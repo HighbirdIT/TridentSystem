@@ -1,0 +1,18 @@
+{
+  "name": "hbnewsite",
+  "version": "1.0.0",
+  "description": "highbird company",
+  "main": "hbnewsite.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "highbird"
+  ],
+  "author": "dryperson",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.3",
+    "express3-handlebars": "^0.5.2"
+  }
+}

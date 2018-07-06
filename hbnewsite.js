@@ -1,4 +1,5 @@
 var express = require('express');
+var fortune = require('./lib/fortune.js');
 
 var app = express();
 
@@ -8,8 +9,6 @@ app.set('view engine', 'handlebars');
 
 app.set('port', process.env.PORT || 3000);
 
-var fortunes = ['香葱','红烧','孜然','麻辣'];
-
 app.use(express.static(__dirname + '/public'));
 
 app.get('/',function(req, res){
@@ -17,8 +16,8 @@ app.get('/',function(req, res){
 });
 
 app.get('/about',function(req, res){
-    var randFotune = fortunes[Math.floor(Math.random() * fortunes.length)];
-    res.render('about',{fortune:randFotune});
+    res.render('about',{fortune:fortune.getFortune()});
+    //res.render('about');
 });
 
 app.use(function(req, res){
