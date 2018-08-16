@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head lang="zh-cn">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="description" content="">
+  <meta name="keywords" content="">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="renderer" content="webkit">
+
+  <meta http-equiv="Cache-Control" content="no-siteapp">
+  <link rel="alternate icon" type="image/png" href="i/favicon.png">
+  <link rel="apple-touch-icon-precomposed" href="i/app-icon72x72@2x.png">
+  <meta name="apple-mobile-web-app-title" content="Highbird">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <link rel="stylesheet" href="\vendor\css\amazeui.touch.min.css">
+  <link rel="stylesheet" href="/vendor/css/webuploader.css">
+  {{{_sections.head}}}
+</head>
+<body>
+  {{{body}}}
+  <div id="root" style="width:100%;height:100%;overflow:hidden;">
+
+  </div>
+    <script src="https://cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
+    {{#if isproduction}}
+    <script src="https://cdn.bootcss.com/react/16.4.0/umd/react.production.min.js"></script>
+    <script src="https://cdn.bootcss.com/react-dom/16.4.0/umd/react-dom.production.min.js"></script>
+    {{else}}
+    <script src="https://cdn.bootcss.com/react/16.4.0/umd/react.development.js"></script>
+    <script src="https://cdn.bootcss.com/react-dom/16.4.0/umd/react-dom.development.js"></script>
+    {{/if}}
+    <script src="https://cdn.bootcss.com/js-cookie/latest/js.cookie.min.js"></script>
+    <script src="https://cdn.bootcss.com/redux/4.0.0/redux.min.js"></script>
+    <script src="https://cdn.bootcss.com/react-redux/5.0.7/react-redux.min.js"></script>
+    <script src="https://cdn.bootcss.com/prop-types/15.6.1/prop-types.js"></script>
+    <script src="https://cdn.bootcss.com/fetch/2.0.4/fetch.min.js"></script>
+    <script src="https://cdn.bootcss.com/reselect/3.0.1/reselect.min.js"></script>
+    <script src="https://cdn.bootcss.com/babel-polyfill/7.0.0-beta.49/polyfill.min.js"></script>
+    <script src="/vendor/js/amazeui.touch.min.js"></script>
+    <script src="/vendor/js/webuploader.html5only.js"></script>
+    <script src="/js/hbtoolkit3.js"></script>
+  {{{_sections.jquery}}}
+</body>
+</html>

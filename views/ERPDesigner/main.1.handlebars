@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta charset="utf-8" />
+    <title>ERP设计器New</title>
+    <link href="/vendor/Microsoft.WinJS.4.4/css/ui-dark.css" rel="stylesheet" />
+    <script src="/vendor/Microsoft.WinJS.4.4/js/base.js"></script>
+    <script src="/vendor/Microsoft.WinJS.4.4/js/ui.js"></script>
+    <link href="/erpdesigner/css/erpdesigner.css" rel="stylesheet" />
+    <script src="/erpdesigner/js/main.js"></script>
+</head>
+<body class="win-type-body" role="application">
+    <div id="menu1" data-win-control="WinJS.UI.Menu">
+        <button data-win-control="WinJS.UI.MenuCommand" data-win-options="{label:'button option', type:'button'}"></button>
+        <button data-win-control="WinJS.UI.MenuCommand" data-win-options="{label:'toggle option', type:'toggle', selected: true}"></button>
+        <hr data-win-control="WinJS.UI.MenuCommand" data-win-options="{type: 'separator'}" />
+        <button data-win-control="WinJS.UI.MenuCommand" data-win-options="{label:'flyout option', type:'flyout', flyout:select('#menuFlyout')}"></button>
+    </div>
+
+    <div id="menuFlyout" data-win-control="WinJS.UI.Flyout" aria-label="{Confirm purchase flyout}">
+        <div>This flyout was invoked after clicking on a menu item.</div>
+        <button class="win-button" id="dismissButton">Ok</button>
+    </div>
+    <div id="root" data-win-control="WinJS.UI.SplitView" data-win-options="{ paneOpened: SdkSample.paneOpenInitially }">
+        <div>
+            <button type="button" class="splitViewButton win-button"></button>
+            <div id="header" role="contentinfo" data-win-control="WinJS.UI.HtmlControl" data-win-options="{uri: '/erpdesigner/html/header.html'}"></div>
+            <div id="scenarioPane" data-win-control="WinJS.UI.HtmlControl" data-win-options="{uri: '/erpdesigner/html/scenario-select.html'}"></div>
+            <div id="footer" data-win-control="WinJS.UI.HtmlControl" data-win-options="{uri: '/erpdesigner/html/footer.html'}"></div>
+        </div>
+
+        <button type="button" class="splitViewButton win-button"></button>
+        <div id="contentWrapper">
+            <div id="contentHost"></div>
+            <div id="statusBox">
+                Status:
+                <div id="statusMessage"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

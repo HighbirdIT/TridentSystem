@@ -1,0 +1,53 @@
+﻿<!--
+Copyright (c) Microsoft Corporation. All rights reserved
+-->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <title></title>
+    <script src="../js/scenario0_Choose.js"></script>
+    <style type="text/css">
+        .control{
+            background-color:white;
+            border:1px solid black;
+            box-sizing:border-box;
+            display:flex;
+            flex-flow:column wrap;
+        }
+
+        .control:hover{
+            border:1px solid white;
+            border-radius:5px;
+        }
+
+        .control .label{
+            flex:0 0 auto;
+            height:20px;
+            background-color:rebeccapurple;
+        }
+    </style>
+</head>
+
+<body class="win-type-body">
+    <h2 id="sampleHeader" class="win-type-subheader">Description:</h2>
+    <div id="scenarioDescription">Choose accelerometer</div>
+
+    <p>Choose the accelerometer to be used by the other scenarios.</p>
+    <p>
+        <select id="reportTypeComboBox" class="win-dropdown">
+            <option value="standard">Standard</option>
+            <option value="linear">Linear</option>
+            <option value="gravity">Gravity</option>
+        </select>
+        <div id="canvas" style="position:absolute;width:500px;height:600px;background-color:red">
+            <div class="control" style="position:absolute;left:0px;top:0px;width:200px;height:200px">
+                <span class="label">Title</span>
+                <span class="label">Content</span>
+            </div>
+            <span class="control" style="position:absolute;left:50px;top:0px;width:50px;height:50px"></span>
+        </div>
+    </p>
+</body>
+
+</html>

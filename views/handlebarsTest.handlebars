@@ -1,0 +1,39 @@
+{{#section 'head'}}
+    <script src="https://cdn.bootcss.com/handlebars.js/4.0.11/handlebars.min.js"></script>
+
+    <script id="nurseryRhymeTemplate" type="text/x-handlebars-template">
+        Marry had a little <b>\{{animal}}</b>, its <b>\{{bodyPart}}</b>.
+    </script>
+{{/section}}
+
+
+
+{{#section 'jquery'}}
+    <script>
+        $(document).ready(function(){
+        var template = Handlebars.compile($('#nurseryRhymeTemplate').html());
+            var $nurseryRhyme = $('#nurseryRhyme');
+            $('#btnNurseryRhyme').on('click', function(evt){
+                evt.preventDefault();
+                $nurseryRhyme.html(template({
+                    animal:'小骚货',
+                    bodyPart:'小粉B',
+                }));
+            });
+
+            $('#btnAjax').on('click', function(evt){
+                evt.preventDefault();
+                $.ajax('/data/nersery-rhyme',{
+                    success:function(data){
+                        $nurseryRhyme.html(template(data));
+                    }
+                });
+            });
+        });
+    </script>
+{{/section}}
+
+<div id="nurseryRhyme"> Click a button...</div> 
+</hr> 
+<button id="btnNurseryRhyme"> Generate nursery rhyme</button> 
+<button id="btnAjax"> Generate nursery rhyme from AJAX</button>

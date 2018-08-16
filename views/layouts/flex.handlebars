@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head lang="zh-cn">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="description" content="">
+  <meta name="keywords" content="">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Hello Highbird!</title>
+  {{{_sections.head}}}
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-siteapp">
+  <style type="text/css">
+    .flexRoot{
+        display: flex;
+        flex-flow:column nowrap;
+        position: absolute;
+    }
+    .flexDynamicItwm{
+        flex: 1 1 auto;
+    }
+    .flexFixItem{
+        flex: 0 0 auto;
+        border:1px solid;
+    }
+    .fill{
+        height: 100%;
+        width:100%;
+    }
+    .content{
+        background-color: bisque;
+    }
+    .scrollable{
+        overflow-y: auto;
+    }
+    .noscroll{
+        overflow: hidden;
+    }
+  </style>
+</head>
+<body class="fill noscroll">
+  <div class="flexRoot fill">
+      <div class="flexFixItem"><H1>Header</H1></div>
+      <div class="flexDynamicItwm scrollable"><H1>Content</H1>
+        <div class="content">
+            <img src="res/img/test.jpg" style="width:100%;height:auto;" />
+        </div>
+      </div>
+      <div class="flexFixItem"><H1>Footer</H1></div>
+  </div>
+</body>
+</html>

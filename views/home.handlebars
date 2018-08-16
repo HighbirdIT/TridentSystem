@@ -1,1 +1,14 @@
 <h1>Welcom to next gen Highbird Web!</h1>
+<ul>
+    {{#each rcds2_arr}}
+        <li>
+            {{.}}
+            <p>{{.. /name2}}</p>
+        </li>
+    {{/each}}
+</ul>
+
+{{#unless rcds_arr}}
+    <p>no rcds data</p>
+{{/unless}}
+<p>{{name}}</p>

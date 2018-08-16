@@ -1,0 +1,2 @@
+::1 - - [Tue, 31 Jul 2018 07:46:31 GMT] "GET /interview/onlineinterview HTTP/1.1" 304 - "-" "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.104 Mobile Safari/537.36"
+::1 - - [Tue, 31 Jul 2018 07:46:31 GMT] "POST /interview/onlineinterview_process HTTP/1.1" 200 - "http://localhost:3000/interview/onlineinterview" "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.104 Mobile Safari/537.36"
