@@ -32,8 +32,14 @@
     <script src="https://cdn.bootcss.com/react-dom/16.4.0/umd/react-dom.development.js"></script>
     {{/if}}
     <script src="https://cdn.bootcss.com/js-cookie/latest/js.cookie.min.js"></script>
+    
+    {{#if isproduction}}
     <script src="https://cdn.bootcss.com/redux/4.0.0/redux.min.js"></script>
     <script src="https://cdn.bootcss.com/react-redux/5.0.7/react-redux.min.js"></script>
+    {{else}}
+    <script src="https://cdn.bootcss.com/redux/4.0.0/redux.js"></script>
+    <script src="https://cdn.bootcss.com/react-redux/5.0.7/react-redux.js"></script>
+    {{/if}}
     <script src="https://cdn.bootcss.com/prop-types/15.6.1/prop-types.js"></script>
     <script src="https://cdn.bootcss.com/fetch/2.0.4/fetch.min.js"></script>
     <script src="https://cdn.bootcss.com/reselect/3.0.1/reselect.min.js"></script>

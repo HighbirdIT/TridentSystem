@@ -8,30 +8,14 @@
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/vendor/bootstrap4/css/bootstrap.css">
+    <link rel="stylesheet" href="/erpdesigner/css/main.css">
 
     <title>ERP设计器New</title>
 </head>
 
 <body class="w-100 h-100">
-    <div class="w-100 h-100 d-flex flex-column">
-        <div class="flex-grow-0 bg-primary">
-            <div>主菜单</div>
-        </div>
-        <div class="flex-grow-1 h-100" style="overflow:auto">
-            <div class="d-flex flex-column h-100">
-                <div class="flex-grow-0 bg-" id="pageTabsContainer">
+    <div id="reactRoot" class="w-100 h-100 bg-secondary">
 
-                </div>
-                <div class="flex-grow-1 h-100" style="overflow:auto" id="pageContentContainer">
-                    <div class="d-flex h-100">
-                        <div class="flex-grow-0" style="width:100px">Toolbar</div>
-                        <div class="flex-grow-1 bg-info">Page</div>
-                        <div class="flex-grow-0" style="width:200px">Props</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="flex-grow-0 bg-info">页脚</div>
     </div>
 
     <script src="https://cdn.bootcss.com/prop-types/15.6.1/prop-types.js"></script>
@@ -41,8 +25,32 @@
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.slim.min.js"></script>
     <script src="https://cdn.bootcss.com/popper.js/1.14.3/umd/popper.min.js"></script>
     <script src="/vendor/bootstrap4/js/bootstrap.js"></script>
+    {{#if isproduction}}
+    <script src="https://cdn.bootcss.com/react/16.4.0/umd/react.production.min.js"></script>
+    <script src="https://cdn.bootcss.com/react-dom/16.4.0/umd/react-dom.production.min.js"></script>
+    {{else}}
     <script src="https://cdn.bootcss.com/react/16.4.0/umd/react.development.js"></script>
     <script src="https://cdn.bootcss.com/react-dom/16.4.0/umd/react-dom.development.js"></script>
+    {{/if}}
+    <script src="https://cdn.bootcss.com/fetch/2.0.4/fetch.min.js"></script>
+    <script src="https://cdn.bootcss.com/js-cookie/latest/js.cookie.min.js"></script>
+    <script src="https://cdn.bootcss.com/EventEmitter/5.2.4/EventEmitter.min.js"></script>
+    <script src="/erpdesigner/js/utilities.js"></script>
+
+    <script src="/erpdesigner/js/core/IAttributeable.js"></script>
+    <script src="/erpdesigner/js/core/CProject.js"></script>
+    <script src="/erpdesigner/js/core/CAttributeGroup.js"></script>
+    <script src="/erpdesigner/js/core/CAttribute.js"></script>
+
+    <script src="/erpdesigner/js/ui/attributeEditor.js"></script>
+    <script src="/erpdesigner/js/ui/mainMenu.js"></script>
+    <script src="/erpdesigner/js/ui/statusBar.js"></script>
+    <script src="/erpdesigner/js/ui/controlPanel.js"></script>
+    <script src="/erpdesigner/js/ui/attributePanel.js"></script>
+    <script src="/erpdesigner/js/ui/contentPanel.js"></script>
+    
+    <script src="/erpdesigner/js/ui/projectDesigner.js"></script>
+    <script src="/erpdesigner/js/ui/projectContainer.js"></script>
     <script src="/erpdesigner/js/main.js"></script>
 </body>
 

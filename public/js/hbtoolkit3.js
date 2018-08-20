@@ -39,6 +39,18 @@ function updateItemInArray(array, itemId, updateItemCallback) {
     return updatedItems;
 }
 
+function updateItemInArrayByIndex(array, index, updateItemCallback) {
+    var updatedItems = array.map(function (item,i) {
+        if (i !== index) {
+            return item;
+        }
+        var updatedItem = updateItemCallback(item);
+        return updatedItem;
+    });
+
+    return updatedItems;
+}
+
 function createReducer(initialState, handlers) {
     return function reducer() {
         var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : initialState;
