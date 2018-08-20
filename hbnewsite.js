@@ -79,6 +79,11 @@ app.use('/ERPDesigner',function( req, res, next)
     return res.render('ERPDesigner/main', {layout:null}); 
 });
 
+app.use('/HelloReact',function( req, res, next)
+{
+    return res.render('study/HelloReact', {layout:null}); 
+});
+
 /*
 app.get('/about',function(req, res){
     res.render('about',{fortune:fortune.getFortune()});

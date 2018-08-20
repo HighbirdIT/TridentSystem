@@ -1,7 +1,6 @@
 class ProjectContainer extends React.PureComponent {
     constructor(props) {
         super(props);
-
         var initState = {
             projects: [
                 new CProject('员工信息管理'),
