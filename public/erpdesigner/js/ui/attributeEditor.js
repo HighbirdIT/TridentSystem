@@ -62,7 +62,7 @@ var AttributeEditor = function (_React$PureComponent) {
             if (theAttr.setFun == null) {
                 return React.createElement(
                     'div',
-                    { className: 'form-control', id: theAttr.inputID },
+                    { className: 'form-control-plaintext text-light', id: theAttr.inputID },
                     this.state.value
                 );
             }
@@ -82,7 +82,7 @@ var AttributeEditor = function (_React$PureComponent) {
                 ),
                 React.createElement(
                     'div',
-                    { className: 'flex-grow-1 flex-shrink-1 p-1' },
+                    { className: 'flex-grow-1 flex-shrink-1 p-1 border-left border-secondary' },
                     this.rednerEditor(theAttr)
                 )
             );

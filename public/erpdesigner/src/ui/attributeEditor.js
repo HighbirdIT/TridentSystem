@@ -38,7 +38,7 @@ class AttributeEditor extends React.PureComponent {
 
     rednerEditor(theAttr){
         if(theAttr.setFun == null){
-            return (<div className="form-control" id={theAttr.inputID}>{this.state.value}</div>);
+            return (<div className="form-control-plaintext text-light" id={theAttr.inputID}>{this.state.value}</div>);
         }
         return (<input type="text" className="form-control" id={theAttr.inputID} value={this.state.value} onChange={this.editorChanged} attrname={theAttr.name} />);
     }
@@ -51,7 +51,7 @@ class AttributeEditor extends React.PureComponent {
                     {theAttr.label}
                 </label>
 
-                <div className="flex-grow-1 flex-shrink-1 p-1">
+                <div className="flex-grow-1 flex-shrink-1 p-1 border-left border-secondary">
                     {
                         this.rednerEditor(theAttr)
                     }
