@@ -37,7 +37,11 @@ var MyApp = function (_React$PureComponent) {
     }, {
         key: 'litItemClick',
         value: function litItemClick(ev) {
-            var code = ev.target.getAttribute('code');
+            var target = ev.target;
+            if (!target.hasAttribute('code')) {
+                target = target.parentElement;
+            }
+            var code = target.getAttribute('code');
             this.setState({ selectedCode: code });
         }
     }, {
@@ -83,8 +87,17 @@ var MyApp = function (_React$PureComponent) {
                     filted_arr.map(function (item, i) {
                         return React.createElement(
                             'div',
-                            { onClick: _this2.litItemClick, className: 'list-group-item list-group-item-action' + (item.code == _this2.state.selectedCode ? ' active' : ''), key: i, code: item.code },
-                            item.name
+                            { onClick: _this2.litItemClick, className: 'd-flex flex-grow-0 flex-shrink-0 list-group-item list-group-item-action' + (item.code == _this2.state.selectedCode ? ' active' : ''), key: i, code: item.code },
+                            React.createElement(
+                                'div',
+                                { className: 'col-6' },
+                                item.name
+                            ),
+                            React.createElement(
+                                'div',
+                                { className: 'col-6' },
+                                item.code
+                            )
                         );
                     })
                 )

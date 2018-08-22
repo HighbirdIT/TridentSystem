@@ -18,7 +18,11 @@ class MyApp extends React.PureComponent{
     }
 
     litItemClick(ev){
-        var code = ev.target.getAttribute('code');
+        var target = ev.target;
+        if(!target.hasAttribute('code')){
+            target = target.parentElement;
+        }
+        var code = target.getAttribute('code');
         this.setState({selectedCode:code});
     }
 
@@ -41,7 +45,10 @@ class MyApp extends React.PureComponent{
                 <div name='listDIV' className='list-group flex-grow-1 flex-shrink-1' style={{overflow:'auto'}} >
                     {
                         filted_arr.map((item,i)=>{
-                            return(<div onClick={this.litItemClick} className={'list-group-item list-group-item-action' + (item.code == this.state.selectedCode ? ' active' : '')} key={i} code={item.code}>{item.name}</div>)
+                            return(<div onClick={this.litItemClick} className={'d-flex flex-grow-0 flex-shrink-0 list-group-item list-group-item-action' + (item.code == this.state.selectedCode ? ' active' : '')} key={i} code={item.code}>
+                                    <div className='col-6'>{item.name}</div>
+                                    <div className='col-6'>{item.code}</div>
+                                </div>)
                         })
                     }
                 </div>
