@@ -3,20 +3,24 @@
 class AttributeEditor extends React.PureComponent {
     constructor(props) {
         super(props);
+        autoBind(this);
+
         var initState = {
-            value:this.props.targetattr.nowValue(),
+            value:this.getAttrNowValue(),
         };
         this.state = initState;
+    }
 
-        autoBind(this,{exclude:['rednerEditor']});
+    getAttrNowValue(){
+        return this.props.targetobj['get_' + this.props.targetattr.name]();
     }
 
     componentWillMount(){
-        this.props.targetattr.group.belongObj.on(EATTRCHANGED, this.attrChangedHandler);
+        this.props.targetobj.on(EATTRCHANGED, this.attrChangedHandler);
     }
 
     componentWillUnmount(){
-        this.props.targetattr.group.belongObj.off(EATTRCHANGED, this.attrChangedHandler);
+        this.props.targetobj.off(EATTRCHANGED, this.attrChangedHandler);
     }
 
     attrChangedHandler(ev){
@@ -31,13 +35,13 @@ class AttributeEditor extends React.PureComponent {
         }
         if(isMyAttrChaned){
             this.setState(nowState=>{
-                return {value:this.props.targetattr.nowValue(),};
+                return {value:this.getAttrNowValue(),};
             });
         }
     }
 
     rednerEditor(theAttr){
-        if(theAttr.setFun == null){
+        if(!theAttr.editable){
             return (<div className="form-control-plaintext text-light" id={theAttr.inputID}>{this.state.value}</div>);
         }
         return (<input type="text" className="form-control" id={theAttr.inputID} value={this.state.value} onChange={this.editorChanged} attrname={theAttr.name} />);
@@ -66,7 +70,7 @@ class AttributeEditor extends React.PureComponent {
         if(editorElem.tagName.toUpperCase() === 'INPUT'){
             newVal = editorElem.value;
         }
-        this.props.targetattr.setFun(newVal);
+        this.props.targetobj['set_' + this.props.targetattr.name](newVal);
     }
 }
 

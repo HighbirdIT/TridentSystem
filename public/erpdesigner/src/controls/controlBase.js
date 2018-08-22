@@ -1,9 +1,8 @@
 class ControlBase{
-    constructor(forPC,label) {
-        Object.assign(this,{
+    constructor(forPC,label,groupName) {
+        this.config = Object.assign({},{
             forPC:forPC,
             label : label,
         });
-        
     }
 }

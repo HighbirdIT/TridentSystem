@@ -12,6 +12,14 @@ class AttributePanel extends React.PureComponent {
         autoBind(this,{exclude:['renderAttribute']});
     }
 
+    getAttrValue(attr){
+        return this.state.target['get' + attr.name]();
+    }
+
+    setAttrValue(attr, newvalue){
+        this.state.target['set' + attr.name](newvalue);
+    }
+
     renderAttribute(target){
         if(target.attrbuteGroups == null){
             return (<div>此对象没有属性</div>);
@@ -25,7 +33,7 @@ class AttributePanel extends React.PureComponent {
                     {
                         attrGroup.attrs_arr.map(attr=>{
                             return(
-                                <AttributeEditor key={attr.name} targetattr={attr} />
+                                <AttributeEditor key={attr.name} targetattr={attr} targetobj={this.state.target} />
                             )
                         })
                     }

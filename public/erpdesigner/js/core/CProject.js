@@ -8,6 +8,10 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+var CProjectAttrsSetting = {
+    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('页面名称', 'title', ValueType.String, true), new CAttribute('真实名称', 'realName', ValueType.String, false)])]
+};
+
 var CProject = function (_IAttributeable) {
     _inherits(CProject, _IAttributeable);
 
@@ -22,20 +26,25 @@ var CProject = function (_IAttributeable) {
         };
         _this.description = '页面';
 
+        _this.content_PC = {};
+        _this.content_Mobile = {
+            pages: []
+        };
+
         var self = _this;
         autoBind(self);
-        _this.attrbuteGroups = [new CAttributeGroup('基本设置', self, [new CAttribute('页面名称', 'title', '', _this.getLabel, _this.setLabel), new CAttribute('真实名称', 'realName', '', _this.getRealName, null)])];
+        _this.attrbuteGroups = CProjectAttrsSetting.groups_arr;
         return _this;
     }
 
     _createClass(CProject, [{
-        key: 'getLabel',
-        value: function getLabel() {
+        key: 'get_title',
+        value: function get_title() {
             return this.config.title;
         }
     }, {
-        key: 'setLabel',
-        value: function setLabel(newtitle) {
+        key: 'set_title',
+        value: function set_title(newtitle) {
             if (newtitle.length > 8) {
                 newtitle = newtitle.substring(0, 8);
             }
@@ -48,8 +57,8 @@ var CProject = function (_IAttributeable) {
             return true;
         }
     }, {
-        key: 'getRealName',
-        value: function getRealName() {
+        key: 'get_realName',
+        value: function get_realName() {
             return this.config.title + 'Real';
         }
     }]);

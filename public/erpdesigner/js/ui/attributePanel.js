@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -28,13 +28,25 @@ var AttributePanel = function (_React$PureComponent) {
     }
 
     _createClass(AttributePanel, [{
-        key: "renderAttribute",
+        key: 'getAttrValue',
+        value: function getAttrValue(attr) {
+            return this.state.target['get' + attr.name]();
+        }
+    }, {
+        key: 'setAttrValue',
+        value: function setAttrValue(attr, newvalue) {
+            this.state.target['set' + attr.name](newvalue);
+        }
+    }, {
+        key: 'renderAttribute',
         value: function renderAttribute(target) {
+            var _this2 = this;
+
             if (target.attrbuteGroups == null) {
                 return React.createElement(
-                    "div",
+                    'div',
                     null,
-                    "\u6B64\u5BF9\u8C61\u6CA1\u6709\u5C5E\u6027"
+                    '\u6B64\u5BF9\u8C61\u6CA1\u6709\u5C5E\u6027'
                 );
             }
             return target.attrbuteGroups.map(function (attrGroup, attrGroupIndex) {
@@ -42,36 +54,36 @@ var AttributePanel = function (_React$PureComponent) {
                     React.Fragment,
                     { key: attrGroup.label },
                     React.createElement(
-                        "button",
-                        { type: "button", "data-toggle": "collapse", "data-target": "#attrGroup" + attrGroup.label, className: "btn flex-grow-0 flex-shrink-0 bg-secondary text-light", style: { borderRadius: '0em', height: '2.5em' } },
+                        'button',
+                        { type: 'button', 'data-toggle': 'collapse', 'data-target': "#attrGroup" + attrGroup.label, className: 'btn flex-grow-0 flex-shrink-0 bg-secondary text-light', style: { borderRadius: '0em', height: '2.5em' } },
                         attrGroup.label
                     ),
                     React.createElement(
-                        "div",
+                        'div',
                         { id: "attrGroup" + attrGroup.label, className: "list-group flex-grow-0 flex-shrink-0 collapse" + (attrGroupIndex == 0 ? ' show' : ''), style: { overflow: 'auto' } },
                         attrGroup.attrs_arr.map(function (attr) {
-                            return React.createElement(AttributeEditor, { key: attr.name, targetattr: attr });
+                            return React.createElement(AttributeEditor, { key: attr.name, targetattr: attr, targetobj: _this2.state.target });
                         })
                     )
                 );
             });
         }
     }, {
-        key: "render",
+        key: 'render',
         value: function render() {
             var target = this.state.target;
             return React.createElement(
-                "div",
-                { className: "flex-grow-0 flex-shrink-0 bg-light d-flex flex-column", style: { width: '350px' } },
+                'div',
+                { className: 'flex-grow-0 flex-shrink-0 bg-light d-flex flex-column', style: { width: '350px' } },
                 React.createElement(
-                    "button",
-                    { type: "button", className: "btn flex-grow-0 flex-shrink-0 bg-secondary text-light", style: { borderRadius: '0em', height: '2.5em', overflow: 'hidden' } },
-                    "\u5C5E\u6027:",
+                    'button',
+                    { type: 'button', className: 'btn flex-grow-0 flex-shrink-0 bg-secondary text-light', style: { borderRadius: '0em', height: '2.5em', overflow: 'hidden' } },
+                    '\u5C5E\u6027:',
                     target.description
                 ),
                 React.createElement(
-                    "div",
-                    { className: "flex-grow-1 flex-shrink-1 bg-secondary d-flex flex-column", style: { overflow: 'auto' } },
+                    'div',
+                    { className: 'flex-grow-1 flex-shrink-1 bg-secondary d-flex flex-column', style: { overflow: 'auto' } },
                     this.renderAttribute(target)
                 )
             );

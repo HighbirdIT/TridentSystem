@@ -188,7 +188,7 @@ var MyApp = function (_React$PureComponent2) {
         value: function renderCalculator(count) {
             var rlt = [];
             for (var i = 1; i <= count; ++i) {
-                rlt.push(React.createElement(Calculator, { key: i, name: '计算器' + i, hadbtn: true }));
+                rlt.push(React.createElement(Calculator, { key: i, name: '计算器' + i, hadbtn: false }));
             }
             return rlt;
         }

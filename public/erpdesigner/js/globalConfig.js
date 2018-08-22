@@ -1,14 +1,34 @@
-"use strict";
+'use strict';
 
 var DesignerConfig = {
-    controlsForPC: [],
-    controlsForMobile: []
+    controlConfig: {
+        groups: [],
+        configs_obj: {}
+    }
 };
 
-DesignerConfig.pushControl = function (ctlConfig) {
-    if (ctlConfig.forPC) {
-        DesignerConfig.controlsForPC.push(ctlConfig);
-    } else {
-        DesignerConfig.controlsForMobile.push(ctlConfig);
+DesignerConfig.registerControl = function (ctlConfig, groupName) {
+    var ctlGroup = this.controlConfig.groups.find(function (item) {
+        return item.name == groupName;
+    });
+    if (ctlGroup == null) {
+        ctlGroup = {
+            name: groupName,
+            controlsForPC: [],
+            controlsForMobile: []
+        };
+        this.controlConfig.groups.push(ctlGroup);
     }
+
+    if (ctlConfig.forPC) {
+        ctlGroup.controlsForPC.push(ctlConfig);
+    } else {
+        ctlGroup.controlsForMobile.push(ctlConfig);
+    }
+    this.controlConfig.configs_obj[ctlConfig.type] = ctlConfig;
+}.bind(DesignerConfig);
+
+var ValueType = {
+    String: 'String',
+    Int: 'Int'
 };

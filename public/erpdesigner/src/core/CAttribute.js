@@ -1,16 +1,11 @@
 class CAttribute{
-    constructor(label,name,valueType,getFun,setFun) {
+    constructor(label,name,valueType,editable,setFun) {
         Object.assign(this,{
             label:label,
             name : name,
             valueType:valueType,
-            getFun:getFun,
-            setFun:setFun,
+            editable:editable,
             inputID:name + '_input',
         });
-    }
-
-    nowValue(){
-        return this.getFun();
     }
 }

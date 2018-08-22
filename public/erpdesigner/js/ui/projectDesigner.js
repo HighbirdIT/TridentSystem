@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -23,14 +23,14 @@ var ProjectDesigner = function (_React$PureComponent) {
     }
 
     _createClass(ProjectDesigner, [{
-        key: 'render',
+        key: "render",
         value: function render() {
             var thisProject = this.props.project;
             thisProject.designer = this;
             return React.createElement(
-                'div',
+                "div",
                 { className: this.props.className },
-                React.createElement(ControlPanel, { project: thisProject, projconfig: thisProject.config, className: 'flex-grow-0 flex-shrink-0 bg-light d-flex flex-column' }),
+                React.createElement(ControlPanel, { project: thisProject, projconfig: thisProject.config }),
                 React.createElement(ContentPanel, { project: thisProject, projconfig: thisProject.config }),
                 React.createElement(AttributePanel, { project: thisProject })
             );

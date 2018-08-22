@@ -16,24 +16,29 @@ var AttributeEditor = function (_React$PureComponent) {
 
         var _this = _possibleConstructorReturn(this, (AttributeEditor.__proto__ || Object.getPrototypeOf(AttributeEditor)).call(this, props));
 
+        autoBind(_this);
+
         var initState = {
-            value: _this.props.targetattr.nowValue()
+            value: _this.getAttrNowValue()
         };
         _this.state = initState;
-
-        autoBind(_this, { exclude: ['rednerEditor'] });
         return _this;
     }
 
     _createClass(AttributeEditor, [{
+        key: 'getAttrNowValue',
+        value: function getAttrNowValue() {
+            return this.props.targetobj['get_' + this.props.targetattr.name]();
+        }
+    }, {
         key: 'componentWillMount',
         value: function componentWillMount() {
-            this.props.targetattr.group.belongObj.on(EATTRCHANGED, this.attrChangedHandler);
+            this.props.targetobj.on(EATTRCHANGED, this.attrChangedHandler);
         }
     }, {
         key: 'componentWillUnmount',
         value: function componentWillUnmount() {
-            this.props.targetattr.group.belongObj.off(EATTRCHANGED, this.attrChangedHandler);
+            this.props.targetobj.off(EATTRCHANGED, this.attrChangedHandler);
         }
     }, {
         key: 'attrChangedHandler',
@@ -52,14 +57,14 @@ var AttributeEditor = function (_React$PureComponent) {
             }
             if (isMyAttrChaned) {
                 this.setState(function (nowState) {
-                    return { value: _this2.props.targetattr.nowValue() };
+                    return { value: _this2.getAttrNowValue() };
                 });
             }
         }
     }, {
         key: 'rednerEditor',
         value: function rednerEditor(theAttr) {
-            if (theAttr.setFun == null) {
+            if (!theAttr.editable) {
                 return React.createElement(
                     'div',
                     { className: 'form-control-plaintext text-light', id: theAttr.inputID },
@@ -95,7 +100,7 @@ var AttributeEditor = function (_React$PureComponent) {
             if (editorElem.tagName.toUpperCase() === 'INPUT') {
                 newVal = editorElem.value;
             }
-            this.props.targetattr.setFun(newVal);
+            this.props.targetobj['set_' + this.props.targetattr.name](newVal);
         }
     }]);
 

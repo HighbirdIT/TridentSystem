@@ -6,20 +6,21 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var M_Container = function (_ControlBase) {
-    _inherits(M_Container, _ControlBase);
+var M_Page = function (_ControlBase) {
+    _inherits(M_Page, _ControlBase);
 
-    function M_Container() {
-        _classCallCheck(this, M_Container);
+    function M_Page() {
+        _classCallCheck(this, M_Page);
 
-        return _possibleConstructorReturn(this, (M_Container.__proto__ || Object.getPrototypeOf(M_Container)).call(this, false, 'Flex容器', '布局'));
+        return _possibleConstructorReturn(this, (M_Page.__proto__ || Object.getPrototypeOf(M_Page)).call(this, false, '手机页面', '布局'));
     }
 
-    return M_Container;
+    return M_Page;
 }(ControlBase);
 
 DesignerConfig.registerControl({
     forPC: false,
-    label: 'Flex容器',
-    type: 'M_Container'
+    label: '页面',
+    type: 'M_Page',
+    invisible: true
 }, '布局');

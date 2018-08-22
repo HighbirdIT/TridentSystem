@@ -84,6 +84,11 @@ app.use('/HelloReact',function( req, res, next)
     return res.render('study/HelloReact', {layout:null}); 
 });
 
+app.use('/ReactKeyList',function( req, res, next)
+{
+    return res.render('study/ReactKeyList', {layout:null}); 
+});
+
 /*
 app.get('/about',function(req, res){
     res.render('about',{fortune:fortune.getFortune()});
