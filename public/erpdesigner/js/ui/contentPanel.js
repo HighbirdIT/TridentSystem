@@ -18,50 +18,111 @@ var ContentPanel = function (_React$PureComponent) {
 
         var project = _this.props.project;
         var initState = {
-            isPC: project.config.isPC
+            isPC: _this.props.project.designeConfig.editingType == 'PC',
+            title: _this.props.project.getAttribute('title')
         };
         _this.state = initState;
-        _this.switchProjectVersion = _this.switchProjectVersion.bind(_this);
+
+        _this.watchedAttrs = ['title', 'editingType'];
+        _this.watchAttrMatch = function (attrName) {
+            return _this.watchedAttrs.indexOf(attrName) != -1;
+        };
+
+        autoBind(_this);
         return _this;
     }
 
     _createClass(ContentPanel, [{
-        key: 'switchProjectVersion',
-        value: function switchProjectVersion() {
-            var project = this.props.project;
-            project.projectManager.switchProjectVersion(project.projectIndex);
+        key: 'toggleProjectEditingType',
+        value: function toggleProjectEditingType() {
+            this.props.project.toggleEditingType();
+        }
+    }, {
+        key: 'attrChangedHandler',
+        value: function attrChangedHandler(ev) {
+            var needFresh = false;
+            if (typeof ev.name === 'string') {
+                needFresh = this.watchedAttrs.indexOf(ev.name) != -1;
+            } else {
+                needFresh = ev.name.some(this.watchAttrMatch);
+            }
+            if (needFresh) {
+                this.setState({
+                    isPC: this.props.project.designeConfig.editingType == 'PC',
+                    title: this.props.project.getAttribute('title')
+                });
+            }
+        }
+    }, {
+        key: 'componentWillMount',
+        value: function componentWillMount() {
+            this.props.project.on(EATTRCHANGED, this.attrChangedHandler);
+        }
+    }, {
+        key: 'componentWillUnmount',
+        value: function componentWillUnmount() {
+            this.props.project.off(EATTRCHANGED, this.attrChangedHandler);
         }
     }, {
         key: 'render',
         value: function render() {
             var project = this.props.project;
+            var isPC = this.state.isPC;
             return React.createElement(
                 'div',
                 { className: 'flex-grow-1 flex-shrink-1 d-flex flex-column' },
                 React.createElement(
                     'div',
-                    { className: 'flex-grow-0 flex-shrink-0 d-flex bg-secondary justify-content-center align-items-center text-light', style: { height: '2.5em', overflow: 'hidden' } },
+                    { className: 'flex-grow-0 flex-shrink-0 d-flex bg-secondary projectContentHeader align-items-center' },
                     React.createElement(
-                        'h4',
-                        null,
-                        project.config.title
-                    ),
-                    React.createElement(
-                        'button',
-                        { type: 'button', className: "ml-1 p-0 btn btn-secondary dropdown-toggle dropdown-toggle-split", 'data-toggle': 'dropdown' },
+                        'div',
+                        { className: 'flex-grow-1 flex-shrink-1 d-flex justify-content-center align-items-center text-light' },
+                        React.createElement(
+                            'h4',
+                            null,
+                            this.state.title
+                        ),
+                        React.createElement(
+                            'button',
+                            { type: 'button', className: "ml-1 p-0 btn btn-secondary dropdown-toggle dropdown-toggle-split", 'data-toggle': 'dropdown' },
+                            React.createElement(
+                                'div',
+                                { className: "badge badge-pill ml-1 badge-" + (isPC ? "danger" : "success") },
+                                isPC ? "电脑版" : "手机版"
+                            )
+                        ),
                         React.createElement(
                             'div',
-                            { className: "badge badge-pill ml-1 badge-" + (project.config.isPC ? "danger" : "success") },
-                            project.config.isPC ? "电脑版" : "手机版"
+                            { className: 'dropdown-menu' },
+                            React.createElement(
+                                'button',
+                                { onClick: this.toggleProjectEditingType, className: 'dropdown-item', type: 'button' },
+                                isPC ? '切换手机版' : '切换电脑版'
+                            )
                         )
                     ),
                     React.createElement(
                         'div',
-                        { className: 'dropdown-menu' },
+                        { className: 'flex-grow-0 flex-shrink-0' },
                         React.createElement(
                             'button',
-                            { onClick: this.switchProjectVersion, className: 'dropdown-item', type: 'button' },
-                            project.config.isPC ? '切换手机版' : '切换电脑版'
+                            { type: 'button', className: "p-0 btn btn-secondary dropdown-toggle", 'data-toggle': 'dropdown' },
+                            React.createElement(
+                                'div',
+                                { className: "badge badge-pill ml-1 badge-" + (isPC ? "danger" : "success") },
+                                'sdf'
+                            )
+                        ),
+                        React.createElement(
+                            'div',
+                            { className: 'dropdown-menu' },
+                            (isPC ? project.content_PC.pages : project.content_Mobile.pages).map(function (page) {
+                                return React.createElement(
+                                    'button',
+                                    { key: page.name, className: 'dropdown-item', type: 'button' },
+                                    page.title
+                                );
+                            })
                         )
                     )
                 ),

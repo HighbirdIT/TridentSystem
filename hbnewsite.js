@@ -89,6 +89,15 @@ app.use('/ReactKeyList',function( req, res, next)
     return res.render('study/ReactKeyList', {layout:null}); 
 });
 
+app.use('/helloProcess',function( req, res, next)
+{
+    var jspath = __dirname + '/views/study/helloProcess.js';
+    jspath = jspath.replace(/^\//, ''); 
+
+    require(jspath)(req,res, next);
+    return;
+});
+
 /*
 app.get('/about',function(req, res){
     res.render('about',{fortune:fortune.getFortune()});

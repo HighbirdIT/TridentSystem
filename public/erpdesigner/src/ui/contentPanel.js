@@ -4,32 +4,76 @@ class ContentPanel extends React.PureComponent {
 
         var project = this.props.project;
         var initState = {
-            isPC:project.config.isPC
+            isPC:this.props.project.designeConfig.editingType == 'PC',
+            title:this.props.project.getAttribute('title'),
         };
         this.state = initState;
-        this.switchProjectVersion = this.switchProjectVersion.bind(this);
+
+        this.watchedAttrs = ['title','editingType'];
+        this.watchAttrMatch = attrName => this.watchedAttrs.indexOf(attrName) != -1;
+
+        autoBind(this);
     }
 
-    switchProjectVersion(){
-        var project = this.props.project;
-        project.projectManager.switchProjectVersion(project.projectIndex);
+    toggleProjectEditingType(){
+        this.props.project.toggleEditingType();
+    }
+
+    attrChangedHandler(ev){
+        var needFresh = false;
+        if(typeof ev.name === 'string'){
+            needFresh = this.watchedAttrs.indexOf(ev.name) != -1;
+        }
+        else{
+            needFresh = ev.name.some(this.watchAttrMatch);
+        }
+        if(needFresh){
+            this.setState({
+                isPC:this.props.project.designeConfig.editingType == 'PC',
+                title:this.props.project.getAttribute('title'),
+            });
+        }
+    }
+
+    componentWillMount(){
+        this.props.project.on(EATTRCHANGED, this.attrChangedHandler);
+    }
+
+    componentWillUnmount(){
+        this.props.project.off(EATTRCHANGED, this.attrChangedHandler);
     }
 
     render() {
         var project = this.props.project;
+        var isPC = this.state.isPC;
         return (
             <div className='flex-grow-1 flex-shrink-1 d-flex flex-column'>
-                <div className='flex-grow-0 flex-shrink-0 d-flex bg-secondary justify-content-center align-items-center text-light' style={{ height: '2.5em',overflow:'hidden' }}>
-                    <h4 >{project.config.title}
-                        
-                    </h4>
-                    <button type="button" className={"ml-1 p-0 btn btn-secondary dropdown-toggle dropdown-toggle-split"} data-toggle="dropdown">
-                        <div className={"badge badge-pill ml-1 badge-" + (project.config.isPC ? "danger" : "success")}>
-                            {project.config.isPC ? "电脑版" : "手机版"}
+                <div className='flex-grow-0 flex-shrink-0 d-flex bg-secondary projectContentHeader align-items-center'>
+                    <div className='flex-grow-1 flex-shrink-1 d-flex justify-content-center align-items-center text-light'>
+                        <h4 >{this.state.title}
+                            
+                        </h4>
+                        <button type="button" className={"ml-1 p-0 btn btn-secondary dropdown-toggle dropdown-toggle-split"} data-toggle="dropdown">
+                            <div className={"badge badge-pill ml-1 badge-" + (isPC ? "danger" : "success")}>
+                                {isPC ? "电脑版" : "手机版"}
+                            </div>
+                        </button>
+                        <div className="dropdown-menu">
+                            <button onClick={this.toggleProjectEditingType} className="dropdown-item" type="button">{isPC ? '切换手机版' : '切换电脑版'}</button>
                         </div>
-                    </button>
-                    <div className="dropdown-menu">
-                        <button onClick={this.switchProjectVersion} className="dropdown-item" type="button">{project.config.isPC ? '切换手机版' : '切换电脑版'}</button>
+                    </div>
+                    <div className='flex-grow-0 flex-shrink-0'>
+                        <button type="button" className={"p-0 btn btn-secondary dropdown-toggle"} data-toggle="dropdown">
+                            <div className={"badge badge-pill ml-1 badge-" + (isPC ? "danger" : "success")}>
+                                sdf
+                            </div>
+                        </button>
+                        <div className="dropdown-menu">
+                            { (isPC ? project.content_PC.pages : project.content_Mobile.pages).map(page=>{
+                                return (<button key={page.name} className="dropdown-item" type="button">{page.title}</button>)
+                            })
+                            }
+                        </div>
                     </div>
                 </div>
                 <div className='flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center'>

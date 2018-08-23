@@ -12,7 +12,7 @@ class AttributeEditor extends React.PureComponent {
     }
 
     getAttrNowValue(){
-        return this.props.targetobj['get_' + this.props.targetattr.name]();
+        return this.props.targetobj.getAttribute(this.props.targetattr.name);
     }
 
     componentWillMount(){
@@ -70,7 +70,7 @@ class AttributeEditor extends React.PureComponent {
         if(editorElem.tagName.toUpperCase() === 'INPUT'){
             newVal = editorElem.value;
         }
-        this.props.targetobj['set_' + this.props.targetattr.name](newVal);
+        this.props.targetobj.setAttribute(this.props.targetattr.name,newVal);
     }
 }
 

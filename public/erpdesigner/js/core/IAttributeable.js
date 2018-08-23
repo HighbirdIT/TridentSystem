@@ -13,13 +13,14 @@ var EATTRCHANGED = 'attrChanged';
 var IAttributeable = function (_EventEmitter) {
     _inherits(IAttributeable, _EventEmitter);
 
-    function IAttributeable() {
+    function IAttributeable(initAttrValues) {
         _classCallCheck(this, IAttributeable);
 
         var _this = _possibleConstructorReturn(this, (IAttributeable.__proto__ || Object.getPrototypeOf(IAttributeable)).call(this));
 
         _this.attrVersion = 0;
         _this.description = '未知';
+        _this.attrValues = initAttrValues;
         autoBind(_this);
         return _this;
     }
@@ -39,6 +40,34 @@ var IAttributeable = function (_EventEmitter) {
                 return false;
             });
             return foundAttr;
+        }
+    }, {
+        key: '__setAttribute',
+        value: function __setAttribute(attrName, value) {
+            if (this.attrValues[attrName] == value) {
+                return false;
+            }
+            this.attrValues[attrName] = value;
+            return true;
+        }
+    }, {
+        key: 'setAttribute',
+        value: function setAttribute(attrName, value) {
+            if (typeof this['set_' + attrName] == 'function') {
+                return this['set_' + attrName](value);
+            } else {
+                if (this.__setAttribute(attrName, value) != false) {
+                    this.attrChanged(attrName);
+                }
+            }
+        }
+    }, {
+        key: 'getAttribute',
+        value: function getAttribute(attrName) {
+            if (typeof this['get_' + attrName] == 'function') {
+                return this['get_' + attrName]();
+            }
+            return this.attrValues[attrName];
         }
     }, {
         key: 'someAttributeChanged',

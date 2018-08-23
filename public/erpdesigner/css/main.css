@@ -11,3 +11,7 @@
     width:450px;
 }
 
+.projectContentHeader{
+    height: 2.5em;
+    overflow:hidden;
+}

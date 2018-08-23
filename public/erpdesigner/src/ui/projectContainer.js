@@ -1,3 +1,49 @@
+class TitleHeaderItem extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        var initState = {
+            title: this.props.project.getAttribute('title'),
+        };
+
+        this.state = initState;
+        autoBind(this);
+    }
+
+    attrChangedHandler(ev){
+        var needFresh = false;
+        if(typeof ev.name === 'string'){
+            needFresh = ev.name == 'title';
+        }
+        else{
+            needFresh = ev.name.indexOf('title') != -1;
+        }
+        if(needFresh){
+            this.setState({
+                title: this.props.project.getAttribute('title'),
+            });
+        }
+    }
+
+    componentWillMount(){
+        this.props.project.on(EATTRCHANGED, this.attrChangedHandler);
+    }
+
+    componentWillUnmount(){
+        this.props.project.off(EATTRCHANGED, this.attrChangedHandler);
+    }
+
+    render() {
+        return (
+            <div className="btn-group" projectindex={this.props.index}>
+                <button onClick={this.props.clickTitlehandler} type="button" className={"btn btn-" + (this.props.active ? 'primary' : 'dark')}>
+                    {this.state.title}
+                </button>
+                <button onClick={this.props.clickClosehandler} className={"btn btn-" + (this.props.active ? 'primary' : 'dark')} type="button"><span>&times;</span></button>
+            </div>
+        )
+    }
+}
+
 class ProjectContainer extends React.PureComponent {
     constructor(props) {
         super(props);
@@ -46,6 +92,7 @@ class ProjectContainer extends React.PureComponent {
         this.setState({ projects: new_arr, selectedIndex: selectedIndex });
     }
 
+    /*
     changeProjectVersion(index, isPC) {
         if (index < 0)
             return;
@@ -63,6 +110,7 @@ class ProjectContainer extends React.PureComponent {
         var selectedIndex = this.state.selectedIndex == index ? this.state.selectedIndex : index;
         this.setState({ projects: new_arr, selectedIndex: selectedIndex });
     }
+    */
 
     switchProjectVersion(index) {
         if (index < 0)
@@ -95,12 +143,7 @@ class ProjectContainer extends React.PureComponent {
                         {
                             this.state.projects.map((item, i) => {
                                 return (
-                                    <div key={i} className="btn-group" projectindex={i}>
-                                        <button onClick={this.clickTitlehandler} type="button" className={"btn btn-" + (this.state.selectedIndex == i ? 'primary' : 'dark')}>
-                                            {item.config.title}
-                                        </button>
-                                        <button onClick={this.clickClosehandler} className={"btn btn-" + (this.state.selectedIndex == i ? 'primary' : 'dark')} type="button"><span>&times;</span></button>
-                                    </div>
+                                    <TitleHeaderItem key={item.designeConfig.name} project={item} index={i} clickTitlehandler={this.clickTitlehandler} clickClosehandler = {this.clickClosehandler} active={i == this.state.selectedIndex} />
                                 )
                             })
                         }
@@ -111,7 +154,7 @@ class ProjectContainer extends React.PureComponent {
                                 item.projectIndex = i;
                                 item.projectManager = projectManager;
                                 return (
-                                    <ProjectDesigner key={i} project={item} projConfig={item.config} className={'flex-grow-1 flex-shrink-1 ' + (this.state.selectedIndex == i ? 'd-flex' : 'd-none')} />
+                                    <ProjectDesigner key={i} project={item} className={'flex-grow-1 flex-shrink-1 ' + (this.state.selectedIndex == i ? 'd-flex' : 'd-none')} />
                                 )
                             })
                         }

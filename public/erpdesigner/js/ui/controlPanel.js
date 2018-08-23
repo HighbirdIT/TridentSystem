@@ -16,8 +16,16 @@ var ControlPanel = function (_React$PureComponent) {
 
         var _this = _possibleConstructorReturn(this, (ControlPanel.__proto__ || Object.getPrototypeOf(ControlPanel)).call(this, props));
 
-        var initState = {};
+        var initState = {
+            isPC: _this.props.project.designeConfig.editingType == 'PC'
+        };
         _this.state = initState;
+        _this.watchedAttrs = 'editingType';
+        _this.watchAttrMatch = function (attrName) {
+            return _this.watchedAttrs.indexOf(attrName) != -1;
+        };
+
+        autoBind(_this);
         return _this;
     }
 
@@ -25,10 +33,36 @@ var ControlPanel = function (_React$PureComponent) {
         key: 'clickControlBtn',
         value: function clickControlBtn(ev) {}
     }, {
+        key: 'attrChangedHandler',
+        value: function attrChangedHandler(ev) {
+            var needFresh = false;
+            if (typeof ev.name === 'string') {
+                needFresh = this.watchedAttrs.indexOf(ev.name) != -1;
+            } else {
+                needFresh = ev.name.some(this.watchAttrMatch);
+            }
+            if (needFresh) {
+                this.setState({
+                    isPC: this.props.project.designeConfig.editingType == 'PC'
+                });
+            }
+        }
+    }, {
+        key: 'componentWillMount',
+        value: function componentWillMount() {
+            this.props.project.on(EATTRCHANGED, this.attrChangedHandler);
+        }
+    }, {
+        key: 'componentWillUnmount',
+        value: function componentWillUnmount() {
+            this.props.project.off(EATTRCHANGED, this.attrChangedHandler);
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this2 = this;
 
+            var isPC = this.state.isPC;
             return React.createElement(
                 'div',
                 { style: { width: '200px' }, className: 'flex-grow-0 flex-shrink-0 bg-secondary d-flex flex-column' },
@@ -44,7 +78,7 @@ var ControlPanel = function (_React$PureComponent) {
                         React.createElement(
                             'div',
                             { id: group.name + "CtlList", className: 'list-group flex-grow-1 flex-shrink-1 collapse show', style: { overflow: 'auto' } },
-                            (_this2.props.projconfig.isPC ? group.controlsForPC : group.controlsForMobile).map(function (ctl) {
+                            (isPC ? group.controlsForPC : group.controlsForMobile).map(function (ctl) {
                                 return ctl.invisible ? null : React.createElement(
                                     'button',
                                     { key: ctl.label, onClick: _this2.clickControlBtn, type: 'button', className: 'list-group-item list-group-item-action flex-grow-0 flex-shrink-0' },

@@ -4,7 +4,6 @@ class AttributePanel extends React.PureComponent {
 
         var initState = {
             target:this.props.project,
-            version:this.props.project.attrVersion,
         };
         this.state = initState;
         this.props.project.designer.attributePanel = this;
@@ -13,11 +12,11 @@ class AttributePanel extends React.PureComponent {
     }
 
     getAttrValue(attr){
-        return this.state.target['get' + attr.name]();
+        return this.state.target.getAttribute(attr.name);
     }
 
     setAttrValue(attr, newvalue){
-        this.state.target['set' + attr.name](newvalue);
+        this.state.target.setAttibute(attr.name,newvalue);
     }
 
     renderAttribute(target){

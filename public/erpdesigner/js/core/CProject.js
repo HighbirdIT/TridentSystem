@@ -12,23 +12,60 @@ var CProjectAttrsSetting = {
     groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('页面名称', 'title', ValueType.String, true), new CAttribute('真实名称', 'realName', ValueType.String, false)])]
 };
 
+var hadNames_project = {};
+function genProjectName() {
+    var rlt = '';
+    for (var i = 1; i < 999; ++i) {
+        rlt = 'PROJ_' + i;
+        if (hadNames_project[rlt] == null) break;
+    }
+    hadNames_project[rlt] = 1;
+    return rlt;
+}
+
 var CProject = function (_IAttributeable) {
     _inherits(CProject, _IAttributeable);
 
     function CProject(title) {
         _classCallCheck(this, CProject);
 
-        var _this = _possibleConstructorReturn(this, (CProject.__proto__ || Object.getPrototypeOf(CProject)).call(this));
+        var _this = _possibleConstructorReturn(this, (CProject.__proto__ || Object.getPrototypeOf(CProject)).call(this, {
+            title: title
+        }));
 
-        _this.config = {
-            title: title,
-            isPC: 0
+        _this.designeConfig = {
+            name: genProjectName(),
+            editingType: 'PC',
+            editingPage: {
+                name: ''
+            },
+            description: '页面'
         };
-        _this.description = '页面';
 
-        _this.content_PC = {};
-        _this.content_Mobile = {
+        _this.content_PC = {
             pages: []
+        };
+        var mainPage = {
+            title: '主页面',
+            name: 'page01',
+            isMain: 1,
+            nav: {
+                hidden: 1,
+                leftBtn: {
+                    hidden: 0,
+                    label: '返回',
+                    action: 'retutn'
+                },
+                rightBtn: {
+                    hidden: 0
+                }
+            },
+            body: {
+                direction: 'column'
+            }
+        };
+        _this.content_Mobile = {
+            pages: [mainPage]
         };
 
         var self = _this;
@@ -38,9 +75,14 @@ var CProject = function (_IAttributeable) {
     }
 
     _createClass(CProject, [{
-        key: 'get_title',
-        value: function get_title() {
-            return this.config.title;
+        key: 'setEditingType',
+        value: function setEditingType(newValue) {}
+    }, {
+        key: 'toggleEditingType',
+        value: function toggleEditingType(newValue) {
+            this.designeConfig.editingType = this.designeConfig.editingType == 'PC' ? 'MB' : 'PC';
+            this.attrChanged('editingType');
+            return true;
         }
     }, {
         key: 'set_title',
@@ -48,18 +90,16 @@ var CProject = function (_IAttributeable) {
             if (newtitle.length > 8) {
                 newtitle = newtitle.substring(0, 8);
             }
-            if (newtitle == this.config.title) {
-                return false;
+            if (this.__setAttribute('title', newtitle)) {
+                this.attrChanged(['title', 'realName']);
+                return true;
             }
-            var newConfig = updateObject(this.config, { title: newtitle });
-            this.projectManager.changeProjectConfig(this.projectIndex, newConfig);
-            this.attrChanged(['title', 'realName']);
-            return true;
+            return false;
         }
     }, {
         key: 'get_realName',
         value: function get_realName() {
-            return this.config.title + 'Real';
+            return this.getAttribute('title') + 'Real';
         }
     }]);
 

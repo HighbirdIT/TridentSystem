@@ -30,8 +30,8 @@ var ProjectDesigner = function (_React$PureComponent) {
             return React.createElement(
                 "div",
                 { className: this.props.className },
-                React.createElement(ControlPanel, { project: thisProject, projconfig: thisProject.config }),
-                React.createElement(ContentPanel, { project: thisProject, projconfig: thisProject.config }),
+                React.createElement(ControlPanel, { project: thisProject }),
+                React.createElement(ContentPanel, { project: thisProject }),
                 React.createElement(AttributePanel, { project: thisProject })
             );
         }

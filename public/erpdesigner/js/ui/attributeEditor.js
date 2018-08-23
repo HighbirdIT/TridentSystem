@@ -28,7 +28,7 @@ var AttributeEditor = function (_React$PureComponent) {
     _createClass(AttributeEditor, [{
         key: 'getAttrNowValue',
         value: function getAttrNowValue() {
-            return this.props.targetobj['get_' + this.props.targetattr.name]();
+            return this.props.targetobj.getAttribute(this.props.targetattr.name);
         }
     }, {
         key: 'componentWillMount',
@@ -100,7 +100,7 @@ var AttributeEditor = function (_React$PureComponent) {
             if (editorElem.tagName.toUpperCase() === 'INPUT') {
                 newVal = editorElem.value;
             }
-            this.props.targetobj['set_' + this.props.targetattr.name](newVal);
+            this.props.targetobj.setAttribute(this.props.targetattr.name, newVal);
         }
     }]);
 
