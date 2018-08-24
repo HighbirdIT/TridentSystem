@@ -1,8 +1,13 @@
-class ControlBase{
-    constructor(forPC,label,groupName) {
+class ControlBase extends React.PureComponent{
+    constructor() {
         this.config = Object.assign({},{
-            forPC:forPC,
-            label : label,
         });
+        this.eventEmitter = new EventEmitter();
+
+        autoBind(this);
+    }
+
+    render(){
+        
     }
 }

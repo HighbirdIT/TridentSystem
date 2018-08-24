@@ -8,15 +8,131 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var DropDownControl = function (_React$PureComponent) {
-    _inherits(DropDownControl, _React$PureComponent);
+var personData = [{ 系统: '膜加工厂', 部门: '膜加工部', 姓名: '程王飞', 代码: '1353' }, { 系统: '钢结构厂', 部门: '钢加工部', 姓名: '程裕云', 代码: '1262' }, { 系统: '运营系统', 部门: '施工管理部', 姓名: '崔恒祥', 代码: '1347' }, { 系统: '钢结构厂', 部门: '钢加工部', 姓名: '戴金陵', 代码: '1164' }, { 系统: '钢结构厂', 部门: '钢厂务部', 姓名: '戴美贞', 代码: '1012' }, { 系统: '营销系统', 部门: '方案设计部', 姓名: '戴松林', 代码: '1711' }, { 系统: '运营系统', 部门: '施工管理部', 姓名: '樊程成', 代码: '1486' }, { 系统: '管理系统', 部门: '合约管理部', 姓名: '樊坤', 代码: '1300' }, { 系统: '运营系统', 部门: '施工管理部', 姓名: '范立长', 代码: '190' }, { 系统: '钢结构厂', 部门: '钢加工部', 姓名: '房爱忠', 代码: '189' }, { 系统: '运营系统', 部门: '施工管理部', 姓名: '房凤魁', 代码: '210' }, { 系统: '钢结构厂', 部门: '钢加工部', 姓名: '房文喜', 代码: '159' }, { 系统: '膜加工厂', 部门: '膜加工部', 姓名: '房永杰', 代码: '1098' }];
+
+function formatTreeData(orginData_arr, leafText, leafValue, groupNames_arr) {
+    var rlt = [];
+    orginData_arr.forEach(function (dataObj) {
+        var parentGroup = null;
+        groupNames_arr.forEach(function (groupName) {
+            var groupVal = dataObj[groupName];
+            if (parentGroup == null) {
+                parentGroup = rlt.find(function (item) {
+                    return item.name == groupVal;
+                });
+                if (parentGroup == null) {
+                    parentGroup = { name: groupVal, child: [] };
+                    rlt.push(parentGroup);
+                }
+            } else {
+                var thisGroup = parentGroup.child.find(function (item) {
+                    return item.name == groupVal;
+                });
+                if (thisGroup == null) {
+                    thisGroup = { name: groupVal, child: [] };
+                    parentGroup.child.push(thisGroup);
+                }
+                parentGroup = thisGroup;
+            }
+        });
+
+        parentGroup.child.push({
+            isleaf: true,
+            text: dataObj[leafText],
+            value: dataObj[leafValue]
+        });
+    });
+    return rlt;
+}
+
+var TreeControl = function (_React$PureComponent) {
+    _inherits(TreeControl, _React$PureComponent);
+
+    function TreeControl(props) {
+        _classCallCheck(this, TreeControl);
+
+        var _this = _possibleConstructorReturn(this, (TreeControl.__proto__ || Object.getPrototypeOf(TreeControl)).call(this, props));
+
+        var data = formatTreeData(personData, '姓名', '代码', ['系统', '部门']);
+        _this.state = {
+            data: data,
+            selected_arr: []
+        };
+
+        _this.clickLeafNodeHandler = _this.clickLeafNodeHandler.bind(_this);
+        return _this;
+    }
+
+    _createClass(TreeControl, [{
+        key: 'renderNode',
+        value: function renderNode(nodeData) {
+            var _this2 = this;
+
+            if (nodeData.isleaf) {
+                return React.createElement(
+                    'div',
+                    { key: nodeData.value, onClick: this.clickLeafNodeHandler, className: 'list-group-item list-group-item-action ' + (this.state.selected_arr.indexOf(nodeData.value) >= 0 ? 'active' : ''), value: nodeData.value },
+                    nodeData.text
+                );
+            }
+            return React.createElement(
+                'div',
+                { key: nodeData.name, className: 'list-group-item' },
+                React.createElement(
+                    'div',
+                    { className: 'list-group-item list-group-item-action', 'data-toggle': 'collapse', 'data-target': '#' + nodeData.name + '_group' },
+                    nodeData.name
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'collapse', id: nodeData.name + '_group' },
+                    nodeData.child.map(function (childNode) {
+                        return _this2.renderNode(childNode);
+                    })
+                )
+            );
+        }
+    }, {
+        key: 'clickLeafNodeHandler',
+        value: function clickLeafNodeHandler(ev) {
+            var target = ev.target;
+            var value = target.getAttribute('value');
+            var nowselected_arr = this.state.selected_arr.concat();
+            var nowIndex = nowselected_arr.indexOf(value);
+            if (nowIndex >= 0) {
+                nowselected_arr.splice(nowIndex, 1); // 操作删除数组元素
+            } else {
+                nowselected_arr.push(value);
+            }
+            this.setState({ selected_arr: nowselected_arr });
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var _this3 = this;
+
+            return React.createElement(
+                'div',
+                { id: 'treeRoot', className: 'list-group flex-grow-1 flex-shrink-1' },
+                this.state.data.map(function (item) {
+                    return _this3.renderNode(item);
+                })
+            );
+        }
+    }]);
+
+    return TreeControl;
+}(React.PureComponent);
+
+var DropDownControl = function (_React$PureComponent2) {
+    _inherits(DropDownControl, _React$PureComponent2);
 
     function DropDownControl(props) {
         _classCallCheck(this, DropDownControl);
 
-        var _this = _possibleConstructorReturn(this, (DropDownControl.__proto__ || Object.getPrototypeOf(DropDownControl)).call(this, props));
+        var _this4 = _possibleConstructorReturn(this, (DropDownControl.__proto__ || Object.getPrototypeOf(DropDownControl)).call(this, props));
 
-        _this.state = {
+        _this4.state = {
             keyword: '',
             selectedCode: -1,
             selectedText: '        ',
@@ -24,13 +140,13 @@ var DropDownControl = function (_React$PureComponent) {
             dataLoaded: false
         };
 
-        _this.keyChanged = _this.keyChanged.bind(_this);
-        _this.litItemClick = _this.litItemClick.bind(_this);
-        _this.dropDowmDivRef = _this.dropDowmDivRef.bind(_this);
+        _this4.keyChanged = _this4.keyChanged.bind(_this4);
+        _this4.litItemClick = _this4.litItemClick.bind(_this4);
+        _this4.dropDowmDivRef = _this4.dropDowmDivRef.bind(_this4);
 
-        _this.dropDownOpened = _this.dropDownOpened.bind(_this);
-        _this.dropDownClosed = _this.dropDownClosed.bind(_this);
-        return _this;
+        _this4.dropDownOpened = _this4.dropDownOpened.bind(_this4);
+        _this4.dropDownClosed = _this4.dropDownClosed.bind(_this4);
+        return _this4;
     }
 
     _createClass(DropDownControl, [{
@@ -102,7 +218,7 @@ var DropDownControl = function (_React$PureComponent) {
     }, {
         key: 'renderDropDown',
         value: function renderDropDown(filted_arr, selectedItem) {
-            var _this2 = this;
+            var _this5 = this;
 
             if (!this.state.dataLoaded) {
                 return React.createElement(
@@ -130,7 +246,7 @@ var DropDownControl = function (_React$PureComponent) {
                     filted_arr.map(function (item, i) {
                         return React.createElement(
                             'div',
-                            { onClick: _this2.litItemClick, className: 'd-flex flex-grow-0 flex-shrink-0 list-group-item list-group-item-action' + (item.code == _this2.state.selectedCode ? ' active' : ''), key: i, code: item.code },
+                            { onClick: _this5.litItemClick, className: 'd-flex flex-grow-0 flex-shrink-0 list-group-item list-group-item-action' + (item.code == _this5.state.selectedCode ? ' active' : ''), key: i, code: item.code },
                             React.createElement(
                                 'div',
                                 null,
@@ -144,13 +260,13 @@ var DropDownControl = function (_React$PureComponent) {
     }, {
         key: 'render',
         value: function render() {
-            var _this3 = this;
+            var _this6 = this;
 
             var filted_arr = this.state.data_arr.filter(function (item) {
-                return _this3.state.keyword == '' || _this3.state.keyword == ' ' || item.name.indexOf(_this3.state.keyword) >= 0;
+                return _this6.state.keyword == '' || _this6.state.keyword == ' ' || item.name.indexOf(_this6.state.keyword) >= 0;
             });
             var selectedItem = this.state.data_arr.find(function (item) {
-                return _this3.state.selectedCode == item.code;
+                return _this6.state.selectedCode == item.code;
             });
 
             return React.createElement(
@@ -206,22 +322,24 @@ var t = (<div className='bg-primary p-1 text-light d-flex felx-grow-0 flex-shrin
 </div>);
 */
 
-var MyApp = function (_React$PureComponent2) {
-    _inherits(MyApp, _React$PureComponent2);
+var MyApp = function (_React$PureComponent3) {
+    _inherits(MyApp, _React$PureComponent3);
 
     function MyApp(props) {
         _classCallCheck(this, MyApp);
 
-        var _this4 = _possibleConstructorReturn(this, (MyApp.__proto__ || Object.getPrototypeOf(MyApp)).call(this, props));
+        var _this7 = _possibleConstructorReturn(this, (MyApp.__proto__ || Object.getPrototypeOf(MyApp)).call(this, props));
 
-        _this4.state = {};
-        return _this4;
+        _this7.state = {};
+        return _this7;
     }
 
     _createClass(MyApp, [{
         key: 'render',
         value: function render() {
-            return React.createElement(DropDownControl, { label: '\u7269\u8D44\u4ED3\u5E93\u540D\u79F0', width: '100px', height: '60px' });
+
+            return React.createElement(TreeControl, null);
+            //        return (<DropDownControl label='物资仓库名称' width='100px' height='60px' />);
         }
     }]);
 

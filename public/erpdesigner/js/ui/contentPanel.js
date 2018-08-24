@@ -17,13 +17,15 @@ var ContentPanel = function (_React$PureComponent) {
         var _this = _possibleConstructorReturn(this, (ContentPanel.__proto__ || Object.getPrototypeOf(ContentPanel)).call(this, props));
 
         var project = _this.props.project;
+        var editingPage = project.getEditingPage();
         var initState = {
             isPC: _this.props.project.designeConfig.editingType == 'PC',
-            title: _this.props.project.getAttribute('title')
+            title: _this.props.project.getAttribute('title'),
+            editingPage: editingPage
         };
         _this.state = initState;
 
-        _this.watchedAttrs = ['title', 'editingType'];
+        _this.watchedAttrs = ['title', 'editingType', 'editingPage'];
         _this.watchAttrMatch = function (attrName) {
             return _this.watchedAttrs.indexOf(attrName) != -1;
         };
@@ -49,7 +51,8 @@ var ContentPanel = function (_React$PureComponent) {
             if (needFresh) {
                 this.setState({
                     isPC: this.props.project.designeConfig.editingType == 'PC',
-                    title: this.props.project.getAttribute('title')
+                    title: this.props.project.getAttribute('title'),
+                    editingPage: this.props.project.getEditingPage()
                 });
             }
         }
@@ -64,10 +67,34 @@ var ContentPanel = function (_React$PureComponent) {
             this.props.project.off(EATTRCHANGED, this.attrChangedHandler);
         }
     }, {
+        key: 'renderEditingPage',
+        value: function renderEditingPage(project, editingPage, isPC) {
+            if (editingPage == null) return null;
+            if (isPC) {
+                return null;
+            } else {
+                return React.createElement(
+                    'div',
+                    { className: 'bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-0 mobilePage rounded' },
+                    React.createElement(M_Page, null)
+                );
+            }
+        }
+    }, {
+        key: 'changeEditingPageBtnClickHandler',
+        value: function changeEditingPageBtnClickHandler(ev) {
+            var target = ev.target;
+            var targetPageName = target.getAttribute('pagename');
+            this.props.project.setEditingPageByName(targetPageName);
+        }
+    }, {
         key: 'render',
         value: function render() {
+            var _this2 = this;
+
             var project = this.props.project;
             var isPC = this.state.isPC;
+            var editingPage = this.state.editingPage;
             return React.createElement(
                 'div',
                 { className: 'flex-grow-1 flex-shrink-1 d-flex flex-column' },
@@ -82,6 +109,7 @@ var ContentPanel = function (_React$PureComponent) {
                             null,
                             this.state.title
                         ),
+                        React.createElement('button', { type: 'button', className: 'btn btn-sm icon icon-gear bg-secondary ml-1' }),
                         React.createElement(
                             'button',
                             { type: 'button', className: "ml-1 p-0 btn btn-secondary dropdown-toggle dropdown-toggle-split", 'data-toggle': 'dropdown' },
@@ -107,37 +135,36 @@ var ContentPanel = function (_React$PureComponent) {
                         React.createElement(
                             'button',
                             { type: 'button', className: "p-0 btn btn-secondary dropdown-toggle", 'data-toggle': 'dropdown' },
-                            React.createElement(
-                                'div',
-                                { className: "badge badge-pill ml-1 badge-" + (isPC ? "danger" : "success") },
-                                'sdf'
-                            )
+                            editingPage ? editingPage.title : '暂无页面'
                         ),
                         React.createElement(
                             'div',
                             { className: 'dropdown-menu' },
                             (isPC ? project.content_PC.pages : project.content_Mobile.pages).map(function (page) {
-                                return React.createElement(
+                                return page == editingPage ? null : React.createElement(
                                     'button',
-                                    { key: page.name, className: 'dropdown-item', type: 'button' },
+                                    { key: page.name, onClick: _this2.changeEditingPageBtnClickHandler, className: 'dropdown-item', type: 'button', pagename: page.name },
                                     page.title
                                 );
-                            })
+                            }),
+                            React.createElement('div', { className: 'dropdown-divider' }),
+                            React.createElement(
+                                'button',
+                                { className: 'dropdown-item text-success', type: 'button' },
+                                '\u521B\u5EFA\u9875\u9762'
+                            ),
+                            React.createElement(
+                                'button',
+                                { className: 'dropdown-item text-danger', type: 'button' },
+                                '\u5220\u9664\u9875\u9762'
+                            )
                         )
                     )
                 ),
                 React.createElement(
                     'div',
                     { className: 'flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center' },
-                    React.createElement(
-                        'div',
-                        { className: 'bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-0 mobilePage rounded' },
-                        React.createElement(
-                            'div',
-                            { className: 'bg-info' },
-                            '123'
-                        )
-                    )
+                    this.renderEditingPage(project, editingPage, isPC)
                 )
             );
         }

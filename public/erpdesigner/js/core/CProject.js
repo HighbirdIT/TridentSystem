@@ -35,7 +35,7 @@ var CProject = function (_IAttributeable) {
 
         _this.designeConfig = {
             name: genProjectName(),
-            editingType: 'PC',
+            editingType: 'MB',
             editingPage: {
                 name: ''
             },
@@ -64,8 +64,27 @@ var CProject = function (_IAttributeable) {
                 direction: 'column'
             }
         };
+        var secondPage = {
+            title: '次页面',
+            name: 'page02',
+            isMain: 1,
+            nav: {
+                hidden: 1,
+                leftBtn: {
+                    hidden: 0,
+                    label: '返回',
+                    action: 'retutn'
+                },
+                rightBtn: {
+                    hidden: 0
+                }
+            },
+            body: {
+                direction: 'column'
+            }
+        };
         _this.content_Mobile = {
-            pages: [mainPage]
+            pages: [mainPage, secondPage]
         };
 
         var self = _this;
@@ -75,6 +94,41 @@ var CProject = function (_IAttributeable) {
     }
 
     _createClass(CProject, [{
+        key: 'setEditingPageByName',
+        value: function setEditingPageByName(pageName) {
+            var thePage = this.getPageByName(pageName);
+            if (thePage == null) return false;
+            this.designeConfig.editingPage.name = thePage.name;
+            this.attrChanged('editingPage');
+        }
+    }, {
+        key: 'getPageByName',
+        value: function getPageByName(pageName) {
+            var rlt = null;
+            if (this.designeConfig.editingType == 'PC') {
+                rlt = this.content_PC.pages.find(function (item) {
+                    return item.name == pageName;
+                });
+                if (rlt == null) {
+                    rlt = this.content_PC.pages.length > 0 ? this.content_PC.pages[0] : null;
+                }
+            } else {
+                rlt = this.content_Mobile.pages.find(function (item) {
+                    return item.name == pageName;
+                });
+                if (rlt == null) {
+                    rlt = this.content_Mobile.pages.length > 0 ? this.content_Mobile.pages[0] : null;
+                }
+            }
+            return rlt;
+        }
+    }, {
+        key: 'getEditingPage',
+        value: function getEditingPage() {
+            var nowEditingPageName = this.designeConfig.editingPage.name;
+            return this.getPageByName(this.designeConfig.editingPage.name);
+        }
+    }, {
         key: 'setEditingType',
         value: function setEditingType(newValue) {}
     }, {

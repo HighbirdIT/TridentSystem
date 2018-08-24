@@ -1,3 +1,115 @@
+var personData = [
+     {系统:'膜加工厂',部门:'膜加工部',姓名:'程王飞',代码:'1353'}
+    ,{系统:'钢结构厂',部门:'钢加工部',姓名:'程裕云',代码:'1262'}
+    ,{系统:'运营系统',部门:'施工管理部',姓名:'崔恒祥',代码:'1347'}
+    ,{系统:'钢结构厂',部门:'钢加工部',姓名:'戴金陵',代码:'1164'}
+    ,{系统:'钢结构厂',部门:'钢厂务部',姓名:'戴美贞',代码:'1012'}
+    ,{系统:'营销系统',部门:'方案设计部',姓名:'戴松林',代码:'1711'}
+    ,{系统:'运营系统',部门:'施工管理部',姓名:'樊程成',代码:'1486'}
+    ,{系统:'管理系统',部门:'合约管理部',姓名:'樊坤',代码:'1300'}
+    ,{系统:'运营系统',部门:'施工管理部',姓名:'范立长',代码:'190'}
+    ,{系统:'钢结构厂',部门:'钢加工部',姓名:'房爱忠',代码:'189'}
+    ,{系统:'运营系统',部门:'施工管理部',姓名:'房凤魁',代码:'210'}
+    ,{系统:'钢结构厂',部门:'钢加工部',姓名:'房文喜',代码:'159'}
+    ,{系统:'膜加工厂',部门:'膜加工部',姓名:'房永杰',代码:'1098'}
+];
+
+function formatTreeData(orginData_arr, leafText, leafValue, groupNames_arr){
+    var rlt = [];
+    orginData_arr.forEach(
+        dataObj=>{
+            var parentGroup = null;
+            groupNames_arr.forEach(groupName=>{
+                var groupVal = dataObj[groupName];
+                if(parentGroup == null){
+                    parentGroup = rlt.find(
+                        item=>{return item.name == groupVal}
+                    );
+                    if(parentGroup == null){
+                        parentGroup = {name:groupVal,child:[]};
+                        rlt.push(parentGroup);
+                    }
+                }
+                else{
+                    var thisGroup = parentGroup.child.find(item=>{
+                        return item.name == groupVal;
+                    });
+                    if(thisGroup == null){
+                        thisGroup = {name:groupVal,child:[]};
+                        parentGroup.child.push(thisGroup);
+                    }
+                    parentGroup = thisGroup;
+                }
+            });
+            
+            parentGroup.child.push({
+                isleaf:true,
+                text:dataObj[leafText],
+                value:dataObj[leafValue],
+            });
+        }
+    );
+    return rlt;
+}
+
+class TreeControl extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        var data = formatTreeData(personData, '姓名', '代码', ['系统','部门']);
+        this.state = {
+            data : data,
+            selected_arr:[],
+        }
+
+        this.clickLeafNodeHandler = this.clickLeafNodeHandler.bind(this);
+    }
+
+    renderNode(nodeData){
+        if(nodeData.isleaf){
+            return (<div key={nodeData.value} onClick={this.clickLeafNodeHandler} className={'list-group-item list-group-item-action ' + (this.state.selected_arr.indexOf(nodeData.value) >= 0 ? 'active' : '')} value={nodeData.value}>{nodeData.text}</div>);
+        }
+        return (<div key={nodeData.name} className='list-group-item'>
+                <div className='list-group-item list-group-item-action' data-toggle="collapse" data-target={'#' + nodeData.name + '_group'} >{nodeData.name}</div>
+                <div className='collapse' id={nodeData.name + '_group'}>
+                    {
+                        nodeData.child.map(childNode=>{
+                            return this.renderNode(childNode);
+                        })
+                    }
+                </div>
+            </div>);
+    }
+
+    clickLeafNodeHandler(ev){
+        var target = ev.target;
+        var value = target.getAttribute('value');
+        var nowselected_arr = this.state.selected_arr.concat();
+        var nowIndex = nowselected_arr.indexOf(value);
+        if(nowIndex >= 0){
+            nowselected_arr.splice(nowIndex,1); // 操作删除数组元素
+        }
+        else{
+            nowselected_arr.push(value);
+        }
+        this.setState({selected_arr:nowselected_arr});
+    }
+
+    render(){
+        return (
+
+            <div id='treeRoot' className='list-group flex-grow-1 flex-shrink-1'>
+                {
+                    this.state.data.map(
+                        item=>{
+                            return this.renderNode(item);
+                        }
+                    )
+                }
+            </div>
+        )
+    }
+}
+
 class DropDownControl extends React.PureComponent {
     constructor(props) {
         super(props);
@@ -165,7 +277,9 @@ class MyApp extends React.PureComponent {
     }
 
     render() {
-        return (<DropDownControl label='物资仓库名称' width='100px' height='60px' />);
+        
+        return (<TreeControl />);
+//        return (<DropDownControl label='物资仓库名称' width='100px' height='60px' />);
     }
 }
 

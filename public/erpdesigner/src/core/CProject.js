@@ -28,7 +28,7 @@ class CProject extends IAttributeable{
 
         this.designeConfig={
             name:genProjectName(),
-            editingType:'PC',
+            editingType:'MB',
             editingPage:{
                 name:''
             },
@@ -57,13 +57,62 @@ class CProject extends IAttributeable{
                 direction:'column'
             }
         };
+        var secondPage={
+            title:'次页面',
+            name:'page02',
+            isMain:1,
+            nav:{
+                hidden:1,
+                leftBtn:{
+                    hidden:0,
+                    label:'返回',
+                    action:'retutn'
+                },
+                rightBtn:{
+                    hidden:0
+                }
+            },
+            body:{
+                direction:'column'
+            }
+        };
         this.content_Mobile={
-            pages:[mainPage],
+            pages:[mainPage,secondPage],
         };
 
         var self = this;
         autoBind(self);
         this.attrbuteGroups = CProjectAttrsSetting.groups_arr;
+    }
+
+    setEditingPageByName(pageName){
+        var thePage = this.getPageByName(pageName);
+        if(thePage == null)
+            return false;
+        this.designeConfig.editingPage.name = thePage.name;
+        this.attrChanged('editingPage');
+    }
+
+    getPageByName(pageName){
+        var rlt = null;
+        if(this.designeConfig.editingType == 'PC'){
+            rlt = this.content_PC.pages.find(item=>{return item.name == pageName;});
+            if(rlt == null){
+                rlt = this.content_PC.pages.length > 0 ? this.content_PC.pages[0] : null;
+            }
+        }
+        else{
+            rlt = this.content_Mobile.pages.find(item=>{return item.name == pageName;});
+            if(rlt == null){
+                rlt = this.content_Mobile.pages.length > 0 ? this.content_Mobile.pages[0] : null;
+            }
+        }
+        return rlt;
+    }
+
+    getEditingPage(){
+        var nowEditingPageName = this.designeConfig.editingPage.name;
+        return this.getPageByName(this.designeConfig.editingPage.name);
     }
 
     setEditingType(newValue){

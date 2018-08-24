@@ -1,6 +1,11 @@
 class M_Page extends ControlBase {
-    constructor(){
-        super(false,'手机页面','布局');
+    constructor(props){
+        super(props);
+        
+    }
+
+    render(){
+        return (<div>123</div>)
     }
 }
 
