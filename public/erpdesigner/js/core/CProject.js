@@ -31,7 +31,7 @@ var CProject = function (_IAttributeable) {
 
         var _this = _possibleConstructorReturn(this, (CProject.__proto__ || Object.getPrototypeOf(CProject)).call(this, {
             title: title
-        }));
+        }, null, '方案'));
 
         _this.designeConfig = {
             name: genProjectName(),
@@ -45,7 +45,7 @@ var CProject = function (_IAttributeable) {
         _this.content_PC = {
             pages: []
         };
-        var mainPage = {
+        var mainPage = new CPage_MB({
             title: '主页面',
             name: 'page01',
             isMain: 1,
@@ -63,8 +63,8 @@ var CProject = function (_IAttributeable) {
             body: {
                 direction: 'column'
             }
-        };
-        var secondPage = {
+        });
+        var secondPage = new CPage_MB({
             title: '次页面',
             name: 'page02',
             isMain: 1,
@@ -82,7 +82,9 @@ var CProject = function (_IAttributeable) {
             body: {
                 direction: 'column'
             }
-        };
+        });
+        mainPage.project = _this;
+        secondPage.project = _this;
         _this.content_Mobile = {
             pages: [mainPage, secondPage]
         };

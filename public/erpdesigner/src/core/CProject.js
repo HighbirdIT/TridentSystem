@@ -24,7 +24,7 @@ class CProject extends IAttributeable{
     constructor(title) {
         super({
             title:title,
-        });
+        },null,'方案');
 
         this.designeConfig={
             name:genProjectName(),
@@ -38,7 +38,7 @@ class CProject extends IAttributeable{
         this.content_PC={
             pages:[],
         };
-        var mainPage={
+        var mainPage=new CPage_MB({
             title:'主页面',
             name:'page01',
             isMain:1,
@@ -56,8 +56,8 @@ class CProject extends IAttributeable{
             body:{
                 direction:'column'
             }
-        };
-        var secondPage={
+        });
+        var secondPage=new CPage_MB({
             title:'次页面',
             name:'page02',
             isMain:1,
@@ -75,7 +75,9 @@ class CProject extends IAttributeable{
             body:{
                 direction:'column'
             }
-        };
+        });
+        mainPage.project = this;
+        secondPage.project = this;
         this.content_Mobile={
             pages:[mainPage,secondPage],
         };

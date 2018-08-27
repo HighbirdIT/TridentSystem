@@ -63,6 +63,7 @@ var ControlPanel = function (_React$PureComponent) {
             var _this2 = this;
 
             var isPC = this.state.isPC;
+            var projectName = this.props.project.designeConfig.name;
             return React.createElement(
                 'div',
                 { style: { width: '200px' }, className: 'flex-grow-0 flex-shrink-0 bg-secondary d-flex flex-column' },
@@ -72,12 +73,12 @@ var ControlPanel = function (_React$PureComponent) {
                         { key: group.name },
                         React.createElement(
                             'button',
-                            { type: 'button', 'data-toggle': 'collapse', 'data-target': "#" + group.name + "CtlList", className: 'btn flex-grow-0 flex-shrink-0 bg-secondary text-light', style: { borderRadius: '0em', height: '2.5em' } },
+                            { type: 'button', 'data-toggle': 'collapse', 'data-target': "#" + projectName + group.name + "CtlList", className: 'btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn', style: { borderRadius: '0em', height: '2.5em' } },
                             group.name
                         ),
                         React.createElement(
                             'div',
-                            { id: group.name + "CtlList", className: 'list-group flex-grow-1 flex-shrink-1 collapse show', style: { overflow: 'auto' } },
+                            { id: projectName + group.name + "CtlList", className: 'list-group flex-grow-1 flex-shrink-1 collapse show', style: { overflow: 'auto' } },
                             (isPC ? group.controlsForPC : group.controlsForMobile).map(function (ctl) {
                                 return ctl.invisible ? null : React.createElement(
                                     'button',

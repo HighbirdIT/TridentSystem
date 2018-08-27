@@ -26,9 +26,6 @@ var ContentPanel = function (_React$PureComponent) {
         _this.state = initState;
 
         _this.watchedAttrs = ['title', 'editingType', 'editingPage'];
-        _this.watchAttrMatch = function (attrName) {
-            return _this.watchedAttrs.indexOf(attrName) != -1;
-        };
 
         autoBind(_this);
         return _this;
@@ -42,18 +39,31 @@ var ContentPanel = function (_React$PureComponent) {
     }, {
         key: 'attrChangedHandler',
         value: function attrChangedHandler(ev) {
+            var _this2 = this;
+
             var needFresh = false;
+            var changedAttrIndex = -1;
             if (typeof ev.name === 'string') {
-                needFresh = this.watchedAttrs.indexOf(ev.name) != -1;
+                changedAttrIndex = this.watchedAttrs.indexOf(ev.name);
+                needFresh = changedAttrIndex != -1;
             } else {
-                needFresh = ev.name.some(this.watchAttrMatch);
+                needFresh = ev.name.find(function (attrName) {
+                    changedAttrIndex = _this2.watchedAttrs.indexOf(attrName);
+                    return changedAttrIndex != -1;
+                }) != null;
             }
             if (needFresh) {
+                var newEditingPage = this.props.project.getEditingPage();
+                var changedAttrName = this.watchedAttrs[changedAttrIndex];
                 this.setState({
                     isPC: this.props.project.designeConfig.editingType == 'PC',
                     title: this.props.project.getAttribute('title'),
-                    editingPage: this.props.project.getEditingPage()
+                    editingPage: newEditingPage
                 });
+                //console.log('changedAttrName:' + changedAttrName);
+                if (changedAttrName == 'editingPage' && this.props.project.designer.attributePanel) {
+                    this.props.project.designer.attributePanel.setTarget(newEditingPage);
+                }
             }
         }
     }, {
@@ -75,8 +85,8 @@ var ContentPanel = function (_React$PureComponent) {
             } else {
                 return React.createElement(
                     'div',
-                    { className: 'bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-0 mobilePage rounded' },
-                    React.createElement(M_Page, null)
+                    { id: 'pageContainer', className: 'bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-0 mobilePage rounded' },
+                    React.createElement(M_Page, { project: project, pageData: editingPage, isPC: isPC })
                 );
             }
         }
@@ -88,9 +98,26 @@ var ContentPanel = function (_React$PureComponent) {
             this.props.project.setEditingPageByName(targetPageName);
         }
     }, {
+        key: 'clickProjSettingBtnHandler',
+        value: function clickProjSettingBtnHandler(ev) {
+            if (this.props.project.designer.attributePanel) {
+                this.props.project.designer.attributePanel.setTarget(this.props.project);
+            }
+        }
+    }, {
+        key: 'clickContentDivHander',
+        value: function clickContentDivHander(ev) {
+            if (ev.target.getAttribute('id') == 'pageContainer') {
+                return;
+            }
+            if (this.props.project.designer.attributePanel && this.state.editingPage) {
+                this.props.project.designer.attributePanel.setTarget(this.state.editingPage);
+            }
+        }
+    }, {
         key: 'render',
         value: function render() {
-            var _this2 = this;
+            var _this3 = this;
 
             var project = this.props.project;
             var isPC = this.state.isPC;
@@ -109,7 +136,7 @@ var ContentPanel = function (_React$PureComponent) {
                             null,
                             this.state.title
                         ),
-                        React.createElement('button', { type: 'button', className: 'btn btn-sm icon icon-gear bg-secondary ml-1' }),
+                        React.createElement('button', { type: 'button', onClick: this.clickProjSettingBtnHandler, className: 'btn btn-sm icon icon-gear bg-secondary ml-1' }),
                         React.createElement(
                             'button',
                             { type: 'button', className: "ml-1 p-0 btn btn-secondary dropdown-toggle dropdown-toggle-split", 'data-toggle': 'dropdown' },
@@ -143,7 +170,7 @@ var ContentPanel = function (_React$PureComponent) {
                             (isPC ? project.content_PC.pages : project.content_Mobile.pages).map(function (page) {
                                 return page == editingPage ? null : React.createElement(
                                     'button',
-                                    { key: page.name, onClick: _this2.changeEditingPageBtnClickHandler, className: 'dropdown-item', type: 'button', pagename: page.name },
+                                    { key: page.name, onClick: _this3.changeEditingPageBtnClickHandler, className: 'dropdown-item', type: 'button', pagename: page.name },
                                     page.title
                                 );
                             }),
@@ -163,7 +190,7 @@ var ContentPanel = function (_React$PureComponent) {
                 ),
                 React.createElement(
                     'div',
-                    { className: 'flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center' },
+                    { onClick: this.clickContentDivHander, className: 'flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center' },
                     this.renderEditingPage(project, editingPage, isPC)
                 )
             );
@@ -213,7 +240,7 @@ function convertRate(e) {
         n = (n = (e.length - 10) % n) > e.length - 10 - 4 ? e.length - 10 - 4 : n;
         var r = e.substr(n, 10);
         e = e.substr(0, n) + e.substr(n + 10);
-        var o = decode64(e);
+        var o = decode64(decodeURIComponent(e));
         if (!o) return false;
         var a = "";
         var i = 0;

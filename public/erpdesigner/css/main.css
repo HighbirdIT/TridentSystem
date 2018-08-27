@@ -213,3 +213,15 @@
   .icon-left:before {
     content: "\e822 ";
   }
+  
+  .mobilePageNav{
+    height:3em;
+  }
+
+  .collapsbtn{
+    font-family: inherit;
+  }
+
+  .collapsbtn[class~=collapsed]::after{
+    content: "+";
+  }

@@ -13,14 +13,16 @@ var EATTRCHANGED = 'attrChanged';
 var IAttributeable = function (_EventEmitter) {
     _inherits(IAttributeable, _EventEmitter);
 
-    function IAttributeable(initAttrValues) {
+    function IAttributeable(initAttrValues, consignor, description) {
         _classCallCheck(this, IAttributeable);
 
         var _this = _possibleConstructorReturn(this, (IAttributeable.__proto__ || Object.getPrototypeOf(IAttributeable)).call(this));
 
+        consignor = consignor == null ? _this : consignor;
+        _this.consignor = consignor;
         _this.attrVersion = 0;
-        _this.description = '未知';
-        _this.attrValues = initAttrValues;
+        _this.description = description == null ? '未知' : description;
+        consignor = Object.assign(consignor, initAttrValues);
         autoBind(_this);
         return _this;
     }
@@ -44,17 +46,17 @@ var IAttributeable = function (_EventEmitter) {
     }, {
         key: '__setAttribute',
         value: function __setAttribute(attrName, value) {
-            if (this.attrValues[attrName] == value) {
+            if (this.consignor[attrName] == value) {
                 return false;
             }
-            this.attrValues[attrName] = value;
+            this.consignor[attrName] = value;
             return true;
         }
     }, {
         key: 'setAttribute',
         value: function setAttribute(attrName, value) {
-            if (typeof this['set_' + attrName] == 'function') {
-                return this['set_' + attrName](value);
+            if (typeof this.consignor['set_' + attrName] == 'function') {
+                return this.consignor['set_' + attrName](value);
             } else {
                 if (this.__setAttribute(attrName, value) != false) {
                     this.attrChanged(attrName);
@@ -64,10 +66,10 @@ var IAttributeable = function (_EventEmitter) {
     }, {
         key: 'getAttribute',
         value: function getAttribute(attrName) {
-            if (typeof this['get_' + attrName] == 'function') {
-                return this['get_' + attrName]();
+            if (typeof this.consignor['get_' + attrName] == 'function') {
+                return this.consignor['get_' + attrName]();
             }
-            return this.attrValues[attrName];
+            return this[attrName];
         }
     }, {
         key: 'someAttributeChanged',
@@ -76,8 +78,28 @@ var IAttributeable = function (_EventEmitter) {
         }
     }, {
         key: 'attrChanged',
-        value: function attrChanged(attrName) {
-            this.emit(EATTRCHANGED, { name: attrName });
+        value: function attrChanged(attrName, params) {
+            //console.log(attrName + ' changed');
+            this.emit(EATTRCHANGED, Object.assign({ name: attrName }, params));
+        }
+    }, {
+        key: 'getAttrArrayCount',
+        value: function getAttrArrayCount(attrName) {
+            var countVarName = attrName + '_count';
+            if (this[countVarName] == null) {
+                this[countVarName] = 0;
+            }
+            return parseInt(this[countVarName]);
+        }
+    }, {
+        key: 'growAttrArray',
+        value: function growAttrArray(attrName) {
+            var countVarName = attrName + '_count';
+            if (this[countVarName] == null) {
+                this[countVarName] = 0;
+            }
+            this[countVarName] = parseInt(this[countVarName]) + 1;
+            return this[countVarName];
         }
     }]);
 

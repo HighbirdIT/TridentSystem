@@ -19,7 +19,8 @@ var AttributeEditor = function (_React$PureComponent) {
         autoBind(_this);
 
         var initState = {
-            value: _this.getAttrNowValue()
+            value: _this.getAttrNowValue(),
+            targetobj: _this.props.targetobj
         };
         _this.state = initState;
         return _this;
@@ -28,24 +29,50 @@ var AttributeEditor = function (_React$PureComponent) {
     _createClass(AttributeEditor, [{
         key: 'getAttrNowValue',
         value: function getAttrNowValue() {
-            return this.props.targetobj.getAttribute(this.props.targetattr.name);
+            var rlt = this.props.targetobj.getAttribute(this.getRealAttrName());
+            return rlt == null ? '' : rlt;
+        }
+    }, {
+        key: 'getRealAttrName',
+        value: function getRealAttrName() {
+            return this.props.targetattr.name + (this.props.index == null ? '' : this.props.index);
+        }
+    }, {
+        key: 'getRealAttrLabel',
+        value: function getRealAttrLabel() {
+            return this.props.targetattr.label + (this.props.index == null ? '' : this.props.index);
+        }
+    }, {
+        key: 'getRealAttrInputID',
+        value: function getRealAttrInputID() {
+            return this.props.targetattr.inputID + (this.props.index == null ? '' : this.props.index);
+        }
+    }, {
+        key: 'listenTarget',
+        value: function listenTarget(target) {
+            target.on(EATTRCHANGED, this.attrChangedHandler);
+        }
+    }, {
+        key: 'unlistenTarget',
+        value: function unlistenTarget(target) {
+            target.off(EATTRCHANGED, this.attrChangedHandler);
         }
     }, {
         key: 'componentWillMount',
         value: function componentWillMount() {
-            this.props.targetobj.on(EATTRCHANGED, this.attrChangedHandler);
+            this.listenTarget(this.props.targetobj);
         }
     }, {
         key: 'componentWillUnmount',
         value: function componentWillUnmount() {
-            this.props.targetobj.off(EATTRCHANGED, this.attrChangedHandler);
+            this.unlistenTarget(this.props.targetobj);
         }
     }, {
         key: 'attrChangedHandler',
         value: function attrChangedHandler(ev) {
             var _this2 = this;
 
-            var myAttrName = this.props.targetattr.name;
+            var myAttrName = this.getRealAttrName();
             var match = function match(pattern) {
                 return typeof pattern === 'string' ? myAttrName === pattern : pattern.test(key);
             };
@@ -63,32 +90,49 @@ var AttributeEditor = function (_React$PureComponent) {
         }
     }, {
         key: 'rednerEditor',
-        value: function rednerEditor(theAttr) {
+        value: function rednerEditor(theAttr, attrName, inputID) {
             if (!theAttr.editable) {
                 return React.createElement(
                     'div',
-                    { className: 'form-control-plaintext text-light', id: theAttr.inputID },
+                    { className: 'form-control-plaintext text-light', id: inputID },
                     this.state.value
                 );
             }
-            return React.createElement('input', { type: 'text', className: 'form-control', id: theAttr.inputID, value: this.state.value, onChange: this.editorChanged, attrname: theAttr.name });
+            return React.createElement('input', { type: 'text', className: 'form-control', id: inputID, value: this.state.value, onChange: this.editorChanged, attrname: attrName });
         }
     }, {
         key: 'render',
         value: function render() {
+            var _this3 = this;
+
+            if (this.state.targetobj != this.props.targetobj) {
+                var self = this;
+                self.unlistenTarget(this.state.targetobj);
+                setTimeout(function () {
+                    self.setState({
+                        targetobj: self.props.targetobj,
+                        value: self.getAttrNowValue()
+                    });
+                    self.listenTarget(_this3.props.targetobj);
+                }, 1);
+                return null;
+            }
             var theAttr = this.props.targetattr;
+            var attrName = this.getRealAttrName();
+            var label = this.getRealAttrLabel();
+            var inputID = this.getRealAttrInputID();
             return React.createElement(
                 'div',
-                { key: theAttr.name, className: 'bg-dark d-flex align-items-center' },
+                { key: attrName, className: 'bg-dark d-flex align-items-center' },
                 React.createElement(
                     'label',
-                    { htmlFor: theAttr.inputID, className: 'col-sm-4 col-form-label text-light' },
-                    theAttr.label
+                    { htmlFor: inputID, className: 'col-sm-4 col-form-label text-light' },
+                    label
                 ),
                 React.createElement(
                     'div',
                     { className: 'flex-grow-1 flex-shrink-1 p-1 border-left border-secondary' },
-                    this.rednerEditor(theAttr)
+                    this.rednerEditor(theAttr, attrName, inputID)
                 )
             );
         }
@@ -100,9 +144,97 @@ var AttributeEditor = function (_React$PureComponent) {
             if (editorElem.tagName.toUpperCase() === 'INPUT') {
                 newVal = editorElem.value;
             }
-            this.props.targetobj.setAttribute(this.props.targetattr.name, newVal);
+            this.props.targetobj.setAttribute(this.getRealAttrName(), newVal);
         }
     }]);
 
     return AttributeEditor;
+}(React.PureComponent);
+
+var AttributeGroup = function (_React$PureComponent2) {
+    _inherits(AttributeGroup, _React$PureComponent2);
+
+    function AttributeGroup(props) {
+        _classCallCheck(this, AttributeGroup);
+
+        var _this4 = _possibleConstructorReturn(this, (AttributeGroup.__proto__ || Object.getPrototypeOf(AttributeGroup)).call(this, props));
+
+        autoBind(_this4);
+
+        var initState = {
+            target: _this4.props.target
+        };
+        _this4.state = initState;
+        return _this4;
+    }
+
+    _createClass(AttributeGroup, [{
+        key: 'clickAddBtnHandler',
+        value: function clickAddBtnHandler(ev) {
+            var attrName = ev.target.getAttribute('attrname');
+            if (attrName == null) {
+                attrName = ev.target.parentNode.getAttribute('attrname');
+                if (attrName == null) return;
+            }
+            var newCount = this.state.target.growAttrArray(attrName);
+            this.setState({
+                count: newCount
+            });
+        }
+    }, {
+        key: 'renderAttribute',
+        value: function renderAttribute(attr) {
+            var target = this.state.target;
+            if (attr.isArray) {
+                var rlt_arr = [];
+                var count = target.getAttrArrayCount(attr.name);
+                for (var i = 0; i < count; ++i) {
+                    rlt_arr.push(React.createElement(AttributeEditor, { key: attr.name + i, targetattr: attr, targetobj: target, index: i }));
+                }
+                rlt_arr.push(React.createElement(
+                    'button',
+                    { key: 'addBtn', attrname: attr.name, onClick: this.clickAddBtnHandler, type: 'button', className: 'btn btn-dark' },
+                    React.createElement('span', { className: 'icon icon-plus' })
+                ));
+                return rlt_arr;
+            }
+            return React.createElement(AttributeEditor, { key: attr.name, targetattr: attr, targetobj: target });
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var _this5 = this;
+
+            var self = this;
+            if (this.state.target != this.props.target) {
+                setTimeout(function () {
+                    self.setState({
+                        target: _this5.props.target
+                    });
+                }, 1);
+                return null;
+            }
+            var projectName = this.props.projectName;
+            var attrGroup = this.props.attrGroup;
+            var attrGroupIndex = this.props.attrGroupIndex;
+            return React.createElement(
+                React.Fragment,
+                null,
+                React.createElement(
+                    'button',
+                    { type: 'button', 'data-toggle': 'collapse', 'data-target': "#attrGroup" + projectName + attrGroup.label, className: 'btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' + (attrGroupIndex == 0 ? '' : ' collapsed'), style: { borderRadius: '0em', height: '2.5em' } },
+                    attrGroup.label
+                ),
+                React.createElement(
+                    'div',
+                    { id: "attrGroup" + projectName + attrGroup.label, className: "list-group flex-grow-0 flex-shrink-0 collapse" + (attrGroupIndex == 0 ? ' show' : ''), style: { overflow: 'auto' } },
+                    attrGroup.attrs_arr.map(function (attr) {
+                        return _this5.renderAttribute(attr);
+                    })
+                )
+            );
+        }
+    }]);
+
+    return AttributeGroup;
 }(React.PureComponent);

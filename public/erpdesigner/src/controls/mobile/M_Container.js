@@ -1,4 +1,4 @@
-class M_Container extends ControlBase {
+class M_Container extends React.PureComponent {
     constructor(){
         super(false,'Flex容器','布局');
         

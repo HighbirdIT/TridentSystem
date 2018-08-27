@@ -41,14 +41,15 @@ class ControlPanel extends React.PureComponent {
 
     render() {
         var isPC = this.state.isPC;
+        var projectName = this.props.project.designeConfig.name;
         return (
             <div style={{width:'200px'}} className='flex-grow-0 flex-shrink-0 bg-secondary d-flex flex-column'>
                 {
                     DesignerConfig.controlConfig.groups.map(group=>{
                         return (
                             <React.Fragment key={group.name}>
-                            <button type="button" data-toggle="collapse" data-target={"#" + group.name + "CtlList"} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light' style={{borderRadius:'0em',height:'2.5em'}}>{group.name}</button>
-                            <div id={group.name + "CtlList"} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
+                            <button type="button" data-toggle="collapse" data-target={"#" + projectName + group.name + "CtlList"} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>{group.name}</button>
+                            <div id={projectName + group.name + "CtlList"} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
                                 {
                                     (isPC ? group.controlsForPC : group.controlsForMobile).map(
                                         ctl=>

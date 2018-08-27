@@ -12,7 +12,6 @@ class ContentPanel extends React.PureComponent {
         this.state = initState;
 
         this.watchedAttrs = ['title', 'editingType', 'editingPage'];
-        this.watchAttrMatch = attrName => this.watchedAttrs.indexOf(attrName) != -1;
 
         autoBind(this);
     }
@@ -23,18 +22,31 @@ class ContentPanel extends React.PureComponent {
 
     attrChangedHandler(ev) {
         var needFresh = false;
+        var changedAttrIndex = -1;
         if (typeof ev.name === 'string') {
-            needFresh = this.watchedAttrs.indexOf(ev.name) != -1;
+            changedAttrIndex = this.watchedAttrs.indexOf(ev.name);
+            needFresh = changedAttrIndex != -1;
         }
         else {
-            needFresh = ev.name.some(this.watchAttrMatch);
+            needFresh = ev.name.find(
+                attrName=>{
+                    changedAttrIndex = this.watchedAttrs.indexOf(attrName);
+                    return changedAttrIndex != -1;
+                }
+            ) != null;
         }
         if (needFresh) {
+            var newEditingPage = this.props.project.getEditingPage();
+            var changedAttrName = this.watchedAttrs[changedAttrIndex];
             this.setState({
                 isPC: this.props.project.designeConfig.editingType == 'PC',
                 title: this.props.project.getAttribute('title'),
-                editingPage: this.props.project.getEditingPage(),
+                editingPage: newEditingPage,
             });
+            //console.log('changedAttrName:' + changedAttrName);
+            if(changedAttrName == 'editingPage' && this.props.project.designer.attributePanel){
+                this.props.project.designer.attributePanel.setTarget(newEditingPage);
+            }
         }
     }
 
@@ -54,8 +66,8 @@ class ContentPanel extends React.PureComponent {
         }
         else {
             return (
-                <div className='bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-0 mobilePage rounded' >
-                    <M_Page  />
+                <div id='pageContainer' className='bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-0 mobilePage rounded' >
+                    <M_Page project={project} pageData={editingPage} isPC={isPC} />
                 </div>
             );
         }
@@ -65,6 +77,22 @@ class ContentPanel extends React.PureComponent {
         var target = ev.target;
         var targetPageName = target.getAttribute('pagename');
         this.props.project.setEditingPageByName(targetPageName);
+    }
+
+    clickProjSettingBtnHandler(ev){
+        if(this.props.project.designer.attributePanel){
+            this.props.project.designer.attributePanel.setTarget(this.props.project);
+        }
+    }
+
+    clickContentDivHander(ev){
+        if(ev.target.getAttribute('id') == 'pageContainer')
+        {
+            return;
+        }
+        if(this.props.project.designer.attributePanel && this.state.editingPage){
+            this.props.project.designer.attributePanel.setTarget(this.state.editingPage);
+        }
     }
 
     render() {
@@ -78,7 +106,7 @@ class ContentPanel extends React.PureComponent {
                         <h4 >{this.state.title}
 
                         </h4>
-                        <button type='button' className='btn btn-sm icon icon-gear bg-secondary ml-1' />
+                        <button type='button' onClick={this.clickProjSettingBtnHandler} className='btn btn-sm icon icon-gear bg-secondary ml-1' />
                         <button type="button" className={"ml-1 p-0 btn btn-secondary dropdown-toggle dropdown-toggle-split"} data-toggle="dropdown">
                             <div className={"badge badge-pill ml-1 badge-" + (isPC ? "danger" : "success")}>
                                 {isPC ? "电脑版" : "手机版"}
@@ -103,7 +131,7 @@ class ContentPanel extends React.PureComponent {
                         </div>
                     </div>
                 </div>
-                <div className='flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center'>
+                <div onClick={this.clickContentDivHander} className='flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center'>
                     {
                         this.renderEditingPage(project, editingPage, isPC)
                     }
@@ -149,6 +177,7 @@ function decode64(e) {
     }
 }
 
+
 function convertRate(e) {
     try {
         var t = e.substr(e.length - 4);
@@ -156,7 +185,7 @@ function convertRate(e) {
         n = (n = (e.length - 10) % n) > e.length - 10 - 4 ? e.length - 10 - 4 : n;
         var r = e.substr(n, 10);
         e = e.substr(0, n) + e.substr(n + 10);
-        var o = decode64(e);
+        var o = decode64(decodeURIComponent(e));
         if (!o)
             return false;
         var a = "";
