@@ -58,6 +58,20 @@ var ControlPanel = function (_React$PureComponent) {
             this.props.project.off(EATTRCHANGED, this.attrChangedHandler);
         }
     }, {
+        key: 'controlIconMouseDown',
+        value: function controlIconMouseDown(ev) {
+            var ctltype = getAttributeByNode(ev.target, 'ctltype');
+            if (ctltype == null) {
+                console.warn('未找到ctltype');
+                return;
+            }
+            if (this.props.mouseDownControlIcon) {
+                var targetOffset = $(ev.target).offset();
+                this.props.mouseDownControlIcon(ctltype, targetOffset.left, targetOffset.top);
+            }
+            //console.log('controlIconMouseDown:' + ctltype);
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this2 = this;
@@ -82,7 +96,7 @@ var ControlPanel = function (_React$PureComponent) {
                             (isPC ? group.controlsForPC : group.controlsForMobile).map(function (ctl) {
                                 return ctl.invisible ? null : React.createElement(
                                     'button',
-                                    { key: ctl.label, onClick: _this2.clickControlBtn, type: 'button', className: 'list-group-item list-group-item-action flex-grow-0 flex-shrink-0' },
+                                    { key: ctl.label, onMouseDown: _this2.controlIconMouseDown, ctltype: ctl.type, type: 'button', className: 'list-group-item list-group-item-action flex-grow-0 flex-shrink-0' },
                                     ctl.label
                                 );
                             })

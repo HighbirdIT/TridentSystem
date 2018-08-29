@@ -1,8 +1,52 @@
+const M_PageKernelAttrsSetting={
+    groups_arr:[
+        new CAttributeGroup('基本设置',[
+            new CAttribute('标题','title',ValueType.String,true),
+            new CAttribute('方向','orientation',ValueType.String,true),
+        ]),
+        new CAttributeGroup('测试设置',[
+            new CAttribute('测试','test',ValueType.String,true,1),
+        ]),
+    ],
+};
+
+const M_PageKernel_Type = 'M_PageKernel';
+const M_PageKernel_Prefix = 'M_P';
+
+class M_PageKernel extends ControlDataBase{
+    constructor(initData,project) {
+        var thisInitData = extractPropsFromObj(initData, 
+            [{name:'title',default:'未命名页面'},
+             {name:'name',default:project.genControlName(M_PageKernel_Prefix)},
+             {name:'orientation',default:Orientation_V},]);
+        super(thisInitData, null, '页面');
+
+        var self = this;
+        autoBind(self);
+        this.attrbuteGroups = M_PageKernelAttrsSetting.groups_arr;
+
+        this.chindren = [new M_ContainerData(null, project)];
+    }
+
+    set_title(newTitle){
+        if(newTitle.length > 10){
+            newTitle = newTitle.substring(0,10);
+        }
+
+        var flag = this.__setAttribute('title', newTitle);
+        if(flag){
+            this.attrChanged('title');
+            this.project.attrChanged('pagetitle',{
+                targetPage : this,
+            });
+        }
+        return flag;
+    }
+}
 
 class M_Page extends React.PureComponent {
     constructor(props) {
         super(props);
-        ApplyControlBase(this);
         this.state = {
             title: this.props.pageData.getAttribute('title'),
             pageData: this.props.pageData,
@@ -51,6 +95,7 @@ class M_Page extends React.PureComponent {
     }
 
     renderMobilePage(pageData) {
+        var s='div';
         return (
             <React.Fragment>
                 <div className="d-flex flex-grow-0 flex-shrink-0 text-light bg-primary align-items-baseline">
@@ -94,4 +139,6 @@ DesignerConfig.registerControl(
         label: '页面',
         type: 'M_Page',
         invisible: true,
+        kernelClass:M_PageKernel,
+        controlClass:M_Page,
     }, '布局');

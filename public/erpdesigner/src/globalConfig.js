@@ -1,3 +1,7 @@
+const Orientation_H = '水平';
+const Orientation_V = '垂直';
+const Orientation_Options_arr = [Orientation_H,Orientation_V];
+
 const DesignerConfig={
     controlConfig:{
         groups:[],
@@ -27,7 +31,12 @@ DesignerConfig.registerControl=(function(ctlConfig,groupName){
     this.controlConfig.configs_obj[ctlConfig.type] = ctlConfig;
 }).bind(DesignerConfig);
 
+DesignerConfig.findConfigByType=(function(ctlType){
+    return this.controlConfig.configs_obj[ctlType];
+}).bind(DesignerConfig);
+
 const ValueType={
     String:'String',
     Int:'Int',
-}
+};
+

@@ -8,27 +8,72 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+var M_PageKernelAttrsSetting = {
+    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('标题', 'title', ValueType.String, true), new CAttribute('方向', 'orientation', ValueType.String, true)]), new CAttributeGroup('测试设置', [new CAttribute('测试', 'test', ValueType.String, true, 1)])]
+};
+
+var M_PageKernel_Type = 'M_PageKernel';
+var M_PageKernel_Prefix = 'M_P';
+
+var M_PageKernel = function (_ControlDataBase) {
+    _inherits(M_PageKernel, _ControlDataBase);
+
+    function M_PageKernel(initData, project) {
+        _classCallCheck(this, M_PageKernel);
+
+        var thisInitData = extractPropsFromObj(initData, [{ name: 'title', default: '未命名页面' }, { name: 'name', default: project.genControlName(M_PageKernel_Prefix) }, { name: 'orientation', default: Orientation_V }]);
+
+        var _this = _possibleConstructorReturn(this, (M_PageKernel.__proto__ || Object.getPrototypeOf(M_PageKernel)).call(this, thisInitData, null, '页面'));
+
+        var self = _this;
+        autoBind(self);
+        _this.attrbuteGroups = M_PageKernelAttrsSetting.groups_arr;
+
+        _this.chindren = [new M_ContainerData(null, project)];
+        return _this;
+    }
+
+    _createClass(M_PageKernel, [{
+        key: 'set_title',
+        value: function set_title(newTitle) {
+            if (newTitle.length > 10) {
+                newTitle = newTitle.substring(0, 10);
+            }
+
+            var flag = this.__setAttribute('title', newTitle);
+            if (flag) {
+                this.attrChanged('title');
+                this.project.attrChanged('pagetitle', {
+                    targetPage: this
+                });
+            }
+            return flag;
+        }
+    }]);
+
+    return M_PageKernel;
+}(ControlDataBase);
+
 var M_Page = function (_React$PureComponent) {
     _inherits(M_Page, _React$PureComponent);
 
     function M_Page(props) {
         _classCallCheck(this, M_Page);
 
-        var _this = _possibleConstructorReturn(this, (M_Page.__proto__ || Object.getPrototypeOf(M_Page)).call(this, props));
+        var _this2 = _possibleConstructorReturn(this, (M_Page.__proto__ || Object.getPrototypeOf(M_Page)).call(this, props));
 
-        ApplyControlBase(_this);
-        _this.state = {
-            title: _this.props.pageData.getAttribute('title'),
-            pageData: _this.props.pageData
+        _this2.state = {
+            title: _this2.props.pageData.getAttribute('title'),
+            pageData: _this2.props.pageData
         };
 
-        autoBind(_this);
+        autoBind(_this2);
 
-        _this.watchedAttrs = ['pagetitle'];
-        _this.watchAttrMatch = function (attrName) {
-            return _this.watchedAttrs.indexOf(attrName) != -1;
+        _this2.watchedAttrs = ['pagetitle'];
+        _this2.watchAttrMatch = function (attrName) {
+            return _this2.watchedAttrs.indexOf(attrName) != -1;
         };
-        return _this;
+        return _this2;
     }
 
     _createClass(M_Page, [{
@@ -44,7 +89,7 @@ var M_Page = function (_React$PureComponent) {
     }, {
         key: 'attrChangedHandler',
         value: function attrChangedHandler(ev) {
-            var _this2 = this;
+            var _this3 = this;
 
             var needFresh = false;
             var changedAttrIndex = -1;
@@ -53,7 +98,7 @@ var M_Page = function (_React$PureComponent) {
                 needFresh = changedAttrIndex != -1;
             } else {
                 needFresh = ev.name.find(function (attrName) {
-                    changedAttrIndex = _this2.watchedAttrs.indexOf(attrName);
+                    changedAttrIndex = _this3.watchedAttrs.indexOf(attrName);
                     return changedAttrIndex != -1;
                 }) != null;
             }
@@ -73,6 +118,7 @@ var M_Page = function (_React$PureComponent) {
     }, {
         key: 'renderMobilePage',
         value: function renderMobilePage(pageData) {
+            var s = 'div';
             return React.createElement(
                 React.Fragment,
                 null,
@@ -114,14 +160,14 @@ var M_Page = function (_React$PureComponent) {
     }, {
         key: 'render',
         value: function render() {
-            var _this3 = this;
+            var _this4 = this;
 
             if (this.props.pageData != this.state.pageData) {
                 var self = this;
                 setTimeout(function () {
                     self.setState({
-                        title: _this3.props.pageData.getAttribute('title'),
-                        pageData: _this3.props.pageData
+                        title: _this4.props.pageData.getAttribute('title'),
+                        pageData: _this4.props.pageData
                     });
                 }, 1);
                 return null;
@@ -141,5 +187,7 @@ DesignerConfig.registerControl({
     forPC: false,
     label: '页面',
     type: 'M_Page',
-    invisible: true
+    invisible: true,
+    kernelClass: M_PageKernel,
+    controlClass: M_Page
 }, '布局');

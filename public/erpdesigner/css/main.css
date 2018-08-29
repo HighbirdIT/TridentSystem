@@ -225,3 +225,7 @@
   .collapsbtn[class~=collapsed]::after{
     content: "+";
   }
+
+  .flowMouseContainer{
+    z-index: 2000;
+  }

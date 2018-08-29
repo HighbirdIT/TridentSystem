@@ -33,6 +33,11 @@ var CProject = function (_IAttributeable) {
             title: title
         }, null, '方案'));
 
+        var self = _this;
+        autoBind(self);
+        _this.attrbuteGroups = CProjectAttrsSetting.groups_arr;
+        _this.defaultNameCounter = {};
+
         _this.designeConfig = {
             name: genProjectName(),
             editingType: 'MB',
@@ -45,9 +50,8 @@ var CProject = function (_IAttributeable) {
         _this.content_PC = {
             pages: []
         };
-        var mainPage = new CPage_MB({
+        var mainPage = new M_PageKernel({
             title: '主页面',
-            name: 'page01',
             isMain: 1,
             nav: {
                 hidden: 1,
@@ -63,11 +67,10 @@ var CProject = function (_IAttributeable) {
             body: {
                 direction: 'column'
             }
-        });
-        var secondPage = new CPage_MB({
+        }, _this);
+        var secondPage = new M_PageKernel({
             title: '次页面',
-            name: 'page02',
-            isMain: 1,
+            isMain: 0,
             nav: {
                 hidden: 1,
                 leftBtn: {
@@ -82,20 +85,33 @@ var CProject = function (_IAttributeable) {
             body: {
                 direction: 'column'
             }
-        });
+        }, _this);
         mainPage.project = _this;
         secondPage.project = _this;
         _this.content_Mobile = {
             pages: [mainPage, secondPage]
         };
-
-        var self = _this;
-        autoBind(self);
-        _this.attrbuteGroups = CProjectAttrsSetting.groups_arr;
         return _this;
     }
 
     _createClass(CProject, [{
+        key: 'genControlName',
+        value: function genControlName(prefix) {
+            if (this.defaultNameCounter[prefix] == null) {
+                this.defaultNameCounter[prefix] = 0;
+            }
+            return prefix + ++this.defaultNameCounter[prefix];
+        }
+    }, {
+        key: 'createCtlByType',
+        value: function createCtlByType(ctlType) {
+            var ctlConfig = DesignerConfig.findConfigByType(ctlType);
+            if (ctlConfig == null) {
+                console.warn('找不到ctl type:' + ctlType);
+                return null;
+            }
+        }
+    }, {
         key: 'setEditingPageByName',
         value: function setEditingPageByName(pageName) {
             var thePage = this.getPageByName(pageName);

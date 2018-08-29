@@ -1,5 +1,9 @@
 'use strict';
 
+var Orientation_H = '水平';
+var Orientation_V = '垂直';
+var Orientation_Options_arr = [Orientation_H, Orientation_V];
+
 var DesignerConfig = {
     controlConfig: {
         groups: [],
@@ -26,6 +30,10 @@ DesignerConfig.registerControl = function (ctlConfig, groupName) {
         ctlGroup.controlsForMobile.push(ctlConfig);
     }
     this.controlConfig.configs_obj[ctlConfig.type] = ctlConfig;
+}.bind(DesignerConfig);
+
+DesignerConfig.findConfigByType = function (ctlType) {
+    return this.controlConfig.configs_obj[ctlType];
 }.bind(DesignerConfig);
 
 var ValueType = {

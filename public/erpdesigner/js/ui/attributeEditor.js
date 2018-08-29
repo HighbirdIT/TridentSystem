@@ -222,12 +222,12 @@ var AttributeGroup = function (_React$PureComponent2) {
                 null,
                 React.createElement(
                     'button',
-                    { type: 'button', 'data-toggle': 'collapse', 'data-target': "#attrGroup" + projectName + attrGroup.label, className: 'btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' + (attrGroupIndex == 0 ? '' : ' collapsed'), style: { borderRadius: '0em', height: '2.5em' } },
+                    { type: 'button', 'data-toggle': 'collapse', 'data-target': "#attrGroup" + projectName + attrGroup.label, className: 'btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' + (attrGroupIndex >= 0 ? '' : ' collapsed'), style: { borderRadius: '0em', height: '2.5em' } },
                     attrGroup.label
                 ),
                 React.createElement(
                     'div',
-                    { id: "attrGroup" + projectName + attrGroup.label, className: "list-group flex-grow-0 flex-shrink-0 collapse" + (attrGroupIndex == 0 ? ' show' : ''), style: { overflow: 'auto' } },
+                    { id: "attrGroup" + projectName + attrGroup.label, className: "list-group flex-grow-0 flex-shrink-0 collapse" + (attrGroupIndex >= 0 ? ' show' : '') },
                     attrGroup.attrs_arr.map(function (attr) {
                         return _this5.renderAttribute(attr);
                     })

@@ -115,6 +115,12 @@ var ContentPanel = function (_React$PureComponent) {
             }
         }
     }, {
+        key: 'setNewControl',
+        value: function setNewControl(newCtl) {}
+    }, {
+        key: 'placeNewControl',
+        value: function placeNewControl() {}
+    }, {
         key: 'render',
         value: function render() {
             var _this3 = this;

@@ -84,7 +84,7 @@ var AttributePanel = function (_React$PureComponent) {
                 ),
                 React.createElement(
                     'div',
-                    { className: 'flex-grow-1 flex-shrink-1 bg-secondary d-flex flex-column', style: { overflow: 'auto' } },
+                    { className: 'flex-grow-1 flex-shrink-1 bg-secondary d-flex flex-column' },
                     this.renderAttribute(target)
                 )
             );

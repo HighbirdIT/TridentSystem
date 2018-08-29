@@ -74,3 +74,27 @@ function updateItemInArrayByIndex(array, index, updateItemCallback) {
 
 				return updatedItems;
 }
+
+function getAttributeByNode(targetNode, attrName, upserach, maxDeep) {
+				if (upserach == null) upserach = true;
+				var tNode = targetNode;
+				var count = 0;
+				do {
+								if (tNode.hasAttribute(attrName)) {
+												return tNode.getAttribute(attrName);
+								}
+								tNode = tNode.parentNode;
+								++count;
+				} while (tNode && (maxDeep == null || count < maxDeep));
+				return null;
+}
+
+function extractPropsFromObj(obj, props_arr) {
+				var rlt = {};
+				props_arr.forEach(function (prop) {
+								if (obj && obj[prop.name] != null) rlt[prop.name] = obj[prop.name];else {
+												rlt[prop.name] = typeof prop.default == 'function' ? prop.default() : prop.default;
+								}
+				});
+				return rlt;
+}

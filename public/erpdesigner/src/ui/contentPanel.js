@@ -95,6 +95,14 @@ class ContentPanel extends React.PureComponent {
         }
     }
 
+    setNewControl(newCtl){
+
+    }
+
+    placeNewControl(){
+        
+    }
+
     render() {
         var project = this.props.project;
         var isPC = this.state.isPC;

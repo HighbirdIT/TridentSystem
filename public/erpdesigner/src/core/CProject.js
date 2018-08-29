@@ -26,6 +26,11 @@ class CProject extends IAttributeable{
             title:title,
         },null,'方案');
 
+        var self = this;
+        autoBind(self);
+        this.attrbuteGroups = CProjectAttrsSetting.groups_arr;
+        this.defaultNameCounter = {};
+
         this.designeConfig={
             name:genProjectName(),
             editingType:'MB',
@@ -38,9 +43,8 @@ class CProject extends IAttributeable{
         this.content_PC={
             pages:[],
         };
-        var mainPage=new CPage_MB({
+        var mainPage=new M_PageKernel({
             title:'主页面',
-            name:'page01',
             isMain:1,
             nav:{
                 hidden:1,
@@ -56,11 +60,10 @@ class CProject extends IAttributeable{
             body:{
                 direction:'column'
             }
-        });
-        var secondPage=new CPage_MB({
+        }, this);
+        var secondPage=new M_PageKernel({
             title:'次页面',
-            name:'page02',
-            isMain:1,
+            isMain:0,
             nav:{
                 hidden:1,
                 leftBtn:{
@@ -75,16 +78,27 @@ class CProject extends IAttributeable{
             body:{
                 direction:'column'
             }
-        });
+        }, this);
         mainPage.project = this;
         secondPage.project = this;
         this.content_Mobile={
             pages:[mainPage,secondPage],
         };
+    }
 
-        var self = this;
-        autoBind(self);
-        this.attrbuteGroups = CProjectAttrsSetting.groups_arr;
+    genControlName(prefix){
+        if(this.defaultNameCounter[prefix] == null){
+            this.defaultNameCounter[prefix] = 0;
+        }
+        return prefix + (++this.defaultNameCounter[prefix]);
+    }
+
+    createCtlByType(ctlType){
+        var ctlConfig = DesignerConfig.findConfigByType(ctlType);
+        if(ctlConfig == null){
+            console.warn('找不到ctl type:' + ctlType);
+            return null;
+        }
     }
 
     setEditingPageByName(pageName){

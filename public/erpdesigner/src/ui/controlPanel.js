@@ -39,6 +39,19 @@ class ControlPanel extends React.PureComponent {
         this.props.project.off(EATTRCHANGED, this.attrChangedHandler);
     }
 
+    controlIconMouseDown(ev){
+        var ctltype = getAttributeByNode(ev.target, 'ctltype');
+        if(ctltype == null){
+            console.warn('未找到ctltype');
+            return;
+        }
+        if(this.props.mouseDownControlIcon){
+            var targetOffset = $(ev.target).offset();
+            this.props.mouseDownControlIcon(ctltype, targetOffset.left, targetOffset.top);
+        }
+        //console.log('controlIconMouseDown:' + ctltype);
+    }
+
     render() {
         var isPC = this.state.isPC;
         var projectName = this.props.project.designeConfig.name;
@@ -54,7 +67,7 @@ class ControlPanel extends React.PureComponent {
                                     (isPC ? group.controlsForPC : group.controlsForMobile).map(
                                         ctl=>
                                         {
-                                            return ctl.invisible ? null : (<button key={ctl.label} onClick={this.clickControlBtn} type="button" className="list-group-item list-group-item-action flex-grow-0 flex-shrink-0">{ctl.label}</button>)
+                                            return ctl.invisible ? null : (<button key={ctl.label} onMouseDown={this.controlIconMouseDown} ctltype={ctl.type} type="button" className="list-group-item list-group-item-action flex-grow-0 flex-shrink-0">{ctl.label}</button>)
                                         }
                                     )
                                 }
