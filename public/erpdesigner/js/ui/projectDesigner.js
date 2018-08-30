@@ -20,6 +20,7 @@ var ProjectDesigner = function (_React$PureComponent) {
 
         _this.state = initState;
         _this.flowMCRef = React.createRef();
+        _this.contenPanelRef = React.createRef();
         autoBind(_this);
         return _this;
     }
@@ -27,23 +28,38 @@ var ProjectDesigner = function (_React$PureComponent) {
     _createClass(ProjectDesigner, [{
         key: 'mouseDownControlIcon',
         value: function mouseDownControlIcon(ctltype, mouseX, mouseY) {
-            //console.log(ctltype);
-            //console.log(this.flowMCRef);
+            this.contenPanelRef.current.endPlace();
+            var thisProject = this.props.project;
+            var newKernel = thisProject.createKernalByType(ctltype);
+            if (newKernel == null) {
+                console.warn('从' + ctltype + '创建控件失败！');
+                return;
+            }
+
             this.flowMCRef.current.setGetContentFun(function () {
                 return React.createElement(
                     'span',
                     null,
-                    ctltype
+                    '\u653E\u7F6E:',
+                    newKernel.description
                 );
             }, mouseX, mouseY);
 
             window.addEventListener('mouseup', this.mouseUpWithFlowHandler);
+            newKernel.__placing = true;
+            this.contenPanelRef.current.startPlace(newKernel);
         }
     }, {
         key: 'mouseUpWithFlowHandler',
         value: function mouseUpWithFlowHandler(ev) {
             this.flowMCRef.current.setGetContentFun(null);
             window.removeEventListener('mouseup', this.mouseUpWithFlowHandler);
+            this.contenPanelRef.current.endPlace();
+        }
+    }, {
+        key: 'FMpositionChanged',
+        value: function FMpositionChanged(newPos) {
+            this.contenPanelRef.current.placePosChanged(newPos);
         }
     }, {
         key: 'render',
@@ -54,9 +70,9 @@ var ProjectDesigner = function (_React$PureComponent) {
                 'div',
                 { className: this.props.className },
                 React.createElement(ControlPanel, { project: thisProject, mouseDownControlIcon: this.mouseDownControlIcon }),
-                React.createElement(ContentPanel, { project: thisProject }),
+                React.createElement(ContentPanel, { project: thisProject, ref: this.contenPanelRef }),
                 React.createElement(AttributePanel, { project: thisProject }),
-                React.createElement(FlowMouseContainer, { project: thisProject, ref: this.flowMCRef })
+                React.createElement(FlowMouseContainer, { project: thisProject, ref: this.flowMCRef, positionChanged: this.FMpositionChanged })
             );
         }
     }]);

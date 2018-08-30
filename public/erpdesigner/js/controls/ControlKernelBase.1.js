@@ -8,19 +8,19 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var ControlKernelBase = function (_IAttributeable) {
-    _inherits(ControlKernelBase, _IAttributeable);
+var ContainerKernelBase = function (_ControlKernelBase) {
+    _inherits(ContainerKernelBase, _ControlKernelBase);
 
-    function ControlKernelBase(initData, project, description) {
-        _classCallCheck(this, ControlKernelBase);
+    function ContainerKernelBase(initData, project, description) {
+        _classCallCheck(this, ContainerKernelBase);
 
-        var _this = _possibleConstructorReturn(this, (ControlKernelBase.__proto__ || Object.getPrototypeOf(ControlKernelBase)).call(this, initData, null, description));
+        var _this = _possibleConstructorReturn(this, (ContainerKernelBase.__proto__ || Object.getPrototypeOf(ContainerKernelBase)).call(this, initData, null, description));
 
         _this.project = project;
         return _this;
     }
 
-    _createClass(ControlKernelBase, [{
+    _createClass(ContainerKernelBase, [{
         key: "renderSelf",
         value: function renderSelf() {
             return null;
@@ -32,5 +32,5 @@ var ControlKernelBase = function (_IAttributeable) {
         }
     }]);
 
-    return ControlKernelBase;
-}(IAttributeable);
+    return ContainerKernelBase;
+}(ControlKernelBase);

@@ -12,10 +12,18 @@ class FlowMouseContainer extends React.PureComponent {
     }
 
     onMouseMoveHandler(ev){
+        var newX = Math.round(ev.x);
+        var newY = Math.round(ev.y);
+        if(newX == this.state.x && newY == this.state.y){
+            return;
+        }
         this.setState({
-            x:ev.x + 20,
-            y:ev.y + 20,
+            x:newX + 20,
+            y:newY + 20,
         });
+        if(this.props.positionChanged){
+            this.props.positionChanged({x:newX,y:newY});
+        }
     }
 
     setGetContentFun(theFun, mx, my){
@@ -25,7 +33,7 @@ class FlowMouseContainer extends React.PureComponent {
             }
         }
         else{
-            if(this.state.getContentFun == null){
+            if(this.state.getContentFun != null){
                 window.removeEventListener('mousemove', this.onMouseMoveHandler);
             }
         }

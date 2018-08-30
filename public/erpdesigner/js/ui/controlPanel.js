@@ -92,7 +92,7 @@ var ControlPanel = function (_React$PureComponent) {
                         ),
                         React.createElement(
                             'div',
-                            { id: projectName + group.name + "CtlList", className: 'list-group flex-grow-1 flex-shrink-1 collapse show', style: { overflow: 'auto' } },
+                            { id: projectName + group.name + "CtlList", className: 'list-group flex-grow-0 flex-shrink-0 collapse show', style: { overflow: 'auto' } },
                             (isPC ? group.controlsForPC : group.controlsForMobile).map(function (ctl) {
                                 return ctl.invisible ? null : React.createElement(
                                     'button',

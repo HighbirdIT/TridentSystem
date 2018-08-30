@@ -80,7 +80,7 @@ var AttributePanel = function (_React$PureComponent) {
                     'button',
                     { type: 'button', className: 'btn flex-grow-0 flex-shrink-0 bg-secondary text-light', style: { borderRadius: '0em', height: '2.5em', overflow: 'hidden' } },
                     '\u5C5E\u6027:',
-                    target == null ? '' : target.description
+                    target == null ? '' : target.description + (target.name ? '(' + target.name + ')' : '')
                 ),
                 React.createElement(
                     'div',

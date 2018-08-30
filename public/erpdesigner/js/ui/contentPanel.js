@@ -26,6 +26,7 @@ var ContentPanel = function (_React$PureComponent) {
         _this.state = initState;
 
         _this.watchedAttrs = ['title', 'editingType', 'editingPage'];
+        _this.pageCtlRef = React.createRef();
 
         autoBind(_this);
         return _this;
@@ -86,7 +87,7 @@ var ContentPanel = function (_React$PureComponent) {
                 return React.createElement(
                     'div',
                     { id: 'pageContainer', className: 'bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-0 mobilePage rounded' },
-                    React.createElement(M_Page, { project: project, pageData: editingPage, isPC: isPC })
+                    React.createElement(M_Page, { project: project, ctlKernel: editingPage, isPC: isPC, ref: this.pageCtlRef })
                 );
             }
         }
@@ -107,7 +108,16 @@ var ContentPanel = function (_React$PureComponent) {
     }, {
         key: 'clickContentDivHander',
         value: function clickContentDivHander(ev) {
-            if (ev.target.getAttribute('id') == 'pageContainer') {
+            var tNode = ev.target;
+            var found = false;
+            do {
+                if (tNode.hasAttribute('id') && tNode.getAttribute('id') == 'pageContainer') {
+                    found = true;
+                    break;
+                }
+                tNode = tNode.parentNode;
+            } while (tNode && tNode != document.body);
+            if (found) {
                 return;
             }
             if (this.props.project.designer.attributePanel && this.state.editingPage) {
@@ -115,11 +125,29 @@ var ContentPanel = function (_React$PureComponent) {
             }
         }
     }, {
-        key: 'setNewControl',
-        value: function setNewControl(newCtl) {}
+        key: 'startPlace',
+        value: function startPlace(ctlKernel) {
+            this.placingKernel = ctlKernel;
+        }
     }, {
-        key: 'placeNewControl',
-        value: function placeNewControl() {}
+        key: 'endPlace',
+        value: function endPlace() {
+            if (this.placingKernel) {
+                this.placingKernel.__placing = false;
+                this.placingKernel.fireForceRender();
+                this.placingKernel = null;
+            }
+        }
+    }, {
+        key: 'placePosChanged',
+        value: function placePosChanged(newPos) {
+            this.pageCtlRef.current.tryPlaceKernel(this.placingKernel, newPos);
+            //var $rootDiv = $(this.pageCtlRef.current);
+            //console.log($thisDiv);
+            //console.log(newPos);
+            //console.log($rootDiv.position());
+            //console.log(this.pageCtlRef.current.getBoundingClientRect());
+        }
     }, {
         key: 'render',
         value: function render() {

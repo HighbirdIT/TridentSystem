@@ -12,6 +12,7 @@ class ContentPanel extends React.PureComponent {
         this.state = initState;
 
         this.watchedAttrs = ['title', 'editingType', 'editingPage'];
+        this.pageCtlRef = React.createRef();
 
         autoBind(this);
     }
@@ -29,7 +30,7 @@ class ContentPanel extends React.PureComponent {
         }
         else {
             needFresh = ev.name.find(
-                attrName=>{
+                attrName => {
                     changedAttrIndex = this.watchedAttrs.indexOf(attrName);
                     return changedAttrIndex != -1;
                 }
@@ -44,7 +45,7 @@ class ContentPanel extends React.PureComponent {
                 editingPage: newEditingPage,
             });
             //console.log('changedAttrName:' + changedAttrName);
-            if(changedAttrName == 'editingPage' && this.props.project.designer.attributePanel){
+            if (changedAttrName == 'editingPage' && this.props.project.designer.attributePanel) {
                 this.props.project.designer.attributePanel.setTarget(newEditingPage);
             }
         }
@@ -59,48 +60,69 @@ class ContentPanel extends React.PureComponent {
     }
 
     renderEditingPage(project, editingPage, isPC) {
-        if(editingPage == null)
+        if (editingPage == null)
             return null;
-        if(isPC){
+        if (isPC) {
             return null;
         }
         else {
             return (
                 <div id='pageContainer' className='bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-0 mobilePage rounded' >
-                    <M_Page project={project} pageData={editingPage} isPC={isPC} />
+                    <M_Page project={project} ctlKernel={editingPage} isPC={isPC} ref={this.pageCtlRef} />
                 </div>
             );
         }
     }
 
-    changeEditingPageBtnClickHandler(ev){
+    changeEditingPageBtnClickHandler(ev) {
         var target = ev.target;
         var targetPageName = target.getAttribute('pagename');
         this.props.project.setEditingPageByName(targetPageName);
     }
 
-    clickProjSettingBtnHandler(ev){
-        if(this.props.project.designer.attributePanel){
+    clickProjSettingBtnHandler(ev) {
+        if (this.props.project.designer.attributePanel) {
             this.props.project.designer.attributePanel.setTarget(this.props.project);
         }
     }
 
-    clickContentDivHander(ev){
-        if(ev.target.getAttribute('id') == 'pageContainer')
-        {
+    clickContentDivHander(ev) {
+        var tNode = ev.target;
+        var found = false;
+        do {
+            if (tNode.hasAttribute('id') && tNode.getAttribute('id') == 'pageContainer') {
+                found = true;
+                break;
+            }
+            tNode = tNode.parentNode;
+        } while (tNode && tNode != document.body);
+        if (found) {
             return;
         }
-        if(this.props.project.designer.attributePanel && this.state.editingPage){
+        if (this.props.project.designer.attributePanel && this.state.editingPage) {
             this.props.project.designer.attributePanel.setTarget(this.state.editingPage);
         }
     }
 
-    setNewControl(newCtl){
-
+    startPlace(ctlKernel) {
+        this.placingKernel = ctlKernel;
     }
 
-    placeNewControl(){
-        
+    endPlace(){
+        if(this.placingKernel){
+            this.placingKernel.__placing = false;
+            this.placingKernel.fireForceRender();
+            this.placingKernel = null;
+        }
+    }
+
+    placePosChanged(newPos){
+        this.pageCtlRef.current.tryPlaceKernel(this.placingKernel,newPos);
+        //var $rootDiv = $(this.pageCtlRef.current);
+        //console.log($thisDiv);
+        //console.log(newPos);
+        //console.log($rootDiv.position());
+        //console.log(this.pageCtlRef.current.getBoundingClientRect());
     }
 
     render() {

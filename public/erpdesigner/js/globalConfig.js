@@ -1,5 +1,8 @@
 'use strict';
 
+var EATTRCHANGED = 'attrChanged';
+var EFORCERENDER = 'forcerender';
+
 var Orientation_H = '水平';
 var Orientation_V = '垂直';
 var Orientation_Options_arr = [Orientation_H, Orientation_V];

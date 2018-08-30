@@ -62,7 +62,7 @@ class ControlPanel extends React.PureComponent {
                         return (
                             <React.Fragment key={group.name}>
                             <button type="button" data-toggle="collapse" data-target={"#" + projectName + group.name + "CtlList"} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>{group.name}</button>
-                            <div id={projectName + group.name + "CtlList"} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
+                            <div id={projectName + group.name + "CtlList"} className="list-group flex-grow-0 flex-shrink-0 collapse show" style={{ overflow: 'auto' }}>
                                 {
                                     (isPC ? group.controlsForPC : group.controlsForMobile).map(
                                         ctl=>

@@ -8,26 +8,46 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var M_ContainerDataAttrsSetting = {
-    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('补助方向', 'orientation', ValueType.String, true)])]
+var M_ContainerKernelAttrsSetting = {
+    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('方向', 'orientation', ValueType.String, true, false, Orientation_Options_arr)])]
 };
 
-var M_ContainerData = function (_ControlDataBase) {
-    _inherits(M_ContainerData, _ControlDataBase);
+var M_ContainerKernel_Prefix = 'M_C';
+var M_ContainerKernel_Type = 'M_ContainerKernel';
 
-    function M_ContainerData(initData, project) {
-        _classCallCheck(this, M_ContainerData);
+var M_ContainerKernel = function (_ContainerKernelBase) {
+    _inherits(M_ContainerKernel, _ContainerKernelBase);
 
-        var _this = _possibleConstructorReturn(this, (M_ContainerData.__proto__ || Object.getPrototypeOf(M_ContainerData)).call(this, extractPropsFromObj(initData, [{ name: 'orientation', default: Orientation_H }]), project));
+    function M_ContainerKernel(initData, project) {
+        _classCallCheck(this, M_ContainerKernel);
+
+        var _this = _possibleConstructorReturn(this, (M_ContainerKernel.__proto__ || Object.getPrototypeOf(M_ContainerKernel)).call(this, extractPropsFromObj(initData, [{ name: 'orientation', default: Orientation_H }, { name: 'name', default: project.genControlName(M_ContainerKernel_Prefix) }]), project, 'Flex容器'));
 
         var self = _this;
         autoBind(self);
-        _this.attrbuteGroups = M_ContainerDataAttrsSetting.groups_arr;
+
+        _this.attrbuteGroups = M_ContainerKernelAttrsSetting.groups_arr;
         return _this;
     }
 
-    return M_ContainerData;
-}(ControlDataBase);
+    _createClass(M_ContainerKernel, [{
+        key: 'clickHandler',
+        value: function clickHandler(ev) {
+            var ctlid = getAttributeByNode(ev.target, 'ctlid', true);
+            if (ctlid == this.name && this.project.designer.attributePanel) {
+                this.project.designer.attributePanel.setTarget(this);
+            }
+            ev.preventDefault();
+        }
+    }, {
+        key: 'renderSelf',
+        value: function renderSelf() {
+            return React.createElement(M_Container, { key: this.name, ctlKernel: this, onClick: this.clickHandler });
+        }
+    }]);
+
+    return M_ContainerKernel;
+}(ContainerKernelBase);
 
 var M_Container = function (_React$PureComponent) {
     _inherits(M_Container, _React$PureComponent);
@@ -35,14 +55,48 @@ var M_Container = function (_React$PureComponent) {
     function M_Container(props) {
         _classCallCheck(this, M_Container);
 
-        return _possibleConstructorReturn(this, (M_Container.__proto__ || Object.getPrototypeOf(M_Container)).call(this, props));
+        var _this2 = _possibleConstructorReturn(this, (M_Container.__proto__ || Object.getPrototypeOf(M_Container)).call(this, props));
+
+        _this2.state = {
+            orientation: _this2.props.ctlKernel.orientation,
+            children: _this2.props.ctlKernel.children
+        };
+
+        autoBind(_this2);
+        M_ControlBase(_this2, ['orientation', 'children']);
+        M_ContainerBase(_this2);
+        return _this2;
     }
 
     _createClass(M_Container, [{
+        key: 'aAttrChanged',
+        value: function aAttrChanged(changedAttrName) {
+            var childrenVal = this.state.children;
+            if (changedAttrName == 'children') {
+                childrenVal = this.props.ctlKernel.children.concat();
+            }
+            this.setState({
+                orientation: this.props.ctlKernel.orientation,
+                children: childrenVal
+            });
+        }
+    }, {
         key: 'render',
         value: function render() {
-            return React.createElement('div', { className: 'bg-info d-flex flex-grow-1 flex-shrink-1'
-            });
+            var className = 'd-flex flex-grow-1 flex-shrink-1';
+            if (this.props.ctlKernel.__placing) {
+                className += ' M_Container_Empty M_placingCtl' + (this.state.orientation == Orientation_V ? ' flex-column' : '');
+                return React.createElement('div', { className: className });
+            }
+            className += ' M_Container border' + (this.state.orientation == Orientation_V ? ' flex-column' : '') + (this.props.ctlKernel.children.length == 0 ? ' M_Container_Empty' : '');
+
+            return React.createElement(
+                'div',
+                { className: className, onClick: this.props.onClick, ref: this.childContainerRef, ctlid: this.props.ctlKernel.name },
+                this.props.ctlKernel.children.length == 0 ? this.props.ctlKernel.name : this.props.ctlKernel.children.map(function (childKernel) {
+                    return childKernel.renderSelf();
+                })
+            );
         }
     }]);
 
@@ -52,7 +106,8 @@ var M_Container = function (_React$PureComponent) {
 DesignerConfig.registerControl({
     forPC: false,
     label: 'Flex容器',
-    type: 'M_Container',
-    namePrefix: 'M_CT',
-    dataclass: M_ContainerData
+    type: M_ContainerKernel_Type,
+    namePrefix: M_ContainerKernel_Prefix,
+    kernelClass: M_ContainerKernel,
+    reactClass: M_Container
 }, '布局');

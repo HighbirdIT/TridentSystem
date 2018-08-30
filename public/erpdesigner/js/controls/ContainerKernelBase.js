@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -8,29 +8,40 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var ControlKernelBase = function (_IAttributeable) {
-    _inherits(ControlKernelBase, _IAttributeable);
+var ContainerKernelBase = function (_ControlKernelBase) {
+    _inherits(ContainerKernelBase, _ControlKernelBase);
 
-    function ControlKernelBase(initData, project, description) {
-        _classCallCheck(this, ControlKernelBase);
+    function ContainerKernelBase(initData, project, description) {
+        _classCallCheck(this, ContainerKernelBase);
 
-        var _this = _possibleConstructorReturn(this, (ControlKernelBase.__proto__ || Object.getPrototypeOf(ControlKernelBase)).call(this, initData, null, description));
+        var _this = _possibleConstructorReturn(this, (ContainerKernelBase.__proto__ || Object.getPrototypeOf(ContainerKernelBase)).call(this, initData, project, description));
 
-        _this.project = project;
+        _this.children = [];
         return _this;
     }
 
-    _createClass(ControlKernelBase, [{
-        key: "renderSelf",
-        value: function renderSelf() {
-            return null;
+    _createClass(ContainerKernelBase, [{
+        key: 'appandChild',
+        value: function appandChild(childKernel) {
+            if (childKernel.parent == this) return;
+            if (childKernel.parent) {
+                childKernel.parent.removeChild(childKernel);
+            }
+            this.children.push(childKernel);
+            childKernel.parent = this;
+            this.attrChanged('children');
         }
     }, {
-        key: "fireForceRender",
-        value: function fireForceRender() {
-            this.emit(EFORCERENDER);
+        key: 'removeChild',
+        value: function removeChild(childKernel) {
+            var i = this.children.indexOf(childKernel);
+            if (i != -1) {
+                this.children.splice(i, 1);
+                childKernel.parent = null;
+                this.attrChanged('children');
+            }
         }
     }]);
 
-    return ControlKernelBase;
-}(IAttributeable);
+    return ContainerKernelBase;
+}(ControlKernelBase);

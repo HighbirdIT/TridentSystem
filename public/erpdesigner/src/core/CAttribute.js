@@ -1,12 +1,13 @@
 class CAttribute{
-    constructor(label,name,valueType,editable,isArray) {
+    constructor(label,name,valueType,editable,isArray,options_arr) {
         Object.assign(this,{
             label:label,
             name : name,
             valueType:valueType,
-            editable:editable,
+            editable:editable != false,
             inputID:name + '_input',
-            isArray:isArray
+            isArray:isArray,
+            options_arr:options_arr,
         });
     }
 }

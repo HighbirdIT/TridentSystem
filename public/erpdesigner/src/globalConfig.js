@@ -1,3 +1,6 @@
+const EATTRCHANGED = 'attrChanged';
+const EFORCERENDER = 'forcerender';
+
 const Orientation_H = '水平';
 const Orientation_V = '垂直';
 const Orientation_Options_arr = [Orientation_H,Orientation_V];

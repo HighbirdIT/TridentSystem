@@ -1,5 +1,3 @@
-const EATTRCHANGED = 'attrChanged';
-
 class IAttributeable extends EventEmitter{
     constructor(initAttrValues,consignor,description) {
         super();

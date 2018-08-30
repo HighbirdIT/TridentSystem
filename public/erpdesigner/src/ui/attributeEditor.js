@@ -60,9 +60,17 @@ class AttributeEditor extends React.PureComponent {
         }
     }
 
+    itemChangedHandler(newItem){
+        this.props.targetobj.setAttribute(this.getRealAttrName(), newItem);
+    }
+
     rednerEditor(theAttr,attrName,inputID) {
         if (!theAttr.editable) {
             return (<div className="form-control-plaintext text-light" id={inputID}>{this.state.value}</div>);
+        }
+        var realAttrName = this.getRealAttrName();
+        if(theAttr.options_arr != null){
+            return (<DropDownControl options_arr={theAttr.options_arr} value={this.state.value} itemChanged={this.itemChangedHandler}/>);
         }
         return (<input type="text" className="form-control" id={inputID} value={this.state.value} onChange={this.editorChanged} attrname={attrName} />);
     }

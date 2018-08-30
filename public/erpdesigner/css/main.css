@@ -229,3 +229,26 @@
   .flowMouseContainer{
     z-index: 2000;
   }
+
+@keyframes blink
+{
+  0% {opacity: 0;}
+  50% {opacity: 1;}
+  100% {opacity:0;}
+}
+
+.anim{
+  animation: blink 1s infinite;
+  -moz-animation:blink 1s infinite; /* Firefox */
+  -webkit-animation:blink 1s infinite; /* Safari and Chrome */
+  -o-animation:blink 1s infinite; /* Opera */
+}
+
+.M_Container_Empty{
+  min-height: 60px;
+}
+
+.M_placingCtl{
+  background: lightgreen;
+  border: dashed 2px green;
+}

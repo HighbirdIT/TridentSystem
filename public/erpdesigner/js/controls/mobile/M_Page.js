@@ -9,27 +9,25 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var M_PageKernelAttrsSetting = {
-    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('标题', 'title', ValueType.String, true), new CAttribute('方向', 'orientation', ValueType.String, true)]), new CAttributeGroup('测试设置', [new CAttribute('测试', 'test', ValueType.String, true, 1)])]
+    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('标题', 'title', ValueType.String, true), new CAttribute('方向', 'orientation', ValueType.String, true, false, Orientation_Options_arr)]), new CAttributeGroup('测试设置', [new CAttribute('测试', 'test', ValueType.String, true, 1)])]
 };
 
 var M_PageKernel_Type = 'M_PageKernel';
 var M_PageKernel_Prefix = 'M_P';
 
-var M_PageKernel = function (_ControlDataBase) {
-    _inherits(M_PageKernel, _ControlDataBase);
+var M_PageKernel = function (_ContainerKernelBase) {
+    _inherits(M_PageKernel, _ContainerKernelBase);
 
     function M_PageKernel(initData, project) {
         _classCallCheck(this, M_PageKernel);
 
         var thisInitData = extractPropsFromObj(initData, [{ name: 'title', default: '未命名页面' }, { name: 'name', default: project.genControlName(M_PageKernel_Prefix) }, { name: 'orientation', default: Orientation_V }]);
 
-        var _this = _possibleConstructorReturn(this, (M_PageKernel.__proto__ || Object.getPrototypeOf(M_PageKernel)).call(this, thisInitData, null, '页面'));
+        var _this = _possibleConstructorReturn(this, (M_PageKernel.__proto__ || Object.getPrototypeOf(M_PageKernel)).call(this, thisInitData, project, '页面'));
 
         var self = _this;
         autoBind(self);
         _this.attrbuteGroups = M_PageKernelAttrsSetting.groups_arr;
-
-        _this.chindren = [new M_ContainerData(null, project)];
         return _this;
     }
 
@@ -43,16 +41,13 @@ var M_PageKernel = function (_ControlDataBase) {
             var flag = this.__setAttribute('title', newTitle);
             if (flag) {
                 this.attrChanged('title');
-                this.project.attrChanged('pagetitle', {
-                    targetPage: this
-                });
             }
             return flag;
         }
     }]);
 
     return M_PageKernel;
-}(ControlDataBase);
+}(ContainerKernelBase);
 
 var M_Page = function (_React$PureComponent) {
     _inherits(M_Page, _React$PureComponent);
@@ -63,52 +58,31 @@ var M_Page = function (_React$PureComponent) {
         var _this2 = _possibleConstructorReturn(this, (M_Page.__proto__ || Object.getPrototypeOf(M_Page)).call(this, props));
 
         _this2.state = {
-            title: _this2.props.pageData.getAttribute('title'),
-            pageData: _this2.props.pageData
+            title: _this2.props.ctlKernel.getAttribute('title'),
+            ctlKernel: _this2.props.ctlKernel,
+            children: _this2.props.ctlKernel.children,
+            orientation: _this2.props.ctlKernel.orientation
         };
 
         autoBind(_this2);
-
-        _this2.watchedAttrs = ['pagetitle'];
-        _this2.watchAttrMatch = function (attrName) {
-            return _this2.watchedAttrs.indexOf(attrName) != -1;
-        };
+        M_ControlBase(_this2, ['title', 'children', 'orientation']);
+        M_ContainerBase(_this2);
         return _this2;
     }
 
     _createClass(M_Page, [{
-        key: 'componentWillMount',
-        value: function componentWillMount() {
-            this.props.project.on(EATTRCHANGED, this.attrChangedHandler);
-        }
-    }, {
-        key: 'componentWillUnmount',
-        value: function componentWillUnmount() {
-            this.props.project.off(EATTRCHANGED, this.attrChangedHandler);
-        }
-    }, {
-        key: 'attrChangedHandler',
-        value: function attrChangedHandler(ev) {
-            var _this3 = this;
-
-            var needFresh = false;
-            var changedAttrIndex = -1;
-            if (typeof ev.name === 'string') {
-                changedAttrIndex = this.watchedAttrs.indexOf(ev.name);
-                needFresh = changedAttrIndex != -1;
-            } else {
-                needFresh = ev.name.find(function (attrName) {
-                    changedAttrIndex = _this3.watchedAttrs.indexOf(attrName);
-                    return changedAttrIndex != -1;
-                }) != null;
+        key: 'aAttrChanged',
+        value: function aAttrChanged(changedAttrName) {
+            var childrenVal = this.state.children;
+            if (changedAttrName == 'children') {
+                childrenVal = this.props.ctlKernel.children.concat();
             }
-            if (needFresh) {
-                var changedAttrName = this.watchedAttrs[changedAttrIndex];
-                console.log(changedAttrName);
-                this.setState({
-                    title: this.props.pageData.getAttribute('title')
-                });
-            }
+            //console.log(changedAttrName);
+            this.setState({
+                title: this.props.ctlKernel.getAttribute('title'),
+                children: childrenVal,
+                orientation: this.props.ctlKernel.orientation
+            });
         }
     }, {
         key: 'renderPCPage',
@@ -117,7 +91,7 @@ var M_Page = function (_React$PureComponent) {
         }
     }, {
         key: 'renderMobilePage',
-        value: function renderMobilePage(pageData) {
+        value: function renderMobilePage(ctlKernel) {
             var s = 'div';
             return React.createElement(
                 React.Fragment,
@@ -147,35 +121,36 @@ var M_Page = function (_React$PureComponent) {
                 ),
                 React.createElement(
                     'div',
-                    { className: 'flex-grow-1 felx-shrink-1 ' },
-                    '\u5185\u5BB9\u533A'
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'flex-grow-0 felx-shrink-0 bg-primary' },
-                    '\u64CD\u4F5C\u533A'
+                    { className: 'flex-grow-1 felx-shrink-1 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : ''), ref: this.childContainerRef },
+                    this.state.children.map(function (childData) {
+                        return childData.renderSelf();
+                    })
                 )
             );
         }
     }, {
         key: 'render',
         value: function render() {
-            var _this4 = this;
+            var _this3 = this;
 
-            if (this.props.pageData != this.state.pageData) {
+            if (this.props.ctlKernel != this.state.ctlKernel) {
                 var self = this;
+                this.unlistenTarget(this.state.ctlKernel);
+                this.listenTarget(this.props.ctlKernel);
                 setTimeout(function () {
                     self.setState({
-                        title: _this4.props.pageData.getAttribute('title'),
-                        pageData: _this4.props.pageData
+                        title: _this3.props.ctlKernel.getAttribute('title'),
+                        ctlKernel: _this3.props.ctlKernel,
+                        children: _this3.props.ctlKernel.children,
+                        orientation: _this3.props.ctlKernel.orientation
                     });
                 }, 1);
                 return null;
             }
             if (this.propsisPC) {
-                return this.renderPCPage(this.props.pageData);
+                return this.renderPCPage(this.props.ctlKernel);
             } else {
-                return this.renderMobilePage(this.props.pageData);
+                return this.renderMobilePage(this.props.ctlKernel);
             }
         }
     }]);

@@ -103,13 +103,14 @@ var CProject = function (_IAttributeable) {
             return prefix + ++this.defaultNameCounter[prefix];
         }
     }, {
-        key: 'createCtlByType',
-        value: function createCtlByType(ctlType) {
+        key: 'createKernalByType',
+        value: function createKernalByType(ctlType) {
             var ctlConfig = DesignerConfig.findConfigByType(ctlType);
             if (ctlConfig == null) {
-                console.warn('找不到ctl type:' + ctlType);
+                console.warn('找不到ctl type:' + ctlType + '的config');
                 return null;
             }
+            return new ctlConfig.kernelClass({}, this);
         }
     }, {
         key: 'setEditingPageByName',

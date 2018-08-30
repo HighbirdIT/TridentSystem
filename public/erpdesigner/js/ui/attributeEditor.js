@@ -89,6 +89,11 @@ var AttributeEditor = function (_React$PureComponent) {
             }
         }
     }, {
+        key: 'itemChangedHandler',
+        value: function itemChangedHandler(newItem) {
+            this.props.targetobj.setAttribute(this.getRealAttrName(), newItem);
+        }
+    }, {
         key: 'rednerEditor',
         value: function rednerEditor(theAttr, attrName, inputID) {
             if (!theAttr.editable) {
@@ -97,6 +102,10 @@ var AttributeEditor = function (_React$PureComponent) {
                     { className: 'form-control-plaintext text-light', id: inputID },
                     this.state.value
                 );
+            }
+            var realAttrName = this.getRealAttrName();
+            if (theAttr.options_arr != null) {
+                return React.createElement(DropDownControl, { options_arr: theAttr.options_arr, value: this.state.value, itemChanged: this.itemChangedHandler });
             }
             return React.createElement('input', { type: 'text', className: 'form-control', id: inputID, value: this.state.value, onChange: this.editorChanged, attrname: attrName });
         }
