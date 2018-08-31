@@ -24,6 +24,13 @@ class M_PageKernel extends ContainerKernelBase {
         var self = this;
         autoBind(self);
         this.attrbuteGroups = M_PageKernelAttrsSetting.groups_arr;
+
+        var nowParent = this;
+        for(var i=0;i<1;++i){
+            var newC = new M_ContainerKernel(null, project);
+            nowParent.appandChild(newC);
+            nowParent = newC;
+        }
     }
 
     set_title(newTitle) {
@@ -75,7 +82,7 @@ class M_Page extends React.PureComponent {
         var s = 'div';
         return (
             <React.Fragment>
-                <div className="d-flex flex-grow-0 flex-shrink-0 text-light bg-primary align-items-baseline">
+                <div className="d-flex flex-grow-0 flex-shrink-1 text-light bg-primary align-items-baseline">
                     <div className="ml-1" href="#"><h5 className='icon icon-left-nav'></h5></div>
 
 
@@ -84,7 +91,7 @@ class M_Page extends React.PureComponent {
                         <span className='icon icon-more-vertical mr-1' />
                     </div>
                 </div>
-                <div className={'flex-grow-1 felx-shrink-1 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : '')} ref={this.childContainerRef}>
+                <div className={'flex-grow-1 felx-shrink-1 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : '')} ref={this.rootElemRef}>
                     {
                         this.state.children.map(childData => {
                             return childData.renderSelf()

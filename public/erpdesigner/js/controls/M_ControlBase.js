@@ -9,17 +9,25 @@ function M_ControlBase_componentWillUnmount() {
 }
 
 function M_ControlBase_listenTarget(target) {
-    target.on(EATTRCHANGED, this.attrChangedHandler);
-    target.on(EFORCERENDER, this.forceRenderHandler);
+    if (target) {
+        target.on(EATTRCHANGED, this.attrChangedHandler);
+        target.on(EFORCERENDER, this.forceRenderHandler);
+    }
 }
 
 function M_ControlBase_unlistenTarget(target) {
-    target.off(EATTRCHANGED, this.attrChangedHandler);
-    target.off(EFORCERENDER, this.forceRenderHandler);
+    if (target) {
+        target.off(EATTRCHANGED, this.attrChangedHandler);
+        target.off(EFORCERENDER, this.forceRenderHandler);
+    }
 }
 
 function M_ControlBase_forceRenderHandler(ev) {
     this.setState({ magicObj: {} });
+}
+
+function M_ControlBase_setSelected(flag) {
+    this.setState({ selected: flag });
 }
 
 function M_ControlBase_attrChangedHandler(ev) {
@@ -43,20 +51,25 @@ function M_ControlBase_attrChangedHandler(ev) {
     }
 }
 
-function M_ControlBase(target, watchedAttrs) {
+function React_Make_AttributeListener(target, watchedAttrs) {
     var _this2 = this;
 
-    var self = this;
-    target.props.ctlKernel.currentControl = target;
     target.watchedAttrs = watchedAttrs;
     target.watchAttrMatch = function (attrName) {
         return _this2.watchedAttrs.indexOf(attrName) != -1;
     };
-
-    target.componentWillMount = M_ControlBase_componentWillMount.bind(target);
-    target.componentWillUnmount = M_ControlBase_componentWillUnmount.bind(target);
     target.listenTarget = M_ControlBase_listenTarget.bind(target);
     target.unlistenTarget = M_ControlBase_unlistenTarget.bind(target);
     target.forceRenderHandler = M_ControlBase_forceRenderHandler.bind(target);
     target.attrChangedHandler = M_ControlBase_attrChangedHandler.bind(target);
+}
+
+function M_ControlBase(target, watchedAttrs) {
+    var self = this;
+    target.props.ctlKernel.currentControl = target;
+    target.rootElemRef = React.createRef();
+    React_Make_AttributeListener(target, watchedAttrs);
+    target.componentWillMount = M_ControlBase_componentWillMount.bind(target);
+    target.componentWillUnmount = M_ControlBase_componentWillUnmount.bind(target);
+    target.setSelected = M_ControlBase_setSelected.bind(target);
 }

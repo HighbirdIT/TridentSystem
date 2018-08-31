@@ -43,6 +43,13 @@ var AttributePanel = function (_React$PureComponent) {
             if (newTarget == this.state.target) {
                 return;
             }
+            if (this.state.target && this.state.target.setSelected) {
+                this.state.target.setSelected(false);
+            }
+            if (newTarget && newTarget.setSelected) {
+                newTarget.setSelected(true);
+            }
+            this.props.project.emit(ESELECTEDCHANGED);
             this.setState({
                 target: newTarget
             });
@@ -75,7 +82,7 @@ var AttributePanel = function (_React$PureComponent) {
             var target = this.state.target;
             return React.createElement(
                 'div',
-                { className: 'flex-grow-0 flex-shrink-0 bg-light d-flex flex-column', style: { width: '350px' } },
+                { className: 'd-flex flex-grow-1 flex-shrink-1 flex-column' },
                 React.createElement(
                     'button',
                     { type: 'button', className: 'btn flex-grow-0 flex-shrink-0 bg-secondary text-light', style: { borderRadius: '0em', height: '2.5em', overflow: 'hidden' } },
@@ -84,7 +91,7 @@ var AttributePanel = function (_React$PureComponent) {
                 ),
                 React.createElement(
                     'div',
-                    { className: 'flex-grow-1 flex-shrink-1 bg-secondary d-flex flex-column' },
+                    { className: 'flex-grow-1 flex-shrink-1 bg-secondary d-flex flex-column autoScroll' },
                     this.renderAttribute(target)
                 )
             );

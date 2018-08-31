@@ -1,5 +1,6 @@
 const EATTRCHANGED = 'attrChanged';
 const EFORCERENDER = 'forcerender';
+const ESELECTEDCHANGED = 'selectedchaned';
 
 const Orientation_H = '水平';
 const Orientation_V = '垂直';

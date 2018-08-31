@@ -6,7 +6,7 @@ class ControlPanel extends React.PureComponent {
             isPC:this.props.project.designeConfig.editingType == 'PC',
         };
         this.state = initState;
-        this.watchedAttrs = 'editingType';
+        this.watchedAttrs = ['editingType'];
         this.watchAttrMatch = attrName => this.watchedAttrs.indexOf(attrName) != -1;
 
         autoBind(this);
@@ -56,7 +56,7 @@ class ControlPanel extends React.PureComponent {
         var isPC = this.state.isPC;
         var projectName = this.props.project.designeConfig.name;
         return (
-            <div style={{width:'200px'}} className='flex-grow-0 flex-shrink-0 bg-secondary d-flex flex-column'>
+            <div className='flex-grow-1 flex-shrink-1 bg-secondary d-flex flex-column autoScroll'>
                 {
                     DesignerConfig.controlConfig.groups.map(group=>{
                         return (

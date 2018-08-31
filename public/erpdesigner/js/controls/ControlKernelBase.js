@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -17,18 +17,39 @@ var ControlKernelBase = function (_IAttributeable) {
         var _this = _possibleConstructorReturn(this, (ControlKernelBase.__proto__ || Object.getPrototypeOf(ControlKernelBase)).call(this, initData, null, description));
 
         _this.project = project;
+        //autoBind(this);
+
+        _this.clickHandler = _this.clickHandler.bind(_this);
         return _this;
     }
 
     _createClass(ControlKernelBase, [{
-        key: "renderSelf",
+        key: 'renderSelf',
         value: function renderSelf() {
             return null;
         }
     }, {
-        key: "fireForceRender",
+        key: 'fireForceRender',
         value: function fireForceRender() {
             this.emit(EFORCERENDER);
+        }
+    }, {
+        key: 'setSelected',
+        value: function setSelected(flag) {
+            if (this.currentControl) {
+                this.currentControl.setSelected(flag);
+            }
+        }
+    }, {
+        key: 'clickHandler',
+        value: function clickHandler(ev) {
+            //return;
+            var ctlid = getAttributeByNode(ev.target, 'ctlid', true);
+            if (ctlid == this.name && this.project.designer) {
+                //this.project.designer.attributePanel.setTarget(this);
+                this.project.designer.selectKernel(this);
+            }
+            ev.preventDefault();
         }
     }]);
 

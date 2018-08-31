@@ -21,7 +21,7 @@ var IAttributeable = function (_EventEmitter) {
         _this.attrVersion = 0;
         _this.description = description == null ? '未知' : description;
         consignor = Object.assign(consignor, initAttrValues);
-        autoBind(_this);
+        //autoBind(this);
         return _this;
     }
 

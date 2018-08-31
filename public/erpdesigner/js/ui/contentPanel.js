@@ -86,7 +86,7 @@ var ContentPanel = function (_React$PureComponent) {
             } else {
                 return React.createElement(
                     'div',
-                    { id: 'pageContainer', className: 'bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-0 mobilePage rounded' },
+                    { id: 'pageContainer', className: 'bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-1 mobilePage rounded' },
                     React.createElement(M_Page, { project: project, ctlKernel: editingPage, isPC: isPC, ref: this.pageCtlRef })
                 );
             }
@@ -134,7 +134,12 @@ var ContentPanel = function (_React$PureComponent) {
         value: function endPlace() {
             if (this.placingKernel) {
                 this.placingKernel.__placing = false;
-                this.placingKernel.fireForceRender();
+                if (this.placingKernel.parent) {
+                    this.placingKernel.fireForceRender();
+                    this.props.project.designer.selectKernel(this.placingKernel);
+                } else {
+                    console.log('reback');
+                }
                 this.placingKernel = null;
             }
         }
@@ -161,7 +166,7 @@ var ContentPanel = function (_React$PureComponent) {
                 { className: 'flex-grow-1 flex-shrink-1 d-flex flex-column' },
                 React.createElement(
                     'div',
-                    { className: 'flex-grow-0 flex-shrink-0 d-flex bg-secondary projectContentHeader align-items-center' },
+                    { className: 'flex-grow-0 flex-shrink-1 d-flex bg-secondary projectContentHeader align-items-center' },
                     React.createElement(
                         'div',
                         { className: 'flex-grow-1 flex-shrink-1 d-flex justify-content-center align-items-center text-light' },
@@ -192,7 +197,7 @@ var ContentPanel = function (_React$PureComponent) {
                     ),
                     React.createElement(
                         'div',
-                        { className: 'flex-grow-0 flex-shrink-0' },
+                        { className: 'flex-grow-0 flex-shrink-1' },
                         React.createElement(
                             'button',
                             { type: 'button', className: "p-0 btn btn-secondary dropdown-toggle", 'data-toggle': 'dropdown' },

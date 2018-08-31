@@ -28,6 +28,13 @@ var M_PageKernel = function (_ContainerKernelBase) {
         var self = _this;
         autoBind(self);
         _this.attrbuteGroups = M_PageKernelAttrsSetting.groups_arr;
+
+        var nowParent = _this;
+        for (var i = 0; i < 1; ++i) {
+            var newC = new M_ContainerKernel(null, project);
+            nowParent.appandChild(newC);
+            nowParent = newC;
+        }
         return _this;
     }
 
@@ -98,7 +105,7 @@ var M_Page = function (_React$PureComponent) {
                 null,
                 React.createElement(
                     'div',
-                    { className: 'd-flex flex-grow-0 flex-shrink-0 text-light bg-primary align-items-baseline' },
+                    { className: 'd-flex flex-grow-0 flex-shrink-1 text-light bg-primary align-items-baseline' },
                     React.createElement(
                         'div',
                         { className: 'ml-1', href: '#' },
@@ -121,7 +128,7 @@ var M_Page = function (_React$PureComponent) {
                 ),
                 React.createElement(
                     'div',
-                    { className: 'flex-grow-1 felx-shrink-1 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : ''), ref: this.childContainerRef },
+                    { className: 'flex-grow-1 felx-shrink-1 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : ''), ref: this.rootElemRef },
                     this.state.children.map(function (childData) {
                         return childData.renderSelf();
                     })

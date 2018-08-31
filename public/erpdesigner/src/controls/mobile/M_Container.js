@@ -24,15 +24,7 @@ class M_ContainerKernel extends ContainerKernelBase{
 
         this.attrbuteGroups = M_ContainerKernelAttrsSetting.groups_arr;
     }
-
-    clickHandler(ev){
-        var ctlid = getAttributeByNode(ev.target, 'ctlid', true);
-        if(ctlid == this.name && this.project.designer.attributePanel){
-            this.project.designer.attributePanel.setTarget(this);
-        }
-        ev.preventDefault();
-    }
-
+    
     renderSelf(){
         return (<M_Container key={this.name} ctlKernel={this} onClick={this.clickHandler} />)
     }
@@ -68,14 +60,16 @@ class M_Container extends React.PureComponent {
         if(this.props.ctlKernel.__placing){
             className += ' M_Container_Empty M_placingCtl'
                         +(this.state.orientation == Orientation_V ? ' flex-column' : '')
-            return (<div className={className}></div>);
+            return (<div className={className} ref={this.rootElemRef}></div>);
         }
-        className += ' M_Container border' 
+        className += ' M_Container border hb-control' 
                         + (this.state.orientation == Orientation_V ? ' flex-column' : '')
-                        + (this.props.ctlKernel.children.length ==0 ? ' M_Container_Empty' : '');
+                        + (this.props.ctlKernel.children.length ==0 ? ' M_Container_Empty' : '')
+                        ;
                         
+
         return(
-            <div className={className} onClick={this.props.onClick} ref={this.childContainerRef} ctlid={this.props.ctlKernel.name}>
+            <div className={className} onClick={this.props.onClick} ctlid={this.props.ctlKernel.name}  ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {
                     this.props.ctlKernel.children.length == 0 ? 
                         this.props.ctlKernel.name :

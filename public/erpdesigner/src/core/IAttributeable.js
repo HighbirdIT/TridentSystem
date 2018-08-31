@@ -6,7 +6,7 @@ class IAttributeable extends EventEmitter{
         this.attrVersion = 0;
         this.description = description == null ? '未知' : description;
         consignor = Object.assign(consignor, initAttrValues);
-        autoBind(this);
+        //autoBind(this);
     }
 
     findAttributeByName(attrName){

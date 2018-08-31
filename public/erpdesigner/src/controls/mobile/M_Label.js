@@ -25,14 +25,6 @@ class M_LabelKernel extends ControlKernelBase{
         this.attrbuteGroups = M_LabelKernelAttrsSetting.groups_arr;
     }
 
-    clickHandler(ev){
-        var ctlid = getAttributeByNode(ev.target, 'ctlid', true);
-        if(ctlid == this.name && this.project.designer.attributePanel){
-            this.project.designer.attributePanel.setTarget(this);
-        }
-        ev.preventDefault();
-    }
-
     renderSelf(){
         return (<M_Label key={this.name} ctlKernel={this} onClick={this.clickHandler} />)
     }
@@ -60,11 +52,11 @@ class M_Label extends React.PureComponent {
         var className = 'flex-grow-0 flex-shrink-0'
         if(this.props.ctlKernel.__placing){
             className += ' M_placingCtl';
-            return (<div className={className}>标签内容</div>);
+            return (<div className={className} ref={this.rootElemRef}>标签内容</div>);
         }
-        className += ' M_Label border';
+        className += ' M_Label border hb-control';
         return(
-            <div className={className} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.name}>
+            <div className={className} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.name} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {
                     this.state.text
                 }

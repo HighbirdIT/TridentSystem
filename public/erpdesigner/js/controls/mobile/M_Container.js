@@ -31,15 +31,6 @@ var M_ContainerKernel = function (_ContainerKernelBase) {
     }
 
     _createClass(M_ContainerKernel, [{
-        key: 'clickHandler',
-        value: function clickHandler(ev) {
-            var ctlid = getAttributeByNode(ev.target, 'ctlid', true);
-            if (ctlid == this.name && this.project.designer.attributePanel) {
-                this.project.designer.attributePanel.setTarget(this);
-            }
-            ev.preventDefault();
-        }
-    }, {
         key: 'renderSelf',
         value: function renderSelf() {
             return React.createElement(M_Container, { key: this.name, ctlKernel: this, onClick: this.clickHandler });
@@ -86,13 +77,13 @@ var M_Container = function (_React$PureComponent) {
             var className = 'd-flex flex-grow-1 flex-shrink-1';
             if (this.props.ctlKernel.__placing) {
                 className += ' M_Container_Empty M_placingCtl' + (this.state.orientation == Orientation_V ? ' flex-column' : '');
-                return React.createElement('div', { className: className });
+                return React.createElement('div', { className: className, ref: this.rootElemRef });
             }
-            className += ' M_Container border' + (this.state.orientation == Orientation_V ? ' flex-column' : '') + (this.props.ctlKernel.children.length == 0 ? ' M_Container_Empty' : '');
+            className += ' M_Container border hb-control' + (this.state.orientation == Orientation_V ? ' flex-column' : '') + (this.props.ctlKernel.children.length == 0 ? ' M_Container_Empty' : '');
 
             return React.createElement(
                 'div',
-                { className: className, onClick: this.props.onClick, ref: this.childContainerRef, ctlid: this.props.ctlKernel.name },
+                { className: className, onClick: this.props.onClick, ctlid: this.props.ctlKernel.name, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
                 this.props.ctlKernel.children.length == 0 ? this.props.ctlKernel.name : this.props.ctlKernel.children.map(function (childKernel) {
                     return childKernel.renderSelf();
                 })

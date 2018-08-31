@@ -2,6 +2,7 @@
 
 var EATTRCHANGED = 'attrChanged';
 var EFORCERENDER = 'forcerender';
+var ESELECTEDCHANGED = 'selectedchaned';
 
 var Orientation_H = '水平';
 var Orientation_V = '垂直';

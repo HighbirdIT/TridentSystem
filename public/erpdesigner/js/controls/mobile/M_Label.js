@@ -31,15 +31,6 @@ var M_LabelKernel = function (_ControlKernelBase) {
     }
 
     _createClass(M_LabelKernel, [{
-        key: 'clickHandler',
-        value: function clickHandler(ev) {
-            var ctlid = getAttributeByNode(ev.target, 'ctlid', true);
-            if (ctlid == this.name && this.project.designer.attributePanel) {
-                this.project.designer.attributePanel.setTarget(this);
-            }
-            ev.preventDefault();
-        }
-    }, {
         key: 'renderSelf',
         value: function renderSelf() {
             return React.createElement(M_Label, { key: this.name, ctlKernel: this, onClick: this.clickHandler });
@@ -81,14 +72,14 @@ var M_Label = function (_React$PureComponent) {
                 className += ' M_placingCtl';
                 return React.createElement(
                     'div',
-                    { className: className },
+                    { className: className, ref: this.rootElemRef },
                     '\u6807\u7B7E\u5185\u5BB9'
                 );
             }
-            className += ' M_Label border';
+            className += ' M_Label border hb-control';
             return React.createElement(
                 'div',
-                { className: className, onClick: this.props.onClick, ctlid: this.props.ctlKernel.name },
+                { className: className, onClick: this.props.onClick, ctlid: this.props.ctlKernel.name, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
                 this.state.text
             );
         }

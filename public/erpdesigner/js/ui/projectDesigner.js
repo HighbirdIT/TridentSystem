@@ -21,16 +21,44 @@ var ProjectDesigner = function (_React$PureComponent) {
         _this.state = initState;
         _this.flowMCRef = React.createRef();
         _this.contenPanelRef = React.createRef();
+        _this.attrbutePanelRef = React.createRef();
+        _this.outlineRef = React.createRef();
         autoBind(_this);
+
+        _this.placingCtonrols = {};
+        _this.selectedKernel = null;
         return _this;
     }
 
     _createClass(ProjectDesigner, [{
+        key: 'selectKernel',
+        value: function selectKernel(kernel) {
+            /*
+            if(this.selectedKernel == kernel){
+                return;
+            }
+            if(this.selectedKernel){
+                this.selectedKernel.setSelected(false);
+            }
+            if(kernel){
+                kernel.setSelected(true);
+            }
+            this.selectedKernel = kernel;
+            */
+            if (this.attrbutePanelRef.current) this.attrbutePanelRef.current.setTarget(kernel);
+        }
+    }, {
         key: 'mouseDownControlIcon',
         value: function mouseDownControlIcon(ctltype, mouseX, mouseY) {
             this.contenPanelRef.current.endPlace();
             var thisProject = this.props.project;
-            var newKernel = thisProject.createKernalByType(ctltype);
+            var newKernel = null;
+            if (this.placingCtonrols[ctltype] && this.placingCtonrols[ctltype].parent == null) {
+                newKernel = this.placingCtonrols[ctltype];
+            } else {
+                newKernel = thisProject.createKernalByType(ctltype);
+                this.placingCtonrols[ctltype] = newKernel;
+            }
             if (newKernel == null) {
                 console.warn('从' + ctltype + '创建控件失败！');
                 return;
@@ -59,7 +87,7 @@ var ProjectDesigner = function (_React$PureComponent) {
     }, {
         key: 'FMpositionChanged',
         value: function FMpositionChanged(newPos) {
-            this.contenPanelRef.current.placePosChanged(newPos);
+            if (this.contenPanelRef.current) this.contenPanelRef.current.placePosChanged(newPos);
         }
     }, {
         key: 'render',
@@ -69,9 +97,23 @@ var ProjectDesigner = function (_React$PureComponent) {
             return React.createElement(
                 'div',
                 { className: this.props.className },
-                React.createElement(ControlPanel, { project: thisProject, mouseDownControlIcon: this.mouseDownControlIcon }),
-                React.createElement(ContentPanel, { project: thisProject, ref: this.contenPanelRef }),
-                React.createElement(AttributePanel, { project: thisProject }),
+                React.createElement(SplitPanel, {
+                    defPercent: 0.15,
+                    barClass: 'bg-secondary',
+                    panel1: React.createElement(SplitPanel, {
+                        defPercent: 0.7,
+                        fixedOne: false,
+                        flexColumn: true,
+                        panel1: React.createElement(ControlPanel, { project: thisProject, mouseDownControlIcon: this.mouseDownControlIcon }),
+                        panel2: React.createElement(OutlinePanel, { project: thisProject, ref: this.outlineRef })
+                    }),
+                    panel2: React.createElement(SplitPanel, { defPercent: 0.8,
+                        fixedOne: false,
+                        barClass: 'bg-secondary',
+                        panel1: React.createElement(ContentPanel, { project: thisProject, ref: this.contenPanelRef }),
+                        panel2: React.createElement(AttributePanel, { project: thisProject, ref: this.attrbutePanelRef })
+                    })
+                }),
                 React.createElement(FlowMouseContainer, { project: thisProject, ref: this.flowMCRef, positionChanged: this.FMpositionChanged })
             );
         }
@@ -79,3 +121,20 @@ var ProjectDesigner = function (_React$PureComponent) {
 
     return ProjectDesigner;
 }(React.PureComponent);
+
+/*
+<ControlPanel project={thisProject} mouseDownControlIcon={this.mouseDownControlIcon} />
+                <ContentPanel project={thisProject} ref={this.contenPanelRef}/>
+                <div className='flex-grow-0 flex-shrink-0 bg-light d-flex flex-column' style={{width:'350px'}}>
+                    <AttributePanel project={thisProject}/>
+                    <OutlinePanel project={thisProject}/>
+                </div>
+
+                <SplitPanel defPercent={0.1}
+                             panel1={<ContentPanel project={thisProject} ref={this.contenPanelRef} />}
+                             panel2={<div className='flex-grow-0 flex-shrink-0 bg-light d-flex flex-column' style={{ width: '350px' }}>
+                                        <AttributePanel project={thisProject} />
+                                        <OutlinePanel project={thisProject} />
+                                    </div>}
+                            />
+*/

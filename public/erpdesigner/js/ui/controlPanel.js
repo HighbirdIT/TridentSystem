@@ -20,7 +20,7 @@ var ControlPanel = function (_React$PureComponent) {
             isPC: _this.props.project.designeConfig.editingType == 'PC'
         };
         _this.state = initState;
-        _this.watchedAttrs = 'editingType';
+        _this.watchedAttrs = ['editingType'];
         _this.watchAttrMatch = function (attrName) {
             return _this.watchedAttrs.indexOf(attrName) != -1;
         };
@@ -80,7 +80,7 @@ var ControlPanel = function (_React$PureComponent) {
             var projectName = this.props.project.designeConfig.name;
             return React.createElement(
                 'div',
-                { style: { width: '200px' }, className: 'flex-grow-0 flex-shrink-0 bg-secondary d-flex flex-column' },
+                { className: 'flex-grow-1 flex-shrink-1 bg-secondary d-flex flex-column autoScroll' },
                 DesignerConfig.controlConfig.groups.map(function (group) {
                     return React.createElement(
                         React.Fragment,

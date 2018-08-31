@@ -6,9 +6,13 @@
     overflow: auto;
 }
 
+.hidenOverflow {
+  overflow: hidden;
+}
+
 .mobilePage{
     min-height: 800px;
-    width:450px;
+    min-width:450px;
 }
 
 .projectContentHeader{
@@ -44,6 +48,16 @@
     display: inline-block;
     font-family: Ratchicons, sans-serif;
     font-size: 24px;
+    line-height: 1;
+    text-decoration: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .icon-sm {
+    display: inline-block;
+    font-family: Ratchicons, sans-serif;
+    font-size: 12px;
     line-height: 1;
     text-decoration: none;
     -webkit-font-smoothing: antialiased;
@@ -251,4 +265,48 @@
 .M_placingCtl{
   background: lightgreen;
   border: dashed 2px green;
+}
+
+.outlineItemDiv{
+  padding-left: 2em;
+  cursor: pointer;
+  margin-top: 0.2em;
+}
+
+.outlineItemDiv[class~=topest]{
+  padding-left: 0em;
+}
+
+.outlineItem{
+  cursor: pointer;
+}
+
+.outlineItem:hover{
+  background-color: greenyellow;
+}
+
+.unselectable{
+  -moz-user-select: none; /*火狐*/
+  -webkit-user-select: none; /*webkit浏览器*/
+  -ms-user-select: none; /*IE10*/
+  -khtml-user-select: none; /*早期浏览器*/
+  user-select: none;
+}
+
+.splitbar_H{
+  min-width: 0.5em;
+  cursor: ew-resize;
+}
+
+.splitbar_V{
+  min-height: 0.5em;
+  cursor: ns-resize;
+}
+
+.hb-control{
+  cursor:auto;
+}
+
+.hb-control[ctlselected]{
+  border: dashed darkblue !important;
 }
