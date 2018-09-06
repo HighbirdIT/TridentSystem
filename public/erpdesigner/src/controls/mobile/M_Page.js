@@ -30,6 +30,9 @@ class M_PageKernel extends ContainerKernelBase {
             var newC = new M_ContainerKernel(null, project);
             nowParent.appandChild(newC);
             nowParent = newC;
+            for(var j=0;j<5;++j){
+                newC.appandChild(new M_LabelKernel(null, project));
+            }
         }
     }
 
@@ -91,7 +94,7 @@ class M_Page extends React.PureComponent {
                         <span className='icon icon-more-vertical mr-1' />
                     </div>
                 </div>
-                <div className={'flex-grow-1 felx-shrink-1 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : '')} ref={this.rootElemRef}>
+                <div className={'flex-grow-1 felx-shrink-0 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : '')} ref={this.rootElemRef}>
                     {
                         this.state.children.map(childData => {
                             return childData.renderSelf()

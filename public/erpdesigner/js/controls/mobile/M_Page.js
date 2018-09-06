@@ -34,6 +34,9 @@ var M_PageKernel = function (_ContainerKernelBase) {
             var newC = new M_ContainerKernel(null, project);
             nowParent.appandChild(newC);
             nowParent = newC;
+            for (var j = 0; j < 5; ++j) {
+                newC.appandChild(new M_LabelKernel(null, project));
+            }
         }
         return _this;
     }
@@ -128,7 +131,7 @@ var M_Page = function (_React$PureComponent) {
                 ),
                 React.createElement(
                     'div',
-                    { className: 'flex-grow-1 felx-shrink-1 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : ''), ref: this.rootElemRef },
+                    { className: 'flex-grow-1 felx-shrink-0 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : ''), ref: this.rootElemRef },
                     this.state.children.map(function (childData) {
                         return childData.renderSelf();
                     })

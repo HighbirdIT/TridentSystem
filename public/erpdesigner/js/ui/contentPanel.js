@@ -154,6 +154,11 @@ var ContentPanel = function (_React$PureComponent) {
             //console.log(this.pageCtlRef.current.getBoundingClientRect());
         }
     }, {
+        key: 'clickPanelNameBtn',
+        value: function clickPanelNameBtn(ev) {
+            this.props.wantOpenPanel(getAttributeByNode(ev.target, 'pname', true, 3));
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this3 = this;
@@ -229,8 +234,78 @@ var ContentPanel = function (_React$PureComponent) {
                 ),
                 React.createElement(
                     'div',
-                    { onClick: this.clickContentDivHander, className: 'flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center' },
-                    this.renderEditingPage(project, editingPage, isPC)
+                    { className: 'd-flex flex-grow-1 flex-shrink-1' },
+                    React.createElement(
+                        'div',
+                        { className: 'd-flex flex-grow-0 flex-shrink-0 flex-column' },
+                        React.createElement(
+                            'button',
+                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickPanelNameBtn, pname: 'datamaster' },
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u6570'
+                            ),
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u636E'
+                            ),
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u5927'
+                            ),
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u5E08'
+                            )
+                        ),
+                        React.createElement(
+                            'button',
+                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickPanelNameBtn },
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u6D41'
+                            ),
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u7A0B'
+                            ),
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u5927'
+                            ),
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u5E08'
+                            )
+                        ),
+                        React.createElement(
+                            'button',
+                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickPanelNameBtn },
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u53D1'
+                            ),
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u5E03'
+                            )
+                        )
+                    ),
+                    React.createElement(
+                        'div',
+                        { onClick: this.clickContentDivHander, className: 'flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center' },
+                        this.renderEditingPage(project, editingPage, isPC)
+                    )
                 )
             );
         }

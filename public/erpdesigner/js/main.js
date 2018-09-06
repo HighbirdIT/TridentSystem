@@ -39,6 +39,11 @@ document.getElementById('pageContentContainer').innerHTML="<div class='d-flex h-
     </div>
 */
 
+window.addEventListener('mousemove', function (ev) {
+    WindowMouse.x = ev.x;
+    WindowMouse.y = ev.y;
+});
+
 var ErpDesigner = function (_React$PureComponent) {
     _inherits(ErpDesigner, _React$PureComponent);
 

@@ -30,6 +30,8 @@ class CProject extends IAttributeable{
         autoBind(self);
         this.attrbuteGroups = CProjectAttrsSetting.groups_arr;
         this.defaultNameCounter = {};
+        this.cacheState = {};
+        this.dataMaster = new DataMaster(this);
 
         this.designeConfig={
             name:genProjectName(),

@@ -37,6 +37,8 @@ var CProject = function (_IAttributeable) {
         autoBind(self);
         _this.attrbuteGroups = CProjectAttrsSetting.groups_arr;
         _this.defaultNameCounter = {};
+        _this.cacheState = {};
+        _this.dataMaster = new DataMaster(_this);
 
         _this.designeConfig = {
             name: genProjectName(),

@@ -26,7 +26,7 @@ class FlowMouseContainer extends React.PureComponent {
         }
     }
 
-    setGetContentFun(theFun, mx, my){
+    setGetContentFun(theFun){
         if(theFun){
             if(this.state.getContentFun == null){
                 window.addEventListener('mousemove', this.onMouseMoveHandler);
@@ -39,8 +39,8 @@ class FlowMouseContainer extends React.PureComponent {
         }
         this.setState({
             getContentFun:theFun,
-            x:mx + 10,
-            y:my + 10,
+            x:WindowMouse.x + 10,
+            y:WindowMouse.y + 10,
         });
     }
 

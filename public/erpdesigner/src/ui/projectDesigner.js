@@ -9,7 +9,9 @@ class ProjectDesigner extends React.PureComponent {
         this.contenPanelRef = React.createRef();
         this.attrbutePanelRef = React.createRef();
         this.outlineRef = React.createRef();
+        this.dataMasterPanelRef = React.createRef();
         autoBind(this);
+        this.props.project.designer = this;
 
         this.placingCtonrols = {};
         this.selectedKernel = null;
@@ -32,7 +34,7 @@ class ProjectDesigner extends React.PureComponent {
             this.attrbutePanelRef.current.setTarget(kernel);
     }
 
-    mouseDownControlIcon(ctltype, mouseX, mouseY) {
+    mouseDownControlIcon(ctltype) {
         this.contenPanelRef.current.endPlace();
         var thisProject = this.props.project;
         var newKernel = null;
@@ -48,31 +50,66 @@ class ProjectDesigner extends React.PureComponent {
             return;
         }
 
-        this.flowMCRef.current.setGetContentFun(() => {
-            return (<span>放置:{newKernel.description}</span>)
-        }, mouseX, mouseY);
-
-        window.addEventListener('mouseup', this.mouseUpWithFlowHandler);
-        newKernel.__placing = true;
-        this.contenPanelRef.current.startPlace(newKernel);
+        this.startPlaceKernel(newKernel);
     }
 
-    mouseUpWithFlowHandler(ev) {
+    startPlaceKernel(theKernel,callBack){
+        this.flowMCRef.current.setGetContentFun(() => {
+            return (<span>放置:{theKernel.description + theKernel.name}</span>)
+        });
+
+        window.addEventListener('mouseup', this.mouseUpInPlacingHandler);
+        theKernel.__placing = true;
+        this.contenPanelRef.current.startPlace(theKernel);
+        this.placeEndCallBack = callBack;
+        this.placingKernel = theKernel;
+        this.props.project.placingKernel = theKernel;
+        theKernel.fireForceRender();
+        if(this.outlineRef.current)
+            this.outlineRef.current.startPlace();
+    }
+
+    mouseUpInPlacingHandler(ev) {
         this.flowMCRef.current.setGetContentFun(null);
-        window.removeEventListener('mouseup', this.mouseUpWithFlowHandler);
+        window.removeEventListener('mouseup', this.mouseUpInPlacingHandler);
+        this.props.project.placingKernel = null;
         this.contenPanelRef.current.endPlace();
+        if(this.outlineRef.current)
+            this.outlineRef.current.endPlace();
+        if(this.placeEndCallBack){
+            this.placeEndCallBack(this.placingKernel);
+            this.placeEndCallBack = null;
+        }
+        this.placingKernel = null;
+        //console.log('mouseUpInPlacingHandler');
+        return;
     }
 
     FMpositionChanged(newPos) {
-        if (this.contenPanelRef.current)
+        if(this.outlineRef.current)
+            this.outlineRef.current.placePosChanged(newPos, this.placingKernel);
+        if (this.contenPanelRef.current && !this.outlineRef.current.bMouseInPanel){
             this.contenPanelRef.current.placePosChanged(newPos);
+        }
+    }
+
+    wantOpenPanel(panelName){
+        console.log('wantOpenPanel:' + panelName);
+        switch(panelName){
+            case 'datamaster':
+                if(this.dataMasterPanelRef.current){
+                    //this.dataMasterPanelRef.current.show();
+                    this.dataMasterPanelRef.current.toggle();
+                }
+            break;
+        }
     }
 
     render() {
         var thisProject = this.props.project;
-        thisProject.designer = this;
         return (
             <div className={this.props.className}>
+                <DataMasterPanel ref={this.dataMasterPanelRef} project={thisProject} />
                 <SplitPanel
                     defPercent={0.15}
                     barClass='bg-secondary'
@@ -87,7 +124,7 @@ class ProjectDesigner extends React.PureComponent {
                         <SplitPanel defPercent={0.8}
                              fixedOne={false}
                              barClass='bg-secondary'
-                             panel1={<ContentPanel project={thisProject} ref={this.contenPanelRef} />}
+                             panel1={<ContentPanel project={thisProject} ref={this.contenPanelRef} wantOpenPanel={this.wantOpenPanel} />}
                              panel2={<AttributePanel project={thisProject} ref={this.attrbutePanelRef} />}
                             />
                             }

@@ -1,7 +1,0 @@
-body
-{
-    transition: scrollTop 0.5s;
-    -moz-transition: scrollTop 0.5s;	/* Firefox 4 */
-    -webkit-transition: scrollTop 5s;	/* Safari 和 Chrome */
-    -o-transition: scrollTop 0.5s;	/* Opera */
-}

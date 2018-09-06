@@ -61,7 +61,7 @@ var TitleHeaderItem = function (_React$PureComponent) {
                     { onClick: this.props.clickTitlehandler, type: 'button', className: "btn btn-" + (this.props.active ? 'primary' : 'dark') },
                     this.state.title
                 ),
-                React.createElement(
+                !this.props.hideClose && React.createElement(
                     'button',
                     { onClick: this.props.clickClosehandler, className: "btn btn-" + (this.props.active ? 'primary' : 'dark'), type: 'button' },
                     React.createElement(
@@ -86,7 +86,7 @@ var ProjectContainer = function (_React$PureComponent2) {
         var _this2 = _possibleConstructorReturn(this, (ProjectContainer.__proto__ || Object.getPrototypeOf(ProjectContainer)).call(this, props));
 
         var initState = {
-            projects: [new CProject('员工信息管理'), new CProject('行政管理'), new CProject('行政是的管理')],
+            projects: [new CProject('员工信息管理')],
             selectedIndex: 0
         };
 

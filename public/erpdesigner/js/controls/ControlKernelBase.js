@@ -39,6 +39,7 @@ var ControlKernelBase = function (_IAttributeable) {
             if (this.currentControl) {
                 this.currentControl.setSelected(flag);
             }
+            this.attrChanged(flag ? 'selected' : 'unselected');
         }
     }, {
         key: 'clickHandler',

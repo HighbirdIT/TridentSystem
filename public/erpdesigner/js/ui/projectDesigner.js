@@ -23,7 +23,9 @@ var ProjectDesigner = function (_React$PureComponent) {
         _this.contenPanelRef = React.createRef();
         _this.attrbutePanelRef = React.createRef();
         _this.outlineRef = React.createRef();
+        _this.dataMasterPanelRef = React.createRef();
         autoBind(_this);
+        _this.props.project.designer = _this;
 
         _this.placingCtonrols = {};
         _this.selectedKernel = null;
@@ -49,7 +51,7 @@ var ProjectDesigner = function (_React$PureComponent) {
         }
     }, {
         key: 'mouseDownControlIcon',
-        value: function mouseDownControlIcon(ctltype, mouseX, mouseY) {
+        value: function mouseDownControlIcon(ctltype) {
             this.contenPanelRef.current.endPlace();
             var thisProject = this.props.project;
             var newKernel = null;
@@ -64,39 +66,74 @@ var ProjectDesigner = function (_React$PureComponent) {
                 return;
             }
 
+            this.startPlaceKernel(newKernel);
+        }
+    }, {
+        key: 'startPlaceKernel',
+        value: function startPlaceKernel(theKernel, callBack) {
             this.flowMCRef.current.setGetContentFun(function () {
                 return React.createElement(
                     'span',
                     null,
                     '\u653E\u7F6E:',
-                    newKernel.description
+                    theKernel.description + theKernel.name
                 );
-            }, mouseX, mouseY);
+            });
 
-            window.addEventListener('mouseup', this.mouseUpWithFlowHandler);
-            newKernel.__placing = true;
-            this.contenPanelRef.current.startPlace(newKernel);
+            window.addEventListener('mouseup', this.mouseUpInPlacingHandler);
+            theKernel.__placing = true;
+            this.contenPanelRef.current.startPlace(theKernel);
+            this.placeEndCallBack = callBack;
+            this.placingKernel = theKernel;
+            this.props.project.placingKernel = theKernel;
+            theKernel.fireForceRender();
+            if (this.outlineRef.current) this.outlineRef.current.startPlace();
         }
     }, {
-        key: 'mouseUpWithFlowHandler',
-        value: function mouseUpWithFlowHandler(ev) {
+        key: 'mouseUpInPlacingHandler',
+        value: function mouseUpInPlacingHandler(ev) {
             this.flowMCRef.current.setGetContentFun(null);
-            window.removeEventListener('mouseup', this.mouseUpWithFlowHandler);
+            window.removeEventListener('mouseup', this.mouseUpInPlacingHandler);
+            this.props.project.placingKernel = null;
             this.contenPanelRef.current.endPlace();
+            if (this.outlineRef.current) this.outlineRef.current.endPlace();
+            if (this.placeEndCallBack) {
+                this.placeEndCallBack(this.placingKernel);
+                this.placeEndCallBack = null;
+            }
+            this.placingKernel = null;
+            //console.log('mouseUpInPlacingHandler');
+            return;
         }
     }, {
         key: 'FMpositionChanged',
         value: function FMpositionChanged(newPos) {
-            if (this.contenPanelRef.current) this.contenPanelRef.current.placePosChanged(newPos);
+            if (this.outlineRef.current) this.outlineRef.current.placePosChanged(newPos, this.placingKernel);
+            if (this.contenPanelRef.current && !this.outlineRef.current.bMouseInPanel) {
+                this.contenPanelRef.current.placePosChanged(newPos);
+            }
+        }
+    }, {
+        key: 'wantOpenPanel',
+        value: function wantOpenPanel(panelName) {
+            console.log('wantOpenPanel:' + panelName);
+            switch (panelName) {
+                case 'datamaster':
+                    if (this.dataMasterPanelRef.current) {
+                        //this.dataMasterPanelRef.current.show();
+                        this.dataMasterPanelRef.current.toggle();
+                    }
+                    break;
+            }
         }
     }, {
         key: 'render',
         value: function render() {
             var thisProject = this.props.project;
-            thisProject.designer = this;
             return React.createElement(
                 'div',
                 { className: this.props.className },
+                React.createElement(DataMasterPanel, { ref: this.dataMasterPanelRef, project: thisProject }),
                 React.createElement(SplitPanel, {
                     defPercent: 0.15,
                     barClass: 'bg-secondary',
@@ -110,7 +147,7 @@ var ProjectDesigner = function (_React$PureComponent) {
                     panel2: React.createElement(SplitPanel, { defPercent: 0.8,
                         fixedOne: false,
                         barClass: 'bg-secondary',
-                        panel1: React.createElement(ContentPanel, { project: thisProject, ref: this.contenPanelRef }),
+                        panel1: React.createElement(ContentPanel, { project: thisProject, ref: this.contenPanelRef, wantOpenPanel: this.wantOpenPanel }),
                         panel2: React.createElement(AttributePanel, { project: thisProject, ref: this.attrbutePanelRef })
                     })
                 }),

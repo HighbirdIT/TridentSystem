@@ -19,6 +19,7 @@ class ControlKernelBase extends IAttributeable{
         if(this.currentControl){
             this.currentControl.setSelected(flag);
         }
+        this.attrChanged(flag ? 'selected' : 'unselected');
     }
 
     clickHandler(ev){

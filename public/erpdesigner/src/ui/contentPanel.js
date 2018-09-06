@@ -131,6 +131,10 @@ class ContentPanel extends React.PureComponent {
         //console.log(this.pageCtlRef.current.getBoundingClientRect());
     }
 
+    clickPanelNameBtn(ev){
+        this.props.wantOpenPanel(getAttributeByNode(ev.target, 'pname', true, 3));
+    }
+
     render() {
         var project = this.props.project;
         var isPC = this.state.isPC;
@@ -167,10 +171,17 @@ class ContentPanel extends React.PureComponent {
                         </div>
                     </div>
                 </div>
-                <div onClick={this.clickContentDivHander} className='flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center'>
-                    {
-                        this.renderEditingPage(project, editingPage, isPC)
-                    }
+                <div className='d-flex flex-grow-1 flex-shrink-1'>
+                    <div className='d-flex flex-grow-0 flex-shrink-0 flex-column'>
+                        <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} pname='datamaster' ><div>数</div><div>据</div><div>大</div><div>师</div></button>
+                        <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} ><div>流</div><div>程</div><div>大</div><div>师</div></button>
+                        <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} ><div>发</div><div>布</div></button>
+                    </div>
+                    <div onClick={this.clickContentDivHander} className='flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center'>
+                        {
+                            this.renderEditingPage(project, editingPage, isPC)
+                        }
+                    </div>
                 </div>
             </div>
         )

@@ -74,6 +74,15 @@ app.use(function(req, res, next){
     next();
 });
 
+app.use('/ERPDesigner/server',function( req, res, next)
+{
+    var jspath = __dirname + '/views/ERPDesigner/server.js';
+    jspath = jspath.replace(/^\//, ''); 
+
+    require(jspath)(req,res, next);
+    return;
+});
+
 app.use('/ERPDesigner',function( req, res, next)
 {
     return res.render('ERPDesigner/main', {layout:null}); 

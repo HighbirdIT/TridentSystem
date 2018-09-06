@@ -45,7 +45,7 @@ var FlowMouseContainer = function (_React$PureComponent) {
         }
     }, {
         key: 'setGetContentFun',
-        value: function setGetContentFun(theFun, mx, my) {
+        value: function setGetContentFun(theFun) {
             if (theFun) {
                 if (this.state.getContentFun == null) {
                     window.addEventListener('mousemove', this.onMouseMoveHandler);
@@ -57,8 +57,8 @@ var FlowMouseContainer = function (_React$PureComponent) {
             }
             this.setState({
                 getContentFun: theFun,
-                x: mx + 10,
-                y: my + 10
+                x: WindowMouse.x + 10,
+                y: WindowMouse.y + 10
             });
         }
     }, {

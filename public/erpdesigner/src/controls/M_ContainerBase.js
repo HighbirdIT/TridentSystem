@@ -50,6 +50,9 @@ function M_ContainerBase_tryPlaceKernel(theKernel, mousePos) {
             }
             */
             this.props.ctlKernel.appandChild(theKernel,appandIndex);
+            setTimeout(() => {
+                theKernel.attrChanged('placeChanged');
+            }, 10);
         }
         return true;
     }

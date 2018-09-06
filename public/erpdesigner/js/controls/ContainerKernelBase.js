@@ -31,7 +31,7 @@ var ContainerKernelBase = function (_ControlKernelBase) {
                         this.children[index] = childKernel;
                         this.children[nowIndex] = temp;
                         this.attrChanged('children');
-                        console.log('swap:' + nowIndex + '->' + index);
+                        //console.log('swap:' + nowIndex + '->' + index);
                     }
                 }
                 return;
@@ -61,6 +61,11 @@ var ContainerKernelBase = function (_ControlKernelBase) {
                 childKernel.parent = null;
                 this.attrChanged('children');
             }
+        }
+    }, {
+        key: 'getChildIndex',
+        value: function getChildIndex(childKernel) {
+            return this.children.indexOf(childKernel);
         }
     }]);
 

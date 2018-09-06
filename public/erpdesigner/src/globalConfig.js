@@ -11,7 +11,12 @@ const DesignerConfig={
         groups:[],
         configs_obj:{}
     }
-}
+};
+
+var WindowMouse = {
+    x:0,
+    y:0,
+};
 
 DesignerConfig.registerControl=(function(ctlConfig,groupName){
     var ctlGroup = this.controlConfig.groups.find(item=>{

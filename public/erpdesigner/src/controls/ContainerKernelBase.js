@@ -14,7 +14,7 @@ class ContainerKernelBase extends ControlKernelBase{
                     this.children[index] = childKernel;
                     this.children[nowIndex] = temp;
                     this.attrChanged('children');
-                    console.log('swap:' + nowIndex + '->' + index);
+                    //console.log('swap:' + nowIndex + '->' + index);
                 }
             }
             return;
@@ -46,5 +46,9 @@ class ContainerKernelBase extends ControlKernelBase{
             childKernel.parent = null;
             this.attrChanged('children');
         }
+    }
+
+    getChildIndex(childKernel){
+        return this.children.indexOf(childKernel);
     }
 }

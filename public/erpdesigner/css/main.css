@@ -268,7 +268,6 @@
 }
 
 .outlineItemDiv{
-  padding-left: 2em;
   cursor: pointer;
   margin-top: 0.2em;
 }
@@ -284,6 +283,11 @@
 .outlineItem:hover{
   background-color: greenyellow;
 }
+
+.outlineItem[ctlselected]{
+  background-color: lightblue;
+}
+
 
 .unselectable{
   -moz-user-select: none; /*火狐*/
@@ -309,4 +313,41 @@
 
 .hb-control[ctlselected]{
   border: dashed darkblue !important;
+}
+
+.verticalDiv{
+  width: 1em;
+}
+
+.floatPanel{
+  position: fixed;
+  min-width: 200px;
+  height: 200px;
+  z-index: 800;
+  border:2px solid black;
+}
+
+.paneltitle{
+  font-size: 1.3em;
+  background:black;
+  color: white;
+}
+
+.panelMoveBar{
+  cursor: move;
+}
+
+.panelSizeBtn{
+  width: 15px;
+  height: 15px;
+  position: absolute;
+  right: 0%;
+  bottom: 0%;
+  background-color: black;
+  cursor: nw-resize;
+  border: none;
+}
+
+.list-group-item[miniitem] {
+  padding: 0.2rem 0.2rem;
 }

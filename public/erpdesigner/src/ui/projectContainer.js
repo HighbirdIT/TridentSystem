@@ -38,7 +38,9 @@ class TitleHeaderItem extends React.PureComponent {
                 <button onClick={this.props.clickTitlehandler} type="button" className={"btn btn-" + (this.props.active ? 'primary' : 'dark')}>
                     {this.state.title}
                 </button>
-                <button onClick={this.props.clickClosehandler} className={"btn btn-" + (this.props.active ? 'primary' : 'dark')} type="button"><span>&times;</span></button>
+                {
+                    !this.props.hideClose &&  <button onClick={this.props.clickClosehandler} className={"btn btn-" + (this.props.active ? 'primary' : 'dark')} type="button"><span>&times;</span></button>
+                }
             </div>
         )
     }
@@ -50,8 +52,6 @@ class ProjectContainer extends React.PureComponent {
         var initState = {
             projects: [
                 new CProject('员工信息管理'),
-                new CProject('行政管理'),
-                new CProject('行政是的管理'),
             ],
             selectedIndex: 0,
         };
