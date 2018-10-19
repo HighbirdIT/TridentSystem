@@ -107,6 +107,15 @@ app.use('/helloProcess',function( req, res, next)
     return;
 });
 
+app.use('/dingdingTest',function( req, res, next)
+{
+    var jspath = __dirname + '/views/study/dingdingTest.js';
+    jspath = jspath.replace(/^\//, ''); 
+
+    require(jspath)(req,res, next);
+    return;
+});
+
 /*
 app.get('/about',function(req, res){
     res.render('about',{fortune:fortune.getFortune()});

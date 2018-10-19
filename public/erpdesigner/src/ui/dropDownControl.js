@@ -17,6 +17,18 @@ class DropDownControl extends React.PureComponent {
 
         this.dropdownbtnRef = React.createRef();
         this.editableInputRef = React.createRef();
+        this.dropmenudivRef = React.createRef();
+    }
+
+    setValue(val){
+        var formated_arr = this.formatData(this.props.options_arr, this.props.textAttrName, this.props.valueAttrName);
+        var selectedOption = formated_arr.find(item=>{
+            return item.value == val;
+        });
+        this.setState({
+            options_arr:formated_arr,
+            selectedOption:selectedOption,
+        });
     }
 
     getSelectedData(){
@@ -25,14 +37,18 @@ class DropDownControl extends React.PureComponent {
 
     dropDowmDivRefFun(elem){
         this.$dropDowmDiv = $(elem);
+        /*
         this.$dropDowmDiv.on('shown.bs.dropdown', this.dropDownOpened);
         this.$dropDowmDiv.on('hidden.bs.dropdown', this.dropDownClosed);
+        */
     }
 
     componentWillUnmount(){
+        /*
         var $current = this.$dropDowmDiv;
         $current.off('shown.bs.dropdown', this.dropDownOpened);
         $current.off('hidden.bs.dropdown', this.dropDownClosed);
+        */
     }
 
     dropDownOpened() {
@@ -43,17 +59,53 @@ class DropDownControl extends React.PureComponent {
         }
         var formated_arr = this.formatData(srcOptions_arr, this.props.textAttrName, this.props.valueAttrName);
         this.setState({
-            keyword:this.state.selectedOption ? '' : this.state.keyword,
+            keyword:'',
             opened:true,
             options_arr:formated_arr,
         });
+        
+        this.popMenuHeight = 0;
+        //this.freshPopUpPos();
 
-        /*
-        var self = this;
-        setTimeout(() => {
-            self.setState({options_arr:formated_arr});
-        }, 2000);
-        */
+        window.addEventListener('mouseup', this.windowMouseUpWidthPopintg);
+    }
+
+    componentDidUpdate(){
+        if(this.state.opened){
+            var popMenu = this.$dropDowmDiv.find('.dropdown-menu');
+            if(this.popMenuHeight == popMenu.height()){
+                return;
+            }
+            this.freshPopUpPos();
+        }
+    }
+
+    freshPopUpPos(){
+        var popMenu = this.$dropDowmDiv.find('.dropdown-menu');
+        var $current = this.$dropDowmDiv;
+        var divTop = $current.offset().top;
+        var divBottom = divTop + $current.outerHeight(true);
+        var windowTop = document.body.scrollTop;
+        var windowBottom = windowTop + $(window).height();
+        var popToUp =  (divBottom - windowTop) > (windowBottom - divBottom);
+        var popMenuHeight = popMenu.outerHeight();
+        this.popMenuHeight = popMenuHeight;
+        var popUpCss = {
+            "top":(popToUp ? (divTop - popMenuHeight) : divBottom) + 'px',
+            "left": $current.offset().left + "px",
+            "min-width":$current.width() + 'px',
+        }
+        popMenu.css(popUpCss);
+        popMenu.find('#listDIV').css({
+            "max-height":(popToUp ? divBottom - windowTop : windowBottom - divBottom) + 'px',
+        });
+    }
+
+    windowMouseUpWidthPopintg(ev){
+        if(isNodeHasParent(ev.target,this.$dropDowmDiv[0])){
+            return;
+        }
+        this.dropDownClosed();
     }
 
     keyChanged(ev) {
@@ -65,6 +117,8 @@ class DropDownControl extends React.PureComponent {
 
     dropDownClosed() {
         console.log('菜单被关闭了');
+        window.removeEventListener('mouseup', this.windowMouseUpWidthPopintg);
+
         this.setState({opened:false});
     }
 
@@ -113,7 +167,8 @@ class DropDownControl extends React.PureComponent {
             return item.value == value;
         });
         this.setState({ selectedOption:theOptionItem,
-                        keyword:'' });
+                        keyword:'',
+                        opened:false });
         if(this.props.itemChanged){
             this.props.itemChanged(theOptionItem.data ? theOptionItem.data : theOptionItem.value);
         }
@@ -123,16 +178,16 @@ class DropDownControl extends React.PureComponent {
         return (
             <React.Fragment>
                 {
-                    this.state.options_arr.length <= 10 || this.props.editable ? null :
+                    this.state.options_arr.length <= 5 || this.props.editable ? null :
                     <div className='d-flex border'>
-                        <span htmlFor='keyword' className='flex-grow-0 flex-shrink-0 ' >搜索:</span>
-                        <input className='ml-1 flex-grow-1 flex-shrink-1' type='text' id='keyword' name='keyword' value={this.state.keyword.length > 0 || selectedOption == null ? this.state.keyword : selectedOption.text} onChange={this.keyChanged} />
+                        <div htmlFor='keyword' className='flex-grow-0 flex-shrink-0 ' >搜索:</div>
+                        <input className='flex-grow-1 flex-shrink-1 flexinput' type='text' id='keyword' name='keyword' value={this.state.keyword} onChange={this.keyChanged} />
                     </div>
                 }
-                <div name='listDIV' className='list-group flex-grow-1 flex-shrink-1' style={{ overflow: 'auto', maxheight: '500px', padding:'5px' }} >
+                <div id='listDIV' className='list-group flex-grow-1 flex-shrink-1 autoScroll' style={{ overflow: 'auto', maxHeight: '500px', padding:'5px' }} >
                     {
                         filted_arr.map((item, i) => {
-                            return (<div onClick={this.listItemClick} className={'d-flex flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedOption && item.value == selectedOption.value ? ' active' : '')} miniitem={1} key={item.value} value={item.value}>
+                            return (<div onClick={this.listItemClick} className={'d-flex flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedOption && item.value == selectedOption.value ? ' active' : '')} menuitem={1} miniitem={1} key={item.value} value={item.value}>
                                 <div>{item.text}</div>
                             </div>)
                         })
@@ -142,15 +197,20 @@ class DropDownControl extends React.PureComponent {
     }
 
     editableInputFocushandler(ev){
-        if(this.dropdownbtnRef.current){
-            if(!this.state.opened)
-            {
-                var inputElem = this.editableInputRef.current;
-                $(this.dropdownbtnRef.current).dropdown('toggle');
-                setTimeout(() => {
-                    inputElem.focus();
-                }, 50);
-            }
+        if(!this.state.opened){
+            this.dropDownOpened();
+            var inputElem = this.editableInputRef.current;
+            setTimeout(() => {
+                inputElem.focus();
+            }, 50);
+        }
+    }
+
+    clickOpenHandler(){
+        if(!this.state.opened){
+            this.dropDownOpened();
+        }else{
+            this.dropDownClosed();
         }
     }
 
@@ -161,17 +221,17 @@ class DropDownControl extends React.PureComponent {
         var selectedOption = this.state.selectedOption;
 
         return (
-            <div className={"d-flex flex-column " + (this.props.rootclass ? this.props.rootclass : '')}>
+            <div className={"d-flex flex-column " + (this.props.rootclass ? this.props.rootclass : '')} style={this.props.style}>
                 <div className='d-flex flex-grow-1 flex-shrink-1'>
-                    <div className='flex-grow-1 flex-shrink-1 d-flex btn-group' ref={this.dropDowmDivRefFun}>
+                    <div className=' d-flex btn-group w-100 h-100' ref={this.dropDowmDivRefFun}>
                         {
-                            this.props.editable ? <input onFocus={this.editableInputFocushandler} ref={this.editableInputRef} type='text' className='flex-grow-1 flex-shrink-1' onChange={this.keyChanged} value={selectedOption ? selectedOption.text : this.state.keyword} />
+                            this.props.editable ? <input onFocus={this.editableInputFocushandler} ref={this.editableInputRef} type='text' className='flex-grow-1 flex-shrink-1 flexinput' onChange={this.keyChanged} value={selectedOption ? selectedOption.text : this.state.keyword} />
                             :
-                            <button type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-1 flex-shrink-1' + (selectedOption == null ? ' text-danger' : '')} data-toggle="dropdown" >{selectedOption ? selectedOption.text : '请选择'}</button>
+                            <button onClick={this.clickOpenHandler} style={{width:'calc(100% - 30px)'}} type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1' + (selectedOption == null ? ' text-danger' : '')} ><div style={{overflow:'hidden'}}>{selectedOption ? selectedOption.text : '请选择'}</div></button>
                         }
-                        <button ref={this.dropdownbtnRef} type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdown-toggle dropdown-toggle-split'} data-toggle="dropdown" data-reference="parent" ></button>
+                        <button ref={this.dropdownbtnRef} style={{width:'30px'}} type='button' onClick={this.clickOpenHandler} className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdown-toggle dropdown-toggle-split'} ></button>
 
-                        <div className="dropdown-menu w-100 autoScroll" style={{maxHeight:'500px'}}>
+                        <div className={"dropdown-menu " + (this.state.opened ? 'show' : '')} ref={this.dropmenudivRef}>
                             {(this.state.opened || this.state.options_arr.length > 0) && this.renderDropDown(filted_arr, selectedOption)}
                         </div>
                     </div>

@@ -5,13 +5,16 @@ class FloatPanelbase extends React.PureComponent{
         this.state={
             show:this.props.initShow == true,
             maximum:false,
+            sizeable:this.props.sizeable != false,
+            closeable:this.props.closeable != false,
+            ismodel:this.props.ismodel == true,
         };
         this.rootDivRef = React.createRef();
         this.rootSize = {
             x:0,
             y:0,
-            width:300,
-            height:300,
+            width:this.props.width > 0 ? this.props.width : null,
+            height:this.props.height > 0 ? this.props.height : null,
             first:true,
         }
         autoBind(this);
@@ -124,11 +127,22 @@ class FloatPanelbase extends React.PureComponent{
         this.setState({maximum:!this.state.maximum});
     }
 
-    render() {
+    render(){
         if(!this.state.show){
             return null;
         }
-        
+
+        if(this.state.ismodel){
+            return (<div className='modelPanelBG'>
+                    {this.renderPanel()}
+                </div>)
+        }
+        else{
+            return this.renderPanel();
+        }
+    }
+
+    renderPanel() {
         var windWidth = $(window).width();
         var windHeight = $(window).height();
         var rootStyle;
@@ -143,8 +157,10 @@ class FloatPanelbase extends React.PureComponent{
         }
         else{
             if(this.rootSize.first){
-                this.rootSize.width = Math.round(windWidth * 0.5);
-                this.rootSize.height = Math.round(windHeight * 0.5);
+                if(isNaN(this.rootSize.width) || this.rootSize.width == null)
+                    this.rootSize.width = Math.round(windWidth * 0.5);
+                if(isNaN(this.rootSize.height) || this.rootSize.height == null)
+                    this.rootSize.height = Math.round(windHeight * 0.5);
                 this.rootSize.x = Math.round((windWidth - this.rootSize.width) * 0.5);
                 this.rootSize.y = Math.round((windHeight - this.rootSize.height) * 0.5);
                 this.rootSize.first = false;
@@ -164,16 +180,23 @@ class FloatPanelbase extends React.PureComponent{
                 height:this.rootSize.height + 'px',
             };
         }
+        
         return(
             <div className='floatPanel' ref={this.rootDivRef} style={rootStyle}>
                 <div className='d-flex w-100 h-100 flex-column bg-secondary'>
                     <div className='d-flex flex-grow-0 flex-shrink-0 paneltitle align-items-baseline'>
                         <span className='icon icon-bars' />
                         <div className='flex-grow-1 flex-shrink-1 panelMoveBar' onMouseDown={this.moveBarMouseDownHandler}>
-                        {this.props.title}
+                            {this.props.title}
                         </div>
-                        <span className={'icon icon-' + (this.state.maximum ? 'pages' : 'stop')} style={{cursor:'pointer'}} onClick={this.toggleMaximum}  />
-                        <span className='icon icon-close' style={{cursor:'pointer'}} onClick={this.close} />
+                        {
+                            this.state.sizeable &&
+                            <i className={"fa fa-" + (this.state.maximum ? 'window-restore' : 'window-maximize')} style={{cursor:'pointer'}} onClick={this.toggleMaximum} />
+                        }
+                        {
+                            this.state.closeable &&
+                            <i className='fa fa-window-close ml-1' style={{cursor:'pointer'}} onClick={this.close} />
+                        }
                     </div>
                     <div className='flex-grow-1 flex-shrink-1 d-flex flex-column'>
                         {
@@ -181,7 +204,7 @@ class FloatPanelbase extends React.PureComponent{
                         }
                     </div>
                     {
-                        !this.state.maximum && <button type='button' className='panelSizeBtn' onMouseDown={this.sizeBtnMouseDownHandler} />
+                        this.state.sizeable && !this.state.maximum && <button type='button' className='panelSizeBtn' onMouseDown={this.sizeBtnMouseDownHandler} />
                     }
                 </div>
             </div>

@@ -27,19 +27,43 @@ class DataBase extends EventEmitter{
         }
         var nowEntity = this.entityCode_map[code];
         if(nowEntity == null){
-            nowEntity = new DBEntity(entityData);
-            this.entities_arr.push(nowEntity);
-            this.entityCode_map[code] = nowEntity;
-            this.entityCode_map[entityData.name] = nowEntity;
+            nowEntity = this.createEnity(entityData);
+            nowEntity.loaded = true;
             return true;
         }
         else{
-            return nowEntity.synData(entityData);
+            this.entityCode_map[entityData.name] = nowEntity;
+            nowEntity.synData(entityData);
         }
+        return true;
+    }
+
+    createEnity(initData){
+        if(initData.code == null){
+            console.error('createEnity的参数必须要有code!');
+            return null;
+        }
+        var newEntity = new DBEntity(initData);
+        this.entities_arr.push(newEntity);
+        this.entityCode_map[initData.code] = newEntity;
+        if(initData.name){
+            this.entityCode_map[initData.name] = newEntity;
+        }
+        return newEntity;
     }
 
     getEntityByCode(code){
-        return this.entityCode_map[code];
+        var rlt = this.entityCode_map[code.toString()];
+        if(rlt == null){
+            rlt = this.createEnity({code:code});
+            rlt.loaded = false;
+            rlt.doSyn();
+        }
+        return this.entityCode_map[code.toString()];
+    }
+
+    synBykeyword(callback){
+
     }
 }
 
@@ -47,17 +71,43 @@ class DBEntity extends EventEmitter{
     constructor(initData){
         super();
         Object.assign(this, initData);
+        autoBind(this);
     }
 
     synData(newData){
-        return false;
+        Object.assign(this, newData);
+        this.syning = false;
+        this.synErr = null;
+        this.loaded = true;
+        this.emit('syned');
+        return true;
     }
-}
 
-class CustomDbEntity extends EventEmitter{
-    constructor(initData){
-        super();
-        Object.assign(this, initData);
+    synComplete(fetchData){
+        console.log('synComplete');
+        this.syning = false;
+        this.loaded = true;
+        var json = fetchData.json;
+        if(json.err){
+            console.error(json.err);
+            this.synErr = err;
+            return;
+        }
+        else if(json.data.length == 0){
+            console.warn(this.code + '没有在数据库中找到');
+            this.synErr = {info:'不存在了' + this.code};
+            return;
+        }
+        else{
+            this.synData(json.data[0]);
+        }
+    }
+
+    doSyn(){
+        if(this.syning)
+            return;
+        this.syning = true;
+        fetchJsonPosts('server', { action: 'syndata_bycodes', codes_arr: [this.code] }, this.synComplete);
     }
 }
 
@@ -72,9 +122,19 @@ class DataMaster extends EventEmitter{
         this.database = g_dataBase;
         this.usedDBEnities_arr = [];
         this.dataView_usedDBEnities = new ListDataView(this.usedDBEnities_arr,'name','code');
-        this.customDBEntities_arr = [new CustomDbEntity({name:'测试源',code:project.genControlName('cusDBE')}), new CustomDbEntity({name:'测试源2',code:project.genControlName('cusDBE')})];
+        this.customDBEntities_arr = [new CustomDbEntity({name:'test',code:project.genControlName('cusDBE'),type:'表值'}),new CustomDbEntity({name:'test2',code:project.genControlName('cusDBE'),type:'标量值'})];
+        this.project = project;
 
         this.dataView_usedDBEnities.on('changed',this.usedDBEnitiesChangedHandler);
+    }
+
+    hadCusDBE(name){
+        return this.customDBEntities_arr.find(item=>{return item.name == name}) != null;
+    }
+
+    createCusDBE(name, type){
+        this.customDBEntities_arr.push(new CustomDbEntity({name:name,code:this.project.genControlName('cusDBE'),type:type}));
+        this.emit('customDBEChanged');
     }
 
     usedDBEnitiesChangedHandler(source){

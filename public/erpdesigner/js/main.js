@@ -66,6 +66,7 @@ var ErpDesigner = function (_React$PureComponent) {
             return React.createElement(
                 "div",
                 _extends({ id: "designerroot" }, this.props),
+                React.createElement(TipWindow, null),
                 React.createElement(MainMenu, null),
                 React.createElement(
                     "div",

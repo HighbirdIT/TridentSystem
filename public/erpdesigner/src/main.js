@@ -44,6 +44,7 @@ class ErpDesigner extends React.PureComponent{
     render(){
         return(
             <div id="designerroot" {...this.props}>
+                <TipWindow />
                 <MainMenu />
                 <div className="flex-grow-1 d-flex flex-column" style={{overflow:"hidden"}}>
                     <ProjectContainer />

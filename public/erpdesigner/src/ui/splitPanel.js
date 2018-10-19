@@ -2,6 +2,9 @@ class SplitPanel extends React.PureComponent {
     constructor(props) {
         super(props);
         autoBind(this);
+        if(this.props.fixedOne != null && this.props.maxSize == null){
+            console.warn('SplitPanel set fixedOne must set maxSize');
+        }
 
         var initState = {
             percent:this.formatPercent(this.props.defPercent),
@@ -9,6 +12,10 @@ class SplitPanel extends React.PureComponent {
         this.state = initState;
         this.rootDivRef = React.createRef();
         this.splitbarRef = React.createRef();
+        this.panelOneRef = React.createRef();
+        this.panelTwoRef = React.createRef();
+
+        this.firstRealSizeCaled = false;
     }
 
     componentWillMount() {
@@ -84,6 +91,13 @@ class SplitPanel extends React.PureComponent {
         var panelOneSize = 0;
         var panelTwoSize = 0;
         if(rootSize > 0){
+            if(!this.firstRealSizeCaled){
+                var $panelOne = $(this.panelOneRef.current);
+                //var $panelTwo = $(this.panelTwoRef.current);
+                //usePercent = (fixedOne ? (isHor ? $panelOne.width() : $panelOne.height()) : (isHor ? $panelTwo.width() : $panelTwo.height())) / rootSize;
+                usePercent = (isHor ? $panelOne.width() : $panelOne.height()) / rootSize;
+                this.firstRealSizeCaled = true;
+            }
             if(fixedOne){
                 panelOneSize = Math.round(maxSize ? Math.min(maxSize, rootSize * usePercent) : rootSize * usePercent);
                 panelTwoSize = rootSize - panelOneSize;
@@ -97,21 +111,37 @@ class SplitPanel extends React.PureComponent {
             panelTwoStyle = isHor ? {width:panelTwoSize + 'px'} : {height:panelTwoSize + 'px'};
             
         }
-        else{  
+        else{
             usePercent *= 100;
-            if(fixedOne){
-                panelOneStyle = isHor ? {width:usePercent + '%', maxWidth:maxSize} : {height:usePercent + '%', maxHeight:maxSize};
+            if(maxSize > 0){
+                if(fixedOne){
+                    panelOneStyle = isHor ? {width:maxSize + 'px'} : {height:maxSize + 'px'};
+                    panelTwoStyle = isHor ? {width:'calc(100% - 0.75em - ' + maxSize + 'px)'} : {height:'calc(100% - 0.75em - ' + maxSize + 'px)'};
+                }
+                else{
+                    panelTwoStyle = isHor ? {width:usePercent + '%', maxWidth:maxSize} : {height:usePercent + '%', maxHeight:maxSize};
+                    panelOneStyle = isHor ? {width:'calc(100% - 0.75em - ' + maxSize + 'px)'} : {height:'calc(100% - 0.75em - ' + maxSize + 'px)'};
+
+                }
             }
             else{
-                usePercent = 1 - usePercent;
-                panelTwoStyle = isHor ? {width:usePercent + '%', maxWidth:maxSize} : {height:usePercent + '%', maxHeight:maxSize};
+                if(fixedOne){
+                    panelOneStyle = isHor ? {width:usePercent + '%', maxWidth:maxSize} : {height:usePercent + '%', maxHeight:maxSize};
+                    panelTwoStyle = isHor ? {width:'calc('+(100-usePercent) + '% - 0.75em)'} : {height:'calc('+(100-usePercent) + '% - 0.75em)'};
+                }
+                else{
+                    usePercent = 100 - usePercent;
+                    panelTwoStyle = isHor ? {width:usePercent + '%', maxWidth:maxSize} : {height:usePercent + '%', maxHeight:maxSize};
+                    panelOneStyle = isHor ? {width:'calc('+(100-usePercent) + '% - 0.75em)'} : {height:'calc('+(100-usePercent) + '% - 0.75em)'};
+
+                }
             }
         }
         
         return (
             <div className={"flex-grow-1 flex-shrink-1 d-flex " + (!isHor ? ' flex-column mw-100 mh-100' : ' mw-100 mh-100')} ref={this.rootDivRef}>
                 { 
-                    <div className={''+(hideOne && maxSize == null ? ' d-none' : ' d-flex')+(fixedOne && !hideTwo ? ' flex-grow-0 flex-shrink-0' : ' flex-grow-1 flex-shrink-1')} style={panelOneStyle}>
+                    <div ref={this.panelOneRef} className={''+(hideOne ? ' d-none' : ' d-flex')+(fixedOne && !hideTwo ? ' flex-grow-0 flex-shrink-0' : ' flex-grow-1 flex-shrink-1')} style={panelOneStyle}>
                         {
                             this.props.panel1
                         }
@@ -121,7 +151,7 @@ class SplitPanel extends React.PureComponent {
                     <span className={'icon-sm text-light ' + (isHor ? 'icon-more-vertical' : 'icon-more')} />
                 </div>
                 {
-                    <div className={''+(hideTwo && maxSize == null ? ' d-none' : ' d-flex')+(fixedOne || hideOne ? ' flex-grow-1 flex-shrink-1' : ' flex-grow-0 flex-shrink-0')} style={panelTwoStyle}>
+                    <div ref={this.panelTwoRef} className={''+(hideTwo ? ' d-none' : ' d-flex')+(fixedOne || hideOne ? ' flex-grow-1 flex-shrink-1' : ' flex-grow-0 flex-shrink-0')} style={panelTwoStyle}>
                         {
                             this.props.panel2
                         }

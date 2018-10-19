@@ -22,8 +22,10 @@ function process(req, res, next) {
 
 function doProcess(req, res) {
     switch (req.body.action) {
-        case 'matchGet':
-            return matchGet(req.body.keyword);
+        case 'syndata_bykeyword':
+            return syndata_bykeyword(req.body.keyword);
+        case 'syndata_bycodes':
+            return GetEntityInfo(req.body.codes_arr);
     }
 
     return co(function* () {
@@ -40,7 +42,7 @@ function getDataTable(tableName) {
     });
 }
 
-function matchGet(keyword) {
+function syndata_bykeyword(keyword) {
     return co(function* () {
         if (keyword[0] != '%') {
             keyword = "%" + keyword;

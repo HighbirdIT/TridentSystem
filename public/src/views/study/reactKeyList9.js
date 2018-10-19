@@ -5,6 +5,17 @@ class PersonList extends React.PureComponent {
     }
 
     render() {
+
+        var arr1=[300,800,800,800,900,300,900,900,1000,600,900,600,700,1000,900,700,900,300,1100,800,900,900,700,500,1000,700,1000,0,1000,800,900,900];
+        var arr2=[600,700,300,500,800,400,900,1000,1100,100,1300,1400,1500,1600,0];
+        var rlt_arr = arr2.map(item=>{
+            return arr1.length - arr1.lastIndexOf(item);
+        });
+
+        return arr2.map((item,i)=>{
+            return (<div>{rlt_arr[i] + 1}</div>)
+        });
+
         if (this.props.data == null) {
             return (<div>正在通信</div>);
         }

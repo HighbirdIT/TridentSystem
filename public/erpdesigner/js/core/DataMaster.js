@@ -46,20 +46,44 @@ var DataBase = function (_EventEmitter) {
             }
             var nowEntity = this.entityCode_map[code];
             if (nowEntity == null) {
-                nowEntity = new DBEntity(entityData);
-                this.entities_arr.push(nowEntity);
-                this.entityCode_map[code] = nowEntity;
-                this.entityCode_map[entityData.name] = nowEntity;
+                nowEntity = this.createEnity(entityData);
+                nowEntity.loaded = true;
                 return true;
             } else {
-                return nowEntity.synData(entityData);
+                this.entityCode_map[entityData.name] = nowEntity;
+                nowEntity.synData(entityData);
             }
+            return true;
+        }
+    }, {
+        key: 'createEnity',
+        value: function createEnity(initData) {
+            if (initData.code == null) {
+                console.error('createEnity的参数必须要有code!');
+                return null;
+            }
+            var newEntity = new DBEntity(initData);
+            this.entities_arr.push(newEntity);
+            this.entityCode_map[initData.code] = newEntity;
+            if (initData.name) {
+                this.entityCode_map[initData.name] = newEntity;
+            }
+            return newEntity;
         }
     }, {
         key: 'getEntityByCode',
         value: function getEntityByCode(code) {
-            return this.entityCode_map[code];
+            var rlt = this.entityCode_map[code.toString()];
+            if (rlt == null) {
+                rlt = this.createEnity({ code: code });
+                rlt.loaded = false;
+                rlt.doSyn();
+            }
+            return this.entityCode_map[code.toString()];
         }
+    }, {
+        key: 'synBykeyword',
+        value: function synBykeyword(callback) {}
     }]);
 
     return DataBase;
@@ -74,57 +98,88 @@ var DBEntity = function (_EventEmitter2) {
         var _this3 = _possibleConstructorReturn(this, (DBEntity.__proto__ || Object.getPrototypeOf(DBEntity)).call(this));
 
         Object.assign(_this3, initData);
+        autoBind(_this3);
         return _this3;
     }
 
     _createClass(DBEntity, [{
         key: 'synData',
         value: function synData(newData) {
-            return false;
+            Object.assign(this, newData);
+            this.syning = false;
+            this.synErr = null;
+            this.loaded = true;
+            this.emit('syned');
+            return true;
+        }
+    }, {
+        key: 'synComplete',
+        value: function synComplete(fetchData) {
+            console.log('synComplete');
+            this.syning = false;
+            this.loaded = true;
+            var json = fetchData.json;
+            if (json.err) {
+                console.error(json.err);
+                this.synErr = err;
+                return;
+            } else if (json.data.length == 0) {
+                console.warn(this.code + '没有在数据库中找到');
+                this.synErr = { info: '不存在了' + this.code };
+                return;
+            } else {
+                this.synData(json.data[0]);
+            }
+        }
+    }, {
+        key: 'doSyn',
+        value: function doSyn() {
+            if (this.syning) return;
+            this.syning = true;
+            fetchJsonPosts('server', { action: 'syndata_bycodes', codes_arr: [this.code] }, this.synComplete);
         }
     }]);
 
     return DBEntity;
 }(EventEmitter);
 
-var CustomDbEntity = function (_EventEmitter3) {
-    _inherits(CustomDbEntity, _EventEmitter3);
-
-    function CustomDbEntity(initData) {
-        _classCallCheck(this, CustomDbEntity);
-
-        var _this4 = _possibleConstructorReturn(this, (CustomDbEntity.__proto__ || Object.getPrototypeOf(CustomDbEntity)).call(this));
-
-        Object.assign(_this4, initData);
-        return _this4;
-    }
-
-    return CustomDbEntity;
-}(EventEmitter);
-
 var g_dataBase = new DataBase();
 
 var E_USED_ENITIES_CHANGED = 'E_USED_ENITIES_CHANGED';
 
-var DataMaster = function (_EventEmitter4) {
-    _inherits(DataMaster, _EventEmitter4);
+var DataMaster = function (_EventEmitter3) {
+    _inherits(DataMaster, _EventEmitter3);
 
     function DataMaster(project) {
         _classCallCheck(this, DataMaster);
 
-        var _this5 = _possibleConstructorReturn(this, (DataMaster.__proto__ || Object.getPrototypeOf(DataMaster)).call(this));
+        var _this4 = _possibleConstructorReturn(this, (DataMaster.__proto__ || Object.getPrototypeOf(DataMaster)).call(this));
 
-        autoBind(_this5);
-        _this5.database = g_dataBase;
-        _this5.usedDBEnities_arr = [];
-        _this5.dataView_usedDBEnities = new ListDataView(_this5.usedDBEnities_arr, 'name', 'code');
-        _this5.customDBEntities_arr = [new CustomDbEntity({ name: '测试源', code: project.genControlName('cusDBE') }), new CustomDbEntity({ name: '测试源2', code: project.genControlName('cusDBE') })];
+        autoBind(_this4);
+        _this4.database = g_dataBase;
+        _this4.usedDBEnities_arr = [];
+        _this4.dataView_usedDBEnities = new ListDataView(_this4.usedDBEnities_arr, 'name', 'code');
+        _this4.customDBEntities_arr = [new CustomDbEntity({ name: 'test', code: project.genControlName('cusDBE'), type: '表值' }), new CustomDbEntity({ name: 'test2', code: project.genControlName('cusDBE'), type: '标量值' })];
+        _this4.project = project;
 
-        _this5.dataView_usedDBEnities.on('changed', _this5.usedDBEnitiesChangedHandler);
-        return _this5;
+        _this4.dataView_usedDBEnities.on('changed', _this4.usedDBEnitiesChangedHandler);
+        return _this4;
     }
 
     _createClass(DataMaster, [{
+        key: 'hadCusDBE',
+        value: function hadCusDBE(name) {
+            return this.customDBEntities_arr.find(function (item) {
+                return item.name == name;
+            }) != null;
+        }
+    }, {
+        key: 'createCusDBE',
+        value: function createCusDBE(name, type) {
+            this.customDBEntities_arr.push(new CustomDbEntity({ name: name, code: this.project.genControlName('cusDBE'), type: type }));
+            this.emit('customDBEChanged');
+        }
+    }, {
         key: 'usedDBEnitiesChangedHandler',
         value: function usedDBEnitiesChangedHandler(source) {
             this.emit(E_USED_ENITIES_CHANGED);

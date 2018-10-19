@@ -1,5 +1,5 @@
 var mssql = require('mssql');
-var config = require('./dbconfig.js');
+var sqlconfig = require('./dbconfig.js');
 var co = require('co');
 
 var sql = {};
@@ -51,11 +51,21 @@ sql.query = function (sqltext, func) {
     sql.queryWithParams(sqltext, null, func);
 };
 
+sql.asynQuery = function (sqltext) {
+    return sql.asynQueryWithParams(sqltext, null);
+};
 
-sql.asynQueryWithParams = function (sqltext, params) {
+sql.asynGetScalar = function (sqltext,params) {
+    return sql.asynQueryWithParams(sqltext, params, {scalar:true});
+};
+
+sql.asynQueryWithParams = function (sqltext, params, config) {
+    if(config == null){
+        config = {};
+    }
     var rlt =  co(function* () {
             var thePool = yield new Promise((rs,re)=>{
-                var usePool = new mssql.ConnectionPool(config,err=>{
+                var usePool = new mssql.ConnectionPool(sqlconfig,err=>{
                     if(err != null){
                         rs({err:err});
                     }
@@ -68,7 +78,7 @@ sql.asynQueryWithParams = function (sqltext, params) {
                 throw new Error(thePool.err.originalError.message);
             }
             var request = thePool.request();
-            request.multiple = true;
+            request.multiple = config.scalar == null || config.scalar == false;
     
             if (params) {
                 params.forEach(param => {
@@ -77,6 +87,13 @@ sql.asynQueryWithParams = function (sqltext, params) {
             }
             var data = yield request.query(sqltext);
             //console.log('data loaded');
+            
+            if(config.scalar){
+                if(data.recordset.length == 0)
+                    return null;
+                return data.recordset[0][""];
+            }
+            
             return data;
         })
         .catch(err=>{

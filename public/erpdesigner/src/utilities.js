@@ -61,8 +61,21 @@ function getAttributeByNode(targetNode, attrName, upserach, maxDeep) {
 		}
 		tNode = tNode.parentNode;
 		++count;
-	} while (tNode && (maxDeep == null || count < maxDeep));
+	} while (tNode && (maxDeep == null || count < maxDeep) && tNode != document.body);
 	return null;
+}
+
+function isNodeHasParent(targetNode, parentNode) {
+	var tNode = targetNode;
+	var count = 0;
+	do {
+		if (tNode.parentNode == parentNode) {
+			return true;
+		}
+		tNode = tNode.parentNode;
+		++count;
+	} while (tNode && tNode.parentNode);
+	return false;
 }
 
 function extractPropsFromObj(obj, props_arr) {

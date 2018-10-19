@@ -18,14 +18,17 @@ var FloatPanelbase = function (_React$PureComponent) {
 
         _this.state = {
             show: _this.props.initShow == true,
-            maximum: false
+            maximum: false,
+            sizeable: _this.props.sizeable != false,
+            closeable: _this.props.closeable != false,
+            ismodel: _this.props.ismodel == true
         };
         _this.rootDivRef = React.createRef();
         _this.rootSize = {
             x: 0,
             y: 0,
-            width: 300,
-            height: 300,
+            width: _this.props.width > 0 ? _this.props.width : null,
+            height: _this.props.height > 0 ? _this.props.height : null,
             first: true
         };
         autoBind(_this);
@@ -152,6 +155,19 @@ var FloatPanelbase = function (_React$PureComponent) {
                 return null;
             }
 
+            if (this.state.ismodel) {
+                return React.createElement(
+                    'div',
+                    { className: 'modelPanelBG' },
+                    this.renderPanel()
+                );
+            } else {
+                return this.renderPanel();
+            }
+        }
+    }, {
+        key: 'renderPanel',
+        value: function renderPanel() {
             var windWidth = $(window).width();
             var windHeight = $(window).height();
             var rootStyle;
@@ -164,8 +180,8 @@ var FloatPanelbase = function (_React$PureComponent) {
                 };
             } else {
                 if (this.rootSize.first) {
-                    this.rootSize.width = Math.round(windWidth * 0.5);
-                    this.rootSize.height = Math.round(windHeight * 0.5);
+                    if (isNaN(this.rootSize.width) || this.rootSize.width == null) this.rootSize.width = Math.round(windWidth * 0.5);
+                    if (isNaN(this.rootSize.height) || this.rootSize.height == null) this.rootSize.height = Math.round(windHeight * 0.5);
                     this.rootSize.x = Math.round((windWidth - this.rootSize.width) * 0.5);
                     this.rootSize.y = Math.round((windHeight - this.rootSize.height) * 0.5);
                     this.rootSize.first = false;
@@ -184,6 +200,7 @@ var FloatPanelbase = function (_React$PureComponent) {
                     height: this.rootSize.height + 'px'
                 };
             }
+
             return React.createElement(
                 'div',
                 { className: 'floatPanel', ref: this.rootDivRef, style: rootStyle },
@@ -199,15 +216,15 @@ var FloatPanelbase = function (_React$PureComponent) {
                             { className: 'flex-grow-1 flex-shrink-1 panelMoveBar', onMouseDown: this.moveBarMouseDownHandler },
                             this.props.title
                         ),
-                        React.createElement('span', { className: 'icon icon-' + (this.state.maximum ? 'pages' : 'stop'), style: { cursor: 'pointer' }, onClick: this.toggleMaximum }),
-                        React.createElement('span', { className: 'icon icon-close', style: { cursor: 'pointer' }, onClick: this.close })
+                        this.state.sizeable && React.createElement('i', { className: "fa fa-" + (this.state.maximum ? 'window-restore' : 'window-maximize'), style: { cursor: 'pointer' }, onClick: this.toggleMaximum }),
+                        this.state.closeable && React.createElement('i', { className: 'fa fa-window-close ml-1', style: { cursor: 'pointer' }, onClick: this.close })
                     ),
                     React.createElement(
                         'div',
                         { className: 'flex-grow-1 flex-shrink-1 d-flex flex-column' },
                         this.props.children
                     ),
-                    !this.state.maximum && React.createElement('button', { type: 'button', className: 'panelSizeBtn', onMouseDown: this.sizeBtnMouseDownHandler })
+                    this.state.sizeable && !this.state.maximum && React.createElement('button', { type: 'button', className: 'panelSizeBtn', onMouseDown: this.sizeBtnMouseDownHandler })
                 )
             );
         }
