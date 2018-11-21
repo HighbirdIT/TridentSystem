@@ -24,6 +24,7 @@ var ProjectDesigner = function (_React$PureComponent) {
         _this.attrbutePanelRef = React.createRef();
         _this.outlineRef = React.createRef();
         _this.dataMasterPanelRef = React.createRef();
+        _this.quickMenuRef = React.createRef();
         autoBind(_this);
         _this.props.project.designer = _this;
 
@@ -33,6 +34,11 @@ var ProjectDesigner = function (_React$PureComponent) {
     }
 
     _createClass(ProjectDesigner, [{
+        key: 'propUpMenu',
+        value: function propUpMenu(items_arr, pos, callBack) {
+            this.quickMenuRef.current.popMenu(items_arr, pos, callBack);
+        }
+    }, {
         key: 'selectKernel',
         value: function selectKernel(kernel) {
             /*
@@ -106,11 +112,48 @@ var ProjectDesigner = function (_React$PureComponent) {
             return;
         }
     }, {
+        key: 'startDrag',
+        value: function startDrag(dragData, callBack, contentFun) {
+            if (dragData.info == null) {
+                dragData.info = '位置drag';
+            }
+            if (contentFun == null) {
+                this.flowMCRef.current.setGetContentFun(function () {
+                    return React.createElement(
+                        'span',
+                        { className: 'text-nowrap border bg-dark text-light' },
+                        dragData.info
+                    );
+                });
+            } else {
+                this.flowMCRef.current.setGetContentFun(function () {
+                    return contentFun();
+                });
+            }
+
+            window.addEventListener('mouseup', this.mouseUpInDragingHandler);
+            this.dragEndCallBack = callBack;
+            this.dragingData = dragData;
+        }
+    }, {
+        key: 'mouseUpInDragingHandler',
+        value: function mouseUpInDragingHandler(ev) {
+            this.flowMCRef.current.setGetContentFun(null);
+            window.removeEventListener('mouseup', this.mouseUpInDragingHandler);
+            if (this.dragEndCallBack) {
+                this.dragEndCallBack({ x: ev.x, y: ev.y }, this.dragingData);
+                this.dragingData = null;
+            }
+            //console.log(ev);
+        }
+    }, {
         key: 'FMpositionChanged',
         value: function FMpositionChanged(newPos) {
-            if (this.outlineRef.current) this.outlineRef.current.placePosChanged(newPos, this.placingKernel);
-            if (this.contenPanelRef.current && !this.outlineRef.current.bMouseInPanel) {
-                this.contenPanelRef.current.placePosChanged(newPos);
+            if (this.placingKernel != null) {
+                if (this.outlineRef.current) this.outlineRef.current.placePosChanged(newPos, this.placingKernel);
+                if (this.contenPanelRef.current && !this.outlineRef.current.bMouseInPanel) {
+                    this.contenPanelRef.current.placePosChanged(newPos);
+                }
             }
         }
     }, {
@@ -151,7 +194,8 @@ var ProjectDesigner = function (_React$PureComponent) {
                         panel2: React.createElement(AttributePanel, { project: thisProject, ref: this.attrbutePanelRef })
                     })
                 }),
-                React.createElement(FlowMouseContainer, { project: thisProject, ref: this.flowMCRef, positionChanged: this.FMpositionChanged })
+                React.createElement(FlowMouseContainer, { project: thisProject, ref: this.flowMCRef, positionChanged: this.FMpositionChanged }),
+                React.createElement(QuickMenuContainer, { project: thisProject, ref: this.quickMenuRef })
             );
         }
     }]);

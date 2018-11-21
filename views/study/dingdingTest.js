@@ -27,11 +27,12 @@ function getAttendanceRecord(res) {
         
         
         var postData = {
-            "userIds": ["022405694335642103"],
+            "userIds": ["061940371620736301","022405694335642103"],
             "checkDateFrom": "2018-10-15 00:00:00",
             "checkDateTo": "2018-10-19 00:00:00",
             "isI18n":"false"
         };
+        
 
         request({
             url: getUrl,

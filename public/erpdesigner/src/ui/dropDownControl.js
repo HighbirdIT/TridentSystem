@@ -229,7 +229,9 @@ class DropDownControl extends React.PureComponent {
                             :
                             <button onClick={this.clickOpenHandler} style={{width:'calc(100% - 30px)'}} type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1' + (selectedOption == null ? ' text-danger' : '')} ><div style={{overflow:'hidden'}}>{selectedOption ? selectedOption.text : '请选择'}</div></button>
                         }
-                        <button ref={this.dropdownbtnRef} style={{width:'30px'}} type='button' onClick={this.clickOpenHandler} className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdown-toggle dropdown-toggle-split'} ></button>
+                        {
+                            this.props.miniBtn && <button ref={this.dropdownbtnRef} style={{width:'30px'}} type='button' onClick={this.clickOpenHandler} className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdown-toggle dropdown-toggle-split'} ></button>
+                        }
 
                         <div className={"dropdown-menu " + (this.state.opened ? 'show' : '')} ref={this.dropmenudivRef}>
                             {(this.state.opened || this.state.options_arr.length > 0) && this.renderDropDown(filted_arr, selectedOption)}

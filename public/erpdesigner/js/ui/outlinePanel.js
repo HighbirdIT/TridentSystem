@@ -103,6 +103,7 @@ var OutlineItem = function (_React$PureComponent) {
         key: 'dragTimeOutHandler',
         value: function dragTimeOutHandler() {
             //console.log('dragTimeOutHandler');
+            window.removeEventListener('mouseup', this.windowMouseUpHandler);
             this.props.wantDragAct(this);
         }
     }, {
@@ -118,6 +119,7 @@ var OutlineItem = function (_React$PureComponent) {
             if (this.dragTimeOut) {
                 clearTimeout(this.dragTimeOut);
             }
+            window.removeEventListener('mouseup', this.windowMouseUpHandler);
         }
     }, {
         key: 'render',

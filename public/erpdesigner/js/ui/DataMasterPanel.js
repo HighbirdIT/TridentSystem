@@ -8,6 +8,8 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+var ISParam_Options_arr = [{ name: '参数', code: '1' }, { name: '变量', code: '0' }];
+
 var __SynAction_count = 0;
 
 var SynAction = function (_EventEmitter) {
@@ -421,7 +423,182 @@ var node_Counter = 1;
 
 var SQLNODE_BDBENTITY = 'dbEntity';
 var SQLNODE_SELECT = 'select';
-var SQLNODE_VAR = 'variable';
+var SQLNODE_VAR_GET = 'var_get';
+var SQLNODE_VAR_SET = 'var_set';
+var SQLNODE_NOPERAND = 'noperand';
+
+var SQLDEF_VAR = 'def_variable';
+
+var SocketLink = function () {
+    function SocketLink(outSocket, inSocket, pool) {
+        _classCallCheck(this, SocketLink);
+
+        this.outID = outSocket.id;
+        this.inID = inSocket.id;
+        this.pool = pool;
+        this.outSocket = outSocket;
+        this.inSocket = inSocket;
+
+        this.id = this.outID + '|L|' + this.inID;
+        //this.revid = inID + '|L|' + outID;
+    }
+
+    _createClass(SocketLink, [{
+        key: 'fireChanged',
+        value: function fireChanged() {
+            this.inSocket.fireLinkChanged();
+            this.outSocket.fireLinkChanged();
+        }
+    }]);
+
+    return SocketLink;
+}();
+
+var ScoketLinkPool = function () {
+    function ScoketLinkPool(bluePrint) {
+        _classCallCheck(this, ScoketLinkPool);
+
+        this.bluePrint = bluePrint;
+        this.link_map = {};
+    }
+
+    _createClass(ScoketLinkPool, [{
+        key: '_deleteLink',
+        value: function _deleteLink(linkObj) {
+            if (this.link_map[linkObj.id] == null) {
+                return false;
+            }
+            if (linkObj) {
+                this.link_map[linkObj.id] = null;
+                delete this.link_map[linkObj.id];
+                linkObj.fireChanged();
+            }
+            return true;
+        }
+    }, {
+        key: 'addLink',
+        value: function addLink(outSocket, inSocket) {
+            if (outSocket.isIn == inSocket.isIn) {
+                throw new Error("两个socket流方向不能一样");
+            }
+            if (outSocket.isIn) {
+                var t = outSocket;
+                outSocket = inSocket;
+                inSocket = t;
+            }
+            var id = outSocket.id + '|L|' + inSocket.id;
+            if (this.link_map[id] == null) {
+                // 把已有的inSocket删除掉
+                for (var si in this.link_map) {
+                    var theLink = this.link_map[si];
+                    if (theLink == null) continue;
+                    if (theLink.inSocket == inSocket) {
+                        this._deleteLink(this.link_map[si]);
+                        break;
+                    }
+                }
+                var newLink = new SocketLink(outSocket, inSocket, this);
+                this.link_map[id] = newLink;
+                newLink.fireChanged();
+                this.cacheData = null;
+                var self = this;
+                setTimeout(function () {
+                    self.bluePrint.emit('changed');
+                }, 10);
+            }
+            return this.link_map[id];
+        }
+    }, {
+        key: 'removeLink',
+        value: function removeLink(link) {
+            if (this._deleteLink(link)) {
+                this.cacheData = null;
+                this.bluePrint.emit('changed');
+            }
+        }
+    }, {
+        key: 'clearNodeLink',
+        value: function clearNodeLink(theNode) {
+            var needClearids_arr = [];
+            for (var si in this.link_map) {
+                var theLink = this.link_map[si];
+                if (theLink == null) continue;
+                if (theLink.inSocket.node == theNode || theLink.outSocket.node == theNode) {
+                    needClearids_arr.push(si);
+                }
+            }
+            if (needClearids_arr.length > 0) {
+                for (var si in needClearids_arr) {
+                    var id = needClearids_arr[si];
+                    this._deleteLink(this.link_map[id]);
+                }
+                this.cacheData = null;
+            }
+            return needClearids_arr.length > 0;
+        }
+    }, {
+        key: 'clearSocketLink',
+        value: function clearSocketLink(theSocket) {
+            var needClearids_arr = [];
+            for (var si in this.link_map) {
+                var theLink = this.link_map[si];
+                if (theLink == null) continue;
+                if (theLink.inSocket == theSocket || theLink.outSocket == theSocket) {
+                    needClearids_arr.push(si);
+                }
+            }
+            if (needClearids_arr.length > 0) {
+                for (var si in needClearids_arr) {
+                    var id = needClearids_arr[si];
+                    this._deleteLink(this.link_map[id]);
+                }
+                this.cacheData = null;
+            }
+            return needClearids_arr.length > 0;
+        }
+    }, {
+        key: 'getLinksByNode',
+        value: function getLinksByNode(theNode) {
+            var rlt_arr = [];
+            for (var si in this.link_map) {
+                var theLink = this.link_map[si];
+                if (theLink == null) continue;
+                if (theLink.inSocket.node == theNode || theLink.outSocket.node == theNode) {
+                    rlt_arr.push(theLink);
+                }
+            }
+            return rlt_arr;
+        }
+    }, {
+        key: 'getLinksBySocket',
+        value: function getLinksBySocket(theSocket) {
+            var rlt_arr = [];
+            for (var si in this.link_map) {
+                var theLink = this.link_map[si];
+                if (theLink == null) continue;
+                if (theLink.inSocket == theSocket || theLink.outSocket == theSocket) {
+                    rlt_arr.push(theLink);
+                }
+            }
+            return rlt_arr;
+        }
+    }, {
+        key: 'getAllLink',
+        value: function getAllLink() {
+            if (this.cacheData == null) {
+                this.cacheData = [];
+                for (var si in this.link_map) {
+                    if (this.link_map[si]) {
+                        this.cacheData.push(this.link_map[si]);
+                    }
+                }
+            }
+            return this.cacheData;
+        }
+    }]);
+
+    return ScoketLinkPool;
+}();
 
 var CustomDbEntity = function (_EventEmitter2) {
     _inherits(CustomDbEntity, _EventEmitter2);
@@ -433,6 +610,8 @@ var CustomDbEntity = function (_EventEmitter2) {
 
         _this6.nodes_arr = [];
         _this6.vars_arr = [];
+        _this6.links_arr = [];
+        _this6.linkPool = new ScoketLinkPool(_this6);
         Object.assign(_this6, initData);
         _this6.nodeIdCounterPool = {};
         var self = _this6;
@@ -495,7 +674,7 @@ var CustomDbEntity = function (_EventEmitter2) {
     }, {
         key: 'registerNode',
         value: function registerNode(node, parentNode) {
-            if (node.type == SQLNODE_VAR) {
+            if (node.type == SQLDEF_VAR) {
                 this.addVariable(node); // 变量需要注册到根节点中
                 return;
             }
@@ -516,6 +695,7 @@ var CustomDbEntity = function (_EventEmitter2) {
             node.parent = parentNode;
             node.id = useId;
             this.allNode_map[useId] = node;
+            this.emit('changed');
         }
     }, {
         key: 'addVariable',
@@ -550,7 +730,7 @@ var CustomDbEntity = function (_EventEmitter2) {
                 varName = '未命名_' + i;
                 if (this.getVariableByName(varName) == null) break;
             }
-            var rlt = new SqlNode_Variable(this, varName, SqlVarType_Int);
+            var rlt = new SqlDef_Variable(this, varName, SqlVarType_Int);
             rlt.needEdit = true;
             return rlt;
         }
@@ -560,7 +740,9 @@ var CustomDbEntity = function (_EventEmitter2) {
             var index = this.vars_arr.indexOf(varData);
             if (index != -1) {
                 this.vars_arr.splice(index, 1);
+                varData.removed = true;
                 this.emit('varChanged');
+                varData.emit('changed');
             }
         }
     }, {
@@ -575,6 +757,7 @@ var CustomDbEntity = function (_EventEmitter2) {
                 }
                 node.bluePrint = null;
                 node.parent = null;
+                this.linkPool.clearNodeLink(node);
                 this.emit('changed');
             }
         }
@@ -585,6 +768,15 @@ var CustomDbEntity = function (_EventEmitter2) {
                 return this;
             }
             return this.allNode_map[id];
+        }
+    }, {
+        key: 'getSocketById',
+        value: function getSocketById(socketID) {
+            var pos = socketID.indexOf('$');
+            var nodeId = socketID.substr(0, pos);
+            var theNode = getNodeByID(nodeId);
+            if (theNode == null) return null;
+            return theNode.sockets_map[socketID];
         }
     }]);
 
@@ -605,6 +797,7 @@ var SqlNode_Base = function (_EventEmitter3) {
         if (_this7.type == null) _this7.type = type;
         if (_this7.left == null) _this7.left = 0;
         if (_this7.top == null) _this7.top = 0;
+        _this7.hadFlow = true;
 
         _this7.bluePrint.registerNode(_this7, parentNode);
 
@@ -613,6 +806,8 @@ var SqlNode_Base = function (_EventEmitter3) {
         }
 
         _this7.sockets_map = {};
+        _this7.inputScokets_arr = [];
+        _this7.outputScokets_arr = [];
         return _this7;
     }
 
@@ -622,70 +817,216 @@ var SqlNode_Base = function (_EventEmitter3) {
             return this.title == null ? '未命名' : this.title;
         }
     }, {
-        key: 'genSocketID',
-        value: function genSocketID(isIn) {
-            var preFix = this.id + '_' + (isIn ? 'i' : 'o') + '_';
-            for (var i = 0; i < 999; ++i) {
-                var id = preFix + i;
-                if (this.sockets_map[id] == null) return id;
+        key: 'getScoketByName',
+        value: function getScoketByName(name, isIn) {
+            if (isIn == null) isIn = '*';
+            var rlt = [];
+            if (isIn != false) {
+                rlt.concat(this.inputScokets_arr.filter(function (item) {
+                    return item.name == name;
+                }));
             }
-            return null;
+
+            if (isIn != true) {
+                rlt.concat(this.outputScokets_arr.filter(function (item) {
+                    return item.name == name;
+                }));
+            }
+            return rlt;
+        }
+    }, {
+        key: 'addSocket',
+        value: function addSocket(socketObj) {
+            this.sockets_map[socketObj.id] = socketObj;
+            if (socketObj.isIn) {
+                this.inputScokets_arr.push(socketObj);
+            } else {
+                this.outputScokets_arr.push(socketObj);
+            }
+        }
+    }, {
+        key: 'removedSocket',
+        value: function removedSocket(socketObj) {
+            if (socketObj.isIn) {
+                removeElemFrommArray(this.inputScokets_arr, socketObj);
+            } else {
+                removeElemFrommArray(this.outputScokets_arr, socketObj);
+            }
+            this.sockets_map[socketObj.id] = null;
+        }
+    }, {
+        key: 'setPos',
+        value: function setPos(newx, newy) {
+            this.left = newx;
+            this.top = newy;
+            this.emit('moved');
         }
     }]);
 
     return SqlNode_Base;
 }(EventEmitter);
 
-var SqlNode_Variable = function (_SqlNode_Base) {
-    _inherits(SqlNode_Variable, _SqlNode_Base);
+function MK_NS_Settings(label, type, defval) {
+    return {
+        label: label,
+        type: type,
+        defval: defval
+    };
+}
 
-    function SqlNode_Variable(bluePrint, name, valType, size_1, size_2) {
-        _classCallCheck(this, SqlNode_Variable);
+function CommonFun_SetCurrentComponent(target) {
+    if (this.currentComponent != target) {
+        this.currentComponent = target;
+        this.emit(Event_CurrentComponentchanged);
+    }
+}
 
-        var _this8 = _possibleConstructorReturn(this, (SqlNode_Variable.__proto__ || Object.getPrototypeOf(SqlNode_Variable)).call(this, {
-            name: name,
-            valType: valType,
-            size_1: isNaN(size_1) ? 0 : parseInt(size_1),
-            size_2: isNaN(size_2) ? 0 : parseInt(size_2)
-        }, bluePrint, null, SQLNODE_VAR, '变量'));
+var NodeSocket = function (_EventEmitter4) {
+    _inherits(NodeSocket, _EventEmitter4);
 
-        autoBind(_this8);
+    function NodeSocket(name, tNode, isIn, initData) {
+        _classCallCheck(this, NodeSocket);
+
+        var _this8 = _possibleConstructorReturn(this, (NodeSocket.__proto__ || Object.getPrototypeOf(NodeSocket)).call(this));
+
+        Object.assign(_this8, initData);
+        _this8.name = name;
+        _this8.node = tNode;
+        _this8.isIn = isIn;
+        _this8.id = tNode.id + '$' + name;
+        _this8.setCurrentComponent = CommonFun_SetCurrentComponent.bind(_this8);
         return _this8;
     }
 
-    return SqlNode_Variable;
-}(SqlNode_Base);
+    _createClass(NodeSocket, [{
+        key: 'set',
+        value: function set(data) {
+            Object.assign(this, data);
+            this.emit('changed');
+        }
+    }, {
+        key: 'getLinks',
+        value: function getLinks() {
+            return this.node.bluePrint.linkPool.getLinksBySocket(this);
+        }
+    }, {
+        key: 'fireLinkChanged',
+        value: function fireLinkChanged() {
+            this.emit(Event_LinkChanged);
+            var self = this;
+            setTimeout(function () {
+                self.node.emit('moved');
+            }, 20);
+        }
+    }]);
 
-var SqlNode_Variable_Component = function (_React$PureComponent4) {
-    _inherits(SqlNode_Variable_Component, _React$PureComponent4);
+    return NodeSocket;
+}(EventEmitter);
 
-    function SqlNode_Variable_Component(props) {
-        _classCallCheck(this, SqlNode_Variable_Component);
+var SqlDef_Variable = function (_SqlNode_Base) {
+    _inherits(SqlDef_Variable, _SqlNode_Base);
 
-        var _this9 = _possibleConstructorReturn(this, (SqlNode_Variable_Component.__proto__ || Object.getPrototypeOf(SqlNode_Variable_Component)).call(this, props));
+    function SqlDef_Variable(bluePrint, name, valType, size_1, size_2) {
+        _classCallCheck(this, SqlDef_Variable);
 
-        var varData = _this9.props.varData;
-        _this9.state = {
-            name: varData.name,
-            valType: varData.valType,
-            isParam: varData.isParam == true,
-            size_1: varData.size_1,
-            size_2: varData.size_2,
-            editing: varData.needEdit == true
-        };
+        var _this9 = _possibleConstructorReturn(this, (SqlDef_Variable.__proto__ || Object.getPrototypeOf(SqlDef_Variable)).call(this, {
+            name: name,
+            valType: valType,
+            size_1: isNaN(size_1) ? 0 : parseInt(size_1),
+            size_2: isNaN(size_2) ? 0 : parseInt(size_2),
+            isParam: 0
+        }, bluePrint, null, SQLDEF_VAR, '变量'));
 
         autoBind(_this9);
         return _this9;
     }
 
-    _createClass(SqlNode_Variable_Component, [{
+    _createClass(SqlDef_Variable, [{
+        key: 'setProp',
+        value: function setProp(data) {
+            if (data.name != null) {
+                this.name = data.name;
+            }
+            if (data.valType != null) {
+                this.valType = data.valType;
+            }
+            if (data.size_1 != null) {
+                this.size_1 = isNaN(data.size_1) ? 0 : parseInt(data.size_1);
+            }
+            if (data.size_2 != null) {
+                this.size_2 = isNaN(data.size_2) ? 0 : parseInt(data.size_2);
+            }
+            if (data.isParam != null) {
+                this.isParam = data.isParam;
+            }
+            if (data.editing != null) {
+                this.needEdit = data.editing;
+            }
+            this.emit('changed');
+        }
+    }, {
+        key: 'toString',
+        value: function toString() {
+            var rlt = (this.isParam ? '@' : '') + this.name + '  ' + this.valType;
+            switch (this.valType) {
+                case SqlVarType_NVarchar:
+                    rlt += '(' + this.size_1 + ')';
+                    break;
+                case SqlVarType_Decimal:
+                    rlt += '(' + this.size_1 + ',' + this.size_2 + ')';
+                    break;
+            }
+
+            return rlt;
+        }
+    }, {
+        key: 'getLabel',
+        value: function getLabel() {
+            return (this.isParam ? '@' : '') + this.name;
+        }
+    }, {
+        key: 'getValType',
+        value: function getValType() {
+            return this.valType;
+        }
+    }]);
+
+    return SqlDef_Variable;
+}(SqlNode_Base);
+
+var SqlDef_Variable_Component = function (_React$PureComponent4) {
+    _inherits(SqlDef_Variable_Component, _React$PureComponent4);
+
+    function SqlDef_Variable_Component(props) {
+        _classCallCheck(this, SqlDef_Variable_Component);
+
+        var _this10 = _possibleConstructorReturn(this, (SqlDef_Variable_Component.__proto__ || Object.getPrototypeOf(SqlDef_Variable_Component)).call(this, props));
+
+        var varData = _this10.props.varData;
+        _this10.state = {
+            name: varData.name,
+            valType: varData.valType,
+            isParam: varData.isParam,
+            size_1: varData.size_1,
+            size_2: varData.size_2,
+            editing: varData.needEdit == true
+        };
+
+        autoBind(_this10);
+        return _this10;
+    }
+
+    _createClass(SqlDef_Variable_Component, [{
         key: 'varChanged',
         value: function varChanged() {
+            if (this.state.editing) {
+                return;
+            }
             var varData = this.props.varData;
             this.setState({
                 name: varData.name,
                 valType: varData.valType,
-                isParam: varData.isParam == true,
+                isParam: varData.isParam,
                 size_1: varData.size_1,
                 size_2: varData.size_2
             });
@@ -712,6 +1053,13 @@ var SqlNode_Variable_Component = function (_React$PureComponent4) {
         value: function valTypeChangedHandler(newData) {
             this.setState({
                 valType: newData
+            });
+        }
+    }, {
+        key: 'isParamChangedHandler',
+        value: function isParamChangedHandler(newData) {
+            this.setState({
+                isParam: newData.code
             });
         }
     }, {
@@ -751,22 +1099,112 @@ var SqlNode_Variable_Component = function (_React$PureComponent4) {
             return null;
         }
     }, {
+        key: 'clickEditBtnHandler',
+        value: function clickEditBtnHandler() {
+            if (this.state.editing) {
+                var tval = Object.assign({}, this.state);
+                tval.editing = false;
+                this.props.varData.setProp(tval);
+            }
+            this.setState({
+                editing: !this.state.editing
+            });
+        }
+    }, {
+        key: 'clickTrashHandler',
+        value: function clickTrashHandler() {
+            gTipWindow.popAlert(makeAlertData('警告', '确定删除变量:"' + this.state.name + '"?', this.deleteTipCallback, [TipBtnOK, TipBtnNo]));
+        }
+    }, {
+        key: 'deleteTipCallback',
+        value: function deleteTipCallback(key) {
+            if (key == 'ok') {
+                this.props.varData.bluePrint.removeVariable(this.props.varData);
+            }
+        }
+    }, {
+        key: 'labelMouseDownHandler',
+        value: function labelMouseDownHandler(ev) {
+            this.dragTimeOut = setTimeout(this.dragTimeOutHandler, 300);
+            window.addEventListener('mouseup', this.labelWindowMouseUpHandler);
+        }
+    }, {
+        key: 'labelWindowMouseUpHandler',
+        value: function labelWindowMouseUpHandler(ev) {
+            if (this.dragTimeOut) {
+                clearTimeout(this.dragTimeOut);
+            }
+        }
+    }, {
+        key: 'genDragContentFun',
+        value: function genDragContentFun() {
+            var varData = this.props.varData;
+            return React.createElement(
+                'span',
+                { className: 'text-nowrap border bg-dark text-light' },
+                '变量:' + varData.name
+            );
+        }
+    }, {
+        key: 'dragTimeOutHandler',
+        value: function dragTimeOutHandler() {
+            var designer = this.props.varData.bluePrint.master.project.designer;
+            designer.startDrag({ info: '放置变量' }, this.dragEndHandler, this.genDragContentFun);
+        }
+    }, {
+        key: 'dragMenuCallBack',
+        value: function dragMenuCallBack(menuItem, pos) {
+            var varData = this.props.varData;
+            if (menuItem.key == 'SET') {
+                this.props.editor.addVarGSNode({ isGet: false, varName: varData.name }, pos);
+            } else if (menuItem.key == 'GET') {
+                //console.log('get');
+                this.props.editor.addVarGSNode({ isGet: true, varName: varData.name }, pos);
+            }
+        }
+    }, {
+        key: 'dragEndHandler',
+        value: function dragEndHandler(pos) {
+            var editorRect = this.props.editor.zoomDivRef.current.getBoundingClientRect();
+            if (MyMath.isPointInRect(editorRect, pos)) {
+                var designer = this.props.varData.bluePrint.master.project.designer;
+                var varData = this.props.varData;
+                designer.propUpMenu([new QuickMenuItem('Set ' + varData.name, 'SET'), new QuickMenuItem('Get ' + varData.name, 'GET')], pos, this.dragMenuCallBack);
+            }
+        }
+    }, {
         key: 'render',
         value: function render() {
             var varData = this.props.varData;
+            var editing = this.state.editing;
+            if (!editing) {
+                return React.createElement(
+                    'div',
+                    { className: 'd-flex flex-grow-0 flex-shrink-0 w-100 text-light align-items-center hidenOverflo' },
+                    React.createElement('i', { className: 'fa fa-edit fa-lg', onClick: this.clickEditBtnHandler }),
+                    React.createElement(
+                        'div',
+                        { className: 'flex-grow-1 flex-shrink-1 text-nowrap cursor-arrow dragableItem',
+                            onMouseDown: this.labelMouseDownHandler },
+                        '' + varData
+                    ),
+                    React.createElement('i', { className: 'fa fa-trash fa-lg', onClick: this.clickTrashHandler })
+                );
+            }
             return React.createElement(
                 'div',
                 { className: 'd-flex flex-column flex-grow-0 flex-shrink-0 w-100 border border-primary' },
                 React.createElement(
                     'div',
                     { className: 'd-flex bg-dark flex-grow-0 flex-shrink-0 w-100 align-items-center' },
-                    React.createElement('input', { onChange: this.nameInputChangeHanlder, type: 'text', value: this.state.name, className: 'flexinput flex-grow-1 flex-shrink-1' }),
-                    React.createElement('i', { className: 'fa fa-edit fa-lg text-success' })
+                    React.createElement('i', { className: 'fa fa-edit fa-lg text-' + (editing ? 'success' : 'info'), onClick: this.clickEditBtnHandler }),
+                    React.createElement('input', { onChange: this.nameInputChangeHanlder, type: 'text', value: this.state.name, className: 'flexinput flex-grow-1 flex-shrink-1' })
                 ),
                 React.createElement(
                     'div',
-                    { className: 'd-flex w-100 flex-grow-0 flex-shrink-0' },
-                    React.createElement(DropDownControl, { itemChanged: this.valTypeChangedHandler, btnclass: 'btn-dark', options_arr: SqlVarTypes_arr, rootclass: 'flex-grow-1 flex-shrink-1', textAttrName: 'name', valueAttrName: 'code', value: this.state.valType })
+                    { className: 'd-flex w-100 flex-grow-0 flex-shrink-0 align-items-center' },
+                    React.createElement(DropDownControl, { itemChanged: this.valTypeChangedHandler, btnclass: 'btn-dark', options_arr: SqlVarTypes_arr, rootclass: 'flex-grow-1 flex-shrink-1', textAttrName: 'name', valueAttrName: 'code', value: this.state.valType }),
+                    React.createElement(DropDownControl, { itemChanged: this.isParamChangedHandler, btnclass: 'btn-dark', options_arr: ISParam_Options_arr, rootclass: 'flex-grow-0 flex-shrink-0', textAttrName: 'name', valueAttrName: 'code', value: this.state.isParam })
                 ),
                 this.renderSize()
             );
@@ -781,7 +1219,7 @@ var SqlNode_Variable_Component = function (_React$PureComponent4) {
         }
     }]);
 
-    return SqlNode_Variable_Component;
+    return SqlDef_Variable_Component;
 }(React.PureComponent);
 
 var SqlNode_DBEntity = function (_SqlNode_Base2) {
@@ -790,23 +1228,23 @@ var SqlNode_DBEntity = function (_SqlNode_Base2) {
     function SqlNode_DBEntity(initData, parentNode, creationInfo) {
         _classCallCheck(this, SqlNode_DBEntity);
 
-        var _this10 = _possibleConstructorReturn(this, (SqlNode_DBEntity.__proto__ || Object.getPrototypeOf(SqlNode_DBEntity)).call(this, initData, parentNode, creationInfo, SQLNODE_BDBENTITY, '数据源'));
+        var _this11 = _possibleConstructorReturn(this, (SqlNode_DBEntity.__proto__ || Object.getPrototypeOf(SqlNode_DBEntity)).call(this, initData, parentNode, creationInfo, SQLNODE_BDBENTITY, '数据源'));
 
-        autoBind(_this10);
+        autoBind(_this11);
 
-        if (_this10.targetentity != null) {
-            var tem_arr = _this10.targetentity.split('-');
+        if (_this11.targetentity != null) {
+            var tem_arr = _this11.targetentity.split('-');
             if (tem_arr[0] == 'dbe') {
-                _this10.targetentity = g_dataBase.getEntityByCode(tem_arr[1]);
-                _this10.targetentity.on('syned', _this10.entitySynedHandler);
+                _this11.targetentity = g_dataBase.getEntityByCode(tem_arr[1]);
+                _this11.targetentity.on('syned', _this11.entitySynedHandler);
                 //console.log(this.targetentity);
             } else {
-                _this10.targetentity = null;
+                _this11.targetentity = null;
             }
         }
 
-        var self = _this10;
-        return _this10;
+        var self = _this11;
+        return _this11;
     }
 
     _createClass(SqlNode_DBEntity, [{
@@ -838,21 +1276,21 @@ var SqlNode_Select = function (_SqlNode_Base3) {
     function SqlNode_Select(initData, parentNode, creationInfo) {
         _classCallCheck(this, SqlNode_Select);
 
-        var _this11 = _possibleConstructorReturn(this, (SqlNode_Select.__proto__ || Object.getPrototypeOf(SqlNode_Select)).call(this, initData, parentNode, creationInfo, SQLNODE_SELECT, '选择'));
+        var _this12 = _possibleConstructorReturn(this, (SqlNode_Select.__proto__ || Object.getPrototypeOf(SqlNode_Select)).call(this, initData, parentNode, creationInfo, SQLNODE_SELECT, '选择'));
 
-        autoBind(_this11);
+        autoBind(_this12);
 
-        if (_this11.columns_arr == null) {
-            _this11.columns_ar = [];
+        if (_this12.columns_arr == null) {
+            _this12.columns_ar = [];
         }
-        if (_this11.nodes_arr == null) {
-            _this11.nodes_arr = [];
+        if (_this12.nodes_arr == null) {
+            _this12.nodes_arr = [];
         }
 
-        if (_this11.innerSocket == null) {
-            _this11.innerSocket = new NodeSocket({}, _this11, true);
+        if (_this12.innerSocket == null) {
+            _this12.innerSocket = new NodeSocket({}, _this12, true);
         }
-        return _this11;
+        return _this12;
     }
 
     _createClass(SqlNode_Select, [{
@@ -863,59 +1301,205 @@ var SqlNode_Select = function (_SqlNode_Base3) {
     return SqlNode_Select;
 }(SqlNode_Base);
 
-var SqlNode_JoinNode = function (_SqlNode_Base4) {
-    _inherits(SqlNode_JoinNode, _SqlNode_Base4);
+var SqlNode_Var_Get = function (_SqlNode_Base4) {
+    _inherits(SqlNode_Var_Get, _SqlNode_Base4);
+
+    function SqlNode_Var_Get(initData, parentNode, creationInfo) {
+        _classCallCheck(this, SqlNode_Var_Get);
+
+        var _this13 = _possibleConstructorReturn(this, (SqlNode_Var_Get.__proto__ || Object.getPrototypeOf(SqlNode_Var_Get)).call(this, initData, parentNode, creationInfo, SQLNODE_VAR_GET, '变量-获取'));
+
+        autoBind(_this13);
+        _this13.hadFlow = false;
+        _this13.outSocket = new NodeSocket('out', _this13, false);
+        _this13.addSocket(_this13.outSocket);
+
+        _this13.varData = _this13.bluePrint.getVariableByName(_this13.varName);
+        if (_this13.varData != null) {
+            _this13.varData.on('changed', _this13.varChangedHandler);
+        }
+        _this13.varChangedHandler();
+
+        var self = _this13;
+        return _this13;
+    }
+
+    _createClass(SqlNode_Var_Get, [{
+        key: 'getNodeTitle',
+        value: function getNodeTitle() {
+            return 'Get:' + this.varName;
+        }
+    }, {
+        key: 'varChangedHandler',
+        value: function varChangedHandler() {
+            if (this.varData == null) {
+                this.outSocket.set(MK_NS_Settings(this.varName + '-不存在', SqlVarType_Unknown, null));
+                return;
+            }
+            var varLabel = '';
+            var valType = '';
+            if (this.varData.removed) {
+                this.varData = null;
+                varLabel = this.varName + '-不存在';
+                valType = SqlVarType_Unknown;
+            } else {
+                varLabel = this.varData.getLabel();
+                valType = this.varData.getValType();
+                this.varName = this.varData.name;
+            }
+
+            this.outSocket.set(MK_NS_Settings(varLabel, valType, null));
+            //this.emit('changed');
+        }
+    }]);
+
+    return SqlNode_Var_Get;
+}(SqlNode_Base);
+
+var SqlNode_Var_Set = function (_SqlNode_Base5) {
+    _inherits(SqlNode_Var_Set, _SqlNode_Base5);
+
+    function SqlNode_Var_Set(initData, parentNode, creationInfo) {
+        _classCallCheck(this, SqlNode_Var_Set);
+
+        var _this14 = _possibleConstructorReturn(this, (SqlNode_Var_Set.__proto__ || Object.getPrototypeOf(SqlNode_Var_Set)).call(this, initData, parentNode, creationInfo, SQLNODE_VAR_SET, '变量-设置'));
+
+        autoBind(_this14);
+
+        _this14.outSocket = new NodeSocket('out', _this14, false);
+        _this14.addSocket(_this14.outSocket);
+        _this14.inSocket = new NodeSocket('in', _this14, true);
+        _this14.addSocket(_this14.inSocket);
+
+        _this14.varData = _this14.bluePrint.getVariableByName(_this14.varName);
+        if (_this14.varData != null) {
+            _this14.varData.on('changed', _this14.varChangedHandler);
+        }
+        _this14.varChangedHandler();
+
+        var self = _this14;
+        return _this14;
+    }
+
+    _createClass(SqlNode_Var_Set, [{
+        key: 'getNodeTitle',
+        value: function getNodeTitle() {
+            return 'Set:' + this.varName;
+        }
+    }, {
+        key: 'varChangedHandler',
+        value: function varChangedHandler() {
+            if (this.varData == null) {
+                this.inSocket.set(MK_NS_Settings(this.varName + '-不存在', SqlVarType_Unknown, null));
+                return;
+            }
+            var varLabel = '';
+            var valType = '';
+            if (this.varData.removed) {
+                this.varData = null;
+                varLabel = this.varName + '-不存在';
+                valType = SqlVarType_Unknown;
+            } else {
+                varLabel = this.varData.getLabel();
+                valType = this.varData.getValType();
+                this.varName = this.varData.name;
+            }
+
+            this.inSocket.set(MK_NS_Settings(varLabel, valType, null));
+            this.outSocket.set(MK_NS_Settings('', valType, null));
+            this.emit('changed');
+        }
+    }]);
+
+    return SqlNode_Var_Set;
+}(SqlNode_Base);
+
+var SqlNode_NOperand = function (_SqlNode_Base6) {
+    _inherits(SqlNode_NOperand, _SqlNode_Base6);
+
+    function SqlNode_NOperand(initData, parentNode, creationInfo) {
+        _classCallCheck(this, SqlNode_NOperand);
+
+        var _this15 = _possibleConstructorReturn(this, (SqlNode_NOperand.__proto__ || Object.getPrototypeOf(SqlNode_NOperand)).call(this, initData, parentNode, creationInfo, SQLNODE_NOPERAND, '运算'));
+
+        autoBind(_this15);
+
+        _this15.outSocket = new NodeSocket('out', _this15, false);
+        _this15.addSocket(_this15.outSocket);
+        _this15.insocketInitVal = {
+            type: SqlVarType_Scalar
+        };
+        _this15.addSocket(_this15.genInSocket());
+        _this15.addSocket(_this15.genInSocket());
+        if (_this15.operator == null) {
+            _this15.operator = '+';
+        }
+        _this15.hadFlow = false;
+
+        var self = _this15;
+        return _this15;
+    }
+
+    _createClass(SqlNode_NOperand, [{
+        key: 'genInSocket',
+        value: function genInSocket() {
+            return new NodeSocket('in' + this.inputScokets_arr.length, this, true, this.insocketInitVal);
+        }
+    }, {
+        key: 'processInputSockets',
+        value: function processInputSockets(isPlus) {
+            if (isPlus) {
+                this.addSocket(this.genInSocket());
+                this.emit(Event_SocketNumChanged);
+            } else {
+                if (this.inputScokets_arr.length > 2) {
+                    var needRemoveSocket = this.inputScokets_arr.pop();
+                    this.bluePrint.linkPool.clearSocketLink(needRemoveSocket);
+                    this.emit(Event_SocketNumChanged);
+                }
+            }
+        }
+    }]);
+
+    return SqlNode_NOperand;
+}(SqlNode_Base);
+
+var SqlNode_JoinNode = function (_SqlNode_Base7) {
+    _inherits(SqlNode_JoinNode, _SqlNode_Base7);
 
     function SqlNode_JoinNode(initData) {
         _classCallCheck(this, SqlNode_JoinNode);
 
-        var _this12 = _possibleConstructorReturn(this, (SqlNode_JoinNode.__proto__ || Object.getPrototypeOf(SqlNode_JoinNode)).call(this));
+        var _this16 = _possibleConstructorReturn(this, (SqlNode_JoinNode.__proto__ || Object.getPrototypeOf(SqlNode_JoinNode)).call(this));
 
-        Object.assign(_this12, initData);
-        var self = _this12;
-        _this12.inSockets_arr.forEach(function (sd, i) {
+        Object.assign(_this16, initData);
+        var self = _this16;
+        _this16.inSockets_arr.forEach(function (sd, i) {
             self.inSockets_arr[i] = new D_NodeSocket(sd, self);
         });
-        return _this12;
+        return _this16;
     }
 
     return SqlNode_JoinNode;
 }(SqlNode_Base);
 
-var D_Node = function (_EventEmitter4) {
-    _inherits(D_Node, _EventEmitter4);
+var D_Node = function (_EventEmitter5) {
+    _inherits(D_Node, _EventEmitter5);
 
     function D_Node(initData) {
         _classCallCheck(this, D_Node);
 
-        var _this13 = _possibleConstructorReturn(this, (D_Node.__proto__ || Object.getPrototypeOf(D_Node)).call(this));
+        var _this17 = _possibleConstructorReturn(this, (D_Node.__proto__ || Object.getPrototypeOf(D_Node)).call(this));
 
-        _this13.id = Object.assign(_this13, initData);
-        var self = _this13;
-        _this13.inSockets_arr.forEach(function (sd, i) {
+        _this17.id = Object.assign(_this17, initData);
+        var self = _this17;
+        _this17.inSockets_arr.forEach(function (sd, i) {
             self.inSockets_arr[i] = new D_NodeSocket(sd, self);
         });
-        return _this13;
+        return _this17;
     }
 
     return D_Node;
-}(EventEmitter);
-
-var NodeSocket = function (_EventEmitter5) {
-    _inherits(NodeSocket, _EventEmitter5);
-
-    function NodeSocket(initData, tNode, isIn) {
-        _classCallCheck(this, NodeSocket);
-
-        var _this14 = _possibleConstructorReturn(this, (NodeSocket.__proto__ || Object.getPrototypeOf(NodeSocket)).call(this));
-
-        Object.assign(_this14, initData);
-        _this14.node = tNode;
-        _this14.isIn = isIn;
-        return _this14;
-    }
-
-    return NodeSocket;
 }(EventEmitter);
 
 var C_Node_Socket = function (_React$PureComponent5) {
@@ -924,34 +1508,118 @@ var C_Node_Socket = function (_React$PureComponent5) {
     function C_Node_Socket(props) {
         _classCallCheck(this, C_Node_Socket);
 
-        var _this15 = _possibleConstructorReturn(this, (C_Node_Socket.__proto__ || Object.getPrototypeOf(C_Node_Socket)).call(this, props));
+        var _this18 = _possibleConstructorReturn(this, (C_Node_Socket.__proto__ || Object.getPrototypeOf(C_Node_Socket)).call(this, props));
 
-        autoBind(_this15);
+        autoBind(_this18);
 
-        _this15.flagRef = React.createRef();
-        return _this15;
+        _this18.flagRef = React.createRef();
+        _this18.inputRef = React.createRef();
+        _this18.state = {
+            socket: _this18.props.socket
+        };
+        return _this18;
     }
 
     _createClass(C_Node_Socket, [{
         key: 'clickHandler',
         value: function clickHandler(ev) {
-            this.props.clickHandler(this);
+            this.props.editor.clickSocket(this.props.socket);
         }
     }, {
         key: 'getCenterPos',
-        value: function getCenterPos(offsetRect) {
+        value: function getCenterPos() {
+            var socket = this.state.socket;
+            var nodeData = socket.node;
+            if (nodeData.currentFrameCom == null || nodeData.currentFrameCom.rootDivRef.current == null) {
+                return null;
+            }
+            var baseRect = nodeData.currentFrameCom.rootDivRef.current.getBoundingClientRect();
             var rect = this.flagRef.current.getBoundingClientRect();
-            return { x: Math.round(rect.left + rect.width * 0.5 - offsetRect.left), y: Math.round(rect.top + rect.height * 0.5 - offsetRect.top) };
+            return { x: Math.round(nodeData.left + (rect.left - baseRect.left) + rect.width * 0.5), y: Math.round(nodeData.top + (rect.top - baseRect.top) + rect.height * 0.5) };
+        }
+    }, {
+        key: 'componentWillMount',
+        value: function componentWillMount() {
+            this.listenData(this.state.socket);
+            this.state.socket.setCurrentComponent(this);
+        }
+    }, {
+        key: 'componentWillUnmount',
+        value: function componentWillUnmount() {
+            this.unlistenData(this.state.socket);
+            this.state.socket.setCurrentComponent(null);
+        }
+    }, {
+        key: 'nodeDataChangedHandler',
+        value: function nodeDataChangedHandler(ev) {
+            var socket = this.state.socket;
+            if (socket.node.parent == null) {
+                return; // node removed
+            }
+            this.setState({
+                magicobj: {}
+            });
+        }
+    }, {
+        key: 'getContent',
+        value: function getContent() {}
+    }, {
+        key: 'listenData',
+        value: function listenData(socket) {
+            if (socket) {
+                socket.on('changed', this.nodeDataChangedHandler);
+                socket.on(Event_LinkChanged, this.nodeDataChangedHandler);
+            }
+        }
+    }, {
+        key: 'unlistenData',
+        value: function unlistenData(socket) {
+            if (socket) {
+                socket.off('changed', this.nodeDataChangedHandler);
+                socket.off(Event_LinkChanged, this.nodeDataChangedHandler);
+            }
+        }
+    }, {
+        key: 'inputChangedHandler',
+        value: function inputChangedHandler(ev) {
+            var socket = this.props.socket;
+            socket.set({ defval: ev.target.value });
         }
     }, {
         key: 'render',
         value: function render() {
+            var socket = this.props.socket;
+            if (this.props.socket != this.state.socket) {
+                var self = this;
+                this.unlistenData(this.state.socket);
+                this.listenData(socket);
+                setTimeout(function () {
+                    self.setState({
+                        socket: socket
+                    });
+                }, 10);
+                return null;
+            }
+            var inputable = socket.isIn && SqlVarInputableTypes_arr.indexOf(socket.type) != -1;
+            var inputElem = null;
+            if (inputable) {
+                var links = socket.getLinks();
+                if (links.length > 0) {
+                    inputable = false;
+                }
+            }
+            if (inputable) {
+                inputElem = React.createElement('input', { type: 'text', ref: this.inputRef, className: 'socketInputer', onChange: this.inputChangedHandler, value: socket.defval == null ? '' : socket.defval });
+            }
+
+            var iconElem = React.createElement('i', { ref: this.flagRef, onClick: this.clickHandler, className: 'fa fa-circle-o cursor-pointer nodesocket', vt: socket.type });
             return React.createElement(
                 'div',
-                { style: { height: this.props.height, width: this.props.width }, className: 'd-flex align-items-center nodesocket', type: 'dbe' },
-                ' ',
-                React.createElement('i', { ref: this.flagRef, onClick: this.clickHandler, className: 'fa fa-circle-o cursor-pointer' }),
-                ' '
+                { className: 'd-flex align-items-center text-nowrap text-light socketCell' },
+                this.props.align == 'left' && iconElem,
+                this.props.align == 'left' && inputElem,
+                socket.label,
+                this.props.align != 'left' && iconElem
             );
         }
     }]);
@@ -965,28 +1633,38 @@ var C_SqlNode_Frame = function (_React$PureComponent6) {
     function C_SqlNode_Frame(props) {
         _classCallCheck(this, C_SqlNode_Frame);
 
-        var _this16 = _possibleConstructorReturn(this, (C_SqlNode_Frame.__proto__ || Object.getPrototypeOf(C_SqlNode_Frame)).call(this, props));
+        var _this19 = _possibleConstructorReturn(this, (C_SqlNode_Frame.__proto__ || Object.getPrototypeOf(C_SqlNode_Frame)).call(this, props));
 
-        autoBind(_this16);
-        _this16.state = {
+        autoBind(_this19);
+        _this19.state = {
             editingTitle: false,
-            moving: _this16.props.nodedata.newborn == true
+            moving: _this19.props.nodedata.newborn == true
         };
 
-        _this16.rooDivRef = React.createRef();
+        _this19.rootDivRef = React.createRef();
 
-        if (_this16.props.nodedata.newborn) {
-            var self = _this16;
+        if (_this19.props.nodedata.newborn) {
+            var self = _this19;
             setTimeout(function () {
                 if (self.state.moving) {
                     self.startMove(null);
+                    _this19.props.editor.setSelectedNF(_this19);
                 }
             }, 10);
         }
-        return _this16;
+        return _this19;
     }
 
     _createClass(C_SqlNode_Frame, [{
+        key: 'addOffset',
+        value: function addOffset(offset) {
+            var nodeData = this.props.nodedata;
+            nodeData.setPos(nodeData.left + offset.x, nodeData.top + offset.y);
+            this.setState({
+                magicobj: {}
+            });
+        }
+    }, {
         key: 'startMove',
         value: function startMove(moveBase) {
             this.moveBase = moveBase;
@@ -996,7 +1674,10 @@ var C_SqlNode_Frame = function (_React$PureComponent6) {
                 moving: true
             });
 
-            this.movingInt = setInterval(this.movingIntHandler, 100);
+            if (this.movingInt == null) {
+                this.movingInt = setInterval(this.movingIntHandler, 100);
+            }
+            this.targetScroll = null;
         }
     }, {
         key: 'endMove',
@@ -1044,17 +1725,48 @@ var C_SqlNode_Frame = function (_React$PureComponent6) {
         key: 'componentWillUnmount',
         value: function componentWillUnmount() {
             this.endMove();
+            this.unmounted = true;
+            this.props.nodedata.currentFrameCom = null;
+        }
+    }, {
+        key: 'componentWillMount',
+        value: function componentWillMount() {
+            this.props.nodedata.currentFrameCom = this;
         }
     }, {
         key: 'mousemoveWidthMoveHandler',
         value: function mousemoveWidthMoveHandler(ev) {
             var moveBase = this.moveBase;
-            var scrollDiv = this.props.editorDivRef.current.parentNode;
-            var scrollDivRect = scrollDiv.getBoundingClientRect();
-            var editorScale = this.props.editorDivRef.current.scale;
+            if (moveBase == null) {
+                moveBase = {
+                    x: 0,
+                    y: 0
+                };
+            }
+            var editorRootDiv = this.props.editor.zoomDivRef.current;
+            var rootDiv = this.rootDivRef.current;
+            var editorRootDivRect = editorRootDiv.getBoundingClientRect();
+            var editorScale = editorRootDivRect.scale;
             if (editorScale == null || isNaN(editorScale)) {
                 editorScale = 1;
             }
+            var mouseX = ev.x;
+            var mouseY = ev.y;
+            var localPos = {
+                x: mouseX - editorRootDivRect.left,
+                y: mouseY - editorRootDivRect.top
+            };
+            var editorDiv = this.props.editor.editorDivRef.current;
+            var newX = localPos.x - parseUnitInt(editorDiv.style.left) + moveBase.x;
+            var newY = localPos.y - parseUnitInt(editorDiv.style.top) + moveBase.y;
+            newX = Math.round(newX / 10) * 10;
+            newY = Math.round(newY / 10) * 10;
+            rootDiv.style.left = newX + 'px';
+            rootDiv.style.top = newY + 'px';
+            var nodeData = this.props.nodedata;
+            nodeData.setPos(newX, newY);
+            return;
+
             scrollDivRect = {
                 left: Math.round(scrollDivRect.left * editorScale),
                 right: Math.round(scrollDivRect.right * editorScale),
@@ -1070,7 +1782,7 @@ var C_SqlNode_Frame = function (_React$PureComponent6) {
                 return;
             }
             var editorDivRect = this.props.editorDivRef.current.getBoundingClientRect();
-            var rootDivRect = this.rooDivRef.current.getBoundingClientRect();
+            var rootDivRect = this.rootDivRef.current.getBoundingClientRect();
             if (moveBase == null) {
                 moveBase = {
                     x: 0,
@@ -1113,8 +1825,8 @@ var C_SqlNode_Frame = function (_React$PureComponent6) {
             } else if (newBottom > editorDivRect.height) {
                 newY = editorDivRect.height - rootDivRect.height;
             }
-            this.rooDivRef.current.style.left = newX + 'px';
-            this.rooDivRef.current.style.top = newY + 'px';
+            this.rootDivRef.current.style.left = newX + 'px';
+            this.rootDivRef.current.style.top = newY + 'px';
             //console.log('nx:' + newX + ';ny:' + newY);
 
             var nodeData = this.props.nodedata;
@@ -1145,6 +1857,32 @@ var C_SqlNode_Frame = function (_React$PureComponent6) {
     }, {
         key: 'movingIntHandler',
         value: function movingIntHandler() {
+            var editorRootDiv = this.props.editor.zoomDivRef.current;
+            var editorDiv = this.props.editor.editorDivRef.current;
+            var theRect = editorRootDiv.getBoundingClientRect();
+            var offset = {
+                left: WindowMouse.x - theRect.left,
+                top: WindowMouse.y - theRect.top,
+                bottom: theRect.bottom - WindowMouse.y,
+                right: theRect.right - WindowMouse.x
+            };
+            var gap = 100;
+            var autoMove = { x: 0, y: 0 };
+            if (offset.left > 0 && offset.left < gap) {
+                autoMove.x = 1;
+            } else if (offset.right > 0 && offset.right < gap) {
+                autoMove.x = -1;
+            }
+            if (offset.top > 0 && offset.top < gap) {
+                autoMove.y = 1;
+            } else if (offset.bottom > 0 && offset.bottom < gap) {
+                autoMove.y = -1;
+            }
+            if (autoMove.x != 0 || autoMove.y != 0) {
+                editorDiv.style.left = parseUnitInt(editorDiv.style.left) + autoMove.x * 30 + 'px';
+                editorDiv.style.top = parseUnitInt(editorDiv.style.top) + autoMove.y * 30 + 'px';
+            }
+            return;
             if (this.targetScroll) {
                 var scrollDiv = this.props.editorDivRef.current.parentNode;
                 var difX = this.targetScroll.x - scrollDiv.scrollLeft;
@@ -1166,8 +1904,8 @@ var C_SqlNode_Frame = function (_React$PureComponent6) {
         }
     }, {
         key: 'moveBarMouseDownHandler',
-        value: function moveBarMouseDownHandler(ev) {
-            if (ev.target != this.rooDivRef.current) {
+        value: function moveBarMouseDownHandler(ev, forcedo) {
+            if (!forcedo && ev.target != this.rootDivRef.current && ev.target.getAttribute('f-canmove') == null) {
                 return;
             }
             if (this.props.clickHandler) {
@@ -1178,22 +1916,23 @@ var C_SqlNode_Frame = function (_React$PureComponent6) {
                     return;
                 }
             }
-            var rootDivRect = this.rooDivRef.current.getBoundingClientRect();
+            this.props.editor.setSelectedNF(this);
+            var rootDivRect = this.rootDivRef.current.getBoundingClientRect();
             this.moveBase = { x: rootDivRect.left - WindowMouse.x, y: rootDivRect.top - WindowMouse.y };
             this.startMove(this.moveBase);
         }
     }, {
-        key: 'clickDeleteHandler',
-        value: function clickDeleteHandler(ev) {
-            gTipWindow.popAlert(makeAlertData('警告', '确定删除节点:"' + this.getNodeTitle() + '"?', this.deleteTipCallback, [TipBtnOK, TipBtnNo]));
+        key: 'setSelected',
+        value: function setSelected(val) {
+            this.setState({ selected: val });
         }
-    }, {
-        key: 'deleteTipCallback',
-        value: function deleteTipCallback(key) {
-            if (key == 'ok') {
-                this.props.nodedata.bluePrint.deleteNode(this.props.nodedata);
-            }
+
+        /*
+        clickDeleteHandler(ev){
+            this.props.editor.wantDeleteNode(this.props.nodedata, this.getNodeTitle());
         }
+        */
+
     }, {
         key: 'getNodeTitle',
         value: function getNodeTitle() {
@@ -1201,36 +1940,67 @@ var C_SqlNode_Frame = function (_React$PureComponent6) {
             return this.props.getTitleFun == null ? nodeData.title == null ? '未命名' : nodeData.title : this.props.getTitleFun();
         }
     }, {
-        key: 'render',
-        value: function render() {
-            var nodeTitle = this.getNodeTitle();
-            var nodeData = this.props.nodedata;
-            var posStyle = { left: parseInt(nodeData.left) + 'px', 'top': parseInt(nodeData.top) };
-            return React.createElement(
-                'div',
-                { ref: this.rooDivRef, onMouseDown: this.moveBarMouseDownHandler, className: 'position-absolute d-flex flex-column nodeRoot', style: posStyle, moving: this.state.moving ? '1' : null },
-                React.createElement(
+        key: 'renderHead',
+        value: function renderHead(nodeData) {
+            if (this.props.isPure) {
+                return null;
+            }
+
+            var headType = this.props.headType;
+            if (headType == null) headType = 'default';
+            if (headType == 'tiny') {
+                return React.createElement(
                     'div',
-                    { className: 'bg-light d-flex align-items-center text-dark', style: { fontSize: '0.5em' } },
+                    { className: 'd-flex nodeHead align-items-center', type: 'tiny' },
+                    nodeData.hadFlow && React.createElement('i', { className: 'fa fa-arrow-circle-right nodeFlow' }),
                     React.createElement(
                         'div',
-                        { className: 'flex-grow-1 flex-shrink-1' },
-                        nodeData.label,
-                        ':',
-                        this.state.editingTitle ? React.createElement('input', { className: '', type: 'text', value: nodeTitle, onChange: this.nodeTitleInputChangeHandler, onKeyPress: this.nodeTitleInputKeypressHandler }) : React.createElement(
-                            React.Fragment,
-                            null,
-                            React.createElement(
-                                'span',
-                                { className: '' },
-                                nodeTitle
-                            )
-                        ),
-                        React.createElement('i', { className: 'fa fa-edit ml-1 cursor-pointer', onClick: this.clickEditTitleHandler })
+                        { className: 'flex-grow-1 flex-shrink-0 text-nowrap text-center', 'f-canmove': 1 },
+                        this.props.headText
                     ),
-                    React.createElement('i', { className: 'fa fa-close ml-1 cursor-pointer mr-1', onClick: this.clickDeleteHandler })
-                ),
-                React.createElement('div', { className: 'dropdown-divider' }),
+                    nodeData.hadFlow && React.createElement('i', { className: 'fa fa-arrow-circle-right nodeFlow' })
+                );
+            }
+
+            if (headType == 'default') {
+                var nodeTitle = this.getNodeTitle();
+                return React.createElement(
+                    React.Fragment,
+                    null,
+                    React.createElement(
+                        'div',
+                        { className: 'bg-light d-flex align-items-center text-dark', style: { fontSize: '0.5em' } },
+                        React.createElement(
+                            'div',
+                            { className: 'flex-grow-1 flex-shrink-1 text-nowrap' },
+                            nodeData.label,
+                            ':',
+                            this.state.editingTitle ? React.createElement('input', { className: '', type: 'text', value: nodeTitle, onChange: this.nodeTitleInputChangeHandler, onKeyPress: this.nodeTitleInputKeypressHandler }) : React.createElement(
+                                React.Fragment,
+                                null,
+                                React.createElement(
+                                    'span',
+                                    { className: '' },
+                                    nodeTitle
+                                )
+                            ),
+                            React.createElement('i', { className: 'fa fa-edit ml-1 cursor-pointer', onClick: this.clickEditTitleHandler })
+                        )
+                    ),
+                    React.createElement('div', { className: 'dropdown-divider' })
+                );
+            }
+            return null;
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var nodeData = this.props.nodedata;
+            var posStyle = { left: parseInt(nodeData.left) + 'px', 'top': parseInt(nodeData.top), 'paddingTop': this.props.isPure ? '0.5em' : null };
+            return React.createElement(
+                'div',
+                { ref: this.rootDivRef, onMouseDown: this.moveBarMouseDownHandler, className: 'position-absolute d-flex flex-column nodeRoot', style: posStyle, 'd-selected': this.state.selected ? '1' : null },
+                this.renderHead(nodeData),
                 this.props.children
             );
         }
@@ -1245,16 +2015,16 @@ var C_SqlNode_DBEntity = function (_React$PureComponent7) {
     function C_SqlNode_DBEntity(props) {
         _classCallCheck(this, C_SqlNode_DBEntity);
 
-        var _this17 = _possibleConstructorReturn(this, (C_SqlNode_DBEntity.__proto__ || Object.getPrototypeOf(C_SqlNode_DBEntity)).call(this, props));
+        var _this20 = _possibleConstructorReturn(this, (C_SqlNode_DBEntity.__proto__ || Object.getPrototypeOf(C_SqlNode_DBEntity)).call(this, props));
 
-        autoBind(_this17);
+        autoBind(_this20);
 
-        _this17.state = {
-            nodedata: _this17.props.nodedata
+        _this20.state = {
+            nodedata: _this20.props.nodedata
         };
-        _this17.listenData(_this17.props.nodedata);
-        _this17.dropdownRef = React.createRef();
-        return _this17;
+        _this20.listenData(_this20.props.nodedata);
+        _this20.dropdownRef = React.createRef();
+        return _this20;
     }
 
     _createClass(C_SqlNode_DBEntity, [{
@@ -1295,11 +2065,6 @@ var C_SqlNode_DBEntity = function (_React$PureComponent7) {
             nodeData.setEntity(selectedDBE);
         }
     }, {
-        key: 'socketOnClickHandler',
-        value: function socketOnClickHandler(srcSocket) {
-            this.props.onClickSocket(srcSocket, this);
-        }
-    }, {
         key: 'getNodeTitle',
         value: function getNodeTitle() {
             var nodeData = this.state.nodedata;
@@ -1310,7 +2075,7 @@ var C_SqlNode_DBEntity = function (_React$PureComponent7) {
     }, {
         key: 'render',
         value: function render() {
-            var _this18 = this;
+            var _this21 = this;
 
             if (this.state.nodedata != this.props.nodedata) {
                 this.unlistenData(this.state.nodedata);
@@ -1318,8 +2083,8 @@ var C_SqlNode_DBEntity = function (_React$PureComponent7) {
                 clearTimeout(this.delaySetTO);
                 var self = this;
                 this.delaySetTO = setTimeout(function () {
-                    _this18.setState({
-                        nodedata: _this18.props.nodedata
+                    _this21.setState({
+                        nodedata: _this21.props.nodedata
                     });
                     self.delaySetTO = null;
                 }, 10);
@@ -1330,7 +2095,7 @@ var C_SqlNode_DBEntity = function (_React$PureComponent7) {
 
             return React.createElement(
                 C_SqlNode_Frame,
-                { nodedata: nodeData, getTitleFun: this.getNodeTitle, editorDivRef: this.props.editorDivRef },
+                { nodedata: nodeData, getTitleFun: this.getNodeTitle, editor: this.props.editor },
                 React.createElement(
                     'div',
                     { className: 'd-flex' },
@@ -1358,15 +2123,15 @@ var C_SqlNode_Select = function (_React$PureComponent8) {
     function C_SqlNode_Select(props) {
         _classCallCheck(this, C_SqlNode_Select);
 
-        var _this19 = _possibleConstructorReturn(this, (C_SqlNode_Select.__proto__ || Object.getPrototypeOf(C_SqlNode_Select)).call(this, props));
+        var _this22 = _possibleConstructorReturn(this, (C_SqlNode_Select.__proto__ || Object.getPrototypeOf(C_SqlNode_Select)).call(this, props));
 
-        autoBind(_this19);
+        autoBind(_this22);
 
-        _this19.state = {
-            nodedata: _this19.props.nodedata
+        _this22.state = {
+            nodedata: _this22.props.nodedata
         };
-        _this19.listenData(_this19.props.nodedata);
-        return _this19;
+        _this22.listenData(_this22.props.nodedata);
+        return _this22;
     }
 
     _createClass(C_SqlNode_Select, [{
@@ -1396,11 +2161,6 @@ var C_SqlNode_Select = function (_React$PureComponent8) {
             }
         }
     }, {
-        key: 'socketOnClickHandler',
-        value: function socketOnClickHandler(srcSocket) {
-            this.props.onClickSocket(srcSocket, this);
-        }
-    }, {
         key: 'clickHandler',
         value: function clickHandler() {
             //console.log('clickHandler');
@@ -1409,7 +2169,7 @@ var C_SqlNode_Select = function (_React$PureComponent8) {
     }, {
         key: 'render',
         value: function render() {
-            var _this20 = this;
+            var _this23 = this;
 
             if (this.state.nodedata != this.props.nodedata) {
                 this.unlistenData(this.state.nodedata);
@@ -1417,8 +2177,8 @@ var C_SqlNode_Select = function (_React$PureComponent8) {
                 clearTimeout(this.delaySetTO);
                 var self = this;
                 this.delaySetTO = setTimeout(function () {
-                    _this20.setState({
-                        nodedata: _this20.props.nodedata
+                    _this23.setState({
+                        nodedata: _this23.props.nodedata
                     });
                     self.delaySetTO = null;
                 }, 10);
@@ -1426,7 +2186,7 @@ var C_SqlNode_Select = function (_React$PureComponent8) {
             var nodeData = this.state.nodedata;
             return React.createElement(
                 C_SqlNode_Frame,
-                { nodedata: nodeData, editorDivRef: this.props.editorDivRef, clickHandler: this.clickHandler },
+                { nodedata: nodeData, clickHandler: this.clickHandler, editor: this.props.editor },
                 React.createElement(
                     'div',
                     { className: 'd-flex flex-column' },
@@ -1445,14 +2205,14 @@ var C_SqlNode_Select_Output = function (_React$PureComponent9) {
     function C_SqlNode_Select_Output(props) {
         _classCallCheck(this, C_SqlNode_Select_Output);
 
-        var _this21 = _possibleConstructorReturn(this, (C_SqlNode_Select_Output.__proto__ || Object.getPrototypeOf(C_SqlNode_Select_Output)).call(this, props));
+        var _this24 = _possibleConstructorReturn(this, (C_SqlNode_Select_Output.__proto__ || Object.getPrototypeOf(C_SqlNode_Select_Output)).call(this, props));
 
-        autoBind(_this21);
+        autoBind(_this24);
 
-        _this21.state = {
-            nodedata: _this21.props.nodedata
+        _this24.state = {
+            nodedata: _this24.props.nodedata
         };
-        return _this21;
+        return _this24;
     }
 
     _createClass(C_SqlNode_Select_Output, [{
@@ -1474,11 +2234,6 @@ var C_SqlNode_Select_Output = function (_React$PureComponent9) {
         key: 'unlistenData',
         value: function unlistenData(nodeData) {}
     }, {
-        key: 'socketOnClickHandler',
-        value: function socketOnClickHandler(srcSocket) {
-            this.props.onClickSocket(srcSocket, this);
-        }
-    }, {
         key: 'clickHandler',
         value: function clickHandler() {
             //console.log('clickHandler');
@@ -1487,7 +2242,7 @@ var C_SqlNode_Select_Output = function (_React$PureComponent9) {
     }, {
         key: 'render',
         value: function render() {
-            var _this22 = this;
+            var _this25 = this;
 
             if (this.state.nodedata != this.props.nodedata) {
                 this.unlistenData(this.state.nodedata);
@@ -1495,8 +2250,8 @@ var C_SqlNode_Select_Output = function (_React$PureComponent9) {
                 clearTimeout(this.delaySetTO);
                 var self = this;
                 this.delaySetTO = setTimeout(function () {
-                    _this22.setState({
-                        nodedata: _this22.props.nodedata
+                    _this25.setState({
+                        nodedata: _this25.props.nodedata
                     });
                     self.delaySetTO = null;
                 }, 10);
@@ -1504,7 +2259,7 @@ var C_SqlNode_Select_Output = function (_React$PureComponent9) {
             var nodeData = this.state.nodedata;
             return React.createElement(
                 C_SqlNode_Frame,
-                { nodedata: nodeData, editorDivRef: this.props.editorDivRef, clickHandler: this.clickHandler },
+                { nodedata: nodeData, clickHandler: this.clickHandler, editor: this.props.editor },
                 React.createElement(
                     'div',
                     { className: 'd-flex flex-column' },
@@ -1517,24 +2272,240 @@ var C_SqlNode_Select_Output = function (_React$PureComponent9) {
     return C_SqlNode_Select_Output;
 }(React.PureComponent);
 
-var C_SqlNode_Editor = function (_React$PureComponent10) {
-    _inherits(C_SqlNode_Editor, _React$PureComponent10);
+var C_SqlNode_Var_Get = function (_React$PureComponent10) {
+    _inherits(C_SqlNode_Var_Get, _React$PureComponent10);
+
+    function C_SqlNode_Var_Get(props) {
+        _classCallCheck(this, C_SqlNode_Var_Get);
+
+        var _this26 = _possibleConstructorReturn(this, (C_SqlNode_Var_Get.__proto__ || Object.getPrototypeOf(C_SqlNode_Var_Get)).call(this, props));
+
+        autoBind(_this26);
+
+        C_SqlNode_Base(_this26);
+        _this26.state = {
+            //nodedata:this.props.nodedata,
+        };
+        return _this26;
+    }
+
+    _createClass(C_SqlNode_Var_Get, [{
+        key: 'render',
+        value: function render() {
+            var nodeData = this.props.nodedata;
+            return React.createElement(
+                C_SqlNode_Frame,
+                { ref: this.frameRef, nodedata: nodeData, editor: this.props.editor, headType: 'tiny', headText: 'GET' },
+                React.createElement(
+                    'div',
+                    { className: 'd-flex' },
+                    React.createElement(C_SqlNode_ScoketsPanel, { data: nodeData.inputScokets_arr, align: 'start', editor: this.props.editor }),
+                    React.createElement(C_SqlNode_ScoketsPanel, { data: nodeData.outputScokets_arr, align: 'end', editor: this.props.editor })
+                )
+            );
+        }
+    }]);
+
+    return C_SqlNode_Var_Get;
+}(React.PureComponent);
+
+var C_SqlNode_NOperand = function (_React$PureComponent11) {
+    _inherits(C_SqlNode_NOperand, _React$PureComponent11);
+
+    function C_SqlNode_NOperand(props) {
+        _classCallCheck(this, C_SqlNode_NOperand);
+
+        var _this27 = _possibleConstructorReturn(this, (C_SqlNode_NOperand.__proto__ || Object.getPrototypeOf(C_SqlNode_NOperand)).call(this, props));
+
+        autoBind(_this27);
+
+        C_SqlNode_Base(_this27);
+        _this27.state = {
+            //nodedata:this.props.nodedata,
+        };
+        return _this27;
+    }
+
+    _createClass(C_SqlNode_NOperand, [{
+        key: 'render',
+        value: function render() {
+            var nodeData = this.props.nodedata;
+            return React.createElement(
+                C_SqlNode_Frame,
+                { ref: this.frameRef, nodedata: nodeData, editor: this.props.editor, headType: 'tiny', headText: nodeData.operator },
+                React.createElement(
+                    'div',
+                    { className: 'd-flex' },
+                    React.createElement(C_SqlNode_ScoketsPanel, { data: nodeData.inputScokets_arr, align: 'start', editor: this.props.editor, processFun: nodeData.processInputSockets }),
+                    React.createElement(C_SqlNode_ScoketsPanel, { data: nodeData.outputScokets_arr, align: 'end', editor: this.props.editor, processFun: nodeData.processOutputSockets })
+                )
+            );
+        }
+    }]);
+
+    return C_SqlNode_NOperand;
+}(React.PureComponent);
+
+function C_SqlNode_componentWillMount() {
+    this.props.nodedata.currentComponent = this;
+    if (this.cus_componentWillMount != null) {
+        this.cus_componentWillMount();
+    }
+}
+
+function C_SqlNode_componentWillUnMount() {
+    this.props.nodedata.currentComponent = null;
+    if (this.cus_componentWillUnmount != null) {
+        this.cus_componentWillUnmount();
+    }
+}
+
+function C_SqlNode_Base(target) {
+    target.frameRef = React.createRef();
+    target.componentWillMount = C_SqlNode_componentWillMount.bind(target);
+    target.componentWillUnmount = C_SqlNode_componentWillUnMount.bind(target);
+}
+
+var C_SqlNode_Var_Set = function (_React$PureComponent12) {
+    _inherits(C_SqlNode_Var_Set, _React$PureComponent12);
+
+    function C_SqlNode_Var_Set(props) {
+        _classCallCheck(this, C_SqlNode_Var_Set);
+
+        var _this28 = _possibleConstructorReturn(this, (C_SqlNode_Var_Set.__proto__ || Object.getPrototypeOf(C_SqlNode_Var_Set)).call(this, props));
+
+        autoBind(_this28);
+
+        C_SqlNode_Base(_this28);
+
+        _this28.state = {};
+        return _this28;
+    }
+
+    _createClass(C_SqlNode_Var_Set, [{
+        key: 'render',
+        value: function render() {
+            var nodeData = this.props.nodedata;
+            return React.createElement(
+                C_SqlNode_Frame,
+                { ref: this.frameRef, nodedata: nodeData, editor: this.props.editor, headType: 'tiny', headText: 'SET' },
+                React.createElement(
+                    'div',
+                    { className: 'd-flex' },
+                    React.createElement(C_SqlNode_ScoketsPanel, { data: nodeData.inputScokets_arr, align: 'start', editor: this.props.editor }),
+                    React.createElement(C_SqlNode_ScoketsPanel, { data: nodeData.outputScokets_arr, align: 'end', editor: this.props.editor })
+                )
+            );
+        }
+    }]);
+
+    return C_SqlNode_Var_Set;
+}(React.PureComponent);
+
+var C_SqlNode_ScoketsPanel = function (_React$PureComponent13) {
+    _inherits(C_SqlNode_ScoketsPanel, _React$PureComponent13);
+
+    function C_SqlNode_ScoketsPanel(props) {
+        _classCallCheck(this, C_SqlNode_ScoketsPanel);
+
+        var _this29 = _possibleConstructorReturn(this, (C_SqlNode_ScoketsPanel.__proto__ || Object.getPrototypeOf(C_SqlNode_ScoketsPanel)).call(this, props));
+
+        autoBind(_this29);
+
+        if (_this29.props.processFun != null) {
+            // add listen
+            var nodedata = _this29.props.data[0].node;
+            nodedata.on(Event_SocketNumChanged, _this29.reRender);
+        }
+        return _this29;
+    }
+
+    _createClass(C_SqlNode_ScoketsPanel, [{
+        key: 'reRender',
+        value: function reRender() {
+            this.setState({
+                magicObj: {}
+            });
+        }
+    }, {
+        key: 'componentWillUnmount',
+        value: function componentWillUnmount() {
+            if (this.props.processFun != null) {
+                var nodedata = this.props.data[0].node;
+                nodedata.off(Event_SocketNumChanged, this.reRender);
+            }
+        }
+    }, {
+        key: 'clickAddIconHandler',
+        value: function clickAddIconHandler(ev) {
+            this.props.processFun(true);
+        }
+    }, {
+        key: 'clickSubIconHandler',
+        value: function clickSubIconHandler(ev) {
+            this.props.processFun(false);
+        }
+    }, {
+        key: 'renderDynamic',
+        value: function renderDynamic() {
+            if (this.props.processFun == null) return null;
+            return React.createElement(
+                'div',
+                { className: 'socketDynamicDiv d-flex' },
+                React.createElement('i', { className: 'fa fa-plus-square ml-1 text-primary fa-2x cursor-pointer', onClick: this.clickAddIconHandler }),
+                React.createElement('i', { className: 'fa fa-minus-square ml-1 text-danger fa-2x cursor-pointer', onClick: this.clickSubIconHandler })
+            );
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var _this30 = this;
+
+            if (this.props.data.length == 0) return null;
+
+            return React.createElement(
+                'div',
+                { className: 'd-flex flex-column align-items-' + this.props.align },
+                this.props.data.map(function (socketObj) {
+                    return React.createElement(C_Node_Socket, { key: socketObj.id, socket: socketObj, align: _this30.props.align == 'start' ? 'left' : 'right', editor: _this30.props.editor });
+                }),
+                this.renderDynamic()
+            );
+        }
+    }]);
+
+    return C_SqlNode_ScoketsPanel;
+}(React.PureComponent);
+
+var C_SqlNode_Editor = function (_React$PureComponent14) {
+    _inherits(C_SqlNode_Editor, _React$PureComponent14);
 
     function C_SqlNode_Editor(props) {
         _classCallCheck(this, C_SqlNode_Editor);
 
-        var _this23 = _possibleConstructorReturn(this, (C_SqlNode_Editor.__proto__ || Object.getPrototypeOf(C_SqlNode_Editor)).call(this, props));
+        var _this31 = _possibleConstructorReturn(this, (C_SqlNode_Editor.__proto__ || Object.getPrototypeOf(C_SqlNode_Editor)).call(this, props));
 
-        _this23.state = {
+        _this31.state = {
             draing: false,
-            editingNode: _this23.props.bluePrint,
+            editingNode: _this31.props.bluePrint,
+            showLink: false,
             scale: 1
         };
 
-        autoBind(_this23);
-        _this23.dragingPathRef = React.createRef();
-        _this23.editorDivRef = React.createRef();
-        return _this23;
+        var self = _this31;
+        setTimeout(function () {
+            _this31.setState({
+                showLink: true
+            });
+        }, 50);
+
+        autoBind(_this31);
+        _this31.dragingPathRef = React.createRef();
+        _this31.editorDivRef = React.createRef();
+        _this31.containerRef = React.createRef();
+        _this31.topBarRef = React.createRef();
+        _this31.zoomDivRef = React.createRef();
+        return _this31;
     }
 
     _createClass(C_SqlNode_Editor, [{
@@ -1545,17 +2516,166 @@ var C_SqlNode_Editor = function (_React$PureComponent10) {
             });
         }
     }, {
+        key: 'setSelectedNF',
+        value: function setSelectedNF(target) {
+            if (this.selectedNF == target) {
+                return;
+            }
+            if (this.selectedNF && !this.selectedNF.unmounted) {
+                this.selectedNF.setSelected(false);
+            }
+            if (target) {
+                target.setSelected(true);
+            }
+            this.selectedNF = target;
+        }
+    }, {
+        key: 'showNodeData',
+        value: function showNodeData(nodeData) {
+            if (nodeData.currentComponent) {
+                var frameElem = nodeData.currentComponent.frameRef.current;
+                if (frameElem == null) return null;
+                this.setSelectedNF(frameElem);
+                var frameRect = frameElem.rootDivRef.current.getBoundingClientRect();
+                var zoomRect = this.zoomDivRef.current.getBoundingClientRect();
+
+                if (!MyMath.intersectRect(frameRect, zoomRect)) {
+                    var targetPos = {
+                        x: Math.floor(-nodeData.left + (zoomRect.width - frameRect.width) * 0.5),
+                        y: Math.floor(-nodeData.top + (zoomRect.height - frameRect.height) * 0.5)
+                    };
+                    //console.log(targetPos);
+                    this.editorDivRef.current.style.left = targetPos.x + 'px';
+                    this.editorDivRef.current.style.top = targetPos.y + 'px';
+                }
+            }
+        }
+    }, {
+        key: 'keyUpHandler',
+        value: function keyUpHandler(ev) {
+            //console.log(ev);
+            switch (ev.keyCode) {
+                case 27:
+                    // esc
+                    if (this.selectedNF) {
+                        this.setSelectedNF(null);
+                    }
+                    var dragingPath = this.dragingPathRef.current;
+                    dragingPath.setState({
+                        draging: false,
+                        start: null,
+                        end: null
+                    });
+                case 46:
+                    if (this.selectedNF) {
+                        this.wantDeleteNode(this.selectedNF.props.nodedata, this.selectedNF.getNodeTitle());
+                    }
+                    break;
+            }
+        }
+    }, {
+        key: 'keyDownHandler',
+        value: function keyDownHandler(ev) {
+            if (this.selectedNF && ev.keyCode >= 37 && ev.keyCode <= 40) {
+                var offset = { x: 0, y: 0 };
+                switch (ev.keyCode) {
+                    case 40:
+                        offset.y = 10;
+                        break;
+                    case 38:
+                        offset.y = -10;
+                        break;
+                    case 37:
+                        offset.x = -10;
+                        break;
+                    case 39:
+                        offset.x = 10;
+                        break;
+                }
+                this.selectedNF.addOffset(offset);
+                ev.preventDefault();
+            }
+        }
+    }, {
+        key: 'wantDeleteNode',
+        value: function wantDeleteNode(nodeData, title) {
+            gTipWindow.popAlert(makeAlertData('警告', '确定删除节点:"' + title + '"?', this.deleteTipCallback, [TipBtnOK, TipBtnNo], nodeData));
+        }
+    }, {
+        key: 'deleteTipCallback',
+        value: function deleteTipCallback(key, nodeData) {
+            if (key == 'ok') {
+                this.state.editingNode.deleteNode(nodeData);
+                this.setSelectedNF(null);
+            }
+        }
+    }, {
+        key: 'freshZoomDiv',
+        value: function freshZoomDiv() {
+            if (this.zoomDivRef.current) {
+                var zoomDivElem = this.zoomDivRef.current;
+                var $containerElem = $(this.containerRef.current);
+                var $topBarElem = $(this.topBarRef.current);
+
+                var newZoomDivSize = {
+                    height: $containerElem.height() - $topBarElem.height(),
+                    width: $containerElem.width(),
+                    top: $topBarElem.offset().top - $topBarElem.offsetParent().offset().top + $topBarElem.height()
+                };
+
+                if (this.preZoomDivSize == null) {
+                    zoomDivElem.style.height = newZoomDivSize.height + 'px';
+                    zoomDivElem.style.width = newZoomDivSize.width + 'px';
+                    zoomDivElem.style.top = newZoomDivSize.top + 'px';
+                } else {
+                    if (Math.abs(this.preZoomDivSize.height - newZoomDivSize.height) > 1) {
+                        zoomDivElem.style.height = newZoomDivSize.height + 'px';
+                    }
+                    if (Math.abs(this.preZoomDivSize.width - newZoomDivSize.width) > 1) {
+                        zoomDivElem.style.width = newZoomDivSize.width + 'px';
+                    }
+                    if (Math.abs(this.preZoomDivSize.top - newZoomDivSize.top) > 1) {
+                        zoomDivElem.style.top = newZoomDivSize.top + 'px';
+                    }
+                }
+
+                this.preZoomDivSize = newZoomDivSize;
+            }
+        }
+    }, {
+        key: 'listenBlueprint',
+        value: function listenBlueprint(bp) {
+            if (bp) {
+                bp.on('changed', this.blueprinkChanged);
+            };
+            this.listenedBP = bp;
+        }
+    }, {
+        key: 'unlistenBlueprint',
+        value: function unlistenBlueprint(bp) {
+            if (bp) {
+                bp.off('changed', this.blueprinkChanged);
+            }
+        }
+    }, {
         key: 'componentWillMount',
         value: function componentWillMount() {
-            this.props.bluePrint.on('changed', this.blueprinkChanged);
+            window.addEventListener('keyup', this.keyUpHandler);
+            window.addEventListener('keydown', this.keyDownHandler);
+
+            this.freshInt = setInterval(this.freshZoomDiv, 500);
+            this.freshZoomDiv();
         }
     }, {
         key: 'componentWillUnmount',
         value: function componentWillUnmount() {
             window.removeEventListener('mousemove', this.mousemoveWidthDragingHandler);
             window.removeEventListener('mouseup', this.mouseupWidthDragingHandler);
-            this.props.bluePrint.off('changed', this.blueprinkChanged);
+            window.removeEventListener('keyup', this.keyUpHandler);
+            window.removeEventListener('keydown', this.keyDownHandler);
+            this.unlistenBlueprint(this.props.bluePrint);
             clearTimeout(this.delaySetTO);
+            clearInterval(this.freshZoomDiv);
         }
     }, {
         key: 'mousemoveWidthDragingHandler',
@@ -1574,7 +2694,7 @@ var C_SqlNode_Editor = function (_React$PureComponent10) {
                 if (this.preClickTime != null && Date.now() - this.preClickTime < 200) {
                     var dragingPath = this.dragingPathRef.current;
                     dragingPath.setState({
-                        draing: false,
+                        draging: false,
                         start: null,
                         end: null
                     });
@@ -1587,25 +2707,45 @@ var C_SqlNode_Editor = function (_React$PureComponent10) {
             }
         }
     }, {
-        key: 'onClickSocket',
-        value: function onClickSocket(srcSocket, srcNode) {
-            //console.log(srcSocket);
-            //console.log(srcNode);
+        key: 'clickSocket',
+        value: function clickSocket(srcSocket) {
+            console.log(srcSocket);
+            var srcNode = srcSocket.node;
             var dragingPath = this.dragingPathRef.current;
-            if (dragingPath.state.draing == true) {
-                dragingPath.setState({
-                    draing: false,
-                    start: null,
-                    end: null
-                });
-                window.removeEventListener('mousemove', this.mousemoveWidthDragingHandler);
-                window.removeEventListener('mouseup', this.mouseupWidthDragingHandler);
+            if (dragingPath.state.draging == true) {
+                var cancelDrag = false;
+                if (srcSocket == dragingPath.state.startScoket) {
+                    // 同一个socket连续点击
+                    cancelDrag = true;
+                } else if (dragingPath.state.startNode == srcNode) {
+                    // 相同的node 忽略
+                    //console.log('相同的node');
+                    return;
+                } else {
+                    // 点击了不同的socket
+                    if (srcSocket.isIn != dragingPath.state.startScoket.isIn) {
+                        // 不同node的in out才能相互链接
+                        this.state.editingNode.linkPool.addLink(srcSocket, dragingPath.state.startScoket);
+                        cancelDrag = true;
+                    }
+                }
+                if (cancelDrag) {
+                    dragingPath.setState({
+                        draging: false,
+                        start: null,
+                        end: null
+                    });
+                    window.removeEventListener('mousemove', this.mousemoveWidthDragingHandler);
+                    window.removeEventListener('mouseup', this.mouseupWidthDragingHandler);
+                }
             } else {
                 var rootRect = this.editorDivRef.current.getBoundingClientRect();
                 dragingPath.setState({
-                    draing: true,
-                    start: srcSocket.getCenterPos(rootRect),
-                    end: { x: WindowMouse.x - rootRect.left, y: WindowMouse.y - rootRect.top }
+                    draging: true,
+                    start: srcSocket.currentComponent.getCenterPos(),
+                    end: { x: WindowMouse.x - rootRect.left, y: WindowMouse.y - rootRect.top },
+                    startScoket: srcSocket,
+                    startNode: srcNode
                 });
                 window.addEventListener('mousemove', this.mousemoveWidthDragingHandler);
                 window.addEventListener('mouseup', this.mouseupWidthDragingHandler);
@@ -1614,9 +2754,12 @@ var C_SqlNode_Editor = function (_React$PureComponent10) {
     }, {
         key: 'setEditeNode',
         value: function setEditeNode(theNode) {
+            var _this32 = this;
+
             if (theNode == this.state.editingNode) {
                 return;
             }
+            this.setSelectedNF(null);
             var editingNode = this.state.editingNode;
             var scrollNode = this.editorDivRef.current.parentNode;
             if (editingNode) {
@@ -1625,10 +2768,18 @@ var C_SqlNode_Editor = function (_React$PureComponent10) {
             }
 
             this.setState({
-                draing: false,
+                draging: false,
                 editingNode: theNode,
-                scale: 1
+                scale: 1,
+                showLink: false
             });
+
+            var self = this;
+            setTimeout(function () {
+                _this32.setState({
+                    showLink: true
+                });
+            }, 50);
 
             if (theNode) {
                 theNode.bluePrint.editingNode = theNode;
@@ -1639,25 +2790,60 @@ var C_SqlNode_Editor = function (_React$PureComponent10) {
             }
         }
     }, {
+        key: 'genSqlNode_Component',
+        value: function genSqlNode_Component(CName, nodeData) {
+            var blueprintPrefix = this.state.editingNode.bluePrint.id + '_';
+            return React.createElement(CName, { key: blueprintPrefix + nodeData.id, nodedata: nodeData, editorDivRef: this.editorDivRef, editor: this });
+        }
+    }, {
         key: 'renderNode',
         value: function renderNode(nodeData) {
             if (nodeData == null) return null;
             switch (nodeData.type) {
                 case SQLNODE_BDBENTITY:
-                    return React.createElement(C_SqlNode_DBEntity, { onClickSocket: this.onClickSocket, key: nodeData.id, nodedata: nodeData, editorDivRef: this.editorDivRef, editor: this });
+                    return this.genSqlNode_Component(C_SqlNode_DBEntity, nodeData);
                     break;
                 case SQLNODE_SELECT:
-                    return React.createElement(C_SqlNode_Select, { onClickSocket: this.onClickSocket, key: nodeData.id, nodedata: nodeData, editorDivRef: this.editorDivRef, editor: this });
+                    return this.genSqlNode_Component(C_SqlNode_Select, nodeData);
+                    break;
+                case SQLNODE_VAR_GET:
+                    return this.genSqlNode_Component(C_SqlNode_Var_Get, nodeData);
+                    break;
+                case SQLNODE_VAR_SET:
+                    return this.genSqlNode_Component(C_SqlNode_Var_Set, nodeData);
+                    break;
+                case SQLNODE_NOPERAND:
+                    return this.genSqlNode_Component(C_SqlNode_NOperand, nodeData);
                     break;
             }
+
             return null;
+        }
+    }, {
+        key: 'addVarGSNode',
+        value: function addVarGSNode(config, windPos) {
+            var editingNode = this.state.editingNode;
+            var $zoomDivElem = $(this.zoomDivRef.current);
+            var zoomOffset = $zoomDivElem.offset();
+
+            var x = -parseUnitInt(this.editorDivRef.current.style.left) + windPos.x - zoomOffset.left;
+            var y = -parseUnitInt(this.editorDivRef.current.style.top) + windPos.y - zoomOffset.top;
+            var newNodeData = null;
+            if (config.isGet) {
+                newNodeData = new SqlNode_Var_Get({ left: x, top: y, varName: config.varName }, editingNode);
+            } else {
+                newNodeData = new SqlNode_Var_Set({ left: x, top: y, varName: config.varName }, editingNode);
+            }
+            this.setState({
+                magicObj: {}
+            });
         }
     }, {
         key: 'mouseDownNodeCtlrHandler',
         value: function mouseDownNodeCtlrHandler(ctlData) {
-            var scrollNode = this.editorDivRef.current.parentNode;
+            var editorDiv = this.editorDivRef.current;
             var editingNode = this.state.editingNode;
-            var newNodeData = new ctlData.nodeClass({ newborn: true, left: scrollNode.scrollLeft, top: scrollNode.scrollTop }, editingNode);
+            var newNodeData = new ctlData.nodeClass({ newborn: true, left: -parseUnitInt(editorDiv.style.left), top: -parseUnitInt(editorDiv.style.top) }, editingNode);
             this.setState({
                 magicObj: {}
             });
@@ -1666,10 +2852,12 @@ var C_SqlNode_Editor = function (_React$PureComponent10) {
         key: 'mousemoveWithDragHandler',
         value: function mousemoveWithDragHandler(ev) {
             var offset = { x: ev.x - this.dragOrgin.x, y: ev.y - this.dragOrgin.y };
-            var scrollNode = this.editorDivRef.current.parentNode;
-            scrollNode.scrollLeft = this.dragOrgin.sl - offset.x;
-            scrollNode.scrollTop = this.dragOrgin.st - offset.y;
+            //var scrollNode = this.editorDivRef.current.parentNode;
+            //scrollNode.scrollLeft = this.dragOrgin.sl - offset.x;
+            //scrollNode.scrollTop = this.dragOrgin.st - offset.y;
             //console.log(offset);
+            this.editorDivRef.current.style.left = this.dragOrgin.left + offset.x + 'px';
+            this.editorDivRef.current.style.top = this.dragOrgin.top + offset.y + 'px';
         }
     }, {
         key: 'mouseupWithDragHandler',
@@ -1681,10 +2869,15 @@ var C_SqlNode_Editor = function (_React$PureComponent10) {
     }, {
         key: 'rootMouseDownHandler',
         value: function rootMouseDownHandler(ev) {
-            if (ev.target == this.editorDivRef.current && this.draging != true) {
+            if (ev.target == this.zoomDivRef.current && this.draging != true) {
                 this.draging = true;
-                var scrollNode = this.editorDivRef.current.parentNode;
-                this.dragOrgin = { x: WindowMouse.x, y: WindowMouse.y, sl: scrollNode.scrollLeft, st: scrollNode.scrollTop };
+                //var scrollNode = this.editorDivRef.current.parentNode;
+                //this.dragOrgin = {x:WindowMouse.x,y:WindowMouse.y,sl:scrollNode.scrollLeft,st:scrollNode.scrollTop};
+                var nowPos = {
+                    x: parseUnitInt(this.editorDivRef.current.style.left),
+                    y: parseUnitInt(this.editorDivRef.current.style.top)
+                };
+                this.dragOrgin = { x: WindowMouse.x, y: WindowMouse.y, left: nowPos.x, top: nowPos.y };
                 window.addEventListener('mousemove', this.mousemoveWithDragHandler);
                 window.addEventListener('mouseup', this.mouseupWithDragHandler);
             }
@@ -1728,14 +2921,14 @@ var C_SqlNode_Editor = function (_React$PureComponent10) {
     }, {
         key: 'render',
         value: function render() {
-            var _this24 = this;
+            var _this33 = this;
 
             var editingNode = this.state.editingNode;
             if (this.props.bluePrint != editingNode.bluePrint) {
                 var self = this;
                 clearTimeout(this.delaySetTO);
                 this.delaySetTO = setTimeout(function () {
-                    _this24.setEditeNode(self.props.bluePrint.editingNode ? self.props.bluePrint.editingNode : self.props.bluePrint);
+                    _this33.setEditeNode(self.props.bluePrint.editingNode ? self.props.bluePrint.editingNode : self.props.bluePrint);
                     self.delaySetTO = null;
                 }, 10);
             }
@@ -1744,21 +2937,27 @@ var C_SqlNode_Editor = function (_React$PureComponent10) {
             if (this.editorDivRef.current) {
                 this.editorDivRef.current.scale = this.state.scale;
             }
+            var self = this;
+            var blueprintPrefix = this.state.editingNode.bluePrint.id + '_';
+            if (this.listenedBP != editingNode.bluePrint) {
+                this.unlistenBlueprint(this.listenedBP);
+                this.listenBlueprint(editingNode.bluePrint);
+            }
 
             return React.createElement(SplitPanel, {
                 defPercent: 0.2,
-                maxSize: '200px',
+                maxSize: '400px',
                 barClass: 'bg-secondary',
-                panel1: React.createElement(CusDBEEditorLeftPanel, { onMouseDown: this.mouseDownNodeCtlrHandler, editingNode: editingNode }),
+                panel1: React.createElement(CusDBEEditorLeftPanel, { onMouseDown: this.mouseDownNodeCtlrHandler, editingNode: editingNode, editorDivRef: this.editorDivRef, editor: self }),
                 panel2: React.createElement(
                     'div',
-                    { className: 'flex-grow-1 flex-shrink-1 d-flex flex-column mw-100', style: {} },
+                    { className: 'flex-grow-1 flex-shrink-1 d-flex flex-column mw-100' },
                     React.createElement(
                         'div',
-                        { className: 'flex-grow-1 flex-shrink-1 d-flex flex-column' },
+                        { className: 'flex-grow-1 flex-shrink-1 d-flex flex-column', ref: this.containerRef },
                         React.createElement(
                             'div',
-                            { className: 'flex-grow-0 flex-shrink-0 border bg-light ' },
+                            { className: 'flex-grow-0 flex-shrink-0 border bg-light ', style: { height: '40px' }, ref: this.topBarRef },
                             React.createElement(
                                 'div',
                                 { className: 'd-flex flex-grow-1 flex-shrink-1' },
@@ -1771,7 +2970,7 @@ var C_SqlNode_Editor = function (_React$PureComponent10) {
                                             { className: 'nav-item', key: nodeData.id },
                                             React.createElement(
                                                 'a',
-                                                { className: "nav-link" + (nodeData == editingNode ? ' active' : ''), href: '#', 'data-id': nodeData.id, onClick: _this24.clickNavBtnHandler },
+                                                { className: "nav-link" + (nodeData == editingNode ? ' active' : ''), href: '#', 'data-id': nodeData.id, onClick: _this33.clickNavBtnHandler },
                                                 nodeData.getNodeTitle(),
                                                 nodeData != editingNode && React.createElement('i', { className: 'fa fa-angle-right ml-1' })
                                             )
@@ -1796,14 +2995,17 @@ var C_SqlNode_Editor = function (_React$PureComponent10) {
                         ),
                         React.createElement(
                             'div',
-                            { className: 'flex-grow-1 flex-shrink-1 autoScroll ', style: { zoom: this.state.scale } },
+                            { className: 'flex-grow-1 flex-shrink-1 position-absolute hidenOverflow', style: { zoom: this.state.scale }, ref: this.zoomDivRef, onMouseDown: this.rootMouseDownHandler },
                             React.createElement(
                                 'div',
-                                { onMouseDown: this.rootMouseDownHandler, ref: this.editorDivRef, className: 'd-block position-relative bg-dark', style: { minWidth: '4000px', minHeight: '4000px' } },
+                                { ref: this.editorDivRef, className: 'd-block position-absolute bg-dark', style: { width: '10px', height: '10px', overflow: 'visible' } },
                                 editingNode.nodes_arr.map(function (nd) {
-                                    return _this24.renderNode(nd); //<G_Node key={nd.id} data={nd} />
+                                    return _this33.renderNode(nd); //<G_Node key={nd.id} data={nd} />
                                 }),
-                                React.createElement(C_Node_Path, { ref: this.dragingPathRef, editorDivRef: this.editorDivRef, draging: '1' })
+                                React.createElement(C_Node_Path, { ref: this.dragingPathRef, editorDivRef: this.editorDivRef }),
+                                this.state.showLink && editingNode.linkPool.getAllLink().map(function (linkobj) {
+                                    return React.createElement(C_Node_Path, { key: blueprintPrefix + linkobj.id, link: linkobj, editorDivRef: _this33.editorDivRef });
+                                })
                             )
                         )
                     )
@@ -1815,30 +3017,76 @@ var C_SqlNode_Editor = function (_React$PureComponent10) {
     return C_SqlNode_Editor;
 }(React.PureComponent);
 
-var C_Node_Path = function (_React$PureComponent11) {
-    _inherits(C_Node_Path, _React$PureComponent11);
+var C_Node_Path = function (_React$PureComponent15) {
+    _inherits(C_Node_Path, _React$PureComponent15);
 
     function C_Node_Path(props) {
         _classCallCheck(this, C_Node_Path);
 
-        var _this25 = _possibleConstructorReturn(this, (C_Node_Path.__proto__ || Object.getPrototypeOf(C_Node_Path)).call(this, props));
+        var _this34 = _possibleConstructorReturn(this, (C_Node_Path.__proto__ || Object.getPrototypeOf(C_Node_Path)).call(this, props));
 
-        autoBind(_this25);
-        _this25.state = {
-            start: _this25.props.start,
-            end: _this25.props.end
-        };
+        autoBind(_this34);
+        var initState = {};
+        if (_this34.props.link) {
+            initState.start = _this34.props.link.outSocket.currentComponent ? _this34.props.link.outSocket.currentComponent.getCenterPos() : null;
+            initState.end = _this34.props.link.inSocket.currentComponent ? _this34.props.link.inSocket.currentComponent.getCenterPos() : null;
+            initState.link = _this34.props.link;
+        } else {
+            initState.start = _this34.props.start;
+            initState.end = _this34.props.end;
+        }
+        _this34.state = initState;
 
-        _this25.rootDivRef = React.createRef();
-        return _this25;
+        _this34.rootDivRef = React.createRef();
+        return _this34;
     }
 
     _createClass(C_Node_Path, [{
+        key: 'startNodeMovedHandler',
+        value: function startNodeMovedHandler() {
+            var newVal = this.state.link.outSocket.currentComponent ? this.state.link.outSocket.currentComponent.getCenterPos() : null;
+            this.setState({
+                start: newVal
+            });
+        }
+    }, {
+        key: 'endNodeMovedHandler',
+        value: function endNodeMovedHandler() {
+            var newVal = this.state.link.inSocket.currentComponent ? this.state.link.inSocket.currentComponent.getCenterPos() : null;
+            this.setState({
+                end: newVal
+            });
+        }
+    }, {
         key: 'componentWillMount',
-        value: function componentWillMount() {}
+        value: function componentWillMount() {
+            if (this.props.link) {
+                this.props.link.outSocket.node.on('moved', this.startNodeMovedHandler);
+                this.props.link.outSocket.node.on(Event_CurrentComponentchanged, this.startNodeMovedHandler);
+                this.props.link.inSocket.node.on('moved', this.endNodeMovedHandler);
+                this.props.link.inSocket.node.on(Event_CurrentComponentchanged, this.endNodeMovedHandler);
+            }
+        }
     }, {
         key: 'componentWillUnmount',
-        value: function componentWillUnmount() {}
+        value: function componentWillUnmount() {
+            if (this.props.link) {
+                this.props.link.outSocket.node.off('moved', this.startNodeMovedHandler);
+                this.props.link.outSocket.node.off(Event_CurrentComponentchanged, this.startNodeMovedHandler);
+                this.props.link.inSocket.node.off('moved', this.endNodeMovedHandler);
+                this.props.link.inSocket.node.off(Event_CurrentComponentchanged, this.endNodeMovedHandler);
+            }
+        }
+    }, {
+        key: 'mouseDownHandler',
+        value: function mouseDownHandler(ev) {
+            if (ev.altKey) {
+                console.log('delete link');
+                if (this.props.link) {
+                    this.props.link.pool.removeLink(this.props.link);
+                }
+            }
+        }
     }, {
         key: 'render',
         value: function render() {
@@ -1853,15 +3101,15 @@ var C_Node_Path = function (_React$PureComponent11) {
             }
             //console.log(angle);
             var thisStyle = { width: dis + 'px', height: '2px', transform: 'rotate(' + angle + 'deg)', left: start.x + 'px', top: start.y + 'px' };
-            return React.createElement('div', { ref: this.rootDivRef, className: 'nodepath', style: thisStyle, draging: this.props.draging });
+            return React.createElement('div', { ref: this.rootDivRef, className: 'nodepath', style: thisStyle, draging: this.state.draging ? 1 : null, onMouseDown: this.mouseDownHandler });
         }
     }]);
 
     return C_Node_Path;
 }(React.PureComponent);
 
-var G_Node = function (_React$PureComponent12) {
-    _inherits(G_Node, _React$PureComponent12);
+var G_Node = function (_React$PureComponent16) {
+    _inherits(G_Node, _React$PureComponent16);
 
     function G_Node(props) {
         _classCallCheck(this, G_Node);
@@ -1925,19 +3173,19 @@ var G_Node = function (_React$PureComponent12) {
     return G_Node;
 }(React.PureComponent);
 
-var CusDBEEditor = function (_React$PureComponent13) {
-    _inherits(CusDBEEditor, _React$PureComponent13);
+var CusDBEEditor = function (_React$PureComponent17) {
+    _inherits(CusDBEEditor, _React$PureComponent17);
 
     function CusDBEEditor(props) {
         _classCallCheck(this, CusDBEEditor);
 
-        var _this27 = _possibleConstructorReturn(this, (CusDBEEditor.__proto__ || Object.getPrototypeOf(CusDBEEditor)).call(this, props));
+        var _this36 = _possibleConstructorReturn(this, (CusDBEEditor.__proto__ || Object.getPrototypeOf(CusDBEEditor)).call(this, props));
 
-        _this27.state = {};
-        autoBind(_this27);
-        _this27.editorDivRef = React.createRef();
-        _this27.bluePrintRef = React.createRef();
-        return _this27;
+        _this36.state = {};
+        autoBind(_this36);
+        _this36.editorDivRef = React.createRef();
+        _this36.bluePrintRef = React.createRef();
+        return _this36;
     }
 
     _createClass(CusDBEEditor, [{
@@ -1971,23 +3219,121 @@ var cusDBEditorControls_arr = [{
 }, {
     label: '选择',
     nodeClass: SqlNode_Select
+}, {
+    label: '多元运算',
+    nodeClass: SqlNode_NOperand
 }];
 
-var CusDBEEditorLeftPanel = function (_React$PureComponent14) {
-    _inherits(CusDBEEditorLeftPanel, _React$PureComponent14);
+var SqlNodeOutlineItem = function (_React$PureComponent18) {
+    _inherits(SqlNodeOutlineItem, _React$PureComponent18);
+
+    function SqlNodeOutlineItem(props) {
+        _classCallCheck(this, SqlNodeOutlineItem);
+
+        var _this37 = _possibleConstructorReturn(this, (SqlNodeOutlineItem.__proto__ || Object.getPrototypeOf(SqlNodeOutlineItem)).call(this, props));
+
+        autoBind(_this37);
+
+        _this37.state = {
+            label: _this37.props.nodeData.getNodeTitle()
+        };
+        return _this37;
+    }
+
+    _createClass(SqlNodeOutlineItem, [{
+        key: 'componentWillMount',
+        value: function componentWillMount() {
+            this.props.nodeData.on('changed', this.nodeChangedhandler);
+        }
+    }, {
+        key: 'componentWillUnmount',
+        value: function componentWillUnmount() {
+            this.props.nodeData.off('changed', this.nodeChangedhandler);
+        }
+    }, {
+        key: 'nodeChangedhandler',
+        value: function nodeChangedhandler() {
+            this.setState({
+                label: this.props.nodeData.getNodeTitle()
+            });
+        }
+    }, {
+        key: 'clickHandler',
+        value: function clickHandler(ev) {
+            this.props.clickHandler(this.props.nodeData);
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            return React.createElement(
+                'div',
+                { className: 'text-nowrap text-light cursor-pointer', onClick: this.clickHandler },
+                this.state.label
+            );
+        }
+    }]);
+
+    return SqlNodeOutlineItem;
+}(React.PureComponent);
+
+var CusDBEEditorLeftPanel = function (_React$PureComponent19) {
+    _inherits(CusDBEEditorLeftPanel, _React$PureComponent19);
 
     function CusDBEEditorLeftPanel(props) {
         _classCallCheck(this, CusDBEEditorLeftPanel);
 
-        var _this28 = _possibleConstructorReturn(this, (CusDBEEditorLeftPanel.__proto__ || Object.getPrototypeOf(CusDBEEditorLeftPanel)).call(this, props));
+        var _this38 = _possibleConstructorReturn(this, (CusDBEEditorLeftPanel.__proto__ || Object.getPrototypeOf(CusDBEEditorLeftPanel)).call(this, props));
 
-        autoBind(_this28);
-        return _this28;
+        autoBind(_this38);
+        return _this38;
     }
 
     _createClass(CusDBEEditorLeftPanel, [{
+        key: 'listenNode',
+        value: function listenNode(node) {
+            if (node) {
+                node.on('changed', this.editingNodeChangedhandler);
+            }
+            this.listenedNode = node;
+        }
+    }, {
+        key: 'unlistenNode',
+        value: function unlistenNode(node) {
+            if (node) {
+                node.off('changed', this.editingNodeChangedhandler);
+            }
+        }
+    }, {
+        key: 'componentWillMount',
+        value: function componentWillMount() {
+            //listenNode(this.state.editingNode);
+        }
+    }, {
+        key: 'componentWillUnmount',
+        value: function componentWillUnmount() {
+            this.unlistenNode(this.state.editingNode);
+        }
+    }, {
+        key: 'editingNodeChangedhandler',
+        value: function editingNodeChangedhandler() {
+            this.setState({
+                magicObj: {}
+            });
+        }
+    }, {
+        key: 'clickOutlineImteHandler',
+        value: function clickOutlineImteHandler(nodeData) {
+            this.props.editor.showNodeData(nodeData);
+        }
+    }, {
         key: 'render',
         value: function render() {
+            var _this39 = this;
+
+            if (this.listenedNode != this.props.editingNode) {
+                this.unlistenNode(this.listenedNode);
+                this.listenNode(this.props.editingNode);
+            }
             return React.createElement(SplitPanel, {
                 fixedOne: true,
                 maxSize: 200,
@@ -1995,14 +3341,16 @@ var CusDBEEditorLeftPanel = function (_React$PureComponent14) {
                 flexColumn: true,
                 panel1: React.createElement(
                     'div',
-                    { className: 'w-100 h-100 bg-info' },
-                    '\u5927\u7EB2'
+                    { className: 'w-100 h-100 autoScroll d-flex flex-column' },
+                    this.props.editingNode.nodes_arr.map(function (nodeData) {
+                        return React.createElement(SqlNodeOutlineItem, { key: nodeData.id, nodeData: nodeData, clickHandler: _this39.clickOutlineImteHandler });
+                    })
                 ),
                 panel2: React.createElement(
                     'div',
                     { className: 'd-flex flex-column h-100 w-100' },
-                    React.createElement(CusDBEEditorVariables, { editingNode: this.props.editingNode }),
-                    React.createElement(CusDBEEditorCanUseNodePanel, { editingNode: this.props.editingNode, onMouseDown: this.props.onMouseDown })
+                    React.createElement(CusDBEEditorVariables, { editingNode: this.props.editingNode, editor: this.props.editor }),
+                    React.createElement(CusDBEEditorCanUseNodePanel, { editingNode: this.props.editingNode, onMouseDown: this.props.onMouseDown, editor: this.props.editor })
                 )
             });
         }
@@ -2011,16 +3359,16 @@ var CusDBEEditorLeftPanel = function (_React$PureComponent14) {
     return CusDBEEditorLeftPanel;
 }(React.PureComponent);
 
-var CusDBEEditorCanUseNodePanel = function (_React$PureComponent15) {
-    _inherits(CusDBEEditorCanUseNodePanel, _React$PureComponent15);
+var CusDBEEditorCanUseNodePanel = function (_React$PureComponent20) {
+    _inherits(CusDBEEditorCanUseNodePanel, _React$PureComponent20);
 
     function CusDBEEditorCanUseNodePanel(props) {
         _classCallCheck(this, CusDBEEditorCanUseNodePanel);
 
-        var _this29 = _possibleConstructorReturn(this, (CusDBEEditorCanUseNodePanel.__proto__ || Object.getPrototypeOf(CusDBEEditorCanUseNodePanel)).call(this, props));
+        var _this40 = _possibleConstructorReturn(this, (CusDBEEditorCanUseNodePanel.__proto__ || Object.getPrototypeOf(CusDBEEditorCanUseNodePanel)).call(this, props));
 
-        autoBind(_this29);
-        return _this29;
+        autoBind(_this40);
+        return _this40;
     }
 
     _createClass(CusDBEEditorCanUseNodePanel, [{
@@ -2038,7 +3386,7 @@ var CusDBEEditorCanUseNodePanel = function (_React$PureComponent15) {
     }, {
         key: 'render',
         value: function render() {
-            var _this30 = this;
+            var _this41 = this;
 
             var targetID = this.props.editingNode.bluePrint.code + 'canUseNode';
             return React.createElement(
@@ -2061,7 +3409,7 @@ var CusDBEEditorCanUseNodePanel = function (_React$PureComponent15) {
                             cusDBEditorControls_arr.map(function (item) {
                                 return React.createElement(
                                     'button',
-                                    { key: item.label, onMouseDown: _this30.mouseDownHandler, 'data-value': item.label, type: 'button', className: 'btn flex-grow-0 flex-shrink-0 btn-dark text-left' },
+                                    { key: item.label, onMouseDown: _this41.mouseDownHandler, 'data-value': item.label, type: 'button', className: 'btn flex-grow-0 flex-shrink-0 btn-dark text-left' },
                                     item.label
                                 );
                             })
@@ -2075,16 +3423,16 @@ var CusDBEEditorCanUseNodePanel = function (_React$PureComponent15) {
     return CusDBEEditorCanUseNodePanel;
 }(React.PureComponent);
 
-var CusDBEEditorVariables = function (_React$PureComponent16) {
-    _inherits(CusDBEEditorVariables, _React$PureComponent16);
+var CusDBEEditorVariables = function (_React$PureComponent21) {
+    _inherits(CusDBEEditorVariables, _React$PureComponent21);
 
     function CusDBEEditorVariables(props) {
         _classCallCheck(this, CusDBEEditorVariables);
 
-        var _this31 = _possibleConstructorReturn(this, (CusDBEEditorVariables.__proto__ || Object.getPrototypeOf(CusDBEEditorVariables)).call(this, props));
+        var _this42 = _possibleConstructorReturn(this, (CusDBEEditorVariables.__proto__ || Object.getPrototypeOf(CusDBEEditorVariables)).call(this, props));
 
-        autoBind(_this31);
-        return _this31;
+        autoBind(_this42);
+        return _this42;
     }
 
     _createClass(CusDBEEditorVariables, [{
@@ -2112,19 +3460,39 @@ var CusDBEEditorVariables = function (_React$PureComponent16) {
             });
         }
     }, {
-        key: 'componentWillMount',
-        value: function componentWillMount() {
-            this.props.editingNode.bluePrint.on('varChanged', this.varChangedhandler);
+        key: 'listenNode',
+        value: function listenNode(node) {
+            if (node) {
+                node.on('varChanged', this.varChangedhandler);
+            }
+            this.listenedNode = node;
         }
+    }, {
+        key: 'unlistenNode',
+        value: function unlistenNode(node) {
+            if (node) {
+                node.off('varChanged', this.varChangedhandler);
+            }
+        }
+    }, {
+        key: 'componentWillMount',
+        value: function componentWillMount() {}
     }, {
         key: 'componentWillUnmount',
         value: function componentWillUnmount() {
-            this.props.editingNode.bluePrint.off('varChanged', this.varChangedhandler);
+            this.unlistenNode(this.props.editingNode);
         }
     }, {
         key: 'render',
         value: function render() {
-            var targetID = this.props.editingNode.bluePrint.code + 'variables';
+            var _this43 = this;
+
+            if (this.listenedNode != this.props.editingNode) {
+                this.unlistenNode(this.listenedNode);
+                this.listenNode(this.props.editingNode);
+            }
+            var blueprintPrefix = this.props.editingNode.bluePrint.id + '_';
+            var targetID = blueprintPrefix + 'variables';
             return React.createElement(
                 React.Fragment,
                 null,
@@ -2148,7 +3516,7 @@ var CusDBEEditorVariables = function (_React$PureComponent16) {
                             'div',
                             { className: 'btn-group-vertical mw-100' },
                             this.props.editingNode.bluePrint.vars_arr.map(function (varData) {
-                                return React.createElement(SqlNode_Variable_Component, { key: varData.id, varData: varData });
+                                return React.createElement(SqlDef_Variable_Component, { belongNode: _this43.props.editingNode, key: blueprintPrefix + varData.id, varData: varData, editor: _this43.props.editor });
                             })
                         )
                     )
@@ -2160,20 +3528,20 @@ var CusDBEEditorVariables = function (_React$PureComponent16) {
     return CusDBEEditorVariables;
 }(React.PureComponent);
 
-var NameInputRow = function (_React$PureComponent17) {
-    _inherits(NameInputRow, _React$PureComponent17);
+var NameInputRow = function (_React$PureComponent22) {
+    _inherits(NameInputRow, _React$PureComponent22);
 
     function NameInputRow(props) {
         _classCallCheck(this, NameInputRow);
 
-        var _this32 = _possibleConstructorReturn(this, (NameInputRow.__proto__ || Object.getPrototypeOf(NameInputRow)).call(this, props));
+        var _this44 = _possibleConstructorReturn(this, (NameInputRow.__proto__ || Object.getPrototypeOf(NameInputRow)).call(this, props));
 
-        _this32.state = {
-            value: _this32.props.default ? _this32.props.default : '',
-            isagent: _this32.props.isagent == true
+        _this44.state = {
+            value: _this44.props.default ? _this44.props.default : '',
+            isagent: _this44.props.isagent == true
         };
-        autoBind(_this32);
-        return _this32;
+        autoBind(_this44);
+        return _this44;
     }
 
     _createClass(NameInputRow, [{
@@ -2248,20 +3616,20 @@ var NameInputRow = function (_React$PureComponent17) {
     return NameInputRow;
 }(React.PureComponent);
 
-var AddNewCusDSItemPanel = function (_React$PureComponent18) {
-    _inherits(AddNewCusDSItemPanel, _React$PureComponent18);
+var AddNewCusDSItemPanel = function (_React$PureComponent23) {
+    _inherits(AddNewCusDSItemPanel, _React$PureComponent23);
 
     function AddNewCusDSItemPanel(props) {
         _classCallCheck(this, AddNewCusDSItemPanel);
 
-        var _this33 = _possibleConstructorReturn(this, (AddNewCusDSItemPanel.__proto__ || Object.getPrototypeOf(AddNewCusDSItemPanel)).call(this, props));
+        var _this45 = _possibleConstructorReturn(this, (AddNewCusDSItemPanel.__proto__ || Object.getPrototypeOf(AddNewCusDSItemPanel)).call(this, props));
 
-        _this33.state = {};
-        autoBind(_this33);
+        _this45.state = {};
+        autoBind(_this45);
 
-        _this33.nameRef = React.createRef();
-        _this33.typeRef = React.createRef();
-        return _this33;
+        _this45.nameRef = React.createRef();
+        _this45.typeRef = React.createRef();
+        return _this45;
     }
 
     _createClass(AddNewCusDSItemPanel, [{
@@ -2338,20 +3706,20 @@ var AddNewCusDSItemPanel = function (_React$PureComponent18) {
     return AddNewCusDSItemPanel;
 }(React.PureComponent);
 
-var CreateDSItemPanel = function (_React$PureComponent19) {
-    _inherits(CreateDSItemPanel, _React$PureComponent19);
+var CreateDSItemPanel = function (_React$PureComponent24) {
+    _inherits(CreateDSItemPanel, _React$PureComponent24);
 
     function CreateDSItemPanel(props) {
         _classCallCheck(this, CreateDSItemPanel);
 
-        var _this34 = _possibleConstructorReturn(this, (CreateDSItemPanel.__proto__ || Object.getPrototypeOf(CreateDSItemPanel)).call(this, props));
+        var _this46 = _possibleConstructorReturn(this, (CreateDSItemPanel.__proto__ || Object.getPrototypeOf(CreateDSItemPanel)).call(this, props));
 
-        _this34.state = {
-            items_arr: _this34.props.project.dataMaster.customDBEntities_arr,
+        _this46.state = {
+            items_arr: _this46.props.project.dataMaster.customDBEntities_arr,
             selectedItem: null
         };
-        autoBind(_this34);
-        return _this34;
+        autoBind(_this46);
+        return _this46;
     }
 
     _createClass(CreateDSItemPanel, [{
@@ -2380,7 +3748,7 @@ var CreateDSItemPanel = function (_React$PureComponent19) {
     }, {
         key: 'render',
         value: function render() {
-            var _this35 = this;
+            var _this47 = this;
 
             var selectedItem = this.state.selectedItem;
             return React.createElement(
@@ -2401,7 +3769,7 @@ var CreateDSItemPanel = function (_React$PureComponent19) {
                             this.state.items_arr.map(function (item) {
                                 return React.createElement(
                                     'div',
-                                    { onClick: _this35.clickListItemHandler, key: item.code, 'data-itemvalue': item.code, className: 'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '') },
+                                    { onClick: _this47.clickListItemHandler, key: item.code, 'data-itemvalue': item.code, className: 'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '') },
                                     item.name + '-' + item.type
                                 );
                             })
@@ -2425,25 +3793,25 @@ var CreateDSItemPanel = function (_React$PureComponent19) {
     return CreateDSItemPanel;
 }(React.PureComponent);
 
-var DataMasterPanel = function (_React$PureComponent20) {
-    _inherits(DataMasterPanel, _React$PureComponent20);
+var DataMasterPanel = function (_React$PureComponent25) {
+    _inherits(DataMasterPanel, _React$PureComponent25);
 
     function DataMasterPanel(props) {
         _classCallCheck(this, DataMasterPanel);
 
-        var _this36 = _possibleConstructorReturn(this, (DataMasterPanel.__proto__ || Object.getPrototypeOf(DataMasterPanel)).call(this, props));
+        var _this48 = _possibleConstructorReturn(this, (DataMasterPanel.__proto__ || Object.getPrototypeOf(DataMasterPanel)).call(this, props));
 
-        _this36.panelBaseRef = React.createRef();
-        _this36.state = {};
+        _this48.panelBaseRef = React.createRef();
+        _this48.state = {};
 
-        autoBind(_this36);
+        autoBind(_this48);
 
-        var navItems = [CreateNavItemData('数据库', React.createElement(DataBasePanel, { project: _this36.props.project })), CreateNavItemData('创造数据', React.createElement(CreateDSItemPanel, { project: _this36.props.project }))];
-        _this36.navData = {
+        var navItems = [CreateNavItemData('数据库', React.createElement(DataBasePanel, { project: _this48.props.project })), CreateNavItemData('创造数据', React.createElement(CreateDSItemPanel, { project: _this48.props.project }))];
+        _this48.navData = {
             selectedItem: navItems[1],
             items: navItems
         };
-        return _this36;
+        return _this48;
     }
 
     _createClass(DataMasterPanel, [{
@@ -2471,11 +3839,11 @@ var DataMasterPanel = function (_React$PureComponent20) {
     }, {
         key: 'render',
         value: function render() {
-            var _this37 = this;
+            var _this49 = this;
 
             return React.createElement(
                 FloatPanelbase,
-                { title: '\u6570\u636E\u5927\u5E08', ref: this.panelBaseRef, initShow: true },
+                { title: '\u6570\u636E\u5927\u5E08', ref: this.panelBaseRef, initShow: true, initMax: true },
                 React.createElement(
                     'div',
                     { className: 'd-flex flex-grow-0 flex-shrink-0' },
@@ -2484,7 +3852,7 @@ var DataMasterPanel = function (_React$PureComponent20) {
                 this.navData.items.map(function (item) {
                     return React.createElement(
                         'div',
-                        { key: item.text, className: 'flex-grow-1 flex-shrink-1 ' + (item == _this37.navData.selectedItem ? ' d-flex' : ' d-none') },
+                        { key: item.text, className: 'flex-grow-1 flex-shrink-1 ' + (item == _this49.navData.selectedItem ? ' d-flex' : ' d-none') },
                         item.content
                     );
                 })
@@ -2494,49 +3862,3 @@ var DataMasterPanel = function (_React$PureComponent20) {
 
     return DataMasterPanel;
 }(React.PureComponent);
-
-/*
-var 员工_arr = ['杨建','刘峰','蒋蔚','姜玉恒','顾熙','赵智淼','唐媛','卢彩琴','金茂永','郭其宝','李旭','陈伟','吴溢华','吕承梅','陆敏','吴安琴','谢颖清','张亚飞','张光运','孙红闯','龙腾云','盛琴','葛添添','任思杰','孙詹','马晓霞','施闻','艾贻娟','张念刚','龙正华','曾庆洪','王保华','周和兵','文刚','鲁全峰','李小阳','卢世志','白勇军','白雯','刘旗','沈立新','胡琛','严于胜','卢惠云','张开宏','苏元兰','石磊磊','廉雪超','杨哲亮','张留权','李世芹','刘志沛','金林军','高连花','黄婷婷','庄毓霞','潘锦波','江晓彦','赵晶','王彦武','金兵兵','刘立群','徐贤生','沈珏茹','马健'];
-var 金额_arr = [59115,36105,27015,6081.9,20283,22605,8827,20805,11640,5121.6,16063.2,2473.5,9603,12901,7333.2,4074,5121.6,4481.4,7760,5674.5,11640,4811.2,12367.5,60555,16490,17460,5868.5,16005,16665,21822,13095,16296,12222,13269.6,27465,12222,6790,28185,9253.8,24585,8245,16296,54555,44555,19995,11203.5,6693,9166.5,6111,16975,3880,4656,8487.5,194,18105,4850,10088,3734.5,1940,465.6,11737,10476,21480,40605,14550]
-var minDif = 999999;
-var minDif_arr = [];
-
-
-var startData = []
-var startNum = 15000 - 450
-var targetNum = 222199.81
-var count = 0;
-
-var found = false;
-
-function detectFun(now员工_arr, nowNum){
-    var turnIndex = ++count;
-    //console.log('turn' + turnIndex + ':' + now员工_arr.join(','));
-    var dif = Math.abs(nowNum - targetNum);
-    if(dif < minDif){
-        minDif = dif;
-        minDif_arr = now员工_arr;
-
-        console.log('min:' + minDif + ',num:' + nowNum);
-        console.log('arr:' + minDif_arr);
-        console.log(now员工_arr.map(x=>{return 员工_arr[x];}));
-     }
-    if(dif < 0){
-        //found = true;
-        return;
-    }
-    if(nowNum > targetNum){
-        return;
-    }
-
-    var len = now员工_arr.length;
-    var index = len == 0 ? -1 : now员工_arr[len - 1];
-    for(var ci=index + 1;ci<员工_arr.length && !found;++ci){
-        var test员工_arr = now员工_arr.concat();
-        test员工_arr.push(ci);
-        detectFun(test员工_arr, nowNum + 金额_arr[ci]);
-    }
-}
-
-detectFun(startData,startNum)
-*/

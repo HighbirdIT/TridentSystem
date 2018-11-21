@@ -25,7 +25,7 @@ function makeAlertBtnData(label, key, bgColor, textColor) {
         textColor: textColor
     };
 }
-function makeAlertData(title, content, callBack, btns_arr) {
+function makeAlertData(title, content, callBack, btns_arr, data) {
     if (btns_arr == null || btns_arr.length == 0) {
         btns_arr = [makeAlertBtnData('确定', 'ok')];
     }
@@ -33,7 +33,8 @@ function makeAlertData(title, content, callBack, btns_arr) {
         title: title,
         content: content,
         btns_arr: btns_arr,
-        callBack: callBack
+        callBack: callBack,
+        data: data
     };
 }
 
@@ -155,7 +156,7 @@ var TipWindow = function (_React$PureComponent2) {
             newTipArr.splice(index, 1);
             setTimeout(function () {
                 if (tipData.callBack != null) {
-                    tipData.callBack(btnKey);
+                    tipData.callBack(btnKey, tipData.data);
                 }
             }, 10);
             this.setState({

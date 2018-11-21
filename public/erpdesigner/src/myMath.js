@@ -7,5 +7,12 @@ const MyMath={
         if(pt1 == null || pt2 == null)
             return 0;
         return Math.sqrt(Math.pow(pt1.x - pt2.x,2) + Math.pow(pt1.y - pt2.y,2));
-    }
+    },
+
+    intersectRect:(r1, r2)=>{
+        return !(r2.left > r1.right || 
+                 r2.right < r1.left || 
+                 r2.top > r1.bottom ||
+                 r2.bottom < r1.top);
+     },
 }

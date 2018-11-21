@@ -18,7 +18,7 @@ var FloatPanelbase = function (_React$PureComponent) {
 
         _this.state = {
             show: _this.props.initShow == true,
-            maximum: false,
+            maximum: _this.props.initMax == true,
             sizeable: _this.props.sizeable != false,
             closeable: _this.props.closeable != false,
             ismodel: _this.props.ismodel == true
@@ -147,6 +147,11 @@ var FloatPanelbase = function (_React$PureComponent) {
         key: 'toggleMaximum',
         value: function toggleMaximum() {
             this.setState({ maximum: !this.state.maximum });
+        }
+    }, {
+        key: 'setMaximum',
+        value: function setMaximum(val) {
+            this.setState({ maximum: val });
         }
     }, {
         key: 'render',

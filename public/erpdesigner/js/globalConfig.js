@@ -8,6 +8,7 @@ var Orientation_H = '水平';
 var Orientation_V = '垂直';
 var Orientation_Options_arr = [Orientation_H, Orientation_V];
 
+var SqlVarType_Unknown = 'unknown';
 var SqlVarType_Int = 'int';
 var SqlVarType_NVarchar = 'nvarchar';
 var SqlVarType_Date = 'date';
@@ -15,7 +16,13 @@ var SqlVarType_DateTime = 'datetime';
 var SqlVarType_Time = 'time';
 var SqlVarType_Float = 'float';
 var SqlVarType_Decimal = 'decimal';
+var SqlVarType_Scalar = 'scalar';
 var SqlVarTypes_arr = [SqlVarType_Int, SqlVarType_NVarchar, SqlVarType_Date, SqlVarType_DateTime, SqlVarType_Time, SqlVarType_Float, SqlVarType_Decimal];
+var SqlVarInputableTypes_arr = [SqlVarType_Int, SqlVarType_NVarchar, SqlVarType_Date, SqlVarType_DateTime, SqlVarType_Time, SqlVarType_Float, SqlVarType_Decimal, SqlVarType_Scalar];
+
+var Event_CurrentComponentchanged = 'currentComponentchanged';
+var Event_LinkChanged = 'linkChanged';
+var Event_SocketNumChanged = 'linkChanged';
 
 var DesignerConfig = {
     controlConfig: {

@@ -89,7 +89,20 @@ function getAttributeByNode(targetNode, attrName, upserach, maxDeep) {
 	return null;
 }
 
+function parseUnitInt(str) {
+	var ret = parseInt(str);
+	return isNaN(ret) ? 0 : ret;
+}
+
+function parseUnitFloat(str) {
+	var ret = parseFloat(str);
+	return isNaN(ret) ? 0 : ret;
+}
+
 function isNodeHasParent(targetNode, parentNode) {
+	if (targetNode == parentNode) {
+		return true;
+	}
 	var tNode = targetNode;
 	var count = 0;
 	do {
@@ -110,6 +123,15 @@ function extractPropsFromObj(obj, props_arr) {
 		}
 	});
 	return rlt;
+}
+
+function removeElemFrommArray(arr, elem) {
+	var index = arr.indexOf(elem);
+	if (index >= 0) {
+		arr.splice(index, 1);
+		return true;
+	}
+	return false;
 }
 
 var REQUEST_POSTS = 'REQUEST_POSTS';

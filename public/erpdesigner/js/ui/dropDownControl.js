@@ -286,7 +286,7 @@ var DropDownControl = function (_React$PureComponent) {
                                 selectedOption ? selectedOption.text : '请选择'
                             )
                         ),
-                        React.createElement('button', { ref: this.dropdownbtnRef, style: { width: '30px' }, type: 'button', onClick: this.clickOpenHandler, className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdown-toggle dropdown-toggle-split' }),
+                        this.props.miniBtn && React.createElement('button', { ref: this.dropdownbtnRef, style: { width: '30px' }, type: 'button', onClick: this.clickOpenHandler, className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdown-toggle dropdown-toggle-split' }),
                         React.createElement(
                             'div',
                             { className: "dropdown-menu " + (this.state.opened ? 'show' : ''), ref: this.dropmenudivRef },

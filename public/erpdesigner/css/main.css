@@ -244,6 +244,10 @@
     z-index: 2000;
   }
 
+  .quickMenuContainer{
+    z-index: 2100;
+  }
+
 @keyframes blink
 {
   0% {opacity: 0;}
@@ -295,6 +299,7 @@
   -ms-user-select: none; /*IE10*/
   -khtml-user-select: none; /*早期浏览器*/
   user-select: none;
+  cursor: default;
 }
 
 .splitbar_H{
@@ -378,27 +383,52 @@
 }
 
 
-.nodeRoot[moving]{
+.nodeRoot[d-selected]{
   border:lightgreen 2px dashed;
   z-index: 10;
 }
 
-.nodesocket{
-  color: black;
+.socketCell{
+  min-height: 30px;
+  min-width: 25px;
 }
 
+.nodesocket{
+  color: black;
+  margin-left: 0.5em;
+}
+
+/*
 .nodesocket:hover{
   color: lightgreen;
 }
+*/
 
-.nodesocket[type='dbe']{
+.nodesocket[vt='dbe']{
   color: red;
+}
+
+.nodesocket[vt='int']{
+  color:rgb(32, 180, 140);
+}
+
+.socketInputer{
+  width: 50px;
+}
+
+.socketDynamicDiv{
+  min-width: 100px;
 }
 
 .nodepath{
   position: absolute;
-  background:red;
+  background:white;
   transform-origin: 0% 0%;
+  z-index: 1000;
+}
+
+.nodepath:hover{
+  border: 2px solid white;
 }
 
 .nodepath[draging]{
@@ -438,4 +468,21 @@
 
 .dropdown-menu.show {
   position: fixed;
+}
+
+.dragableItem{
+  cursor: default;
+}
+
+.dragableItem:hover{
+  color: aqua;
+}
+
+.nodeHead{
+  color : white;
+  font-size: 1.5em;
+}
+
+.nodeFlow{
+  cursor: pointer;
 }

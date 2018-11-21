@@ -88,6 +88,7 @@ class OutlineItem extends React.PureComponent {
 
     dragTimeOutHandler() {
         //console.log('dragTimeOutHandler');
+        window.removeEventListener('mouseup', this.windowMouseUpHandler);
         this.props.wantDragAct(this);
     }
 
@@ -101,6 +102,7 @@ class OutlineItem extends React.PureComponent {
         if (this.dragTimeOut) {
             clearTimeout(this.dragTimeOut);
         }
+        window.removeEventListener('mouseup', this.windowMouseUpHandler);
     }
 
     render() {

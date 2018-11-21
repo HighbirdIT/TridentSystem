@@ -1,3 +1,4 @@
+const ISParam_Options_arr=[{name:'参数',code:'1'},{name:'变量',code:'0'}]
 
 var __SynAction_count = 0;
 class SynAction extends EventEmitter {
@@ -317,14 +318,175 @@ var node_Counter = 1;
 
 const SQLNODE_BDBENTITY = 'dbEntity';
 const SQLNODE_SELECT = 'select';
-const SQLNODE_VAR = 'variable';
+const SQLNODE_VAR_GET = 'var_get';
+const SQLNODE_VAR_SET = 'var_set';
+const SQLNODE_NOPERAND = 'noperand';
 
+const SQLDEF_VAR = 'def_variable';
+
+
+class SocketLink{
+    constructor(outSocket, inSocket, pool){
+        this.outID = outSocket.id;
+        this.inID = inSocket.id;
+        this.pool = pool;
+        this.outSocket = outSocket;
+        this.inSocket = inSocket;
+
+        this.id = this.outID + '|L|' + this.inID;
+        //this.revid = inID + '|L|' + outID;
+    }
+
+    fireChanged(){
+        this.inSocket.fireLinkChanged();
+        this.outSocket.fireLinkChanged();
+    }
+}
+
+class ScoketLinkPool{
+    constructor(bluePrint){
+        this.bluePrint = bluePrint;
+        this.link_map = {};
+    }
+
+    _deleteLink(linkObj){
+        if(this.link_map[linkObj.id] == null){
+            return false; 
+        }
+        if(linkObj){
+            this.link_map[linkObj.id] = null;
+            delete this.link_map[linkObj.id];
+            linkObj.fireChanged();
+        }
+        return true;
+    }
+    
+    addLink(outSocket, inSocket){
+        if(outSocket.isIn == inSocket.isIn){
+            throw new Error("两个socket流方向不能一样");
+        }
+        if(outSocket.isIn){
+            var t = outSocket;
+            outSocket = inSocket;
+            inSocket = t;
+        }
+        var id = outSocket.id + '|L|' + inSocket.id;
+        if(this.link_map[id] == null){
+            // 把已有的inSocket删除掉
+            for(var si in this.link_map){
+                var theLink = this.link_map[si];
+                if(theLink == null)
+                    continue;
+                if(theLink.inSocket == inSocket){
+                    this._deleteLink(this.link_map[si]);
+                    break;
+                }
+            }
+            var newLink = new SocketLink(outSocket, inSocket, this);
+            this.link_map[id] = newLink;
+            newLink.fireChanged();
+            this.cacheData = null;
+            var self = this;
+            setTimeout(() => {
+                self.bluePrint.emit('changed');
+            }, 10);
+        }
+        return this.link_map[id];
+    }
+
+    removeLink(link){
+        if(this._deleteLink(link)){
+            this.cacheData = null;
+            this.bluePrint.emit('changed');
+        }
+    }
+
+    clearNodeLink(theNode){
+        var needClearids_arr = [];
+        for(var si in this.link_map){
+            var theLink = this.link_map[si];
+            if(theLink == null)
+                continue;
+            if(theLink.inSocket.node == theNode || theLink.outSocket.node == theNode){
+                needClearids_arr.push(si);
+            }
+        }
+        if(needClearids_arr.length > 0){
+            for(var si in needClearids_arr){
+                var id = needClearids_arr[si];
+                this._deleteLink(this.link_map[id])
+            }
+            this.cacheData = null
+        }
+        return needClearids_arr.length > 0;
+    }
+
+    clearSocketLink(theSocket){
+        var needClearids_arr = [];
+        for(var si in this.link_map){
+            var theLink = this.link_map[si];
+            if(theLink == null)
+                continue;
+            if(theLink.inSocket == theSocket || theLink.outSocket == theSocket){
+                needClearids_arr.push(si);
+            }
+        }
+        if(needClearids_arr.length > 0){
+            for(var si in needClearids_arr){
+                var id = needClearids_arr[si];
+                this._deleteLink(this.link_map[id])
+            }
+            this.cacheData = null
+        }
+        return needClearids_arr.length > 0;
+    }
+
+    getLinksByNode(theNode){
+        var rlt_arr = [];
+        for(var si in this.link_map){
+            var theLink = this.link_map[si];
+            if(theLink == null)
+                continue;
+            if(theLink.inSocket.node == theNode || theLink.outSocket.node == theNode){
+                rlt_arr.push(theLink);
+            }
+        }
+        return rlt_arr;
+    }
+
+    getLinksBySocket(theSocket){
+        var rlt_arr = [];
+        for(var si in this.link_map){
+            var theLink = this.link_map[si];
+            if(theLink == null)
+                continue;
+            if(theLink.inSocket == theSocket || theLink.outSocket == theSocket){
+                rlt_arr.push(theLink);
+            }
+        }
+        return rlt_arr;
+    }
+
+    getAllLink(){
+        if(this.cacheData == null){
+            this.cacheData = [];
+            for(var si in this.link_map){
+                if(this.link_map[si]){
+                    this.cacheData.push(this.link_map[si]);
+                }
+            }
+        }
+        return this.cacheData;
+    }
+}
 
 class CustomDbEntity extends EventEmitter{
     constructor(initData){
         super();
         this.nodes_arr = [];
         this.vars_arr = [];
+        this.links_arr = [];
+        this.linkPool = new ScoketLinkPool(this);
         Object.assign(this, initData); 
         this.nodeIdCounterPool = {};
         var self = this;
@@ -382,7 +544,7 @@ class CustomDbEntity extends EventEmitter{
     }
 
     registerNode(node, parentNode){
-        if(node.type == SQLNODE_VAR){
+        if(node.type == SQLDEF_VAR){
             this.addVariable(node);// 变量需要注册到根节点中
             return;
         }
@@ -403,6 +565,7 @@ class CustomDbEntity extends EventEmitter{
         node.parent = parentNode;
         node.id = useId;
         this.allNode_map[useId] = node;
+        this.emit('changed');
     }
 
     addVariable(varData){
@@ -431,7 +594,7 @@ class CustomDbEntity extends EventEmitter{
             if(this.getVariableByName(varName) == null)
                 break;
         }
-        var rlt = new SqlNode_Variable(this,varName, SqlVarType_Int);
+        var rlt = new SqlDef_Variable(this,varName, SqlVarType_Int);
         rlt.needEdit = true;
         return rlt;
     }
@@ -440,7 +603,9 @@ class CustomDbEntity extends EventEmitter{
         var index = this.vars_arr.indexOf(varData);
         if(index != -1){
             this.vars_arr.splice(index, 1);
+            varData.removed = true;
             this.emit('varChanged');
+            varData.emit('changed');
         }
     }
 
@@ -454,6 +619,7 @@ class CustomDbEntity extends EventEmitter{
             }
             node.bluePrint = null;
             node.parent = null;
+            this.linkPool.clearNodeLink(node);
             this.emit('changed');
         }
     }
@@ -463,6 +629,15 @@ class CustomDbEntity extends EventEmitter{
             return this;
         }
         return this.allNode_map[id];
+    }
+
+    getSocketById(socketID){
+        var pos = socketID.indexOf('$');
+        var nodeId = socketID.substr(0, pos);
+        var theNode = getNodeByID(nodeId);
+        if(theNode == null)
+            return null;
+        return theNode.sockets_map[socketID];
     }
 }
 
@@ -478,6 +653,7 @@ class SqlNode_Base extends EventEmitter{
             this.left = 0;
         if(this.top == null)
             this.top = 0;
+        this.hadFlow = true;
 
         this.bluePrint.registerNode(this, parentNode);
 
@@ -487,6 +663,8 @@ class SqlNode_Base extends EventEmitter{
         }
 
         this.sockets_map = {};
+        this.inputScokets_arr = [];
+        this.outputScokets_arr = [];
     }
 
 
@@ -494,37 +672,156 @@ class SqlNode_Base extends EventEmitter{
         return this.title == null ? '未命名' : this.title;
     }
 
-    genSocketID(isIn){
-        var preFix = this.id + '_' + (isIn ? 'i' : 'o') + '_';
-        for(var i=0;i<999;++i){
-            var id = preFix + i;
-            if(this.sockets_map[id] == null)
-                return id;
+    getScoketByName(name, isIn){
+        if(isIn == null)
+            isIn = '*';
+        var rlt = [];
+        if(isIn != false){
+            rlt.concat(this.inputScokets_arr.filter(item=>{return item.name == name}));
         }
-        return null;
+
+        if(isIn != true){
+            rlt.concat(this.outputScokets_arr.filter(item=>{return item.name == name}));
+        }
+        return rlt;
+    }
+
+    addSocket(socketObj){
+        this.sockets_map[socketObj.id] = socketObj;
+        if(socketObj.isIn){
+            this.inputScokets_arr.push(socketObj);
+        }
+        else{
+            this.outputScokets_arr.push(socketObj);
+        }
+    }
+
+    removedSocket(socketObj){
+        if(socketObj.isIn){
+            removeElemFrommArray(this.inputScokets_arr, socketObj);
+        }
+        else{
+            removeElemFrommArray(this.outputScokets_arr, socketObj);
+        }
+        this.sockets_map[socketObj.id] = null;
+    }
+
+    setPos(newx, newy){
+        this.left = newx;
+        this.top = newy;
+        this.emit('moved');
     }
 }
 
-class SqlNode_Variable extends SqlNode_Base{
+function MK_NS_Settings(label, type, defval){
+    return{
+        label:label,
+        type:type,
+        defval:defval
+    };
+}
+
+function CommonFun_SetCurrentComponent(target){
+    if(this.currentComponent != target){
+        this.currentComponent = target;
+        this.emit(Event_CurrentComponentchanged);
+    }
+}
+
+class NodeSocket extends EventEmitter{
+    constructor(name, tNode, isIn, initData){
+        super();
+        Object.assign(this, initData);
+        this.name = name;
+        this.node = tNode;
+        this.isIn = isIn;
+        this.id = tNode.id + '$' + name;
+        this.setCurrentComponent = CommonFun_SetCurrentComponent.bind(this);
+    }
+    
+    set(data){
+        Object.assign(this, data);
+        this.emit('changed');
+    }
+
+    getLinks(){
+        return this.node.bluePrint.linkPool.getLinksBySocket(this);
+    }
+
+    fireLinkChanged(){
+        this.emit(Event_LinkChanged);
+        var self = this;
+        setTimeout(() => {
+            self.node.emit('moved');
+        }, 20);
+    }
+}
+
+class SqlDef_Variable extends SqlNode_Base{
     constructor(bluePrint,name,valType,size_1,size_2){
         super({
             name:name,
             valType:valType,
             size_1:isNaN(size_1) ? 0 : parseInt(size_1),
             size_2:isNaN(size_2) ? 0 : parseInt(size_2),
-        }, bluePrint, null, SQLNODE_VAR, '变量');
+            isParam:0,
+        }, bluePrint, null, SQLDEF_VAR, '变量');
         autoBind(this);
+    }
+
+    setProp(data){
+        if(data.name != null){
+            this.name = data.name;
+        }
+        if(data.valType != null){
+            this.valType = data.valType;
+        }
+        if(data.size_1 != null){
+            this.size_1 = isNaN(data.size_1) ? 0 : parseInt(data.size_1);
+        }
+        if(data.size_2 != null){
+            this.size_2 = isNaN(data.size_2) ? 0 : parseInt(data.size_2);
+        }
+        if(data.isParam != null){
+            this.isParam = data.isParam;
+        }
+        if(data.editing != null){
+            this.needEdit = data.editing;
+        }
+        this.emit('changed');
+    }
+
+    toString(){
+        var rlt = (this.isParam ? '@' : '') + this.name + '  ' + this.valType;
+        switch(this.valType){
+            case SqlVarType_NVarchar:
+                rlt += '(' + this.size_1 + ')';
+                break;
+            case SqlVarType_Decimal:
+                rlt += '(' + this.size_1 + ',' + this.size_2 + ')';
+                break;
+        }
+
+        return rlt;
+    }
+
+    getLabel(){
+        return (this.isParam ? '@' : '') + this.name;
+    }
+
+    getValType(){
+        return this.valType;
     }
 }
 
-class SqlNode_Variable_Component extends React.PureComponent{
+class SqlDef_Variable_Component extends React.PureComponent{
     constructor(props){
         super(props);
         var varData = this.props.varData;
         this.state = {
             name:varData.name,
             valType:varData.valType,
-            isParam:varData.isParam == true,
+            isParam:varData.isParam,
             size_1:varData.size_1,
             size_2:varData.size_2,
             editing:varData.needEdit == true,
@@ -534,11 +831,14 @@ class SqlNode_Variable_Component extends React.PureComponent{
     }
 
     varChanged(){
+        if(this.state.editing){
+            return;
+        }
         var varData = this.props.varData;
         this.setState({
             name:varData.name,
             valType:varData.valType,
-            isParam:varData.isParam == true,
+            isParam:varData.isParam,
             size_1:varData.size_1,
             size_2:varData.size_2,
         });
@@ -562,6 +862,12 @@ class SqlNode_Variable_Component extends React.PureComponent{
     valTypeChangedHandler(newData){
         this.setState({
             valType:newData,
+        });
+    }
+
+    isParamChangedHandler(newData){
+        this.setState({
+            isParam:newData.code,
         });
     }
 
@@ -600,16 +906,95 @@ class SqlNode_Variable_Component extends React.PureComponent{
         return null;
     }
 
+    clickEditBtnHandler(){
+        if(this.state.editing){
+            var tval = Object.assign({},this.state);
+            tval.editing = false;
+            this.props.varData.setProp(tval);
+        }
+        this.setState({
+            editing:!this.state.editing,
+        });
+    }
+
+    clickTrashHandler(){
+        gTipWindow.popAlert(makeAlertData('警告','确定删除变量:"' + this.state.name + '"?',this.deleteTipCallback,[TipBtnOK,TipBtnNo]));
+    }
+
+    deleteTipCallback(key){
+        if(key == 'ok'){
+            this.props.varData.bluePrint.removeVariable(this.props.varData);
+        }
+    }
+
+    labelMouseDownHandler(ev) {
+        this.dragTimeOut = setTimeout(this.dragTimeOutHandler, 300);
+        window.addEventListener('mouseup', this.labelWindowMouseUpHandler);
+    }
+
+    labelWindowMouseUpHandler(ev) {
+        if (this.dragTimeOut) {
+            clearTimeout(this.dragTimeOut);
+        }
+    }
+
+    genDragContentFun(){
+        var varData = this.props.varData;
+        return (<span className='text-nowrap border bg-dark text-light'>{'变量:' + varData.name}</span>)
+    }
+
+    dragTimeOutHandler() {
+        var designer = this.props.varData.bluePrint.master.project.designer;
+        designer.startDrag({info:'放置变量'}, this.dragEndHandler, this.genDragContentFun);
+    }
+
+    dragMenuCallBack(menuItem, pos){
+        var varData = this.props.varData;
+        if(menuItem.key == 'SET'){
+            this.props.editor.addVarGSNode({isGet:false, varName:varData.name}, pos)
+        }
+        else if(menuItem.key == 'GET'){
+            //console.log('get');
+            this.props.editor.addVarGSNode({isGet:true, varName:varData.name}, pos)
+        }
+    }
+
+    dragEndHandler(pos){
+        var editorRect = this.props.editor.zoomDivRef.current.getBoundingClientRect();
+        if(MyMath.isPointInRect(editorRect, pos)){
+            var designer = this.props.varData.bluePrint.master.project.designer;
+            var varData = this.props.varData;
+            designer.propUpMenu([new QuickMenuItem('Set ' + varData.name, 'SET'),new QuickMenuItem('Get ' + varData.name, 'GET')]
+                ,pos
+                ,this.dragMenuCallBack
+            );
+        }
+    }
+
     render() {
         var varData = this.props.varData;
+        var editing = this.state.editing;
+        if(!editing){
+            return(
+                <div className='d-flex flex-grow-0 flex-shrink-0 w-100 text-light align-items-center hidenOverflo'>
+                    <i className={'fa fa-edit fa-lg'} onClick={this.clickEditBtnHandler} />
+                    <div className='flex-grow-1 flex-shrink-1 text-nowrap cursor-arrow dragableItem'
+                         onMouseDown={this.labelMouseDownHandler}>
+                        {'' + varData}
+                    </div>
+                    <i className={'fa fa-trash fa-lg'} onClick={this.clickTrashHandler} />
+                </div>
+            )
+        }
         return(
         <div className='d-flex flex-column flex-grow-0 flex-shrink-0 w-100 border border-primary'>
             <div className='d-flex bg-dark flex-grow-0 flex-shrink-0 w-100 align-items-center'>
+                <i className={'fa fa-edit fa-lg text-' + (editing ? 'success' : 'info')} onClick={this.clickEditBtnHandler} />
                 <input onChange={this.nameInputChangeHanlder} type='text' value={this.state.name} className='flexinput flex-grow-1 flex-shrink-1' />
-                <i className='fa fa-edit fa-lg text-success' />
             </div>
-            <div className='d-flex w-100 flex-grow-0 flex-shrink-0'>
-            <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={SqlVarTypes_arr} rootclass='flex-grow-1 flex-shrink-1' textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
+            <div className='d-flex w-100 flex-grow-0 flex-shrink-0 align-items-center'>
+                <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={SqlVarTypes_arr} rootclass='flex-grow-1 flex-shrink-1' textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
+                <DropDownControl itemChanged={this.isParamChangedHandler} btnclass='btn-dark' options_arr={ISParam_Options_arr} rootclass='flex-grow-0 flex-shrink-0' textAttrName='name' valueAttrName='code' value={this.state.isParam} /> 
             </div>
             {
                 this.renderSize()
@@ -685,6 +1070,147 @@ class SqlNode_Select extends SqlNode_Base{
     }
 }
 
+class SqlNode_Var_Get extends SqlNode_Base{
+    constructor(initData, parentNode, creationInfo){
+        super(initData, parentNode, creationInfo, SQLNODE_VAR_GET, '变量-获取');
+        autoBind(this);
+        this.hadFlow = false;
+        this.outSocket = new NodeSocket('out', this, false);
+        this.addSocket(this.outSocket);
+
+        this.varData = this.bluePrint.getVariableByName(this.varName);
+        if(this.varData != null){
+            this.varData.on('changed', this.varChangedHandler);
+        }
+        this.varChangedHandler();
+
+        var self = this;
+    }
+
+    getNodeTitle(){
+        return 'Get:' + this.varName;
+    }
+
+    varChangedHandler(){
+        if(this.varData == null){
+            this.outSocket.set(
+                MK_NS_Settings(this.varName + '-不存在', SqlVarType_Unknown, null)
+            );
+            return;
+        }
+        var varLabel = '';
+        var valType = '';
+        if(this.varData.removed){
+            this.varData = null;
+            varLabel = this.varName + '-不存在';
+            valType = SqlVarType_Unknown;
+        }
+        else{
+            varLabel = this.varData.getLabel();
+            valType = this.varData.getValType();
+            this.varName = this.varData.name;
+        }
+
+        this.outSocket.set(
+            MK_NS_Settings(varLabel, valType, null)
+        );
+        //this.emit('changed');
+    }
+}
+
+class SqlNode_Var_Set extends SqlNode_Base{
+    constructor(initData, parentNode, creationInfo){
+        super(initData, parentNode, creationInfo, SQLNODE_VAR_SET, '变量-设置');
+        autoBind(this);
+
+        this.outSocket = new NodeSocket('out', this, false);
+        this.addSocket(this.outSocket);
+        this.inSocket = new NodeSocket('in', this, true);
+        this.addSocket(this.inSocket);
+
+        this.varData = this.bluePrint.getVariableByName(this.varName);
+        if(this.varData != null){
+            this.varData.on('changed', this.varChangedHandler);
+        }
+        this.varChangedHandler();
+
+        var self = this;
+    }
+
+    getNodeTitle(){
+        return 'Set:' + this.varName;
+    }
+
+    varChangedHandler(){
+        if(this.varData == null){
+            this.inSocket.set(
+                MK_NS_Settings(this.varName + '-不存在', SqlVarType_Unknown, null)
+            );
+            return;
+        }
+        var varLabel = '';
+        var valType = '';
+        if(this.varData.removed){
+            this.varData = null;
+            varLabel = this.varName + '-不存在';
+            valType = SqlVarType_Unknown;
+        }
+        else{
+            varLabel = this.varData.getLabel();
+            valType = this.varData.getValType();
+            this.varName = this.varData.name;
+        }
+
+        this.inSocket.set(
+            MK_NS_Settings(varLabel, valType, null)
+        );
+        this.outSocket.set(
+            MK_NS_Settings('', valType, null)
+        );
+        this.emit('changed');
+    }
+
+}
+
+class SqlNode_NOperand extends SqlNode_Base{
+    constructor(initData, parentNode, creationInfo){
+        super(initData, parentNode, creationInfo, SQLNODE_NOPERAND, '运算');
+        autoBind(this);
+
+        this.outSocket = new NodeSocket('out', this, false);
+        this.addSocket(this.outSocket);
+        this.insocketInitVal  = {
+            type:SqlVarType_Scalar,
+        };
+        this.addSocket(this.genInSocket());
+        this.addSocket(this.genInSocket());
+        if(this.operator == null){
+            this.operator = '+';
+        }
+        this.hadFlow = false;
+
+        var self = this;
+    }
+
+    genInSocket(){
+        return new NodeSocket('in' + this.inputScokets_arr.length, this, true, this.insocketInitVal);
+    }
+
+    processInputSockets(isPlus){
+        if(isPlus){
+            this.addSocket(this.genInSocket());
+            this.emit(Event_SocketNumChanged);
+        }
+        else{
+            if(this.inputScokets_arr.length > 2){
+                var needRemoveSocket = this.inputScokets_arr.pop();
+                this.bluePrint.linkPool.clearSocketLink(needRemoveSocket);
+                this.emit(Event_SocketNumChanged);
+            }
+        }
+    }
+}
+
 class SqlNode_JoinNode extends SqlNode_Base{
     constructor(initData){
         super();
@@ -708,14 +1234,7 @@ class D_Node extends EventEmitter{
     }
 }
 
-class NodeSocket extends EventEmitter{
-    constructor(initData, tNode, isIn){
-        super();
-        Object.assign(this, initData);
-        this.node = tNode;
-        this.isIn = isIn;
-    }
-}
+
 
 class C_Node_Socket extends React.PureComponent{
     constructor(props){
@@ -723,19 +1242,103 @@ class C_Node_Socket extends React.PureComponent{
         autoBind(this);
 
         this.flagRef = React.createRef();
+        this.inputRef = React.createRef();
+        this.state={
+            socket:this.props.socket,
+        }
     }
 
     clickHandler(ev){
-        this.props.clickHandler(this);
+        this.props.editor.clickSocket(this.props.socket);
     }
 
-    getCenterPos(offsetRect){
+    getCenterPos(){
+        var socket = this.state.socket;
+        var nodeData = socket.node;
+        if(nodeData.currentFrameCom == null || nodeData.currentFrameCom.rootDivRef.current == null){
+            return null;
+        }
+        var baseRect = nodeData.currentFrameCom.rootDivRef.current.getBoundingClientRect();
         var rect = this.flagRef.current.getBoundingClientRect();
-        return {x:Math.round(rect.left + rect.width * 0.5 - offsetRect.left), y:Math.round(rect.top + rect.height * 0.5 - offsetRect.top)};
+        return {x:Math.round(nodeData.left + (rect.left - baseRect.left) + rect.width * 0.5), y:Math.round(nodeData.top + (rect.top - baseRect.top)  + rect.height * 0.5)};
+    }
+
+    componentWillMount(){
+        this.listenData(this.state.socket);
+        this.state.socket.setCurrentComponent(this);
+    }
+
+    componentWillUnmount(){
+        this.unlistenData(this.state.socket);
+        this.state.socket.setCurrentComponent(null);
+    }
+
+    nodeDataChangedHandler(ev){
+        var socket = this.state.socket;
+        if(socket.node.parent == null){
+            return; // node removed
+        }
+        this.setState({
+            magicobj:{}
+        });
+    }
+
+    getContent(){
+    }
+    
+    listenData(socket){
+        if(socket){
+            socket.on('changed', this.nodeDataChangedHandler);
+            socket.on(Event_LinkChanged, this.nodeDataChangedHandler);
+        }
+        
+    }
+
+    unlistenData(socket){
+        if(socket){
+            socket.off('changed', this.nodeDataChangedHandler);
+            socket.off(Event_LinkChanged, this.nodeDataChangedHandler);
+        }
+    }
+
+    inputChangedHandler(ev){
+        var socket = this.props.socket;
+        socket.set({defval:ev.target.value});
     }
 
     render(){
-        return <div style={{height:this.props.height,width:this.props.width}} className='d-flex align-items-center nodesocket' type='dbe'> <i ref={this.flagRef} onClick={this.clickHandler} className='fa fa-circle-o cursor-pointer'  /> </div>
+        var socket = this.props.socket;
+        if(this.props.socket != this.state.socket){
+            var self = this;
+            this.unlistenData(this.state.socket);
+            this.listenData(socket);
+            setTimeout(() => {
+                self.setState({
+                    socket:socket,
+                });
+            }, 10);
+            return null;
+        }
+        var inputable = socket.isIn && SqlVarInputableTypes_arr.indexOf(socket.type) != -1;
+        var inputElem = null;
+        if(inputable){
+            var links = socket.getLinks();
+            if(links.length > 0){
+                inputable = false;
+            }
+        }
+        if(inputable)
+        {
+            inputElem = (<input type='text' ref={this.inputRef} className='socketInputer' onChange={this.inputChangedHandler} value={socket.defval == null ? '' : socket.defval} />);
+        }
+
+        var iconElem = (<i ref={this.flagRef} onClick={this.clickHandler} className='fa fa-circle-o cursor-pointer nodesocket' vt={socket.type} /> );
+        return <div className='d-flex align-items-center text-nowrap text-light socketCell'> 
+                    {this.props.align == 'left' && iconElem}
+                    {this.props.align == 'left' && inputElem}
+                    {socket.label}
+                    {this.props.align != 'left' && iconElem}
+                </div>
     }
 }
 
@@ -749,16 +1352,27 @@ class C_SqlNode_Frame extends React.PureComponent{
             moving:this.props.nodedata.newborn == true,
         }
 
-        this.rooDivRef = React.createRef();
+        this.rootDivRef = React.createRef();
 
         if(this.props.nodedata.newborn){
             var self = this;
             setTimeout(() => {
                 if(self.state.moving){
                     self.startMove(null);
+                    this.props.editor.setSelectedNF(this);
                 }
             }, 10);
         }
+    }
+
+    addOffset(offset){
+        var nodeData = this.props.nodedata;
+        nodeData.setPos(nodeData.left + offset.x, nodeData.top + offset.y);
+        this.setState(
+            {
+                magicobj:{},
+            }
+        );
     }
 
     startMove(moveBase){
@@ -770,8 +1384,11 @@ class C_SqlNode_Frame extends React.PureComponent{
                 moving:true,
             }
         );
-    
-        this.movingInt = setInterval(this.movingIntHandler,100);
+        
+        if(this.movingInt == null){
+            this.movingInt = setInterval(this.movingIntHandler,100);
+        }
+        this.targetScroll = null;
     }
     
     endMove(){
@@ -822,16 +1439,46 @@ class C_SqlNode_Frame extends React.PureComponent{
 
     componentWillUnmount(){
         this.endMove();
+        this.unmounted = true;
+        this.props.nodedata.currentFrameCom = null;
+    }
+
+    componentWillMount(){
+        this.props.nodedata.currentFrameCom = this;
     }
     
     mousemoveWidthMoveHandler(ev){
         var moveBase = this.moveBase;
-        var scrollDiv = this.props.editorDivRef.current.parentNode;
-        var scrollDivRect = scrollDiv.getBoundingClientRect();
-        var editorScale = this.props.editorDivRef.current.scale;
+        if(moveBase == null){
+            moveBase = {
+                x:0, 
+                y:0
+            };
+        }
+        var editorRootDiv = this.props.editor.zoomDivRef.current;
+        var rootDiv = this.rootDivRef.current;
+        var editorRootDivRect = editorRootDiv.getBoundingClientRect();
+        var editorScale = editorRootDivRect.scale;
         if(editorScale == null || isNaN(editorScale)){
             editorScale = 1;
         }
+        var mouseX = ev.x;
+        var mouseY = ev.y;
+        var localPos = {
+            x:mouseX - editorRootDivRect.left,
+            y:mouseY - editorRootDivRect.top,
+        }
+        var editorDiv = this.props.editor.editorDivRef.current;
+        var newX = localPos.x - parseUnitInt(editorDiv.style.left) + moveBase.x;
+        var newY = localPos.y - parseUnitInt(editorDiv.style.top) + moveBase.y;
+        newX = Math.round(newX / 10) * 10;
+        newY = Math.round(newY / 10) * 10;
+        rootDiv.style.left = newX + 'px';
+        rootDiv.style.top = newY + 'px';
+        var nodeData = this.props.nodedata;
+        nodeData.setPos(newX, newY);
+        return;
+
         scrollDivRect = {
             left:Math.round(scrollDivRect.left * editorScale),
             right:Math.round(scrollDivRect.right * editorScale),
@@ -847,7 +1494,7 @@ class C_SqlNode_Frame extends React.PureComponent{
             return;
         }
         var editorDivRect = this.props.editorDivRef.current.getBoundingClientRect();
-        var rootDivRect = this.rooDivRef.current.getBoundingClientRect();
+        var rootDivRect = this.rootDivRef.current.getBoundingClientRect();
         if(moveBase == null){
             moveBase = {
                 x:0, 
@@ -893,8 +1540,8 @@ class C_SqlNode_Frame extends React.PureComponent{
         else if(newBottom > editorDivRect.height){
             newY = editorDivRect.height - rootDivRect.height;
         }
-        this.rooDivRef.current.style.left = newX + 'px';
-        this.rooDivRef.current.style.top = newY + 'px';
+        this.rootDivRef.current.style.left = newX + 'px';
+        this.rootDivRef.current.style.top = newY + 'px';
         //console.log('nx:' + newX + ';ny:' + newY);
     
         var nodeData = this.props.nodedata;
@@ -927,6 +1574,34 @@ class C_SqlNode_Frame extends React.PureComponent{
     }
     
     movingIntHandler(){
+        var editorRootDiv = this.props.editor.zoomDivRef.current;
+        var editorDiv = this.props.editor.editorDivRef.current;
+        var theRect = editorRootDiv.getBoundingClientRect();
+        var offset = {
+            left:WindowMouse.x - theRect.left,
+            top:WindowMouse.y - theRect.top,
+            bottom:theRect.bottom - WindowMouse.y,
+            right:theRect.right - WindowMouse.x,
+        }
+        var gap = 100;
+        var autoMove = {x:0,y:0};
+        if(offset.left > 0 && offset.left < gap){
+            autoMove.x = 1;
+        }
+        else if(offset.right > 0 && offset.right < gap){
+            autoMove.x = -1;
+        }
+        if(offset.top > 0 && offset.top < gap){
+            autoMove.y = 1;
+        }
+        else if(offset.bottom > 0 && offset.bottom < gap){
+            autoMove.y = -1;
+        }
+        if(autoMove.x != 0 || autoMove.y != 0){
+            editorDiv.style.left = (parseUnitInt(editorDiv.style.left) + autoMove.x * 30) + 'px';
+            editorDiv.style.top = (parseUnitInt(editorDiv.style.top) + autoMove.y * 30) + 'px';
+        }
+        return;
         if(this.targetScroll){
             var scrollDiv = this.props.editorDivRef.current.parentNode;
             var difX = this.targetScroll.x - scrollDiv.scrollLeft;
@@ -946,8 +1621,8 @@ class C_SqlNode_Frame extends React.PureComponent{
         this.endMove();
     }
     
-    moveBarMouseDownHandler(ev){
-        if(ev.target != this.rooDivRef.current){
+    moveBarMouseDownHandler(ev, forcedo){
+        if(!forcedo && ev.target != this.rootDivRef.current && ev.target.getAttribute('f-canmove') == null){
             return;
         }
         if(this.props.clickHandler){
@@ -959,46 +1634,75 @@ class C_SqlNode_Frame extends React.PureComponent{
                 return;
             }
         }
-        var rootDivRect = this.rooDivRef.current.getBoundingClientRect();
+        this.props.editor.setSelectedNF(this);
+        var rootDivRect = this.rootDivRef.current.getBoundingClientRect();
         this.moveBase={x:rootDivRect.left - WindowMouse.x,y:rootDivRect.top - WindowMouse.y};
         this.startMove(this.moveBase);
     }
+
+    setSelected(val){
+        this.setState({selected:val});
+    }
     
+    /*
     clickDeleteHandler(ev){
-        gTipWindow.popAlert(makeAlertData('警告','确定删除节点:"' + this.getNodeTitle() + '"?',this.deleteTipCallback,[TipBtnOK,TipBtnNo]));
+        this.props.editor.wantDeleteNode(this.props.nodedata, this.getNodeTitle());
     }
-    
-    deleteTipCallback(key){
-        if(key == 'ok'){
-            this.props.nodedata.bluePrint.deleteNode(this.props.nodedata);
-        }
-    }
+    */
 
     getNodeTitle(){
         var nodeData = this.props.nodedata;
         return this.props.getTitleFun == null ? (nodeData.title == null ? '未命名' : nodeData.title) : this.props.getTitleFun();
     }
 
-    render(){
-        var nodeTitle = this.getNodeTitle();
-        var nodeData = this.props.nodedata;
-        var posStyle = {left:parseInt(nodeData.left) + 'px','top':parseInt(nodeData.top) };
-        return (<div ref={this.rooDivRef} onMouseDown={this.moveBarMouseDownHandler} className='position-absolute d-flex flex-column nodeRoot' style={posStyle} moving={this.state.moving ? '1' : null}>
-                <div className='bg-light d-flex align-items-center text-dark' style={{fontSize:'0.5em'}}>
-                    <div className='flex-grow-1 flex-shrink-1'>
-                        {nodeData.label}:
-                        {
-                            this.state.editingTitle ? <input className='' type='text' value={nodeTitle} onChange={this.nodeTitleInputChangeHandler} onKeyPress={this.nodeTitleInputKeypressHandler} />
-                            :
-                            <React.Fragment>
-                                <span className=''>{nodeTitle}</span>
-                            </React.Fragment>
-                        }
-                        <i className='fa fa-edit ml-1 cursor-pointer' onClick={this.clickEditTitleHandler} />
+
+    renderHead(nodeData){
+        if(this.props.isPure){
+            return null;
+        }
+
+        var headType = this.props.headType;
+        if(headType == null)
+            headType = 'default';
+        if(headType == 'tiny'){
+            return <div className='d-flex nodeHead align-items-center' type='tiny' >
+                        {nodeData.hadFlow && <i className='fa fa-arrow-circle-right nodeFlow' />}
+                        <div className='flex-grow-1 flex-shrink-0 text-nowrap text-center' f-canmove={1} >
+                            {this.props.headText}
+                        </div>
+                        {nodeData.hadFlow && <i className='fa fa-arrow-circle-right nodeFlow' />}
                     </div>
-                    <i className='fa fa-close ml-1 cursor-pointer mr-1' onClick={this.clickDeleteHandler} />
-                </div>
-                <div className="dropdown-divider"></div>
+        }
+
+        if(headType == 'default'){
+            var nodeTitle = this.getNodeTitle();
+            return  <React.Fragment>
+                        <div className='bg-light d-flex align-items-center text-dark' style={{fontSize:'0.5em'}}>
+                            <div className='flex-grow-1 flex-shrink-1 text-nowrap'>
+                                {nodeData.label}:
+                                {
+                                    this.state.editingTitle ? <input className='' type='text' value={nodeTitle} onChange={this.nodeTitleInputChangeHandler} onKeyPress={this.nodeTitleInputKeypressHandler} />
+                                    :
+                                    <React.Fragment>
+                                        <span className=''>{nodeTitle}</span>
+                                    </React.Fragment>
+                                }
+                                <i className='fa fa-edit ml-1 cursor-pointer' onClick={this.clickEditTitleHandler} />
+                            </div>
+                        </div>
+                        <div className="dropdown-divider"></div>
+                    </React.Fragment>
+        }
+        return null;
+    }
+
+    render(){
+        var nodeData = this.props.nodedata;
+        var posStyle = {left:parseInt(nodeData.left) + 'px','top':parseInt(nodeData.top), 'paddingTop':this.props.isPure ? '0.5em' : null };
+        return (<div ref={this.rootDivRef} onMouseDown={this.moveBarMouseDownHandler} className='position-absolute d-flex flex-column nodeRoot' style={posStyle} d-selected={this.state.selected ? '1' : null}>
+                {
+                    this.renderHead(nodeData)
+                }
                 {
                     this.props.children
                 }
@@ -1052,10 +1756,6 @@ class C_SqlNode_DBEntity extends React.PureComponent{
         nodeData.setEntity(selectedDBE);
     }
 
-    socketOnClickHandler(srcSocket){
-        this.props.onClickSocket(srcSocket, this);
-    }
-
     getNodeTitle(){
         var nodeData = this.state.nodedata;
         var entity = nodeData.targetentity;
@@ -1082,7 +1782,7 @@ class C_SqlNode_DBEntity extends React.PureComponent{
         var entity = nodeData.targetentity;
         var dataloaded = entity ? entity.loaded : false;
         
-        return <C_SqlNode_Frame nodedata={nodeData} getTitleFun={this.getNodeTitle} editorDivRef={this.props.editorDivRef}>
+        return <C_SqlNode_Frame nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor}>
                 <div className='d-flex'>
                     <div className='flex-grow-1 flex-shrink-1'>
                         <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={g_dataBase.entities_arr} rootclass='flex-grow-0 flex-shrink-0' style={{width:'200px',height:'40px'}} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} /> 
@@ -1129,11 +1829,6 @@ class C_SqlNode_Select extends React.PureComponent{
             nodeData.off('changed', this.nodeDataChangedHandler);
         }
     }
-
-    socketOnClickHandler(srcSocket){
-        this.props.onClickSocket(srcSocket, this);
-    }
-
     clickHandler(){
         //console.log('clickHandler');
         this.props.editor.setEditeNode(this.props.nodedata);
@@ -1155,7 +1850,7 @@ class C_SqlNode_Select extends React.PureComponent{
             }, 10);
         }
         var nodeData = this.state.nodedata;
-        return <C_SqlNode_Frame nodedata={nodeData} editorDivRef={this.props.editorDivRef} clickHandler={this.clickHandler}>
+        return <C_SqlNode_Frame nodedata={nodeData} clickHandler={this.clickHandler} editor={this.props.editor}>
                 <div className='d-flex flex-column'>
                     列名
                 </div>
@@ -1191,10 +1886,6 @@ class C_SqlNode_Select_Output extends React.PureComponent{
     unlistenData(nodeData){
     }
 
-    socketOnClickHandler(srcSocket){
-        this.props.onClickSocket(srcSocket, this);
-    }
-
     clickHandler(){
         //console.log('clickHandler');
         this.props.editor.setEditeNode(this.props.nodedata);
@@ -1216,11 +1907,160 @@ class C_SqlNode_Select_Output extends React.PureComponent{
             }, 10);
         }
         var nodeData = this.state.nodedata;
-        return <C_SqlNode_Frame nodedata={nodeData} editorDivRef={this.props.editorDivRef} clickHandler={this.clickHandler}>
+        return <C_SqlNode_Frame nodedata={nodeData} clickHandler={this.clickHandler} editor={this.props.editor}>
                 <div className='d-flex flex-column'>
                     列名
                 </div>
             </C_SqlNode_Frame>
+    }
+}
+
+class C_SqlNode_Var_Get extends React.PureComponent{
+    constructor(props){
+        super(props);
+        autoBind(this);
+
+        C_SqlNode_Base(this);
+        this.state={
+            //nodedata:this.props.nodedata,
+        }
+    }
+
+    render(){
+        var nodeData = this.props.nodedata;
+        return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText='GET'>
+                <div className='d-flex'>
+                    <C_SqlNode_ScoketsPanel data={nodeData.inputScokets_arr} align='start' editor={this.props.editor}/>
+                    <C_SqlNode_ScoketsPanel data={nodeData.outputScokets_arr} align='end' editor={this.props.editor}/>
+                </div>
+            </C_SqlNode_Frame>
+    }
+}
+
+class C_SqlNode_NOperand extends React.PureComponent{
+    constructor(props){
+        super(props);
+        autoBind(this);
+
+        C_SqlNode_Base(this);
+        this.state={
+            //nodedata:this.props.nodedata,
+        }
+    }
+
+    render(){
+        var nodeData = this.props.nodedata;
+        return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={nodeData.operator} >
+                <div className='d-flex'>
+                    <C_SqlNode_ScoketsPanel data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.processInputSockets} />
+                    <C_SqlNode_ScoketsPanel data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.processOutputSockets}/>
+                </div>
+            </C_SqlNode_Frame>
+    }
+}
+
+
+function C_SqlNode_componentWillMount(){
+    this.props.nodedata.currentComponent = this;
+    if(this.cus_componentWillMount != null){
+        this.cus_componentWillMount();
+    }
+}
+
+function C_SqlNode_componentWillUnMount(){
+    this.props.nodedata.currentComponent = null;
+    if(this.cus_componentWillUnmount != null){
+        this.cus_componentWillUnmount();
+    }
+}
+
+function C_SqlNode_Base(target){
+    target.frameRef =  React.createRef();
+    target.componentWillMount = C_SqlNode_componentWillMount.bind(target);
+    target.componentWillUnmount = C_SqlNode_componentWillUnMount.bind(target);
+}
+
+class C_SqlNode_Var_Set extends React.PureComponent{
+    constructor(props){
+        super(props);
+        autoBind(this);
+
+        C_SqlNode_Base(this);
+
+        this.state={
+            
+        }
+    }
+
+    render(){
+        var nodeData = this.props.nodedata;
+        return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText='SET' >
+                <div className='d-flex'>
+                    <C_SqlNode_ScoketsPanel data={nodeData.inputScokets_arr} align='start' editor={this.props.editor}/>
+                    <C_SqlNode_ScoketsPanel data={nodeData.outputScokets_arr} align='end' editor={this.props.editor}/>
+                </div>
+            </C_SqlNode_Frame>
+    }
+}
+
+class C_SqlNode_ScoketsPanel extends React.PureComponent{
+    constructor(props){
+        super(props);
+        autoBind(this);
+
+        if(this.props.processFun != null){
+            // add listen
+            var nodedata = this.props.data[0].node;
+            nodedata.on(Event_SocketNumChanged, this.reRender);
+        }
+    }
+
+    reRender(){
+        this.setState({
+            magicObj:{}
+        });
+    }
+
+    componentWillUnmount(){
+        if(this.props.processFun != null){
+            var nodedata = this.props.data[0].node;
+            nodedata.off(Event_SocketNumChanged, this.reRender);
+        }
+    }
+
+    clickAddIconHandler(ev){
+        this.props.processFun(true);
+    }
+
+    clickSubIconHandler(ev){
+        this.props.processFun(false);
+    }
+
+    renderDynamic(){
+        if(this.props.processFun == null)
+            return null;
+        return (
+            <div className='socketDynamicDiv d-flex'>
+                <i className='fa fa-plus-square ml-1 text-primary fa-2x cursor-pointer' onClick={this.clickAddIconHandler} />
+                <i className='fa fa-minus-square ml-1 text-danger fa-2x cursor-pointer' onClick={this.clickSubIconHandler} />
+            </div>
+        );
+    }
+
+    render(){
+        if(this.props.data.length == 0)
+            return null;
+
+        return (<div className={'d-flex flex-column align-items-' + this.props.align}>
+            {
+                this.props.data.map(socketObj=>{
+                    return <C_Node_Socket key={socketObj.id} socket={socketObj} align={this.props.align == 'start' ? 'left' : 'right'} editor={this.props.editor} />
+                })
+            }
+            {
+                this.renderDynamic()
+            }
+        </div>);
     }
 }
 
@@ -1231,12 +2071,23 @@ class C_SqlNode_Editor extends React.PureComponent{
         this.state={
             draing:false,
             editingNode:this.props.bluePrint,
+            showLink:false,
             scale:1,
         }
+
+        var self = this;
+        setTimeout(() => {
+            this.setState({
+                showLink:true,
+            })
+        }, 50);
 
         autoBind(this);
         this.dragingPathRef = React.createRef();
         this.editorDivRef = React.createRef();
+        this.containerRef = React.createRef();
+        this.topBarRef = React.createRef();
+        this.zoomDivRef = React.createRef();
     }
 
     blueprinkChanged(ev){
@@ -1245,15 +2096,159 @@ class C_SqlNode_Editor extends React.PureComponent{
         });
     }
 
+    setSelectedNF(target){
+        if(this.selectedNF == target){
+            return;
+        }
+        if(this.selectedNF && !this.selectedNF.unmounted){
+            this.selectedNF.setSelected(false);
+        }
+        if(target){
+            target.setSelected(true);
+        }
+        this.selectedNF = target;
+    }
+
+    showNodeData(nodeData){
+        if(nodeData.currentComponent){
+            var frameElem = nodeData.currentComponent.frameRef.current;
+            if(frameElem == null)
+                return null;
+            this.setSelectedNF(frameElem);
+            var frameRect = frameElem.rootDivRef.current.getBoundingClientRect();
+            var zoomRect = this.zoomDivRef.current.getBoundingClientRect();
+            
+            if(!MyMath.intersectRect(frameRect, zoomRect)){
+                var targetPos = {
+                    x:Math.floor(-nodeData.left + (zoomRect.width - frameRect.width) * 0.5),
+                    y:Math.floor(-nodeData.top + (zoomRect.height - frameRect.height) * 0.5),
+                };
+                //console.log(targetPos);
+                this.editorDivRef.current.style.left = targetPos.x  + 'px';
+                this.editorDivRef.current.style.top = targetPos.y + 'px';
+            }
+        }
+    }
+
+    keyUpHandler(ev){
+        //console.log(ev);
+        switch(ev.keyCode){
+            case 27:
+                // esc
+                if(this.selectedNF){
+                    this.setSelectedNF(null);
+                }
+                var dragingPath = this.dragingPathRef.current;
+                dragingPath.setState({
+                    draging:false,
+                    start:null,
+                    end:null,
+                });
+            case 46:
+                if(this.selectedNF){
+                    this.wantDeleteNode(this.selectedNF.props.nodedata, this.selectedNF.getNodeTitle());
+                }
+            break;
+        }
+    }
+
+    keyDownHandler(ev){
+        if(this.selectedNF && ev.keyCode >= 37 && ev.keyCode <= 40){
+            var offset = {x:0,y:0};
+            switch(ev.keyCode){
+                case 40:
+                    offset.y = 10;
+                break;
+                case 38:
+                    offset.y = -10;
+                break;
+                case 37:
+                    offset.x = -10;
+                break;
+                case 39:
+                    offset.x = 10;
+                break;
+            }
+            this.selectedNF.addOffset(offset);
+            ev.preventDefault();
+        }
+    }
+
+    wantDeleteNode(nodeData, title){
+        gTipWindow.popAlert(makeAlertData('警告','确定删除节点:"' + title + '"?',this.deleteTipCallback,[TipBtnOK,TipBtnNo], nodeData));
+    }
+
+    deleteTipCallback(key, nodeData){
+        if(key == 'ok'){
+            this.state.editingNode.deleteNode(nodeData);
+            this.setSelectedNF(null);
+        }
+    }
+
+    freshZoomDiv(){
+        if(this.zoomDivRef.current){
+            var zoomDivElem = this.zoomDivRef.current;
+            var $containerElem = $(this.containerRef.current);
+            var $topBarElem = $(this.topBarRef.current);
+
+            var newZoomDivSize = {
+                height : $containerElem.height() - $topBarElem.height(),
+                width : $containerElem.width(),
+                top : $topBarElem.offset().top - $topBarElem.offsetParent().offset().top + $topBarElem.height()
+            };
+
+            if(this.preZoomDivSize == null){
+                zoomDivElem.style.height = newZoomDivSize.height + 'px';
+                zoomDivElem.style.width = newZoomDivSize.width + 'px';
+                zoomDivElem.style.top = newZoomDivSize.top + 'px';
+            }
+            else{
+                if(Math.abs(this.preZoomDivSize.height - newZoomDivSize.height)>1){
+                    zoomDivElem.style.height = newZoomDivSize.height + 'px';
+                }
+                if(Math.abs(this.preZoomDivSize.width - newZoomDivSize.width)>1){
+                    zoomDivElem.style.width = newZoomDivSize.width + 'px';
+                }
+                if(Math.abs(this.preZoomDivSize.top - newZoomDivSize.top)>1){
+                    zoomDivElem.style.top = newZoomDivSize.top + 'px';
+                }
+            }
+
+            this.preZoomDivSize = newZoomDivSize;
+            
+            
+        }
+    }
+
+    listenBlueprint(bp){
+        if(bp){
+            bp.on('changed', this.blueprinkChanged);
+        };
+        this.listenedBP = bp;
+    }
+
+    unlistenBlueprint(bp){
+        if(bp){
+            bp.off('changed', this.blueprinkChanged);
+        }
+    }
+
     componentWillMount(){
-        this.props.bluePrint.on('changed', this.blueprinkChanged);
+        window.addEventListener('keyup', this.keyUpHandler);
+        window.addEventListener('keydown', this.keyDownHandler);
+
+        this.freshInt = setInterval(this.freshZoomDiv, 500);
+        this.freshZoomDiv();
     }
 
     componentWillUnmount(){
         window.removeEventListener('mousemove', this.mousemoveWidthDragingHandler);
         window.removeEventListener('mouseup', this.mouseupWidthDragingHandler);
-        this.props.bluePrint.off('changed', this.blueprinkChanged);
+        window.removeEventListener('keyup', this.keyUpHandler);
+        window.removeEventListener('keydown', this.keyDownHandler);
+        this.unlistenBlueprint(this.props.bluePrint);
         clearTimeout(this.delaySetTO);
+        clearInterval(this.freshZoomDiv);
     }
 
     mousemoveWidthDragingHandler(ev){
@@ -1270,7 +2265,7 @@ class C_SqlNode_Editor extends React.PureComponent{
             if(this.preClickTime != null && (Date.now() - this.preClickTime) < 200){
                 var dragingPath = this.dragingPathRef.current;
                 dragingPath.setState({
-                    draing:false,
+                    draging:false,
                     start:null,
                     end:null,
                 });
@@ -1284,24 +2279,47 @@ class C_SqlNode_Editor extends React.PureComponent{
         }
     }
 
-    onClickSocket(srcSocket, srcNode){
-        //console.log(srcSocket);
-        //console.log(srcNode);
+    clickSocket(srcSocket){
+        console.log(srcSocket);
+        var srcNode = srcSocket.node;
         var dragingPath = this.dragingPathRef.current;
-        if(dragingPath.state.draing == true){
-            dragingPath.setState({
-                draing:false,
-                start:null,
-                end:null,
-            });
-            window.removeEventListener('mousemove', this.mousemoveWidthDragingHandler);
-            window.removeEventListener('mouseup', this.mouseupWidthDragingHandler);
+        if(dragingPath.state.draging == true){
+            var cancelDrag = false;
+            if(srcSocket == dragingPath.state.startScoket){
+                // 同一个socket连续点击
+                cancelDrag = true;
+            }
+            else if(dragingPath.state.startNode == srcNode){
+                // 相同的node 忽略
+                //console.log('相同的node');
+                return;
+            }
+            else{
+                // 点击了不同的socket
+                if(srcSocket.isIn != dragingPath.state.startScoket.isIn){
+                    // 不同node的in out才能相互链接
+                    this.state.editingNode.linkPool.addLink(srcSocket, dragingPath.state.startScoket);
+                    cancelDrag = true;
+                }
+            }
+            if(cancelDrag)
+            {
+                dragingPath.setState({
+                    draging:false,
+                    start:null,
+                    end:null,
+                });
+                window.removeEventListener('mousemove', this.mousemoveWidthDragingHandler);
+                window.removeEventListener('mouseup', this.mouseupWidthDragingHandler);
+            }
         }else{
             var rootRect = this.editorDivRef.current.getBoundingClientRect();
             dragingPath.setState({
-                draing:true,
-                start:srcSocket.getCenterPos(rootRect),
+                draging:true,
+                start:srcSocket.currentComponent.getCenterPos(),
                 end:{x:WindowMouse.x - rootRect.left,y:WindowMouse.y - rootRect.top},
+                startScoket:srcSocket,
+                startNode:srcNode,
             });
             window.addEventListener('mousemove', this.mousemoveWidthDragingHandler);
             window.addEventListener('mouseup', this.mouseupWidthDragingHandler);
@@ -1312,6 +2330,7 @@ class C_SqlNode_Editor extends React.PureComponent{
         if(theNode == this.state.editingNode){
             return;
         }
+        this.setSelectedNF(null);
         var editingNode = this.state.editingNode;
         var scrollNode = this.editorDivRef.current.parentNode;
         if(editingNode){
@@ -1320,10 +2339,18 @@ class C_SqlNode_Editor extends React.PureComponent{
         }
         
         this.setState({
-            draing:false,
+            draging:false,
             editingNode:theNode,
             scale:1,
+            showLink:false,
         });
+
+        var self = this;
+        setTimeout(() => {
+            this.setState({
+                showLink:true,
+            })
+        }, 50);
 
         if(theNode){
             theNode.bluePrint.editingNode = theNode;
@@ -1334,24 +2361,58 @@ class C_SqlNode_Editor extends React.PureComponent{
         }
     }
 
+    genSqlNode_Component(CName, nodeData){
+        var blueprintPrefix = this.state.editingNode.bluePrint.id + '_';
+        return <CName key={blueprintPrefix + nodeData.id} nodedata={nodeData} editorDivRef={this.editorDivRef} editor={this} />
+    }
+
     renderNode(nodeData){
         if(nodeData == null)
             return null;
         switch(nodeData.type){
             case SQLNODE_BDBENTITY:
-                return <C_SqlNode_DBEntity onClickSocket={this.onClickSocket} key={nodeData.id} nodedata={nodeData} editorDivRef={this.editorDivRef} editor={this} />
+                return this.genSqlNode_Component(C_SqlNode_DBEntity, nodeData);
             break;
             case SQLNODE_SELECT:
-                return <C_SqlNode_Select onClickSocket={this.onClickSocket} key={nodeData.id} nodedata={nodeData} editorDivRef={this.editorDivRef} editor={this} />
+                return this.genSqlNode_Component(C_SqlNode_Select, nodeData);
+            break;
+            case SQLNODE_VAR_GET:
+                return this.genSqlNode_Component(C_SqlNode_Var_Get, nodeData);
+            break;
+            case SQLNODE_VAR_SET:
+                return this.genSqlNode_Component(C_SqlNode_Var_Set, nodeData);
+            break;
+            case SQLNODE_NOPERAND:
+                return this.genSqlNode_Component(C_SqlNode_NOperand, nodeData);
             break;
         }
+
         return null;
     }
 
-    mouseDownNodeCtlrHandler(ctlData){
-        var scrollNode = this.editorDivRef.current.parentNode;
+    addVarGSNode(config, windPos){
         var editingNode = this.state.editingNode;
-        var newNodeData = new ctlData.nodeClass({newborn:true,left:scrollNode.scrollLeft,top:scrollNode.scrollTop},editingNode);
+        var $zoomDivElem = $(this.zoomDivRef.current);
+        var zoomOffset = $zoomDivElem.offset();
+        
+        var x = -parseUnitInt(this.editorDivRef.current.style.left) + windPos.x - zoomOffset.left;
+        var y = -parseUnitInt(this.editorDivRef.current.style.top) + windPos.y - zoomOffset.top;
+        var newNodeData = null;
+        if(config.isGet){
+            newNodeData = new SqlNode_Var_Get({left:x,top:y,varName:config.varName}, editingNode);
+        }
+        else{
+            newNodeData = new SqlNode_Var_Set({left:x,top:y,varName:config.varName}, editingNode);
+        }
+        this.setState({
+            magicObj:{},
+        });
+    }
+
+    mouseDownNodeCtlrHandler(ctlData){
+        var editorDiv = this.editorDivRef.current;
+        var editingNode = this.state.editingNode;
+        var newNodeData = new ctlData.nodeClass({newborn:true,left:-parseUnitInt(editorDiv.style.left),top:-parseUnitInt(editorDiv.style.top)},editingNode);
         this.setState({
             magicObj:{},
         });
@@ -1359,10 +2420,12 @@ class C_SqlNode_Editor extends React.PureComponent{
 
     mousemoveWithDragHandler(ev){
         var offset = {x:ev.x - this.dragOrgin.x,y:ev.y - this.dragOrgin.y};
-        var scrollNode = this.editorDivRef.current.parentNode;
-        scrollNode.scrollLeft = this.dragOrgin.sl - offset.x;
-        scrollNode.scrollTop = this.dragOrgin.st - offset.y;
+        //var scrollNode = this.editorDivRef.current.parentNode;
+        //scrollNode.scrollLeft = this.dragOrgin.sl - offset.x;
+        //scrollNode.scrollTop = this.dragOrgin.st - offset.y;
         //console.log(offset);
+        this.editorDivRef.current.style.left = (this.dragOrgin.left + offset.x )  + 'px';
+        this.editorDivRef.current.style.top = (this.dragOrgin.top + offset.y ) + 'px';
     }
 
     mouseupWithDragHandler(ev){
@@ -1372,10 +2435,15 @@ class C_SqlNode_Editor extends React.PureComponent{
     }
 
     rootMouseDownHandler(ev){
-        if(ev.target == this.editorDivRef.current && this.draging != true){
+        if(ev.target == this.zoomDivRef.current && this.draging != true){
             this.draging = true;
-            var scrollNode = this.editorDivRef.current.parentNode;
-            this.dragOrgin = {x:WindowMouse.x,y:WindowMouse.y,sl:scrollNode.scrollLeft,st:scrollNode.scrollTop};
+            //var scrollNode = this.editorDivRef.current.parentNode;
+            //this.dragOrgin = {x:WindowMouse.x,y:WindowMouse.y,sl:scrollNode.scrollLeft,st:scrollNode.scrollTop};
+            var nowPos = {
+                x:parseUnitInt(this.editorDivRef.current.style.left),
+                y:parseUnitInt(this.editorDivRef.current.style.top),
+            }
+            this.dragOrgin = {x:WindowMouse.x,y:WindowMouse.y, left:nowPos.x, top: nowPos.y};
             window.addEventListener('mousemove', this.mousemoveWithDragHandler);
             window.addEventListener('mouseup', this.mouseupWithDragHandler);
         }
@@ -1429,18 +2497,24 @@ class C_SqlNode_Editor extends React.PureComponent{
         if(this.editorDivRef.current){
             this.editorDivRef.current.scale = this.state.scale;
         }
+        var self = this;
+        var blueprintPrefix = this.state.editingNode.bluePrint.id + '_';
+        if(this.listenedBP != editingNode.bluePrint){
+            this.unlistenBlueprint(this.listenedBP);
+            this.listenBlueprint(editingNode.bluePrint);
+        }
 
         return (<SplitPanel
                 defPercent={0.2}
-                maxSize='200px'
+                maxSize='400px'
                 barClass='bg-secondary'
                 panel1={
-                    <CusDBEEditorLeftPanel onMouseDown={this.mouseDownNodeCtlrHandler} editingNode={editingNode} />
+                    <CusDBEEditorLeftPanel onMouseDown={this.mouseDownNodeCtlrHandler} editingNode={editingNode} editorDivRef={this.editorDivRef} editor={self} />
                 }
                 panel2={
-                    <div className='flex-grow-1 flex-shrink-1 d-flex flex-column mw-100' style={{}}>
-                        <div className='flex-grow-1 flex-shrink-1 d-flex flex-column'>
-                            <div className='flex-grow-0 flex-shrink-0 border bg-light '>
+                    <div className='flex-grow-1 flex-shrink-1 d-flex flex-column mw-100' >
+                        <div className='flex-grow-1 flex-shrink-1 d-flex flex-column' ref={this.containerRef}>
+                            <div className='flex-grow-0 flex-shrink-0 border bg-light ' style={{height:'40px'}} ref={this.topBarRef}>
                                 <div className='d-flex flex-grow-1 flex-shrink-1'>
                                     <ul className="nav nav-pills flex-grow-1 flex-shrink-1">
                                         {
@@ -1460,14 +2534,19 @@ class C_SqlNode_Editor extends React.PureComponent{
                                     </div>
                                 </div>
                             </div>
-                            <div className='flex-grow-1 flex-shrink-1 autoScroll ' style={{zoom:this.state.scale}} >
-                                <div onMouseDown={this.rootMouseDownHandler} ref={this.editorDivRef} className='d-block position-relative bg-dark' style={{minWidth:'4000px',minHeight:'4000px'}}>
+                            <div className='flex-grow-1 flex-shrink-1 position-absolute hidenOverflow' style={{zoom:this.state.scale}} ref={this.zoomDivRef} onMouseDown={this.rootMouseDownHandler} >
+                                <div ref={this.editorDivRef} className='d-block position-absolute bg-dark' style={{width:'10px',height:'10px',overflow:'visible'}}>
                                     {
                                         editingNode.nodes_arr.map(nd=>{
                                             return this.renderNode(nd) //<G_Node key={nd.id} data={nd} />
                                         })
                                     }
-                                    <C_Node_Path ref={this.dragingPathRef} editorDivRef={this.editorDivRef} draging='1' />
+                                    <C_Node_Path ref={this.dragingPathRef} editorDivRef={this.editorDivRef} />
+                                    {
+                                        this.state.showLink && editingNode.linkPool.getAllLink().map((linkobj=>{
+                                            return <C_Node_Path key={blueprintPrefix + linkobj.id} link={linkobj} editorDivRef={this.editorDivRef} />
+                                        }))
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -1482,20 +2561,60 @@ class C_Node_Path extends React.PureComponent{
         super(props);
 
         autoBind(this);
-        this.state={
-            start : this.props.start,
-            end : this.props.end,
-        };
+        var initState = {};
+        if(this.props.link){
+            initState.start = this.props.link.outSocket.currentComponent ? this.props.link.outSocket.currentComponent.getCenterPos() : null;
+            initState.end = this.props.link.inSocket.currentComponent ? this.props.link.inSocket.currentComponent.getCenterPos() : null;
+            initState.link = this.props.link;
+        }
+        else{
+            initState.start = this.props.start;
+            initState.end = this.props.end;
+        }
+        this.state=initState;
 
         this.rootDivRef = React.createRef();
     }
 
+    startNodeMovedHandler(){
+        var newVal = this.state.link.outSocket.currentComponent ? this.state.link.outSocket.currentComponent.getCenterPos() : null;
+        this.setState({
+            start : newVal
+        });
+    }
+
+    endNodeMovedHandler(){
+        var newVal = this.state.link.inSocket.currentComponent ? this.state.link.inSocket.currentComponent.getCenterPos() : null;
+        this.setState({
+            end : newVal
+        });
+    }
+
     componentWillMount(){
-        
+        if(this.props.link){
+            this.props.link.outSocket.node.on('moved', this.startNodeMovedHandler);
+            this.props.link.outSocket.node.on(Event_CurrentComponentchanged, this.startNodeMovedHandler);
+            this.props.link.inSocket.node.on('moved', this.endNodeMovedHandler);
+            this.props.link.inSocket.node.on(Event_CurrentComponentchanged, this.endNodeMovedHandler);
+        }
     }
 
     componentWillUnmount(){
-        
+        if(this.props.link){
+            this.props.link.outSocket.node.off('moved', this.startNodeMovedHandler);
+            this.props.link.outSocket.node.off(Event_CurrentComponentchanged, this.startNodeMovedHandler);
+            this.props.link.inSocket.node.off('moved', this.endNodeMovedHandler);
+            this.props.link.inSocket.node.off(Event_CurrentComponentchanged, this.endNodeMovedHandler);
+        }
+    }
+
+    mouseDownHandler(ev){
+        if(ev.altKey){
+            console.log('delete link');
+            if(this.props.link){
+                this.props.link.pool.removeLink(this.props.link);
+            }
+        }
     }
 
     render() {
@@ -1515,7 +2634,7 @@ class C_Node_Path extends React.PureComponent{
         //console.log(angle);
         var thisStyle = {width:dis + 'px', height:'2px',transform:'rotate(' + angle + 'deg)',left:start.x + 'px',top:start.y + 'px'};
         return (
-            <div ref={this.rootDivRef} className='nodepath' style={thisStyle} draging={this.props.draging}>
+            <div ref={this.rootDivRef} className='nodepath' style={thisStyle} draging={this.state.draging ? 1 : null} onMouseDown={this.mouseDownHandler}>
                 
             </div>
         );
@@ -1591,8 +2710,46 @@ const cusDBEditorControls_arr =[
     {
         label:'选择',
         nodeClass:SqlNode_Select,
+    },
+    {
+        label:'多元运算',
+        nodeClass:SqlNode_NOperand,
     }
 ]; 
+
+class SqlNodeOutlineItem extends React.PureComponent{
+    constructor(props){
+        super(props);
+
+        autoBind(this);
+
+        this.state = {
+            label:this.props.nodeData.getNodeTitle(),
+        }
+    }
+
+    componentWillMount(){
+        this.props.nodeData.on('changed', this.nodeChangedhandler);
+    }
+
+    componentWillUnmount(){
+        this.props.nodeData.off('changed', this.nodeChangedhandler);
+    }
+
+    nodeChangedhandler(){
+        this.setState({
+            label:this.props.nodeData.getNodeTitle(),
+        });
+    }
+
+    clickHandler(ev){
+        this.props.clickHandler(this.props.nodeData);
+    }
+
+    render(){
+        return <div className='text-nowrap text-light cursor-pointer'  onClick={this.clickHandler}>{this.state.label}</div>
+    }
+}
 
 class CusDBEEditorLeftPanel extends React.PureComponent{
     constructor(props){
@@ -1601,7 +2758,42 @@ class CusDBEEditorLeftPanel extends React.PureComponent{
         autoBind(this);
     }
 
+    listenNode(node){
+        if(node){
+            node.on('changed', this.editingNodeChangedhandler);
+        }
+        this.listenedNode = node;
+    }
+
+    unlistenNode(node){
+        if(node){
+            node.off('changed', this.editingNodeChangedhandler);
+        }
+    }
+
+    componentWillMount(){
+        //listenNode(this.state.editingNode);
+    }
+
+    componentWillUnmount(){
+        this.unlistenNode(this.state.editingNode);
+    }
+
+    editingNodeChangedhandler(){
+        this.setState({
+            magicObj:{},
+        });
+    }
+
+    clickOutlineImteHandler(nodeData){
+        this.props.editor.showNodeData(nodeData);
+    }
+
     render() {
+        if(this.listenedNode != this.props.editingNode){
+            this.unlistenNode(this.listenedNode);
+            this.listenNode(this.props.editingNode);
+        }
         return (
             <SplitPanel 
                 fixedOne={true}
@@ -1609,14 +2801,18 @@ class CusDBEEditorLeftPanel extends React.PureComponent{
                 defPercent={0.3}
                 flexColumn={true}
                 panel1={
-                    <div className='w-100 h-100 bg-info'>
-                        大纲
+                    <div className='w-100 h-100 autoScroll d-flex flex-column'>
+                        {
+                            this.props.editingNode.nodes_arr.map(nodeData=>{
+                                return <SqlNodeOutlineItem key={nodeData.id} nodeData={nodeData} clickHandler={this.clickOutlineImteHandler} />
+                            })
+                        }
                     </div>
                 }
                 panel2={
                     <div className='d-flex flex-column h-100 w-100'>
-                        <CusDBEEditorVariables editingNode={this.props.editingNode} />
-                        <CusDBEEditorCanUseNodePanel editingNode={this.props.editingNode} onMouseDown={this.props.onMouseDown} />
+                        <CusDBEEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} />
+                        <CusDBEEditorCanUseNodePanel editingNode={this.props.editingNode} onMouseDown={this.props.onMouseDown} editor={this.props.editor} />
                     </div>
                 }
             />
@@ -1691,16 +2887,33 @@ class CusDBEEditorVariables extends React.PureComponent{
         });
     }
 
+    listenNode(node){
+        if(node){
+            node.on('varChanged', this.varChangedhandler);
+        }
+        this.listenedNode = node;
+    }
+
+    unlistenNode(node){
+        if(node){
+            node.off('varChanged', this.varChangedhandler);
+        }
+    }
+
     componentWillMount(){
-        this.props.editingNode.bluePrint.on('varChanged', this.varChangedhandler);
     }
 
     componentWillUnmount(){
-        this.props.editingNode.bluePrint.off('varChanged', this.varChangedhandler);
+        this.unlistenNode(this.props.editingNode);
     }
 
     render() {
-        var targetID = this.props.editingNode.bluePrint.code + 'variables';
+        if(this.listenedNode != this.props.editingNode){
+            this.unlistenNode(this.listenedNode);
+            this.listenNode(this.props.editingNode);
+        }
+        var blueprintPrefix = this.props.editingNode.bluePrint.id + '_';
+        var targetID = blueprintPrefix + 'variables';
         return (
             <React.Fragment>
                 <div className='flex-grow-0 flex-shrink-0 bg-secondary d-flex align-items-center'>
@@ -1712,7 +2925,7 @@ class CusDBEEditorVariables extends React.PureComponent{
                         <div className='btn-group-vertical mw-100'>
                             {
                                 this.props.editingNode.bluePrint.vars_arr.map(varData=>{
-                                    return <SqlNode_Variable_Component key={varData.id} varData={varData} />
+                                    return <SqlDef_Variable_Component belongNode={this.props.editingNode} key={blueprintPrefix + varData.id} varData={varData} editor={this.props.editor} />
                                 })
                             }
                         </div>
@@ -1958,11 +3171,8 @@ class DataMasterPanel extends React.PureComponent {
 
 
     render() {
-
-        
-
         return (
-            <FloatPanelbase title='数据大师' ref={this.panelBaseRef} initShow={true}>
+            <FloatPanelbase title='数据大师' ref={this.panelBaseRef} initShow={true} initMax={true}>
                 <div className='d-flex flex-grow-0 flex-shrink-0'>
                     <TabNavBar navData={this.navData} navChanged={this.navChanged} />
                 </div>
@@ -1977,49 +3187,3 @@ class DataMasterPanel extends React.PureComponent {
         );
     }
 }
-
-/*
-var 员工_arr = ['杨建','刘峰','蒋蔚','姜玉恒','顾熙','赵智淼','唐媛','卢彩琴','金茂永','郭其宝','李旭','陈伟','吴溢华','吕承梅','陆敏','吴安琴','谢颖清','张亚飞','张光运','孙红闯','龙腾云','盛琴','葛添添','任思杰','孙詹','马晓霞','施闻','艾贻娟','张念刚','龙正华','曾庆洪','王保华','周和兵','文刚','鲁全峰','李小阳','卢世志','白勇军','白雯','刘旗','沈立新','胡琛','严于胜','卢惠云','张开宏','苏元兰','石磊磊','廉雪超','杨哲亮','张留权','李世芹','刘志沛','金林军','高连花','黄婷婷','庄毓霞','潘锦波','江晓彦','赵晶','王彦武','金兵兵','刘立群','徐贤生','沈珏茹','马健'];
-var 金额_arr = [59115,36105,27015,6081.9,20283,22605,8827,20805,11640,5121.6,16063.2,2473.5,9603,12901,7333.2,4074,5121.6,4481.4,7760,5674.5,11640,4811.2,12367.5,60555,16490,17460,5868.5,16005,16665,21822,13095,16296,12222,13269.6,27465,12222,6790,28185,9253.8,24585,8245,16296,54555,44555,19995,11203.5,6693,9166.5,6111,16975,3880,4656,8487.5,194,18105,4850,10088,3734.5,1940,465.6,11737,10476,21480,40605,14550]
-var minDif = 999999;
-var minDif_arr = [];
-
-
-var startData = []
-var startNum = 15000 - 450
-var targetNum = 222199.81
-var count = 0;
-
-var found = false;
-
-function detectFun(now员工_arr, nowNum){
-    var turnIndex = ++count;
-    //console.log('turn' + turnIndex + ':' + now员工_arr.join(','));
-    var dif = Math.abs(nowNum - targetNum);
-    if(dif < minDif){
-        minDif = dif;
-        minDif_arr = now员工_arr;
-
-        console.log('min:' + minDif + ',num:' + nowNum);
-        console.log('arr:' + minDif_arr);
-        console.log(now员工_arr.map(x=>{return 员工_arr[x];}));
-     }
-    if(dif < 0){
-        //found = true;
-        return;
-    }
-    if(nowNum > targetNum){
-        return;
-    }
-
-    var len = now员工_arr.length;
-    var index = len == 0 ? -1 : now员工_arr[len - 1];
-    for(var ci=index + 1;ci<员工_arr.length && !found;++ci){
-        var test员工_arr = now员工_arr.concat();
-        test员工_arr.push(ci);
-        detectFun(test员工_arr, nowNum + 金额_arr[ci]);
-    }
-}
-
-detectFun(startData,startNum)
-*/

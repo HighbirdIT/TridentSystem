@@ -10,11 +10,16 @@ class ProjectDesigner extends React.PureComponent {
         this.attrbutePanelRef = React.createRef();
         this.outlineRef = React.createRef();
         this.dataMasterPanelRef = React.createRef();
+        this.quickMenuRef = React.createRef();
         autoBind(this);
         this.props.project.designer = this;
 
         this.placingCtonrols = {};
         this.selectedKernel = null;
+    }
+
+    propUpMenu(items_arr, pos, callBack){
+        this.quickMenuRef.current.popMenu(items_arr, pos, callBack);
     }
 
     selectKernel(kernel){
@@ -85,11 +90,43 @@ class ProjectDesigner extends React.PureComponent {
         return;
     }
 
+    startDrag(dragData, callBack, contentFun){
+        if(dragData.info == null){
+            dragData.info = '位置drag';
+        }
+        if(contentFun == null){
+            this.flowMCRef.current.setGetContentFun(() => {
+                return (<span className='text-nowrap border bg-dark text-light'>{dragData.info}</span>)
+            });
+        }
+        else{
+            this.flowMCRef.current.setGetContentFun(() => {
+                return contentFun();
+            });
+        }
+
+        window.addEventListener('mouseup', this.mouseUpInDragingHandler);
+        this.dragEndCallBack = callBack;
+        this.dragingData = dragData;
+    }
+
+    mouseUpInDragingHandler(ev) {
+        this.flowMCRef.current.setGetContentFun(null);
+        window.removeEventListener('mouseup', this.mouseUpInDragingHandler);
+        if(this.dragEndCallBack){
+            this.dragEndCallBack({x:ev.x, y:ev.y},this.dragingData);
+            this.dragingData = null;
+        }
+        //console.log(ev);
+    }
+
     FMpositionChanged(newPos) {
-        if(this.outlineRef.current)
-            this.outlineRef.current.placePosChanged(newPos, this.placingKernel);
-        if (this.contenPanelRef.current && !this.outlineRef.current.bMouseInPanel){
-            this.contenPanelRef.current.placePosChanged(newPos);
+        if(this.placingKernel != null){
+            if(this.outlineRef.current)
+                this.outlineRef.current.placePosChanged(newPos, this.placingKernel);
+            if (this.contenPanelRef.current && !this.outlineRef.current.bMouseInPanel){
+                this.contenPanelRef.current.placePosChanged(newPos);
+            }
         }
     }
 
@@ -130,6 +167,7 @@ class ProjectDesigner extends React.PureComponent {
                             }
                 />
                 <FlowMouseContainer project={thisProject} ref={this.flowMCRef} positionChanged={this.FMpositionChanged} />
+                <QuickMenuContainer project={thisProject} ref={this.quickMenuRef} />
             </div>
         )
     }

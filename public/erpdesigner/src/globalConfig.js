@@ -6,6 +6,7 @@ const Orientation_H = '水平';
 const Orientation_V = '垂直';
 const Orientation_Options_arr = [Orientation_H,Orientation_V];
 
+const SqlVarType_Unknown = 'unknown';
 const SqlVarType_Int = 'int';
 const SqlVarType_NVarchar = 'nvarchar';
 const SqlVarType_Date = 'date';
@@ -13,7 +14,13 @@ const SqlVarType_DateTime = 'datetime';
 const SqlVarType_Time = 'time';
 const SqlVarType_Float = 'float';
 const SqlVarType_Decimal = 'decimal';
+const SqlVarType_Scalar = 'scalar';
 const SqlVarTypes_arr = [SqlVarType_Int,SqlVarType_NVarchar,SqlVarType_Date,SqlVarType_DateTime,SqlVarType_Time,SqlVarType_Float,SqlVarType_Decimal];
+const SqlVarInputableTypes_arr = [SqlVarType_Int,SqlVarType_NVarchar,SqlVarType_Date,SqlVarType_DateTime,SqlVarType_Time,SqlVarType_Float,SqlVarType_Decimal,SqlVarType_Scalar];
+
+const Event_CurrentComponentchanged = 'currentComponentchanged';
+const Event_LinkChanged = 'linkChanged';
+const Event_SocketNumChanged = 'linkChanged';
 
 const DesignerConfig={
     controlConfig:{

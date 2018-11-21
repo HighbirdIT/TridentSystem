@@ -4,7 +4,7 @@ class FloatPanelbase extends React.PureComponent{
 
         this.state={
             show:this.props.initShow == true,
-            maximum:false,
+            maximum:this.props.initMax == true,
             sizeable:this.props.sizeable != false,
             closeable:this.props.closeable != false,
             ismodel:this.props.ismodel == true,
@@ -125,6 +125,10 @@ class FloatPanelbase extends React.PureComponent{
 
     toggleMaximum(){
         this.setState({maximum:!this.state.maximum});
+    }
+
+    setMaximum(val){
+        this.setState({maximum:val});
     }
 
     render(){

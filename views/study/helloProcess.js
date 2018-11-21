@@ -32,7 +32,7 @@ function doProcess(req, res) {
 
 function getDataTable(tableName) {
     return co(function* () {
-        var rcdRlt = yield dbhelper.asynQueryWithParams("select * from " + tableName, null);
+        var rcdRlt = yield dbhelper.asynQueryWithParams("declare @id int = 17 select * from " + tableName + " where 员工登记姓名代码=@id", null);
         return rcdRlt.recordset;
     });
 }
