@@ -322,9 +322,12 @@ const SQLNODE_VAR_GET = 'var_get';
 const SQLNODE_VAR_SET = 'var_set';
 const SQLNODE_NOPERAND = 'noperand';
 const SQLNODE_COLUMN = 'column';
+const SQLNODE_XJOIN = 'xjion';
 const SQLNODE_DBENTITY_COLUMNSELECTOR = 'dbentity_columnselector';
 const SQLNODE_RET_CONDITION = 'ret_condition';
 const SQLNODE_RET_COLUMNS = 'ret_columns';
+const SQLNODE_RET_ORDER = 'ret_order';
+
 
 const SQLDEF_VAR = 'def_variable';
 
@@ -533,7 +536,6 @@ class CustomDbEntity extends EventEmitter{
         this.links_arr = [];
         this.linkPool = new ScoketLinkPool(this);
         Object.assign(this, initData); 
-        this.nodeIdCounterPool = {};
         var self = this;
         var creationInfo={
             orginID_map:{},
@@ -591,10 +593,15 @@ class CustomDbEntity extends EventEmitter{
             console.warn('genNodeId参数不能为空');
             return;
         }
-        if(this.nodeIdCounterPool[prefix] == null){
-            this.nodeIdCounterPool[prefix] = 0;
+        var testI = 0;
+        while(testI < 9999){
+            var testId = prefix + '_' + testI;
+            if(this.allNode_map[testId] == null){
+                break;
+            }
+            ++testI;
         }
-        return prefix + (++this.nodeIdCounterPool[prefix]);
+        return prefix + '_' + testI;
     }
 
     registerNode(node, parentNode){
@@ -711,6 +718,32 @@ class CustomDbEntity extends EventEmitter{
     fireChanged(delay){
         this.fireEvent('changed', delay);
     }
+
+    getJson(){
+        var self = this;
+        // save base info
+        var theJson={
+            code:self.id,
+        }
+        // save var info
+        var varJson_arr=[];
+        this.vars_arr.forEach(varData=>{
+            varJson_arr.push(varData.getJson());
+        });
+        if(varJson_arr.length > 0){
+            theJson.variables_arr = varJson_arr;
+        }
+
+        if(this.nodes_arr.length > 0){
+            var nodeJson_arr=[];
+            this.nodes_arr.forEach(nodeData=>{
+                nodeJson_arr.push(nodeData.getJson());
+            });
+            theJson.nodes_arr = nodeJson_arr;
+        }
+
+        return theJson;
+    }
 }
 
 class SqlNode_Base extends EventEmitter{
@@ -726,6 +759,7 @@ class SqlNode_Base extends EventEmitter{
             this.left = 0;
         if(this.top == null)
             this.top = 0;
+            
         this.hadFlow = false;
 
         this.bluePrint.registerNode(this, parentNode);
@@ -950,6 +984,70 @@ class SqlNode_Base extends EventEmitter{
     customSocketRender(socket){
         return null;
     }
+
+    requestSaveAttrs(){
+        var rlt = {
+            id:this.id,
+            type:this.type,
+        };
+        if(!IsEmptyString(this.title)){
+            rlt.title = this.title;
+        }
+        return rlt;
+    }
+
+    getJson(){
+        var attrs = this.requestSaveAttrs();
+        if(attrs == null){
+            return null;
+        }
+        var rlt = {};
+        for(var pname in attrs){
+            var pval = attrs[pname];
+            if(pval == null){
+                continue;
+            }
+            var pValType = typeof(pval);
+            var stringVal = null;
+            switch(pValType){
+                case 'string':
+                case 'number':
+                {
+                    stringVal = pval;
+                    break;
+                }
+            }
+            rlt[pname] = stringVal;
+        }
+        // input sockets
+        if(this.inputScokets_arr.length > 0){
+            var t_insocketJson_arr = [];
+            this.inputScokets_arr.forEach(data=>{
+                t_insocketJson_arr.push(data.getJson());
+            });
+            rlt.inputScokets_arr = t_insocketJson_arr;
+        }
+        if(this.outputScokets_arr.length > 0){
+            var t_outsocketJson_arr = [];
+            this.outputScokets_arr.forEach(data=>{
+                t_outsocketJson_arr.push(data.getJson());
+            });
+            rlt.outputScokets_arr = t_outsocketJson_arr;
+        }
+        // child node
+        if(this.nodes_arr && this.nodes_arr.length>0){
+            var tNode_arr = [];
+            this.nodes_arr.forEach(childNode=>{
+                var childJson = childNode.getJson();
+                if(childJson){
+                    tNode_arr.push(childJson);
+                }
+            });
+            rlt.nodes_arr = tNode_arr;
+        }
+
+        return rlt;
+    }
 }
 
 function MK_NS_Settings(label, type, defval){
@@ -1009,18 +1107,46 @@ class NodeSocket extends EventEmitter{
         }
         this.extra[key] = val;
     }
+
+    getJson(){
+        var rlt = {
+            name:this.name,
+            isIn:this.isIn,
+            id:this.id,
+            defval:this.defval,
+        };
+        if(this.extra){
+            for(var si in this.extra){
+                var tVal = this.extra[si];
+                if(tval != null){
+                    rlt[si] = tVal;
+                }
+            }
+        }
+        return rlt;
+    }
 }
 
 class SqlDef_Variable extends SqlNode_Base{
     constructor(bluePrint,name,valType,size_1,size_2){
         super({
-            name:name,
-            valType:valType,
-            size_1:isNaN(size_1) ? 0 : parseInt(size_1),
-            size_2:isNaN(size_2) ? 0 : parseInt(size_2),
-            isParam:0,
+                name:name,
+                valType:valType,
+                size_1:isNaN(size_1) ? 0 : parseInt(size_1),
+                size_2:isNaN(size_2) ? 0 : parseInt(size_2),
+                isParam:0,
         }, bluePrint, null, SQLDEF_VAR, '变量');
         autoBind(this);
+    }
+
+    requestSaveAttrs(){
+        var rlt = super.requestSaveAttrs();
+        rlt.name = this.name;
+        rlt.valType = this.valType;
+        rlt.size_1 = this.size_1;
+        rlt.size_2 = this.size_2;
+        rlt.isParam = this.isParam;
+        return rlt;
     }
 
     setProp(data){
@@ -1046,13 +1172,14 @@ class SqlDef_Variable extends SqlNode_Base{
     }
 
     toString(){
-        var rlt = (this.isParam ? '@' : '') + this.name + '  ' + this.valType;
-        switch(this.valType){
+        var attrs = this;
+        var rlt = (attrs.isParam ? '@' : '') + attrs.name + '  ' + attrs.valType;
+        switch(attrs.valType){
             case SqlVarType_NVarchar:
-                rlt += '(' + this.size_1 + ')';
+                rlt += '(' + attrs.size_1 + ')';
                 break;
             case SqlVarType_Decimal:
-                rlt += '(' + this.size_1 + ',' + this.size_2 + ')';
+                rlt += '(' + attrs.size_1 + ',' + attrs.size_2 + ')';
                 break;
         }
 
@@ -1112,7 +1239,6 @@ class SqlDef_Variable_Component extends React.PureComponent{
         });
     }
 
-    
     valTypeChangedHandler(newData){
         this.setState({
             valType:newData,
@@ -1273,23 +1399,31 @@ class SqlNode_DBEntity extends SqlNode_Base{
         this.outSocket = new NodeSocket('out', this, false, {type:SqlVarType_Table});
         this.addSocket(this.outSocket);
 
-        if(this.targetentity != null){
-            var tem_arr = this.targetentity.split('-');
+        if(this.targetEntity != null){
+            var tem_arr = this.targetEntity.split('-');
             if(tem_arr[0] == 'dbe'){
-                this.targetentity = g_dataBase.getEntityByCode(tem_arr[1]);
-                this.targetentity.on('syned', this.entitySynedHandler);
-                //console.log(this.targetentity);
+                this.targetEntity = g_dataBase.getEntityByCode(tem_arr[1]);
+                this.targetEntity.on('syned', this.entitySynedHandler);
+                //console.log(this.targetEntity);
             }
             else{
-                this.targetentity = null;
+                this.targetEntity = null;
             }
         }
 
         var self = this;
     }
 
+    requestSaveAttrs(){
+        var rlt = super.requestSaveAttrs();
+        if(this.targetEntity != null){
+            rlt.targetEntity = 'dbe-' + this.targetEntity.code;
+        }
+        return rlt;
+    }
+
     entitySynedHandler(){
-        var entity = this.targetentity;
+        var entity = this.targetEntity;
         if(entity && entity.loaded){
             var paramCount = entity.params.length;
             this.inputScokets_arr.forEach(item=>{
@@ -1322,12 +1456,12 @@ class SqlNode_DBEntity extends SqlNode_Base{
     }
 
     setEntity(entity){
-        if(this.targetentity == entity)
+        if(this.targetEntity == entity)
             return;
-        if(this.targetentity != null){
-            this.targetentity.off('syned', this.entitySynedHandler);
+        if(this.targetEntity != null){
+            this.targetEntity.off('syned', this.entitySynedHandler);
         }
-        this.targetentity = entity;
+        this.targetEntity = entity;
         if(entity){
             entity.on('syned', this.entitySynedHandler);
         }
@@ -1336,16 +1470,87 @@ class SqlNode_DBEntity extends SqlNode_Base{
 
     getContext(finder){
         finder.setTest(this.id);
-        if(this.targetentity == null){
+        if(this.targetEntity == null){
             return;
         }
         if(finder.type == ContextType_DBEntity){
             var theLabel = this.title;
             if(IsEmptyString(theLabel)){
-                theLabel = this.targetentity.loaded ? this.targetentity.name : this.targetentity.code;
+                theLabel = this.targetEntity.loaded ? this.targetEntity.name : this.targetEntity.code;
             }
-            finder.addItem(theLabel,this.targetentity);
+            finder.addItem(theLabel,this.targetEntity);
         }
+    }
+}
+
+class SqlNode_XJoin extends SqlNode_Base{
+    constructor(initData, parentNode, creationInfo){
+        super(initData, parentNode, creationInfo, SQLNODE_XJOIN, 'Join', true);
+        autoBind(this);
+
+        if(this.joinType == null){
+            this.joinType = JoinType_Inner;
+        }
+
+        this.conditionNode = new SqlNode_Ret_Condition({left:100,top:0},this,creationInfo);
+        this.conditionNode.label = 'ON';
+
+        this.outSocket = new NodeSocket('out', this, false, {type:SqlVarType_Table});
+        this.addSocket(this.outSocket);
+
+        this.addSocket(new NodeSocket('in0', this, true, {type:SqlVarType_Table}));
+        this.addSocket(new NodeSocket('in1', this, true, {type:SqlVarType_Table}));
+
+        this.contextEntities_arr = [];
+        this.entityNodes_arr = [];
+        this.autoCreateHelper = {};
+    }
+
+    requestSaveAttrs(){
+        var rlt = super.requestSaveAttrs();
+        rlt.joinType = this.joinType;
+        return rlt;
+    }
+
+    preEditing(){
+        var cFinder = new ContextFinder(ContextType_DBEntity);
+        this.getContext(cFinder);
+        this.contextEntities_arr = cFinder.item_arr;
+        for(var i in this.entityNodes_arr){
+            this.entityNodes_arr[i].valid = false;
+        }
+        for(var i =0; i<this.contextEntities_arr.length; ++i){
+            var contextEntity = this.contextEntities_arr[i];
+            var theNode = this.entityNodes_arr.find(x=>{return x.label == contextEntity.label});
+            if(theNode == null){
+                theNode = new SqlNode_DBEntity_ColumnSelector({left:(i+1)*-200}, this, null);
+                theNode.setEntity(contextEntity.label, contextEntity.data);
+                this.entityNodes_arr.push(theNode);
+            }
+            theNode.valid = true;
+        }
+        this.bluePrint.banEvent('changed');
+        for(var i=0;i<this.entityNodes_arr.length;++i){
+            var tNode = this.entityNodes_arr[i];
+            if(!tNode.valid){
+                this.entityNodes_arr.splice(i, 1);
+                --i;
+                tNode.isConstNode = false;
+                this.bluePrint.deleteNode(tNode);
+            }
+        }
+        this.bluePrint.allowEvent('changed');
+    }
+
+    addNewColumn(tableCode, tableAlias, tableName, columnName, cvalType, x, y, newborn){
+        return new SqlNode_Column({tableCode:tableCode,
+                                   tableAlias:tableAlias,
+                                   tableName:tableName,
+                                   columnName:columnName,
+                                   cvalType:cvalType,
+                                   left:x,
+                                   top:y,
+                                   newborn:newborn}, this, null);
     }
 }
 
@@ -1392,6 +1597,15 @@ class SqlNode_Column extends SqlNode_Base{
         this.scoketNameMoveable = true;
     }
 
+    requestSaveAttrs(){
+        var rlt = super.requestSaveAttrs();
+        rlt.tableAlias = this.tableAlias;
+        rlt.tableName = this.tableName;
+        rlt.columnName = this.columnName;
+        rlt.tableCode = this.tableCode;
+        return rlt;
+    }
+
     getNodeTitle(){
         return '列:' + this.getSocketLabel();
     }
@@ -1411,9 +1625,18 @@ class SqlNode_DBEntity_ColumnSelector extends SqlNode_Base{
         autoBind(this);
         this.isConstNode = true;
 
-        this.addFrameButton('select-all', '全选');
-        this.addFrameButton('unselect-all', '全不选');
-        this.addFrameButton('fresh', '刷新');
+        var bCanSlect = parentNode.isSelectColumn != null;
+        if(bCanSlect)
+        {
+            this.addFrameButton('select-all', '全选');
+            this.addFrameButton('unselect-all', '全不选');
+            this.addFrameButton('fresh', '刷新');
+        }
+    }
+
+    requestSaveAttrs(){
+        // 临时节点不需保存
+        return null;
     }
 
     clickFrameButton(btnName){
@@ -1489,27 +1712,23 @@ class SqlNode_Select extends SqlNode_Base{
         this.autoCreateHelper = {};
     }
 
-    getContext(finder){
-        finder.setTest(this.id);
-        if(finder.type == ContextType_DBEntity){
-            var links = this.bluePrint.linkPool.getLinksBySocket(this.inSocket);
-            for(var i in links){
-                var tLink = links[i];
-                var outNode = tLink.outSocket.node;
-                if(!finder.isTest(outNode.id))
-                {
-                    outNode.getContext(finder);
-                }
-            }
-        }
+    requestSaveAttrs(){
+        var rlt = super.requestSaveAttrs();
+        rlt.name = this.name;
+        rlt.valType = this.valType;
+        rlt.size_1 = this.size_1;
+        rlt.size_2 = this.size_2;
+        rlt.isParam = this.isParam;
+        return rlt;
     }
 
     getContext(finder,depth){
+        finder.setTest(this.id);
         if(depth == null){
             depth = 0;
         }
         if(depth == 0){
-            return super.getContext(finder, 0);
+            return super.getContext(finder, 1);
         }
         // 其他情况下只返回自身即可
         var retLinks = this.bluePrint.linkPool.getLinksByNode(this.columnNode, 'i');
@@ -1748,6 +1967,12 @@ class SqlNode_Var_Get extends SqlNode_Base{
         var self = this;
     }
 
+    requestSaveAttrs(){
+        var rlt = super.requestSaveAttrs();
+        rlt.varName = this.varName;
+        return rlt;
+    }
+
     getNodeTitle(){
         return 'Get:' + this.varName;
     }
@@ -1796,6 +2021,12 @@ class SqlNode_Var_Set extends SqlNode_Base{
         this.varChangedHandler();
 
         var self = this;
+    }
+
+    requestSaveAttrs(){
+        var rlt = super.requestSaveAttrs();
+        rlt.varName = this.varName;
+        return rlt;
     }
 
     getNodeTitle(){
@@ -1853,6 +2084,12 @@ class SqlNode_NOperand extends SqlNode_Base{
         var self = this;
     }
 
+    requestSaveAttrs(){
+        var rlt = super.requestSaveAttrs();
+        rlt.operator = this.operator;
+        return rlt;
+    }
+
     getNodeTitle(){
         return '运算:' + this.operator;
     }
@@ -1876,7 +2113,7 @@ class SqlNode_Ret_Condition extends SqlNode_Base{
 
 class SqlNode_Ret_Order extends SqlNode_Base{
     constructor(initData, parentNode, creationInfo){
-        super(initData, parentNode, creationInfo, SQLNODE_RET_CONDITION, 'Order');
+        super(initData, parentNode, creationInfo, SQLNODE_RET_ORDER, 'Order');
         autoBind(this);
         this.isConstNode = true;
     }
@@ -1987,31 +2224,6 @@ class SqlNode_Ret_Columns extends SqlNode_Base{
         return (<div>AS:<input type='text' className='socketInputer' big='1' onChange={this.aliasInputChangedHanlder} value={alias} /></div>)
     }
 }
-
-class SqlNode_JoinNode extends SqlNode_Base{
-    constructor(initData){
-        super();
-        Object.assign(this, initData);
-        var self = this;
-        this.inSockets_arr.forEach((sd,i)=>{
-            self.inSockets_arr[i] = new D_NodeSocket(sd, self);
-        })
-    }
-}
-
-class D_Node extends EventEmitter{
-    constructor(initData){
-        super();
-        this.id = 
-        Object.assign(this, initData);
-        var self = this;
-        this.inSockets_arr.forEach((sd,i)=>{
-            self.inSockets_arr[i] = new D_NodeSocket(sd, self);
-        })
-    }
-}
-
-
 
 class C_Node_Socket extends React.PureComponent{
     constructor(props){
@@ -2576,7 +2788,7 @@ class C_SqlNode_DBEntity extends React.PureComponent{
     
     nodeDataChangedHandler(){
         var nodeData = this.props.nodedata;
-        var entity = nodeData.targetentity;
+        var entity = nodeData.targetEntity;
         if(entity){
             this.dropdownRef.current.setValue(entity.code);
         }
@@ -2610,7 +2822,7 @@ class C_SqlNode_DBEntity extends React.PureComponent{
 
     getNodeTitle(){
         var nodeData = this.props.nodedata;
-        var entity = nodeData.targetentity;
+        var entity = nodeData.targetEntity;
         if(nodeData.title && nodeData.title.length > 0){
             return nodeData.title;
         }
@@ -2620,7 +2832,7 @@ class C_SqlNode_DBEntity extends React.PureComponent{
 
     render(){
         var nodeData = this.props.nodedata;
-        var entity = nodeData.targetentity;
+        var entity = nodeData.targetEntity;
         var dataloaded = entity ? entity.loaded : false;
         
         return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor}>
@@ -2835,6 +3047,47 @@ class C_SqlNode_NOperand extends React.PureComponent{
     }
 }
 
+class C_SqlNode_XJoin extends React.PureComponent{
+    constructor(props){
+        super(props);
+        autoBind(this);
+
+        C_SqlNode_Base(this);
+        this.state={
+            joinType:this.props.nodedata.joinType,
+        }
+    }
+
+    selectItemChangedHandler(newJoinType){
+        var nodeData = this.props.nodedata;
+        nodeData.joinType = newJoinType;
+        this.setState({
+            joinType:newJoinType
+        });
+    }
+
+    cusHeaderFuc(){
+        if(this.ddcStyle == null){
+            this.ddcStyle = {
+                width:'100px',
+                margin:'10px',
+            }
+        }
+        var nodeData = this.props.nodedata;
+        return (<DropDownControl options_arr={JoinTypes_arr} value={nodeData.joinType} itemChanged={this.selectItemChangedHandler} style={this.ddcStyle} />);
+    }
+
+    render(){
+        var nodeData = this.props.nodedata;
+        return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' cusHeaderFuc={this.cusHeaderFuc} >
+                <div className='d-flex'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null}/>
+                </div>
+            </C_SqlNode_Frame>
+    }
+}
+
 class C_SqlNode_SimpleNode extends React.PureComponent{
     constructor(props){
         super(props);
@@ -2864,6 +3117,7 @@ class C_SqlNode_DBEntity_ColumnSelector extends React.PureComponent{
         C_SqlNode_Base(this);
 
         this.state={
+            hadCheckbox : this.props.nodedata.parent.isSelectColumn != null,
         }
 
         this.checkmap = {};
@@ -2941,11 +3195,12 @@ class C_SqlNode_DBEntity_ColumnSelector extends React.PureComponent{
     renderColumn(entity,column,parentNodeData, nodeData){
         var nodeData = this.props.nodedata;
         var compareKey = (nodeData.alias == null ? entity.code : nodeData.alias) + '.' + column.name;
-        var isCheck = parentNodeData.isSelectColumn(compareKey);
+        var hadCheckbox = this.state.hadCheckbox;
+        var isCheck = hadCheckbox ? parentNodeData.isSelectColumn(compareKey) : false;
         this.checkmap[column.name] = isCheck;
         return (<div key={column.name} className='d-flex flex-grow-1 align-items-center ' data-colname={column.name}>
-                    <input type='checkbox' onChange={this.checkboxChangeHandler} checked={isCheck} />
-                    <div className='d-flex flex-grow-1 text-nowrap' onMouseDown={this.checkboxChangeHandler} >{column.name}</div>
+                    {hadCheckbox && <input type='checkbox' onChange={this.checkboxChangeHandler} checked={isCheck} />}
+                    <div className='d-flex flex-grow-1 text-nowrap' onMouseDown={hadCheckbox ? this.checkboxChangeHandler : null} >{column.name}</div>
                     <i className='fa fa-hand-paper-o cursor-pointer' onMouseDown={this.mouseDownColumnNameHandler} />
                 </div>);
     }
@@ -3605,6 +3860,9 @@ class C_SqlNode_Editor extends React.PureComponent{
             case SQLNODE_DBENTITY_COLUMNSELECTOR:
                 return this.genSqlNode_Component(C_SqlNode_DBEntity_ColumnSelector, nodeData);
             break;
+            case SQLNODE_XJOIN:
+                return this.genSqlNode_Component(C_SqlNode_XJoin, nodeData);
+            break;
             default:
                 return this.genSqlNode_Component(C_SqlNode_SimpleNode, nodeData);
             break;
@@ -3764,6 +4022,17 @@ class C_SqlNode_Editor extends React.PureComponent{
         this.setEditeNode(theNode);
     }
 
+    clickCompileBtnHandler(ev){
+        console.log("Start compile");
+    }
+
+    clickExportBtnHandler(ev){
+        console.log("Start export");
+        var editingNode = this.state.editingNode;
+        var json = editingNode.bluePrint.getJson();
+        console.log(json);
+    }
+
     render(){
         var editingNode = this.state.editingNode;
         if(this.props.bluePrint != editingNode.bluePrint){
@@ -3812,6 +4081,8 @@ class C_SqlNode_Editor extends React.PureComponent{
                                         }
                                     </ul>
                                     <div className='btn-group flex-grow-0 flex-shrink-0'>
+                                        <button type='button' onClick={this.clickCompileBtnHandler} className='btn btn-dark' >编译</button>
+                                        <button type='button' onClick={this.clickExportBtnHandler} className='btn btn-dark' >导出</button>
                                         <button type='button' onClick={this.clickBigBtnHandler} className='btn btn-dark' ><i className='fa fa-search-plus' /></button>
                                         <button type='button' onClick={this.clickSmallBtnHandler} className='btn btn-dark' ><i className='fa fa-search-minus' /></button>
                                     </div>
@@ -4044,6 +4315,11 @@ const cusDBEditorControls_arr =[
         label:'多元运算',
         nodeClass:SqlNode_NOperand,
     }
+    ,
+    {
+        label:'Join',
+        nodeClass:SqlNode_XJoin,
+    }
 ]; 
 
 class SqlNodeOutlineItem extends React.PureComponent{
@@ -4237,9 +4513,9 @@ class CusDBEEditorVariables extends React.PureComponent{
     }
 
     render() {
-        if(this.listenedNode != this.props.editingNode){
+        if(this.listenedNode != this.props.editingNode.bluePrint){
             this.unlistenNode(this.listenedNode);
-            this.listenNode(this.props.editingNode);
+            this.listenNode(this.props.editingNode.bluePrint);
         }
         var blueprintPrefix = this.props.editingNode.bluePrint.id + '_';
         var targetID = blueprintPrefix + 'variables';

@@ -24,6 +24,12 @@ const SqlVarTypes_arr = [SqlVarType_Boolean,SqlVarType_Int,SqlVarType_NVarchar,S
 const SqlVarInputableTypes_arr = [SqlVarType_Boolean,SqlVarType_Int,SqlVarType_NVarchar,SqlVarType_Date,SqlVarType_DateTime,SqlVarType_Time,SqlVarType_Float,SqlVarType_Decimal,SqlVarType_Scalar];
 const SqlVarType_Table = 'table';
 
+const JoinType_Inner = 'inner join';
+const JoinType_Left = 'left join';
+const JoinType_Right = 'right join';
+const JoinType_Cross = 'cross join';
+const JoinTypes_arr = [JoinType_Inner,JoinType_Left,JoinType_Right,JoinType_Cross];
+
 const Event_CurrentComponentchanged = 'currentComponentchanged';
 const Event_LinkChanged = 'linkChanged';
 const Event_SocketNumChanged = 'socketnumChanged';

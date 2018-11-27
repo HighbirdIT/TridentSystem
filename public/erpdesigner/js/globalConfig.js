@@ -26,6 +26,12 @@ var SqlVarTypes_arr = [SqlVarType_Boolean, SqlVarType_Int, SqlVarType_NVarchar, 
 var SqlVarInputableTypes_arr = [SqlVarType_Boolean, SqlVarType_Int, SqlVarType_NVarchar, SqlVarType_Date, SqlVarType_DateTime, SqlVarType_Time, SqlVarType_Float, SqlVarType_Decimal, SqlVarType_Scalar];
 var SqlVarType_Table = 'table';
 
+var JoinType_Inner = 'inner join';
+var JoinType_Left = 'left join';
+var JoinType_Right = 'right join';
+var JoinType_Cross = 'cross join';
+var JoinTypes_arr = [JoinType_Inner, JoinType_Left, JoinType_Right, JoinType_Cross];
+
 var Event_CurrentComponentchanged = 'currentComponentchanged';
 var Event_LinkChanged = 'linkChanged';
 var Event_SocketNumChanged = 'socketnumChanged';
