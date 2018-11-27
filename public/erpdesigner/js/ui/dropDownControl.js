@@ -32,6 +32,7 @@ var DropDownControl = function (_React$PureComponent) {
         _this.dropdownbtnRef = React.createRef();
         _this.editableInputRef = React.createRef();
         _this.dropmenudivRef = React.createRef();
+        _this.rootDivRef = React.createRef();
         return _this;
     }
 
@@ -200,7 +201,7 @@ var DropDownControl = function (_React$PureComponent) {
                 keyword: '',
                 opened: false });
             if (this.props.itemChanged) {
-                this.props.itemChanged(theOptionItem.data ? theOptionItem.data : theOptionItem.value);
+                this.props.itemChanged(theOptionItem.data ? theOptionItem.data : theOptionItem.value, this);
             }
         }
     }, {
@@ -270,7 +271,7 @@ var DropDownControl = function (_React$PureComponent) {
 
             return React.createElement(
                 'div',
-                { className: "d-flex flex-column " + (this.props.rootclass ? this.props.rootclass : ''), style: this.props.style },
+                { className: "d-flex flex-column " + (this.props.rootclass ? this.props.rootclass : ''), style: this.props.style, ref: this.rootDivRef },
                 React.createElement(
                     'div',
                     { className: 'd-flex flex-grow-1 flex-shrink-1' },

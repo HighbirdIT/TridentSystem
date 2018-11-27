@@ -183,3 +183,7 @@ function fetchJsonPosts(url, postdata, callBack, key = '', timeout = 2) {
 		}
 	});
 }
+
+function IsEmptyString(val){
+	return val == null || val == '';
+}

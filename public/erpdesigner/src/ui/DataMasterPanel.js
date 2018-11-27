@@ -197,7 +197,7 @@ class DataBasePanel extends React.PureComponent {
         autoBind(this);
         var self = this;
         setTimeout(() => {
-            self.startSynAction('keyword','T503B');
+            self.startSynAction('keyword','T101');
         }, 100);
     }
 
@@ -321,6 +321,10 @@ const SQLNODE_SELECT = 'select';
 const SQLNODE_VAR_GET = 'var_get';
 const SQLNODE_VAR_SET = 'var_set';
 const SQLNODE_NOPERAND = 'noperand';
+const SQLNODE_COLUMN = 'column';
+const SQLNODE_DBENTITY_COLUMNSELECTOR = 'dbentity_columnselector';
+const SQLNODE_RET_CONDITION = 'ret_condition';
+const SQLNODE_RET_COLUMNS = 'ret_columns';
 
 const SQLDEF_VAR = 'def_variable';
 
@@ -341,6 +345,24 @@ class SocketLink{
         this.inSocket.fireLinkChanged();
         this.outSocket.fireLinkChanged();
     }
+
+    straightOut(offsetX){
+        var inSocket = this.inSocket;
+        var outSocket = this.outSocket;
+        if(outSocket.node.currentFrameCom == null || inSocket.node.currentFrameCom == null)
+        {
+            return;
+        }
+        if(isNaN(offsetX)){
+            offsetX = 100;
+        }
+        var inSocketCenter = inSocket.currentComponent.getCenterPos();
+        var outSocketCenter = outSocket.currentComponent.getCenterPos();
+        var offset = {x:inSocketCenter.x - outSocketCenter.x, y:inSocketCenter.y - outSocketCenter.y};
+        offset.x += offsetX;
+        outSocket.node.setPos(outSocket.node.left + offset.x, outSocket.node.top + offset.y);
+        outSocket.node.currentFrameCom.reDraw();
+    }
 }
 
 class ScoketLinkPool{
@@ -357,6 +379,9 @@ class ScoketLinkPool{
             this.link_map[linkObj.id] = null;
             delete this.link_map[linkObj.id];
             linkObj.fireChanged();
+
+            linkObj.inSocket.node.linkRemoved(linkObj);
+            linkObj.outSocket.node.linkRemoved(linkObj);
         }
         return true;
     }
@@ -386,10 +411,10 @@ class ScoketLinkPool{
             this.link_map[id] = newLink;
             newLink.fireChanged();
             this.cacheData = null;
-            var self = this;
-            setTimeout(() => {
-                self.bluePrint.emit('changed');
-            }, 10);
+            this.bluePrint.fireChanged(10);
+            
+            inSocket.node.linkAdded(newLink);
+            outSocket.node.linkAdded(newLink);
         }
         return this.link_map[id];
     }
@@ -397,7 +422,7 @@ class ScoketLinkPool{
     removeLink(link){
         if(this._deleteLink(link)){
             this.cacheData = null;
-            this.bluePrint.emit('changed');
+            this.bluePrint.fireChanged();
         }
     }
 
@@ -441,27 +466,47 @@ class ScoketLinkPool{
         return needClearids_arr.length > 0;
     }
 
-    getLinksByNode(theNode){
+    getLinksByNode(theNode, type){
+        if(type == null){
+            type = '*';
+        }
         var rlt_arr = [];
         for(var si in this.link_map){
             var theLink = this.link_map[si];
             if(theLink == null)
                 continue;
-            if(theLink.inSocket.node == theNode || theLink.outSocket.node == theNode){
-                rlt_arr.push(theLink);
+            if(theLink.inSocket.node == theNode){
+                if(type == '*' || type == 'i'){
+                    rlt_arr.push(theLink);
+                }
+            }
+            else if(theLink.outSocket.node == theNode){
+                if(type == '*' || type == 'o'){
+                    rlt_arr.push(theLink);
+                }
             }
         }
         return rlt_arr;
     }
 
-    getLinksBySocket(theSocket){
+    getLinksBySocket(theSocket, type){
+        if(type == null){
+            type = '*';
+        }
         var rlt_arr = [];
         for(var si in this.link_map){
             var theLink = this.link_map[si];
             if(theLink == null)
                 continue;
-            if(theLink.inSocket == theSocket || theLink.outSocket == theSocket){
-                rlt_arr.push(theLink);
+            if(theLink.inSocket == theSocket){
+                if(type == '*' || type == 'i'){
+                    rlt_arr.push(theLink);
+                }
+            }
+            else if(theLink.outSocket == theSocket){
+                if(type == '*' || type == 'o'){
+                    rlt_arr.push(theLink);
+                }
             }
         }
         return rlt_arr;
@@ -496,6 +541,7 @@ class CustomDbEntity extends EventEmitter{
         };
         this.bluePrint = this;
         this.id = this.code;
+        EnhanceEventEmiter(this);
 
         creationInfo.save=(initData, node)=>{
             if(initData.id){
@@ -516,6 +562,14 @@ class CustomDbEntity extends EventEmitter{
             }
         });
 
+    }
+
+    preEditing(){
+        // call pre enter Editing
+    }
+
+    postEditing(){
+        // call leve eidting
     }
 
     getNodeParentList(theNode){
@@ -565,7 +619,7 @@ class CustomDbEntity extends EventEmitter{
         node.parent = parentNode;
         node.id = useId;
         this.allNode_map[useId] = node;
-        this.emit('changed');
+        parentNode.fireChanged();
     }
 
     addVariable(varData){
@@ -580,7 +634,7 @@ class CustomDbEntity extends EventEmitter{
         }
         varData.bluePrint = this;
         this.vars_arr.push(varData);
-        this.emit('varChanged');
+        this.fireEvent('varChanged');
     }
 
     getVariableByName(varName){
@@ -604,12 +658,15 @@ class CustomDbEntity extends EventEmitter{
         if(index != -1){
             this.vars_arr.splice(index, 1);
             varData.removed = true;
-            this.emit('varChanged');
+            this.fireEvent('varChanged');
             varData.emit('changed');
         }
     }
 
     deleteNode(node){
+        if(node.isConstNode){
+            return;
+        }
         var useId = node.id;
         if(this.allNode_map[useId]){
             this.allNode_map[useId] = null;
@@ -620,8 +677,15 @@ class CustomDbEntity extends EventEmitter{
             node.bluePrint = null;
             node.parent = null;
             this.linkPool.clearNodeLink(node);
-            this.emit('changed');
+            this.fireChanged();
         }
+    }
+
+    deleteNodes(nodes_arr){
+        this.banEvent('changed');
+        nodes_arr.forEach(node=>{this.deleteNode(node)});
+        this.allowEvent('changed');
+        this.fireChanged();
     }
 
     getNodeByID(id){
@@ -639,13 +703,22 @@ class CustomDbEntity extends EventEmitter{
             return null;
         return theNode.sockets_map[socketID];
     }
+
+    fireMoved(delay){
+        this.fireEvent('moved', delay);
+    }
+
+    fireChanged(delay){
+        this.fireEvent('changed', delay);
+    }
 }
 
 class SqlNode_Base extends EventEmitter{
-    constructor(initData, parentNode, creationInfo, type, label){
+    constructor(initData, parentNode, creationInfo, type, label, isContainer){
         super();
         this.bluePrint = parentNode.bluePrint;
         Object.assign(this, initData);
+        EnhanceEventEmiter(this);
         this.label = label;
         if(this.type == null)
             this.type = type;
@@ -653,7 +726,7 @@ class SqlNode_Base extends EventEmitter{
             this.left = 0;
         if(this.top == null)
             this.top = 0;
-        this.hadFlow = true;
+        this.hadFlow = false;
 
         this.bluePrint.registerNode(this, parentNode);
 
@@ -665,23 +738,105 @@ class SqlNode_Base extends EventEmitter{
         this.sockets_map = {};
         this.inputScokets_arr = [];
         this.outputScokets_arr = [];
+        if(isContainer)
+        {
+            this.nodes_arr = [];
+            this.isContainer = true;
+        }
+
+        this.processInputSockets = this.processInputSockets.bind(this);
+        this.processOutSockets = this.processOutSockets.bind(this);
+        this.frameButtons_arr = [];
     }
 
+    clickFrameButton(btnName){
+        console.log('clickFrameButton:' + btnName);
+        switch(btnName){
+            case FrameButton_LineSocket:
+            {
+                var links = this.bluePrint.linkPool.getLinksByNode(this, 'i');
+                links.forEach(link=>{
+                    link.straightOut(-150);
+                });
+            }
+            break;
+            case FrameButton_ClearEmptySocket:
+            {
+                var removeCount = 0;
+                for(var si=this.inputScokets_arr.length - 1;si>=this.minInSocketCount && this.inputScokets_arr.length > 0;--si){
+                    var socket = this.inputScokets_arr[si];
+                    if(this.bluePrint.linkPool.getLinksBySocket(socket).length == 0){
+                        this.removeSocket(socket);
+                        ++removeCount;
+                    }
+                }
+                if(removeCount > 0){
+                    this.fireEvent(Event_SocketNumChanged);
+                    this.fireMoved(10);
+                }
+            }
+            break;
+            case 'fresh':
+            {
+                if(this.currentComponent){
+                    this.currentComponent.reDraw();
+                }
+            }
+        }
+        return false;
+    }
+
+    addFrameButton(name, label){
+        this.frameButtons_arr.push({name:name,label:label});
+    }
+
+    linkRemoved(link){
+
+    }
+
+    linkAdded(link){
+        
+    }
+
+    preEditing(){
+        // call pre enter Editing
+    }
+
+    postEditing(){
+        // call leve eidting
+    }
+
+    getRect(){
+        if(this.currentFrameCom == null)
+            return null;
+        var frameRootDiv = this.currentFrameCom.rootDivRef.current;
+        if(frameRootDiv == null)
+            return null;
+        var bcr = frameRootDiv.getBoundingClientRect();
+        return {
+            left:this.left,
+            top:this.top,
+            right:this.left + bcr.width,
+            bottom:this.top + bcr.height,
+            width:bcr.width,
+            height:bcr.height,
+        }
+    }
 
     getNodeTitle(){
-        return this.title == null ? '未命名' : this.title;
+        return this.label + (this.title == null ? '' : ':' + this.title);
     }
 
     getScoketByName(name, isIn){
         if(isIn == null)
             isIn = '*';
-        var rlt = [];
+        var rlt = null;
         if(isIn != false){
-            rlt.concat(this.inputScokets_arr.filter(item=>{return item.name == name}));
+            rlt = this.inputScokets_arr.find(x=>{return x.name == name});
         }
 
-        if(isIn != true){
-            rlt.concat(this.outputScokets_arr.filter(item=>{return item.name == name}));
+        if(rlt == null && isIn != true){
+            rlt = this.outputScokets_arr.find(x=>{return x.name == name});
         }
         return rlt;
     }
@@ -696,7 +851,7 @@ class SqlNode_Base extends EventEmitter{
         }
     }
 
-    removedSocket(socketObj){
+    removeSocket(socketObj){
         if(socketObj.isIn){
             removeElemFrommArray(this.inputScokets_arr, socketObj);
         }
@@ -704,12 +859,96 @@ class SqlNode_Base extends EventEmitter{
             removeElemFrommArray(this.outputScokets_arr, socketObj);
         }
         this.sockets_map[socketObj.id] = null;
+        this.bluePrint.linkPool.clearSocketLink(socketObj);
+    }
+
+    getSocketById(socketID){
+        return this.sockets_map[socketID];
     }
 
     setPos(newx, newy){
         this.left = newx;
         this.top = newy;
-        this.emit('moved');
+        this.fireMoved();
+    }
+
+    fireMoved(delay){
+        this.fireEvent('moved', delay);
+    }
+
+    fireChanged(delay){
+        this.fireEvent('changed', delay);
+    }
+
+    getContext(finder,depth){
+        if(depth == null){
+            depth = 0;
+        }
+        finder.setTest(this.id);
+        var inlinks = this.bluePrint.linkPool.getLinksByNode(this, 'i');
+        for(var i in inlinks){
+            var tLink = inlinks[i];
+            var outNode = tLink.outSocket.node;
+            if(!finder.isTest(outNode.id))
+            {
+                outNode.getContext(finder,depth + 1);
+            }
+        }
+    }
+
+    isInScoketDynamic(){
+        return this.genInSocket != null;
+    }
+
+    isOutScoketDynamic(){
+        return this.genOutSocket != null;
+    }
+
+    processInputSockets(isPlus){
+        if(this.minInSocketCount == null){
+            this.minInSocketCount = 0;
+        }
+        var retSocket = null;
+        if(isPlus){
+            retSocket = this.genInSocket();
+            this.addSocket(retSocket);
+            this.fireEvent(Event_SocketNumChanged);
+        }
+        else{
+            if(this.inputScokets_arr.length > this.minInSocketCount){
+                var needRemoveSocket = this.inputScokets_arr[this.inputScokets_arr.length - 1];
+                this.removeSocket(needRemoveSocket);
+                this.fireEvent(Event_SocketNumChanged);
+                retSocket = needRemoveSocket;
+            }
+        }
+        return retSocket;
+    }
+
+    processOutSockets(isPlus){
+        if(this.minOutSocketCount == null){
+            this.minOutSocketCount = 0;
+        }
+        var retSocket = null;
+        if(isPlus){
+            retSocket = this.genOutSocket();
+            this.addSocket(retSocket);
+            this.fireEvent(Event_SocketNumChanged);
+        }
+        else{
+            if(this.outputScokets_arr.length > this.minOutSocketCount){
+                var needRemoveSocket = this.outputScokets_arr[this.outputScokets_arr.length - 1];
+                this.removeSocket(needRemoveSocket);
+                this.fireEvent(Event_SocketNumChanged);
+                retSocket = needRemoveSocket;
+            }
+        }
+        return retSocket;
+    }
+
+    // can custom socket component
+    customSocketRender(socket){
+        return null;
     }
 }
 
@@ -724,7 +963,7 @@ function MK_NS_Settings(label, type, defval){
 function CommonFun_SetCurrentComponent(target){
     if(this.currentComponent != target){
         this.currentComponent = target;
-        this.emit(Event_CurrentComponentchanged);
+        this.emit(Event_CurrentComponentchanged, this);
     }
 }
 
@@ -732,6 +971,7 @@ class NodeSocket extends EventEmitter{
     constructor(name, tNode, isIn, initData){
         super();
         Object.assign(this, initData);
+        EnhanceEventEmiter(this);
         this.name = name;
         this.node = tNode;
         this.isIn = isIn;
@@ -754,6 +994,20 @@ class NodeSocket extends EventEmitter{
         setTimeout(() => {
             self.node.emit('moved');
         }, 20);
+    }
+
+    getExtra(key,def){
+        if(this.extra == null){
+            return def;
+        }
+        return this.extra[key] == null ? def : this.extra[key];
+    }
+
+    setExtra(key, val){
+        if(this.extra == null){
+            this.extra = {};;
+        }
+        this.extra[key] = val;
     }
 }
 
@@ -788,7 +1042,7 @@ class SqlDef_Variable extends SqlNode_Base{
         if(data.editing != null){
             this.needEdit = data.editing;
         }
-        this.emit('changed');
+        this.fireChanged();
     }
 
     toString(){
@@ -1016,6 +1270,9 @@ class SqlNode_DBEntity extends SqlNode_Base{
         super(initData, parentNode, creationInfo, SQLNODE_BDBENTITY, '数据源');
         autoBind(this);
 
+        this.outSocket = new NodeSocket('out', this, false, {type:SqlVarType_Table});
+        this.addSocket(this.outSocket);
+
         if(this.targetentity != null){
             var tem_arr = this.targetentity.split('-');
             if(tem_arr[0] == 'dbe'){
@@ -1032,7 +1289,36 @@ class SqlNode_DBEntity extends SqlNode_Base{
     }
 
     entitySynedHandler(){
-        this.emit('changed');
+        var entity = this.targetentity;
+        if(entity && entity.loaded){
+            var paramCount = entity.params.length;
+            this.inputScokets_arr.forEach(item=>{
+                item._validparam = false;
+            });
+            var hadChanged = false;
+            entity.params.forEach(param=>{
+                var theSocket = this.getScoketByName(param.name);
+                if(theSocket == null){
+                    this.addSocket(new NodeSocket(param.name, this, true, {type:SqlVarType_Scalar,label:param.name}));
+                    hadChanged = true;
+                }
+            });
+            for(var si=0;si<this.inputScokets_arr.length;++si){
+                var theSocket = this.inputScokets_arr[si];
+                if(theSocket._validparam == false){
+                    this.removeSocket(theSocket);
+                    --si;
+                    hadChanged = true;
+                }
+            }
+            if(hadChanged){
+                this.fireEvent(Event_SocketNumChanged, 20);
+                this.bluePrint.fireChanged();
+            }
+        }
+
+        this.fireChanged();
+        this.fireMoved(10);
     }
 
     setEntity(entity){
@@ -1045,28 +1331,404 @@ class SqlNode_DBEntity extends SqlNode_Base{
         if(entity){
             entity.on('syned', this.entitySynedHandler);
         }
-        this.emit('changed');
+        this.entitySynedHandler();
+    }
+
+    getContext(finder){
+        finder.setTest(this.id);
+        if(this.targetentity == null){
+            return;
+        }
+        if(finder.type == ContextType_DBEntity){
+            var theLabel = this.title;
+            if(IsEmptyString(theLabel)){
+                theLabel = this.targetentity.loaded ? this.targetentity.name : this.targetentity.code;
+            }
+            finder.addItem(theLabel,this.targetentity);
+        }
+    }
+}
+
+class ContextFinder{
+    constructor(type){
+        this.type = type;
+        this.item_arr = [];
+    }
+
+    addItem(label,data){
+        if(data == null){
+            return;
+        }
+        if(label == null){
+            console.warn('context meet null label');
+            label = 'unname';
+        }
+        this.item_arr.push({label:label,data:data});
+    }
+
+    setTest(key){
+        this['test-' + key] = 1;
+    }
+
+    isTest(key){
+        return this['test-' + key] == 1;
+    }
+
+    count(){
+        return this.item_arr.length;
+    }
+}
+
+class SqlNode_Column extends SqlNode_Base{
+    constructor(initData, parentNode, creationInfo){
+        super(initData, parentNode, creationInfo, SQLNODE_COLUMN, '列', false);
+        autoBind(this);
+
+        //this.label = this.tableName + '.' + this.columnName;
+        this.headType = 'empty';
+        this.outSocket = new NodeSocket('out', this, false,{type:this.cvalType,label:this.getSocketLabel()});
+        this.addSocket(this.outSocket);
+
+        this.scoketNameMoveable = true;
+    }
+
+    getNodeTitle(){
+        return '列:' + this.getSocketLabel();
+    }
+
+    getSocketLabel(){
+        return (this.tableAlias == null ? this.tableName : this.tableAlias) + '.' + this.columnName;
+    }
+
+    getCompareKey(){
+        return (this.tableAlias == null ? this.tableCode : this.tableAlias) + '.' + this.columnName;
+    }
+}
+
+class SqlNode_DBEntity_ColumnSelector extends SqlNode_Base{
+    constructor(initData, parentNode, creationInfo){
+        super(initData, parentNode, creationInfo, SQLNODE_DBENTITY_COLUMNSELECTOR, '实体', false);
+        autoBind(this);
+        this.isConstNode = true;
+
+        this.addFrameButton('select-all', '全选');
+        this.addFrameButton('unselect-all', '全不选');
+        this.addFrameButton('fresh', '刷新');
+    }
+
+    clickFrameButton(btnName){
+        if(super.clickFrameButton(btnName)){
+            return;
+        }
+        switch(btnName){
+            case 'select-all':
+            {
+                var entity = this.entity;
+                for(var si in this.entity.columns){
+                    var theColumn = this.entity.columns[si];
+                    this.parent.columnCheckChanged(entity.code, this.alias, entity.name, theColumn.name, theColumn.cvalType, true);
+                }
+                break;
+            }
+            case 'unselect-all':
+            {
+                var entity = this.entity;
+                for(var si in this.entity.columns){
+                    var theColumn = this.entity.columns[si];
+                    this.parent.columnCheckChanged(entity.code, this.alias, entity.name, theColumn.name, theColumn.cvalType, false);
+                }
+                break;
+            }
+        }
+        return false;
+    }
+
+    entitySynedHandler(){
+        this.fireChanged();
+    }
+
+    setEntity(label, target){
+        this.entity = target;
+        if(label == target.name){
+            this.alias = null;
+        }
+        else{
+            this.alias = label;
+        }
+        this.label = label;
+        if(target.on != null){
+            target.on('syned', this.entitySynedHandler);
+        }
     }
 }
 
 class SqlNode_Select extends SqlNode_Base{
     constructor(initData, parentNode, creationInfo){
-        super(initData, parentNode, creationInfo, SQLNODE_SELECT, '选择');
+        super(initData, parentNode, creationInfo, SQLNODE_SELECT, '选择', true);
         autoBind(this);
+        this.inSocket = new NodeSocket('in', this, true, {type:SqlVarType_Table});
+        this.addSocket(this.inSocket);
+        this.outSocket = new NodeSocket('out', this, false, {type:SqlVarType_Table});
+        this.addSocket(this.outSocket);
+        if(IsEmptyString(this.title)){
+            this.title = '未命名';
+        }
+
+        this.columnNode = new SqlNode_Ret_Columns({left:100,top:0}, this, creationInfo);
+        this.conditionNode = new SqlNode_Ret_Condition({left:250,top:0},this,creationInfo);
+        this.orderNode = new SqlNode_Ret_Order({left:400,top:0},this,creationInfo);
 
         if(this.columns_arr == null){
-            this.columns_ar = [];
+            this.columns_arr = [];
         }
-        if(this.nodes_arr == null){
-            this.nodes_arr = [];
+        if(this.orderColumns_arr == null){
+            this.orderColumns_arr = [];
         }
+        this.contextEntities_arr = [];
+        this.entityNodes_arr = [];
+        this.autoCreateHelper = {};
+    }
 
-        if(this.innerSocket == null){
-            this.innerSocket = new NodeSocket({}, this, true);
+    getContext(finder){
+        finder.setTest(this.id);
+        if(finder.type == ContextType_DBEntity){
+            var links = this.bluePrint.linkPool.getLinksBySocket(this.inSocket);
+            for(var i in links){
+                var tLink = links[i];
+                var outNode = tLink.outSocket.node;
+                if(!finder.isTest(outNode.id))
+                {
+                    outNode.getContext(finder);
+                }
+            }
         }
     }
 
-    setEntity(entity){
+    getContext(finder,depth){
+        if(depth == null){
+            depth = 0;
+        }
+        if(depth == 0){
+            return super.getContext(finder, 0);
+        }
+        // 其他情况下只返回自身即可
+        var retLinks = this.bluePrint.linkPool.getLinksByNode(this.columnNode, 'i');
+        if(retLinks.length == 0){
+            return;
+        }
+        var temEntity = {
+            code:this.id,
+            name:'temp',
+            columns:[]
+        };
+        for(var i in retLinks){
+            var link = retLinks[i];
+            var theSocket = link.inSocket;
+            var colName = theSocket.getExtra('alias');
+            var cvalType = SqlVarType_NVarchar;
+            if(IsEmptyString(colName)){
+                if(link.outSocket.node.type == SQLNODE_COLUMN){
+                    colName = link.outSocket.node.columnName;
+                    cvalType = link.outSocket.node.cvalType;
+                }
+            }
+            if(!IsEmptyString(colName)){
+                temEntity.columns.push({name:colName,cvalType:cvalType});
+            }
+        }
+        finder.addItem(this.title,temEntity);
+    }
+
+    preEditing(){
+        var cFinder = new ContextFinder(ContextType_DBEntity);
+        this.getContext(cFinder);
+        this.contextEntities_arr = cFinder.item_arr;
+        for(var i in this.entityNodes_arr){
+            this.entityNodes_arr[i].valid = false;
+        }
+        for(var i in this.contextEntities_arr){
+            var contextEntity = this.contextEntities_arr[i];
+            var theNode = this.entityNodes_arr.find(x=>{return x.label == contextEntity.label});
+            if(theNode == null){
+                theNode = new SqlNode_DBEntity_ColumnSelector({left:(i+1)*-200}, this, null);
+                theNode.setEntity(contextEntity.label, contextEntity.data);
+                this.entityNodes_arr.push(theNode);
+            }
+            theNode.valid = true;
+        }
+        this.bluePrint.banEvent('changed');
+        for(var i=0;i<this.entityNodes_arr.length;++i){
+            var tNode = this.entityNodes_arr[i];
+            if(!tNode.valid){
+                this.entityNodes_arr.splice(i, 1);
+                --i;
+                tNode.isConstNode = false;
+                this.bluePrint.deleteNode(tNode);
+            }
+        }
+        this.bluePrint.allowEvent('changed');
+    }
+
+    postEditing(){
+        var colSockets = this.columnNode.inputScokets_arr;
+        var newColumns_arr = [];
+        var temMap = {};
+        for(var i in colSockets){
+            var socket = colSockets[i];
+            var tlinks = this.bluePrint.linkPool.getLinksBySocket(socket);
+            var colNode = null;
+            if(tlinks.length > 0){
+                var theLink = tlinks[0];
+                if(theLink.outSocket.node.type == SQLNODE_COLUMN){
+                    colNode = theLink.outSocket.node;
+                }
+            }
+            var colName = socket.getExtra('alias');
+            var cvalType = colNode ? colNode.cvalType : SqlVarType_NVarchar;
+            if(IsEmptyString(colName) && colNode){
+                colName = colNode.columnName;
+            }
+            if(!IsEmptyString(colName)){
+                if(temMap[colName] == null){
+                    newColumns_arr.push({name:colName,cvalType:cvalType});
+                    temMap[colName] = 1;
+                }
+            }
+        }
+        this.columns_arr = newColumns_arr;
+
+        var orderBySockets = this.orderNode.inputScokets_arr;
+        var newOrderByColumns_arr = [];
+        temMap = {};
+        for(var i in orderBySockets){
+            var socket = orderBySockets[i];
+            var tlinks = this.bluePrint.linkPool.getLinksBySocket(socket);
+            var colNode = null;
+            if(tlinks.length > 0){
+                var theLink = tlinks[0];
+                if(theLink.outSocket.node.type == SQLNODE_COLUMN){
+                    colNode = theLink.outSocket.node;
+                }
+            }
+            if(colNode){
+                newOrderByColumns_arr.push({name:colNode.columnName,orderType:socket.getExtra('orderType', '')});;
+            }
+        }
+
+        this.orderColumns_arr = newOrderByColumns_arr;
+    }
+
+    isSelectColumn(compareKey){
+        return this.getSelectColumnLink(compareKey) != null;
+    }
+
+    getSelectColumnLink(compareKey){
+        if(this.autoCreateHelper[compareKey + '_creating']){
+            return true;
+        }
+        var columnNode = this.columnNode;
+        for(var i in columnNode.inputScokets_arr){
+            var inSocket = columnNode.inputScokets_arr[i];
+            var links_arr = this.bluePrint.linkPool.getLinksBySocket(inSocket);
+            if(links_arr.length > 0){
+                var link = links_arr[0];
+                var outNode = link.outSocket.node;
+                if(outNode.type == SQLNODE_COLUMN){
+                    if(compareKey == outNode.getCompareKey()){
+                        return link;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    addNewColumn(tableCode, tableAlias, tableName, columnName, cvalType, x, y, newborn){
+        return new SqlNode_Column({tableCode:tableCode,
+                                   tableAlias:tableAlias,
+                                   tableName:tableName,
+                                   columnName:columnName,
+                                   cvalType:cvalType,
+                                   left:x,
+                                   top:y,
+                                   newborn:newborn}, this, null);
+    }
+
+    columnCheckChanged(tableCode, tableAlias, tableName, columnName, cvalType, isCheck){
+        var compareKey = (tableAlias == null ? tableCode : tableAlias) + '.' + columnName;
+        var theLink = this.getSelectColumnLink(compareKey);
+        if(isCheck){
+            // 加入
+            if(theLink != null){
+                return false;
+            }
+            var newSocket = this.columnNode.processInputSockets(true);
+            newSocket.on(Event_CurrentComponentchanged, this.socketComponentCreated);
+            this.newSocket = newSocket;
+            this.autoCreateHelper[compareKey + '_creating'] = 1;
+            this.autoCreateHelper[newSocket.id] = {
+                newSocket:newSocket,
+                step:'created-socket',
+                columnName:columnName,
+                tableName:tableName,
+                tableAlias:tableAlias,
+                cvalType:cvalType,
+                tableCode:tableCode,
+                compareKey:compareKey,
+            };
+        }
+        else{
+            // 删除
+            if(theLink == null){
+                return false;
+            }
+            var needRemoveSocket = theLink.inSocket;
+            this.bluePrint.deleteNode(theLink.outSocket.node);
+            this.columnNode.removeSocket(needRemoveSocket);
+            this.columnNode.fireEvent(Event_SocketNumChanged);
+        }
+        return true;
+    }
+    
+    socketComponentCreated(socket){
+        if(socket.currentComponent){
+            var createInfo = this.autoCreateHelper[socket.id];
+            if(createInfo.step == 'created-socket'){
+                var newColNode = this.addNewColumn(createInfo.tableCode, createInfo.tableAlias, createInfo.tableName, createInfo.columnName, createInfo.cvalType);
+                createInfo.newColNode = newColNode;
+                this.autoCreateHelper[newColNode.id] = createInfo;
+                this.bluePrint.fireChanged(10);
+                createInfo.step = 'created-column'
+
+                newColNode.on(Event_FrameComMount, this.newColumNodeFrameComMounted);
+            }
+        }
+        socket.off(Event_CurrentComponentchanged, this.socketComponentCreated);
+    }
+
+    newColumNodeFrameComMounted(newColNode){
+        var createInfo = this.autoCreateHelper[newColNode.id];
+        if(createInfo){
+            if(createInfo.step == 'created-column')
+            {
+                /*
+                var inSocket = createInfo.newSocket;
+                var outSocket = newColNode.outSocket;
+                var inSocketCenter = inSocket.currentComponent.getCenterPos();
+                var outSocketCenter = outSocket.currentComponent.getCenterPos();
+                var offset = {x:inSocketCenter.x - outSocketCenter.x, y:inSocketCenter.y - outSocketCenter.y};
+                offset.x -= 150;
+                createInfo.newColNode.setPos(newColNode.left + offset.x, newColNode.top + offset.y);
+                createInfo.newColNode.currentFrameCom.reDraw();
+                */
+                // addLink
+                var newLink = this.bluePrint.linkPool.addLink(newColNode.outSocket, createInfo.newSocket);
+                newLink.straightOut(-150);
+            }
+            this.autoCreateHelper[createInfo.compareKey + '_creating'] = null;
+            
+        }
+        newColNode.off(Event_FrameComMount, this.newColumNodeFrameComMounted);
     }
 }
 
@@ -1074,7 +1736,6 @@ class SqlNode_Var_Get extends SqlNode_Base{
     constructor(initData, parentNode, creationInfo){
         super(initData, parentNode, creationInfo, SQLNODE_VAR_GET, '变量-获取');
         autoBind(this);
-        this.hadFlow = false;
         this.outSocket = new NodeSocket('out', this, false);
         this.addSocket(this.outSocket);
 
@@ -1167,7 +1828,7 @@ class SqlNode_Var_Set extends SqlNode_Base{
         this.outSocket.set(
             MK_NS_Settings('', valType, null)
         );
-        this.emit('changed');
+        this.fireChanged();
     }
 
 }
@@ -1177,7 +1838,7 @@ class SqlNode_NOperand extends SqlNode_Base{
         super(initData, parentNode, creationInfo, SQLNODE_NOPERAND, '运算');
         autoBind(this);
 
-        this.outSocket = new NodeSocket('out', this, false);
+        this.outSocket = new NodeSocket('out', this, false, {type:SqlVarType_Scalar});
         this.addSocket(this.outSocket);
         this.insocketInitVal  = {
             type:SqlVarType_Scalar,
@@ -1187,27 +1848,143 @@ class SqlNode_NOperand extends SqlNode_Base{
         if(this.operator == null){
             this.operator = '+';
         }
-        this.hadFlow = false;
+        this.minInSocketCount = 2;
 
         var self = this;
+    }
+
+    getNodeTitle(){
+        return '运算:' + this.operator;
     }
 
     genInSocket(){
         return new NodeSocket('in' + this.inputScokets_arr.length, this, true, this.insocketInitVal);
     }
+}
 
-    processInputSockets(isPlus){
-        if(isPlus){
-            this.addSocket(this.genInSocket());
-            this.emit(Event_SocketNumChanged);
-        }
-        else{
-            if(this.inputScokets_arr.length > 2){
-                var needRemoveSocket = this.inputScokets_arr.pop();
-                this.bluePrint.linkPool.clearSocketLink(needRemoveSocket);
-                this.emit(Event_SocketNumChanged);
+class SqlNode_Ret_Condition extends SqlNode_Base{
+    constructor(initData, parentNode, creationInfo){
+        super(initData, parentNode, creationInfo, SQLNODE_RET_CONDITION, 'Where');
+        autoBind(this);
+        this.isConstNode = true;
+
+        this.inSocket = new NodeSocket('in', this, true, {type:SqlVarType_Boolean,inputable:false});
+        this.addSocket(this.inSocket);
+        var self = this;
+    }
+}
+
+class SqlNode_Ret_Order extends SqlNode_Base{
+    constructor(initData, parentNode, creationInfo){
+        super(initData, parentNode, creationInfo, SQLNODE_RET_CONDITION, 'Order');
+        autoBind(this);
+        this.isConstNode = true;
+    }
+
+    genInSocket(){
+        var socketName = 'in' + this.inputScokets_arr.length;
+        var nameI = this.inputScokets_arr.length;
+        while(nameI < 999){
+            if(this.getScoketByName('in' + nameI, true) == null){
+                break;
             }
+            ++nameI;
         }
+        return new NodeSocket('in' + nameI, this, true, {type:SqlVarType_Scalar,inputable:false});
+    }
+
+    orderTypeDropdownChangedHandler(data, dropCtl){
+        var theSocketID = getAttributeByNode(dropCtl.rootDivRef.current, 'd-socketid');
+        if(theSocketID == null)
+            return;
+        var theSocket = this.getSocketById(theSocketID);
+        if(theSocket == null)
+            return;
+        theSocket.setExtra('orderType', data);
+        //console.log(data);
+    }
+
+    customSocketRender(socket){
+        if(!socket.isIn){
+            return;
+        }
+        var orderType = socket.getExtra('orderType');
+        if(orderType == null){
+            orderType = OrderType_ASCE;
+        }
+        return (<DropDownControl itemChanged={this.orderTypeDropdownChangedHandler} btnclass='btn-dark' options_arr={OrderTypes_arr} rootclass='flex-grow-1 flex-shrink-1' value={orderType} /> )
+    }
+}
+
+class SqlNode_Ret_Columns extends SqlNode_Base{
+    constructor(initData, parentNode, creationInfo){
+        super(initData, parentNode, creationInfo, SQLNODE_RET_COLUMNS, 'RET 列');
+        autoBind(this);
+        this.isConstNode = true;
+        this.addFrameButton(FrameButton_LineSocket, '拉平');
+        this.addFrameButton(FrameButton_ClearEmptySocket, '清理');
+    }
+
+    genInSocket(){
+        var socketName = 'in' + this.inputScokets_arr.length;
+        var nameI = this.inputScokets_arr.length;
+        while(nameI < 999){
+            if(this.getScoketByName('in' + nameI, true) == null){
+                break;
+            }
+            ++nameI;
+        }
+        return new NodeSocket('in' + nameI, this, true, {type:SqlVarType_Scalar,inputable:false});
+    }
+
+    freshContext(){
+
+    }
+
+    linkAdded(link){
+        super.linkAdded(link);
+        var outNode = link.outSocket.node;
+        if(outNode.type == SQLNODE_COLUMN){
+            this.parent.fireEvent('selectchanged', 0, {
+                tableCode:outNode.tableCode,
+                tableAlias:outNode.tableAlias,
+                columnName:outNode.columnName
+            });
+        }
+    }
+
+    linkRemoved(link){
+        super.linkRemoved(link);
+        var outNode = link.outSocket.node;
+        if(outNode.type == SQLNODE_COLUMN){
+            this.parent.fireEvent('selectchanged', 0, {
+                tableCode:outNode.tableCode,
+                tableAlias:outNode.tableAlias,
+                columnName:outNode.columnName
+            });
+        }
+    }
+
+    aliasInputChangedHanlder(ev){
+        var theSocketID = getAttributeByNode(ev.target, 'd-socketid');
+        if(theSocketID == null)
+            return;
+        var theSocket = this.getSocketById(theSocketID);
+        if(theSocket == null)
+            return;
+        theSocket.setExtra('alias', ev.target.value);
+        theSocket.fireEvent('changed');
+    }
+
+    customSocketRender(socket){
+        if(!socket.isIn){
+            return;
+        }
+        var alias = socket.getExtra('alias');
+        if(alias == null){
+            alias = '';
+        }
+        return (<div>AS:<input type='text' className='socketInputer' big='1' onChange={this.aliasInputChangedHanlder} value={alias} /></div>)
     }
 }
 
@@ -1245,6 +2022,7 @@ class C_Node_Socket extends React.PureComponent{
         this.inputRef = React.createRef();
         this.state={
             socket:this.props.socket,
+            draging:this.props.draging == true,
         }
     }
 
@@ -1306,6 +2084,18 @@ class C_Node_Socket extends React.PureComponent{
         socket.set({defval:ev.target.value});
     }
 
+    mouseDownDragIconHandler(ev){
+        if(this.props.startDragAct != null){
+            this.props.startDragAct(this);
+        }
+    }
+
+    setDraging(val){
+        this.setState({
+            draging:val == true,
+        });
+    }
+
     render(){
         var socket = this.props.socket;
         if(this.props.socket != this.state.socket){
@@ -1320,6 +2110,9 @@ class C_Node_Socket extends React.PureComponent{
             return null;
         }
         var inputable = socket.isIn && SqlVarInputableTypes_arr.indexOf(socket.type) != -1;
+        if(socket.inputable == false){
+            inputable = false;
+        }
         var inputElem = null;
         if(inputable){
             var links = socket.getLinks();
@@ -1331,13 +2124,33 @@ class C_Node_Socket extends React.PureComponent{
         {
             inputElem = (<input type='text' ref={this.inputRef} className='socketInputer' onChange={this.inputChangedHandler} value={socket.defval == null ? '' : socket.defval} />);
         }
+        var dragElem = null;
+        if(this.props.startDragAct){
+            dragElem = (<div className={'btn btn-' + (this.state.draging ? 'primary' : 'dark')} onMouseDown={this.mouseDownDragIconHandler}><i className='fa fa-arrows-v cursor-pointer' /></div>);
+        }
+        var cusElem = socket.node.customSocketRender(socket);
 
         var iconElem = (<i ref={this.flagRef} onClick={this.clickHandler} className='fa fa-circle-o cursor-pointer nodesocket' vt={socket.type} /> );
-        return <div className='d-flex align-items-center text-nowrap text-light socketCell'> 
-                    {this.props.align == 'left' && iconElem}
-                    {this.props.align == 'left' && inputElem}
-                    {socket.label}
-                    {this.props.align != 'left' && iconElem}
+        return <div className='d-flex align-items-center text-nowrap text-light socketCell' d-socketid={socket.id}> 
+                    {
+                        this.props.align == 'left' &&
+                        <React.Fragment>
+                            {iconElem}
+                            {dragElem}
+                            {inputElem}
+                            {cusElem}
+                        </React.Fragment>
+                    }
+                    <div f-canmove={this.props.nameMoveable ? '1' : null}>{socket.label}</div>
+                    {
+                        this.props.align != 'left' &&
+                        <React.Fragment>
+                            {cusElem}
+                            {inputElem}
+                            {dragElem}
+                            {iconElem}
+                        </React.Fragment>
+                    }
                 </div>
     }
 }
@@ -1365,14 +2178,18 @@ class C_SqlNode_Frame extends React.PureComponent{
         }
     }
 
-    addOffset(offset){
-        var nodeData = this.props.nodedata;
-        nodeData.setPos(nodeData.left + offset.x, nodeData.top + offset.y);
+    reDraw(){
         this.setState(
             {
                 magicobj:{},
             }
         );
+    }
+
+    addOffset(offset){
+        var nodeData = this.props.nodedata;
+        nodeData.setPos(nodeData.left + offset.x, nodeData.top + offset.y);
+        this.reDraw();
     }
 
     startMove(moveBase){
@@ -1415,16 +2232,14 @@ class C_SqlNode_Frame extends React.PureComponent{
                 editingTitle:!this.state.editingTitle,
             }
         );
+        this.props.nodedata.fireMoved(10);
     }
     
     nodeTitleInputChangeHandler(ev){
         var inputStr = ev.target.value;
         this.props.nodedata.title = inputStr.trim();
-        this.setState(
-            {
-                magicobj:{},
-            }
-        );
+        this.props.nodedata.fireChanged();
+        this.reDraw();
     }
     
     nodeTitleInputKeypressHandler(ev){
@@ -1441,10 +2256,12 @@ class C_SqlNode_Frame extends React.PureComponent{
         this.endMove();
         this.unmounted = true;
         this.props.nodedata.currentFrameCom = null;
+        this.props.nodedata.fireEvent(Event_FrameComUnMount, 10);
     }
 
     componentWillMount(){
         this.props.nodedata.currentFrameCom = this;
+        this.props.nodedata.fireEvent(Event_FrameComMount, 10);
     }
     
     mousemoveWidthMoveHandler(ev){
@@ -1625,16 +2442,17 @@ class C_SqlNode_Frame extends React.PureComponent{
         if(!forcedo && ev.target != this.rootDivRef.current && ev.target.getAttribute('f-canmove') == null){
             return;
         }
-        if(this.props.clickHandler){
+        var nodeData = this.props.nodedata;
+        if(nodeData.isContainer){
             if(this.lastClickTime == null || (Date.now() - this.lastClickTime) > 300){
                 this.lastClickTime = Date.now();
             }
             else{
-                this.props.clickHandler();
+                this.props.editor.setEditeNode(nodeData);
                 return;
             }
         }
-        this.props.editor.setSelectedNF(this);
+        this.props.editor.setSelectedNF(this, ev != null && ev.ctrlKey);
         var rootDivRect = this.rootDivRef.current.getBoundingClientRect();
         this.moveBase={x:rootDivRect.left - WindowMouse.x,y:rootDivRect.top - WindowMouse.y};
         this.startMove(this.moveBase);
@@ -1650,9 +2468,12 @@ class C_SqlNode_Frame extends React.PureComponent{
     }
     */
 
-    getNodeTitle(){
+    getNodeTitle(readable){
         var nodeData = this.props.nodedata;
-        return this.props.getTitleFun == null ? (nodeData.title == null ? '未命名' : nodeData.title) : this.props.getTitleFun();
+        if(readable){
+            return nodeData.getNodeTitle();
+        }
+        return this.props.getTitleFun == null ? (nodeData.title == null ? '' : nodeData.title) : this.props.getTitleFun();
     }
 
 
@@ -1665,26 +2486,33 @@ class C_SqlNode_Frame extends React.PureComponent{
         if(headType == null)
             headType = 'default';
         if(headType == 'tiny'){
+            var headElem = this.props.headText;
+            if(this.props.cusHeaderFuc != null){
+                headElem = this.props.cusHeaderFuc();
+            }
             return <div className='d-flex nodeHead align-items-center' type='tiny' >
                         {nodeData.hadFlow && <i className='fa fa-arrow-circle-right nodeFlow' />}
                         <div className='flex-grow-1 flex-shrink-0 text-nowrap text-center' f-canmove={1} >
-                            {this.props.headText}
+                            {headElem}
                         </div>
                         {nodeData.hadFlow && <i className='fa fa-arrow-circle-right nodeFlow' />}
                     </div>
+        }
+        else if(headType == 'empty'){
+            return null;
         }
 
         if(headType == 'default'){
             var nodeTitle = this.getNodeTitle();
             return  <React.Fragment>
-                        <div className='bg-light d-flex align-items-center text-dark' style={{fontSize:'0.5em'}}>
-                            <div className='flex-grow-1 flex-shrink-1 text-nowrap'>
+                        <div className='bg-light d-flex align-items-center text-dark' style={{fontSize:'1em'}}>
+                            <div className='flex-grow-1 flex-shrink-1 text-nowrap' f-canmove={1}>
                                 {nodeData.label}:
                                 {
                                     this.state.editingTitle ? <input className='' type='text' value={nodeTitle} onChange={this.nodeTitleInputChangeHandler} onKeyPress={this.nodeTitleInputKeypressHandler} />
                                     :
                                     <React.Fragment>
-                                        <span className=''>{nodeTitle}</span>
+                                        <span className='' f-canmove={1}>{nodeTitle}</span>
                                     </React.Fragment>
                                 }
                                 <i className='fa fa-edit ml-1 cursor-pointer' onClick={this.clickEditTitleHandler} />
@@ -1696,12 +2524,35 @@ class C_SqlNode_Frame extends React.PureComponent{
         return null;
     }
 
+    renderButtons(){
+        var nodeData = this.props.nodedata;
+        if(nodeData.frameButtons_arr.length == 0)
+        {
+            return null;
+        }
+        return (<div className='btn-group flex-grow-1 flex-shrink-1'>
+                    {nodeData.frameButtons_arr.map(btnData=>{
+                        return <button key={btnData.name} type='button' onClick={this.clickFrameButtonHandler} className='btn btn-dark' d-btnname={btnData.name} >{btnData.label}</button>
+                    })}
+                </div>)
+    }
+
+    clickFrameButtonHandler(ev){
+        var btnName = getAttributeByNode(ev.target, 'd-btnname', true);
+        if(btnName != null){
+            this.props.nodedata.clickFrameButton(btnName);
+        }
+    }
+
     render(){
         var nodeData = this.props.nodedata;
         var posStyle = {left:parseInt(nodeData.left) + 'px','top':parseInt(nodeData.top), 'paddingTop':this.props.isPure ? '0.5em' : null };
         return (<div ref={this.rootDivRef} onMouseDown={this.moveBarMouseDownHandler} className='position-absolute d-flex flex-column nodeRoot' style={posStyle} d-selected={this.state.selected ? '1' : null}>
                 {
                     this.renderHead(nodeData)
+                }
+                {
+                    this.renderButtons()
                 }
                 {
                     this.props.children
@@ -1715,28 +2566,29 @@ class C_SqlNode_DBEntity extends React.PureComponent{
     constructor(props){
         super(props);
         autoBind(this);
+        C_SqlNode_Base(this);
 
         this.state={
-            nodedata:this.props.nodedata,
         }
-        this.listenData(this.props.nodedata);
+
         this.dropdownRef = React.createRef();
     }
     
-
     nodeDataChangedHandler(){
-        var nodeData = this.state.nodedata;
+        var nodeData = this.props.nodedata;
         var entity = nodeData.targetentity;
-        this.dropdownRef.current.setValue(entity.code);
+        if(entity){
+            this.dropdownRef.current.setValue(entity.code);
+        }
         this.setState({magicObj:{}});
     }
 
-    componentWillMount(){
+    cus_componentWillMount(){
+        this.listenData(this.props.nodedata);
     }
 
-    componentWillUnmount(){
-        this.unlistenData(this.state.nodedata);
-        clearTimeout(this.delaySetTO);
+    cus_componentWillUnmount(){
+        this.unlistenData(this.props.nodedata);
     }
 
     listenData(nodeData){
@@ -1757,39 +2609,29 @@ class C_SqlNode_DBEntity extends React.PureComponent{
     }
 
     getNodeTitle(){
-        var nodeData = this.state.nodedata;
+        var nodeData = this.props.nodedata;
         var entity = nodeData.targetentity;
-        var nodeTitle = entity == null ? '新节点' : (nodeData.title ? nodeData.title : (entity.loaded ? entity.name : '正在加载:' + entity.code));
+        if(nodeData.title && nodeData.title.length > 0){
+            return nodeData.title;
+        }
+        var nodeTitle = entity == null ? '' : (entity.loaded ? '' : '正在加载:' + entity.code);
         return nodeTitle;
     }
 
     render(){
-        if(this.state.nodedata != this.props.nodedata){
-            this.unlistenData(this.state.nodedata);
-            this.listenData(this.props.nodedata);
-            clearTimeout(this.delaySetTO);
-            var self = this;
-            this.delaySetTO = setTimeout(() => {
-                this.setState(
-                    {
-                        nodedata:this.props.nodedata,
-                    }
-                );
-                self.delaySetTO = null;
-            }, 10);
-        }
-        var nodeData = this.state.nodedata;
+        var nodeData = this.props.nodedata;
         var entity = nodeData.targetentity;
         var dataloaded = entity ? entity.loaded : false;
         
-        return <C_SqlNode_Frame nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor}>
+        return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor}>
                 <div className='d-flex'>
                     <div className='flex-grow-1 flex-shrink-1'>
-                        <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={g_dataBase.entities_arr} rootclass='flex-grow-0 flex-shrink-0' style={{width:'200px',height:'40px'}} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} /> 
+                        <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={g_dataBase.entities_arr} rootclass='flex-grow-1 flex-shrink-1' style={{minWidth:'200px',height:'40px'}} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} /> 
                     </div>
-                    <div className='flex-grow-0 flex-shrink-0 align-items-center d-flex flex-column'>
-                        <C_Node_Socket clickHandler={this.socketOnClickHandler} height='40px' />
-                    </div>
+                </div>
+                <div className='d-flex'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor}/>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor}/>
                 </div>
             </C_SqlNode_Frame>
     }
@@ -1799,23 +2641,21 @@ class C_SqlNode_Select extends React.PureComponent{
     constructor(props){
         super(props);
         autoBind(this);
+        C_SqlNode_Base(this);
 
         this.state={
-            nodedata:this.props.nodedata,
         }
-        this.listenData(this.props.nodedata);
     }
     
-
     nodeDataChangedHandler(){
     }
 
-    componentWillMount(){
+    cus_componentWillMount(){
+        this.listenData(this.props.nodedata);
     }
 
-    componentWillUnmount(){
-        this.unlistenData(this.state.nodedata);
-        clearTimeout(this.delaySetTO);
+    cus_componentWillUnmount(){
+        this.unlistenData(this.props.nodedata);
     }
 
     listenData(nodeData){
@@ -1829,32 +2669,49 @@ class C_SqlNode_Select extends React.PureComponent{
             nodeData.off('changed', this.nodeDataChangedHandler);
         }
     }
-    clickHandler(){
-        //console.log('clickHandler');
-        this.props.editor.setEditeNode(this.props.nodedata);
+
+    renderColumns(){
+        var nodeData = this.props.nodedata;
+        var columns_arr = nodeData.columns_arr;
+        if(columns_arr.length == 0){
+            return null;
+        }
+        return <div className='d-flex flex-column'>
+                    <div className="dropdown-divider"></div>
+                    <div>Select</div>
+                    {
+                    columns_arr.map(column=>{
+                        return <div key={column.name} className='text-nowrap'>{column.name}</div>
+                    })}
+                </div>
+    }
+
+    renderOrderColumns(){
+        var nodeData = this.props.nodedata;
+        var columns_arr = nodeData.orderColumns_arr;
+        if(columns_arr.length == 0){
+            return null;
+        }
+        return <div className='d-flex flex-column'>
+                    <div className="dropdown-divider"></div>
+                    <div>Order by</div>
+                    {
+                    columns_arr.map(column=>{
+                        return <div key={column.name} className='text-nowrap'>{column.name + '  ' + column.orderType}</div>
+                    })}
+                </div>
     }
 
     render(){
-        if(this.state.nodedata != this.props.nodedata){
-            this.unlistenData(this.state.nodedata);
-            this.listenData(this.props.nodedata);
-            clearTimeout(this.delaySetTO);
-            var self = this;
-            this.delaySetTO = setTimeout(() => {
-                this.setState(
-                    {
-                        nodedata:this.props.nodedata,
-                    }
-                );
-                self.delaySetTO = null;
-            }, 10);
-        }
-        var nodeData = this.state.nodedata;
-        return <C_SqlNode_Frame nodedata={nodeData} clickHandler={this.clickHandler} editor={this.props.editor}>
-                <div className='d-flex flex-column'>
-                    列名
+        var nodeData = this.props.nodedata;
+        return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor}>
+                <div className='d-flex'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor}/>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor}/>
                 </div>
-            </C_SqlNode_Frame>
+                {this.renderColumns()}
+                {this.renderOrderColumns()}
+        </C_SqlNode_Frame>
     }
 }
 
@@ -1930,8 +2787,8 @@ class C_SqlNode_Var_Get extends React.PureComponent{
         var nodeData = this.props.nodedata;
         return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText='GET'>
                 <div className='d-flex'>
-                    <C_SqlNode_ScoketsPanel data={nodeData.inputScokets_arr} align='start' editor={this.props.editor}/>
-                    <C_SqlNode_ScoketsPanel data={nodeData.outputScokets_arr} align='end' editor={this.props.editor}/>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor}/>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor}/>
                 </div>
             </C_SqlNode_Frame>
     }
@@ -1944,18 +2801,166 @@ class C_SqlNode_NOperand extends React.PureComponent{
 
         C_SqlNode_Base(this);
         this.state={
-            //nodedata:this.props.nodedata,
+            operator:this.props.nodedata.operator,
+        }
+    }
+
+    selectItemChangedHandler(newoperator){
+        var nodeData = this.props.nodedata;
+        nodeData.operator = newoperator;
+        this.setState({
+            operator:newoperator
+        });
+    }
+
+    cusHeaderFuc(){
+        if(this.ddcStyle == null){
+            this.ddcStyle = {
+                width:'40px',
+                margin:'auto',
+            }
+        }
+        var nodeData = this.props.nodedata;
+        return (<DropDownControl options_arr={['+','-','×','÷']} value={nodeData.operator} itemChanged={this.selectItemChangedHandler} style={this.ddcStyle} />);
+    }
+
+    render(){
+        var nodeData = this.props.nodedata;
+        return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' cusHeaderFuc={this.cusHeaderFuc} >
+                <div className='d-flex'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null}/>
+                </div>
+            </C_SqlNode_Frame>
+    }
+}
+
+class C_SqlNode_SimpleNode extends React.PureComponent{
+    constructor(props){
+        super(props);
+        autoBind(this);
+
+        C_SqlNode_Base(this);
+        this.state={
         }
     }
 
     render(){
         var nodeData = this.props.nodedata;
-        return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={nodeData.operator} >
+        var headType = nodeData.headType == null ? 'tiny' : nodeData.headType;
+        return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType={headType} headText={nodeData.label} >
                 <div className='d-flex'>
-                    <C_SqlNode_ScoketsPanel data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.processInputSockets} />
-                    <C_SqlNode_ScoketsPanel data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.processOutputSockets}/>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
                 </div>
             </C_SqlNode_Frame>
+    }
+}
+
+class C_SqlNode_DBEntity_ColumnSelector extends React.PureComponent{
+    constructor(props){
+        super(props);
+        autoBind(this);
+        C_SqlNode_Base(this);
+
+        this.state={
+        }
+
+        this.checkmap = {};
+    }
+    
+    nodeDataChangedHandler(){
+        this.reDraw();
+    }
+
+    selectChangedHandler(data){
+        var nodeData = this.props.nodedata;
+        var needReDraw = false;
+        if(data.tableAlias){
+            needReDraw = data.tableAlias == nodeData.alias;
+        }
+        else{
+            needReDraw = data.tableCode == data.tableCode;
+        }
+        if(needReDraw)
+        {
+            this.reDraw();
+        }
+    }
+
+    cus_componentWillMount(){
+        this.listenData(this.props.nodedata);
+    }
+
+    cus_componentWillUnmount(){
+        this.unlistenData(this.props.nodedata);
+    }
+
+    listenData(nodeData){
+        if(nodeData){
+            nodeData.on('changed', this.nodeDataChangedHandler);
+            nodeData.parent.on('selectchanged', this.selectChangedHandler);
+        }
+    }
+
+    unlistenData(nodeData){
+        if(nodeData){
+            nodeData.off('changed', this.nodeDataChangedHandler);
+            nodeData.parent.off('selectchanged', this.selectChangedHandler);
+        }
+    }
+
+    mouseDownColumnNameHandler(ev){
+        if(ev.button == 0){
+            var nodeData = this.props.nodedata;
+            var parentNodeData = nodeData.parent;
+            var entity = nodeData.entity;
+            var initPos = this.props.editor.transToEditorPos({x:WindowMouse.x,y:WindowMouse.y});
+
+            var columnName = getAttributeByNode(ev.target, 'data-colname', true, 5);
+            var column = entity.columns.find(x=>{return x.name == columnName});
+            if(column){
+                var newNode = parentNodeData.addNewColumn(entity.code, nodeData.alias, entity.name, columnName, column.cvalType, initPos.x, initPos.y, true);
+            }
+            this.props.editor.reDraw();
+        }
+    }
+
+    checkboxChangeHandler(ev){
+        var nodeData = this.props.nodedata;
+        var parentNodeData = nodeData.parent;
+        var entity = nodeData.entity;
+        var columnName = getAttributeByNode(ev.target, 'data-colname', true, 5);
+        var column = entity.columns.find(x=>{return x.name == columnName});
+        if(column)
+        {
+            parentNodeData.columnCheckChanged(entity.code, nodeData.alias, entity.name, columnName, column.cvalType, !this.checkmap[columnName]);
+        }
+    }
+
+    renderColumn(entity,column,parentNodeData, nodeData){
+        var nodeData = this.props.nodedata;
+        var compareKey = (nodeData.alias == null ? entity.code : nodeData.alias) + '.' + column.name;
+        var isCheck = parentNodeData.isSelectColumn(compareKey);
+        this.checkmap[column.name] = isCheck;
+        return (<div key={column.name} className='d-flex flex-grow-1 align-items-center ' data-colname={column.name}>
+                    <input type='checkbox' onChange={this.checkboxChangeHandler} checked={isCheck} />
+                    <div className='d-flex flex-grow-1 text-nowrap' onMouseDown={this.checkboxChangeHandler} >{column.name}</div>
+                    <i className='fa fa-hand-paper-o cursor-pointer' onMouseDown={this.mouseDownColumnNameHandler} />
+                </div>);
+    }
+
+    render(){
+        var nodeData = this.props.nodedata;
+        var parentNodeData = nodeData.parent;
+        var entity = nodeData.entity;
+        return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={nodeData.label}>
+                <div className='d-flex flex-column'>
+                    {entity.columns.map(column=>{
+                        return this.renderColumn(entity, column, parentNodeData, nodeData);
+                    })}
+                </div>
+        </C_SqlNode_Frame>
     }
 }
 
@@ -1974,10 +2979,65 @@ function C_SqlNode_componentWillUnMount(){
     }
 }
 
+function C_ReDraw(){
+    this.setState({
+        magicobj:{},
+    });
+}
+
 function C_SqlNode_Base(target){
     target.frameRef =  React.createRef();
     target.componentWillMount = C_SqlNode_componentWillMount.bind(target);
     target.componentWillUnmount = C_SqlNode_componentWillUnMount.bind(target);
+    target.reDraw = C_ReDraw.bind(target);
+}
+
+function EV_BanEvent(et){
+    var nowVal = this.suspressEvents[et];
+    this.suspressEvents[et] = nowVal == null ? 1 : nowVal + 1;
+}
+
+function EV_AllowEvent(et){
+    var nowVal = this.suspressEvents[et];
+    if(nowVal > 0){
+        this.suspressEvents[et] = nowVal - 1;
+    }
+    else{
+        console.warn('allowEvent执行时count等于' + nowVal);
+    }
+}
+
+function EV_FireEvent(et,delay,arg){
+    if(this.suspressEvents[et] > 0){
+        console.warn(et + '被压抑了');
+        return; // 压抑了此事件
+    }
+    if(delay == null || isNaN(delay)){
+        delay = 0;
+    }
+    if(delay < 0){
+        delay = 0;
+    }
+    else if(delay > 500){
+        console.warn('长达' + delay + '毫秒的延迟fire' + et);
+    }
+    var self = this;
+    if(delay > 0)
+    {
+        setTimeout(() => {
+            self.emit(et, arg == null ? self : arg);
+        }, delay);
+    }
+    else{
+        self.emit(et, arg == null ? self : arg);
+    }
+}
+
+function EnhanceEventEmiter(target){
+    target.suspressEvents = {};
+    target.fireEvent = EV_FireEvent.bind(target);
+    target.banEvent = EV_BanEvent.bind(target);
+    target.allowEvent = EV_AllowEvent.bind(target);
 }
 
 class C_SqlNode_Var_Set extends React.PureComponent{
@@ -1996,8 +3056,8 @@ class C_SqlNode_Var_Set extends React.PureComponent{
         var nodeData = this.props.nodedata;
         return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText='SET' >
                 <div className='d-flex'>
-                    <C_SqlNode_ScoketsPanel data={nodeData.inputScokets_arr} align='start' editor={this.props.editor}/>
-                    <C_SqlNode_ScoketsPanel data={nodeData.outputScokets_arr} align='end' editor={this.props.editor}/>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor}/>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor}/>
                 </div>
             </C_SqlNode_Frame>
     }
@@ -2008,11 +3068,7 @@ class C_SqlNode_ScoketsPanel extends React.PureComponent{
         super(props);
         autoBind(this);
 
-        if(this.props.processFun != null){
-            // add listen
-            var nodedata = this.props.data[0].node;
-            nodedata.on(Event_SocketNumChanged, this.reRender);
-        }
+        this.socketParentRef = React.createRef();
     }
 
     reRender(){
@@ -2021,11 +3077,12 @@ class C_SqlNode_ScoketsPanel extends React.PureComponent{
         });
     }
 
+    componentWillMount(){
+        this.props.nodedata.on(Event_SocketNumChanged, this.reRender);
+    }
+
     componentWillUnmount(){
-        if(this.props.processFun != null){
-            var nodedata = this.props.data[0].node;
-            nodedata.off(Event_SocketNumChanged, this.reRender);
-        }
+        this.props.nodedata.off(Event_SocketNumChanged, this.reRender);
     }
 
     clickAddIconHandler(ev){
@@ -2047,20 +3104,145 @@ class C_SqlNode_ScoketsPanel extends React.PureComponent{
         );
     }
 
+    startDragSocket(targetSocketCom){
+        this.dragingSocket = targetSocketCom.props.socket;
+        window.addEventListener('mouseup', this.mouseUpWhenDragingHandler);
+        window.addEventListener('mousemove', this.mouseMoveWhenDragingHandler);
+        targetSocketCom.setDraging(true);
+
+        var theLinks = this.dragingSocket.node.bluePrint.linkPool.getLinksBySocket(this.dragingSocket);
+        if(theLinks.length > 0){
+            var theLink = theLinks[0];
+            var otherNode = theLink.inSocket == this.dragingSocket ? theLink.outSocket.node : theLink.inSocket.node;
+            var designer = otherNode.bluePrint.master.project.designer;
+            designer.startDrag({info:otherNode.getNodeTitle()}, null, null);
+        }
+    }
+
+    mouseUpWhenDragingHandler(ev){
+        if(this.dragingSocket.currentComponent){
+            this.dragingSocket.currentComponent.setDraging(false);
+        }
+        window.removeEventListener('mouseup', this.mouseUpWhenDragingHandler);
+        window.removeEventListener('mousemove', this.mouseMoveWhenDragingHandler);
+        this.dragingSocket = null;
+    }
+
+    mouseMoveWhenDragingHandler(ev){
+        if(this.dragingSocket == null){
+            mouseUpWhenDragingHandler(null);
+            return;
+        }
+        if(this.socketParentRef.current == null){
+            return;
+        }
+        var sockets_arr = this.props.data;
+        for(var i=0;i<sockets_arr.length;++i){
+            var theSocket = sockets_arr[i];
+            var socketRect = theSocket.currentComponent.flagRef.current.getBoundingClientRect();
+            if(ev.y > socketRect.top && ev.y < socketRect.bottom){
+                if(theSocket == this.dragingSocket)
+                {
+                    return; // same socket
+                }
+                // swap socket
+                var dragingIndex = sockets_arr.indexOf(this.dragingSocket);
+                if(dragingIndex == -1)
+                {
+                    console.warn("dragingIndex = -1!");
+                    return;
+                }
+                sockets_arr[dragingIndex] = theSocket;
+                sockets_arr[i] = this.dragingSocket;
+                this.dragingSocket.node.fireEvent(Event_SocketNumChanged);
+                this.dragingSocket.node.fireMoved(10);
+                return;
+            }
+        }
+    }
+
     render(){
         if(this.props.data.length == 0)
-            return null;
-
-        return (<div className={'d-flex flex-column align-items-' + this.props.align}>
+            return <div className='flex-grow-1 flex-shrink-1'>
+                {
+                    this.renderDynamic()
+                }</div>;
+        
+        var isDynamic = this.props.processFun != null;
+        return (<div ref={this.socketParentRef} className={'d-flex flex-grow-1 flex-shrink-1 flex-column align-items-' + this.props.align}>
             {
                 this.props.data.map(socketObj=>{
-                    return <C_Node_Socket key={socketObj.id} socket={socketObj} align={this.props.align == 'start' ? 'left' : 'right'} editor={this.props.editor} />
+                    return <C_Node_Socket key={socketObj.id} socket={socketObj} align={this.props.align == 'start' ? 'left' : 'right'} editor={this.props.editor} nameMoveable={this.props.nameMoveable} startDragAct={isDynamic ? this.startDragSocket : null} draging={socketObj == this.dragingSocket} />
                 })
             }
             {
                 this.renderDynamic()
             }
         </div>);
+    }
+}
+
+class SelectItemManager{
+    constructor(addCallBack,removeCallBack){
+        this.items_arr = [];
+        this.removeCallBack = removeCallBack;
+        this.addCallBack = addCallBack;
+
+        autoBind(this);
+    }
+
+    getIndex(item){
+        return this.items_arr.indexOf(item);
+    }
+
+    isSelected(item){
+        return this.getIndex(item) != -1;
+    }
+
+    add(item){
+        if(item == null)
+            return false;
+        var index = this.getIndex(item);
+        if(index == -1){
+            this.items_arr.push(item);
+            if(this.addCallBack != null){
+                this.addCallBack(item);
+            }
+        }
+        return true;
+    }
+
+    remove(item){
+        var index = this.getIndex(item);
+        if(index == -1){
+            return false;
+        }
+        if(this.removeCallBack != null){
+            this.removeCallBack(item);
+        }
+        this.items_arr.splice(index, 1);
+        return true;
+    }
+
+    clear(){
+        if(this.items_arr.length == 0)
+            return;
+        if(this.removeCallBack != null){
+            this.forEach(this.removeCallBack);
+        }
+        this.items_arr = [];
+    }
+
+    forEach(act){
+        this.items_arr.forEach(act);
+    }
+
+    isEmpty(){
+        return this.count() == 0;
+    }
+
+    count(){
+        return this.items_arr.length;
     }
 }
 
@@ -2088,25 +3270,49 @@ class C_SqlNode_Editor extends React.PureComponent{
         this.containerRef = React.createRef();
         this.topBarRef = React.createRef();
         this.zoomDivRef = React.createRef();
+        this.selectRectRef = React.createRef();
+
+        var editor = this;
+        this.selectedNFManager=new SelectItemManager(this.cb_addNF, this.cb_removeNF);
     }
 
-    blueprinkChanged(ev){
+    reDraw(){
         this.setState({
             magicObj:{},
         });
     }
 
-    setSelectedNF(target){
-        if(this.selectedNF == target){
-            return;
+    blueprinkChanged(ev){
+        this.reDraw();
+    }
+
+    cb_removeNF(target){
+        if(target && !target.unmounted){
+            target.setSelected(false);
         }
-        if(this.selectedNF && !this.selectedNF.unmounted){
-            this.selectedNF.setSelected(false);
-        }
-        if(target){
+    }
+
+    cb_addNF(target){
+        if(target && !target.unmounted){
             target.setSelected(true);
         }
-        this.selectedNF = target;
+    }
+
+    setSelectedNF(target, addMode){
+        if(target == null){
+            this.selectedNFManager.clear();
+            return;
+        }
+        if(this.selectedNFManager.isSelected(target)){
+            return;
+        }
+        if(addMode == null || target == null){
+            addMode = false;
+        }
+        if(!addMode){
+            this.selectedNFManager.clear();
+        }
+        this.selectedNFManager.add(target);
     }
 
     showNodeData(nodeData){
@@ -2135,7 +3341,7 @@ class C_SqlNode_Editor extends React.PureComponent{
         switch(ev.keyCode){
             case 27:
                 // esc
-                if(this.selectedNF){
+                if(!this.selectedNFManager.isEmpty()){
                     this.setSelectedNF(null);
                 }
                 var dragingPath = this.dragingPathRef.current;
@@ -2145,15 +3351,21 @@ class C_SqlNode_Editor extends React.PureComponent{
                     end:null,
                 });
             case 46:
-                if(this.selectedNF){
-                    this.wantDeleteNode(this.selectedNF.props.nodedata, this.selectedNF.getNodeTitle());
+                if(!this.selectedNFManager.isEmpty()){
+                    var titles = '';
+                    var nodes_arr = [];
+                    this.selectedNFManager.forEach(nf=>{
+                        titles += nf.getNodeTitle(true) + ';';
+                        nodes_arr.push(nf.props.nodedata);
+                    });
+                    this.wantDeleteNode(nodes_arr, titles);
                 }
             break;
         }
     }
 
     keyDownHandler(ev){
-        if(this.selectedNF && ev.keyCode >= 37 && ev.keyCode <= 40){
+        if(!this.selectedNFManager.isEmpty() && ev.keyCode >= 37 && ev.keyCode <= 40){
             var offset = {x:0,y:0};
             switch(ev.keyCode){
                 case 40:
@@ -2169,18 +3381,20 @@ class C_SqlNode_Editor extends React.PureComponent{
                     offset.x = 10;
                 break;
             }
-            this.selectedNF.addOffset(offset);
+            this.selectedNFManager.forEach(nf=>{
+                nf.addOffset(offset);
+            });
             ev.preventDefault();
         }
     }
 
-    wantDeleteNode(nodeData, title){
-        gTipWindow.popAlert(makeAlertData('警告','确定删除节点:"' + title + '"?',this.deleteTipCallback,[TipBtnOK,TipBtnNo], nodeData));
+    wantDeleteNode(nodeData_arr, title){
+        gTipWindow.popAlert(makeAlertData('警告','确定删除' + nodeData_arr.length + '个节点:"' + title + '"?',this.deleteTipCallback,[TipBtnOK,TipBtnNo], nodeData_arr));
     }
 
-    deleteTipCallback(key, nodeData){
+    deleteTipCallback(key, nodeData_arr){
         if(key == 'ok'){
-            this.state.editingNode.deleteNode(nodeData);
+            this.state.editingNode.bluePrint.deleteNodes(nodeData_arr);
             this.setSelectedNF(null);
         }
     }
@@ -2298,7 +3512,7 @@ class C_SqlNode_Editor extends React.PureComponent{
                 // 点击了不同的socket
                 if(srcSocket.isIn != dragingPath.state.startScoket.isIn){
                     // 不同node的in out才能相互链接
-                    this.state.editingNode.linkPool.addLink(srcSocket, dragingPath.state.startScoket);
+                    this.state.editingNode.bluePrint.linkPool.addLink(srcSocket, dragingPath.state.startScoket);
                     cancelDrag = true;
                 }
             }
@@ -2330,12 +3544,14 @@ class C_SqlNode_Editor extends React.PureComponent{
         if(theNode == this.state.editingNode){
             return;
         }
-        this.setSelectedNF(null);
+        
         var editingNode = this.state.editingNode;
         var scrollNode = this.editorDivRef.current.parentNode;
         if(editingNode){
             editingNode.scrollLeft = scrollNode.scrollLeft;
             editingNode.scrollTop = scrollNode.scrollTop;
+
+            editingNode.postEditing();
         }
         
         this.setState({
@@ -2353,6 +3569,7 @@ class C_SqlNode_Editor extends React.PureComponent{
         }, 50);
 
         if(theNode){
+            theNode.preEditing();
             theNode.bluePrint.editingNode = theNode;
             setTimeout(() => {
                 scrollNode.scrollLeft = theNode.scrollLeft == null ? 0 : theNode.scrollLeft;
@@ -2385,24 +3602,43 @@ class C_SqlNode_Editor extends React.PureComponent{
             case SQLNODE_NOPERAND:
                 return this.genSqlNode_Component(C_SqlNode_NOperand, nodeData);
             break;
+            case SQLNODE_DBENTITY_COLUMNSELECTOR:
+                return this.genSqlNode_Component(C_SqlNode_DBEntity_ColumnSelector, nodeData);
+            break;
+            default:
+                return this.genSqlNode_Component(C_SqlNode_SimpleNode, nodeData);
+            break;
         }
 
         return null;
     }
 
-    addVarGSNode(config, windPos){
-        var editingNode = this.state.editingNode;
+    transToEditorPos(pt){
         var $zoomDivElem = $(this.zoomDivRef.current);
         var zoomOffset = $zoomDivElem.offset();
+
+        var x = -parseUnitInt(this.editorDivRef.current.style.left) + pt.x - zoomOffset.left;
+        var y = -parseUnitInt(this.editorDivRef.current.style.top) + pt.y - zoomOffset.top;
+        return{
+            x:x,
+            y:y
+        }
+    }
+
+    addVarGSNode(config, windPos){
+        var editingNode = this.state.editingNode;
+        //var $zoomDivElem = $(this.zoomDivRef.current);
+        //var zoomOffset = $zoomDivElem.offset();
         
-        var x = -parseUnitInt(this.editorDivRef.current.style.left) + windPos.x - zoomOffset.left;
-        var y = -parseUnitInt(this.editorDivRef.current.style.top) + windPos.y - zoomOffset.top;
+        //var x = -parseUnitInt(this.editorDivRef.current.style.left) + windPos.x - zoomOffset.left;
+        //var y = -parseUnitInt(this.editorDivRef.current.style.top) + windPos.y - zoomOffset.top;
+        var editorPos = this.transToEditorPos(windPos);
         var newNodeData = null;
         if(config.isGet){
-            newNodeData = new SqlNode_Var_Get({left:x,top:y,varName:config.varName}, editingNode);
+            newNodeData = new SqlNode_Var_Get({left:editorPos.x,top:editorPos.y,varName:config.varName}, editingNode);
         }
         else{
-            newNodeData = new SqlNode_Var_Set({left:x,top:y,varName:config.varName}, editingNode);
+            newNodeData = new SqlNode_Var_Set({left:editorPos.x,top:editorPos.y,varName:config.varName}, editingNode);
         }
         this.setState({
             magicObj:{},
@@ -2434,16 +3670,62 @@ class C_SqlNode_Editor extends React.PureComponent{
         window.removeEventListener('mouseup', this.mouseupWithDragHandler);
     }
 
+    mousemoveWithSelectHandler(ev){
+        var offset = {x:ev.x - this.dragOrgin.x,y:ev.y - this.dragOrgin.y};
+        this.selectRectRef.current.setSize({
+            width:offset.x,
+            height:offset.y
+        });
+    }
+
+    mouseupWithSelectHandler(ev){
+        // check
+        var theRect = this.selectRectRef.current.getRect();
+        var hitNodes_arr = [];
+        this.state.editingNode.nodes_arr.forEach(node=>{
+            var nodeRect = node.getRect();
+            if(MyMath.intersectRect(nodeRect, theRect)){
+                hitNodes_arr.push(node);
+            }
+        });
+        if(!ev.ctrlKey){
+            this.selectedNFManager.clear();
+        }
+        if(hitNodes_arr.length > 0){
+            for(var i in hitNodes_arr){
+                this.selectedNFManager.add(hitNodes_arr[i].currentFrameCom);
+            }
+        }
+
+        window.removeEventListener('mousemove', this.mousemoveWithSelectHandler);
+        window.removeEventListener('mouseup', this.mouseupWithSelectHandler);
+        this.selectRectRef.current.setSize({
+            width:0,
+            height:0
+        });
+    }
+
     rootMouseDownHandler(ev){
         if(ev.target == this.zoomDivRef.current && this.draging != true){
-            this.draging = true;
-            //var scrollNode = this.editorDivRef.current.parentNode;
-            //this.dragOrgin = {x:WindowMouse.x,y:WindowMouse.y,sl:scrollNode.scrollLeft,st:scrollNode.scrollTop};
             var nowPos = {
                 x:parseUnitInt(this.editorDivRef.current.style.left),
                 y:parseUnitInt(this.editorDivRef.current.style.top),
             }
             this.dragOrgin = {x:WindowMouse.x,y:WindowMouse.y, left:nowPos.x, top: nowPos.y};
+            if(ev.button == 0){
+                // 拉取选择范围
+                var editorPos = this.transToEditorPos({x:WindowMouse.x,y:WindowMouse.y});
+                this.selectRectRef.current.setSize({
+                    left:editorPos.x,
+                    top:editorPos.y
+                });
+                window.addEventListener('mousemove', this.mousemoveWithSelectHandler);
+                window.addEventListener('mouseup', this.mouseupWithSelectHandler);
+                return;
+            }
+            this.draging = true;
+            //var scrollNode = this.editorDivRef.current.parentNode;
+            //this.dragOrgin = {x:WindowMouse.x,y:WindowMouse.y,sl:scrollNode.scrollLeft,st:scrollNode.scrollTop};
             window.addEventListener('mousemove', this.mousemoveWithDragHandler);
             window.addEventListener('mouseup', this.mouseupWithDragHandler);
         }
@@ -2498,11 +3780,12 @@ class C_SqlNode_Editor extends React.PureComponent{
             this.editorDivRef.current.scale = this.state.scale;
         }
         var self = this;
-        var blueprintPrefix = this.state.editingNode.bluePrint.id + '_';
+        var blueprintPrefix = editingNode.bluePrint.id + '_';
         if(this.listenedBP != editingNode.bluePrint){
             this.unlistenBlueprint(this.listenedBP);
             this.listenBlueprint(editingNode.bluePrint);
         }
+        var linkPool = editingNode.bluePrint.linkPool;
 
         return (<SplitPanel
                 defPercent={0.2}
@@ -2543,16 +3826,62 @@ class C_SqlNode_Editor extends React.PureComponent{
                                     }
                                     <C_Node_Path ref={this.dragingPathRef} editorDivRef={this.editorDivRef} />
                                     {
-                                        this.state.showLink && editingNode.linkPool.getAllLink().map((linkobj=>{
+                                        this.state.showLink && linkPool.getAllLink().map((linkobj=>{
                                             return <C_Node_Path key={blueprintPrefix + linkobj.id} link={linkobj} editorDivRef={this.editorDivRef} />
                                         }))
                                     }
+                                    <C_SelectRect ref={this.selectRectRef}/>
                                 </div>
                             </div>
                         </div>
                     </div>
                 }
                 />);
+    }
+}
+
+class C_SelectRect extends React.PureComponent{
+    constructor(props){
+        super(props);
+        autoBind(this);
+
+        this.state = {
+            left:0,
+            top:0,
+            width:0,
+            height:0
+        }
+    }
+
+    setSize(size){
+        this.setState(size);
+    }
+
+    getRect(){
+        var nowSize = this.state;
+        var rlt = {
+            left:this.state.left + (nowSize.width < 0 ? nowSize.width : 0),
+            top:this.state.top + (nowSize.height < 0 ? nowSize.height : 0),
+            width:Math.abs(this.state.width),
+            height:Math.abs(this.state.height)
+        }
+        rlt.right = rlt.left + rlt.width;
+        rlt.bottom = rlt.top + rlt.height;
+        return rlt;
+    }
+
+    render(){
+        if(this.state.width == 0 || this.state.height == 0)
+            return null;
+        
+        var nowSize = this.state;
+        var style = {
+            left:this.state.left + (nowSize.width < 0 ? nowSize.width : 0) + 'px',
+            top:this.state.top + (nowSize.height < 0 ? nowSize.height : 0) +'px',
+            width:Math.abs(this.state.width) + 'px',
+            height:Math.abs(this.state.height) + 'px',
+        }
+        return <div className='selectRect' style={style} />
     }
 }
 
@@ -2724,7 +4053,7 @@ class SqlNodeOutlineItem extends React.PureComponent{
         autoBind(this);
 
         this.state = {
-            label:this.props.nodeData.getNodeTitle(),
+            label:this.props.nodeData.getNodeTitle(true),
         }
     }
 
@@ -2776,7 +4105,7 @@ class CusDBEEditorLeftPanel extends React.PureComponent{
     }
 
     componentWillUnmount(){
-        this.unlistenNode(this.state.editingNode);
+        this.unlistenNode(this.props.editingNode);
     }
 
     editingNodeChangedhandler(){

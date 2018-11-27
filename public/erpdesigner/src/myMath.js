@@ -10,6 +10,8 @@ const MyMath={
     },
 
     intersectRect:(r1, r2)=>{
+        if(r1 == null || r2 == null)
+            return false;
         return !(r2.left > r1.right || 
                  r2.right < r1.left || 
                  r2.top > r1.bottom ||

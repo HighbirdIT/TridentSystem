@@ -6,6 +6,10 @@ const Orientation_H = '水平';
 const Orientation_V = '垂直';
 const Orientation_Options_arr = [Orientation_H,Orientation_V];
 
+const OrderType_DESC = 'desc';
+const OrderType_ASCE = 'asce';
+const OrderTypes_arr = [OrderType_DESC,OrderType_ASCE];
+
 const SqlVarType_Unknown = 'unknown';
 const SqlVarType_Int = 'int';
 const SqlVarType_NVarchar = 'nvarchar';
@@ -15,12 +19,21 @@ const SqlVarType_Time = 'time';
 const SqlVarType_Float = 'float';
 const SqlVarType_Decimal = 'decimal';
 const SqlVarType_Scalar = 'scalar';
-const SqlVarTypes_arr = [SqlVarType_Int,SqlVarType_NVarchar,SqlVarType_Date,SqlVarType_DateTime,SqlVarType_Time,SqlVarType_Float,SqlVarType_Decimal];
-const SqlVarInputableTypes_arr = [SqlVarType_Int,SqlVarType_NVarchar,SqlVarType_Date,SqlVarType_DateTime,SqlVarType_Time,SqlVarType_Float,SqlVarType_Decimal,SqlVarType_Scalar];
+const SqlVarType_Boolean = 'boolean';
+const SqlVarTypes_arr = [SqlVarType_Boolean,SqlVarType_Int,SqlVarType_NVarchar,SqlVarType_Date,SqlVarType_DateTime,SqlVarType_Time,SqlVarType_Float,SqlVarType_Decimal];
+const SqlVarInputableTypes_arr = [SqlVarType_Boolean,SqlVarType_Int,SqlVarType_NVarchar,SqlVarType_Date,SqlVarType_DateTime,SqlVarType_Time,SqlVarType_Float,SqlVarType_Decimal,SqlVarType_Scalar];
+const SqlVarType_Table = 'table';
 
 const Event_CurrentComponentchanged = 'currentComponentchanged';
 const Event_LinkChanged = 'linkChanged';
-const Event_SocketNumChanged = 'linkChanged';
+const Event_SocketNumChanged = 'socketnumChanged';
+const Event_FrameComMount = 'framecommount';
+const Event_FrameComUnMount = 'framecomunmount';
+
+const ContextType_DBEntity = 'ct-dbentity';
+
+const FrameButton_LineSocket = 'lineSocket';
+const FrameButton_ClearEmptySocket = 'ClearEmptySocket';
 
 const DesignerConfig={
     controlConfig:{

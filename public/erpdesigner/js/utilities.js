@@ -206,3 +206,7 @@ function fetchJsonPosts(url, postdata, callBack) {
 		}
 	});
 }
+
+function IsEmptyString(val) {
+	return val == null || val == '';
+}

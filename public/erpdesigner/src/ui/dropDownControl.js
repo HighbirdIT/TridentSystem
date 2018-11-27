@@ -18,6 +18,7 @@ class DropDownControl extends React.PureComponent {
         this.dropdownbtnRef = React.createRef();
         this.editableInputRef = React.createRef();
         this.dropmenudivRef = React.createRef();
+        this.rootDivRef = React.createRef();
     }
 
     setValue(val){
@@ -170,7 +171,7 @@ class DropDownControl extends React.PureComponent {
                         keyword:'',
                         opened:false });
         if(this.props.itemChanged){
-            this.props.itemChanged(theOptionItem.data ? theOptionItem.data : theOptionItem.value);
+            this.props.itemChanged(theOptionItem.data ? theOptionItem.data : theOptionItem.value, this);
         }
     }
 
@@ -221,7 +222,7 @@ class DropDownControl extends React.PureComponent {
         var selectedOption = this.state.selectedOption;
 
         return (
-            <div className={"d-flex flex-column " + (this.props.rootclass ? this.props.rootclass : '')} style={this.props.style}>
+            <div className={"d-flex flex-column " + (this.props.rootclass ? this.props.rootclass : '')} style={this.props.style} ref={this.rootDivRef}>
                 <div className='d-flex flex-grow-1 flex-shrink-1'>
                     <div className=' d-flex btn-group w-100 h-100' ref={this.dropDowmDivRefFun}>
                         {
