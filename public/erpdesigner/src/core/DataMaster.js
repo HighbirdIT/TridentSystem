@@ -122,8 +122,8 @@ class DataMaster extends EventEmitter{
         this.database = g_dataBase;
         this.usedDBEnities_arr = [];
         this.dataView_usedDBEnities = new ListDataView(this.usedDBEnities_arr,'name','code');
-        var cus1 = new CustomDbEntity({name:'test',code:project.genControlName('cusDBE'),type:'表值',master:this});
-        var cus2 = new CustomDbEntity({name:'test2',code:project.genControlName('cusDBE'),type:'表值',master:this});
+        var cus1 = new SqlNode_BluePrint({name:'test',code:project.genControlName('cusDBE'),type:'表值',master:this});
+        var cus2 = new SqlNode_BluePrint({name:'test2',code:project.genControlName('cusDBE'),type:'表值',master:this});
         var tVar = cus1.createEmptyVariable();
         tVar.needEdit = false;
         this.customDBEntities_arr = [cus1,cus2];
@@ -137,7 +137,7 @@ class DataMaster extends EventEmitter{
     }
 
     createCusDBE(name, type){
-        this.customDBEntities_arr.push(new CustomDbEntity({name:name,code:this.project.genControlName('cusDBE'),type:type,master:this}));
+        this.customDBEntities_arr.push(new SqlNode_BluePrint({name:name,code:this.project.genControlName('cusDBE'),type:type,master:this}));
         this.emit('customDBEChanged');
     }
 

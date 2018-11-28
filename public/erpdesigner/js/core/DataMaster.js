@@ -159,8 +159,8 @@ var DataMaster = function (_EventEmitter3) {
         _this4.database = g_dataBase;
         _this4.usedDBEnities_arr = [];
         _this4.dataView_usedDBEnities = new ListDataView(_this4.usedDBEnities_arr, 'name', 'code');
-        var cus1 = new CustomDbEntity({ name: 'test', code: project.genControlName('cusDBE'), type: '表值', master: _this4 });
-        var cus2 = new CustomDbEntity({ name: 'test2', code: project.genControlName('cusDBE'), type: '表值', master: _this4 });
+        var cus1 = new SqlNode_BluePrint({ name: 'test', code: project.genControlName('cusDBE'), type: '表值', master: _this4 });
+        var cus2 = new SqlNode_BluePrint({ name: 'test2', code: project.genControlName('cusDBE'), type: '表值', master: _this4 });
         var tVar = cus1.createEmptyVariable();
         tVar.needEdit = false;
         _this4.customDBEntities_arr = [cus1, cus2];
@@ -180,7 +180,7 @@ var DataMaster = function (_EventEmitter3) {
     }, {
         key: 'createCusDBE',
         value: function createCusDBE(name, type) {
-            this.customDBEntities_arr.push(new CustomDbEntity({ name: name, code: this.project.genControlName('cusDBE'), type: type, master: this }));
+            this.customDBEntities_arr.push(new SqlNode_BluePrint({ name: name, code: this.project.genControlName('cusDBE'), type: type, master: this }));
             this.emit('customDBEChanged');
         }
     }, {

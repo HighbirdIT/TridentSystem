@@ -187,3 +187,51 @@ function fetchJsonPosts(url, postdata, callBack, key = '', timeout = 2) {
 function IsEmptyString(val){
 	return val == null || val == '';
 }
+
+function EV_BanEvent(et){
+    var nowVal = this.suspressEvents[et];
+    this.suspressEvents[et] = nowVal == null ? 1 : nowVal + 1;
+}
+
+function EV_AllowEvent(et){
+    var nowVal = this.suspressEvents[et];
+    if(nowVal > 0){
+        this.suspressEvents[et] = nowVal - 1;
+    }
+    else{
+        console.warn('allowEvent执行时count等于' + nowVal);
+    }
+}
+
+function EV_FireEvent(et,delay,arg){
+    if(this.suspressEvents[et] > 0){
+        console.warn(et + '被压抑了');
+        return; // 压抑了此事件
+    }
+    if(delay == null || isNaN(delay)){
+        delay = 0;
+    }
+    if(delay < 0){
+        delay = 0;
+    }
+    else if(delay > 500){
+        console.warn('长达' + delay + '毫秒的延迟fire' + et);
+    }
+    var self = this;
+    if(delay > 0)
+    {
+        setTimeout(() => {
+            self.emit(et, arg == null ? self : arg);
+        }, delay);
+    }
+    else{
+        self.emit(et, arg == null ? self : arg);
+    }
+}
+
+function EnhanceEventEmiter(target){
+    target.suspressEvents = {};
+    target.fireEvent = EV_FireEvent.bind(target);
+    target.banEvent = EV_BanEvent.bind(target);
+    target.allowEvent = EV_AllowEvent.bind(target);
+}
