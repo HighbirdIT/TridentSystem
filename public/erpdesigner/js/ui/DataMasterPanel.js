@@ -679,27 +679,33 @@ var CustomDbEntity = function (_EventEmitter2) {
         };
 
         _this6.allNode_map = {};
+        _this6.nodes_arr = [];
 
-        _this6.nodes_arr = _this6.nodes_arr.map(function (nodeData, i) {
-            if (nodeData.type == SQLNODE_BDBENTITY) {
+        /*
+        this.nodes_arr = this.nodes_arr.map((nodeData,i)=>{
+            if(nodeData.type == SQLNODE_BDBENTITY){
                 return new SqlNode_DBEntity(nodeData, self, creationInfo);
-            } else {
+            }
+            else{
                 console.log('不支持的sql节点:' + nodeData.type);
                 console.warn(nodeData);
             }
         });
-
+        */
+        _this6.finalSelectNode = new SqlNode_Select({ title: '返回表' }, _this6, creationInfo);
+        _this6.finalSelectNode.removeSocket(_this6.finalSelectNode.outSocket);
+        _this6.finalSelectNode.isConstNode = true;
         return _this6;
     }
 
     _createClass(CustomDbEntity, [{
         key: 'preEditing',
-        value: function preEditing() {
+        value: function preEditing(editor) {
             // call pre enter Editing
         }
     }, {
         key: 'postEditing',
-        value: function postEditing() {
+        value: function postEditing(editor) {
             // call leve eidting
         }
     }, {
@@ -873,9 +879,17 @@ var CustomDbEntity = function (_EventEmitter2) {
             var self = this;
             // save base info
             var theJson = {
-                code: self.id
-                // save var info
-            };var varJson_arr = [];
+                code: self.id,
+                retNodeId: this.finalSelectNode.id
+            };
+            if (this.editorLeft) {
+                theJson.editorLeft = this.editorLeft;
+            }
+            if (this.editorTop) {
+                theJson.editorTop = this.editorTop;
+            }
+            // save var info
+            var varJson_arr = [];
             this.vars_arr.forEach(function (varData) {
                 varJson_arr.push(varData.getJson());
             });
@@ -987,12 +1001,12 @@ var SqlNode_Base = function (_EventEmitter3) {
         value: function linkAdded(link) {}
     }, {
         key: 'preEditing',
-        value: function preEditing() {
+        value: function preEditing(editor) {
             // call pre enter Editing
         }
     }, {
         key: 'postEditing',
-        value: function postEditing() {
+        value: function postEditing(editor) {
             // call leve eidting
         }
     }, {
@@ -1163,7 +1177,32 @@ var SqlNode_Base = function (_EventEmitter3) {
             if (!IsEmptyString(this.title)) {
                 rlt.title = this.title;
             }
+            if (this.extra != null) {
+                rlt.extra = this.extra;
+            }
+            if (this.editorLeft) {
+                rlt.editorLeft = this.editorLeft;
+            }
+            if (this.editorTop) {
+                rlt.editorTop = this.editorTop;
+            }
             return rlt;
+        }
+    }, {
+        key: 'getExtra',
+        value: function getExtra(key, def) {
+            if (this.extra == null) {
+                return def;
+            }
+            return this.extra[key] == null ? def : this.extra[key];
+        }
+    }, {
+        key: 'setExtra',
+        value: function setExtra(key, val) {
+            if (this.extra == null) {
+                this.extra = {};
+            }
+            this.extra[key] = val;
         }
     }, {
         key: 'getJson',
@@ -1289,7 +1328,7 @@ var NodeSocket = function (_EventEmitter4) {
         key: 'setExtra',
         value: function setExtra(key, val) {
             if (this.extra == null) {
-                this.extra = {};;
+                this.extra = {};
             }
             this.extra[key] = val;
         }
@@ -1772,7 +1811,7 @@ var SqlNode_XJoin = function (_SqlNode_Base3) {
         }
     }, {
         key: 'preEditing',
-        value: function preEditing() {
+        value: function preEditing(editor) {
             var cFinder = new ContextFinder(ContextType_DBEntity);
             this.getContext(cFinder);
             this.contextEntities_arr = cFinder.item_arr;
@@ -2070,7 +2109,7 @@ var SqlNode_Select = function (_SqlNode_Base6) {
         }
     }, {
         key: 'preEditing',
-        value: function preEditing() {
+        value: function preEditing(editor) {
             var cFinder = new ContextFinder(ContextType_DBEntity);
             this.getContext(cFinder);
             this.contextEntities_arr = cFinder.item_arr;
@@ -2103,7 +2142,7 @@ var SqlNode_Select = function (_SqlNode_Base6) {
         }
     }, {
         key: 'postEditing',
-        value: function postEditing() {
+        value: function postEditing(editor) {
             var colSockets = this.columnNode.inputScokets_arr;
             var newColumns_arr = [];
             var temMap = {};
@@ -4466,10 +4505,9 @@ var C_SqlNode_Editor = function (_React$PureComponent17) {
             var editingNode = this.state.editingNode;
             var scrollNode = this.editorDivRef.current.parentNode;
             if (editingNode) {
-                editingNode.scrollLeft = scrollNode.scrollLeft;
-                editingNode.scrollTop = scrollNode.scrollTop;
-
-                editingNode.postEditing();
+                editingNode.editorLeft = parseUnitInt(this.editorDivRef.current.style.left);
+                editingNode.editorTop = parseUnitInt(this.editorDivRef.current.style.top);
+                editingNode.postEditing(this);
             }
 
             this.setState({
@@ -4487,11 +4525,11 @@ var C_SqlNode_Editor = function (_React$PureComponent17) {
             }, 50);
 
             if (theNode) {
-                theNode.preEditing();
+                theNode.preEditing(this);
                 theNode.bluePrint.editingNode = theNode;
                 setTimeout(function () {
-                    scrollNode.scrollLeft = theNode.scrollLeft == null ? 0 : theNode.scrollLeft;
-                    scrollNode.scrollTop = theNode.scrollTop == null ? 0 : theNode.scrollTop;
+                    _this41.editorDivRef.current.style.left = (theNode.editorLeft == null ? 0 : theNode.editorLeft) + 'px';
+                    _this41.editorDivRef.current.style.top = (theNode.editorTop == null ? 0 : theNode.editorTop) + 'px';
                 }, 50);
             }
         }

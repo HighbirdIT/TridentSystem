@@ -553,7 +553,9 @@ class CustomDbEntity extends EventEmitter{
         }
 
         this.allNode_map={};
+        this.nodes_arr=[];
 
+        /*
         this.nodes_arr = this.nodes_arr.map((nodeData,i)=>{
             if(nodeData.type == SQLNODE_BDBENTITY){
                 return new SqlNode_DBEntity(nodeData, self, creationInfo);
@@ -563,14 +565,17 @@ class CustomDbEntity extends EventEmitter{
                 console.warn(nodeData);
             }
         });
-
+        */
+       this.finalSelectNode = new SqlNode_Select({title:'返回表'},this,creationInfo);
+       this.finalSelectNode.removeSocket(this.finalSelectNode.outSocket);
+       this.finalSelectNode.isConstNode = true;
     }
 
-    preEditing(){
+    preEditing(editor){
         // call pre enter Editing
     }
 
-    postEditing(){
+    postEditing(editor){
         // call leve eidting
     }
 
@@ -724,6 +729,13 @@ class CustomDbEntity extends EventEmitter{
         // save base info
         var theJson={
             code:self.id,
+            retNodeId:this.finalSelectNode.id,
+        }
+        if(this.editorLeft){
+            theJson.editorLeft = this.editorLeft;
+        }
+        if(this.editorTop){
+            theJson.editorTop = this.editorTop;
         }
         // save var info
         var varJson_arr=[];
@@ -832,11 +844,11 @@ class SqlNode_Base extends EventEmitter{
         
     }
 
-    preEditing(){
+    preEditing(editor){
         // call pre enter Editing
     }
 
-    postEditing(){
+    postEditing(editor){
         // call leve eidting
     }
 
@@ -993,7 +1005,30 @@ class SqlNode_Base extends EventEmitter{
         if(!IsEmptyString(this.title)){
             rlt.title = this.title;
         }
+        if(this.extra != null){
+            rlt.extra = this.extra;
+        }
+        if(this.editorLeft){
+            rlt.editorLeft = this.editorLeft;
+        }
+        if(this.editorTop){
+            rlt.editorTop = this.editorTop;
+        }
         return rlt;
+    }
+
+    getExtra(key,def){
+        if(this.extra == null){
+            return def;
+        }
+        return this.extra[key] == null ? def : this.extra[key];
+    }
+
+    setExtra(key, val){
+        if(this.extra == null){
+            this.extra = {};
+        }
+        this.extra[key] = val;
     }
 
     getJson(){
@@ -1103,7 +1138,7 @@ class NodeSocket extends EventEmitter{
 
     setExtra(key, val){
         if(this.extra == null){
-            this.extra = {};;
+            this.extra = {};
         }
         this.extra[key] = val;
     }
@@ -1512,7 +1547,7 @@ class SqlNode_XJoin extends SqlNode_Base{
         return rlt;
     }
 
-    preEditing(){
+    preEditing(editor){
         var cFinder = new ContextFinder(ContextType_DBEntity);
         this.getContext(cFinder);
         this.contextEntities_arr = cFinder.item_arr;
@@ -1758,7 +1793,7 @@ class SqlNode_Select extends SqlNode_Base{
         finder.addItem(this.title,temEntity);
     }
 
-    preEditing(){
+    preEditing(editor){
         var cFinder = new ContextFinder(ContextType_DBEntity);
         this.getContext(cFinder);
         this.contextEntities_arr = cFinder.item_arr;
@@ -1788,7 +1823,7 @@ class SqlNode_Select extends SqlNode_Base{
         this.bluePrint.allowEvent('changed');
     }
 
-    postEditing(){
+    postEditing(editor){
         var colSockets = this.columnNode.inputScokets_arr;
         var newColumns_arr = [];
         var temMap = {};
@@ -3803,10 +3838,9 @@ class C_SqlNode_Editor extends React.PureComponent{
         var editingNode = this.state.editingNode;
         var scrollNode = this.editorDivRef.current.parentNode;
         if(editingNode){
-            editingNode.scrollLeft = scrollNode.scrollLeft;
-            editingNode.scrollTop = scrollNode.scrollTop;
-
-            editingNode.postEditing();
+            editingNode.editorLeft = parseUnitInt(this.editorDivRef.current.style.left);
+            editingNode.editorTop = parseUnitInt(this.editorDivRef.current.style.top);
+            editingNode.postEditing(this);
         }
         
         this.setState({
@@ -3824,11 +3858,11 @@ class C_SqlNode_Editor extends React.PureComponent{
         }, 50);
 
         if(theNode){
-            theNode.preEditing();
+            theNode.preEditing(this);
             theNode.bluePrint.editingNode = theNode;
             setTimeout(() => {
-                scrollNode.scrollLeft = theNode.scrollLeft == null ? 0 : theNode.scrollLeft;
-                scrollNode.scrollTop = theNode.scrollTop == null ? 0 : theNode.scrollTop;
+                this.editorDivRef.current.style.left = (theNode.editorLeft == null ? 0 : theNode.editorLeft) + 'px';
+                this.editorDivRef.current.style.top = (theNode.editorTop == null ? 0 : theNode.editorTop) + 'px';
             }, 50);
         }
     }
