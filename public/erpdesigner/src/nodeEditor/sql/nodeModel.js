@@ -246,6 +246,7 @@ class SqlNode_BluePrint extends EventEmitter{
         compilHelper.logManager.log("开始编译[" + this.name + ']');
         var ret = this.finalSelectNode.compile(compilHelper,[]);
         compilHelper.logManager.log('[' + this.name + ']编译' + (ret ? '成功' : '失败'));
+        compilHelper.logManager.log('共' + compilHelper.logManager.getCount(LogTag_Warning) + '条警告,' + compilHelper.logManager.getCount(LogTag_Error) + '条错误,' );
     }
 }
 

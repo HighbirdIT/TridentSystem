@@ -11,9 +11,15 @@ class LogManager extends EventEmitter{
         this.logs_arr = [];
         this.label = label;
         this.baseTime = (new Date()).getTime();
+        this.counter = {};
     }
 
     _add(tag, content, data){
+        if(this.counter[tag] == null){
+            this.counter[tag] = 0;
+        }
+        ++this.counter[tag];
+
         this.logs_arr.push({
             tag:tag,
             content:content,
@@ -24,6 +30,11 @@ class LogManager extends EventEmitter{
     }
 
     _addEx(tag, items_arr, data){
+        if(this.counter[tag] == null){
+            this.counter[tag] = 0;
+        }
+        ++this.counter[tag];
+
         this.logs_arr.push({
             tag:tag,
             contents:items_arr,
@@ -31,6 +42,10 @@ class LogManager extends EventEmitter{
             time:(new Date()).getTime() - this.baseTime,
         });
         this.fireEvent('changed');
+    }
+
+    getCount(tag){
+        return this.counter[tag] == null ? 0 : this.counter[tag];
     }
 
     log(info,data){
