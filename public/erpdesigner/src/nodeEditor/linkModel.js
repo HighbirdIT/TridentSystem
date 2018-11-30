@@ -32,6 +32,15 @@ class SocketLink{
         outSocket.node.setPos(outSocket.node.left + offset.x, outSocket.node.top + offset.y);
         outSocket.node.currentFrameCom.reDraw();
     }
+
+    getJson(){
+        if(this.inSocket && this.outSocket && this.inSocket.node && this.outSocket.node && this.inSocket.node.bluePrint && this.outSocket.node.bluePrint){
+            return {
+                inSocketID:this.inSocket.id,
+                outSocketID:this.outSocket.id,
+            }
+        }
+    }
 }
 
 class ScoketLinkPool{
@@ -184,5 +193,34 @@ class ScoketLinkPool{
             }
         }
         return this.cacheData;
+    }
+
+    getJson(){
+        var rlt_arr=[];
+        for(var si in this.link_map){
+            var theLink = this.link_map[si];
+            if(theLink == null)
+                continue;
+            var linkJson = theLink.getJson();
+            if(linkJson != null){
+                rlt_arr.push(linkJson);
+            }
+        }
+        return rlt_arr;
+    }
+
+    restorFromJson(linkJason_arr, createHelper){
+        var self = this;
+        if(linkJason_arr != null){
+            linkJason_arr.forEach(linkJson => {
+                var inSocket = createHelper.getObjFromID(linkJson.inSocketID);
+                var outSocket = createHelper.getObjFromID(linkJson.outSocketID);
+                if(inSocket == null || outSocket == null){
+                    console.warn('有一个link没有加载');
+                    return;
+                }
+                self.addLink(outSocket, inSocket);
+            });
+        }
     }
 }

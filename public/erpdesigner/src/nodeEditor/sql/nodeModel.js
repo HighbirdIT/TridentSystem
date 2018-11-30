@@ -21,13 +21,32 @@ class NodeCreationHelper extends EventEmitter{
         EnhanceEventEmiter(this);
         this.orginID_map={};
         this.newID_map={};
+        this.idTracer = {};
     }
 
     saveJsonMap(jsonData, newNode){
         if(jsonData && jsonData.id){
+            if(this.getObjFromID(jsonData.id) != null){
+                console.warn(jsonData.id + '被重复saveJsonMap');
+            }
+            if(jsonData.id != newNode.id){
+                if(this.getObjFromID(newNode.id) != null){
+                    console.warn(jsonData.id + '被重复saveJsonMap');
+                }
+                this.idTracer[jsonData.id] = this.idTracer[newNode.id]
+            }
             this.orginID_map[jsonData.id] = newNode;
         }
+        
         this.newID_map[newNode.id] = newNode;
+    }
+
+    getObjFromID(id){
+        var rlt = this.orginID_map[id];
+        if(rlt == null){
+            rlt = this.newID_map[id];
+        }
+        return rlt;
     }
 }
 
@@ -61,6 +80,7 @@ class SqlNode_BluePrint extends EventEmitter{
             this.finalSelectNode = newChildNodes_arr.find(node=>{
                 return node.id == bluePrintJson.retNodeId;
             });
+            this.linkPool.restorFromJson(bluePrintJson.links_arr, createHelper);
         }
         this.id = this.code;
 
@@ -292,6 +312,8 @@ class SqlNode_BluePrint extends EventEmitter{
             });
             theJson.nodes_arr = nodeJson_arr;
         }
+        theJson.links_arr = this.linkPool.getJson();
+        
 
         return theJson;
     }
@@ -873,7 +895,7 @@ class SqlNode_DBEntity extends SqlNode_Base{
 
 class SqlNode_XJoin extends SqlNode_Base{
     constructor(initData, parentNode, createHelper, nodeJson){
-        super(initData, parentNode, createHelper, SQLNODE_XJOIN, 'Join', true, false, nodeJson);
+        super(initData, parentNode, createHelper, SQLNODE_XJOIN, 'Join', true, nodeJson);
         autoBind(this);
 
         if(this.joinType == null){
@@ -905,6 +927,11 @@ class SqlNode_XJoin extends SqlNode_Base{
         {
             this.addSocket(new NodeSocket('in0', this, true, {type:SqlVarType_Table}));
             this.addSocket(new NodeSocket('in1', this, true, {type:SqlVarType_Table}));
+        }
+        else{
+            this.inputScokets_arr.forEach(socket => {
+                socket.type = SqlVarType_Table;
+            });
         }
 
         this.contextEntities_arr = [];
@@ -1603,6 +1630,11 @@ class SqlNode_NOperand extends SqlNode_Base{
         {
             this.addSocket(this.genInSocket());
             this.addSocket(this.genInSocket());
+        }
+        else{
+            this.inputScokets_arr.forEach(socket=>{
+                socket.set(this.insocketInitVal);
+            })
         }
         if(this.operator == null){
             this.operator = '+';

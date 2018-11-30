@@ -63,7 +63,7 @@ class NodeSocket extends EventEmitter{
 }
 
 function CreateNodeSocketByJson(theNode, jsonData, createHelper){
-    var rlt = new NodeSocket(jsonData.name,theNode,jsonData.isIn, {defval:jsonData.defval,extra:jsonData.extra});
+    var rlt = new NodeSocket(jsonData.name,theNode,jsonData.isIn, {defval:jsonData.defval,extra:jsonData.extra,type:jsonData.type});
     createHelper.saveJsonMap(jsonData, rlt);
     return rlt;
 }
