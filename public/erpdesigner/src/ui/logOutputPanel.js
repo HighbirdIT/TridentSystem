@@ -175,8 +175,9 @@ class CLogItem extends React.PureComponent{
             }
         }
         var d = new Date();
+        var paseSec = Math.floor((logItem.time / 1000.0));
         return (<span className={textColor}>
-                    {'[' + (logItem.time / 1000.0) + ']'}
+                    {'[' + paseSec + ']'}
                     {iconElem}
                     {this.renderItem(logItem)}
                 </span>);

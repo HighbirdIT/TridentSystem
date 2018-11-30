@@ -3,7 +3,7 @@ class NodeSocket extends EventEmitter{
         super();
         Object.assign(this, initData);
         EnhanceEventEmiter(this);
-        this.name = name;
+        this.name =  name;
         this.node = tNode;
         this.isIn = isIn;
         this.id = tNode.id + '$' + name;
@@ -47,12 +47,14 @@ class NodeSocket extends EventEmitter{
             isIn:this.isIn,
             id:this.id,
             defval:this.defval,
+            type:this.type,
         };
         if(this.extra){
+            rlt.extra={};
             for(var si in this.extra){
                 var tVal = this.extra[si];
-                if(tval != null){
-                    rlt[si] = tVal;
+                if(tVal != null){
+                    rlt.extra[si] = tVal;
                 }
             }
         }
@@ -60,3 +62,8 @@ class NodeSocket extends EventEmitter{
     }
 }
 
+function CreateNodeSocketByJson(theNode, jsonData, createHelper){
+    var rlt = new NodeSocket(jsonData.name,theNode,jsonData.isIn, {defval:jsonData.defval,extra:jsonData.extra});
+    createHelper.saveJsonMap(jsonData, rlt);
+    return rlt;
+}

@@ -459,338 +459,20 @@ var CusDBEEditor = function (_React$PureComponent4) {
     return CusDBEEditor;
 }(React.PureComponent);
 
-var cusDBEditorControls_arr = [{
-    label: '源',
-    nodeClass: SqlNode_DBEntity
-}, {
-    label: '选择',
-    nodeClass: SqlNode_Select
-}, {
-    label: '多元运算',
-    nodeClass: SqlNode_NOperand
-}, {
-    label: 'Join',
-    nodeClass: SqlNode_XJoin
-}];
-
-var SqlNodeOutlineItem = function (_React$PureComponent5) {
-    _inherits(SqlNodeOutlineItem, _React$PureComponent5);
-
-    function SqlNodeOutlineItem(props) {
-        _classCallCheck(this, SqlNodeOutlineItem);
-
-        var _this7 = _possibleConstructorReturn(this, (SqlNodeOutlineItem.__proto__ || Object.getPrototypeOf(SqlNodeOutlineItem)).call(this, props));
-
-        autoBind(_this7);
-
-        _this7.state = {
-            label: _this7.props.nodeData.getNodeTitle(true)
-        };
-        return _this7;
-    }
-
-    _createClass(SqlNodeOutlineItem, [{
-        key: 'componentWillMount',
-        value: function componentWillMount() {
-            this.props.nodeData.on('changed', this.nodeChangedhandler);
-        }
-    }, {
-        key: 'componentWillUnmount',
-        value: function componentWillUnmount() {
-            this.props.nodeData.off('changed', this.nodeChangedhandler);
-        }
-    }, {
-        key: 'nodeChangedhandler',
-        value: function nodeChangedhandler() {
-            this.setState({
-                label: this.props.nodeData.getNodeTitle()
-            });
-        }
-    }, {
-        key: 'clickHandler',
-        value: function clickHandler(ev) {
-            this.props.clickHandler(this.props.nodeData);
-        }
-    }, {
-        key: 'render',
-        value: function render() {
-            return React.createElement(
-                'div',
-                { className: 'text-nowrap text-light cursor-pointer', onClick: this.clickHandler },
-                this.state.label
-            );
-        }
-    }]);
-
-    return SqlNodeOutlineItem;
-}(React.PureComponent);
-
-var CusDBEEditorLeftPanel = function (_React$PureComponent6) {
-    _inherits(CusDBEEditorLeftPanel, _React$PureComponent6);
-
-    function CusDBEEditorLeftPanel(props) {
-        _classCallCheck(this, CusDBEEditorLeftPanel);
-
-        var _this8 = _possibleConstructorReturn(this, (CusDBEEditorLeftPanel.__proto__ || Object.getPrototypeOf(CusDBEEditorLeftPanel)).call(this, props));
-
-        autoBind(_this8);
-        return _this8;
-    }
-
-    _createClass(CusDBEEditorLeftPanel, [{
-        key: 'listenNode',
-        value: function listenNode(node) {
-            if (node) {
-                node.on('changed', this.editingNodeChangedhandler);
-            }
-            this.listenedNode = node;
-        }
-    }, {
-        key: 'unlistenNode',
-        value: function unlistenNode(node) {
-            if (node) {
-                node.off('changed', this.editingNodeChangedhandler);
-            }
-        }
-    }, {
-        key: 'componentWillMount',
-        value: function componentWillMount() {
-            //listenNode(this.state.editingNode);
-        }
-    }, {
-        key: 'componentWillUnmount',
-        value: function componentWillUnmount() {
-            this.unlistenNode(this.props.editingNode);
-        }
-    }, {
-        key: 'editingNodeChangedhandler',
-        value: function editingNodeChangedhandler() {
-            this.setState({
-                magicObj: {}
-            });
-        }
-    }, {
-        key: 'clickOutlineImteHandler',
-        value: function clickOutlineImteHandler(nodeData) {
-            this.props.editor.showNodeData(nodeData);
-        }
-    }, {
-        key: 'render',
-        value: function render() {
-            var _this9 = this;
-
-            if (this.listenedNode != this.props.editingNode) {
-                this.unlistenNode(this.listenedNode);
-                this.listenNode(this.props.editingNode);
-            }
-            return React.createElement(SplitPanel, {
-                fixedOne: true,
-                maxSize: 200,
-                defPercent: 0.3,
-                flexColumn: true,
-                panel1: React.createElement(
-                    'div',
-                    { className: 'w-100 h-100 autoScroll d-flex flex-column' },
-                    this.props.editingNode.nodes_arr.map(function (nodeData) {
-                        return React.createElement(SqlNodeOutlineItem, { key: nodeData.id, nodeData: nodeData, clickHandler: _this9.clickOutlineImteHandler });
-                    })
-                ),
-                panel2: React.createElement(
-                    'div',
-                    { className: 'd-flex flex-column h-100 w-100' },
-                    React.createElement(CusDBEEditorVariables, { editingNode: this.props.editingNode, editor: this.props.editor }),
-                    React.createElement(CusDBEEditorCanUseNodePanel, { editingNode: this.props.editingNode, onMouseDown: this.props.onMouseDown, editor: this.props.editor })
-                )
-            });
-        }
-    }]);
-
-    return CusDBEEditorLeftPanel;
-}(React.PureComponent);
-
-var CusDBEEditorCanUseNodePanel = function (_React$PureComponent7) {
-    _inherits(CusDBEEditorCanUseNodePanel, _React$PureComponent7);
-
-    function CusDBEEditorCanUseNodePanel(props) {
-        _classCallCheck(this, CusDBEEditorCanUseNodePanel);
-
-        var _this10 = _possibleConstructorReturn(this, (CusDBEEditorCanUseNodePanel.__proto__ || Object.getPrototypeOf(CusDBEEditorCanUseNodePanel)).call(this, props));
-
-        autoBind(_this10);
-        return _this10;
-    }
-
-    _createClass(CusDBEEditorCanUseNodePanel, [{
-        key: 'mouseDownHandler',
-        value: function mouseDownHandler(ev) {
-            var itemValue = getAttributeByNode(ev.target, 'data-value');
-            if (itemValue == null) return;
-            var ctlItem = cusDBEditorControls_arr.find(function (item) {
-                return item.label == itemValue;
-            });
-            if (ctlItem) {
-                this.props.onMouseDown(ctlItem);
-            }
-        }
-    }, {
-        key: 'render',
-        value: function render() {
-            var _this11 = this;
-
-            var targetID = this.props.editingNode.bluePrint.code + 'canUseNode';
-            return React.createElement(
-                React.Fragment,
-                null,
-                React.createElement(
-                    'button',
-                    { type: 'button', 'data-toggle': 'collapse', 'data-target': "#" + targetID, className: 'btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn', style: { borderRadius: '0em', height: '2.5em' } },
-                    '\u53EF\u7528\u8282\u70B9'
-                ),
-                React.createElement(
-                    'div',
-                    { id: targetID, className: 'list-group flex-grow-1 flex-shrink-1 collapse show', style: { overflow: 'auto' } },
-                    React.createElement(
-                        'div',
-                        { className: 'mw-100 d-flex flex-column' },
-                        React.createElement(
-                            'div',
-                            { className: 'btn-group-vertical mw-100' },
-                            cusDBEditorControls_arr.map(function (item) {
-                                return React.createElement(
-                                    'button',
-                                    { key: item.label, onMouseDown: _this11.mouseDownHandler, 'data-value': item.label, type: 'button', className: 'btn flex-grow-0 flex-shrink-0 btn-dark text-left' },
-                                    item.label
-                                );
-                            })
-                        )
-                    )
-                )
-            );
-        }
-    }]);
-
-    return CusDBEEditorCanUseNodePanel;
-}(React.PureComponent);
-
-var CusDBEEditorVariables = function (_React$PureComponent8) {
-    _inherits(CusDBEEditorVariables, _React$PureComponent8);
-
-    function CusDBEEditorVariables(props) {
-        _classCallCheck(this, CusDBEEditorVariables);
-
-        var _this12 = _possibleConstructorReturn(this, (CusDBEEditorVariables.__proto__ || Object.getPrototypeOf(CusDBEEditorVariables)).call(this, props));
-
-        autoBind(_this12);
-        return _this12;
-    }
-
-    _createClass(CusDBEEditorVariables, [{
-        key: 'mouseDownHandler',
-        value: function mouseDownHandler(ev) {
-            var itemValue = getAttributeByNode(ev.target, 'data-value');
-            if (itemValue == null) return;
-            var ctlItem = cusDBEditorControls_arr.find(function (item) {
-                return item.label == itemValue;
-            });
-            if (ctlItem && this.props.onMouseDown) {
-                this.props.onMouseDown(ctlItem);
-            }
-        }
-    }, {
-        key: 'clickAddHandler',
-        value: function clickAddHandler(ev) {
-            this.props.editingNode.bluePrint.createEmptyVariable();
-        }
-    }, {
-        key: 'varChangedhandler',
-        value: function varChangedhandler() {
-            this.setState({
-                magicobj: {}
-            });
-        }
-    }, {
-        key: 'listenNode',
-        value: function listenNode(node) {
-            if (node) {
-                node.on('varChanged', this.varChangedhandler);
-            }
-            this.listenedNode = node;
-        }
-    }, {
-        key: 'unlistenNode',
-        value: function unlistenNode(node) {
-            if (node) {
-                node.off('varChanged', this.varChangedhandler);
-            }
-        }
-    }, {
-        key: 'componentWillMount',
-        value: function componentWillMount() {}
-    }, {
-        key: 'componentWillUnmount',
-        value: function componentWillUnmount() {
-            this.unlistenNode(this.props.editingNode);
-        }
-    }, {
-        key: 'render',
-        value: function render() {
-            var _this13 = this;
-
-            if (this.listenedNode != this.props.editingNode.bluePrint) {
-                this.unlistenNode(this.listenedNode);
-                this.listenNode(this.props.editingNode.bluePrint);
-            }
-            var blueprintPrefix = this.props.editingNode.bluePrint.id + '_';
-            var targetID = blueprintPrefix + 'variables';
-            return React.createElement(
-                React.Fragment,
-                null,
-                React.createElement(
-                    'div',
-                    { className: 'flex-grow-0 flex-shrink-0 bg-secondary d-flex align-items-center' },
-                    React.createElement(
-                        'button',
-                        { type: 'button', 'data-toggle': 'collapse', 'data-target': "#" + targetID, className: 'btn bg-secondary flex-grow-1 flex-shrink-1 text-light collapsbtn', style: { borderRadius: '0em', height: '2.5em' } },
-                        ' \u53D8\u91CF'
-                    ),
-                    React.createElement('i', { className: 'fa fa-plus fa-lg text-light cursor-pointer', onClick: this.clickAddHandler, style: { width: '30px' } })
-                ),
-                React.createElement(
-                    'div',
-                    { id: targetID, className: 'list-group flex-grow-1 flex-shrink-1 collapse show', style: { overflow: 'auto' } },
-                    React.createElement(
-                        'div',
-                        { className: 'mw-100 d-flex flex-column' },
-                        React.createElement(
-                            'div',
-                            { className: 'btn-group-vertical mw-100' },
-                            this.props.editingNode.bluePrint.vars_arr.map(function (varData) {
-                                return React.createElement(SqlDef_Variable_Component, { belongNode: _this13.props.editingNode, key: blueprintPrefix + varData.id, varData: varData, editor: _this13.props.editor });
-                            })
-                        )
-                    )
-                )
-            );
-        }
-    }]);
-
-    return CusDBEEditorVariables;
-}(React.PureComponent);
-
-var NameInputRow = function (_React$PureComponent9) {
-    _inherits(NameInputRow, _React$PureComponent9);
+var NameInputRow = function (_React$PureComponent5) {
+    _inherits(NameInputRow, _React$PureComponent5);
 
     function NameInputRow(props) {
         _classCallCheck(this, NameInputRow);
 
-        var _this14 = _possibleConstructorReturn(this, (NameInputRow.__proto__ || Object.getPrototypeOf(NameInputRow)).call(this, props));
+        var _this7 = _possibleConstructorReturn(this, (NameInputRow.__proto__ || Object.getPrototypeOf(NameInputRow)).call(this, props));
 
-        _this14.state = {
-            value: _this14.props.default ? _this14.props.default : '',
-            isagent: _this14.props.isagent == true
+        _this7.state = {
+            value: _this7.props.default ? _this7.props.default : '',
+            isagent: _this7.props.isagent == true
         };
-        autoBind(_this14);
-        return _this14;
+        autoBind(_this7);
+        return _this7;
     }
 
     _createClass(NameInputRow, [{
@@ -865,20 +547,20 @@ var NameInputRow = function (_React$PureComponent9) {
     return NameInputRow;
 }(React.PureComponent);
 
-var AddNewCusDSItemPanel = function (_React$PureComponent10) {
-    _inherits(AddNewCusDSItemPanel, _React$PureComponent10);
+var AddNewCusDSItemPanel = function (_React$PureComponent6) {
+    _inherits(AddNewCusDSItemPanel, _React$PureComponent6);
 
     function AddNewCusDSItemPanel(props) {
         _classCallCheck(this, AddNewCusDSItemPanel);
 
-        var _this15 = _possibleConstructorReturn(this, (AddNewCusDSItemPanel.__proto__ || Object.getPrototypeOf(AddNewCusDSItemPanel)).call(this, props));
+        var _this8 = _possibleConstructorReturn(this, (AddNewCusDSItemPanel.__proto__ || Object.getPrototypeOf(AddNewCusDSItemPanel)).call(this, props));
 
-        _this15.state = {};
-        autoBind(_this15);
+        _this8.state = {};
+        autoBind(_this8);
 
-        _this15.nameRef = React.createRef();
-        _this15.typeRef = React.createRef();
-        return _this15;
+        _this8.nameRef = React.createRef();
+        _this8.typeRef = React.createRef();
+        return _this8;
     }
 
     _createClass(AddNewCusDSItemPanel, [{
@@ -955,20 +637,20 @@ var AddNewCusDSItemPanel = function (_React$PureComponent10) {
     return AddNewCusDSItemPanel;
 }(React.PureComponent);
 
-var CreateDSItemPanel = function (_React$PureComponent11) {
-    _inherits(CreateDSItemPanel, _React$PureComponent11);
+var CreateDSItemPanel = function (_React$PureComponent7) {
+    _inherits(CreateDSItemPanel, _React$PureComponent7);
 
     function CreateDSItemPanel(props) {
         _classCallCheck(this, CreateDSItemPanel);
 
-        var _this16 = _possibleConstructorReturn(this, (CreateDSItemPanel.__proto__ || Object.getPrototypeOf(CreateDSItemPanel)).call(this, props));
+        var _this9 = _possibleConstructorReturn(this, (CreateDSItemPanel.__proto__ || Object.getPrototypeOf(CreateDSItemPanel)).call(this, props));
 
-        _this16.state = {
-            items_arr: _this16.props.project.dataMaster.customDBEntities_arr,
+        _this9.state = {
+            items_arr: _this9.props.project.dataMaster.customDBEntities_arr,
             selectedItem: null
         };
-        autoBind(_this16);
-        return _this16;
+        autoBind(_this9);
+        return _this9;
     }
 
     _createClass(CreateDSItemPanel, [{
@@ -997,7 +679,7 @@ var CreateDSItemPanel = function (_React$PureComponent11) {
     }, {
         key: 'render',
         value: function render() {
-            var _this17 = this;
+            var _this10 = this;
 
             var selectedItem = this.state.selectedItem;
             return React.createElement(
@@ -1018,7 +700,7 @@ var CreateDSItemPanel = function (_React$PureComponent11) {
                             this.state.items_arr.map(function (item) {
                                 return React.createElement(
                                     'div',
-                                    { onClick: _this17.clickListItemHandler, key: item.code, 'data-itemvalue': item.code, className: 'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '') },
+                                    { onClick: _this10.clickListItemHandler, key: item.code, 'data-itemvalue': item.code, className: 'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '') },
                                     item.name + '-' + item.type
                                 );
                             })
@@ -1042,25 +724,25 @@ var CreateDSItemPanel = function (_React$PureComponent11) {
     return CreateDSItemPanel;
 }(React.PureComponent);
 
-var DataMasterPanel = function (_React$PureComponent12) {
-    _inherits(DataMasterPanel, _React$PureComponent12);
+var DataMasterPanel = function (_React$PureComponent8) {
+    _inherits(DataMasterPanel, _React$PureComponent8);
 
     function DataMasterPanel(props) {
         _classCallCheck(this, DataMasterPanel);
 
-        var _this18 = _possibleConstructorReturn(this, (DataMasterPanel.__proto__ || Object.getPrototypeOf(DataMasterPanel)).call(this, props));
+        var _this11 = _possibleConstructorReturn(this, (DataMasterPanel.__proto__ || Object.getPrototypeOf(DataMasterPanel)).call(this, props));
 
-        _this18.panelBaseRef = React.createRef();
-        _this18.state = {};
+        _this11.panelBaseRef = React.createRef();
+        _this11.state = {};
 
-        autoBind(_this18);
+        autoBind(_this11);
 
-        var navItems = [CreateNavItemData('数据库', React.createElement(DataBasePanel, { project: _this18.props.project })), CreateNavItemData('创造数据', React.createElement(CreateDSItemPanel, { project: _this18.props.project }))];
-        _this18.navData = {
+        var navItems = [CreateNavItemData('数据库', React.createElement(DataBasePanel, { project: _this11.props.project })), CreateNavItemData('创造数据', React.createElement(CreateDSItemPanel, { project: _this11.props.project }))];
+        _this11.navData = {
             selectedItem: navItems[1],
             items: navItems
         };
-        return _this18;
+        return _this11;
     }
 
     _createClass(DataMasterPanel, [{
@@ -1088,7 +770,7 @@ var DataMasterPanel = function (_React$PureComponent12) {
     }, {
         key: 'render',
         value: function render() {
-            var _this19 = this;
+            var _this12 = this;
 
             return React.createElement(
                 FloatPanelbase,
@@ -1101,7 +783,7 @@ var DataMasterPanel = function (_React$PureComponent12) {
                 this.navData.items.map(function (item) {
                     return React.createElement(
                         'div',
-                        { key: item.text, className: 'flex-grow-1 flex-shrink-1 ' + (item == _this19.navData.selectedItem ? ' d-flex' : ' d-none') },
+                        { key: item.text, className: 'flex-grow-1 flex-shrink-1 ' + (item == _this12.navData.selectedItem ? ' d-flex' : ' d-none') },
                         item.content
                     );
                 })

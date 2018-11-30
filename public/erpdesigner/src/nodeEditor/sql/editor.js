@@ -1,3 +1,23 @@
+const SqlNodeEditorControls_arr =[
+    {
+        label:'源',
+        nodeClass:SqlNode_DBEntity,
+    },
+    {
+        label:'选择',
+        nodeClass:SqlNode_Select,
+    },
+    {
+        label:'多元运算',
+        nodeClass:SqlNode_NOperand,
+    }
+    ,
+    {
+        label:'Join',
+        nodeClass:SqlNode_XJoin,
+    }
+]; 
+
 class C_SqlNode_Editor extends React.PureComponent{
     constructor(props){
         super(props);
@@ -348,6 +368,13 @@ class C_SqlNode_Editor extends React.PureComponent{
     renderNode(nodeData){
         if(nodeData == null)
             return null;
+        var settting = SqlNodeClassMap[nodeData.type];
+        if(settting == null){
+            console.warn(nodeData.type + ' 节点类型找不到映射');
+            return null;
+        }
+        return this.genSqlNode_Component(settting.comClass, nodeData);
+        /*
         switch(nodeData.type){
             case SQLNODE_BDBENTITY:
                 return this.genSqlNode_Component(C_SqlNode_DBEntity, nodeData);
@@ -376,6 +403,7 @@ class C_SqlNode_Editor extends React.PureComponent{
         }
 
         return null;
+        */
     }
 
     transToEditorPos(pt){
@@ -534,7 +562,7 @@ class C_SqlNode_Editor extends React.PureComponent{
         this.logManager.clear();
         //this.logManager.log("Start compile");
         var compileHelper = new SqlNode_CompileHelper(this.logManager, this);
-        theBluePrint.compile(compileHelper);
+        var compileRet = theBluePrint.compile(compileHelper);
         //this.logManager.log("End compile");
     }
 
@@ -542,7 +570,7 @@ class C_SqlNode_Editor extends React.PureComponent{
         console.log("Start export");
         var editingNode = this.state.editingNode;
         var json = editingNode.bluePrint.getJson();
-        console.log(json);
+        console.log(JSON.stringify(json));
     }
 
     render(){
@@ -573,7 +601,7 @@ class C_SqlNode_Editor extends React.PureComponent{
                 maxSize='400px'
                 barClass='bg-secondary'
                 panel1={
-                    <CusDBEEditorLeftPanel onMouseDown={this.mouseDownNodeCtlrHandler} editingNode={editingNode} editorDivRef={this.editorDivRef} editor={self} />
+                    <SqlNodeEditorLeftPanel onMouseDown={this.mouseDownNodeCtlrHandler} editingNode={editingNode} editorDivRef={this.editorDivRef} editor={self} />
                 }
                 panel2={
                     <SplitPanel
@@ -633,12 +661,423 @@ class C_SqlNode_Editor extends React.PureComponent{
     }
 }
 
+class SqlNodeEditorLeftPanel extends React.PureComponent{
+    constructor(props){
+        super(props);
+
+        autoBind(this);
+    }
+
+    listenNode(node){
+        if(node){
+            node.on('changed', this.editingNodeChangedhandler);
+        }
+        this.listenedNode = node;
+    }
+
+    unlistenNode(node){
+        if(node){
+            node.off('changed', this.editingNodeChangedhandler);
+        }
+    }
+
+    componentWillMount(){
+        //listenNode(this.state.editingNode);
+    }
+
+    componentWillUnmount(){
+        this.unlistenNode(this.props.editingNode);
+    }
+
+    editingNodeChangedhandler(){
+        this.setState({
+            magicObj:{},
+        });
+    }
+
+    clickOutlineImteHandler(nodeData){
+        this.props.editor.showNodeData(nodeData);
+    }
+
+    render() {
+        if(this.listenedNode != this.props.editingNode){
+            this.unlistenNode(this.listenedNode);
+            this.listenNode(this.props.editingNode);
+        }
+        return (
+            <SplitPanel 
+                fixedOne={true}
+                maxSize={200}
+                defPercent={0.3}
+                flexColumn={true}
+                panel1={
+                    <div className='w-100 h-100 autoScroll d-flex flex-column'>
+                        {
+                            this.props.editingNode.nodes_arr.map(nodeData=>{
+                                return <SqlNodeOutlineItem key={nodeData.id} nodeData={nodeData} clickHandler={this.clickOutlineImteHandler} />
+                            })
+                        }
+                    </div>
+                }
+                panel2={
+                    <div className='d-flex flex-column h-100 w-100'>
+                        <SqlNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} />
+                        <SqlNodeEditorCanUseNodePanel editingNode={this.props.editingNode} onMouseDown={this.props.onMouseDown} editor={this.props.editor} />
+                    </div>
+                }
+            />
+        );
+    }
+}
+
+class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
+    constructor(props){
+        super(props);
+
+        autoBind(this);
+    }
+
+    mouseDownHandler(ev){
+        var itemValue = getAttributeByNode(ev.target, 'data-value');
+        if(itemValue == null)
+            return;
+        var ctlItem = SqlNodeEditorControls_arr.find(item=>{return item.label == itemValue});
+        if(ctlItem){
+            this.props.onMouseDown(ctlItem);
+        }
+    }
+
+    render() {
+        var targetID = this.props.editingNode.bluePrint.code + 'canUseNode';
+        return (
+            <React.Fragment>
+                <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>可用节点</button>
+                <div id={targetID} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
+                    <div className='mw-100 d-flex flex-column'>
+                        <div className='btn-group-vertical mw-100'>
+                            {
+                                SqlNodeEditorControls_arr.map(
+                                    item=>{
+                                        return <button key={item.label} onMouseDown={this.mouseDownHandler} data-value={item.label} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>
+                                    }
+                                )
+                            }
+                        </div>
+                    </div>
+                    </div>
+            </React.Fragment>
+        );
+    }
+}
+
+class SqlNodeEditorVariables extends React.PureComponent{
+    constructor(props){
+        super(props);
+
+        autoBind(this);
+    }
+
+    mouseDownHandler(ev){
+        var itemValue = getAttributeByNode(ev.target, 'data-value');
+        if(itemValue == null)
+            return;
+        var ctlItem = SqlNodeEditorControls_arr.find(item=>{return item.label == itemValue});
+        if(ctlItem && this.props.onMouseDown){
+            this.props.onMouseDown(ctlItem);
+        }
+    }
+
+    clickAddHandler(ev){
+        this.props.editingNode.bluePrint.createEmptyVariable();
+    }
+
+    varChangedhandler(){
+        this.setState({
+            magicobj:{}
+        });
+    }
+
+    listenNode(node){
+        if(node){
+            node.on('varChanged', this.varChangedhandler);
+        }
+        this.listenedNode = node;
+    }
+
+    unlistenNode(node){
+        if(node){
+            node.off('varChanged', this.varChangedhandler);
+        }
+    }
+
+    componentWillMount(){
+    }
+
+    componentWillUnmount(){
+        this.unlistenNode(this.props.editingNode);
+    }
+
+    render() {
+        if(this.listenedNode != this.props.editingNode.bluePrint){
+            this.unlistenNode(this.listenedNode);
+            this.listenNode(this.props.editingNode.bluePrint);
+        }
+        var blueprintPrefix = this.props.editingNode.bluePrint.id + '_';
+        var targetID = blueprintPrefix + 'variables';
+        return (
+            <React.Fragment>
+                <div className='flex-grow-0 flex-shrink-0 bg-secondary d-flex align-items-center'>
+                    <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn bg-secondary flex-grow-1 flex-shrink-1 text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}> 变量</button>
+                    <i className='fa fa-plus fa-lg text-light cursor-pointer' onClick={this.clickAddHandler} style={{width:'30px'}} />
+                </div>
+                <div id={targetID} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
+                    <div className='mw-100 d-flex flex-column'>
+                        <div className='btn-group-vertical mw-100'>
+                            {
+                                this.props.editingNode.bluePrint.vars_arr.map(varData=>{
+                                    return <SqlDef_Variable_Component belongNode={this.props.editingNode} key={blueprintPrefix + varData.id} varData={varData} editor={this.props.editor} />
+                                })
+                            }
+                        </div>
+                    </div>
+                    </div>
+            </React.Fragment>
+        );
+    }
+}
+
+class SqlNodeOutlineItem extends React.PureComponent{
+    constructor(props){
+        super(props);
+
+        autoBind(this);
+
+        this.state = {
+            label:this.props.nodeData.getNodeTitle(true),
+        }
+    }
+
+    componentWillMount(){
+        this.props.nodeData.on('changed', this.nodeChangedhandler);
+    }
+
+    componentWillUnmount(){
+        this.props.nodeData.off('changed', this.nodeChangedhandler);
+    }
+
+    nodeChangedhandler(){
+        this.setState({
+            label:this.props.nodeData.getNodeTitle(),
+        });
+    }
+
+    clickHandler(ev){
+        this.props.clickHandler(this.props.nodeData);
+    }
+
+    render(){
+        return <div className='text-nowrap text-light cursor-pointer'  onClick={this.clickHandler}>{this.state.label}</div>
+    }
+}
+
+class SqlDef_Variable_Component extends React.PureComponent{
+    constructor(props){
+        super(props);
+        var varData = this.props.varData;
+        this.state = {
+            name:varData.name,
+            valType:varData.valType,
+            isParam:varData.isParam,
+            size_1:varData.size_1,
+            size_2:varData.size_2,
+            editing:varData.needEdit == true,
+        };
+
+        autoBind(this);
+    }
+
+    varChanged(){
+        if(this.state.editing){
+            return;
+        }
+        var varData = this.props.varData;
+        this.setState({
+            name:varData.name,
+            valType:varData.valType,
+            isParam:varData.isParam,
+            size_1:varData.size_1,
+            size_2:varData.size_2,
+        });
+    }
+
+    componentWillMount(){
+        this.props.varData.on('changed', this.varChanged);
+    }
+
+    componentWillUnmount(){
+        this.props.varData.off('changed', this.varChanged);
+    }
+
+    nameInputChangeHanlder(ev){
+        this.setState({
+            name:ev.target.value,
+        });
+    }
+
+    valTypeChangedHandler(newData){
+        this.setState({
+            valType:newData,
+        });
+    }
+
+    isParamChangedHandler(newData){
+        this.setState({
+            isParam:newData.code,
+        });
+    }
+
+    size1InputChangedHandler(newVal){
+        this.setState({
+            size_1:isNaN(newVal) ? 0 : parseInt(newVal),
+        });
+    }
+
+    size2InputChangedHandler(newVal){
+        this.setState({
+            size_2:isNaN(newVal) ? 0 : parseInt(newVal),
+        });
+    }
+
+    renderSize(){
+        var sizeCount = 0;
+        switch(this.state.valType){
+            case SqlVarType_NVarchar:
+                sizeCount = 1;
+                break;
+            case SqlVarType_Decimal:
+                sizeCount = 2;
+                break;
+        }
+        if(sizeCount > 0){
+            return(<div className='d-flex flex-grow-0 flex-shrink-0 w-100'>
+                <NameInputRow isagent={true} label='S1' type='int' rootClass='flex-grow-1 flex-shrink-1' value={this.state.size_1} nameWidth='50px' nameColor='rgb(255,255,255)' onValueChanged={this.size1InputChangedHandler} />
+                {
+                    sizeCount == 2 ? 
+                    <NameInputRow isagent={true} label='S2' type='int' rootClass='flex-grow-1 flex-shrink-1' value={this.state.size_2} nameWidth='50px' nameColor='rgb(255,255,255)' onValueChanged={this.size2InputChangedHandler} />
+                    : null
+                }
+            </div>);
+        }
+        return null;
+    }
+
+    clickEditBtnHandler(){
+        if(this.state.editing){
+            var tval = Object.assign({},this.state);
+            tval.editing = false;
+            this.props.varData.setProp(tval);
+        }
+        this.setState({
+            editing:!this.state.editing,
+        });
+    }
+
+    clickTrashHandler(){
+        gTipWindow.popAlert(makeAlertData('警告','确定删除变量:"' + this.state.name + '"?',this.deleteTipCallback,[TipBtnOK,TipBtnNo]));
+    }
+
+    deleteTipCallback(key){
+        if(key == 'ok'){
+            this.props.varData.bluePrint.removeVariable(this.props.varData);
+        }
+    }
+
+    labelMouseDownHandler(ev) {
+        this.dragTimeOut = setTimeout(this.dragTimeOutHandler, 300);
+        window.addEventListener('mouseup', this.labelWindowMouseUpHandler);
+    }
+
+    labelWindowMouseUpHandler(ev) {
+        if (this.dragTimeOut) {
+            clearTimeout(this.dragTimeOut);
+        }
+    }
+
+    genDragContentFun(){
+        var varData = this.props.varData;
+        return (<span className='text-nowrap border bg-dark text-light'>{'变量:' + varData.name}</span>)
+    }
+
+    dragTimeOutHandler() {
+        var designer = this.props.varData.bluePrint.master.project.designer;
+        designer.startDrag({info:'放置变量'}, this.dragEndHandler, this.genDragContentFun);
+    }
+
+    dragMenuCallBack(menuItem, pos){
+        var varData = this.props.varData;
+        if(menuItem.key == 'SET'){
+            this.props.editor.addVarGSNode({isGet:false, varName:varData.name}, pos)
+        }
+        else if(menuItem.key == 'GET'){
+            //console.log('get');
+            this.props.editor.addVarGSNode({isGet:true, varName:varData.name}, pos)
+        }
+    }
+
+    dragEndHandler(pos){
+        // sql node 只支持var get
+        var editorRect = this.props.editor.zoomDivRef.current.getBoundingClientRect();
+        if(MyMath.isPointInRect(editorRect, pos)){
+            var designer = this.props.varData.bluePrint.master.project.designer;
+            var varData = this.props.varData;
+            this.dragMenuCallBack(new QuickMenuItem('Get ' + varData.name, 'GET'), pos);
+            return;
+            designer.propUpMenu([new QuickMenuItem('Set ' + varData.name, 'SET'),new QuickMenuItem('Get ' + varData.name, 'GET')]
+                ,pos
+                ,this.dragMenuCallBack
+            );
+        }
+    }
+
+    render() {
+        var varData = this.props.varData;
+        var editing = this.state.editing;
+        if(!editing){
+            return(
+                <div className='d-flex flex-grow-0 flex-shrink-0 w-100 text-light align-items-center hidenOverflo'>
+                    <i className={'fa fa-edit fa-lg'} onClick={this.clickEditBtnHandler} />
+                    <div className='flex-grow-1 flex-shrink-1 text-nowrap cursor-arrow dragableItem'
+                         onMouseDown={this.labelMouseDownHandler}>
+                        {'' + varData}
+                    </div>
+                    <i className={'fa fa-trash fa-lg'} onClick={this.clickTrashHandler} />
+                </div>
+            )
+        }
+        return(
+        <div className='d-flex flex-column flex-grow-0 flex-shrink-0 w-100 border border-primary'>
+            <div className='d-flex bg-dark flex-grow-0 flex-shrink-0 w-100 align-items-center'>
+                <i className={'fa fa-edit fa-lg text-' + (editing ? 'success' : 'info')} onClick={this.clickEditBtnHandler} />
+                <input onChange={this.nameInputChangeHanlder} type='text' value={this.state.name} className='flexinput flex-grow-1 flex-shrink-1' />
+            </div>
+            <div className='d-flex w-100 flex-grow-0 flex-shrink-0 align-items-center'>
+                <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={SqlVarTypes_arr} rootclass='flex-grow-1 flex-shrink-1' textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
+                <DropDownControl itemChanged={this.isParamChangedHandler} btnclass='btn-dark' options_arr={ISParam_Options_arr} rootclass='flex-grow-0 flex-shrink-0' textAttrName='name' valueAttrName='code' value={this.state.isParam} /> 
+            </div>
+            {
+                this.renderSize()
+            }
+        </div>);
+    }
+}
+
 class SqlNode_CompileHelper{
     constructor(logManager,editor){
         this.logManager = logManager;
         this.startNode = null;
         this.editor = editor;
-        this.linkCache = {};
+        this.cacheObj = {};
+        this.useEntities_arr = [];
 
         autoBind(this);
     }
@@ -657,22 +1096,54 @@ class SqlNode_CompileHelper{
         }
     }
 
+    getCache(id){
+        this.cacheObj[id];
+    }
+
+    setCache(id, data){
+        this.cacheObj[id] = data;
+    }
+
     getLinksByNode(theNode,type){
         if(type == null){
             type = '*';
         }
         var cacheID = 'linkcache-' + theNode.id + '-' + type;
-        if(this.linkCache[cacheID] == null){
-            this.linkCache[cacheID] = theNode.bluePrint.linkPool.getLinksByNode(theNode,type);
+        var rlt = this.getCache(cacheID);
+        if(rlt == null){
+            rlt = theNode.bluePrint.linkPool.getLinksByNode(theNode,type);
+            this.setCache(cacheID, rlt);
         }
-        return this.linkCache[cacheID];
+        return rlt;
     }
 
     getLinksBySocket(theSocket){
         var cacheID = 'linkcache-' + theSocket.id;
-        if(this.linkCache[cacheID] == null){
-            this.linkCache[cacheID] = theSocket.node.bluePrint.linkPool.getLinksBySocket(theSocket);
+        var rlt = this.getCache(cacheID);
+        if(rlt == null){
+            rlt = theSocket.node.bluePrint.linkPool.getLinksBySocket(theSocket);
+            this.setCache(cacheID, rlt);
         }
-        return this.linkCache[cacheID];
+        return rlt;
+    }
+
+    addUseEntity(target){
+        var index = this.useEntities_arr.indexOf(target);
+        if(index == -1){
+            this.useEntities_arr.push(target);
+        }
+    }
+
+    getContext(theNode, finder, depth,suffix){
+        if(suffix == null){
+            suffix = '';
+        }
+        var cacheID = 'contextCache-' + theNode.id + '-' + finder.type + suffix;
+        var rlt = this.getCache(cacheID);
+        if(rlt == null){
+            rlt = theNode.getContext(finder, depth);
+            this.setCache(cacheID, rlt);
+        }
+        return rlt;
     }
 }

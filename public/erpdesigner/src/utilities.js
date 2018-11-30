@@ -22,6 +22,12 @@ function autoBind(self, options) {
 	return self;
 }
 
+function assginObjByProperties(dstObj, srcObj, pros_arr){
+	pros_arr.forEach(pName=>{
+		dstObj[pName] = srcObj[pName];
+	});
+}
+
 function updateObject(oldObject, newValues) {
 	return Object.assign({}, oldObject, newValues);
 }
@@ -73,6 +79,10 @@ function parseUnitInt(str){
 function parseUnitFloat(str){
 	var ret = parseFloat(str);
 	return isNaN(ret) ? 0 : ret;
+}
+
+function parseBoolean(str){
+	return str == true || str =='true' || str == '1';
 }
 
 function isNodeHasParent(targetNode, parentNode) {
@@ -184,8 +194,20 @@ function fetchJsonPosts(url, postdata, callBack, key = '', timeout = 2) {
 	});
 }
 
+function ReplaceIfNull(val,def){
+	return val == null ? def : val;
+}
+
+function ReplaceIfNaN(val,def){
+	return val == null || isNaN(val) ? def : val;
+}
+
 function IsEmptyString(val){
 	return val == null || val == '';
+}
+
+function IsEmptyArray(val){
+	return val == null || val.length == 0;
 }
 
 function EV_BanEvent(et){
@@ -233,5 +255,5 @@ function EnhanceEventEmiter(target){
     target.suspressEvents = {};
     target.fireEvent = EV_FireEvent.bind(target);
     target.banEvent = EV_BanEvent.bind(target);
-    target.allowEvent = EV_AllowEvent.bind(target);
+	target.allowEvent = EV_AllowEvent.bind(target);
 }

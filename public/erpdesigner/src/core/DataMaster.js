@@ -122,14 +122,105 @@ class DataMaster extends EventEmitter{
         this.database = g_dataBase;
         this.usedDBEnities_arr = [];
         this.dataView_usedDBEnities = new ListDataView(this.usedDBEnities_arr,'name','code');
-        var cus1 = new SqlNode_BluePrint({name:'test',code:project.genControlName('cusDBE'),type:'表值',master:this});
-        var cus2 = new SqlNode_BluePrint({name:'test2',code:project.genControlName('cusDBE'),type:'表值',master:this});
-        var tVar = cus1.createEmptyVariable();
-        tVar.needEdit = false;
-        this.customDBEntities_arr = [cus1,cus2];
+        //var cus1 = new SqlNode_BluePrint({name:'test',code:project.genControlName('cusDBE'),type:'表值',master:this});
+        //var cus2 = new SqlNode_BluePrint({name:'test2',code:project.genControlName('cusDBE'),type:'表值',master:this});
+        //var tVar = cus1.createEmptyVariable();
+        //tVar.needEdit = false;
+        this.customDBEntities_arr = [];
         this.project = project;
 
         this.dataView_usedDBEnities.on('changed',this.usedDBEnitiesChangedHandler);
+
+        var testJson = {
+            "code": "cusDBE3",
+            "retNodeId": "select_0",
+            "name": "rtyghfgh",
+            "type": "表值",
+            "nodes_arr": [{
+                "id": "select_0",
+                "type": "select",
+                "left": 320,
+                "top": 210,
+                "title": "返回表",
+                "editorLeft": 208,
+                "editorTop": 259,
+                "inputScokets_arr": [{
+                    "name": "in",
+                    "isIn": true,
+                    "id": "select_0$in",
+                    "type": "table"
+                }],
+                "outputScokets_arr": [{
+                    "name": "out",
+                    "isIn": false,
+                    "id": "select_0$out",
+                    "type": "table"
+                }],
+                "nodes_arr": [{
+                    "id": "ret_columns_0",
+                    "type": "ret_columns",
+                    "left": 100,
+                    "top": 0,
+                    "inputScokets_arr": [{
+                        "name": "in1",
+                        "isIn": true,
+                        "id": "ret_columns_0$in1",
+                        "extra": {
+                            "alias": "222"
+                        }
+                    }, {
+                        "name": "in0",
+                        "isIn": true,
+                        "id": "ret_columns_0$in0",
+                        "extra": {
+                            "alias": "333"
+                        }
+                    }, {
+                        "name": "in2",
+                        "isIn": true,
+                        "id": "ret_columns_0$in2",
+                        "extra": {
+                            "alias": "1111"
+                        }
+                    }]
+                }, {
+                    "id": "ret_condition_0",
+                    "type": "ret_condition",
+                    "left": 250,
+                    "top": 0,
+                    "inputScokets_arr": [{
+                        "name": "in",
+                        "isIn": true,
+                        "id": "ret_condition_0$in",
+                        "type": "boolean"
+                    }]
+                }, {
+                    "id": "ret_order_0",
+                    "type": "ret_order",
+                    "left": 400,
+                    "top": 0,
+                    "inputScokets_arr": [{
+                        "name": "in0",
+                        "isIn": true,
+                        "id": "ret_order_0$in0",
+                        "type": "scalar",
+                        "extra": {
+                            "orderType": "desc"
+                        }
+                    }, {
+                        "name": "in1",
+                        "isIn": true,
+                        "id": "ret_order_0$in1",
+                        "type": "scalar"
+                    }]
+                }]
+            }]
+        };
+        //console.log(testJson);
+        var creationHelper = new NodeCreationHelper(); 
+        var newCus = new SqlNode_BluePrint(null, testJson,creationHelper);
+        newCus.master = this;
+        this.customDBEntities_arr.push(newCus);
     }
 
     hadCusDBE(name){
