@@ -12,7 +12,7 @@ class NodeSocket extends EventEmitter{
     
     set(data){
         Object.assign(this, data);
-        this.emit('changed');
+        this.fireEvent('changed');
     }
 
     getLinks(){
@@ -23,7 +23,7 @@ class NodeSocket extends EventEmitter{
         this.emit(Event_LinkChanged);
         var self = this;
         setTimeout(() => {
-            self.node.emit('moved');
+            self.node.fireMoved();
         }, 20);
     }
 

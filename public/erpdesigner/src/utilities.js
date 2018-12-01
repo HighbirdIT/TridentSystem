@@ -257,3 +257,11 @@ function EnhanceEventEmiter(target){
     target.banEvent = EV_BanEvent.bind(target);
 	target.allowEvent = EV_AllowEvent.bind(target);
 }
+
+function singleQuotesStr(val){
+	return "'" + val + "'";
+}
+
+function doubleQuotesStr(val){
+	return '"' + val + '"';
+}

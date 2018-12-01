@@ -76,6 +76,7 @@ class C_SqlNode_Frame extends React.PureComponent{
             this.movingInt = setInterval(this.movingIntHandler,100);
         }
         this.targetScroll = null;
+        this.props.editor.nodeFrameStartMove(this);
     }
     
     endMove(){
@@ -156,14 +157,20 @@ class C_SqlNode_Frame extends React.PureComponent{
             y:mouseY - editorRootDivRect.top,
         }
         var editorDiv = this.props.editor.editorDivRef.current;
-        var newX = localPos.x - parseUnitInt(editorDiv.style.left) + moveBase.x;
-        var newY = localPos.y - parseUnitInt(editorDiv.style.top) + moveBase.y;
+        var offset = {
+            x:localPos.x - parseUnitInt(editorDiv.style.left),
+            y:localPos.y - parseUnitInt(editorDiv.style.top),
+        };
+        var newX = offset.x + moveBase.x;
+        var newY = offset.y + moveBase.y;
         newX = Math.round(newX / 10) * 10;
         newY = Math.round(newY / 10) * 10;
         rootDiv.style.left = newX + 'px';
         rootDiv.style.top = newY + 'px';
         var nodeData = this.props.nodedata;
         nodeData.setPos(newX, newY);
+
+        this.props.editor.nodeFrameMoving(this, offset);
     }
     
     movingIntHandler(){
@@ -573,9 +580,60 @@ class C_SqlNode_NOperand extends React.PureComponent{
                 width:'40px',
                 margin:'auto',
             }
+            this.outDivStyle = {
+                minWidth:'100px'
+            };
         }
         var nodeData = this.props.nodedata;
-        return (<DropDownControl options_arr={['+','-','×','÷']} value={nodeData.operator} itemChanged={this.selectItemChangedHandler} style={this.ddcStyle} />);
+        return (<div style={this.outDivStyle} f-canmove={1}>
+                    <DropDownControl options_arr={['+','-','*','/']} value={nodeData.operator} itemChanged={this.selectItemChangedHandler} style={this.ddcStyle} />
+                </div>);
+    }
+
+    render(){
+        var nodeData = this.props.nodedata;
+        return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' cusHeaderFuc={this.cusHeaderFuc} >
+                <div className='d-flex'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null}/>
+                </div>
+            </C_SqlNode_Frame>
+    }
+}
+
+class C_SqlNode_Compare extends React.PureComponent{
+    constructor(props){
+        super(props);
+        autoBind(this);
+
+        C_SqlNode_Base(this);
+        this.state={
+            operator:this.props.nodedata.operator,
+        }
+    }
+
+    selectItemChangedHandler(newoperator){
+        var nodeData = this.props.nodedata;
+        nodeData.operator = newoperator;
+        this.setState({
+            operator:newoperator
+        });
+    }
+
+    cusHeaderFuc(){
+        if(this.ddcStyle == null){
+            this.ddcStyle = {
+                width:'50px',
+                margin:'auto',
+            }
+            this.outDivStyle = {
+                minWidth:'100px'
+            };
+        }
+        var nodeData = this.props.nodedata;
+        return (<div style={this.outDivStyle} f-canmove={1}>
+                    <DropDownControl options_arr={['>','>=','<','<=','=','!=']} value={nodeData.operator} itemChanged={this.selectItemChangedHandler} style={this.ddcStyle} />
+                </div>);
     }
 
     render(){
@@ -612,11 +670,16 @@ class C_SqlNode_XJoin extends React.PureComponent{
         if(this.ddcStyle == null){
             this.ddcStyle = {
                 width:'100px',
-                margin:'10px',
+                margin:'auto',
             }
+            this.outDivStyle = {
+                minWidth:'150px'
+            };
         }
         var nodeData = this.props.nodedata;
-        return (<DropDownControl options_arr={JoinTypes_arr} value={nodeData.joinType} itemChanged={this.selectItemChangedHandler} style={this.ddcStyle} />);
+        return (<div style={this.outDivStyle} f-canmove={1}>
+                    <DropDownControl options_arr={JoinTypes_arr} value={nodeData.joinType} itemChanged={this.selectItemChangedHandler} style={this.ddcStyle} />
+                </div>);
     }
 
     render(){

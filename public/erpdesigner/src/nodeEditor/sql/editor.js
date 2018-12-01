@@ -13,8 +13,18 @@ const SqlNodeEditorControls_arr =[
     }
     ,
     {
+        label:'比较运算',
+        nodeClass:SqlNode_Compare,
+    }
+    ,
+    {
         label:'Join',
         nodeClass:SqlNode_XJoin,
+    }
+    ,
+    {
+        label:'常量',
+        nodeClass:SqlNode_ConstValue,
     }
 ]; 
 
@@ -174,6 +184,33 @@ class C_SqlNode_Editor extends React.PureComponent{
         }
     }
 
+    nodeFrameStartMove(srcNF){
+        if(this.selectedNFManager.count()>1){
+            var srcPos = {x:srcNF.props.nodedata.left,y:srcNF.props.nodedata.top};
+            this.selectedNFManager.forEach(nf=>{
+                if(nf == srcNF){
+                    return;
+                }
+                nf.offsetBase = {x:nf.props.nodedata.left - srcPos.x,y:nf.props.nodedata.top - srcPos.y};
+            });
+        }
+    }
+
+    nodeFrameMoving(srcNF){
+        if(this.selectedNFManager.count()>1){
+            var srcPos = {x:srcNF.props.nodedata.left,y:srcNF.props.nodedata.top};
+            this.selectedNFManager.forEach(nf=>{
+                if(nf == srcNF){
+                    return;
+                }
+                var theNode = nf.props.nodedata;
+                var offsetBase = nf.offsetBase;
+                theNode.setPos(srcPos.x + offsetBase.x, srcPos.y + offsetBase.y);
+                nf.reDraw();
+            });
+        }
+    }
+
     wantDeleteNode(nodeData_arr, title){
         gTipWindow.popAlert(makeAlertData('警告','确定删除' + nodeData_arr.length + '个节点:"' + title + '"?',this.deleteTipCallback,[TipBtnOK,TipBtnNo], nodeData_arr));
     }
@@ -237,6 +274,14 @@ class C_SqlNode_Editor extends React.PureComponent{
 
         this.freshInt = setInterval(this.freshZoomDiv, 500);
         this.freshZoomDiv();
+
+        if(this.state.editingNode){
+            var theNode = this.state.editingNode;
+            setTimeout(() => {
+                this.editorDivRef.current.style.left = (theNode.editorLeft == null ? 0 : theNode.editorLeft) + 'px';
+                this.editorDivRef.current.style.top = (theNode.editorTop == null ? 0 : theNode.editorTop) + 'px';
+            }, 50);
+        }
     }
 
     componentWillUnmount(){
@@ -374,36 +419,6 @@ class C_SqlNode_Editor extends React.PureComponent{
             return null;
         }
         return this.genSqlNode_Component(settting.comClass, nodeData);
-        /*
-        switch(nodeData.type){
-            case SQLNODE_BDBENTITY:
-                return this.genSqlNode_Component(C_SqlNode_DBEntity, nodeData);
-            break;
-            case SQLNODE_SELECT:
-                return this.genSqlNode_Component(C_SqlNode_Select, nodeData);
-            break;
-            case SQLNODE_VAR_GET:
-                return this.genSqlNode_Component(C_SqlNode_Var_Get, nodeData);
-            break;
-            case SQLNODE_VAR_SET:
-                return this.genSqlNode_Component(C_SqlNode_Var_Set, nodeData);
-            break;
-            case SQLNODE_NOPERAND:
-                return this.genSqlNode_Component(C_SqlNode_NOperand, nodeData);
-            break;
-            case SQLNODE_DBENTITY_COLUMNSELECTOR:
-                return this.genSqlNode_Component(C_SqlNode_DBEntity_ColumnSelector, nodeData);
-            break;
-            case SQLNODE_XJOIN:
-                return this.genSqlNode_Component(C_SqlNode_XJoin, nodeData);
-            break;
-            default:
-                return this.genSqlNode_Component(C_SqlNode_SimpleNode, nodeData);
-            break;
-        }
-
-        return null;
-        */
     }
 
     transToEditorPos(pt){
@@ -453,8 +468,11 @@ class C_SqlNode_Editor extends React.PureComponent{
         //scrollNode.scrollLeft = this.dragOrgin.sl - offset.x;
         //scrollNode.scrollTop = this.dragOrgin.st - offset.y;
         //console.log(offset);
-        this.editorDivRef.current.style.left = (this.dragOrgin.left + offset.x )  + 'px';
-        this.editorDivRef.current.style.top = (this.dragOrgin.top + offset.y ) + 'px';
+        var editingNode = this.state.editingNode;
+        editingNode.editorLeft = this.dragOrgin.left + offset.x;
+        editingNode.editorTop = this.dragOrgin.top + offset.y;
+        this.editorDivRef.current.style.left = editingNode.editorLeft  + 'px';
+        this.editorDivRef.current.style.top = editingNode.editorTop + 'px';
     }
 
     mouseupWithDragHandler(ev){
@@ -570,13 +588,15 @@ class C_SqlNode_Editor extends React.PureComponent{
         console.log("Start export");
         var editingNode = this.state.editingNode;
         var json = editingNode.bluePrint.getJson();
-        console.log(JSON.stringify(json));
+        var text = JSON.stringify(json);
+        console.log(text);
     }
 
     render(){
         var editingNode = this.state.editingNode;
         if(this.props.bluePrint != editingNode.bluePrint){
             var self = this;
+            this.selectedNFManager.clear();
             clearTimeout(this.delaySetTO);
             this.delaySetTO = setTimeout(() => {
                 this.setEditeNode(self.props.bluePrint.editingNode ? self.props.bluePrint.editingNode : self.props.bluePrint); 
@@ -1134,16 +1154,24 @@ class SqlNode_CompileHelper{
         }
     }
 
-    getContext(theNode, finder, depth,suffix){
-        if(suffix == null){
-            suffix = '';
-        }
-        var cacheID = 'contextCache-' + theNode.id + '-' + finder.type + suffix;
+    getContext(theNode, finder){
+        var cacheID = 'contextCache-' + theNode.id + '-' + finder.type;
         var rlt = this.getCache(cacheID);
         if(rlt == null){
-            rlt = theNode.getContext(finder, depth);
+            theNode.getContext(finder, 0);
+            rlt = finder;
             this.setCache(cacheID, rlt);
         }
         return rlt;
+    }
+
+    getCompileRetCache(theNode){
+        var cacheID = 'compileRet-' + theNode.id;
+        return this.getCache(cacheID);
+    }
+
+    setCompileRetCache(theNode, data){
+        var cacheID = 'compileRet-' + theNode.id;
+        this.setCache(cacheID, data);
     }
 }

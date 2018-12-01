@@ -302,6 +302,15 @@
   cursor: default;
 }
 
+.selectable{
+  -moz-user-select: initial; /*火狐*/
+  -webkit-user-select: initial; /*webkit浏览器*/
+  -ms-user-select: initial; /*IE10*/
+  -khtml-user-select: initial; /*早期浏览器*/
+  user-select: initial;
+  cursor: default;
+}
+
 .splitbar_H{
   min-width: 0.75em;
   cursor: ew-resize;
@@ -393,6 +402,7 @@
   min-width: 25px;
 }
 
+
 .nodesocket{
   color: black;
   margin-left: 0.5em;
@@ -414,6 +424,10 @@
 
 .nodesocket[vt='scalar']{
   color:rgb(49, 180, 32);
+}
+
+.nodesocket[vt='boolean']{
+  color:rgb(250, 170, 70)
 }
 
 .socketInputer{

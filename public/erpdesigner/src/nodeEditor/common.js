@@ -13,6 +13,35 @@ function CommonFun_SetCurrentComponent(target){
     }
 }
 
+class CompileResult{
+    constructor(node){
+        this.node = node;
+        this.socketOuts = {};
+    }
+    
+    setSocketOut(socket, strContent, data){
+        this.socketOuts[socket.id]={
+            strContent:strContent,
+            data:data,
+        }
+    }
+
+    setDirectOut(strContent,data){
+        this.directOut={
+            strContent:strContent,
+            data:data,
+        }
+    }
+
+    getSocketOut(socket){
+        return this.socketOuts[socket.id];
+    }
+
+    getDirectOut(){
+        return this.directOut;
+    }
+}
+
 class ContextFinder{
     constructor(type){
         this.type = type;

@@ -98,8 +98,11 @@ class C_Node_Socket extends React.PureComponent{
         if(socket.inputable == false){
             inputable = false;
         }
+        else if(socket.inputable == true){
+            inputable = true;
+        }
         var inputElem = null;
-        if(inputable){
+        if(socket.isIn && inputable){
             var links = socket.getLinks();
             if(links.length > 0){
                 inputable = false;
@@ -114,9 +117,17 @@ class C_Node_Socket extends React.PureComponent{
             dragElem = (<div className={'btn btn-' + (this.state.draging ? 'primary' : 'dark')} onMouseDown={this.mouseDownDragIconHandler}><i className='fa fa-arrows-v cursor-pointer' /></div>);
         }
         var cusElem = socket.node.customSocketRender(socket);
+        
+        var arrowsItem = null;
+        if(socket.node.isNeedMoveArrowBeforeSocket()){
+            if(!this.props.nameMoveable){
+                arrowsItem = <i className='fa fa-arrows' f-canmove={1} />
+            }
+        }
 
         var iconElem = (<i ref={this.flagRef} onClick={this.clickHandler} className='fa fa-circle-o cursor-pointer nodesocket' vt={socket.type} /> );
-        return <div className='d-flex align-items-center text-nowrap text-light socketCell' d-socketid={socket.id}> 
+        return <div className='d-flex align-items-center text-nowrap text-light socketCell' d-socketid={socket.id} isin={socket.isIn ? 1 : null} isout={!socket.isIn ? 1 : null}> 
+                    {arrowsItem}
                     {
                         this.props.align == 'left' &&
                         <React.Fragment>

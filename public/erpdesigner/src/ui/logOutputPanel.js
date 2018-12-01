@@ -4,14 +4,22 @@ const LogTag_Error='error';
 
 const LogItemBadge='Badge';
 
+var g_logMangerCounter = {};
+
 class LogManager extends EventEmitter{
     constructor(label){
         super();
         EnhanceEventEmiter(this);
         this.logs_arr = [];
+        if(label == null){
+            label = 'unname';
+        }
         this.label = label;
         this.baseTime = (new Date()).getTime();
         this.counter = {};
+        var nowCount = ReplaceIfNaN(g_logMangerCounter[label],0) + 1;
+        this.id = label + (nowCount + 1);
+        g_logMangerCounter[label] = nowCount;
     }
 
     _add(tag, content, data){
@@ -100,6 +108,7 @@ class CLogItem extends React.PureComponent{
     constructor(props){
         super(props);
         autoBind(this);
+        this.copyBtnRef = React.createRef();
 
         this.state={
 
@@ -156,6 +165,21 @@ class CLogItem extends React.PureComponent{
         }
     }
 
+    componentWillMount(){
+        var self = this;
+        setTimeout(() => {
+            if(self.copyBtnRef.current){
+                self.clipboard = new ClipboardJS(self.copyBtnRef.current);
+            }
+        }, 50);
+    }
+
+    componentWillUnmount(){
+        if(this.clipboard){
+            this.clipboard.destroy();
+        }
+    }
+
     render(){
         var logItem = this.props.logItem;
         var iconElem = null;
@@ -163,23 +187,29 @@ class CLogItem extends React.PureComponent{
         switch(logItem.tag){
             case LogTag_Warning:
             {
-                iconElem = (<i className='fa fa-warning'/>);
                 textColor = 'text-warning';
+                iconElem = (<i className='fa fa-warning text-warning'/>);
                 break;
             }
             case LogTag_Error:
             {
-                iconElem = (<i className='fa fa-times-circle'/>);
                 textColor = 'text-danger';
+                iconElem = (<i className='fa fa-times-circle text-danger'/>);
                 break;
             }
         }
         var d = new Date();
         var paseSec = Math.floor((logItem.time / 1000.0));
-        return (<span className={textColor}>
-                    {'[' + paseSec + ']'}
+        var itemID = this.props.idPrefix + '_' + this.props.index;
+        return (<span>
+                    <span className='text-light'>{'[' + paseSec + ']'}</span>
                     {iconElem}
-                    {this.renderItem(logItem)}
+                    <span id={itemID} className={textColor + ' selectable'}>
+                        {this.renderItem(logItem)}
+                    </span>
+                    <span ref={this.copyBtnRef} className='btn btn-dark' data-clipboard-target={"#" + itemID}>
+                        <i className='fa fa-copy text-light' />
+                    </span>
                 </span>);
     }
 }
@@ -214,11 +244,15 @@ class LogOutputPanel extends React.PureComponent {
     }
 
     render() {
+        var sourceID = this.props.source.id;
+        if(sourceID == null){
+            console.error("LogOutputPanel'source need id prop!");
+        }
         return (
             <div className={"w-100 h-100 autoScroll d-flex flex-column " + (this.props.className == null ? '' : this.props.className)}>
                 {
                     this.state.infos_arr.map((logItem,i)=>{
-                        return <CLogItem key={i} logItem={logItem} />
+                        return <CLogItem key={i} logItem={logItem} idPrefix={sourceID} index={i} />
                     })
                 }
             </div>
