@@ -30,6 +30,7 @@ class CProject extends IAttributeable{
         autoBind(self);
         this.attrbuteGroups = CProjectAttrsSetting.groups_arr;
         this.defaultNameCounter = {};
+        this.controlName_map = {};
         this.cacheState = {};
         this.dataMaster = new DataMaster(this);
 
@@ -89,10 +90,20 @@ class CProject extends IAttributeable{
     }
 
     genControlName(prefix){
-        if(this.defaultNameCounter[prefix] == null){
-            this.defaultNameCounter[prefix] = 0;
+        if(prefix == null){
+            console.warn('genNodeId参数不能为空');
+            return;
         }
-        return prefix + (++this.defaultNameCounter[prefix]);
+        var testI = 0;
+        var useID = '';
+        while(testI < 9999){
+            useID = prefix + '_' + testI;
+            if(this.controlName_map[useID] == null){
+                break;
+            }
+            ++testI;
+        }
+        return useID;
     }
 
     createKernalByType(ctlType){

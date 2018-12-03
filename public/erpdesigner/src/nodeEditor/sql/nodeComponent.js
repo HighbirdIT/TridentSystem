@@ -850,4 +850,3 @@ class C_SqlNode_Var_Set extends React.PureComponent{
             </C_SqlNode_Frame>
     }
 }
-

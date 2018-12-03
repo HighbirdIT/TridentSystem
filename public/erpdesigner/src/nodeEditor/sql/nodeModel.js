@@ -11,6 +11,7 @@ const SQLNODE_DBENTITY_COLUMNSELECTOR = 'dbentity_columnselector';
 const SQLNODE_RET_CONDITION = 'ret_condition';
 const SQLNODE_RET_COLUMNS = 'ret_columns';
 const SQLNODE_RET_ORDER = 'ret_order';
+const SQLNODE_ROWNUMBER = 'rownumber';
 
 const SQLDEF_VAR = 'def_variable';
 
@@ -2133,7 +2134,6 @@ class SqlNode_Ret_Order extends SqlNode_Base{
     }
 
     genInSocket(){
-        var socketName = 'in' + this.inputScokets_arr.length;
         var nameI = this.inputScokets_arr.length;
         while(nameI < 999){
             if(this.getScoketByName('in' + nameI, true) == null){
@@ -2498,6 +2498,123 @@ class SqlNodeTool_SynColumnNodeAlias{
     }
 }
 
+class SqlNode_RowNumber extends SqlNode_Base{
+    constructor(initData, parentNode, createHelper, nodeJson){
+        super(initData, parentNode, createHelper, SQLNODE_ROWNUMBER, 'RowNumber', false, nodeJson);
+        autoBind(this);
+
+        if(nodeJson){
+            if(this.outputScokets_arr.length > 0){
+                this.outSocket = this.outputScokets_arr[0];
+                this.outSocket.type = SqlVarType_Scalar;
+            }
+        }
+        if(this.outSocket == null){
+            this.outSocket = new NodeSocket('out', this, false, {type:SqlVarType_Scalar});
+            this.addSocket(this.outSocket);
+        }
+        if(this.inputScokets_arr.length > 0){
+            this.inputScokets_arr.forEach(x=>{
+                x.inputable = false;
+            });
+        }
+    }
+
+    requestSaveAttrs(){
+        var rlt = super.requestSaveAttrs();
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson){
+    }
+
+    genInSocket(){
+        var nameI = this.inputScokets_arr.length;
+        while(nameI < 999){
+            if(this.getScoketByName('in' + nameI, true) == null){
+                break;
+            }
+            ++nameI;
+        }
+        return new NodeSocket('in' + nameI, this, true, {type:SqlVarType_Scalar,inputable:false});
+    }
+
+    orderTypeDropdownChangedHandler(data, dropCtl){
+        var theSocketID = getAttributeByNode(dropCtl.rootDivRef.current, 'd-socketid');
+        if(theSocketID == null)
+            return;
+        var theSocket = this.getSocketById(theSocketID);
+        if(theSocket == null)
+            return;
+        theSocket.setExtra('orderType', data);
+        //console.log(data);
+    }
+
+    customSocketRender(socket){
+        if(!socket.isIn){
+            return;
+        }
+        var orderType = socket.getExtra('orderType');
+        if(orderType == null){
+            orderType = OrderType_ASCE;
+        }
+        return (<DropDownControl itemChanged={this.orderTypeDropdownChangedHandler} btnclass='btn-dark' options_arr={OrderTypes_arr} rootclass='flex-grow-1 flex-shrink-1' value={orderType} /> )
+    }
+
+    compile(helper, preNodes_arr){
+        var superRet = super.compile(helper, preNodes_arr);
+        if(superRet == false || superRet != null){
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketVal_arr = [];
+        for(var i=0;i<this.inputScokets_arr.length;++i){
+            var theSocket = this.inputScokets_arr[i];
+            var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+            var tValue = null;
+            if(tLinks.length == 0){
+                helper.logManager.errorEx([helper.logManager.createBadgeItem( 
+                     thisNodeTitle
+                    ,nodeThis
+                    ,helper.clickLogBadgeItemHandler)
+                    ,'输入不能为空']);
+                 return false;
+            }
+            else{
+                var link = tLinks[0];
+                var outNode = link.outSocket.node;
+                var compileRet = outNode.compile(helper, usePreNodes_arr);
+                if(compileRet == false){
+                    return false;
+                }
+                tValue = compileRet.getSocketOut(link.outSocket).strContent;
+                if(!outNode.outputIsSimpleValue()){
+                    tValue = '(' + tValue + ')';
+                }
+            }
+            socketVal_arr.push(tValue);
+        }
+        var finalStr = 'ROW_NUMBER() over (order by ';
+        if(socketVal_arr.length == 0){
+            finalStr += '(select 0))';
+        }
+        else{
+            socketVal_arr.forEach((x,i)=>{
+                var orderType = this.inputScokets_arr[i].getExtra('orderType');
+                finalStr += (i == 0 ? '' : ',') + x + (orderType == OrderType_DESC ? ' desc' : '');
+            });
+            finalStr += ')';
+        }
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        helper.setCompileRetCache(this,selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
 SqlNodeClassMap[SQLNODE_DBENTITY] = {
     modelClass: SqlNode_DBEntity,
     comClass: C_SqlNode_DBEntity,
@@ -2549,4 +2666,8 @@ SqlNodeClassMap[SQLNODE_CONSTVALUE] = {
 SqlNodeClassMap[SQLNODE_COMPARE] = {
     modelClass: SqlNode_Compare,
     comClass: C_SqlNode_Compare,
+};
+SqlNodeClassMap[SQLNODE_ROWNUMBER] = {
+    modelClass: SqlNode_RowNumber,
+    comClass: C_SqlNode_SimpleNode,
 };

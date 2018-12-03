@@ -26,6 +26,11 @@ const SqlNodeEditorControls_arr =[
         label:'常量',
         nodeClass:SqlNode_ConstValue,
     }
+    ,
+    {
+        label:'RowNumber',
+        nodeClass:SqlNode_RowNumber,
+    }
 ]; 
 
 class C_SqlNode_Editor extends React.PureComponent{

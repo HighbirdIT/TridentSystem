@@ -37,6 +37,7 @@ var CProject = function (_IAttributeable) {
         autoBind(self);
         _this.attrbuteGroups = CProjectAttrsSetting.groups_arr;
         _this.defaultNameCounter = {};
+        _this.controlName_map = {};
         _this.cacheState = {};
         _this.dataMaster = new DataMaster(_this);
 
@@ -99,10 +100,20 @@ var CProject = function (_IAttributeable) {
     _createClass(CProject, [{
         key: 'genControlName',
         value: function genControlName(prefix) {
-            if (this.defaultNameCounter[prefix] == null) {
-                this.defaultNameCounter[prefix] = 0;
+            if (prefix == null) {
+                console.warn('genNodeId参数不能为空');
+                return;
             }
-            return prefix + ++this.defaultNameCounter[prefix];
+            var testI = 0;
+            var useID = '';
+            while (testI < 9999) {
+                useID = prefix + '_' + testI;
+                if (this.controlName_map[useID] == null) {
+                    break;
+                }
+                ++testI;
+            }
+            return useID;
         }
     }, {
         key: 'createKernalByType',
