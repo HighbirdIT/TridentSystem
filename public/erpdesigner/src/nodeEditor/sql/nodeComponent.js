@@ -32,6 +32,7 @@ class C_SqlNode_Frame extends React.PureComponent{
         autoBind(this);
         this.state={
             editingTitle:false,
+            title:ReplaceIfNull(props.nodedata.title, ''),
             moving:this.props.nodedata.newborn == true,
         }
 
@@ -98,6 +99,9 @@ class C_SqlNode_Frame extends React.PureComponent{
     }
     
     clickEditTitleHandler(){
+        if(this.state.editingTitle){
+            this.props.nodedata.setTitle(this.state.title);
+        }
         this.setState(
             {
                 editingTitle:!this.state.editingTitle,
@@ -108,9 +112,9 @@ class C_SqlNode_Frame extends React.PureComponent{
     
     nodeTitleInputChangeHandler(ev){
         var inputStr = ev.target.value;
-        this.props.nodedata.title = inputStr.trim();
-        this.props.nodedata.fireChanged();
-        this.reDraw();
+        this.setState({
+            title:inputStr.trim(),
+        });
     }
     
     nodeTitleInputKeypressHandler(ev){
@@ -271,7 +275,7 @@ class C_SqlNode_Frame extends React.PureComponent{
                             <div className='flex-grow-1 flex-shrink-1 text-nowrap' f-canmove={1}>
                                 {nodeData.label}:
                                 {
-                                    this.state.editingTitle ? <input className='' type='text' value={nodeTitle} onChange={this.nodeTitleInputChangeHandler} onKeyPress={this.nodeTitleInputKeypressHandler} />
+                                    this.state.editingTitle ? <input className='' type='text' value={this.state.title} onChange={this.nodeTitleInputChangeHandler} onKeyPress={this.nodeTitleInputKeypressHandler} />
                                     :
                                     <React.Fragment>
                                         <span className='' f-canmove={1}>{nodeTitle}</span>

@@ -93,6 +93,7 @@ class LogManager extends EventEmitter{
         this.logs_arr = [];
         this.fireEvent('changed');
         this.baseTime = (new Date()).getTime();
+        this.counter = {};
     }
 
 

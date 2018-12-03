@@ -1098,6 +1098,7 @@ class SqlNode_CompileHelper{
         this.editor = editor;
         this.cacheObj = {};
         this.useEntities_arr = [];
+        this.useVariables_arr = [];
 
         autoBind(this);
     }
@@ -1117,7 +1118,7 @@ class SqlNode_CompileHelper{
     }
 
     getCache(id){
-        this.cacheObj[id];
+        return this.cacheObj[id];
     }
 
     setCache(id, data){
@@ -1151,6 +1152,12 @@ class SqlNode_CompileHelper{
         var index = this.useEntities_arr.indexOf(target);
         if(index == -1){
             this.useEntities_arr.push(target);
+        }
+    }
+
+    addUseVariable(name, type, declareStr){
+        if(this.useVariables_arr[name] == null){
+            this.useVariables_arr[name] = {name:name,type:type,declareStr:declareStr};
         }
     }
 

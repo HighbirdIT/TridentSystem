@@ -284,3 +284,11 @@ function singleQuotesStr(val) {
 function doubleQuotesStr(val) {
 	return '"' + val + '"';
 }
+
+function bracketStr(val) {
+	return '(' + val + ')';
+}
+
+function clampStr(val, char) {
+	return char + val + char;
+}
