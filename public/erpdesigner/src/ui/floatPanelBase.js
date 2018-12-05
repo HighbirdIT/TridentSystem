@@ -3,7 +3,7 @@ class FloatPanelbase extends React.PureComponent{
         super(props);
 
         this.state={
-            show:this.props.initShow == true,
+            show:false,
             maximum:this.props.initMax == true,
             sizeable:this.props.sizeable != false,
             closeable:this.props.closeable != false,
@@ -18,6 +18,12 @@ class FloatPanelbase extends React.PureComponent{
             first:true,
         }
         autoBind(this);
+        var self = this;
+        if(this.props.initShow){
+            setTimeout(() => {
+                self.show();
+            }, 50);
+        }
     }
 
     mousemoveWidthMoveHandler(ev){
@@ -112,15 +118,27 @@ class FloatPanelbase extends React.PureComponent{
     }
 
     close(){
+        if(this.props.preClose && this.props.preClose() == false){
+            return;
+        }
+        
         this.setState({show:false});
     }
 
     show(){
+        if(this.props.preShow && this.props.preShow() == false){
+            return;
+        }
         this.setState({show:true});
     }
 
     toggle(){
-        this.setState({show:!this.state.show});
+        if(this.state.show){
+            this.close();
+        }
+        else{
+            this.show();
+        }
     }
 
     toggleMaximum(){
@@ -202,7 +220,7 @@ class FloatPanelbase extends React.PureComponent{
                             <i className='fa fa-window-close ml-1' style={{cursor:'pointer'}} onClick={this.close} />
                         }
                     </div>
-                    <div className='flex-grow-1 flex-shrink-1 d-flex flex-column'>
+                    <div className='flex-grow-1 flex-shrink-1 d-flex flex-column h-100'>
                         {
                             this.props.children
                         }

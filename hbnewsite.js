@@ -48,7 +48,7 @@ app.use(bodyParser.urlencoded({
 
 app.use(bodyParser.json({limit:'50mb'}));
 app.use(require('cookie-parser')(credentials.cookieSecret));
-app.use(require('express-session')({resave:true, saveUninitialized:false, secret:credentials.cookieSecret}));
+app.use(require('express-session')({resave:true, saveUninitialized:false, secret:credentials.cookieSecret, cookie:{ secure: false }}));
 var compression = require('compression');
 app.use(compression());
 
@@ -114,6 +114,19 @@ app.use('/dingdingTest',function( req, res, next)
 
     require(jspath)(req,res, next);
     return;
+});
+
+app.get('/sessionTest', function(req, res){
+    var money = req.cookies.money;
+    var id = req.signedCookies.id;
+    res.cookie('money', '100');
+    res.cookie('id', '980', {signed:true, maxAge:1000000, httpOnly:true});
+    if(req.session.count == null){
+        req.session.count = 0;
+    }
+    req.session.count += 1;
+
+    res.json({money:money,id:id,count:req.session.count});
 });
 
 /*

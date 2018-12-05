@@ -17,7 +17,7 @@ var FloatPanelbase = function (_React$PureComponent) {
         var _this = _possibleConstructorReturn(this, (FloatPanelbase.__proto__ || Object.getPrototypeOf(FloatPanelbase)).call(this, props));
 
         _this.state = {
-            show: _this.props.initShow == true,
+            show: false,
             maximum: _this.props.initMax == true,
             sizeable: _this.props.sizeable != false,
             closeable: _this.props.closeable != false,
@@ -32,6 +32,12 @@ var FloatPanelbase = function (_React$PureComponent) {
             first: true
         };
         autoBind(_this);
+        var self = _this;
+        if (_this.props.initShow) {
+            setTimeout(function () {
+                self.show();
+            }, 50);
+        }
         return _this;
     }
 
@@ -131,17 +137,28 @@ var FloatPanelbase = function (_React$PureComponent) {
     }, {
         key: 'close',
         value: function close() {
+            if (this.props.preClose && this.props.preClose() == false) {
+                return;
+            }
+
             this.setState({ show: false });
         }
     }, {
         key: 'show',
         value: function show() {
+            if (this.props.preShow && this.props.preShow() == false) {
+                return;
+            }
             this.setState({ show: true });
         }
     }, {
         key: 'toggle',
         value: function toggle() {
-            this.setState({ show: !this.state.show });
+            if (this.state.show) {
+                this.close();
+            } else {
+                this.show();
+            }
         }
     }, {
         key: 'toggleMaximum',
@@ -226,7 +243,7 @@ var FloatPanelbase = function (_React$PureComponent) {
                     ),
                     React.createElement(
                         'div',
-                        { className: 'flex-grow-1 flex-shrink-1 d-flex flex-column' },
+                        { className: 'flex-grow-1 flex-shrink-1 d-flex flex-column h-100' },
                         this.props.children
                     ),
                     this.state.sizeable && !this.state.maximum && React.createElement('button', { type: 'button', className: 'panelSizeBtn', onMouseDown: this.sizeBtnMouseDownHandler })

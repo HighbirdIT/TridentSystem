@@ -8,24 +8,52 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-function MenuCammandItem(props) {
-    return React.createElement(
-        "a",
-        { className: "dropdown-item", href: "#" },
-        props.text
-    );
-}
+var MenuCammandItem = function (_React$PureComponent) {
+    _inherits(MenuCammandItem, _React$PureComponent);
 
-var MenuItem = function (_React$PureComponent) {
-    _inherits(MenuItem, _React$PureComponent);
+    function MenuCammandItem(props) {
+        _classCallCheck(this, MenuCammandItem);
+
+        var _this = _possibleConstructorReturn(this, (MenuCammandItem.__proto__ || Object.getPrototypeOf(MenuCammandItem)).call(this, props));
+
+        _this.state = {};
+
+        autoBind(_this);
+        return _this;
+    }
+
+    _createClass(MenuCammandItem, [{
+        key: "clickHandler",
+        value: function clickHandler(ev) {
+            var cmd = getAttributeByNode(ev.target, 'd-cmd');
+            if (this.props.executFun) {
+                this.props.executFun({ cmd: cmd });
+            }
+        }
+    }, {
+        key: "render",
+        value: function render() {
+            return React.createElement(
+                "a",
+                { className: "dropdown-item", href: "#", onClick: this.clickHandler, "d-cmd": IsEmptyString(this.props.cmd) ? this.props.text : this.props.cmd },
+                this.props.text
+            );
+        }
+    }]);
+
+    return MenuCammandItem;
+}(React.PureComponent);
+
+var MenuItem = function (_React$PureComponent2) {
+    _inherits(MenuItem, _React$PureComponent2);
 
     function MenuItem(props) {
         _classCallCheck(this, MenuItem);
 
-        var _this = _possibleConstructorReturn(this, (MenuItem.__proto__ || Object.getPrototypeOf(MenuItem)).call(this, props));
+        var _this2 = _possibleConstructorReturn(this, (MenuItem.__proto__ || Object.getPrototypeOf(MenuItem)).call(this, props));
 
-        _this.state = {};
-        return _this;
+        _this2.state = {};
+        return _this2;
     }
 
     _createClass(MenuItem, [{
@@ -51,16 +79,16 @@ var MenuItem = function (_React$PureComponent) {
     return MenuItem;
 }(React.PureComponent);
 
-var MainMenu = function (_React$PureComponent2) {
-    _inherits(MainMenu, _React$PureComponent2);
+var MainMenu = function (_React$PureComponent3) {
+    _inherits(MainMenu, _React$PureComponent3);
 
     function MainMenu(props) {
         _classCallCheck(this, MainMenu);
 
-        var _this2 = _possibleConstructorReturn(this, (MainMenu.__proto__ || Object.getPrototypeOf(MainMenu)).call(this, props));
+        var _this3 = _possibleConstructorReturn(this, (MainMenu.__proto__ || Object.getPrototypeOf(MainMenu)).call(this, props));
 
-        _this2.state = {};
-        return _this2;
+        _this3.state = {};
+        return _this3;
     }
 
     _createClass(MainMenu, [{

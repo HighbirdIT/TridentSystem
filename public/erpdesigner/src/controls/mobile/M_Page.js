@@ -24,7 +24,8 @@ class M_PageKernel extends ContainerKernelBase {
         var self = this;
         autoBind(self);
         this.attrbuteGroups = M_PageKernelAttrsSetting.groups_arr;
-
+        
+        /*
         var nowParent = this;
         for(var i=0;i<1;++i){
             var newC = new M_ContainerKernel(null, project);
@@ -34,6 +35,7 @@ class M_PageKernel extends ContainerKernelBase {
                 newC.appandChild(new M_LabelKernel(null, project));
             }
         }
+        */
     }
 
     set_title(newTitle) {

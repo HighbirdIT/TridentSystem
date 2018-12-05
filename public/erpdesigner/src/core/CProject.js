@@ -8,15 +8,15 @@ const CProjectAttrsSetting={
     ]
 }
 
-var hadNames_project = {};
+var projNames_project = {};
 function genProjectName(){
     var rlt = '';
     for(var i=1; i<999; ++i){
         rlt = 'PROJ_' + i;
-        if(hadNames_project[rlt] == null)
+        if(projNames_project[rlt] == null)
             break;
     }
-    hadNames_project[rlt] = 1;
+    projNames_project[rlt] = 1;
     return rlt;
 }
 
@@ -64,6 +64,7 @@ class CProject extends IAttributeable{
                 direction:'column'
             }
         }, this);
+        /*
         var secondPage=new M_PageKernel({
             title:'次页面',
             isMain:0,
@@ -82,10 +83,11 @@ class CProject extends IAttributeable{
                 direction:'column'
             }
         }, this);
+        */
         mainPage.project = this;
-        secondPage.project = this;
+        //secondPage.project = this;
         this.content_Mobile={
-            pages:[mainPage,secondPage],
+            pages:[mainPage],
         };
     }
 

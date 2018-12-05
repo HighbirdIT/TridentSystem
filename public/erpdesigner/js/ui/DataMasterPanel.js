@@ -774,7 +774,7 @@ var DataMasterPanel = function (_React$PureComponent8) {
 
             return React.createElement(
                 FloatPanelbase,
-                { title: '\u6570\u636E\u5927\u5E08', ref: this.panelBaseRef, initShow: true, initMax: true },
+                { title: '\u6570\u636E\u5927\u5E08', ref: this.panelBaseRef, initShow: false, initMax: false },
                 React.createElement(
                     'div',
                     { className: 'd-flex flex-grow-0 flex-shrink-0' },

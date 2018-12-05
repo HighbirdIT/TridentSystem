@@ -3,12 +3,49 @@ const co = require('co');
 const sqlTypes = dbhelper.Types;
 const sharp = require('sharp');
 const fs = require("fs");
+const forge = require("node-forge");
+
+var fileLocker = {};
+const FileName_Projects = 'projects';
+
+var rsa = forge.pki.rsa;
+/*
+rsa.generateKeyPair({bits: 512, workers: 2}, function(err, keypair) {
+    //var t = keypair.publicKey.encrypt('abc');
+    //var g = keypair.privateKey.decrypt(t);
+    logRsaKeypair = keypair;
+});
+*/
+
+
+function lockFile(fileName){
+    if(fileLocker[fileName] == null){
+        fileLocker[fileName] = 0;
+    }
+    fileLocker[fileName]++;
+}
+
+function unlockFile(fileName){
+    fileLocker[fileName]--;
+}
+
+function isLock(fileName){
+    return fileLocker[fileName] != null && fileLocker[fileName] > 0;
+}
 
 function process(req, res, next) {
     var rlt = {};
     doProcess(req, res)
         .then((data) => {
-            rlt.data = data;
+            if(data.err){
+                rlt.err = data.err;
+            }
+            else if(data.banAutoReturn){
+                return;
+            }
+            else{
+                rlt.data = data;
+            }
             res.json(rlt);
         })
         .catch(err => {
@@ -26,6 +63,16 @@ function doProcess(req, res) {
             return syndata_bykeyword(req.body.keyword);
         case 'syndata_bycodes':
             return GetEntityInfo(req.body.codes_arr);
+        case 'getProjectsJson':
+            return getProjectsJson();
+        case 'createProject':
+            return createProject(req.body.title);
+        case 'login':
+            return userLogin(req,res,req.body.account,req.body.password);
+        case 'loginUseCoockie':
+            return loginUseCoockie(req);
+        case 'getPreLogData':
+            return getPreLogData(req, res);
     }
 
     return co(function* () {
@@ -34,11 +81,172 @@ function doProcess(req, res) {
     });
 }
 
+function userLogin(req,res,account, password){
+    return co(function* () {
+        if(req.session.logRsaPrivateKeyPem == null){
+            return {err:{info:'session中断，请刷新页面'}};
+        }
+        if(account == null || password == null){
+            return {err:{info:'参数非法'}};
+        }
+        var privateKey = forge.pki.privateKeyFromPem(req.session.logRsaPrivateKeyPem);
+        var realAccount = privateKey.decrypt(account);
+        var realPassword = privateKey.decrypt(password);
+
+        var sql1 = 'SELECT [账号记录代码],[账号名称],[权属姓名],[账号密码],[是否有效],[账号盐] FROM [designer].[dbo].[T账号记录] where [账号名称]=@account';
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql1, [dbhelper.makeSqlparam('account', sqlTypes.NVarChar, realAccount)]);
+        if (rcdRlt.recordset.length == 0) {
+            return {err:{info:'账号不存在'}};
+        }
+        var accountRow = rcdRlt.recordset[0];
+        if(accountRow.是否有效 == '0'){
+            return {err:{info:'账号无效了'}};
+        }
+        var midPassword = accountRow.账号盐 + realPassword;
+        var md = forge.md.md5.create();
+        md.update(midPassword);
+        var md5Password = md.digest().toHex();
+        if(md5Password != accountRow.账号密码){
+            return {err:{info:'密码错误'}};
+        }
+
+        var logProRet = yield dbhelper.asynExcute('[designer].[dbo].[P用户登录]'
+                ,[dbhelper.makeSqlparam('账号记录代码', sqlTypes.Int, accountRow.账号记录代码)]
+                ,[dbhelper.makeSqlparam('登录标识', sqlTypes.NVarChar(36))]
+            );
+        if(logProRet.output.登录标识 == null){
+            return {err:{info:'登录过程失败'}};
+        }
+        res.cookie('_designerlogRcdId', logProRet.output.登录标识, {signed:true, maxAge:1000000, httpOnly:true});
+        return {
+            name:accountRow.权属姓名,
+            id:accountRow.账号记录代码,
+        };
+    });
+}
+
+function loginUseCoockie(req){
+    return co(function* () {
+        var _designerlogRcdId = req.signedCookies._designerlogRcdId;
+        if(_designerlogRcdId == null){
+            return {err:{info:'无cookie'}};
+        }
+        var sql = 'select * from [designer].[dbo].FT查询登录记录(@记录标识)';
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('记录标识', sqlTypes.NVarChar, _designerlogRcdId)]);
+        if(rcdRlt.recordset.length == 0){
+            return {err:{info:'cookie失效'}};
+        }
+        var accountRow = rcdRlt.recordset[0];
+        return {
+            name:accountRow.权属姓名,
+            id:accountRow.账号记录代码,
+        };
+    });
+}
+
+function getPreLogData(req, res){
+    return co(function* () {
+        if(req.session.logRsaPublicKeyPem == null){
+            rsa.generateKeyPair({bits: 512, workers: 2}, function(err, keypair) {
+                //var t = keypair.publicKey.encrypt('abc');
+                //var g = keypair.privateKey.decrypt(t);
+                //logRsaKeypair = keypair;
+                //req.session.logRsaKeypair = keypair;
+                req.session.logRsaPrivateKeyPem = forge.pki.privateKeyToPem(keypair.privateKey); 
+                req.session.logRsaPublicKeyPem = forge.pki.publicKeyToPem(keypair.publicKey);
+                res.json({data:{
+                    publicKey: req.session.logRsaPublicKeyPem,
+                }});
+            });
+        }
+        else{
+            res.json({data:{
+                publicKey: req.session.logRsaPublicKeyPem,
+            }});
+        }
+        return {banAutoReturn:true};
+    });
+}
+
 
 function getDataTable(tableName) {
     return co(function* () {
         var rcdRlt = yield dbhelper.asynQueryWithParams("select * from " + tableName, null);
         return rcdRlt.recordset;
+    });
+}
+
+function createProject(title,creator){
+    return co(function* () {
+        if(creator == null){
+            creator = 0;
+        }
+        if(title == null){
+            return {err:{info:'no title'}};
+        }
+        title = title.trim();
+        if(title.length < 4 || title.length > 20){
+            return {err:{info:'title长度不合法'}};
+        }
+        if(isLock(FileName_Projects)){
+            return {err:{info:'文件锁定中，请稍后再试'}};
+        }
+        var rlt = {};
+        lockFile(FileName_Projects);
+        try
+        {
+            var projJson = yield getProjectsJson();
+            if(projJson.projects == null){
+                projJson.projects = [];
+            }
+            else{
+                var nowItem = projJson.projects.find(item=>{
+                    return item.title == title;
+                });
+                if(nowItem != null){
+                    return {err:{info:'同名项目已经存在'}};
+                }
+            }
+            var newProj = {
+                title:title,
+                creator:creator,
+                createTime:new Date(),
+            };
+            projJson.projects.push(newProj);
+            var dirPath = "public/erpdesigner/files/";
+            var filePath = dirPath + "projects.json";
+            if(!fs.existsSync(dirPath))
+                fs.mkdirSync(dirPath);
+            fs.writeFileSync(filePath, JSON.stringify(projJson));
+            rlt = newProj;
+        }
+        catch(err){
+            rlt.err = err;
+        }
+        finally{
+            unlockFile(FileName_Projects);
+        }
+        return rlt;
+    });
+}
+
+function getProjectsJson(){
+    return co(function* () {
+        var filePath = "public/erpdesigner/files/projects.json";
+        try{
+            var rlt = null;
+            if(fs.existsSync(filePath))
+            {
+                rlt = JSON.parse(fs.readFileSync(filePath,'utf8'));
+            }
+            else{
+                return {projects:{}};
+            }
+            return rlt;
+        }
+        catch(err){
+            throw err;
+        }
     });
 }
 

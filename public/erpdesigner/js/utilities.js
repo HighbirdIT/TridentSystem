@@ -194,8 +194,8 @@ function fetchJsonPosts(url, postdata, callBack) {
 		body: JSON.stringify(postdata),
 		headers: {
 			"Content-Type": "application/json"
-		}
-		//credentials: "include",
+		},
+		credentials: "include"
 	}).then(function (response) {
 		clearTimeout(timeoutHandler);
 		if (response.ok) {

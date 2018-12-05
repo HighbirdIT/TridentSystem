@@ -86,12 +86,23 @@ var ProjectContainer = function (_React$PureComponent2) {
         var _this2 = _possibleConstructorReturn(this, (ProjectContainer.__proto__ || Object.getPrototypeOf(ProjectContainer)).call(this, props));
 
         var initState = {
-            projects: [new CProject('员工信息管理')],
+            projects: [
+                //new CProject('员工信息管理'),
+            ],
             selectedIndex: 0
         };
 
+        _this2.projManagerRef = React.createRef();
+        _this2.creatProjRef = React.createRef();
         _this2.state = initState;
         autoBind(_this2);
+
+        /*
+        var self = this;
+        setTimeout(() => {
+            self.createEmptyProject();
+        }, 100);
+        */
         return _this2;
     }
 
@@ -127,6 +138,32 @@ var ProjectContainer = function (_React$PureComponent2) {
                 selectedIndex = Math.max(new_arr.length - 1, 0);
             }
             this.setState({ projects: new_arr, selectedIndex: selectedIndex });
+        }
+    }, {
+        key: 'wantOpenProject',
+        value: function wantOpenProject(projTitle) {
+            var projects_arr = this.state.projects;
+            var nowProj = projects_arr.find(function (item) {
+                return item.label;
+            });
+        }
+    }, {
+        key: 'createEmptyProject',
+        value: function createEmptyProject() {
+            var emptyProj = new CProject('未命名方案');
+            var newProjects = this.state.projects.concat(emptyProj);
+            this.setState({
+                projects: newProjects
+            });
+        }
+    }, {
+        key: 'logCompleteFun',
+        value: function logCompleteFun() {
+            var self = this;
+            self.projManagerRef.current.toggle();
+            this.setState({
+                magicObj: {}
+            });
         }
 
         /*
@@ -167,6 +204,24 @@ var ProjectContainer = function (_React$PureComponent2) {
             this.setState({ projects: new_arr });
         }
     }, {
+        key: 'executCmd',
+        value: function executCmd(cmdItem) {
+            if (LoginUser == null) {
+                return;
+            }
+            switch (cmdItem.cmd) {
+                case 'open':
+                    {
+                        this.projManagerRef.current.toggle();
+                        break;
+                    }
+                case 'create':
+                    {
+                        this.createEmptyProject();
+                    }
+            }
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this3 = this;
@@ -183,14 +238,16 @@ var ProjectContainer = function (_React$PureComponent2) {
                         { className: 'btn-group flex-grow-0 flex-shrink-0', role: 'group' },
                         React.createElement(
                             MenuItem,
-                            { id: 'MI_HB', text: 'HB', className: 'text-primary' },
-                            React.createElement(MenuCammandItem, { text: '\u6253\u5F00' }),
-                            React.createElement(MenuCammandItem, { text: '\u521B\u5EFA' })
+                            { id: 'MI_HB', text: "HB" + (LoginUser == null ? '' : LoginUser.name), className: 'text-primary' },
+                            React.createElement(MenuCammandItem, { text: '\u6253\u5F00\u9879\u76EE', cmd: 'open', executFun: this.executCmd }),
+                            React.createElement(MenuCammandItem, { text: '\u521B\u5EFA\u7A7A\u9879\u76EE', cmd: 'create', executFun: this.executCmd })
                         ),
                         this.state.projects.map(function (item, i) {
                             return React.createElement(TitleHeaderItem, { key: item.designeConfig.name, project: item, index: i, clickTitlehandler: _this3.clickTitlehandler, clickClosehandler: _this3.clickClosehandler, active: i == _this3.state.selectedIndex });
                         })
                     ),
+                    React.createElement(ProjectManagerPanel, { ref: this.projManagerRef, wantOpenProjectFun: this.wantOpenProject }),
+                    React.createElement(LoginPanel, { logCompleteFun: this.logCompleteFun }),
                     React.createElement(
                         'div',
                         { className: 'flex-grow-1 flex-shrink-1 bg-dark d-flex' },

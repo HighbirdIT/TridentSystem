@@ -170,7 +170,7 @@ function fetchJsonPosts(url, postdata, callBack, key = '', timeout = 2) {
 		headers: {
 			"Content-Type": "application/json"
 		},
-		//credentials: "include",
+		credentials: "include",
 	}).then(
 		response => {
 			clearTimeout(timeoutHandler);

@@ -51,13 +51,22 @@ class ProjectContainer extends React.PureComponent {
         super(props);
         var initState = {
             projects: [
-                new CProject('员工信息管理'),
+                //new CProject('员工信息管理'),
             ],
             selectedIndex: 0,
         };
 
+        this.projManagerRef = React.createRef();
+        this.creatProjRef = React.createRef();
         this.state = initState;
         autoBind(this);
+
+        /*
+        var self = this;
+        setTimeout(() => {
+            self.createEmptyProject();
+        }, 100);
+        */
     }
 
     clickTitlehandler(ev) {
@@ -90,6 +99,27 @@ class ProjectContainer extends React.PureComponent {
             selectedIndex = Math.max(new_arr.length - 1, 0);
         }
         this.setState({ projects: new_arr, selectedIndex: selectedIndex });
+    }
+
+    wantOpenProject(projTitle){
+        var projects_arr = this.state.projects;
+        var nowProj = projects_arr.find(item=>{return item.label});
+    }
+    
+    createEmptyProject(){
+        var emptyProj = new CProject('未命名方案');
+        var newProjects = this.state.projects.concat(emptyProj);
+        this.setState({
+            projects:newProjects
+        });
+    }
+
+    logCompleteFun(){
+        var self = this;
+        self.projManagerRef.current.toggle();
+        this.setState({
+            magicObj:{},
+        });
     }
 
     /*
@@ -130,15 +160,31 @@ class ProjectContainer extends React.PureComponent {
         this.setState({ projects: new_arr });
     }
 
+    executCmd(cmdItem){
+        if(LoginUser == null){
+            return;
+        }
+        switch(cmdItem.cmd){
+            case 'open':
+            {
+                this.projManagerRef.current.toggle();
+                break;
+            }
+            case 'create':{
+                this.createEmptyProject();
+            }
+        }
+    }
+
     render() {
         var projectManager = this;
         return (
             <React.Fragment>
                 <div className='flex-grow-1 flex-shrink-1 d-flex flex-column'>
                     <div className="btn-group flex-grow-0 flex-shrink-0" role="group">
-                        <MenuItem id='MI_HB' text="HB" className='text-primary' >
-                            <MenuCammandItem text="打开" />
-                            <MenuCammandItem text="创建" />
+                        <MenuItem id='MI_HB' text={"HB" + (LoginUser == null ? '' : LoginUser.name)} className='text-primary' >
+                            <MenuCammandItem text="打开项目" cmd='open' executFun={this.executCmd} />
+                            <MenuCammandItem text="创建空项目" cmd='create' executFun={this.executCmd} />
                         </MenuItem>
                         {
                             this.state.projects.map((item, i) => {
@@ -148,6 +194,8 @@ class ProjectContainer extends React.PureComponent {
                             })
                         }
                     </div>
+                    <ProjectManagerPanel ref={this.projManagerRef} wantOpenProjectFun={this.wantOpenProject} />
+                    <LoginPanel logCompleteFun={this.logCompleteFun} />
                     <div className="flex-grow-1 flex-shrink-1 bg-dark d-flex" >
                         {
                             this.state.projects.map((item, i) => {

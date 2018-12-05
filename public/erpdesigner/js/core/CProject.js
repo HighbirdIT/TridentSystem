@@ -12,14 +12,14 @@ var CProjectAttrsSetting = {
     groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('页面名称', 'title', ValueType.String, true), new CAttribute('真实名称', 'realName', ValueType.String, false)])]
 };
 
-var hadNames_project = {};
+var projNames_project = {};
 function genProjectName() {
     var rlt = '';
     for (var i = 1; i < 999; ++i) {
         rlt = 'PROJ_' + i;
-        if (hadNames_project[rlt] == null) break;
+        if (projNames_project[rlt] == null) break;
     }
-    hadNames_project[rlt] = 1;
+    projNames_project[rlt] = 1;
     return rlt;
 }
 
@@ -71,28 +71,30 @@ var CProject = function (_IAttributeable) {
                 direction: 'column'
             }
         }, _this);
-        var secondPage = new M_PageKernel({
-            title: '次页面',
-            isMain: 0,
-            nav: {
-                hidden: 1,
-                leftBtn: {
-                    hidden: 0,
-                    label: '返回',
-                    action: 'retutn'
+        /*
+        var secondPage=new M_PageKernel({
+            title:'次页面',
+            isMain:0,
+            nav:{
+                hidden:1,
+                leftBtn:{
+                    hidden:0,
+                    label:'返回',
+                    action:'retutn'
                 },
-                rightBtn: {
-                    hidden: 0
+                rightBtn:{
+                    hidden:0
                 }
             },
-            body: {
-                direction: 'column'
+            body:{
+                direction:'column'
             }
-        }, _this);
+        }, this);
+        */
         mainPage.project = _this;
-        secondPage.project = _this;
+        //secondPage.project = this;
         _this.content_Mobile = {
-            pages: [mainPage, secondPage]
+            pages: [mainPage]
         };
         return _this;
     }

@@ -1,7 +1,24 @@
-function MenuCammandItem(props) {
-    return (
-        <a className="dropdown-item" href="#">{props.text}</a>
-    );
+class MenuCammandItem extends React.PureComponent {
+    constructor(props){
+        super(props);
+
+        this.state = {};
+
+        autoBind(this);
+    }
+
+    clickHandler(ev){
+        var cmd = getAttributeByNode(ev.target, 'd-cmd');
+        if(this.props.executFun){
+            this.props.executFun({cmd:cmd});
+        }
+    }
+
+    render(){
+        return (
+            <a className="dropdown-item" href="#" onClick={this.clickHandler} d-cmd={IsEmptyString(this.props.cmd) ? this.props.text : this.props.cmd}>{this.props.text}</a>
+        );
+    }
 }
 
 class MenuItem extends React.PureComponent {

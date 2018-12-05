@@ -105,7 +105,7 @@ sql.asynQueryWithParams = function (sqltext, params, config) {
 sql.asynExcute = function (excutableName, inputParams, outputParams) {
     var rlt =  co(function* () {
             var thePool = yield new Promise((rs,re)=>{
-                var usePool = new mssql.ConnectionPool(config,err=>{
+                var usePool = new mssql.ConnectionPool(sqlconfig,err=>{
                     if(err != null){
                         rs({err:err});
                     }
