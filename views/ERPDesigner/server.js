@@ -240,7 +240,7 @@ function getProjectsJson(){
                 rlt = JSON.parse(fs.readFileSync(filePath,'utf8'));
             }
             else{
-                return {projects:{}};
+                return {projects:[]};
             }
             return rlt;
         }
