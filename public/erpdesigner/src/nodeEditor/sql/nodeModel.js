@@ -3131,6 +3131,7 @@ class SqlNode_Getdate extends SqlNode_Base{
     restorFromAttrs(attrsJson){
         assginObjByProperties(this, attrsJson, ['getdate']);
     }
+}
 /*
     getValue(){
         return this.outSocket.defval;
