@@ -51,6 +51,14 @@ const SqlNodeEditorControls_arr =[
         label:'Cast',
         nodeClass:SqlNode_Cast,
     },
+    {
+        label:'Getdate',
+        nodeClass:SqlNode_Getdate,
+    },
+    {
+        label:'逻辑运算',
+        nodeClass:SqlNode_Logical_Operator,
+    }，
 ]; 
 
 class C_SqlNode_Editor extends React.PureComponent{

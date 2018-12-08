@@ -30,6 +30,15 @@ const JoinType_Right = 'right join';
 const JoinType_Cross = 'cross join';
 const JoinTypes_arr = [JoinType_Inner,JoinType_Left,JoinType_Right,JoinType_Cross];
 
+/**
+ * 逻辑运算符 and or not
+ */
+var Logical_Operator_and = 'and';
+var Logical_Operator_or = 'or';
+//var Logical_Operator_not = 'not';
+var Logical_Operators_arr = [Logical_Operator_and, Logical_Operator_or];
+
+
 const Event_CurrentComponentchanged = 'currentComponentchanged';
 const Event_LinkChanged = 'linkChanged';
 const Event_SocketNumChanged = 'socketnumChanged';
