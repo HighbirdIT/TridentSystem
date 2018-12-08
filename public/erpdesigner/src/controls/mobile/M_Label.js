@@ -1,32 +1,28 @@
 const M_LabelKernelAttrsSetting={
     groups_arr:[
         new CAttributeGroup('基本设置',[
-            new CAttribute('内容','text',ValueType.String),
+            new CAttribute('内容',AttrNames.Text,ValueType.String,'标签内容'),
         ]),
     ],
 };
 
-const M_LabelKernel_Prefix = 'M_Label';
-const M_LabelKernel_Type = 'M_Label';
 
 class M_LabelKernel extends ControlKernelBase{
-    constructor(initData, project) {
-        super(  extractPropsFromObj(initData, 
-                [
-                    {name:'name',default:project.genControlName(M_LabelKernel_Prefix)},
-                    {name:'text',default:'标签内容'},
-                ]), 
-                project, 
-                '标签');
+    constructor(initData, parentKernel, createHelper, kernelJson) {
+        super(  initData,
+                M_LabelKernel_Type,
+                '标签',
+                M_LabelKernelAttrsSetting.groups_arr.concat(),
+                parentKernel,
+                createHelper,kernelJson
+            );
 
         var self = this;
         autoBind(self);
-
-        this.attrbuteGroups = M_LabelKernelAttrsSetting.groups_arr;
     }
 
     renderSelf(){
-        return (<M_Label key={this.name} ctlKernel={this} onClick={this.clickHandler} />)
+        return (<M_Label key={this.id} ctlKernel={this} onClick={this.clickHandler} />)
     }
 }
 
@@ -35,7 +31,7 @@ class M_Label extends React.PureComponent {
         super(props);
 
         this.state={
-            text:this.props.ctlKernel.text,
+            text:this.props.ctlKernel.getAttribute(AttrNames.Text),
         };
 
         autoBind(this);
@@ -43,20 +39,25 @@ class M_Label extends React.PureComponent {
     }
 
     aAttrChanged(changedAttrName) {
+        if(this.aAttrChangedBase(changedAttrName)){
+            return;
+        }
         this.setState({
-            text:this.props.ctlKernel.text,
+            text:this.props.ctlKernel.getAttribute(AttrNames.Text),
         });
     }
 
     render(){
-        var className = 'flex-grow-0 flex-shrink-0'
+        var ctlKernel = this.props.ctlKernel;
+        var className = 'flex-grow-0 flex-shrink-0';
         if(this.props.ctlKernel.__placing){
             className += ' M_placingCtl';
             return (<div className={className} ref={this.rootElemRef}>标签内容</div>);
         }
+        className += ctlKernel.getRootDivClass();
         className += ' M_Label border hb-control';
         return(
-            <div className={className} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.name} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+            <div className={className} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {
                     this.state.text
                 }

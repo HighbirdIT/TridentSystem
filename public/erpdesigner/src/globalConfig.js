@@ -82,4 +82,7 @@ DesignerConfig.findConfigByType=(function(ctlType){
 const ValueType={
     String:'String',
     Int:'Int',
+    Boolean:'Boolean',
+    Float:'float',
+    StyleValues:'StyleValues',
 };

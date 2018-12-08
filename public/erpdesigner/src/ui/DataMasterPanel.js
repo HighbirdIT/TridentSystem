@@ -439,7 +439,7 @@ class AddNewCusDSItemPanel extends React.PureComponent {
             });
             return;
         }
-        if(this.props.dataMaster.hadCusDBE(name)){
+        if(this.props.dataMaster.getCusDBEByName(name) != null){
             this.setState({
                 errinfo:'已有同名的自订数据存在'
             });

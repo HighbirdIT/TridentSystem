@@ -10,6 +10,7 @@ function M_ControlBase_componentWillUnmount() {
 
 function M_ControlBase_listenTarget(target) {
     if (target) {
+        target.currentControl = this;
         target.on(EATTRCHANGED, this.attrChangedHandler);
         target.on(EFORCERENDER, this.forceRenderHandler);
     }
@@ -17,6 +18,9 @@ function M_ControlBase_listenTarget(target) {
 
 function M_ControlBase_unlistenTarget(target) {
     if (target) {
+        if (target.currentControl == this) {
+            target.currentControl = null;
+        }
         target.off(EATTRCHANGED, this.attrChangedHandler);
         target.off(EFORCERENDER, this.forceRenderHandler);
     }
@@ -51,6 +55,15 @@ function M_ControlBase_attrChangedHandler(ev) {
     }
 }
 
+function M_ControlBase_aAttrChangedBase(changedAttrName) {
+    var ctlKernel = this.props.ctlKernel;
+    if (AttrNames.LayoutNames[changedAttrName] != null) {
+        this.forceUpdate();
+        return true;
+    }
+    return false;
+}
+
 function React_Make_AttributeListener(target, watchedAttrs) {
     var _this2 = this;
 
@@ -66,10 +79,17 @@ function React_Make_AttributeListener(target, watchedAttrs) {
 
 function M_ControlBase(target, watchedAttrs) {
     var self = this;
-    target.props.ctlKernel.currentControl = target;
+    var ctlKernel = target.props.ctlKernel;
     target.rootElemRef = React.createRef();
     React_Make_AttributeListener(target, watchedAttrs);
     target.componentWillMount = M_ControlBase_componentWillMount.bind(target);
     target.componentWillUnmount = M_ControlBase_componentWillUnmount.bind(target);
     target.setSelected = M_ControlBase_setSelected.bind(target);
+    target.aAttrChangedBase = M_ControlBase_aAttrChangedBase.bind(target);
+
+    var layoutState = {};
+    LayoutAttrNames_arr.forEach(function (name) {
+        layoutState[name] = ctlKernel.getAttribute(name);
+    });
+    return layoutState;
 }

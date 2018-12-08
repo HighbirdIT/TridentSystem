@@ -117,7 +117,7 @@ function userLogin(req,res,account, password){
         if(logProRet.output.登录标识 == null){
             return {err:{info:'登录过程失败'}};
         }
-        res.cookie('_designerlogRcdId', logProRet.output.登录标识, {signed:true, maxAge:1000000, httpOnly:true});
+        res.cookie('_designerlogRcdId', logProRet.output.登录标识, {signed:true, maxAge:new Date(Date.now() + 259200000), httpOnly:true});
         return {
             name:accountRow.权属姓名,
             id:accountRow.账号记录代码,

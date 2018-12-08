@@ -9,25 +9,19 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var M_PageKernelAttrsSetting = {
-    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('标题', 'title', ValueType.String, true), new CAttribute('方向', 'orientation', ValueType.String, true, false, Orientation_Options_arr)]), new CAttributeGroup('测试设置', [new CAttribute('测试', 'test', ValueType.String, true, 1)])]
+    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'), new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr)]), new CAttributeGroup('测试设置', [new CAttribute('测试', AttrNames.Test, ValueType.String, '', true, 1)])]
 };
-
-var M_PageKernel_Type = 'M_PageKernel';
-var M_PageKernel_Prefix = 'M_P';
 
 var M_PageKernel = function (_ContainerKernelBase) {
     _inherits(M_PageKernel, _ContainerKernelBase);
 
-    function M_PageKernel(initData, project) {
+    function M_PageKernel(initData, parentKernel, createHelper, kernelJson) {
         _classCallCheck(this, M_PageKernel);
 
-        var thisInitData = extractPropsFromObj(initData, [{ name: 'title', default: '未命名页面' }, { name: 'name', default: project.genControlName(M_PageKernel_Prefix) }, { name: 'orientation', default: Orientation_V }]);
-
-        var _this = _possibleConstructorReturn(this, (M_PageKernel.__proto__ || Object.getPrototypeOf(M_PageKernel)).call(this, thisInitData, project, '页面'));
+        var _this = _possibleConstructorReturn(this, (M_PageKernel.__proto__ || Object.getPrototypeOf(M_PageKernel)).call(this, initData, M_PageKernel_Type, '页面', M_PageKernelAttrsSetting.groups_arr.concat(), parentKernel, createHelper, kernelJson));
 
         var self = _this;
         autoBind(self);
-        _this.attrbuteGroups = M_PageKernelAttrsSetting.groups_arr;
 
         /*
         var nowParent = this;
@@ -50,9 +44,9 @@ var M_PageKernel = function (_ContainerKernelBase) {
                 newTitle = newTitle.substring(0, 10);
             }
 
-            var flag = this.__setAttribute('title', newTitle);
+            var flag = this.__setAttribute(AttrNames.Title, newTitle);
             if (flag) {
-                this.attrChanged('title');
+                this.attrChanged(AttrNames.Title);
             }
             return flag;
         }
@@ -70,14 +64,14 @@ var M_Page = function (_React$PureComponent) {
         var _this2 = _possibleConstructorReturn(this, (M_Page.__proto__ || Object.getPrototypeOf(M_Page)).call(this, props));
 
         _this2.state = {
-            title: _this2.props.ctlKernel.getAttribute('title'),
+            title: _this2.props.ctlKernel.getAttribute(AttrNames.Title),
             ctlKernel: _this2.props.ctlKernel,
             children: _this2.props.ctlKernel.children,
-            orientation: _this2.props.ctlKernel.orientation
+            orientation: _this2.props.ctlKernel.getAttribute(AttrNames.Orientation)
         };
 
         autoBind(_this2);
-        M_ControlBase(_this2, ['title', 'children', 'orientation']);
+        M_ControlBase(_this2, [AttrNames.Title, AttrNames.Chidlren, AttrNames.Orientation, AttrNames.LayoutNames.APDClass]);
         M_ContainerBase(_this2);
         return _this2;
     }
@@ -85,15 +79,18 @@ var M_Page = function (_React$PureComponent) {
     _createClass(M_Page, [{
         key: 'aAttrChanged',
         value: function aAttrChanged(changedAttrName) {
+            if (this.aAttrChangedBase(changedAttrName)) {
+                return;
+            }
             var childrenVal = this.state.children;
-            if (changedAttrName == 'children') {
+            if (changedAttrName == AttrNames.Chidlren) {
                 childrenVal = this.props.ctlKernel.children.concat();
             }
             //console.log(changedAttrName);
             this.setState({
-                title: this.props.ctlKernel.getAttribute('title'),
+                title: this.props.ctlKernel.getAttribute(AttrNames.Title),
                 children: childrenVal,
-                orientation: this.props.ctlKernel.orientation
+                orientation: this.props.ctlKernel.getAttribute(AttrNames.Orientation)
             });
         }
     }, {
@@ -104,7 +101,8 @@ var M_Page = function (_React$PureComponent) {
     }, {
         key: 'renderMobilePage',
         value: function renderMobilePage(ctlKernel) {
-            var s = 'div';
+            var rootDivClass = 'flex-grow-1 felx-shrink-0 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : '');
+            rootDivClass += ctlKernel.getRootDivClass();
             return React.createElement(
                 React.Fragment,
                 null,
@@ -133,7 +131,7 @@ var M_Page = function (_React$PureComponent) {
                 ),
                 React.createElement(
                     'div',
-                    { className: 'flex-grow-1 felx-shrink-0 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : ''), ref: this.rootElemRef },
+                    { className: rootDivClass, ref: this.rootElemRef },
                     this.state.children.map(function (childData) {
                         return childData.renderSelf();
                     })

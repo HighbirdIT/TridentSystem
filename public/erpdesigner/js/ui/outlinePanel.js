@@ -153,7 +153,7 @@ var OutlineItem = function (_React$PureComponent) {
             var offsetStyle = { width: this.props.deep * 25 + (hasChild ? 0 : 7) + 'px' };
             return React.createElement(
                 'div',
-                { key: kernel.name, className: 'outlineItemDiv' + (this.props.deep ? ' ' : ' topest') + (isContainer ? " d-felx flex-column" : '') },
+                { key: kernel.id, className: 'outlineItemDiv' + (this.props.deep ? ' ' : ' topest') + (isContainer ? " d-felx flex-column" : '') },
                 React.createElement(
                     'div',
                     { className: 'd-flex' },
@@ -162,11 +162,11 @@ var OutlineItem = function (_React$PureComponent) {
                     React.createElement(
                         'div',
                         { className: 'outlineItem flex-grow-0 flex-shrink-0' + (kernel.__placing ? ' bg-dark text-light' : ''), ctlselected: this.state.selected ? ' active' : null, onClick: this.clickhandler, onMouseDown: this.mouseDownHandler, ref: this.rootElemRef },
-                        (kernel.__placing ? '*' : '') + kernel.name
+                        (kernel.__placing ? '*' : '') + kernel.id
                     )
                 ),
                 kernel.__placing || this.state.collapsed || kernel.children == null || kernel.children.length == 0 ? null : kernel.children.map(function (childKernel) {
-                    return React.createElement(OutlineItem, { key: childKernel.name, kernel: childKernel, deep: _this2.props.deep + 1, itemSelected: _this2.props.itemSelected, wantDragAct: _this2.props.wantDragAct });
+                    return React.createElement(OutlineItem, { key: childKernel.id, kernel: childKernel, deep: _this2.props.deep + 1, itemSelected: _this2.props.itemSelected, wantDragAct: _this2.props.wantDragAct });
                 })
             );
         }
@@ -394,7 +394,7 @@ var OutlinePanel = function (_React$PureComponent2) {
                     'div',
                     { className: 'flex-grow-1 flex-shrink-1 autoScroll', ref: this.scrollDivRef },
                     this.state.editingPage && this.state.editingPage.children.map(function (kernal) {
-                        return React.createElement(OutlineItem, { key: kernal.name, kernel: kernal, deep: 0, itemSelected: _this4.itemSelected, wantDragAct: _this4.wantDragAct });
+                        return React.createElement(OutlineItem, { key: kernal.id, kernel: kernal, deep: 0, itemSelected: _this4.itemSelected, wantDragAct: _this4.wantDragAct });
                     }),
                     React.createElement('div', { ref: this.bottomDivRef, style: { height: '20px' } })
                 )

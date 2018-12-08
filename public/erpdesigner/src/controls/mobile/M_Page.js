@@ -1,29 +1,27 @@
 const M_PageKernelAttrsSetting = {
     groups_arr: [
         new CAttributeGroup('基本设置', [
-            new CAttribute('标题', 'title', ValueType.String, true),
-            new CAttribute('方向', 'orientation', ValueType.String, true, false, Orientation_Options_arr),
+            new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'),
+            new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
         ]),
         new CAttributeGroup('测试设置', [
-            new CAttribute('测试', 'test', ValueType.String, true, 1),
+            new CAttribute('测试', AttrNames.Test, ValueType.String,'', true, 1),
         ]),
     ],
 };
 
-const M_PageKernel_Type = 'M_PageKernel';
-const M_PageKernel_Prefix = 'M_P';
-
 class M_PageKernel extends ContainerKernelBase {
-    constructor(initData, project) {
-        var thisInitData = extractPropsFromObj(initData,
-            [{ name: 'title', default: '未命名页面' },
-            { name: 'name', default: project.genControlName(M_PageKernel_Prefix) },
-            { name: 'orientation', default: Orientation_V },]);
-        super(thisInitData, project, '页面');
+    constructor(initData, parentKernel, createHelper, kernelJson) {
+        super(initData, 
+            M_PageKernel_Type, 
+            '页面',
+            M_PageKernelAttrsSetting.groups_arr.concat(),
+            parentKernel,
+            createHelper,kernelJson
+        );
 
         var self = this;
         autoBind(self);
-        this.attrbuteGroups = M_PageKernelAttrsSetting.groups_arr;
         
         /*
         var nowParent = this;
@@ -43,9 +41,9 @@ class M_PageKernel extends ContainerKernelBase {
             newTitle = newTitle.substring(0, 10);
         }
 
-        var flag = this.__setAttribute('title', newTitle);
+        var flag = this.__setAttribute(AttrNames.Title, newTitle);
         if (flag) {
-            this.attrChanged('title');
+            this.attrChanged(AttrNames.Title);
         }
         return flag;
     }
@@ -55,27 +53,34 @@ class M_Page extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            title: this.props.ctlKernel.getAttribute('title'),
+            title: this.props.ctlKernel.getAttribute(AttrNames.Title),
             ctlKernel: this.props.ctlKernel,
             children: this.props.ctlKernel.children,
-            orientation: this.props.ctlKernel.orientation,
+            orientation: this.props.ctlKernel.getAttribute(AttrNames.Orientation),
         };
 
         autoBind(this);
-        M_ControlBase(this,['title', 'children', 'orientation']);
+        M_ControlBase(this,[AttrNames.Title, 
+                            AttrNames.Chidlren, 
+                            AttrNames.Orientation,
+                            AttrNames.LayoutNames.APDClass,
+                         ]);
         M_ContainerBase(this);
     }
 
     aAttrChanged(changedAttrName) {
+        if(this.aAttrChangedBase(changedAttrName)){
+            return;
+        }
         var childrenVal = this.state.children;
-        if (changedAttrName == 'children') {
+        if (changedAttrName == AttrNames.Chidlren) {
             childrenVal = this.props.ctlKernel.children.concat();
         }
         //console.log(changedAttrName);
         this.setState({
-            title: this.props.ctlKernel.getAttribute('title'),
+            title: this.props.ctlKernel.getAttribute(AttrNames.Title),
             children: childrenVal,
-            orientation: this.props.ctlKernel.orientation,
+            orientation: this.props.ctlKernel.getAttribute(AttrNames.Orientation),
         });
     }
 
@@ -84,7 +89,8 @@ class M_Page extends React.PureComponent {
     }
 
     renderMobilePage(ctlKernel) {
-        var s = 'div';
+        var rootDivClass = 'flex-grow-1 felx-shrink-0 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : '');
+        rootDivClass += ctlKernel.getRootDivClass();
         return (
             <React.Fragment>
                 <div className="d-flex flex-grow-0 flex-shrink-1 text-light bg-primary align-items-baseline">
@@ -96,7 +102,7 @@ class M_Page extends React.PureComponent {
                         <span className='icon icon-more-vertical mr-1' />
                     </div>
                 </div>
-                <div className={'flex-grow-1 felx-shrink-0 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : '')} ref={this.rootElemRef}>
+                <div className={rootDivClass} ref={this.rootElemRef}>
                     {
                         this.state.children.map(childData => {
                             return childData.renderSelf()

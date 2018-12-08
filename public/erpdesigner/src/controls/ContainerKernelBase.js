@@ -1,7 +1,6 @@
 class ContainerKernelBase extends ControlKernelBase{
-    constructor(initData,project,description){
-        super(initData, project, description);
-
+    constructor(initData, type, description, attrbuteGroups, parentKernel, createHelper, kernelJson){
+        super(initData, type, description, attrbuteGroups, parentKernel, createHelper, kernelJson);
         this.children = [];
     }
 
@@ -13,7 +12,7 @@ class ContainerKernelBase extends ControlKernelBase{
                     var temp = this.children[index];
                     this.children[index] = childKernel;
                     this.children[nowIndex] = temp;
-                    this.attrChanged('children');
+                    this.attrChanged(AttrNames.Chidlren);
                     //console.log('swap:' + nowIndex + '->' + index);
                 }
             }
@@ -36,7 +35,7 @@ class ContainerKernelBase extends ControlKernelBase{
         this.children.splice(index, 0, childKernel)
         //this.children.push(childKernel);
         childKernel.parent = this;
-        this.attrChanged('children');
+        this.attrChanged(AttrNames.Chidlren);
     }
 
     removeChild(childKernel) {
@@ -44,7 +43,7 @@ class ContainerKernelBase extends ControlKernelBase{
         if (i != -1) {
             this.children.splice(i, 1);
             childKernel.parent = null;
-            this.attrChanged('children');
+            this.attrChanged(AttrNames.Chidlren);
         }
     }
 

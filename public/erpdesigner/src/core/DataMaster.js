@@ -148,7 +148,6 @@ class DataMaster extends EventEmitter{
         this.usedDBEnities_arr = [];
         this.dataView_usedDBEnities = new ListDataView(this.usedDBEnities_arr,'name','code');
         //var cus1 = new SqlNode_BluePrint({name:'test',code:project.genControlName('cusDBE'),type:'表值',master:this});
-        //var cus2 = new SqlNode_BluePrint({name:'test2',code:project.genControlName('cusDBE'),type:'表值',master:this});
         //var tVar = cus1.createEmptyVariable();
         //tVar.needEdit = false;
         this.customDBEntities_arr = [];
@@ -160,21 +159,54 @@ class DataMaster extends EventEmitter{
         //console.log(testJson);
         var creationHelper = new NodeCreationHelper(); 
         var newCus = new SqlNode_BluePrint(null, testJson,creationHelper);
-        newCus.master = this;
-        this.customDBEntities_arr.push(newCus);
+        this.addCusDBE(newCus);
 
         creationHelper = new NodeCreationHelper(); 
         var testJson2 = {"code":"cusDBE1","retNodeId":"select_0","name":"est2222","type":"表值","editorLeft":798,"editorTop":266,"nodes_arr":[{"id":"select_0","type":"select","left":0,"top":0,"title":"返回表","editorLeft":-72,"editorTop":168,"inputScokets_arr":[{"name":"in","isIn":true,"id":"select_0$in","type":"table"}],"outputScokets_arr":[{"name":"out","isIn":false,"id":"select_0$out","type":"table"}],"nodes_arr":[{"id":"ret_columns_0","type":"ret_columns","left":100,"top":0,"inputScokets_arr":[{"name":"in0","isIn":true,"id":"ret_columns_0$in0","type":"scalar"},{"name":"in1","isIn":true,"id":"ret_columns_0$in1","type":"scalar"},{"name":"in2","isIn":true,"id":"ret_columns_0$in2","type":"scalar"},{"name":"in3","isIn":true,"id":"ret_columns_0$in3","type":"scalar"},{"name":"in4","isIn":true,"id":"ret_columns_0$in4","type":"scalar"},{"name":"in5","isIn":true,"id":"ret_columns_0$in5","type":"scalar"}]},{"id":"ret_condition_0","type":"ret_condition","left":680,"top":60,"inputScokets_arr":[{"name":"in","isIn":true,"id":"ret_condition_0$in","type":"boolean"}]},{"id":"ret_order_0","type":"ret_order","left":870,"top":220,"inputScokets_arr":[{"name":"in0","isIn":true,"id":"ret_order_0$in0","type":"scalar"}]},{"id":"column_7","type":"column","left":-198,"top":78,"tableAlias":"未命名","tableName":"temp","tableCode":"select_1","columnName":"员工登记姓名","outputScokets_arr":[{"name":"out","isIn":false,"id":"column_7$out","type":"varchar"}]},{"id":"column_9","type":"column","left":-230,"top":116,"tableAlias":"未命名","tableName":"temp","tableCode":"select_1","columnName":"员工登记姓名代码","outputScokets_arr":[{"name":"out","isIn":false,"id":"column_9$out","type":"int"}]},{"id":"column_10","type":"column","left":-198,"top":154,"tableAlias":"未命名","tableName":"temp","tableCode":"select_1","columnName":"身份证件号码","outputScokets_arr":[{"name":"out","isIn":false,"id":"column_10$out","type":"varchar"}]},{"id":"column_11","type":"column","left":-198,"top":192,"tableAlias":"未命名","tableName":"temp","tableCode":"select_1","columnName":"身份证件地址","outputScokets_arr":[{"name":"out","isIn":false,"id":"column_11$out","type":"varchar"}]},{"id":"column_12","type":"column","left":-198,"top":230,"tableAlias":"未命名","tableName":"temp","tableCode":"select_1","columnName":"员工登记性别","outputScokets_arr":[{"name":"out","isIn":false,"id":"column_12$out","type":"varchar"}]},{"id":"column_13","type":"column","left":-198,"top":268,"tableAlias":"未命名","tableName":"temp","tableCode":"select_1","columnName":"用户登录名称","outputScokets_arr":[{"name":"out","isIn":false,"id":"column_13$out","type":"varchar"}]},{"id":"column_14","type":"column","left":490,"top":260,"tableAlias":"未命名","tableName":"temp","tableCode":"select_1","columnName":"员工登记姓名","outputScokets_arr":[{"name":"out","isIn":false,"id":"column_14$out","type":"varchar"}]}]},{"id":"select_1","type":"select","left":-240,"top":10,"title":"未命名","editorLeft":-329,"editorTop":109,"inputScokets_arr":[{"name":"in","isIn":true,"id":"select_1$in","type":"table"}],"outputScokets_arr":[{"name":"out","isIn":false,"id":"select_1$out","type":"table"}],"nodes_arr":[{"id":"ret_columns_1","type":"ret_columns","left":100,"top":0,"inputScokets_arr":[{"name":"in0","isIn":true,"id":"ret_columns_1$in0","type":"scalar"},{"name":"in1","isIn":true,"id":"ret_columns_1$in1","type":"scalar"},{"name":"in2","isIn":true,"id":"ret_columns_1$in2","type":"scalar"},{"name":"in3","isIn":true,"id":"ret_columns_1$in3","type":"scalar"},{"name":"in4","isIn":true,"id":"ret_columns_1$in4","type":"scalar"},{"name":"in5","isIn":true,"id":"ret_columns_1$in5","type":"scalar"}]},{"id":"ret_condition_1","type":"ret_condition","left":1060,"top":230,"inputScokets_arr":[{"name":"in","isIn":true,"id":"ret_condition_1$in","type":"boolean"}]},{"id":"ret_order_1","type":"ret_order","left":860,"top":-60,"inputScokets_arr":[{"name":"in0","isIn":true,"id":"ret_order_1$in0","type":"scalar"}]},{"id":"column_0","type":"column","left":-290,"top":78,"tableName":"T100A员工登记姓名","tableCode":126,"columnName":"员工登记姓名","outputScokets_arr":[{"name":"out","isIn":false,"id":"column_0$out","type":"varchar"}]},{"id":"column_1","type":"column","left":-322,"top":116,"tableName":"T100A员工登记姓名","tableCode":126,"columnName":"员工登记姓名代码","outputScokets_arr":[{"name":"out","isIn":false,"id":"column_1$out","type":"int"}]},{"id":"column_2","type":"column","left":-290,"top":154,"tableName":"T100A员工登记姓名","tableCode":126,"columnName":"身份证件号码","outputScokets_arr":[{"name":"out","isIn":false,"id":"column_2$out","type":"varchar"}]},{"id":"column_3","type":"column","left":-290,"top":192,"tableName":"T100A员工登记姓名","tableCode":126,"columnName":"身份证件地址","outputScokets_arr":[{"name":"out","isIn":false,"id":"column_3$out","type":"varchar"}]},{"id":"column_4","type":"column","left":-290,"top":230,"tableName":"T100A员工登记姓名","tableCode":126,"columnName":"员工登记性别","outputScokets_arr":[{"name":"out","isIn":false,"id":"column_4$out","type":"varchar"}]},{"id":"column_5","type":"column","left":-290,"top":268,"tableName":"T100A员工登记姓名","tableCode":126,"columnName":"用户登录名称","outputScokets_arr":[{"name":"out","isIn":false,"id":"column_5$out","type":"varchar"}]},{"id":"column_6","type":"column","left":490,"top":260,"tableName":"T100A员工登记姓名","tableCode":126,"columnName":"员工登记姓名代码","outputScokets_arr":[{"name":"out","isIn":false,"id":"column_6$out","type":"int"}]},{"id":"compare_0","type":"compare","left":850,"top":230,"operator":"<=","inputScokets_arr":[{"name":"in0","isIn":true,"id":"compare_0$in0","type":"scalar"},{"name":"in1","isIn":true,"id":"compare_0$in1","defval":"17","type":"scalar"}],"outputScokets_arr":[{"name":"out","isIn":false,"id":"compare_0$out","type":"boolean"}]}]},{"id":"dbEntity_0","type":"dbEntity","left":-750,"top":-50,"targetEntity":"dbe-126","outputScokets_arr":[{"name":"out","isIn":false,"id":"dbEntity_0$out","type":"table"}]},{"id":"dbEntity_1","type":"dbEntity","left":-750,"top":130,"title":"T100A员工登记姓名","targetEntity":"dbe-9151","outputScokets_arr":[{"name":"out","isIn":false,"id":"dbEntity_1$out","type":"table"}]},{"id":"xjion_0","type":"xjion","left":-480,"top":80,"editorLeft":190,"editorTop":374,"joinType":"inner join","inputScokets_arr":[{"name":"in0","isIn":true,"id":"xjion_0$in0","type":"table"},{"name":"in1","isIn":true,"id":"xjion_0$in1","type":"table"}],"outputScokets_arr":[{"name":"out","isIn":false,"id":"xjion_0$out","type":"table"}],"nodes_arr":[{"id":"ret_condition_2","type":"ret_condition","left":290,"top":-50,"inputScokets_arr":[{"name":"in","isIn":true,"id":"ret_condition_2$in","type":"boolean"}]},{"id":"column_8","type":"column","left":-130,"top":-60,"tableName":"T100A员工登记姓名","tableCode":126,"columnName":"员工登记姓名代码","outputScokets_arr":[{"name":"out","isIn":false,"id":"column_8$out","type":"int"}]},{"id":"compare_1","type":"compare","left":100,"top":40,"operator":"=","inputScokets_arr":[{"name":"in0","isIn":true,"id":"compare_1$in0","type":"scalar"},{"name":"in1","isIn":true,"id":"compare_1$in1","defval":"17","type":"scalar"}],"outputScokets_arr":[{"name":"out","isIn":false,"id":"compare_1$out","type":"boolean"}]}]}],"links_arr":[{"inSocketID":"select_0$in","outSocketID":"select_1$out"},{"inSocketID":"ret_columns_1$in0","outSocketID":"column_0$out"},{"inSocketID":"ret_columns_1$in1","outSocketID":"column_1$out"},{"inSocketID":"ret_columns_1$in2","outSocketID":"column_2$out"},{"inSocketID":"ret_columns_1$in3","outSocketID":"column_3$out"},{"inSocketID":"ret_columns_1$in4","outSocketID":"column_4$out"},{"inSocketID":"ret_columns_1$in5","outSocketID":"column_5$out"},{"inSocketID":"compare_0$in0","outSocketID":"column_6$out"},{"inSocketID":"ret_condition_1$in","outSocketID":"compare_0$out"},{"inSocketID":"ret_columns_0$in0","outSocketID":"column_7$out"},{"inSocketID":"ret_columns_0$in1","outSocketID":"column_9$out"},{"inSocketID":"ret_columns_0$in2","outSocketID":"column_10$out"},{"inSocketID":"ret_columns_0$in3","outSocketID":"column_11$out"},{"inSocketID":"ret_columns_0$in4","outSocketID":"column_12$out"},{"inSocketID":"ret_columns_0$in5","outSocketID":"column_13$out"},{"inSocketID":"ret_order_0$in0","outSocketID":"column_14$out"},{"inSocketID":"xjion_0$in0","outSocketID":"dbEntity_0$out"},{"inSocketID":"xjion_0$in1","outSocketID":"dbEntity_1$out"},{"inSocketID":"select_1$in","outSocketID":"xjion_0$out"},{"inSocketID":"compare_1$in0","outSocketID":"column_8$out"},{"inSocketID":"ret_condition_2$in","outSocketID":"compare_1$out"}]};
         var newCus2 = new SqlNode_BluePrint(null, testJson2,creationHelper);
-        this.customDBEntities_arr.push(newCus2);
+        this.addCusDBE(newCus2);
     }
 
-    hadCusDBE(name){
+    addCusDBE(cusdbeItem){
+        if(this.customDBEntities_arr.indexOf(cusdbeItem) != -1){
+            return;
+        }
+        var useCode = cusdbeItem.code;
+        var  i = 0;
+        if(IsEmptyString(useCode) && this.getCusDBEByCode(useCode) != null){
+            for(i=0;i<9999;++i){
+                useCode = 'cusDBE_' + i;
+                if(this.getCusDBEByCode(useCode) == null){
+                    break;
+                }
+            }
+        }
+        var useName = cusdbeItem.name;
+        if(IsEmptyString(useName) && this.getCusDBEByName(useName) != null){
+            for(i=0;i<9999;++i){
+                useName = '自订数据源_' + i;
+                if(this.getCusDBEByName(useCode) == null){
+                    break;
+                }
+            }
+        }
+        cusdbeItem.master = this;
+        cusdbeItem.name = useName;
+        cusdbeItem.code = useCode;
+        this.customDBEntities_arr.push(cusdbeItem);
+    }
+
+    getCusDBEByName(name){
+        return this.customDBEntities_arr.find(item=>{return item.name == name}) != null;
+    }
+
+    getCusDBEByCode(code){
         return this.customDBEntities_arr.find(item=>{return item.name == name}) != null;
     }
 
     createCusDBE(name, type){
-        this.customDBEntities_arr.push(new SqlNode_BluePrint({name:name,code:this.project.genControlName('cusDBE'),type:type,master:this}));
+        var newItem = new SqlNode_BluePrint({name:name,code:this.project.genControlName('cusDBE'),type:type,master:this});
+        this.addCusDBE(newItem);
         this.emit('customDBEChanged');
     }
 

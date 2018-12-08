@@ -1,5 +1,7 @@
 'use strict';
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -29,13 +31,26 @@ var AttributeEditor = function (_React$PureComponent) {
     _createClass(AttributeEditor, [{
         key: 'getAttrNowValue',
         value: function getAttrNowValue() {
-            var rlt = this.props.targetobj.getAttribute(this.getRealAttrName());
-            return rlt == null ? '' : rlt;
+            var rlt = this.props.targetobj.getAttribute(this.props.targetattr.name, this.props.index);
+            if (rlt == null) {
+                switch (this.props.targetattr.valueType) {
+                    case ValueType.StyleValues:
+                        rlt = {};
+                        break;
+                    default:
+                        rlt = '';
+                }
+            } else {
+                if ((typeof rlt === 'undefined' ? 'undefined' : _typeof(rlt)) === 'object') {
+                    rlt = Object.assign({}, rlt);
+                }
+            }
+            return rlt;
         }
     }, {
         key: 'getRealAttrName',
         value: function getRealAttrName() {
-            return this.props.targetattr.name + (this.props.index == null ? '' : this.props.index);
+            return this.props.targetattr.name + (this.props.index == null ? '' : '_' + this.props.index);
         }
     }, {
         key: 'getRealAttrLabel',
@@ -72,13 +87,16 @@ var AttributeEditor = function (_React$PureComponent) {
         value: function attrChangedHandler(ev) {
             var _this2 = this;
 
-            var myAttrName = this.getRealAttrName();
+            var myAttrName = this.props.targetattr.name;
             var match = function match(pattern) {
                 return typeof pattern === 'string' ? myAttrName === pattern : pattern.test(key);
             };
             var isMyAttrChaned = false;
             if (typeof ev.name === 'string') {
                 isMyAttrChaned = ev.name == myAttrName;
+                if (isMyAttrChaned && this.props.index >= 0) {
+                    isMyAttrChaned = this.props.index == ev.index;
+                }
             } else {
                 isMyAttrChaned = ev.name.some(match);
             }
@@ -89,25 +107,111 @@ var AttributeEditor = function (_React$PureComponent) {
             }
         }
     }, {
+        key: 'doSetAttribute',
+        value: function doSetAttribute(newValue) {
+            this.props.targetobj.setAttribute(this.props.targetattr.name, newValue, this.props.index);
+        }
+    }, {
         key: 'itemChangedHandler',
         value: function itemChangedHandler(newItem) {
-            this.props.targetobj.setAttribute(this.getRealAttrName(), newItem);
+            this.doSetAttribute(newItem);
+        }
+    }, {
+        key: 'renderStyleAttrEditor',
+        value: function renderStyleAttrEditor(nowVal, theAttr, attrName, inputID) {
+            var nameDDCValue = ReplaceIfNull(nowVal.name, '');
+            var valueElem = null;
+            var setting = StyleAttrSetting[nameDDCValue];
+            if (setting != null) {
+                var value = ReplaceIfNull(nowVal.value, setting.def);
+                if (setting.options_arr) {
+                    valueElem = React.createElement(DropDownControl, { options_arr: setting.options_arr, value: value, itemChanged: this.styleValueDDCChanged });
+                } else {
+                    var inputType = 'text';
+                    switch (setting.type) {
+                        case ValueType.Boolean:
+                            inputType = 'checkbox';
+                            break;
+                    }
+
+                    valueElem = React.createElement('input', { type: inputType, className: 'form-control', checked: value, value: value, onChange: this.styleValueInputChanged });
+                }
+            }
+            this.styleSetting = setting;
+            return React.createElement(
+                'div',
+                { className: 'd-flex flex-grow-1 flex-shrink-1 flex-column' },
+                React.createElement(DropDownControl, { options_arr: AttrNames.StyleAttrNames.values_arr, value: nameDDCValue, itemChanged: this.styleNameDDCChanged }),
+                valueElem
+            );
+        }
+    }, {
+        key: 'styleValueInputChanged',
+        value: function styleValueInputChanged(ev) {
+            if (this.styleSetting == null) {
+                return;
+            }
+            var inputElem = ev.target;
+            var inputVal = null;
+            switch (this.styleSetting.type) {
+                case ValueType.Boolean:
+                    inputVal = inputElem.checked;
+                    break;
+                default:
+                    inputVal = inputElem.value;
+            }
+            var nowVal = this.state.value;
+
+            nowVal.value = inputVal;
+            this.doSetAttribute(nowVal);
+        }
+    }, {
+        key: 'styleNameDDCChanged',
+        value: function styleNameDDCChanged(newName) {
+            var nowVal = this.state.value;
+            nowVal.name = newName;
+            this.doSetAttribute(nowVal);
+        }
+    }, {
+        key: 'styleValueDDCChanged',
+        value: function styleValueDDCChanged(newVal) {
+            var nowVal = this.state.value;
+            nowVal.value = newVal;
+            this.doSetAttribute(nowVal);
         }
     }, {
         key: 'rednerEditor',
         value: function rednerEditor(theAttr, attrName, inputID) {
+            var nowVal = this.state.value;
+            if (theAttr.valueType == ValueType.StyleValues) {
+                return this.renderStyleAttrEditor(nowVal, theAttr, attrName, inputID);
+            }
             if (!theAttr.editable) {
                 return React.createElement(
                     'div',
                     { className: 'form-control-plaintext text-light', id: inputID },
-                    this.state.value
+                    nowVal
                 );
             }
-            var realAttrName = this.getRealAttrName();
             if (theAttr.options_arr != null) {
-                return React.createElement(DropDownControl, { options_arr: theAttr.options_arr, value: this.state.value, itemChanged: this.itemChangedHandler });
+                return React.createElement(DropDownControl, { options_arr: theAttr.options_arr, value: nowVal, itemChanged: this.itemChangedHandler });
             }
-            return React.createElement('input', { type: 'text', className: 'form-control', id: inputID, value: this.state.value, onChange: this.editorChanged, attrname: attrName });
+
+            var inputType = 'text';
+            switch (theAttr.valueType) {
+                case ValueType.Boolean:
+                    inputType = 'checkbox';
+                    break;
+            }
+            return React.createElement('input', { type: inputType, className: 'form-control', id: inputID, checked: this.state.value, value: this.state.value, onChange: this.editorChanged, attrname: attrName });
+        }
+    }, {
+        key: 'clickTrashHandler',
+        value: function clickTrashHandler(ev) {
+            var newCount = this.props.targetobj.deleteAttrArrayItem(this.props.targetattr.name, this.getRealAttrName());
+            if (this.props.onAttrArrayChanged) {
+                this.props.onAttrArrayChanged(this.props.targetattr.name, newCount);
+            }
         }
     }, {
         key: 'render',
@@ -130,6 +234,11 @@ var AttributeEditor = function (_React$PureComponent) {
             var attrName = this.getRealAttrName();
             var label = this.getRealAttrLabel();
             var inputID = this.getRealAttrInputID();
+            var deleteElem = this.props.index >= 0 ? React.createElement(
+                'div',
+                { onClick: this.clickTrashHandler, className: 'btn btn-dark flex-grow-0 flex-shrink-0' },
+                React.createElement('i', { className: 'fa fa-trash text-danger' })
+            ) : null;
             return React.createElement(
                 'div',
                 { key: attrName, className: 'bg-dark d-flex align-items-center' },
@@ -142,7 +251,8 @@ var AttributeEditor = function (_React$PureComponent) {
                     'div',
                     { className: 'flex-grow-1 flex-shrink-1 p-1 border-left border-secondary' },
                     this.rednerEditor(theAttr, attrName, inputID)
-                )
+                ),
+                deleteElem
             );
         }
     }, {
@@ -150,10 +260,18 @@ var AttributeEditor = function (_React$PureComponent) {
         value: function editorChanged(ev) {
             var editorElem = ev.target;
             var newVal = null;
+            var theAttr = this.props.targetattr;
             if (editorElem.tagName.toUpperCase() === 'INPUT') {
                 newVal = editorElem.value;
+                switch (theAttr.valueType) {
+                    case ValueType.Boolean:
+                        newVal = editorElem.checked;
+                        break;
+                    default:
+                        newVal = editorElem.value;
+                }
             }
-            this.props.targetobj.setAttribute(this.getRealAttrName(), newVal);
+            this.doSetAttribute(newVal);
         }
     }]);
 
@@ -185,10 +303,16 @@ var AttributeGroup = function (_React$PureComponent2) {
                 attrName = ev.target.parentNode.getAttribute('attrname');
                 if (attrName == null) return;
             }
+
             var newCount = this.state.target.growAttrArray(attrName);
-            this.setState({
-                count: newCount
-            });
+            this.attrArrayChanged(attrName, newCount);
+        }
+    }, {
+        key: 'attrArrayChanged',
+        value: function attrArrayChanged(attrName, newCount) {
+            var newState = {};
+            newState[attrName + 'count'] = newCount;
+            this.setState(newState);
         }
     }, {
         key: 'renderAttribute',
@@ -196,14 +320,16 @@ var AttributeGroup = function (_React$PureComponent2) {
             var target = this.state.target;
             if (attr.isArray) {
                 var rlt_arr = [];
-                var count = target.getAttrArrayCount(attr.name);
-                for (var i = 0; i < count; ++i) {
-                    rlt_arr.push(React.createElement(AttributeEditor, { key: attr.name + i, targetattr: attr, targetobj: target, index: i }));
+                var attrArrayItem_arr = target.getAttrArrayList(attr.name);
+                for (var i = 0; i < attrArrayItem_arr.length; ++i) {
+                    var attrArrayItem = attrArrayItem_arr[i];
+                    rlt_arr.push(React.createElement(AttributeEditor, { key: attrArrayItem.name, targetattr: attr, targetobj: target, index: attrArrayItem.index, onAttrArrayChanged: this.attrArrayChanged }));
                 }
                 rlt_arr.push(React.createElement(
                     'button',
                     { key: 'addBtn', attrname: attr.name, onClick: this.clickAddBtnHandler, type: 'button', className: 'btn btn-dark' },
-                    React.createElement('span', { className: 'icon icon-plus' })
+                    React.createElement('span', { className: 'icon icon-plus' }),
+                    attr.label
                 ));
                 return rlt_arr;
             }

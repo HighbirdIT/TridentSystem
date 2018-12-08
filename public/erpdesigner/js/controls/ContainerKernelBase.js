@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -11,17 +11,17 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var ContainerKernelBase = function (_ControlKernelBase) {
     _inherits(ContainerKernelBase, _ControlKernelBase);
 
-    function ContainerKernelBase(initData, project, description) {
+    function ContainerKernelBase(initData, type, description, attrbuteGroups, parentKernel, createHelper, kernelJson) {
         _classCallCheck(this, ContainerKernelBase);
 
-        var _this = _possibleConstructorReturn(this, (ContainerKernelBase.__proto__ || Object.getPrototypeOf(ContainerKernelBase)).call(this, initData, project, description));
+        var _this = _possibleConstructorReturn(this, (ContainerKernelBase.__proto__ || Object.getPrototypeOf(ContainerKernelBase)).call(this, initData, type, description, attrbuteGroups, parentKernel, createHelper, kernelJson));
 
         _this.children = [];
         return _this;
     }
 
     _createClass(ContainerKernelBase, [{
-        key: 'appandChild',
+        key: "appandChild",
         value: function appandChild(childKernel, index) {
             if (childKernel.parent == this) {
                 if (index >= 0 && index < this.children.length) {
@@ -30,7 +30,7 @@ var ContainerKernelBase = function (_ControlKernelBase) {
                         var temp = this.children[index];
                         this.children[index] = childKernel;
                         this.children[nowIndex] = temp;
-                        this.attrChanged('children');
+                        this.attrChanged(AttrNames.Chidlren);
                         //console.log('swap:' + nowIndex + '->' + index);
                     }
                 }
@@ -50,20 +50,20 @@ var ContainerKernelBase = function (_ControlKernelBase) {
             this.children.splice(index, 0, childKernel);
             //this.children.push(childKernel);
             childKernel.parent = this;
-            this.attrChanged('children');
+            this.attrChanged(AttrNames.Chidlren);
         }
     }, {
-        key: 'removeChild',
+        key: "removeChild",
         value: function removeChild(childKernel) {
             var i = this.children.indexOf(childKernel);
             if (i != -1) {
                 this.children.splice(i, 1);
                 childKernel.parent = null;
-                this.attrChanged('children');
+                this.attrChanged(AttrNames.Chidlren);
             }
         }
     }, {
-        key: 'getChildIndex',
+        key: "getChildIndex",
         value: function getChildIndex(childKernel) {
             return this.children.indexOf(childKernel);
         }

@@ -38,8 +38,10 @@ var CProject = function (_IAttributeable) {
         _this.attrbuteGroups = CProjectAttrsSetting.groups_arr;
         _this.defaultNameCounter = {};
         _this.controlName_map = {};
+        _this.controlId_map = {};
         _this.cacheState = {};
         _this.dataMaster = new DataMaster(_this);
+        _this.project = _this;
 
         _this.designeConfig = {
             name: genProjectName(),
@@ -100,8 +102,36 @@ var CProject = function (_IAttributeable) {
     }
 
     _createClass(CProject, [{
-        key: 'genControlName',
-        value: function genControlName(prefix) {
+        key: 'registerControl',
+        value: function registerControl(ctlKernel) {
+            var useID = ctlKernel.id;
+            if (this.getControlById(useID) == this) {
+                console.warn(useID + ' 重复注册');
+            }
+            if (IsEmptyString(useID)) {
+                for (var i = 0; i < 9999; ++i) {
+                    useID = ctlKernel.type + '_' + i;
+                    if (this.getControlById(useID) == null) {
+                        break;
+                    }
+                }
+            }
+            ctlKernel.id = useID;
+            this.controlId_map[useID] = ctlKernel;
+        }
+    }, {
+        key: 'getControlById',
+        value: function getControlById(id) {
+            return this.controlId_map[id];
+        }
+    }, {
+        key: 'getControlByName',
+        value: function getControlByName(name) {
+            return this.controlName_map[name];
+        }
+    }, {
+        key: 'genControlName2',
+        value: function genControlName2(prefix) {
             if (prefix == null) {
                 console.warn('genNodeId参数不能为空');
                 return;
@@ -178,8 +208,8 @@ var CProject = function (_IAttributeable) {
             if (newtitle.length > 8) {
                 newtitle = newtitle.substring(0, 8);
             }
-            if (this.__setAttribute('title', newtitle)) {
-                this.attrChanged(['title', 'realName']);
+            if (this.__setAttribute(AttrNames.Title, newtitle)) {
+                this.attrChanged([AttrNames.Title, AttrNames.RealName]);
                 return true;
             }
             return false;
@@ -187,7 +217,7 @@ var CProject = function (_IAttributeable) {
     }, {
         key: 'get_realName',
         value: function get_realName() {
-            return this.getAttribute('title') + 'Real';
+            return this.getAttribute(AttrNames.Title) + 'Real';
         }
     }]);
 

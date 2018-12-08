@@ -31,8 +31,10 @@ class CProject extends IAttributeable{
         this.attrbuteGroups = CProjectAttrsSetting.groups_arr;
         this.defaultNameCounter = {};
         this.controlName_map = {};
+        this.controlId_map = {};
         this.cacheState = {};
         this.dataMaster = new DataMaster(this);
+        this.project = this;
 
         this.designeConfig={
             name:genProjectName(),
@@ -91,7 +93,32 @@ class CProject extends IAttributeable{
         };
     }
 
-    genControlName(prefix){
+    registerControl(ctlKernel){
+        var useID = ctlKernel.id;
+        if(this.getControlById(useID) == this){
+            console.warn(useID + ' 重复注册');
+        }
+        if(IsEmptyString(useID)){
+            for(var i=0;i<9999;++i){
+                useID = ctlKernel.type + '_' + i;
+                if(this.getControlById(useID) == null){
+                    break;
+                }
+            }
+        }
+        ctlKernel.id = useID;
+        this.controlId_map[useID] = ctlKernel;
+    }
+
+    getControlById(id){
+        return this.controlId_map[id];
+    }
+
+    getControlByName(name){
+        return this.controlName_map[name];
+    }
+
+    genControlName2(prefix){
         if(prefix == null){
             console.warn('genNodeId参数不能为空');
             return;
@@ -161,14 +188,14 @@ class CProject extends IAttributeable{
         if(newtitle.length > 8){
             newtitle = newtitle.substring(0, 8);
         }
-        if(this.__setAttribute('title', newtitle)){
-            this.attrChanged(['title','realName']);
+        if(this.__setAttribute(AttrNames.Title, newtitle)){
+            this.attrChanged([AttrNames.Title,AttrNames.RealName]);
             return true;
         }
         return false;
     }
 
     get_realName(){
-        return this.getAttribute('title') + 'Real';
+        return this.getAttribute(AttrNames.Title) + 'Real';
     }
 }

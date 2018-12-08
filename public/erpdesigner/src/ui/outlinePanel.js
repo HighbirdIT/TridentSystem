@@ -133,18 +133,18 @@ class OutlineItem extends React.PureComponent {
         var hasChild = isContainer && kernel.children.length > 0;
         var offsetStyle = { width: (this.props.deep * 25 + (hasChild ? 0 : 7) + 'px') };
         return (
-            <div key={kernel.name} className={'outlineItemDiv' + (this.props.deep ? ' ' : ' topest') + (isContainer ? " d-felx flex-column" : '')}>
+            <div key={kernel.id} className={'outlineItemDiv' + (this.props.deep ? ' ' : ' topest') + (isContainer ? " d-felx flex-column" : '')}>
                 <div className='d-flex'>
                     <span style={offsetStyle} className='flex-grow-0 flex-shrink-0' />
                     {!hasChild ? null : <span onClick={this.toggleCollapse} className={'flex-grow-0 flex-shrink-0 ml-1 icon-sm btn-secondary btn-sm' + (this.state.collapsed ? ' icon-right btn-info' : ' icon-down btn-secondary')} />}
-                    <div className={'outlineItem flex-grow-0 flex-shrink-0' + (kernel.__placing ? ' bg-dark text-light' : '')} ctlselected={(this.state.selected ? ' active' : null)} onClick={this.clickhandler} onMouseDown={this.mouseDownHandler} ref={this.rootElemRef}>{(kernel.__placing ? '*' : '') + kernel.name}</div>
+                    <div className={'outlineItem flex-grow-0 flex-shrink-0' + (kernel.__placing ? ' bg-dark text-light' : '')} ctlselected={(this.state.selected ? ' active' : null)} onClick={this.clickhandler} onMouseDown={this.mouseDownHandler} ref={this.rootElemRef}>{(kernel.__placing ? '*' : '') + kernel.id}</div>
                 </div>
 
                 {
                     kernel.__placing || this.state.collapsed || kernel.children == null || kernel.children.length == 0 ? null :
 
                         kernel.children.map(childKernel => {
-                            return (<OutlineItem key={childKernel.name} kernel={childKernel} deep={this.props.deep + 1} itemSelected={this.props.itemSelected} wantDragAct={this.props.wantDragAct} />)
+                            return (<OutlineItem key={childKernel.id} kernel={childKernel} deep={this.props.deep + 1} itemSelected={this.props.itemSelected} wantDragAct={this.props.wantDragAct} />)
                         })
 
                 }
@@ -360,7 +360,7 @@ class OutlinePanel extends React.PureComponent {
                     {
                         this.state.editingPage && this.state.editingPage.children.map(
                             kernal => {
-                                return <OutlineItem key={kernal.name} kernel={kernal} deep={0} itemSelected={this.itemSelected} wantDragAct={this.wantDragAct} />
+                                return <OutlineItem key={kernal.id} kernel={kernal} deep={0} itemSelected={this.itemSelected} wantDragAct={this.wantDragAct} />
                             }
                         )
                     }

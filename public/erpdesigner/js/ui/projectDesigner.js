@@ -82,7 +82,7 @@ var ProjectDesigner = function (_React$PureComponent) {
                     'span',
                     null,
                     '\u653E\u7F6E:',
-                    theKernel.description + theKernel.name
+                    theKernel.description + theKernel.id
                 );
             });
 

@@ -60,7 +60,7 @@ class ProjectDesigner extends React.PureComponent {
 
     startPlaceKernel(theKernel,callBack){
         this.flowMCRef.current.setGetContentFun(() => {
-            return (<span>放置:{theKernel.description + theKernel.name}</span>)
+            return (<span>放置:{theKernel.description + theKernel.id}</span>)
         });
 
         window.addEventListener('mouseup', this.mouseUpInPlacingHandler);

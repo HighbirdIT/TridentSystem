@@ -21,6 +21,8 @@ var IAttributeable = function (_EventEmitter) {
         _this.attrVersion = 0;
         _this.description = description == null ? '未知' : description;
         consignor = Object.assign(consignor, initAttrValues);
+        EnhanceEventEmiter(_this);
+        _this.cacheObj = {};
         //autoBind(this);
         return _this;
     }
@@ -43,31 +45,62 @@ var IAttributeable = function (_EventEmitter) {
         }
     }, {
         key: '__setAttribute',
-        value: function __setAttribute(attrName, value) {
-            if (this.consignor[attrName] == value) {
+        value: function __setAttribute(realAtrrName, value) {
+            if (typeof value === 'string' && this.consignor[realAtrrName] == value) {
                 return false;
             }
-            this.consignor[attrName] = value;
+            this.consignor[realAtrrName] = value;
             return true;
         }
     }, {
         key: 'setAttribute',
-        value: function setAttribute(attrName, value) {
+        value: function setAttribute(attrName, value, indexInArray) {
             if (typeof this.consignor['set_' + attrName] == 'function') {
-                return this.consignor['set_' + attrName](value);
+                return this.consignor['set_' + attrName](value, indexInArray);
             } else {
-                if (this.__setAttribute(attrName, value) != false) {
-                    this.attrChanged(attrName);
+                var realAtrrName = attrName + (indexInArray >= 0 ? '_' + indexInArray : '');
+                if (this.__setAttribute(realAtrrName, value) != false) {
+                    this.attrChanged(attrName, { index: indexInArray });
                 }
             }
         }
     }, {
         key: 'getAttribute',
-        value: function getAttribute(attrName) {
-            if (typeof this.consignor['get_' + attrName] == 'function') {
-                return this.consignor['get_' + attrName]();
+        value: function getAttribute(attrName, index) {
+            if (index == null) {
+                var keypos = attrName.lastIndexOf('_');
+                if (keypos != -1) {
+                    // maybe attrarry
+                    var nameStr = attrName.substring(0, keypos);
+                    var indexStr = attrName.substring(keypos + 1);
+                    attrName = nameStr;
+                    index = indexStr;
+                    if (isNaN(index)) {
+                        console.error('vist attrarray item without index:' + attrName);
+                    }
+                }
             }
-            return this[attrName];
+            if (typeof this.consignor['get_' + attrName] == 'function') {
+                return this.consignor['get_' + attrName](index);
+            }
+            var realname = index == null ? attrName : attrName + '_' + index;
+            var rlt = this[realname];
+            if (rlt == null) {
+                var attrItem = this.findAttributeByName(attrName);
+                if (attrItem == null) {
+                    console.error('访问不存在的属性:' + attrName);
+                }
+                rlt = attrItem.defaultVal;
+                if (rlt == null) {
+                    switch (attrItem.name) {
+                        case AttrNames.LayoutNames.StyleAttr:
+                            break;
+                        default:
+                            console.warn('属性:' + attrName + '没有默认值');
+                    }
+                }
+            }
+            return rlt;
         }
     }, {
         key: 'someAttributeChanged',
@@ -83,21 +116,67 @@ var IAttributeable = function (_EventEmitter) {
     }, {
         key: 'getAttrArrayCount',
         value: function getAttrArrayCount(attrName) {
-            var countVarName = attrName + '_count';
-            if (this[countVarName] == null) {
-                this[countVarName] = 0;
+            return this.getAttrArrayNames(attrName).length;
+        }
+    }, {
+        key: 'attrNameArraySortFun',
+        value: function attrNameArraySortFun(a, b) {
+            return a.index < b.index;
+        }
+    }, {
+        key: 'getAttrArrayList',
+        value: function getAttrArrayList(attrName) {
+            var rlt = this.cacheObj[attrName + '_arry_cache'];
+            if (rlt == null) {
+                var tem_arr = [];
+                var nameReg = new RegExp(attrName + "_\\d+$");
+                var indexReg = /\d+$/;
+                for (var propName in this) {
+                    if (nameReg.test(propName)) {
+                        var index = parseInt(indexReg.exec(propName)[0]);
+                        tem_arr.push({ index: index, name: propName });
+                    }
+                }
+                tem_arr.sort(this.attrNameArraySortFun);
+                rlt = tem_arr;
+                this.cacheObj[attrName + '_arry_cache'] = rlt;
             }
-            return parseInt(this[countVarName]);
+            return rlt;
         }
     }, {
         key: 'growAttrArray',
         value: function growAttrArray(attrName) {
-            var countVarName = attrName + '_count';
-            if (this[countVarName] == null) {
-                this[countVarName] = 0;
+            var nowAttrArrayList = this.getAttrArrayList(attrName);
+            var useIndex = 0;
+            var newAttrname = null;
+            while (useIndex < 9999) {
+                newAttrname = attrName + '_' + useIndex;
+                if (nowAttrArrayList.find(function (e) {
+                    return e.name == newAttrname;
+                }) == null) {
+                    break;
+                }
+                ++useIndex;
             }
-            this[countVarName] = parseInt(this[countVarName]) + 1;
-            return this[countVarName];
+            this[newAttrname] = null;
+            nowAttrArrayList.push({ index: useIndex, name: newAttrname });
+            //nowAttrArrayList.sort(this.attrNameArraySortFun);
+            return nowAttrArrayList.length;
+        }
+    }, {
+        key: 'deleteAttrArrayItem',
+        value: function deleteAttrArrayItem(attrName, realName) {
+            var nowAttrArrayList = this.getAttrArrayList(attrName);
+            var index = nowAttrArrayList.findIndex(function (e) {
+                return e.name == realName;
+            });
+            if (index != -1) {
+                nowAttrArrayList.splice(index, 1);
+            }
+            delete this[realName];
+            //console.log('delete:' + realName);
+            this.attrChanged(attrName);
+            return nowAttrArrayList.length;
         }
     }]);
 
