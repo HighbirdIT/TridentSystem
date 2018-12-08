@@ -46,6 +46,11 @@ const SqlNodeEditorControls_arr =[
         label:'BetWeen',
         nodeClass:SqlNode_BetWeen,
     }
+    ,
+    {
+        label:'Cast',
+        nodeClass:SqlNode_Cast,
+    },
 ]; 
 
 class C_SqlNode_Editor extends React.PureComponent{
