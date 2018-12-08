@@ -23,10 +23,14 @@ class LoginPanel extends React.PureComponent {
     logComplete(useData){
         //console.log(useData);
         LoginUser = new Account(useData);
-        this.panelBaseRef.current.close();
-        if(this.props.logCompleteFun != null){
-            this.props.logCompleteFun();
-        }
+        var self = this;
+        
+        setTimeout(()=>{
+            self.panelBaseRef.current.close();
+            if(self.props.logCompleteFun != null){
+                self.props.logCompleteFun();
+            }
+        },200);
     }
 
     loginUseCookieCallBack(respon){
@@ -35,7 +39,7 @@ class LoginPanel extends React.PureComponent {
                 this.endFetch(respon.json.err.info);
                 return;
             }
-            this.endFetch('成功');
+            this.endFetch('缓存登录成功');
             this.logComplete(respon.json.data);
         }
         else{
