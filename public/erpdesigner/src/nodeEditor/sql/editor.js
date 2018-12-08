@@ -58,7 +58,7 @@ const SqlNodeEditorControls_arr =[
     {
         label:'逻辑运算',
         nodeClass:SqlNode_Logical_Operator,
-    }，
+    }
 ]; 
 
 class C_SqlNode_Editor extends React.PureComponent{
