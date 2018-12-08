@@ -160,10 +160,14 @@ var ProjectContainer = function (_React$PureComponent2) {
         key: 'logCompleteFun',
         value: function logCompleteFun() {
             var self = this;
-            self.projManagerRef.current.toggle();
+            //self.projManagerRef.current.toggle();
             this.setState({
                 magicObj: {}
             });
+
+            setTimeout(function () {
+                self.createEmptyProject();
+            }, 200);
         }
 
         /*

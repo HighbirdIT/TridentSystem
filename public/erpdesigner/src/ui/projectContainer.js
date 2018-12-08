@@ -116,10 +116,14 @@ class ProjectContainer extends React.PureComponent {
 
     logCompleteFun(){
         var self = this;
-        self.projManagerRef.current.toggle();
+        //self.projManagerRef.current.toggle();
         this.setState({
             magicObj:{},
         });
+
+        setTimeout(() => {
+            self.createEmptyProject();
+        }, 200);
     }
 
     /*
