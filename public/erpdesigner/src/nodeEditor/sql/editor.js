@@ -31,6 +31,21 @@ const SqlNodeEditorControls_arr =[
         label:'RowNumber',
         nodeClass:SqlNode_RowNumber,
     }
+    ,
+    {
+        label:'IsNull()',
+        nodeClass:SqlNode_IsNullFun,
+    }
+    ,
+    {
+        label:'IsNullOperator',
+        nodeClass:SqlNode_IsNullOperator,
+    }
+    ,
+    {
+        label:'BetWeen',
+        nodeClass:SqlNode_BetWeen,
+    }
 ]; 
 
 class C_SqlNode_Editor extends React.PureComponent{
