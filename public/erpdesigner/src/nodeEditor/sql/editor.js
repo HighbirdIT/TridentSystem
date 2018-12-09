@@ -794,7 +794,7 @@ class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
                 <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>可用节点</button>
                 <div id={targetID} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
                     <div className='mw-100 d-flex flex-column'>
-                        <div className='btn-group-vertical mw-100'>
+                        <div className='btn-group-vertical mw-100 flex-shrink-0'>
                             {
                                 SqlNodeEditorControls_arr.map(
                                     item=>{
