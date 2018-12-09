@@ -32,6 +32,14 @@ var JoinType_Right = 'right join';
 var JoinType_Cross = 'cross join';
 var JoinTypes_arr = [JoinType_Inner, JoinType_Left, JoinType_Right, JoinType_Cross];
 
+/**
+ * 逻辑运算符 and or not
+ */
+var Logical_Operator_and = 'and';
+var Logical_Operator_or = 'or';
+//var Logical_Operator_not = 'not';
+var Logical_Operators_arr = [Logical_Operator_and, Logical_Operator_or];
+
 var Event_CurrentComponentchanged = 'currentComponentchanged';
 var Event_LinkChanged = 'linkChanged';
 var Event_SocketNumChanged = 'socketnumChanged';
