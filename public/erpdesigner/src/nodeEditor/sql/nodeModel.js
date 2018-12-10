@@ -3132,6 +3132,7 @@ class SqlNode_Getdate extends SqlNode_Base{
         assginObjByProperties(this, attrsJson, ['getdate']);
     }
 }
+
 /*
     getValue(){
         return this.outSocket.defval;
