@@ -2653,29 +2653,6 @@ class SqlNode_IsNullFun extends SqlNode_Base{
         var rlt = super.requestSaveAttrs();
         return rlt;
     }
-
-    // orderTypeDropdownChangedHandler(data, dropCtl){
-    //     var theSocketID = getAttributeByNode(dropCtl.rootDivRef.current, 'd-socketid');
-    //     if(theSocketID == null)
-    //         return;
-    //     var theSocket = this.getSocketById(theSocketID);
-    //     if(theSocket == null)
-    //         return;
-    //     theSocket.setExtra('orderType', data);
-    //     //console.log(data);
-    // }
-
-    // customSocketRender(socket){
-    //     if(!socket.isIn){
-    //         return;
-    //     }
-    //     var orderType = socket.getExtra('orderType');
-    //     if(orderType == null){
-    //         orderType = OrderType_ASCE;
-    //     }
-    //     return (<DropDownControl itemChanged={this.orderTypeDropdownChangedHandler} btnclass='btn-dark' options_arr={OrderTypes_arr} rootclass='flex-grow-1 flex-shrink-1' value={orderType} /> )
-    // }
-
     compile(helper, preNodes_arr){
         var superRet = super.compile(helper, preNodes_arr);
         if(superRet == false || superRet != null){
@@ -2691,8 +2668,13 @@ class SqlNode_IsNullFun extends SqlNode_Base{
             var tValue = null;
             if(tLinks.length == 0  ){
                 if(i == 1){
-                    if(!IsEmptyString(theSocket.defval)){
+                    if(isNaN(theSocket.defval))
+                        {
                         tValue = "'"+theSocket.defval+"'";
+                    }
+                    else
+                    {
+                        tValue=theSocket.defval;
                     }
                 }
                 if(tValue == null){
