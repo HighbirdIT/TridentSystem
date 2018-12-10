@@ -583,7 +583,7 @@ class DataMasterPanel extends React.PureComponent {
 
     render() {
         return (
-            <FloatPanelbase title='数据大师' ref={this.panelBaseRef} initShow={false} initMax={false}>
+            <FloatPanelbase title='数据大师' ref={this.panelBaseRef} initShow={true} initMax={true}>
                 <div className='d-flex flex-grow-0 flex-shrink-0'>
                     <TabNavBar navData={this.navData} navChanged={this.navChanged} />
                 </div>
