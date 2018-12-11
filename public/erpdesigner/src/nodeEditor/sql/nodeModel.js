@@ -2636,7 +2636,6 @@ class SqlNode_IsNullFun extends SqlNode_Base{
         if(this.outSocket == null){
             this.outSocket = new NodeSocket('out', this, false, {type:SqlVarType_Scalar});
             this.addSocket(this.outSocket);
-            
         }
 
         if(this.inputScokets_arr.length == 0)
@@ -2648,6 +2647,7 @@ class SqlNode_IsNullFun extends SqlNode_Base{
             this.inputScokets_arr.forEach(socket => {
                 socket.type = SqlVarType_Scalar;
             });
+            this.inputScokets_arr[0].inputable = false;
         }
     
     }
@@ -2695,7 +2695,11 @@ class SqlNode_IsNullFun extends SqlNode_Base{
             if(tLinks.length == 0  ){
                 if(i == 1){
                     if(!IsEmptyString(theSocket.defval)){
-                        tValue = "'"+theSocket.defval+"'";
+                        tValue = theSocket.defval;
+                        if(isNaN(tValue))
+                        {
+                            tValue = singleQuotesStr(tValue);
+                        }
                     }
                 }
                 if(tValue == null){
@@ -2774,22 +2778,17 @@ class SqlNode_IsNullOperator extends SqlNode_Base{
         // var nodeThis = this;
         // var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
-            var theSocket = this.inputScokets_arr[0];
-            var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-            var tValue = null;
-                var link = tLinks[0];
-                var outNode = link.outSocket.node;
-                var compileRet = outNode.compile(helper, usePreNodes_arr);
-                if(compileRet == false){
-                    return false;
-                }
-                tValue = compileRet.getSocketOut(link.outSocket).strContent;
+        var theSocket = this.inputScokets_arr[0];
+        var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+        var tValue = null;
+        var link = tLinks[0];
+        var outNode = link.outSocket.node;
+        var compileRet = outNode.compile(helper, usePreNodes_arr);
+        if(compileRet == false){
+            return false;
+        }
+        tValue = compileRet.getSocketOut(link.outSocket).strContent;
         var finalStr = tValue +' is null';
-            // socketVal_arr.forEach((x,i)=>{
-            //     finalStr += (i == 0 ? '' : ',') + x;
-            // });
-            // finalStr += ')';
-        
 
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, finalStr);
@@ -3084,16 +3083,10 @@ class SqlNode_Logical_Operator extends SqlNode_Base{
         socketVal_arr.push(tValue);
     }
     var finalStr = '';
-     var value = this.getValue();
-        if(isNaN(value)){
-            value = "and";
-        }
    
-        socketVal_arr.forEach((x,i)=>{
-            finalStr += (i == 0 ? '' : nodeThis.LogicalType) + x ;
-        });
-        finalStr += '';
-    
+    socketVal_arr.forEach((x,i)=>{
+        finalStr += (i == 0 ? '' : nodeThis.LogicalType) + x ;
+    });
 
     var selfCompileRet = new CompileResult(this);
     selfCompileRet.setSocketOut(this.outSocket, finalStr);
@@ -3124,20 +3117,24 @@ class SqlNode_Getdate extends SqlNode_Base{
 
     requestSaveAttrs(){
         var rlt = super.requestSaveAttrs();
-        rlt.value = this.value;
         return rlt;
     }
 
     restorFromAttrs(attrsJson){
-        assginObjByProperties(this, attrsJson, ['getdate']);
+    }
+
+    compile(helper, preNodes_arr){
+        var superRet = super.compile(helper, preNodes_arr);
+        if(superRet == false || superRet != null){
+            return superRet;
+        }
+        var value = "getdate()";
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, value);
+        helper.setCompileRetCache(this,selfCompileRet);
+        return selfCompileRet;
     }
 }
-
-/*
-    getValue(){
-        return this.outSocket.defval;
-    }
-*/
 
 //数据类型转换
 class SqlNode_Cast extends SqlNode_Base{
@@ -3147,23 +3144,32 @@ class SqlNode_Cast extends SqlNode_Base{
         this.size_2 = ReplaceIfNaN(this.size_2, 0);
         autoBind(this);
 
-        this.addSocket(new NodeSocket('in0', this, true, {type:SqlVarType_Table}));
-  
+        //this.isConstNode = true; //使节点不可被删除
+
         if(nodeJson){
             if(this.outputScokets_arr.length > 0){
                 this.outSocket = this.outputScokets_arr[0];
                 this.outSocket.type = SqlVarType_Boolean;
+            }
+            if(this.inputScokets_arr.length > 0){
+                this.inSocket = this.inputScokets_arr[0];
             }
         }
         if(this.outSocket == null){
             this.outSocket = new NodeSocket('out', this, false, {type:SqlVarType_Boolean});
             this.addSocket(this.outSocket);
         }
+        if(this.inSocket == null){
+            this.inSocket = new NodeSocket('in', this, true, {type:SqlVarType_Table});
+            this.addSocket(this.inSocket);
+        }
         this.insocketInitVal  = {
              type:SqlVarType_Scalar,
         };
-   
-
+        var castValType = this.inSocket.getExtra('valType');
+        if(SqlVarTypes_arr.indexOf(castValType) == -1){
+            this.inSocket.setExtra('valType',SqlVarType_NVarchar);
+        }
     }
     
     
@@ -3188,45 +3194,75 @@ class SqlNode_Cast extends SqlNode_Base{
     }
     
     castTypeDropdownChangedHandler(data, dropCtl){
-        var theSocketID = getAttributeByNode(dropCtl.rootDivRef.current, 'd-socketid');
-        if(theSocketID == null)
+        var theSocket = this.inSocket;
+        theSocket.setExtra('valType', data);
+        theSocket.fireEvent('changed');
+    }
+
+    sizeOneInputChangedHandler(ev){
+        var newVal = ev.target.value;
+        if(isNaN(newVal)){
             return;
-        var theSocket = this.getSocketById(theSocketID);
-        if(theSocket == null)
-            return;
-        theSocket.setExtra('castValType', data);
-        
-        console.log(theSocket.extra.castValType);
-   
-        if(theSocket.extra.castValType == 'decimal' || theSocket.extra.castValType == 'nvarchar'){
-            console.log('进来啦');
-            return(<div className='d-flex flex-grow-0 flex-shrink-0 w-100'>
-             <NameInputRow isagent={true} label='S1' type='int' rootClass='flex-grow-1 flex-shrink-1' value={this.size_1} nameWidth='50px' nameColor='rgb(255,255,255)' onValueChanged={this.size1InputChangedHandler} />
-            {
-                theSocket.extra.castValType =='decimal' ? 
-                <NameInputRow isagent={true} label='S2' type='int' rootClass='flex-grow-1 flex-shrink-1' value={this.size_2} nameWidth='50px' nameColor='rgb(255,255,255)' onValueChanged={this.size2InputChangedHandler} />
-                : null
-            }
-        </div>);
         }
+        this.inSocket.setExtra('size1', newVal);
+        this.inSocket.fireEvent('changed');
+    }
+
+    sizeTwoInputChangedHandler(ev){
+        var newVal = ev.target.value;
+        if(isNaN(newVal)){
+            return;
+        }
+        this.inSocket.setExtra('size2', newVal);
+        this.inSocket.fireEvent('changed');
     }
 
     customSocketRender(socket){
         if(!socket.isIn){
             return;
         }
-        var castValType = socket.getExtra('castValType');
-        if(castValType == null){
-            
-            castValType = OrderType_ASCE;
+        var castValType = socket.getExtra('valType');
+        var hadSizeOne = false;
+        var hadSizeTwo = false;
+        switch (castValType) {
+            case SqlVarType_Time:
+            case SqlVarType_NVarchar:
+            hadSizeOne = true;
+            break;
+            case SqlVarType_Decimal:
+            hadSizeOne = true;
+            hadSizeTwo = true;
+            break;
         }
-        if(this.castValType == null){
-            this.castValType = 'int';
+        var sizeOneInptELem = null;
+        var sizeTwoInputElem = null;
+        if(this.inputStyle == null){
+            this.inputStyle = {
+                width:'3em',
+            };
+        }
+        if(hadSizeOne){
+            var sizeValue = socket.getExtra('size1');
+            if(isNaN(sizeValue)){
+                sizeValue = 0;
+            }
+            sizeOneInptELem = (<input type='int' style={this.inputStyle} value={sizeValue} onChange={this.sizeOneInputChangedHandler}/>);
+        }
+        if(hadSizeTwo){
+            var sizeValue = socket.getExtra('size2');
+            if(isNaN(sizeValue)){
+                sizeValue = 0;
+            }
+            sizeTwoInputElem = (<input type='int' style={this.inputStyle} value={sizeValue} onChange={this.sizeTwoInputChangedHandler}/>);
         }
 
         //创建一个下拉框
-        return (<DropDownControl itemChanged={this.castTypeDropdownChangedHandler} btnclass='btn-dark' options_arr={['boolean','int','nvarchar','date','datetime','time','float','decimal']} rootclass='flex-grow-1 flex-shrink-1' value={castValType} />
-       
+        return (
+            <React.Fragment>
+                <DropDownControl itemChanged={this.castTypeDropdownChangedHandler} btnclass='btn-dark' options_arr={SqlVarTypes_arr} rootclass='flex-grow-1 flex-shrink-1' value={castValType} />
+                {sizeOneInptELem}
+                {sizeTwoInputElem}
+            </React.Fragment>
         );
     }
     //编译
