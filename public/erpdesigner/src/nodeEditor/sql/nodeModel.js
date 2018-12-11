@@ -3147,8 +3147,6 @@ class SqlNode_Cast extends SqlNode_Base{
         this.size_2 = ReplaceIfNaN(this.size_2, 0);
         autoBind(this);
 
-        //this.isConstNode = true; //使节点不可被删除
-
         this.addSocket(new NodeSocket('in0', this, true, {type:SqlVarType_Table}));
   
         if(nodeJson){
