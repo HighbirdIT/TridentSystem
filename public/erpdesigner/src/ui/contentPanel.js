@@ -135,6 +135,11 @@ class ContentPanel extends React.PureComponent {
         this.props.wantOpenPanel(getAttributeByNode(ev.target, 'pname', true, 3));
     }
 
+    clickSaveBtnHanlder(ev){
+        var project = this.props.project;
+        var jsonData =  project.getJson();
+    }
+
     render() {
         var project = this.props.project;
         var isPC = this.state.isPC;
@@ -176,6 +181,7 @@ class ContentPanel extends React.PureComponent {
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} pname='datamaster' ><div>数</div><div>据</div><div>大</div><div>师</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} ><div>流</div><div>程</div><div>大</div><div>师</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} ><div>发</div><div>布</div></button>
+                        <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickSaveBtnHanlder} ><div>保</div><div>存</div></button>
                     </div>
                     <div onClick={this.clickContentDivHander} className='flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center'>
                         {

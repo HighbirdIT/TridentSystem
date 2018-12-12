@@ -101,8 +101,9 @@ var M_Page = function (_React$PureComponent) {
     }, {
         key: 'renderMobilePage',
         value: function renderMobilePage(ctlKernel) {
+            var layoutConfig = ctlKernel.getLayoutConfig();
             var rootDivClass = 'flex-grow-1 felx-shrink-0 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : '');
-            rootDivClass += ctlKernel.getRootDivClass();
+            rootDivClass += layoutConfig.baseClassName;
             return React.createElement(
                 React.Fragment,
                 null,
