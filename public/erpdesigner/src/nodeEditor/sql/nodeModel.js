@@ -3276,6 +3276,7 @@ class SqlNode_Cast extends SqlNode_Base{
             return superRet;
         }
         var nodeThis = this;
+        //节点名称
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
         var socketVal_arr = [];
