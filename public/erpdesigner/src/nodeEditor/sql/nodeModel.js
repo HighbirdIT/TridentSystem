@@ -3140,12 +3140,13 @@ class SqlNode_Getdate extends SqlNode_Base{
 class SqlNode_Cast extends SqlNode_Base{
     constructor(initData, parentNode, createHelper, nodeJson){
         super(initData, parentNode, createHelper, SQLNODE_CAST, 'CAST', false, nodeJson);
-        this.size_1 = ReplaceIfNaN(this.size_1, 0);
-        this.size_2 = ReplaceIfNaN(this.size_2, 0);
+        // this.size_1 = ReplaceIfNaN(this.size_1, 0);
+        // this.size_2 = ReplaceIfNaN(this.size_2, 0);
         autoBind(this);
 
         //this.isConstNode = true; //使节点不可被删除
 
+        //复原
         if(nodeJson){
             if(this.outputScokets_arr.length > 0){
                 this.outSocket = this.outputScokets_arr[0];
@@ -3155,6 +3156,7 @@ class SqlNode_Cast extends SqlNode_Base{
                 this.inSocket = this.inputScokets_arr[0];
             }
         }
+
         if(this.outSocket == null){
             this.outSocket = new NodeSocket('out', this, false, {type:SqlVarType_Boolean});
             this.addSocket(this.outSocket);
@@ -3181,17 +3183,17 @@ class SqlNode_Cast extends SqlNode_Base{
     restorFromAttrs(attrsJson){
     }
    
-    size1InputChangedHandler(newVal){
-        this.setState({
-            size_1:isNaN(newVal) ? 0 : parseInt(newVal),
-        });
-    }
+    // size1InputChangedHandler(newVal){
+    //     this.setState({
+    //         size_1:isNaN(newVal) ? 0 : parseInt(newVal),
+    //     });
+    // }
 
-    size2InputChangedHandler(newVal){
-        this.setState({
-            size_2:isNaN(newVal) ? 0 : parseInt(newVal),
-        });
-    }
+    // size2InputChangedHandler(newVal){
+    //     this.setState({
+    //         size_2:isNaN(newVal) ? 0 : parseInt(newVal),
+    //     });
+    // }
     
     castTypeDropdownChangedHandler(data, dropCtl){
         var theSocket = this.inSocket;
@@ -3269,6 +3271,7 @@ class SqlNode_Cast extends SqlNode_Base{
 
     compile(helper, preNodes_arr){
         var superRet = super.compile(helper, preNodes_arr);
+
         if(superRet == false || superRet != null){
             return superRet;
         }
@@ -3276,10 +3279,13 @@ class SqlNode_Cast extends SqlNode_Base{
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
         var socketVal_arr = [];
+
         for(var i=0;i<this.inputScokets_arr.length;++i){
             var theSocket = this.inputScokets_arr[i];
             var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
             var tValue = null;
+            
+
             if(tLinks.length == 0){
                 helper.logManager.errorEx([helper.logManager.createBadgeItem( 
                      thisNodeTitle
@@ -3302,7 +3308,7 @@ class SqlNode_Cast extends SqlNode_Base{
             }
             socketVal_arr.push(tValue);
         }
-        var finalStr = ' cast(';
+        var finalStr = thisNodeTitle+'(';
         if(socketVal_arr.length == 0){
             finalStr += '(select 0))';
         }
