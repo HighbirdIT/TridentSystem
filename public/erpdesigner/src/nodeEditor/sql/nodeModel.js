@@ -1798,7 +1798,44 @@ class SqlNode_Select extends SqlNode_Base{
         var selfCompileRet = new CompileResult(this);
         var columnsStr = '';
         selectColumns_arr.forEach((x,i)=>{columnsStr += (i == 0 ? '' : ',') + x.strContent + (x.alias == null ? '' : ' as [' + x.alias + ']') });
-        var finalSql = 'select ' + columnsStr + ' from ' + fromString
+        var topString = '';
+        if(!IsEmptyString(columnNode.topValue)){
+            if(isNaN(columnNode.topValue)){
+                var reg = /^\d+%$/;
+                if(!reg.test(columnNode.topValue)){
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem( 
+                        thisNodeTitle
+                        ,columnNode
+                        ,helper.clickLogBadgeItemHandler)
+                        ,"top值不合法"]);
+                    return false;
+                }
+                var num = columnNode.topValue.substr(0, columnNode.topValue.length - 1);
+                if(num == 0){
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem( 
+                        thisNodeTitle
+                        ,columnNode
+                        ,helper.clickLogBadgeItemHandler)
+                        ,"top值不合法"]);
+                    return false;
+                }
+                else if(num > 100){
+                    helper.logManager.warnEx(
+                        [helper.logManager.createBadgeItem( 
+                            thisNodeTitle
+                            ,columnNode
+                            ,helper.clickLogBadgeItemHandler)
+                            ,"top百分比值被修改为100%"]
+                    );
+                    num = 100;
+                }
+                topString = 'top ' + num + ' percent ';
+            }
+            else{
+                topString = 'top ' + columnNode.topValue + ' ';
+            }
+        }
+        var finalSql = 'select ' + topString + columnsStr + ' from ' + fromString
                         + (IsEmptyString(whereString) ? '' : ' where ' + whereString)
                         + (IsEmptyString(sortString) ? '' : ' order by ' + sortString);
         selfCompileRet.setSocketOut(this.outSocket, finalSql,{tableName:this.title});
@@ -2227,6 +2264,16 @@ class SqlNode_Ret_Columns extends SqlNode_Base{
                 x.type = SqlVarType_Scalar;
             });
         }
+    }
+
+    requestSaveAttrs(){
+        var rlt = super.requestSaveAttrs();
+        rlt.topValue = this.topValue;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson){
+        assginObjByProperties(this, attrsJson, ['topValue']);
     }
 
     genInSocket(){
@@ -2807,14 +2854,13 @@ class SqlNode_BetWeen extends SqlNode_Base{
         if(nodeJson){
             if(this.outputScokets_arr.length > 0){
                 this.outSocket = this.outputScokets_arr[0];
-                this.outSocket.type = SqlVarType_Scalar;
+                this.outSocket.type = SqlVarType_Boolean;
             }
         }
 //定义输出接口标量
         if(this.outSocket == null){
-            this.outSocket = new NodeSocket('out', this, false, {type:SqlVarType_Scalar});
+            this.outSocket = new NodeSocket('out', this, false, {type:SqlVarType_Boolean});
             this.addSocket(this.outSocket);
-            
         }
 //定义输入接口标量
         if(this.inputScokets_arr.length == 0)
@@ -2883,26 +2929,7 @@ class SqlNode_BetWeen extends SqlNode_Base{
             socketVal_arr.push(tValue);
         }
         //SQL语句拼接
-        var finalStr = null;
-            socketVal_arr.forEach((x,i)=>{
-                console.log(i);
-                if(i==0)
-                {
-                    finalStr=x;
-                }
-               else if(i==1)
-               {
-                finalStr+=' BETWEEN '+x;
-               }
-               else
-               {
-                finalStr+=' and '+x;
-               }
-                
-            });
-            finalStr += ' ';
-        
-
+        var finalStr = socketVal_arr[0] + ' between ' + socketVal_arr[1] + ' and ' + socketVal_arr[2];
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, finalStr);
         helper.setCompileRetCache(this,selfCompileRet);
@@ -3296,7 +3323,7 @@ SqlNodeClassMap[SQLNODE_RET_CONDITION] = {
 };
 SqlNodeClassMap[SQLNODE_RET_COLUMNS] = {
     modelClass: SqlNode_Ret_Columns,
-    comClass: C_SqlNode_SimpleNode,
+    comClass: C_SqlNode_Ret_Columns,
 };
 SqlNodeClassMap[SQLNODE_RET_ORDER] = {
     modelClass: SqlNode_Ret_Order,
