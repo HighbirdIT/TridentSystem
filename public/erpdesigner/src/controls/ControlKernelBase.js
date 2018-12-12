@@ -60,19 +60,105 @@ class ControlKernelBase extends IAttributeable{
         ev.preventDefault();
     }
 
-    getRootDivClass(){
+    getLayoutConfig(){
+        var rlt = new ControlLayoutConfig();
         var apdAttrList = this.getAttrArrayList(AttrNames.LayoutNames.APDClass);
-        var temmap = {};
         var self = this;
         apdAttrList.forEach(attrArrayItem=>{
             var val = this.getAttribute(attrArrayItem.name);
-            if(!IsEmptyString(val) && temmap[val] == null){
-                temmap[val] = 1;
+            rlt.addClass(val);
+        });
+
+        var styleAttrList = this.getAttrArrayList(AttrNames.LayoutNames.StyleAttr);
+        styleAttrList.forEach(attrArrayItem=>{
+            var val = this.getAttribute(attrArrayItem.name);
+            if(val != null && !IsEmptyString(val.name) && !IsEmptyString(val.value)){
+                var styleName = val.name;
+                var styleValue = val.value;
+                switch(styleName){
+                    case AttrNames.StyleAttrNames.Width:
+                    case AttrNames.StyleAttrNames.Height:
+                    {
+                        styleValue = isNaN(styleValue) ? styleValue : styleValue + 'px';
+                        break;
+                    }
+                    case AttrNames.StyleAttrNames.FlexGrow:
+                    {
+                        rlt.addSwitchClass(AttrNames.StyleAttrNames.FlexGrow, styleValue ? 1 : 0);
+                        styleName = null;
+                        break;
+                    }
+                    case AttrNames.StyleAttrNames.FlexShrink:
+                    {
+                        rlt.addSwitchClass(AttrNames.StyleAttrNames.FlexShrink, styleValue ? 1 : 0);
+                        styleName = null;
+                        break;
+                    }
+                }
+
+                if(styleName != null){
+                    rlt.addStyle(styleName,styleValue);
+                }
             }
         });
+        return rlt;
+    }
+}
+
+const g_switchClassNameReg = /-\d+$/;
+
+class ControlLayoutConfig{
+    constructor(){
+        this.class = {};
+        this.style = {};
+        this.switch = {};
+    }
+
+    addSwitchClass(switchName, switchVal, existsProcess){
+        if(this.switch[switchName] != null){
+            switch(existsProcess){
+                case 'set':
+                this.class[this.switch[switchName].name] = 0;
+                break;
+                default:
+                return false;
+            }
+        }
+        var className = switchName + '-' + switchVal;
+        this.switch[switchName] = {name:className, val:switchVal};
+        this.class[className] = 1;
+        return true;
+    }
+
+    addClass(className, existsProcess){
+        if(IsEmptyString(className)){
+            return false;
+        }
+        var t_arr = g_switchClassNameReg.exec(className);
+        if(t_arr != null){
+            var switchName = className.substr(0, className.length - t_arr[0].length);
+            var switchVal = t_arr[0].substr(1);
+            return this.addSwitchClass(switchName, switchVal, existsProcess);
+        }
+
+        this.class[className] = 1;
+        return true;
+    }
+
+    addStyle(name,val){
+        if(IsEmptyString(name) || val == null){
+            return false;
+        }
+        this.style[name] = val;
+        return true;
+    }
+
+    getClassName(){
         var rlt = '';
-        for(var si in temmap){
-            rlt += ' ' + si;
+        for(var si in this.class){
+            if(this.class[si] == 0)
+            continue;
+            rlt += si + ' ';
         }
         return rlt;
     }

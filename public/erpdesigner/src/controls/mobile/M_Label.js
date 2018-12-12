@@ -35,7 +35,11 @@ class M_Label extends React.PureComponent {
         };
 
         autoBind(this);
-        M_ControlBase(this,['text']);
+        M_ControlBase(this,[
+            AttrNames.Text,
+            AttrNames.LayoutNames.APDClass,
+            AttrNames.LayoutNames.StyleAttr,
+        ]);
     }
 
     aAttrChanged(changedAttrName) {
@@ -49,15 +53,18 @@ class M_Label extends React.PureComponent {
 
     render(){
         var ctlKernel = this.props.ctlKernel;
-        var className = 'flex-grow-0 flex-shrink-0';
+        var layoutConfig = ctlKernel.getLayoutConfig();
+        layoutConfig.addClass('flex-grow-0');
+        layoutConfig.addClass('flex-shrink-0');
         if(this.props.ctlKernel.__placing){
-            className += ' M_placingCtl';
-            return (<div className={className} ref={this.rootElemRef}>标签内容</div>);
+            layoutConfig.addClass('M_placingCtl');
+            return (<div className={layoutConfig.getClassName()} style={layoutConfig.style} ref={this.rootElemRef}>标签内容</div>);
         }
-        className += ctlKernel.getRootDivClass();
-        className += ' M_Label border hb-control';
+        layoutConfig.addClass('M_Label');
+        layoutConfig.addClass('border');
+        layoutConfig.addClass('hb-control');
         return(
-            <div className={className} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+            <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {
                     this.state.text
                 }

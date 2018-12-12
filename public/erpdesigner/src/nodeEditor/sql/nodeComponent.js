@@ -441,9 +441,16 @@ class C_SqlNode_Select extends React.PureComponent{
         if(columns_arr.length == 0){
             return null;
         }
+        var topValue = nodeData.columnNode.topValue;
+        if(topValue == null){
+            topValue = '';
+        }
+        else{
+            topValue = ' top ' + topValue;
+        }
         return <div className='d-flex flex-column'>
                     <div className="dropdown-divider"></div>
-                    <div>Select</div>
+                    <div>Select{topValue}</div>
                     {
                     columns_arr.map(column=>{
                         return <div key={column.name} className='text-nowrap'>{column.name}</div>
@@ -892,5 +899,44 @@ class C_SqlNode_Logical_Operator extends React.PureComponent{
                     <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null}/>
                 </div>
             </C_SqlNode_Frame>
+    }
+}
+
+class C_SqlNode_Ret_Columns extends React.PureComponent{
+    constructor(props){
+        super(props);
+        autoBind(this);
+
+        C_SqlNode_Base(this);
+        this.state={
+            topValue:this.props.nodedata.topValue,
+        }
+    }
+
+    topInputChangeHandler(ev){
+        var topValue=ev.target.value;
+        this.setState(
+            {topValue:topValue}
+        );
+        this.props.nodedata.topValue = topValue;
+    }
+
+    render(){
+        var nodeData = this.props.nodedata;
+        var topVal = this.state.topValue;
+        if(topVal == null){
+            topVal = '';
+        }
+        var headType = nodeData.headType == null ? 'tiny' : nodeData.headType;
+        return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType={headType} headText={nodeData.label} >
+                <div className='d-flex'>
+                    <div>Top:</div>
+                    <input type='text' className='flex-grow-1 flex-shrink-1' value={topVal} onChange={this.topInputChangeHandler}/>'
+                </div>
+                <div className='d-flex'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+                </div>
+                </C_SqlNode_Frame>
     }
 }

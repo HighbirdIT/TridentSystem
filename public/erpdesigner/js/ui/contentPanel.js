@@ -159,6 +159,12 @@ var ContentPanel = function (_React$PureComponent) {
             this.props.wantOpenPanel(getAttributeByNode(ev.target, 'pname', true, 3));
         }
     }, {
+        key: 'clickSaveBtnHanlder',
+        value: function clickSaveBtnHanlder(ev) {
+            var project = this.props.project;
+            var jsonData = project.getJson();
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this3 = this;
@@ -298,6 +304,20 @@ var ContentPanel = function (_React$PureComponent) {
                                 'div',
                                 null,
                                 '\u5E03'
+                            )
+                        ),
+                        React.createElement(
+                            'button',
+                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickSaveBtnHanlder },
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u4FDD'
+                            ),
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u5B58'
                             )
                         )
                     ),

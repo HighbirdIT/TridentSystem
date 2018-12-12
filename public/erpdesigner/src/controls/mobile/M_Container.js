@@ -57,31 +57,30 @@ class M_Container extends React.PureComponent {
 
     render(){
         var ctlKernel = this.props.ctlKernel;
-        var className = 'd-flex ';
-        className += ctlKernel.getRootDivClass();
-        className += ' flex-grow-' + (this.state[AttrNames.FlexGrow] != false ? '1' : '0');
-        className += ' flex-shrink-' + (this.state[AttrNames.FlexShrink] != false ? '1' : '0');
-        var rootStyle = {};
-        if(this.state.width){
-            rootStyle.width = this.state.width + (!isNaN(this.state.width) ? 'px' : '');
-        }
-        if(this.state.height){
-            rootStyle.height = this.state.height + (!isNaN(this.state.height) ? 'px' : '');
-        }
+        var layoutConfig = ctlKernel.getLayoutConfig();
+        layoutConfig.addClass('d-flex');
+        layoutConfig.addClass('flex-grow-1');
+        layoutConfig.addClass('flex-shrink-1');
+        var rootStyle = layoutConfig.style;
 
         if(this.props.ctlKernel.__placing){
-            className += ' M_Container_Empty M_placingCtl'
+            layoutConfig.addClass('M_Container_Empty');
+            layoutConfig.addClass('M_placingCtl');
                         +(this.state.orientation == Orientation_V ? ' flex-column' : '')
-            return (<div className={className} style={rootStyle} ref={this.rootElemRef}></div>);
+            return (<div className={layoutConfig.getClassName()} style={rootStyle} ref={this.rootElemRef}></div>);
         }
-        className += ' M_Container border hb-control' 
-                        + (this.state.orientation == Orientation_V ? ' flex-column' : '')
-                        + (this.props.ctlKernel.children.length ==0 ? ' M_Container_Empty' : '')
-                        ;
-                        
+        layoutConfig.addClass('M_Container');
+        layoutConfig.addClass('border');
+        layoutConfig.addClass('hb-control');
+        if(this.state.orientation == Orientation_V){
+            layoutConfig.addClass('flex-column');
+        }
+        if(this.props.ctlKernel.children.length ==0){
+            layoutConfig.addClass('M_Container_Empty');
+        }
 
         return(
-            <div className={className} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id}  ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+            <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id}  ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {
                     this.props.ctlKernel.children.length == 0 ? 
                         this.props.ctlKernel.id :

@@ -136,12 +136,15 @@ class AttributeEditor extends React.PureComponent {
     styleNameDDCChanged(newName){
         var nowVal = this.state.value;
         nowVal.name = newName;
+        var setting = StyleAttrSetting[newName];
+        if(setting != null){
+            nowVal.value = setting.def;
+        }
         this.doSetAttribute(nowVal);
     }
 
     styleValueDDCChanged(newVal){
         var nowVal = this.state.value;
-        nowVal.value = newVal;
         this.doSetAttribute(nowVal);
     }
 
