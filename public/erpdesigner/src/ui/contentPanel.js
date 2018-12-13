@@ -138,6 +138,8 @@ class ContentPanel extends React.PureComponent {
     clickSaveBtnHanlder(ev){
         var project = this.props.project;
         var jsonData =  project.getJson();
+        console.log(jsonData);
+        project.designer.saveProject();
     }
 
     render() {
@@ -194,6 +196,7 @@ class ContentPanel extends React.PureComponent {
     }
 }
 
+/*
 function decode64(e) {
     try {
         var t = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
@@ -254,5 +257,4 @@ function convertRate(e) {
     }
     catch (e) { return !1 }
 }
-
-//alert(convertRate('fS44NDYxMDY3gQCGX9rraGOJs0'));
+*/

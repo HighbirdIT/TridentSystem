@@ -299,7 +299,7 @@ var DataBasePanel = function (_React$PureComponent3) {
         }
 
         /*
-        fetchJsonPosts('server',{action:'matchGet',keyword:'T922'}, function(rlt){
+        fetchJsonPost('server',{action:'matchGet',keyword:'T922'}, function(rlt){
             console.log(rlt);
         });
         */
@@ -328,7 +328,7 @@ var DataBasePanel = function (_React$PureComponent3) {
 
                 this.appendSynAction(newAction);
                 newAction.startFetch(function (callBack) {
-                    fetchJsonPosts('server', { action: 'syndata_bykeyword', keyword: keyword }, callBack);
+                    fetchJsonPost('server', { action: 'syndata_bykeyword', keyword: keyword }, callBack);
                 });
             }
         }
@@ -419,13 +419,13 @@ var DataBasePanel = function (_React$PureComponent3) {
     return DataBasePanel;
 }(React.PureComponent);
 
-var CusDBEEditor = function (_React$PureComponent4) {
-    _inherits(CusDBEEditor, _React$PureComponent4);
+var SqlBPEditor = function (_React$PureComponent4) {
+    _inherits(SqlBPEditor, _React$PureComponent4);
 
-    function CusDBEEditor(props) {
-        _classCallCheck(this, CusDBEEditor);
+    function SqlBPEditor(props) {
+        _classCallCheck(this, SqlBPEditor);
 
-        var _this6 = _possibleConstructorReturn(this, (CusDBEEditor.__proto__ || Object.getPrototypeOf(CusDBEEditor)).call(this, props));
+        var _this6 = _possibleConstructorReturn(this, (SqlBPEditor.__proto__ || Object.getPrototypeOf(SqlBPEditor)).call(this, props));
 
         _this6.state = {};
         autoBind(_this6);
@@ -434,7 +434,7 @@ var CusDBEEditor = function (_React$PureComponent4) {
         return _this6;
     }
 
-    _createClass(CusDBEEditor, [{
+    _createClass(SqlBPEditor, [{
         key: 'componentWillMount',
         value: function componentWillMount() {}
     }, {
@@ -456,7 +456,7 @@ var CusDBEEditor = function (_React$PureComponent4) {
         }
     }]);
 
-    return CusDBEEditor;
+    return SqlBPEditor;
 }(React.PureComponent);
 
 var NameInputRow = function (_React$PureComponent5) {
@@ -547,13 +547,13 @@ var NameInputRow = function (_React$PureComponent5) {
     return NameInputRow;
 }(React.PureComponent);
 
-var AddNewCusDSItemPanel = function (_React$PureComponent6) {
-    _inherits(AddNewCusDSItemPanel, _React$PureComponent6);
+var AddNewSqlBPPanel = function (_React$PureComponent6) {
+    _inherits(AddNewSqlBPPanel, _React$PureComponent6);
 
-    function AddNewCusDSItemPanel(props) {
-        _classCallCheck(this, AddNewCusDSItemPanel);
+    function AddNewSqlBPPanel(props) {
+        _classCallCheck(this, AddNewSqlBPPanel);
 
-        var _this8 = _possibleConstructorReturn(this, (AddNewCusDSItemPanel.__proto__ || Object.getPrototypeOf(AddNewCusDSItemPanel)).call(this, props));
+        var _this8 = _possibleConstructorReturn(this, (AddNewSqlBPPanel.__proto__ || Object.getPrototypeOf(AddNewSqlBPPanel)).call(this, props));
 
         _this8.state = {};
         autoBind(_this8);
@@ -563,7 +563,7 @@ var AddNewCusDSItemPanel = function (_React$PureComponent6) {
         return _this8;
     }
 
-    _createClass(AddNewCusDSItemPanel, [{
+    _createClass(AddNewSqlBPPanel, [{
         key: 'clickConfirmHandler',
         value: function clickConfirmHandler() {
             var name = this.nameRef.current.getValue().trim();
@@ -573,9 +573,9 @@ var AddNewCusDSItemPanel = function (_React$PureComponent6) {
                 });
                 return;
             }
-            if (this.props.dataMaster.getCusDBEByName(name) != null) {
+            if (this.props.dataMaster.getSqlBPByName(name) != null) {
                 this.setState({
-                    errinfo: '已有同名的自订数据存在'
+                    errinfo: '已有同名的蓝图存在'
                 });
                 return;
             }
@@ -586,7 +586,7 @@ var AddNewCusDSItemPanel = function (_React$PureComponent6) {
                 });
                 return;
             }
-            var newDBE = this.props.dataMaster.createCusDBE(name, type);
+            var newDBE = this.props.dataMaster.createSqlBP(name, type);
             this.props.onComplete(newDBE);
         }
     }, {
@@ -600,7 +600,7 @@ var AddNewCusDSItemPanel = function (_React$PureComponent6) {
             var nameWidth = 100;
             return React.createElement(
                 FloatPanelbase,
-                { title: '\u65B0\u5EFA\u81EA\u8BA2\u6570\u636E', width: 480, height: 320, initShow: true, sizeable: false, closeable: false, ismodel: true },
+                { title: '\u65B0\u5EFASql\u84DD\u56FE', width: 480, height: 320, initShow: false, sizeable: false, closeable: false, ismodel: true },
                 React.createElement(
                     'div',
                     { className: 'd-flex flex-grow-1 flex-shrink-1 flex-column' },
@@ -634,26 +634,26 @@ var AddNewCusDSItemPanel = function (_React$PureComponent6) {
         }
     }]);
 
-    return AddNewCusDSItemPanel;
+    return AddNewSqlBPPanel;
 }(React.PureComponent);
 
-var CreateDSItemPanel = function (_React$PureComponent7) {
-    _inherits(CreateDSItemPanel, _React$PureComponent7);
+var SqlBPItemPanel = function (_React$PureComponent7) {
+    _inherits(SqlBPItemPanel, _React$PureComponent7);
 
-    function CreateDSItemPanel(props) {
-        _classCallCheck(this, CreateDSItemPanel);
+    function SqlBPItemPanel(props) {
+        _classCallCheck(this, SqlBPItemPanel);
 
-        var _this9 = _possibleConstructorReturn(this, (CreateDSItemPanel.__proto__ || Object.getPrototypeOf(CreateDSItemPanel)).call(this, props));
+        var _this9 = _possibleConstructorReturn(this, (SqlBPItemPanel.__proto__ || Object.getPrototypeOf(SqlBPItemPanel)).call(this, props));
 
         _this9.state = {
-            items_arr: _this9.props.project.dataMaster.customDBEntities_arr,
+            items_arr: _this9.props.project.dataMaster.BP_sql_arr,
             selectedItem: null
         };
         autoBind(_this9);
         return _this9;
     }
 
-    _createClass(CreateDSItemPanel, [{
+    _createClass(SqlBPItemPanel, [{
         key: 'clickListItemHandler',
         value: function clickListItemHandler(ev) {
             var targetCode = getAttributeByNode(ev.target, 'data-itemvalue', true, 5);
@@ -670,8 +670,8 @@ var CreateDSItemPanel = function (_React$PureComponent7) {
             });
         }
     }, {
-        key: 'newCusCompleteHandler',
-        value: function newCusCompleteHandler(newDBE) {
+        key: 'newItemCompleteHandler',
+        value: function newItemCompleteHandler(newDBE) {
             this.setState({
                 creating: false
             });
@@ -685,7 +685,7 @@ var CreateDSItemPanel = function (_React$PureComponent7) {
             return React.createElement(
                 React.Fragment,
                 null,
-                this.state.creating ? React.createElement(AddNewCusDSItemPanel, { dataMaster: this.props.project.dataMaster, onComplete: this.newCusCompleteHandler }) : null,
+                this.state.creating ? React.createElement(AddNewSqlBPPanel, { dataMaster: this.props.project.dataMaster, onComplete: this.newItemCompleteHandler }) : null,
                 React.createElement(SplitPanel, {
                     defPercent: 0.45,
                     maxSize: '200px',
@@ -714,14 +714,14 @@ var CreateDSItemPanel = function (_React$PureComponent7) {
                     panel2: React.createElement(
                         'div',
                         { className: 'd-flex flex-grow-1 flex-shrink-1 bg-dark mw-100' },
-                        React.createElement(CusDBEEditor, { item: selectedItem })
+                        React.createElement(SqlBPEditor, { item: selectedItem })
                     )
                 })
             );
         }
     }]);
 
-    return CreateDSItemPanel;
+    return SqlBPItemPanel;
 }(React.PureComponent);
 
 var DataMasterPanel = function (_React$PureComponent8) {
@@ -737,7 +737,7 @@ var DataMasterPanel = function (_React$PureComponent8) {
 
         autoBind(_this11);
 
-        var navItems = [CreateNavItemData('数据库', React.createElement(DataBasePanel, { project: _this11.props.project })), CreateNavItemData('创造数据', React.createElement(CreateDSItemPanel, { project: _this11.props.project }))];
+        var navItems = [CreateNavItemData('数据库', React.createElement(DataBasePanel, { project: _this11.props.project })), CreateNavItemData('创造数据', React.createElement(SqlBPItemPanel, { project: _this11.props.project }))];
         _this11.navData = {
             selectedItem: navItems[1],
             items: navItems
@@ -774,7 +774,7 @@ var DataMasterPanel = function (_React$PureComponent8) {
 
             return React.createElement(
                 FloatPanelbase,
-                { title: '\u6570\u636E\u5927\u5E08', ref: this.panelBaseRef, initShow: true, initMax: true },
+                { title: '\u6570\u636E\u5927\u5E08', ref: this.panelBaseRef, initShow: false, initMax: true },
                 React.createElement(
                     'div',
                     { className: 'd-flex flex-grow-0 flex-shrink-0' },

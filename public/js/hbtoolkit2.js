@@ -73,7 +73,7 @@ function receivePosts(key, json) {
     };
 }
 
-function fetchJsonPosts(url, postdata) {
+function fetchJsonPost(url, postdata) {
     var key = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
     var tip = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '加载中';
     var timeout = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 15;

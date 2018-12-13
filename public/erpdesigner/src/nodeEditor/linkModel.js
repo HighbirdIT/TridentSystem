@@ -209,10 +209,10 @@ class ScoketLinkPool{
         return rlt_arr;
     }
 
-    restorFromJson(linkJason_arr, createHelper){
+    restorFromJson(linkjson_arr, createHelper){
         var self = this;
-        if(linkJason_arr != null){
-            linkJason_arr.forEach(linkJson => {
+        if(linkjson_arr != null){
+            linkjson_arr.forEach(linkJson => {
                 var inSocket = createHelper.getObjFromID(linkJson.inSocketID);
                 var outSocket = createHelper.getObjFromID(linkJson.outSocketID);
                 if(inSocket == null || outSocket == null){

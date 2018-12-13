@@ -1048,7 +1048,7 @@ function doUpload() {
         postData.photoName = state.main.tel + state.main.name;
         postData.Orientation = Orientation;
     }
-    store.dispatch(fetchJsonPosts('onlineinterview_process', postData, 'uploading'));
+    store.dispatch(fetchJsonPost('onlineinterview_process', postData, 'uploading'));
 }
 
 function photoViewDisptchToprops(dispatch, ownProps) {
@@ -1389,4 +1389,4 @@ ReactDOM.render(React.createElement(
     React.createElement(ThisPage, null)
 ), document.getElementById('root'));
 
-store.dispatch(fetchJsonPosts('onlineinterview_process', { action: 'pageinit' }, 'pageiniting'));
+store.dispatch(fetchJsonPost('onlineinterview_process', { action: 'pageinit' }, 'pageiniting'));

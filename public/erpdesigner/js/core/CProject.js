@@ -2,6 +2,8 @@
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
@@ -26,7 +28,7 @@ function genProjectName() {
 var CProject = function (_IAttributeable) {
     _inherits(CProject, _IAttributeable);
 
-    function CProject(title) {
+    function CProject(title, jsonData) {
         _classCallCheck(this, CProject);
 
         var _this = _possibleConstructorReturn(this, (CProject.__proto__ || Object.getPrototypeOf(CProject)).call(this, {
@@ -55,49 +57,45 @@ var CProject = function (_IAttributeable) {
         _this.content_PC = {
             pages: []
         };
-        var mainPage = new M_PageKernel({
-            title: '主页面',
-            isMain: 1,
-            nav: {
-                hidden: 1,
-                leftBtn: {
-                    hidden: 0,
-                    label: '返回',
-                    action: 'retutn'
-                },
-                rightBtn: {
-                    hidden: 0
-                }
-            },
-            body: {
-                direction: 'column'
-            }
-        }, _this);
-        /*
-        var secondPage=new M_PageKernel({
-            title:'次页面',
-            isMain:0,
-            nav:{
-                hidden:1,
-                leftBtn:{
-                    hidden:0,
-                    label:'返回',
-                    action:'retutn'
-                },
-                rightBtn:{
-                    hidden:0
-                }
-            },
-            body:{
-                direction:'column'
-            }
-        }, this);
-        */
-        mainPage.project = _this;
-        //secondPage.project = this;
+
         _this.content_Mobile = {
-            pages: [mainPage]
+            pages: []
         };
+
+        if (jsonData == null) {
+            var mainPage = new M_PageKernel({
+                title: '主页面',
+                isMain: 1,
+                nav: {
+                    hidden: 1,
+                    leftBtn: {
+                        hidden: 0,
+                        label: '返回',
+                        action: 'retutn'
+                    },
+                    rightBtn: {
+                        hidden: 0
+                    }
+                },
+                body: {
+                    direction: 'column'
+                }
+            }, _this);
+            mainPage.project = _this;
+            _this.content_Mobile.pages.push(mainPage);
+        } else {
+            if (jsonData.attr != null) {
+                Object.assign(_this, jsonData.attr);
+            }
+            var self = _this;
+            _this.dataMaster.restoreFromJson(jsonData.dataMaster);
+
+            var ctlCreatioinHelper = new CtlKernelCreationHelper();
+            jsonData.content_Mobile.pages.forEach(function (pageJson) {
+                var newPage = new M_PageKernel({}, _this, ctlCreatioinHelper, pageJson);
+                _this.content_Mobile.pages.push(newPage);
+            });
+        }
         return _this;
     }
 
@@ -105,8 +103,12 @@ var CProject = function (_IAttributeable) {
         key: 'registerControl',
         value: function registerControl(ctlKernel) {
             var useID = ctlKernel.id;
-            if (this.getControlById(useID) == this) {
+            var registedCtl = this.getControlById(useID);
+            if (registedCtl == ctlKernel) {
                 console.warn(useID + ' 重复注册');
+            } else if (registedCtl != null) {
+                console.warn(useID + ' 已被占用');
+                useID = null;
             }
             if (IsEmptyString(useID)) {
                 for (var i = 0; i < 9999; ++i) {
@@ -218,6 +220,29 @@ var CProject = function (_IAttributeable) {
         key: 'get_realName',
         value: function get_realName() {
             return this.getAttribute(AttrNames.Title) + 'Real';
+        }
+    }, {
+        key: 'getJson',
+        value: function getJson() {
+            var attrJson = _get(CProject.prototype.__proto__ || Object.getPrototypeOf(CProject.prototype), 'getJson', this).call(this);
+            var rlt = {
+                attr: attrJson
+            };
+            rlt.content_PC = {
+                pages: []
+            };
+            this.content_PC.pages.forEach(function (page) {
+                rlt.content_PC.pages.push(page.getJson());
+            });
+
+            rlt.content_Mobile = {
+                pages: []
+            };
+            this.content_Mobile.pages.forEach(function (page) {
+                rlt.content_Mobile.pages.push(page.getJson());
+            });
+            rlt.dataMaster = this.dataMaster.getJson();
+            return rlt;
         }
     }]);
 
