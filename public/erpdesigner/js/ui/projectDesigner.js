@@ -34,6 +34,11 @@ var ProjectDesigner = function (_React$PureComponent) {
     }
 
     _createClass(ProjectDesigner, [{
+        key: 'saveProject',
+        value: function saveProject() {
+            this.props.savePanelRef.current.saveProject(this.props.project);
+        }
+    }, {
         key: 'propUpMenu',
         value: function propUpMenu(items_arr, pos, callBack) {
             this.quickMenuRef.current.popMenu(items_arr, pos, callBack);

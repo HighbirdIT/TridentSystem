@@ -17,7 +17,7 @@ class LoginPanel extends React.PureComponent {
         this.setState({
             info:'尝试自动登录',
         });
-        fetchJsonPosts('server', { action: 'loginUseCoockie'}, this.loginUseCookieCallBack);
+        fetchJsonPost('server', { action: 'loginUseCoockie'}, this.loginUseCookieCallBack);
     }
 
     logComplete(useData){
@@ -85,7 +85,7 @@ class LoginPanel extends React.PureComponent {
             //var dstText = forge.util.encodeUtf8("12345"); 
             var encryptPass = usePublickKey.encrypt(this.usePassword);
             var encryptAccount = usePublickKey.encrypt(this.useAccount);
-            fetchJsonPosts('server', { action: 'login', account:encryptAccount, password:encryptPass}, this.loginCallBack);
+            fetchJsonPost('server', { action: 'login', account:encryptAccount, password:encryptPass}, this.loginCallBack);
         }
         else{
             this.endFetch(respon.json.err.info);
@@ -116,7 +116,7 @@ class LoginPanel extends React.PureComponent {
             this.endFetch('密码太短');
             return;
         }
-        fetchJsonPosts('server', { action: 'getPreLogData' }, this.getPreLogDataCallBack);
+        fetchJsonPost('server', { action: 'getPreLogData' }, this.getPreLogDataCallBack);
         this.fetching = true;
     }
 

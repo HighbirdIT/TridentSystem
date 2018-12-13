@@ -83,7 +83,7 @@ app.use('/ERPDesigner/server',function( req, res, next)
     return;
 });
 
-app.use('/ERPDesigner',function( req, res, next)
+app.use('/ERPDesigner/main',function( req, res, next)
 {
     return res.render('ERPDesigner/main', {layout:null}); 
 });

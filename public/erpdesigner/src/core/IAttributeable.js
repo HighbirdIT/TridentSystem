@@ -148,4 +148,36 @@ class IAttributeable extends EventEmitter{
         this.attrChanged(attrName);
         return nowAttrArrayList.length;
     }
+
+    getJson(){
+        var rlt={};
+        this.attrbuteGroups.forEach(group=>{
+            group.attrs_arr.forEach(attr=>{
+                if(!attr.editable)
+                    return;
+                if(attr.isArray){
+                    var attrItemArray = this.getAttrArrayList(attr.name);
+                    attrItemArray.forEach(attrItemInArray=>{
+                        var val = this[attrItemInArray.name];
+                        if(val == null || val == attr.defaultVal){
+                            return;
+                        }
+                        rlt[attrItemInArray.name] = val;
+                    });
+                }
+                else{
+                    var val = this[attr.name];
+                    if(val == null || val == attr.defaultVal){
+                        return;
+                    }
+                    rlt[attr.name] = val;
+                }
+            });
+        });
+        return rlt;
+    }
+
+    restoreJson(target){
+        Object.assign(this, target);
+    }
 }

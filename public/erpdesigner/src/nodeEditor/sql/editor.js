@@ -911,28 +911,50 @@ class SqlNodeOutlineItem extends React.PureComponent{
 
         this.state = {
             label:this.props.nodeData.getNodeTitle(true),
+            nodeData:this.props.nodeData,
         }
     }
 
+    listenNode(target){
+        target.on('changed', this.nodeChangedhandler);
+    }
+
+    unlistenNode(target){
+        target.off('changed', this.nodeChangedhandler);
+    }
+
     componentWillMount(){
-        this.props.nodeData.on('changed', this.nodeChangedhandler);
+        this.listenNode(this.state.nodeData);
     }
 
     componentWillUnmount(){
-        this.props.nodeData.off('changed', this.nodeChangedhandler);
+        this.unlistenNode(this.state.nodeData);
     }
 
     nodeChangedhandler(){
         this.setState({
-            label:this.props.nodeData.getNodeTitle(),
+            label:this.state.nodeData.getNodeTitle(),
         });
     }
 
     clickHandler(ev){
-        this.props.clickHandler(this.props.nodeData);
+        this.props.clickHandler(this.state.nodeData);
     }
 
     render(){
+        if(this.state.nodeData != this.props.nodeData){
+            this.unlistenNode(this.state.nodeData);
+            this.listenNode(this.props.nodeData);
+            var self = this;
+            var newNodeData = this.props.nodeData;
+            setTimeout(() => {
+                self.setState({
+                    nodeData:newNodeData,
+                    label:newNodeData.getNodeTitle(true),
+                });
+            }, 20);
+            return null;
+        }
         return <div className='text-nowrap text-light cursor-pointer'  onClick={this.clickHandler}>{this.state.label}</div>
     }
 }

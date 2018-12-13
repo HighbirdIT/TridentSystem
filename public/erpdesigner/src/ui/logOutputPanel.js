@@ -202,16 +202,16 @@ class CLogItem extends React.PureComponent{
         var d = new Date();
         var paseSec = Math.floor((logItem.time / 1000.0));
         var itemID = this.props.idPrefix + '_' + this.props.index;
-        return (<span>
+        return (<div className='d-flex flex-grow-0 flex-shrink-0'>
                     <span className='text-light'>{'[' + paseSec + ']'}</span>
                     {iconElem}
-                    <span id={itemID} className={textColor + ' selectable'}>
+                    <span id={itemID} className={textColor + ' selectable flex-grow-1 flex-shrink-1'}>
                         {this.renderItem(logItem)}
                     </span>
                     <span ref={this.copyBtnRef} className='btn btn-dark' data-clipboard-target={"#" + itemID}>
                         <i className='fa fa-copy text-light' />
                     </span>
-                </span>);
+                </div>);
     }
 }
 
@@ -250,7 +250,7 @@ class LogOutputPanel extends React.PureComponent {
             console.error("LogOutputPanel'source need id prop!");
         }
         return (
-            <div className={"w-100 h-100 autoScroll d-flex flex-column " + (this.props.className == null ? '' : this.props.className)}>
+            <div className={"w-100 h-100 autoScroll d-flex flex-column" + (this.props.className == null ? '' : this.props.className)}>
                 {
                     this.state.infos_arr.map((logItem,i)=>{
                         return <CLogItem key={i} logItem={logItem} idPrefix={sourceID} index={i} />

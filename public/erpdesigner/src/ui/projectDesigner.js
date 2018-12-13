@@ -18,6 +18,10 @@ class ProjectDesigner extends React.PureComponent {
         this.selectedKernel = null;
     }
 
+    saveProject(){
+        this.props.savePanelRef.current.saveProject(this.props.project);
+    }
+
     propUpMenu(items_arr, pos, callBack){
         this.quickMenuRef.current.popMenu(items_arr, pos, callBack);
     }

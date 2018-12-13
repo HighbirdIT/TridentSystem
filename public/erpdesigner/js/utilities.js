@@ -176,33 +176,49 @@ function fetchResult(key, sucess, json, postdata) {
 	};
 }
 
-function fetchJsonPosts(url, postdata, callBack) {
-	var key = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-	var timeout = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 2;
+function fetchJson(useGet, url, params, callBack) {
+	var key = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
+	var timeout = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 2;
 
 	timeout = Math.min(Math.max(30, timeout), 120) * 1000;
 	var thisFetch = {};
 	thisFetch.callBack = callBack;
 	var timeoutHandler = setTimeout(function () {
 		if (thisFetch.callBack) {
-			thisFetch.callBack(fetchResult(key, false, { err: { info: '啊哦，服务器没响应了' } }, postdata));
+			thisFetch.callBack(fetchResult(key, false, { err: { info: '啊哦，服务器没响应了' } }, params));
 		}
 	}, timeout);
 
-	return fetch(url, {
-		method: "POST",
-		body: JSON.stringify(postdata),
+	var fetchParam = {
+		method: useGet ? "GET" : "POST",
 		headers: {
 			"Content-Type": "application/json"
 		},
 		credentials: "include"
-	}).then(function (response) {
+	};
+	if (useGet) {
+		if (params != null) {
+			var str = '';
+			for (var si in params) {
+				str += si + '=' + params[si];
+			}
+			if (str.length > 0) {
+				url += '?' + str;
+			}
+		}
+	} else {
+		fetchParam.body = JSON.stringify(params);
+	}
+
+	//console.log(url);
+
+	return fetch(url, fetchParam).then(function (response) {
 		clearTimeout(timeoutHandler);
 		if (response.ok) {
 			return response.json();
 		} else {
 			if (thisFetch.callBack) {
-				thisFetch.callBack(fetchResult(key, false, { err: { info: response.statusText } }, postdata));
+				thisFetch.callBack(fetchResult(key, false, { err: { info: response.statusText } }, params));
 			}
 			return null;
 		}
@@ -211,10 +227,24 @@ function fetchJsonPosts(url, postdata, callBack) {
 	}).then(function (json) {
 		if (json != null) {
 			if (thisFetch.callBack) {
-				thisFetch.callBack(fetchResult(key, true, json, postdata));
+				thisFetch.callBack(fetchResult(key, true, json, params));
 			}
 		}
 	});
+}
+
+function fetchJsonPost(url, postdata, callBack) {
+	var key = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+	var timeout = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 2;
+
+	fetchJson(false, url, postdata, callBack, key, timeout);
+}
+
+function fetchJsonGet(url, params, callBack) {
+	var key = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+	var timeout = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 2;
+
+	fetchJson(true, url, params, callBack, key, timeout);
 }
 
 function ReplaceIfNull(val, def) {

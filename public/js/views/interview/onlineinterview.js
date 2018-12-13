@@ -1091,7 +1091,7 @@ function photoViewDisptchToprops(dispatch, ownProps) {
             postData.ques_arr = getMustAnswerQues(state.main);
             postData.imgBase64 = selectedFileBase64;
             postData.Orientation = Orientation;
-            store.dispatch(fetchJsonPosts('onlineinterview_process', postData, 'uploading'));
+            store.dispatch(fetchJsonPost('onlineinterview_process', postData, 'uploading'));
             //store.dispatch(uiModelOpen('LoadingModel','正在上传'));
         }
     };
@@ -1425,4 +1425,4 @@ ReactDOM.render(React.createElement(
     React.createElement(ThisPage, null)
 ), document.getElementById('root'));
 
-store.dispatch(fetchJsonPosts('onlineinterview_process', { action: 'pageinit' }, 'pageiniting'));
+store.dispatch(fetchJsonPost('onlineinterview_process', { action: 'pageinit' }, 'pageiniting'));

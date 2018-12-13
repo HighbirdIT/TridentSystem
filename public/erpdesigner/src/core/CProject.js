@@ -21,7 +21,7 @@ function genProjectName(){
 }
 
 class CProject extends IAttributeable{
-    constructor(title) {
+    constructor(title, jsonData) {
         super({
             title:title,
         },null,'方案');
@@ -48,55 +48,57 @@ class CProject extends IAttributeable{
         this.content_PC={
             pages:[],
         };
-        var mainPage=new M_PageKernel({
-            title:'主页面',
-            isMain:1,
-            nav:{
-                hidden:1,
-                leftBtn:{
-                    hidden:0,
-                    label:'返回',
-                    action:'retutn'
-                },
-                rightBtn:{
-                    hidden:0
-                }
-            },
-            body:{
-                direction:'column'
-            }
-        }, this);
-        /*
-        var secondPage=new M_PageKernel({
-            title:'次页面',
-            isMain:0,
-            nav:{
-                hidden:1,
-                leftBtn:{
-                    hidden:0,
-                    label:'返回',
-                    action:'retutn'
-                },
-                rightBtn:{
-                    hidden:0
-                }
-            },
-            body:{
-                direction:'column'
-            }
-        }, this);
-        */
-        mainPage.project = this;
-        //secondPage.project = this;
+
         this.content_Mobile={
-            pages:[mainPage],
+            pages:[],
         };
+        
+        if(jsonData == null){
+            var mainPage=new M_PageKernel({
+                title:'主页面',
+                isMain:1,
+                nav:{
+                    hidden:1,
+                    leftBtn:{
+                        hidden:0,
+                        label:'返回',
+                        action:'retutn'
+                    },
+                    rightBtn:{
+                        hidden:0
+                    }
+                },
+                body:{
+                    direction:'column'
+                }
+            }, this);
+            mainPage.project = this;
+            this.content_Mobile.pages.push(mainPage);
+        }
+        else{
+            if(jsonData.attr != null){
+                Object.assign(this, jsonData.attr );
+            }
+            var self = this;
+            this.dataMaster.restoreFromJson(jsonData.dataMaster);
+
+            var ctlCreatioinHelper = new CtlKernelCreationHelper();
+            jsonData.content_Mobile.pages.forEach(pageJson=>{
+                var newPage = new M_PageKernel({}, this, ctlCreatioinHelper, pageJson);
+                this.content_Mobile.pages.push(newPage);
+            });
+        }
     }
 
     registerControl(ctlKernel){
         var useID = ctlKernel.id;
-        if(this.getControlById(useID) == this){
+        var registedCtl = this.getControlById(useID);
+        if(registedCtl == ctlKernel){
             console.warn(useID + ' 重复注册');
+        }
+        else if(registedCtl != null){
+            console.warn(useID + ' 已被占用');
+            useID = null;
         }
         if(IsEmptyString(useID)){
             for(var i=0;i<9999;++i){
@@ -197,5 +199,31 @@ class CProject extends IAttributeable{
 
     get_realName(){
         return this.getAttribute(AttrNames.Title) + 'Real';
+    }
+
+    getJson(){
+        var attrJson=super.getJson();
+        var rlt = {
+            attr:attrJson,
+        };
+        rlt.content_PC={
+            pages:[],
+        }
+        this.content_PC.pages.forEach(
+            page=>{
+                rlt.content_PC.pages.push(page.getJson());
+            }
+        );
+
+        rlt.content_Mobile={
+            pages:[],
+        }
+        this.content_Mobile.pages.forEach(
+            page=>{
+                rlt.content_Mobile.pages.push(page.getJson());
+            }
+        );
+        rlt.dataMaster = this.dataMaster.getJson();
+        return rlt;
     }
 }

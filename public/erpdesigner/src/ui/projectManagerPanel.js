@@ -26,7 +26,7 @@ class ProjectManagerPanel extends React.PureComponent {
     }
 
     freshData(){
-        fetchJsonPosts('server', { action: 'getProjectsJson' }, this.freshCallBack);
+        fetchJsonPost('server', { action: 'getProjectsJson' }, this.freshCallBack);
     }
 
     panelPreShow(){
@@ -42,8 +42,10 @@ class ProjectManagerPanel extends React.PureComponent {
 
     }
 
-    openProject(){
-
+    openProject(title){
+        if(this.props.wantOpenProjectFun(title)){
+            this.panelBaseRef.current.close();
+        }
     }
 
     toggle() {
@@ -60,16 +62,18 @@ class ProjectManagerPanel extends React.PureComponent {
         if(item){
             this.setState({
                 selectTitle:itemTitle,
+                selectItem:item,
             });
-            if(this.preClickTick != null){
+            if(this.preClickTick != null && this.preClickItem == item){
                 var pastSec = (new Date() - this.preClickTick);
                 if(pastSec < 400){
-                    this.openProject(item);
+                    this.openProject(itemTitle);
                 }
             }
         }
 
         this.preClickTick = new Date().getTime();
+        this.preClickItem = item;
     }
 
     renderProjList(){
@@ -80,6 +84,28 @@ class ProjectManagerPanel extends React.PureComponent {
         return projects_arr.map(item=>{
             return (<div onClick={this.clickItemHandler} className={'list-group-item list-group-item-action flex-grow-0 flex-shrink-0' + (this.state.selectTitle == item.title ? ' active' : '')} key={item.title}>{item.title}</div>);
         });
+    }
+
+    renderItemInfo(){
+        var item = this.state.selectItem;
+        if(item == null)
+        {
+            return null;
+        }
+
+        
+        return <React.Fragment>
+                <div>创建者:{item.creator}</div>
+                <div>创建时间:{item.createTime}</div>
+                <div className='flex-grow-1 flex-shrink-0 d-flex flex-column'>
+                    <div>修改历史</div>
+                    {
+                        item.history && item.history.map((his,i)=>{
+                            return (<div key={i}><span className='text-info'>{his.name}:</span><span className='text-light'>{his.time}</span></div>);
+                        })
+                    }
+                </div>
+            </React.Fragment>
     }
 
     render(){
@@ -101,8 +127,8 @@ class ProjectManagerPanel extends React.PureComponent {
                             </div>
                         </div>
                     </div>
-                    <div className='d-flex flex-column flex-grow-1 flex-shrink-1'>
-                        信息
+                    <div className='d-flex flex-column flex-grow-1 flex-shrink-1 autoScroll'>
+                        {this.renderItemInfo()}
                     </div>
                 </div>
             </FloatPanelbase>
@@ -177,7 +203,7 @@ class CreateProjectPanel extends React.PureComponent{
             errinfo:'',
         });
 
-        fetchJsonPosts('server', { action: 'createProject', title:title }, this.freshCallBack);
+        fetchJsonPost('server', { action: 'createProject', title:title }, this.freshCallBack);
         return;
     }
 
