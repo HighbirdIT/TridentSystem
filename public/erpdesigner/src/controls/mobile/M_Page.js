@@ -89,8 +89,9 @@ class M_Page extends React.PureComponent {
     }
 
     renderMobilePage(ctlKernel) {
+        var layoutConfig = ctlKernel.getLayoutConfig();
         var rootDivClass = 'flex-grow-1 felx-shrink-0 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : '');
-        rootDivClass += ctlKernel.getRootDivClass();
+        rootDivClass += layoutConfig.baseClassName;
         return (
             <React.Fragment>
                 <div className="d-flex flex-grow-0 flex-shrink-1 text-light bg-primary align-items-baseline">

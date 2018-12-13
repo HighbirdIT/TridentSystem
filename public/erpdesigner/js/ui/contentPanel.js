@@ -159,6 +159,14 @@ var ContentPanel = function (_React$PureComponent) {
             this.props.wantOpenPanel(getAttributeByNode(ev.target, 'pname', true, 3));
         }
     }, {
+        key: 'clickSaveBtnHanlder',
+        value: function clickSaveBtnHanlder(ev) {
+            var project = this.props.project;
+            var jsonData = project.getJson();
+            console.log(jsonData);
+            project.designer.saveProject();
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this3 = this;
@@ -299,6 +307,20 @@ var ContentPanel = function (_React$PureComponent) {
                                 null,
                                 '\u5E03'
                             )
+                        ),
+                        React.createElement(
+                            'button',
+                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickSaveBtnHanlder },
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u4FDD'
+                            ),
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u5B58'
+                            )
                         )
                     ),
                     React.createElement(
@@ -314,6 +336,7 @@ var ContentPanel = function (_React$PureComponent) {
     return ContentPanel;
 }(React.PureComponent);
 
+/*
 function decode64(e) {
     try {
         var t = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
@@ -325,15 +348,18 @@ function decode64(e) {
         var u = void 0;
         var l = "";
         var s = 0;
-        if (/[^A-Za-z0-9\+\/\=]/g.exec(e)) return false;
+        if (/[^A-Za-z0-9\+\/\=]/g.exec(e))
+            return false;
         e = e.replace(/[^A-Za-z0-9\+\/\=]/g, "");
         do {
             r = t.indexOf(e.charAt(s++)) << 2 | (i = t.indexOf(e.charAt(s++))) >> 4;
             o = (15 & i) << 4 | (u = t.indexOf(e.charAt(s++))) >> 2;
             a = (3 & u) << 6 | (l = t.indexOf(e.charAt(s++)));
             n += String.fromCharCode(r);
-            if (64 !== u) n += String.fromCharCode(o);
-            if (64 !== l) n += String.fromCharCode(a);
+            if (64 !== u)
+                n += String.fromCharCode(o);
+            if (64 !== l)
+                n += String.fromCharCode(a);
             r = "";
             o = "";
             a = "";
@@ -347,6 +373,7 @@ function decode64(e) {
     }
 }
 
+
 function convertRate(e) {
     try {
         var t = e.substr(e.length - 4);
@@ -355,7 +382,8 @@ function convertRate(e) {
         var r = e.substr(n, 10);
         e = e.substr(0, n) + e.substr(n + 10);
         var o = decode64(decodeURIComponent(e));
-        if (!o) return false;
+        if (!o)
+            return false;
         var a = "";
         var i = 0;
         var u = 0;
@@ -365,10 +393,8 @@ function convertRate(e) {
             a += (l = String.fromCharCode(l.charCodeAt(0) - s.charCodeAt(0))) + o.substring(i + 1, i + 10);
             u++;
         }
-        return a;
-    } catch (e) {
-        return !1;
+        return a
     }
+    catch (e) { return !1 }
 }
-
-//alert(convertRate('fS44NDYxMDY3gQCGX9rraGOJs0'));
+*/

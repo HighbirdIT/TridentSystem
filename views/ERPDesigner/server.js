@@ -9,6 +9,7 @@ var fileLocker = {};
 const FileName_Projects = 'projects';
 
 var rsa = forge.pki.rsa;
+const baseFileDir = 'public/erpdesigner/files/';
 /*
 rsa.generateKeyPair({bits: 512, workers: 2}, function(err, keypair) {
     //var t = keypair.publicKey.encrypt('abc');
@@ -73,11 +74,93 @@ function doProcess(req, res) {
             return loginUseCoockie(req);
         case 'getPreLogData':
             return getPreLogData(req, res);
+        case 'saveProject':
+            return saveProject(req, req.body.projJson);
     }
 
     return co(function* () {
         var data = {};
         return data;
+    });
+}
+
+function saveProject(req, projJson){
+    return co(function* () {
+        var userData = yield getUserData(req);
+        if(userData == null){
+            return {err:{info:'你还没有登录'}};
+        }
+        if(projJson == null){
+            return {err:{info:'没有提供项目文件'}};
+        }
+        title = projJson.attr.title;
+        if(title == null){
+            title = '';
+        }
+        else{
+            title = title.trim();
+        }
+        if(title.length < 4 || title.length > 20){
+            return {err:{info:'方案title长度不合法'}};
+        }
+        if(isLock(FileName_Projects)){
+            return {err:{info:'服务端文件锁定中，请稍后再试'}};
+        }
+        var rlt = {};
+        lockFile(FileName_Projects);
+        try
+        {
+            var allProjJson = yield getProjectsJson();
+            var projItem = null;
+            if(allProjJson.projects == null){
+                allProjJson.projects = [];
+            }
+            else{
+                projItem = allProjJson.projects.find(item=>{
+                    return item.title == title;
+                });
+            }
+            if(projItem == null){
+                projItem = {
+                    createTime:new Date(),
+                    creator:userData.name,
+                    creatorID:userData.id,
+                    title:title,
+                };
+                allProjJson.projects.push(projItem);
+            }
+            if(projItem.history == null){
+                projItem.history = [];
+            }
+            projItem.history.push({
+                name:userData.name,
+                id:userData.name,
+                time:new Date(),
+            });
+
+            if(!fs.existsSync(baseFileDir))
+                fs.mkdirSync(baseFileDir);
+
+            var projDirPath = baseFileDir + 'proj/';
+            if(!fs.existsSync(projDirPath))
+                fs.mkdirSync(projDirPath);
+            var projFilePath = projDirPath + title + ".json";
+            fs.writeFileSync(projFilePath, JSON.stringify(projJson));
+
+            var filePath = baseFileDir + "projects.json";
+            fs.writeFileSync(filePath, JSON.stringify(allProjJson));
+            rlt = projItem;
+
+            // save real proj json file
+        }
+        catch(err){
+            rlt.err = {info:err.toString()};
+        }
+        finally{
+            unlockFile(FileName_Projects);
+        }
+        
+        return rlt;
     });
 }
 
@@ -125,6 +208,18 @@ function userLogin(req,res,account, password){
     });
 }
 
+function getUserData(req){
+    return co(function* () {
+        if(req.session.userData == null){
+            var userData = yield loginUseCoockie(req);
+            if(userData.err != null){
+                return null;
+            }
+        }
+        return req.session.userData;
+    });
+}
+
 function loginUseCoockie(req){
     return co(function* () {
         var _designerlogRcdId = req.signedCookies._designerlogRcdId;
@@ -137,10 +232,12 @@ function loginUseCoockie(req){
             return {err:{info:'cookie失效'}};
         }
         var accountRow = rcdRlt.recordset[0];
-        return {
+        var rlt = {
             name:accountRow.权属姓名,
             id:accountRow.账号记录代码,
         };
+        req.session.userData = rlt;
+        return rlt;
     });
 }
 

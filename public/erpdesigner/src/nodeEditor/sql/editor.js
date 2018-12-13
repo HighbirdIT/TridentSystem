@@ -815,7 +815,7 @@ class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
                 <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>可用节点</button>
                 <div id={targetID} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
                     <div className='mw-100 d-flex flex-column'>
-                        <div className='btn-group-vertical mw-100'>
+                        <div className='btn-group-vertical mw-100 flex-shrink-0'>
                             {
                                 SqlNodeEditorControls_arr.map(
                                     item=>{
@@ -915,28 +915,50 @@ class SqlNodeOutlineItem extends React.PureComponent{
 
         this.state = {
             label:this.props.nodeData.getNodeTitle(true),
+            nodeData:this.props.nodeData,
         }
     }
 
+    listenNode(target){
+        target.on('changed', this.nodeChangedhandler);
+    }
+
+    unlistenNode(target){
+        target.off('changed', this.nodeChangedhandler);
+    }
+
     componentWillMount(){
-        this.props.nodeData.on('changed', this.nodeChangedhandler);
+        this.listenNode(this.state.nodeData);
     }
 
     componentWillUnmount(){
-        this.props.nodeData.off('changed', this.nodeChangedhandler);
+        this.unlistenNode(this.state.nodeData);
     }
 
     nodeChangedhandler(){
         this.setState({
-            label:this.props.nodeData.getNodeTitle(),
+            label:this.state.nodeData.getNodeTitle(),
         });
     }
 
     clickHandler(ev){
-        this.props.clickHandler(this.props.nodeData);
+        this.props.clickHandler(this.state.nodeData);
     }
 
     render(){
+        if(this.state.nodeData != this.props.nodeData){
+            this.unlistenNode(this.state.nodeData);
+            this.listenNode(this.props.nodeData);
+            var self = this;
+            var newNodeData = this.props.nodeData;
+            setTimeout(() => {
+                self.setState({
+                    nodeData:newNodeData,
+                    label:newNodeData.getNodeTitle(true),
+                });
+            }, 20);
+            return null;
+        }
         return <div className='text-nowrap text-light cursor-pointer'  onClick={this.clickHandler}>{this.state.label}</div>
     }
 }

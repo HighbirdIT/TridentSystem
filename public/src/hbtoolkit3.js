@@ -62,7 +62,7 @@ function receivePosts(key, json,postData) {
     };
 }
 
-function fetchJsonPosts(url, postdata, key = '', tip = '加载中', timeout = 15) {
+function fetchJsonPost(url, postdata, key = '', tip = '加载中', timeout = 15) {
     timeout = Math.min(Math.max(30,timeout),120) * 1000;
     return function (dispatch) {
         dispatch(requestPosts(key, tip,postdata));

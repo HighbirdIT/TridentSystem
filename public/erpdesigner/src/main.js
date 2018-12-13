@@ -39,7 +39,7 @@ class ErpDesigner extends React.PureComponent{
             configDataIsLoaded:false,
         };
 
-        //fetchJsonPosts('onlineinterview_process', { action: 'pageinit' }, 'pageiniting')
+        //fetchJsonPost('onlineinterview_process', { action: 'pageinit' }, 'pageiniting')
     }
     render(){
         return(

@@ -405,5 +405,5 @@ var rcdUID = getQueryString('rcdUID');
 if (rcdUID == null || rcdUID.length != 36) {
     store.dispatch(uiModelOpen('AlertModel', '错误', '没有提供目标参数'));
 } else {
-    store.dispatch(fetchJsonPosts('recordinfo_process', { action: 'pageinit', rcdUID: getQueryString('rcdUID') }, 'pageiniting'));
+    store.dispatch(fetchJsonPost('recordinfo_process', { action: 'pageinit', rcdUID: getQueryString('rcdUID') }, 'pageiniting'));
 }

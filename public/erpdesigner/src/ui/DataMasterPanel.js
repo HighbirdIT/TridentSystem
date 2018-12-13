@@ -216,7 +216,7 @@ class DataBasePanel extends React.PureComponent {
     }
 
     /*
-    fetchJsonPosts('server',{action:'matchGet',keyword:'T922'}, function(rlt){
+    fetchJsonPost('server',{action:'matchGet',keyword:'T922'}, function(rlt){
         console.log(rlt);
     });
     */
@@ -244,7 +244,7 @@ class DataBasePanel extends React.PureComponent {
 
             this.appendSynAction(newAction);
             newAction.startFetch((callBack) => {
-                fetchJsonPosts('server', { action: 'syndata_bykeyword', keyword: keyword }, callBack);
+                fetchJsonPost('server', { action: 'syndata_bykeyword', keyword: keyword }, callBack);
             });
 
         }
@@ -314,7 +314,7 @@ class DataBasePanel extends React.PureComponent {
     }
 }
 
-class CusDBEEditor extends React.PureComponent{
+class SqlBPEditor extends React.PureComponent{
     constructor(props) {
         super(props);
         this.state={
@@ -420,7 +420,7 @@ class NameInputRow extends React.PureComponent{
     }
 }
 
-class AddNewCusDSItemPanel extends React.PureComponent {
+class AddNewSqlBPPanel extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state={
@@ -439,9 +439,9 @@ class AddNewCusDSItemPanel extends React.PureComponent {
             });
             return;
         }
-        if(this.props.dataMaster.getCusDBEByName(name) != null){
+        if(this.props.dataMaster.getSqlBPByName(name) != null){
             this.setState({
-                errinfo:'已有同名的自订数据存在'
+                errinfo:'已有同名的蓝图存在'
             });
             return;
         }
@@ -452,7 +452,7 @@ class AddNewCusDSItemPanel extends React.PureComponent {
             });
             return;
         }
-        var newDBE = this.props.dataMaster.createCusDBE(name, type);
+        var newDBE = this.props.dataMaster.createSqlBP(name, type);
         this.props.onComplete(newDBE);
     }
 
@@ -462,7 +462,7 @@ class AddNewCusDSItemPanel extends React.PureComponent {
 
     render(){
         var nameWidth = 100;
-        return <FloatPanelbase title='新建自订数据' width={480} height={320} initShow={true} sizeable={false} closeable={false} ismodel={true} >
+        return <FloatPanelbase title='新建Sql蓝图' width={480} height={320} initShow={false} sizeable={false} closeable={false} ismodel={true} >
                 <div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
                     <div className='d-flex flex-column autoScroll flex-grow-1 flex-shrink-1'>
                         <NameInputRow label='名称' type='text' rootClass='m-1' nameWidth={nameWidth} ref={this.nameRef} />
@@ -483,11 +483,11 @@ class AddNewCusDSItemPanel extends React.PureComponent {
 }
 
 
-class CreateDSItemPanel extends React.PureComponent {
+class SqlBPItemPanel extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state={
-            items_arr:this.props.project.dataMaster.customDBEntities_arr,
+            items_arr:this.props.project.dataMaster.BP_sql_arr,
             selectedItem:null,
         }
         autoBind(this);
@@ -505,7 +505,7 @@ class CreateDSItemPanel extends React.PureComponent {
         });
     }
 
-    newCusCompleteHandler(newDBE){
+    newItemCompleteHandler(newDBE){
         this.setState({
             creating:false,
         });
@@ -516,7 +516,7 @@ class CreateDSItemPanel extends React.PureComponent {
         return (
             <React.Fragment>
                 {
-                    this.state.creating ? <AddNewCusDSItemPanel dataMaster={this.props.project.dataMaster} onComplete={this.newCusCompleteHandler} /> : null
+                    this.state.creating ? <AddNewSqlBPPanel dataMaster={this.props.project.dataMaster} onComplete={this.newItemCompleteHandler} /> : null
                 }
                 <SplitPanel
                 defPercent={0.45}
@@ -537,7 +537,7 @@ class CreateDSItemPanel extends React.PureComponent {
                 }
                 panel2={
                     <div className='d-flex flex-grow-1 flex-shrink-1 bg-dark mw-100'>
-                        <CusDBEEditor item={selectedItem} />
+                        <SqlBPEditor item={selectedItem} />
                     </div>
                 }
                 />
@@ -555,7 +555,7 @@ class DataMasterPanel extends React.PureComponent {
 
         var navItems = [
             CreateNavItemData('数据库', <DataBasePanel project={this.props.project} />),
-            CreateNavItemData('创造数据', <CreateDSItemPanel project={this.props.project} />),
+            CreateNavItemData('创造数据', <SqlBPItemPanel project={this.props.project} />),
         ];
         this.navData = {
             selectedItem: navItems[1],
@@ -583,7 +583,7 @@ class DataMasterPanel extends React.PureComponent {
 
     render() {
         return (
-            <FloatPanelbase title='数据大师' ref={this.panelBaseRef} initShow={true} initMax={true}>
+            <FloatPanelbase title='数据大师' ref={this.panelBaseRef} initShow={false} initMax={true}>
                 <div className='d-flex flex-grow-0 flex-shrink-0'>
                     <TabNavBar navData={this.navData} navChanged={this.navChanged} />
                 </div>
