@@ -2840,18 +2840,6 @@ class SqlNode_IsNullOperator extends SqlNode_Base{
             socketVal_arr.push(tValue);
         }
         var finalStr = (this.operator == Operat_IsNull ? tValue+' '+Operat_IsNull : tValue+' '+Operat_IsNotNull) ;
-        var theSocket = this.inputScokets_arr[0];
-        var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-        var tValue = null;
-        var link = tLinks[0];
-        var outNode = link.outSocket.node;
-        var compileRet = outNode.compile(helper, usePreNodes_arr);
-        if(compileRet == false){
-            return false;
-        }
-        tValue = compileRet.getSocketOut(link.outSocket).strContent;
-        var finalStr = tValue +' is null';
-
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, finalStr);
         helper.setCompileRetCache(this,selfCompileRet);
