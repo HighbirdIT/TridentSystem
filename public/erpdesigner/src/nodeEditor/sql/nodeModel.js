@@ -15,12 +15,15 @@ const SQLNODE_ROWNUMBER = 'rownumber';
 const SQLNODE_ISNULL = 'isnullfun';
 const SQLNODE_ISNULLOPERATOR ='isnulloperator';
 const SQLNODE_BETWEEN='between';
+const SQLNODE_CAST= 'cast';
+const SQLNODE_LOGICAL_OPERATOR='logical_operator';
+const SQLNODE_GETDATE='getdate';
 
 const SQLDEF_VAR = 'def_variable';
 
 var SqlNodeClassMap={};
 // CONSTSQLNODES_ARR output是常量的节点类型
-const SQL_OutSimpleValueNode_arr = [SQLNODE_COLUMN,SQLNODE_VAR_GET,SQLNODE_CONSTVALUE]
+const SQL_OutSimpleValueNode_arr = [SQLNODE_COLUMN,SQLNODE_VAR_GET,SQLNODE_CONSTVALUE,SQLNODE_GETDATE]
 
 
 class NodeCreationHelper extends EventEmitter{
@@ -1795,7 +1798,44 @@ class SqlNode_Select extends SqlNode_Base{
         var selfCompileRet = new CompileResult(this);
         var columnsStr = '';
         selectColumns_arr.forEach((x,i)=>{columnsStr += (i == 0 ? '' : ',') + x.strContent + (x.alias == null ? '' : ' as [' + x.alias + ']') });
-        var finalSql = 'select ' + columnsStr + ' from ' + fromString
+        var topString = '';
+        if(!IsEmptyString(columnNode.topValue)){
+            if(isNaN(columnNode.topValue)){
+                var reg = /^\d+%$/;
+                if(!reg.test(columnNode.topValue)){
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem( 
+                        thisNodeTitle
+                        ,columnNode
+                        ,helper.clickLogBadgeItemHandler)
+                        ,"top值不合法"]);
+                    return false;
+                }
+                var num = columnNode.topValue.substr(0, columnNode.topValue.length - 1);
+                if(num == 0){
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem( 
+                        thisNodeTitle
+                        ,columnNode
+                        ,helper.clickLogBadgeItemHandler)
+                        ,"top值不合法"]);
+                    return false;
+                }
+                else if(num > 100){
+                    helper.logManager.warnEx(
+                        [helper.logManager.createBadgeItem( 
+                            thisNodeTitle
+                            ,columnNode
+                            ,helper.clickLogBadgeItemHandler)
+                            ,"top百分比值被修改为100%"]
+                    );
+                    num = 100;
+                }
+                topString = 'top ' + num + ' percent ';
+            }
+            else{
+                topString = 'top ' + columnNode.topValue + ' ';
+            }
+        }
+        var finalSql = 'select ' + topString + columnsStr + ' from ' + fromString
                         + (IsEmptyString(whereString) ? '' : ' where ' + whereString)
                         + (IsEmptyString(sortString) ? '' : ' order by ' + sortString);
         selfCompileRet.setSocketOut(this.outSocket, finalSql,{tableName:this.title});
@@ -2226,6 +2266,16 @@ class SqlNode_Ret_Columns extends SqlNode_Base{
         }
     }
 
+    requestSaveAttrs(){
+        var rlt = super.requestSaveAttrs();
+        rlt.topValue = this.topValue;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson){
+        assginObjByProperties(this, attrsJson, ['topValue']);
+    }
+
     genInSocket(){
         var socketName = 'in' + this.inputScokets_arr.length;
         var nameI = this.inputScokets_arr.length;
@@ -2633,7 +2683,6 @@ class SqlNode_IsNullFun extends SqlNode_Base{
         if(this.outSocket == null){
             this.outSocket = new NodeSocket('out', this, false, {type:SqlVarType_Scalar});
             this.addSocket(this.outSocket);
-            
         }
 
         if(this.inputScokets_arr.length == 0)
@@ -2645,6 +2694,8 @@ class SqlNode_IsNullFun extends SqlNode_Base{
             this.inputScokets_arr.forEach(socket => {
                 socket.type = SqlVarType_Scalar;
             });
+            this.inputScokets_arr[0].inputable = false;
+            this.inputScokets_arr[1].inputable = true;
         }
     
     }
@@ -2671,6 +2722,12 @@ class SqlNode_IsNullFun extends SqlNode_Base{
                     if(isNaN(theSocket.defval))
                         {
                         tValue = "'"+theSocket.defval+"'";
+                    if(!IsEmptyString(theSocket.defval)){
+                        tValue = theSocket.defval;
+                        if(isNaN(tValue))
+                        {
+                            tValue = singleQuotesStr(tValue);
+                        }
                     }
                     else
                     {
@@ -2710,7 +2767,7 @@ class SqlNode_IsNullFun extends SqlNode_Base{
         return selfCompileRet;
     }
 }
-
+}
 class SqlNode_IsNullOperator extends SqlNode_Base{
     constructor(initData, parentNode, createHelper, nodeJson){
         super(initData, parentNode, createHelper, SQLNODE_ISNULLOPERATOR, 'IsNullOperator', false, nodeJson);
@@ -2783,13 +2840,25 @@ class SqlNode_IsNullOperator extends SqlNode_Base{
             socketVal_arr.push(tValue);
         }
         var finalStr = (this.operator == Operat_IsNull ? tValue+' '+Operat_IsNull : tValue+' '+Operat_IsNotNull) ;
+        var theSocket = this.inputScokets_arr[0];
+        var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+        var tValue = null;
+        var link = tLinks[0];
+        var outNode = link.outSocket.node;
+        var compileRet = outNode.compile(helper, usePreNodes_arr);
+        if(compileRet == false){
+            return false;
+        }
+        tValue = compileRet.getSocketOut(link.outSocket).strContent;
+        var finalStr = tValue +' is null';
+
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, finalStr);
         helper.setCompileRetCache(this,selfCompileRet);
         return selfCompileRet;
     }
 }
-
+//  SQL_between
 class SqlNode_BetWeen extends SqlNode_Base{
     constructor(initData, parentNode, createHelper, nodeJson){
         super(initData, parentNode, createHelper, SQLNODE_BETWEEN,'BetWeen', false, nodeJson);
@@ -2799,24 +2868,29 @@ class SqlNode_BetWeen extends SqlNode_Base{
         if(nodeJson){
             if(this.outputScokets_arr.length > 0){
                 this.outSocket = this.outputScokets_arr[0];
-                this.outSocket.type = SqlVarType_Scalar;
+                this.outSocket.type = SqlVarType_Boolean;
             }
         }
+//定义输出接口标量
         if(this.outSocket == null){
-            this.outSocket = new NodeSocket('out', this, false, {type:SqlVarType_Scalar});
+            this.outSocket = new NodeSocket('out', this, false, {type:SqlVarType_Boolean});
             this.addSocket(this.outSocket);
-            
         }
-
+//定义输入接口标量
         if(this.inputScokets_arr.length == 0)
         {   
-            this.addSocket(new NodeSocket('in0', this, null, {type:SqlVarType_Scalar,inputable:true}));
+            this.addSocket(new NodeSocket('in0', this, true, {type:SqlVarType_Scalar,inputable:false}));
             this.addSocket(new NodeSocket('in1', this, true, {type:SqlVarType_Scalar,inputable:true}));
+            this.addSocket(new NodeSocket('in2', this, true, {type:SqlVarType_Scalar,inputable:true}));
         }
         else{
             this.inputScokets_arr.forEach(socket => {
                 socket.type = SqlVarType_Scalar;
             });
+
+            this.inputScokets_arr[0].inputable = false;
+            this.inputScokets_arr[1].inputable = true;
+            this.inputScokets_arr[2].inputable = true;
         }
     
     }
@@ -2830,143 +2904,400 @@ class SqlNode_BetWeen extends SqlNode_Base{
         if(superRet == false || superRet != null){
             return superRet;
         }
-        var columnNode = this.columnNode;
-        var columnNode_inSockets = columnNode.inputScokets_arr;
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
-        if(IsEmptyString(this.title)){
-            helper.logManager.errorEx([helper.logManager.createBadgeItem( 
-                thisNodeTitle
-               ,nodeThis
-               ,helper.clickLogBadgeItemHandler)
-               ,'需要指定title']);
-            return false;
-            return false;
-        }
-        if(columnNode_inSockets.length == 0){
-            helper.logManager.errorEx([helper.logManager.createBadgeItem( 
-                thisNodeTitle
-               ,columnNode
-               ,helper.clickLogBadgeItemHandler)
-               ,'没有选择任何返回列。']);
-            return false;
-        }
-        var emptySocket = null;
-        var emptySocketIndex = 0;
-        for(var socketI=0;socketI<columnNode_inSockets.length;++socketI){
-            var socket = columnNode_inSockets[socketI];
-            if(helper.getLinksBySocket(socket).length == 0){
-                emptySocket = socket;
-                emptySocketIndex = socketI;
-                break;
-            }
-        }
-        if(emptySocket){
-            helper.logManager.errorEx([helper.logManager.createBadgeItem( 
-                thisNodeTitle
-               ,columnNode
-               ,helper.clickLogBadgeItemHandler)
-               ,'第' + (emptySocketIndex + 1) + '个输入接口是空链接']);
-            return false;
-        }
-
-        // compile from
-        var fromString = '';
-        if(this.inputScokets_arr.length == 0){
-            helper.logManager.warnEx([helper.logManager.createBadgeItem( 
-                thisNodeTitle
-               ,nodeThis
-               ,helper.clickLogBadgeItemHandler)
-               ,'没有输入接口']);
-        }
         var usePreNodes_arr = preNodes_arr.concat(this);
-        var fromScoket = this.inputScokets_arr[0];
-        var t_links = helper.getLinksBySocket(fromScoket);
-        if(t_links.length > 0){
-            var fromLink = t_links[0];
-            if(fromLink.outSocket != null && fromLink.outSocket.node != null){
-                if(fromLink.outSocket.type != SqlVarType_Table){
+        var socketVal_arr = [];
+        for(var i=0;i<this.inputScokets_arr.length;++i){
+            var theSocket = this.inputScokets_arr[i];
+            var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+            var tValue = null;
+            if(tLinks.length == 0  ){
+                if(i >0){
+                    if(!IsEmptyString(theSocket.defval)){
+                        tValue = theSocket.defval;
+                        if(isNaN(tValue))
+                        {
+                            tValue = singleQuotesStr(tValue);
+                        }
+                    }
+                }
+                if(tValue == null){
                     helper.logManager.errorEx([helper.logManager.createBadgeItem( 
                         thisNodeTitle
-                       ,nodeThis
-                       ,helper.clickLogBadgeItemHandler)
-                       ,'的输入不是一个关系']);
-                    return false;
-                }
-                var fromNode = fromLink.outSocket.node;
-                var compileRet = fromNode.compile(helper, usePreNodes_arr);
-                if(compileRet == false){
-                    // child compile fail
-                    return false;
-                }
-                fromString = compileRet.getSocketOut(fromLink.outSocket).strContent;
-                if(fromNode.type == SQLNODE_SELECT){
-                    // select node 中断
-                    fromString = bracketStr(fromString) + ' as ' + fromNode.title;
-                }
-            }
-        }
-        var selectColumns_arr = [];
-        var selectColumns_map = {};
-        for(var socketI=0;socketI<columnNode_inSockets.length;++socketI){
-            var socket = columnNode_inSockets[socketI];
-            var link = helper.getLinksBySocket(socket)[0];
-            var outNode = link.outSocket.node;
-            var isColumnNode = outNode.type == SQLNODE_COLUMN;
-            var alias = socket.getExtra('alias');
-            var colName = alias;
-            if(IsEmptyString(alias)){
-                if(!isColumnNode)
-                {
-                    helper.logManager.errorEx([helper.logManager.createBadgeItem( 
-                        thisNodeTitle
-                        ,columnNode
+                        ,nodeThis
                         ,helper.clickLogBadgeItemHandler)
-                        ,'第' + (socketI + 1) + '列没有指定列名!']);
+                        ,'输入不能为空']);
                     return false;
                 }
-                colName = outNode.columnName;
             }
-            if(selectColumns_map[colName]){
-                helper.logManager.errorEx([helper.logManager.createBadgeItem( 
-                    thisNodeTitle
-                    ,columnNode
-                    ,helper.clickLogBadgeItemHandler)
-                    ,"列名:'" + colName + "'重复了!"]);
-                return false;
+            else{
+                var link = tLinks[0];
+                var outNode = link.outSocket.node;
+                var compileRet = outNode.compile(helper, usePreNodes_arr);
+                if(compileRet == false){
+                    return false;
+                }
+                tValue = compileRet.getSocketOut(link.outSocket).strContent;
             }
-            selectColumns_map[colName] = 1;
-            var outNodeCompileRet = outNode.compile(helper, usePreNodes_arr);
-            var socketOutData = outNodeCompileRet.getSocketOut(link.outSocket); 
-            selectColumns_arr.push({
-                alias:alias,
-                strContent:socketOutData.strContent,
-            });
+            socketVal_arr.push(tValue);
         }
-        var sortNodeCompileRet = this.orderNode.compile(helper, usePreNodes_arr);
-        if(sortNodeCompileRet == false){
-            return false;
-        }
-        var sortString = sortNodeCompileRet.getDirectOut().strContent;
-        
-        var conditionNodeCompileRet = this.conditionNode.compile(helper, usePreNodes_arr);
-        if(conditionNodeCompileRet == false){
-            return false;
-        }
-        var whereString = conditionNodeCompileRet.getDirectOut().strContent;
-
-        //var selfContext = helper.getContext(nodeThis, new ContextFinder(ContextType_DBEntity));
+        //SQL语句拼接
+        var finalStr = socketVal_arr[0] + ' between ' + socketVal_arr[1] + ' and ' + socketVal_arr[2];
         var selfCompileRet = new CompileResult(this);
-        var columnsStr = '';
-        selectColumns_arr.forEach((x,i)=>{columnsStr += (i == 0 ? '' : ',') + x.strContent + (x.alias == null ? '' : ' as [' + x.alias + ']') });
-        var finalSql = 'select ' + columnsStr + ' from ' + fromString
-                        + (IsEmptyString(whereString) ? '' : ' where ' + whereString)
-                        + (IsEmptyString(sortString) ? '' : ' order by ' + sortString);
-        selfCompileRet.setSocketOut(this.outSocket, finalSql,{tableName:this.title});
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
         helper.setCompileRetCache(this,selfCompileRet);
         return selfCompileRet;
     }
 }
+
+/**
+ * 逻辑运算符 and or not
+ */
+class SqlNode_Logical_Operator extends SqlNode_Base{
+    constructor(initData, parentNode, createHelper, nodeJson){
+        super(initData, parentNode, createHelper, SQLNODE_LOGICAL_OPERATOR, '逻辑', false, nodeJson);
+        autoBind(this);
+
+        if(this.LogicalType == null){
+            this.LogicalType=Logical_Operator_and;
+        }
+
+        if(nodeJson){
+            if(this.outputScokets_arr.length > 0){
+                this.outSocket = this.outputScokets_arr[0];
+                this.outSocket.type = SqlVarType_Table;
+            }
+            
+        }//给出标量
+        if(this.outSocket == null){
+            this.outSocket = new NodeSocket('out', this, false, {type:SqlVarType_Table});
+            this.addSocket(this.outSocket);
+        }
+
+        if(this.inputScokets_arr.length == 0)
+        {
+            this.addSocket(new NodeSocket('input1', this, true, {type:SqlVarType_Table,inputable:false}));
+            this.addSocket(new NodeSocket('input2', this, true, {type:SqlVarType_Table,inputable:false}));
+        }
+        else{
+            this.inputScokets_arr.forEach(socket => {
+                socket.type = SqlVarType_Table;
+            });
+        this.minInSocketCount = 2;
+
+        }
+
+        this.contextEntities_arr = [];
+        this.entityNodes_arr = [];
+        this.autoCreateHelper = {};
+    }
+    customSocketRender(socket){
+        return null;
+    }
+    getNodeTitle(){
+        return '逻辑:' + this.LogicalType;
+    }
+    //保存 and or
+    requestSaveAttrs(){
+        var rlt = super.requestSaveAttrs();
+        rlt.LogicalType = this.LogicalType;
+        return rlt;
+    }
+    //复原
+    restorFromAttrs(attrsJson){
+        assginObjByProperties(this, attrsJson, ['LogicalType']);
+    }
+    //增加输入接口
+    genInSocket(){
+        var nameI = this.inputScokets_arr.length;
+        while(nameI < 999){
+            if(this.getScoketByName('in' + nameI, true) == null){
+                break;
+            }
+            ++nameI;
+        }
+        return new NodeSocket('in' + nameI, this, true, {type:SqlVarType_Scalar,inputable:false});
+    }
+    getValue(){
+        return this.outSocket.defval;
+    }
+
+    compile(helper, preNodes_arr){
+    var superRet = super.compile(helper, preNodes_arr);
+    if(superRet == false || superRet != null){
+        return superRet;
+    }
+    var nodeThis = this;
+    var thisNodeTitle = nodeThis.getNodeTitle();
+    var usePreNodes_arr = preNodes_arr.concat(this);
+    var socketVal_arr = [];
+    for(var i=0;i<this.inputScokets_arr.length;++i){
+        var theSocket = this.inputScokets_arr[i];
+        var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+        var tValue = null;
+        if(tLinks.length == 0){
+            helper.logManager.errorEx([helper.logManager.createBadgeItem( 
+                 thisNodeTitle
+                ,nodeThis
+                ,helper.clickLogBadgeItemHandler)
+                ,'输入不能为空']);
+             return false;
+        }
+        else{
+            var link = tLinks[0];
+            var outNode = link.outSocket.node;
+            var compileRet = outNode.compile(helper, usePreNodes_arr);
+            if(compileRet == false){
+                return false;
+            }
+            tValue = compileRet.getSocketOut(link.outSocket).strContent;
+            if(!outNode.outputIsSimpleValue()){
+                tValue = '(' + tValue + ')';
+            }
+        }
+        socketVal_arr.push(tValue);
+    }
+    var finalStr = '';
+   
+    socketVal_arr.forEach((x,i)=>{
+        finalStr += (i == 0 ? '' : nodeThis.LogicalType) + x ;
+    });
+
+    var selfCompileRet = new CompileResult(this);
+    selfCompileRet.setSocketOut(this.outSocket, finalStr);
+    helper.setCompileRetCache(this,selfCompileRet);
+    return selfCompileRet;
+    }
+}
+/**
+ * 获取当前时间
+ */
+
+class SqlNode_Getdate extends SqlNode_Base{
+    constructor(initData, parentNode, createHelper, nodeJson){
+        super(initData, parentNode, createHelper, SQLNODE_GETDATE, 'Getdate', false, nodeJson);
+        autoBind(this);
+
+        if(nodeJson){
+            if(this.outputScokets_arr.length > 0){
+                this.outSocket = this.outputScokets_arr[0];
+                this.outSocket.type=SqlVarType_Scalar
+            }
+        }
+        if(this.outSocket == null){
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+    }
+
+    requestSaveAttrs(){
+        var rlt = super.requestSaveAttrs();
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson){
+    }
+
+    compile(helper, preNodes_arr){
+        var superRet = super.compile(helper, preNodes_arr);
+        if(superRet == false || superRet != null){
+            return superRet;
+        }
+        var value = "getdate()";
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, value);
+        helper.setCompileRetCache(this,selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+//数据类型转换
+class SqlNode_Cast extends SqlNode_Base{
+    constructor(initData, parentNode, createHelper, nodeJson){
+        super(initData, parentNode, createHelper, SQLNODE_CAST, 'CAST', false, nodeJson);
+        this.size_1 = ReplaceIfNaN(this.size_1, 0);
+        this.size_2 = ReplaceIfNaN(this.size_2, 0);
+        autoBind(this);
+
+        //this.isConstNode = true; //使节点不可被删除
+
+        if(nodeJson){
+            if(this.outputScokets_arr.length > 0){
+                this.outSocket = this.outputScokets_arr[0];
+                this.outSocket.type = SqlVarType_Boolean;
+            }
+            if(this.inputScokets_arr.length > 0){
+                this.inSocket = this.inputScokets_arr[0];
+            }
+        }
+        if(this.outSocket == null){
+            this.outSocket = new NodeSocket('out', this, false, {type:SqlVarType_Boolean});
+            this.addSocket(this.outSocket);
+        }
+        if(this.inSocket == null){
+            this.inSocket = new NodeSocket('in', this, true, {type:SqlVarType_Table});
+            this.addSocket(this.inSocket);
+        }
+        this.insocketInitVal  = {
+             type:SqlVarType_Scalar,
+        };
+        var castValType = this.inSocket.getExtra('valType');
+        if(SqlVarTypes_arr.indexOf(castValType) == -1){
+            this.inSocket.setExtra('valType',SqlVarType_NVarchar);
+        }
+    }
+    
+    
+    requestSaveAttrs(){
+        var rlt = super.requestSaveAttrs();
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson){
+    }
+   
+    size1InputChangedHandler(newVal){
+        this.setState({
+            size_1:isNaN(newVal) ? 0 : parseInt(newVal),
+        });
+    }
+
+    size2InputChangedHandler(newVal){
+        this.setState({
+            size_2:isNaN(newVal) ? 0 : parseInt(newVal),
+        });
+    }
+    
+    castTypeDropdownChangedHandler(data, dropCtl){
+        var theSocket = this.inSocket;
+        theSocket.setExtra('valType', data);
+        theSocket.fireEvent('changed');
+    }
+
+    sizeOneInputChangedHandler(ev){
+        var newVal = ev.target.value;
+        if(isNaN(newVal)){
+            return;
+        }
+        this.inSocket.setExtra('size1', newVal);
+        this.inSocket.fireEvent('changed');
+    }
+
+    sizeTwoInputChangedHandler(ev){
+        var newVal = ev.target.value;
+        if(isNaN(newVal)){
+            return;
+        }
+        this.inSocket.setExtra('size2', newVal);
+        this.inSocket.fireEvent('changed');
+    }
+
+    customSocketRender(socket){
+        if(!socket.isIn){
+            return;
+        }
+        var castValType = socket.getExtra('valType');
+        var hadSizeOne = false;
+        var hadSizeTwo = false;
+        switch (castValType) {
+            case SqlVarType_Time:
+            case SqlVarType_NVarchar:
+            hadSizeOne = true;
+            break;
+            case SqlVarType_Decimal:
+            hadSizeOne = true;
+            hadSizeTwo = true;
+            break;
+        }
+        var sizeOneInptELem = null;
+        var sizeTwoInputElem = null;
+        if(this.inputStyle == null){
+            this.inputStyle = {
+                width:'3em',
+            };
+        }
+        if(hadSizeOne){
+            var sizeValue = socket.getExtra('size1');
+            if(isNaN(sizeValue)){
+                sizeValue = 0;
+            }
+            sizeOneInptELem = (<input type='int' style={this.inputStyle} value={sizeValue} onChange={this.sizeOneInputChangedHandler}/>);
+        }
+        if(hadSizeTwo){
+            var sizeValue = socket.getExtra('size2');
+            if(isNaN(sizeValue)){
+                sizeValue = 0;
+            }
+            sizeTwoInputElem = (<input type='int' style={this.inputStyle} value={sizeValue} onChange={this.sizeTwoInputChangedHandler}/>);
+        }
+
+        //创建一个下拉框
+        return (
+            <React.Fragment>
+                <DropDownControl itemChanged={this.castTypeDropdownChangedHandler} btnclass='btn-dark' options_arr={SqlVarTypes_arr} rootclass='flex-grow-1 flex-shrink-1' value={castValType} />
+                {sizeOneInptELem}
+                {sizeTwoInputElem}
+            </React.Fragment>
+        );
+    }
+    //编译
+
+    compile(helper, preNodes_arr){
+        var superRet = super.compile(helper, preNodes_arr);
+        if(superRet == false || superRet != null){
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketVal_arr = [];
+        for(var i=0;i<this.inputScokets_arr.length;++i){
+            var theSocket = this.inputScokets_arr[i];
+            var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+            var tValue = null;
+            if(tLinks.length == 0){
+                helper.logManager.errorEx([helper.logManager.createBadgeItem( 
+                     thisNodeTitle
+                    ,nodeThis
+                    ,helper.clickLogBadgeItemHandler)
+                    ,'输入不能为空']);
+                 return false;
+            }
+            else{
+                var link = tLinks[0];
+                var outNode = link.outSocket.node;
+                var compileRet = outNode.compile(helper, usePreNodes_arr);
+                if(compileRet == false){
+                    return false;
+                }
+                tValue = compileRet.getSocketOut(link.outSocket).strContent;
+                if(!outNode.outputIsSimpleValue()){
+                    tValue = '(' + tValue + ')';
+                }
+            }
+            socketVal_arr.push(tValue);
+        }
+        var finalStr = ' cast(';
+        if(socketVal_arr.length == 0){
+            finalStr += '(select 0))';
+        }
+        else{
+            socketVal_arr.forEach((x,i)=>{
+                var castValType = this.inputScokets_arr[i].getExtra('castValType');
+                finalStr += (i == 0 ? '' : ',') + x +' as '+ castValType ;
+            });
+            finalStr += ')';
+        }
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        helper.setCompileRetCache(this,selfCompileRet);
+        return selfCompileRet;
+    }
+
+}
+
 
 SqlNodeClassMap[SQLNODE_DBENTITY] = {
     modelClass: SqlNode_DBEntity,
@@ -3006,7 +3337,7 @@ SqlNodeClassMap[SQLNODE_RET_CONDITION] = {
 };
 SqlNodeClassMap[SQLNODE_RET_COLUMNS] = {
     modelClass: SqlNode_Ret_Columns,
-    comClass: C_SqlNode_SimpleNode,
+    comClass: C_SqlNode_Ret_Columns,
 };
 SqlNodeClassMap[SQLNODE_RET_ORDER] = {
     modelClass: SqlNode_Ret_Order,
@@ -3036,3 +3367,16 @@ SqlNodeClassMap[SQLNODE_BETWEEN] = {
     modelClass: SqlNode_BetWeen,
     comClass: C_SqlNode_SimpleNode,
 };
+SqlNodeClassMap[SQLNODE_CAST] = {
+    modelClass: SqlNode_Cast,
+    comClass: C_SqlNode_SimpleNode,
+};
+SqlNodeClassMap[SQLNODE_GETDATE]={
+    modelClass:SqlNode_Getdate,
+    comClass: C_SqlNode_SimpleNode,
+};
+SqlNodeClassMap[SQLNODE_LOGICAL_OPERATOR]={
+    modelClass:SqlNode_Logical_Operator,
+    comClass: C_SqlNode_Logical_Operator,
+};
+

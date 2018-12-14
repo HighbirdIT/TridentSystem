@@ -36,8 +36,8 @@ var AttrNames = {
         Display: 'display',
         Width: 'width',
         Height: 'height',
-        FlexGrow: 'flexGrow',
-        FlexShrink: 'flexShrink'
+        FlexGrow: 'flex-grow',
+        FlexShrink: 'flex-shrink'
     },
 
     StyleValues: {

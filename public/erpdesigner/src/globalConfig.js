@@ -33,6 +33,14 @@ const JoinTypes_arr = [JoinType_Inner,JoinType_Left,JoinType_Right,JoinType_Cros
 const Operat_IsNull ='is null';
 const Operat_IsNotNull='is not null';
 const Operat_arr = [Operat_IsNull,Operat_IsNotNull];
+/**
+ * 逻辑运算符 and or not
+ */
+var Logical_Operator_and = 'and';
+var Logical_Operator_or = 'or';
+//var Logical_Operator_not = 'not';
+var Logical_Operators_arr = [Logical_Operator_and, Logical_Operator_or];
+
 
 const Event_CurrentComponentchanged = 'currentComponentchanged';
 const Event_LinkChanged = 'linkChanged';

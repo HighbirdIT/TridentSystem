@@ -46,6 +46,19 @@ const SqlNodeEditorControls_arr =[
         label:'BetWeen',
         nodeClass:SqlNode_BetWeen,
     }
+    ,
+    {
+        label:'Cast',
+        nodeClass:SqlNode_Cast,
+    },
+    {
+        label:'Getdate',
+        nodeClass:SqlNode_Getdate,
+    },
+    {
+        label:'逻辑运算',
+        nodeClass:SqlNode_Logical_Operator,
+    }
 ]; 
 
 class C_SqlNode_Editor extends React.PureComponent{
@@ -794,7 +807,7 @@ class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
                 <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>可用节点</button>
                 <div id={targetID} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
                     <div className='mw-100 d-flex flex-column'>
-                        <div className='btn-group-vertical mw-100'>
+                        <div className='btn-group-vertical mw-100 flex-shrink-0'>
                             {
                                 SqlNodeEditorControls_arr.map(
                                     item=>{

@@ -48,7 +48,7 @@ var M_Label = function (_React$PureComponent) {
         };
 
         autoBind(_this2);
-        M_ControlBase(_this2, ['text']);
+        M_ControlBase(_this2, [AttrNames.Text, AttrNames.LayoutNames.APDClass, AttrNames.LayoutNames.StyleAttr]);
         return _this2;
     }
 
@@ -66,20 +66,23 @@ var M_Label = function (_React$PureComponent) {
         key: 'render',
         value: function render() {
             var ctlKernel = this.props.ctlKernel;
-            var className = 'flex-grow-0 flex-shrink-0';
+            var layoutConfig = ctlKernel.getLayoutConfig();
+            layoutConfig.addClass('flex-grow-0');
+            layoutConfig.addClass('flex-shrink-0');
             if (this.props.ctlKernel.__placing) {
-                className += ' M_placingCtl';
+                layoutConfig.addClass('M_placingCtl');
                 return React.createElement(
                     'div',
-                    { className: className, ref: this.rootElemRef },
+                    { className: layoutConfig.getClassName(), style: layoutConfig.style, ref: this.rootElemRef },
                     '\u6807\u7B7E\u5185\u5BB9'
                 );
             }
-            className += ctlKernel.getRootDivClass();
-            className += ' M_Label border hb-control';
+            layoutConfig.addClass('M_Label');
+            layoutConfig.addClass('border');
+            layoutConfig.addClass('hb-control');
             return React.createElement(
                 'div',
-                { className: className, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                { className: layoutConfig.getClassName(), style: layoutConfig.style, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
                 this.state.text
             );
         }

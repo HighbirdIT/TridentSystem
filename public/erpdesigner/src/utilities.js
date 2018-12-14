@@ -203,7 +203,7 @@ function ReplaceIfNaN(val,def){
 }
 
 function IsEmptyString(val){
-	return val == null || val == '';
+	return val == null || val === '';
 }
 
 function IsEmptyArray(val){

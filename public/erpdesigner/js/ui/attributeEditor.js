@@ -170,13 +170,16 @@ var AttributeEditor = function (_React$PureComponent) {
         value: function styleNameDDCChanged(newName) {
             var nowVal = this.state.value;
             nowVal.name = newName;
+            var setting = StyleAttrSetting[newName];
+            if (setting != null) {
+                nowVal.value = setting.def;
+            }
             this.doSetAttribute(nowVal);
         }
     }, {
         key: 'styleValueDDCChanged',
         value: function styleValueDDCChanged(newVal) {
             var nowVal = this.state.value;
-            nowVal.value = newVal;
             this.doSetAttribute(nowVal);
         }
     }, {
