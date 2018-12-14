@@ -58,6 +58,10 @@ const SqlNodeEditorControls_arr =[
     {
         label:'逻辑运算',
         nodeClass:SqlNode_Logical_Operator,
+    } ,
+    {
+        label:'Like',
+        nodeClass:SqlNode_Like,
     }
 ]; 
 
