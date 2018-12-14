@@ -221,7 +221,7 @@ class LogOutputPanel extends React.PureComponent {
         autoBind(this);
 
         this.state = {
-            infos_arr:[]
+            infos_arr:this.props.source.getLogs(),
         };
         
     }
