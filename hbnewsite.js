@@ -199,6 +199,21 @@ var autoViews = {};
 var jsCache = {};
 var fs = require('fs'); 
 
+app.use('/erppage',function( req, res, next)
+{
+    var childPath = req.path.toLowerCase();
+    var t_arr = childPath.split('/');
+    var layoutName = null;
+    switch(t_arr[0].toLowerCase()){
+        case 'ma':
+        layoutName = 'erppagetype_MA';
+        break;
+    }
+    var filePath = ''
+    childPath = '';
+    next();
+});
+
 app.use('/interview',function( req, res, next)
 {
     var childPath = req.path.toLowerCase();

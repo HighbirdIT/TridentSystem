@@ -32,6 +32,8 @@ var JoinType_Right = 'right join';
 var JoinType_Cross = 'cross join';
 var JoinTypes_arr = [JoinType_Inner, JoinType_Left, JoinType_Right, JoinType_Cross];
 
+var SqlOperator_IsNull = 'is null';
+var SqlOperator_IsNotNull = 'is not null';
 /**
  * 逻辑运算符 and or not
  */

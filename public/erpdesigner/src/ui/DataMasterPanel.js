@@ -462,7 +462,7 @@ class AddNewSqlBPPanel extends React.PureComponent {
 
     render(){
         var nameWidth = 100;
-        return <FloatPanelbase title='新建Sql蓝图' width={480} height={320} initShow={false} sizeable={false} closeable={false} ismodel={true} >
+        return <FloatPanelbase title='新建Sql蓝图' width={480} height={320} initShow={true} sizeable={false} closeable={false} ismodel={true} >
                 <div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
                     <div className='d-flex flex-column autoScroll flex-grow-1 flex-shrink-1'>
                         <NameInputRow label='名称' type='text' rootClass='m-1' nameWidth={nameWidth} ref={this.nameRef} />
