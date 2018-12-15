@@ -3275,7 +3275,7 @@ class SqlNode_Cast extends SqlNode_Base{
                          else if(sizeOneValue>4000){
                             helper.logManager.warnEx(
                                 [helper.logManager.createBadgeItem( 
-                                thisNodeTitle
+                                SqlVarType_NVarchar
                                 ,SqlVarType_NVarchar
                                 ,helper.clickLogBadgeItemHandler)
                                 ,"该类型长度不可大于4000。"]
@@ -3291,7 +3291,7 @@ class SqlNode_Cast extends SqlNode_Base{
                             
                             helper.logManager.warnEx(
                                 [helper.logManager.createBadgeItem( 
-                                thisNodeTitle
+                                    SqlVarType_Time
                                 ,SqlVarType_Time
                                 ,helper.clickLogBadgeItemHandler)
                                 ,"该类型长度不可大于7。"]
@@ -3311,7 +3311,7 @@ class SqlNode_Cast extends SqlNode_Base{
 
                             helper.logManager.warnEx(
                                 [helper.logManager.createBadgeItem( 
-                                thisNodeTitle
+                                    SqlVarType_Decimal
                                 ,SqlVarType_Decimal
                                 ,helper.clickLogBadgeItemHandler)
                                 ,"该类型长度不可大于20。"]
@@ -3321,7 +3321,7 @@ class SqlNode_Cast extends SqlNode_Base{
                          if(sizeTwoValue>6){  
                             helper.logManager.warnEx(
                                 [helper.logManager.createBadgeItem( 
-                                thisNodeTitle
+                                    SqlVarType_Decimal
                                 ,SqlVarType_Decimal
                                 ,helper.clickLogBadgeItemHandler)
                                 ,"该类型长度不可大于6。"]
@@ -3330,7 +3330,7 @@ class SqlNode_Cast extends SqlNode_Base{
                          if(sizeOneValue<sizeTwoValue){
                             helper.logManager.warnEx(
                                 [helper.logManager.createBadgeItem( 
-                                    thisNodeTitle
+                                    SqlVarType_Decimal
                                     ,SqlVarType_Decimal
                                     ,helper.clickLogBadgeItemHandler)
                                     ,"小数位数必须小于或等于精度。"]
@@ -3342,7 +3342,7 @@ class SqlNode_Cast extends SqlNode_Base{
                     break;
                 }
                 
-                if(castValTypeText=='nvarchar' || castValTypeText=='time' || castValTypeText=='decimal'){
+                if(castValTypeText=='nvarchar' || castValTypeText==SqlVarType_Time || castValTypeText==SqlVarType_Decimal){
                     
                     finalStr += (i == 0 ? '' : ',') + x +' as '+ aStringValue ;
                 }
