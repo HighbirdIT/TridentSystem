@@ -202,16 +202,29 @@ var fs = require('fs');
 app.use('/erppage',function( req, res, next)
 {
     var childPath = req.path.toLowerCase();
-    var t_arr = childPath.split('/');
-    var layoutName = null;
-    switch(t_arr[0].toLowerCase()){
-        case 'ma':
-        layoutName = 'erppagetype_MA';
-        break;
+    var cahce = autoViews['erp-' + childPath];
+    if(cahce == null){
+        var tPos = childPath.indexOf('/',1);
+        if(tPos != -1){
+            var layoutName = 'erppagetype_' +  childPath.substr(1, tPos - 1).toLocaleUpperCase();
+            var filePath = '/erppage' + childPath.substr(tPos) + '.handlebars';
+            if(fs.existsSync(__dirname + '/views' + filePath)){
+                cahce = {
+                    path:filePath.replace(/^\//, ''),
+                    layoutName:layoutName,
+                };
+                autoViews['erp-' + childPath] = cahce;
+            }
+        }
     }
-    var filePath = ''
-    childPath = '';
-    next();
+    
+    if(cahce != null){
+        return res.render(cahce.path, {layout:cahce.layoutName}); 
+    }
+    res.status(404);
+    res.render('404');
+    
+    //next();
 });
 
 app.use('/interview',function( req, res, next)
