@@ -62,6 +62,8 @@ var CProject = function (_IAttributeable) {
             pages: []
         };
 
+        _this.logmanager = new LogManager(_this.designeConfig.name + '_lm');
+
         if (jsonData == null) {
             var mainPage = new M_PageKernel({
                 title: '主页面',
@@ -96,6 +98,7 @@ var CProject = function (_IAttributeable) {
                 _this.content_Mobile.pages.push(newPage);
             });
         }
+        _this.logmanager.log('加载完成');
         return _this;
     }
 

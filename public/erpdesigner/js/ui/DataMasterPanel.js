@@ -600,7 +600,7 @@ var AddNewSqlBPPanel = function (_React$PureComponent6) {
             var nameWidth = 100;
             return React.createElement(
                 FloatPanelbase,
-                { title: '\u65B0\u5EFASql\u84DD\u56FE', width: 480, height: 320, initShow: false, sizeable: false, closeable: false, ismodel: true },
+                { title: '\u65B0\u5EFASql\u84DD\u56FE', width: 480, height: 320, initShow: true, sizeable: false, closeable: false, ismodel: true },
                 React.createElement(
                     'div',
                     { className: 'd-flex flex-grow-1 flex-shrink-1 flex-column' },

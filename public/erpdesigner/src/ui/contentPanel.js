@@ -150,8 +150,8 @@ class ContentPanel extends React.PureComponent {
             <div className='flex-grow-1 flex-shrink-1 d-flex flex-column'>
                 <div className='flex-grow-0 flex-shrink-1 d-flex bg-secondary projectContentHeader align-items-center'>
                     <div className='flex-grow-1 flex-shrink-1 d-flex justify-content-center align-items-center text-light'>
-                        <h4 >{this.state.title}
-
+                        <h4 >
+                            {this.state.title}
                         </h4>
                         <button type='button' onClick={this.clickProjSettingBtnHandler} className='btn btn-sm icon icon-gear bg-secondary ml-1' />
                         <button type="button" className={"ml-1 p-0 btn btn-secondary dropdown-toggle dropdown-toggle-split"} data-toggle="dropdown">

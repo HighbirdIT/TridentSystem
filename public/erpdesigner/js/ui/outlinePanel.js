@@ -392,11 +392,24 @@ var OutlinePanel = function (_React$PureComponent2) {
                 ),
                 React.createElement(
                     'div',
+                    { className: 'btn-group flex-grow-0 flex-shrink-1 bg-dark' },
+                    React.createElement(
+                        'div',
+                        { className: 'btn btn-dark' },
+                        React.createElement('i', { className: 'fa fa-trash text-danger' })
+                    )
+                ),
+                React.createElement(
+                    'div',
                     { className: 'flex-grow-1 flex-shrink-1 autoScroll', ref: this.scrollDivRef },
-                    this.state.editingPage && this.state.editingPage.children.map(function (kernal) {
-                        return React.createElement(OutlineItem, { key: kernal.id, kernel: kernal, deep: 0, itemSelected: _this4.itemSelected, wantDragAct: _this4.wantDragAct });
-                    }),
-                    React.createElement('div', { ref: this.bottomDivRef, style: { height: '20px' } })
+                    React.createElement(
+                        'div',
+                        { className: 'flex-grow-0 flex-shrink-0 d-flex flex-column' },
+                        this.state.editingPage && this.state.editingPage.children.map(function (kernal) {
+                            return React.createElement(OutlineItem, { key: kernal.id, kernel: kernal, deep: 0, itemSelected: _this4.itemSelected, wantDragAct: _this4.wantDragAct });
+                        }),
+                        React.createElement('div', { ref: this.bottomDivRef, style: { height: '20px' } })
+                    )
                 )
             );
         }

@@ -30,6 +30,8 @@ const JoinType_Right = 'right join';
 const JoinType_Cross = 'cross join';
 const JoinTypes_arr = [JoinType_Inner,JoinType_Left,JoinType_Right,JoinType_Cross];
 
+const SqlOperator_IsNull ='is null';
+const SqlOperator_IsNotNull='is not null';
 /**
  * 逻辑运算符 and or not
  */

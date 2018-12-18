@@ -356,15 +356,22 @@ class OutlinePanel extends React.PureComponent {
         return (
             <div id="outlineRoot" className="flex-grow-1 flex-shrink-1 bg-light d-flex flex-column mw-100">
                 <button type="button" className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light' style={{ borderRadius: '0em', height: '2.5em', overflow: 'hidden' }}>大纲</button>
+                <div className='btn-group flex-grow-0 flex-shrink-1 bg-dark'>
+                    <div className='btn btn-dark'>
+                        <i className='fa fa-trash text-danger' />
+                    </div>
+                </div>
                 <div className='flex-grow-1 flex-shrink-1 autoScroll' ref={this.scrollDivRef} >
-                    {
-                        this.state.editingPage && this.state.editingPage.children.map(
-                            kernal => {
-                                return <OutlineItem key={kernal.id} kernel={kernal} deep={0} itemSelected={this.itemSelected} wantDragAct={this.wantDragAct} />
-                            }
-                        )
-                    }
-                    <div ref={this.bottomDivRef} style={{height:'20px'}}></div>
+                    <div className='flex-grow-0 flex-shrink-0 d-flex flex-column'>
+                        {
+                            this.state.editingPage && this.state.editingPage.children.map(
+                                kernal => {
+                                    return <OutlineItem key={kernal.id} kernel={kernal} deep={0} itemSelected={this.itemSelected} wantDragAct={this.wantDragAct} />
+                                }
+                            )
+                        }
+                        <div ref={this.bottomDivRef} style={{height:'20px'}}></div>
+                    </div>
                 </div>
             </div>
         );

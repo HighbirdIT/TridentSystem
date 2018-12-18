@@ -165,7 +165,16 @@ class ProjectDesigner extends React.PureComponent {
                         <SplitPanel defPercent={0.8}
                              fixedOne={false}
                              barClass='bg-secondary'
-                             panel1={<ContentPanel project={thisProject} ref={this.contenPanelRef} wantOpenPanel={this.wantOpenPanel} />}
+                             panel1={
+                                <SplitPanel
+                                        defPercent={0.8}
+                                        barClass='bg-secondary'
+                                        fixedOne={false}
+                                        flexColumn={true}
+                                        panel1={<ContentPanel project={thisProject} ref={this.contenPanelRef} wantOpenPanel={this.wantOpenPanel} />}
+                                        panel2={<LogOutputPanel source={thisProject.logmanager} />}
+                                />
+                             }
                              panel2={<AttributePanel project={thisProject} ref={this.attrbutePanelRef} />}
                             />
                             }
