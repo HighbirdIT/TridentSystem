@@ -65,7 +65,11 @@ const SqlNodeEditorControls_arr =[
     }
     ,{
         label:'In',
-        nodeClass:SqlNode_In_Operator
+        nodeClass:SqlNode_In_Operator,
+    }
+    ,{
+        label:'字符串拼接',
+        nodeClass:SqlNode_ToString,
     }
 ]; 
 
