@@ -31,7 +31,7 @@ function fetchBeginHandler(state, action){
     if(triggerData){
         isModel = triggerData.isModel != false;
         if(triggerData.base != null && triggerData.id != null && triggerData.propName != null){
-            fetchIdentify = triggerData.base + '.' + triggerData.id + '.' + triggerData.propName;
+            fetchIdentify = MakePath(triggerData.base,triggerData.id,triggerData.propName);
         }
     }
     if(isModel){
@@ -44,7 +44,7 @@ function fetchBeginHandler(state, action){
     if(triggerData)
     {
         if(triggerData.base != null && triggerData.id != null){
-            var propPath = triggerData.base + '.' + triggerData.id;
+            var propPath = MakePath(triggerData.base,triggerData.id);
             retState = setManyStateByPath(retState, propPath, {
                 fetching:true,
                 fetchingpropname:triggerData.propName,
@@ -68,7 +68,7 @@ function fetchEndHandler(state, action){
     if(triggerData){
         isModel = triggerData.isModel != false;
         if(triggerData.base != null && triggerData.id != null && triggerData.propName != null){
-            fetchIdentify = triggerData.base + '.' + triggerData.id + '.' + triggerData.propName;
+            fetchIdentify = MakePath(triggerData.base,triggerData.id,triggerData.propName);
         }
     }
     if(fetchIdentify){
@@ -83,7 +83,7 @@ function fetchEndHandler(state, action){
         console.warn(action.err);
         if(triggerData)
         {
-            var propPath = triggerData.base + '.' + triggerData.id + '.fetching';
+            var propPath = MakePath(triggerData.base,triggerData.id,'fetching');
             retState = setStateByPath(retState, propPath, false);
         }
 
@@ -98,7 +98,7 @@ function fetchEndHandler(state, action){
     if(triggerData)
     {
         if(triggerData.base != null && triggerData.id != null){
-            var propPath = triggerData.base + '.' + triggerData.id + '.fetching';
+            var propPath = MakePath(triggerData.base, triggerData.id, 'fetching');
             retState = setStateByPath(retState, propPath, false);
         }
     }
@@ -112,7 +112,7 @@ function fetchEndHandler(state, action){
             return Object.assign({},retState,{loaded:true});
         case 'fetchpropvalue':
         {
-            var propPath = triggerData.base + '.' + triggerData.id + '.' + triggerData.propName;
+            var propPath = MakePath(triggerData.base, triggerData.id, triggerData.propName);
             return setStateByPath(retState, propPath, action.json.data);
         }
     }
@@ -129,8 +129,9 @@ function setManyStateByPathHandler(state, action){
 
 function controlStateChanged(state, path, newValue, visited = {}){
     if(visited[path] != null){
-        console.err('controlStateChanged回路访问:' + path);
+        console.error('controlStateChanged回路访问:' + path);
     }
+    visited[path] = 1;
     var retState = state;
     switch(path){
         case 'page1.testControl01.text':
@@ -154,6 +155,9 @@ function controlStateChanged(state, path, newValue, visited = {}){
                 },
                 'fetchpropvalue'));
             }, 20);
+        break;
+        case 'page1.text03.value':
+            retState = setStateByPath(retState, MakePath('page1.text04.value'), '没想到' + newValue + '哈哈', visited);
         break;
     }
     return retState;
@@ -180,12 +184,12 @@ class TestControl extends React.PureComponent{
 }
 
 const selectTestControlData = (state, ownProp)=>{
-    var ctlState = getStateByPath(state, 'app.' + ownProp.parentPath + '.' + ownProp.ctrlID, {});
+    var ctlState = getStateByPath(state, 'app.' + ownProp.parentPath + '.' + ownProp.id, {});
     return ctlState.data == null ? [] : ctlState.data;
 };
 
 const selectTestControlSelectedValue = (state, ownProp)=>{
-    var ctlState = getStateByPath(state, 'app.' + ownProp.parentPath + '.' + ownProp.ctrlID, {});
+    var ctlState = getStateByPath(state, 'app.' + ownProp.parentPath + '.' + ownProp.id, {});
     return ctlState.selectedValue;
 };
 
@@ -199,7 +203,7 @@ function TestControl_mapstatetoprops(state, ownprops) {
 }
 
 function TestControl_dispatchtorprops(dispatch, ownprops) {
-    var ctrlBasePath = ownprops.parentPath + '.' + ownprops.ctrlID;
+    var ctrlBasePath = ownprops.parentPath + '.' + ownprops.id;
     return {
         clickFresh: (ev) => {
             store.dispatch(fetchJsonPost('/erppage/server/test', { action: 'getData', ctrlId:'t_0' }, {
@@ -245,7 +249,7 @@ class TextControl extends React.PureComponent{
 }
 
 function TextControl_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state, 'app.' + ownprops.parentPath + '.' + ownprops.ctrlID, {});
+    var ctlState = getStateByPath(state, 'app.' + ownprops.parentPath + '.' + ownprops.id, {});
     return {
         text: ctlState.text,
         fetching: ctlState.fetching
@@ -253,7 +257,7 @@ function TextControl_mapstatetoprops(state, ownprops) {
 }
 
 function TextControl_dispatchtorprops(dispatch, ownprops) {
-    var ctrlBasePath = ownprops.parentPath + '.' + ownprops.ctrlID;
+    var ctrlBasePath = ownprops.parentPath + '.' + ownprops.id;
     return {
     };
 }
@@ -303,16 +307,20 @@ class App extends React.PureComponent{
         </div>
     }
 
+
     renderContent(){
         if(!this.props.loaded){
             return null;
         }
+
         return <React.Fragment>
-                <VisibleERPC_DropDownControl pullDataSource={pullDL01DataSource} ctrlID='testControl01' label='员工姓名' parentPath='page1' textAttrName='员工登记姓名' valueAttrName='员工登记姓名代码' />
+                <VisibleERPC_DropDown pullDataSource={pullDL01DataSource} id='testControl01' label='员工姓名' parentPath='page1' textAttrName='员工登记姓名' valueAttrName='员工登记姓名代码' />
                 <div className='d-flex flex-shrink-0'>
-                    <VisibleTextControl label='代码' ctrlID='text01' parentPath='page1' />
-                    <VisibleTextControl label='身份证' ctrlID='text02' parentPath='page1' />
+                    <VisibleTextControl label='代码' id='text01' parentPath='page1' />
+                    <VisibleTextControl label='身份证' id='text02' parentPath='page1' />
                 </div>
+                <VisibleERPC_Text id='text03' parentPath='page1' />
+                <VisibleERPC_Text id='text04' readonly={true} parentPath='page1' />
             </React.Fragment>
     }
 

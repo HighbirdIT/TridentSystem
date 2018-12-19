@@ -1,20 +1,45 @@
-class ERPC_DropDownControl extends React.PureComponent {
+var ctrlCurrentComponent_map = {};
+
+function SetCurrentComponent(ctrlProps, component){
+    ctrlCurrentComponent_map[MakePath(ctrlProps.parentPath,ctrlProps.id)] = component;
+}
+
+function ERPC_Fun_ComponentWillUnmount(){
+    SetCurrentComponent(this.props, null);
+    if(this.cusComponentWillMount){
+        this.cusComponentWillMount();
+    }
+}
+
+function ERPC_Fun_ComponentWillMount(){
+    SetCurrentComponent(this.props, this);
+    if(this.cusComponentWillUnmount){
+        this.cusComponentWillUnmount();
+    }
+}
+
+function ERPControlBase(target){
+    target.rootDivRef = React.createRef();
+    target.initState = {
+        
+    };
+    target.componentWillUnmount = ERPC_Fun_ComponentWillUnmount.bind(target);
+    target.componentWillMount = ERPC_Fun_ComponentWillMount.bind(target);
+}
+
+class ERPC_DropDown extends React.PureComponent {
     constructor(props) {
         super(props);
         autoBind(this);
 
-        this.state = {
+        ERPControlBase(this);
+        this.state = Object.assign(this.initState,{
             keyword:'',
             opened:false,
-        };
-
-        this.dropdownbtnRef = React.createRef();
+        });
+        
         this.editableInputRef = React.createRef();
-        this.dropmenudivRef = React.createRef();
-        this.rootDivRef = React.createRef();
-    }
-
-    componentWillUnmount(){
+        this.initState = null;
     }
 
     dropDownOpened() {
@@ -70,7 +95,7 @@ class ERPC_DropDownControl extends React.PureComponent {
         store.dispatch(makeAction_setManyStateByPath({
             value:theOptionItem.value,
             text:theOptionItem.text,
-        }, this.props.parentPath + '.' + this.props.ctrlID));
+        }, MakePath(this.props.parentPath,this.props.id)));
     }
 
     clickOpenHandler(){
@@ -164,7 +189,7 @@ class ERPC_DropDownControl extends React.PureComponent {
                             </button>
                         }
                         {
-                            hadMini && <button ref={this.dropdownbtnRef} type='button' onClick={this.clickOpenHandler} className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdownbtn dropdown-toggle-split'} ></button>
+                            hadMini && <button type='button' onClick={this.clickOpenHandler} className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdownbtn dropdown-toggle-split'} ></button>
                         }
                         {this.renderPopPanel(keyword, filted_arr,this.props.options_arr, selectedVal)}
             </div>
@@ -172,23 +197,23 @@ class ERPC_DropDownControl extends React.PureComponent {
     }
 }
 
-const selectERPC_DropDownControl_options = (state, ownprops)=>{
+const selectERPC_DropDown_options = (state, ownprops)=>{
     if(ownprops.options_arr != null){
         return ownprops.options_arr;
     }
-    var ctlState = getStateByPath(state, ownprops.parentPath + '.' + ownprops.ctrlID, {});
+    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
     return ctlState.options_arr;
 };
 
-const selectERPC_DropDownControl_textName = (state, ownprops)=>{
+const selectERPC_DropDown_textName = (state, ownprops)=>{
     return ownprops.textAttrName;
 };
 
-const selectERPC_DropDownControl_valueName = (state, ownprops)=>{
+const selectERPC_DropDown_valueName = (state, ownprops)=>{
     return ownprops.valueAttrName;
 };
 
-const formatERPC_DropDownControl_options = (orginData_arr, textAttrName, valueAttrName)=>{
+const formatERPC_DropDown_options = (orginData_arr, textAttrName, valueAttrName)=>{
     if(orginData_arr == null){
         return [];
     }
@@ -201,26 +226,76 @@ const formatERPC_DropDownControl_options = (orginData_arr, textAttrName, valueAt
     });
 }
 
-const ERPC_DropDownControl_optionsSelector = Reselect.createSelector(selectERPC_DropDownControl_options,selectERPC_DropDownControl_textName,selectERPC_DropDownControl_valueName, formatERPC_DropDownControl_options);
+const ERPC_DropDown_optionsSelector = Reselect.createSelector(selectERPC_DropDown_options,selectERPC_DropDown_textName,selectERPC_DropDown_valueName, formatERPC_DropDown_options);
 
-function ERPC_DropDownControl_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state.app, ownprops.parentPath + '.' + ownprops.ctrlID, {});
+function ERPC_DropDown_mapstatetoprops(state, ownprops) {
+    var ctlState = getStateByPath(state.app, MakePath(ownprops.parentPath,ownprops.id), {});
     return {
         value: ctlState.value,
         text: ctlState.text,
         fetching: ctlState.fetching,
-        options_arr: ERPC_DropDownControl_optionsSelector(state.app, ownprops),
+        options_arr: ERPC_DropDown_optionsSelector(state.app, ownprops),
     };
 }
 
-function ERPC_DropDownControl_dispatchtoprops(dispatch, ownprops) {
-    var ctrlBasePath = ownprops.parentPath + '.' + ownprops.ctrlID;
+function ERPC_DropDown_dispatchtoprops(dispatch, ownprops) {
     return {
     };
 }
 
-var VisibleERPC_DropDownControl = null;
+class ERPC_Text extends React.PureComponent{
+    constructor(props){
+        super();
+        autoBind(this);
+
+        ERPControlBase(this);
+        this.state = this.initState;
+    }
+
+    inputChanged(ev){
+        var text = ev.target.value;
+        store.dispatch(makeAction_setStateByPath(text, MakePath(this.props.parentPath,this.props.id,'value')));
+    }
+
+    render(){
+        var contentElem = null;
+        var rootDivClassName = 'd-flex flex-grow-1 flex-shrink-1';
+        if(this.props.fetching){
+            contentElem = (<i className='fa fa-spinner fa-pulse fa-fw' />);
+        }
+        else{
+            if(this.props.readonly){
+                rootDivClassName += ' bg-secondary rounded border'
+                contentElem = <div className='flex-grow-1 flex-shrink-1'>{this.props.value}</div>
+            }
+            else{
+                contentElem = (<input className='flex-grow-1 flex-shrink-1 flexinput' type='text' value={this.props.text} onChange={this.inputChanged} />);
+            }
+        }
+        return (<div className={rootDivClassName} ref={this.rootDivRef}>
+                    {contentElem}
+                </div>);
+    }
+}
+
+function ERPC_Text_mapstatetoprops(state, ownprops) {
+    var ctlState = getStateByPath(state.app, MakePath(ownprops.parentPath,ownprops.id), {});
+    return {
+        value: ctlState.value,
+        fetching: ctlState.fetching
+    };
+}
+
+function ERPC_Text_dispatchtorprops(dispatch, ownprops) {
+    return {
+    };
+}
+
+
+var VisibleERPC_DropDown = null;
+var VisibleERPC_Text = null;
 
 function ErpControlInit(){
-    VisibleERPC_DropDownControl = ReactRedux.connect(ERPC_DropDownControl_mapstatetoprops, ERPC_DropDownControl_dispatchtoprops)(ERPC_DropDownControl);
+    VisibleERPC_DropDown = ReactRedux.connect(ERPC_DropDown_mapstatetoprops, ERPC_DropDown_dispatchtoprops)(ERPC_DropDown);
+    VisibleERPC_Text = ReactRedux.connect(ERPC_Text_mapstatetoprops, ERPC_Text_dispatchtorprops)(ERPC_Text);
 }

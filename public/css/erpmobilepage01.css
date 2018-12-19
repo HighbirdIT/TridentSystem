@@ -1,3 +1,7 @@
+body{
+
+}
+
 .loadingTipBG{
     position: fixed;
     width: 100%;
@@ -80,4 +84,14 @@
     min-width: 10px;
     min-height: 10px;
     width: 10px;
-  }
+    max-height: 2em;
+}
+
+.touchMoveMask{
+    position: absolute;
+    bottom: 80%;
+    background-color: red;
+    height: 1000px;
+    width: 100%;
+    z-index: 500;
+}

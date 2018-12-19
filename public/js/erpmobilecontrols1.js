@@ -10,32 +10,55 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var ERPC_DropDownControl = function (_React$PureComponent) {
-    _inherits(ERPC_DropDownControl, _React$PureComponent);
+var ctrlCurrentComponent_map = {};
 
-    function ERPC_DropDownControl(props) {
-        _classCallCheck(this, ERPC_DropDownControl);
+function SetCurrentComponent(ctrlProps, component) {
+    ctrlCurrentComponent_map[MakePath(ctrlProps.parentPath, ctrlProps.id)] = component;
+}
 
-        var _this = _possibleConstructorReturn(this, (ERPC_DropDownControl.__proto__ || Object.getPrototypeOf(ERPC_DropDownControl)).call(this, props));
+function ERPC_Fun_ComponentWillUnmount() {
+    SetCurrentComponent(this.props, null);
+    if (this.cusComponentWillMount) {
+        this.cusComponentWillMount();
+    }
+}
+
+function ERPC_Fun_ComponentWillMount() {
+    SetCurrentComponent(this.props, this);
+    if (this.cusComponentWillUnmount) {
+        this.cusComponentWillUnmount();
+    }
+}
+
+function ERPControlBase(target) {
+    target.rootDivRef = React.createRef();
+    target.initState = {};
+    target.componentWillUnmount = ERPC_Fun_ComponentWillUnmount.bind(target);
+    target.componentWillMount = ERPC_Fun_ComponentWillMount.bind(target);
+}
+
+var ERPC_DropDown = function (_React$PureComponent) {
+    _inherits(ERPC_DropDown, _React$PureComponent);
+
+    function ERPC_DropDown(props) {
+        _classCallCheck(this, ERPC_DropDown);
+
+        var _this = _possibleConstructorReturn(this, (ERPC_DropDown.__proto__ || Object.getPrototypeOf(ERPC_DropDown)).call(this, props));
 
         autoBind(_this);
 
-        _this.state = {
+        ERPControlBase(_this);
+        _this.state = Object.assign(_this.initState, {
             keyword: '',
             opened: false
-        };
+        });
 
-        _this.dropdownbtnRef = React.createRef();
         _this.editableInputRef = React.createRef();
-        _this.dropmenudivRef = React.createRef();
-        _this.rootDivRef = React.createRef();
+        _this.initState = null;
         return _this;
     }
 
-    _createClass(ERPC_DropDownControl, [{
-        key: 'componentWillUnmount',
-        value: function componentWillUnmount() {}
-    }, {
+    _createClass(ERPC_DropDown, [{
         key: 'dropDownOpened',
         value: function dropDownOpened() {
             this.setState({
@@ -93,7 +116,7 @@ var ERPC_DropDownControl = function (_React$PureComponent) {
             store.dispatch(makeAction_setManyStateByPath({
                 value: theOptionItem.value,
                 text: theOptionItem.text
-            }, this.props.parentPath + '.' + this.props.ctrlID));
+            }, MakePath(this.props.parentPath, this.props.id)));
         }
     }, {
         key: 'clickOpenHandler',
@@ -234,32 +257,32 @@ var ERPC_DropDownControl = function (_React$PureComponent) {
                         )
                     )
                 ),
-                hadMini && React.createElement('button', { ref: this.dropdownbtnRef, type: 'button', onClick: this.clickOpenHandler, className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdownbtn dropdown-toggle-split' }),
+                hadMini && React.createElement('button', { type: 'button', onClick: this.clickOpenHandler, className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdownbtn dropdown-toggle-split' }),
                 this.renderPopPanel(keyword, filted_arr, this.props.options_arr, selectedVal)
             );
         }
     }]);
 
-    return ERPC_DropDownControl;
+    return ERPC_DropDown;
 }(React.PureComponent);
 
-var selectERPC_DropDownControl_options = function selectERPC_DropDownControl_options(state, ownprops) {
+var selectERPC_DropDown_options = function selectERPC_DropDown_options(state, ownprops) {
     if (ownprops.options_arr != null) {
         return ownprops.options_arr;
     }
-    var ctlState = getStateByPath(state, ownprops.parentPath + '.' + ownprops.ctrlID, {});
+    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
     return ctlState.options_arr;
 };
 
-var selectERPC_DropDownControl_textName = function selectERPC_DropDownControl_textName(state, ownprops) {
+var selectERPC_DropDown_textName = function selectERPC_DropDown_textName(state, ownprops) {
     return ownprops.textAttrName;
 };
 
-var selectERPC_DropDownControl_valueName = function selectERPC_DropDownControl_valueName(state, ownprops) {
+var selectERPC_DropDown_valueName = function selectERPC_DropDown_valueName(state, ownprops) {
     return ownprops.valueAttrName;
 };
 
-var formatERPC_DropDownControl_options = function formatERPC_DropDownControl_options(orginData_arr, textAttrName, valueAttrName) {
+var formatERPC_DropDown_options = function formatERPC_DropDown_options(orginData_arr, textAttrName, valueAttrName) {
     if (orginData_arr == null) {
         return [];
     }
@@ -272,25 +295,89 @@ var formatERPC_DropDownControl_options = function formatERPC_DropDownControl_opt
     });
 };
 
-var ERPC_DropDownControl_optionsSelector = Reselect.createSelector(selectERPC_DropDownControl_options, selectERPC_DropDownControl_textName, selectERPC_DropDownControl_valueName, formatERPC_DropDownControl_options);
+var ERPC_DropDown_optionsSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, formatERPC_DropDown_options);
 
-function ERPC_DropDownControl_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state.app, ownprops.parentPath + '.' + ownprops.ctrlID, {});
+function ERPC_DropDown_mapstatetoprops(state, ownprops) {
+    var ctlState = getStateByPath(state.app, MakePath(ownprops.parentPath, ownprops.id), {});
     return {
         value: ctlState.value,
         text: ctlState.text,
         fetching: ctlState.fetching,
-        options_arr: ERPC_DropDownControl_optionsSelector(state.app, ownprops)
+        options_arr: ERPC_DropDown_optionsSelector(state.app, ownprops)
     };
 }
 
-function ERPC_DropDownControl_dispatchtoprops(dispatch, ownprops) {
-    var ctrlBasePath = ownprops.parentPath + '.' + ownprops.ctrlID;
+function ERPC_DropDown_dispatchtoprops(dispatch, ownprops) {
     return {};
 }
 
-var VisibleERPC_DropDownControl = null;
+var ERPC_Text = function (_React$PureComponent2) {
+    _inherits(ERPC_Text, _React$PureComponent2);
+
+    function ERPC_Text(props) {
+        _classCallCheck(this, ERPC_Text);
+
+        var _this4 = _possibleConstructorReturn(this, (ERPC_Text.__proto__ || Object.getPrototypeOf(ERPC_Text)).call(this));
+
+        autoBind(_this4);
+
+        ERPControlBase(_this4);
+        _this4.state = _this4.initState;
+        return _this4;
+    }
+
+    _createClass(ERPC_Text, [{
+        key: 'inputChanged',
+        value: function inputChanged(ev) {
+            var text = ev.target.value;
+            store.dispatch(makeAction_setStateByPath(text, MakePath(this.props.parentPath, this.props.id, 'value')));
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var contentElem = null;
+            var rootDivClassName = 'd-flex flex-grow-1 flex-shrink-1';
+            if (this.props.fetching) {
+                contentElem = React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw' });
+            } else {
+                if (this.props.readonly) {
+                    rootDivClassName += ' bg-secondary rounded border';
+                    contentElem = React.createElement(
+                        'div',
+                        { className: 'flex-grow-1 flex-shrink-1' },
+                        this.props.value
+                    );
+                } else {
+                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 flexinput', type: 'text', value: this.props.text, onChange: this.inputChanged });
+                }
+            }
+            return React.createElement(
+                'div',
+                { className: rootDivClassName, ref: this.rootDivRef },
+                contentElem
+            );
+        }
+    }]);
+
+    return ERPC_Text;
+}(React.PureComponent);
+
+function ERPC_Text_mapstatetoprops(state, ownprops) {
+    var ctlState = getStateByPath(state.app, MakePath(ownprops.parentPath, ownprops.id), {});
+    return {
+        value: ctlState.value,
+        fetching: ctlState.fetching
+    };
+}
+
+function ERPC_Text_dispatchtorprops(dispatch, ownprops) {
+    return {};
+}
+
+var VisibleERPC_DropDown = null;
+var VisibleERPC_Text = null;
 
 function ErpControlInit() {
-    VisibleERPC_DropDownControl = ReactRedux.connect(ERPC_DropDownControl_mapstatetoprops, ERPC_DropDownControl_dispatchtoprops)(ERPC_DropDownControl);
+    VisibleERPC_DropDown = ReactRedux.connect(ERPC_DropDown_mapstatetoprops, ERPC_DropDown_dispatchtoprops)(ERPC_DropDown);
+    VisibleERPC_Text = ReactRedux.connect(ERPC_Text_mapstatetoprops, ERPC_Text_dispatchtorprops)(ERPC_Text);
 }

@@ -463,7 +463,7 @@ function getStateByPath(state, path, def) {
     return nowState;
 }
 
-function setStateByPath(state, path, value) {
+function setStateByPath(state, path, value, visited) {
     if (path == null || path.length == 0) {
         return state;
     }
@@ -512,12 +512,12 @@ function setStateByPath(state, path, value) {
         return newStateValue;
     }
     newStatePrent[newStateName] = updateObject(newStatePrent[newStateName], newStateValue);
-    var retState = controlStateChanged(state, path, value);
+    var retState = controlStateChanged(state, path, value, visited == null ? {} : visited);
 
     return retState == state ? Object.assign({}, retState) : retState;
 }
 
-function setManyStateByPath(state, path, valuesObj) {
+function setManyStateByPath(state, path, valuesObj, visited) {
     if (path == null || path.length == 0 || valuesObj == null) {
         return state;
     }
@@ -574,9 +574,20 @@ function setManyStateByPath(state, path, valuesObj) {
     newStatePrent[newStateName] = updateObject(newStatePrent[newStateName], newStateValue);
     var retState = Object.assign({}, state);
 
+    if (visited == null) {
+        visited = {};
+    }
     var retState = state;
     for (var pi in valuesObj) {
-        retState = controlStateChanged(retState, path + '.' + pi, valuesObj[pi]);
+        retState = controlStateChanged(retState, path + '.' + pi, valuesObj[pi], visited);
     }
     return retState == state ? Object.assign({}, retState) : retState;
+}
+
+function MakePath() {
+    var rlt = '';
+    for (var i = 0; i < arguments.length; ++i) {
+        rlt += (i == 0 ? '' : '.') + arguments[i];
+    }
+    return rlt;
 }

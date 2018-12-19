@@ -38,7 +38,7 @@ function fetchBeginHandler(state, action) {
     if (triggerData) {
         isModel = triggerData.isModel != false;
         if (triggerData.base != null && triggerData.id != null && triggerData.propName != null) {
-            fetchIdentify = triggerData.base + '.' + triggerData.id + '.' + triggerData.propName;
+            fetchIdentify = MakePath(triggerData.base, triggerData.id, triggerData.propName);
         }
     }
     if (isModel) {
@@ -50,7 +50,7 @@ function fetchBeginHandler(state, action) {
 
     if (triggerData) {
         if (triggerData.base != null && triggerData.id != null) {
-            var propPath = triggerData.base + '.' + triggerData.id;
+            var propPath = MakePath(triggerData.base, triggerData.id);
             retState = setManyStateByPath(retState, propPath, {
                 fetching: true,
                 fetchingpropname: triggerData.propName
@@ -73,7 +73,7 @@ function fetchEndHandler(state, action) {
     if (triggerData) {
         isModel = triggerData.isModel != false;
         if (triggerData.base != null && triggerData.id != null && triggerData.propName != null) {
-            fetchIdentify = triggerData.base + '.' + triggerData.id + '.' + triggerData.propName;
+            fetchIdentify = MakePath(triggerData.base, triggerData.id, triggerData.propName);
         }
     }
     if (fetchIdentify) {
@@ -86,7 +86,7 @@ function fetchEndHandler(state, action) {
     if (action.err != null) {
         console.warn(action.err);
         if (triggerData) {
-            var propPath = triggerData.base + '.' + triggerData.id + '.fetching';
+            var propPath = MakePath(triggerData.base, triggerData.id, 'fetching');
             retState = setStateByPath(retState, propPath, false);
         }
 
@@ -100,7 +100,7 @@ function fetchEndHandler(state, action) {
 
     if (triggerData) {
         if (triggerData.base != null && triggerData.id != null) {
-            var propPath = triggerData.base + '.' + triggerData.id + '.fetching';
+            var propPath = MakePath(triggerData.base, triggerData.id, 'fetching');
             retState = setStateByPath(retState, propPath, false);
         }
     }
@@ -114,7 +114,7 @@ function fetchEndHandler(state, action) {
             return Object.assign({}, retState, { loaded: true });
         case 'fetchpropvalue':
             {
-                var propPath = triggerData.base + '.' + triggerData.id + '.' + triggerData.propName;
+                var propPath = MakePath(triggerData.base, triggerData.id, triggerData.propName);
                 return setStateByPath(retState, propPath, action.json.data);
             }
     }
@@ -133,8 +133,9 @@ function controlStateChanged(state, path, newValue) {
     var visited = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
 
     if (visited[path] != null) {
-        console.err('controlStateChanged回路访问:' + path);
+        console.error('controlStateChanged回路访问:' + path);
     }
+    visited[path] = 1;
     var retState = state;
     switch (path) {
         case 'page1.testControl01.text':
@@ -156,6 +157,9 @@ function controlStateChanged(state, path, newValue) {
                     isModel: false
                 }, 'fetchpropvalue'));
             }, 20);
+            break;
+        case 'page1.text03.value':
+            retState = setStateByPath(retState, MakePath('page1.text04.value'), '没想到' + newValue + '哈哈', visited);
             break;
     }
     return retState;
@@ -201,12 +205,12 @@ var TestControl = function (_React$PureComponent) {
 }(React.PureComponent);
 
 var selectTestControlData = function selectTestControlData(state, ownProp) {
-    var ctlState = getStateByPath(state, 'app.' + ownProp.parentPath + '.' + ownProp.ctrlID, {});
+    var ctlState = getStateByPath(state, 'app.' + ownProp.parentPath + '.' + ownProp.id, {});
     return ctlState.data == null ? [] : ctlState.data;
 };
 
 var selectTestControlSelectedValue = function selectTestControlSelectedValue(state, ownProp) {
-    var ctlState = getStateByPath(state, 'app.' + ownProp.parentPath + '.' + ownProp.ctrlID, {});
+    var ctlState = getStateByPath(state, 'app.' + ownProp.parentPath + '.' + ownProp.id, {});
     return ctlState.selectedValue;
 };
 
@@ -222,7 +226,7 @@ function TestControl_mapstatetoprops(state, ownprops) {
 }
 
 function TestControl_dispatchtorprops(dispatch, ownprops) {
-    var ctrlBasePath = ownprops.parentPath + '.' + ownprops.ctrlID;
+    var ctrlBasePath = ownprops.parentPath + '.' + ownprops.id;
     return {
         clickFresh: function clickFresh(ev) {
             store.dispatch(fetchJsonPost('/erppage/server/test', { action: 'getData', ctrlId: 't_0' }, {
@@ -281,7 +285,7 @@ var TextControl = function (_React$PureComponent2) {
 }(React.PureComponent);
 
 function TextControl_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state, 'app.' + ownprops.parentPath + '.' + ownprops.ctrlID, {});
+    var ctlState = getStateByPath(state, 'app.' + ownprops.parentPath + '.' + ownprops.id, {});
     return {
         text: ctlState.text,
         fetching: ctlState.fetching
@@ -289,7 +293,7 @@ function TextControl_mapstatetoprops(state, ownprops) {
 }
 
 function TextControl_dispatchtorprops(dispatch, ownprops) {
-    var ctrlBasePath = ownprops.parentPath + '.' + ownprops.ctrlID;
+    var ctrlBasePath = ownprops.parentPath + '.' + ownprops.id;
     return {};
 }
 
@@ -371,16 +375,19 @@ var App = function (_React$PureComponent3) {
             if (!this.props.loaded) {
                 return null;
             }
+
             return React.createElement(
                 React.Fragment,
                 null,
-                React.createElement(VisibleERPC_DropDownControl, { pullDataSource: pullDL01DataSource, ctrlID: 'testControl01', label: '\u5458\u5DE5\u59D3\u540D', parentPath: 'page1', textAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D', valueAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801' }),
+                React.createElement(VisibleERPC_DropDown, { pullDataSource: pullDL01DataSource, id: 'testControl01', label: '\u5458\u5DE5\u59D3\u540D', parentPath: 'page1', textAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D', valueAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801' }),
                 React.createElement(
                     'div',
                     { className: 'd-flex flex-shrink-0' },
-                    React.createElement(VisibleTextControl, { label: '\u4EE3\u7801', ctrlID: 'text01', parentPath: 'page1' }),
-                    React.createElement(VisibleTextControl, { label: '\u8EAB\u4EFD\u8BC1', ctrlID: 'text02', parentPath: 'page1' })
-                )
+                    React.createElement(VisibleTextControl, { label: '\u4EE3\u7801', id: 'text01', parentPath: 'page1' }),
+                    React.createElement(VisibleTextControl, { label: '\u8EAB\u4EFD\u8BC1', id: 'text02', parentPath: 'page1' })
+                ),
+                React.createElement(VisibleERPC_Text, { id: 'text03', parentPath: 'page1' }),
+                React.createElement(VisibleERPC_Text, { id: 'text04', readonly: true, parentPath: 'page1' })
             );
         }
     }, {
