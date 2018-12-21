@@ -3714,112 +3714,53 @@ class SqlNode_ToString extends SqlNode_Base {
         if (superRet == false || superRet != null) {
             return superRet;
         }
-
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
-        var socketOuts_arr = [];
-
-        if (this.inputScokets_arr[0].type == SqlVarType_Table) {
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                '第一个输入不得为table类型']);
-            return false;
-        }
-        var first_socket = this.inputScokets_arr[0];
-        var first_socketlinks = this.bluePrint.linkPool.getLinksBySocket(first_socket);
-        if (first_socketlinks.length == 0) {
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                '第一个输入不能为空']);
-            return false;
-        }
-        var firstvalue = ''
-        var firstLink = first_socketlinks[0];
-        var firstoutNode = firstLink.outSocket.node;
-        var firstcompileRet = firstoutNode.compile(helper, usePreNodes_arr);
-        if (firstcompileRet == false) {
-            // child compile fail
-            return false;
-        }
-        firstvalue = firstcompileRet.getSocketOut(firstLink.outSocket).strContent;
-        if (!firstoutNode.outputIsSimpleValue()) {
-            firstvalue = ' (' + firstvalue + ')';
-        }
-
-        var finalSql = '';
-        var tablesocketlinks = this.bluePrint.linkPool.getLinksBySocket(this.tablesocket);
-        if (tablesocketlinks.length != 0) {
-            var theLink = tablesocketlinks[0];//insocket 只有一个输入值
-            var outNode = theLink.outSocket.node; //一根线 指向另一端输出端口
-            var compileRet = outNode.compile(helper, usePreNodes_arr);
-            if (compileRet == false) {
-                // child compile fail
-                return false;
-            }
-            var socketOut = compileRet.getSocketOut(theLink.outSocket).strContent;
-            finalSql = firstvalue + ' in ( ' + socketOut + ' ) ';
-        } else {
-            var socketOutstrs_arr = [];
-
-            for (var i = 1; i < this.inputScokets_arr.length; ++i) {
-                var socket = this.inputScokets_arr[i];
-                if (socket == this.tablesocket) {
-                    continue;
+        var socketVal_arr = [];
+        var allNumberic = true;
+        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+            var theSocket = this.inputScokets_arr[i];
+            var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+            var tValue = null;
+            if (tLinks.length == 0) {
+                if (IsEmptyString(theSocket.defval)) {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle
+                        , nodeThis
+                        , helper.clickLogBadgeItemHandler)
+                        , '输入不能为空']);
+                    return false;
                 }
-                var tValue = null;
-                var tLinks = this.bluePrint.linkPool.getLinksBySocket(socket);
-
-                if (tLinks.length == 0) {
-                    if (!IsEmptyString(socket.defval)) {
-                        tValue = socket.defval;// 判断手输入值
-                        if (isNaN(tValue)) {
-                            tValue = singleQuotesStr(tValue);
-                        }
-                    }
-                    if (tValue == null) {
-                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                            thisNodeTitle,
-                            nodeThis,
-                            helper.clickLogBadgeItemHandler),
-                            '不能有空输入']);
-                        return false;
-                    }
-                } else {
-                    var theLink = tLinks[0];
-                    var outNode = theLink.outSocket.node;
-                    var compileRet = outNode.compile(helper, usePreNodes_arr);
-                    if (compileRet == false) {
-                        // child compile fail
-                        return false;
-                    }
-                    tValue = compileRet.getSocketOut(theLink.outSocket).strContent;
-                    if (!outNode.outputIsSimpleValue()) {
-                        tValue = ' (' + tValue + ')';
-                    }
+                tValue = theSocket.defval.replace(/\'/g,'');
+            }
+            else {
+                var link = tLinks[0];
+                var outNode = link.outSocket.node;
+                var compileRet = outNode.compile(helper, usePreNodes_arr);
+                if (compileRet == false) {
+                    return false;
                 }
-                socketOutstrs_arr.push(tValue);
+                tValue = compileRet.getSocketOut(link.outSocket).strContent.replace(/\'/g,'');     
             }
-            if (socketOutstrs_arr.length == 0) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle,
-                    nodeThis,
-                    helper.clickLogBadgeItemHandler),
-                    '至少输入一个 in 条件']);
-                return false;
-            }
-            finalSql = firstvalue + ' in ( ' + socketOutstrs_arr.join(',') + ' ) ';
+            socketVal_arr.push(tValue);
         }
-
+        /*if (!allNumberic) {
+            for (var si in socketVal_arr) {
+                if (!isNaN(socketVal_arr[si])) {
+                    socketVal_arr[si] = singleQuotesStr(socketVal_arr[si]);
+                }
+            }
+        }*/
+        var finalStr = '';
+        socketVal_arr.forEach((x, i) => {
+            finalStr += (i == 0 ? '' : '') + x;
+        });
+        finalStr= " '"+finalStr+"' "
         var selfCompileRet = new CompileResult(this);
-         selfCompileRet.setSocketOut(this.outSocket, ' '+finalSql);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
-
     }
 }
 
