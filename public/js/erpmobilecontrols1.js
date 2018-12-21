@@ -618,9 +618,9 @@ var ERPC_Text = function (_React$PureComponent2) {
                         nowValue
                     );
                 } else if (this.props.type == 'multiline') {
-                    contentElem = React.createElement('textarea', { onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 rounded flexTextarea', value: this.props.value });
+                    contentElem = React.createElement('textarea', { onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 form-control textarea-2x', value: this.props.value });
                 } else {
-                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 rounded flexinput', type: this.props.type, value: this.props.value, onChange: this.inputChanged });
+                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control', type: this.props.type, value: this.props.value, onChange: this.inputChanged });
                 }
             }
             return React.createElement(

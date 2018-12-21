@@ -84,7 +84,7 @@ body{
     left:50%;
     top:0%;
     transform:translate(-50%);
-    border: 1px solid black;
+    border: 1px solid #d1d5da;
     padding: 5px; 
     overflow: hidden;
     z-index: 4100;
@@ -109,9 +109,15 @@ body{
     max-height: 2em;
 }
 
-.flexTextarea{
+.textarea-1x{
     min-width: 10px;
-    min-height: 8em;
+    min-height: 5em;
+    width: 10px;
+}
+
+.textarea-2x{
+    min-width: 10px;
+    min-height: 10em;
     width: 10px;
 }
 

@@ -3410,7 +3410,7 @@ class SqlNode_Like extends SqlNode_Base {
         }
         socketVal_arr.push(tValue);
 
-        finalStr =socketVal_arr[0] +' '+this.operator+socketVal_arr[1];
+        var finalStr = socketVal_arr[0] +' '+this.operator+socketVal_arr[1];
 
 
         var selfCompileRet = new CompileResult(this);

@@ -513,10 +513,10 @@ class ERPC_Text extends React.PureComponent {
                 contentElem = <div className='flex-grow-1 flex-shrink-1'>{nowValue}</div>
             }
             else if (this.props.type == 'multiline') {
-                contentElem = <textarea onChange={this.inputChanged} className='flex-grow-1 flex-shrink-1 rounded flexTextarea' value={this.props.value} />
+                contentElem = <textarea onChange={this.inputChanged} className='flex-grow-1 flex-shrink-1 form-control textarea-2x' value={this.props.value} />
             }
             else {
-                contentElem = (<input className='flex-grow-1 flex-shrink-1 rounded flexinput' type={this.props.type} value={this.props.value} onChange={this.inputChanged} />);
+                contentElem = (<input className='flex-grow-1 flex-shrink-1 form-control' type={this.props.type} value={this.props.value} onChange={this.inputChanged} />);
             }
         }
         return (<div className={rootDivClassName} ref={this.rootDivRef}>
