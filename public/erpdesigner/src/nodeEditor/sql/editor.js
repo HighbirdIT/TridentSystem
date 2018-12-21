@@ -62,11 +62,11 @@ const SqlNodeEditorControls_arr =[
     {
         label:'Like',
         nodeClass:SqlNode_Like,
-    },
-    {
-        label:'exists',
-        nodeClass:SqlNode_Exists,
     }
+    //{
+    //    label:'exists',
+    //    nodeClass:SqlNode_Exists,
+    //}
     ,{
         label:'Not',
         nodeClass:SqlNode_Logical_Not,
