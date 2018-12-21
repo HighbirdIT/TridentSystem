@@ -67,6 +67,18 @@ const SqlNodeEditorControls_arr =[
         label:'exists',
         nodeClass:SqlNode_Exists,
     }
+    ,{
+        label:'Not',
+        nodeClass:SqlNode_Logical_Not,
+    }
+    ,{
+        label:'In',
+        nodeClass:SqlNode_In_Operator,
+    }
+    ,{
+        label:'字符串拼接',
+        nodeClass:SqlNode_ToString,
+    }
 ]; 
 
 class C_SqlNode_Editor extends React.PureComponent{
