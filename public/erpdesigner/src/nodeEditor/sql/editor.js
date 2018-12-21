@@ -64,10 +64,6 @@ const SqlNodeEditorControls_arr =[
         nodeClass:SqlNode_Like,
     },
     {
-        label:'exists',
-        nodeClass:SqlNode_Exists,
-    }
-    ,{
         label:'Not',
         nodeClass:SqlNode_Logical_Not,
     }

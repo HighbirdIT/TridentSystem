@@ -3405,12 +3405,12 @@ class SqlNode_Like extends SqlNode_Base {
               
                 if (!outNode.outputIsSimpleValue()) {
                     tValue = '(' + tValue + ')';
-                }        
+                }
             }
+            socketVal_arr.push(tValue);
         }
-        socketVal_arr.push(tValue);
 
-        var finalStr = socketVal_arr[0] +' '+this.operator+socketVal_arr[1];
+        var finalStr = socketVal_arr[0] + ' ' + this.operator + ' ' + socketVal_arr[1];
 
 
         var selfCompileRet = new CompileResult(this);
@@ -3865,3 +3865,8 @@ class SqlNode_ToString extends SqlNode_Base {
         modelClass:SqlNode_ToString,
         comClass:C_SqlNode_SimpleNode,
     }
+    SqlNodeClassMap[SQLNODE_LIKE]={
+        modelClass:SqlNode_Like,
+        comClass:C_SqlNode_SimpleNode,
+    }
+    
