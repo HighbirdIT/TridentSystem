@@ -142,6 +142,12 @@ class ContentPanel extends React.PureComponent {
         project.designer.saveProject();
     }
 
+    clickCompileBtnHanlder(ev){
+        var project = this.props.project;
+        var compiler = new ProjectCompiler(project);
+        compiler.compile();
+    }
+
     render() {
         var project = this.props.project;
         var isPC = this.state.isPC;
@@ -182,7 +188,7 @@ class ContentPanel extends React.PureComponent {
                     <div className='d-flex flex-grow-0 flex-shrink-0 flex-column'>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} pname='datamaster' ><div>数</div><div>据</div><div>大</div><div>师</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} ><div>流</div><div>程</div><div>大</div><div>师</div></button>
-                        <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} ><div>发</div><div>布</div></button>
+                        <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickCompileBtnHanlder} ><div>编</div><div>译</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickSaveBtnHanlder} ><div>保</div><div>存</div></button>
                     </div>
                     <div onClick={this.clickContentDivHander} className='flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center'>

@@ -167,6 +167,13 @@ var ContentPanel = function (_React$PureComponent) {
             project.designer.saveProject();
         }
     }, {
+        key: 'clickCompileBtnHanlder',
+        value: function clickCompileBtnHanlder(ev) {
+            var project = this.props.project;
+            var compiler = new ProjectCompiler(project);
+            compiler.compile();
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this3 = this;
@@ -296,16 +303,16 @@ var ContentPanel = function (_React$PureComponent) {
                         ),
                         React.createElement(
                             'button',
-                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickPanelNameBtn },
+                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickCompileBtnHanlder },
                             React.createElement(
                                 'div',
                                 null,
-                                '\u53D1'
+                                '\u7F16'
                             ),
                             React.createElement(
                                 'div',
                                 null,
-                                '\u5E03'
+                                '\u8BD1'
                             )
                         ),
                         React.createElement(

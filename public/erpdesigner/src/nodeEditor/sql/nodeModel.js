@@ -335,19 +335,19 @@ class SqlNode_BluePrint extends EventEmitter {
     }
 
     compile(compilHelper) {
-        compilHelper.logManager.log("开始编译[" + this.name + ']');
         var ret = this.finalSelectNode.compile(compilHelper, []);
-        compilHelper.logManager.log('[' + this.name + ']编译' + (ret ? '成功' : '失败'));
-        if (ret != false && ret != null) {
-            console.log(ret.getSocketOut(this.finalSelectNode.outSocket).strContent);
-            var sql = ret.getSocketOut(this.finalSelectNode.outSocket).strContent;
-            var varDeclareString = '';
-            for (var si in compilHelper.useVariables_arr) {
-                varDeclareString += compilHelper.useVariables_arr[si].declareStr + ' ';
-            }
-            compilHelper.logManager.log(varDeclareString + sql);
+        if(ret == false){
+            return false;
         }
-        compilHelper.logManager.log('共' + compilHelper.logManager.getCount(LogTag_Warning) + '条警告,' + compilHelper.logManager.getCount(LogTag_Error) + '条错误,');
+        var varDeclareString = '';
+        for (var si in compilHelper.useVariables_arr) {
+            varDeclareString += compilHelper.useVariables_arr[si].declareStr + ' ';
+        }
+        return {
+            sql:ret.getSocketOut(this.finalSelectNode.outSocket).strContent,
+            varDeclareStr:varDeclareString,
+            vars_arr:compilHelper.useVariables_arr,
+        };
     }
 
 }
