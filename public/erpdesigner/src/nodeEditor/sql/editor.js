@@ -62,11 +62,11 @@ const SqlNodeEditorControls_arr =[
     {
         label:'Like',
         nodeClass:SqlNode_Like,
+    },
+    {
+        label:'exists',
+        nodeClass:SqlNode_Exists,
     }
-    //{
-    //    label:'exists',
-    //    nodeClass:SqlNode_Exists,
-    //}
     ,{
         label:'Not',
         nodeClass:SqlNode_Logical_Not,
@@ -78,6 +78,18 @@ const SqlNodeEditorControls_arr =[
     ,{
         label:'字符串拼接',
         nodeClass:SqlNode_ToString,
+    }
+    ,{
+        label:'case_when',
+        nodeClass:SqlNode_Case_When
+    },
+    {
+        label:'cw_when',
+        nodeClass:SqlNode_CW_When
+    }
+    ,{
+        label:'cw_else',
+        nodeClass:SqlNode_CW_Else
     }
 ]; 
 
