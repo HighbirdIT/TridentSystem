@@ -274,6 +274,26 @@ function pullDL01DataSource(){
     'fetchpropvalue'));
 }
 
+function pullControl01DataSource(){
+    store.dispatch(fetchJsonPost('/erppage/server/test', { action: 'getControl01_ds' }, {
+        base:'page1',
+        id:'control01',
+        propName:'options_arr',
+        isModel:true,
+    },
+    'fetchpropvalue'));
+}
+
+function pullControl02DataSource(){
+    store.dispatch(fetchJsonPost('/erppage/server/test', { action: 'getControl02_ds' }, {
+        base:'page1',
+        id:'control02',
+        propName:'options_arr',
+        isModel:true,
+    },
+    'fetchpropvalue'));
+}
+
 class App extends React.PureComponent{
     constructor(props){
         super();
@@ -314,28 +334,134 @@ class App extends React.PureComponent{
         }
 
         return <React.Fragment>
-                <VisibleERPC_DropDown pullDataSource={pullDL01DataSource} id='testControl01' label='员工姓名' parentPath='page1' textAttrName='员工登记姓名' valueAttrName='员工登记姓名代码' />
+                <VisibleERPC_LabeledControl id='test01_label' parentPath='page1' label='所属部门'>
+                    <VisibleERPC_DropDown pullDataSource={pullControl01DataSource} label='选择员工姓名' id='control01' parentPath='page1' textAttrName='员工登记姓名' valueAttrName='员工登记姓名代码' groupAttr='员工在职状态,员工工时状态,所属系统名称,所属部门名称' recentCookieKey='recent_user' />
+                </VisibleERPC_LabeledControl>
+                <VisibleERPC_LabeledControl id='test01_label' parentPath='page1' label='项目名称'>
+                    <VisibleERPC_DropDown pullDataSource={pullControl02DataSource} label='选择项目名称' id='control02' parentPath='page1' textAttrName='项目登记名称' valueAttrName='项目登记名称代码' groupAttr='项目运行阶段' recentCookieKey='recent_projects' />
+                </VisibleERPC_LabeledControl>
                 <div className='d-flex flex-shrink-0'>
                     <VisibleTextControl label='代码' id='text01' parentPath='page1' />
                     <VisibleTextControl label='身份证' id='text02' parentPath='page1' />
                 </div>
-                <VisibleERPC_Text id='text03' parentPath='page1' />
-                <VisibleERPC_Text id='text04' readonly={true} parentPath='page1' />
+                <VisibleERPC_LabeledControl id='test01_label' parentPath='page1' label='员工姓名'>
+                    <VisibleERPC_DropDown pullDataSource={pullDL01DataSource} id='testControl01' parentPath='page1' textAttrName='员工登记姓名' valueAttrName='员工登记姓名代码' recentCookieKey='recent_user' />
+                </VisibleERPC_LabeledControl>
+
+                <div className='rowlFameOne'>
+                    <div className='rowlFameOne_Left'>
+                        总结时间
+                    </div>
+                    <div className='rowlFameOne_right'>
+                    <VisibleERPC_Text id='text05' type='date' parentPath='page1' />
+                    </div>
+                </div>
+                <div className='rowlFameOne' last={1}>
+                    <div className='rowlFameOne_Left'>
+                        耗用小时
+                    </div>
+                    <div className='rowlFameOne_right'>
+                    <VisibleERPC_Text id='text06' type='number' parentPath='page1' />
+                    </div>
+                </div>
+                <div className='d-flex flex-shrink-0'>
+                    <div className='rowlFameOne' hor={1}>
+                        <div className='rowlFameOne_Left'>
+                            总结时间
+                        </div>
+                        <div className='rowlFameOne_right'>
+                        <VisibleERPC_Text id='text05' type='date' parentPath='page1' />
+                        </div>
+                    </div>
+                    <div className='rowlFameOne' hor={1}>
+                        <div className='rowlFameOne_Left'>
+                            耗用小时
+                        </div>
+                        <div className='rowlFameOne_right'>
+                        <VisibleERPC_Text id='text06' type='number' parentPath='page1' />
+                        </div>
+                    </div>
+                </div>
+                <div className='rowlFameOne' last={1}>
+                    <div className='rowlFameOne_Left'>
+                        工作内容
+                    </div>
+                    <div className='rowlFameOne_right'>
+                    <VisibleERPC_Text id='textContent' type='multiline' parentPath='page1' />
+                    </div>
+                </div>
+                <div className='rowlFameOne' last={1}>
+                    <div className='rowlFameOne_Left'>
+                        工作内容
+                    </div>
+                    <div className='rowlFameOne_right'>
+                    <VisibleERPC_Text id='textContent' type='multiline' parentPath='page1' />
+                    </div>
+                </div>
+                <div className='rowlFameOne' last={1}>
+                    <div className='rowlFameOne_Left'>
+                        工作内容
+                    </div>
+                    <div className='rowlFameOne_right'>
+                    <VisibleERPC_Text id='textContent' type='multiline' parentPath='page1' />
+                    </div>
+                </div>
+                <div className='rowlFameOne' last={1}>
+                    <div className='rowlFameOne_Left'>
+                        工作内容
+                    </div>
+                    <div className='rowlFameOne_right'>
+                    <VisibleERPC_Text id='textContent' type='multiline' parentPath='page1' />
+                    </div>
+                </div>
+                <div className='rowlFameOne' last={1}>
+                    <div className='rowlFameOne_Left'>
+                        工作内容
+                    </div>
+                    <div className='rowlFameOne_right'>
+                    <VisibleERPC_Text id='textContent' type='multiline' parentPath='page1' />
+                    </div>
+                </div>
+                <div className='rowlFameOne' last={1}>
+                    <div className='rowlFameOne_Left'>
+                        工作内容
+                    </div>
+                    <div className='rowlFameOne_right'>
+                    <VisibleERPC_Text id='textContent' type='multiline' parentPath='page1' />
+                    </div>
+                </div>
+                <div className='rowlFameOne' last={1}>
+                    <div className='rowlFameOne_Left'>
+                        工作内容
+                    </div>
+                    <div className='rowlFameOne_right'>
+                    <VisibleERPC_Text id='textContent' type='multiline' parentPath='page1' />
+                    </div>
+                </div>
+                <VisibleERPC_LabeledControl id='test01_label' parentPath='page1' label='所属部门'>
+                    <VisibleERPC_DropDown pullDataSource={pullControl01DataSource} label='选择员工姓名' id='control01' parentPath='page1' textAttrName='员工登记姓名' valueAttrName='员工登记姓名代码' groupAttr='员工在职状态,员工工时状态,所属系统名称,所属部门名称' recentCookieKey='recent_user' />
+                </VisibleERPC_LabeledControl>
             </React.Fragment>
+    }
+
+    clickTest(){
+        alert('test');
     }
 
     render(){
         return (
-            <div className='d-flex flex-column flex-grow-1 flex-shrink-1 h-100'>
+            <div className='d-flex flex-column flex-grow-1 flex-shrink-1 h-100 pageFooter'>
                 {this.renderLoadingTip()}
                 <div className='d-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap'>
                     <h3>{thisAppTitle}</h3>
+                    <button type='button' onClick={this.clickTest} className='btn btn-dark'>123</button>
                 </div>
-                <div className='d-flex flex-column flex-grow-1 flex-shrink-1 hidenOverflow'>
+                <div className='d-flex flex-column flex-grow-1 flex-shrink-1 autoScroll'>
                     {this.renderContent()}
                 </div>
-                <div className='d-flex flex-grow-0 flex-shrink-0 bg-primary text-light'>
+                <div className='flex-grow-0 flex-shrink-0 bg-primary text-light pageFooter'>
                     <h3>页脚</h3>
+                    <button type='button' onClick={this.clickTest} className='btn btn-dark'>123</button>
                 </div>
             </div>
         );

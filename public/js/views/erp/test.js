@@ -308,6 +308,24 @@ function pullDL01DataSource() {
     }, 'fetchpropvalue'));
 }
 
+function pullControl01DataSource() {
+    store.dispatch(fetchJsonPost('/erppage/server/test', { action: 'getControl01_ds' }, {
+        base: 'page1',
+        id: 'control01',
+        propName: 'options_arr',
+        isModel: true
+    }, 'fetchpropvalue'));
+}
+
+function pullControl02DataSource() {
+    store.dispatch(fetchJsonPost('/erppage/server/test', { action: 'getControl02_ds' }, {
+        base: 'page1',
+        id: 'control02',
+        propName: 'options_arr',
+        isModel: true
+    }, 'fetchpropvalue'));
+}
+
 var App = function (_React$PureComponent3) {
     _inherits(App, _React$PureComponent3);
 
@@ -379,23 +397,203 @@ var App = function (_React$PureComponent3) {
             return React.createElement(
                 React.Fragment,
                 null,
-                React.createElement(VisibleERPC_DropDown, { pullDataSource: pullDL01DataSource, id: 'testControl01', label: '\u5458\u5DE5\u59D3\u540D', parentPath: 'page1', textAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D', valueAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801' }),
+                React.createElement(
+                    VisibleERPC_LabeledControl,
+                    { id: 'test01_label', parentPath: 'page1', label: '\u6240\u5C5E\u90E8\u95E8' },
+                    React.createElement(VisibleERPC_DropDown, { pullDataSource: pullControl01DataSource, label: '\u9009\u62E9\u5458\u5DE5\u59D3\u540D', id: 'control01', parentPath: 'page1', textAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D', valueAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801', groupAttr: '\u5458\u5DE5\u5728\u804C\u72B6\u6001,\u5458\u5DE5\u5DE5\u65F6\u72B6\u6001,\u6240\u5C5E\u7CFB\u7EDF\u540D\u79F0,\u6240\u5C5E\u90E8\u95E8\u540D\u79F0', recentCookieKey: 'recent_user' })
+                ),
+                React.createElement(
+                    VisibleERPC_LabeledControl,
+                    { id: 'test01_label', parentPath: 'page1', label: '\u9879\u76EE\u540D\u79F0' },
+                    React.createElement(VisibleERPC_DropDown, { pullDataSource: pullControl02DataSource, label: '\u9009\u62E9\u9879\u76EE\u540D\u79F0', id: 'control02', parentPath: 'page1', textAttrName: '\u9879\u76EE\u767B\u8BB0\u540D\u79F0', valueAttrName: '\u9879\u76EE\u767B\u8BB0\u540D\u79F0\u4EE3\u7801', groupAttr: '\u9879\u76EE\u8FD0\u884C\u9636\u6BB5', recentCookieKey: 'recent_projects' })
+                ),
                 React.createElement(
                     'div',
                     { className: 'd-flex flex-shrink-0' },
                     React.createElement(VisibleTextControl, { label: '\u4EE3\u7801', id: 'text01', parentPath: 'page1' }),
                     React.createElement(VisibleTextControl, { label: '\u8EAB\u4EFD\u8BC1', id: 'text02', parentPath: 'page1' })
                 ),
-                React.createElement(VisibleERPC_Text, { id: 'text03', parentPath: 'page1' }),
-                React.createElement(VisibleERPC_Text, { id: 'text04', readonly: true, parentPath: 'page1' })
+                React.createElement(
+                    VisibleERPC_LabeledControl,
+                    { id: 'test01_label', parentPath: 'page1', label: '\u5458\u5DE5\u59D3\u540D' },
+                    React.createElement(VisibleERPC_DropDown, { pullDataSource: pullDL01DataSource, id: 'testControl01', parentPath: 'page1', textAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D', valueAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801', recentCookieKey: 'recent_user' })
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'rowlFameOne' },
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_Left' },
+                        '\u603B\u7ED3\u65F6\u95F4'
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_right' },
+                        React.createElement(VisibleERPC_Text, { id: 'text05', type: 'date', parentPath: 'page1' })
+                    )
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'rowlFameOne', last: 1 },
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_Left' },
+                        '\u8017\u7528\u5C0F\u65F6'
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_right' },
+                        React.createElement(VisibleERPC_Text, { id: 'text06', type: 'number', parentPath: 'page1' })
+                    )
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'd-flex flex-shrink-0' },
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne', hor: 1 },
+                        React.createElement(
+                            'div',
+                            { className: 'rowlFameOne_Left' },
+                            '\u603B\u7ED3\u65F6\u95F4'
+                        ),
+                        React.createElement(
+                            'div',
+                            { className: 'rowlFameOne_right' },
+                            React.createElement(VisibleERPC_Text, { id: 'text05', type: 'date', parentPath: 'page1' })
+                        )
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne', hor: 1 },
+                        React.createElement(
+                            'div',
+                            { className: 'rowlFameOne_Left' },
+                            '\u8017\u7528\u5C0F\u65F6'
+                        ),
+                        React.createElement(
+                            'div',
+                            { className: 'rowlFameOne_right' },
+                            React.createElement(VisibleERPC_Text, { id: 'text06', type: 'number', parentPath: 'page1' })
+                        )
+                    )
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'rowlFameOne', last: 1 },
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_Left' },
+                        '\u5DE5\u4F5C\u5185\u5BB9'
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_right' },
+                        React.createElement(VisibleERPC_Text, { id: 'textContent', type: 'multiline', parentPath: 'page1' })
+                    )
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'rowlFameOne', last: 1 },
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_Left' },
+                        '\u5DE5\u4F5C\u5185\u5BB9'
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_right' },
+                        React.createElement(VisibleERPC_Text, { id: 'textContent', type: 'multiline', parentPath: 'page1' })
+                    )
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'rowlFameOne', last: 1 },
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_Left' },
+                        '\u5DE5\u4F5C\u5185\u5BB9'
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_right' },
+                        React.createElement(VisibleERPC_Text, { id: 'textContent', type: 'multiline', parentPath: 'page1' })
+                    )
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'rowlFameOne', last: 1 },
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_Left' },
+                        '\u5DE5\u4F5C\u5185\u5BB9'
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_right' },
+                        React.createElement(VisibleERPC_Text, { id: 'textContent', type: 'multiline', parentPath: 'page1' })
+                    )
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'rowlFameOne', last: 1 },
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_Left' },
+                        '\u5DE5\u4F5C\u5185\u5BB9'
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_right' },
+                        React.createElement(VisibleERPC_Text, { id: 'textContent', type: 'multiline', parentPath: 'page1' })
+                    )
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'rowlFameOne', last: 1 },
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_Left' },
+                        '\u5DE5\u4F5C\u5185\u5BB9'
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_right' },
+                        React.createElement(VisibleERPC_Text, { id: 'textContent', type: 'multiline', parentPath: 'page1' })
+                    )
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'rowlFameOne', last: 1 },
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_Left' },
+                        '\u5DE5\u4F5C\u5185\u5BB9'
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'rowlFameOne_right' },
+                        React.createElement(VisibleERPC_Text, { id: 'textContent', type: 'multiline', parentPath: 'page1' })
+                    )
+                ),
+                React.createElement(
+                    VisibleERPC_LabeledControl,
+                    { id: 'test01_label', parentPath: 'page1', label: '\u6240\u5C5E\u90E8\u95E8' },
+                    React.createElement(VisibleERPC_DropDown, { pullDataSource: pullControl01DataSource, label: '\u9009\u62E9\u5458\u5DE5\u59D3\u540D', id: 'control01', parentPath: 'page1', textAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D', valueAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801', groupAttr: '\u5458\u5DE5\u5728\u804C\u72B6\u6001,\u5458\u5DE5\u5DE5\u65F6\u72B6\u6001,\u6240\u5C5E\u7CFB\u7EDF\u540D\u79F0,\u6240\u5C5E\u90E8\u95E8\u540D\u79F0', recentCookieKey: 'recent_user' })
+                )
             );
+        }
+    }, {
+        key: 'clickTest',
+        value: function clickTest() {
+            alert('test');
         }
     }, {
         key: 'render',
         value: function render() {
             return React.createElement(
                 'div',
-                { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 h-100' },
+                { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 h-100 pageFooter' },
                 this.renderLoadingTip(),
                 React.createElement(
                     'div',
@@ -404,20 +602,30 @@ var App = function (_React$PureComponent3) {
                         'h3',
                         null,
                         thisAppTitle
+                    ),
+                    React.createElement(
+                        'button',
+                        { type: 'button', onClick: this.clickTest, className: 'btn btn-dark' },
+                        '123'
                     )
                 ),
                 React.createElement(
                     'div',
-                    { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 hidenOverflow' },
+                    { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 autoScroll' },
                     this.renderContent()
                 ),
                 React.createElement(
                     'div',
-                    { className: 'd-flex flex-grow-0 flex-shrink-0 bg-primary text-light' },
+                    { className: 'flex-grow-0 flex-shrink-0 bg-primary text-light pageFooter' },
                     React.createElement(
                         'h3',
                         null,
                         '\u9875\u811A'
+                    ),
+                    React.createElement(
+                        'button',
+                        { type: 'button', onClick: this.clickTest, className: 'btn btn-dark' },
+                        '123'
                     )
                 )
             );

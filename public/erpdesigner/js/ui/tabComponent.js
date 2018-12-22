@@ -35,9 +35,19 @@ var TabNavBar = function (_React$PureComponent) {
                 console.warn('navtext is null');
                 return;
             }
+            this.selectByText(navtext);
+        }
+    }, {
+        key: 'selectByText',
+        value: function selectByText(text) {
             var wantItem = this.props.navData.items.find(function (item) {
-                return item.text == navtext;
+                return item.text == text;
             });
+            this.setSelect(wantItem);
+        }
+    }, {
+        key: 'setSelect',
+        value: function setSelect(wantItem) {
             if (wantItem == null) {
                 console.warn('wantItem is null');
                 return;

@@ -146,6 +146,17 @@ class ProjectDesigner extends React.PureComponent {
         }
     }
 
+    forcusSqlNode(nodeData){
+        if(this.dataMasterPanelRef.current == null){
+            return;
+        }
+        this.dataMasterPanelRef.current.show();
+        var dataMaskterPanel = this.dataMasterPanelRef.current;
+        setTimeout(() => {
+            dataMaskterPanel.forcusSqlNode(nodeData);
+        }, 200);
+    }
+
     render() {
         var thisProject = this.props.project;
         return (

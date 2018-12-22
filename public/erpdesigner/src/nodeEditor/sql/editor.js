@@ -64,10 +64,6 @@ const SqlNodeEditorControls_arr =[
         nodeClass:SqlNode_Like,
     },
     {
-        label:'exists',
-        nodeClass:SqlNode_Exists,
-    }
-    ,{
         label:'Not',
         nodeClass:SqlNode_Logical_Not,
     }
@@ -643,10 +639,17 @@ class C_SqlNode_Editor extends React.PureComponent{
     clickCompileBtnHandler(ev){
         var theBluePrint = this.props.bluePrint;
         this.logManager.clear();
-        //this.logManager.log("Start compile");
+        this.logManager.log("开始编译[" + theBluePrint.name + ']');
         var compileHelper = new SqlNode_CompileHelper(this.logManager, this);
         var compileRet = theBluePrint.compile(compileHelper);
-        //this.logManager.log("End compile");
+        if(compileRet == false){
+            this.logManager.log('[' + theBluePrint.name + ']编译失败');
+        }
+        else{
+            this.logManager.log('[' + theBluePrint.name + ']编译成功');
+            this.logManager.log(compileRet.varDeclareStr + compileRet.sql);
+        }
+        this.logManager.log('共' + this.logManager.getCount(LogTag_Warning) + '条警告,' + this.logManager.getCount(LogTag_Error) + '条错误,');
     }
 
     clickExportBtnHandler(ev){
@@ -661,7 +664,7 @@ class C_SqlNode_Editor extends React.PureComponent{
         var editingNode = this.state.editingNode;
         if(this.props.bluePrint != editingNode.bluePrint){
             var self = this;
-            this.selectedNFManager.clear();
+            this.selectedNFManager.clear(false);
             clearTimeout(this.delaySetTO);
             this.delaySetTO = setTimeout(() => {
                 this.setEditeNode(self.props.bluePrint.editingNode ? self.props.bluePrint.editingNode : self.props.bluePrint); 
