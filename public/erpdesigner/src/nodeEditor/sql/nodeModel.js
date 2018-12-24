@@ -1774,6 +1774,9 @@ class SqlNode_Select extends SqlNode_Base {
             }
             selectColumns_map[colName] = 1;
             var outNodeCompileRet = outNode.compile(helper, usePreNodes_arr);
+            if(outNodeCompileRet == false){
+                return false;
+            }
             var socketOutData = outNodeCompileRet.getSocketOut(link.outSocket);
             selectColumns_arr.push({
                 alias: alias,

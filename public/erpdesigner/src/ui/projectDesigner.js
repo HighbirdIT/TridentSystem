@@ -183,7 +183,7 @@ class ProjectDesigner extends React.PureComponent {
                                         fixedOne={false}
                                         flexColumn={true}
                                         panel1={<ContentPanel project={thisProject} ref={this.contenPanelRef} wantOpenPanel={this.wantOpenPanel} />}
-                                        panel2={<LogOutputPanel source={thisProject.logmanager} />}
+                                        panel2={<LogOutputPanel source={thisProject.logManager} />}
                                 />
                              }
                              panel2={<AttributePanel project={thisProject} ref={this.attrbutePanelRef} />}

@@ -2,8 +2,8 @@ var Redux = window.Redux;
 var Provider = ReactRedux.Provider;
 
 var isDebug = false;
-var fetchTracer={};
 var thisAppTitle = '功能测试页面';
+var appServerUrl = '/erppage/server/test';
 
 var appInitState = {
     loaded:false,
@@ -13,158 +13,29 @@ var appInitState = {
     }
 };
 
-const appReducer = createReducer(appInitState, {
-    AT_FETCHBEGIN: fetchBeginHandler,
-    AT_FETCHEND: fetchEndHandler,
-    AT_SETSTATEBYPATH:setStateByPathHandler,
-    AT_SETMANYSTATEBYPATH:setManyStateByPathHandler,
-});
-
-
-function fetchBeginHandler(state, action){
-    //console.log('fetchBeginHandler');
-    var retState = state;
-    var triggerData = action.fetchData.triggerData;
-    var fetchIdentify = null;
-
-    var isModel = true;
-    if(triggerData){
-        isModel = triggerData.isModel != false;
-        if(triggerData.base != null && triggerData.id != null && triggerData.propName != null){
-            fetchIdentify = MakePath(triggerData.base,triggerData.id,triggerData.propName);
-        }
-    }
-    if(isModel){
-        var newUI = Object.assign({}, retState.ui);
-        newUI.fetchState = action.fetchData;
-        retState.ui = newUI;
-        retState = Object.assign({}, retState);
-    }
-
-    if(triggerData)
-    {
-        if(triggerData.base != null && triggerData.id != null){
-            var propPath = MakePath(triggerData.base,triggerData.id);
-            retState = setManyStateByPath(retState, propPath, {
-                fetching:true,
-                fetchingpropname:triggerData.propName,
-            });
-        }
-    }
-
-    if(fetchIdentify)
-    {
-        fetchTracer[fetchIdentify] = action.fetchData;
-    }
-    return retState;
-}
-
-function fetchEndHandler(state, action){
-    //console.log('fetchEndHandler');
-    var retState = state;
-    var isModel = true;
-    var fetchIdentify = null;
-    var triggerData = action.fetchData.triggerData;
-    if(triggerData){
-        isModel = triggerData.isModel != false;
-        if(triggerData.base != null && triggerData.id != null && triggerData.propName != null){
-            fetchIdentify = MakePath(triggerData.base,triggerData.id,triggerData.propName);
-        }
-    }
-    if(fetchIdentify){
-        if(fetchTracer[fetchIdentify] != action.fetchData){
-            console.warn('丢弃了一个fetchResult');
-            return state;
-        }
-    }
-
-    if(action.err != null)
-    {
-        console.warn(action.err);
-        if(triggerData)
-        {
-            var propPath = MakePath(triggerData.base,triggerData.id,'fetching');
-            retState = setStateByPath(retState, propPath, false);
-        }
-
-        if(isModel){
-            var newFetchState = Object.assign({}, retState.ui.fetchState);
-            newFetchState.err = action.err;
-            retState.ui.fetchState = newFetchState;
-        }
-        return retState == state ? Object.assign({}, retState) : retState;
-    }
-
-    if(triggerData)
-    {
-        if(triggerData.base != null && triggerData.id != null){
-            var propPath = MakePath(triggerData.base, triggerData.id, 'fetching');
-            retState = setStateByPath(retState, propPath, false);
-        }
-    }
-
-    if(isModel){
-        retState.ui = Object.assign({}, retState.ui, {fetchState:null});
-    }
-
-    switch(action.key){
-        case 'pageloaded':
-            return Object.assign({},retState,{loaded:true});
-        case 'fetchpropvalue':
-        {
-            var propPath = MakePath(triggerData.base, triggerData.id, triggerData.propName);
-            return setStateByPath(retState, propPath, action.json.data);
-        }
-    }
-    return retState == state ? Object.assign({}, retState) : retState;
-}
-
-function setStateByPathHandler(state, action){
-    return setStateByPath(state, action.path, action.value);
-}
-
-function setManyStateByPathHandler(state, action){
-    return setManyStateByPath(state, action.path, action.value);
-}
-
-function controlStateChanged(state, path, newValue, visited = {}){
-    if(visited[path] != null){
-        console.error('controlStateChanged回路访问:' + path);
-    }
-    visited[path] = 1;
-    var retState = state;
-    switch(path){
-        case 'page1.testControl01.text':
-            setTimeout(() => {
-                store.dispatch(fetchJsonPost('/erppage/server/test', { action: 'getPersonCode', name:newValue }, {
-                    base:'page1',
-                    id:'text01',
-                    propName:'text',
-                    isModel:false,
-                },
-                'fetchpropvalue'));
-            }, 20);
-        break;
-        case 'page1.text01.text':
-            setTimeout(() => {
-                store.dispatch(fetchJsonPost('/erppage/server/test', { action: 'getPersonIdentify', id:newValue }, {
-                    base:'page1',
-                    id:'text02',
-                    propName:'text',
-                    isModel:false,
-                },
-                'fetchpropvalue'));
-            }, 20);
-        break;
-        case 'page1.text03.value':
-            retState = setStateByPath(retState, MakePath('page1.text04.value'), '没想到' + newValue + '哈哈', visited);
-        break;
-    }
-    return retState;
-}
+const appReducerSetting = {AT_FETCHBEGIN:fetchBeginHandler,AT_FETCHEND:fetchEndHandler,};
+const appReducer = createReducer(appInitState, Object.assign(baseReducerSetting,appReducerSetting));
 
 let reducer = Redux.combineReducers({ app: appReducer });
 let store = Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));
+
+
+
+const appStateChangedAct_map = {
+    'page1.testControl01.text':(state, path, newValue, visited)=>{
+        setTimeout(() => {
+            store.dispatch(fetchJsonPost(appServerUrl, {action: 'getPersonCode', name:newValue }, makeFTD_Prop('page1','text01','text',false),EFetchKey.FetchPropValue));
+        }, 20);
+    },
+    'page1.text01.text':(state, path, newValue, visited)=>{
+        setTimeout(() => {
+            store.dispatch(fetchJsonPost(appServerUrl, {action: 'getPersonIdentify', id:newValue }, makeFTD_Prop('page1','text02','text',false),EFetchKey.FetchPropValue));
+        }, 20);
+    },
+    'page1.text03.value':(state, path, newValue, visited)=>{
+        return setStateByPath(state, MakePath('page1.text04.value'), '没想到' + newValue + '哈哈', visited);
+    }
+};
 
 class TestControl extends React.PureComponent{
     constructor(props){
@@ -206,12 +77,7 @@ function TestControl_dispatchtorprops(dispatch, ownprops) {
     var ctrlBasePath = ownprops.parentPath + '.' + ownprops.id;
     return {
         clickFresh: (ev) => {
-            store.dispatch(fetchJsonPost('/erppage/server/test', { action: 'getData', ctrlId:'t_0' }, {
-                base:'page1',
-                id:'testControl01',
-                propName:'data'
-            },
-            'fetchpropvalue'));
+            store.dispatch(fetchJsonPost(appServerUrl, {action: 'getData', ctrlId:'t_0' }, makeFTD_Prop('page1','testControl01','data'),EFetchKey.FetchPropValue));
         },
         onClickItem:(ev)=>{
             var text = ev.target.innerText;
@@ -265,33 +131,15 @@ function TextControl_dispatchtorprops(dispatch, ownprops) {
 const VisibleTextControl = ReactRedux.connect(TextControl_mapstatetoprops, TextControl_dispatchtorprops)(TextControl);
 
 function pullDL01DataSource(){
-    store.dispatch(fetchJsonPost('/erppage/server/test', { action: 'getPersonList' }, {
-        base:'page1',
-        id:'testControl01',
-        propName:'options_arr',
-        isModel:true,
-    },
-    'fetchpropvalue'));
+    store.dispatch(fetchJsonPost(appServerUrl, {action: 'getPersonList'}, makeFTD_Prop('page1','testControl01','options_arr'),EFetchKey.FetchPropValue));
 }
 
 function pullControl01DataSource(){
-    store.dispatch(fetchJsonPost('/erppage/server/test', { action: 'getControl01_ds' }, {
-        base:'page1',
-        id:'control01',
-        propName:'options_arr',
-        isModel:true,
-    },
-    'fetchpropvalue'));
+    store.dispatch(fetchJsonPost(appServerUrl, {action: 'getControl01_ds'}, makeFTD_Prop('page1','control01','options_arr'),EFetchKey.FetchPropValue));
 }
 
 function pullControl02DataSource(){
-    store.dispatch(fetchJsonPost('/erppage/server/test', { action: 'getControl02_ds' }, {
-        base:'page1',
-        id:'control02',
-        propName:'options_arr',
-        isModel:true,
-    },
-    'fetchpropvalue'));
+    store.dispatch(fetchJsonPost(appServerUrl, {action: 'getControl02_ds'}, makeFTD_Prop('page1','control02','options_arr'),EFetchKey.FetchPropValue));
 }
 
 class App extends React.PureComponent{
@@ -380,54 +228,6 @@ class App extends React.PureComponent{
                         <div className='rowlFameOne_right'>
                         <VisibleERPC_Text id='text06' type='number' parentPath='page1' />
                         </div>
-                    </div>
-                </div>
-                <div className='rowlFameOne' last={1}>
-                    <div className='rowlFameOne_Left'>
-                        工作内容
-                    </div>
-                    <div className='rowlFameOne_right'>
-                    <VisibleERPC_Text id='textContent' type='multiline' parentPath='page1' />
-                    </div>
-                </div>
-                <div className='rowlFameOne' last={1}>
-                    <div className='rowlFameOne_Left'>
-                        工作内容
-                    </div>
-                    <div className='rowlFameOne_right'>
-                    <VisibleERPC_Text id='textContent' type='multiline' parentPath='page1' />
-                    </div>
-                </div>
-                <div className='rowlFameOne' last={1}>
-                    <div className='rowlFameOne_Left'>
-                        工作内容
-                    </div>
-                    <div className='rowlFameOne_right'>
-                    <VisibleERPC_Text id='textContent' type='multiline' parentPath='page1' />
-                    </div>
-                </div>
-                <div className='rowlFameOne' last={1}>
-                    <div className='rowlFameOne_Left'>
-                        工作内容
-                    </div>
-                    <div className='rowlFameOne_right'>
-                    <VisibleERPC_Text id='textContent' type='multiline' parentPath='page1' />
-                    </div>
-                </div>
-                <div className='rowlFameOne' last={1}>
-                    <div className='rowlFameOne_Left'>
-                        工作内容
-                    </div>
-                    <div className='rowlFameOne_right'>
-                    <VisibleERPC_Text id='textContent' type='multiline' parentPath='page1' />
-                    </div>
-                </div>
-                <div className='rowlFameOne' last={1}>
-                    <div className='rowlFameOne_Left'>
-                        工作内容
-                    </div>
-                    <div className='rowlFameOne_right'>
-                    <VisibleERPC_Text id='textContent' type='multiline' parentPath='page1' />
                     </div>
                 </div>
                 <div className='rowlFameOne' last={1}>

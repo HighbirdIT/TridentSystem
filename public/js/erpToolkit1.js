@@ -2,6 +2,8 @@
 
 var PAGE_LOADED = 'PAGE_LOADED';
 
+var fetchTracer = {};
+
 function makeActionCreator(type) {
     for (var _len = arguments.length, argNames = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
         argNames[_key - 1] = arguments[_key];
@@ -88,6 +90,14 @@ function makeAction_fetchError(key, err, fetchData) {
 
 var makeAction_setStateByPath = makeActionCreator(AT_SETSTATEBYPATH, 'value', 'path');
 var makeAction_setManyStateByPath = makeActionCreator(AT_SETMANYSTATEBYPATH, 'value', 'path');
+
+function setStateByPathHandler(state, action) {
+    return setStateByPath(state, action.path, action.value);
+}
+
+function setManyStateByPathHandler(state, action) {
+    return setManyStateByPath(state, action.path, action.value);
+}
 
 function myTrim(x) {
     return x.replace(/^\s+|\s+$/gm, '');
@@ -337,10 +347,25 @@ var ErrType = {
     NORESPONSE: 'NORESPONSE'
 };
 
+var EFetchKey = {
+    FetchPropValue: 'fetchPropValue'
+};
+
 function createError(info, type) {
     return {
         type: type == null ? ErrType.UNKNOWN : type,
         info: info
+    };
+}
+
+function makeFTD_Prop(basePath, id, propName) {
+    var isModel = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+
+    return {
+        base: basePath,
+        id: id,
+        propName: propName,
+        isModel: isModel
     };
 }
 
@@ -512,7 +537,7 @@ function setStateByPath(state, path, value, visited) {
         return newStateValue;
     }
     newStatePrent[newStateName] = updateObject(newStatePrent[newStateName], newStateValue);
-    var retState = controlStateChanged(state, path, value, visited == null ? {} : visited);
+    var retState = aStateChanged(state, path, value, visited == null ? {} : visited);
 
     return retState == state ? Object.assign({}, retState) : retState;
 }
@@ -579,9 +604,29 @@ function setManyStateByPath(state, path, valuesObj, visited) {
     }
     var retState = state;
     for (var pi in valuesObj) {
-        retState = controlStateChanged(retState, path + '.' + pi, valuesObj[pi], visited);
+        retState = aStateChanged(retState, path + '.' + pi, valuesObj[pi], visited);
     }
     return retState == state ? Object.assign({}, retState) : retState;
+}
+
+function aStateChanged(state, path, newValue) {
+    var visited = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+
+    if (visited[path] != null) {
+        console.error('aStateChanged回路访问:' + path);
+    }
+    var retState = state;
+    visited[path] = 1;
+    if (appStateChangedAct_map != null) {
+        var theAct = appStateChangedAct_map[path];
+        if (theAct) {
+            var actRet = theAct(retState, path, newValue, visited);
+            if (actRet != null) {
+                retState = actRet;
+            }
+        }
+    }
+    return retState;
 }
 
 function MakePath() {
@@ -591,3 +636,103 @@ function MakePath() {
     }
     return rlt;
 }
+
+function fetchBeginHandler(state, action) {
+    //console.log('fetchBeginHandler');
+    var retState = state;
+    var triggerData = action.fetchData.triggerData;
+    var fetchIdentify = null;
+
+    var isModel = true;
+    if (triggerData) {
+        isModel = triggerData.isModel != false;
+        if (triggerData.base != null && triggerData.id != null && triggerData.propName != null) {
+            fetchIdentify = MakePath(triggerData.base, triggerData.id, triggerData.propName);
+        }
+    }
+    if (isModel) {
+        var newUI = Object.assign({}, retState.ui);
+        newUI.fetchState = action.fetchData;
+        retState.ui = newUI;
+        retState = Object.assign({}, retState);
+    }
+
+    if (triggerData) {
+        if (triggerData.base != null && triggerData.id != null) {
+            var propPath = MakePath(triggerData.base, triggerData.id);
+            retState = setManyStateByPath(retState, propPath, {
+                fetching: true,
+                fetchingpropname: triggerData.propName
+            });
+        }
+    }
+
+    if (fetchIdentify) {
+        fetchTracer[fetchIdentify] = action.fetchData;
+    }
+    return retState;
+}
+
+function fetchEndHandler(state, action) {
+    //console.log('fetchEndHandler');
+    var retState = state;
+    var isModel = true;
+    var fetchIdentify = null;
+    var triggerData = action.fetchData.triggerData;
+    if (triggerData) {
+        isModel = triggerData.isModel != false;
+        if (triggerData.base != null && triggerData.id != null && triggerData.propName != null) {
+            fetchIdentify = MakePath(triggerData.base, triggerData.id, triggerData.propName);
+        }
+    }
+    if (fetchIdentify) {
+        if (fetchTracer[fetchIdentify] != action.fetchData) {
+            console.warn('丢弃了一个fetchResult');
+            return state;
+        }
+    }
+
+    if (action.err != null) {
+        console.warn(action.err);
+        if (triggerData) {
+            var propPath = MakePath(triggerData.base, triggerData.id, 'fetching');
+            retState = setStateByPath(retState, propPath, false);
+        }
+
+        if (isModel) {
+            var newFetchState = Object.assign({}, retState.ui.fetchState);
+            newFetchState.err = action.err;
+            retState.ui.fetchState = newFetchState;
+        }
+        return retState == state ? Object.assign({}, retState) : retState;
+    }
+
+    if (triggerData) {
+        if (triggerData.base != null && triggerData.id != null) {
+            var propPath = MakePath(triggerData.base, triggerData.id, 'fetching');
+            retState = setStateByPath(retState, propPath, false);
+        }
+    }
+
+    if (isModel) {
+        retState.ui = Object.assign({}, retState.ui, { fetchState: null });
+    }
+
+    switch (action.key) {
+        case 'pageloaded':
+            return Object.assign({}, retState, { loaded: true });
+        case EFetchKey.FetchPropValue:
+            {
+                var propPath = MakePath(triggerData.base, triggerData.id, triggerData.propName);
+                return setStateByPath(retState, propPath, action.json.data);
+            }
+    }
+    return retState == state ? Object.assign({}, retState) : retState;
+}
+
+var baseReducerSetting = {
+    AT_FETCHBEGIN: fetchBeginHandler,
+    AT_FETCHEND: fetchEndHandler,
+    AT_SETSTATEBYPATH: setStateByPathHandler,
+    AT_SETMANYSTATEBYPATH: setManyStateByPathHandler
+};

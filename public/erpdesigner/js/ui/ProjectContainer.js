@@ -332,7 +332,7 @@ var RC_SavaPanel = function (_React$PureComponent3) {
         };
         autoBind(_this4);
 
-        _this4.logmanager = new LogManager('_savepanel');
+        _this4.logManager = new LogManager('_savepanel');
         return _this4;
     }
 
@@ -343,10 +343,10 @@ var RC_SavaPanel = function (_React$PureComponent3) {
                 console.warn('正在保存另一个方案');
                 return;
             }
-            this.logmanager.clear();
+            this.logManager.clear();
 
-            this.logmanager.log('保存[' + target.title + ']');
-            this.logmanager.log('开始生成文件');
+            this.logManager.log('保存[' + target.title + ']');
+            this.logManager.log('开始生成文件');
             var self = this;
             setTimeout(function () {
                 self.do_getJson();
@@ -363,8 +363,8 @@ var RC_SavaPanel = function (_React$PureComponent3) {
         value: function do_getJson() {
             var projectJson = this.state.targetProject.getJson();
             this.projectJson = projectJson;
-            this.logmanager.log('生成文件成功');
-            this.logmanager.log('开始上传');
+            this.logManager.log('生成文件成功');
+            this.logManager.log('开始上传');
             var self = this;
             setTimeout(function () {
                 self.do_fetch();
@@ -384,9 +384,9 @@ var RC_SavaPanel = function (_React$PureComponent3) {
             };
             if (respon.success) {
                 if (respon.json.err != null) {
-                    this.logmanager.error(respon.json.err.info);
+                    this.logManager.error(respon.json.err.info);
                 } else {
-                    this.logmanager.log('上传成功');
+                    this.logManager.log('上传成功');
                     newState.show = false;
                     var self = this;
                     this.autoCloseTimeOut = setTimeout(function () {
@@ -394,7 +394,7 @@ var RC_SavaPanel = function (_React$PureComponent3) {
                     }, 2000);
                 }
             } else {
-                this.logmanager.err(respon.json.err.info);
+                this.logManager.err(respon.json.err.info);
             }
             this.setState(newState);
         }
@@ -427,7 +427,7 @@ var RC_SavaPanel = function (_React$PureComponent3) {
                 React.createElement(
                     'div',
                     { className: 'fixedTipPanel bg-dark border' },
-                    React.createElement(LogOutputPanel, { source: this.logmanager }),
+                    React.createElement(LogOutputPanel, { source: this.logManager }),
                     !this.state.saving && React.createElement(
                         'button',
                         { type: 'button', className: 'w-100 btn btn-sm bg-danger text-light', onClick: this.clickCloseBtnHanlder },
