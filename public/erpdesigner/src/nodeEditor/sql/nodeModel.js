@@ -2473,6 +2473,9 @@ class SqlNode_Compare extends SqlNode_Base {
                     return false;
                 }
                 tValue = theSocket.defval;
+                if(isNaN(tValue)){
+                    tValue="'"+tValue+"'";
+                }
             }
             else {
                 var link = tLinks[0];
@@ -3332,11 +3335,11 @@ class SqlNode_Like extends SqlNode_Base {
         if (nodeJson) {
             if (this.outputScokets_arr.length > 0) {
                 this.outSocket = this.outputScokets_arr[0];
-                this.outSocket.type = SqlVarType_Scalar;
+                this.outSocket.type = SqlVarType_Boolean;
             }
         }
         if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Scalar });
+            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Boolean });
             this.addSocket(this.outSocket);
         }
 
@@ -3523,7 +3526,7 @@ class SqlNode_In_Operator extends SqlNode_Base {
         }
         if (this.outSocket == null) {
 
-            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Boolean });
+            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Boolean});
             this.addSocket(this.outSocket);
         }
 
@@ -3545,8 +3548,6 @@ class SqlNode_In_Operator extends SqlNode_Base {
         if (this.tablesocket == null) {
             this.tablesocket = this.addSocket(new NodeSocket('intable', this, true, { type: SqlVarType_Table }));
         }
-         
-
     }
     genInSocket() {
         return new NodeSocket('in' + this.inputScokets_arr.length, this, true, { type: SqlVarType_Scalar, inputable: true });
@@ -3742,6 +3743,7 @@ class SqlNode_ToString extends SqlNode_Base {
                     return false;
                 }
                 tValue = theSocket.defval.replace(/\'/g,'');
+                tValue = "'"+tValue+"'";
             }
             else {
                 var link = tLinks[0];
@@ -3763,9 +3765,8 @@ class SqlNode_ToString extends SqlNode_Base {
         }*/
         var finalStr = '';
         socketVal_arr.forEach((x, i) => {
-            finalStr += (i == 0 ? '' : '') + x;
+            finalStr += (i == 0 ? '' : '+') + x;
         });
-        finalStr= " '"+finalStr+"' "
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, finalStr);
         helper.setCompileRetCache(this, selfCompileRet);
@@ -3885,7 +3886,7 @@ class SqlNode_Case_When extends SqlNode_Base {
                 socket.type = SqlVarType_Scalar;
                 socket.inputable=false;
             });
-            this.minInSocketCount = 2;
+            this.minInSocketCount = 1;
         }
         
         this.contextEntities_arr = [];
@@ -3918,111 +3919,87 @@ class SqlNode_Case_When extends SqlNode_Base {
         return this.outSocket.defval;
     }
     compile(helper, preNodes_arr) {
-        var superRet = super.compile(helper, preNodes_arr);
-        if (superRet == false || superRet != null) {
-            return superRet;
-        }
+       var superRet = super.compile(helper, preNodes_arr);
+       if (superRet == false || superRet != null) {
+           return superRet;
+       }
+       var nodeThis = this;
+       var thisNodeTitle = nodeThis.getNodeTitle();
+       var usePreNodes_arr = preNodes_arr.concat(this);
+       var socketVal_arr = [];
+       /*if(this.inputScokets_arr.length < 1){
+         helper.logManager.errorEx([helper.logManager.createBadgeItem(
+             thisNodeTitle
+             , nodeThis
+             , helper.clickLogBadgeItemHandler)
+             , '缺少when条件或者else条件输入']);
+         return false;
+        }*/
 
-        var nodeThis = this;
-        var thisNodeTitle = nodeThis.getNodeTitle();
-        var usePreNodes_arr = preNodes_arr.concat(this);
-        var socketOuts_arr = [];
-
-        if (this.inputScokets_arr[0].getNodeTitle == 'cw_else') {
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                '第一个输入必须为else条件']);
-            return false;
-        }
-        var first_socket = this.inputScokets_arr[0];
-        var first_socketlinks = this.bluePrint.linkPool.getLinksBySocket(first_socket);
-        if (first_socketlinks.length == 0) {
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                '第一个输入不能为空']);
-            return false;
-        }
-        var firstvalue = ''
-        var firstLink = first_socketlinks[0];
-        var firstoutNode = firstLink.outSocket.node;
-        var firstcompileRet = firstoutNode.compile(helper, usePreNodes_arr);
-        if (firstcompileRet == false) {
-            // child compile fail
-            return false;
-        }
-        firstvalue = firstcompileRet.getSocketOut(firstLink.outSocket).strContent;
-        if (!firstoutNode.outputIsSimpleValue()) {
-            firstvalue = ' (' + firstvalue + ')';
-        }
-
-        var finalSql = '';
-        var tablesocketlinks = this.bluePrint.linkPool.getLinksBySocket(this.tablesocket);
-        if (tablesocketlinks.length != 0) {
-            var theLink = tablesocketlinks[0];//insocket 只有一个输入值
-            var outNode = theLink.outSocket.node; //一根线 指向另一端输出端口
+        var tValue_else=null;
+       for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+           var theSocket = this.inputScokets_arr[i];
+           var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+           var tValue = null;
+           if (tLinks.length == 0) {
+               helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                   thisNodeTitle
+                   , nodeThis
+                   , helper.clickLogBadgeItemHandler)
+                   , '输入不能为空']);
+               return false;
+           }
+           else {
+            var link = tLinks[0];
+            var outNode = link.outSocket.node;
             var compileRet = outNode.compile(helper, usePreNodes_arr);
-            if (compileRet == false) {
-                // child compile fail
-                return false;
-            }
-            var socketOut = compileRet.getSocketOut(theLink.outSocket).strContent;
-            finalSql = firstvalue + ' in ( ' + socketOut + ' ) ';
-        } else {
-            var socketOutstrs_arr = [];
-
-            for (var i = 1; i < this.inputScokets_arr.length; ++i) {
-                var socket = this.inputScokets_arr[i];
-                if (socket == this.tablesocket) {
-                    continue;
+                if (compileRet == false) {
+                    return false;
                 }
-                var tValue = null;
-                var tLinks = this.bluePrint.linkPool.getLinksBySocket(socket);
-
-                if (tLinks.length == 0) {
-                    if (!IsEmptyString(socket.defval)) {
-                        tValue = socket.defval;// 判断手输入值
-                        if (isNaN(tValue)) {
-                            tValue = singleQuotesStr(tValue);
-                        }
-                    }
-                    if (tValue == null) {
-                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                            thisNodeTitle,
-                            nodeThis,
-                            helper.clickLogBadgeItemHandler),
-                            '不能有空输入']);
+                
+            var nodetype=outNode.type
+            //||outNode.getNodeTitle() !='cw_else'
+                if(nodetype!='cw_when'&&nodetype !='cw_else'){
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle
+                        , nodeThis
+                        , helper.clickLogBadgeItemHandler)
+                        , '不能输入除了when和else以外节点']);
+                    return false;
+                }
+                if(nodetype =='cw_when'){
+                    tValue = compileRet.getSocketOut(link.outSocket).strContent;
+                }
+                if(tValue_else !=null){
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle
+                        , nodeThis
+                        , helper.clickLogBadgeItemHandler)
+                        , '只能输入一次else节点']);
                         return false;
-                    }
-                } else {
-                    var theLink = tLinks[0];
-                    var outNode = theLink.outSocket.node;
-                    var compileRet = outNode.compile(helper, usePreNodes_arr);
-                    if (compileRet == false) {
-                        // child compile fail
-                        return false;
-                    }
-                    tValue = compileRet.getSocketOut(theLink.outSocket).strContent;
-                    if (!outNode.outputIsSimpleValue()) {
-                        tValue = ' (' + tValue + ')';
+                }else{
+                    if(nodetype =='cw_else'){
+                        tValue_else = compileRet.getSocketOut(link.outSocket).strContent;    
                     }
                 }
-                socketOutstrs_arr.push(tValue);
-            }
-            if (socketOutstrs_arr.length == 0) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle,
-                    nodeThis,
-                    helper.clickLogBadgeItemHandler),
-                    '至少输入一个 in 条件']);
-                return false;
-            }
-            finalSql = firstvalue + ' in ( ' + socketOutstrs_arr.join(',') + ' ) ';
-        }
-
+                
+                /*if (!outNode.outputIsSimpleValue()) {
+                    tValue = '' + tValue + '';
+                    }*/
+                
+           }
+           if(tValue!=null){
+            socketVal_arr.push(tValue);
+           }
+       }
+ 
+       
+       var finalSql = '';
+ 
+       socketVal_arr.forEach((x, i) => {
+           finalSql +=  x;
+       });
+       finalSql = 'case '+ finalSql + ' else ' + tValue_else+ ' end ';
         var selfCompileRet = new CompileResult(this);
          selfCompileRet.setSocketOut(this.outSocket, ' '+finalSql);
         helper.setCompileRetCache(this, selfCompileRet);
@@ -4058,14 +4035,15 @@ class SqlNode_CW_When extends SqlNode_Base {
         }
         else {
             this.inputScokets_arr.forEach(socket => {
-                socket.type = SqlVarType_Scalar;
+                if (socket.type == SqlVarType_Boolean) {
+                    socket.type = SqlVarType_Boolean;
+                    socket.inputable=false;
+                }
+                else if (socket.type == SqlVarType_Scalar) {
+                    socket.type = SqlVarType_Scalar;
+                }
             });
-            this.maxInSocketCount = 2;
         }
-
-        this.contextEntities_arr = [];
-        this.entityNodes_arr = [];
-        this.autoCreateHelper = {};
     }
     customSocketRender(socket) {
         return null;
@@ -4073,7 +4051,89 @@ class SqlNode_CW_When extends SqlNode_Base {
     getNodeTitle() {
         return 'cw_when';
     }
-   
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketOuts_arr = [];
+
+        var first_socket = this.inputScokets_arr[0];
+        var first_socketlinks = this.bluePrint.linkPool.getLinksBySocket(first_socket);
+        if (first_socketlinks.length == 0) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '第一个输入不能为空']);
+            return false;
+        }
+        var firstvalue = ''
+        var firstLink = first_socketlinks[0];
+        var firstoutNode = firstLink.outSocket.node;
+        var firstcompileRet = firstoutNode.compile(helper, usePreNodes_arr);
+        if(firstLink.outSocket.type !=SqlVarType_Boolean){
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '应该输入一个boolean值']);
+            return false;
+        }
+        if (firstcompileRet == false) {
+            // child compile fail
+            return false;
+        }
+        firstvalue = firstcompileRet.getSocketOut(firstLink.outSocket).strContent;
+        if (!firstoutNode.outputIsSimpleValue()) {
+            firstvalue = '' + firstvalue + '';
+        }
+
+        var finalSql = '';
+        
+                var socket = this.inputScokets_arr[1];
+                var tValue = null;
+                var tLinks = this.bluePrint.linkPool.getLinksBySocket(socket);
+
+                if (tLinks.length == 0) {
+                    if (!IsEmptyString(socket.defval)) {
+                        tValue = socket.defval;// 判断手输入值
+                        if (isNaN(tValue)) {
+                            tValue = singleQuotesStr(tValue);
+                        }
+                    }
+                    if (tValue == null) {
+                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                            thisNodeTitle,
+                            nodeThis,
+                            helper.clickLogBadgeItemHandler),
+                            '不能有空输入']);
+                        return false;
+                    }
+                } else {
+                    var theLink = tLinks[0];
+                    var outNode = theLink.outSocket.node;
+                    var compileRet = outNode.compile(helper, usePreNodes_arr);
+                    if (compileRet == false) {
+                        // child compile fail
+                        return false;
+                    }
+                    tValue = compileRet.getSocketOut(theLink.outSocket).strContent;
+                    if (!outNode.outputIsSimpleValue()) {
+                        tValue = '' + tValue + '';
+                    }
+                }
+            finalSql ='when '+ firstvalue + ' then ' + tValue ;
+        var selfCompileRet = new CompileResult(this);
+         selfCompileRet.setSocketOut(this.outSocket, ' '+finalSql);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+
+    }
 }
 /**
  *  else
@@ -4130,6 +4190,9 @@ class SqlNode_CW_Else extends SqlNode_Base {
             if (tLinks.length == 0) {
                 if (!IsEmptyString(theSocket.defval)) {
                     tValue = theSocket.defval;// 判断手输入值
+                    if (isNaN(tValue)) {
+                        tValue = singleQuotesStr(tValue);
+                    }
                 }
                 if (tValue == null) {
                     helper.logManager.errorEx([helper.logManager.createBadgeItem(
@@ -4148,9 +4211,6 @@ class SqlNode_CW_Else extends SqlNode_Base {
                     return false;
                 }
                 tValue = compileRet.getSocketOut(link.outSocket).strContent;
-            }
-            if (isNaN(tValue)) {
-                tValue = singleQuotesStr(tValue);
             }
         var finalStr = tValue;
         var selfCompileRet = new CompileResult(this);
