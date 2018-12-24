@@ -75,6 +75,18 @@ const SqlNodeEditorControls_arr =[
         label:'字符串拼接',
         nodeClass:SqlNode_ToString,
     }
+    ,{
+        label:'case_when',
+        nodeClass:SqlNode_Case_When
+    },
+    {
+        label:'cw_when',
+        nodeClass:SqlNode_CW_When
+    }
+    ,{
+        label:'cw_else',
+        nodeClass:SqlNode_CW_Else
+    }
 ]; 
 
 class C_SqlNode_Editor extends React.PureComponent{
