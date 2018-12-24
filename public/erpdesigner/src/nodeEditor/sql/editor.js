@@ -59,6 +59,11 @@ const SqlNodeEditorControls_arr =[
         label:'逻辑运算',
         nodeClass:SqlNode_Logical_Operator,
     }
+    ,
+    {
+        label:'UNION',
+        nodeClass:SqlNode_Union,
+    }
 ]; 
 
 class C_SqlNode_Editor extends React.PureComponent{
