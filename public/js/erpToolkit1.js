@@ -354,7 +354,8 @@ var EFetchKey = {
 function createError(info, type) {
     return {
         type: type == null ? ErrType.UNKNOWN : type,
-        info: info
+        info: info,
+        err: 1
     };
 }
 
@@ -464,6 +465,48 @@ function fetchJson(useGet, url, sendData, triggerData) {
             }
         });
     };
+}
+
+function nativeFetchJson(useGet, url, sendData) {
+    var thisFetch = {
+        useGet: useGet,
+        url: url,
+        sendData: sendData
+    };
+    var fetchParam = {
+        method: useGet ? "GET" : "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        credentials: "include"
+    };
+    if (useGet) {
+        if (sendData != null) {
+            var str = '';
+            for (var si in sendData) {
+                str += si + '=' + sendData[si];
+            }
+            if (str.length > 0) {
+                url += '?' + str;
+            }
+        }
+    } else {
+        fetchParam.body = JSON.stringify(sendData);
+    }
+
+    return fetch(url, fetchParam).then(function (response) {
+        if (response.ok) {
+            return response.json();
+        } else {
+            var errObj = createError(response.statusText, ErrType.NORESPONSE, thisFetch);
+            return { err: errObj };
+        }
+    }, function (error) {
+        var errObj = createError(error.toString(), ErrType.NORESPONSE, thisFetch);
+        return { err: errObj };
+    }).then(function (json) {
+        return json;
+    });
 }
 
 function getValFromCookies(identity, defaultVal) {
@@ -736,3 +779,54 @@ var baseReducerSetting = {
     AT_SETSTATEBYPATH: setStateByPathHandler,
     AT_SETMANYSTATEBYPATH: setManyStateByPathHandler
 };
+
+function baseRenderLoadingTip() {
+    if (this.props.fetchState == null) {
+        return null;
+    }
+    var fetchState = this.props.fetchState;
+    var tipElem = null;
+    if (fetchState.err == null) {
+        tipElem = React.createElement(
+            'div',
+            { className: 'd-flex align-items-center' },
+            React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw fa-3x' }),
+            fetchState.tip
+        );
+    } else {
+        tipElem = React.createElement(
+            React.Fragment,
+            null,
+            React.createElement(
+                'div',
+                { className: 'bg-danger text-light d-flex d-flex align-items-center' },
+                React.createElement('i', { className: 'fa fa-warning fa-2x' }),
+                React.createElement(
+                    'h3',
+                    null,
+                    '\u9519\u8BEF'
+                )
+            ),
+            React.createElement('div', { className: 'dropdown-divider' }),
+            React.createElement(
+                'div',
+                { className: 'd-flex align-items-center' },
+                fetchState.err.info
+            ),
+            React.createElement(
+                'button',
+                { onClick: this.props.clickLoadingErrorBtn, type: 'button', className: 'btn btn-danger' },
+                '\u77E5\u9053\u4E86'
+            )
+        );
+    }
+    return React.createElement(
+        'div',
+        { className: 'loadingTipBG' },
+        React.createElement(
+            'div',
+            { className: 'loadingTip bg-light rounded d-flex flex-column' },
+            tipElem
+        )
+    );
+}

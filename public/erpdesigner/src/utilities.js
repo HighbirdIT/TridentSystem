@@ -302,14 +302,11 @@ function clampStr(val, char){
 
 function JsObjectToString(obj){
 	var objtype = typeof obj;
-	if(objtype === 'string'){
-		return obj;
-	}
-	if(objtype === 'number'){
+	if(objtype === 'string' || objtype === 'number' || objtype === 'boolean'){
 		return obj;
 	}
 	else if(objtype != 'object'){
-		console.err('what is ' + objtype);
+		console.error('what is ' + objtype);
 	}
 	var rltStr = '{';
 	if(obj.length != null && typeof obj.length === 'function'){
@@ -330,3 +327,4 @@ function JsObjectToString(obj){
 	
 	return rltStr;
 }
+

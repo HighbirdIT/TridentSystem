@@ -13,7 +13,7 @@ var Provider = ReactRedux.Provider;
 var isDebug = false;
 var appServerUrl = '/erppage/server/ZZMCS_server';
 var thisAppTitle = '赵智淼测试';
-var appInitState;
+var appInitState = { loaded: false, ui: {} };
 var appReducerSetting = {};
 var appReducer = createReducer(appInitState, Object.assign(baseReducerSetting, appReducerSetting));;
 var reducer = Redux.combineReducers({ app: appReducer });;
@@ -25,7 +25,10 @@ var App = function (_React$PureComponent) {
 	function App(props) {
 		_classCallCheck(this, App);
 
-		return _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this, props));
+		var _this = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this, props));
+
+		_this.renderLoadingTip = baseRenderLoadingTip.bind(_this);
+		return _this;
 	}
 
 	_createClass(App, [{
@@ -33,8 +36,50 @@ var App = function (_React$PureComponent) {
 		value: function render() {
 			return React.createElement(
 				'div',
+				{ className: 'd-flex flex-column flex-grow-1 flex-shrink-1 h-100' },
+				this.renderLoadingTip(),
+				this.renderHead(),
+				React.createElement(
+					'div',
+					{ className: 'd-flex flex-column flex-grow-1 flex-shrink-1 autoScroll' },
+					this.renderContent()
+				),
+				this.renderFoot()
+			);
+		}
+	}, {
+		key: 'renderContent',
+		value: function renderContent() {
+			return React.createElement(
+				'div',
 				null,
-				thisAppTitle
+				'Haha'
+			);
+		}
+	}, {
+		key: 'renderHead',
+		value: function renderHead() {
+			return React.createElement(
+				'div',
+				{ className: 'd-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader' },
+				React.createElement(
+					'h3',
+					null,
+					thisAppTitle
+				)
+			);
+		}
+	}, {
+		key: 'renderFoot',
+		value: function renderFoot() {
+			return React.createElement(
+				'div',
+				{ className: 'flex-grow-0 flex-shrink-0 bg-primary text-light pageFooter' },
+				React.createElement(
+					'h3',
+					null,
+					'\u9875\u811A'
+				)
 			);
 		}
 	}]);
@@ -54,5 +99,5 @@ ErpControlInit();
 ReactDOM.render(React.createElement(
 	Provider,
 	{ store: store },
-	React.createElement(VisiblaeApp, null)
+	React.createElement(VisibleApp, null)
 ), document.getElementById('reactRoot'));

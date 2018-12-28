@@ -3962,10 +3962,10 @@ class SqlNode_Case_When extends SqlNode_Base {
                 
             var nodetype=outNode.type
             //||outNode.getNodeTitle() !='cw_else'
-                if(nodetype!='cw_when'&&nodetype !='cw_else'){
+                if(nodetype!='cw_when' && nodetype !='cw_else'){
                     helper.logManager.errorEx([helper.logManager.createBadgeItem(
                         thisNodeTitle
-                        , nodeThis
+                        , outNode
                         , helper.clickLogBadgeItemHandler)
                         , '不能输入除了when和else以外节点']);
                     return false;
@@ -3973,16 +3973,18 @@ class SqlNode_Case_When extends SqlNode_Base {
                 if(nodetype =='cw_when'){
                     tValue = compileRet.getSocketOut(link.outSocket).strContent;
                 }
-                if(tValue_else !=null){
-                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                        thisNodeTitle
-                        , nodeThis
-                        , helper.clickLogBadgeItemHandler)
-                        , '只能输入一次else节点']);
-                        return false;
-                }else{
-                    if(nodetype =='cw_else'){
-                        tValue_else = compileRet.getSocketOut(link.outSocket).strContent;    
+                if(nodetype =='cw_else'){
+                    if(tValue_else !=null){
+                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                            thisNodeTitle
+                            , nodeThis
+                            , helper.clickLogBadgeItemHandler)
+                            , '只能输入一次else节点']);
+                            return false;
+                    }else{
+                        if(nodetype =='cw_else'){
+                            tValue_else = compileRet.getSocketOut(link.outSocket).strContent;    
+                        }
                     }
                 }
                 
@@ -4011,7 +4013,7 @@ class SqlNode_Case_When extends SqlNode_Base {
     }
 }
 /**
- *     when
+ *     then
  */
 class SqlNode_CW_When extends SqlNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
@@ -4126,11 +4128,11 @@ class SqlNode_CW_When extends SqlNode_Base {
                         return false;
                     }
                     tValue = compileRet.getSocketOut(theLink.outSocket).strContent;
-                    if (!outNode.outputIsSimpleValue()) {
-                        tValue = '' + tValue + '';
-                    }
+                    //if (!outNode.outputIsSimpleValue()) {
+                    //    tValue = '' + tValue + '';
+                    //}
                 }
-            finalSql ='when '+ firstvalue + ' then ' + tValue ;
+            finalSql =' when '+ firstvalue + ' then ' + tValue ;
         var selfCompileRet = new CompileResult(this);
          selfCompileRet.setSocketOut(this.outSocket, ' '+finalSql);
         helper.setCompileRetCache(this, selfCompileRet);
@@ -4337,3 +4339,4 @@ class SqlNode_CW_Else extends SqlNode_Base {
         comClass:C_SqlNode_SimpleNode,
     }
     
+

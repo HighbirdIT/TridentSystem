@@ -476,7 +476,7 @@ class CP_ServerSide extends JSFileMaker{
         this.importBlock.pushLine("const forge = require('node-forge');");
 
         this.processFun = this.scope.getFunction('process', true, ['req', 'res', 'next']);
-        this.processFun.pushLine('serverhelper.commonProcess(req, res, next, doProcess);');
+        this.processFun.pushLine('serverhelper.commonProcess(req, res, next, processes_map);');
         this.pageLoadedFun = this.scope.getFunction('pageloaded', true, ['req', 'res'], 'cofun');
         this.pageLoadedFun.pushLine('var rlt = {};');
 
@@ -512,7 +512,12 @@ class CP_ClientSide extends JSFileMaker{
             },
         };
         this.appClass = this.getReactClass('App', true);
+        this.appClass.renderContentFun = this.appClass.getFunction('renderContent', true);
+        this.appClass.renderHeaderFun = this.appClass.getFunction('renderHead', true);
+        this.appClass.renderFootFun = this.appClass.getFunction('renderFoot', true);
         this.reducers_map = {};
+
+        this.appClass.constructorFun.pushLine("this.renderLoadingTip = baseRenderLoadingTip.bind(this);");
 
         this.appReducerSettingVar = this.scope.getVar('appReducerSetting', true);
         this.appReducerVar = this.scope.getVar('appReducer', true, 'createReducer(appInitState, Object.assign(baseReducerSetting,appReducerSetting));');
@@ -525,14 +530,35 @@ class CP_ClientSide extends JSFileMaker{
     }
 
     compileEnd(){
+        this.appInitStateVar.initVal = JsObjectToString(this.appInitState);
         this.appReducerSettingVar.initVal = JsObjectToString(this.reducers_map);
 
         this.endBlock.pushLine('ErpControlInit();');
         this.endBlock.pushLine('ReactDOM.render(<Provider store={store}>', 1);
-        this.endBlock.pushLine('<VisiblaeApp />', -1);
+        this.endBlock.pushLine('<VisibleApp />', -1);
         this.endBlock.pushLine("</Provider>, document.getElementById('reactRoot'));");
 
-        this.appClass.renderFun.pushLine("return (<div>{thisAppTitle}</div>)");
+        this.appClass.renderHeaderFun.pushLine("return (<div className='d-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader'>", 1);
+        this.appClass.renderHeaderFun.pushLine("<h3>{thisAppTitle}</h3>",-1);
+        this.appClass.renderHeaderFun.pushLine("</div>);");
+
+        this.appClass.renderContentFun.pushLine("return (<div>Haha</div>)");
+
+        this.appClass.renderFootFun.pushLine("return (<div className='flex-grow-0 flex-shrink-0 bg-primary text-light pageFooter'>", 1);
+        this.appClass.renderFootFun.pushLine("<h3>页脚</h3>", -1);
+        this.appClass.renderFootFun.pushLine("</div>);");
+
+        this.appClass.renderFun.pushLine("return (", 1);
+        this.appClass.renderFun.pushLine("<div className='d-flex flex-column flex-grow-1 flex-shrink-1 h-100'>", 1);
+        this.appClass.renderFun.pushLine("{this.renderLoadingTip()}");
+        this.appClass.renderFun.pushLine("{this." + this.appClass.renderHeaderFun.name + "()}");
+        this.appClass.renderFun.pushLine("<div className='d-flex flex-column flex-grow-1 flex-shrink-1 autoScroll'>", 1);
+        this.appClass.renderFun.pushLine("{this.renderContent()}", -1);
+        this.appClass.renderFun.pushLine("</div>");
+        this.appClass.renderFun.pushLine("{this." + this.appClass.renderFootFun.name + "()}", -1);
+        this.appClass.renderFun.pushLine("</div>);");
+
+        
         this.appClass.mapStateFun.pushLine("return {};");
         this.appClass.mapDispathFun.pushLine("return {};");
     }

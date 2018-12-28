@@ -162,7 +162,8 @@ class ContentPanel extends React.PureComponent {
         if(theCompile.isCompleted){
             project.logManager.log('开始上传');
             var compileResult = {
-                layoutName:'ma',
+                mbLayoutName:'erppagetype_MA',
+                pcLayoutName:'erppagetype_MA',
                 mobilePart:theCompile.mobileContentCompiler.getString(),
                 serverPart:theCompile.serverSide.getString(),
             };
@@ -181,6 +182,8 @@ class ContentPanel extends React.PureComponent {
                 project.logManager.log('发布失败！');
                 return;
             }
+            project.logManager.log(respon.json.data.mobileUrl);
+            project.logManager.log(respon.json.data.pcUrl);
             project.logManager.log('发布成功');
         }
         else{

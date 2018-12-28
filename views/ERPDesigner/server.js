@@ -4,6 +4,9 @@ const sqlTypes = dbhelper.Types;
 const sharp = require('sharp');
 const fs = require("fs");
 const forge = require("node-forge");
+const child_process = require('child_process');
+var httpApp = null;
+var appErpPageCache = null;
 
 var fileLocker = {};
 const FileName_Projects = 'projects';
@@ -27,7 +30,11 @@ function isLock(fileName) {
     return fileLocker[fileName] != null && fileLocker[fileName] > 0;
 }
 
-function process(req, res, next) {
+function process(req, res, next, app, erpPageCache) {
+    if(httpApp == null)
+        httpApp = app;
+    if(appErpPageCache == null)
+        appErpPageCache = erpPageCache;        
     var rlt = {};
     doProcess(req, res)
         .then((data) => {
@@ -72,7 +79,7 @@ function doProcess(req, res) {
         case 'getProjectProfile':
             return getProjectProfile(req);
         case 'publishProject':
-            return publishProject(req);
+            return publishProject(req, res);
     }
 
     return co(function* () {
@@ -196,7 +203,7 @@ function userLogin(req, res, account, password) {
         if (logProRet.output.登录标识 == null) {
             return { err: { info: '登录过程失败' } };
         }
-        res.cookie('_designerlogRcdId', logProRet.output.登录标识, { signed: true, maxAge: new Date(Date.now() + 259200000), httpOnly: true });
+        res.cookie('_designerlogRcdId', logProRet.output.登录标识, { signed: true, maxAge: 259200000, httpOnly: true });
         return {
             name: accountRow.权属姓名,
             id: accountRow.账号记录代码,
@@ -507,8 +514,12 @@ function WriteEntity(库内对象_dr, 目标库内对象_dic) {
     });
 }
 
-function publishProject(req){
+function publishProject(req, res){
     return co(function* () {
+        var userData = yield getUserData(req);
+        if (userData == null) {
+            return { err: { info: '你还没有登录' } };
+        }
         var compileResult = req.body.compileResult;
         var projTitle = req.body.projTitle;
         if(compileResult == null){
@@ -521,46 +532,145 @@ function publishProject(req){
         if(projProfile.err != null){
             return projProfile;
         }
-        if(compileResult.layoutName == null || compileResult.layoutName.length == 0){
-            return {err:{info:'no layoutName'}};
+        if(compileResult.mobilePart == null && compileResult.pcPart == null){
+            return {err:{info:'no part content'}};
         }
-        var layoutName = compileResult.layoutName;
-        var clientJsDir = 'public/src/views/erp/';
-        if (!fs.existsSync(clientJsDir))
+        var clientJsSrcDir = 'public/src/views/erp/pages/';
+        var clientJsOutputDir = 'public/js/views/erp/pages/';
+        if (!fs.existsSync(clientJsSrcDir))
         {
-            fs.mkdirSync(clientJsDir);
+            fs.mkdirSync(clientJsSrcDir);
         }
-        var pageUrl = 'erppage/';
-        if(projProfile.flowName.length > 0){
-            clientJsDir += projProfile.flowName + '/';
-            pageUrl += projProfile.flowName + '/';
-            if (!fs.existsSync(clientJsDir))
-            {
-                fs.mkdirSync(clientJsDir);
-            }
+        if (!fs.existsSync(clientJsOutputDir))
+        {
+            fs.mkdirSync(clientJsOutputDir);
         }
         
         var newVersion = parseInt(projProfile.version) + 1;
 
         var jsMobileClientName = '';
         var jsMobileClientPath = '';
+        var jsPCClientName = '';
+        var jsPCClientPath = '';
         var jsServerName = '';
         var jsServerPath = '';
+        var modifyRecordID = 0;
 
+        var hostDir = httpApp.get('hostDirName') + '/';
         if(compileResult.mobilePart != null){
-            jsMobileClientName = projProfile.enName + '_mb_' + newVersion;
-            jsMobileClientPath = clientJsDir + jsMobileClientName + ".js";
+            if(compileResult.mbLayoutName == null || compileResult.mbLayoutName.length == 0){
+                return {err:{info:'no mbLayoutName'}};
+            }
+            jsMobileClientName = projProfile.flowName + projProfile.enName + '_mb_' + newVersion;
+            jsMobileClientPath = clientJsSrcDir + jsMobileClientName + ".js";
             fs.writeFileSync(jsMobileClientPath, compileResult.mobilePart);
+
+            var srcJsPath = hostDir + jsMobileClientPath;
+            var outputJsPath = hostDir + clientJsOutputDir + jsMobileClientName + ".js";
+            var execPath = 'npx babel '+ srcJsPath + ' --out-file ' + outputJsPath;
+            child_process.exec(execPath,function (error, stdout, stderr) {
+                var info = 'OK';
+                if (error !== null) {
+                    info = error.toString();
+                    console.log('exec error: ' + error);
+                }
+                
+            });
+        }
+
+        if(compileResult.pcPart != null){
+            if(compileResult.pcLayoutName == null || compileResult.pcLayoutName.length == 0){
+                return {err:{info:'no pcLayoutName'}};
+            }
+            jsPCClientName = projProfile.flowName + projProfile.enName + '_pc_' + newVersion;
+            jsPCClientPath = clientJsSrcDir + jsPCClientName + ".js";
+            fs.writeFileSync(jsPCClientPath, compileResult.pcPart);
+
+            var srcJsPath = hostDir + jsPCClientName;
+            var outputJsPath = hostDir + clientJsOutputDir + jsPCClientName + ".js";
+            var execPath = 'npx babel '+ srcJsPath + ' --out-file ' + outputJsPath;
+            child_process.exec(execPath,function (error, stdout, stderr) {
+                if (error !== null) {
+                    console.log('exec error: ' + error);
+                }
+            });
         }
 
         if(compileResult.serverPart != null){
-            jsServerName = projProfile.enName + '_server';
-            jsServerPath = 'views/erppage/server/' + jsServerName + ".js";
+            jsServerName = projProfile.enName + '_s' + newVersion;
+            jsServerPath = 'views/erppage/server/pages' + jsServerName + ".js";
             fs.writeFileSync(jsServerPath, compileResult.serverPart);
         }
         
+        var hostIP = httpApp.get('hostip') ;
+        var hostPort = httpApp.get('port') ;
+        var rcdRlt = yield dbhelper.asynExcute('P002E修改方案配置', [
+            dbhelper.makeSqlparam('系统方案名称代码', sqlTypes.Int, projProfile.code),
+            dbhelper.makeSqlparam('桌面端名称', sqlTypes.NVarChar, jsPCClientName),
+            dbhelper.makeSqlparam('移动端名称', sqlTypes.NVarChar, jsMobileClientName),
+            dbhelper.makeSqlparam('移动端LN', sqlTypes.NVarChar, compileResult.mbLayoutName),
+            dbhelper.makeSqlparam('桌面端LN', sqlTypes.NVarChar, compileResult.pcLayoutName),
+            dbhelper.makeSqlparam('源地址ip', sqlTypes.NVarChar, hostIP),
+            dbhelper.makeSqlparam('修改用户代码', sqlTypes.Int, userData.id),
+            dbhelper.makeSqlparam('版本号', sqlTypes.Int, newVersion),
+            dbhelper.makeSqlparam('后台名称', sqlTypes.NVarChar, jsServerName),
+            ]);
+        modifyRecordID = rcdRlt.returnValue;
+        if(modifyRecordID == -1){
+            return {err:{info:'数据库里有更新的文件版本，拒绝了你的修改请求'}};
+        }
+
+        appErpPageCache[projProfile.enName] = {
+            mobileJsPath: jsMobileClientName,
+            mobileLayoutName: compileResult.mbLayoutName,
+            pcJsPath: jsPCClientName,
+            pcLayoutName: compileResult.pcLayoutName,
+            serverName: jsServerName,
+            title:projTitle,
+        }
+
+        if(compileResult.mobilePart != null){
+            var srcJsPath = hostDir + jsMobileClientPath;
+            var outputJsPath = hostDir + clientJsOutputDir + jsMobileClientName + ".js";
+            var execPath = 'npx babel '+ srcJsPath + ' --out-file ' + outputJsPath;
+            child_process.exec(execPath,function (error, stdout, stderr) {
+                var info = 'OK';
+                if (error !== null) {
+                    info = error.toString();
+                    console.log('exec error: ' + error);
+                }
+                dbhelper.asynExcute('P002E报告编译结果', [
+                    dbhelper.makeSqlparam('方案修改记录代码', sqlTypes.Int, modifyRecordID),
+                    dbhelper.makeSqlparam('移动端', sqlTypes.Bit, 1),
+                    dbhelper.makeSqlparam('结果', sqlTypes.NVarChar, info),
+                ]);
+            });
+        }
+
+        if(compileResult.pcPart != null){
+            var srcJsPath = hostDir + jsPCClientName;
+            var outputJsPath = hostDir + clientJsOutputDir + jsPCClientName + ".js";
+            var execPath = 'npx babel '+ srcJsPath + ' --out-file ' + outputJsPath;
+            child_process.exec(execPath,function (error, stdout, stderr) {
+                var info = 'OK';
+                if (error !== null) {
+                    info = error.toString();
+                    console.log('exec error: ' + error);
+                }
+                dbhelper.asynExcute('P002E报告编译结果', [
+                    dbhelper.makeSqlparam('方案修改记录代码', sqlTypes.Int, modifyRecordID),
+                    dbhelper.makeSqlparam('移动端', sqlTypes.Bit, 0),
+                    dbhelper.makeSqlparam('结果', sqlTypes.NVarChar, info),
+                ]);
+            });
+        }
+
+        var pageMobileUrl = 'http://' + hostIP + ':' + hostPort + '/erppage/mb/' + projProfile.enName;
+        var pagePcUrl = 'http://' + hostIP + ':' + hostPort + '/erppage/pc/' + projProfile.enName;
+        
         return {
-            url:pageUrl + projProfile.enName + '_mb'
+            mobileUrl:pageMobileUrl,
+            pcUrl:pagePcUrl,
         };
     });
 }

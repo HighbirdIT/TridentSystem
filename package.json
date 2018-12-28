@@ -30,6 +30,7 @@
     "images": "^3.0.1",
     "morgan": "^1.9.0",
     "mssql": "^4.1.0",
+    "node-fetch": "^2.3.0",
     "node-forge": "^0.7.6",
     "node-mssql": "0.0.1",
     "react": "^16.4.1",

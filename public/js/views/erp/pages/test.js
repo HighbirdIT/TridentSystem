@@ -9,6 +9,17 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var Redux = window.Redux;
+var ReactRedux = window.ReactRedux;
+/*
+alert(Redux.ReactRedux);
+try{
+    var info = ReactRedux.Provider;
+    alert(info);
+}
+catch(eo){
+    alert(eo);
+}
+*/
 var Provider = ReactRedux.Provider;
 
 var isDebug = false;
@@ -188,62 +199,13 @@ var App = function (_React$PureComponent3) {
     function App(props) {
         _classCallCheck(this, App);
 
-        return _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this));
+        var _this4 = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this));
+
+        _this4.renderLoadingTip = baseRenderLoadingTip.bind(_this4);
+        return _this4;
     }
 
     _createClass(App, [{
-        key: 'renderLoadingTip',
-        value: function renderLoadingTip() {
-            if (this.props.fetchState == null) {
-                return null;
-            }
-            var fetchState = this.props.fetchState;
-            var tipElem = null;
-            if (fetchState.err == null) {
-                tipElem = React.createElement(
-                    'div',
-                    { className: 'd-flex align-items-center' },
-                    React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw fa-3x' }),
-                    fetchState.tip
-                );
-            } else {
-                tipElem = React.createElement(
-                    React.Fragment,
-                    null,
-                    React.createElement(
-                        'div',
-                        { className: 'bg-danger text-light d-flex d-flex align-items-center' },
-                        React.createElement('i', { className: 'fa fa-warning fa-2x' }),
-                        React.createElement(
-                            'h3',
-                            null,
-                            '\u9519\u8BEF'
-                        )
-                    ),
-                    React.createElement('div', { className: 'dropdown-divider' }),
-                    React.createElement(
-                        'div',
-                        { className: 'd-flex align-items-center' },
-                        fetchState.err.info
-                    ),
-                    React.createElement(
-                        'button',
-                        { onClick: this.props.clickLoadingErrorBtn, type: 'button', className: 'btn btn-danger' },
-                        '\u77E5\u9053\u4E86'
-                    )
-                );
-            }
-            return React.createElement(
-                'div',
-                { className: 'loadingTipBG' },
-                React.createElement(
-                    'div',
-                    { className: 'loadingTip bg-light rounded d-flex flex-column' },
-                    tipElem
-                )
-            );
-        }
-    }, {
         key: 'renderContent',
         value: function renderContent() {
             if (!this.props.loaded) {
@@ -307,7 +269,7 @@ var App = function (_React$PureComponent3) {
                     { className: 'd-flex flex-shrink-0' },
                     React.createElement(
                         'div',
-                        { className: 'rowlFameOne', hor: 1 },
+                        { className: 'rowlFameOne w-50', hor: 1 },
                         React.createElement(
                             'div',
                             { className: 'rowlFameOne_Left' },
@@ -321,7 +283,7 @@ var App = function (_React$PureComponent3) {
                     ),
                     React.createElement(
                         'div',
-                        { className: 'rowlFameOne', hor: 1 },
+                        { className: 'rowlFameOne w-50', hor: 1 },
                         React.createElement(
                             'div',
                             { className: 'rowlFameOne_Left' },
@@ -365,20 +327,15 @@ var App = function (_React$PureComponent3) {
         value: function render() {
             return React.createElement(
                 'div',
-                { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 h-100 pageFooter' },
+                { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 h-100' },
                 this.renderLoadingTip(),
                 React.createElement(
                     'div',
-                    { className: 'd-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap' },
+                    { className: 'd-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader' },
                     React.createElement(
                         'h3',
                         null,
                         thisAppTitle
-                    ),
-                    React.createElement(
-                        'button',
-                        { type: 'button', onClick: this.clickTest, className: 'btn btn-dark' },
-                        '123'
                     )
                 ),
                 React.createElement(
@@ -393,11 +350,6 @@ var App = function (_React$PureComponent3) {
                         'h3',
                         null,
                         '\u9875\u811A'
-                    ),
-                    React.createElement(
-                        'button',
-                        { type: 'button', onClick: this.clickTest, className: 'btn btn-dark' },
-                        '123'
                     )
                 )
             );
