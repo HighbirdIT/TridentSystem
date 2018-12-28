@@ -58,15 +58,9 @@ class ProjectContainer extends React.PureComponent {
 
         this.projManagerRef = React.createRef();
         this.creatProjRef = React.createRef();
+        this.savePanelRef = React.createRef();
         this.state = initState;
         autoBind(this);
-
-        /*
-        var self = this;
-        setTimeout(() => {
-            self.createEmptyProject();
-        }, 100);
-        */
     }
 
     clickTitlehandler(ev) {
@@ -103,7 +97,49 @@ class ProjectContainer extends React.PureComponent {
 
     wantOpenProject(projTitle){
         var projects_arr = this.state.projects;
-        var nowProj = projects_arr.find(item=>{return item.label});
+        var nowProj = projects_arr.find(item=>{return item.title == projTitle});
+        if(nowProj != null){
+            console.log(projTitle + '已经打开过了');
+            return false;
+        }
+        var path = 'files/proj/' + projTitle + '.json';
+        this.openingProj={
+            path:path,
+            title:projTitle,
+        }
+        fetchJsonGet(path, {rnd:Math.random()}, this.fetchProjJsonCallback);
+        return true;
+    }
+
+    fetchProjJsonCallback(response){
+        if(response.success){
+            var newProject = new CProject(null, response.json);
+            var newProjects = this.state.projects.concat(newProject);
+            this.setState({
+                projects:newProjects
+            });
+
+            var openPage_his = ReplaceIfNull(Cookies.get('openPage_his'),'');
+            var t_arr = openPage_his.split('|P|');
+            var newProjTitle = this.openingProj.title;
+            var index = t_arr.indexOf(newProjTitle);
+            if(index != 0){
+                var newHis = newProjTitle;
+                t_arr.forEach(item=>{
+                    if(item != newProjTitle && item != null && item.length > 0){
+                        newHis += '|P|' + item;
+                    }
+                });
+                Cookies.set('openPage_his', newHis, { expires: 7 });
+            }
+        }
+        else{
+            gTipWindow.popAlert(makeAlertData('错误','[' + this.openingProj.path + ']文件未能在服务器中找到',null,[TipBtnOK]));
+        }
+    }
+
+    wantSaveProject(project){
+        this.savePanelRef.current.saveProject(project);
     }
     
     createEmptyProject(){
@@ -121,8 +157,18 @@ class ProjectContainer extends React.PureComponent {
             magicObj:{},
         });
 
+        var openPage_his = Cookies.get('openPage_his');
+        if(openPage_his != null){
+            console.log(openPage_his);
+            var arr = openPage_his.split('|P|');
+            if(this.wantOpenProject(arr[0])){
+                return;
+            }
+        }
+
         setTimeout(() => {
-            self.createEmptyProject();
+            //self.createEmptyProject();
+            self.projManagerRef.current.toggle();
         }, 200);
     }
 
@@ -206,15 +252,126 @@ class ProjectContainer extends React.PureComponent {
                                 item.projectIndex = i;
                                 item.projectManager = projectManager;
                                 return (
-                                    <ProjectDesigner key={i} project={item} className={'flex-grow-1 flex-shrink-1 ' + (this.state.selectedIndex == i ? 'd-flex' : 'd-none')} />
+                                    <ProjectDesigner key={i} project={item} className={'flex-grow-1 flex-shrink-1 ' + (this.state.selectedIndex == i ? 'd-flex' : 'd-none')} savePanelRef={this.savePanelRef} />
                                 )
                             })
                         }
 
                     </div>
                 </div>
+                <RC_SavaPanel ref={this.savePanelRef} />
             </React.Fragment>
         );
     }
 }
 
+class RC_SavaPanel extends React.PureComponent {
+    constructor(props){
+        super(props);
+
+        this.state={
+            targetProject:null,
+            saving:false,
+            info:'',
+        };
+        autoBind(this);
+
+        this.logManager = new LogManager('_savepanel');
+    }
+
+    saveProject(target){
+        if(this.state.saving){
+            console.warn('正在保存另一个方案');
+            return;
+        }
+        this.logManager.clear();
+        
+        this.logManager.log('保存[' + target.title + ']');
+        this.logManager.log('开始生成文件');
+        var self = this;
+        setTimeout(() => {
+            self.do_getJson();
+        }, 50);
+
+        this.setState({
+            show:true,
+            targetProject:target,
+            saving:true,
+        });
+    }
+
+    do_getJson(){
+        var projectJson = this.state.targetProject.getJson();
+        this.projectJson = projectJson;
+        this.logManager.log('生成文件成功');
+        this.logManager.log('开始上传');
+        var self = this;
+        setTimeout(() => {
+            self.do_fetch();
+        }, 50);
+    }
+
+    do_fetch(){
+        var self = this;
+        fetchJsonPost('server', { action: 'saveProject', projJson: self.projectJson }, this.fetchComplete);
+    }
+
+    fetchComplete(respon){
+        var newState = {
+            saving:false,
+        }
+        if(respon.success){
+            if(respon.json.err != null){
+                this.logManager.error(respon.json.err.info);
+            }
+            else
+            {
+                this.logManager.log('上传成功');
+                newState.show = false;
+                var self = this;
+                this.autoCloseTimeOut = setTimeout(() => {
+                    self.clickCloseBtnHanlder();
+                }, 2000);
+            }
+        }
+        else{
+            this.logManager.err(respon.json.err.info);
+            
+        }
+        this.setState(newState);
+    }
+
+    componentWillMount(){
+
+    }
+
+    componentWillUnmount(){
+        
+    }
+
+    clickCloseBtnHanlder(ev){
+        if(this.autoCloseTimeOut){
+            clearTimeout(this.autoCloseTimeOut);
+            this.autoCloseTimeOut = null;
+        }
+        this.setState({
+            show:false,
+        });
+    }
+    
+    render(){
+        if(!this.state.show){
+            return null;
+        }
+        return (<div className='maskDiv' >
+                    <div className='fixedTipPanel bg-dark border'>
+                        <LogOutputPanel source={this.logManager} />
+                        {
+                            !this.state.saving 
+                            &&
+                            <button type='button' className='w-100 btn btn-sm bg-danger text-light' onClick={this.clickCloseBtnHanlder} >关闭</button>
+                        }
+                    </div>
+                </div>);
+    }
+}

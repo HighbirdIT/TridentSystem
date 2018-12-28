@@ -34,6 +34,11 @@ var ProjectDesigner = function (_React$PureComponent) {
     }
 
     _createClass(ProjectDesigner, [{
+        key: 'saveProject',
+        value: function saveProject() {
+            this.props.savePanelRef.current.saveProject(this.props.project);
+        }
+    }, {
         key: 'propUpMenu',
         value: function propUpMenu(items_arr, pos, callBack) {
             this.quickMenuRef.current.popMenu(items_arr, pos, callBack);
@@ -170,6 +175,18 @@ var ProjectDesigner = function (_React$PureComponent) {
             }
         }
     }, {
+        key: 'forcusSqlNode',
+        value: function forcusSqlNode(nodeData) {
+            if (this.dataMasterPanelRef.current == null) {
+                return;
+            }
+            this.dataMasterPanelRef.current.show();
+            var dataMaskterPanel = this.dataMasterPanelRef.current;
+            setTimeout(function () {
+                dataMaskterPanel.forcusSqlNode(nodeData);
+            }, 200);
+        }
+    }, {
         key: 'render',
         value: function render() {
             var thisProject = this.props.project;
@@ -190,7 +207,14 @@ var ProjectDesigner = function (_React$PureComponent) {
                     panel2: React.createElement(SplitPanel, { defPercent: 0.8,
                         fixedOne: false,
                         barClass: 'bg-secondary',
-                        panel1: React.createElement(ContentPanel, { project: thisProject, ref: this.contenPanelRef, wantOpenPanel: this.wantOpenPanel }),
+                        panel1: React.createElement(SplitPanel, {
+                            defPercent: 0.8,
+                            barClass: 'bg-secondary',
+                            fixedOne: false,
+                            flexColumn: true,
+                            panel1: React.createElement(ContentPanel, { project: thisProject, ref: this.contenPanelRef, wantOpenPanel: this.wantOpenPanel }),
+                            panel2: React.createElement(LogOutputPanel, { source: thisProject.logManager })
+                        }),
                         panel2: React.createElement(AttributePanel, { project: thisProject, ref: this.attrbutePanelRef })
                     })
                 }),

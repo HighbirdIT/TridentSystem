@@ -178,6 +178,40 @@ var IAttributeable = function (_EventEmitter) {
             this.attrChanged(attrName);
             return nowAttrArrayList.length;
         }
+    }, {
+        key: 'getJson',
+        value: function getJson() {
+            var _this2 = this;
+
+            var rlt = {};
+            this.attrbuteGroups.forEach(function (group) {
+                group.attrs_arr.forEach(function (attr) {
+                    if (!attr.editable) return;
+                    if (attr.isArray) {
+                        var attrItemArray = _this2.getAttrArrayList(attr.name);
+                        attrItemArray.forEach(function (attrItemInArray) {
+                            var val = _this2[attrItemInArray.name];
+                            if (val == null || val == attr.defaultVal) {
+                                return;
+                            }
+                            rlt[attrItemInArray.name] = val;
+                        });
+                    } else {
+                        var val = _this2[attr.name];
+                        if (val == null || val == attr.defaultVal) {
+                            return;
+                        }
+                        rlt[attr.name] = val;
+                    }
+                });
+            });
+            return rlt;
+        }
+    }, {
+        key: 'restoreJson',
+        value: function restoreJson(target) {
+            Object.assign(this, target);
+        }
     }]);
 
     return IAttributeable;

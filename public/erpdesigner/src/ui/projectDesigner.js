@@ -18,6 +18,10 @@ class ProjectDesigner extends React.PureComponent {
         this.selectedKernel = null;
     }
 
+    saveProject(){
+        this.props.savePanelRef.current.saveProject(this.props.project);
+    }
+
     propUpMenu(items_arr, pos, callBack){
         this.quickMenuRef.current.popMenu(items_arr, pos, callBack);
     }
@@ -142,6 +146,17 @@ class ProjectDesigner extends React.PureComponent {
         }
     }
 
+    forcusSqlNode(nodeData){
+        if(this.dataMasterPanelRef.current == null){
+            return;
+        }
+        this.dataMasterPanelRef.current.show();
+        var dataMaskterPanel = this.dataMasterPanelRef.current;
+        setTimeout(() => {
+            dataMaskterPanel.forcusSqlNode(nodeData);
+        }, 200);
+    }
+
     render() {
         var thisProject = this.props.project;
         return (
@@ -161,7 +176,16 @@ class ProjectDesigner extends React.PureComponent {
                         <SplitPanel defPercent={0.8}
                              fixedOne={false}
                              barClass='bg-secondary'
-                             panel1={<ContentPanel project={thisProject} ref={this.contenPanelRef} wantOpenPanel={this.wantOpenPanel} />}
+                             panel1={
+                                <SplitPanel
+                                        defPercent={0.8}
+                                        barClass='bg-secondary'
+                                        fixedOne={false}
+                                        flexColumn={true}
+                                        panel1={<ContentPanel project={thisProject} ref={this.contenPanelRef} wantOpenPanel={this.wantOpenPanel} />}
+                                        panel2={<LogOutputPanel source={thisProject.logManager} />}
+                                />
+                             }
                              panel2={<AttributePanel project={thisProject} ref={this.attrbutePanelRef} />}
                             />
                             }

@@ -58,6 +58,34 @@ const SqlNodeEditorControls_arr =[
     {
         label:'逻辑运算',
         nodeClass:SqlNode_Logical_Operator,
+    } ,
+    {
+        label:'Like',
+        nodeClass:SqlNode_Like,
+    },
+    {
+        label:'Not',
+        nodeClass:SqlNode_Logical_Not,
+    }
+    ,{
+        label:'In',
+        nodeClass:SqlNode_In_Operator,
+    }
+    ,{
+        label:'字符串拼接',
+        nodeClass:SqlNode_ToString,
+    }
+    ,{
+        label:'case_when',
+        nodeClass:SqlNode_Case_When
+    },
+    {
+        label:'cw_when',
+        nodeClass:SqlNode_CW_When
+    }
+    ,{
+        label:'cw_else',
+        nodeClass:SqlNode_CW_Else
     }
     ,
     {
@@ -65,6 +93,7 @@ const SqlNodeEditorControls_arr =[
         nodeClass:SqlNode_Union,
     }
 ]; 
+
 
 class C_SqlNode_Editor extends React.PureComponent{
     constructor(props){
@@ -616,10 +645,17 @@ class C_SqlNode_Editor extends React.PureComponent{
     clickCompileBtnHandler(ev){
         var theBluePrint = this.props.bluePrint;
         this.logManager.clear();
-        //this.logManager.log("Start compile");
+        this.logManager.log("开始编译[" + theBluePrint.name + ']');
         var compileHelper = new SqlNode_CompileHelper(this.logManager, this);
         var compileRet = theBluePrint.compile(compileHelper);
-        //this.logManager.log("End compile");
+        if(compileRet == false){
+            this.logManager.log('[' + theBluePrint.name + ']编译失败');
+        }
+        else{
+            this.logManager.log('[' + theBluePrint.name + ']编译成功');
+            this.logManager.log(compileRet.varDeclareStr + compileRet.sql);
+        }
+        this.logManager.log('共' + this.logManager.getCount(LogTag_Warning) + '条警告,' + this.logManager.getCount(LogTag_Error) + '条错误,');
     }
 
     clickExportBtnHandler(ev){
@@ -634,7 +670,7 @@ class C_SqlNode_Editor extends React.PureComponent{
         var editingNode = this.state.editingNode;
         if(this.props.bluePrint != editingNode.bluePrint){
             var self = this;
-            this.selectedNFManager.clear();
+            this.selectedNFManager.clear(false);
             clearTimeout(this.delaySetTO);
             this.delaySetTO = setTimeout(() => {
                 this.setEditeNode(self.props.bluePrint.editingNode ? self.props.bluePrint.editingNode : self.props.bluePrint); 
@@ -912,28 +948,50 @@ class SqlNodeOutlineItem extends React.PureComponent{
 
         this.state = {
             label:this.props.nodeData.getNodeTitle(true),
+            nodeData:this.props.nodeData,
         }
     }
 
+    listenNode(target){
+        target.on('changed', this.nodeChangedhandler);
+    }
+
+    unlistenNode(target){
+        target.off('changed', this.nodeChangedhandler);
+    }
+
     componentWillMount(){
-        this.props.nodeData.on('changed', this.nodeChangedhandler);
+        this.listenNode(this.state.nodeData);
     }
 
     componentWillUnmount(){
-        this.props.nodeData.off('changed', this.nodeChangedhandler);
+        this.unlistenNode(this.state.nodeData);
     }
 
     nodeChangedhandler(){
         this.setState({
-            label:this.props.nodeData.getNodeTitle(),
+            label:this.state.nodeData.getNodeTitle(),
         });
     }
 
     clickHandler(ev){
-        this.props.clickHandler(this.props.nodeData);
+        this.props.clickHandler(this.state.nodeData);
     }
 
     render(){
+        if(this.state.nodeData != this.props.nodeData){
+            this.unlistenNode(this.state.nodeData);
+            this.listenNode(this.props.nodeData);
+            var self = this;
+            var newNodeData = this.props.nodeData;
+            setTimeout(() => {
+                self.setState({
+                    nodeData:newNodeData,
+                    label:newNodeData.getNodeTitle(true),
+                });
+            }, 20);
+            return null;
+        }
         return <div className='text-nowrap text-light cursor-pointer'  onClick={this.clickHandler}>{this.state.label}</div>
     }
 }

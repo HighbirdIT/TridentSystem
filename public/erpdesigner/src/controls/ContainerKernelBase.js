@@ -2,6 +2,19 @@ class ContainerKernelBase extends ControlKernelBase{
     constructor(initData, type, description, attrbuteGroups, parentKernel, createHelper, kernelJson){
         super(initData, type, description, attrbuteGroups, parentKernel, createHelper, kernelJson);
         this.children = [];
+
+        if(kernelJson != null){
+            if(kernelJson.children != null){
+                kernelJson.children.forEach(childJson=>{
+                    var ctlConfig = DesignerConfig.findConfigByType(childJson.type);
+                    if(ctlConfig == null){
+                        console.warn('type:' + childJson.type + '未找到配置数据');
+                        return;
+                    }
+                    var newCtl = new ctlConfig.kernelClass(initData, this, createHelper, childJson);
+                });
+            }
+        }
     }
 
     appandChild(childKernel, index) {
@@ -49,5 +62,14 @@ class ContainerKernelBase extends ControlKernelBase{
 
     getChildIndex(childKernel){
         return this.children.indexOf(childKernel);
+    }
+
+    getJson(){
+        var rlt = super.getJson();
+        rlt.children = [];
+        this.children.forEach(child=>{
+            rlt.children.push(child.getJson());
+        });
+        return rlt;
     }
 }

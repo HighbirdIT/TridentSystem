@@ -26,10 +26,19 @@ class ControlKernelBase extends IAttributeable{
             attrbuteGroups.unshift(M_ControlKernelBaseAttrsSetting.layoutGrop);
         }
         this.attrbuteGroups = attrbuteGroups;
-
         this.clickHandler = this.clickHandler.bind(this);
 
+        if(kernelJson != null){
+            // restore attr from json
+            if(kernelJson.attr != null){
+                Object.assign(this, kernelJson.attr );
+            }
+        }
+
         this.project.registerControl(this);
+        if(createHelper){
+            createHelper.saveJsonMap(kernelJson,this);
+        }
         if(parentKernel.project != parentKernel){
             parentKernel.appandChild(this);
         }
@@ -103,6 +112,15 @@ class ControlKernelBase extends IAttributeable{
         });
         return rlt;
     }
+
+    getJson(){
+        var rlt = {
+            attr:super.getJson(),
+            type:this.type,
+            id:this.id,
+        };
+        return rlt;
+    }
 }
 
 const g_switchClassNameReg = /-\d+$/;
@@ -159,6 +177,41 @@ class ControlLayoutConfig{
             if(this.class[si] == 0)
             continue;
             rlt += si + ' ';
+        }
+        return rlt;
+    }
+}
+
+class CtlKernelCreationHelper extends EventEmitter{
+    constructor(){
+        super();
+        EnhanceEventEmiter(this);
+        this.orginID_map={};
+        this.newID_map={};
+        this.idTracer = {};
+    }
+
+    saveJsonMap(jsonData, newKernel){
+        if(jsonData && jsonData.id){
+            if(this.getObjFromID(jsonData.id) != null){
+                console.warn(jsonData.id + '被重复saveJsonMap');
+            }
+            if(jsonData.id != newKernel.id){
+                if(this.getObjFromID(newKernel.id) != null){
+                    console.warn(jsonData.id + '被重复saveJsonMap');
+                }
+                this.idTracer[jsonData.id] = this.idTracer[newKernel.id]
+            }
+            this.orginID_map[jsonData.id] = newKernel;
+        }
+        
+        this.newID_map[newKernel.id] = newKernel;
+    }
+
+    getObjFromID(id){
+        var rlt = this.orginID_map[id];
+        if(rlt == null){
+            rlt = this.newID_map[id];
         }
         return rlt;
     }

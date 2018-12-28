@@ -8,16 +8,25 @@ var connect = require('connect');
 var React = require('react');
 var dbhelper = require('./dbhelper.js');
 var co = require('co');
+var dingHelper = require('./dingHelper');
+var developconfig = require('./developconfig');
+var debug = require('debug');
+debug.enabled = ()=>{
+    return false;
+}
+
+
+const sqlTypes = dbhelper.Types;
 
 var app = express();
 
 app.disable('x-powered-by');
 
 var handlebars = require('express3-handlebars').create({
-    defaultLayout:'main',
-    helpers:{
-        section:function(name, options){
-            if(!this._sections){
+    defaultLayout: 'main',
+    helpers: {
+        section: function (name, options) {
+            if (!this._sections) {
                 this._sections = {};
             }
             this._sections[name] = options.fn(this);
@@ -26,107 +35,217 @@ var handlebars = require('express3-handlebars').create({
     }
 });
 
-app.set('port', process.env.PORT || 1318);
+app.set('port', process.env.PORT || 1330);
 //app.set('env', process.env.PORT || 'production');
 
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
-if(app.get('env') == 'production'){
-    //app.set('view cache', true);
+if (app.get('env') == 'production') {
+    app.set('view cache', true);
 }
 
+function getIPAdress() {
+    var interfaces = require('os').networkInterfaces();
+    for (var devName in interfaces) {
+        var iface = interfaces[devName];
+        for (var i = 0; i < iface.length; i++) {
+            var alias = iface[i];
+            if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) {
+                return alias.address;
+            }
+        }
+    }
+    return 'NaN';
+}
 
+app.set('hostip', getIPAdress());
+app.set('hostDirName', __dirname);
 
-var staticOptions = { 
+//3600000
+var staticOptions = {
     maxAge: app.get('env') == 'production' ? 3600000 : 0
 };
 
 app.use(express.static(__dirname + '/public', staticOptions));
 app.use(bodyParser.urlencoded({
-    extended:true
+    extended: true
 }));
 
-app.use(bodyParser.json({limit:'50mb'}));
+app.use(function (req, res, next) {
+    var child = req.path;
+    next();
+});
+
+app.use(bodyParser.json({ limit: '50mb' }));
 app.use(require('cookie-parser')(credentials.cookieSecret));
-app.use(require('express-session')({resave:true, saveUninitialized:false, secret:credentials.cookieSecret, cookie:{ secure: false }}));
+app.use(require('express-session')({ resave: true, saveUninitialized: false, secret: credentials.cookieSecret, cookie: { secure: false } }));
 var compression = require('compression');
 app.use(compression());
 
-switch(app.get('env')){
+switch (app.get('env')) {
     case 'development':
         app.use(require('morgan')('dev'));
         break;
     case 'production':
         app.use(require('express-logger')({
-            path:__dirname + '/log/requests.log'
+            path: __dirname + '/log/requests.log'
         }));
         break;
 }
 
 //app.use(connect.compress);
 
-app.use(function(req, res, next){
+app.use(function (req, res, next) {
     var cluster = require('cluster');
-    if(cluster.isWorker){
+    if (cluster.isWorker) {
         console.log('Worker %d received request', cluster.worker.id);
     }
-    res.locals.isproduction = app.get('env') == 'production' ? true : false;
     next();
 });
 
-app.use('/ERPDesigner/server',function( req, res, next)
-{
+app.use('/', function (req, res, next) {
+    if(req.path == '/' || req.path == '#'){
+        /*
+        res.locals.clientJs = '/js/views/erp/pages/test2.js';
+        res.locals.title = '测试';
+        return res.render('erppage/client', { layout: 'erppagetype_MA' });
+        */
+        var ua = req.headers['user-agent'];
+        var android = ua.match(/(Android);?[\s\/]+([\d.]+)?/) != null;
+        var ipad = ua.match(/(iPad).*OS\s([\d_]+)/) != null;
+        var ipod = ua.match(/(iPod)(.*OS\s([\d_]+))?/) != null;
+        var iphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/) != null;
+        res.locals.isMobile = android || ipad || ipod || iphone;
+        res.locals.isMobileStr = res.locals.isMobile ? 'true' : 'false';
+
+        dingHelper.asynGetDingDingTicket('http://' + req.headers.host + req.originalUrl).then((data)=>{
+            res.locals.Signature = data.Signature == null? '' : data.Signature;
+            res.locals.TimeStamp = data.TimeStamp == null? '' : data.TimeStamp;
+            res.locals.NonceStr = data.NonceStr == null? '' : data.NonceStr;
+            res.locals.DingErrInfo = data.errInfo == null? '' : data.errInfo;
+            res.locals.isProduction = app.get('env') == 'production';
+
+            if(!res.locals.isProduction){
+                res.locals.cacheUserid = developconfig.userID;
+                res.locals.cacheUserName = developconfig.userName;
+                req.session.userid = developconfig.userID;
+                req.session.username = developconfig.userName;
+            }
+            else{
+                var cookiesUer = {
+                    id:-1,
+                    name:'未知用户',
+                };
+                var logrcd = req.signedCookies._erplogrcdid;
+                logrcd='5FE1EC04-4271-4650-AB4D-193A9F9D1DEA';
+                if(logrcd != null){
+                    dingHelper.aysnLoginfFromRcdID(logrcd, req, res).then(
+                        userData=>{
+                            if(userData != null){
+                                cookiesUer.id = userData.userid;
+                                cookiesUer.name = userData.username;
+                            }
+                            res.locals.cacheUserid = cookiesUer.id;
+                            res.locals.cacheUserName = cookiesUer.name;
+                            return res.render('erppage/mobileerp', { layout: 'erppagetype_MA' });
+                        }
+                    );
+                    return;
+                }
+                res.locals.cacheUserid = cookiesUer.id;
+                res.locals.cacheUserName = cookiesUer.name;
+            }
+    
+            return res.render('erppage/mobileerp', { layout: 'erppagetype_MA' });
+        });
+        return;
+    }
+
+    next();
+});
+
+
+app.use('/dingUtility', function (req, res, next) {
+    if(req.path == '/')
+    {
+        dingHelper.doAction(req, res).then(rlt=>{
+            res.json(rlt);
+        });
+        return;
+    }
+    next();
+});
+
+app.use('/ERPDesigner/server', function (req, res, next) {
     var jspath = __dirname + '/views/ERPDesigner/server.js';
-    jspath = jspath.replace(/^\//, ''); 
-
-    require(jspath)(req,res, next);
+    jspath = jspath.replace(/^\//, '');
+    var serverMode = require(jspath);
+    serverMode(req, res, next, app, erpPageCache);
     return;
 });
 
-app.use('/ERPDesigner',function( req, res, next)
-{
-    return res.render('ERPDesigner/main', {layout:null}); 
+/*
+app.use('/mobileerp', function (req, res, next) {
+    var ua = req.headers['user-agent'];
+    var android = ua.match(/(Android);?[\s\/]+([\d.]+)?/) != null;
+    var ipad = ua.match(/(iPad).*OS\s([\d_]+)/) != null;
+    var ipod = ua.match(/(iPod)(.*OS\s([\d_]+))?/) != null;
+    var iphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/) != null;
+    res.locals.isMobile = android || ipad || ipod || iphone;
+    res.locals.isMobileStr = res.locals.isMobile ? 'true' : 'false';
+
+    dingHelper.asynGetDingDingTicket(req.originalUrl).then((data)=>{
+        res.locals.Signature = data.Signature == null? '' : data.Signature;
+        res.locals.TimeStamp = data.TimeStamp == null? '' : data.TimeStamp;
+        res.locals.NonceStr = data.NonceStr == null? '' : data.NonceStr;
+        res.locals.DingErrInfo = data.errInfo == null? '' : data.errInfo;
+        res.locals.isProduction = app.get('env') == 'production';
+        res.locals.isProductionStr = app.get('env') == 'production' ? 'true' : 'false';
+
+        return res.render('erppage/mobileerp', { layout: 'erppagetype_MA' });
+    });
+});
+*/
+
+app.use('/ERPDesigner/main', function (req, res, next) {
+    return res.render('ERPDesigner/main', { layout: null });
 });
 
-app.use('/HelloReact',function( req, res, next)
-{
-    return res.render('study/HelloReact', {layout:null}); 
+app.use('/HelloReact', function (req, res, next) {
+    return res.render('study/HelloReact', { layout: null });
 });
 
-app.use('/ReactKeyList',function( req, res, next)
-{
-    return res.render('study/ReactKeyList', {layout:null}); 
+app.use('/ReactKeyList', function (req, res, next) {
+    return res.render('study/ReactKeyList', { layout: null });
 });
 
-app.use('/helloProcess',function( req, res, next)
-{
+app.use('/helloProcess', function (req, res, next) {
     var jspath = __dirname + '/views/study/helloProcess.js';
-    jspath = jspath.replace(/^\//, ''); 
+    jspath = jspath.replace(/^\//, '');
 
-    require(jspath)(req,res, next);
+    require(jspath)(req, res, next);
     return;
 });
 
-app.use('/dingdingTest',function( req, res, next)
-{
+app.use('/dingdingTest', function (req, res, next) {
     var jspath = __dirname + '/views/study/dingdingTest.js';
-    jspath = jspath.replace(/^\//, ''); 
+    jspath = jspath.replace(/^\//, '');
 
-    require(jspath)(req,res, next);
+    require(jspath)(req, res, next);
     return;
 });
 
-app.get('/sessionTest', function(req, res){
+app.get('/sessionTest', function (req, res) {
     var money = req.cookies.money;
     var id = req.signedCookies.id;
     res.cookie('money', '100');
-    res.cookie('id', '980', {signed:true, maxAge:1000000, httpOnly:true});
-    if(req.session.count == null){
+    res.cookie('id', '980', { signed: true, maxAge: 1000000, httpOnly: true });
+    if (req.session.count == null) {
         req.session.count = 0;
     }
     req.session.count += 1;
 
-    res.json({money:money,id:id,count:req.session.count});
+    res.json({ money: money, id: id, count: req.session.count });
 });
 
 /*
@@ -196,60 +315,154 @@ dbhelper.query("select * from dbo.T135D在线面试问题",(data)=>{
 */
 
 var autoViews = {};
-var jsCache = {};
-var fs = require('fs'); 
+var erpPageCache = {};
+var fs = require('fs');
 
-app.use('/interview',function( req, res, next)
-{
+app.use('/erppage/server', function (req, res, next) {
+    var pageName = req.path.substr(1).toUpperCase();
+    var cache = erpPageCache[pageName];
+    if (cache == null) {
+        var jspath = __dirname + '/views/erppage/server' + req.path + '.js';
+        if (fs.existsSync(jspath)) {
+            var jsModel = require(jspath);
+            return jsModel(req, res, next, app);
+        }
+        res.status(404);
+        return res.render('404');
+    }
+    var jspath = __dirname + '/views/erppage/server/pages/' + cache.serverName + '.js';
+    if (!fs.existsSync(jspath)) {
+        res.status(404);
+        return res.render('404');
+    }
+    
+    return require(jspath)(req, res, next, app);
+});
+
+app.use('/erppage', function (req, res, next) {
+    res.locals.isProduction = app.get('env') == 'production';
+    var childPath = req.path;
+    var t_arr = childPath.split('/');
+    if (t_arr.length != 3) {
+        res.status(404);
+        return res.render('404');
+    }
+    var pageName = t_arr[2].toUpperCase();
+    var isPC = t_arr[1].toLowerCase() == 'pc';
+    var cache = erpPageCache[pageName];
+    if (cache == null) {
+        var sql = 'SELECT [系统方案名称],[桌面端名称],[移动端名称],[桌面端LN],[移动端LN],[后台名称] FROM [base1].[dbo].[V002C系统方案名称] where [方案英文名称]=@name and (len([桌面端名称]) > 0 or len([移动端名称]) > 0)';
+        dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('name', sqlTypes.NVarChar, pageName)])
+            .then(ret => {
+                if (ret.recordset.length == 0) {
+                    res.status(404);
+                    res.render('404');
+                    return;
+                }
+
+                var row = ret.recordset[0];
+                var mobileJsPath = row['移动端名称'];
+                var mobileLayoutName = row['移动端LN'];
+                var pcJsPath = row['桌面端名称'];
+                var pcLayoutName = row['桌面端LN'];
+                var serverName = row['后台名称'];
+
+                if (mobileJsPath.length == 0) {
+                    mobileJsPath = pcJsPath;
+                    mobileLayoutName = pcLayoutName;
+                }
+                else if (pcJsPath.length == 0) {
+                    pcJsPath = mobileJsPath;
+                    pcLayoutName = mobileLayoutName;
+                }
+
+                cache = {
+                    mobileJsPath: mobileJsPath,
+                    mobileLayoutName: mobileLayoutName,
+                    pcJsPath: pcJsPath,
+                    pcLayoutName: pcLayoutName,
+                    serverName: serverName,
+                    title:row['系统方案名称'],
+                };
+                erpPageCache[pageName] = cache;
+                var layoutName = isPC ? cache.pcLayoutName : cache.mobileLayoutName;
+                var jsFilePath = '/js/views/erp/pages/' + (isPC ? cache.pcJsPath : cache.mobileJsPath) + '.js';
+
+                if (fs.existsSync(__dirname + '/public' + jsFilePath)) {
+                    res.locals.clientJs = jsFilePath;
+                    res.locals.title = cache.title;
+                    return res.render('erppage/client', { layout: layoutName });
+                }
+                else {
+                    res.status(404);
+                    return res.render('404');
+                }
+            });
+
+
+    }
+    else {
+        var layoutName = isPC ? cache.pcLayoutName : cache.mobileLayoutName;
+        var jsFilePath = '/js/views/erp/pages/' + (isPC ? cache.pcJsPath : cache.mobileJsPath) + '.js';
+        if (fs.existsSync(__dirname + '/public' + jsFilePath)) {
+            res.locals.clientJs = jsFilePath;
+            res.locals.title = cache.title;
+            return res.render('erppage/client', { layout: layoutName });
+        }
+        else {
+            res.status(404);
+            return res.render('404');
+        }
+    }
+});
+
+app.use('/interview', function (req, res, next) {
     var childPath = req.path.toLowerCase();
     var path = '/interview' + childPath; // 检查 缓存； 如果 它在 那里， 渲染 这个 视图 
-    if(childPath != null && childPath.lastIndexOf('_process') == childPath.length -8){
+    if (childPath != null && childPath.lastIndexOf('_process') == childPath.length - 8) {
         var jspath = __dirname + '/views' + path + '.js';
-        jspath = jspath.replace(/^\//, ''); 
-        if(jsCache[jspath] == null){
+        jspath = jspath.replace(/^\//, '');
+        if (jsCache[jspath] == null) {
             jsCache[jspath] = require(jspath);
         }
-        else(fs.existsSync(jspath))
+        else (fs.existsSync(jspath))
         {
             // process操作
-            jsCache[jspath](req,res,next);
+            jsCache[jspath](req, res, next);
             return;
         }
     }
-    else{
-        if(autoViews[path]){
-            return res.render(autoViews[path], {layout:'mobilesimple'}); // 如果 它不 在 缓存 里， 那就 看看 有没有. handlebars 文件 能 匹配 
+    else {
+        if (autoViews[path]) {
+            return res.render(autoViews[path], { layout: 'mobilesimple' }); // 如果 它不 在 缓存 里， 那就 看看 有没有. handlebars 文件 能 匹配 
         }
-        if(fs.existsSync(__dirname + '/views' + path + '.handlebars'))
-        { 
-            autoViews[path] = path.replace(/^\//, ''); 
-            return res.render(autoViews[path], {layout:'mobilesimple'}); 
+        if (fs.existsSync(__dirname + '/views' + path + '.handlebars')) {
+            autoViews[path] = path.replace(/^\//, '');
+            return res.render(autoViews[path], { layout: 'mobilesimple' });
         } // 没 发现 视图； 转到 404 处理器
     }
-    next(); 
+    next();
 });
 
-app.use(function( req, res, next)
-{ 
+app.use(function (req, res, next) {
     var path = req.path.toLowerCase(); // 检查 缓存； 如果 它在 那里， 渲染 这个 视图 
-    if(autoViews[path]){
+    if (autoViews[path]) {
         return res.render(autoViews[path]); // 如果 它不 在 缓存 里， 那就 看看 有没有. handlebars 文件 能 匹配 
     }
-    if(fs.existsSync(__dirname + '/views' + path + '.handlebars'))
-    { 
-        autoViews[path] = path.replace(/^\//, ''); 
-        return res.render(autoViews[ path]); 
+    if (fs.existsSync(__dirname + '/views' + path + '.handlebars')) {
+        autoViews[path] = path.replace(/^\//, '');
+        return res.render(autoViews[path]);
     } // 没 发现 视图； 转到 404 处理器 
-    next(); 
+    next();
 });
 
-app.use(function(req, res){
+app.use(function (req, res) {
     res.status(404);
     res.render('404');
     //res.send('404 - Not Found');
 });
 
-app.use(function(err, req, res, next){
+app.use(function (err, req, res, next) {
     console.error(err.stack);
     //res.type('text/plain');
     res.status(500);
@@ -257,16 +470,16 @@ app.use(function(err, req, res, next){
     //res.send('500 - Server Error');
 });
 
-function startServer(){
-    http.createServer(app).listen(app.get('port'), function(){
-        console.log('Express started on http://localhost:' + app.get('port') + '; press Ctl-C to terminate.');
+function startServer() {
+    http.createServer(app).listen(app.get('port'), function () {
+        console.log('Express started on http://' + app.get('hostip') + ':' + app.get('port') + '; press Ctl-C to terminate.');
         console.log('env:' + app.get('env'));
     });
 }
 
-if(require.main == module){
+if (require.main == module) {
     startServer();
 }
-else{
+else {
     module.exports = startServer;
 }

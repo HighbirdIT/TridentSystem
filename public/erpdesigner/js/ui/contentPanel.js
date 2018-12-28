@@ -163,6 +163,79 @@ var ContentPanel = function (_React$PureComponent) {
         value: function clickSaveBtnHanlder(ev) {
             var project = this.props.project;
             var jsonData = project.getJson();
+            console.log(jsonData);
+            project.designer.saveProject();
+        }
+    }, {
+        key: 'clickCompileBtnHanlder',
+        value: function clickCompileBtnHanlder(ev) {
+            var project = this.props.project;
+            var compiler = new ProjectCompiler(project);
+            compiler.compile();
+        }
+    }, {
+        key: 'clickPublickBtnHandler',
+        value: function clickPublickBtnHandler(ev) {
+            var project = this.props.project;
+            project.logManager.clear();
+            project.logManager.log('开始发布方案,结束前请不要操作本项目!');
+            project.logManager.log('获取方案基础信息,');
+            fetchJsonPost('server', { action: 'getProjectProfile', projTitle: project.title }, this.getProjectProfileCallBack);
+        }
+    }, {
+        key: 'compileCompletedHandler',
+        value: function compileCompletedHandler(theCompile) {
+            var project = this.props.project;
+            theCompile.off('completed', this.compileCompletedHandler);
+            if (theCompile.isCompleted) {
+                project.logManager.log('开始上传');
+                var compileResult = {
+                    mbLayoutName: 'erppagetype_MA',
+                    pcLayoutName: 'erppagetype_MA',
+                    mobilePart: theCompile.mobileContentCompiler.getString(),
+                    serverPart: theCompile.serverSide.getString()
+                };
+                fetchJsonPost('server', { action: 'publishProject', projTitle: project.title, compileResult: compileResult }, this.uploadResultCallBack);
+            } else {
+                project.logManager.log('发布失败');
+            }
+        }
+    }, {
+        key: 'uploadResultCallBack',
+        value: function uploadResultCallBack(respon) {
+            var project = this.props.project;
+            if (respon.success) {
+                if (respon.json.err != null) {
+                    project.logManager.error(respon.json.err.info);
+                    project.logManager.log('发布失败！');
+                    return;
+                }
+                project.logManager.log(respon.json.data.mobileUrl);
+                project.logManager.log(respon.json.data.pcUrl);
+                project.logManager.log('发布成功');
+            } else {
+                project.logManager.error(respon.json.err.info);
+                project.logManager.log('发布失败！');
+            }
+        }
+    }, {
+        key: 'getProjectProfileCallBack',
+        value: function getProjectProfileCallBack(respon) {
+            var project = this.props.project;
+            if (respon.success) {
+                if (respon.json.err != null) {
+                    project.logManager.error(respon.json.err.info);
+                    project.logManager.log('发布失败！');
+                    return;
+                }
+                project.logManager.log(JSON.stringify(respon.json.data));
+                var compiler = new ProjectCompiler(project, respon.json.data);
+                compiler.on('completed', this.compileCompletedHandler);
+                compiler.compile();
+            } else {
+                project.logManager.error(respon.json.err.info);
+                project.logManager.log('发布失败！');
+            }
         }
     }, {
         key: 'render',
@@ -294,16 +367,16 @@ var ContentPanel = function (_React$PureComponent) {
                         ),
                         React.createElement(
                             'button',
-                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickPanelNameBtn },
+                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickCompileBtnHanlder },
                             React.createElement(
                                 'div',
                                 null,
-                                '\u53D1'
+                                '\u7F16'
                             ),
                             React.createElement(
                                 'div',
                                 null,
-                                '\u5E03'
+                                '\u8BD1'
                             )
                         ),
                         React.createElement(
@@ -318,6 +391,20 @@ var ContentPanel = function (_React$PureComponent) {
                                 'div',
                                 null,
                                 '\u5B58'
+                            )
+                        ),
+                        React.createElement(
+                            'button',
+                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickPublickBtnHandler },
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u53D1'
+                            ),
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u5E03'
                             )
                         )
                     ),
@@ -334,6 +421,7 @@ var ContentPanel = function (_React$PureComponent) {
     return ContentPanel;
 }(React.PureComponent);
 
+/*
 function decode64(e) {
     try {
         var t = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
@@ -345,15 +433,18 @@ function decode64(e) {
         var u = void 0;
         var l = "";
         var s = 0;
-        if (/[^A-Za-z0-9\+\/\=]/g.exec(e)) return false;
+        if (/[^A-Za-z0-9\+\/\=]/g.exec(e))
+            return false;
         e = e.replace(/[^A-Za-z0-9\+\/\=]/g, "");
         do {
             r = t.indexOf(e.charAt(s++)) << 2 | (i = t.indexOf(e.charAt(s++))) >> 4;
             o = (15 & i) << 4 | (u = t.indexOf(e.charAt(s++))) >> 2;
             a = (3 & u) << 6 | (l = t.indexOf(e.charAt(s++)));
             n += String.fromCharCode(r);
-            if (64 !== u) n += String.fromCharCode(o);
-            if (64 !== l) n += String.fromCharCode(a);
+            if (64 !== u)
+                n += String.fromCharCode(o);
+            if (64 !== l)
+                n += String.fromCharCode(a);
             r = "";
             o = "";
             a = "";
@@ -367,6 +458,7 @@ function decode64(e) {
     }
 }
 
+
 function convertRate(e) {
     try {
         var t = e.substr(e.length - 4);
@@ -375,7 +467,8 @@ function convertRate(e) {
         var r = e.substr(n, 10);
         e = e.substr(0, n) + e.substr(n + 10);
         var o = decode64(decodeURIComponent(e));
-        if (!o) return false;
+        if (!o)
+            return false;
         var a = "";
         var i = 0;
         var u = 0;
@@ -385,10 +478,8 @@ function convertRate(e) {
             a += (l = String.fromCharCode(l.charCodeAt(0) - s.charCodeAt(0))) + o.substring(i + 1, i + 10);
             u++;
         }
-        return a;
-    } catch (e) {
-        return !1;
+        return a
     }
+    catch (e) { return !1 }
 }
-
-//alert(convertRate('fS44NDYxMDY3gQCGX9rraGOJs0'));
+*/
