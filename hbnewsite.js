@@ -8,6 +8,15 @@ var connect = require('connect');
 var React = require('react');
 var dbhelper = require('./dbhelper.js');
 var co = require('co');
+var dingHelper = require('./dingHelper');
+var developconfig = require('./developconfig');
+var debug = require('debug');
+debug.enabled = ()=>{
+    return false;
+}
+
+
+const sqlTypes = dbhelper.Types;
 
 var app = express();
 
@@ -26,17 +35,33 @@ var handlebars = require('express3-handlebars').create({
     }
 });
 
-app.set('port', process.env.PORT || 1318);
+app.set('port', process.env.PORT || 1330);
 //app.set('env', process.env.PORT || 'production');
 
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 if (app.get('env') == 'production') {
-    //app.set('view cache', true);
+    app.set('view cache', true);
 }
 
+function getIPAdress() {
+    var interfaces = require('os').networkInterfaces();
+    for (var devName in interfaces) {
+        var iface = interfaces[devName];
+        for (var i = 0; i < iface.length; i++) {
+            var alias = iface[i];
+            if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) {
+                return alias.address;
+            }
+        }
+    }
+    return 'NaN';
+}
 
+app.set('hostip', getIPAdress());
+app.set('hostDirName', __dirname);
 
+//3600000
 var staticOptions = {
     maxAge: app.get('env') == 'production' ? 3600000 : 0
 };
@@ -45,6 +70,11 @@ app.use(express.static(__dirname + '/public', staticOptions));
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+
+app.use(function (req, res, next) {
+    var child = req.path;
+    next();
+});
 
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(require('cookie-parser')(credentials.cookieSecret));
@@ -70,17 +100,112 @@ app.use(function (req, res, next) {
     if (cluster.isWorker) {
         console.log('Worker %d received request', cluster.worker.id);
     }
-    res.locals.isproduction = app.get('env') == 'production' ? true : false;
+    next();
+});
+
+app.use('/', function (req, res, next) {
+    if(req.path == '/' || req.path == '#'){
+        /*
+        res.locals.clientJs = '/js/views/erp/pages/test2.js';
+        res.locals.title = '测试';
+        return res.render('erppage/client', { layout: 'erppagetype_MA' });
+        */
+        var ua = req.headers['user-agent'];
+        var android = ua.match(/(Android);?[\s\/]+([\d.]+)?/) != null;
+        var ipad = ua.match(/(iPad).*OS\s([\d_]+)/) != null;
+        var ipod = ua.match(/(iPod)(.*OS\s([\d_]+))?/) != null;
+        var iphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/) != null;
+        res.locals.isMobile = android || ipad || ipod || iphone;
+        res.locals.isMobileStr = res.locals.isMobile ? 'true' : 'false';
+
+        dingHelper.asynGetDingDingTicket('http://' + req.headers.host + req.originalUrl).then((data)=>{
+            res.locals.Signature = data.Signature == null? '' : data.Signature;
+            res.locals.TimeStamp = data.TimeStamp == null? '' : data.TimeStamp;
+            res.locals.NonceStr = data.NonceStr == null? '' : data.NonceStr;
+            res.locals.DingErrInfo = data.errInfo == null? '' : data.errInfo;
+            res.locals.isProduction = app.get('env') == 'production';
+
+            if(!res.locals.isProduction){
+                res.locals.cacheUserid = developconfig.userID;
+                res.locals.cacheUserName = developconfig.userName;
+                req.session.userid = developconfig.userID;
+                req.session.username = developconfig.userName;
+            }
+            else{
+                var cookiesUer = {
+                    id:-1,
+                    name:'未知用户',
+                };
+                var logrcd = req.signedCookies._erplogrcdid;
+                logrcd='5FE1EC04-4271-4650-AB4D-193A9F9D1DEA';
+                if(logrcd != null){
+                    dingHelper.aysnLoginfFromRcdID(logrcd, req, res).then(
+                        userData=>{
+                            if(userData != null){
+                                cookiesUer.id = userData.userid;
+                                cookiesUer.name = userData.username;
+                            }
+                            res.locals.cacheUserid = cookiesUer.id;
+                            res.locals.cacheUserName = cookiesUer.name;
+                            return res.render('erppage/mobileerp', { layout: 'erppagetype_MA' });
+                        }
+                    );
+                    return;
+                }
+                res.locals.cacheUserid = cookiesUer.id;
+                res.locals.cacheUserName = cookiesUer.name;
+            }
+    
+            return res.render('erppage/mobileerp', { layout: 'erppagetype_MA' });
+        });
+        return;
+    }
+
+    next();
+});
+
+
+app.use('/dingUtility', function (req, res, next) {
+    if(req.path == '/')
+    {
+        dingHelper.doAction(req, res).then(rlt=>{
+            res.json(rlt);
+        });
+        return;
+    }
     next();
 });
 
 app.use('/ERPDesigner/server', function (req, res, next) {
     var jspath = __dirname + '/views/ERPDesigner/server.js';
     jspath = jspath.replace(/^\//, '');
-
-    require(jspath)(req, res, next);
+    var serverMode = require(jspath);
+    serverMode(req, res, next, app, erpPageCache);
     return;
 });
+
+/*
+app.use('/mobileerp', function (req, res, next) {
+    var ua = req.headers['user-agent'];
+    var android = ua.match(/(Android);?[\s\/]+([\d.]+)?/) != null;
+    var ipad = ua.match(/(iPad).*OS\s([\d_]+)/) != null;
+    var ipod = ua.match(/(iPod)(.*OS\s([\d_]+))?/) != null;
+    var iphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/) != null;
+    res.locals.isMobile = android || ipad || ipod || iphone;
+    res.locals.isMobileStr = res.locals.isMobile ? 'true' : 'false';
+
+    dingHelper.asynGetDingDingTicket(req.originalUrl).then((data)=>{
+        res.locals.Signature = data.Signature == null? '' : data.Signature;
+        res.locals.TimeStamp = data.TimeStamp == null? '' : data.TimeStamp;
+        res.locals.NonceStr = data.NonceStr == null? '' : data.NonceStr;
+        res.locals.DingErrInfo = data.errInfo == null? '' : data.errInfo;
+        res.locals.isProduction = app.get('env') == 'production';
+        res.locals.isProductionStr = app.get('env') == 'production' ? 'true' : 'false';
+
+        return res.render('erppage/mobileerp', { layout: 'erppagetype_MA' });
+    });
+});
+*/
 
 app.use('/ERPDesigner/main', function (req, res, next) {
     return res.render('ERPDesigner/main', { layout: null });
@@ -190,53 +315,105 @@ dbhelper.query("select * from dbo.T135D在线面试问题",(data)=>{
 */
 
 var autoViews = {};
-var jsCache = {};
+var erpPageCache = {};
 var fs = require('fs');
 
 app.use('/erppage/server', function (req, res, next) {
-    var childPath = req.path.toLowerCase();
-    var cahce = jsCache['erp-server-' + childPath];
-    if (cahce == null) {
-        var jspath = __dirname + '/views/erppage/server' + childPath + '.js';
+    var pageName = req.path.substr(1).toUpperCase();
+    var cache = erpPageCache[pageName];
+    if (cache == null) {
+        var jspath = __dirname + '/views/erppage/server' + req.path + '.js';
         if (fs.existsSync(jspath)) {
-            cahce = require(jspath);
-            jsCache['erp-server-' + childPath] = cahce;
+            var jsModel = require(jspath);
+            return jsModel(req, res, next, app);
         }
+        res.status(404);
+        return res.render('404');
     }
-
-    if (cahce != null) {
-        cahce(req, res, next);
-        return;
+    var jspath = __dirname + '/views/erppage/server/pages/' + cache.serverName + '.js';
+    if (!fs.existsSync(jspath)) {
+        res.status(404);
+        return res.render('404');
     }
-    res.status(404);
-    res.render('404');
+    
+    return require(jspath)(req, res, next, app);
 });
 
 app.use('/erppage', function (req, res, next) {
-    var childPath = req.path.toLowerCase();
-    var cahce = autoViews['erp-' + childPath];
-    if (cahce == null) {
-        var tPos = childPath.indexOf('/', 1);
-        if (tPos != -1) {
-            var layoutName = 'erppagetype_' + childPath.substr(1, tPos - 1).toLocaleUpperCase();
-            var filePath = '/erppage' + childPath.substr(tPos) + '.handlebars';
-            if (fs.existsSync(__dirname + '/views' + filePath)) {
-                cahce = {
-                    path: filePath.replace(/^\//, ''),
-                    layoutName: layoutName,
+    res.locals.isProduction = app.get('env') == 'production';
+    var childPath = req.path;
+    var t_arr = childPath.split('/');
+    if (t_arr.length != 3) {
+        res.status(404);
+        return res.render('404');
+    }
+    var pageName = t_arr[2].toUpperCase();
+    var isPC = t_arr[1].toLowerCase() == 'pc';
+    var cache = erpPageCache[pageName];
+    if (cache == null) {
+        var sql = 'SELECT [系统方案名称],[桌面端名称],[移动端名称],[桌面端LN],[移动端LN],[后台名称] FROM [base1].[dbo].[V002C系统方案名称] where [方案英文名称]=@name and (len([桌面端名称]) > 0 or len([移动端名称]) > 0)';
+        dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('name', sqlTypes.NVarChar, pageName)])
+            .then(ret => {
+                if (ret.recordset.length == 0) {
+                    res.status(404);
+                    res.render('404');
+                    return;
+                }
+
+                var row = ret.recordset[0];
+                var mobileJsPath = row['移动端名称'];
+                var mobileLayoutName = row['移动端LN'];
+                var pcJsPath = row['桌面端名称'];
+                var pcLayoutName = row['桌面端LN'];
+                var serverName = row['后台名称'];
+
+                if (mobileJsPath.length == 0) {
+                    mobileJsPath = pcJsPath;
+                    mobileLayoutName = pcLayoutName;
+                }
+                else if (pcJsPath.length == 0) {
+                    pcJsPath = mobileJsPath;
+                    pcLayoutName = mobileLayoutName;
+                }
+
+                cache = {
+                    mobileJsPath: mobileJsPath,
+                    mobileLayoutName: mobileLayoutName,
+                    pcJsPath: pcJsPath,
+                    pcLayoutName: pcLayoutName,
+                    serverName: serverName,
+                    title:row['系统方案名称'],
                 };
-                autoViews['erp-' + childPath] = cahce;
-            }
+                erpPageCache[pageName] = cache;
+                var layoutName = isPC ? cache.pcLayoutName : cache.mobileLayoutName;
+                var jsFilePath = '/js/views/erp/pages/' + (isPC ? cache.pcJsPath : cache.mobileJsPath) + '.js';
+
+                if (fs.existsSync(__dirname + '/public' + jsFilePath)) {
+                    res.locals.clientJs = jsFilePath;
+                    res.locals.title = cache.title;
+                    return res.render('erppage/client', { layout: layoutName });
+                }
+                else {
+                    res.status(404);
+                    return res.render('404');
+                }
+            });
+
+
+    }
+    else {
+        var layoutName = isPC ? cache.pcLayoutName : cache.mobileLayoutName;
+        var jsFilePath = '/js/views/erp/pages/' + (isPC ? cache.pcJsPath : cache.mobileJsPath) + '.js';
+        if (fs.existsSync(__dirname + '/public' + jsFilePath)) {
+            res.locals.clientJs = jsFilePath;
+            res.locals.title = cache.title;
+            return res.render('erppage/client', { layout: layoutName });
+        }
+        else {
+            res.status(404);
+            return res.render('404');
         }
     }
-
-    if (cahce != null) {
-        return res.render(cahce.path, { layout: cahce.layoutName });
-    }
-    res.status(404);
-    res.render('404');
-
-    //next();
 });
 
 app.use('/interview', function (req, res, next) {
@@ -295,7 +472,7 @@ app.use(function (err, req, res, next) {
 
 function startServer() {
     http.createServer(app).listen(app.get('port'), function () {
-        console.log('Express started on http://localhost:' + app.get('port') + '; press Ctl-C to terminate.');
+        console.log('Express started on http://' + app.get('hostip') + ':' + app.get('port') + '; press Ctl-C to terminate.');
         console.log('env:' + app.get('env'));
     });
 }

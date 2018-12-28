@@ -11,7 +11,6 @@
   <meta http-equiv="Cache-Control" content="no-siteapp">
   <link rel="alternate icon" type="image/png" href="i/favicon.png">
   <link rel="apple-touch-icon-precomposed" href="i/app-icon72x72@2x.png">
-  <meta name="apple-mobile-web-app-title" content="Highbird ERP Mobile">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <link rel="stylesheet" href="/vendor/bootstrap4/css/bootstrap.css">
@@ -19,42 +18,45 @@
   <link rel="stylesheet" href="/vendor/font-awesome-4.7.0/css/font-awesome.min.css">
   <link rel="stylesheet" href="/vendor/css/webuploader.css">
   <script>
+    {{{_sections.headScript}}}
   </script>
   {{{_sections.head}}}
 </head>
-<body class="w-100 h-100">
+<body class="w-100 h-100" >
   {{{body}}}
   <div id="reactRoot" class="w-100 h-100">
-
   </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.6.1/prop-types.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/reselect/3.0.1/reselect.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/7.0.0-beta.49/polyfill.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/latest/js.cookie.min.js"></script>
+    <script src="https://cdn.bootcss.com/prop-types/15.6.2/prop-types.min.js"></script>
+    <script src="https://cdn.bootcss.com/reselect/4.0.0-beta.1/reselect.min.js"></script>
+    <script src="https://cdn.bootcss.com/babel-polyfill/7.2.5/polyfill.min.js"></script>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.slim.min.js"></script>
+    <script src="https://cdn.bootcss.com/popper.js/1.14.6/umd/popper.min.js"></script>
+    <script src="https://cdn.bootcss.com/js-cookie/latest/js.cookie.min.js"></script>
     <script src="/vendor/bootstrap4/js/bootstrap.js"></script>
-    {{#if isproduction}}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.4.0/umd/react.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.4.0/umd/react-dom.production.min.js"></script>
+    {{#if isProduction}}
+    <script src="https://cdn.bootcss.com/react/16.7.0/umd/react.production.min.js"></script>
+    <script src="https://cdn.bootcss.com/react-dom/16.6.3/umd/react-dom.production.min.js"></script>
     {{else}}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.4.0/umd/react.development.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.4.0/umd/react-dom.development.js"></script>
+    <script src="https://cdn.bootcss.com/react/16.7.0/umd/react.development.js"></script>
+    <script src="https://cdn.bootcss.com/react-dom/16.6.3/umd/react-dom.development.js"></script>
     {{/if}}
 
-    {{#if isproduction}}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.0.0/redux.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-redux/5.0.7/react-redux.min.js"></script>
+    {{#if isProduction}}
+    <script src="https://cdn.bootcss.com/redux/4.0.1/redux.min.js"></script>
+    <script src="/vendor/js/react-redux.min.js"></script>
     {{else}}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.0.0/redux.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-redux/5.0.7/react-redux.js"></script>
+    <script src="https://cdn.bootcss.com/redux/4.0.1/redux.js"></script>
+    <script src="/vendor/js/react-redux.js"></script>
     {{/if}}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fetch/2.0.4/fetch.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/EventEmitter/5.2.4/EventEmitter.js"></script>
+    <script src="https://cdn.bootcss.com/fetch/3.0.0/fetch.min.js"></script>
+    <script src="https://cdn.bootcss.com/EventEmitter/5.2.5/EventEmitter.min.js"></script>
     <script src="https://cdn.bootcss.com/forge/0.7.6/forge.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+    <script src="https://cdn.bootcss.com/exif-js/2.3.0/exif.min.js"></script>
     <script src="/js/erpToolkit1.js"></script>
     <script src="/js/erpmobilecontrols1.js"></script>
     {{{_sections.script}}}
+    <script>
+    {{{_sections.postScript}}}
+  </script>
 </body>
 </html>

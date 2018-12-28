@@ -40,10 +40,10 @@ class SelectItemManager{
         return true;
     }
 
-    clear(){
+    clear(bBrigerCallBack){
         if(this.items_arr.length == 0)
             return;
-        if(this.removeCallBack != null){
+        if(this.removeCallBack != null && bBrigerCallBack != false){
             this.forEach(this.removeCallBack);
         }
         this.items_arr = [];
