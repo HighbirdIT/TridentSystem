@@ -446,6 +446,17 @@ var SqlBPEditor = function (_React$PureComponent4) {
             }
         }
     }, {
+        key: 'forcusSqlNode',
+        value: function forcusSqlNode(nodeData) {
+            if (this.bluePrintRef.current == null) {
+                return;
+            }
+            var self = this;
+            setTimeout(function () {
+                self.bluePrintRef.current.showNodeData(nodeData);
+            }, 200);
+        }
+    }, {
         key: 'render',
         value: function render() {
             var editingItem = this.props.item;
@@ -649,6 +660,7 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
             items_arr: _this9.props.project.dataMaster.BP_sql_arr,
             selectedItem: null
         };
+        _this9.sqlbpEditorRef = React.createRef();
         autoBind(_this9);
         return _this9;
     }
@@ -675,6 +687,18 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
             this.setState({
                 creating: false
             });
+        }
+    }, {
+        key: 'forcusSqlNode',
+        value: function forcusSqlNode(nodeData) {
+            this.setState({ selectedItem: nodeData.bluePrint });
+            var self = this;
+            setTimeout(function () {
+                if (self.sqlbpEditorRef.current == null) {
+                    return;
+                }
+                self.sqlbpEditorRef.current.forcusSqlNode(nodeData);
+            }, 200);
         }
     }, {
         key: 'render',
@@ -714,7 +738,7 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
                     panel2: React.createElement(
                         'div',
                         { className: 'd-flex flex-grow-1 flex-shrink-1 bg-dark mw-100' },
-                        React.createElement(SqlBPEditor, { item: selectedItem })
+                        React.createElement(SqlBPEditor, { ref: this.sqlbpEditorRef, item: selectedItem })
                     )
                 })
             );
@@ -733,11 +757,14 @@ var DataMasterPanel = function (_React$PureComponent8) {
         var _this11 = _possibleConstructorReturn(this, (DataMasterPanel.__proto__ || Object.getPrototypeOf(DataMasterPanel)).call(this, props));
 
         _this11.panelBaseRef = React.createRef();
+        _this11.navbarRef = React.createRef();
+        _this11.sqlBPPanelRef = React.createRef();
         _this11.state = {};
 
         autoBind(_this11);
 
-        var navItems = [CreateNavItemData('数据库', React.createElement(DataBasePanel, { project: _this11.props.project })), CreateNavItemData('创造数据', React.createElement(SqlBPItemPanel, { project: _this11.props.project }))];
+        var navItems = [CreateNavItemData('数据库', React.createElement(DataBasePanel, { project: _this11.props.project })), CreateNavItemData('创造数据', React.createElement(SqlBPItemPanel, { ref: _this11.sqlBPPanelRef, project: _this11.props.project }))];
+
         _this11.navData = {
             selectedItem: navItems[1],
             items: navItems
@@ -746,6 +773,21 @@ var DataMasterPanel = function (_React$PureComponent8) {
     }
 
     _createClass(DataMasterPanel, [{
+        key: 'forcusSqlNode',
+        value: function forcusSqlNode(nodeData) {
+            if (this.navbarRef.current == null) {
+                return;
+            }
+            this.navbarRef.current.selectByText('创造数据');
+            var self = this;
+            setTimeout(function () {
+                if (self.sqlBPPanelRef.current == null) {
+                    return;
+                }
+                self.sqlBPPanelRef.current.forcusSqlNode(nodeData);
+            }, 200);
+        }
+    }, {
         key: 'show',
         value: function show() {
             this.panelBaseRef.current.show();
@@ -778,7 +820,7 @@ var DataMasterPanel = function (_React$PureComponent8) {
                 React.createElement(
                     'div',
                     { className: 'd-flex flex-grow-0 flex-shrink-0' },
-                    React.createElement(TabNavBar, { navData: this.navData, navChanged: this.navChanged })
+                    React.createElement(TabNavBar, { ref: this.navbarRef, navData: this.navData, navChanged: this.navChanged })
                 ),
                 this.navData.items.map(function (item) {
                     return React.createElement(

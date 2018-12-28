@@ -175,6 +175,18 @@ var ProjectDesigner = function (_React$PureComponent) {
             }
         }
     }, {
+        key: 'forcusSqlNode',
+        value: function forcusSqlNode(nodeData) {
+            if (this.dataMasterPanelRef.current == null) {
+                return;
+            }
+            this.dataMasterPanelRef.current.show();
+            var dataMaskterPanel = this.dataMasterPanelRef.current;
+            setTimeout(function () {
+                dataMaskterPanel.forcusSqlNode(nodeData);
+            }, 200);
+        }
+    }, {
         key: 'render',
         value: function render() {
             var thisProject = this.props.project;
@@ -201,7 +213,7 @@ var ProjectDesigner = function (_React$PureComponent) {
                             fixedOne: false,
                             flexColumn: true,
                             panel1: React.createElement(ContentPanel, { project: thisProject, ref: this.contenPanelRef, wantOpenPanel: this.wantOpenPanel }),
-                            panel2: React.createElement(LogOutputPanel, { source: thisProject.logmanager })
+                            panel2: React.createElement(LogOutputPanel, { source: thisProject.logManager })
                         }),
                         panel2: React.createElement(AttributePanel, { project: thisProject, ref: this.attrbutePanelRef })
                     })

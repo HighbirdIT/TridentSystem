@@ -146,6 +146,17 @@ class ProjectDesigner extends React.PureComponent {
         }
     }
 
+    forcusSqlNode(nodeData){
+        if(this.dataMasterPanelRef.current == null){
+            return;
+        }
+        this.dataMasterPanelRef.current.show();
+        var dataMaskterPanel = this.dataMasterPanelRef.current;
+        setTimeout(() => {
+            dataMaskterPanel.forcusSqlNode(nodeData);
+        }, 200);
+    }
+
     render() {
         var thisProject = this.props.project;
         return (
@@ -172,7 +183,7 @@ class ProjectDesigner extends React.PureComponent {
                                         fixedOne={false}
                                         flexColumn={true}
                                         panel1={<ContentPanel project={thisProject} ref={this.contenPanelRef} wantOpenPanel={this.wantOpenPanel} />}
-                                        panel2={<LogOutputPanel source={thisProject.logmanager} />}
+                                        panel2={<LogOutputPanel source={thisProject.logManager} />}
                                 />
                              }
                              panel2={<AttributePanel project={thisProject} ref={this.attrbutePanelRef} />}

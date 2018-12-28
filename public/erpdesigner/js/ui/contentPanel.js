@@ -167,6 +167,77 @@ var ContentPanel = function (_React$PureComponent) {
             project.designer.saveProject();
         }
     }, {
+        key: 'clickCompileBtnHanlder',
+        value: function clickCompileBtnHanlder(ev) {
+            var project = this.props.project;
+            var compiler = new ProjectCompiler(project);
+            compiler.compile();
+        }
+    }, {
+        key: 'clickPublickBtnHandler',
+        value: function clickPublickBtnHandler(ev) {
+            var project = this.props.project;
+            project.logManager.clear();
+            project.logManager.log('开始发布方案,结束前请不要操作本项目!');
+            project.logManager.log('获取方案基础信息,');
+            fetchJsonPost('server', { action: 'getProjectProfile', projTitle: project.title }, this.getProjectProfileCallBack);
+        }
+    }, {
+        key: 'compileCompletedHandler',
+        value: function compileCompletedHandler(theCompile) {
+            var project = this.props.project;
+            theCompile.off('completed', this.compileCompletedHandler);
+            if (theCompile.isCompleted) {
+                project.logManager.log('开始上传');
+                var compileResult = {
+                    mbLayoutName: 'erppagetype_MA',
+                    pcLayoutName: 'erppagetype_MA',
+                    mobilePart: theCompile.mobileContentCompiler.getString(),
+                    serverPart: theCompile.serverSide.getString()
+                };
+                fetchJsonPost('server', { action: 'publishProject', projTitle: project.title, compileResult: compileResult }, this.uploadResultCallBack);
+            } else {
+                project.logManager.log('发布失败');
+            }
+        }
+    }, {
+        key: 'uploadResultCallBack',
+        value: function uploadResultCallBack(respon) {
+            var project = this.props.project;
+            if (respon.success) {
+                if (respon.json.err != null) {
+                    project.logManager.error(respon.json.err.info);
+                    project.logManager.log('发布失败！');
+                    return;
+                }
+                project.logManager.log(respon.json.data.mobileUrl);
+                project.logManager.log(respon.json.data.pcUrl);
+                project.logManager.log('发布成功');
+            } else {
+                project.logManager.error(respon.json.err.info);
+                project.logManager.log('发布失败！');
+            }
+        }
+    }, {
+        key: 'getProjectProfileCallBack',
+        value: function getProjectProfileCallBack(respon) {
+            var project = this.props.project;
+            if (respon.success) {
+                if (respon.json.err != null) {
+                    project.logManager.error(respon.json.err.info);
+                    project.logManager.log('发布失败！');
+                    return;
+                }
+                project.logManager.log(JSON.stringify(respon.json.data));
+                var compiler = new ProjectCompiler(project, respon.json.data);
+                compiler.on('completed', this.compileCompletedHandler);
+                compiler.compile();
+            } else {
+                project.logManager.error(respon.json.err.info);
+                project.logManager.log('发布失败！');
+            }
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this3 = this;
@@ -296,16 +367,16 @@ var ContentPanel = function (_React$PureComponent) {
                         ),
                         React.createElement(
                             'button',
-                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickPanelNameBtn },
+                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickCompileBtnHanlder },
                             React.createElement(
                                 'div',
                                 null,
-                                '\u53D1'
+                                '\u7F16'
                             ),
                             React.createElement(
                                 'div',
                                 null,
-                                '\u5E03'
+                                '\u8BD1'
                             )
                         ),
                         React.createElement(
@@ -320,6 +391,20 @@ var ContentPanel = function (_React$PureComponent) {
                                 'div',
                                 null,
                                 '\u5B58'
+                            )
+                        ),
+                        React.createElement(
+                            'button',
+                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickPublickBtnHandler },
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u53D1'
+                            ),
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u5E03'
                             )
                         )
                     ),
