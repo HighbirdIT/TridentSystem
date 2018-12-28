@@ -75,6 +75,31 @@ const SqlNodeEditorControls_arr =[
         label:'字符串拼接',
         nodeClass:SqlNode_ToString,
     }
+    ,{
+        label:'convert',//日期类型转换
+        nodeClass:SqlNode_Convert,
+    }
+    ,{
+        label:'dateadd',//日期函数dateadd
+        nodeClass:SqlNode_Dateadd,
+    }
+    ,{
+        label:'datediff',//日期函数datediff
+        nodeClass:SqlNode_Datediff,
+    }
+    ,{
+        label:'datename',//日期函数datename
+        nodeClass:SqlNode_Datename,
+    }
+    ,{
+        label:'datepart',//日期函数datepart
+        nodeClass:SqlNode_Datepart,
+    }
+    ,{
+        label:'mathfun',//数学函数
+        nodeClass:SqlNode_Mathfun,
+    }
+    
 ]; 
 
 class C_SqlNode_Editor extends React.PureComponent{
