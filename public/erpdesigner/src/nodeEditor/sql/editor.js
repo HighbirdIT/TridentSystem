@@ -76,19 +76,31 @@ const SqlNodeEditorControls_arr =[
         nodeClass:SqlNode_ToString,
     }
     ,{
-        label:'case_when',
-        nodeClass:SqlNode_Case_When
-    },
-    {
-        label:'cw_when',
-        nodeClass:SqlNode_CW_When
+        label:'convert',//日期类型转换
+        nodeClass:SqlNode_Convert,
     }
     ,{
-        label:'cw_else',
-        nodeClass:SqlNode_CW_Else
+        label:'dateadd',//日期函数dateadd
+        nodeClass:SqlNode_Dateadd,
     }
+    ,{
+        label:'datediff',//日期函数datediff
+        nodeClass:SqlNode_Datediff,
+    }
+    ,{
+        label:'datename',//日期函数datename
+        nodeClass:SqlNode_Datename,
+    }
+    ,{
+        label:'datepart',//日期函数datepart
+        nodeClass:SqlNode_Datepart,
+    }
+    ,{
+        label:'mathfun',//数学函数
+        nodeClass:SqlNode_Mathfun,
+    }
+    
 ]; 
-
 
 class C_SqlNode_Editor extends React.PureComponent{
     constructor(props){
@@ -640,17 +652,10 @@ class C_SqlNode_Editor extends React.PureComponent{
     clickCompileBtnHandler(ev){
         var theBluePrint = this.props.bluePrint;
         this.logManager.clear();
-        this.logManager.log("开始编译[" + theBluePrint.name + ']');
+        //this.logManager.log("Start compile");
         var compileHelper = new SqlNode_CompileHelper(this.logManager, this);
         var compileRet = theBluePrint.compile(compileHelper);
-        if(compileRet == false){
-            this.logManager.log('[' + theBluePrint.name + ']编译失败');
-        }
-        else{
-            this.logManager.log('[' + theBluePrint.name + ']编译成功');
-            this.logManager.log(compileRet.varDeclareStr + compileRet.sql);
-        }
-        this.logManager.log('共' + this.logManager.getCount(LogTag_Warning) + '条警告,' + this.logManager.getCount(LogTag_Error) + '条错误,');
+        //this.logManager.log("End compile");
     }
 
     clickExportBtnHandler(ev){
@@ -665,7 +670,7 @@ class C_SqlNode_Editor extends React.PureComponent{
         var editingNode = this.state.editingNode;
         if(this.props.bluePrint != editingNode.bluePrint){
             var self = this;
-            this.selectedNFManager.clear(false);
+            this.selectedNFManager.clear();
             clearTimeout(this.delaySetTO);
             this.delaySetTO = setTimeout(() => {
                 this.setEditeNode(self.props.bluePrint.editingNode ? self.props.bluePrint.editingNode : self.props.bluePrint); 

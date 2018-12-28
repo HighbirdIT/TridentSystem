@@ -336,16 +336,6 @@ class SqlBPEditor extends React.PureComponent{
         }
     }
 
-    forcusSqlNode(nodeData){
-        if(this.bluePrintRef.current == null){
-            return;
-        }
-        var self = this;
-        setTimeout(() => {
-            self.bluePrintRef.current.showNodeData(nodeData);
-        }, 200);
-    }
-
     render(){
         var editingItem = this.props.item;
         if(editingItem == null){
@@ -500,7 +490,6 @@ class SqlBPItemPanel extends React.PureComponent {
             items_arr:this.props.project.dataMaster.BP_sql_arr,
             selectedItem:null,
         }
-        this.sqlbpEditorRef = React.createRef();
         autoBind(this);
     }
 
@@ -520,17 +509,6 @@ class SqlBPItemPanel extends React.PureComponent {
         this.setState({
             creating:false,
         });
-    }
-
-    forcusSqlNode(nodeData){
-        this.setState({selectedItem:nodeData.bluePrint});
-        var self = this;
-        setTimeout(() => {
-            if(self.sqlbpEditorRef.current == null){
-                return;
-            }
-            self.sqlbpEditorRef.current.forcusSqlNode(nodeData);
-        }, 200);
     }
 
     render() {
@@ -559,7 +537,7 @@ class SqlBPItemPanel extends React.PureComponent {
                 }
                 panel2={
                     <div className='d-flex flex-grow-1 flex-shrink-1 bg-dark mw-100'>
-                        <SqlBPEditor ref={this.sqlbpEditorRef} item={selectedItem} />
+                        <SqlBPEditor item={selectedItem} />
                     </div>
                 }
                 />
@@ -571,35 +549,18 @@ class DataMasterPanel extends React.PureComponent {
     constructor(props) {
         super(props);
         this.panelBaseRef = React.createRef();
-        this.navbarRef = React.createRef();
-        this.sqlBPPanelRef = React.createRef();
         this.state = {};
 
         autoBind(this);
 
         var navItems = [
             CreateNavItemData('数据库', <DataBasePanel project={this.props.project} />),
-            CreateNavItemData('创造数据', <SqlBPItemPanel ref={this.sqlBPPanelRef} project={this.props.project} />),
+            CreateNavItemData('创造数据', <SqlBPItemPanel project={this.props.project} />),
         ];
-        
         this.navData = {
             selectedItem: navItems[1],
             items: navItems,
         };
-    }
-
-    forcusSqlNode(nodeData){
-        if(this.navbarRef.current == null){
-            return;
-        }
-        this.navbarRef.current.selectByText('创造数据');
-        var self = this;
-        setTimeout(() => {
-            if(self.sqlBPPanelRef.current == null){
-                return;
-            }
-            self.sqlBPPanelRef.current.forcusSqlNode(nodeData);
-        }, 200);
     }
 
     show() {
@@ -624,7 +585,7 @@ class DataMasterPanel extends React.PureComponent {
         return (
             <FloatPanelbase title='数据大师' ref={this.panelBaseRef} initShow={false} initMax={true}>
                 <div className='d-flex flex-grow-0 flex-shrink-0'>
-                    <TabNavBar ref={this.navbarRef} navData={this.navData} navChanged={this.navChanged} />
+                    <TabNavBar navData={this.navData} navChanged={this.navChanged} />
                 </div>
                 {
                     this.navData.items.map(item => {

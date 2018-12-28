@@ -2,8 +2,6 @@
 
 var PAGE_LOADED = 'PAGE_LOADED';
 
-var fetchTracer = {};
-
 function makeActionCreator(type) {
     for (var _len = arguments.length, argNames = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
         argNames[_key - 1] = arguments[_key];
@@ -90,14 +88,6 @@ function makeAction_fetchError(key, err, fetchData) {
 
 var makeAction_setStateByPath = makeActionCreator(AT_SETSTATEBYPATH, 'value', 'path');
 var makeAction_setManyStateByPath = makeActionCreator(AT_SETMANYSTATEBYPATH, 'value', 'path');
-
-function setStateByPathHandler(state, action) {
-    return setStateByPath(state, action.path, action.value);
-}
-
-function setManyStateByPathHandler(state, action) {
-    return setManyStateByPath(state, action.path, action.value);
-}
 
 function myTrim(x) {
     return x.replace(/^\s+|\s+$/gm, '');
@@ -347,26 +337,10 @@ var ErrType = {
     NORESPONSE: 'NORESPONSE'
 };
 
-var EFetchKey = {
-    FetchPropValue: 'fetchPropValue'
-};
-
 function createError(info, type) {
     return {
         type: type == null ? ErrType.UNKNOWN : type,
-        info: info,
-        err: 1
-    };
-}
-
-function makeFTD_Prop(basePath, id, propName) {
-    var isModel = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-
-    return {
-        base: basePath,
-        id: id,
-        propName: propName,
-        isModel: isModel
+        info: info
     };
 }
 
@@ -467,48 +441,6 @@ function fetchJson(useGet, url, sendData, triggerData) {
     };
 }
 
-function nativeFetchJson(useGet, url, sendData) {
-    var thisFetch = {
-        useGet: useGet,
-        url: url,
-        sendData: sendData
-    };
-    var fetchParam = {
-        method: useGet ? "GET" : "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        credentials: "include"
-    };
-    if (useGet) {
-        if (sendData != null) {
-            var str = '';
-            for (var si in sendData) {
-                str += si + '=' + sendData[si];
-            }
-            if (str.length > 0) {
-                url += '?' + str;
-            }
-        }
-    } else {
-        fetchParam.body = JSON.stringify(sendData);
-    }
-
-    return fetch(url, fetchParam).then(function (response) {
-        if (response.ok) {
-            return response.json();
-        } else {
-            var errObj = createError(response.statusText, ErrType.NORESPONSE, thisFetch);
-            return { err: errObj };
-        }
-    }, function (error) {
-        var errObj = createError(error.toString(), ErrType.NORESPONSE, thisFetch);
-        return { err: errObj };
-    }).then(function (json) {
-        return json;
-    });
-}
-
 function getValFromCookies(identity, defaultVal) {
     var a = Cookies.get(identity);
     return a == null ? defaultVal : a;
@@ -580,7 +512,7 @@ function setStateByPath(state, path, value, visited) {
         return newStateValue;
     }
     newStatePrent[newStateName] = updateObject(newStatePrent[newStateName], newStateValue);
-    var retState = aStateChanged(state, path, value, visited == null ? {} : visited);
+    var retState = controlStateChanged(state, path, value, visited == null ? {} : visited);
 
     return retState == state ? Object.assign({}, retState) : retState;
 }
@@ -647,29 +579,9 @@ function setManyStateByPath(state, path, valuesObj, visited) {
     }
     var retState = state;
     for (var pi in valuesObj) {
-        retState = aStateChanged(retState, path + '.' + pi, valuesObj[pi], visited);
+        retState = controlStateChanged(retState, path + '.' + pi, valuesObj[pi], visited);
     }
     return retState == state ? Object.assign({}, retState) : retState;
-}
-
-function aStateChanged(state, path, newValue) {
-    var visited = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
-
-    if (visited[path] != null) {
-        console.error('aStateChanged回路访问:' + path);
-    }
-    var retState = state;
-    visited[path] = 1;
-    if (appStateChangedAct_map != null) {
-        var theAct = appStateChangedAct_map[path];
-        if (theAct) {
-            var actRet = theAct(retState, path, newValue, visited);
-            if (actRet != null) {
-                retState = actRet;
-            }
-        }
-    }
-    return retState;
 }
 
 function MakePath() {
@@ -678,155 +590,4 @@ function MakePath() {
         rlt += (i == 0 ? '' : '.') + arguments[i];
     }
     return rlt;
-}
-
-function fetchBeginHandler(state, action) {
-    //console.log('fetchBeginHandler');
-    var retState = state;
-    var triggerData = action.fetchData.triggerData;
-    var fetchIdentify = null;
-
-    var isModel = true;
-    if (triggerData) {
-        isModel = triggerData.isModel != false;
-        if (triggerData.base != null && triggerData.id != null && triggerData.propName != null) {
-            fetchIdentify = MakePath(triggerData.base, triggerData.id, triggerData.propName);
-        }
-    }
-    if (isModel) {
-        var newUI = Object.assign({}, retState.ui);
-        newUI.fetchState = action.fetchData;
-        retState.ui = newUI;
-        retState = Object.assign({}, retState);
-    }
-
-    if (triggerData) {
-        if (triggerData.base != null && triggerData.id != null) {
-            var propPath = MakePath(triggerData.base, triggerData.id);
-            retState = setManyStateByPath(retState, propPath, {
-                fetching: true,
-                fetchingpropname: triggerData.propName
-            });
-        }
-    }
-
-    if (fetchIdentify) {
-        fetchTracer[fetchIdentify] = action.fetchData;
-    }
-    return retState;
-}
-
-function fetchEndHandler(state, action) {
-    //console.log('fetchEndHandler');
-    var retState = state;
-    var isModel = true;
-    var fetchIdentify = null;
-    var triggerData = action.fetchData.triggerData;
-    if (triggerData) {
-        isModel = triggerData.isModel != false;
-        if (triggerData.base != null && triggerData.id != null && triggerData.propName != null) {
-            fetchIdentify = MakePath(triggerData.base, triggerData.id, triggerData.propName);
-        }
-    }
-    if (fetchIdentify) {
-        if (fetchTracer[fetchIdentify] != action.fetchData) {
-            console.warn('丢弃了一个fetchResult');
-            return state;
-        }
-    }
-
-    if (action.err != null) {
-        console.warn(action.err);
-        if (triggerData) {
-            var propPath = MakePath(triggerData.base, triggerData.id, 'fetching');
-            retState = setStateByPath(retState, propPath, false);
-        }
-
-        if (isModel) {
-            var newFetchState = Object.assign({}, retState.ui.fetchState);
-            newFetchState.err = action.err;
-            retState.ui.fetchState = newFetchState;
-        }
-        return retState == state ? Object.assign({}, retState) : retState;
-    }
-
-    if (triggerData) {
-        if (triggerData.base != null && triggerData.id != null) {
-            var propPath = MakePath(triggerData.base, triggerData.id, 'fetching');
-            retState = setStateByPath(retState, propPath, false);
-        }
-    }
-
-    if (isModel) {
-        retState.ui = Object.assign({}, retState.ui, { fetchState: null });
-    }
-
-    switch (action.key) {
-        case 'pageloaded':
-            return Object.assign({}, retState, { loaded: true });
-        case EFetchKey.FetchPropValue:
-            {
-                var propPath = MakePath(triggerData.base, triggerData.id, triggerData.propName);
-                return setStateByPath(retState, propPath, action.json.data);
-            }
-    }
-    return retState == state ? Object.assign({}, retState) : retState;
-}
-
-var baseReducerSetting = {
-    AT_FETCHBEGIN: fetchBeginHandler,
-    AT_FETCHEND: fetchEndHandler,
-    AT_SETSTATEBYPATH: setStateByPathHandler,
-    AT_SETMANYSTATEBYPATH: setManyStateByPathHandler
-};
-
-function baseRenderLoadingTip() {
-    if (this.props.fetchState == null) {
-        return null;
-    }
-    var fetchState = this.props.fetchState;
-    var tipElem = null;
-    if (fetchState.err == null) {
-        tipElem = React.createElement(
-            'div',
-            { className: 'd-flex align-items-center' },
-            React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw fa-3x' }),
-            fetchState.tip
-        );
-    } else {
-        tipElem = React.createElement(
-            React.Fragment,
-            null,
-            React.createElement(
-                'div',
-                { className: 'bg-danger text-light d-flex d-flex align-items-center' },
-                React.createElement('i', { className: 'fa fa-warning fa-2x' }),
-                React.createElement(
-                    'h3',
-                    null,
-                    '\u9519\u8BEF'
-                )
-            ),
-            React.createElement('div', { className: 'dropdown-divider' }),
-            React.createElement(
-                'div',
-                { className: 'd-flex align-items-center' },
-                fetchState.err.info
-            ),
-            React.createElement(
-                'button',
-                { onClick: this.props.clickLoadingErrorBtn, type: 'button', className: 'btn btn-danger' },
-                '\u77E5\u9053\u4E86'
-            )
-        );
-    }
-    return React.createElement(
-        'div',
-        { className: 'loadingTipBG' },
-        React.createElement(
-            'div',
-            { className: 'loadingTip bg-light rounded d-flex flex-column' },
-            tipElem
-        )
-    );
 }

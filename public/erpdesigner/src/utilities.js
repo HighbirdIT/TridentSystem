@@ -299,32 +299,3 @@ function bracketStr(val){
 function clampStr(val, char){
 	return char + val + char;
 }
-
-function JsObjectToString(obj){
-	var objtype = typeof obj;
-	if(objtype === 'string' || objtype === 'number' || objtype === 'boolean'){
-		return obj;
-	}
-	else if(objtype != 'object'){
-		console.error('what is ' + objtype);
-	}
-	var rltStr = '{';
-	if(obj.length != null && typeof obj.length === 'function'){
-		rltStr = '[';
-		obj.forEach(
-			(e,i)=>{
-				rltStr += (i == 0 ? '' : ',') + JsObjectToString(e);
-			}
-		);
-		rltStr += ']';
-	}
-	else{
-		for(var si in obj){
-			rltStr += si + ':' + JsObjectToString(obj[si]) + ',';
-		}
-		rltStr += '}';
-	}
-	
-	return rltStr;
-}
-

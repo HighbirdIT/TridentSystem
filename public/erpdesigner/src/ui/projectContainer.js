@@ -276,7 +276,7 @@ class RC_SavaPanel extends React.PureComponent {
         };
         autoBind(this);
 
-        this.logManager = new LogManager('_savepanel');
+        this.logmanager = new LogManager('_savepanel');
     }
 
     saveProject(target){
@@ -284,10 +284,10 @@ class RC_SavaPanel extends React.PureComponent {
             console.warn('正在保存另一个方案');
             return;
         }
-        this.logManager.clear();
+        this.logmanager.clear();
         
-        this.logManager.log('保存[' + target.title + ']');
-        this.logManager.log('开始生成文件');
+        this.logmanager.log('保存[' + target.title + ']');
+        this.logmanager.log('开始生成文件');
         var self = this;
         setTimeout(() => {
             self.do_getJson();
@@ -303,8 +303,8 @@ class RC_SavaPanel extends React.PureComponent {
     do_getJson(){
         var projectJson = this.state.targetProject.getJson();
         this.projectJson = projectJson;
-        this.logManager.log('生成文件成功');
-        this.logManager.log('开始上传');
+        this.logmanager.log('生成文件成功');
+        this.logmanager.log('开始上传');
         var self = this;
         setTimeout(() => {
             self.do_fetch();
@@ -322,11 +322,11 @@ class RC_SavaPanel extends React.PureComponent {
         }
         if(respon.success){
             if(respon.json.err != null){
-                this.logManager.error(respon.json.err.info);
+                this.logmanager.error(respon.json.err.info);
             }
             else
             {
-                this.logManager.log('上传成功');
+                this.logmanager.log('上传成功');
                 newState.show = false;
                 var self = this;
                 this.autoCloseTimeOut = setTimeout(() => {
@@ -335,7 +335,7 @@ class RC_SavaPanel extends React.PureComponent {
             }
         }
         else{
-            this.logManager.err(respon.json.err.info);
+            this.logmanager.err(respon.json.err.info);
             
         }
         this.setState(newState);
@@ -365,7 +365,7 @@ class RC_SavaPanel extends React.PureComponent {
         }
         return (<div className='maskDiv' >
                     <div className='fixedTipPanel bg-dark border'>
-                        <LogOutputPanel source={this.logManager} />
+                        <LogOutputPanel source={this.logmanager} />
                         {
                             !this.state.saving 
                             &&

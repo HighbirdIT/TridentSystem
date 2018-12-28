@@ -19,15 +19,7 @@ class TabNavBar extends React.PureComponent {
             console.warn('navtext is null');
             return;
         }
-        this.selectByText(navtext);
-    }
-
-    selectByText(text){
-        var wantItem = this.props.navData.items.find(item=>{return item.text == text});
-        this.setSelect(wantItem);
-    }
-
-    setSelect(wantItem){
+        var wantItem = this.props.navData.items.find(item=>{return item.text == navtext});
         if(wantItem == null)
         {
             console.warn('wantItem is null');

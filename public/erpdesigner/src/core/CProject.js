@@ -53,7 +53,7 @@ class CProject extends IAttributeable{
             pages:[],
         };
 
-        this.logManager = new LogManager(this.designeConfig.name + '_lm');
+        this.logmanager = new LogManager(this.designeConfig.name + '_lm');
         
         if(jsonData == null){
             var mainPage=new M_PageKernel({
@@ -90,7 +90,7 @@ class CProject extends IAttributeable{
                 this.content_Mobile.pages.push(newPage);
             });
         }
-        this.logManager.log('加载完成');
+        this.logmanager.log('加载完成');
     }
 
     registerControl(ctlKernel){
