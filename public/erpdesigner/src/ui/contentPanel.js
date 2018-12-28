@@ -148,6 +148,69 @@ class ContentPanel extends React.PureComponent {
         compiler.compile();
     }
 
+    clickPublickBtnHandler(ev){
+        var project = this.props.project;
+        project.logManager.clear();
+        project.logManager.log('开始发布方案,结束前请不要操作本项目!');
+        project.logManager.log('获取方案基础信息,');
+        fetchJsonPost('server', { action: 'getProjectProfile', projTitle:project.title}, this.getProjectProfileCallBack);
+    }
+
+    compileCompletedHandler(theCompile){
+        var project = this.props.project;
+        theCompile.off('completed', this.compileCompletedHandler);
+        if(theCompile.isCompleted){
+            project.logManager.log('开始上传');
+            var compileResult = {
+                mbLayoutName:'erppagetype_MA',
+                pcLayoutName:'erppagetype_MA',
+                mobilePart:theCompile.mobileContentCompiler.getString(),
+                serverPart:theCompile.serverSide.getString(),
+            };
+            fetchJsonPost('server', { action: 'publishProject', projTitle:project.title, compileResult:compileResult}, this.uploadResultCallBack);
+        }
+        else{
+            project.logManager.log('发布失败');
+        }
+    }
+
+    uploadResultCallBack(respon){
+        var project = this.props.project;
+        if(respon.success){
+            if(respon.json.err != null){
+                project.logManager.error(respon.json.err.info);
+                project.logManager.log('发布失败！');
+                return;
+            }
+            project.logManager.log(respon.json.data.mobileUrl);
+            project.logManager.log(respon.json.data.pcUrl);
+            project.logManager.log('发布成功');
+        }
+        else{
+            project.logManager.error(respon.json.err.info);
+            project.logManager.log('发布失败！');
+        }
+    }
+
+    getProjectProfileCallBack(respon){
+        var project = this.props.project;
+        if(respon.success){
+            if(respon.json.err != null){
+                project.logManager.error(respon.json.err.info);
+                project.logManager.log('发布失败！');
+                return;
+            }
+            project.logManager.log(JSON.stringify(respon.json.data));
+            var compiler = new ProjectCompiler(project, respon.json.data);
+            compiler.on('completed', this.compileCompletedHandler);
+            compiler.compile();
+        }
+        else{
+            project.logManager.error(respon.json.err.info);
+            project.logManager.log('发布失败！');
+        }
+    }
+
     render() {
         var project = this.props.project;
         var isPC = this.state.isPC;
@@ -190,6 +253,7 @@ class ContentPanel extends React.PureComponent {
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} ><div>流</div><div>程</div><div>大</div><div>师</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickCompileBtnHanlder} ><div>编</div><div>译</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickSaveBtnHanlder} ><div>保</div><div>存</div></button>
+                        <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPublickBtnHandler} ><div>发</div><div>布</div></button>
                     </div>
                     <div onClick={this.clickContentDivHander} className='flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center'>
                         {

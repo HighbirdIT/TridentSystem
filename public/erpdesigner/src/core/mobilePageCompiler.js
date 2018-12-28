@@ -6,8 +6,8 @@ class ProjectCompiler extends EventEmiter{
     }
 
     compile(){
-        this.project.logmanager.clear();
-        this.project.logmanager.log('开始编译');
+        this.project.logManager.clear();
+        this.project.logManager.log('开始编译');
     }
 }
 

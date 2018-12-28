@@ -4270,12 +4270,66 @@ class SqlNode_Union extends SqlNode_Base {
         }
         return new NodeSocket('in' + nameI, this, true, { type: SqlVarType_Table , inputable: false });
     }
+    cusTitleChanged(oldTitle, newTitle) {
+        if (this.targetEntity == null) {
+            return;
+        }
+        if (IsEmptyString(newTitle)) {
+            return;
+        }
+        var compareType = IsEmptyString(oldTitle) ? 'code' : 'alias';
+        var key = IsEmptyString(oldTitle) ? this.targetEntity.code : oldTitle;
+        var newTool = new SqlNodeTool_SynColumnNodeAlias(this, compareType, key, newTitle);
+    }
+    getContext(finder) {
+        finder.setTest(this.id);
+        if (this.targetEntity == null) {
+            return;
+        }
+        if (finder.type == ContextType_DBEntity) {
+            var theLabel = this.title;
+            if (IsEmptyString(theLabel)) {
+                theLabel = this.targetEntity.loaded ? this.targetEntity.name : this.targetEntity.code;
+            }
+            finder.addItem(theLabel, this.targetEntity);
+        }
+    }
     customSocketRender(socket) {
         return null;
     }
     getNodeTitle() {
         return 'union';
     }
+    preEditing(editor) {
+        var cFinder = new ContextFinder(ContextType_DBEntity);
+        this.getContext(cFinder);
+        this.contextEntities_arr = cFinder.item_arr;
+        for (var i in this.entityNodes_arr) {
+            this.entityNodes_arr[i].valid = false;
+        }
+        for (var i = 0; i < this.contextEntities_arr.length; ++i) {
+            var contextEntity = this.contextEntities_arr[i];
+            var theNode = this.entityNodes_arr.find(x => { return x.label == contextEntity.label });
+            if (theNode == null) {
+                theNode = new SqlNode_DBEntity_ColumnSelector({ left: (i + 1) * -200 }, this, null);
+                theNode.setEntity(contextEntity.label, contextEntity.data);
+                this.entityNodes_arr.push(theNode);
+            }
+            theNode.valid = true;
+        }
+        this.bluePrint.banEvent('changed');
+        for (var i = 0; i < this.entityNodes_arr.length; ++i) {
+            var tNode = this.entityNodes_arr[i];
+            if (!tNode.valid) {
+                this.entityNodes_arr.splice(i, 1);
+                --i;
+                tNode.isConstNode = false;
+                this.bluePrint.deleteNode(tNode);
+            }
+        }
+        this.bluePrint.allowEvent('changed');
+    }
+
     compile(helper, preNodes_arr) {
         var superRet = super.compile(helper, preNodes_arr);
         if (superRet == false || superRet != null) {

@@ -93,6 +93,7 @@ const SqlNodeEditorControls_arr =[
     }
 ]; 
 
+
 class C_SqlNode_Editor extends React.PureComponent{
     constructor(props){
         super(props);
