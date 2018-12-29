@@ -36,18 +36,18 @@ var SqlOperator_IsNull = 'is null';
 var SqlOperator_IsNotNull = 'is not null';
 
 //2018-12-22黄永恒编辑datepart
-var Datepart_yy = 'yy'; //年
-var Datepart_qq = 'qq'; //季度
-var Datepart_mm = 'mm'; //月
+var Datepart_year = 'year'; //年
+var Datepart_quarter = 'quarter'; //季度
+var Datepart_month = 'month'; //月
 var Datepart_dy = 'dy'; //年中第几天
-var Datepart_dd = 'dd'; //天
+var Datepart_day = 'day'; //天
 var Datepart_wk = 'wk'; //周
-var Datepart_dw = 'dw'; //星期几
-var Datepart_hh = 'hh'; //小时
-var Datepart_mi = 'mi'; //分钟
-var Datepart_ss = 'ss'; //秒
+var Datepart_week = 'week'; //星期几
+var Datepart_hours = 'hours'; //小时
+var Datepart_minutes = 'minutes'; //分钟
+var Datepart_seconds = 'seconds'; //秒
 var Datepart_ms = 'ms'; //毫秒
-var Datepart_arr = [Datepart_yy, Datepart_qq, Datepart_mm, Datepart_dy, Datepart_dd, Datepart_wk, Datepart_dw, Datepart_hh, Datepart_mi, Datepart_ss, Datepart_ms];
+var Datepart_arr = [Datepart_year, Datepart_quarter, Datepart_month, Datepart_dy, Datepart_day, Datepart_wk, Datepart_week, Datepart_hours, Datepart_minutes, Datepart_seconds, Datepart_ms];
 
 //2018-12-25黄永恒编辑math
 var Math_ABS = 'ABS'; //计算绝对值

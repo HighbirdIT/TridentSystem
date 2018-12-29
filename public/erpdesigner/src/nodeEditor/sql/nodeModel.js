@@ -22,11 +22,7 @@ const SQLNODE_LOGICAL_NOT = 'logical_not';
 const SQLNODE_IN_OPERATOR = 'in_operator';
 const SQLNODE_LIKE = 'like';
 const SQLNODE_EXISTS = 'exists';
-const SQLNODE_CONVERT = 'convert';
-const SQLNODE_DATEADD = 'dateadd';        
-const SQLNODE_DATEDIFF = 'datediff';
-const SQLNODE_DATENAME = 'datename';   
-const SQLNODE_DATEPART = 'datepart';                  
+const SQLNODE_CONVERT = 'convert';               
 const SQLDEF_VAR = 'def_variable';
 const SQLNODE_TOSTRING='tostring';
 const SQLNODE_CASE_WHEN='case_when';
@@ -4349,7 +4345,154 @@ class SqlNode_CW_Else extends SqlNode_Base {
     }
 
 }
+//日期类型转换
+class SqlNode_Convert extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, SQLNODE_CONVERT, 'Convert', false, nodeJson);
+        this.varchar_len = ReplaceIfNaN(this.varchar_len, 0);
+        autoBind(this);
+        //复原
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+                this.outSocket.type = SqlVarType_Boolean;
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+            }
+        }
 
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Boolean });
+            this.addSocket(this.outSocket);
+        }
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true, { type: SqlVarType_Table });
+            this.addSocket(this.inSocket);
+        }
+        var format_code=this.inSocket.getExtra('format_code');
+        if(format_code==null){
+            this.inSocket.setExtra('format_code', '21');
+        }
+        var varchar_len=this.inSocket.getExtra('varchar_len');
+        if(varchar_len==null){
+            this.inSocket.setExtra('varchar_len', '10');
+        }
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.code=this.inSocket.getExtra('format_code'); 
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+    }
+    
+    convertTypeDropdownChangedHandler(data, dropCtl) {
+        var theSocket = this.inSocket;
+        theSocket.setExtra('format_code', data.value);
+        theSocket.fireEvent('changed');
+    }
+
+    varlenInputChangedHandler(ev) {
+        var newVal = ev.target.value;
+        if (isNaN(newVal)) {
+            return;
+        }
+        this.inSocket.setExtra('varchar_len', newVal);
+        this.inSocket.fireEvent('changed');
+    }
+
+    customSocketRender(socket) {
+        if(socket.isIn==false){
+            return null;
+        }
+        var varlenInptELem = null;
+       
+        var varlenValue = socket.getExtra('varchar_len');
+        if(varlenValue==null){
+            varlenValue = 10;
+        }
+        var  format_code = socket.getExtra('format_code');
+        if (this.inputStyle == null) {
+            this.inputStyle = {
+                width: '3em',
+            };
+        }
+        var varlenInptELem = (<input type='int' style={this.inputStyle} value={varlenValue} onChange={this.varlenInputChangedHandler} />);
+        var formatOptions_arr=[
+            {text:'yyyy-mm-dd Thh:mm:ss',value:126},
+            {text:'yyyy-mm-dd hh:mm:ss',value:21},
+            {text:'hh:mi:ss',value:114},
+            {text:'hh:mm:ss',value:108},
+        ];
+        
+        return (
+            <React.Fragment>
+                <div>varchar:{varlenInptELem}</div>
+                <div>
+                     格式:<DropDownControl itemChanged={this.convertTypeDropdownChangedHandler} btnclass='btn-dark' options_arr={formatOptions_arr} textAttrName='text' valueAttrName='value' rootclass='flex-grow-1 flex-shrink-1' value={format_code} />    
+                </div>
+            </React.Fragment>
+        );
+    }
+    //编译
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        //节点名称
+        var thisNodeTitle = nodeThis.getNodeTitle();//convert
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var inSocket = this.inSocket;
+        var tLinks = this.bluePrint.linkPool.getLinksBySocket(inSocket);
+
+        if (tLinks.length == 0) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle
+                , nodeThis
+                , helper.clickLogBadgeItemHandler)
+                , '输入不能为空']);
+            return false;
+        }
+        var link = tLinks[0];
+        var outNode = link.outSocket.node;
+        
+        var compileRet = outNode.compile(helper, usePreNodes_arr);
+        if (compileRet == false) {
+            return false;
+        }
+        var varchar_len = inSocket.getExtra('varchar_len');
+        if(isNaN(varchar_len) || varchar_len <= 0 || varchar_len > 20){
+            varchar_len = 10;
+            helper.logManager.warnEx([helper.logManager.createBadgeItem(
+                thisNodeTitle
+                , nodeThis
+                , helper.clickLogBadgeItemHandler)
+                , 'varchar Length使用了默认值10']);
+        }
+        var code = inSocket.getExtra('format_code');
+        if(isNaN(code)){
+            code = 21;
+            helper.logManager.warnEx([helper.logManager.createBadgeItem(
+                thisNodeTitle
+                , nodeThis
+                , helper.clickLogBadgeItemHandler)
+                , 'format_code使用了默认值21']);
+        }
+
+        var inputCompileStrContent = compileRet.getSocketOut(link.outSocket).strContent; 
+        var finalStr = 'convert(varchar(' + varchar_len + '),' + inputCompileStrContent + ','+code+')';
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
     SqlNodeClassMap[SQLNODE_DBENTITY] = {
         modelClass: SqlNode_DBEntity,
         comClass: C_SqlNode_DBEntity,
@@ -4461,6 +4604,11 @@ class SqlNode_CW_Else extends SqlNode_Base {
     SqlNodeClassMap[SQLNODE_LIKE]={
         modelClass:SqlNode_Like,
         comClass:C_SqlNode_SimpleNode,
-    }
+    };
+    SqlNodeClassMap[SQLNODE_CONVERT] = {
+        modelClass: SqlNode_Convert,
+        comClass: C_SqlNode_SimpleNode,
+    };
+    
     
 
