@@ -68,6 +68,8 @@ var Logical_Operator_or = 'or';
 //var Logical_Operator_not = 'not';
 var Logical_Operators_arr = [Logical_Operator_and, Logical_Operator_or];
 
+// union union all
+
 var Event_CurrentComponentchanged = 'currentComponentchanged';
 var Event_LinkChanged = 'linkChanged';
 var Event_SocketNumChanged = 'socketnumChanged';
