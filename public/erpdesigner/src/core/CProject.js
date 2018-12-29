@@ -56,25 +56,10 @@ class CProject extends IAttributeable{
         this.logManager = new LogManager(this.designeConfig.name + '_lm');
         
         if(jsonData == null){
-            var mainPage=new M_PageKernel({
-                title:'主页面',
-                isMain:1,
-                nav:{
-                    hidden:1,
-                    leftBtn:{
-                        hidden:0,
-                        label:'返回',
-                        action:'retutn'
-                    },
-                    rightBtn:{
-                        hidden:0
-                    }
-                },
-                body:{
-                    direction:'column'
-                }
-            }, this);
+            var mainPage=new M_PageKernel(null, this);
             mainPage.project = this;
+            mainPage.set_ismain(true);
+            mainPage.set_title('主页面');
             this.content_Mobile.pages.push(mainPage);
         }
         else{
@@ -91,6 +76,27 @@ class CProject extends IAttributeable{
             });
         }
         this.logManager.log('加载完成');
+    }
+
+    mainPageChanged(pagekernel){
+        var index = this.content_PC.pages.indexOf(pagekernel);
+        if(index != -1){
+            this.content_PC.pages.forEach(pk=>{
+                if(pk != pagekernel){
+                    pk.__setAttribute(AttrNames.isMain, false);
+                }
+            });
+        }
+        else{
+            index = this.content_Mobile.pages.indexOf(pagekernel);
+            if(index != -1){
+                this.content_Mobile.pages.forEach(pk=>{
+                    if(pk != pagekernel){
+                        pk.__setAttribute(AttrNames.isMain, false);
+                    }
+                });
+            }
+        }
     }
 
     registerControl(ctlKernel){

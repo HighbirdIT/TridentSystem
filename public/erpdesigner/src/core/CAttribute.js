@@ -13,6 +13,14 @@ class CAttribute{
     }
 }
 
+const VarNames={
+    RetProps:'retProps',
+    RetDispather:'retDispather',
+    NowPage:'nowPage',
+    RetElem:'retElem',
+    ThisProps:'this.props',
+}
+
 const AttrNames={
     Title:'title',
     Text:'text',
@@ -20,6 +28,7 @@ const AttrNames={
     Orientation:'orientation',
     RealName:'realName',
     Chidlren:'children',
+    IsMain:'ismain',
 
     LayoutNames:{
         APDClass:'apdClass',

@@ -43,6 +43,7 @@ class ControlKernelBase extends IAttributeable{
             parentKernel.appandChild(this);
         }
     }
+    
 
     renderSelf(){
         return null;

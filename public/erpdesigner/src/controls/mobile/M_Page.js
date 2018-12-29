@@ -2,6 +2,7 @@ const M_PageKernelAttrsSetting = {
     groups_arr: [
         new CAttributeGroup('基本设置', [
             new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'),
+            new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false),
             new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
         ]),
         new CAttributeGroup('测试设置', [
@@ -44,6 +45,18 @@ class M_PageKernel extends ContainerKernelBase {
         var flag = this.__setAttribute(AttrNames.Title, newTitle);
         if (flag) {
             this.attrChanged(AttrNames.Title);
+        }
+        return flag;
+    }
+
+    set_ismain(val){
+        var flag = this.__setAttribute(AttrNames.IsMain, val);
+        if (flag) {
+            if(val){
+                var project = this.project;
+                project.mainPageChanged(this);
+            }
+            this.attrChanged(AttrNames.IsMain);
         }
         return flag;
     }

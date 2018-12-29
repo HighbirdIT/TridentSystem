@@ -182,15 +182,15 @@ function TextControl_dispatchtorprops(dispatch, ownprops) {
 var VisibleTextControl = ReactRedux.connect(TextControl_mapstatetoprops, TextControl_dispatchtorprops)(TextControl);
 
 function pullDL01DataSource() {
-    store.dispatch(fetchJsonPost(appServerUrl, { action: 'getPersonList' }, makeFTD_Prop('page1', 'testControl01', 'options_arr'), EFetchKey.FetchPropValue));
+    store.dispatch(fetchJsonPost(appServerUrl, { action: 'getPersonList' }, makeFTD_Prop('page1', 'testControl01', 'options_arr', true), EFetchKey.FetchPropValue));
 }
 
 function pullControl01DataSource() {
-    store.dispatch(fetchJsonPost(appServerUrl, { action: 'getControl01_ds' }, makeFTD_Prop('page1', 'control01', 'options_arr'), EFetchKey.FetchPropValue));
+    store.dispatch(fetchJsonPost(appServerUrl, { action: 'getControl01_ds' }, makeFTD_Prop('page1', 'control01', 'options_arr', false), EFetchKey.FetchPropValue));
 }
 
 function pullControl02DataSource() {
-    store.dispatch(fetchJsonPost(appServerUrl, { action: 'getControl02_ds' }, makeFTD_Prop('page1', 'control02', 'options_arr'), EFetchKey.FetchPropValue));
+    store.dispatch(fetchJsonPost(appServerUrl, { action: 'getControl02_ds' }, makeFTD_Prop('page1', 'control02', 'options_arr', false), EFetchKey.FetchPropValue));
 }
 
 var App = function (_React$PureComponent3) {
@@ -328,6 +328,7 @@ var App = function (_React$PureComponent3) {
             return React.createElement(
                 'div',
                 { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 h-100' },
+                React.createElement(FixedContainer, { ref: gFixedContainerRef }),
                 this.renderLoadingTip(),
                 React.createElement(
                     'div',
@@ -340,7 +341,7 @@ var App = function (_React$PureComponent3) {
                 ),
                 React.createElement(
                     'div',
-                    { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 autoScroll' },
+                    { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 autoScroll_Touch' },
                     this.renderContent()
                 ),
                 React.createElement(

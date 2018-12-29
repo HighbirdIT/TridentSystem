@@ -19,6 +19,14 @@ var CAttribute = function CAttribute(label, name, valueType, defaultVal, editabl
     });
 };
 
+var VarNames = {
+    RetProps: 'retProps',
+    RetDispather: 'retDispather',
+    NowPage: 'nowPage',
+    RetElem: 'retElem',
+    ThisProps: 'this.props'
+};
+
 var AttrNames = {
     Title: 'title',
     Text: 'text',
@@ -26,6 +34,7 @@ var AttrNames = {
     Orientation: 'orientation',
     RealName: 'realName',
     Chidlren: 'children',
+    IsMain: 'ismain',
 
     LayoutNames: {
         APDClass: 'apdClass',

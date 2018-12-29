@@ -79,7 +79,7 @@ class ContentCompiler extends EventEmitter{
         this.projectCompiler = projectCompiler;
         this.serverSide = projectCompiler.serverSide;
         this.logManager = projectCompiler.logManager;
-        this.handlebars = new CP_HandleBarsItem(this);
+        //this.handlebars = new CP_HandleBarsItem(this);
 
         this.clientSide = new CP_ClientSide(projectCompiler);
     }
@@ -93,29 +93,6 @@ class ContentCompiler extends EventEmitter{
     }
 }
 
-class MobileContentCompiler extends ContentCompiler{
-    constructor(projectCompiler){
-        super(projectCompiler);
-        autoBind(this);
-        
-        this.conetents_arr = this.project.content_Mobile;
-    }
-
-    compile(){
-        this.handlebars.pushScriptPath('clientJS','/js/views/erp/' + this.projectCompiler.projectName + '_mb.js');
-        
-        var clientSide = this.clientSide;
-        return true;
-    }
-
-    compileEnd(){
-        super.compileEnd();
-    }
-    
-    getString(){
-        return this.clientSide.getString();
-    }
-}
 
 class CP_HandleBarsItem{
     constructor(belongCompiler){

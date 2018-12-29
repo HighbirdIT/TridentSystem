@@ -348,3 +348,22 @@ function JsObjectToString(obj) {
 
 	return rltStr;
 }
+
+function makeLine_Assign(left, right) {
+	return left + '=' + right + ';';
+}
+
+function makeLine_Return(str) {
+	return 'return ' + str + ';';
+}
+
+function makeStr_DotProp(left, propName) {
+	if (Array.isArray(propName)) {
+		propName = propName.join('.');
+	}
+	return left + '.' + propName;
+}
+
+function makeStr_ThisProp(propName) {
+	return VarNames.ThisProps + '.' + propName;
+}

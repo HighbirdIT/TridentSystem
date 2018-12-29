@@ -119,7 +119,6 @@ class FormatFileBlock extends FormatFile_ItemBase{
         child.parent = this;
         child.indent = this.nextLineIndent;
         this.childs_arr.push(child);
-        
     }
 
     getChild(childName){
@@ -146,7 +145,7 @@ class FormatFileBlock extends FormatFile_ItemBase{
         var indentString = this.getIndentString(indentChar);
         var rlt = '';
         this.childs_arr.forEach(child=>{
-            rlt += child.getString(prefixStr + indentString, indentChar) + newLineChar;
+            rlt += child.getString(prefixStr + indentString, indentChar, newLineChar) + newLineChar;
         });
 
         this.getStringCallbacker.forEach(callBack=>{
@@ -308,6 +307,46 @@ class JSFile_Scope{
     }
 }
 
+class JSFile_Switch extends FormatFileBlock{
+    constructor(name,flagName){
+        super(name);
+        this.flagName = flagName;
+
+        this.caseBloks_map = {};
+        this.defaultBlock = new FormatFileBlock('default');
+    }
+
+    getCaseBlock(caseVal){
+        var rlt = this.caseBloks_map[caseVal];
+        if(rlt == null){
+            rlt = new FormatFileBlock(caseVal);
+            this.caseBloks_map[caseVal] = rlt;
+        }
+        return rlt;
+    }
+
+    getString(prefixStr, indentChar, newLineChar){
+        var indentString = this.getIndentString(indentChar);
+        var rlt = prefixStr + 'switch(' + this.flagName + '){' + newLineChar;
+
+        for(var si in this.caseBloks_map){
+            rlt += prefixStr + indentChar + 'case ' + si + ':{' + newLineChar;
+            rlt += this.caseBloks_map[si].getString(prefixStr + indentChar, indentChar, newLineChar);
+            rlt += prefixStr + indentChar + 'break;}' + newLineChar;
+        }
+
+        if(this.defaultBlock.childs_arr.length > 0)
+        {
+            rlt += prefixStr + indentChar + 'default:{' + newLineChar;
+            rlt += this.defaultBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
+            rlt += prefixStr + indentChar + 'break;}' + newLineChar;
+        }
+        rlt += prefixStr + '}';
+
+        return rlt;
+    }
+}
+
 class JSFile_Funtion extends FormatFileBlock{
     constructor(name, params_arr, declareType){
         super(name);
@@ -317,9 +356,49 @@ class JSFile_Funtion extends FormatFileBlock{
             paramsStr += (paramsStr.length == 0 ? '' : ',') + e;
         });
         //this.pushLine('function ' + name + '(' + paramsStr + ')', true);
+        this.headBlock = new FormatFileBlock('head');
+        this.bodyBlock = new FormatFileBlock('body');
+        this.retBlock = new FormatFileBlock('ret');
 
         this.scope = new JSFile_Scope('_localfun', this.getScope());
         this.declareType = declareType;
+    }
+
+    addNextIndent(){
+        this.bodyBlock.nextLineIndent += 1;
+    }
+
+    subNextIndent(){
+        this.bodyBlock.nextLineIndent -= 1;
+    }
+
+    pushChild(child){
+        if(!IsEmptyString(child.name)){
+            this.bodyBlock.childs_map[child.name] = child;
+        }
+        child.parent = this.bodyBlock;
+        child.indent = this.bodyBlock.nextLineIndent;
+        this.bodyBlock.childs_arr.push(child);
+    }
+
+    getChild(childName){
+        return this.bodyBlock.childs_map[childName];
+    }
+
+    pushLine(lineItem, indentOffset){
+        var itemType = typeof lineItem;
+        if(itemType === 'string'){
+            lineItem = new FormatFile_Line(lineItem, this.bodyBlock.nextLineIndent);
+        }
+        else if(!FormatFile_Line.prototype.isPrototypeOf(lineItem)){
+            console.error('不支持的lineitem！');
+        }
+        else{
+            lineItem.indent = this.bodyBlock.nextLineIndent;
+        }
+        lineItem.parent = this.bodyBlock;
+        this.bodyBlock.childs_arr.push(lineItem);
+        this.bodyBlock.nextLineIndent += indentOffset == null ? 0 : Math.sign(indentOffset);
     }
 
     getString(prefixStr, indentChar, newLineChar){
@@ -344,8 +423,20 @@ class JSFile_Funtion extends FormatFileBlock{
         }
         //this.childs_arr[0].content = declareLine;
 
-        var bodyStr = super.getString(prefixStr + indentString + indentChar, indentChar, newLineChar);
-        return prefixStr + indentString + declareLine + newLineChar + bodyStr + endDeclareLine;
+        var headStr = '';
+        if(this.headBlock.childs_arr.length > 0){
+            headStr = this.headBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
+        }
+        var bodyStr = '';
+        if(this.bodyBlock.childs_arr.length > 0){
+            bodyStr = this.bodyBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
+        }
+        var retStr = '';
+        if(this.retBlock.childs_arr.length > 0){
+            retStr = this.retBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
+        }
+        var varDeclareStr = this.scope.getVarDeclareString(prefixStr + indentString + indentChar, newLineChar);
+        return prefixStr + indentString + declareLine + newLineChar + varDeclareStr + headStr + bodyStr + retStr + endDeclareLine;
     }
 }
 
@@ -379,13 +470,20 @@ class JSFile_ReactClass extends JSFile_Class{
         super(name, outScope);
         this.parentClassName = 'React.PureComponent';
         this.constructorFun.params_arr = ['props'];
-        this.constructorFun.pushLine('super(props)');
+        this.constructorFun.pushLine('super(props);');
 
         this.renderFun = this.getFunction('render', true);
+        this.renderFun.scope.getVar(VarNames.RetElem, true, 'null');
+        this.renderFun.retBlock.pushLine(makeLine_Return(VarNames.RetElem));
         this.visibleComScope = new JSFile_Scope('visible' + name, outScope);
 
         this.mapStateFun = this.visibleComScope.getFunction(name + '_mapstatetoprops', true, ['state']);
         this.mapDispathFun = this.visibleComScope.getFunction(name + '_disptchtoprops', true, ['dispatch','ownprops']);
+
+        this.mapStateFun.scope.getVar(VarNames.RetProps, true, '{}');
+        this.mapStateFun.retBlock.pushLine('return ' + VarNames.RetProps + ';');
+        this.mapDispathFun.scope.getVar('retDispath', true, '{}');
+        this.mapDispathFun.retBlock.pushLine('return retDispath;');
     }
 
     getString(prefixStr, indentChar, newLineChar){
@@ -466,9 +564,10 @@ class CP_ServerSide extends JSFileMaker{
         super();
         this.projectCompiler = projectCompiler;
         this.fileName = projectCompiler.projectName + '_server';
+        this.project = projectCompiler.project;
 
-        this.importBlock.pushLine("const dbhelper = require('../../../dbhelper.js');");
-        this.importBlock.pushLine("const serverhelper = require('../../../erpserverhelper.js');");
+        this.importBlock.pushLine("const dbhelper = require('../../../../dbhelper.js');");
+        this.importBlock.pushLine("const serverhelper = require('../../../../erpserverhelper.js');");
         this.importBlock.pushLine("const co = require('co');");
         this.importBlock.pushLine("const sqlTypes = dbhelper.Types;");
         this.importBlock.pushLine("const sharp = require('sharp');");
@@ -486,6 +585,10 @@ class CP_ServerSide extends JSFileMaker{
         };
     }
 
+    compile(){
+        return true;
+    }
+
     compileEnd(){
         this.processesMapVar.initVal = JsObjectToString(this.processesMapVarInitVal);
         this.endBlock.pushLine('module.exports = process;');
@@ -498,6 +601,7 @@ class CP_ClientSide extends JSFileMaker{
     constructor(projectCompiler){
         super();
         this.projectCompiler = projectCompiler;
+        this.project = projectCompiler.project;
 
         this.importBlock.pushLine('var Redux = window.Redux;');
         this.importBlock.pushLine('var Provider = ReactRedux.Provider;');
@@ -513,6 +617,8 @@ class CP_ClientSide extends JSFileMaker{
         };
         this.appClass = this.getReactClass('App', true);
         this.appClass.renderContentFun = this.appClass.getFunction('renderContent', true);
+        this.appClass.renderContentFun.scope.getVar(VarNames.RetElem, true);
+        this.appClass.renderContentFun.retBlock.pushLine(makeLine_Return(VarNames.RetElem));
         this.appClass.renderHeaderFun = this.appClass.getFunction('renderHead', true);
         this.appClass.renderFootFun = this.appClass.getFunction('renderFoot', true);
         this.reducers_map = {};
@@ -521,8 +627,14 @@ class CP_ClientSide extends JSFileMaker{
 
         this.appReducerSettingVar = this.scope.getVar('appReducerSetting', true);
         this.appReducerVar = this.scope.getVar('appReducer', true, 'createReducer(appInitState, Object.assign(baseReducerSetting,appReducerSetting));');
-        this.reducerVar = this.scope.getVar('reducer', true, 'Redux.combineReducers({ app: appReducer });');
+        this.reducerVar = this.scope.getVar('reducer', true, 'appReducer;');
         this.storeVar = this.scope.getVar('store', true, 'Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));');
+
+        this.appClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps,VarNames.NowPage), makeStr_DotProp('state',VarNames.NowPage)));
+    }
+
+    compile(){
+        return true;
     }
 
     addReducer(reducerKey, reducerName){
@@ -542,13 +654,11 @@ class CP_ClientSide extends JSFileMaker{
         this.appClass.renderHeaderFun.pushLine("<h3>{thisAppTitle}</h3>",-1);
         this.appClass.renderHeaderFun.pushLine("</div>);");
 
-        this.appClass.renderContentFun.pushLine("return (<div>Haha</div>)");
-
         this.appClass.renderFootFun.pushLine("return (<div className='flex-grow-0 flex-shrink-0 bg-primary text-light pageFooter'>", 1);
         this.appClass.renderFootFun.pushLine("<h3>页脚</h3>", -1);
         this.appClass.renderFootFun.pushLine("</div>);");
 
-        this.appClass.renderFun.pushLine("return (", 1);
+        this.appClass.renderFun.pushLine(VarNames.RetElem + " = (", 1);
         this.appClass.renderFun.pushLine("<div className='d-flex flex-column flex-grow-1 flex-shrink-1 h-100'>", 1);
         this.appClass.renderFun.pushLine("{this.renderLoadingTip()}");
         this.appClass.renderFun.pushLine("{this." + this.appClass.renderHeaderFun.name + "()}");
@@ -558,12 +668,9 @@ class CP_ClientSide extends JSFileMaker{
         this.appClass.renderFun.pushLine("{this." + this.appClass.renderFootFun.name + "()}", -1);
         this.appClass.renderFun.pushLine("</div>);");
 
-        
-        this.appClass.mapStateFun.pushLine("return {};");
-        this.appClass.mapDispathFun.pushLine("return {};");
     }
 
-    getString(){
-        return super.getString();
+    getString(indentChar, newLineChar){
+        return super.getString(indentChar, newLineChar);
     }
 }
