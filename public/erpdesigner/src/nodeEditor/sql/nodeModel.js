@@ -1670,7 +1670,7 @@ class SqlNode_Select extends SqlNode_Base {
         newColNode.off(Event_FrameComMount, this.newColumNodeFrameComMounted);
     }
 
-    binarySearch(array,helper,usePreNodes_arr) {
+    binarySearch(array,helper) {
 
         //递归终止条件
         if(array.length < 0)
@@ -1688,18 +1688,26 @@ class SqlNode_Select extends SqlNode_Base {
                 var link = helper.getLinksBySocket(socket)[0];
                 var outNode = link.outSocket.node;
                 var nodeType = outNode.type;
-                var outNodeCompileRet = outNode.compile(helper, usePreNodes_arr);
-                if (outNodeCompileRet == false) {
-                    return false;
+                if(nodeType != SQLNODE_COLUMN)
+                {
+                    this.binarySearch(outNode.inputScokets_arr,helper);
                 }
-                socketOutData = outNodeCompileRet.getSocketOut(link.outSocket);
-            if (nodeType != SQLNODE_COLUMN) {
-                this.binarySearch(outNode.inputScokets_arr);
-            }
-            outColumns_arr.push({
-                strcolName: socketOutData.colName,
-            });
-
+                else
+                {
+                    outColumns_arr.push({
+                        strcolName: socketOutData.colName,
+                    });
+        
+                }
+                return outColumns_arr;
+            //     var outNodeCompileRet = outNode.compile(helper, usePreNodes_arr);
+            //     if (outNodeCompileRet == false) {
+            //         return false;
+            //     }
+            // if (nodeType != SQLNODE_COLUMN) {
+            //     this.binarySearch(outNode.inputScokets_arr);
+            // }
+    
         }
     }
 
@@ -1831,20 +1839,18 @@ compile(helper, preNodes_arr) {
         if (nodeType != SQLNODE_AGGREGATE) {
            var ttt= this.binarySearch(outNode,helper,usePreNodes_arr);
 
-            // if (nodeType != SQLNODE_COLUMN) {
-            //     for (var i = 0; i < outNode.inputScokets_arr.length; ++i) {
-            //         console.log("312");
-            //     }
+            // ttt.forEach(ss=>{
+            //     outColumns_arr.push({
+            //         strContent: ss,
+            //     });
+            // })
             }
-            if(IsEmptyString(ttt))
-            {
                 outColumns_arr.push({
                     strContent: socketOutData.strContent,
+
                 });
             }
-
-
-        }
+        
     
 
 
