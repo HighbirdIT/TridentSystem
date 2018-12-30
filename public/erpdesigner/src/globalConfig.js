@@ -29,7 +29,12 @@ const JoinType_Left = 'left join';
 const JoinType_Right = 'right join';
 const JoinType_Cross = 'cross join';
 const JoinTypes_arr = [JoinType_Inner,JoinType_Left,JoinType_Right,JoinType_Cross];
-
+const Aggregate_count = 'count';
+const Aggregate_sum = 'sum';
+const Aggregate_avg = 'avg';
+const Aggregate_max = 'max';
+const Aggregate_min = 'min';
+const Aggregate_arr = [Aggregate_count,Aggregate_sum,Aggregate_avg,Aggregate_max,Aggregate_min];
 const SqlOperator_IsNull ='is null';
 const SqlOperator_IsNotNull='is not null';
 /**
