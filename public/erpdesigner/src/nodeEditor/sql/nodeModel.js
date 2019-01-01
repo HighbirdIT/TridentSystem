@@ -22,8 +22,7 @@ const SQLNODE_GETDATE = 'getdate';
 const SQLNODE_LOGICAL_NOT = 'logical_not';
 const SQLNODE_IN_OPERATOR = 'in_operator';
 const SQLNODE_LIKE = 'like';
-const SQLNODE_EXISTS = 'exists';
-const SQLNODE_CONVERT = 'convert';               
+const SQLNODE_EXISTS = 'exists';              
 const SQLDEF_VAR = 'def_variable';
 const SQLNODE_TOSTRING='tostring';
 const SQLNODE_CASE_WHEN='case_when';
@@ -32,7 +31,7 @@ const SQLNODE_CW_ELSE='cw_else';
 const SQLDEF_UNION='union';
 var SqlNodeClassMap = {};
 // CONSTSQLNODES_ARR output是常量的节点类型
-const SQL_OutSimpleValueNode_arr = [SQLNODE_COLUMN, SQLNODE_VAR_GET, SQLNODE_CONSTVALUE, SQLNODE_GETDATE, SQLNODE_CAST, SQLNODE_CONVERT];
+const SQL_OutSimpleValueNode_arr = [SQLNODE_COLUMN, SQLNODE_VAR_GET, SQLNODE_CONSTVALUE, SQLNODE_GETDATE, SQLNODE_CAST];
 
 
 class NodeCreationHelper extends EventEmitter {
@@ -3848,128 +3847,6 @@ class SqlNode_Exists extends SqlNode_Base {
                 socket.inputable = false;
             });
         }
-
-SqlNodeClassMap[SQLNODE_DBENTITY] = {
-    modelClass: SqlNode_DBEntity,
-    comClass: C_SqlNode_DBEntity,
-};
-SqlNodeClassMap[SQLNODE_SELECT] = {
-    modelClass: SqlNode_Select,
-    comClass: C_SqlNode_Select,
-};
-SqlNodeClassMap[SQLNODE_VAR_GET] = {
-    modelClass: SqlNode_Var_Get,
-    comClass: C_SqlNode_Var_Get,
-};
-SqlNodeClassMap[SQLNODE_VAR_SET] = {
-    modelClass: SqlNode_Var_Set,
-    comClass: C_SqlNode_Var_Set,
-};
-SqlNodeClassMap[SQLNODE_NOPERAND] = {
-    modelClass: SqlNode_NOperand,
-    comClass: C_SqlNode_NOperand,
-};
-SqlNodeClassMap[SQLNODE_COLUMN] = {
-    modelClass: SqlNode_Column,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_XJOIN] = {
-    modelClass: SqlNode_XJoin,
-    comClass: C_SqlNode_XJoin,
-};
-SqlNodeClassMap[SQLNODE_DBENTITY_COLUMNSELECTOR] = {
-    modelClass: SqlNode_DBEntity_ColumnSelector,
-    comClass: C_SqlNode_DBEntity_ColumnSelector,
-};
-SqlNodeClassMap[SQLNODE_RET_CONDITION] = {
-    modelClass: SqlNode_Ret_Condition,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_RET_COLUMNS] = {
-    modelClass: SqlNode_Ret_Columns,
-    comClass: C_SqlNode_Ret_Columns,
-};
-SqlNodeClassMap[SQLNODE_RET_ORDER] = {
-    modelClass: SqlNode_Ret_Order,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_CONSTVALUE] = {
-    modelClass: SqlNode_ConstValue,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_COMPARE] = {
-    modelClass: SqlNode_Compare,
-    comClass: C_SqlNode_Compare,
-};
-SqlNodeClassMap[SQLNODE_ROWNUMBER] = {
-    modelClass: SqlNode_RowNumber,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_ISNULL] = {
-    modelClass: SqlNode_IsNullFun,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_ISNULLOPERATOR] = {
-    modelClass: SqlNode_IsNullOperator,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_BETWEEN] = {
-    modelClass: SqlNode_BetWeen,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_CAST] = {
-    modelClass: SqlNode_Cast,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_GETDATE] = {
-    modelClass: SqlNode_Getdate,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_LOGICAL_OPERATOR] = {
-    modelClass: SqlNode_Logical_Operator,
-    comClass: C_SqlNode_Logical_Operator,
-};
-SqlNodeClassMap[SQLNODE_LOGICAL_NOT] = {
-    modelClass: SqlNode_Logical_Not,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_IN_OPERATOR] = {
-    modelClass: SqlNode_In_Operator,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_TOSTRING] = {
-    modelClass: SqlNode_ToString,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_LIKE] = {
-    modelClass: SqlNode_Like,
-    comClass: C_SqlNode_Like,
-};
-SqlNodeClassMap[SQLNODE_CONVERT] = {
-    modelClass: SqlNode_Convert,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_DATEADD] = {
-    modelClass: SqlNode_Dateadd,
-    comClass: C_SqlNode_Dateadd,
-};
-SqlNodeClassMap[SQLNODE_DATEDIFF] = {
-    modelClass: SqlNode_Datediff,
-    comClass: C_SqlNode_Datediff,
-};
-SqlNodeClassMap[SQLNODE_DATENAME] = {
-    modelClass: SqlNode_Datename,
-    comClass: C_SqlNode_Datename,
-};
-SqlNodeClassMap[SQLNODE_DATEPART] = {
-    modelClass: SqlNode_Datepart,
-    comClass: C_SqlNode_Datepart,
-};
-SqlNodeClassMap[SQLNODE_MATHFUN] = {
-    modelClass: SqlNode_Mathfun,
-    comClass: C_SqlNode_Mathfun,
-};
-
     }
     //保存
     requestSaveAttrs() {
@@ -4386,40 +4263,7 @@ class SqlNode_CW_Else extends SqlNode_Base {
     }
 
 }
-//日期类型转换
-class SqlNode_Convert extends SqlNode_Base {
-    constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, SQLNODE_CONVERT, 'Convert', false, nodeJson);
-        this.varchar_len = ReplaceIfNaN(this.varchar_len, 0);
-        autoBind(this);
-        //复原
-        if (nodeJson) {
-            if (this.outputScokets_arr.length > 0) {
-                this.outSocket = this.outputScokets_arr[0];
-                this.outSocket.type = SqlVarType_Boolean;
-            }
-            if (this.inputScokets_arr.length > 0) {
-                this.inSocket = this.inputScokets_arr[0];
-            }
-        }
 
-        if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Boolean });
-            this.addSocket(this.outSocket);
-        }
-        if (this.inSocket == null) {
-            this.inSocket = new NodeSocket('in', this, true, { type: SqlVarType_Table });
-            this.addSocket(this.inSocket);
-        }
-        var format_code=this.inSocket.getExtra('format_code');
-        if(format_code==null){
-            this.inSocket.setExtra('format_code', '21');
-        }
-        var varchar_len=this.inSocket.getExtra('varchar_len');
-        if(varchar_len==null){
-            this.inSocket.setExtra('varchar_len', '10');
-        }
-    }
 // union
 class SqlNode_Union extends SqlNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
@@ -4639,119 +4483,7 @@ class SqlNode_Ret_Group extends SqlNode_Base {
     }
 }
 
-    requestSaveAttrs() {
-        var rlt = super.requestSaveAttrs();
-        rlt.code=this.inSocket.getExtra('format_code'); 
-        return rlt;
-    }
-
-    restorFromAttrs(attrsJson) {
-    }
-    
-    convertTypeDropdownChangedHandler(data, dropCtl) {
-        var theSocket = this.inSocket;
-        theSocket.setExtra('format_code', data.value);
-        theSocket.fireEvent('changed');
-    }
-
-    varlenInputChangedHandler(ev) {
-        var newVal = ev.target.value;
-        if (isNaN(newVal)) {
-            return;
-        }
-        this.inSocket.setExtra('varchar_len', newVal);
-        this.inSocket.fireEvent('changed');
-    }
-
-    customSocketRender(socket) {
-        if(socket.isIn==false){
-            return null;
-        }
-        var varlenInptELem = null;
-       
-        var varlenValue = socket.getExtra('varchar_len');
-        if(varlenValue==null){
-            varlenValue = 10;
-        }
-        var  format_code = socket.getExtra('format_code');
-        if (this.inputStyle == null) {
-            this.inputStyle = {
-                width: '3em',
-            };
-        }
-        var varlenInptELem = (<input type='int' style={this.inputStyle} value={varlenValue} onChange={this.varlenInputChangedHandler} />);
-        var formatOptions_arr=[
-            {text:'yyyy-mm-dd Thh:mm:ss',value:126},
-            {text:'yyyy-mm-dd hh:mm:ss',value:21},
-            {text:'hh:mi:ss',value:114},
-            {text:'hh:mm:ss',value:108},
-        ];
-        
-        return (
-            <React.Fragment>
-                <div>varchar:{varlenInptELem}</div>
-                <div>
-                     格式:<DropDownControl itemChanged={this.convertTypeDropdownChangedHandler} btnclass='btn-dark' options_arr={formatOptions_arr} textAttrName='text' valueAttrName='value' rootclass='flex-grow-1 flex-shrink-1' value={format_code} />    
-                </div>
-            </React.Fragment>
-        );
-    }
-    //编译
-    compile(helper, preNodes_arr) {
-        var superRet = super.compile(helper, preNodes_arr);
-        if (superRet == false || superRet != null) {
-            return superRet;
-        }
-        var nodeThis = this;
-        //节点名称
-        var thisNodeTitle = nodeThis.getNodeTitle();//convert
-        var usePreNodes_arr = preNodes_arr.concat(this);
-
-        var inSocket = this.inSocket;
-        var tLinks = this.bluePrint.linkPool.getLinksBySocket(inSocket);
-
-        if (tLinks.length == 0) {
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle
-                , nodeThis
-                , helper.clickLogBadgeItemHandler)
-                , '输入不能为空']);
-            return false;
-        }
-        var link = tLinks[0];
-        var outNode = link.outSocket.node;
-        
-        var compileRet = outNode.compile(helper, usePreNodes_arr);
-        if (compileRet == false) {
-            return false;
-        }
-        var varchar_len = inSocket.getExtra('varchar_len');
-        if(isNaN(varchar_len) || varchar_len <= 0 || varchar_len > 20){
-            varchar_len = 10;
-            helper.logManager.warnEx([helper.logManager.createBadgeItem(
-                thisNodeTitle
-                , nodeThis
-                , helper.clickLogBadgeItemHandler)
-                , 'varchar Length使用了默认值10']);
-        }
-        var code = inSocket.getExtra('format_code');
-        if(isNaN(code)){
-            code = 21;
-            helper.logManager.warnEx([helper.logManager.createBadgeItem(
-                thisNodeTitle
-                , nodeThis
-                , helper.clickLogBadgeItemHandler)
-                , 'format_code使用了默认值21']);
-        }
-
-        var inputCompileStrContent = compileRet.getSocketOut(link.outSocket).strContent; 
-        var finalStr = 'convert(varchar(' + varchar_len + '),' + inputCompileStrContent + ','+code+')';
-        var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, finalStr);
-        helper.setCompileRetCache(this, selfCompileRet);
-        return selfCompileRet;
-    }
-}
+   
     SqlNodeClassMap[SQLNODE_DBENTITY] = {
         modelClass: SqlNode_DBEntity,
         comClass: C_SqlNode_DBEntity,
@@ -4864,12 +4596,6 @@ class SqlNode_Ret_Group extends SqlNode_Base {
         modelClass:SqlNode_Like,
         comClass:C_SqlNode_SimpleNode,
     };
-    SqlNodeClassMap[SQLNODE_CONVERT] = {
-        modelClass: SqlNode_Convert,
-        comClass: C_SqlNode_SimpleNode,
-    };
-    
-    
     SqlNodeClassMap[SQLDEF_UNION]={
         modelClass:SqlNode_Union,
         comClass:C_SqlNode_Union,
