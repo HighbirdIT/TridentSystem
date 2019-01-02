@@ -23,18 +23,7 @@ const SQLNODE_GETDATE = 'getdate';
 const SQLNODE_LOGICAL_NOT = 'logical_not';
 const SQLNODE_IN_OPERATOR = 'in_operator';
 const SQLNODE_LIKE = 'like';
-const SQLNODE_EXISTS = 'exists';
-const SQLNODE_AGGREGATE = 'aggregate';
-const SQLNODE_TOSTRING = 'tostring';
-const SQLNODE_CASE_WHEN = 'case_when';
-const SQLNODE_CW_WHEN = 'cw_when';
-const SQLNODE_CW_ELSE = 'cw_else';
-const SQLDEF_VAR = 'variable';
-const SQLNODE_CONVERT = 'convert';
-const SQLNODE_DATEADD = 'dateadd';        
-const SQLNODE_DATEDIFF = 'datediff';
-const SQLNODE_DATENAME = 'datename';   
-const SQLNODE_DATEPART = 'datepart';                  
+const SQLNODE_EXISTS = 'exists';              
 const SQLDEF_VAR = 'def_variable';
 const SQLNODE_TOSTRING='tostring';
 const SQLNODE_CASE_WHEN='case_when';
@@ -43,7 +32,7 @@ const SQLNODE_CW_ELSE='cw_else';
 const SQLDEF_UNION='union';
 var SqlNodeClassMap = {};
 // CONSTSQLNODES_ARR output是常量的节点类型
-const SQL_OutSimpleValueNode_arr = [SQLNODE_COLUMN, SQLNODE_VAR_GET, SQLNODE_CONSTVALUE, SQLNODE_GETDATE, SQLNODE_CAST, SQLNODE_CONVERT];
+const SQL_OutSimpleValueNode_arr = [SQLNODE_COLUMN, SQLNODE_VAR_GET, SQLNODE_CONSTVALUE, SQLNODE_GETDATE, SQLNODE_CAST];
 
 
 class NodeCreationHelper extends EventEmitter {
@@ -4059,128 +4048,6 @@ class SqlNode_Exists extends SqlNode_Base {
                 socket.inputable = false;
             });
         }
-
-SqlNodeClassMap[SQLNODE_DBENTITY] = {
-    modelClass: SqlNode_DBEntity,
-    comClass: C_SqlNode_DBEntity,
-};
-SqlNodeClassMap[SQLNODE_SELECT] = {
-    modelClass: SqlNode_Select,
-    comClass: C_SqlNode_Select,
-};
-SqlNodeClassMap[SQLNODE_VAR_GET] = {
-    modelClass: SqlNode_Var_Get,
-    comClass: C_SqlNode_Var_Get,
-};
-SqlNodeClassMap[SQLNODE_VAR_SET] = {
-    modelClass: SqlNode_Var_Set,
-    comClass: C_SqlNode_Var_Set,
-};
-SqlNodeClassMap[SQLNODE_NOPERAND] = {
-    modelClass: SqlNode_NOperand,
-    comClass: C_SqlNode_NOperand,
-};
-SqlNodeClassMap[SQLNODE_COLUMN] = {
-    modelClass: SqlNode_Column,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_XJOIN] = {
-    modelClass: SqlNode_XJoin,
-    comClass: C_SqlNode_XJoin,
-};
-SqlNodeClassMap[SQLNODE_DBENTITY_COLUMNSELECTOR] = {
-    modelClass: SqlNode_DBEntity_ColumnSelector,
-    comClass: C_SqlNode_DBEntity_ColumnSelector,
-};
-SqlNodeClassMap[SQLNODE_RET_CONDITION] = {
-    modelClass: SqlNode_Ret_Condition,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_RET_COLUMNS] = {
-    modelClass: SqlNode_Ret_Columns,
-    comClass: C_SqlNode_Ret_Columns,
-};
-SqlNodeClassMap[SQLNODE_RET_ORDER] = {
-    modelClass: SqlNode_Ret_Order,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_CONSTVALUE] = {
-    modelClass: SqlNode_ConstValue,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_COMPARE] = {
-    modelClass: SqlNode_Compare,
-    comClass: C_SqlNode_Compare,
-};
-SqlNodeClassMap[SQLNODE_ROWNUMBER] = {
-    modelClass: SqlNode_RowNumber,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_ISNULL] = {
-    modelClass: SqlNode_IsNullFun,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_ISNULLOPERATOR] = {
-    modelClass: SqlNode_IsNullOperator,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_BETWEEN] = {
-    modelClass: SqlNode_BetWeen,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_CAST] = {
-    modelClass: SqlNode_Cast,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_GETDATE] = {
-    modelClass: SqlNode_Getdate,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_LOGICAL_OPERATOR] = {
-    modelClass: SqlNode_Logical_Operator,
-    comClass: C_SqlNode_Logical_Operator,
-};
-SqlNodeClassMap[SQLNODE_LOGICAL_NOT] = {
-    modelClass: SqlNode_Logical_Not,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_IN_OPERATOR] = {
-    modelClass: SqlNode_In_Operator,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_TOSTRING] = {
-    modelClass: SqlNode_ToString,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_LIKE] = {
-    modelClass: SqlNode_Like,
-    comClass: C_SqlNode_Like,
-};
-SqlNodeClassMap[SQLNODE_CONVERT] = {
-    modelClass: SqlNode_Convert,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_DATEADD] = {
-    modelClass: SqlNode_Dateadd,
-    comClass: C_SqlNode_Dateadd,
-};
-SqlNodeClassMap[SQLNODE_DATEDIFF] = {
-    modelClass: SqlNode_Datediff,
-    comClass: C_SqlNode_Datediff,
-};
-SqlNodeClassMap[SQLNODE_DATENAME] = {
-    modelClass: SqlNode_Datename,
-    comClass: C_SqlNode_Datename,
-};
-SqlNodeClassMap[SQLNODE_DATEPART] = {
-    modelClass: SqlNode_Datepart,
-    comClass: C_SqlNode_Datepart,
-};
-SqlNodeClassMap[SQLNODE_MATHFUN] = {
-    modelClass: SqlNode_Mathfun,
-    comClass: C_SqlNode_Mathfun,
-};
-
     }
     //保存
     requestSaveAttrs() {

@@ -39,18 +39,18 @@ const SqlOperator_IsNull ='is null';
 const SqlOperator_IsNotNull='is not null';
 
 //2018-12-22黄永恒编辑datepart
-const Datepart_yy ='yy';//年
-const Datepart_qq ='qq';//季度
-const Datepart_mm ='mm';//月
+const Datepart_year ='year';//年
+const Datepart_quarter ='quarter';//季度
+const Datepart_month ='month';//月
 const Datepart_dy ='dy';//年中第几天
-const Datepart_dd ='dd';//天
+const Datepart_day ='day';//天
 const Datepart_wk ='wk';//周
-const Datepart_dw ='dw';//星期几
-const Datepart_hh ='hh';//小时
-const Datepart_mi ='mi';//分钟
-const Datepart_ss ='ss';//秒
+const Datepart_week ='week';//星期几
+const Datepart_hours ='hours';//小时
+const Datepart_minutes ='minutes';//分钟
+const Datepart_seconds ='seconds';//秒
 const Datepart_ms ='ms';//毫秒
-const Datepart_arr = [Datepart_yy,Datepart_qq,Datepart_mm,Datepart_dy,Datepart_dd,Datepart_wk,Datepart_dw,Datepart_hh,Datepart_mi,Datepart_ss,Datepart_ms];
+const Datepart_arr = [Datepart_year,Datepart_quarter,Datepart_month,Datepart_dy,Datepart_day,Datepart_wk,Datepart_week,Datepart_hours,Datepart_minutes,Datepart_seconds,Datepart_ms];
 
 //2018-12-25黄永恒编辑math
 const Math_ABS ='ABS';//计算绝对值
@@ -62,6 +62,33 @@ const Math_POWER ='POWER';//计算指定表达式的制定幂的值
 const Math_SQUARE ='SQUARE';//计算参数的平方值
 const Math_SQRT ='SQRT';//计算参数的平方根
 const Math_arr =[Math_ABS,Math_CEILING,Math_FLOOR,Math_RAND,Math_ROUND,Math_POWER,Math_SQUARE,Math_SQRT];
+
+//2018-23-31黄永恒编辑charfunType
+const CharfunType_ASCII = 'ASCII';//返回字符表达式中最左侧字符的ASCII代码值  select ASCII('a')--97
+const CharfunType_CHAR = 'CHAR';//将整数ASCII代码转换为字符 select CHAR(97)--a
+const CharfunType_LEFT = 'LEFT';//返回字符表达式最左侧指定数目的字符串 --select LEFT('abcdefg',1)--'a'
+const CharfunType_RIGHT = 'RIGHT';//返回字符表达式最右侧指定数目的字符串  --select RIGHT('abcdefg',1)--'g'
+const CharfunType_SUBSTRING = 'SUBSTRING';//SUBSTRING（被截取字符串,开始位置,长度） --SELECT SUBSTRING('abcd',1,1)--a 
+const CharfunType_LOWER = 'LOWER';//返回转换为小写的字符串 --select LOWER('abcdefg')--'abcdefg'
+const CharfunType_UPPER = 'UPPER';//返回转换为大写的字符串 --select UPPER('abcdefg')--ABCDEFG
+const CharfunType_LTRIM = 'LTRIM';//返回去左空格的字符串 --select LTRIM('  abcdefg')--'abcdefg'
+const CharfunType_RTRIM = 'RTRIM';//返回去右空格的字符串 --select RTRIM('abcdefg    ')--'abcdefg'
+const CharfunType_CHARINDEX = 'CHARINDEX';//返回表达式中指定字符的开始位置  --select CHARINDEX('a','abcdefg',1)--1
+const CharfunType_PATINDEX = 'PATINDEX';//返回指定表达式中模式第一次出现的开始位置 --select PATINDEX('%cd%','abcdefg')--3
+const CharfunType_REPLACE = 'REPLACE';//replace（被搜索字符串,要被替换的字符串，替换的字符串） --select REPLACE('abcdefg','cd','a')--abaefg
+const CharfunType_REPLICATE = 'REPLICATE';//返回指定次数重复的表达式  --select REPLICATE('abc|',4)--abc|abc|abc|abc|
+const CharfunType_REVERSE = 'REVERSE';//返回反转后的字符串  --select REVERSE('ABC')--CBA
+const CharfunType_LEN = 'LEN';//返回字符串长度 --select LEN('abcdefg')--7
+const CharfunType_STUFF = 'STUFF';//删除指定长度的字符,并在指定的起点处插入另一组字符  
+                                //--stuff(character_expression , start , length ,character_expression)
+                                //character_expression被搜索字符串
+                                //start开始位置
+                                //length要删除的长度
+                                //character_expression替换字符串
+const CharfunType_SPACE = 'SPACE';//--返回指定个数空格的字符串 --select 'A'+ space(2)+'B'--A  B
+const CharfunType_arr = [CharfunType_ASCII,CharfunType_CHAR,CharfunType_LEFT,CharfunType_RIGHT,CharfunType_SUBSTRING,CharfunType_LOWER,
+                         CharfunType_UPPER,CharfunType_LTRIM,CharfunType_RTRIM,CharfunType_CHARINDEX,CharfunType_PATINDEX,CharfunType_REPLACE,
+                         CharfunType_REPLICATE,CharfunType_REVERSE,CharfunType_LEN,CharfunType_STUFF,CharfunType_SPACE];
 
 /**
  * 逻辑运算符 and or not
