@@ -1124,3 +1124,43 @@ render() {
     </C_SqlNode_Frame>
 }
 }
+class C_SqlNode_Union extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+
+        C_SqlNode_Base(this);
+        this.state = {
+            unionType: this.props.nodedata.unionType,
+        }
+    }
+
+    selectItemChangedHandler(newunionType) {
+        var nodeData = this.props.nodedata;
+        nodeData.unionType = newunionType;
+        this.setState({
+            unionType: newunionType
+        });
+    }
+
+    cusHeaderFuc() {
+        if (this.ddcStyle == null) {
+            this.ddcStyle = {
+                width: '100px',
+                margin: '10px',
+            }
+        }
+        var nodeData = this.props.nodedata;
+        return (<DropDownControl options_arr={['union','union all']} value={nodeData.unionType} itemChanged={this.selectItemChangedHandler} style={this.ddcStyle} />);
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' cusHeaderFuc={this.cusHeaderFuc} >
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
+            </div>
+        </C_SqlNode_Frame>
+    }
+}

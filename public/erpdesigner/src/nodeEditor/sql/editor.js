@@ -77,15 +77,19 @@ const SqlNodeEditorControls_arr =[
     }
     ,{
         label:'case_when',
-        nodeClass:SqlNode_Case_When
+        nodeClass:SqlNode_Case_When,
     },
     {
-        label:'cw_when',
-        nodeClass:SqlNode_CW_When
+        label:'then',
+        nodeClass:SqlNode_CW_When,
     }
     ,{
-        label:'cw_else',
-        nodeClass:SqlNode_CW_Else
+        label:'else',
+        nodeClass:SqlNode_CW_Else,
+    },
+    {
+        label:'union',
+        nodeClass:SqlNode_Union,
     }
     ,
     {

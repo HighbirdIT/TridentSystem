@@ -57,6 +57,7 @@ class ContextFinder{
             label = 'unname';
         }
         this.item_arr.push({label:label,data:data});
+        return this.item_arr[this.item_arr.length - 1];
     }
 
     setTest(key){
