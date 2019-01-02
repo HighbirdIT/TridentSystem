@@ -261,7 +261,7 @@ var DataMaster = function (_EventEmitter4) {
         key: 'getSqlBPByCode',
         value: function getSqlBPByCode(code) {
             return this.BP_sql_arr.find(function (item) {
-                return item.name == name;
+                return item.code == code;
             });
         }
     }, {

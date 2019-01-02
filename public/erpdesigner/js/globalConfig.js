@@ -31,7 +31,12 @@ var JoinType_Left = 'left join';
 var JoinType_Right = 'right join';
 var JoinType_Cross = 'cross join';
 var JoinTypes_arr = [JoinType_Inner, JoinType_Left, JoinType_Right, JoinType_Cross];
-
+var Aggregate_count = 'count';
+var Aggregate_sum = 'sum';
+var Aggregate_avg = 'avg';
+var Aggregate_max = 'max';
+var Aggregate_min = 'min';
+var Aggregate_arr = [Aggregate_count, Aggregate_sum, Aggregate_avg, Aggregate_max, Aggregate_min];
 var SqlOperator_IsNull = 'is null';
 var SqlOperator_IsNotNull = 'is not null';
 
