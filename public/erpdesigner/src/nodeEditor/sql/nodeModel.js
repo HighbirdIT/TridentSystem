@@ -12,6 +12,7 @@ const SQLNODE_RET_CONDITION = 'ret_condition';
 const SQLNODE_RET_COLUMNS = 'ret_columns';
 const SQLNODE_RET_ORDER = 'ret_order';
 const SQLNODE_RET_GROUP = 'ret_group';
+const SQLNODE_RET_HAVING = 'ret_having';
 const SQLNODE_ROWNUMBER = 'rownumber';
 const SQLNODE_ISNULL = 'isnullfun';
 const SQLNODE_ISNULLOPERATOR = 'isnulloperator';
@@ -1254,6 +1255,9 @@ class SqlNode_Column extends SqlNode_Base {
     getCompareKey() {
         return (this.tableAlias == null ? this.tableCode : this.tableAlias) + '.' + this.columnName;
     }
+    isAggregation() {
+        return { selectNodeCompilingSocket: selectSocket, isaggregation: isaggrega }
+    }
 
     compile(helper, preNodes_arr) {
         var superRet = super.compile(helper, preNodes_arr);
@@ -1261,11 +1265,18 @@ class SqlNode_Column extends SqlNode_Base {
             return superRet;
         }
         var belongSelectNode = null;
-        for (var i = preNodes_arr.length - 1; i >= 0; --i) {
+        var demandColumn = true;
+        var nodeType = null;
+        for (var i = preNodes_arr.length - 1; i >= 0; i--) {
             if (preNodes_arr[i].type == SQLNODE_SELECT) {
                 belongSelectNode = preNodes_arr[i];
                 break;
             }
+            else if (preNodes_arr[i].type == SQLNODE_AGGREGATE || preNodes_arr[i].type == SQLNODE_CONSTVALUE) {
+                demandColumn = false;
+                nodeType = (preNodes_arr[i].type == SQLNODE_AGGREGATE ? SQLNODE_AGGREGATE : SQLNODE_CONSTVALUE)
+            }
+
         }
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
@@ -1277,6 +1288,10 @@ class SqlNode_Column extends SqlNode_Base {
                 , '没有找到归属select节点']);
             return false;
         }
+        //var selectNodeCompilingSocket = helper[belongSelectNode.id + '_complingSocket'];
+        //var columnNodeSocket=[];
+        helper[belongSelectNode.id + '_complingSocket'] = (demandColumn == true ? { demandColumn: true, nodeType: nodeType } : { demandColumn: false, nodeType: nodeType });
+
         var compareLabel = (this.tableAlias == null ? this.tableName : this.tableAlias);
         var selectNodeContext = helper.getContext(belongSelectNode, new ContextFinder(ContextType_DBEntity));
         var columnItem = null;
@@ -1391,6 +1406,7 @@ class SqlNode_Select extends SqlNode_Base {
             this.conditionNode = this.nodes_arr.find(node => { return node.type == SQLNODE_RET_CONDITION });
             this.orderNode = this.nodes_arr.find(node => { return node.type == SQLNODE_RET_ORDER });
             this.groupNode = this.nodes_arr.find(node => { return node.type == SQLNODE_RET_GROUP });
+            this.havingNode = this.nodes_arr.find(node => { return node.type == SQLNODE_RET_HAVING });
         }
         if (this.inSocket == null) {
             this.inSocket = new NodeSocket('in', this, true, { type: SqlVarType_Table });
@@ -1411,10 +1427,13 @@ class SqlNode_Select extends SqlNode_Base {
             this.conditionNode = new SqlNode_Ret_Condition({ left: 250, top: 0 }, this, createHelper);
         }
         if (this.orderNode == null) {
-            this.orderNode = new SqlNode_Ret_Order({ left: 400, top: 0 }, this, createHelper);
+            this.orderNode = new SqlNode_Ret_Order({ left: 300, top: 0 }, this, createHelper);
         }
         if (this.groupNode == null) {
             this.groupNode = new SqlNode_Ret_Group({ left: 400, top: 0 }, this, createHelper);
+        }
+        if (this.havingNode == null) {
+            this.havingNode = new SqlNode_Ret_Having({ left: 500, top: 0 }, this, createHelper);
         }
         if (this.columns_arr == null) {
             this.columns_arr = [];
@@ -1650,17 +1669,6 @@ class SqlNode_Select extends SqlNode_Base {
         var createInfo = this.autoCreateHelper[newColNode.id];
         if (createInfo) {
             if (createInfo.step == 'created-column') {
-                /*
-                var inSocket = createInfo.newSocket;
-                var outSocket = newColNode.outSocket;
-                var inSocketCenter = inSocket.currentComponent.getCenterPos();
-                var outSocketCenter = outSocket.currentComponent.getCenterPos();
-                var offset = {x:inSocketCenter.x - outSocketCenter.x, y:inSocketCenter.y - outSocketCenter.y};
-                offset.x -= 150;
-                createInfo.newColNode.setPos(newColNode.left + offset.x, newColNode.top + offset.y);
-                createInfo.newColNode.currentFrameCom.reDraw();
-                */
-                // addLink
                 var newLink = this.bluePrint.linkPool.addLink(newColNode.outSocket, createInfo.newSocket);
                 newLink.straightOut(-150);
             }
@@ -1669,279 +1677,263 @@ class SqlNode_Select extends SqlNode_Base {
         }
         newColNode.off(Event_FrameComMount, this.newColumNodeFrameComMounted);
     }
-
-    binarySearch(array,helper) {
-
-        //递归终止条件
-        if(array.length < 0)
-        {
-            return null;
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
         }
-        var outColumns_arr=[];
-        var socketOutData = null;
-        for (var socketI = 0; socketI < array.length; ++socketI) {
-                var columnNode = this.columnNode;
-                var columnNode_inSockets = columnNode.inputScokets_arr;
-                var nodeThis = this;
-                var thisNodeTitle = nodeThis.getNodeTitle();
-                var socket = columnNode_inSockets[socketI];
-                var link = helper.getLinksBySocket(socket)[0];
-                var outNode = link.outSocket.node;
-                var nodeType = outNode.type;
-                if(nodeType != SQLNODE_COLUMN)
-                {
-                    this.binarySearch(outNode.inputScokets_arr,helper);
-                }
-                else
-                {
-                    outColumns_arr.push({
-                        strcolName: socketOutData.colName,
-                    });
-        
-                }
-                return outColumns_arr;
-            //     var outNodeCompileRet = outNode.compile(helper, usePreNodes_arr);
-            //     if (outNodeCompileRet == false) {
-            //         return false;
-            //     }
-            // if (nodeType != SQLNODE_COLUMN) {
-            //     this.binarySearch(outNode.inputScokets_arr);
-            // }
-    
+        var columnNode = this.columnNode;
+        var columnNode_inSockets = columnNode.inputScokets_arr;
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        if (IsEmptyString(this.title)) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle
+                , nodeThis
+                , helper.clickLogBadgeItemHandler)
+                , '需要指定title']);
+            return false;
         }
-    }
-
-
-compile(helper, preNodes_arr) {
-    var superRet = super.compile(helper, preNodes_arr);
-    if (superRet == false || superRet != null) {
-        return superRet;
-    }
-    var columnNode = this.columnNode;
-    var columnNode_inSockets = columnNode.inputScokets_arr;
-    var nodeThis = this;
-    var thisNodeTitle = nodeThis.getNodeTitle();
-    if (IsEmptyString(this.title)) {
-        helper.logManager.errorEx([helper.logManager.createBadgeItem(
-            thisNodeTitle
-            , nodeThis
-            , helper.clickLogBadgeItemHandler)
-            , '需要指定title']);
-        return false;
-        return false;
-    }
-    if (columnNode_inSockets.length == 0) {
-        helper.logManager.errorEx([helper.logManager.createBadgeItem(
-            thisNodeTitle
-            , columnNode
-            , helper.clickLogBadgeItemHandler)
-            , '没有选择任何返回列。']);
-        return false;
-    }
-    var emptySocket = null;
-    var emptySocketIndex = 0;
-    var selectColumns = [];
-    for (var socketI = 0; socketI < columnNode_inSockets.length; ++socketI) {
-        var socket = columnNode_inSockets[socketI];
-        if (helper.getLinksBySocket(socket).length == 0) {
-            emptySocket = socket;
-            emptySocketIndex = socketI;
-            break;
-        }
-    }
-    if (emptySocket) {
-        helper.logManager.errorEx([helper.logManager.createBadgeItem(
-            thisNodeTitle
-            , columnNode
-            , helper.clickLogBadgeItemHandler)
-            , '第' + (emptySocketIndex + 1) + '个输入接口是空链接']);
-        return false;
-    }
-
-    // compile from
-    var fromString = '';
-    if (this.inputScokets_arr.length == 0) {
-        helper.logManager.warnEx([helper.logManager.createBadgeItem(
-            thisNodeTitle
-            , nodeThis
-            , helper.clickLogBadgeItemHandler)
-            , '没有输入接口']);
-    }
-    var usePreNodes_arr = preNodes_arr.concat(this);
-    var fromScoket = this.inputScokets_arr[0];
-    var t_links = helper.getLinksBySocket(fromScoket);
-    if (t_links.length > 0) {
-        var fromLink = t_links[0];
-        if (fromLink.outSocket != null && fromLink.outSocket.node != null) {
-            if (fromLink.outSocket.type != SqlVarType_Table) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle
-                    , nodeThis
-                    , helper.clickLogBadgeItemHandler)
-                    , '的输入不是一个关系']);
-                return false;
-            }
-            var fromNode = fromLink.outSocket.node;
-            var compileRet = fromNode.compile(helper, usePreNodes_arr);
-            if (compileRet == false) {
-                // child compile fail
-                return false;
-            }
-            fromString = compileRet.getSocketOut(fromLink.outSocket).strContent;
-            if (fromNode.type == SQLNODE_SELECT) {
-                // select node 中断
-                fromString = bracketStr(fromString) + ' as ' + fromNode.title;
-            }
-        }
-    }
-    var selectColumns_arr = [];
-    var outColumns_arr = [];
-    var selectColumns_map = {};
-    var socketOutData = null;
-    for (var socketI = 0; socketI < columnNode_inSockets.length; ++socketI) {
-        var socket = columnNode_inSockets[socketI];
-        var link = helper.getLinksBySocket(socket)[0];
-        var outNode = link.outSocket.node;
-        var isColumnNode = outNode.type == SQLNODE_COLUMN;
-        var nodeType = outNode.type;
-        var alias = socket.getExtra('alias');
-        var colName = alias;
-        if (IsEmptyString(alias)) {
-            if (!isColumnNode) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle
-                    , columnNode
-                    , helper.clickLogBadgeItemHandler)
-                    , '第' + (socketI + 1) + '列没有指定列名!']);
-                return false;
-            }
-            colName = outNode.columnName;
-        }
-        if (selectColumns_map[colName]) {
+        if (columnNode_inSockets.length == 0) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle
                 , columnNode
                 , helper.clickLogBadgeItemHandler)
-                , "列名:'" + colName + "'重复了!"]);
+                , '没有选择任何返回列。']);
             return false;
         }
-        selectColumns_map[colName] = 1;
-        var outNodeCompileRet = outNode.compile(helper, usePreNodes_arr);
-        if (outNodeCompileRet == false) {
+        var emptySocket = null;
+        var emptySocketIndex = 0;
+        for (var socketI = 0; socketI < columnNode_inSockets.length; ++socketI) {
+            var socket = columnNode_inSockets[socketI];
+            if (helper.getLinksBySocket(socket).length == 0) {
+                emptySocket = socket;
+                emptySocketIndex = socketI;
+                break;
+            }
+        }
+        if (emptySocket) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle
+                , columnNode
+                , helper.clickLogBadgeItemHandler)
+                , '第' + (emptySocketIndex + 1) + '个输入接口是空链接']);
             return false;
         }
-        socketOutData = outNodeCompileRet.getSocketOut(link.outSocket);
-        selectColumns_arr.push({
-            alias: alias,
-            strContent: socketOutData.strContent,
-            strcolName: outNode.columnName,
-        });
-        if (nodeType != SQLNODE_AGGREGATE) {
-           var ttt= this.binarySearch(outNode,helper,usePreNodes_arr);
 
-            // ttt.forEach(ss=>{
-            //     outColumns_arr.push({
-            //         strContent: ss,
-            //     });
-            // })
+        // compile from
+        var fromString = '';
+        if (this.inputScokets_arr.length == 0) {
+            helper.logManager.warnEx([helper.logManager.createBadgeItem(
+                thisNodeTitle
+                , nodeThis
+                , helper.clickLogBadgeItemHandler)
+                , '没有输入接口']);
+        }
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var fromScoket = this.inputScokets_arr[0];
+        var t_links = helper.getLinksBySocket(fromScoket);
+        if (t_links.length > 0) {
+            var fromLink = t_links[0];
+            if (fromLink.outSocket != null && fromLink.outSocket.node != null) {
+                if (fromLink.outSocket.type != SqlVarType_Table) {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle
+                        , nodeThis
+                        , helper.clickLogBadgeItemHandler)
+                        , '的输入不是一个关系']);
+                    return false;
+                }
+                var fromNode = fromLink.outSocket.node;
+                var compileRet = fromNode.compile(helper, usePreNodes_arr);
+                if (compileRet == false) {
+                    // child compile fail
+                    return false;
+                }
+                fromString = compileRet.getSocketOut(fromLink.outSocket).strContent;
+                if (fromNode.type == SQLNODE_SELECT) {
+                    // select node 中断
+                    fromString = bracketStr(fromString) + ' as ' + fromNode.title;
+                }
             }
-                outColumns_arr.push({
-                    strContent: socketOutData.strContent,
-
-                });
-            }
-        
-    
-
-
-    var sortNodeCompileRet = this.orderNode.compile(helper, usePreNodes_arr);
-    if (sortNodeCompileRet == false) {
-        return false;
-    }
-    var sortString = sortNodeCompileRet.getDirectOut().strContent;
-
-    var conditionNodeCompileRet = this.conditionNode.compile(helper, usePreNodes_arr);
-    if (conditionNodeCompileRet == false) {
-        return false;
-    }
-    var whereString = conditionNodeCompileRet.getDirectOut().strContent;
-
-    var groupNodeCompileRet = this.groupNode.compile(helper, usePreNodes_arr);
-    if (groupNodeCompileRet == false) {
-        return false;
-    }
-    var groupcolums = groupNodeCompileRet.getDirectOut().strContent;
-    if (groupcolums.length != 0) {
-        var groupstring = '';
-        for (var i = 0; i < selectColumns_arr.length; ++i) {
-            for (var j = 0; j < groupcolums.colums.length; ++j) {
-                if (selectColumns_arr[i].strContent != groupcolums.colums[j]) {
+        }
+        var selectColumns_arr = [];
+        var nonAggregateColumns_arr = [];
+        var AggregateColumns = false;
+        var outColumns_arr = [];
+        var selectColumns_map = {};
+        var socketOutData = null;
+        for (var socketI = 0; socketI < columnNode_inSockets.length; ++socketI) {
+            var socket = columnNode_inSockets[socketI];
+            var link = helper.getLinksBySocket(socket)[0];
+            var outNode = link.outSocket.node;
+            var isColumnNode = outNode.type == SQLNODE_COLUMN;
+            var nodeType = outNode.type;
+            var alias = socket.getExtra('alias');
+            var colName = alias;
+            if (IsEmptyString(alias)) {
+                if (!isColumnNode) {
                     helper.logManager.errorEx([helper.logManager.createBadgeItem(
                         thisNodeTitle
                         , columnNode
                         , helper.clickLogBadgeItemHandler)
-                        , "ttttttttttttttt"]);
+                        , '第' + (socketI + 1) + '列没有指定列名!']);
                     return false;
+                }
+                colName = outNode.columnName;
+            }
+            if (selectColumns_map[colName]) {
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle
+                    , columnNode
+                    , helper.clickLogBadgeItemHandler)
+                    , "列名:'" + colName + "'重复了!"]);
+                return false;
+            }
+            selectColumns_map[colName] = 1;
+            helper[this.id + '_complingSocket'] = socket;
+
+            var outNodeCompileRet = outNode.compile(helper, usePreNodes_arr);
+            if (outNodeCompileRet == false) {
+                return false;
+            }
+            outNodeCompileRet.select
+            socketOutData = outNodeCompileRet.getSocketOut(link.outSocket);
+            var selectNodeCompilingSocket = helper[this.id + '_complingSocket'];
+            if (selectNodeCompilingSocket.demandColumn) {
+                nonAggregateColumns_arr.push({
+                    alias: alias,
+                    strContent: socketOutData.strContent,
+                    strcolName: outNode.columnName,
+                });
+            }
+            else if (selectNodeCompilingSocket.nodeType == SQLNODE_AGGREGATE) {
+                    AggregateColumns=true;
+            }
+            selectColumns_arr.push({
+                alias: alias,
+                strContent: socketOutData.strContent,
+                strcolName: outNode.columnName,
+            });
+        }
+        var sortNodeCompileRet = this.orderNode.compile(helper, usePreNodes_arr);
+        if (sortNodeCompileRet == false) {
+            return false;
+        }
+        var sortString = sortNodeCompileRet.getDirectOut().strContent;
+
+        var conditionNodeCompileRet = this.conditionNode.compile(helper, usePreNodes_arr);
+        if (conditionNodeCompileRet == false) {
+            return false;
+        }
+        var whereString = conditionNodeCompileRet.getDirectOut().strContent;
+
+        var groupNodeCompileRet = this.groupNode.compile(helper, usePreNodes_arr);
+        if (groupNodeCompileRet == false) {
+            return false;
+        }
+
+        var havingNodeCompileRet = this.havingNode.compile(helper, usePreNodes_arr);
+        if (havingNodeCompileRet == false) {
+            return false;
+        }
+        var havingString = conditionNodeCompileRet.getDirectOut().strContent;
+
+        var groupNodeInputLenth = groupNodeCompileRet.node.inputScokets_arr.length
+            if (AggregateColumns && groupNodeInputLenth == 0||havingNodeCompileRet.node.inputScokets_arr > 0 && groupNodeInputLenth == 0) {
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle
+                    , this.groupNode
+                    , helper.clickLogBadgeItemHandler)
+                    , "存在聚合函数，未使用group节点"]);
+                return false;
+        }
+        var groupstring = '';
+        if (groupNodeInputLenth != 0) {
+            var groupcolums = groupNodeCompileRet.getDirectOut().strContent;
+            if (groupcolums.colums.length < nonAggregateColumns_arr.length) {
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle
+                    , this.groupNode
+                    , helper.clickLogBadgeItemHandler)
+                    , "Group列数和select列数不一致"]);
+                return false;
+            }
+
+            for (var i = 0; i < nonAggregateColumns_arr.length; ++i) {
+                var exist = false;
+                for (var j = 0; j < groupcolums.colums.length; ++j) {
+                    if (groupcolums.colums[j].indexOf(nonAggregateColumns_arr[i].strContent) == !-1) {
+                        exist = true;
+                        break;
+                    }
+                }
+                if (!exist) {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle
+                        , this.groupNode
+                        , helper.clickLogBadgeItemHandler)
+                        , nonAggregateColumns_arr[i].strContent + "字段不存在Group里面"]);
+                    return false;
+
+                }
+                else {
+                    groupstring += (i == 0 ? '' : ',') + groupcolums.colums[i];
                 }
 
             }
-
-
-            groupstring += (i == 0 ? '' : ',') + groupcolums.colums[i];
-
         }
-    }
-    var selfCompileRet = new CompileResult(this);
-    var columnsStr = '';
-    selectColumns_arr.forEach((x, i) => { columnsStr += (i == 0 ? '' : ',') + x.strContent + (x.alias == null ? '' : ' as [' + x.alias + ']') });
+        var selfCompileRet = new CompileResult(this);
+        var columnsStr = '';
+        selectColumns_arr.forEach((x, i) => { columnsStr += (i == 0 ? '' : ',') + x.strContent + (x.alias == null ? '' : ' as [' + x.alias + ']') });
 
-    var topString = '';
-    if (!IsEmptyString(columnNode.topValue)) {
-        if (isNaN(columnNode.topValue)) {
-            var reg = /^\d+%$/;
-            if (!reg.test(columnNode.topValue)) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle
-                    , columnNode
-                    , helper.clickLogBadgeItemHandler)
-                    , "top值不合法"]);
-                return false;
-            }
-            var num = columnNode.topValue.substr(0, columnNode.topValue.length - 1);
-            if (num == 0) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle
-                    , columnNode
-                    , helper.clickLogBadgeItemHandler)
-                    , "top值不合法"]);
-                return false;
-            }
-            else if (num > 100) {
-                helper.logManager.warnEx(
-                    [helper.logManager.createBadgeItem(
+        var topString = '';
+        if (!IsEmptyString(columnNode.topValue)) {
+            if (isNaN(columnNode.topValue)) {
+                var reg = /^\d+%$/;
+                if (!reg.test(columnNode.topValue)) {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
                         thisNodeTitle
                         , columnNode
                         , helper.clickLogBadgeItemHandler)
-                        , "top百分比值被修改为100%"]
-                );
-                num = 100;
+                        , "top值不合法"]);
+                    return false;
+                }
+                var num = columnNode.topValue.substr(0, columnNode.topValue.length - 1);
+                if (num == 0) {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle
+                        , columnNode
+                        , helper.clickLogBadgeItemHandler)
+                        , "top值不合法"]);
+                    return false;
+                }
+                else if (num > 100) {
+                    helper.logManager.warnEx(
+                        [helper.logManager.createBadgeItem(
+                            thisNodeTitle
+                            , columnNode
+                            , helper.clickLogBadgeItemHandler)
+                            , "top百分比值被修改为100%"]
+                    );
+                    num = 100;
+                }
+                topString = 'top ' + num + ' percent ';
             }
-            topString = 'top ' + num + ' percent ';
+            else {
+                topString = 'top ' + columnNode.topValue + ' ';
+            }
         }
-        else {
-            topString = 'top ' + columnNode.topValue + ' ';
-        }
+        var finalSql = 'select ' + topString + columnsStr + ' from ' + fromString
+            + (IsEmptyString(whereString) ? '' : ' where ' + whereString)
+            + (IsEmptyString(groupstring) ? '' : ' group by ' + groupstring)
+            + (IsEmptyString(havingString) ? '' : ' having ' + havingString)
+            + (IsEmptyString(sortString) ? '' : ' order by ' + sortString);
+        selfCompileRet.setSocketOut(this.outSocket, finalSql, { tableName: this.title, colName_arr: outColumns_arr });
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
     }
-    var finalSql = 'select ' + topString + columnsStr + ' from ' + fromString
-        + (IsEmptyString(whereString) ? '' : ' where ' + whereString)
-        + (IsEmptyString(groupstring) ? '' : ' group by ' + groupstring)
-        + (IsEmptyString(sortString) ? '' : ' order by ' + sortString);
-    selfCompileRet.setSocketOut(this.outSocket, finalSql, { tableName: this.title });
-    helper.setCompileRetCache(this, selfCompileRet);
-    return selfCompileRet;
 }
-}
-
 
 class SqlNode_Var_Get extends SqlNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
@@ -4597,6 +4589,49 @@ class SqlNode_Aggregate extends SqlNode_Base {
     }
 }
 
+class SqlNode_Ret_Having extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, SQLNODE_RET_HAVING, 'having', false, nodeJson);
+        autoBind(this);
+        this.isConstNode = true;
+
+        if (nodeJson) {
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+                this.inSocket.inputable = false;
+                this.inSocket.type = SqlVarType_Boolean;
+            }
+        }
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true, { type: SqlVarType_Boolean, inputable: false });
+            this.addSocket(this.inSocket);
+        }
+        var self = this;
+    }
+
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var selfCompileRet = new CompileResult(this);
+        var tLinks = this.bluePrint.linkPool.getLinksBySocket(this.inSocket);
+        if (tLinks.length > 0) {
+             var outNode = link.outSocket.node;
+            var tCompileRet = outNode.compile(helper, preNodes_arr);
+            if (tCompileRet == false) {
+                return false;
+            }
+            selfCompileRet.setDirectOut(tCompileRet.getSocketOut(link.outSocket).strContent);
+        }
+        else {
+            selfCompileRet.setDirectOut('');
+        }
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
 SqlNodeClassMap[SQLNODE_DBENTITY] = {
     modelClass: SqlNode_DBEntity,
     comClass: C_SqlNode_DBEntity,
@@ -4716,6 +4751,10 @@ SqlNodeClassMap[SQLNODE_RET_GROUP] = {
 SqlNodeClassMap[SQLNODE_AGGREGATE] = {
     modelClass: SqlNode_Aggregate,
     comClass: C_SqlNode_Aggregate,
+};
+SqlNodeClassMap[SQLNODE_RET_HAVING] = {
+    modelClass: SqlNode_Ret_Having,
+    comClass: C_SqlNode_SimpleNode,
 };
 SqlNodeClassMap[SQLDEF_VAR] = {
     modelClass: SqlDef_Variable,

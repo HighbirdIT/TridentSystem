@@ -198,7 +198,7 @@ class DataMaster extends EventEmitter{
     }
 
     getSqlBPByCode(code){
-        return this.BP_sql_arr.find(item=>{return item.name == name});
+        return this.BP_sql_arr.find(item=>{return item.code == code});
     }
 
     createSqlBP(name, type){
