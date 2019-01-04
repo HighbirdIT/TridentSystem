@@ -295,14 +295,8 @@ class C_SqlNode_DateCon extends React.PureComponent {
             datepartType: newdatepart
         });
     }
-    datepartChangedHandler(newdatepart) {
-        var nodeData = this.props.nodedata;
-        nodeData.datepartType = newdatepart;
-        this.setState({
-            datepartType: newdatepart
-        });
-    }
-    dateChangedHandler(mathType) {
+
+    dateChangedHandler(dateType) {
         var nodeData = this.props.nodedata;
         nodeData.setDateType(dateType);
     }
@@ -320,8 +314,8 @@ class C_SqlNode_DateCon extends React.PureComponent {
         
         var nodeData = this.props.nodedata;
         return (<div style={this.outDivStyle} f-canmove={1}>
-                    <DropDownControl options_arr={['DateAdd','DateDiff','DateName','DatePart']}  value={nodeData.mathType} itemChanged={this.dateChangedHandler} style={this.ddcStyle} />
-                    <DropDownControl options_arr={Datepart_arr} itemChanged={this.datepartChangedHandler} value={nodeData.datepartValue} style={this.ddcStyle} />
+                    <DropDownControl options_arr={['DateAdd','DateDiff','DateName','DatePart']}  value={nodeData.dateType} itemChanged={this.dateChangedHandler} style={this.ddcStyle} />
+                    <DropDownControl options_arr={Datepart_arr} itemChanged={this.datepartChangedHandler} value={nodeData.datepartType} style={this.ddcStyle} />
                 </div> 
            
         );

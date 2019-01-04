@@ -1,10 +1,10 @@
-const SQLNODE_DATEADD = 'dateadd';        
+const SQLNODE_DATEADD = 'dateadd';
 const SQLNODE_DATEDIFF = 'datediff';
-const SQLNODE_DATENAME = 'datename';   
-const SQLNODE_DATEPART = 'datepart'; 
+const SQLNODE_DATENAME = 'datename';
+const SQLNODE_DATEPART = 'datepart';
 const SQLNODE_MATHFUN = 'mathfun';
 const SQLNODE_DATECON = 'datecon';
-const SQLNODE_CONVERT = 'convert'; 
+const SQLNODE_CONVERT = 'convert';
 const SQLNODE_CHARFUN = 'charfun';
 const SQLNODE_NEWID = 'newid';
 
@@ -13,11 +13,11 @@ class SqlNode_Dateadd extends SqlNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, SQLNODE_DATEADD, 'Dateadd', false, nodeJson);
         autoBind(this);
-        
+
         // if (this.operator == null) {
         //     this.operator = 'Datediff';
         // }
-        if(this.datepartValue == null){
+        if (this.datepartValue == null) {
             this.datepartValue = 'day';
         }
         //复原
@@ -39,11 +39,11 @@ class SqlNode_Dateadd extends SqlNode_Base {
             this.addSocket(new NodeSocket('in0', this, true, { type: SqlVarType_Scalar, inputable: true }));
             this.addSocket(new NodeSocket('in1', this, true, { type: SqlVarType_Scalar, inputable: true }));
         }
-     
+
     }
-     
+
     //保存
-    requestSaveAttrs(){
+    requestSaveAttrs() {
         var rlt = super.requestSaveAttrs();
         rlt.operator = this.operator;
         return rlt;
@@ -52,7 +52,7 @@ class SqlNode_Dateadd extends SqlNode_Base {
     restorFromAttrs(attrsJson) {
         assginObjByProperties(this, attrsJson, ['operator']);
     }
-  
+
     //编译
     compile(helper, preNodes_arr) {
         var superRet = super.compile(helper, preNodes_arr);
@@ -65,15 +65,15 @@ class SqlNode_Dateadd extends SqlNode_Base {
         var usePreNodes_arr = preNodes_arr.concat(this);
         var socketVal_arr = [];
         //var inSocket = this.inSocket;
-        var dataone=null;
-        var datatwo=null;
-        for(var i = 0;i<this.inputScokets_arr.length;i++){
+        var dataone = null;
+        var datatwo = null;
+        for (var i = 0; i < this.inputScokets_arr.length; i++) {
             var theSocket = this.inputScokets_arr[i];
             var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-            var tValue=null;
-            if(tLinks.length == 0){
-                tValue=theSocket.defval;//无link，就取输入框的值
-                if(tValue==null || tValue==''){
+            var tValue = null;
+            if (tLinks.length == 0) {
+                tValue = theSocket.defval;//无link，就取输入框的值
+                if (tValue == null || tValue == '') {
                     helper.logManager.errorEx([helper.logManager.createBadgeItem(
                         thisNodeTitle
                         , nodeThis
@@ -82,24 +82,24 @@ class SqlNode_Dateadd extends SqlNode_Base {
                     return false;
                 }
             }
-            else{
+            else {
                 var link = tLinks[0];
                 var outNode = link.outSocket.node;
                 var compileRet = outNode.compile(helper, usePreNodes_arr);
                 if (compileRet == false) {
                     return false;
                 }
-                tValue=compileRet.getSocketOut(link.outSocket).strContent;
-            }   
-            if(isNaN(tValue)){
+                tValue = compileRet.getSocketOut(link.outSocket).strContent;
+            }
+            if (isNaN(tValue)) {
                 tValue = singleQuotesStr(tValue);
             }
-            socketVal_arr.push(tValue);         
+            socketVal_arr.push(tValue);
         }
-        var datepartValue=this.datepartValue;
-        
-        
-        var finalStr = ' dateadd('+datepartValue+','+socketVal_arr[0]+','+socketVal_arr[1]+')';
+        var datepartValue = this.datepartValue;
+
+
+        var finalStr = ' dateadd(' + datepartValue + ',' + socketVal_arr[0] + ',' + socketVal_arr[1] + ')';
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, finalStr);
         helper.setCompileRetCache(this, selfCompileRet);
@@ -112,8 +112,8 @@ class SqlNode_Datediff extends SqlNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, SQLNODE_DATEDIFF, 'Datediff', false, nodeJson);
         autoBind(this);
-        
-        if(this.datepartValue == null){
+
+        if (this.datepartValue == null) {
             this.datepartValue = 'dd';
         }
         //复原
@@ -135,21 +135,21 @@ class SqlNode_Datediff extends SqlNode_Base {
             this.addSocket(new NodeSocket('in0', this, true, { type: SqlVarType_Scalar, inputable: true }));
             this.addSocket(new NodeSocket('in1', this, true, { type: SqlVarType_Scalar, inputable: true }));
         }
-     
+
     }
-     
+
     //保存
-    requestSaveAttrs(){
+    requestSaveAttrs() {
         var rlt = super.requestSaveAttrs();
         rlt.operator = this.operator;
-        rlt.datepartValue=this.datepartValue;
+        rlt.datepartValue = this.datepartValue;
         return rlt;
     }
     //复原
     restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['operator','datepartValue']);
+        assginObjByProperties(this, attrsJson, ['operator', 'datepartValue']);
     }
-  
+
     //编译
     compile(helper, preNodes_arr) {
         var superRet = super.compile(helper, preNodes_arr);
@@ -161,13 +161,13 @@ class SqlNode_Datediff extends SqlNode_Base {
         var thisNodeTitle = nodeThis.getNodeTitle();//convert
         var usePreNodes_arr = preNodes_arr.concat(this);
         var socketVal_arr = [];
-        for(var i = 0;i<this.inputScokets_arr.length;i++){
+        for (var i = 0; i < this.inputScokets_arr.length; i++) {
             var theSocket = this.inputScokets_arr[i];
             var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-            var tValue=null;
-            if(tLinks.length == 0){
-                tValue=theSocket.defval;//无link，就取输入框的值
-                if(tValue==null || tValue==''){
+            var tValue = null;
+            if (tLinks.length == 0) {
+                tValue = theSocket.defval;//无link，就取输入框的值
+                if (tValue == null || tValue == '') {
                     helper.logManager.errorEx([helper.logManager.createBadgeItem(
                         thisNodeTitle
                         , nodeThis
@@ -176,24 +176,24 @@ class SqlNode_Datediff extends SqlNode_Base {
                     return false;
                 }
             }
-            else{
+            else {
                 var link = tLinks[0];
                 var outNode = link.outSocket.node;
                 var compileRet = outNode.compile(helper, usePreNodes_arr);
                 if (compileRet == false) {
                     return false;
                 }
-                tValue=compileRet.getSocketOut(link.outSocket).strContent;
-            }   
-            if(isNaN(tValue)){
+                tValue = compileRet.getSocketOut(link.outSocket).strContent;
+            }
+            if (isNaN(tValue)) {
                 tValue = singleQuotesStr(tValue);
             }
-            socketVal_arr.push(tValue);         
+            socketVal_arr.push(tValue);
         }
-        var datepartValue=this.datepartValue;
-        
-        
-        var finalStr = ' datediff('+datepartValue+','+socketVal_arr[0]+','+socketVal_arr[1]+')';
+        var datepartValue = this.datepartValue;
+
+
+        var finalStr = ' datediff(' + datepartValue + ',' + socketVal_arr[0] + ',' + socketVal_arr[1] + ')';
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, finalStr);
         helper.setCompileRetCache(this, selfCompileRet);
@@ -206,8 +206,8 @@ class SqlNode_Datename extends SqlNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, SQLNODE_DATENAME, 'Datename', false, nodeJson);
         autoBind(this);
-        
-        if(this.datepartValue == null){
+
+        if (this.datepartValue == null) {
             this.datepartValue = 'dd';
         }
         //复原
@@ -228,11 +228,11 @@ class SqlNode_Datename extends SqlNode_Base {
         if (this.inputScokets_arr.length == 0) {
             this.addSocket(new NodeSocket('in0', this, true, { type: SqlVarType_Scalar, inputable: true }));
         }
-     
+
     }
-     
+
     //保存
-    requestSaveAttrs(){
+    requestSaveAttrs() {
         var rlt = super.requestSaveAttrs();
         rlt.datepartValue = this.datepartValue;
         return rlt;
@@ -241,7 +241,7 @@ class SqlNode_Datename extends SqlNode_Base {
     restorFromAttrs(attrsJson) {
         assginObjByProperties(this, attrsJson, ['datepartValue']);
     }
-  
+
     //编译
     compile(helper, preNodes_arr) {
         var superRet = super.compile(helper, preNodes_arr);
@@ -255,36 +255,36 @@ class SqlNode_Datename extends SqlNode_Base {
         var socketVal_arr = [];
         var theSocket = this.inputScokets_arr[0];
         var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-        var tValue=null;
-        if(tLinks.length == 0){
-            tValue=theSocket.defval;//无link，就取输入框的值
-            if(tValue==null || tValue==''){
+        var tValue = null;
+        if (tLinks.length == 0) {
+            tValue = theSocket.defval;//无link，就取输入框的值
+            if (tValue == null || tValue == '') {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                     thisNodeTitle
+                    thisNodeTitle
                     , nodeThis
                     , helper.clickLogBadgeItemHandler)
                     , '参数不能为空']);
-                 return false;
+                return false;
             }
         }
-        else{
+        else {
             var link = tLinks[0];
             var outNode = link.outSocket.node;
             var compileRet = outNode.compile(helper, usePreNodes_arr);
             if (compileRet == false) {
                 return false;
             }
-            tValue=compileRet.getSocketOut(link.outSocket).strContent;
-            }   
-            if(isNaN(tValue)){
-                tValue = singleQuotesStr(tValue);
-            }
-            socketVal_arr.push(tValue);         
-        
-        var datepartValue=this.datepartValue;
-        
-        
-        var finalStr = ' datename('+datepartValue+','+socketVal_arr[0]+')';
+            tValue = compileRet.getSocketOut(link.outSocket).strContent;
+        }
+        if (isNaN(tValue)) {
+            tValue = singleQuotesStr(tValue);
+        }
+        socketVal_arr.push(tValue);
+
+        var datepartValue = this.datepartValue;
+
+
+        var finalStr = ' datename(' + datepartValue + ',' + socketVal_arr[0] + ')';
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, finalStr);
         helper.setCompileRetCache(this, selfCompileRet);
@@ -295,8 +295,8 @@ class SqlNode_Datepart extends SqlNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, SQLNODE_DATEPART, 'Datepart', false, nodeJson);
         autoBind(this);
-        
-        if(this.datepartValue == null){
+
+        if (this.datepartValue == null) {
             this.datepartValue = 'dd';
         }
         //复原
@@ -317,11 +317,11 @@ class SqlNode_Datepart extends SqlNode_Base {
         if (this.inputScokets_arr.length == 0) {
             this.addSocket(new NodeSocket('in0', this, true, { type: SqlVarType_Scalar, inputable: true }));
         }
-     
+
     }
-     
+
     //保存
-    requestSaveAttrs(){
+    requestSaveAttrs() {
         var rlt = super.requestSaveAttrs();
         rlt.datepartValue = this.datepartValue;
         return rlt;
@@ -330,7 +330,7 @@ class SqlNode_Datepart extends SqlNode_Base {
     restorFromAttrs(attrsJson) {
         assginObjByProperties(this, attrsJson, ['datepartValue']);
     }
-  
+
     //编译
     compile(helper, preNodes_arr) {
         var superRet = super.compile(helper, preNodes_arr);
@@ -344,36 +344,36 @@ class SqlNode_Datepart extends SqlNode_Base {
         var socketVal_arr = [];
         var theSocket = this.inputScokets_arr[0];
         var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-        var tValue=null;
-        if(tLinks.length == 0){
-            tValue=theSocket.defval;//无link，就取输入框的值
-            if(tValue==null || tValue==''){
+        var tValue = null;
+        if (tLinks.length == 0) {
+            tValue = theSocket.defval;//无link，就取输入框的值
+            if (tValue == null || tValue == '') {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                     thisNodeTitle
+                    thisNodeTitle
                     , nodeThis
                     , helper.clickLogBadgeItemHandler)
                     , '参数不能为空']);
-                 return false;
+                return false;
             }
         }
-        else{
+        else {
             var link = tLinks[0];
             var outNode = link.outSocket.node;
             var compileRet = outNode.compile(helper, usePreNodes_arr);
             if (compileRet == false) {
                 return false;
             }
-            tValue=compileRet.getSocketOut(link.outSocket).strContent;
-            }   
-            if(isNaN(tValue)){
-                tValue = singleQuotesStr(tValue);
-            }
-            socketVal_arr.push(tValue);         
-        
-        var datepartValue=this.datepartValue;
-        
-        
-        var finalStr = ' datepart('+datepartValue+','+socketVal_arr[0]+')';
+            tValue = compileRet.getSocketOut(link.outSocket).strContent;
+        }
+        if (isNaN(tValue)) {
+            tValue = singleQuotesStr(tValue);
+        }
+        socketVal_arr.push(tValue);
+
+        var datepartValue = this.datepartValue;
+
+
+        var finalStr = ' datepart(' + datepartValue + ',' + socketVal_arr[0] + ')';
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, finalStr);
         helper.setCompileRetCache(this, selfCompileRet);
@@ -402,7 +402,7 @@ class SqlNode_Mathfun extends SqlNode_Base {
             this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Boolean });
             this.addSocket(this.outSocket);
         }
-        if(this.mathType==null){
+        if (this.mathType == null) {
             this.mathType = Math_ABS;
         }
         this.setMathType(this.mathType);
@@ -422,35 +422,35 @@ class SqlNode_Mathfun extends SqlNode_Base {
         this.mathType = newMathType;
         var inputCount = 1;
         var inputLabels_arr = ['num'];
-        switch(newMathType){
+        switch (newMathType) {
             case Math_RAND:
-            inputCount = 0;
-            break;
+                inputCount = 0;
+                break;
             case Math_ROUND:
-            inputCount = 2;
-            inputLabels_arr.push('精度');
-            break;
+                inputCount = 2;
+                inputLabels_arr.push('精度');
+                break;
             case Math_POWER:
-            inputCount = 2;
-            inputLabels_arr.push('幂');
-            break;
+                inputCount = 2;
+                inputLabels_arr.push('幂');
+                break;
         }
         var nowCount = this.inputScokets_arr.length;
-        if(nowCount != inputCount){
+        if (nowCount != inputCount) {
             var step = Math.sign(inputCount - nowCount);
-            for(var i=nowCount;i != inputCount; i += step){
-                if(step > 0){
+            for (var i = nowCount; i != inputCount; i += step) {
+                if (step > 0) {
                     this.addSocket(new NodeSocket('in' + i, this, true, { type: SqlVarType_Scalar, inputable: true }));
                 }
-                else{
+                else {
 
                     this.removeSocket(this.inputScokets_arr[this.inputScokets_arr.length - 1]);
                 }
             }
             this.fireEvent(Event_SocketNumChanged, 0);
         }
-        this.inputScokets_arr.forEach((soket,i)=>{
-            if(soket.label != inputLabels_arr[i]){
+        this.inputScokets_arr.forEach((soket, i) => {
+            if (soket.label != inputLabels_arr[i]) {
                 soket.label = inputLabels_arr[i];
                 soket.fireEvent('changed');
             }
@@ -458,7 +458,7 @@ class SqlNode_Mathfun extends SqlNode_Base {
     }
 
 
-   
+
     compile(helper, preNodes_arr) {
         var superRet = super.compile(helper, preNodes_arr);
 
@@ -470,19 +470,19 @@ class SqlNode_Mathfun extends SqlNode_Base {
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
         var inSocket = this.inSocket;
-        
-        var finalStr=this.mathType + '(';
+
+        var finalStr = this.mathType + '(';
         switch (this.mathType) {
             case Math_ROUND:
             case Math_POWER:
                 var socketVal_arr = [];
-                for(var i = 0;i<this.inputScokets_arr.length;i++){
+                for (var i = 0; i < this.inputScokets_arr.length; i++) {
                     var theSocket = this.inputScokets_arr[i];
                     var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-                    var tValue=null;
-                    if(tLinks.length==0){
-                        tValue=theSocket.defval;//无link，就取输入框的值
-                        if(tValue==null || tValue==''){
+                    var tValue = null;
+                    if (tLinks.length == 0) {
+                        tValue = theSocket.defval;//无link，就取输入框的值
+                        if (tValue == null || tValue == '') {
                             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                                 thisNodeTitle
                                 , nodeThis
@@ -491,55 +491,55 @@ class SqlNode_Mathfun extends SqlNode_Base {
                             return false;
                         }
                     }
-                    else{
+                    else {
                         var link = tLinks[0];
                         var outNode = link.outSocket.node;
                         var compileRet = outNode.compile(helper, usePreNodes_arr);
                         if (compileRet == false) {
                             return false;
                         }
-                        tValue=compileRet.getSocketOut(link.outSocket).strContent;  
+                        tValue = compileRet.getSocketOut(link.outSocket).strContent;
                     }
-                    socketVal_arr.push(tValue);  
+                    socketVal_arr.push(tValue);
                 }
-                finalStr += socketVal_arr[0]+','+socketVal_arr[1]+')';
-            break;
+                finalStr += socketVal_arr[0] + ',' + socketVal_arr[1] + ')';
+                break;
             case Math_ABS:
             case Math_CEILING:
             case Math_FLOOR:
             case Math_SQUARE:
             case Math_SQRT:
-                 var socketVal_arr = [];
-                 var theSocket = this.inputScokets_arr[0];
-                 var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-                 var tValue=null;
-                 if(tLinks.length == 0){
-                    tValue=theSocket.defval;//无link，就取输入框的值
-                    if(tValue==null || tValue==''){
+                var socketVal_arr = [];
+                var theSocket = this.inputScokets_arr[0];
+                var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+                var tValue = null;
+                if (tLinks.length == 0) {
+                    tValue = theSocket.defval;//无link，就取输入框的值
+                    if (tValue == null || tValue == '') {
                         helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                             thisNodeTitle
+                            thisNodeTitle
                             , nodeThis
                             , helper.clickLogBadgeItemHandler)
                             , '参数不能为空']);
-                         return false;
+                        return false;
                     }
                 }
-                else{
+                else {
                     var link = tLinks[0];
                     var outNode = link.outSocket.node;
                     var compileRet = outNode.compile(helper, usePreNodes_arr);
                     if (compileRet == false) {
                         return false;
                     }
-                    tValue=compileRet.getSocketOut(link.outSocket).strContent;
-                } 
-                finalStr +=tValue+')';
+                    tValue = compileRet.getSocketOut(link.outSocket).strContent;
+                }
+                finalStr += tValue + ')';
                 break;
             case Math_RAND:
-                finalStr +=')';
+                finalStr += ')';
                 break;
         }
-       
+
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, finalStr);
         helper.setCompileRetCache(this, selfCompileRet);
@@ -552,6 +552,7 @@ class SqlNode_DateCon extends SqlNode_Base {
         super(initData, parentNode, createHelper, SQLNODE_DATECON, 'datecon', false, nodeJson);
         this.size_1 = ReplaceIfNaN(this.size_1, 0);
         this.size_2 = ReplaceIfNaN(this.size_2, 0);
+        var inputNum;
         autoBind(this);
 
         if (nodeJson) {
@@ -564,10 +565,10 @@ class SqlNode_DateCon extends SqlNode_Base {
             this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Boolean });
             this.addSocket(this.outSocket);
         }
-        if(this.dateType==null){
+        if (this.dateType == null) {
             this.dateType = 'DateAdd';
         }
-        if(this.datepartType==null){
+        if (this.datepartType == null) {
             this.datepartType = Datepart_day;
         }
         this.setDateType(this.dateType);
@@ -580,38 +581,49 @@ class SqlNode_DateCon extends SqlNode_Base {
     }
 
     restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['mathType','datepartType']);
+        assginObjByProperties(this, attrsJson, ['mathType', 'datepartType']);
     }
 
-    setDateType(newDateType){
+    setDateType(newDateType) {
         this.dateType = newDateType;
         var inputCount = 1;
-        var inputLabels_arr = ['日期时间'];
-        switch(newDateType){
+        var inputLabels_arr = [];
+        switch (newDateType) {
             case 'DateAdd':
-                 inputCount  = 2;
-                 inputLabels_arr.push('数值');
-            break;
+                inputCount = 2;
+                this.inputNum = inputCount;
+                inputLabels_arr.push('数值', '日期时间');
+                break;
             case 'DateDiff':
-                 inputCount  = 2;
-                 inputLabels_arr.push('日期时间');
-            break;
+                inputCount = 2;
+                this.inputNum = inputCount;
+                inputLabels_arr.push('日期时间', '日期时间');
+                break;
+            case 'DateName':
+                this.inputNum = inputCount;
+                inputLabels_arr.push('日期时间');
+                break;
+            case 'DatePart':
+                this.inputNum = inputCount;
+                inputLabels_arr.push('日期时间');
+                break;
+
         }
-        var nowCount  = this.inputScokets_arr.length;
-        if(nowCount != inputCount){
+        var nowCount = this.inputScokets_arr.length;
+        if (nowCount != inputCount) {
             var step = Math.sign(inputCount - nowCount);
-            for(var i=nowCount;i != inputCount; i +=step){
-                if(step>0){
+            for (var i = nowCount; i != inputLabels_arr.length; i += step) {
+                if (step > 0) {
                     this.addSocket(new NodeSocket('in' + i, this, true, { type: SqlVarType_Scalar, inputable: true }));
                 }
-                else{
+                else {
                     this.removeSocket(this.inputScokets_arr[this.inputScokets_arr.length - 1]);
                 }
             }
             this.fireEvent(Event_SocketNumChanged, 0);
         }
-        this.inputScokets_arr.forEach((soket,i)=>{
-            if(soket.label != inputLabels_arr[i]){
+        this.inputScokets_arr.forEach((soket, i) => {
+            if (soket.label != inputLabels_arr[i]) {
                 soket.label = inputLabels_arr[i];
                 soket.fireEvent('changed');
             }
@@ -619,6 +631,73 @@ class SqlNode_DateCon extends SqlNode_Base {
     }
 
     //编译
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var finalStr = ' ' + this.dateType + '(' + this.datepartType + ',';
+        for (var i = 0; i < this.inputNum; i++) {
+            var theSocket = this.inputScokets_arr[i];
+            var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+            var tValue = null;
+            var socketVal_arr = [];
+            if (tLinks.length == 0) {
+                tValue = theSocket.defval;//无link，就取输入框的值
+                if (tValue == null || tValue == '') {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle
+                        , nodeThis
+                        , helper.clickLogBadgeItemHandler)
+                        , '输入不能为空']);
+                    return false;
+                }
+                if (i != 0) {
+                    tValue = singleQuotesStr(tValue);
+                }
+                else {
+                    if (this.dateType =='DateAdd') {
+                        if (isNaN(tValue)) {
+                            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                                thisNodeTitle
+                                , nodeThis
+                                , helper.clickLogBadgeItemHandler)
+                                , '该函数的该参数必须为数值']);
+                            return false;
+                        }
+                    }
+                    else{
+                        tValue = singleQuotesStr(tValue);
+                    }
+                }
+
+            }
+            else {
+                var link = tLinks[0];
+                var outNode = link.outSocket.node;
+                var compileRet = outNode.compile(helper, usePreNodes_arr);
+                if (compileRet == false) {
+                    return false;
+                }
+                tValue = compileRet.getSocketOut(link.outSocket).strContent;
+            }
+            socketVal_arr.push(tValue);
+            if (i == 0) {
+                finalStr += socketVal_arr[0]
+            }
+            else {
+                finalStr += ',' + socketVal_arr[0]
+            }
+        }
+        finalStr += ')';
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
 }
 //日期类型转换
 class SqlNode_Convert extends SqlNode_Base {
@@ -645,127 +724,127 @@ class SqlNode_Convert extends SqlNode_Base {
             this.inSocket = new NodeSocket('in', this, true, { type: SqlVarType_Table });
             this.addSocket(this.inSocket);
         }
-        var format_code=this.inSocket.getExtra('format_code');
-        if(format_code==null){
+        var format_code = this.inSocket.getExtra('format_code');
+        if (format_code == null) {
             this.inSocket.setExtra('format_code', '21');
         }
-        var varchar_len=this.inSocket.getExtra('varchar_len');
-        if(varchar_len==null){
+        var varchar_len = this.inSocket.getExtra('varchar_len');
+        if (varchar_len == null) {
             this.inSocket.setExtra('varchar_len', '10');
         }
     }
-requestSaveAttrs() {
-    var rlt = super.requestSaveAttrs();
-    rlt.code=this.inSocket.getExtra('format_code'); 
-    return rlt;
-}
-
-restorFromAttrs(attrsJson) {
-}
-
-convertTypeDropdownChangedHandler(data, dropCtl) {
-    var theSocket = this.inSocket;
-    theSocket.setExtra('format_code', data.value);
-    theSocket.fireEvent('changed');
-}
-
-varlenInputChangedHandler(ev) {
-    var newVal = ev.target.value;
-    if (isNaN(newVal)) {
-        return;
-    }
-    this.inSocket.setExtra('varchar_len', newVal);
-    this.inSocket.fireEvent('changed');
-}
-
-customSocketRender(socket) {
-    if(socket.isIn==false){
-        return null;
-    }
-    var varlenInptELem = null;
-   
-    var varlenValue = socket.getExtra('varchar_len');
-    if(varlenValue==null){
-        varlenValue = 10;
-    }
-    var  format_code = socket.getExtra('format_code');
-    if (this.inputStyle == null) {
-        this.inputStyle = {
-            width: '3em',
-        };
-    }
-    var varlenInptELem = (<input type='int' style={this.inputStyle} value={varlenValue} onChange={this.varlenInputChangedHandler} />);
-    var formatOptions_arr=[
-        {text:'yyyy-mm-dd Thh:mm:ss',value:126},
-        {text:'yyyy-mm-dd hh:mm:ss',value:21},
-        {text:'hh:mi:ss',value:114},
-        {text:'hh:mm:ss',value:108},
-    ];
-    
-    return (
-        <React.Fragment>
-            <div>varchar:{varlenInptELem}</div>
-            <div>
-                 格式:<DropDownControl itemChanged={this.convertTypeDropdownChangedHandler} btnclass='btn-dark' options_arr={formatOptions_arr} textAttrName='text' valueAttrName='value' rootclass='flex-grow-1 flex-shrink-1' value={format_code} />    
-            </div>
-        </React.Fragment>
-    );
-}
-//编译
-compile(helper, preNodes_arr) {
-    var superRet = super.compile(helper, preNodes_arr);
-    if (superRet == false || superRet != null) {
-        return superRet;
-    }
-    var nodeThis = this;
-    //节点名称
-    var thisNodeTitle = nodeThis.getNodeTitle();//convert
-    var usePreNodes_arr = preNodes_arr.concat(this);
-
-    var inSocket = this.inSocket;
-    var tLinks = this.bluePrint.linkPool.getLinksBySocket(inSocket);
-
-    if (tLinks.length == 0) {
-        helper.logManager.errorEx([helper.logManager.createBadgeItem(
-            thisNodeTitle
-            , nodeThis
-            , helper.clickLogBadgeItemHandler)
-            , '输入不能为空']);
-        return false;
-    }
-    var link = tLinks[0];
-    var outNode = link.outSocket.node;
-    
-    var compileRet = outNode.compile(helper, usePreNodes_arr);
-    if (compileRet == false) {
-        return false;
-    }
-    var varchar_len = inSocket.getExtra('varchar_len');
-    if(isNaN(varchar_len) || varchar_len <= 0 || varchar_len > 20){
-        varchar_len = 10;
-        helper.logManager.warnEx([helper.logManager.createBadgeItem(
-            thisNodeTitle
-            , nodeThis
-            , helper.clickLogBadgeItemHandler)
-            , 'varchar Length使用了默认值10']);
-    }
-    var code = inSocket.getExtra('format_code');
-    if(isNaN(code)){
-        code = 21;
-        helper.logManager.warnEx([helper.logManager.createBadgeItem(
-            thisNodeTitle
-            , nodeThis
-            , helper.clickLogBadgeItemHandler)
-            , 'format_code使用了默认值21']);
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.code = this.inSocket.getExtra('format_code');
+        return rlt;
     }
 
-    var inputCompileStrContent = compileRet.getSocketOut(link.outSocket).strContent; 
-    var finalStr = 'convert(varchar(' + varchar_len + '),' + inputCompileStrContent + ','+code+')';
-    var selfCompileRet = new CompileResult(this);
-    selfCompileRet.setSocketOut(this.outSocket, finalStr);
-    helper.setCompileRetCache(this, selfCompileRet);
-    return selfCompileRet;
-}
+    restorFromAttrs(attrsJson) {
+    }
+
+    convertTypeDropdownChangedHandler(data, dropCtl) {
+        var theSocket = this.inSocket;
+        theSocket.setExtra('format_code', data.value);
+        theSocket.fireEvent('changed');
+    }
+
+    varlenInputChangedHandler(ev) {
+        var newVal = ev.target.value;
+        if (isNaN(newVal)) {
+            return;
+        }
+        this.inSocket.setExtra('varchar_len', newVal);
+        this.inSocket.fireEvent('changed');
+    }
+
+    customSocketRender(socket) {
+        if (socket.isIn == false) {
+            return null;
+        }
+        var varlenInptELem = null;
+
+        var varlenValue = socket.getExtra('varchar_len');
+        if (varlenValue == null) {
+            varlenValue = 10;
+        }
+        var format_code = socket.getExtra('format_code');
+        if (this.inputStyle == null) {
+            this.inputStyle = {
+                width: '3em',
+            };
+        }
+        var varlenInptELem = (<input type='int' style={this.inputStyle} value={varlenValue} onChange={this.varlenInputChangedHandler} />);
+        var formatOptions_arr = [
+            { text: 'yyyy-mm-dd Thh:mm:ss', value: 126 },
+            { text: 'yyyy-mm-dd hh:mm:ss', value: 21 },
+            { text: 'hh:mi:ss', value: 114 },
+            { text: 'hh:mm:ss', value: 108 },
+        ];
+
+        return (
+            <React.Fragment>
+                <div>varchar:{varlenInptELem}</div>
+                <div>
+                    格式:<DropDownControl itemChanged={this.convertTypeDropdownChangedHandler} btnclass='btn-dark' options_arr={formatOptions_arr} textAttrName='text' valueAttrName='value' rootclass='flex-grow-1 flex-shrink-1' value={format_code} />
+                </div>
+            </React.Fragment>
+        );
+    }
+    //编译
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        //节点名称
+        var thisNodeTitle = nodeThis.getNodeTitle();//convert
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var inSocket = this.inSocket;
+        var tLinks = this.bluePrint.linkPool.getLinksBySocket(inSocket);
+
+        if (tLinks.length == 0) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle
+                , nodeThis
+                , helper.clickLogBadgeItemHandler)
+                , '输入不能为空']);
+            return false;
+        }
+        var link = tLinks[0];
+        var outNode = link.outSocket.node;
+
+        var compileRet = outNode.compile(helper, usePreNodes_arr);
+        if (compileRet == false) {
+            return false;
+        }
+        var varchar_len = inSocket.getExtra('varchar_len');
+        if (isNaN(varchar_len) || varchar_len <= 0 || varchar_len > 20) {
+            varchar_len = 10;
+            helper.logManager.warnEx([helper.logManager.createBadgeItem(
+                thisNodeTitle
+                , nodeThis
+                , helper.clickLogBadgeItemHandler)
+                , 'varchar Length使用了默认值10']);
+        }
+        var code = inSocket.getExtra('format_code');
+        if (isNaN(code)) {
+            code = 21;
+            helper.logManager.warnEx([helper.logManager.createBadgeItem(
+                thisNodeTitle
+                , nodeThis
+                , helper.clickLogBadgeItemHandler)
+                , 'format_code使用了默认值21']);
+        }
+
+        var inputCompileStrContent = compileRet.getSocketOut(link.outSocket).strContent;
+        var finalStr = 'convert(varchar(' + varchar_len + '),' + inputCompileStrContent + ',' + code + ')';
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
 }
 
 class SqlNode_Charfun extends SqlNode_Base {
@@ -773,6 +852,7 @@ class SqlNode_Charfun extends SqlNode_Base {
         super(initData, parentNode, createHelper, SQLNODE_CHARFUN, 'charfun', false, nodeJson);
         this.size_1 = ReplaceIfNaN(this.size_1, 0);
         this.size_2 = ReplaceIfNaN(this.size_2, 0);
+        var inputLabels_arrs = [];
         autoBind(this);
 
         //this.isConstNode = true; //使节点不可被删除
@@ -788,12 +868,12 @@ class SqlNode_Charfun extends SqlNode_Base {
             this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Boolean });
             this.addSocket(this.outSocket);
         }
-        if(this.charfunType==null){
+        if (this.charfunType == null) {
             this.charfunType = CharfunType_SUBSTRING;
         }
         this.setCharfunType(this.charfunType);
     }
-    
+
     requestSaveAttrs() {
         var rlt = super.requestSaveAttrs();
         rlt.charfunType = this.charfunType;
@@ -806,9 +886,8 @@ class SqlNode_Charfun extends SqlNode_Base {
 
     setCharfunType(newcharfunType) {
         this.charfunType = newcharfunType;
-        var inputCount = 0 ;
         var inputLabels_arr = [];
-        switch(newcharfunType){
+        switch (newcharfunType) {
             case CharfunType_ASCII:
             case CharfunType_LOWER:
             case CharfunType_UPPER:
@@ -816,67 +895,65 @@ class SqlNode_Charfun extends SqlNode_Base {
             case CharfunType_RTRIM:
             case CharfunType_REVERSE:
             case CharfunType_LEN:
-                 inputCount = 1;
-                 inputLabels_arr.push('字符串');
-            break;
+                inputLabels_arr.push('字符串');
+                this.inputLabels_arrs = inputLabels_arr;
+                break;
             case CharfunType_CHAR:
-                 inputCount = 1;
-                 inputLabels_arr.push('数值');
-            break;
+                inputLabels_arr.push('数值');
+                this.inputLabels_arrs = inputLabels_arr;
+                break;
             case CharfunType_LEFT:
             case CharfunType_RIGHT:
             case CharfunType_REPLICATE:
-                 inputCount = 2;
-                 inputLabels_arr.push('字符串','数值');
-            break;
+                inputLabels_arr.push('字符串', '数值');
+                this.inputLabels_arrs = inputLabels_arr;
+                break;
             case CharfunType_PATINDEX:
-                 inputCount = 2;
-                 inputLabels_arr.push('表达式','字符串');
-            break;
+                inputLabels_arr.push('表达式', '字符串');
+                this.inputLabels_arrs = inputLabels_arr;
+                break;
             case CharfunType_SUBSTRING:
-                 inputCount = 3;
-                 inputLabels_arr.push('字符串','开始位置','截取长度');
-            break;
+                inputLabels_arr.push('字符串', '起始位置', '截取长度');
+                this.inputLabels_arrs = inputLabels_arr;
+                break;
             case CharfunType_CHARINDEX:
-                 inputCount = 3;
-                 inputLabels_arr.push('查询字符','字符串','起始位置');
-            break;
+                inputLabels_arr.push('查询字符', '字符串', '起始位置');
+                this.inputLabels_arrs = inputLabels_arr;
+                break;
             case CharfunType_REPLACE:
-                 inputCount = 3;
-                 inputLabels_arr.push('字符串','被替换字符','替换字符');
-            break;
+                inputLabels_arr.push('字符串', '被替换字符', '替换字符');
+                this.inputLabels_arrs = inputLabels_arr;
+                break;
             case CharfunType_SPACE:
-                 inputCount = 3;
-                 inputLabels_arr.push('字符串1','字符串2','空格数量');
-            break;
+                inputLabels_arr.push('字符串1', '空格数量', '字符串2');
+                this.inputLabels_arrs = inputLabels_arr;
+                break;
             case CharfunType_STUFF:
-                 inputCount = 4;
-                 inputLabels_arr.push('字符串','开始位置','删除长度','替换字符');
-            break;
+                inputLabels_arr.push('字符串', '开始位置', '删除长度', '替换字符');
+                this.inputLabels_arrs = inputLabels_arr;
+                break;
         }
+
         var nowCount = this.inputScokets_arr.length;
-        if(nowCount != inputCount){
-            var step = Math.sign(inputCount - nowCount);
-            for(var i=nowCount;i != inputCount; i += step){
-                if(step > 0){
-                    // for(var j=0;j<(inputCount-nowCount);j++){
-                    //     this.addSocket(new NodeSocket('in' + j, this, true, { type: SqlVarType_Scalar, inputable: true }));
-                    // }
+        if (nowCount != inputLabels_arr.length) {
+            var step = Math.sign(inputLabels_arr.length - nowCount);
+            for (var i = nowCount; i != inputLabels_arr.length; i += step) {
+                if (step > 0) {
                     this.addSocket(new NodeSocket('in' + i, this, true, { type: SqlVarType_Scalar, inputable: true }));
                 }
-                else{
-
+                else {
                     this.removeSocket(this.inputScokets_arr[this.inputScokets_arr.length - 1]);
                 }
             }
             this.fireEvent(Event_SocketNumChanged, 0);
         }
-        this.inputScokets_arr.forEach((soket,i)=>{
-            if(soket.label != inputLabels_arr[i]){
+        this.inputScokets_arr.forEach((soket, i) => {
+            if (soket.label != inputLabels_arr[i]) {
                 soket.label = inputLabels_arr[i];
                 soket.fireEvent('changed');
             }
         });
+
     }
     //编译
     compile(helper, preNodes_arr) {
@@ -889,174 +966,88 @@ class SqlNode_Charfun extends SqlNode_Base {
         //节点名称
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
-        var inSocket = this.inSocket;
-        var finalStr='';
-        switch (this.charfunType) {
-            //一个参数
-            case CharfunType_ASCII:
-            case CharfunType_CHAR:
-            case CharfunType_LOWER:
-            case CharfunType_UPPER:
-            case CharfunType_LTRIM:
-            case CharfunType_RTRIM:
-            case CharfunType_REVERSE:
-            case CharfunType_LEN:
-                 var socketVal_arr = [];
-                 var theSocket = this.inputScokets_arr[0];
-                 var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-                 var tValue=null;
-                 if(tLinks.length == 0){
-                    tValue=theSocket.defval;//无link，就取输入框的值
-                    if(tValue==null || tValue==''){
-                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                             thisNodeTitle
-                            , nodeThis
-                            , helper.clickLogBadgeItemHandler)
-                            , '参数不能为空']);
-                         return false;
-                    }
-                }
-                else{
-                    var link = tLinks[0];
-                    var outNode = link.outSocket.node;
-                    var compileRet = outNode.compile(helper, usePreNodes_arr);
-                    if (compileRet == false) {
-                        return false;
-                    }
-                    tValue=compileRet.getSocketOut(link.outSocket).strContent;
-                    
-                } 
-                if(this.charfunType == CharfunType_CHAR){
-                    if (isNaN(tValue)) {
-                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                            thisNodeTitle
-                            , nodeThis
-                            , helper.clickLogBadgeItemHandler)
-                            , '该函数的参数不能为字符']);
-                        return false;
-                    }
-                }
-                else{
-                    if (isNaN(tValue)) {
-                        tValue = singleQuotesStr(tValue);
-                    }
-                }
-                finalStr =this.charfunType+'('+tValue+')';
-            break;
-            //两个参数
-            case CharfunType_LEFT:
-            case CharfunType_LEFT:
-            case CharfunType_LEFT:
-            case CharfunType_LEFT:
-                var socketVal_arr = [];
-                for (var i = 0; i < this.inputScokets_arr.length; i++) {
-                    var theSocket = this.inputScokets_arr[i];
-                    var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-                    var tValue = null;
-                    if (tLinks.length == 0) {
-                        tValue = theSocket.defval;//无link，就取输入框的值
-                        if (tValue == null || tValue == '') {
-                            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                                thisNodeTitle
-                                , nodeThis
-                                , helper.clickLogBadgeItemHandler)
-                                , '输入不能为空']);
-                            return false;
-                        }
-                    }
-                    else {
-                        var link = tLinks[0];
-                        var outNode = link.outSocket.node;
-                        var compileRet = outNode.compile(helper, usePreNodes_arr);
-                        if (compileRet == false) {
-                            return false;
-                        }
-                        tValue = compileRet.getSocketOut(link.outSocket).strContent;
-                        
-                    }
-                    if (isNaN(tValue)) {
-                        tValue = singleQuotesStr(tValue);
-                    }
-                    socketVal_arr.push(tValue);
-                }
-                finalStr = this.charfunType+'('+socketVal_arr[0] + ',' + socketVal_arr[1] + ')';
-            break;
-            //三个参数
-            case CharfunType_SUBSTRING:
-            case CharfunType_CHARINDEX:
-            case CharfunType_REPLACE:
-            case CharfunType_SPACE:
-                var socketVal_arr = [];
-                for (var i = 0; i < this.inputScokets_arr.length; i++) {
-                    var theSocket = this.inputScokets_arr[i];
-                    var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-                    var tValue = null;
-                    if (tLinks.length == 0) {
-                        tValue = theSocket.defval;//无link，就取输入框的值
-                        if (tValue == null || tValue == '') {
-                            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                                thisNodeTitle
-                                , nodeThis
-                                , helper.clickLogBadgeItemHandler)
-                                , '输入不能为空']);
-                            return false;
-                        }
-                    }
-                    else {
-                        var link = tLinks[0];
-                        var outNode = link.outSocket.node;
-                        var compileRet = outNode.compile(helper, usePreNodes_arr);
-                        if (compileRet == false) {
-                            return false;
-                        }
-                        tValue = compileRet.getSocketOut(link.outSocket).strContent;
-                        
-                    }
-                    if (isNaN(tValue)) {
-                        tValue = singleQuotesStr(tValue);
-                    }
-                    socketVal_arr.push(tValue);
-                }
-                finalStr = this.charfunType + '(' + socketVal_arr[0] + ',' + socketVal_arr[1] + socketVal_arr[2]+')';
-                if(this.charfunType == CharfunType_SPACE){
-                    finalStr = socketVal_arr[0]+ '+ '+CharfunType_SPACE+'('+socketVal_arr[2]+') '+ '+' +singleQuotesStr(socketVal_arr[1])
-                }
-            break;
-            //四个参数
-            case CharfunType_STUFF:
+        var finalStr = ' ' + this.charfunType + '(';
+        for (var i = 0; i < this.inputLabels_arrs.length; i++) {
+            var theSocket = this.inputScokets_arr[i];
+            var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+            var tValue = null;
             var socketVal_arr = [];
-            for (var i = 0; i < this.inputScokets_arr.length; i++) {
-                var theSocket = this.inputScokets_arr[i];
-                var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-                var tValue = null;
-                if (tLinks.length == 0) {
-                    tValue = theSocket.defval;//无link，就取输入框的值
-                    if (tValue == null || tValue == '') {
-                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                            thisNodeTitle
-                            , nodeThis
-                            , helper.clickLogBadgeItemHandler)
-                            , '输入不能为空']);
-                        return false;
+            if (tLinks.length == 0) {
+                tValue = theSocket.defval;//无link，就取输入框的值
+                if (tValue == null || tValue == '') {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle
+                        , nodeThis
+                        , helper.clickLogBadgeItemHandler)
+                        , '输入不能为空']);
+                    return false;
+                }
+                //判断是不是第一个输入
+                if (i == 0) {
+                    //判断是不是char函数
+                    if (this.charfunType != CharfunType_CHAR && this.charfunType != CharfunType_PATINDEX) {
+                        tValue = singleQuotesStr(tValue);
+                    }
+                    if (this.charfunType == CharfunType_CHAR) {
+                        if (isNaN(tValue)) {
+                            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                                thisNodeTitle
+                                , nodeThis
+                                , helper.clickLogBadgeItemHandler)
+                                , '该函数的参数不能为字符']);
+                            return false;
+                        }
+                    }
+
+                }
+                //不是第一个输入
+                else {
+                    if (this.inputLabels_arrs[i] != '数值' && this.inputLabels_arrs[i] != '删除长度' && this.inputLabels_arrs[i] != '开始位置' && this.inputLabels_arrs[i] != '空格数量' && this.inputLabels_arrs[i] != '起始位置' && this.inputLabels_arrs[i] != '截取长度') {
+                        tValue = singleQuotesStr(tValue);
+                    }
+                }
+            }
+            //有连线
+            else {
+                var link = tLinks[0];
+                var outNode = link.outSocket.node;
+                var compileRet = outNode.compile(helper, usePreNodes_arr);
+                if (compileRet == false) {
+                    return false;
+                }
+                tValue = compileRet.getSocketOut(link.outSocket).strContent;
+            }
+            //获取输入值
+            socketVal_arr.push(tValue);
+            if (i == 0) {
+                if (this.charfunType == CharfunType_PATINDEX) {
+                    finalStr += singleQuotesStr('%' + socketVal_arr[0] + '%');
+                }
+                else if (this.charfunType == CharfunType_SPACE) {
+                    finalStr = socketVal_arr[0] + ' + SPACE(';
+                }
+                else {
+                    finalStr += socketVal_arr[0];
+                }
+
+            }
+            else {
+                if (this.charfunType == CharfunType_SPACE) {
+                    if (i == 1) {
+                        finalStr += socketVal_arr[0] + ') + ';
+                    }
+                    else {
+                        finalStr += socketVal_arr[0];
                     }
                 }
                 else {
-                    var link = tLinks[0];
-                    var outNode = link.outSocket.node;
-                    var compileRet = outNode.compile(helper, usePreNodes_arr);
-                    if (compileRet == false) {
-                        return false;
-                    }
-                    tValue = compileRet.getSocketOut(link.outSocket).strContent;
-                    
-                }                
-                if (isNaN(tValue)) {
-                    tValue = singleQuotesStr(tValue);
+                    finalStr += ',' + socketVal_arr[0];
                 }
-                socketVal_arr.push(tValue);
             }
-            finalStr = this.charfunType + '(' + socketVal_arr[0] + ',' + socketVal_arr[1] + ',' + socketVal_arr[2] + ',' + socketVal_arr[3]+')';
-            break;
+        }
+
+        if (this.charfunType != CharfunType_SPACE) {
+            finalStr += ')'
         }
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, finalStr);
@@ -1080,7 +1071,6 @@ class SqlNode_NewID extends SqlNode_Base {
                 this.outSocket.type = SqlVarType_Boolean;
             }
         }
-
         if (this.outSocket == null) {
             this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Boolean });
             this.addSocket(this.outSocket);
@@ -1090,9 +1080,8 @@ class SqlNode_NewID extends SqlNode_Base {
         var rlt = super.requestSaveAttrs();
         return rlt;
     }
-
     restorFromAttrs(attrsJson) {
-       // assginObjByProperties(this, attrsJson, ['charfunType']);
+        // assginObjByProperties(this, attrsJson, ['charfunType']);
     }
     compile(helper, preNodes_arr) {
         var superRet = super.compile(helper, preNodes_arr);
@@ -1102,8 +1091,8 @@ class SqlNode_NewID extends SqlNode_Base {
         }
         var nodeThis = this;
         //节点名称
-        var thisNodeTitle = nodeThis.getNodeTitle();
-        var finalStr = thisNodeTitle+'()'
+
+        var finalStr = ' NEWID() ';
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, finalStr);
         helper.setCompileRetCache(this, selfCompileRet);
@@ -1150,39 +1139,41 @@ SqlNodeClassMap[SQLNODE_NEWID] = {
 };
 ////////////////////////////////////////////////////////
 SqlNodeEditorControls_arr.push({
-    label:'CONVERT',
-    nodeClass:SqlNode_Convert,
+    label: 'CONVERT',
+    nodeClass: SqlNode_Convert,
 });
 SqlNodeEditorControls_arr.push({
-    label:'DateAdd',
-    nodeClass:SqlNode_Dateadd,
+    label: 'DateAdd',
+    nodeClass: SqlNode_Dateadd,
 });
 SqlNodeEditorControls_arr.push({
-    label:'DateDiff',
-    nodeClass:SqlNode_Datediff,
+    label: 'DateDiff',
+    nodeClass: SqlNode_Datediff,
 });
 SqlNodeEditorControls_arr.push({
-    label:'DateName',
-    nodeClass:SqlNode_Datename,
+    label: 'DateName',
+    nodeClass: SqlNode_Datename,
 });
 SqlNodeEditorControls_arr.push({
-    label:'DatePart',
-    nodeClass:SqlNode_Datepart,
+    label: 'DatePart',
+    nodeClass: SqlNode_Datepart,
 });
 
 SqlNodeEditorControls_arr.push({
-    label:'Math函数',
-    nodeClass:SqlNode_Mathfun,
+    label: 'Math函数',
+    nodeClass: SqlNode_Mathfun,
 });
 SqlNodeEditorControls_arr.push({
-    label:'date函数',
-    nodeClass:SqlNode_DateCon,
+    label: 'date函数',
+    nodeClass: SqlNode_DateCon,
 });
 SqlNodeEditorControls_arr.push({
-    label:'字符串函数',
-    nodeClass:SqlNode_Charfun,
+    label: '字符串函数',
+    nodeClass: SqlNode_Charfun,
 });
 SqlNodeEditorControls_arr.push({
-    label:'NewID',
-    nodeClass:SqlNode_NewID,
+    label: 'NewID',
+    nodeClass: SqlNode_NewID,
 });
+//简单值
+SQL_OutSimpleValueNode_arr.push(SQLNODE_NEWID);
