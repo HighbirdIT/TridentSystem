@@ -1,32 +1,34 @@
-const M_ContainerKernelAttrsSetting={
+const M_FormKernelAttrsSetting={
     groups_arr:[
         new CAttributeGroup('基本设置',[
             new CAttribute('name',AttrNames.Name,ValueType.String),
-            new CAttribute('方向',AttrNames.Orientation,ValueType.String,Orientation_H,true,false, Orientation_Options_arr),
+            new CAttribute('方向',AttrNames.Orientation,ValueType.String,Orientation_V,true,false, Orientation_Options_arr),
+            new CAttribute('数据源', AttrNames.DataSource, ValueType.DataSource, false, true, false, null, {text:'name', value:'code'}),
         ]),
     ],
 };
 
-class M_ContainerKernel extends ContainerKernelBase{
+class M_FormKernel extends ContainerKernelBase{
     constructor(initData, parentKernel, createHelper, kernelJson) {
-        super(  initData, 
-                M_ContainerKernel_Type, 
-                'Flex容器',
-                M_ContainerKernelAttrsSetting.groups_arr.concat(),
+        super(  initData,
+                M_FormKernel_Type,
+                '数据表单',
+                M_FormKernelAttrsSetting.groups_arr.concat(),
                 parentKernel,
                 createHelper,kernelJson
             );
-
+        
+        this.findAttributeByName(AttrNames.DataSource).options_arr = parentKernel.project.dataMaster.getAllEntities;
         var self = this;
         autoBind(self);
     }
     
     renderSelf(){
-        return (<M_Container key={this.id} ctlKernel={this} onClick={this.clickHandler} />)
+        return (<M_Form key={this.id} ctlKernel={this} onClick={this.clickHandler} />)
     }
 }
 
-class M_Container extends React.PureComponent {
+class M_Form extends React.PureComponent {
     constructor(props){
         super(props);
         autoBind(this);
@@ -65,18 +67,18 @@ class M_Container extends React.PureComponent {
         var rootStyle = layoutConfig.style;
 
         if(this.props.ctlKernel.__placing){
-            layoutConfig.addClass('M_Container_Empty');
             layoutConfig.addClass('M_placingCtl');
+            layoutConfig.addClass('M_Form_Empty');
             return (<div className={layoutConfig.getClassName()} style={rootStyle} ref={this.rootElemRef}></div>);
         }
-        layoutConfig.addClass('M_Container');
+        layoutConfig.addClass('M_Form');
         layoutConfig.addClass('border');
         layoutConfig.addClass('hb-control');
         if(this.state.orientation == Orientation_V){
             layoutConfig.addClass('flex-column');
         }
         if(this.props.ctlKernel.children.length ==0){
-            layoutConfig.addClass('M_Container_Empty');
+            layoutConfig.addClass('M_Form_Empty');
         }
 
         return(
@@ -96,9 +98,9 @@ class M_Container extends React.PureComponent {
 DesignerConfig.registerControl(
     {
         forPC : false,
-        label : 'DIV',
-        type : M_ContainerKernel_Type,
-        namePrefix : M_ContainerKernel_Prefix,
-        kernelClass:M_ContainerKernel,
-        reactClass:M_Container,
+        label : 'Form',
+        type : M_FormKernel_Type,
+        namePrefix : M_FormKernel_Prefix,
+        kernelClass:M_FormKernel,
+        reactClass:M_Form,
     }, '布局');

@@ -641,7 +641,9 @@ function aStateChanged(state, path, newValue, visited = {}) {
 function MakePath() {
     var rlt = '';
     for (var i = 0; i < arguments.length; ++i) {
-        rlt += (i == 0 ? '' : '.') + arguments[i];
+        if(arguments[i] == null || arguments[i].length == 0)
+            continue;
+        rlt += (rlt.length == 0 ? '' : '.') + arguments[i];
     }
     return rlt;
 }

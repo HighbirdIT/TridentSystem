@@ -33,6 +33,7 @@ var ControlKernelBase = function (_IAttributeable) {
 
         var _this = _possibleConstructorReturn(this, (ControlKernelBase.__proto__ || Object.getPrototypeOf(ControlKernelBase)).call(this, initData, null, description));
 
+        _this.lisenedDSSyned = _this.lisenedDSSyned.bind(_this);
         _this.project = parentKernel.project;
         _this.type = type;
         if (attrbuteGroups == null) {
@@ -43,11 +44,45 @@ var ControlKernelBase = function (_IAttributeable) {
         }
         _this.attrbuteGroups = attrbuteGroups;
         _this.clickHandler = _this.clickHandler.bind(_this);
+        _this.listendDS_map = {};
 
         if (kernelJson != null) {
             // restore attr from json
             if (kernelJson.attr != null) {
                 Object.assign(_this, kernelJson.attr);
+
+                _this.attrbuteGroups.forEach(function (group) {
+                    group.attrs_arr.forEach(function (attr) {
+                        if (!attr.editable) return;
+                        var attrItemArray = null;
+                        if (attr.isArray) {
+                            attrItemArray = _this.getAttrArrayList(attr.name).map(function (e) {
+                                return e.name;
+                            });
+                        } else {
+                            attrItemArray = [attr.name];
+                        }
+                        attrItemArray.forEach(function (attrName) {
+                            var val = _this[attrName];
+                            if (val == null || val == attr.defaultVal) {
+                                return;
+                            }
+                            switch (attr.valueType) {
+                                case ValueType.DataSource:
+                                    if (!IsEmptyString(val)) {
+                                        var theDS = parentKernel.project.dataMaster.getDataSourceByCode(val);
+                                        if (theDS != null) {
+                                            _this[attrName] = theDS;
+                                            _this.listenDS(theDS, attr.name);
+                                        } else {
+                                            parentKernel.project.logManager.warn(val + '不是合法的数据源代码');
+                                        }
+                                    }
+                                    break;
+                            }
+                        });
+                    });
+                });
             }
         }
 
@@ -62,6 +97,97 @@ var ControlKernelBase = function (_IAttributeable) {
     }
 
     _createClass(ControlKernelBase, [{
+        key: '__attributeChanged',
+        value: function __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {
+            var attrItem = this.findAttributeByName(attrName);
+            if (attrItem.valueType == ValueType.DataSource) {
+                this.unlistenDS(oldValue, attrName);
+                this.listenDS(newValue, attrName);
+            }
+        }
+    }, {
+        key: 'delete',
+        value: function _delete() {
+            for (var dsCode in this.listendDS_map) {
+                var t_arr = this.listendDS_map[dsCode];
+                if (t_arr == null) {
+                    continue;
+                }
+                var theDS = parentKernel.project.dataMaster.getDataSourceByCode(val);
+                if (theDS) {
+                    this.unlistenDS(theDS);
+                }
+            }
+            if (this.children) {
+                for (var ci in this.children) {
+                    this.children[ci].delete();
+                }
+            }
+            this.project.unRegisterControl(this);
+            this.parent.removeChild(this);
+        }
+    }, {
+        key: 'listenDS',
+        value: function listenDS(target, attrName) {
+            if (target == null) {
+                return;
+            }
+            var t_arr = this.listendDS_map[target.code];
+            if (t_arr == null) {
+                this.listendDS_map[target.code] = [attrName];
+                target.on('syned', this.lisenedDSSyned);
+            } else {
+                var index = t_arr.indexOf(attrName);
+                if (index == -1) {
+                    t_arr.push(attrName);
+                }
+            }
+        }
+    }, {
+        key: 'unlistenDS',
+        value: function unlistenDS(target, attrName) {
+            if (target == null) {
+                return;
+            }
+            var t_arr = this.listendDS_map[target.code];
+            if (t_arr != null) {
+                var index = t_arr.indexOf(attrName);
+                if (index != -1) {
+                    t_arr.splice(index, 1);
+                }
+                if (t_arr.length == 0) {
+                    this.listendDS_map[target.code] = null;
+                    target.off('syned', this.lisenedDSSyned);
+                }
+            }
+        }
+    }, {
+        key: 'lisenedDSSyned',
+        value: function lisenedDSSyned(theDS) {
+            console.log('lisenedDSSyned');
+            console.log(theDS);
+            var t_arr = this.listendDS_map[theDS.code];
+            if (t_arr == null || t_arr.length == 0) {
+                console.warn('lisenedDSSyned but not in listendDS_map');
+                return;
+            }
+            if (t_arr.length == 1) {
+                this.attrChanged(t_arr[0]);
+            } else {
+                this.attrChanged(t_arr);
+            }
+        }
+    }, {
+        key: 'getReadableName',
+        value: function getReadableName() {
+            return this.id + (IsEmptyString(this[AttrNames.Name]) ? '' : '(' + this[AttrNames.Name] + ')');
+        }
+    }, {
+        key: 'getReactClassName',
+        value: function getReactClassName(isRedux) {
+            return (isRedux ? 'VisibleC' : 'C') + this.id;
+        }
+    }, {
         key: 'renderSelf',
         value: function renderSelf() {
             return null;

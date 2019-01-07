@@ -232,6 +232,15 @@ function IsEmptyString(val){
 	return val == null || val === '';
 }
 
+function IsEmptyObject(val){
+	for(var si in val){
+		if(val[si] != null){
+			return false;
+		}
+	}
+	return true;
+}
+
 function IsEmptyArray(val){
 	return val == null || val.length == 0;
 }

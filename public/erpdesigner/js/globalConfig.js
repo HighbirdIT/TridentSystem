@@ -119,9 +119,15 @@ DesignerConfig.findConfigByType = function (ctlType) {
 }.bind(DesignerConfig);
 
 var ValueType = {
-    String: 'String',
-    Int: 'Int',
-    Boolean: 'Boolean',
+    String: 'string',
+    Int: 'int',
+    Boolean: 'boolean',
     Float: 'float',
-    StyleValues: 'StyleValues'
+    Date: 'date',
+    Time: 'time',
+    DateTime: 'datetime',
+    StyleValues: 'StyleValues',
+    DataSource: 'DataSource'
 };
+
+var JsValueTypes = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time, ValueType.DateTime];

@@ -266,6 +266,10 @@
   min-height: 60px;
 }
 
+.M_Form_Empty{
+  min-height: 60px;
+}
+
 .M_placingCtl{
   background: lightgreen;
   border: dashed 2px green;
@@ -532,4 +536,40 @@
   top:50%;
   transform:translate(-50%,-50%);
   z-index:1000; 
+}
+
+.rowlFameOne{
+  height: auto;
+  border-top: solid #ced4da 1px;
+  align-items: center;
+  flex-shrink: 0;
+  flex-grow: 0;
+  display: flex;
+  min-height: 2em;
+}
+
+.rowlFameDivider{
+  height: 80%;
+  background-color: #ced4da;
+  width: 1px;
+}
+
+.rowlFameOne_Left{
+  width: 6.5em;
+}
+
+.rowlFameOne_right{
+  padding: 4px;
+  max-width: calc(100% - 6.5em);
+  flex-grow: 1;
+  flex-shrink: 1;
+  border-left: solid #ced4da 1px;
+}
+
+.rowlFameOne[last]{
+  border-bottom: solid #ced4da 1px;
+}
+
+.rowlFameOne[hor]{
+  flex-grow: 1;
 }

@@ -1,5 +1,5 @@
 class CAttribute{
-    constructor(label,name,valueType,defaultVal,editable,isArray,options_arr) {
+    constructor(label,name,valueType,defaultVal,editable,isArray,options_arr, dropdownSetting, visible) {
         Object.assign(this,{
             label:label,
             name : name,
@@ -9,7 +9,19 @@ class CAttribute{
             isArray:isArray,
             options_arr:options_arr,
             defaultVal:defaultVal,
+            dropdownSetting:dropdownSetting,
+            visible:visible != false,
         });
+    }
+
+    setVisible(target, val) {
+        var nowVisible = target[this.name + '_visible'];
+        if(nowVisible == val)
+        {
+            return;
+        }
+        target[this.name + '_visible'] = val;
+        this.group.fireEvent('changed');
     }
 }
 
@@ -29,6 +41,12 @@ const AttrNames={
     RealName:'realName',
     Chidlren:'children',
     IsMain:'ismain',
+    Label:'label',
+    DataSource:'datasource',
+    Name:'name',
+    ValueType:'valuetype',
+    FloatNum:'floatnum',
+    DefaultValue:'defaultvalue',
 
     LayoutNames:{
         APDClass:'apdClass',

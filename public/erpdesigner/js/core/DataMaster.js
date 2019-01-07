@@ -140,7 +140,7 @@ var DBEntity = function (_EventEmitter3) {
             this.syning = false;
             this.synErr = null;
             this.loaded = true;
-            this.emit('syned');
+            this.emit('syned', this);
             return true;
         }
     }, {
@@ -261,7 +261,7 @@ var DataMaster = function (_EventEmitter4) {
         key: 'getSqlBPByCode',
         value: function getSqlBPByCode(code) {
             return this.BP_sql_arr.find(function (item) {
-                return item.name == name;
+                return item.code == code;
             });
         }
     }, {
@@ -269,6 +269,13 @@ var DataMaster = function (_EventEmitter4) {
         value: function createSqlBP(name, type) {
             var newItem = new SqlNode_BluePrint({ name: name, type: type, master: this });
             this.addSqlBP(newItem);
+            this.emit('sqlbpchanged');
+        }
+    }, {
+        key: 'modifySqlBP',
+        value: function modifySqlBP(sqpBP, name, type) {
+            sqpBP.name = name;
+            sqpBP.type = type;
             this.emit('sqlbpchanged');
         }
     }, {
@@ -289,7 +296,6 @@ var DataMaster = function (_EventEmitter4) {
             })) {
                 return false;
             }
-            var index = this.usedDBEnities_arr;
             this.usedDBEnities_arr.push(data);
             this.usedDBEnities_arr.sort(function (a, b) {
                 return a.name < b.name;
@@ -307,6 +313,20 @@ var DataMaster = function (_EventEmitter4) {
                 rlt.BP_sql_arr.push(bp.getJson());
             });
             return rlt;
+        }
+    }, {
+        key: 'getDataSourceByCode',
+        value: function getDataSourceByCode(code) {
+            var rlt = this.getSqlBPByCode(code);
+            if (rlt == null && !isNaN(code)) {
+                rlt = g_dataBase.getEntityByCode(code);
+            }
+            return rlt;
+        }
+    }, {
+        key: 'getAllEntities',
+        value: function getAllEntities() {
+            return this.BP_sql_arr.concat(g_dataBase.entities_arr);
         }
     }, {
         key: 'restoreFromJson',

@@ -2,22 +2,42 @@
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var CAttribute = function CAttribute(label, name, valueType, defaultVal, editable, isArray, options_arr) {
-    _classCallCheck(this, CAttribute);
+var CAttribute = function () {
+    function CAttribute(label, name, valueType, defaultVal, editable, isArray, options_arr, dropdownSetting, visible) {
+        _classCallCheck(this, CAttribute);
 
-    Object.assign(this, {
-        label: label,
-        name: name,
-        valueType: valueType,
-        editable: editable != false,
-        inputID: name + '_input',
-        isArray: isArray,
-        options_arr: options_arr,
-        defaultVal: defaultVal
-    });
-};
+        Object.assign(this, {
+            label: label,
+            name: name,
+            valueType: valueType,
+            editable: editable != false,
+            inputID: name + '_input',
+            isArray: isArray,
+            options_arr: options_arr,
+            defaultVal: defaultVal,
+            dropdownSetting: dropdownSetting,
+            visible: visible != false
+        });
+    }
+
+    _createClass(CAttribute, [{
+        key: 'setVisible',
+        value: function setVisible(target, val) {
+            var nowVisible = target[this.name + '_visible'];
+            if (nowVisible == val) {
+                return;
+            }
+            target[this.name + '_visible'] = val;
+            this.group.fireEvent('changed');
+        }
+    }]);
+
+    return CAttribute;
+}();
 
 var VarNames = {
     RetProps: 'retProps',
@@ -35,6 +55,12 @@ var AttrNames = {
     RealName: 'realName',
     Chidlren: 'children',
     IsMain: 'ismain',
+    Label: 'label',
+    DataSource: 'datasource',
+    Name: 'name',
+    ValueType: 'valuetype',
+    FloatNum: 'floatnum',
+    DefaultValue: 'defaultvalue',
 
     LayoutNames: {
         APDClass: 'apdClass',

@@ -3,7 +3,11 @@ class DropDownControl extends React.PureComponent {
         super(props);
 
         var formated_arr = this.formatData(this.props.options_arr, this.props.textAttrName, this.props.valueAttrName);
+        var valueAttrName = this.props.valueAttrName == null ? this.props.textAttrName : this.props.valueAttrName;
         var selectedOption = formated_arr.find(item=>{
+            if(typeof this.props.value === 'object'){
+                return item == this.props.value || item.value == this.props.value[valueAttrName];
+            }
             return item.value == this.props.value;
         });
         autoBind(this);
@@ -131,6 +135,9 @@ class DropDownControl extends React.PureComponent {
     */
 
     formatData(orginData_arr, textAttrName, valueAttrName){
+        if(typeof orginData_arr === 'function'){
+            orginData_arr = orginData_arr();
+        }
         return orginData_arr.map(item=>{
             return typeof item == 'string' ? {text:item,value:item} : {text:item[textAttrName],value:item[valueAttrName],data:item};
         });

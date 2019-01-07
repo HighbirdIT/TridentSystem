@@ -11,7 +11,7 @@ class ProjectCompiler extends EventEmiter{
     }
 }
 
-class MobileProjectCompiler{
+class MobileProjectCompiler extends ProjectCompiler{
     constructor(project){
         super(project);
     }

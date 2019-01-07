@@ -115,8 +115,12 @@ var M_Page = function (_React$PureComponent) {
         key: 'renderMobilePage',
         value: function renderMobilePage(ctlKernel) {
             var layoutConfig = ctlKernel.getLayoutConfig();
-            var rootDivClass = 'flex-grow-1 felx-shrink-0 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : '');
-            rootDivClass += layoutConfig.baseClassName;
+            layoutConfig.addClass('d-flex');
+            layoutConfig.addClass('flex-grow-1');
+            layoutConfig.addClass('flex-shrink-0');
+            if (this.state.orientation == Orientation_V) {
+                layoutConfig.addClass('flex-column');
+            }
             return React.createElement(
                 React.Fragment,
                 null,
@@ -145,7 +149,7 @@ var M_Page = function (_React$PureComponent) {
                 ),
                 React.createElement(
                     'div',
-                    { className: rootDivClass, ref: this.rootElemRef },
+                    { className: layoutConfig.getClassName(), ref: this.rootElemRef },
                     this.state.children.map(function (childData) {
                         return childData.renderSelf();
                     })

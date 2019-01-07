@@ -286,7 +286,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
         var recentElem = null;
         var recentItems_arr = [];
         if (this.state.fetching) {
-            contentElem = (<div className='d-flex align-items-center'>正在获取数据<i className='fa fa-spinner fa-pulse fa-fw fa-2x' /></div>);
+            contentElem = (<div className='d-flex align-items-center m-auto'>正在获取数据<i className='fa fa-spinner fa-pulse fa-fw fa-2x' /></div>);
         }
         else {
             if (options_arr == null) {
@@ -417,7 +417,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             }
             if (options_arr.length > 20) {
                 searchItem = (<div className='d-flex flex-shrink-0 align-items-center'>
-                    <span className='badge badge-primary'>搜索:</span>
+                    <span className='fa fa-search fa-2x text-primary' />
                     <input className='flex-grow-1 flex-shrink-1 flexinput' type='text' value={keyword} onChange={this.keyInputChanged} />
                 </div>);
             }
@@ -691,7 +691,7 @@ const formatERPC_DropDown_options = (orginData_arr, textAttrName, valueAttrName,
 const ERPC_DropDown_optionsSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName, formatERPC_DropDown_options);
 
 function ERPC_DropDown_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state.app, MakePath(ownprops.parentPath, ownprops.id), {});
+    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
     if(ctlState.fetching){
         console.log('ctlState.fetching');
     }
@@ -699,7 +699,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         value: ctlState.value,
         text: ctlState.text,
         fetching: ctlState.fetching,
-        optionsData: ERPC_DropDown_optionsSelector(state.app, ownprops),
+        optionsData: ERPC_DropDown_optionsSelector(state, ownprops),
     };
 }
 
@@ -745,7 +745,7 @@ class ERPC_Text extends React.PureComponent {
                 contentElem = <textarea onChange={this.inputChanged} className='flex-grow-1 flex-shrink-1 form-control textarea-2x' value={this.props.value} />
             }
             else {
-                contentElem = (<input className='flex-grow-1 flex-shrink-1 form-control' type={this.props.type} value={this.props.value} onChange={this.inputChanged} />);
+                contentElem = (<input className='flex-grow-1 flex-shrink-1 form-control invalid ' type={this.props.type} value={this.props.value} onChange={this.inputChanged} />);
             }
         }
         return (<div className={rootDivClassName} ref={this.rootDivRef}>
@@ -755,7 +755,7 @@ class ERPC_Text extends React.PureComponent {
 }
 
 function ERPC_Text_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state.app, MakePath(ownprops.parentPath, ownprops.id), {});
+    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
     return {
         value: ctlState.value == null ? '' : ctlState.value,
         fetching: ctlState.fetching
@@ -789,7 +789,7 @@ class ERPC_LabeledControl extends React.PureComponent {
 }
 
 function ERPC_LabeledControl_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state.app, MakePath(ownprops.parentPath, ownprops.id), {});
+    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
     var useLabel = ownprops.label ? ownprops.label : (ctlState.label ? ctlState.label : '未知名称');
     return {
         label: useLabel,
@@ -798,6 +798,32 @@ function ERPC_LabeledControl_mapstatetoprops(state, ownprops) {
 }
 
 function ERPC_LabeledControl_dispatchtorprops(dispatch, ownprops) {
+    return {
+    };
+}
+
+class ERPC_Form extends React.PureComponent {
+    constructor(props) {
+        super();
+        autoBind(this);
+
+        ERPControlBase(this);
+        this.state = this.initState;
+    }
+
+    render() {
+        return (
+        <div className={this.props.className} style={this.props.style}>\
+            {this.props.children}
+        </div>);
+    }
+}
+
+function ERPC_Form_mapstatetoprops(state, ownprops) {
+    return {};
+}
+
+function ERPC_Form_dispatchtorprops(dispatch, ownprops) {
     return {
     };
 }

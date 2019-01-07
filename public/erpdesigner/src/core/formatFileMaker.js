@@ -76,6 +76,7 @@ class FormatFile_Line extends FormatFile_ItemBase{
     }
 }
 
+
 class FormatFileBlock extends FormatFile_ItemBase{
     constructor(name, priority){
         super();
@@ -159,6 +160,137 @@ class FormatFileBlock extends FormatFile_ItemBase{
     }
 }
 
+class FormatHtmlTag extends FormatFile_ItemBase{
+    constructor(name, tagName, clientSide){
+        super();
+        this.name = name;
+        this.tagName = tagName;
+        this.clientSide = clientSide;
+        this.class = {};
+        this.style = {};
+        this.switch = {};
+        this.attrObj = {};
+        this.childs_map = {};
+        this.childs_arr = [];
+    }
+
+    setAttr(name, value){
+        this.attrObj[name] = value;
+    }
+
+    addSwitchClass(switchName, switchVal, existsProcess) {
+        if (this.switch[switchName] != null) {
+            switch (existsProcess) {
+                case 'set':
+                    this.class[this.switch[switchName].name] = 0;
+                    break;
+                default:
+                    return false;
+            }
+        }
+        var className = switchName + '-' + switchVal;
+        this.switch[switchName] = { name: className, val: switchVal };
+        this.class[className] = 1;
+        return true;
+    }
+
+    addClass(className, existsProcess) {
+        if (IsEmptyString(className)) {
+            return false;
+        }
+        var t_arr = g_switchClassNameReg.exec(className);
+        if (t_arr != null) {
+            var switchName = className.substr(0, className.length - t_arr[0].length);
+            var switchVal = t_arr[0].substr(1);
+            return this.addSwitchClass(switchName, switchVal, existsProcess);
+        }
+
+        this.class[className] = 1;
+        return true;
+    }
+
+    addStyle(name, val) {
+        if (IsEmptyString(name) || val == null) {
+            return false;
+        }
+        this.style[name] = val;
+        return true;
+    }
+
+    getClassName() {
+        var rlt = '';
+        for (var si in this.class) {
+            if (this.class[si] == 0)
+                continue;
+            rlt += si + ' ';
+        }
+        return rlt;
+    }
+
+    pushChild(child){
+        if(!IsEmptyString(child.name)){
+            this.childs_map[child.name] = child;
+        }
+        child.parent = this;
+        child.indent = this.nextLineIndent;
+        this.childs_arr.push(child);
+    }
+
+    pushLine(lineItem, indentOffset){
+        var itemType = typeof lineItem;
+        if(itemType === 'string'){
+            lineItem = new FormatFile_Line(lineItem, this.nextLineIndent);
+        }
+        else if(!FormatFile_Line.prototype.isPrototypeOf(lineItem)){
+            console.error('不支持的lineitem！');
+        }
+        else{
+            lineItem.indent = this.nextLineIndent;
+        }
+        lineItem.parent = this;
+        this.childs_arr.push(lineItem);
+        this.nextLineIndent += indentOffset == null ? 0 : Math.sign(indentOffset);
+    }
+
+    getChild(childName){
+        return this.childs_map[childName];
+    }
+
+    getString(prefixStr, indentChar, newLineChar){
+        var rlt = prefixStr + '<' + this.tagName;
+        var className = this.getClassName();
+        if(!IsEmptyString(className)){
+            rlt += " className='" + className + "'";
+        }
+        var styleID = (this.attrObj.id == null ? (this.styleCounter++) : this.attrObj.id) + '_style';
+        if(this.clientSide.addStyleObject(styleID,this.style)){
+            rlt += " style={" + styleID + "}";
+        }
+
+        for(var i in this.attrObj){
+            var attrVal = this.attrObj[i];
+            if(IsEmptyString(attrVal)){
+                continue;
+            }
+            switch(attrVal[0]){
+                case '{':
+                case "'":
+                break;
+                default:
+                attrVal = "'" + attrVal + "'";
+            }
+            rlt += ' ' + i + '=' + attrVal;
+        }
+        rlt += '>' + newLineChar;
+        for(var ci in this.childs_arr){
+            var child = this.childs_arr[ci];
+            rlt += child.getString(prefixStr + indentChar, indentChar, newLineChar) + newLineChar;
+        }
+        rlt += prefixStr + '</' + this.tagName + '>' + newLineChar;
+        return rlt;
+    }
+}
+
 class FormatFileRegion extends FormatFile_ItemBase{
     constructor(name, priority){
         super();
@@ -175,15 +307,16 @@ class FormatFileRegion extends FormatFile_ItemBase{
     }
 
     getBlock(blockName, autoCreate, priority){
-        if(priority == null && this.blocks_arr.length > 0){
-            var nowMax = 0;
-            this.blocks_arr.forEach(x=>{
-                nowMax = Math.max(x.priority, nowMax);
-            });
-            priority = nowMax + 1;
-        }
         var rlt = this.blocks_map[blockName];
         if(rlt == null && autoCreate){
+            if(priority == null && this.blocks_arr.length > 0){
+                var nowMax = 0;
+                this.blocks_arr.forEach(x=>{
+                    nowMax = Math.max(x.priority, nowMax);
+                });
+                priority = nowMax + 1;
+            }
+            
             rlt = new FormatFileBlock(blockName, priority);
             this.blocks_arr.push(rlt);
             this.blocks_map[rlt.name] = rlt;
@@ -477,7 +610,7 @@ class JSFile_ReactClass extends JSFile_Class{
         this.renderFun.retBlock.pushLine(makeLine_Return(VarNames.RetElem));
         this.visibleComScope = new JSFile_Scope('visible' + name, outScope);
 
-        this.mapStateFun = this.visibleComScope.getFunction(name + '_mapstatetoprops', true, ['state']);
+        this.mapStateFun = this.visibleComScope.getFunction(name + '_mapstatetoprops', true, ['state','ownprops']);
         this.mapDispathFun = this.visibleComScope.getFunction(name + '_disptchtoprops', true, ['dispatch','ownprops']);
 
         this.mapStateFun.scope.getVar(VarNames.RetProps, true, '{}');
@@ -616,11 +749,6 @@ class CP_ClientSide extends JSFileMaker{
             },
         };
         this.appClass = this.getReactClass('App', true);
-        this.appClass.renderContentFun = this.appClass.getFunction('renderContent', true);
-        this.appClass.renderContentFun.scope.getVar(VarNames.RetElem, true);
-        this.appClass.renderContentFun.retBlock.pushLine(makeLine_Return(VarNames.RetElem));
-        this.appClass.renderHeaderFun = this.appClass.getFunction('renderHead', true);
-        this.appClass.renderFootFun = this.appClass.getFunction('renderFoot', true);
         this.reducers_map = {};
 
         this.appClass.constructorFun.pushLine("this.renderLoadingTip = baseRenderLoadingTip.bind(this);");
@@ -634,6 +762,7 @@ class CP_ClientSide extends JSFileMaker{
     }
 
     compile(){
+        this.styleCounter = 1;
         return true;
     }
 
@@ -649,28 +778,25 @@ class CP_ClientSide extends JSFileMaker{
         this.endBlock.pushLine('ReactDOM.render(<Provider store={store}>', 1);
         this.endBlock.pushLine('<VisibleApp />', -1);
         this.endBlock.pushLine("</Provider>, document.getElementById('reactRoot'));");
-
-        this.appClass.renderHeaderFun.pushLine("return (<div className='d-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader'>", 1);
-        this.appClass.renderHeaderFun.pushLine("<h3>{thisAppTitle}</h3>",-1);
-        this.appClass.renderHeaderFun.pushLine("</div>);");
-
-        this.appClass.renderFootFun.pushLine("return (<div className='flex-grow-0 flex-shrink-0 bg-primary text-light pageFooter'>", 1);
-        this.appClass.renderFootFun.pushLine("<h3>页脚</h3>", -1);
-        this.appClass.renderFootFun.pushLine("</div>);");
-
-        this.appClass.renderFun.pushLine(VarNames.RetElem + " = (", 1);
-        this.appClass.renderFun.pushLine("<div className='d-flex flex-column flex-grow-1 flex-shrink-1 h-100'>", 1);
-        this.appClass.renderFun.pushLine("{this.renderLoadingTip()}");
-        this.appClass.renderFun.pushLine("{this." + this.appClass.renderHeaderFun.name + "()}");
-        this.appClass.renderFun.pushLine("<div className='d-flex flex-column flex-grow-1 flex-shrink-1 autoScroll'>", 1);
-        this.appClass.renderFun.pushLine("{this.renderContent()}", -1);
-        this.appClass.renderFun.pushLine("</div>");
-        this.appClass.renderFun.pushLine("{this." + this.appClass.renderFootFun.name + "()}", -1);
-        this.appClass.renderFun.pushLine("</div>);");
-
     }
 
     getString(indentChar, newLineChar){
         return super.getString(indentChar, newLineChar);
+    }
+
+    addStyleObject(styleId, styleObj){
+        if(IsEmptyObject(styleObj)){
+            return false;
+        }
+        if(this.styleDefBlock == null){
+            this.styleDefBlock = this.defaultRegion.getBlock('styledef', true, 2);
+        }
+        var styleBlock = this.styleDefBlock.getChild(styleId);
+        if(styleBlock == null){
+            styleBlock = new FormatFileBlock(styleId);
+            this.styleDefBlock.pushChild(styleBlock);
+            styleBlock.pushLine('const ' + styleId + '=' + JSON.stringify(styleObj) + ';');
+        }
+        return true;
     }
 }

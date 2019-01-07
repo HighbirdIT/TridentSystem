@@ -333,7 +333,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             if (this.state.fetching) {
                 contentElem = React.createElement(
                     'div',
-                    { className: 'd-flex align-items-center' },
+                    { className: 'd-flex align-items-center m-auto' },
                     '\u6B63\u5728\u83B7\u53D6\u6570\u636E',
                     React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw fa-2x' })
                 );
@@ -485,11 +485,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                     searchItem = React.createElement(
                         'div',
                         { className: 'd-flex flex-shrink-0 align-items-center' },
-                        React.createElement(
-                            'span',
-                            { className: 'badge badge-primary' },
-                            '\u641C\u7D22:'
-                        ),
+                        React.createElement('span', { className: 'fa fa-search fa-2x text-primary' }),
                         React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 flexinput', type: 'text', value: keyword, onChange: this.keyInputChanged })
                     );
                 }
@@ -813,7 +809,7 @@ var formatERPC_DropDown_options = function formatERPC_DropDown_options(orginData
 var ERPC_DropDown_optionsSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName, formatERPC_DropDown_options);
 
 function ERPC_DropDown_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state.app, MakePath(ownprops.parentPath, ownprops.id), {});
+    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
     if (ctlState.fetching) {
         console.log('ctlState.fetching');
     }
@@ -821,7 +817,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         value: ctlState.value,
         text: ctlState.text,
         fetching: ctlState.fetching,
-        optionsData: ERPC_DropDown_optionsSelector(state.app, ownprops)
+        optionsData: ERPC_DropDown_optionsSelector(state, ownprops)
     };
 }
 
@@ -875,7 +871,7 @@ var ERPC_Text = function (_React$PureComponent4) {
                 } else if (this.props.type == 'multiline') {
                     contentElem = React.createElement('textarea', { onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 form-control textarea-2x', value: this.props.value });
                 } else {
-                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control', type: this.props.type, value: this.props.value, onChange: this.inputChanged });
+                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control invalid ', type: this.props.type, value: this.props.value, onChange: this.inputChanged });
                 }
             }
             return React.createElement(
@@ -890,7 +886,7 @@ var ERPC_Text = function (_React$PureComponent4) {
 }(React.PureComponent);
 
 function ERPC_Text_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state.app, MakePath(ownprops.parentPath, ownprops.id), {});
+    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
     return {
         value: ctlState.value == null ? '' : ctlState.value,
         fetching: ctlState.fetching
@@ -940,7 +936,7 @@ var ERPC_LabeledControl = function (_React$PureComponent5) {
 }(React.PureComponent);
 
 function ERPC_LabeledControl_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state.app, MakePath(ownprops.parentPath, ownprops.id), {});
+    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
     var useLabel = ownprops.label ? ownprops.label : ctlState.label ? ctlState.label : '未知名称';
     return {
         label: useLabel,
@@ -949,6 +945,44 @@ function ERPC_LabeledControl_mapstatetoprops(state, ownprops) {
 }
 
 function ERPC_LabeledControl_dispatchtorprops(dispatch, ownprops) {
+    return {};
+}
+
+var ERPC_Form = function (_React$PureComponent6) {
+    _inherits(ERPC_Form, _React$PureComponent6);
+
+    function ERPC_Form(props) {
+        _classCallCheck(this, ERPC_Form);
+
+        var _this8 = _possibleConstructorReturn(this, (ERPC_Form.__proto__ || Object.getPrototypeOf(ERPC_Form)).call(this));
+
+        autoBind(_this8);
+
+        ERPControlBase(_this8);
+        _this8.state = _this8.initState;
+        return _this8;
+    }
+
+    _createClass(ERPC_Form, [{
+        key: 'render',
+        value: function render() {
+            return React.createElement(
+                'div',
+                { className: this.props.className, style: this.props.style },
+                '\\',
+                this.props.children
+            );
+        }
+    }]);
+
+    return ERPC_Form;
+}(React.PureComponent);
+
+function ERPC_Form_mapstatetoprops(state, ownprops) {
+    return {};
+}
+
+function ERPC_Form_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 

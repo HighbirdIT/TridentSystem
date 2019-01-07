@@ -26,6 +26,13 @@ class AttributeEditor extends React.PureComponent {
                 rlt = Object.assign({},rlt);
             }
         }
+        switch(this.props.targetattr.valueType){
+            case ValueType.StyleValues:
+            if(typeof rlt === 'string'){
+                rlt = {};
+            }
+            break;
+        }
         return rlt;
     }
 
@@ -157,7 +164,16 @@ class AttributeEditor extends React.PureComponent {
             return (<div className="form-control-plaintext text-light" id={inputID}>{nowVal}</div>);
         }
         if(theAttr.options_arr != null){
-            return (<DropDownControl options_arr={theAttr.options_arr} value={nowVal} itemChanged={this.itemChangedHandler}/>);
+            var dropdownSetting = theAttr.dropdownSetting == null ? {} : theAttr.dropdownSetting;
+            if(dropdownSetting.text == null){
+                dropdownSetting.text = 'text';
+            }
+            if(theAttr.valueType == ValueType.DataSource){
+                if(nowVal && nowVal.loaded == false){
+                    return (<div className='text-light'>加载中</div>);
+                }
+            }
+            return (<DropDownControl options_arr={theAttr.options_arr} value={nowVal} itemChanged={this.itemChangedHandler} textAttrName={dropdownSetting.text} valueAttrName={dropdownSetting.value}/>);
         }
         
         var inputType = 'text';
@@ -250,6 +266,32 @@ class AttributeGroup extends React.PureComponent {
         this.attrArrayChanged(attrName,newCount);
     }
 
+    groupChangedhandler(ev){
+        this.setState({
+            magicObj:{}
+        });
+    }
+
+    componentWillUnmount(){
+        this.listenGroup(this.props.attrGroup);
+    }
+
+    listenGroup(group){
+        this.listeningGroup = group;
+        if(group == null){
+            return;
+        }
+        group.on('changed', this.groupChangedhandler);
+    }
+
+    unlistenGroup(group){
+        this.listeningGroup = null;
+        if(targroupget == null){
+            return;
+        }
+        group.off('changed', this.groupChangedhandler);
+    }
+
     attrArrayChanged(attrName, newCount){
         var newState = {};
         newState[attrName + 'count'] = newCount;
@@ -258,6 +300,9 @@ class AttributeGroup extends React.PureComponent {
 
     renderAttribute(attr){
         var target = this.state.target;
+        if(!attr.visible && !target[attr.name + '_visible']){
+            return null;
+        }
         if(attr.isArray){
             var rlt_arr = [];
             var attrArrayItem_arr = target.getAttrArrayList(attr.name);
@@ -284,6 +329,9 @@ class AttributeGroup extends React.PureComponent {
         var projectName = this.props.projectName;
         var attrGroup = this.props.attrGroup;
         var attrGroupIndex = this.props.attrGroupIndex;
+        if(this.listeningGroup != attrGroup){
+            this.listenGroup(attrGroup);
+        }
         return(
             <React.Fragment>
                 <button type="button" data-toggle="collapse" data-target={"#attrGroup" + projectName + attrGroup.label} className={'btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' + (attrGroupIndex >= 0 ? '' : ' collapsed')} style={{ borderRadius: '0em', height: '2.5em' }}>{attrGroup.label}</button>

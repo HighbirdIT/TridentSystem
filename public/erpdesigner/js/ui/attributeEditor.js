@@ -45,6 +45,13 @@ var AttributeEditor = function (_React$PureComponent) {
                     rlt = Object.assign({}, rlt);
                 }
             }
+            switch (this.props.targetattr.valueType) {
+                case ValueType.StyleValues:
+                    if (typeof rlt === 'string') {
+                        rlt = {};
+                    }
+                    break;
+            }
             return rlt;
         }
     }, {
@@ -197,7 +204,20 @@ var AttributeEditor = function (_React$PureComponent) {
                 );
             }
             if (theAttr.options_arr != null) {
-                return React.createElement(DropDownControl, { options_arr: theAttr.options_arr, value: nowVal, itemChanged: this.itemChangedHandler });
+                var dropdownSetting = theAttr.dropdownSetting == null ? {} : theAttr.dropdownSetting;
+                if (dropdownSetting.text == null) {
+                    dropdownSetting.text = 'text';
+                }
+                if (theAttr.valueType == ValueType.DataSource) {
+                    if (nowVal && nowVal.loaded == false) {
+                        return React.createElement(
+                            'div',
+                            { className: 'text-light' },
+                            '\u52A0\u8F7D\u4E2D'
+                        );
+                    }
+                }
+                return React.createElement(DropDownControl, { options_arr: theAttr.options_arr, value: nowVal, itemChanged: this.itemChangedHandler, textAttrName: dropdownSetting.text, valueAttrName: dropdownSetting.value });
             }
 
             var inputType = 'text';
@@ -311,6 +331,36 @@ var AttributeGroup = function (_React$PureComponent2) {
             this.attrArrayChanged(attrName, newCount);
         }
     }, {
+        key: 'groupChangedhandler',
+        value: function groupChangedhandler(ev) {
+            this.setState({
+                magicObj: {}
+            });
+        }
+    }, {
+        key: 'componentWillUnmount',
+        value: function componentWillUnmount() {
+            this.listenGroup(this.props.attrGroup);
+        }
+    }, {
+        key: 'listenGroup',
+        value: function listenGroup(group) {
+            this.listeningGroup = group;
+            if (group == null) {
+                return;
+            }
+            group.on('changed', this.groupChangedhandler);
+        }
+    }, {
+        key: 'unlistenGroup',
+        value: function unlistenGroup(group) {
+            this.listeningGroup = null;
+            if (targroupget == null) {
+                return;
+            }
+            group.off('changed', this.groupChangedhandler);
+        }
+    }, {
         key: 'attrArrayChanged',
         value: function attrArrayChanged(attrName, newCount) {
             var newState = {};
@@ -321,6 +371,9 @@ var AttributeGroup = function (_React$PureComponent2) {
         key: 'renderAttribute',
         value: function renderAttribute(attr) {
             var target = this.state.target;
+            if (!attr.visible && !target[attr.name + '_visible']) {
+                return null;
+            }
             if (attr.isArray) {
                 var rlt_arr = [];
                 var attrArrayItem_arr = target.getAttrArrayList(attr.name);
@@ -355,6 +408,9 @@ var AttributeGroup = function (_React$PureComponent2) {
             var projectName = this.props.projectName;
             var attrGroup = this.props.attrGroup;
             var attrGroupIndex = this.props.attrGroupIndex;
+            if (this.listeningGroup != attrGroup) {
+                this.listenGroup(attrGroup);
+            }
             return React.createElement(
                 React.Fragment,
                 null,

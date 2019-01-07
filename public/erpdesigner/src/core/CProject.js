@@ -121,6 +121,15 @@ class CProject extends IAttributeable{
         this.controlId_map[useID] = ctlKernel;
     }
 
+    unRegisterControl(ctlKernel){
+        var useID = ctlKernel.id;
+        var registedCtl = this.getControlById(useID);
+        if(registedCtl == null){
+            return true;
+        }
+        delete this.controlId_map[useID];
+    }
+
     getControlById(id){
         return this.controlId_map[id];
     }

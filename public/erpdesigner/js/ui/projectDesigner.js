@@ -61,6 +61,27 @@ var ProjectDesigner = function (_React$PureComponent) {
             if (this.attrbutePanelRef.current) this.attrbutePanelRef.current.setTarget(kernel);
         }
     }, {
+        key: 'deleteSelectedKernel',
+        value: function deleteSelectedKernel() {
+            if (this.attrbutePanelRef.current == null) {
+                return;
+            }
+            var nowTarget = this.attrbutePanelRef.current.getTarget();
+            if (nowTarget == null) {
+                return;
+            }
+            if (nowTarget.parent == null) {
+                return;
+            }
+            if (ControlKernelBase.prototype.isPrototypeOf(nowTarget)) {
+                // is kernel
+                if (nowTarget.parent == M_LabeledControlKernel_Type) {
+                    return;
+                }
+                nowTarget.delete();
+            }
+        }
+    }, {
         key: 'mouseDownControlIcon',
         value: function mouseDownControlIcon(ctltype) {
             this.contenPanelRef.current.endPlace();

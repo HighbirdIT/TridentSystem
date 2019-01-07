@@ -1,6 +1,7 @@
 const M_LabelKernelAttrsSetting={
     groups_arr:[
         new CAttributeGroup('基本设置',[
+            new CAttribute('name',AttrNames.Name,ValueType.String),
             new CAttribute('内容',AttrNames.Text,ValueType.String,'标签内容'),
         ]),
     ],
@@ -54,8 +55,6 @@ class M_Label extends React.PureComponent {
     render(){
         var ctlKernel = this.props.ctlKernel;
         var layoutConfig = ctlKernel.getLayoutConfig();
-        layoutConfig.addClass('flex-grow-0');
-        layoutConfig.addClass('flex-shrink-0');
         if(this.props.ctlKernel.__placing){
             layoutConfig.addClass('M_placingCtl');
             return (<div className={layoutConfig.getClassName()} style={layoutConfig.style} ref={this.rootElemRef}>标签内容</div>);

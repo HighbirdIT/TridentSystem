@@ -131,6 +131,16 @@ var CProject = function (_IAttributeable) {
             this.controlId_map[useID] = ctlKernel;
         }
     }, {
+        key: 'unRegisterControl',
+        value: function unRegisterControl(ctlKernel) {
+            var useID = ctlKernel.id;
+            var registedCtl = this.getControlById(useID);
+            if (registedCtl == null) {
+                return true;
+            }
+            delete this.controlId_map[useID];
+        }
+    }, {
         key: 'getControlById',
         value: function getControlById(id) {
             return this.controlId_map[id];

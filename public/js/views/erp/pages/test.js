@@ -35,8 +35,8 @@ var appInitState = {
 var appReducerSetting = { AT_FETCHBEGIN: fetchBeginHandler, AT_FETCHEND: fetchEndHandler };
 var appReducer = createReducer(appInitState, Object.assign(baseReducerSetting, appReducerSetting));
 
-var reducer = Redux.combineReducers({ app: appReducer });
-var store = Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));
+//let reducer = Redux.combineReducers({ app: appReducer });
+var store = Redux.createStore(appReducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));
 
 var appStateChangedAct_map = {
     'page1.testControl01.text': function page1TestControl01Text(state, path, newValue, visited) {
@@ -342,7 +342,11 @@ var App = function (_React$PureComponent3) {
                 React.createElement(
                     'div',
                     { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 autoScroll_Touch' },
-                    this.renderContent()
+                    React.createElement(
+                        'form',
+                        { className: 'needs-validation' },
+                        this.renderContent()
+                    )
                 ),
                 React.createElement(
                     'div',
@@ -362,8 +366,8 @@ var App = function (_React$PureComponent3) {
 
 function App_mapstatetoprops(state) {
     return {
-        loaded: state.app.loaded,
-        fetchState: state.app.ui.fetchState
+        loaded: state.loaded,
+        fetchState: state.ui.fetchState
     };
 }
 

@@ -9,7 +9,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var M_LabelKernelAttrsSetting = {
-    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('内容', AttrNames.Text, ValueType.String, '标签内容')])]
+    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('name', AttrNames.Name, ValueType.String), new CAttribute('内容', AttrNames.Text, ValueType.String, '标签内容')])]
 };
 
 var M_LabelKernel = function (_ControlKernelBase) {
@@ -67,8 +67,6 @@ var M_Label = function (_React$PureComponent) {
         value: function render() {
             var ctlKernel = this.props.ctlKernel;
             var layoutConfig = ctlKernel.getLayoutConfig();
-            layoutConfig.addClass('flex-grow-0');
-            layoutConfig.addClass('flex-shrink-0');
             if (this.props.ctlKernel.__placing) {
                 layoutConfig.addClass('M_placingCtl');
                 return React.createElement(

@@ -96,7 +96,7 @@ class DBEntity extends EventEmitter{
         this.syning = false;
         this.synErr = null;
         this.loaded = true;
-        this.emit('syned');
+        this.emit('syned', this);
         return true;
     }
 
@@ -198,12 +198,18 @@ class DataMaster extends EventEmitter{
     }
 
     getSqlBPByCode(code){
-        return this.BP_sql_arr.find(item=>{return item.name == name});
+        return this.BP_sql_arr.find(item=>{return item.code == code});
     }
 
     createSqlBP(name, type){
         var newItem = new SqlNode_BluePrint({name:name,type:type,master:this});
         this.addSqlBP(newItem);
+        this.emit('sqlbpchanged');
+    }
+
+    modifySqlBP(sqpBP, name, type){
+        sqpBP.name = name;
+        sqpBP.type = type;
         this.emit('sqlbpchanged');
     }
 
@@ -219,7 +225,6 @@ class DataMaster extends EventEmitter{
         if(this.usedDBEnities_arr.find(e=>{return e.code == data.code})){
             return false;
         }
-        var index = this.usedDBEnities_arr;
         this.usedDBEnities_arr.push(data);
         this.usedDBEnities_arr.sort((a,b)=>{
             return a.name < b.name;
@@ -236,6 +241,18 @@ class DataMaster extends EventEmitter{
             rlt.BP_sql_arr.push(bp.getJson());
         });
         return rlt;
+    }
+
+    getDataSourceByCode(code){
+        var rlt = this.getSqlBPByCode(code);
+        if(rlt == null && !isNaN(code)){
+            rlt = g_dataBase.getEntityByCode(code);
+        }
+        return rlt;
+    }
+
+    getAllEntities(){
+        return this.BP_sql_arr.concat(g_dataBase.entities_arr);
     }
 
     restoreFromJson(json){

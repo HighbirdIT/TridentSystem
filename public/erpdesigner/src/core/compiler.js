@@ -17,6 +17,15 @@ class ProjectCompiler extends EventEmitter{
         }
     }
 
+    clickKernelLogBadgeItemHandler(badgeItem){
+        console.log('clickSqlCompilerLogBadgeItemHandler');
+        if(badgeItem.data){
+            var project = this.project;
+            var designer = project.designer;
+            designer.selectKernel(badgeItem.data);
+        }
+    }
+
     stopCompile(isCompleted, stopInfo){
         this.isCompleted = isCompleted;
         var project = this.project;

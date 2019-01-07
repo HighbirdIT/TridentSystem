@@ -29,7 +29,7 @@ var OutlineItem = function (_React$PureComponent) {
         }
         _this.state = Object.assign({ kernel: _this.props.kernel }, _this.props.kernel.outlineProfile);
         autoBind(_this);
-        React_Make_AttributeListener(_this, ['children', 'selected', 'unselected', 'placeChanged']);
+        React_Make_AttributeListener(_this, [AttrNames.Name, AttrNames.Chidlren, 'selected', 'unselected', 'placeChanged']);
         _this.rootElemRef = React.createRef();
         return _this;
     }
@@ -37,7 +37,7 @@ var OutlineItem = function (_React$PureComponent) {
     _createClass(OutlineItem, [{
         key: 'aAttrChanged',
         value: function aAttrChanged(changedAttrName) {
-            if (changedAttrName == 'children') {
+            if (changedAttrName == AttrNames.Chidlren) {
                 this.setState({
                     magicObj: {}
                 });
@@ -54,6 +54,10 @@ var OutlineItem = function (_React$PureComponent) {
                 });
             } else if (changedAttrName == 'placeChanged') {
                 this.props.itemSelected(this, this.rootElemRef.current);
+            } else if (changedAttrName == AttrNames.Name) {
+                this.setState({
+                    magicObj: {}
+                });
             }
         }
     }, {
@@ -151,6 +155,7 @@ var OutlineItem = function (_React$PureComponent) {
             var isContainer = kernel.children != null;
             var hasChild = isContainer && kernel.children.length > 0;
             var offsetStyle = { width: this.props.deep * 25 + (hasChild ? 0 : 7) + 'px' };
+            var kernelLabel = kernel.id + (IsEmptyString(kernel[AttrNames.Name]) ? '' : '(' + kernel[AttrNames.Name] + ')');
             return React.createElement(
                 'div',
                 { key: kernel.id, className: 'outlineItemDiv' + (this.props.deep ? ' ' : ' topest') + (isContainer ? " d-felx flex-column" : '') },
@@ -162,7 +167,7 @@ var OutlineItem = function (_React$PureComponent) {
                     React.createElement(
                         'div',
                         { className: 'outlineItem flex-grow-0 flex-shrink-0' + (kernel.__placing ? ' bg-dark text-light' : ''), ctlselected: this.state.selected ? ' active' : null, onClick: this.clickhandler, onMouseDown: this.mouseDownHandler, ref: this.rootElemRef },
-                        (kernel.__placing ? '*' : '') + kernel.id
+                        (kernel.__placing ? '*' : '') + kernelLabel
                     )
                 ),
                 kernel.__placing || this.state.collapsed || kernel.children == null || kernel.children.length == 0 ? null : kernel.children.map(function (childKernel) {
@@ -378,6 +383,11 @@ var OutlinePanel = function (_React$PureComponent2) {
             //console.log(this.scrollHStep);
         }
     }, {
+        key: 'clickTrashBtnHandler',
+        value: function clickTrashBtnHandler(ev) {
+            this.props.project.designer.deleteSelectedKernel();
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this4 = this;
@@ -392,10 +402,10 @@ var OutlinePanel = function (_React$PureComponent2) {
                 ),
                 React.createElement(
                     'div',
-                    { className: 'btn-group flex-grow-0 flex-shrink-1 bg-dark' },
+                    { className: 'btn-group flex-grow-0 flex-shrink-0 bg-dark' },
                     React.createElement(
                         'div',
-                        { className: 'btn btn-dark' },
+                        { className: 'btn btn-dark', onClick: this.clickTrashBtnHandler },
                         React.createElement('i', { className: 'fa fa-trash text-danger' })
                     )
                 ),

@@ -103,8 +103,12 @@ class M_Page extends React.PureComponent {
 
     renderMobilePage(ctlKernel) {
         var layoutConfig = ctlKernel.getLayoutConfig();
-        var rootDivClass = 'flex-grow-1 felx-shrink-0 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : '');
-        rootDivClass += layoutConfig.baseClassName;
+        layoutConfig.addClass('d-flex');
+        layoutConfig.addClass('flex-grow-1');
+        layoutConfig.addClass('flex-shrink-0');
+        if(this.state.orientation == Orientation_V){
+            layoutConfig.addClass('flex-column');
+        }
         return (
             <React.Fragment>
                 <div className="d-flex flex-grow-0 flex-shrink-1 text-light bg-primary align-items-baseline">
@@ -116,7 +120,7 @@ class M_Page extends React.PureComponent {
                         <span className='icon icon-more-vertical mr-1' />
                     </div>
                 </div>
-                <div className={rootDivClass} ref={this.rootElemRef}>
+                <div className={layoutConfig.getClassName()} ref={this.rootElemRef}>
                     {
                         this.state.children.map(childData => {
                             return childData.renderSelf()
