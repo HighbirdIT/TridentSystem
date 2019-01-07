@@ -91,16 +91,11 @@ const SqlNodeEditorControls_arr =[
         label:'union',
         nodeClass:SqlNode_Union,
     }
-    ,
-    {
-        label:'UNION',
-        nodeClass:SqlNode_Union,
-    }
-    ,
+    /*
     {
         label:'聚合函数',
         nodeClass:SqlNode_Aggregate,
-    }
+    }*/
 ]; 
 
 

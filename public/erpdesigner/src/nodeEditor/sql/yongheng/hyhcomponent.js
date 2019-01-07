@@ -295,13 +295,7 @@ class C_SqlNode_DateCon extends React.PureComponent {
             datepartType: newdatepart
         });
     }
-    datepartChangedHandler(newdatepart) {
-        var nodeData = this.props.nodedata;
-        nodeData.datepartType = newdatepart;
-        this.setState({
-            datepartType: newdatepart
-        });
-    }
+    
     dateChangedHandler(mathType) {
         var nodeData = this.props.nodedata;
         nodeData.setDateType(dateType);

@@ -1148,7 +1148,7 @@ SqlNodeClassMap[SQLNODE_NEWID] = {
     modelClass: SqlNode_NewID,
     comClass: C_SqlNode_SimpleNode,
 };
-////////////////////////////////////////////////////////
+
 SqlNodeEditorControls_arr.push({
     label:'CONVERT',
     nodeClass:SqlNode_Convert,

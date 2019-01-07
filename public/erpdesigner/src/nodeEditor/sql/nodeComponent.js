@@ -441,15 +441,23 @@ class C_SqlNode_Select extends React.PureComponent {
             return null;
         }
         var topValue = nodeData.columnNode.topValue;
+        var distChecked = nodeData.columnNode.distChecked;
         if (topValue == null) {
             topValue = '';
         }
         else {
             topValue = ' top ' + topValue;
         }
+
+        if (distChecked == null){
+            distChecked = false;
+        }else{
+            distChecked = true;
+        }
+
         return <div className='d-flex flex-column'>
             <div className="dropdown-divider"></div>
-            <div>Select{topValue}</div>
+            <div>Select{topValue}{distChecked}</div>
             {
                 columns_arr.map(column => {
                     return <div key={column.name} className='text-nowrap'>{column.name}</div>
@@ -907,7 +915,7 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
         C_SqlNode_Base(this);
         this.state = {
             topValue: this.props.nodedata.topValue,
-            ischecked : '',
+            distChecked :this.props.nodedata.distChecked,
         }
     }
 
@@ -919,16 +927,11 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
         this.props.nodedata.topValue = topValue;
     }
     distinctChangeHandler(ev){
-        var isChecked = ev.target.value;
-        //if(isChecked == null){
-        //    isChecked = false;
-        //}else{
-         //   isChecked= true;
-        //}
+        var distChecked = ev.target.checked;
         this.setState({
-            ischecked: isChecked
+            distChecked: distChecked
         })
-        this.props.nodeData.isChecked = isChecked;
+      //  this.props.nodeData.distChecked = distChecked;
     }
     render() {
         var nodeData = this.props.nodedata;
@@ -936,8 +939,8 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
         if (topVal == null) {
             topVal = '';
         }
-        if(this.state.isChecked == null){
-            this.state.isChecked = false;
+        if(this.state.distChecked == null){
+            this.state.distChecked = false;
         }
         var headType = nodeData.headType == null ? 'tiny' : nodeData.headType;
         return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType={headType} headText={nodeData.label} >
@@ -947,7 +950,7 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
             </div>
             <div className='d-flex'>
                 <div>Distinct:</div>
-                <input type='checkbox' id='distinct' checked={this.state.isChecked} onClick={this.distinctChangeHandler}></input>
+                <input type='checkbox' id='distinct' checked={this.state.distChecked} onClick={this.distinctChangeHandler}></input>
                 <label htmlFor="distinct"></label>
             </div>
             <div className='d-flex'>
