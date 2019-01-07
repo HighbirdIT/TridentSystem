@@ -1962,10 +1962,6 @@ class SqlNode_Select extends SqlNode_Base {
                 topString = 'top ' + columnNode.topValue + ' ';
             }
         }
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-        
         var isCheckedString = ''
         /*
         if(!IsEmptyString(columnNode.distChecked)){
@@ -1976,15 +1972,6 @@ class SqlNode_Select extends SqlNode_Base {
             }
         }*/
         var finalSql = 'select ' +topString +isCheckedString+ columnsStr + ' from ' + fromString
-=======
-        var finalSql = 'select ' + topString + columnsStr + ' from ' + fromString
->>>>>>> parent of 48d0015... 1-7
-=======
-        var finalSql = 'select ' + topString + columnsStr + ' from ' + fromString
->>>>>>> parent of 48d0015... 1-7
-=======
-        var finalSql = 'select ' + topString + columnsStr + ' from ' + fromString
->>>>>>> parent of 48d0015... 1-7
             + (IsEmptyString(whereString) ? '' : ' where ' + whereString)
             + (IsEmptyString(groupstring) ? '' : ' group by ' + groupstring)
             + (IsEmptyString(havingString) ? '' : ' having ' + havingString)
@@ -2418,31 +2405,15 @@ class SqlNode_Ret_Columns extends SqlNode_Base {
     requestSaveAttrs() {
         var rlt = super.requestSaveAttrs();
         rlt.topValue = this.topValue;
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
         rlt.distChecked =this.distChecked;
-=======
->>>>>>> parent of 48d0015... 1-7
-=======
->>>>>>> parent of 48d0015... 1-7
-=======
->>>>>>> parent of 48d0015... 1-7
         return rlt;
     }
 
     restorFromAttrs(attrsJson) {
-<<<<<<< HEAD
         assginObjByProperties(this, attrsJson, ['topValue','distChecked']);
-=======
+
         assginObjByProperties(this, attrsJson, ['topValue']);
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> parent of 48d0015... 1-7
-=======
->>>>>>> parent of 48d0015... 1-7
-=======
->>>>>>> parent of 48d0015... 1-7
+
     }
 
     genInSocket() {

@@ -915,16 +915,8 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
         C_SqlNode_Base(this);
         this.state = {
             topValue: this.props.nodedata.topValue,
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
             distChecked :this.props.nodedata.distChecked,
-=======
->>>>>>> parent of 48d0015... 1-7
-=======
->>>>>>> parent of 48d0015... 1-7
-=======
->>>>>>> parent of 48d0015... 1-7
+
         }
     }
 
@@ -935,9 +927,7 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
         );
         this.props.nodedata.topValue = topValue;
     }
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
+
     distinctChangeHandler(ev){
         var distChecked = ev.target.checked;
         this.setState({
@@ -945,59 +935,28 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
         })
       //  this.props.nodeData.distChecked = distChecked;
     }
-=======
 
->>>>>>> parent of 48d0015... 1-7
-=======
-
->>>>>>> parent of 48d0015... 1-7
-=======
-
->>>>>>> parent of 48d0015... 1-7
     render() {
         var nodeData = this.props.nodedata;
         var topVal = this.state.topValue;
         if (topVal == null) {
             topVal = '';
         }
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
         if(this.state.distChecked == null){
             this.state.distChecked = false;
         }
-=======
->>>>>>> parent of 48d0015... 1-7
-=======
->>>>>>> parent of 48d0015... 1-7
-=======
->>>>>>> parent of 48d0015... 1-7
         var headType = nodeData.headType == null ? 'tiny' : nodeData.headType;
         return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType={headType} headText={nodeData.label} >
             <div className='d-flex'>
                 <div>Top:</div>
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
+
                 <input type='text' className='flex-grow-1 flex-shrink-1' value={topVal} onChange={this.topInputChangeHandler} />
             </div>
             <div className='d-flex'>
                 <div>Distinct:</div>
                 <input type='checkbox' id='distinct' checked={this.state.distChecked} onClick={this.distinctChangeHandler}></input>
                 <label htmlFor="distinct"></label>
-            </div>
-=======
-                <input type='text' className='flex-grow-1 flex-shrink-1' value={topVal} onChange={this.topInputChangeHandler} />'
-                </div>
->>>>>>> parent of 48d0015... 1-7
-=======
-                <input type='text' className='flex-grow-1 flex-shrink-1' value={topVal} onChange={this.topInputChangeHandler} />'
-                </div>
->>>>>>> parent of 48d0015... 1-7
-=======
-                <input type='text' className='flex-grow-1 flex-shrink-1' value={topVal} onChange={this.topInputChangeHandler} />'
-                </div>
->>>>>>> parent of 48d0015... 1-7
+            </div>         
             <div className='d-flex'>
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
