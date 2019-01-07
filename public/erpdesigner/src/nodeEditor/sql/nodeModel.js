@@ -25,7 +25,7 @@ const SQLNODE_LIKE = 'like';
 const SQLNODE_EXISTS = 'exists';
 
 const SQLDEF_VAR = 'def_variable';
-const SQLNODE_TOSTRING='tostring';
+const SQLNODE_TOSTRING='makestring';
 const SQLNODE_CASE_WHEN='case_when';
 const SQLNODE_CW_WHEN='cw_when';
 const SQLNODE_CW_ELSE='cw_else';
@@ -1880,7 +1880,15 @@ class SqlNode_Select extends SqlNode_Base {
                 topString = 'top ' + columnNode.topValue + ' ';
             }
         }
-        var finalSql = 'select ' + topString + columnsStr + ' from ' + fromString
+        var isCheckedString = ''
+        if(!IsEmptyString(columnNode.isChecked)){
+            if(columnNode.isChecked == true){
+                isCheckedString = ' distinct '
+            }else{
+                isCheckedString = ''
+            }
+        }
+        var finalSql = 'select ' +topString +isCheckedString+ columnsStr + ' from ' + fromString
             + (IsEmptyString(whereString) ? '' : ' where ' + whereString)
             + (IsEmptyString(groupString) ? '' : ' group by ' + groupString)
             + (IsEmptyString(sortString) ? '' : ' order by ' + sortString);
@@ -2314,11 +2322,13 @@ class SqlNode_Ret_Columns extends SqlNode_Base {
     requestSaveAttrs() {
         var rlt = super.requestSaveAttrs();
         rlt.topValue = this.topValue;
+        rlt.isChecked =this.isChecked;
         return rlt;
     }
 
     restorFromAttrs(attrsJson) {
         assginObjByProperties(this, attrsJson, ['topValue']);
+        assginObjByProperties(this, attrsJson, ['isChecked']);
     }
 
     genInSocket() {
@@ -3590,7 +3600,7 @@ class SqlNode_In_Operator extends SqlNode_Base {
 
             });
         } else {
-            this.addSocket(this.genInSocket());
+            this.addSocket(new NodeSocket('in' + this.inputScokets_arr.length, this, true, { type: SqlVarType_Scalar, inputable: false }));
         }
         if (this.tablesocket == null) {
             this.tablesocket = this.addSocket(new NodeSocket('intable', this, true, { type: SqlVarType_Table }));
@@ -3619,14 +3629,6 @@ class SqlNode_In_Operator extends SqlNode_Base {
         var usePreNodes_arr = preNodes_arr.concat(this);
         var socketOuts_arr = [];
 
-        if (this.inputScokets_arr[0].type == SqlVarType_Table) {
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                '第一个输入不得为table类型']);
-            return false;
-        }
         var first_socket = this.inputScokets_arr[0];
         var first_socketlinks = this.bluePrint.linkPool.getLinksBySocket(first_socket);
         if (first_socketlinks.length == 0) {
@@ -3641,6 +3643,14 @@ class SqlNode_In_Operator extends SqlNode_Base {
         var firstLink = first_socketlinks[0];
         var firstoutNode = firstLink.outSocket.node;
         var firstcompileRet = firstoutNode.compile(helper, usePreNodes_arr);
+        if (firstLink.outSocket.type == SqlVarType_Table) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '第一个输入不得为table类型']);
+            return false;
+        }
         if (firstcompileRet == false) {
             // child compile fail
             return false;
@@ -3672,7 +3682,7 @@ class SqlNode_In_Operator extends SqlNode_Base {
                 }
                 var tValue = null;
                 var tLinks = this.bluePrint.linkPool.getLinksBySocket(socket);
-
+                
                 if (tLinks.length == 0) {
                     if (!IsEmptyString(socket.defval)) {
                         tValue = socket.defval;// 判断手输入值
@@ -3680,7 +3690,7 @@ class SqlNode_In_Operator extends SqlNode_Base {
                             tValue = singleQuotesStr(tValue);
                         }
                     }
-                    if (tValue == null) {
+                    if (tValue == null && socket.type!=SqlVarType_Table ) {
                         helper.logManager.errorEx([helper.logManager.createBadgeItem(
                             thisNodeTitle,
                             nodeThis,
@@ -3728,7 +3738,7 @@ class SqlNode_In_Operator extends SqlNode_Base {
 */
 class SqlNode_ToString extends SqlNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, SQLNODE_TOSTRING, 'tostring()', false, nodeJson);
+        super(initData, parentNode, createHelper, SQLNODE_TOSTRING, 'makestring()', false, nodeJson);
         autoBind(this);
 
         if (nodeJson) {

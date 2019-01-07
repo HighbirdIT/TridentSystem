@@ -907,6 +907,7 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
         C_SqlNode_Base(this);
         this.state = {
             topValue: this.props.nodedata.topValue,
+            ischecked : '',
         }
     }
 
@@ -917,19 +918,38 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
         );
         this.props.nodedata.topValue = topValue;
     }
-
+    distinctChangeHandler(ev){
+        var isChecked = ev.target.value;
+        //if(isChecked == null){
+        //    isChecked = false;
+        //}else{
+         //   isChecked= true;
+        //}
+        this.setState({
+            ischecked: isChecked
+        })
+        this.props.nodeData.isChecked = isChecked;
+    }
     render() {
         var nodeData = this.props.nodedata;
         var topVal = this.state.topValue;
         if (topVal == null) {
             topVal = '';
         }
+        if(this.state.isChecked == null){
+            this.state.isChecked = false;
+        }
         var headType = nodeData.headType == null ? 'tiny' : nodeData.headType;
         return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType={headType} headText={nodeData.label} >
             <div className='d-flex'>
                 <div>Top:</div>
-                <input type='text' className='flex-grow-1 flex-shrink-1' value={topVal} onChange={this.topInputChangeHandler} />'
-                </div>
+                <input type='text' className='flex-grow-1 flex-shrink-1' value={topVal} onChange={this.topInputChangeHandler} />
+            </div>
+            <div className='d-flex'>
+                <div>Distinct:</div>
+                <input type='checkbox' id='distinct' checked={this.state.isChecked} onClick={this.distinctChangeHandler}></input>
+                <label htmlFor="distinct"></label>
+            </div>
             <div className='d-flex'>
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
