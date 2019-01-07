@@ -916,7 +916,10 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
         this.state = {
             topValue: this.props.nodedata.topValue,
 <<<<<<< HEAD
+<<<<<<< HEAD
             distChecked :this.props.nodedata.distChecked,
+=======
+>>>>>>> parent of 48d0015... 1-7
 =======
 >>>>>>> parent of 48d0015... 1-7
         }
@@ -930,6 +933,7 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
         this.props.nodedata.topValue = topValue;
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
     distinctChangeHandler(ev){
         var distChecked = ev.target.checked;
         this.setState({
@@ -940,6 +944,9 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
 =======
 
 >>>>>>> parent of 48d0015... 1-7
+=======
+
+>>>>>>> parent of 48d0015... 1-7
     render() {
         var nodeData = this.props.nodedata;
         var topVal = this.state.topValue;
@@ -947,15 +954,19 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
             topVal = '';
         }
 <<<<<<< HEAD
+<<<<<<< HEAD
         if(this.state.distChecked == null){
             this.state.distChecked = false;
         }
+=======
+>>>>>>> parent of 48d0015... 1-7
 =======
 >>>>>>> parent of 48d0015... 1-7
         var headType = nodeData.headType == null ? 'tiny' : nodeData.headType;
         return <C_SqlNode_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType={headType} headText={nodeData.label} >
             <div className='d-flex'>
                 <div>Top:</div>
+<<<<<<< HEAD
 <<<<<<< HEAD
                 <input type='text' className='flex-grow-1 flex-shrink-1' value={topVal} onChange={this.topInputChangeHandler} />
             </div>
@@ -964,6 +975,10 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
                 <input type='checkbox' id='distinct' checked={this.state.distChecked} onClick={this.distinctChangeHandler}></input>
                 <label htmlFor="distinct"></label>
             </div>
+=======
+                <input type='text' className='flex-grow-1 flex-shrink-1' value={topVal} onChange={this.topInputChangeHandler} />'
+                </div>
+>>>>>>> parent of 48d0015... 1-7
 =======
                 <input type='text' className='flex-grow-1 flex-shrink-1' value={topVal} onChange={this.topInputChangeHandler} />'
                 </div>
