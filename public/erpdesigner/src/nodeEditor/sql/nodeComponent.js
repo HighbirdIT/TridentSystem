@@ -917,7 +917,10 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
             topValue: this.props.nodedata.topValue,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             distChecked :this.props.nodedata.distChecked,
+=======
+>>>>>>> parent of 48d0015... 1-7
 =======
 >>>>>>> parent of 48d0015... 1-7
 =======
@@ -934,6 +937,7 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
     }
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     distinctChangeHandler(ev){
         var distChecked = ev.target.checked;
         this.setState({
@@ -941,6 +945,9 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
         })
       //  this.props.nodeData.distChecked = distChecked;
     }
+=======
+
+>>>>>>> parent of 48d0015... 1-7
 =======
 
 >>>>>>> parent of 48d0015... 1-7
@@ -955,9 +962,12 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
         }
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         if(this.state.distChecked == null){
             this.state.distChecked = false;
         }
+=======
+>>>>>>> parent of 48d0015... 1-7
 =======
 >>>>>>> parent of 48d0015... 1-7
 =======
@@ -968,6 +978,7 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
                 <div>Top:</div>
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                 <input type='text' className='flex-grow-1 flex-shrink-1' value={topVal} onChange={this.topInputChangeHandler} />
             </div>
             <div className='d-flex'>
@@ -975,6 +986,10 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
                 <input type='checkbox' id='distinct' checked={this.state.distChecked} onClick={this.distinctChangeHandler}></input>
                 <label htmlFor="distinct"></label>
             </div>
+=======
+                <input type='text' className='flex-grow-1 flex-shrink-1' value={topVal} onChange={this.topInputChangeHandler} />'
+                </div>
+>>>>>>> parent of 48d0015... 1-7
 =======
                 <input type='text' className='flex-grow-1 flex-shrink-1' value={topVal} onChange={this.topInputChangeHandler} />'
                 </div>

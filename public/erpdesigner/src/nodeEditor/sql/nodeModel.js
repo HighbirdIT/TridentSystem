@@ -1964,6 +1964,7 @@ class SqlNode_Select extends SqlNode_Base {
         }
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         
         var isCheckedString = ''
         /*
@@ -1975,6 +1976,9 @@ class SqlNode_Select extends SqlNode_Base {
             }
         }*/
         var finalSql = 'select ' +topString +isCheckedString+ columnsStr + ' from ' + fromString
+=======
+        var finalSql = 'select ' + topString + columnsStr + ' from ' + fromString
+>>>>>>> parent of 48d0015... 1-7
 =======
         var finalSql = 'select ' + topString + columnsStr + ' from ' + fromString
 >>>>>>> parent of 48d0015... 1-7
@@ -2416,7 +2420,10 @@ class SqlNode_Ret_Columns extends SqlNode_Base {
         rlt.topValue = this.topValue;
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         rlt.distChecked =this.distChecked;
+=======
+>>>>>>> parent of 48d0015... 1-7
 =======
 >>>>>>> parent of 48d0015... 1-7
 =======
@@ -2430,6 +2437,9 @@ class SqlNode_Ret_Columns extends SqlNode_Base {
 =======
         assginObjByProperties(this, attrsJson, ['topValue']);
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> parent of 48d0015... 1-7
+=======
 >>>>>>> parent of 48d0015... 1-7
 =======
 >>>>>>> parent of 48d0015... 1-7
