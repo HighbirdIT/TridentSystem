@@ -1,19 +1,29 @@
 class DropDownControl extends React.PureComponent {
     constructor(props) {
         super(props);
-
-        var formated_arr = this.formatData(this.props.options_arr, this.props.textAttrName, this.props.valueAttrName);
         var valueAttrName = this.props.valueAttrName == null ? this.props.textAttrName : this.props.valueAttrName;
-        var selectedOption = formated_arr.find(item=>{
-            if(typeof this.props.value === 'object'){
-                return item == this.props.value || item.value == this.props.value[valueAttrName];
-            }
-            return item.value == this.props.value;
-        });
+        if(this.props.editable && this.props.valueAttrName != null && this.props.valueAttrName != this.props.textAttrName){
+            //console.error('下拉框设置为editable 但同时设置了text和value属性明');
+            this.editIsKeyword = true;
+        }
+
+        var selectedOption = null;
+        if(!this.props.editable || this.editIsKeyword){
+            var formated_arr = this.formatData(this.props.options_arr, this.props.textAttrName, this.props.valueAttrName);
+            selectedOption = formated_arr.find(item=>{
+                if(typeof this.props.value === 'object'){
+                    return item == this.props.value || item.value == this.props.value[valueAttrName];
+                }
+                return item.value == this.props.value;
+            });
+        }
+        
         autoBind(this);
+        
 
         this.state = {
             keyword:'',
+            value:this.props.value,
             opened:false,
             options_arr:selectedOption ? [selectedOption] : [],
             selectedOption:selectedOption,
@@ -26,14 +36,22 @@ class DropDownControl extends React.PureComponent {
     }
 
     setValue(val){
-        var formated_arr = this.formatData(this.props.options_arr, this.props.textAttrName, this.props.valueAttrName);
-        var selectedOption = formated_arr.find(item=>{
-            return item.value == val;
-        });
-        this.setState({
-            options_arr:formated_arr,
-            selectedOption:selectedOption,
-        });
+        if(this.props.editable && !this.editIsKeyword){
+            this.setState({
+                value:val,
+            });
+        }
+        else
+        {
+            var formated_arr = this.formatData(this.props.options_arr, this.props.textAttrName, this.props.valueAttrName);
+            var selectedOption = formated_arr.find(item=>{
+                return item.value == val;
+            });
+            this.setState({
+                options_arr:formated_arr,
+                selectedOption:selectedOption,
+            });
+        }
     }
 
     getSelectedData(){
@@ -138,6 +156,9 @@ class DropDownControl extends React.PureComponent {
         if(typeof orginData_arr === 'function'){
             orginData_arr = orginData_arr();
         }
+        if(valueAttrName == null){
+            valueAttrName = textAttrName;
+        }
         return orginData_arr.map(item=>{
             return typeof item == 'string' ? {text:item,value:item} : {text:item[textAttrName],value:item[valueAttrName],data:item};
         });
@@ -148,17 +169,31 @@ class DropDownControl extends React.PureComponent {
         var keyword = target.value;
         var selectedOpt = this.state.options_arr.find(item=>{return item.text == keyword});
 
-        if(this.props.editable){
+
+        if(selectedOpt){
             this.setState({ keyword: keyword,
-                selectedOption:selectedOpt,});
+                selectedOption:selectedOpt, });
         }
         else{
-            if(selectedOpt){
-                this.setState({ keyword: keyword,
-                    selectedOption:selectedOpt, });
-            }
-            else{
-                this.setState({ keyword: keyword });
+            this.setState({ keyword: keyword });
+        }
+    }
+
+    inputChangedHandler(ev){
+        if(this.editIsKeyword){
+            this.keyChanged(ev);
+            return;
+        }
+        this.setState({
+            value:ev.target.value.trim(),
+        });
+    }
+
+    inputBlurHandler(ev){
+        if(this.state.value != this.props.value){
+            if(this.props.itemChanged){
+                //theOptionItem.data ? theOptionItem.data : theOptionItem.value
+                this.props.itemChanged(this.state.value, this);
             }
         }
     }
@@ -176,9 +211,11 @@ class DropDownControl extends React.PureComponent {
         });
         this.setState({ selectedOption:theOptionItem,
                         keyword:'',
-                        opened:false });
+                        opened:false,
+                        value:theOptionItem.text });
         if(this.props.itemChanged){
-            this.props.itemChanged(theOptionItem.data ? theOptionItem.data : theOptionItem.value, this);
+            //theOptionItem.data ? theOptionItem.data : theOptionItem.value
+            this.props.itemChanged(value, this, theOptionItem.data);
         }
     }
 
@@ -186,7 +223,7 @@ class DropDownControl extends React.PureComponent {
         return (
             <React.Fragment>
                 {
-                    this.state.options_arr.length <= 5 || this.props.editable ? null :
+                    this.state.options_arr.length <= 5 || this.editIsKeyword == true ? null :
                     <div className='d-flex border'>
                         <div htmlFor='keyword' className='flex-grow-0 flex-shrink-0 ' >搜索:</div>
                         <input className='flex-grow-1 flex-shrink-1 flexinput' type='text' id='keyword' name='keyword' value={this.state.keyword} onChange={this.keyChanged} />
@@ -227,13 +264,14 @@ class DropDownControl extends React.PureComponent {
             return this.state.keyword.trim().length == 0 || item.text.indexOf(this.state.keyword) >= 0;
         });
         var selectedOption = this.state.selectedOption;
+        var inputValue = this.editIsKeyword ? (this.state.keyword == '' ? (selectedOption == null ? '' : selectedOption.text) : this.state.keyword) : this.state.value;
 
         return (
             <div className={"d-flex flex-column " + (this.props.rootclass ? this.props.rootclass : '')} style={this.props.style} ref={this.rootDivRef}>
                 <div className='d-flex flex-grow-1 flex-shrink-1'>
                     <div className=' d-flex btn-group w-100 h-100' ref={this.dropDowmDivRefFun}>
                         {
-                            this.props.editable ? <input onFocus={this.editableInputFocushandler} ref={this.editableInputRef} type='text' className='flex-grow-1 flex-shrink-1 flexinput' onChange={this.keyChanged} value={selectedOption ? selectedOption.text : this.state.keyword} />
+                            this.props.editable ? <input onFocus={this.editableInputFocushandler} ref={this.editableInputRef} type='text' className='flex-grow-1 flex-shrink-1 flexinput' onChange={this.inputChangedHandler} onBlur={this.inputBlurHandler} value={inputValue} />
                             :
                             <button onClick={this.clickOpenHandler} style={{width:'calc(100% - 30px)'}} type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1' + (selectedOption == null ? ' text-danger' : '')} ><div style={{overflow:'hidden'}}>{selectedOption ? selectedOption.text : '请选择'}</div></button>
                         }

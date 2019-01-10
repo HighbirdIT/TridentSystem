@@ -1175,7 +1175,7 @@ class SqlNode_XJoin extends SqlNode_Base {
             }
             socketOuts_arr.push(socketOut);
         }
-        var joinString = socketOuts_arr[0].strContent + clampStr(this.joinType, ' ') + socketOuts_arr[1].strContent;
+        var joinString = socketOuts_arr[0].strContent + clampStr(this.joinType, ' ', ' ') + socketOuts_arr[1].strContent;
 
         if (this.conditionNode.inputScokets_arr.length == 0) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(

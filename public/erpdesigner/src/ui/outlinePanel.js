@@ -206,7 +206,10 @@ class OutlinePanel extends React.PureComponent {
     }
 
     wantDragAct(targetItem) {
-        console.log(targetItem);
+        if(targetItem.props.kernel.isfixed){
+            return;
+        }
+        //console.log(targetItem);
         this.beforeDragData = {
             kernel: targetItem.props.kernel,
             parent: targetItem.props.kernel.parent,

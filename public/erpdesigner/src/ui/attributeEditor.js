@@ -165,15 +165,21 @@ class AttributeEditor extends React.PureComponent {
         }
         if(theAttr.options_arr != null){
             var dropdownSetting = theAttr.dropdownSetting == null ? {} : theAttr.dropdownSetting;
-            if(dropdownSetting.text == null){
-                dropdownSetting.text = 'text';
+            var useOptioins_arr = theAttr.options_arr;
+            if(dropdownSetting.pullDataFun != null){
+                var pullDataFun = dropdownSetting.pullDataFun;
+                var nowTarget = this.props.targetobj;
+                useOptioins_arr = ()=>{
+                    return pullDataFun(nowTarget);
+                }
             }
+            
             if(theAttr.valueType == ValueType.DataSource){
                 if(nowVal && nowVal.loaded == false){
                     return (<div className='text-light'>加载中</div>);
                 }
             }
-            return (<DropDownControl options_arr={theAttr.options_arr} value={nowVal} itemChanged={this.itemChangedHandler} textAttrName={dropdownSetting.text} valueAttrName={dropdownSetting.value}/>);
+            return (<DropDownControl options_arr={useOptioins_arr} value={nowVal} itemChanged={this.itemChangedHandler} textAttrName={dropdownSetting.text} valueAttrName={dropdownSetting.value} editable={dropdownSetting.editable}/>);
         }
         
         var inputType = 'text';

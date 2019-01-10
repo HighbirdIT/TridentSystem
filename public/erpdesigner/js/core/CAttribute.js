@@ -6,6 +6,18 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+function genTextFiledAttribute() {
+    var label = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '显示字段';
+    var def = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+    var editable = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+
+    return new CAttribute(label, AttrNames.TextField, ValueType.String, def, true, false, [], {
+        pullDataFun: GetKernelCanUseColumns,
+        text: 'name',
+        editable: editable
+    });
+}
+
 var CAttribute = function () {
     function CAttribute(label, name, valueType, defaultVal, editable, isArray, options_arr, dropdownSetting, visible) {
         _classCallCheck(this, CAttribute);
@@ -39,12 +51,62 @@ var CAttribute = function () {
     return CAttribute;
 }();
 
+function makeFName_activePage(pageKernel) {
+    return 'active_' + pageKernel.id;
+}
+
+function makeFName_freshForm(formKernel) {
+    return 'fresh_' + formKernel.id;
+}
+
+function makeFName_bindForm(formKernel) {
+    return 'bind_' + formKernel.id;
+}
+
+function makeFName_pull(formKernel) {
+    return 'pull_' + formKernel.id;
+}
+
+function makeStr_callFun(funName, params_arr) {
+    var endChar = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+
+    return funName + '(' + (params_arr == null || params_arr.length == 0 ? '' : params_arr.join(',')) + ')' + endChar;
+}
+
+function makeStr_getStateByPath(state, path) {
+    return makeStr_callFun('getStateByPath', [state, path]);
+}
+
+function makeStr_DynamicAttr(objStr, propName) {
+    return objStr + (propName[0] == "'" ? '[' : "['") + propName + (propName[propName.length - 1] == "'" ? ']' : "']");
+}
+
+function makeActStr_pullKernel(formKernel) {
+    return 'pulldata_' + formKernel.id;
+}
+
+function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr) {
+    var isModel = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : true;
+    var url = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 'appServerUrl';
+
+    return "store.dispatch(fetchJsonPost(" + url + ", { action: '" + actStr + "' }, makeFTD_Prop(" + baseStr + "," + idStr + ',' + propStr + ',' + isModel + "), EFetchKey.FetchPropValue));";
+}
+
 var VarNames = {
     RetProps: 'retProps',
+    ReState: 'retState',
     RetDispather: 'retDispather',
     NowPage: 'nowPage',
+    NeedSetState: 'needSetState',
+    NowRecord: 'nowRecord',
     RetElem: 'retElem',
-    ThisProps: 'this.props'
+    ThisProps: 'this.props',
+    FetchErr: 'fetchErr',
+    Fetching: 'fetching',
+    CtlState: 'ctlState',
+    Records_arr: 'records_arr',
+    RecordIndex: 'recordIndex',
+    InsertCache: 'insertCache'
 };
 
 var AttrNames = {
@@ -61,6 +123,8 @@ var AttrNames = {
     ValueType: 'valuetype',
     FloatNum: 'floatnum',
     DefaultValue: 'defaultvalue',
+    EditorType: 'editortype',
+    TextField: 'textfield',
 
     LayoutNames: {
         APDClass: 'apdClass',

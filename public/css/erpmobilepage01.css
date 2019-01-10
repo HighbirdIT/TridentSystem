@@ -176,3 +176,13 @@ body{
 .w-20p{
     width: 2em;
 }
+
+.navigationBtn{
+    min-width: 3em;
+    min-height: 3em;
+}
+
+.processBtn{
+    min-height: 3em;
+    flex-flow: 1;
+}

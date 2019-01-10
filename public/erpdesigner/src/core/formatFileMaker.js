@@ -146,7 +146,10 @@ class FormatFileBlock extends FormatFile_ItemBase{
         var indentString = this.getIndentString(indentChar);
         var rlt = '';
         this.childs_arr.forEach(child=>{
-            rlt += child.getString(prefixStr + indentString, indentChar, newLineChar) + newLineChar;
+            var childStr = child.getString(prefixStr + indentString, indentChar, newLineChar);
+            if(childStr.length > 0){
+                rlt += childStr + newLineChar;
+            }
         });
 
         this.getStringCallbacker.forEach(callBack=>{
@@ -281,12 +284,18 @@ class FormatHtmlTag extends FormatFile_ItemBase{
             }
             rlt += ' ' + i + '=' + attrVal;
         }
-        rlt += '>' + newLineChar;
-        for(var ci in this.childs_arr){
-            var child = this.childs_arr[ci];
-            rlt += child.getString(prefixStr + indentChar, indentChar, newLineChar) + newLineChar;
+        if(this.childs_arr.length > 0)
+        {
+            rlt += '>' + newLineChar;
+            for(var ci in this.childs_arr){
+                var child = this.childs_arr[ci];
+                rlt += child.getString(prefixStr + indentChar, indentChar, newLineChar) + newLineChar;
+            }
+            rlt += prefixStr + '</' + this.tagName + '>';
         }
-        rlt += prefixStr + '</' + this.tagName + '>' + newLineChar;
+        else{
+            rlt += ' />';
+        }
         return rlt;
     }
 }
@@ -476,6 +485,59 @@ class JSFile_Switch extends FormatFileBlock{
         }
         rlt += prefixStr + '}';
 
+        return rlt;
+    }
+}
+
+class JSFile_IF extends FormatFileBlock{
+    constructor(name, condition){
+        super(name);
+        this.condition = condition;
+
+        this.trueBlock = new FormatFileBlock('true');
+        this.falseBlock = new FormatFileBlock('false');
+        this.elseIfs_arr = [];
+    }
+
+    pushChild(){
+        console.error("if block can't call pushChild");
+    }
+
+    pushLine(lineItem, indentOffset){
+        this.trueBlock.pushLine(lineItem, indentOffset);
+    }
+
+    pushElseIf(name, condition){
+        var nowBlock = this.getElseIfBlock(name);
+        if(nowBlock != null){
+            console.error('重复的 else if:' + name);
+            return;
+        }
+        var rltBlock = new FormatFileBlock(name);
+        rltBlock.pushLine('else if(' + condition + '){', 1);
+    }
+
+    getElseIfBlock(name){
+        return this.elseIfs_arr.filter(item=>{return item.name == name;});
+    }
+
+    getString(prefixStr, indentChar, newLineChar){
+        if(IsEmptyString(this.condition)){
+            console.error('JSFile_IF:' + this.name + ' confition为空');
+        }
+        var rlt = prefixStr + 'if(' + this.condition + '){' + newLineChar;
+        rlt += this.trueBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
+        rlt += prefixStr + '}' + newLineChar;
+        for(var ei in this.elseIfs_arr){
+            var elseIfBlock = this.elseIfs_arr[ei];
+            rlt += elseIfBlock.getString(prefixStr, indentChar, newLineChar);
+            rlt += prefixStr + '}' + newLineChar;
+        }
+        if(this.falseBlock.childs_arr.length > 0){
+            rlt += prefixStr + 'else{' + newLineChar;
+            rlt += this.falseBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
+            rlt += prefixStr + '}' + newLineChar;
+        }
         return rlt;
     }
 }
@@ -728,6 +790,16 @@ class CP_ServerSide extends JSFileMaker{
 
         this.pageLoadedFun.pushLine('return rlt;');
     }
+
+    initProcessFun(theFun){
+        if(theFun.inited){
+            return;
+        }
+        theFun.headBlock.pushLine("return co(function* () {");
+        theFun.bodyBlock.addNextIndent();
+        theFun.retBlock.pushLine("});");
+        theFun.inited = true;
+    }
 }
 
 class CP_ClientSide extends JSFileMaker{
@@ -740,7 +812,7 @@ class CP_ClientSide extends JSFileMaker{
         this.importBlock.pushLine('var Provider = ReactRedux.Provider;');
 
         this.scope.getVar('isDebug', true, 'false');
-        this.scope.getVar('appServerUrl', true, "'/erppage/server/" + projectCompiler.serverSide.fileName + "'");
+        this.scope.getVar('appServerUrl', true, "'/erppage/server/" + projectCompiler.projectName + "'");
         this.scope.getVar('thisAppTitle', true, singleQuotesStr(projectCompiler.projectTitle));
         this.appInitStateVar = this.scope.getVar('appInitState', true);
         this.appInitState = this.appInitState = {
@@ -751,12 +823,14 @@ class CP_ClientSide extends JSFileMaker{
         this.appClass = this.getReactClass('App', true);
         this.reducers_map = {};
 
-        this.appClass.constructorFun.pushLine("this.renderLoadingTip = baseRenderLoadingTip.bind(this);");
+        this.appClass.constructorFun.pushLine("this.renderLoadingTip = baseRenderLoadingTip.bind(this)");
 
         this.appReducerSettingVar = this.scope.getVar('appReducerSetting', true);
-        this.appReducerVar = this.scope.getVar('appReducer', true, 'createReducer(appInitState, Object.assign(baseReducerSetting,appReducerSetting));');
-        this.reducerVar = this.scope.getVar('reducer', true, 'appReducer;');
-        this.storeVar = this.scope.getVar('store', true, 'Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));');
+        this.appReducerVar = this.scope.getVar('appReducer', true, 'createReducer(appInitState, Object.assign(baseReducerSetting,appReducerSetting))');
+        this.reducerVar = this.scope.getVar('reducer', true, 'appReducer');
+        this.storeVar = this.scope.getVar('store', true, 'Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()))');
+        this.stateChangedAct_mapVar = this.scope.getVar('appStateChangedAct_map', true);
+        this.stateChangedAct = {};
 
         this.appClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps,VarNames.NowPage), makeStr_DotProp('state',VarNames.NowPage)));
     }
@@ -773,11 +847,14 @@ class CP_ClientSide extends JSFileMaker{
     compileEnd(){
         this.appInitStateVar.initVal = JsObjectToString(this.appInitState);
         this.appReducerSettingVar.initVal = JsObjectToString(this.reducers_map);
+        this.stateChangedAct_mapVar.initVal = JsObjectToString(this.stateChangedAct);
 
         this.endBlock.pushLine('ErpControlInit();');
         this.endBlock.pushLine('ReactDOM.render(<Provider store={store}>', 1);
         this.endBlock.pushLine('<VisibleApp />', -1);
         this.endBlock.pushLine("</Provider>, document.getElementById('reactRoot'));");
+
+        this.endBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, { action: 'pageloaded' }, null, 'pageloaded', '正在加载[' + thisAppTitle + ']'));");
     }
 
     getString(indentChar, newLineChar){

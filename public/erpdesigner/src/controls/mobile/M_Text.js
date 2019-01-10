@@ -2,6 +2,7 @@ const M_TextKernelAttrsSetting={
     groups_arr:[
         new CAttributeGroup('基本设置',[
             new CAttribute('name',AttrNames.Name,ValueType.String),
+            genTextFiledAttribute(),
             new CAttribute('数据类型',AttrNames.ValueType,ValueType.String,ValueType.String, true, false, JsValueTypes),
             new CAttribute('小数精度',AttrNames.FloatNum,ValueType.Int, 2, true, false, null, null, false),
             new CAttribute('默认值',AttrNames.DefaultValue,ValueType.String, ''),
@@ -49,12 +50,14 @@ class M_Text extends React.PureComponent {
         this.state={
             defaultVal:this.props.ctlKernel.getAttribute(AttrNames.DefaultValue),
             ValueType:this.props.ctlKernel.getAttribute(AttrNames.ValueType),
+            text:this.props.ctlKernel.getAttribute(AttrNames.TextField),
         };
 
         autoBind(this);
         M_ControlBase(this,[
             AttrNames.DefaultValue,
             AttrNames.ValueType,
+            AttrNames.TextField,
             AttrNames.LayoutNames.APDClass,
             AttrNames.LayoutNames.StyleAttr,
         ]);
@@ -67,6 +70,7 @@ class M_Text extends React.PureComponent {
         this.setState({
             defaultVal:this.props.ctlKernel.getAttribute(AttrNames.DefaultValue),
             ValueType:this.props.ctlKernel.getAttribute(AttrNames.ValueType),
+            text:this.props.ctlKernel.getAttribute(AttrNames.TextField),
         });
     }
 
@@ -81,8 +85,7 @@ class M_Text extends React.PureComponent {
         layoutConfig.addClass('border');
         layoutConfig.addClass('hb-control');
         layoutConfig.addClass('w-100');
-        var showText = IsEmptyString(this.state.defaultVal) ? '输入框' : this.state.defaultVal;
-        showText += "[" + this.state.ValueType + ']';
+        var showText = '编辑' + (IsEmptyString(this.state.text) ? '' : '[' + this.state.text + ']') + (IsEmptyString(this.state.defaultVal) ? '' : '[' + this.state.defaultVal + ']') + "[" + this.state.ValueType + ']';;
         return(
             <input className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}
                 value={showText}
@@ -100,4 +103,5 @@ DesignerConfig.registerControl(
         namePrefix : M_TextKernel_Prefix,
         kernelClass:M_TextKernel,
         reactClass:M_Text,
+        canbeLabeled:true,
     }, '基础');

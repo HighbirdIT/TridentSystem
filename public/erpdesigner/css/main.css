@@ -12,7 +12,9 @@
 
 .mobilePage{
     min-height: 600px;
-    min-width:450px;
+    min-width: 450px;
+    max-height: 800px;
+    max-width: 700px;
 }
 
 .projectContentHeader{
@@ -263,7 +265,7 @@
 }
 
 .M_Container_Empty{
-  min-height: 60px;
+  min-height: 30px;
 }
 
 .M_Form_Empty{

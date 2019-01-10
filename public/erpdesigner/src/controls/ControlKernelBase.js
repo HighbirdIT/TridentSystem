@@ -32,6 +32,7 @@ class ControlKernelBase extends IAttributeable {
 
         if (kernelJson != null) {
             // restore attr from json
+            this.id = kernelJson.id;
             if (kernelJson.attr != null) {
                 Object.assign(this, kernelJson.attr);
 
@@ -89,12 +90,15 @@ class ControlKernelBase extends IAttributeable {
     }
 
     delete(){
+        if(this.isfixed){
+            return;
+        }
         for(var dsCode in this.listendDS_map){
             var t_arr = this.listendDS_map[dsCode];
             if(t_arr == null){
                 continue;
             }
-            var theDS = parentKernel.project.dataMaster.getDataSourceByCode(val);
+            var theDS = this.project.dataMaster.getDataSourceByCode(dsCode);
             if(theDS){
                 this.unlistenDS(theDS);
             }
@@ -105,7 +109,10 @@ class ControlKernelBase extends IAttributeable {
             }
         }
         this.project.unRegisterControl(this);
-        this.parent.removeChild(this);
+        if(this.parent)
+        {
+            this.parent.removeChild(this);
+        }
     }
 
     listenDS(target, attrName){
@@ -242,6 +249,26 @@ class ControlKernelBase extends IAttributeable {
             type: this.type,
             id: this.id,
         };
+        return rlt;
+    }
+
+    searchParentKernel(targetType, justFirst){
+        var rlt = null;
+        var tKernel = this.parent;
+        while(tKernel != null){
+            if(tKernel.type == targetType){
+                if(justFirst){
+                    return tKernel;
+                }
+                if(rlt == null){
+                    rlt = [tKernel];
+                }
+                else{
+                    rlt.push(tKernel);
+                }
+            }
+            tKernel = tKernel.parent;
+        }
         return rlt;
     }
 }

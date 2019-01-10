@@ -117,6 +117,17 @@ DesignerConfig.findConfigByType=(function(ctlType){
     return this.controlConfig.configs_obj[ctlType];
 }).bind(DesignerConfig);
 
+DesignerConfig.getMobileCanLabeledControls = (function(){
+    var rlt = [];
+    for(var si in this.controlConfig.configs_obj){
+        var item = this.controlConfig.configs_obj[si];
+        if(item.canbeLabeled){
+            rlt.push(item);
+        }
+    }
+    return rlt;
+}).bind(DesignerConfig);
+
 const ValueType={
     String:'string',
     Int:'int',
@@ -130,3 +141,4 @@ const ValueType={
 };
 
 const JsValueTypes = [ValueType.String,ValueType.Int,ValueType.Boolean,ValueType.Float,ValueType.Date,ValueType.Time,ValueType.DateTime];
+

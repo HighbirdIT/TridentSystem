@@ -48,6 +48,7 @@ var ControlKernelBase = function (_IAttributeable) {
 
         if (kernelJson != null) {
             // restore attr from json
+            _this.id = kernelJson.id;
             if (kernelJson.attr != null) {
                 Object.assign(_this, kernelJson.attr);
 
@@ -108,12 +109,15 @@ var ControlKernelBase = function (_IAttributeable) {
     }, {
         key: 'delete',
         value: function _delete() {
+            if (this.isfixed) {
+                return;
+            }
             for (var dsCode in this.listendDS_map) {
                 var t_arr = this.listendDS_map[dsCode];
                 if (t_arr == null) {
                     continue;
                 }
-                var theDS = parentKernel.project.dataMaster.getDataSourceByCode(val);
+                var theDS = this.project.dataMaster.getDataSourceByCode(dsCode);
                 if (theDS) {
                     this.unlistenDS(theDS);
                 }
@@ -124,7 +128,9 @@ var ControlKernelBase = function (_IAttributeable) {
                 }
             }
             this.project.unRegisterControl(this);
-            this.parent.removeChild(this);
+            if (this.parent) {
+                this.parent.removeChild(this);
+            }
         }
     }, {
         key: 'listenDS',
@@ -271,6 +277,26 @@ var ControlKernelBase = function (_IAttributeable) {
                 type: this.type,
                 id: this.id
             };
+            return rlt;
+        }
+    }, {
+        key: 'searchParentKernel',
+        value: function searchParentKernel(targetType, justFirst) {
+            var rlt = null;
+            var tKernel = this.parent;
+            while (tKernel != null) {
+                if (tKernel.type == targetType) {
+                    if (justFirst) {
+                        return tKernel;
+                    }
+                    if (rlt == null) {
+                        rlt = [tKernel];
+                    } else {
+                        rlt.push(tKernel);
+                    }
+                }
+                tKernel = tKernel.parent;
+            }
             return rlt;
         }
     }]);

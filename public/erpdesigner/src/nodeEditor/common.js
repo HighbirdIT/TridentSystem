@@ -72,3 +72,38 @@ class ContextFinder{
         return this.item_arr.length;
     }
 }
+
+class NodeCreationHelper extends EventEmitter {
+    constructor() {
+        super();
+        EnhanceEventEmiter(this);
+        this.orginID_map = {};
+        this.newID_map = {};
+        this.idTracer = {};
+    }
+
+    saveJsonMap(jsonData, newNode) {
+        if (jsonData && jsonData.id) {
+            if (this.getObjFromID(jsonData.id) != null) {
+                console.warn(jsonData.id + '被重复saveJsonMap');
+            }
+            if (jsonData.id != newNode.id) {
+                if (this.getObjFromID(newNode.id) != null) {
+                    console.warn(jsonData.id + '被重复saveJsonMap');
+                }
+                this.idTracer[jsonData.id] = this.idTracer[newNode.id]
+            }
+            this.orginID_map[jsonData.id] = newNode;
+        }
+
+        this.newID_map[newNode.id] = newNode;
+    }
+
+    getObjFromID(id) {
+        var rlt = this.orginID_map[id];
+        if (rlt == null) {
+            rlt = this.newID_map[id];
+        }
+        return rlt;
+    }
+}

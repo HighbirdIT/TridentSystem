@@ -698,6 +698,9 @@ var ERPC_DropDown = function (_React$PureComponent3) {
     }, {
         key: 'render',
         value: function render() {
+            if (this.props.visible == false) {
+                return null;
+            }
             var hadMini = this.props.miniBtn != false;
             var selectedVal = this.props.value;
             var selectedText = this.props.text;
@@ -817,7 +820,8 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         value: ctlState.value,
         text: ctlState.text,
         fetching: ctlState.fetching,
-        optionsData: ERPC_DropDown_optionsSelector(state, ownprops)
+        optionsData: ERPC_DropDown_optionsSelector(state, ownprops),
+        visible: ctlState.visible
     };
 }
 
@@ -847,8 +851,80 @@ var ERPC_Text = function (_React$PureComponent4) {
             store.dispatch(makeAction_setStateByPath(text, MakePath(this.props.parentPath, this.props.id, 'value')));
         }
     }, {
+        key: 'formatValue',
+        value: function formatValue(val) {
+            if (IsEmptyString(val)) {
+                return '';
+            }
+            var type = this.props.type;
+            var rlt = val;
+            switch (type) {
+                case 'int':
+                    rlt = parseInt(val);
+                    if (isNaN(rlt)) {
+                        rlt = '';
+                    }
+                    break;
+                case 'boolean':
+                    rlt = parseBoolean(val) ? true : false;
+                    break;
+                case 'float':
+                    var precision = tihs.props.precision == null ? 2 : parseInt(tihs.props.precision);
+                    rlt = Math.round(val * Math.pow(10, precision));
+                    if (isNaN(rlt)) {
+                        rlt = '';
+                    }
+                    break;
+                case 'date':
+                case 'datetime':
+                    if (!checkDate(val)) {
+                        rlt = '';
+                    }
+                    break;
+                case 'time':
+                    if (!checkTime(val)) {
+                        rlt = '';
+                    }
+                    break;
+            }
+            return rlt;
+        }
+    }, {
+        key: 'formatInputValue',
+        value: function formatInputValue(val) {
+            if (IsEmptyString(val)) {
+                return '';
+            }
+            var type = this.props.type;
+            var rlt = val;
+            switch (type) {
+                case 'int':
+                    rlt = parseInt(val);
+                    if (isNaN(rlt)) {
+                        rlt = '';
+                    }
+                    break;
+                case 'float':
+                    var precision = this.props.precision == null ? 2 : parseInt(this.props.precision);
+                    rlt = Math.round(val * Math.pow(10, precision)) / Math.pow(10, precision);
+                    if (isNaN(rlt)) {
+                        rlt = '';
+                    }
+                    break;
+                case 'date':
+                    if (val.length > 10) {
+                        rlt = getFormatDateString(new Date(Date.parse(val)));
+                    }
+                    break;
+            }
+            return rlt;
+        }
+    }, {
         key: 'render',
         value: function render() {
+            if (this.props.visible == false) {
+                return null;
+            }
             var contentElem = null;
             var rootDivClassName = 'd-flex flex-grow-1 flex-shrink-1';
             if (this.props.fetching) {
@@ -871,7 +947,23 @@ var ERPC_Text = function (_React$PureComponent4) {
                 } else if (this.props.type == 'multiline') {
                     contentElem = React.createElement('textarea', { onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 form-control textarea-2x', value: this.props.value });
                 } else {
-                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control invalid ', type: this.props.type, value: this.props.value, onChange: this.inputChanged });
+                    var useType = this.props.type;
+                    var useChecked = null;
+                    switch (this.props.type) {
+                        case 'string':
+                            useType = 'text';
+                            break;
+                        case 'int':
+                        case 'float':
+                            useType = 'number';
+                            break;
+                        case 'boolean':
+                            useType = 'checkbox';
+                            useChecked = parseBoolean(useType);
+                            break;
+                    }
+                    var useValue = this.formatInputValue(this.props.value);
+                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control invalid ', type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged });
                 }
             }
             return React.createElement(
@@ -889,7 +981,8 @@ function ERPC_Text_mapstatetoprops(state, ownprops) {
     var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
     return {
         value: ctlState.value == null ? '' : ctlState.value,
-        fetching: ctlState.fetching
+        fetching: ctlState.fetching,
+        visible: ctlState.visible
     };
 }
 
@@ -915,6 +1008,9 @@ var ERPC_LabeledControl = function (_React$PureComponent5) {
     _createClass(ERPC_LabeledControl, [{
         key: 'render',
         value: function render() {
+            if (this.props.visible == false) {
+                return null;
+            }
             return React.createElement(
                 'div',
                 { className: 'rowlFameOne' },
@@ -940,7 +1036,8 @@ function ERPC_LabeledControl_mapstatetoprops(state, ownprops) {
     var useLabel = ownprops.label ? ownprops.label : ctlState.label ? ctlState.label : '未知名称';
     return {
         label: useLabel,
-        fetching: ctlState.fetching
+        fetching: ctlState.fetching,
+        visible: ctlState.visible
     };
 }
 
@@ -986,12 +1083,157 @@ function ERPC_Form_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
+var ERPC_Label = function (_React$PureComponent7) {
+    _inherits(ERPC_Label, _React$PureComponent7);
+
+    function ERPC_Label(props) {
+        _classCallCheck(this, ERPC_Label);
+
+        var _this9 = _possibleConstructorReturn(this, (ERPC_Label.__proto__ || Object.getPrototypeOf(ERPC_Label)).call(this));
+
+        autoBind(_this9);
+
+        ERPControlBase(_this9);
+        _this9.state = _this9.initState;
+        return _this9;
+    }
+
+    _createClass(ERPC_Label, [{
+        key: 'render',
+        value: function render() {
+            return React.createElement(
+                'span',
+                { className: this.props.className },
+                this.props.text
+            );
+        }
+    }]);
+
+    return ERPC_Label;
+}(React.PureComponent);
+
+function ERPC_Label_mapstatetoprops(state, ownprops) {
+    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
+    var useText = ctlState.text ? ctlState.text : ownprops.text ? ownprops.text : '';
+    return {
+        text: useText,
+        visible: ctlState.visible
+    };
+}
+
+function ERPC_Label_dispatchtorprops(dispatch, ownprops) {
+    return {};
+}
+
 var VisibleERPC_DropDown = null;
 var VisibleERPC_Text = null;
 var VisibleERPC_LabeledControl = null;
+var VisibleERPC_Label = null;
 
 function ErpControlInit() {
     VisibleERPC_DropDown = ReactRedux.connect(ERPC_DropDown_mapstatetoprops, ERPC_DropDown_dispatchtoprops)(ERPC_DropDown);
     VisibleERPC_Text = ReactRedux.connect(ERPC_Text_mapstatetoprops, ERPC_Text_dispatchtorprops)(ERPC_Text);
     VisibleERPC_LabeledControl = ReactRedux.connect(ERPC_LabeledControl_mapstatetoprops, ERPC_LabeledControl_dispatchtorprops)(ERPC_LabeledControl);
+    VisibleERPC_Label = ReactRedux.connect(ERPC_Label_mapstatetoprops, ERPC_Label_dispatchtorprops)(ERPC_Label);
+}
+
+function ERPC_PageForm(target) {
+    target.clickPreNavBtnHandler = ERPC_PageForm_clickPreNavBtnHandler.bind(target);
+    target.clickNextNavBtnHandler = ERPC_PageForm_clickNextNavBtnHandler.bind(target);
+    target.clickPlusNavBtnHandler = ERPC_PageForm_clickPlusNavBtnHandler.bind(target);
+    target.clickUnPlusNavBtnHandler = ERPC_PageForm_clickUnPlusNavBtnHandler.bind(target);
+    target.renderNavigater = ERPC_PageForm_renderNavigater.bind(target);
+}
+
+function ERPC_PageForm_clickPreNavBtnHandler() {
+    var nowIndex = this.props.recordIndex;
+    var count = this.props.records_arr == null ? 0 : this.props.records_arr.length;
+    if (count <= 1) {
+        return;
+    }
+    var newIndex = nowIndex - 1;
+    if (newIndex < 0) {
+        newIndex += count;
+    }
+    store.dispatch(makeAction_setStateByPath(newIndex, MakePath(this.props.parentPath, this.props.id, 'recordIndex')));
+}
+
+function ERPC_PageForm_clickNextNavBtnHandler() {
+    var nowIndex = this.props.recordIndex;
+    var count = this.props.records_arr == null ? 0 : this.props.records_arr.length;
+    if (count <= 1) {
+        return;
+    }
+    var newIndex = (nowIndex + 1) % count;
+    store.dispatch(makeAction_setStateByPath(newIndex, MakePath(this.props.parentPath, this.props.id, 'recordIndex')));
+}
+
+function ERPC_PageForm_clickPlusNavBtnHandler() {
+    this.prePlusIndex = this.props.recordIndex;
+    store.dispatch(makeAction_setStateByPath(-1, MakePath(this.props.parentPath, this.props.id, 'recordIndex')));
+}
+
+function ERPC_PageForm_clickUnPlusNavBtnHandler() {
+    store.dispatch(makeAction_setStateByPath(this.prePlusIndex, MakePath(this.props.parentPath, this.props.id, 'recordIndex')));
+}
+
+function ERPC_PageForm_renderNavigater() {
+    if (this.props.records_arr == null) {
+        return null;
+    }
+    var count = this.props.records_arr.length;
+    var plushBtnItem = null;
+    var exitPlushBtnItem = null;
+    var preBtnItem = null;
+    var nextBtnItem = null;
+    var infoItem = null;
+    var nowIndex = this.props.recordIndex;
+    var countInfo = count > 9999 ? '9999..' : count;
+    var indexInfo = count == 0 ? '0' : nowIndex > 9999 ? '9999..' : nowIndex + 1;
+
+    if (nowIndex != -1) {
+        preBtnItem = React.createElement(
+            'button',
+            { type: 'button', onClick: this.clickPreNavBtnHandler, className: 'btn flex-grow-1 navigationBtn btn-info' },
+            React.createElement('span', { className: 'fa fa-chevron-left' })
+        );
+        nextBtnItem = React.createElement(
+            'button',
+            { type: 'button', onClick: this.clickNextNavBtnHandler, className: 'btn flex-grow-1 navigationBtn btn-info' },
+            React.createElement('span', { className: 'fa fa-chevron-right' })
+        );
+        infoItem = React.createElement(
+            'span',
+            { className: 'bg-info text-light d-flex align-items-center flex-shrink-1 p-1' },
+            indexInfo,
+            '/',
+            countInfo
+        );
+    }
+
+    if (this.canInsert) {
+        if (nowIndex == -1) {
+            exitPlushBtnItem = React.createElement(
+                'button',
+                { type: 'button', onClick: this.clickUnPlusNavBtnHandler, className: 'btn btn-danger flex-grow-1 navigationBtn' },
+                React.createElement('span', { className: 'fa fa-undo' })
+            );
+        } else {
+            plushBtnItem = React.createElement(
+                'button',
+                { type: 'button', onClick: this.clickPlusNavBtnHandler, className: 'btn btn-info flex-grow-1 navigationBtn' },
+                React.createElement('span', { className: 'fa fa-plus' })
+            );
+        }
+    }
+
+    return React.createElement(
+        'div',
+        { className: 'btn-group' },
+        preBtnItem,
+        infoItem,
+        nextBtnItem,
+        plushBtnItem,
+        exitPlushBtnItem
+    );
 }

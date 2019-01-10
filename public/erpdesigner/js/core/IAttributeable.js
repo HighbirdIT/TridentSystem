@@ -106,6 +106,7 @@ var IAttributeable = function (_EventEmitter) {
                 if (rlt == null) {
                     switch (attrItem.name) {
                         case AttrNames.LayoutNames.StyleAttr:
+                        case AttrNames.Name:
                             break;
                         default:
                             console.warn('属性:' + attrName + '没有默认值');

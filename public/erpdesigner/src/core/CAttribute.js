@@ -1,3 +1,12 @@
+function genTextFiledAttribute(label='显示字段', def='', editable = true){
+    return new CAttribute(label,AttrNames.TextField,ValueType.String, def, true, false, [], 
+    {
+        pullDataFun:GetKernelCanUseColumns,
+        text:'name',
+        editable:editable,
+    });
+}
+
 class CAttribute{
     constructor(label,name,valueType,defaultVal,editable,isArray,options_arr, dropdownSetting, visible) {
         Object.assign(this,{
@@ -25,13 +34,59 @@ class CAttribute{
     }
 }
 
+function makeFName_activePage(pageKernel){
+    return 'active_' + pageKernel.id;
+}
+
+function makeFName_freshForm(formKernel){
+    return 'fresh_' + formKernel.id;
+}
+
+function makeFName_bindForm(formKernel){
+    return 'bind_' + formKernel.id;
+}
+
+function makeFName_pull(formKernel){
+    return 'pull_' + formKernel.id;
+}
+
+function makeStr_callFun(funName, params_arr, endChar = ''){
+    return funName + '(' + (params_arr == null || params_arr.length == 0 ? '' : params_arr.join(',')) + ')' + endChar;
+}
+
+function makeStr_getStateByPath(state, path){
+    return makeStr_callFun('getStateByPath', [state, path]);
+}
+
+function makeStr_DynamicAttr(objStr, propName){
+    return objStr + (propName[0] == "'" ? '[' : "['") + propName + (propName[propName.length - 1] == "'" ? ']' : "']");
+}
+
+function makeActStr_pullKernel(formKernel){
+    return 'pulldata_' + formKernel.id;
+}
+
+function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr, isModel = true, url = 'appServerUrl'){
+    return "store.dispatch(fetchJsonPost(" + url + ", { action: '" + actStr + "' }, makeFTD_Prop(" + baseStr + "," + idStr + ',' + propStr + ',' + isModel + "), EFetchKey.FetchPropValue));";
+}
+
+
 const VarNames={
     RetProps:'retProps',
+    ReState:'retState',
     RetDispather:'retDispather',
     NowPage:'nowPage',
+    NeedSetState:'needSetState',
+    NowRecord:'nowRecord',
     RetElem:'retElem',
     ThisProps:'this.props',
-}
+    FetchErr:'fetchErr',
+    Fetching:'fetching',
+    CtlState:'ctlState',
+    Records_arr:'records_arr',
+    RecordIndex:'recordIndex',
+    InsertCache:'insertCache',
+};
 
 const AttrNames={
     Title:'title',
@@ -47,6 +102,8 @@ const AttrNames={
     ValueType:'valuetype',
     FloatNum:'floatnum',
     DefaultValue:'defaultvalue',
+    EditorType:'editortype',
+    TextField:'textfield',
 
     LayoutNames:{
         APDClass:'apdClass',

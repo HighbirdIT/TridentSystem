@@ -48,6 +48,8 @@ const AT_FETCHBEGIN = 'AT_FETCHBEGIN';
 const AT_FETCHEND = 'AT_FETCHEND';
 const AT_SETSTATEBYPATH = 'AT_SETSTATEBYPATH';
 const AT_SETMANYSTATEBYPATH = 'AT_SETMANYSTATEBYPATH';
+const AT_GOTOPAGE = 'AT_GOTOPAGE';
+const AT_PAGELOADED = 'AT_PAGELOADED';
 
 function makeAction_fetchbegin(key, fetchData) {
     return {
@@ -79,6 +81,7 @@ function makeAction_fetchError(key, err, fetchData) {
 
 const makeAction_setStateByPath = makeActionCreator(AT_SETSTATEBYPATH, 'value', 'path');
 const makeAction_setManyStateByPath = makeActionCreator(AT_SETMANYSTATEBYPATH, 'value', 'path');
+const makeAction_gotoPage = makeActionCreator(AT_GOTOPAGE, 'pageName');
 
 function setStateByPathHandler(state, action) {
     return setStateByPath(state, action.path, action.value);
@@ -94,6 +97,11 @@ function myTrim(x) {
 
 function checkDate(date) {
     var dateVal = new Date(Date.parse(date));
+    return !isNaN(dateVal.getDate());
+}
+
+function checkTime(str) {
+    var dateVal = new Date(Date.parse('2000-1-1 ' + str));
     return !isNaN(dateVal.getDate());
 }
 
@@ -201,7 +209,7 @@ function parseUnitFloat(str) {
 }
 
 function parseBoolean(str) {
-    return str == true || str == 'true' || str == '1';
+    return str == true || str == 'true' || str == '1' || str == '是' || str == '真';
 }
 
 function isNodeHasParent(targetNode, parentNode) {
@@ -416,9 +424,9 @@ function fetchJson(useGet, url, sendData, triggerData, key = '', tip = '加载�
                 dispatch(makeAction_fetchError(key, createError(json.err.info, ErrType.SERVERSIDE, thisFetch), thisFetch));
             }
             else {
-                //setTimeout(() => {
+                setTimeout(() => {
                 dispatch(makeAction_fetchend(key, json, thisFetch));
-                //}, 2000);
+                }, 2000);
             }
         });
     };
@@ -500,20 +508,22 @@ function setStateByPath(state, path, value, visited) {
     var t_arr = path.split('.');
     var len = t_arr.length;
     var nowState = state;
-    var newStatePrent = null;
+    var newStateParent = null;
     var newStateName = null;
     var newStateValue = null;
     var preState = state;
     var preStateName = null;
+    var oldValue = null;
     for (var i = 0; i < len; ++i) {
         // 最后一个是属性的名字
         var name = t_arr[i];
         if (i >= len - 1) {
-            if (newStatePrent == null) {
+            if (newStateParent == null) {
                 if (nowState[name] == value) {
                     return state;
                 }
-                newStatePrent = preState;
+                oldValue = nowState[name];
+                newStateParent = preState;
                 newStateName = preStateName;
                 newStateValue = {};
                 newStateValue[name] = value;
@@ -524,8 +534,8 @@ function setStateByPath(state, path, value, visited) {
             break;
         }
         if (nowState[name] == null) {
-            if (newStatePrent == null) {
-                newStatePrent = preState;
+            if (newStateParent == null) {
+                newStateParent = preState;
                 newStateName = preStateName;
                 nowState = {};
                 newStateValue = {};
@@ -533,6 +543,7 @@ function setStateByPath(state, path, value, visited) {
             }
             else {
                 nowState[name] = {};
+                nowState = nowState[name];
             }
         }
         else {
@@ -541,11 +552,15 @@ function setStateByPath(state, path, value, visited) {
             nowState = nowState[name];
         }
     }
+    var retState = null;
     if (preStateName == null) {
-        return newStateValue;
+        retState = Object.assign({}, state, newStateValue);
     }
-    newStatePrent[newStateName] = updateObject(newStatePrent[newStateName], newStateValue);
-    var retState = aStateChanged(state, path, value, visited == null ? {} : visited);
+    else {
+        newStateParent[newStateName] = updateObject(newStateParent[newStateName], newStateValue);
+        retState = state;
+    }
+    retState = aStateChanged(retState, path, value, oldValue, visited == null ? {} : visited);
 
     return retState == state ? Object.assign({}, retState) : retState;
 }
@@ -557,70 +572,118 @@ function setManyStateByPath(state, path, valuesObj, visited) {
     var t_arr = path.split('.');
     var len = t_arr.length;
     var nowState = state;
-    var newStatePrent = null;
-    var newStateName = null;
-    var newStateValue = null;
+    var newStateParent = null;
+    //var newStateValue = null;
     var preState = state;
-    var preStateName = null;
+    var preStatename = null;
+
     for (var i = 0; i < len; ++i) {
-        // 最后一个是属性的名字
         var name = t_arr[i];
-        if (i >= len - 1) {
-            if (newStatePrent == null) {
-                var hadChange = false;
-                for (var pi in valuesObj) {
-                    if (valuesObj[pi] != nowState[pi]) {
-                        hadChange = true;
-                        break;
-                    }
-                }
-                if (!hadChange) {
-                    return state;
-                }
-                newStatePrent = nowState;
-                newStateName = name;
-                newStateValue = Object.assign({}, nowState[name], valuesObj);
-            }
-            else {
-                nowState[name] = Object.assign({}, nowState[name], valuesObj);
-            }
-            break;
-        }
         if (nowState[name] == null) {
-            if (newStatePrent == null) {
-                newStatePrent = preState;
-                newStateName = preStateName;
-                nowState = {};
-                newStateValue = {};
-                newStateValue[name] = nowState;
+            if (newStateParent == null) {
+                nowState[name] = {};
+                newStateParent = preState;
+                //newStateValue = {};
+                nowState = nowState[name];
+                continue;
+            }
+            nowState[name] = {};
+        }
+
+        if(i == len - 1){
+            if(newStateParent == null){
+                newStateParent = preState;
+                //newStateValue = Object.assign({}, nowState[name]);
+                nowState[name] = Object.assign({}, nowState[name]);
+            }
+        }
+        preState = nowState;
+        preStatename = name;
+        nowState = nowState[name];
+    }
+    var mideState = nowState;
+    var changed_arr = [];
+    var newStateObj_arr = [];
+    for (var vi in valuesObj) {
+        var value = valuesObj[vi];
+        nowState = mideState;
+        t_arr = vi.split('.');
+        len = t_arr.length;
+        var aidPreStateName = null;
+        var aidPidPreState = null;
+        for (i = 0; i < len; ++i) {
+            name = t_arr[i];
+            if (i >= len - 1) {
+                if (value != nowState[name]) {
+                    changed_arr.push(
+                        {
+                            path:path + '.' + vi,
+                            name:name,
+                            oldValue:nowState[name],
+                            newValue:value,
+                            state:nowState,
+                            preState:aidPidPreState,
+                            preStateName:aidPreStateName,
+                        }
+                    );
+                }
             }
             else {
-                nowState[name] = {};
+                if (nowState[name] == null) {
+                    nowState[name] = {};
+                    newStateObj_arr.push(nowState[name]);
+                }
+                aidPidPreState = nowState;
+                aidPreStateName = name;
+                nowState = nowState[name];
             }
         }
-        else {
-            preState = nowState;
-            preStateName = name;
-            nowState = nowState[name];
+    }
+    if (changed_arr.length == 0) {
+        return state;
+    }
+
+    var assginedObjs_arr = [];
+    for (i in changed_arr) {
+        var changedInfo = changed_arr[i];
+        if(changedInfo.preState == null){
+            changedInfo.state[changedInfo.name] = changedInfo.newValue;
+            continue;
         }
+
+        if(assginedObjs_arr.indexOf(changedInfo.state) == -1){
+            assginedObjs_arr.push(changedInfo.state);
+            if(newStateObj_arr.indexOf(changedInfo.state) == -1){
+                changedInfo.state = Object.assign({}, changedInfo.state);
+                changedInfo.preState[changedInfo.preStateName] = changedInfo.state;
+            }
+        }
+        changedInfo.state[changedInfo.name] = changedInfo.newValue;
     }
-    if (preStateName == null) {
-        return newStateValue;
+
+    var retState = state;
+    /*
+    if(newStateParent == state){
+        retState = Object.assign({}, state, newStateValue);
     }
-    newStatePrent[newStateName] = updateObject(newStatePrent[newStateName], newStateValue);
-    var retState = Object.assign({}, state);
+    else{
+        
+        newStateParent[newStateName] = newStateValue;
+        retState = state;
+    }
+    */
 
     if (visited == null) {
         visited = {};
     }
-    var retState = state;
-    for (var pi in valuesObj) {
-        retState = aStateChanged(retState, path + '.' + pi, valuesObj[pi], visited);
+    for (i in changed_arr) {
+        var changedInfo = changed_arr[i];
+        retState = aStateChanged(retState, changedInfo.path, changedInfo.newValue, changedInfo.oldValue, visited);
     }
     return retState == state ? Object.assign({}, retState) : retState;
 }
 
-function aStateChanged(state, path, newValue, visited = {}) {
+function aStateChanged(state, path, newValue, oldValue, visited = {}) {
     if (visited[path] != null) {
         console.error('aStateChanged回路访问:' + path);
     }
@@ -629,7 +692,7 @@ function aStateChanged(state, path, newValue, visited = {}) {
     if (appStateChangedAct_map != null) {
         var theAct = appStateChangedAct_map[path];
         if (theAct) {
-            var actRet = theAct(retState, path, newValue, visited);
+            var actRet = theAct(retState, newValue, oldValue, path, visited);
             if (actRet != null) {
                 retState = actRet;
             }
@@ -641,7 +704,7 @@ function aStateChanged(state, path, newValue, visited = {}) {
 function MakePath() {
     var rlt = '';
     for (var i = 0; i < arguments.length; ++i) {
-        if(arguments[i] == null || arguments[i].length == 0)
+        if (arguments[i] == null || arguments[i].length == 0)
             continue;
         rlt += (rlt.length == 0 ? '' : '.') + arguments[i];
     }
@@ -674,6 +737,7 @@ function fetchBeginHandler(state, action) {
             retState = setManyStateByPath(retState, propPath, {
                 fetching: true,
                 fetchingpropname: triggerData.propName,
+                fetchingErr: null,
             });
         }
     }
@@ -705,15 +769,19 @@ function fetchEndHandler(state, action) {
 
     if (action.err != null) {
         console.warn(action.err);
-        if (triggerData) {
-            var propPath = MakePath(triggerData.base, triggerData.id, 'fetching');
-            retState = setStateByPath(retState, propPath, false);
-        }
-
         if (isModel) {
             var newFetchState = Object.assign({}, retState.ui.fetchState);
             newFetchState.err = action.err;
             retState.ui.fetchState = newFetchState;
+        }
+        else {
+            if (triggerData) {
+                var propPath = MakePath(triggerData.base, triggerData.id);
+                retState = setManyStateByPath(retState, propPath, {
+                    fetching: false,
+                    fetchingErr: action.err,
+                });
+            }
         }
         return retState == state ? Object.assign({}, retState) : retState;
     }
@@ -731,6 +799,9 @@ function fetchEndHandler(state, action) {
 
     switch (action.key) {
         case 'pageloaded':
+            setTimeout(() => {
+                store.dispatch({ type: AT_PAGELOADED });
+            }, 50);
             return Object.assign({}, retState, { loaded: true });
         case EFetchKey.FetchPropValue:
             {
@@ -776,4 +847,50 @@ function baseRenderLoadingTip() {
             {tipElem}
         </div>
     </div>);
+}
+
+function renderFetcingTipDiv(tipstr = '数据加载中') {
+    return (
+        <div className='w-100 h-100 flex-grow-1 d-flex align-items-center'>
+            <div className='m-auto d-flex align-items-center border rounded'>
+                <i className='fa fa-spinner fa-pulse fa-fw fa-2x' />
+                <div className='text-nowrap'>{tipstr}</div>
+            </div>
+        </div>
+    );
+}
+
+
+function renderFetcingErrDiv(errInfo) {
+    return (
+        <div className='w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch'>
+            <div className='m-auto d-flex align-items-center border rounded text-danger flex-shrink-0 mw-100'>
+                <i className='fa fa-warning fa-fw fa-2x' />
+                <div className='text'>出错了:{errInfo}联系信息部吧。</div>
+            </div>
+        </div>
+    );
+}
+
+function getFormatDateString(date){
+    var y = date.getFullYear();
+    var m = date.getMonth() + 1;
+    var d = date.getDate();
+    return y + (m < 10 ? '-0' : '-') + m + (d < 10 ? '-0' : '-') + d;
+}
+
+function simpleFreshFormFun(retState, records_arr, formFullID){
+    var formState = getStateByPath(retState, formFullID);
+	var needSetState = {};
+	if (records_arr == null || records_arr.length == 0) {
+		needSetState.recordIndex = -1;
+	}
+	else {
+		var useIndex = formState.recordIndex == null ? 0 : parseInt(formState.recordIndex);
+		if (useIndex >= records_arr.length) {
+			useIndex = records_arr.length - 1;
+		}
+		needSetState.recordIndex = useIndex;
+	}
+	setManyStateByPath(retState, formFullID, needSetState);
 }
