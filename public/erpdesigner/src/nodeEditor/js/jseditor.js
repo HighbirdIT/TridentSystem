@@ -24,6 +24,16 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_Compare,
         type:'数学'
     },
+    {
+        label:'Switch',
+        nodeClass:JSNode_Switch,
+        type:'流控制'
+    },
+    {
+        label:'Break',
+        nodeClass:JSNode_Break,
+        type:'流控制'
+    },
 ];
 
 class JSNode_CompileHelper extends SqlNode_CompileHelper{
