@@ -323,46 +323,26 @@ var ContentPanel = function (_React$PureComponent) {
                             React.createElement(
                                 'div',
                                 null,
-                                '\u6570'
+                                '\u6570\u636E'
                             ),
                             React.createElement(
                                 'div',
                                 null,
-                                '\u636E'
-                            ),
-                            React.createElement(
-                                'div',
-                                null,
-                                '\u5927'
-                            ),
-                            React.createElement(
-                                'div',
-                                null,
-                                '\u5E08'
+                                '\u5927\u5E08'
                             )
                         ),
                         React.createElement(
                             'button',
-                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickPanelNameBtn },
+                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickPanelNameBtn, pname: 'scriptmaster' },
                             React.createElement(
                                 'div',
                                 null,
-                                '\u6D41'
+                                '\u811A\u672C'
                             ),
                             React.createElement(
                                 'div',
                                 null,
-                                '\u7A0B'
-                            ),
-                            React.createElement(
-                                'div',
-                                null,
-                                '\u5927'
-                            ),
-                            React.createElement(
-                                'div',
-                                null,
-                                '\u5E08'
+                                '\u5927\u5E08'
                             )
                         ),
                         React.createElement(

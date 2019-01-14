@@ -202,7 +202,7 @@ class CLogItem extends React.PureComponent{
         var d = new Date();
         var paseSec = Math.floor((logItem.time / 1000.0));
         var itemID = this.props.idPrefix + '_' + this.props.index;
-        return (<div className='d-flex flex-grow-0 flex-shrink-0'>
+        return (<div className='d-flex flex-grow-0 flex-shrink-0 align-items-center'>
                     <span className='text-light'>{'[' + paseSec + ']'}</span>
                     {iconElem}
                     <span id={itemID} className={textColor + ' selectable flex-grow-1 flex-shrink-1'}>

@@ -15,12 +15,12 @@ class OutlineItem extends React.PureComponent {
         }
         this.state = Object.assign({ kernel: this.props.kernel }, this.props.kernel.outlineProfile);
         autoBind(this);
-        React_Make_AttributeListener(this, ['children', 'selected', 'unselected', 'placeChanged']);
+        React_Make_AttributeListener(this, [AttrNames.Name, AttrNames.Chidlren, 'selected', 'unselected', 'placeChanged']);
         this.rootElemRef = React.createRef();
     }
 
     aAttrChanged(changedAttrName) {
-        if (changedAttrName == 'children') {
+        if (changedAttrName == AttrNames.Chidlren) {
             this.setState({
                 magicObj: {},
             });
@@ -40,6 +40,11 @@ class OutlineItem extends React.PureComponent {
         }
         else if (changedAttrName == 'placeChanged') {
             this.props.itemSelected(this, this.rootElemRef.current);
+        }
+        else if(changedAttrName == AttrNames.Name){
+            this.setState({
+                magicObj: {},
+            });
         }
     }
 
@@ -132,12 +137,13 @@ class OutlineItem extends React.PureComponent {
         var isContainer = kernel.children != null;
         var hasChild = isContainer && kernel.children.length > 0;
         var offsetStyle = { width: (this.props.deep * 25 + (hasChild ? 0 : 7) + 'px') };
+        var kernelLabel = kernel.id + (IsEmptyString(kernel[AttrNames.Name]) ? '' : '(' + kernel[AttrNames.Name] + ')');
         return (
             <div key={kernel.id} className={'outlineItemDiv' + (this.props.deep ? ' ' : ' topest') + (isContainer ? " d-felx flex-column" : '')}>
                 <div className='d-flex'>
                     <span style={offsetStyle} className='flex-grow-0 flex-shrink-0' />
                     {!hasChild ? null : <span onClick={this.toggleCollapse} className={'flex-grow-0 flex-shrink-0 ml-1 icon-sm btn-secondary btn-sm' + (this.state.collapsed ? ' icon-right btn-info' : ' icon-down btn-secondary')} />}
-                    <div className={'outlineItem flex-grow-0 flex-shrink-0' + (kernel.__placing ? ' bg-dark text-light' : '')} ctlselected={(this.state.selected ? ' active' : null)} onClick={this.clickhandler} onMouseDown={this.mouseDownHandler} ref={this.rootElemRef}>{(kernel.__placing ? '*' : '') + kernel.id}</div>
+                    <div className={'outlineItem flex-grow-0 flex-shrink-0' + (kernel.__placing ? ' bg-dark text-light' : '')} ctlselected={(this.state.selected ? ' active' : null)} onClick={this.clickhandler} onMouseDown={this.mouseDownHandler} ref={this.rootElemRef}>{(kernel.__placing ? '*' : '') + kernelLabel}</div>
                 </div>
 
                 {
@@ -200,7 +206,10 @@ class OutlinePanel extends React.PureComponent {
     }
 
     wantDragAct(targetItem) {
-        console.log(targetItem);
+        if(targetItem.props.kernel.isfixed){
+            return;
+        }
+        //console.log(targetItem);
         this.beforeDragData = {
             kernel: targetItem.props.kernel,
             parent: targetItem.props.kernel.parent,
@@ -352,12 +361,16 @@ class OutlinePanel extends React.PureComponent {
         //console.log(this.scrollHStep);
     }
 
+    clickTrashBtnHandler(ev){
+        this.props.project.designer.deleteSelectedKernel();
+    }
+
     render() {
         return (
             <div id="outlineRoot" className="flex-grow-1 flex-shrink-1 bg-light d-flex flex-column mw-100">
                 <button type="button" className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light' style={{ borderRadius: '0em', height: '2.5em', overflow: 'hidden' }}>大纲</button>
-                <div className='btn-group flex-grow-0 flex-shrink-1 bg-dark'>
-                    <div className='btn btn-dark'>
+                <div className='btn-group flex-grow-0 flex-shrink-0 bg-dark'>
+                    <div className='btn btn-dark' onClick={this.clickTrashBtnHandler}>
                         <i className='fa fa-trash text-danger' />
                     </div>
                 </div>

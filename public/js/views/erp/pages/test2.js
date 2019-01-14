@@ -9,379 +9,343 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var Redux = window.Redux;
-var ReactRedux = window.ReactRedux;
-/*
-alert(Redux.ReactRedux);
-try{
-    var info = ReactRedux.Provider;
-    alert(info);
-}
-catch(eo){
-    alert(eo);
-}
-*/
 var Provider = ReactRedux.Provider;
-
 var isDebug = false;
-var thisAppTitle = '功能测试页面';
-var appServerUrl = '/erppage/server/test';
-
-var appInitState = {
-    loaded: false,
-    ui: {},
-    page1: {}
+var appServerUrl = '/erppage/server/test2';
+var thisAppTitle = 'test2';
+var appInitState = { loaded: false, ui: {}, nowPage: '' };
+var appReducerSetting = {
+	AT_PAGELOADED: pageLoadedReducer.bind(window),
+	AT_GOTOPAGE: gotoPageReducer.bind(window)
 };
-
-var appReducerSetting = { AT_FETCHBEGIN: fetchBeginHandler, AT_FETCHEND: fetchEndHandler };
-var appReducer = createReducer(appInitState, Object.assign(baseReducerSetting, appReducerSetting));
-
-var reducer = Redux.combineReducers({ app: appReducer });
-var store = Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));
-
+var appReducer = createReducer(appInitState, Object.assign(baseReducerSetting, appReducerSetting));;
+var reducer = appReducer;
+var store = Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));;
 var appStateChangedAct_map = {
-    'page1.testControl01.text': function page1TestControl01Text(state, path, newValue, visited) {
-        setTimeout(function () {
-            store.dispatch(fetchJsonPost(appServerUrl, { action: 'getPersonCode', name: newValue }, makeFTD_Prop('page1', 'text01', 'text', false), EFetchKey.FetchPropValue));
-        }, 20);
-    },
-    'page1.text01.text': function page1Text01Text(state, path, newValue, visited) {
-        setTimeout(function () {
-            store.dispatch(fetchJsonPost(appServerUrl, { action: 'getPersonIdentify', id: newValue }, makeFTD_Prop('page1', 'text02', 'text', false), EFetchKey.FetchPropValue));
-        }, 20);
-    },
-    'page1.text03.value': function page1Text03Value(state, path, newValue, visited) {
-        return setStateByPath(state, MakePath('page1.text04.value'), '没想到' + newValue + '哈哈', visited);
-    }
+	'M_Page_0.M_Form_0.records_arr': FreshCM_Form_0.bind(window),
+	'M_Page_0.M_Form_0.recordIndex': BindCM_Form_0.bind(window)
 };
 
-var TestControl = function (_React$PureComponent) {
-    _inherits(TestControl, _React$PureComponent);
+function pageLoadedReducer(state) {
+	return gotoPage('M_Page_0', state);
+}
 
-    function TestControl(props) {
-        _classCallCheck(this, TestControl);
+function gotoPageReducer(state, action) {
+	return gotoPage(action.pageName, state);
+}
 
-        return _possibleConstructorReturn(this, (TestControl.__proto__ || Object.getPrototypeOf(TestControl)).call(this));
-    }
+function gotoPage(pageName, state) {
+	if (state.nowPage == pageName) {
+		return state;
+	}
+	var rltState = state;
+	switch (pageName) {
+		case 'M_Page_0':
+			rltState = activeM_Page_0(state);
+			break;
+	}
+	return Object.assign({}, rltState);
+}
 
-    _createClass(TestControl, [{
-        key: 'render',
-        value: function render() {
-            var _this2 = this;
+function activeM_Page_0(state) {
+	state.nowPage = 'M_Page_0';
+	setTimeout(function () {
+		pullCM_Form_0Data();
+	}, 50);
+	return state;
+}
 
-            return React.createElement(
-                'div',
-                { className: 'list-group flex-grow-1 flex-shrink-1 autoScroll' },
-                React.createElement(
-                    'button',
-                    { type: 'button', className: 'btn btn-dark flex-shrink-0', onClick: this.props.clickFresh },
-                    '\u5237\u65B0'
-                ),
-                this.props.data.map(function (item) {
-                    return React.createElement(
-                        'div',
-                        { key: item[_this2.props.textName], onClick: _this2.props.onClickItem, className: 'd-flex flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (item[_this2.props.textName] == _this2.props.selectedValue ? 'active' : '') },
-                        item[_this2.props.textName]
-                    );
-                })
-            );
-        }
-    }]);
+function FreshCM_Form_0(retState, newValue) {
+	simpleFreshFormFun(retState, newValue, 'M_Page_0.M_Form_0');
+	//console.log('123');
+}
 
-    return TestControl;
+function BindCM_Form_0(retState, newIndex, oldIndex) {
+	var formState = getStateByPath(retState, 'M_Page_0.M_Form_0');
+	var records_arr = formState.records_arr;
+	var needSetState = {};
+	if (oldIndex == -1) {
+		// undo insert
+		needSetState['insertCache.M_Label0_text'] = getStateByPath(formState, 'M_Label0.text');
+		needSetState['insertCache.M_Text_2_value'] = getStateByPath(formState, 'M_Text_2.value');
+	}
+	var useIndex = newIndex;
+	if (records_arr == null || newIndex == -1) {
+		var insertCache = getStateByPath(formState, 'insertCache');
+		if (insertCache) {
+			needSetState['M_Label0.text'] = IsEmptyString(insertCache.M_Label0_text) ? '' : insertCache.M_Label0_text;
+			needSetState['M_Text_2.value'] = IsEmptyString(insertCache.M_Text_2_value) ? '' : insertCache.M_Text_2_value;
+		} else {
+			needSetState['M_Label0.text'] = '';
+			needSetState['M_Text_2.value'] = '';
+		}
+	} else {
+		var nowRecord = records_arr[useIndex];
+		needSetState['M_Label0.text'] = nowRecord['员工登记姓名'];
+		needSetState['M_Text_2.value'] = nowRecord['出生年月日期'];
+	}
+	setManyStateByPath(retState, 'M_Page_0.M_Form_0', needSetState);
+}
+
+function pullCM_Form_0Data() {
+	store.dispatch(fetchJsonPost(appServerUrl, { action: 'getCM_Form_0DS' }, makeFTD_Prop('M_Page_0', 'M_Form_0', 'records_arr', false), EFetchKey.FetchPropValue));
+}
+
+var App = function (_React$PureComponent) {
+	_inherits(App, _React$PureComponent);
+
+	function App(props) {
+		_classCallCheck(this, App);
+
+		var _this = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this, props));
+
+		_this.renderLoadingTip = baseRenderLoadingTip.bind(_this);
+		return _this;
+	}
+
+	_createClass(App, [{
+		key: 'render',
+		value: function render() {
+			var retElem = null;
+			var pageElem;
+			switch (this.props.nowPage) {
+				case 'M_Page_0':
+					{
+						pageElem = React.createElement(VisibleCM_Page_0, null);
+						break;
+					}
+			}
+			retElem = React.createElement(
+				'div',
+				{ className: 'w-100 h-100' },
+				React.createElement(FixedContainer, { ref: gFixedContainerRef }),
+				this.renderLoadingTip(),
+				pageElem
+			);
+			return retElem;
+		}
+	}]);
+
+	return App;
 }(React.PureComponent);
 
-var selectTestControlData = function selectTestControlData(state, ownProp) {
-    var ctlState = getStateByPath(state, 'app.' + ownProp.parentPath + '.' + ownProp.id, {});
-    return ctlState.data == null ? [] : ctlState.data;
-};
-
-var selectTestControlSelectedValue = function selectTestControlSelectedValue(state, ownProp) {
-    var ctlState = getStateByPath(state, 'app.' + ownProp.parentPath + '.' + ownProp.id, {});
-    return ctlState.selectedValue;
-};
-
-var TestControl_dataSelector = Reselect.createSelector(selectTestControlData, function (b) {
-    return b;
-});
-
-function TestControl_mapstatetoprops(state, ownprops) {
-    return {
-        data: TestControl_dataSelector(state, ownprops),
-        selectedValue: selectTestControlSelectedValue(state, ownprops)
-    };
+function App_mapstatetoprops(state, ownprops) {
+	var retProps = {};
+	retProps.nowPage = state.nowPage;
+	retProps.loaded = state.loaded;
+	if (!retProps.loaded) {
+		retProps.fetchState = state.ui.fetchState;
+	}
+	return retProps;
 }
-
-function TestControl_dispatchtorprops(dispatch, ownprops) {
-    var ctrlBasePath = ownprops.parentPath + '.' + ownprops.id;
-    return {
-        clickFresh: function clickFresh(ev) {
-            store.dispatch(fetchJsonPost(appServerUrl, { action: 'getData', ctrlId: 't_0' }, makeFTD_Prop('page1', 'testControl01', 'data'), EFetchKey.FetchPropValue));
-        },
-        onClickItem: function onClickItem(ev) {
-            var text = ev.target.innerText;
-            store.dispatch(makeAction_setStateByPath(text, ctrlBasePath + '.selectedValue'));
-        }
-    };
+function App_disptchtoprops(dispatch, ownprops) {
+	var retDispath = {};
+	return retDispath;
 }
+var VisibleApp = ReactRedux.connect(App_mapstatetoprops, App_disptchtoprops)(App);
 
-var VisibleTestControl = ReactRedux.connect(TestControl_mapstatetoprops, TestControl_dispatchtorprops)(TestControl);
+var CM_Page_0 = function (_React$PureComponent2) {
+	_inherits(CM_Page_0, _React$PureComponent2);
 
-var TextControl = function (_React$PureComponent2) {
-    _inherits(TextControl, _React$PureComponent2);
+	function CM_Page_0(props) {
+		_classCallCheck(this, CM_Page_0);
 
-    function TextControl(props) {
-        _classCallCheck(this, TextControl);
+		return _possibleConstructorReturn(this, (CM_Page_0.__proto__ || Object.getPrototypeOf(CM_Page_0)).call(this, props));
+	}
 
-        return _possibleConstructorReturn(this, (TextControl.__proto__ || Object.getPrototypeOf(TextControl)).call(this));
-    }
+	_createClass(CM_Page_0, [{
+		key: 'render',
+		value: function render() {
+			var retElem = null;
+			retElem = React.createElement(
+				'div',
+				{ className: 'd-flex flex-column flex-grow-1 flex-shrink-1 h-100' },
+				this.renderHead(),
+				this.renderContent()
+			);
+			return retElem;
+		}
+	}, {
+		key: 'renderHead',
+		value: function renderHead() {
+			return React.createElement(
+				'div',
+				{ className: 'd-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader' },
+				React.createElement(
+					'h3',
+					null,
+					'\u8D75\u667A\u6DFC'
+				)
+			);
+		}
+	}, {
+		key: 'renderFoot',
+		value: function renderFoot() {
+			return React.createElement(
+				'div',
+				{ className: 'flex-grow-0 flex-shrink-0 bg-primary text-light pageFooter' },
+				React.createElement(
+					'h3',
+					null,
+					'\u9875\u811A'
+				)
+			);
+		}
+	}, {
+		key: 'renderContent',
+		value: function renderContent() {
+			var retElem = null;
+			retElem = React.createElement(
+				'div',
+				{ className: 'd-flex flex-grow-1 flex-shrink-0 autoScroll_Touch flex-column ' },
+				React.createElement(VisibleCM_Form_0, { parentPath: 'M_Page_0', id: 'M_Form_0' })
+			);
+			return retElem;
+		}
+	}]);
 
-    _createClass(TextControl, [{
-        key: 'renderContent',
-        value: function renderContent() {
-            if (this.props.fetching) {
-                return React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw' });
-            }
-            return this.props.text;
-        }
-    }, {
-        key: 'render',
-        value: function render() {
-            return React.createElement(
-                'div',
-                { className: 'd-flex flex-grow-1 flex-shrink-1' },
-                React.createElement(
-                    'div',
-                    { className: 'flex-grow-0 flex-shrink-0' },
-                    this.props.label
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'flex-grow-1 flex-shrink-1' },
-                    this.renderContent()
-                )
-            );
-        }
-    }]);
-
-    return TextControl;
+	return CM_Page_0;
 }(React.PureComponent);
 
-function TextControl_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state, 'app.' + ownprops.parentPath + '.' + ownprops.id, {});
-    return {
-        text: ctlState.text,
-        fetching: ctlState.fetching
-    };
+function CM_Page_0_mapstatetoprops(state, ownprops) {
+	var retProps = {};
+	return retProps;
 }
-
-function TextControl_dispatchtorprops(dispatch, ownprops) {
-    var ctrlBasePath = ownprops.parentPath + '.' + ownprops.id;
-    return {};
+function CM_Page_0_disptchtoprops(dispatch, ownprops) {
+	var retDispath = {};
+	return retDispath;
 }
+var VisibleCM_Page_0 = ReactRedux.connect(CM_Page_0_mapstatetoprops, CM_Page_0_disptchtoprops)(CM_Page_0);
 
-var VisibleTextControl = ReactRedux.connect(TextControl_mapstatetoprops, TextControl_dispatchtorprops)(TextControl);
+var CM_Form_0 = function (_React$PureComponent3) {
+	_inherits(CM_Form_0, _React$PureComponent3);
 
-function pullDL01DataSource() {
-    store.dispatch(fetchJsonPost(appServerUrl, { action: 'getPersonList' }, makeFTD_Prop('page1', 'testControl01', 'options_arr'), EFetchKey.FetchPropValue));
-}
+	function CM_Form_0(props) {
+		_classCallCheck(this, CM_Form_0);
 
-function pullControl01DataSource() {
-    store.dispatch(fetchJsonPost(appServerUrl, { action: 'getControl01_ds' }, makeFTD_Prop('page1', 'control01', 'options_arr'), EFetchKey.FetchPropValue));
-}
+		var _this3 = _possibleConstructorReturn(this, (CM_Form_0.__proto__ || Object.getPrototypeOf(CM_Form_0)).call(this, props));
 
-function pullControl02DataSource() {
-    store.dispatch(fetchJsonPost(appServerUrl, { action: 'getControl02_ds' }, makeFTD_Prop('page1', 'control02', 'options_arr'), EFetchKey.FetchPropValue));
-}
+		_this3.canInsert = false;
+		ERPC_PageForm(_this3);
+		return _this3;
+	}
 
-var App = function (_React$PureComponent3) {
-    _inherits(App, _React$PureComponent3);
+	_createClass(CM_Form_0, [{
+		key: 'render',
+		value: function render() {
+			var retElem = null;
+			retElem = this.renderContent();
+			return retElem;
+		}
+	}, {
+		key: 'renderContent',
+		value: function renderContent() {
+			var retElem = null;
+			if (this.props.fetchErr) {
+				return renderFetcingErrDiv(this.props.fetchErr.info);
+			}
+			if (!this.props.loaded || this.props.fetching) {
+				return renderFetcingTipDiv();
+			}
+			var nowIndex = this.props.recordIndex;
 
-    function App(props) {
-        _classCallCheck(this, App);
+			retElem = React.createElement(
+				'div',
+				{ className: 'd-flex flex-grow-1 flex-shrink-1 erp-form flex-column ' },
+				React.createElement(
+					'div',
+					{ className: 'position-relative d-flex flex-grow-1 d-flex flex-shrink-1 flex-column autoScroll_Touch' },
+					React.createElement(
+						'div',
+						{ className: 'flex-grow-0 d-flex flex-shrink-1 erp-control' },
+						React.createElement('div', { className: 'flex-grow-1 d-flex flex-shrink-1 erp-control ' }),
+						React.createElement(
+							'span',
+							{ className: 'erp-control ' },
+							'2019-1-7'
+						),
+						React.createElement('div', { className: 'flex-grow-1 d-flex flex-shrink-1 erp-control ' })
+					),
+					React.createElement(
+						VisibleERPC_LabeledControl,
+						{ id: 'M_LC_1', parentPath: 'M_Page_0.M_Form_0', label: '\u5458\u5DE5\u59D3\u540D' },
+						React.createElement(VisibleERPC_Label, { id: 'M_Label0', parentPath: 'M_Page_0.M_Form_0' })
+					),
+					React.createElement(
+						VisibleERPC_LabeledControl,
+						{ id: 'M_LC_0', parentPath: 'M_Page_0.M_Form_0', label: '\u6D4B\u8BD5\u5B57\u6BB5' },
+						React.createElement(VisibleERPC_Text, { id: 'M_Text_2', parentPath: 'M_Page_0.M_Form_0', type: 'date' })
+					)
+				),
+				nowIndex == -1 && React.createElement(
+					'div',
+					{ className: 'btn-group' },
+					React.createElement(
+						'button',
+						{ type: 'button', className: 'btn btn-success flex-grow-1 processBtn' },
+						'\u767B\u8BB0\u6682\u5B58'
+					),
+					React.createElement(
+						'button',
+						{ type: 'button', className: 'btn btn-success flex-grow-1 processBtn' },
+						'\u6700\u7EC8\u63D0\u4EA4'
+					)
+				),
+				nowIndex != -1 && React.createElement(
+					'div',
+					{ className: 'btn-group' },
+					React.createElement(
+						'button',
+						{ type: 'button', className: 'btn btn-primary flex-grow-1 processBtn' },
+						'\u4FEE\u6539\u4FDD\u5B58'
+					),
+					React.createElement(
+						'button',
+						{ type: 'button', className: 'btn btn-primary flex-grow-1 processBtn' },
+						'\u5BA1\u6838\u63D0\u4EA4'
+					),
+					React.createElement(
+						'button',
+						{ type: 'button', className: 'btn btn-primary flex-grow-1 processBtn' },
+						'\u5BA1\u6838\u62D2\u7EDD'
+					),
+					React.createElement(
+						'button',
+						{ type: 'button', className: 'btn btn-primary flex-grow-1 processBtn' },
+						'\u5BA1\u6838\u5220\u9664'
+					)
+				),
+				this.renderNavigater()
+			);
+			return retElem;
+		}
+	}]);
 
-        var _this4 = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this));
-
-        _this4.renderLoadingTip = baseRenderLoadingTip.bind(_this4);
-        return _this4;
-    }
-
-    _createClass(App, [{
-        key: 'renderContent',
-        value: function renderContent() {
-            if (!this.props.loaded) {
-                return null;
-            }
-
-            return React.createElement(
-                React.Fragment,
-                null,
-                React.createElement(
-                    VisibleERPC_LabeledControl,
-                    { id: 'test01_label', parentPath: 'page1', label: '\u6240\u5C5E\u90E8\u95E8' },
-                    React.createElement(VisibleERPC_DropDown, { pullDataSource: pullControl01DataSource, label: '\u9009\u62E9\u5458\u5DE5\u59D3\u540D', id: 'control01', parentPath: 'page1', textAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D', valueAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801', groupAttr: '\u5458\u5DE5\u5728\u804C\u72B6\u6001,\u5458\u5DE5\u5DE5\u65F6\u72B6\u6001,\u6240\u5C5E\u7CFB\u7EDF\u540D\u79F0,\u6240\u5C5E\u90E8\u95E8\u540D\u79F0', recentCookieKey: 'recent_user' })
-                ),
-                React.createElement(
-                    VisibleERPC_LabeledControl,
-                    { id: 'test01_label', parentPath: 'page1', label: '\u9879\u76EE\u540D\u79F0' },
-                    React.createElement(VisibleERPC_DropDown, { pullDataSource: pullControl02DataSource, label: '\u9009\u62E9\u9879\u76EE\u540D\u79F0', id: 'control02', parentPath: 'page1', textAttrName: '\u9879\u76EE\u767B\u8BB0\u540D\u79F0', valueAttrName: '\u9879\u76EE\u767B\u8BB0\u540D\u79F0\u4EE3\u7801', groupAttr: '\u9879\u76EE\u8FD0\u884C\u9636\u6BB5', recentCookieKey: 'recent_projects' })
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'd-flex flex-shrink-0' },
-                    React.createElement(VisibleTextControl, { label: '\u4EE3\u7801', id: 'text01', parentPath: 'page1' }),
-                    React.createElement(VisibleTextControl, { label: '\u8EAB\u4EFD\u8BC1', id: 'text02', parentPath: 'page1' })
-                ),
-                React.createElement(
-                    VisibleERPC_LabeledControl,
-                    { id: 'test01_label', parentPath: 'page1', label: '\u5458\u5DE5\u59D3\u540D' },
-                    React.createElement(VisibleERPC_DropDown, { pullDataSource: pullDL01DataSource, id: 'testControl01', parentPath: 'page1', textAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D', valueAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801', recentCookieKey: 'recent_user' })
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'rowlFameOne' },
-                    React.createElement(
-                        'div',
-                        { className: 'rowlFameOne_Left' },
-                        '\u603B\u7ED3\u65F6\u95F4'
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'rowlFameOne_right' },
-                        React.createElement(VisibleERPC_Text, { id: 'text05', type: 'date', parentPath: 'page1' })
-                    )
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'rowlFameOne', last: 1 },
-                    React.createElement(
-                        'div',
-                        { className: 'rowlFameOne_Left' },
-                        '\u8017\u7528\u5C0F\u65F6'
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'rowlFameOne_right' },
-                        React.createElement(VisibleERPC_Text, { id: 'text06', type: 'number', parentPath: 'page1' })
-                    )
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'd-flex flex-shrink-0' },
-                    React.createElement(
-                        'div',
-                        { className: 'rowlFameOne w-50', hor: 1 },
-                        React.createElement(
-                            'div',
-                            { className: 'rowlFameOne_Left' },
-                            '\u603B\u7ED3\u65F6\u95F4'
-                        ),
-                        React.createElement(
-                            'div',
-                            { className: 'rowlFameOne_right' },
-                            React.createElement(VisibleERPC_Text, { id: 'text05', type: 'date', parentPath: 'page1' })
-                        )
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'rowlFameOne w-50', hor: 1 },
-                        React.createElement(
-                            'div',
-                            { className: 'rowlFameOne_Left' },
-                            '\u8017\u7528\u5C0F\u65F6'
-                        ),
-                        React.createElement(
-                            'div',
-                            { className: 'rowlFameOne_right' },
-                            React.createElement(VisibleERPC_Text, { id: 'text06', type: 'number', parentPath: 'page1' })
-                        )
-                    )
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'rowlFameOne', last: 1 },
-                    React.createElement(
-                        'div',
-                        { className: 'rowlFameOne_Left' },
-                        '\u5DE5\u4F5C\u5185\u5BB9'
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'rowlFameOne_right' },
-                        React.createElement(VisibleERPC_Text, { id: 'textContent', type: 'multiline', parentPath: 'page1' })
-                    )
-                ),
-                React.createElement(
-                    VisibleERPC_LabeledControl,
-                    { id: 'test01_label', parentPath: 'page1', label: '\u6240\u5C5E\u90E8\u95E8' },
-                    React.createElement(VisibleERPC_DropDown, { pullDataSource: pullControl01DataSource, label: '\u9009\u62E9\u5458\u5DE5\u59D3\u540D', id: 'control01', parentPath: 'page1', textAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D', valueAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801', groupAttr: '\u5458\u5DE5\u5728\u804C\u72B6\u6001,\u5458\u5DE5\u5DE5\u65F6\u72B6\u6001,\u6240\u5C5E\u7CFB\u7EDF\u540D\u79F0,\u6240\u5C5E\u90E8\u95E8\u540D\u79F0', recentCookieKey: 'recent_user' })
-                )
-            );
-        }
-    }, {
-        key: 'clickTest',
-        value: function clickTest() {
-            alert('test');
-        }
-    }, {
-        key: 'render',
-        value: function render() {
-            return React.createElement(
-                'div',
-                { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 h-100' },
-                this.renderLoadingTip(),
-                React.createElement(
-                    'div',
-                    { className: 'd-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader' },
-                    React.createElement(
-                        'h3',
-                        null,
-                        thisAppTitle
-                    )
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 autoScroll' },
-                    this.renderContent()
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'flex-grow-0 flex-shrink-0 bg-primary text-light pageFooter' },
-                    React.createElement(
-                        'h3',
-                        null,
-                        '\u9875\u811A'
-                    )
-                )
-            );
-        }
-    }]);
-
-    return App;
+	return CM_Form_0;
 }(React.PureComponent);
 
-function App_mapstatetoprops(state) {
-    return {
-        loaded: state.app.loaded,
-        fetchState: state.app.ui.fetchState
-    };
+function CM_Form_0_mapstatetoprops(state, ownprops) {
+	var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, 'M_Form_0'), {});
+	var retProps = {
+		fetching: ctlState.fetching,
+		fetchErr: ctlState.fetchErr,
+		records_arr: ctlState.records_arr,
+		recordIndex: ctlState.recordIndex
+	};
+	retProps.loaded = ctlState.records_arr != null;
+	return retProps;
 }
-
-function App_distpatchtoprops(dispatch, ownprops) {
-    return {
-        clickLoadingErrorBtn: function clickLoadingErrorBtn(ev) {
-            dispatch(makeAction_setStateByPath(null, 'ui.fetchState'));
-        }
-    };
+function CM_Form_0_disptchtoprops(dispatch, ownprops) {
+	var retDispath = {};
+	return retDispath;
 }
-
-var VisiblaeApp = ReactRedux.connect(App_mapstatetoprops, App_distpatchtoprops)(App);
+var VisibleCM_Form_0 = ReactRedux.connect(CM_Form_0_mapstatetoprops, CM_Form_0_disptchtoprops)(CM_Form_0);
 
 ErpControlInit();
-
 ReactDOM.render(React.createElement(
-    Provider,
-    { store: store },
-    React.createElement(VisiblaeApp, null)
+	Provider,
+	{ store: store },
+	React.createElement(VisibleApp, null)
 ), document.getElementById('reactRoot'));
 
-store.dispatch(fetchJsonPost('/erppage/server/test', { action: 'pageloaded' }, null, 'pageloaded', '页面加载中'));
+store.dispatch(fetchJsonPost(appServerUrl, { action: 'pageloaded' }, null, 'pageloaded', '正在加载[' + thisAppTitle + ']'));

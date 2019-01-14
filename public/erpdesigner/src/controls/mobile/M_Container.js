@@ -1,6 +1,7 @@
 const M_ContainerKernelAttrsSetting={
     groups_arr:[
         new CAttributeGroup('基本设置',[
+            new CAttribute('name',AttrNames.Name,ValueType.String),
             new CAttribute('方向',AttrNames.Orientation,ValueType.String,Orientation_H,true,false, Orientation_Options_arr),
         ]),
     ],
@@ -66,7 +67,6 @@ class M_Container extends React.PureComponent {
         if(this.props.ctlKernel.__placing){
             layoutConfig.addClass('M_Container_Empty');
             layoutConfig.addClass('M_placingCtl');
-                        +(this.state.orientation == Orientation_V ? ' flex-column' : '')
             return (<div className={layoutConfig.getClassName()} style={rootStyle} ref={this.rootElemRef}></div>);
         }
         layoutConfig.addClass('M_Container');
@@ -96,7 +96,7 @@ class M_Container extends React.PureComponent {
 DesignerConfig.registerControl(
     {
         forPC : false,
-        label : 'Flex容器',
+        label : 'DIV',
         type : M_ContainerKernel_Type,
         namePrefix : M_ContainerKernel_Prefix,
         kernelClass:M_ContainerKernel,

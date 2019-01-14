@@ -9,7 +9,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var M_LabelKernelAttrsSetting = {
-    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('内容', AttrNames.Text, ValueType.String, '标签内容')])]
+    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('name', AttrNames.Name, ValueType.String), genTextFiledAttribute()])]
 };
 
 var M_LabelKernel = function (_ControlKernelBase) {
@@ -44,11 +44,11 @@ var M_Label = function (_React$PureComponent) {
         var _this2 = _possibleConstructorReturn(this, (M_Label.__proto__ || Object.getPrototypeOf(M_Label)).call(this, props));
 
         _this2.state = {
-            text: _this2.props.ctlKernel.getAttribute(AttrNames.Text)
+            text: _this2.props.ctlKernel.getAttribute(AttrNames.TextField)
         };
 
         autoBind(_this2);
-        M_ControlBase(_this2, [AttrNames.Text, AttrNames.LayoutNames.APDClass, AttrNames.LayoutNames.StyleAttr]);
+        M_ControlBase(_this2, [AttrNames.TextField, AttrNames.LayoutNames.APDClass, AttrNames.LayoutNames.StyleAttr]);
         return _this2;
     }
 
@@ -59,7 +59,7 @@ var M_Label = function (_React$PureComponent) {
                 return;
             }
             this.setState({
-                text: this.props.ctlKernel.getAttribute(AttrNames.Text)
+                text: this.props.ctlKernel.getAttribute(AttrNames.TextField)
             });
         }
     }, {
@@ -67,8 +67,6 @@ var M_Label = function (_React$PureComponent) {
         value: function render() {
             var ctlKernel = this.props.ctlKernel;
             var layoutConfig = ctlKernel.getLayoutConfig();
-            layoutConfig.addClass('flex-grow-0');
-            layoutConfig.addClass('flex-shrink-0');
             if (this.props.ctlKernel.__placing) {
                 layoutConfig.addClass('M_placingCtl');
                 return React.createElement(
@@ -80,10 +78,11 @@ var M_Label = function (_React$PureComponent) {
             layoutConfig.addClass('M_Label');
             layoutConfig.addClass('border');
             layoutConfig.addClass('hb-control');
+            var showText = IsEmptyString(this.state.text) ? '[空标签]' : this.state.text;
             return React.createElement(
                 'div',
                 { className: layoutConfig.getClassName(), style: layoutConfig.style, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
-                this.state.text
+                showText
             );
         }
     }]);
@@ -97,5 +96,6 @@ DesignerConfig.registerControl({
     type: M_LabelKernel_Type,
     namePrefix: M_LabelKernel_Prefix,
     kernelClass: M_LabelKernel,
-    reactClass: M_Label
+    reactClass: M_Label,
+    canbeLabeled: true
 }, '基础');

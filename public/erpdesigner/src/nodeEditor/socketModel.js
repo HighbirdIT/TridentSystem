@@ -46,9 +46,11 @@ class NodeSocket extends EventEmitter{
             name:this.name,
             isIn:this.isIn,
             id:this.id,
-            defval:this.defval,
             type:this.type,
         };
+        if(this.defval != null){
+            rlt.defval = this.defval;
+        }
         if(this.extra){
             rlt.extra={};
             for(var si in this.extra){
@@ -62,8 +64,24 @@ class NodeSocket extends EventEmitter{
     }
 }
 
+class NodeFlowSocket extends NodeSocket{
+    constructor(name, tNode, isIn, initData){
+        super(name, tNode, isIn, initData);
+        this.isFlowSocket = true;
+        this.type = 'flow';
+    }
+}
+
 function CreateNodeSocketByJson(theNode, jsonData, createHelper){
-    var rlt = new NodeSocket(jsonData.name,theNode,jsonData.isIn, {defval:jsonData.defval,extra:jsonData.extra,type:jsonData.type});
+    var rlt = null;
+    var initData = {defval:jsonData.defval,extra:jsonData.extra};
+    if(jsonData.type == 'flow'){
+        rlt = new NodeFlowSocket(jsonData.name,theNode,jsonData.isIn, initData);
+    }
+    else{
+        initData.type = jsonData.type;
+        rlt = new NodeSocket(jsonData.name,theNode,jsonData.isIn, initData);
+    }
     createHelper.saveJsonMap(jsonData, rlt);
     return rlt;
 }

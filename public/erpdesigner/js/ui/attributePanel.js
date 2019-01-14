@@ -28,6 +28,11 @@ var AttributePanel = function (_React$PureComponent) {
     }
 
     _createClass(AttributePanel, [{
+        key: 'getTarget',
+        value: function getTarget() {
+            return this.state.target;
+        }
+    }, {
         key: 'getAttrValue',
         value: function getAttrValue(attr) {
             return this.state.target.getAttribute(attr.name);
@@ -38,11 +43,40 @@ var AttributePanel = function (_React$PureComponent) {
             this.state.target.setAttibute(attr.name, newvalue);
         }
     }, {
+        key: 'componentWillUnmount',
+        value: function componentWillUnmount() {
+            this.unlistenTarget(this.state.target);
+        }
+    }, {
+        key: 'targetAttributeGroupChangedhandler',
+        value: function targetAttributeGroupChangedhandler(ev) {
+            this.setState({
+                magicObj: {}
+            });
+        }
+    }, {
+        key: 'listenTarget',
+        value: function listenTarget(target) {
+            if (target == null) {
+                return;
+            }
+            target.on('AttributeGroupChanged', this.targetAttributeGroupChangedhandler);
+        }
+    }, {
+        key: 'unlistenTarget',
+        value: function unlistenTarget(target) {
+            if (target == null) {
+                return;
+            }
+            target.off('AttributeGroupChanged', this.targetAttributeGroupChangedhandler);
+        }
+    }, {
         key: 'setTarget',
         value: function setTarget(newTarget) {
             if (newTarget == this.state.target) {
                 return;
             }
+            this.unlistenTarget(this.state.target);
             if (this.state.target && this.state.target.setSelected) {
                 this.state.target.setSelected(false);
             }
@@ -50,6 +84,7 @@ var AttributePanel = function (_React$PureComponent) {
                 newTarget.setSelected(true);
             }
             this.props.project.emit(ESELECTEDCHANGED);
+            this.listenTarget(newTarget);
             this.setState({
                 target: newTarget
             });

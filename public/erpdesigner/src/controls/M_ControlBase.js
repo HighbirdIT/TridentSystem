@@ -1,12 +1,14 @@
 function M_ControlBase_componentWillMount(){
     this.listenTarget(this.props.ctlKernel);
+    this.mounted = true;
 }
 
 function M_ControlBase_componentWillUnmount(){
+    this.mounted = false;
     this.unlistenTarget(this.props.ctlKernel);
 }
 
-function M_ControlBase_listenTarget(target) {
+function M_ControlBase_listenTarget_SetControl(target) {
     if(target)
     {
         target.currentControl = this;
@@ -15,12 +17,28 @@ function M_ControlBase_listenTarget(target) {
     }
 }
 
-function M_ControlBase_unlistenTarget(target) {
+function M_ControlBase_unlistenTarget_SetControl(target) {
     if(target)
     {
         if(target.currentControl == this){
             target.currentControl = null;
         }
+        target.off(EATTRCHANGED, this.attrChangedHandler);
+        target.off(EFORCERENDER, this.forceRenderHandler);
+    }
+}
+
+function M_ControlBase_listenTarget(target) {
+    if(target)
+    {
+        target.on(EATTRCHANGED, this.attrChangedHandler);
+        target.on(EFORCERENDER, this.forceRenderHandler);
+    }
+}
+
+function M_ControlBase_unlistenTarget(target) {
+    if(target)
+    {
         target.off(EATTRCHANGED, this.attrChangedHandler);
         target.off(EFORCERENDER, this.forceRenderHandler);
     }
@@ -67,11 +85,17 @@ function M_ControlBase_aAttrChangedBase(changedAttrName){
     return false;
 }
 
-function React_Make_AttributeListener(target,watchedAttrs){
+function React_Make_AttributeListener(target,watchedAttrs,manageCurrentControl){
     target.watchedAttrs = watchedAttrs;
     target.watchAttrMatch = attrName => this.watchedAttrs.indexOf(attrName) != -1;
-    target.listenTarget = M_ControlBase_listenTarget.bind(target);
-    target.unlistenTarget = M_ControlBase_unlistenTarget.bind(target);
+    if(manageCurrentControl){
+        target.listenTarget = M_ControlBase_listenTarget_SetControl.bind(target);
+        target.unlistenTarget = M_ControlBase_unlistenTarget_SetControl.bind(target);
+    }
+    else{
+        target.listenTarget = M_ControlBase_listenTarget.bind(target);
+        target.unlistenTarget = M_ControlBase_unlistenTarget.bind(target);
+    }
     target.forceRenderHandler = M_ControlBase_forceRenderHandler.bind(target);
     target.attrChangedHandler = M_ControlBase_attrChangedHandler.bind(target);
 }
@@ -80,7 +104,7 @@ function M_ControlBase(target,watchedAttrs){
     var self = this;
     var ctlKernel = target.props.ctlKernel;
     target.rootElemRef = React.createRef();
-    React_Make_AttributeListener(target, watchedAttrs);
+    React_Make_AttributeListener(target, watchedAttrs, true);
     target.componentWillMount = M_ControlBase_componentWillMount.bind(target);
     target.componentWillUnmount = M_ControlBase_componentWillUnmount.bind(target);
     target.setSelected = M_ControlBase_setSelected.bind(target);
@@ -93,3 +117,21 @@ function M_ControlBase(target,watchedAttrs){
     return layoutState;
 }
 
+
+function GetKernelCanUseColumns(theKernel){
+    var rlt = null;
+    var nowKernel = theKernel.parent;
+    do{
+        var theDS = null;
+        switch(nowKernel.type){
+            case M_FormKernel_Type:
+            theDS = nowKernel.getAttribute(AttrNames.DataSource);
+            break;
+        }
+        if(theDS != null){
+            rlt = theDS.columns;
+        }
+        nowKernel = nowKernel.parent;
+    }while(nowKernel != null);
+    return rlt == null ? [] : rlt;
+}

@@ -13,8 +13,12 @@ function M_ContainerBase_tryPlaceKernel(theKernel, mousePos) {
         }) != null;
 
         if(!placedInChildren){
-            var parentIsHor = (selfKernel.parent == null ? selfKernel.orientation : selfKernel.parent.orientation) == '水平';
+            var selfIsHor = selfKernel.getAttribute(AttrNames.Orientation) == Orientation_H;
             var appandIndex = selfKernel.children.length;
+            var theKernelNowIndex = -1;
+            if(theKernel.parent == selfKernel){
+                theKernelNowIndex = selfKernel.getChildIndex(theKernel);
+            }
             var hitplacing = false;
             //if(horContainer){
                 for(var ci = 0; ci < selfKernel.children.length; ++ci){
@@ -28,13 +32,29 @@ function M_ContainerBase_tryPlaceKernel(theKernel, mousePos) {
                     var childRect = childRootElem.getBoundingClientRect();
                     if (MyMath.isPointInRect(childRect, mousePos)){
                         // hit the child
-                        
                         if(childKernel == theKernel)
                         {
                             hitplacing = true;
+                            appandIndex = ci;
                         }
-                        
-                        appandIndex = ci;
+                        else{
+                            var hitPercent = 0;
+                            if(selfIsHor){
+                                hitPercent = (mousePos.x - childRect.left) / (childRect.width);
+                            }
+                            else{
+                                hitPercent = (mousePos.y - childRect.top) / (childRect.height);
+                            }
+                            appandIndex = hitPercent < 0.5 ? ci : ci + 1;
+                            if(theKernelNowIndex != -1){
+                                if(hitPercent < 0.5){
+                                    if(theKernelNowIndex == appandIndex - 1){
+                                        appandIndex = theKernelNowIndex;
+                                    }
+                                }
+                            }
+                            //console.log(Math.round(hitPercent * 100) + ',' + appandIndex);
+                        }
                         break;
                     }
                 }
