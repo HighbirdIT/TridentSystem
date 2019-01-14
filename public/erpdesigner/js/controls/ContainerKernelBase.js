@@ -36,15 +36,43 @@ var ContainerKernelBase = function (_ControlKernelBase) {
     }
 
     _createClass(ContainerKernelBase, [{
+        key: 'getChildIndex',
+        value: function getChildIndex(childKernel) {
+            return this.children.indexOf(childKernel);
+        }
+    }, {
         key: 'appandChild',
         value: function appandChild(childKernel, index) {
+            var temp = null;
             if (childKernel.parent == this) {
-                if (index >= 0 && index < this.children.length) {
+                if (index >= this.children.length) {
+                    index = this.children.length - 1;
+                }
+                if (index >= 0 && index <= this.children.length) {
                     var nowIndex = this.children.indexOf(childKernel);
                     if (nowIndex != index) {
-                        var temp = this.children[index];
-                        this.children[index] = childKernel;
-                        this.children[nowIndex] = temp;
+                        if (nowIndex != -1) {
+                            var step = Math.sign(index - nowIndex);
+                            while (nowIndex != index) {
+                                this.children[nowIndex] = this.children[nowIndex + step];
+                                nowIndex += step;
+                            }
+                            this.children[index] = childKernel;
+                        } else {
+                            if (index == this.children.length) {
+                                this.children.push(childKernel);
+                            } else if (index == 0) {
+                                this.children.unshift(childKernel);
+                            } else {
+                                var moveingIndex = this.children.length + 1;
+                                while (moveingIndex != index) {
+                                    this.children[moveingIndex] = this.children[moveingIndex - 1];
+                                    --moveingIndex;
+                                }
+                                this.children[index] = childKernel;
+                            }
+                        }
+
                         this.attrChanged(AttrNames.Chidlren);
                         //console.log('swap:' + nowIndex + '->' + index);
                     }
@@ -76,6 +104,7 @@ var ContainerKernelBase = function (_ControlKernelBase) {
                 childKernel.parent = null;
                 this.attrChanged(AttrNames.Chidlren);
             }
+            childKernel.parent = null;
         }
     }, {
         key: 'getChildIndex',

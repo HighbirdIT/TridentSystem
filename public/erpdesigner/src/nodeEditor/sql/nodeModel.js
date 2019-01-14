@@ -11,22 +11,14 @@ const SQLNODE_DBENTITY_COLUMNSELECTOR = 'dbentity_columnselector';
 const SQLNODE_RET_CONDITION = 'ret_condition';
 const SQLNODE_RET_COLUMNS = 'ret_columns';
 const SQLNODE_RET_ORDER = 'ret_order';
-const SQLNODE_RET_GROUP = 'ret_group';
-const SQLNODE_RET_HAVING = 'ret_having';
 const SQLNODE_ROWNUMBER = 'rownumber';
 const SQLNODE_ISNULL = 'isnullfun';
 const SQLNODE_ISNULLOPERATOR = 'isnulloperator';
-const SQLNODE_BETWEEN = 'between';
-const SQLNODE_CAST = 'cast';
 const SQLNODE_LOGICAL_OPERATOR = 'logical_operator';
-const SQLNODE_LIKE = 'like';
-//const SQLNODE_EXISTS = 'exists';              
 const SQLDEF_VAR = 'def_variable';
-const SQLNODE_UNION='union';
-const SQLNODE_AGGREGATE='aggregate'
 var SqlNodeClassMap = {};
 // CONSTSQLNODES_ARR output是常量的节点类型
-const SQL_OutSimpleValueNode_arr = [SQLNODE_COLUMN, SQLNODE_VAR_GET, SQLNODE_CONSTVALUE, SQLNODE_CAST];
+const SQL_OutSimpleValueNode_arr = [SQLNODE_COLUMN, SQLNODE_VAR_GET, SQLNODE_CONSTVALUE];
 
 
 class NodeCreationHelper extends EventEmitter {
@@ -61,6 +53,81 @@ class NodeCreationHelper extends EventEmitter {
             rlt = this.newID_map[id];
         }
         return rlt;
+    }
+}
+
+class C_SqlNode_DBEntity extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        C_NodeCom_Base(this);
+
+        this.state = {
+        }
+
+        this.dropdownRef = React.createRef();
+    }
+
+    nodeDataChangedHandler() {
+        var nodeData = this.props.nodedata;
+        var entity = nodeData.targetEntity;
+        if (entity) {
+            this.dropdownRef.current.setValue(entity.code);
+        }
+        this.setState({ magicObj: {} });
+    }
+
+    cus_componentWillMount() {
+        this.listenData(this.props.nodedata);
+    }
+
+    cus_componentWillUnmount() {
+        this.unlistenData(this.props.nodedata);
+    }
+
+    listenData(nodeData) {
+        if (nodeData) {
+            nodeData.on('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    unlistenData(nodeData) {
+        if (nodeData) {
+            nodeData.off('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    dropdownCtlChangedHandler(selectedDBE) {
+        var nodeData = this.props.nodedata;
+        nodeData.setEntity(selectedDBE);
+    }
+
+    getNodeTitle() {
+        var nodeData = this.props.nodedata;
+        var entity = nodeData.targetEntity;
+        if (nodeData.title && nodeData.title.length > 0) {
+            return nodeData.title;
+        }
+        var nodeTitle = entity == null ? '' : (entity.loaded ? '' : '正在加载:' + entity.code);
+        return nodeTitle;
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        var entity = nodeData.targetEntity;
+        var dataloaded = entity ? entity.loaded : false;
+
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor}>
+            <div className='d-flex'>
+                <div className='flex-grow-1 flex-shrink-1'>
+                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={g_dataBase.entities_arr} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
+                </div>
+            </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} />
+            </div>
+        </C_Node_Frame>
     }
 }
 
@@ -351,382 +418,9 @@ class SqlNode_BluePrint extends EventEmitter {
 }
 
 
-class SqlNode_Base extends EventEmitter {
-    constructor(initData, parentNode, createHelper, type, label, isContainer, nodeJson) {
-        super();
-        this.bluePrint = parentNode.bluePrint;
-        Object.assign(this, initData);
-        EnhanceEventEmiter(this);
-        var self = this;
-
-        this.sockets_map = {};
-        this.inputScokets_arr = [];
-        this.outputScokets_arr = [];
-        if (isContainer) {
-            this.nodes_arr = [];
-            this.isContainer = true;
-        }
-
-        if (nodeJson != null) {
-            assginObjByProperties(this, nodeJson, ['id', 'left', 'top', 'title', 'extra', 'editorLeft', 'editorTop']);
-            if (this.restorFromAttrs) {
-                this.restorFromAttrs(nodeJson);
-            }
-            // createSocket
-            if (!IsEmptyArray(nodeJson.inputScokets_arr)) {
-                nodeJson.inputScokets_arr.forEach(socketJson => {
-                    self.addSocket(CreateNodeSocketByJson(this, socketJson, createHelper));
-                });
-            }
-            if (!IsEmptyArray(nodeJson.outputScokets_arr)) {
-                nodeJson.outputScokets_arr.forEach(socketJson => {
-                    self.addSocket(CreateNodeSocketByJson(this, socketJson, createHelper));
-                });
-            }
-        }
-
-        this.label = label;
-        this.type = type;
-        this.left = ReplaceIfNaN(this.left, 0);
-        this.top = ReplaceIfNaN(this.top, 0);
-        this.minInSocketCount = 0;
-        this.minOutSocketCount = 0;
-
-        this.hadFlow = false;
-        this.processInputSockets = this.processInputSockets.bind(this);
-        this.processOutSockets = this.processOutSockets.bind(this);
-        this.frameButtons_arr = [];
-
-        this.bluePrint.registerNode(this, parentNode);
-
-        if (createHelper) {
-            createHelper.saveJsonMap(nodeJson, this);
-        }
-
-        if (nodeJson) {
-            this.bluePrint.genNodesByJsonArr(this, nodeJson.nodes_arr, createHelper);
-        }
-    }
-
-    clickFrameButton(btnName) {
-        console.log('clickFrameButton:' + btnName);
-        switch (btnName) {
-            case FrameButton_LineSocket:
-                {
-                    var links = this.bluePrint.linkPool.getLinksByNode(this, 'i');
-                    links.forEach(link => {
-                        link.straightOut(-150);
-                    });
-                }
-                break;
-            case FrameButton_ClearEmptySocket:
-                {
-                    var removeCount = 0;
-                    for (var si = this.inputScokets_arr.length - 1; si >= this.minInSocketCount && this.inputScokets_arr.length > 0; --si) {
-                        var socket = this.inputScokets_arr[si];
-                        if (this.bluePrint.linkPool.getLinksBySocket(socket).length == 0) {
-                            this.removeSocket(socket);
-                            ++removeCount;
-                        }
-                    }
-                    if (removeCount > 0) {
-                        this.fireEvent(Event_SocketNumChanged);
-                        this.fireMoved(10);
-                    }
-                }
-                break;
-            case 'fresh':
-                {
-                    if (this.currentComponent) {
-                        this.currentComponent.reDraw();
-                    }
-                }
-        }
-        return false;
-    }
-
-    setTitle(newTitle) {
-        var oldTitle = this.title;
-        this.title = newTitle;
-        this.fireChanged();
-
-        if (this.cusTitleChanged) {
-            this.cusTitleChanged(oldTitle, newTitle);
-        }
-    }
-
-    addFrameButton(name, label) {
-        this.frameButtons_arr.push({ name: name, label: label });
-    }
-
-    linkRemoved(link) {
-
-    }
-
-    linkAdded(link) {
-
-    }
-
-    preEditing(editor) {
-        // call pre enter Editing
-    }
-
-    postEditing(editor) {
-        // call leve eidting
-    }
-
-    isNeedMoveArrowBeforeSocket() {
-        return this.headType == 'empty' && (this.inputScokets_arr.length == 0 || this.outputScokets_arr.length == 0);
-    }
-
-    outputIsSimpleValue() {
-        return SQL_OutSimpleValueNode_arr.indexOf(this.type) != -1;
-    }
-
-    getRect() {
-        if (this.currentFrameCom == null)
-            return null;
-        var frameRootDiv = this.currentFrameCom.rootDivRef.current;
-        if (frameRootDiv == null)
-            return null;
-        var bcr = frameRootDiv.getBoundingClientRect();
-        return {
-            left: this.left,
-            top: this.top,
-            right: this.left + bcr.width,
-            bottom: this.top + bcr.height,
-            width: bcr.width,
-            height: bcr.height,
-        }
-    }
-
-    getNodeTitle() {
-        return this.label + (this.title == null ? '' : ':' + this.title);
-    }
-
-    getScoketByName(name, isIn) {
-        if (isIn == null)
-            isIn = '*';
-        var rlt = null;
-        if (isIn != false) {
-            rlt = this.inputScokets_arr.find(x => { return x.name == name });
-        }
-
-        if (rlt == null && isIn != true) {
-            rlt = this.outputScokets_arr.find(x => { return x.name == name });
-        }
-        return rlt;
-    }
-
-    addSocket(socketObj) {
-        this.sockets_map[socketObj.id] = socketObj;
-        if (socketObj.isIn) {
-            this.inputScokets_arr.push(socketObj);
-        }
-        else {
-            this.outputScokets_arr.push(socketObj);
-        }
-    }
-
-    removeSocket(socketObj) {
-        if (socketObj.isIn) {
-            removeElemFrommArray(this.inputScokets_arr, socketObj);
-        }
-        else {
-            removeElemFrommArray(this.outputScokets_arr, socketObj);
-        }
-        this.sockets_map[socketObj.id] = null;
-        this.bluePrint.linkPool.clearSocketLink(socketObj);
-    }
-
-    getSocketById(socketID) {
-        return this.sockets_map[socketID];
-    }
-
-    setPos(newx, newy) {
-        this.left = newx;
-        this.top = newy;
-        this.fireMoved();
-    }
-
-    fireMoved(delay) {
-        this.fireEvent('moved', delay);
-    }
-
-    fireChanged(delay) {
-        this.fireEvent('changed', delay);
-    }
-
-    getContext(finder, depth) {
-        if (depth == null) {
-            depth = 0;
-        }
-        finder.setTest(this.id);
-        var inlinks = this.bluePrint.linkPool.getLinksByNode(this, 'i');
-        for (var i in inlinks) {
-            var tLink = inlinks[i];
-            var outNode = tLink.outSocket.node;
-            if (!finder.isTest(outNode.id)) {
-                outNode.getContext(finder, depth + 1);
-            }
-        }
-    }
-
-    isInScoketDynamic() {
-        return this.genInSocket != null;
-    }
-
-    isOutScoketDynamic() {
-        return this.genOutSocket != null;
-    }
-
-    processInputSockets(isPlus) {
-        var retSocket = null;
-        if (isPlus) {
-            retSocket = this.genInSocket();
-            this.addSocket(retSocket);
-            this.fireEvent(Event_SocketNumChanged);
-        }
-        else {
-            if (this.inputScokets_arr.length > this.minInSocketCount) {
-                var needRemoveSocket = this.inputScokets_arr[this.inputScokets_arr.length - 1];
-                this.removeSocket(needRemoveSocket);
-                this.fireEvent(Event_SocketNumChanged);
-                retSocket = needRemoveSocket;
-            }
-        }
-        return retSocket;
-    }
-
-    processOutSockets(isPlus) {
-        if (this.minOutSocketCount == null) {
-            this.minOutSocketCount = 0;
-        }
-        var retSocket = null;
-        if (isPlus) {
-            retSocket = this.genOutSocket();
-            this.addSocket(retSocket);
-            this.fireEvent(Event_SocketNumChanged);
-        }
-        else {
-            if (this.outputScokets_arr.length > this.minOutSocketCount) {
-                var needRemoveSocket = this.outputScokets_arr[this.outputScokets_arr.length - 1];
-                this.removeSocket(needRemoveSocket);
-                this.fireEvent(Event_SocketNumChanged);
-                retSocket = needRemoveSocket;
-            }
-        }
-        return retSocket;
-    }
-
-    // can custom socket component
-    customSocketRender(socket) {
-        return null;
-    }
-
-    requestSaveAttrs() {
-        var rlt = {
-            id: this.id,
-            type: this.type,
-            left: this.left,
-            top: this.top,
-        };
-        if (!IsEmptyString(this.title)) {
-            rlt.title = this.title;
-        }
-        if (this.extra != null) {
-            rlt.extra = this.extra;
-        }
-        if (this.editorLeft) {
-            rlt.editorLeft = this.editorLeft;
-        }
-        if (this.editorTop) {
-            rlt.editorTop = this.editorTop;
-        }
-        return rlt;
-    }
-
-    getExtra(key, def) {
-        if (this.extra == null) {
-            return def;
-        }
-        return this.extra[key] == null ? def : this.extra[key];
-    }
-
-    setExtra(key, val) {
-        if (this.extra == null) {
-            this.extra = {};
-        }
-        this.extra[key] = val;
-    }
-
-    getJson() {
-        var attrs = this.requestSaveAttrs();
-        if (attrs == null) {
-            return null;
-        }
-        var rlt = {};
-        for (var pname in attrs) {
-            var pval = attrs[pname];
-            if (pval == null) {
-                continue;
-            }
-            var pValType = typeof (pval);
-            var stringVal = null;
-            switch (pValType) {
-                case 'string':
-                case 'number':
-                case 'boolean':
-                    {
-                        stringVal = pval;
-                        break;
-                    }
-                default:
-                console.warn('不支持得值类型:' + pValType);
-            }
-            rlt[pname] = stringVal;
-        }
-        // input sockets
-        if (this.inputScokets_arr.length > 0) {
-            var t_insocketJson_arr = [];
-            this.inputScokets_arr.forEach(data => {
-                t_insocketJson_arr.push(data.getJson());
-            });
-            rlt.inputScokets_arr = t_insocketJson_arr;
-        }
-        if (this.outputScokets_arr.length > 0) {
-            var t_outsocketJson_arr = [];
-            this.outputScokets_arr.forEach(data => {
-                t_outsocketJson_arr.push(data.getJson());
-            });
-            rlt.outputScokets_arr = t_outsocketJson_arr;
-        }
-        // child node
-        if (this.nodes_arr && this.nodes_arr.length > 0) {
-            var tNode_arr = [];
-            this.nodes_arr.forEach(childNode => {
-                var childJson = childNode.getJson();
-                if (childJson) {
-                    tNode_arr.push(childJson);
-                }
-            });
-            rlt.nodes_arr = tNode_arr;
-        }
-
-        return rlt;
-    }
-
-    compile(helper, preNodes_arr) {
-        if (preNodes_arr.indexOf(this) != -1) {
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                this.getNodeTitle(),
-                this,
-                helper.clickLogBadgeItemHandler),
-                '处产生了回路!']);
-            return false;
-        }
-        var cacheRet = helper.getCompileRetCache(this);
-        return cacheRet;
+class SqlNode_Base extends Node_Base{
+    constructor(initData, parentNode, createHelper, type, label, isContainer, nodeJson){
+        super(initData, parentNode, createHelper, type, label, isContainer, nodeJson);
     }
 }
 
@@ -1168,7 +862,7 @@ class SqlNode_XJoin extends SqlNode_Base {
             }
             socketOuts_arr.push(socketOut);
         }
-        var joinString = socketOuts_arr[0].strContent + clampStr(this.joinType, ' ') + socketOuts_arr[1].strContent;
+        var joinString = socketOuts_arr[0].strContent + clampStr(this.joinType, ' ', ' ') + socketOuts_arr[1].strContent;
 
         if (this.conditionNode.inputScokets_arr.length == 0) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
@@ -1261,16 +955,14 @@ class SqlNode_Column extends SqlNode_Base {
             return superRet;
         }
         var belongSelectNode = null;
-        var demandColumn = true;
-        var nodeType = null;
+        var isolatedColumn = true;
         for (var i = preNodes_arr.length - 1; i >= 0; i--) {
             if (preNodes_arr[i].type == SQLNODE_SELECT) {
                 belongSelectNode = preNodes_arr[i];
                 break;
             }
-            else if (preNodes_arr[i].type == SQLNODE_AGGREGATE || preNodes_arr[i].type == SQLNODE_CONSTVALUE) {
-                demandColumn = false;
-                nodeType = (preNodes_arr[i].type == SQLNODE_AGGREGATE ? SQLNODE_AGGREGATE : SQLNODE_CONSTVALUE)
+            else if (preNodes_arr[i].type == SQLNODE_AGGREGATE) {
+                isolatedColumn = false;                                                                                            
             }
 
         }
@@ -1284,10 +976,20 @@ class SqlNode_Column extends SqlNode_Base {
                 , '没有找到归属select节点']);
             return false;
         }
-        //var selectNodeCompilingSocket = helper[belongSelectNode.id + '_complingSocket'];
-        //var columnNodeSocket=[];
-        helper[belongSelectNode.id + '_complingSocket'] = (demandColumn == true ? { demandColumn: true, nodeType: nodeType } : { demandColumn: false, nodeType: nodeType });
-
+        if (isolatedColumn) {
+            if(helper[belongSelectNode.id + '_complingSocket_complingSocket'] != null)
+            {
+                if (helper[belongSelectNode.id + '_complingSocket_isolated'] == false) {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle
+                        , nodeThis
+                        , helper.clickLogBadgeItemHandler)
+                        , '不能和聚合函数混用！']);
+                    return false;
+                }
+                helper[belongSelectNode.id + '_complingSocket_isolated'] = true;
+            }
+        }
         var compareLabel = (this.tableAlias == null ? this.tableName : this.tableAlias);
         var selectNodeContext = helper.getContext(belongSelectNode, new ContextFinder(ContextType_DBEntity));
         var columnItem = null;
@@ -1716,11 +1418,11 @@ class SqlNode_Select extends SqlNode_Base {
                 if (compileRet == false) {
                     return false;
                 }
-            var socketout = compileRet.getSocketOut(unionlink.outSocket);
-            uniontValue = socketout.strContent;
-            selfCompileRet.setSocketOut(this.outSocket, uniontValue, { tableName: this.title, columnsName_arr:socketout.data.columsName_arr });
-            helper.setCompileRetCache(this, selfCompileRet);
-            return selfCompileRet;
+                var socketout = compileRet.getSocketOut(unionlink.outSocket);
+                uniontValue = socketout.strContent;
+                selfCompileRet.setSocketOut(this.outSocket, uniontValue, { tableName: this.title, columnsName_arr: socketout.data.columsName_arr });
+                helper.setCompileRetCache(this, selfCompileRet);
+                return selfCompileRet;
             }
         }
         
@@ -1788,12 +1490,12 @@ class SqlNode_Select extends SqlNode_Base {
             }
         }
         var selectColumns_arr = [];
-        var nonAggregateColumns_arr = [];
-        var AggregateColumns = false;
+        var isolatedColumns_arr = [];
         var outColumns_arr = [];
         var selectColumns_map = {};
         var socketOutData = null;
         var columsName_arr = [];
+        var hadAggregateColumn = false;
         for (var socketI = 0; socketI < columnNode_inSockets.length; ++socketI) {
             var socket = columnNode_inSockets[socketI];
             var link = helper.getLinksBySocket(socket)[0];
@@ -1822,28 +1524,21 @@ class SqlNode_Select extends SqlNode_Base {
                 return false;
             }
             selectColumns_map[colName] = 1;
-            helper[this.id + '_complingSocket'] = socket;
-
+            helper[this.id + '_complingSocket_isolated']=null;
+            helper[this.id + '_complingSocket_complingSocket']=socket;
             var outNodeCompileRet = outNode.compile(helper, usePreNodes_arr);
             if (outNodeCompileRet == false) {
                 return false;
             }
-            outNodeCompileRet.select
-            socketOutData = outNodeCompileRet.getSocketOut(link.outSocket);
-            var selectNodeCompilingSocket = helper[this.id + '_complingSocket'];
-            if (selectNodeCompilingSocket.demandColumn) {
-                nonAggregateColumns_arr.push({
-                    alias: alias,
-                    strContent: socketOutData.strContent,
-                    strcolName: outNode.columnName,
-                });
-            }
-            else if (selectNodeCompilingSocket.nodeType == SQLNODE_AGGREGATE) {
-                    AggregateColumns=true;
-            }
-            columsName_arr.push(colName);
-            var outNodeCompileRet = outNode.compile(helper, usePreNodes_arr);
             var socketOutData = outNodeCompileRet.getSocketOut(link.outSocket);
+            if (helper[this.id + '_complingSocket_isolated']) {
+                isolatedColumns_arr.push(socketOutData.strContent);
+            }
+            else if (helper[this.id + '_complingSocket_isolated'] == false) {
+                hadAggregateColumn = true;
+            }
+            helper[this.id + '_complingSocket_complingSocket']=null;
+            columsName_arr.push(colName);
             selectColumns_arr.push({
                 alias: alias,
                 strContent: socketOutData.strContent,
@@ -1866,55 +1561,33 @@ class SqlNode_Select extends SqlNode_Base {
         if (groupNodeCompileRet == false) {
             return false;
         }
-
+        var groupstring = groupNodeCompileRet.getDirectOut().strContent;
         var havingNodeCompileRet = this.havingNode.compile(helper, usePreNodes_arr);
         if (havingNodeCompileRet == false) {
             return false;
         }
-        var havingString = conditionNodeCompileRet.getDirectOut().strContent;
-
-        var groupNodeInputLenth = groupNodeCompileRet.node.inputScokets_arr.length
-            if (AggregateColumns && groupNodeInputLenth == 0||havingNodeCompileRet.node.inputScokets_arr > 0 && groupNodeInputLenth == 0) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle
-                    , this.groupNode
-                    , helper.clickLogBadgeItemHandler)
-                    , "存在聚合函数，未使用group节点"]);
-                return false;
+        var havingString = havingNodeCompileRet.getDirectOut().strContent;
+        var havingNodeInputLenth = havingNodeCompileRet.node.inputScokets_arr.length;
+        var groupNodeInputLenth = groupNodeCompileRet.node.inputScokets_arr.length;
+        if ((hadAggregateColumn && groupNodeInputLenth == 0) ||
+            (havingNodeInputLenth > 0 && groupNodeInputLenth == 0)) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle
+                , this.groupNode
+                , helper.clickLogBadgeItemHandler)
+                , "必须设置group节点！"]);
+            return false;
         }
-        var groupstring = '';
-        if (groupNodeInputLenth != 0) {
-            var groupcolums = groupNodeCompileRet.getDirectOut().strContent;
-            if (groupcolums.colums.length < nonAggregateColumns_arr.length) {
+        var groupnodeOut = groupNodeCompileRet.getDirectOut();
+        for (var i = 0; i < isolatedColumns_arr.length; ++i) {
+            var targetStr = isolatedColumns_arr[i];
+            if (groupnodeOut.data.groupColumns_arr.indexOf(targetStr) == -1) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle
                     , this.groupNode
                     , helper.clickLogBadgeItemHandler)
-                    , "Group列数和select列数不一致"]);
+                    , targetStr + "不存在Group里面"]);
                 return false;
-            }
-
-            for (var i = 0; i < nonAggregateColumns_arr.length; ++i) {
-                var exist = false;
-                for (var j = 0; j < groupcolums.colums.length; ++j) {
-                    if (groupcolums.colums[j].indexOf(nonAggregateColumns_arr[i].strContent) == !-1) {
-                        exist = true;
-                        break;
-                    }
-                }
-                if (!exist) {
-                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                        thisNodeTitle
-                        , this.groupNode
-                        , helper.clickLogBadgeItemHandler)
-                        , nonAggregateColumns_arr[i].strContent + "字段不存在Group里面"]);
-                    return false;
-
-                }
-                else {
-                    groupstring += (i == 0 ? '' : ',') + groupcolums.colums[i];
-                }
-
             }
         }
         var selfCompileRet = new CompileResult(this);
@@ -2487,20 +2160,9 @@ class SqlNode_ConstValue extends SqlNode_Base {
         }
         this.outSocket.type = SqlVarType_Scalar;
         this.outSocket.inputable = true;
-        this.outSocket.hadMoveArrows;
         this.headType = 'empty';
 
         var self = this;
-    }
-
-    requestSaveAttrs() {
-        var rlt = super.requestSaveAttrs();
-        rlt.value = this.value;
-        return rlt;
-    }
-
-    restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['value']);
     }
 
     getValue() {
@@ -2565,7 +2227,7 @@ class SqlNode_Compare extends SqlNode_Base {
             })
         }
         if (this.operator == null) {
-            this.operator = '=';
+            this.operator = '==';
         }
     }
 
@@ -2630,8 +2292,18 @@ class SqlNode_Compare extends SqlNode_Base {
                 socketVal2 = tValue;
             }
         }
+
+        var operator = this.operator;
+        switch(operator){
+            case '==':
+                operator = '=';
+            break;
+            case '!=':
+                operator = '<>';
+            break;
+        }
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, socketVal1 + this.operator + socketVal2);
+        selfCompileRet.setSocketOut(this.outSocket, socketVal1 + operator + socketVal2);
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -2972,97 +2644,6 @@ class SqlNode_IsNullOperator extends SqlNode_Base {
         return selfCompileRet;
     }
 }
-//  SQL_between
-class SqlNode_BetWeen extends SqlNode_Base {
-    constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, SQLNODE_BETWEEN, 'BetWeen', false, nodeJson);
-        autoBind(this);
-
-
-        if (nodeJson) {
-            if (this.outputScokets_arr.length > 0) {
-                this.outSocket = this.outputScokets_arr[0];
-                this.outSocket.type = SqlVarType_Boolean;
-            }
-        }
-        //定义输出接口标量
-        if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Boolean });
-            this.addSocket(this.outSocket);
-        }
-        //定义输入接口标量
-        if (this.inputScokets_arr.length == 0) {
-            this.addSocket(new NodeSocket('in0', this, true, { type: SqlVarType_Scalar, inputable: false }));
-            this.addSocket(new NodeSocket('in1', this, true, { type: SqlVarType_Scalar, inputable: true }));
-            this.addSocket(new NodeSocket('in2', this, true, { type: SqlVarType_Scalar, inputable: true }));
-        }
-        else {
-            this.inputScokets_arr.forEach(socket => {
-                socket.type = SqlVarType_Scalar;
-            });
-
-            this.inputScokets_arr[0].inputable = false;
-            this.inputScokets_arr[1].inputable = true;
-            this.inputScokets_arr[2].inputable = true;
-        }
-
-    }
-
-    requestSaveAttrs() {
-        var rlt = super.requestSaveAttrs();
-        return rlt;
-    }
-    compile(helper, preNodes_arr) {
-        var superRet = super.compile(helper, preNodes_arr);
-        if (superRet == false || superRet != null) {
-            return superRet;
-        }
-        var nodeThis = this;
-        var thisNodeTitle = nodeThis.getNodeTitle();
-        var usePreNodes_arr = preNodes_arr.concat(this);
-        var socketVal_arr = [];
-        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
-            var theSocket = this.inputScokets_arr[i];
-            var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-            var tValue = null;
-            if (tLinks.length == 0) {
-                if (i > 0) {
-                    if (!IsEmptyString(theSocket.defval)) {
-                        tValue = theSocket.defval;
-                        if (isNaN(tValue)) {
-                            tValue = singleQuotesStr(tValue);
-                        }
-                    }
-                }
-                if (tValue == null) {
-                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                        thisNodeTitle
-                        , nodeThis
-                        , helper.clickLogBadgeItemHandler)
-                        , '输入不能为空']);
-                    return false;
-                }
-            }
-            else {
-                var link = tLinks[0];
-                var outNode = link.outSocket.node;
-                var compileRet = outNode.compile(helper, usePreNodes_arr);
-                if (compileRet == false) {
-                    return false;
-                }
-                tValue = compileRet.getSocketOut(link.outSocket).strContent;
-            }
-            socketVal_arr.push(tValue);
-        }
-        //SQL语句拼接
-        var finalStr = socketVal_arr[0] + ' between ' + socketVal_arr[1] + ' and ' + socketVal_arr[2];
-        var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, finalStr);
-        helper.setCompileRetCache(this, selfCompileRet);
-        return selfCompileRet;
-    }
-}
-
 /**
  * 逻辑运算符 and or not
  */
@@ -3182,689 +2763,6 @@ class SqlNode_Logical_Operator extends SqlNode_Base {
     }
 }
 
-//数据类型转换
-class SqlNode_Cast extends SqlNode_Base {
-    constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, SQLNODE_CAST, 'CAST', false, nodeJson);
-        this.size_1 = ReplaceIfNaN(this.size_1, 0);
-        this.size_2 = ReplaceIfNaN(this.size_2, 0);
-        autoBind(this);
-
-        //this.isConstNode = true; //使节点不可被删除
-
-        //复原
-        if (nodeJson) {
-            if (this.outputScokets_arr.length > 0) {
-                this.outSocket = this.outputScokets_arr[0];
-                this.outSocket.type = SqlVarType_Boolean;
-            }
-            if (this.inputScokets_arr.length > 0) {
-                this.inSocket = this.inputScokets_arr[0];
-            }
-        }
-        if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Boolean });
-            this.addSocket(this.outSocket);
-        }
-        if (this.inSocket == null) {
-            this.inSocket = new NodeSocket('in', this, true, { type: SqlVarType_Table });
-            this.addSocket(this.inSocket);
-        }
-        this.insocketInitVal = {
-            type: SqlVarType_Scalar,
-        };
-        var castValType = this.inSocket.getExtra('castValType');//一
-        if (SqlVarTypes_arr.indexOf(castValType) == -1) {
-            this.inSocket.setExtra('castValType', SqlVarType_NVarchar);
-        }
-    }
-
-
-    requestSaveAttrs() {
-        var rlt = super.requestSaveAttrs();
-        return rlt;
-    }
-
-    restorFromAttrs(attrsJson) {
-    }
-
-    castTypeDropdownChangedHandler(data, dropCtl) {
-        var theSocket = this.inSocket;
-        theSocket.setExtra('castValType', data);//三
-        theSocket.fireEvent('changed');
-    }
-
-    sizeOneInputChangedHandler(ev) {
-        var newVal = ev.target.value;
-        if (isNaN(newVal)) {
-            return;
-        }
-        this.inSocket.setExtra('size1', newVal);
-        this.inSocket.fireEvent('changed');
-    }
-
-    sizeTwoInputChangedHandler(ev) {
-        var newVal = ev.target.value;
-        if (isNaN(newVal)) {
-            return;
-        }
-        this.inSocket.setExtra('size2', newVal);
-        this.inSocket.fireEvent('changed');
-    }
-
-    customSocketRender(socket) {
-        if (!socket.isIn) {
-            return;
-        }
-        var castValType = socket.getExtra('castValType');//四
-        var hadSizeOne = false;
-        var hadSizeTwo = false;
-        switch (castValType) {
-            case SqlVarType_Time:
-            case SqlVarType_NVarchar:
-                hadSizeOne = true;
-                break;
-            case SqlVarType_Decimal:
-                hadSizeOne = true;
-                hadSizeTwo = true;
-                break;
-        }
-        var sizeOneInptELem = null;
-        var sizeTwoInputElem = null;
-        if (this.inputStyle == null) {
-            this.inputStyle = {
-                width: '3em',
-            };
-        }
-        if (hadSizeOne) {
-            var sizeValue = socket.getExtra('size1');
-            if (isNaN(sizeValue)) {
-                sizeValue = 0;
-            }
-            sizeOneInptELem = (<input type='int' style={this.inputStyle} value={sizeValue} onChange={this.sizeOneInputChangedHandler} />);
-        }
-        if (hadSizeTwo) {
-            var sizeValue = socket.getExtra('size2');
-            if (isNaN(sizeValue)) {
-                sizeValue = 0;
-            }
-            sizeTwoInputElem = (<input type='int' style={this.inputStyle} value={sizeValue} onChange={this.sizeTwoInputChangedHandler} />);
-        }
-
-        //创建一个下拉框
-        return (
-            <React.Fragment>
-                <DropDownControl itemChanged={this.castTypeDropdownChangedHandler} btnclass='btn-dark' options_arr={SqlVarTypes_arr} rootclass='flex-grow-1 flex-shrink-1' value={castValType} />
-                {sizeOneInptELem}
-                {sizeTwoInputElem}
-            </React.Fragment>
-        );
-    }
-    //编译
-
-    compile(helper, preNodes_arr) {
-        var superRet = super.compile(helper, preNodes_arr);
-
-        if (superRet == false || superRet != null) {
-            return superRet;
-        }
-        var nodeThis = this;
-        //节点名称
-        var thisNodeTitle = nodeThis.getNodeTitle();
-        var usePreNodes_arr = preNodes_arr.concat(this);
-
-        var inSocket = this.inSocket;
-        var tLinks = this.bluePrint.linkPool.getLinksBySocket(inSocket);
-        var inscoketValue = null;
-
-        if (tLinks.length == 0) {
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle
-                , nodeThis
-                , helper.clickLogBadgeItemHandler)
-                , '输入不能为空']);
-            return false;
-        }
-        var link = tLinks[0];
-        var outNode = link.outSocket.node;
-        var compileRet = outNode.compile(helper, usePreNodes_arr);
-        if (compileRet == false) {
-            return false;
-        }
-        inscoketValue = compileRet.getSocketOut(link.outSocket).strContent;
-        if (!outNode.outputIsSimpleValue()) {
-            inscoketValue = '(' + inscoketValue + ')';
-        }
-
-        var castValType = inSocket.getExtra('castValType');
-
-        var hadSizeOne = false;
-        var hadSizeTwo = false;
-        var sizeOneMax = 0;
-        var sizeTwoMax = 0;
-        switch (castValType) {
-            case SqlVarType_Time:
-                sizeOneMax = 7;
-                hadSizeOne = true;
-                break;
-            case SqlVarType_NVarchar:
-                sizeOneMax = 4000;
-                hadSizeOne = true;
-                break;
-            case SqlVarType_Decimal:
-                sizeOneMax = 20;
-                sizeTwoMax = 6;
-                hadSizeOne = true;
-                hadSizeTwo = true;
-                break;
-        }
-        var sizeStr = '';
-        if (hadSizeOne) {
-            var sizeValue = parseInt(inSocket.getExtra('size1'));
-            if (sizeValue == null || sizeValue < 0) {
-                sizeValue = 0;
-            }
-            if (sizeValue > sizeOneMax) {
-                sizeValue = sizeOneMax;
-                helper.logManager.warnEx(
-                    [helper.logManager.createBadgeItem(
-                        thisNodeTitle
-                        , this
-                        , helper.clickLogBadgeItemHandler)
-                        , "size1已被重置为:" + sizeOneMax]
-                );
-            }
-            sizeStr = '(' + sizeValue;
-            switch (castValType) {
-                case SqlVarType_Decimal:
-                    sizeTwoMax = sizeValue;
-                    break;
-                case SqlVarType_NVarchar:
-                    if (sizeValue == 0) {
-                        sizeStr = '';
-                    }
-                    break;
-            }
-        }
-        if (hadSizeTwo) {
-            var sizeValue = parseInt(inSocket.getExtra('size2'));
-            if (sizeValue == null || sizeValue < 0) {
-                sizeValue = 0;
-            }
-            if (sizeValue > sizeTwoMax) {
-                sizeValue = sizeTwoMax;
-                helper.logManager.warnEx(
-                    [helper.logManager.createBadgeItem(
-                        thisNodeTitle
-                        , this
-                        , helper.clickLogBadgeItemHandler)
-                        , "size2已被重置为:" + sizeTwoMax]
-                );
-            }
-            sizeStr += ',' + sizeValue;
-        }
-        if (sizeStr.length > 0) {
-            sizeStr += ')';
-        }
-
-        var finalStr = 'cast(' + inscoketValue + ' as ' + castValType + sizeStr + ')';
-        var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, finalStr);
-        helper.setCompileRetCache(this, selfCompileRet);
-        return selfCompileRet;
-    }
-}
-
-
-//like模糊查询
-class SqlNode_Like extends SqlNode_Base {
-    constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, SQLNODE_LIKE, 'Like', false, nodeJson);
-        autoBind(this);
-
-        if (this.operator == null) {
-            this.operator = 'like';
-        }
-        if (nodeJson) {
-            if (this.outputScokets_arr.length > 0) {
-                this.outSocket = this.outputScokets_arr[0];
-                this.outSocket.type = SqlVarType_Boolean;
-            }
-        }
-        if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Boolean });
-            this.addSocket(this.outSocket);
-        }
-
-        if (this.inputScokets_arr.length == 0) {
-            this.addSocket(new NodeSocket('in0', this, true, { type: SqlVarType_Scalar, inputable: false }));
-            this.addSocket(new NodeSocket('in1', this, true, { type: SqlVarType_Scalar, inputable: true }));
-        }
-        else {
-            this.inputScokets_arr.forEach(socket => {
-                socket.type = SqlVarType_Scalar;
-            });
-            this.inputScokets_arr[0].inputable = false;
-            this.inputScokets_arr[1].inputable = true;
-        }
-    }
-    //保存
-    requestSaveAttrs() {
-        var rlt = super.requestSaveAttrs();
-        rlt.operator = this.operator;
-        return rlt;
-    }
-    //复原
-    restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['operator']);
-    }
-    //like语句编译
-    compile(helper, preNodes_arr) {
-        var superRet = super.compile(helper, preNodes_arr);
-        if (superRet == false || superRet != null) {
-            return superRet;
-        }
-
-        var nodeThis = this;
-        var thisNodeTitle = nodeThis.getNodeTitle();
-        var usePreNodes_arr = preNodes_arr.concat(this);
-        var socketVal_arr = [];
-
-        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
-            var theSocket = this.inputScokets_arr[i];
-            var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);//找到当前link
-            if (tLinks.length == 0) {
-                var tValue = null;
-                if (i == 1) {
-                    tValue = theSocket.defval;
-                    if (!IsEmptyString(tValue)) {//判断输入值是不是一个空值
-                        if (isNaN(tValue)) {//判断输入值是不是字符值，如果是返回true，不是返回false
-                            tValue = singleQuotesStr(tValue);//如果是字符类型，就给字符两边加上引号
-                        }
-                    }
-                }
-                if (IsEmptyString(tValue)) {
-                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                        thisNodeTitle
-                        , nodeThis
-                        , helper.clickLogBadgeItemHandler)
-                        , '输入不能为空']);
-                    return false;
-                }
-            }
-            else {
-                var link = tLinks[0];
-                var outNode = link.outSocket.node;
-                var compileRet = outNode.compile(helper, usePreNodes_arr);
-                if (compileRet == false) {
-                    return false;
-                }
-                tValue = compileRet.getSocketOut(link.outSocket).strContent;//link.outSocket
-
-                if (!outNode.outputIsSimpleValue()) {
-                    tValue = '(' + tValue + ')';
-                }
-            }
-            socketVal_arr.push(tValue);
-        }
-
-        var finalStr = socketVal_arr[0] + ' ' + this.operator + ' ' + socketVal_arr[1];
-
-
-        var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, finalStr);
-        helper.setCompileRetCache(this, selfCompileRet);
-        return selfCompileRet;
-
-    }
-}
-
-
-class SqlNode_Aggregate extends SqlNode_Base {
-    constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, SQLNODE_AGGREGATE, '聚合函数', false, nodeJson);
-        autoBind(this);
-
-        if (nodeJson) {
-            if (this.outputScokets_arr.length > 0) {
-                this.outSocket = this.outputScokets_arr[0];
-                this.outSocket.type = SqlVarType_Scalar;
-            }
-        }
-        if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Scalar });
-            this.addSocket(this.outSocket);
-        }
-        this.insocketInitVal = {
-            type: SqlVarType_Scalar,
-            inputable: false,
-        };
-        if (this.inputScokets_arr.length == 0) {
-            this.addSocket(new NodeSocket('in0', this, true, { type: SqlVarType_Scalar, inputable: false }));
-        }
-        else {
-            this.inputScokets_arr.forEach(socket => {
-                socket.set(this.insocketInitVal);
-            })
-        }
-        if (this.aggregate == null) {
-            this.aggregate = 'count';
-        }
-    }
-
-    requestSaveAttrs() {
-        var rlt = super.requestSaveAttrs();
-        rlt.aggregate = this.aggregate;
-        return rlt;
-    }
-
-    restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['aggregate']);
-    }
-
-    getNodeTitle() {
-        return this.aggregate;
-    }
-
-    compile(helper, preNodes_arr) { //preNodes_arr 前面的节点
-        var superRet = super.compile(helper, preNodes_arr);
-        if (superRet == false || superRet != null) {
-            return superRet;
-        }
-        var nodeThis = this;
-        var thisNodeTitle = nodeThis.getNodeTitle();
-        var usePreNodes_arr = preNodes_arr.concat(this);
-        var theSocket = this.inputScokets_arr[0];
-        var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-        var tValue = null;
-        if (tLinks.length == 0) {
-            if (this.aggregate != 'count') {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle
-                    , nodeThis
-                    , helper.clickLogBadgeItemHandler)
-                    , '输入接口没有值']);
-                return false;
-            }
-            else {
-                tValue = '*';
-            }
-        }
-        else {
-            var link = tLinks[0];
-            var outNode = link.outSocket.node;
-            var compileRet = outNode.compile(helper, usePreNodes_arr);
-            if (compileRet == false) {
-                return false;
-            }
-            tValue = compileRet.getSocketOut(link.outSocket).strContent;
-        }
-        var finalStr = this.aggregate + '(' + tValue + ')';
-        var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, finalStr);
-        helper.setCompileRetCache(this, selfCompileRet);
-        return selfCompileRet;
-    }
-}
-
-class SqlNode_Ret_Having extends SqlNode_Base {
-    constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, SQLNODE_RET_HAVING, 'having', false, nodeJson);
-        autoBind(this);
-        this.isConstNode = true;
-
-        if (nodeJson) {
-            if (this.inputScokets_arr.length > 0) {
-                this.inSocket = this.inputScokets_arr[0];
-                this.inSocket.inputable = false;
-                this.inSocket.type = SqlVarType_Boolean;
-            }
-        }
-        if (this.inSocket == null) {
-            this.inSocket = new NodeSocket('in', this, true, { type: SqlVarType_Boolean, inputable: false });
-            this.addSocket(this.inSocket);
-        }
-        var self = this;
-    }
-
-    compile(helper, preNodes_arr) {
-        var superRet = super.compile(helper, preNodes_arr);
-        if (superRet == false || superRet != null) {
-            return superRet;
-        }
-        var selfCompileRet = new CompileResult(this);
-        var tLinks = this.bluePrint.linkPool.getLinksBySocket(this.inSocket);
-        if (tLinks.length > 0) {
-             var outNode = link.outSocket.node;
-            var tCompileRet = outNode.compile(helper, preNodes_arr);
-            if (tCompileRet == false) {
-                return false;
-            }
-            selfCompileRet.setDirectOut(tCompileRet.getSocketOut(link.outSocket).strContent);
-        }
-        else {
-            selfCompileRet.setDirectOut('');
-        }
-        helper.setCompileRetCache(this, selfCompileRet);
-        return selfCompileRet;
-    }
-}
-
-// union
-class SqlNode_Union extends SqlNode_Base {
-    constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, SQLNODE_UNION, 'union', false, nodeJson);
-        autoBind(this);
-
-        if (this.unionType == null) {
-            this.unionType = 'union';
-        }
-
-        if (nodeJson) {
-            if (this.outputScokets_arr.length > 0) {
-                this.outSocket = this.outputScokets_arr[0];
-                this.outSocket.type = SqlVarType_Table;
-            }
-
-        }
-        if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Table });
-            this.addSocket(this.outSocket);
-        }
-
-        if (this.inputScokets_arr.length == 0) {
-            this.addSocket(new NodeSocket('input1', this, true, { type: SqlVarType_Table, inputable: false }));
-            this.addSocket(new NodeSocket('input2', this, true, { type: SqlVarType_Table, inputable: false }));
-        }
-        else {
-            this.inputScokets_arr.forEach(socket => {
-                if (socket.type == SqlVarType_Table) {
-                    socket.type = SqlVarType_Table;
-                    socket.inputable=false;
-                }
-                else if (socket.type == SqlVarType_Scalar) {
-                    socket.type = SqlVarType_Scalar;
-                }
-            });
-        }
-
-        this.contextEntities_arr = [];
-        this.entityNodes_arr = [];
-        this.autoCreateHelper = {};
-    }
-
-    genInSocket() {
-        var nameI = this.inputScokets_arr.length;
-        while (nameI < 999) {
-            if (this.getScoketByName('in' + nameI, true) == null) {
-                break;
-            }
-            ++nameI;
-        }
-        return new NodeSocket('in' + nameI, this, true, { type: SqlVarType_Table , inputable: false });
-    }
-    requestSaveAttrs() {
-        var rlt = super.requestSaveAttrs();
-        rlt.unionType = this.unionType;
-        return rlt;
-    }
-    restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['unionType']);
-    }
-    customSocketRender(socket) {
-        return null;
-    }
-    getNodeTitle() {
-        return 'union';
-    }
-
-    getContext(finder, depth){
-        var firstSocket = this.inputScokets_arr[0];
-        var tLinks = this.bluePrint.linkPool.getLinksBySocket(firstSocket);
-        if(tLinks.length == 0){
-            return;
-        }
-        var temLink = tLinks[0];
-        var outNode = temLink.outSocket.node;
-        if(outNode.type != SQLNODE_SELECT){
-            return;
-        }
-        return outNode.getContext(finder, depth + 1);
-    }
-
-    compile(helper, preNodes_arr) {
-        var superRet = super.compile(helper, preNodes_arr);
-        if (superRet == false || superRet != null) {
-            return superRet;
-        }
-        var nodeThis = this;
-        var thisNodeTitle = nodeThis.getNodeTitle();
-        var usePreNodes_arr = preNodes_arr.concat(this);
-        var socketVal_arr = [];
-
-        var colName_number= null;
-        var firstColumname_arr = [];
-        
-        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
-            var theSocket = this.inputScokets_arr[i];
-            var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-            var tValue = null;
-            if (tLinks.length == 0) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle
-                    , nodeThis
-                    , helper.clickLogBadgeItemHandler)
-                    , '输入不能为空']);
-                return false;
-            }
-            else {
-                var link = tLinks[0];
-                var outNode = link.outSocket.node;
-                var compileRet = outNode.compile(helper, usePreNodes_arr);
-                if (compileRet == false) {
-                    return false;
-                }
-                tValue = compileRet.getSocketOut(link.outSocket).strContent;
-                var column_name_arr = compileRet.getSocketOut(link.outSocket).data.columsName_arr;
-                if( i == 0) {
-                    firstColumname_arr = column_name_arr;
-                }
-                if(column_name_arr.length != colName_number && colName_number != null){
-                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                        thisNodeTitle
-                        , nodeThis
-                        , helper.clickLogBadgeItemHandler)
-                        , '输入列出现不相同数目']);
-                    return false;
-                }
-                colName_number = column_name_arr.length
-            }
-            socketVal_arr.push(tValue);
-        }
-        var theoutsocket = this.outputScokets_arr[0]
-        var outLinks = this.bluePrint.linkPool.getLinksBySocket(theoutsocket);
-        if(outLinks.length != 0){
-            var inNode = outLinks[0].inSocket.node;
-            var inSocketype = inNode.type;
-            if(inSocketype !=SQLNODE_SELECT){
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle
-                    , nodeThis
-                    , helper.clickLogBadgeItemHandler)
-                    , '输入连接必须是select节点']);
-                return false;
-            }
-        }
-        var finalStr = '';
-        socketVal_arr.forEach((x, i) => {
-            finalStr += (i == 0 ? '' : ' '+nodeThis.unionType+' ') + x;
-        });
-        var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, finalStr,{ columnsName_arr:firstColumname_arr });
-        helper.setCompileRetCache(this, selfCompileRet);
-        return selfCompileRet;
-    }
-}
-
-class SqlNode_Ret_Group extends SqlNode_Base {
-    constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, SQLNODE_RET_GROUP, 'group', false, nodeJson);
-        autoBind(this);
-        this.isConstNode = true;
-    }
-
-    genInSocket() {
-        var nameI = this.inputScokets_arr.length;
-        while (nameI < 999) {
-            if (this.getScoketByName('in' + nameI, true) == null) {
-                break;
-            }
-            ++nameI;
-        }
-        return new NodeSocket('in' + nameI, this, true, { type: SqlVarType_Scalar, inputable: false });
-    }
-    compile(helper, preNodes_arr) {
-        var superRet = super.compile(helper, preNodes_arr);
-        if (superRet == false || superRet != null) {
-            return superRet;
-        }
-        var sortColumns_arr = [];
-        var selfCompileRet = new CompileResult(this);
-        if (this.inputScokets_arr.length > 0) {
-            var nodeThis = this;
-            var thisNodeTitle = nodeThis.getNodeTitle();
-            var usePreNodes_arr = preNodes_arr.concat(this);
-            for (var i = 0; i < this.inputScokets_arr.length; ++i) {
-                var socket = this.inputScokets_arr[i];
-                var tLinks = this.bluePrint.linkPool.getLinksBySocket(socket);
-                if (tLinks.length == 0) {
-                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                        thisNodeTitle
-                        , nodeThis
-                        , helper.clickLogBadgeItemHandler)
-                        , '有空输入']);
-                    return false;
-                }
-                var link = tLinks[0];
-                var compileRet = link.outSocket.node.compile(helper, usePreNodes_arr);
-                if (compileRet == false) {
-                    return false;
-                }
-                var compileData = compileRet.getSocketOut(link.outSocket);
-                sortColumns_arr.push({ name: compileData.strContent});
-            }
-            var strContent = '';
-            sortColumns_arr.forEach((x, i) => { strContent += (i == 0 ? '' : ',') + x.name  });
-            selfCompileRet.setDirectOut(strContent);
-        }
-        else {
-            selfCompileRet.setDirectOut('');
-        }
-        helper.setCompileRetCache(this, selfCompileRet);
-        return selfCompileRet;
-    }
-}
-
 SqlNodeClassMap[SQLNODE_DBENTITY] = {
     modelClass: SqlNode_DBEntity,
     comClass: C_SqlNode_DBEntity,
@@ -3887,7 +2785,7 @@ SqlNodeClassMap[SQLNODE_NOPERAND] = {
 };
 SqlNodeClassMap[SQLNODE_COLUMN] = {
     modelClass: SqlNode_Column,
-    comClass: C_SqlNode_SimpleNode,
+    comClass: C_Node_SimpleNode,
 };
 SqlNodeClassMap[SQLNODE_XJOIN] = {
     modelClass: SqlNode_XJoin,
@@ -3899,7 +2797,7 @@ SqlNodeClassMap[SQLNODE_DBENTITY_COLUMNSELECTOR] = {
 };
 SqlNodeClassMap[SQLNODE_RET_CONDITION] = {
     modelClass: SqlNode_Ret_Condition,
-    comClass: C_SqlNode_SimpleNode,
+    comClass: C_Node_SimpleNode,
 };
 SqlNodeClassMap[SQLNODE_RET_COLUMNS] = {
     modelClass: SqlNode_Ret_Columns,
@@ -3907,11 +2805,11 @@ SqlNodeClassMap[SQLNODE_RET_COLUMNS] = {
 };
 SqlNodeClassMap[SQLNODE_RET_ORDER] = {
     modelClass: SqlNode_Ret_Order,
-    comClass: C_SqlNode_SimpleNode,
+    comClass: C_Node_SimpleNode,
 };
 SqlNodeClassMap[SQLNODE_CONSTVALUE] = {
     modelClass: SqlNode_ConstValue,
-    comClass: C_SqlNode_SimpleNode,
+    comClass: C_Node_SimpleNode,
 };
 SqlNodeClassMap[SQLNODE_COMPARE] = {
     modelClass: SqlNode_Compare,
@@ -3919,54 +2817,21 @@ SqlNodeClassMap[SQLNODE_COMPARE] = {
 };
 SqlNodeClassMap[SQLNODE_ROWNUMBER] = {
     modelClass: SqlNode_RowNumber,
-    comClass: C_SqlNode_SimpleNode,
+    comClass: C_Node_SimpleNode,
 };
 SqlNodeClassMap[SQLNODE_ISNULL] = {
     modelClass: SqlNode_IsNullFun,
-    comClass: C_SqlNode_SimpleNode,
+    comClass: C_Node_SimpleNode,
 };
 SqlNodeClassMap[SQLNODE_ISNULLOPERATOR] = {
     modelClass: SqlNode_IsNullOperator,
-    comClass: C_SqlNode_SimpleNode,
+    comClass: C_Node_SimpleNode,
 };
-SqlNodeClassMap[SQLNODE_BETWEEN] = {
-    modelClass: SqlNode_BetWeen,
-    comClass: C_SqlNode_SimpleNode,
-};
-SqlNodeClassMap[SQLNODE_CAST] = {
-    modelClass: SqlNode_Cast,
-    comClass: C_SqlNode_SimpleNode,
-};
-
 SqlNodeClassMap[SQLNODE_LOGICAL_OPERATOR] = {
     modelClass: SqlNode_Logical_Operator,
     comClass: C_SqlNode_Logical_Operator,
 };
-SqlNodeClassMap[SQLNODE_LIKE] = {
-    modelClass: SqlNode_Like,
-    comClass: C_SqlNode_SimpleNode,
-};
-
-SqlNodeClassMap[SQLNODE_AGGREGATE] = {
-    modelClass: SqlNode_Aggregate,
-    comClass: C_SqlNode_Aggregate,
-};
-SqlNodeClassMap[SQLNODE_RET_HAVING] = {
-    modelClass: SqlNode_Ret_Having,
-    comClass: C_SqlNode_SimpleNode,
-};
 SqlNodeClassMap[SQLDEF_VAR] = {
     modelClass: SqlDef_Variable,
-    comClass: C_SqlNode_SimpleNode,
+    comClass: C_Node_SimpleNode,
 };
-SqlNodeClassMap[SQLNODE_UNION]={
-    modelClass:SqlNode_Union,
-    comClass:C_SqlNode_Union,
-};
-SqlNodeClassMap[SQLNODE_RET_GROUP] = {
-    modelClass: SqlNode_Ret_Group,
-    comClass: C_SqlNode_SimpleNode,
-};
-
-
-    

@@ -149,10 +149,31 @@ DesignerConfig.findConfigByType=(function(ctlType){
     return this.controlConfig.configs_obj[ctlType];
 }).bind(DesignerConfig);
 
+DesignerConfig.getMobileCanLabeledControls = (function(){
+    var rlt = [];
+    for(var si in this.controlConfig.configs_obj){
+        var item = this.controlConfig.configs_obj[si];
+        if(item.canbeLabeled){
+            rlt.push(item);
+        }
+    }
+    return rlt;
+}).bind(DesignerConfig);
+
 const ValueType={
-    String:'String',
-    Int:'Int',
-    Boolean:'Boolean',
+    String:'string',
+    Int:'int',
+    Boolean:'boolean',
     Float:'float',
+    Date:'date',
+    Time:'time',
+    DateTime:'datetime',
     StyleValues:'StyleValues',
+    DataSource:'DataSource',
+    Unknown:'Unknown'
 };
+
+const VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
+
+const JsValueTypes = [ValueType.String,ValueType.Int,ValueType.Boolean,ValueType.Float,ValueType.Date,ValueType.Time];
+

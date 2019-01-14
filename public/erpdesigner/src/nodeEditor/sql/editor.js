@@ -43,27 +43,8 @@ const SqlNodeEditorControls_arr =[
     }
     ,
     {
-        label:'BetWeen',
-        nodeClass:SqlNode_BetWeen,
-    }
-    ,
-    {
-        label:'Cast',
-        nodeClass:SqlNode_Cast,
-    },
-  //nizihua
-    {
         label:'逻辑运算',
         nodeClass:SqlNode_Logical_Operator,
-    } ,
-    {
-        label:'Like',
-        nodeClass:SqlNode_Like,
-    },
-    // nizihau
-    {
-        label:'union',
-        nodeClass:SqlNode_Union,
     }
 ]; 
 

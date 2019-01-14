@@ -31,6 +31,10 @@ var IAttributeable = function (_EventEmitter) {
         key: 'findAttributeByName',
         value: function findAttributeByName(attrName) {
             var foundAttr = null;
+            var rlt = this.cacheObj[attrName + '_c'];
+            if (rlt != null) {
+                return rlt;
+            }
             this.attrbuteGroups.find(function (group) {
                 var t = group.attrs_arr.find(function (attr) {
                     return attr.name === attrName ? attr : null;
@@ -41,15 +45,23 @@ var IAttributeable = function (_EventEmitter) {
                 }
                 return false;
             });
+            this.cacheObj[attrName + '_c'] = foundAttr;
             return foundAttr;
         }
     }, {
         key: '__setAttribute',
-        value: function __setAttribute(realAtrrName, value) {
-            if (typeof value === 'string' && this.consignor[realAtrrName] == value) {
+        value: function __setAttribute(realAtrrName, value, attrName, indexInArray) {
+            var oldValue = this.consignor[realAtrrName];
+            if (typeof value === 'string' && oldValue == value) {
                 return false;
             }
+            if (attrName == null) {
+                attrName = realAtrrName;
+            }
             this.consignor[realAtrrName] = value;
+            if (this.__attributeChanged != null) {
+                this.__attributeChanged(attrName, oldValue, value, realAtrrName, indexInArray);
+            }
             return true;
         }
     }, {
@@ -59,7 +71,7 @@ var IAttributeable = function (_EventEmitter) {
                 return this.consignor['set_' + attrName](value, indexInArray);
             } else {
                 var realAtrrName = attrName + (indexInArray >= 0 ? '_' + indexInArray : '');
-                if (this.__setAttribute(realAtrrName, value) != false) {
+                if (this.__setAttribute(realAtrrName, value, attrName, indexInArray) != false) {
                     this.attrChanged(attrName, { index: indexInArray });
                 }
             }
@@ -94,6 +106,7 @@ var IAttributeable = function (_EventEmitter) {
                 if (rlt == null) {
                     switch (attrItem.name) {
                         case AttrNames.LayoutNames.StyleAttr:
+                        case AttrNames.Name:
                             break;
                         default:
                             console.warn('属性:' + attrName + '没有默认值');
@@ -187,22 +200,26 @@ var IAttributeable = function (_EventEmitter) {
             this.attrbuteGroups.forEach(function (group) {
                 group.attrs_arr.forEach(function (attr) {
                     if (!attr.editable) return;
+                    var attrItemArray = null;
                     if (attr.isArray) {
-                        var attrItemArray = _this2.getAttrArrayList(attr.name);
-                        attrItemArray.forEach(function (attrItemInArray) {
-                            var val = _this2[attrItemInArray.name];
-                            if (val == null || val == attr.defaultVal) {
-                                return;
-                            }
-                            rlt[attrItemInArray.name] = val;
+                        attrItemArray = _this2.getAttrArrayList(attr.name).map(function (e) {
+                            return e.name;
                         });
                     } else {
-                        var val = _this2[attr.name];
+                        attrItemArray = [attr.name];
+                    }
+                    attrItemArray.forEach(function (attrName) {
+                        var val = _this2[attrName];
                         if (val == null || val == attr.defaultVal) {
                             return;
                         }
-                        rlt[attr.name] = val;
-                    }
+                        switch (attr.valueType) {
+                            case ValueType.DataSource:
+                                val = val.code;
+                                break;
+                        }
+                        rlt[attrName] = val;
+                    });
                 });
             });
             return rlt;

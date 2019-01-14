@@ -2,13 +2,27 @@
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var CAttributeGroup = function CAttributeGroup(label, attrs_arr) {
-    _classCallCheck(this, CAttributeGroup);
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
-    var self = this;
-    this.label = label;
-    this.attrs_arr = attrs_arr;
-    attrs_arr.forEach(function (attr) {
-        attr.group = self;
-    });
-};
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var CAttributeGroup = function (_EventEmitter) {
+    _inherits(CAttributeGroup, _EventEmitter);
+
+    function CAttributeGroup(label, attrs_arr) {
+        _classCallCheck(this, CAttributeGroup);
+
+        var _this = _possibleConstructorReturn(this, (CAttributeGroup.__proto__ || Object.getPrototypeOf(CAttributeGroup)).call(this));
+
+        EnhanceEventEmiter(_this);
+        var self = _this;
+        _this.label = label;
+        _this.attrs_arr = attrs_arr;
+        attrs_arr.forEach(function (attr) {
+            attr.group = self;
+        });
+        return _this;
+    }
+
+    return CAttributeGroup;
+}(EventEmitter);

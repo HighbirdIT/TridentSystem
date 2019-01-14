@@ -430,7 +430,7 @@ class NameInputRow extends React.PureComponent{
     }
 }
 
-class AddNewSqlBPPanel extends React.PureComponent {
+class SqlBPEditPanel extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state={
@@ -442,6 +442,7 @@ class AddNewSqlBPPanel extends React.PureComponent {
     }
 
     clickConfirmHandler(){
+        var targetBP = this.props.targetBP;
         var name = this.nameRef.current.getValue().trim();
         if(name.length <= 2){
             this.setState({
@@ -449,7 +450,8 @@ class AddNewSqlBPPanel extends React.PureComponent {
             });
             return;
         }
-        if(this.props.dataMaster.getSqlBPByName(name) != null){
+        var nowBP = this.props.dataMaster.getSqlBPByName(name);
+        if(nowBP != null && nowBP != targetBP){
             this.setState({
                 errinfo:'已有同名的蓝图存在'
             });
@@ -462,8 +464,14 @@ class AddNewSqlBPPanel extends React.PureComponent {
             });
             return;
         }
-        var newDBE = this.props.dataMaster.createSqlBP(name, type);
-        this.props.onComplete(newDBE);
+        var targetBP = this.props.targetBP;
+        if(targetBP == null){
+            targetBP = this.props.dataMaster.createSqlBP(name, type);
+        }
+        else{
+            targetBP = this.props.dataMaster.modifySqlBP(targetBP, name, type);
+        }
+        this.props.onComplete(targetBP);
     }
 
     clickCancelHandler(){
@@ -471,20 +479,27 @@ class AddNewSqlBPPanel extends React.PureComponent {
     }
 
     render(){
+        var targetBP = this.props.targetBP;
+        var title = '新建Sql蓝图';
+        if(targetBP != null){
+            title = '修改' + targetBP.name;
+        }
+        var value = targetBP == null ? '' : targetBP.name;
+        var type = targetBP == null ? '表值' : targetBP.type;
         var nameWidth = 100;
-        return <FloatPanelbase title='新建Sql蓝图' width={480} height={320} initShow={true} sizeable={false} closeable={false} ismodel={true} >
+        return <FloatPanelbase title={title} width={480} height={320} initShow={true} sizeable={false} closeable={false} ismodel={true} >
                 <div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
                     <div className='d-flex flex-column autoScroll flex-grow-1 flex-shrink-1'>
-                        <NameInputRow label='名称' type='text' rootClass='m-1' nameWidth={nameWidth} ref={this.nameRef} />
-                        <NameInputRow label='类型' type='select' rootClass='m-1' nameWidth={nameWidth} options_arr={['表值','标量值']} ref={this.typeRef} />   
+                        <NameInputRow label='名称' type='text' rootClass='m-1' nameWidth={nameWidth} ref={this.nameRef} default={value} />
+                        <NameInputRow label='类型' type='select' rootClass='m-1' nameWidth={nameWidth} options_arr={['表值','标量值']} default={type} ref={this.typeRef} />   
                         <div className='flex-grow-1 flex-shrink-1 text-info'>
                             {
                                 this.state.errinfo
                             }
                         </div>
                     </div>
-                    <div className='d-flex flex-grow-0 flex-shrink-0'>
-                        <button type='button' onClick={this.clickConfirmHandler} className='btn btn-success flex-grow-1 flex-shrink-1'>创建</button>
+                    <div className='flex-grow-0 flex-shrink-0 btn-group'>
+                        <button type='button' onClick={this.clickConfirmHandler} className='btn btn-success flex-grow-1 flex-shrink-1'>{targetBP ? '修改' : '创建'}</button>
                         <button type='button' onClick={this.clickCancelHandler} className='btn btn-danger flex-grow-1 flex-shrink-1'>取消</button>
                     </div>
                 </div>
@@ -516,9 +531,18 @@ class SqlBPItemPanel extends React.PureComponent {
         });
     }
 
+    clickEditBtnHandler(ev){
+        if(this.state.selectedItem){
+            this.setState({
+                modifing:true,
+            });
+        }
+    }
+
     newItemCompleteHandler(newDBE){
         this.setState({
             creating:false,
+            modifing:false,
         });
     }
 
@@ -538,7 +562,7 @@ class SqlBPItemPanel extends React.PureComponent {
         return (
             <React.Fragment>
                 {
-                    this.state.creating ? <AddNewSqlBPPanel dataMaster={this.props.project.dataMaster} onComplete={this.newItemCompleteHandler} /> : null
+                    this.state.creating || this.state.modifing ? <SqlBPEditPanel targetBP={this.state.modifing ? selectedItem : null} dataMaster={this.props.project.dataMaster} onComplete={this.newItemCompleteHandler} /> : null
                 }
                 <SplitPanel
                 defPercent={0.45}
@@ -554,7 +578,10 @@ class SqlBPItemPanel extends React.PureComponent {
                                 })
                             }
                         </div>
-                        <button type='button' onClick={this.clickAddBtnhandler} className='btn btn-success'><i className='fa fa-plus' /></button>
+                        <div className='flex-shrink-0 btn-group'>
+                            <button type='button' onClick={this.clickAddBtnhandler} className='btn btn-success flex-grow-1'><i className='fa fa-plus' /></button>
+                            <button type='button' onClick={this.clickEditBtnHandler} className='btn'><i className='fa fa-edit' /></button>
+                        </div>
                     </div>
                 }
                 panel2={

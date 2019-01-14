@@ -34,6 +34,7 @@ class CProject extends IAttributeable{
         this.controlId_map = {};
         this.cacheState = {};
         this.dataMaster = new DataMaster(this);
+        this.scriptMaster = new ScriptMaster(this);
         this.project = this;
 
         this.designeConfig={
@@ -56,25 +57,10 @@ class CProject extends IAttributeable{
         this.logManager = new LogManager(this.designeConfig.name + '_lm');
         
         if(jsonData == null){
-            var mainPage=new M_PageKernel({
-                title:'主页面',
-                isMain:1,
-                nav:{
-                    hidden:1,
-                    leftBtn:{
-                        hidden:0,
-                        label:'返回',
-                        action:'retutn'
-                    },
-                    rightBtn:{
-                        hidden:0
-                    }
-                },
-                body:{
-                    direction:'column'
-                }
-            }, this);
+            var mainPage=new M_PageKernel(null, this);
             mainPage.project = this;
+            mainPage.set_ismain(true);
+            mainPage.set_title('主页面');
             this.content_Mobile.pages.push(mainPage);
         }
         else{
@@ -83,6 +69,7 @@ class CProject extends IAttributeable{
             }
             var self = this;
             this.dataMaster.restoreFromJson(jsonData.dataMaster);
+            this.scriptMaster.restoreFromJson(jsonData.scriptMaster);
 
             var ctlCreatioinHelper = new CtlKernelCreationHelper();
             jsonData.content_Mobile.pages.forEach(pageJson=>{
@@ -91,6 +78,27 @@ class CProject extends IAttributeable{
             });
         }
         this.logManager.log('加载完成');
+    }
+
+    mainPageChanged(pagekernel){
+        var index = this.content_PC.pages.indexOf(pagekernel);
+        if(index != -1){
+            this.content_PC.pages.forEach(pk=>{
+                if(pk != pagekernel){
+                    pk.__setAttribute(AttrNames.isMain, false);
+                }
+            });
+        }
+        else{
+            index = this.content_Mobile.pages.indexOf(pagekernel);
+            if(index != -1){
+                this.content_Mobile.pages.forEach(pk=>{
+                    if(pk != pagekernel){
+                        pk.__setAttribute(AttrNames.isMain, false);
+                    }
+                });
+            }
+        }
     }
 
     registerControl(ctlKernel){
@@ -113,6 +121,15 @@ class CProject extends IAttributeable{
         }
         ctlKernel.id = useID;
         this.controlId_map[useID] = ctlKernel;
+    }
+
+    unRegisterControl(ctlKernel){
+        var useID = ctlKernel.id;
+        var registedCtl = this.getControlById(useID);
+        if(registedCtl == null){
+            return true;
+        }
+        delete this.controlId_map[useID];
     }
 
     getControlById(id){
@@ -227,6 +244,7 @@ class CProject extends IAttributeable{
             }
         );
         rlt.dataMaster = this.dataMaster.getJson();
+        rlt.scriptMaster = this.scriptMaster.getJson();
         return rlt;
     }
 }

@@ -558,13 +558,13 @@ var NameInputRow = function (_React$PureComponent5) {
     return NameInputRow;
 }(React.PureComponent);
 
-var AddNewSqlBPPanel = function (_React$PureComponent6) {
-    _inherits(AddNewSqlBPPanel, _React$PureComponent6);
+var SqlBPEditPanel = function (_React$PureComponent6) {
+    _inherits(SqlBPEditPanel, _React$PureComponent6);
 
-    function AddNewSqlBPPanel(props) {
-        _classCallCheck(this, AddNewSqlBPPanel);
+    function SqlBPEditPanel(props) {
+        _classCallCheck(this, SqlBPEditPanel);
 
-        var _this8 = _possibleConstructorReturn(this, (AddNewSqlBPPanel.__proto__ || Object.getPrototypeOf(AddNewSqlBPPanel)).call(this, props));
+        var _this8 = _possibleConstructorReturn(this, (SqlBPEditPanel.__proto__ || Object.getPrototypeOf(SqlBPEditPanel)).call(this, props));
 
         _this8.state = {};
         autoBind(_this8);
@@ -574,9 +574,10 @@ var AddNewSqlBPPanel = function (_React$PureComponent6) {
         return _this8;
     }
 
-    _createClass(AddNewSqlBPPanel, [{
+    _createClass(SqlBPEditPanel, [{
         key: 'clickConfirmHandler',
         value: function clickConfirmHandler() {
+            var targetBP = this.props.targetBP;
             var name = this.nameRef.current.getValue().trim();
             if (name.length <= 2) {
                 this.setState({
@@ -584,7 +585,8 @@ var AddNewSqlBPPanel = function (_React$PureComponent6) {
                 });
                 return;
             }
-            if (this.props.dataMaster.getSqlBPByName(name) != null) {
+            var nowBP = this.props.dataMaster.getSqlBPByName(name);
+            if (nowBP != null && nowBP != targetBP) {
                 this.setState({
                     errinfo: '已有同名的蓝图存在'
                 });
@@ -597,8 +599,13 @@ var AddNewSqlBPPanel = function (_React$PureComponent6) {
                 });
                 return;
             }
-            var newDBE = this.props.dataMaster.createSqlBP(name, type);
-            this.props.onComplete(newDBE);
+            var targetBP = this.props.targetBP;
+            if (targetBP == null) {
+                targetBP = this.props.dataMaster.createSqlBP(name, type);
+            } else {
+                targetBP = this.props.dataMaster.modifySqlBP(targetBP, name, type);
+            }
+            this.props.onComplete(targetBP);
         }
     }, {
         key: 'clickCancelHandler',
@@ -608,18 +615,25 @@ var AddNewSqlBPPanel = function (_React$PureComponent6) {
     }, {
         key: 'render',
         value: function render() {
+            var targetBP = this.props.targetBP;
+            var title = '新建Sql蓝图';
+            if (targetBP != null) {
+                title = '修改' + targetBP.name;
+            }
+            var value = targetBP == null ? '' : targetBP.name;
+            var type = targetBP == null ? '表值' : targetBP.type;
             var nameWidth = 100;
             return React.createElement(
                 FloatPanelbase,
-                { title: '\u65B0\u5EFASql\u84DD\u56FE', width: 480, height: 320, initShow: true, sizeable: false, closeable: false, ismodel: true },
+                { title: title, width: 480, height: 320, initShow: true, sizeable: false, closeable: false, ismodel: true },
                 React.createElement(
                     'div',
                     { className: 'd-flex flex-grow-1 flex-shrink-1 flex-column' },
                     React.createElement(
                         'div',
                         { className: 'd-flex flex-column autoScroll flex-grow-1 flex-shrink-1' },
-                        React.createElement(NameInputRow, { label: '\u540D\u79F0', type: 'text', rootClass: 'm-1', nameWidth: nameWidth, ref: this.nameRef }),
-                        React.createElement(NameInputRow, { label: '\u7C7B\u578B', type: 'select', rootClass: 'm-1', nameWidth: nameWidth, options_arr: ['表值', '标量值'], ref: this.typeRef }),
+                        React.createElement(NameInputRow, { label: '\u540D\u79F0', type: 'text', rootClass: 'm-1', nameWidth: nameWidth, ref: this.nameRef, 'default': value }),
+                        React.createElement(NameInputRow, { label: '\u7C7B\u578B', type: 'select', rootClass: 'm-1', nameWidth: nameWidth, options_arr: ['表值', '标量值'], 'default': type, ref: this.typeRef }),
                         React.createElement(
                             'div',
                             { className: 'flex-grow-1 flex-shrink-1 text-info' },
@@ -628,11 +642,11 @@ var AddNewSqlBPPanel = function (_React$PureComponent6) {
                     ),
                     React.createElement(
                         'div',
-                        { className: 'd-flex flex-grow-0 flex-shrink-0' },
+                        { className: 'flex-grow-0 flex-shrink-0 btn-group' },
                         React.createElement(
                             'button',
                             { type: 'button', onClick: this.clickConfirmHandler, className: 'btn btn-success flex-grow-1 flex-shrink-1' },
-                            '\u521B\u5EFA'
+                            targetBP ? '修改' : '创建'
                         ),
                         React.createElement(
                             'button',
@@ -645,7 +659,7 @@ var AddNewSqlBPPanel = function (_React$PureComponent6) {
         }
     }]);
 
-    return AddNewSqlBPPanel;
+    return SqlBPEditPanel;
 }(React.PureComponent);
 
 var SqlBPItemPanel = function (_React$PureComponent7) {
@@ -682,10 +696,20 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
             });
         }
     }, {
+        key: 'clickEditBtnHandler',
+        value: function clickEditBtnHandler(ev) {
+            if (this.state.selectedItem) {
+                this.setState({
+                    modifing: true
+                });
+            }
+        }
+    }, {
         key: 'newItemCompleteHandler',
         value: function newItemCompleteHandler(newDBE) {
             this.setState({
-                creating: false
+                creating: false,
+                modifing: false
             });
         }
     }, {
@@ -709,7 +733,7 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
             return React.createElement(
                 React.Fragment,
                 null,
-                this.state.creating ? React.createElement(AddNewSqlBPPanel, { dataMaster: this.props.project.dataMaster, onComplete: this.newItemCompleteHandler }) : null,
+                this.state.creating || this.state.modifing ? React.createElement(SqlBPEditPanel, { targetBP: this.state.modifing ? selectedItem : null, dataMaster: this.props.project.dataMaster, onComplete: this.newItemCompleteHandler }) : null,
                 React.createElement(SplitPanel, {
                     defPercent: 0.45,
                     maxSize: '200px',
@@ -730,9 +754,18 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
                             })
                         ),
                         React.createElement(
-                            'button',
-                            { type: 'button', onClick: this.clickAddBtnhandler, className: 'btn btn-success' },
-                            React.createElement('i', { className: 'fa fa-plus' })
+                            'div',
+                            { className: 'flex-shrink-0 btn-group' },
+                            React.createElement(
+                                'button',
+                                { type: 'button', onClick: this.clickAddBtnhandler, className: 'btn btn-success flex-grow-1' },
+                                React.createElement('i', { className: 'fa fa-plus' })
+                            ),
+                            React.createElement(
+                                'button',
+                                { type: 'button', onClick: this.clickEditBtnHandler, className: 'btn' },
+                                React.createElement('i', { className: 'fa fa-edit' })
+                            )
                         )
                     ),
                     panel2: React.createElement(

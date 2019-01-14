@@ -12,6 +12,10 @@ class AttributePanel extends React.PureComponent {
         autoBind(this,{exclude:['renderAttribute']});
     }
 
+    getTarget(){
+        return this.state.target;
+    }
+
     getAttrValue(attr){
         return this.state.target.getAttribute(attr.name);
     }
@@ -20,10 +24,35 @@ class AttributePanel extends React.PureComponent {
         this.state.target.setAttibute(attr.name,newvalue);
     }
 
+    componentWillUnmount(){
+        this.unlistenTarget(this.state.target);
+    }
+
+    targetAttributeGroupChangedhandler(ev){
+        this.setState({
+            magicObj:{}
+        });
+    }
+
+    listenTarget(target){
+        if(target == null){
+            return;
+        }
+        target.on('AttributeGroupChanged', this.targetAttributeGroupChangedhandler);
+    }
+
+    unlistenTarget(target){
+        if(target == null){
+            return;
+        }
+        target.off('AttributeGroupChanged', this.targetAttributeGroupChangedhandler);
+    }
+
     setTarget(newTarget){
         if(newTarget == this.state.target){
             return;
         }
+        this.unlistenTarget(this.state.target);
         if(this.state.target && this.state.target.setSelected){
             this.state.target.setSelected(false);
         }
@@ -31,6 +60,7 @@ class AttributePanel extends React.PureComponent {
             newTarget.setSelected(true);
         }
         this.props.project.emit(ESELECTEDCHANGED);
+        this.listenTarget(newTarget);
         this.setState({
             target:newTarget,
         });

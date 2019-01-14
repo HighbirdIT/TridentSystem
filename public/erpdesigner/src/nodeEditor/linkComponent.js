@@ -73,10 +73,17 @@ class C_Node_Link extends React.PureComponent{
             else
                 angle = -180 - angle;
         }
+        var linkflow = null;
+        if(this.state.startScoket != null && this.state.startScoket.isFlowSocket){
+            linkflow = '1';
+        }
+        else if(this.state.link != null && this.state.link.inSocket.isFlowSocket){
+            linkflow = '1';
+        }
         //console.log(angle);
         var thisStyle = {width:dis + 'px', height:'2px',transform:'rotate(' + angle + 'deg)',left:start.x + 'px',top:start.y + 'px'};
         return (
-            <div ref={this.rootDivRef} className='nodepath' style={thisStyle} draging={this.state.draging ? 1 : null} onMouseDown={this.mouseDownHandler}>
+            <div ref={this.rootDivRef} className='nodepath' style={thisStyle} linkflow={linkflow} draging={this.state.draging ? 1 : null} onMouseDown={this.mouseDownHandler}>
                 
             </div>
         );

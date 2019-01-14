@@ -25,6 +25,7 @@ var ProjectDesigner = function (_React$PureComponent) {
         _this.outlineRef = React.createRef();
         _this.dataMasterPanelRef = React.createRef();
         _this.quickMenuRef = React.createRef();
+        _this.scriptMasterPanelRef = React.createRef();
         autoBind(_this);
         _this.props.project.designer = _this;
 
@@ -59,6 +60,27 @@ var ProjectDesigner = function (_React$PureComponent) {
             this.selectedKernel = kernel;
             */
             if (this.attrbutePanelRef.current) this.attrbutePanelRef.current.setTarget(kernel);
+        }
+    }, {
+        key: 'deleteSelectedKernel',
+        value: function deleteSelectedKernel() {
+            if (this.attrbutePanelRef.current == null) {
+                return;
+            }
+            var nowTarget = this.attrbutePanelRef.current.getTarget();
+            if (nowTarget == null) {
+                return;
+            }
+            if (nowTarget.parent == null) {
+                return;
+            }
+            if (ControlKernelBase.prototype.isPrototypeOf(nowTarget)) {
+                // is kernel
+                if (nowTarget.parent == M_LabeledControlKernel_Type) {
+                    return;
+                }
+                nowTarget.delete();
+            }
         }
     }, {
         key: 'mouseDownControlIcon',
@@ -172,6 +194,12 @@ var ProjectDesigner = function (_React$PureComponent) {
                         this.dataMasterPanelRef.current.toggle();
                     }
                     break;
+                case 'scriptmaster':
+                    if (this.scriptMasterPanelRef.current) {
+                        //this.dataMasterPanelRef.current.show();
+                        this.scriptMasterPanelRef.current.toggle();
+                    }
+                    break;
             }
         }
     }, {
@@ -194,6 +222,7 @@ var ProjectDesigner = function (_React$PureComponent) {
                 'div',
                 { className: this.props.className },
                 React.createElement(DataMasterPanel, { ref: this.dataMasterPanelRef, project: thisProject }),
+                React.createElement(ScriptMasterPanel, { ref: this.scriptMasterPanelRef, project: thisProject }),
                 React.createElement(SplitPanel, {
                     defPercent: 0.15,
                     barClass: 'bg-secondary',

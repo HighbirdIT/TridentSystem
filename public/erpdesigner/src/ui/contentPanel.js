@@ -249,8 +249,8 @@ class ContentPanel extends React.PureComponent {
                 </div>
                 <div className='d-flex flex-grow-1 flex-shrink-1'>
                     <div className='d-flex flex-grow-0 flex-shrink-0 flex-column'>
-                        <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} pname='datamaster' ><div>数</div><div>据</div><div>大</div><div>师</div></button>
-                        <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} ><div>流</div><div>程</div><div>大</div><div>师</div></button>
+                        <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} pname='datamaster' ><div>数据</div><div>大师</div></button>
+                        <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} pname='scriptmaster' ><div>脚本</div><div>大师</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickCompileBtnHanlder} ><div>编</div><div>译</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickSaveBtnHanlder} ><div>保</div><div>存</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPublickBtnHandler} ><div>发</div><div>布</div></button>

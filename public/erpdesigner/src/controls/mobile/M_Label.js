@@ -1,7 +1,8 @@
 const M_LabelKernelAttrsSetting={
     groups_arr:[
         new CAttributeGroup('基本设置',[
-            new CAttribute('内容',AttrNames.Text,ValueType.String,'标签内容'),
+            new CAttribute('name',AttrNames.Name,ValueType.String),
+            genTextFiledAttribute(),
         ]),
     ],
 };
@@ -31,12 +32,12 @@ class M_Label extends React.PureComponent {
         super(props);
 
         this.state={
-            text:this.props.ctlKernel.getAttribute(AttrNames.Text),
+            text:this.props.ctlKernel.getAttribute(AttrNames.TextField),
         };
 
         autoBind(this);
         M_ControlBase(this,[
-            AttrNames.Text,
+            AttrNames.TextField,
             AttrNames.LayoutNames.APDClass,
             AttrNames.LayoutNames.StyleAttr,
         ]);
@@ -47,15 +48,13 @@ class M_Label extends React.PureComponent {
             return;
         }
         this.setState({
-            text:this.props.ctlKernel.getAttribute(AttrNames.Text),
+            text:this.props.ctlKernel.getAttribute(AttrNames.TextField),
         });
     }
 
     render(){
         var ctlKernel = this.props.ctlKernel;
         var layoutConfig = ctlKernel.getLayoutConfig();
-        layoutConfig.addClass('flex-grow-0');
-        layoutConfig.addClass('flex-shrink-0');
         if(this.props.ctlKernel.__placing){
             layoutConfig.addClass('M_placingCtl');
             return (<div className={layoutConfig.getClassName()} style={layoutConfig.style} ref={this.rootElemRef}>标签内容</div>);
@@ -63,10 +62,11 @@ class M_Label extends React.PureComponent {
         layoutConfig.addClass('M_Label');
         layoutConfig.addClass('border');
         layoutConfig.addClass('hb-control');
+        var showText = IsEmptyString(this.state.text) ? '[空标签]' : this.state.text;
         return(
             <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {
-                    this.state.text
+                    showText
                 }
             </div>
         );
@@ -81,4 +81,5 @@ DesignerConfig.registerControl(
         namePrefix : M_LabelKernel_Prefix,
         kernelClass:M_LabelKernel,
         reactClass:M_Label,
+        canbeLabeled:true,
     }, '基础');

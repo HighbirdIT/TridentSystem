@@ -68,6 +68,9 @@ class ScoketLinkPool{
         if(outSocket.isIn == inSocket.isIn){
             throw new Error("两个socket流方向不能一样");
         }
+        if(outSocket.isFlowSocket != inSocket.isFlowSocket){
+            throw new Error("两个socket不是相同种类");
+        }
         if(outSocket.isIn){
             var t = outSocket;
             outSocket = inSocket;
@@ -80,7 +83,16 @@ class ScoketLinkPool{
                 var theLink = this.link_map[si];
                 if(theLink == null)
                     continue;
-                if(theLink.inSocket == inSocket){
+                var needDelete = false;
+                if(inSocket.isFlowSocket){
+                    // 流接口的是单输出，多输入
+                    needDelete = theLink.outSocket == outSocket;
+                }
+                else{
+                    // 数据接口是单输入，多输出
+                    needDelete = theLink.inSocket == inSocket;
+                }
+                if(needDelete){
                     this._deleteLink(this.link_map[si]);
                     break;
                 }

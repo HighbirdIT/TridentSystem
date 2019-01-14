@@ -9,7 +9,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var M_PageKernelAttrsSetting = {
-    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'), new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr)]), new CAttributeGroup('测试设置', [new CAttribute('测试', AttrNames.Test, ValueType.String, '', true, 1)])]
+    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'), new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false), new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr)]), new CAttributeGroup('测试设置', [new CAttribute('测试', AttrNames.Test, ValueType.String, '', true, 1)])]
 };
 
 var M_PageKernel = function (_ContainerKernelBase) {
@@ -47,6 +47,19 @@ var M_PageKernel = function (_ContainerKernelBase) {
             var flag = this.__setAttribute(AttrNames.Title, newTitle);
             if (flag) {
                 this.attrChanged(AttrNames.Title);
+            }
+            return flag;
+        }
+    }, {
+        key: 'set_ismain',
+        value: function set_ismain(val) {
+            var flag = this.__setAttribute(AttrNames.IsMain, val);
+            if (flag) {
+                if (val) {
+                    var project = this.project;
+                    project.mainPageChanged(this);
+                }
+                this.attrChanged(AttrNames.IsMain);
             }
             return flag;
         }
@@ -102,8 +115,12 @@ var M_Page = function (_React$PureComponent) {
         key: 'renderMobilePage',
         value: function renderMobilePage(ctlKernel) {
             var layoutConfig = ctlKernel.getLayoutConfig();
-            var rootDivClass = 'flex-grow-1 felx-shrink-0 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : '');
-            rootDivClass += layoutConfig.baseClassName;
+            layoutConfig.addClass('d-flex');
+            layoutConfig.addClass('flex-grow-1');
+            layoutConfig.addClass('flex-shrink-0');
+            if (this.state.orientation == Orientation_V) {
+                layoutConfig.addClass('flex-column');
+            }
             return React.createElement(
                 React.Fragment,
                 null,
@@ -132,7 +149,7 @@ var M_Page = function (_React$PureComponent) {
                 ),
                 React.createElement(
                     'div',
-                    { className: rootDivClass, ref: this.rootElemRef },
+                    { className: layoutConfig.getClassName(), ref: this.rootElemRef },
                     this.state.children.map(function (childData) {
                         return childData.renderSelf();
                     })
