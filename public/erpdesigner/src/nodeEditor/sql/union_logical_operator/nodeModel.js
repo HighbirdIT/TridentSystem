@@ -3942,6 +3942,12 @@ SqlNodeClassMap[SQLNODE_LOGICAL_OPERATOR] = {
     modelClass: SqlNode_Logical_Operator,
     comClass: C_SqlNode_Logical_Operator,
 };
+/*
+SqlNodeClassMap[SQLNODE_EXISTS] = {
+    modelClass: SqlNode_Exists,
+    comClass: C_SqlNode_Exists,
+};*/
+
 SqlNodeClassMap[SQLNODE_LIKE] = {
     modelClass: SqlNode_Like,
     comClass: C_SqlNode_SimpleNode,
