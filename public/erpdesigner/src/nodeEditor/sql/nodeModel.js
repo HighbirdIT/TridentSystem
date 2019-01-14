@@ -1570,7 +1570,7 @@ class SqlNode_Select extends SqlNode_Base {
         var havingNodeInputLenth = havingNodeCompileRet.node.inputScokets_arr.length;
         var groupNodeInputLenth = groupNodeCompileRet.node.inputScokets_arr.length;
         if ((hadAggregateColumn && groupNodeInputLenth == 0) ||
-            (havingNodeInputLenth > 0 && groupNodeInputLenth == 0)) {
+            (havingString.length > 0 && groupNodeInputLenth == 0)) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle
                 , this.groupNode
@@ -1579,17 +1579,20 @@ class SqlNode_Select extends SqlNode_Base {
             return false;
         }
         var groupnodeOut = groupNodeCompileRet.getDirectOut();
-        for (var i = 0; i < isolatedColumns_arr.length; ++i) {
-            var targetStr = isolatedColumns_arr[i];
-            if (groupnodeOut.data.groupColumns_arr.indexOf(targetStr) == -1) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle
-                    , this.groupNode
-                    , helper.clickLogBadgeItemHandler)
-                    , targetStr + "不存在Group里面"]);
-                return false;
+        if(hadAggregateColumn){
+            for (var i = 0; i < isolatedColumns_arr.length; ++i) {
+                var targetStr = isolatedColumns_arr[i];
+                if (groupnodeOut.data.groupColumns_arr.indexOf(targetStr) == -1) {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle
+                        , this.groupNode
+                        , helper.clickLogBadgeItemHandler)
+                        , targetStr + "不存在Group里面"]);
+                    return false;
+                }
             }
         }
+        
         var selfCompileRet = new CompileResult(this);
         var columnsStr = '';
         selectColumns_arr.forEach((x, i) => { columnsStr += (i == 0 ? '' : ',') + x.strContent + (x.alias == null ? '' : ' as [' + x.alias + ']') });
