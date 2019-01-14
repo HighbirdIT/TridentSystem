@@ -2,6 +2,7 @@ const M_PageKernelAttrsSetting = {
     groups_arr: [
         new CAttributeGroup('基本设置', [
             new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'),
+            new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false),
             new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
         ]),
         new CAttributeGroup('测试设置', [
@@ -44,6 +45,18 @@ class M_PageKernel extends ContainerKernelBase {
         var flag = this.__setAttribute(AttrNames.Title, newTitle);
         if (flag) {
             this.attrChanged(AttrNames.Title);
+        }
+        return flag;
+    }
+
+    set_ismain(val){
+        var flag = this.__setAttribute(AttrNames.IsMain, val);
+        if (flag) {
+            if(val){
+                var project = this.project;
+                project.mainPageChanged(this);
+            }
+            this.attrChanged(AttrNames.IsMain);
         }
         return flag;
     }
@@ -90,8 +103,12 @@ class M_Page extends React.PureComponent {
 
     renderMobilePage(ctlKernel) {
         var layoutConfig = ctlKernel.getLayoutConfig();
-        var rootDivClass = 'flex-grow-1 felx-shrink-0 d-flex' + (this.state.orientation == Orientation_V ? ' flex-column' : '');
-        rootDivClass += layoutConfig.baseClassName;
+        layoutConfig.addClass('d-flex');
+        layoutConfig.addClass('flex-grow-1');
+        layoutConfig.addClass('flex-shrink-0');
+        if(this.state.orientation == Orientation_V){
+            layoutConfig.addClass('flex-column');
+        }
         return (
             <React.Fragment>
                 <div className="d-flex flex-grow-0 flex-shrink-1 text-light bg-primary align-items-baseline">
@@ -103,7 +120,7 @@ class M_Page extends React.PureComponent {
                         <span className='icon icon-more-vertical mr-1' />
                     </div>
                 </div>
-                <div className={rootDivClass} ref={this.rootElemRef}>
+                <div className={layoutConfig.getClassName()} ref={this.rootElemRef}>
                     {
                         this.state.children.map(childData => {
                             return childData.renderSelf()

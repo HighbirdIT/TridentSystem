@@ -43,53 +43,8 @@ const SqlNodeEditorControls_arr =[
     }
     ,
     {
-        label:'BetWeen',
-        nodeClass:SqlNode_BetWeen,
-    }
-    ,
-    {
-        label:'Cast',
-        nodeClass:SqlNode_Cast,
-    },
-    {
-        label:'Getdate',
-        nodeClass:SqlNode_Getdate,
-    },
-    {
         label:'逻辑运算',
         nodeClass:SqlNode_Logical_Operator,
-    } ,
-    {
-        label:'Like',
-        nodeClass:SqlNode_Like,
-    },
-    {
-        label:'Not',
-        nodeClass:SqlNode_Logical_Not,
-    }
-    ,{
-        label:'In',
-        nodeClass:SqlNode_In_Operator,
-    }
-    ,{
-        label:'字符串拼接',
-        nodeClass:SqlNode_ToString,
-    }
-    ,{
-        label:'case_when',
-        nodeClass:SqlNode_Case_When,
-    },
-    {
-        label:'then',
-        nodeClass:SqlNode_CW_When,
-    }
-    ,{
-        label:'else',
-        nodeClass:SqlNode_CW_Else,
-    },
-    {
-        label:'union',
-        nodeClass:SqlNode_Union,
     }
 ]; 
 

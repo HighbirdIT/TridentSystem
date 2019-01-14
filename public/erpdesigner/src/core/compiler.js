@@ -8,6 +8,18 @@ class ProjectCompiler extends EventEmitter{
         autoBind(this);
     }
 
+    getMidData(key){
+        if(typeof key !== 'string'){
+            console.error('getMidData key must string');
+        }
+        var rlt = this.midData_map[key];
+        if(rlt== null){
+            rlt = {};
+            this.midData_map[key] = rlt;
+        }
+        return rlt;
+    }
+
     clickSqlCompilerLogBadgeItemHandler(badgeItem){
         console.log('clickSqlCompilerLogBadgeItemHandler');
         if(badgeItem.data){
@@ -17,12 +29,23 @@ class ProjectCompiler extends EventEmitter{
         }
     }
 
+    clickKernelLogBadgeItemHandler(badgeItem){
+        console.log('clickSqlCompilerLogBadgeItemHandler');
+        if(badgeItem.data){
+            var project = this.project;
+            var designer = project.designer;
+            designer.selectKernel(badgeItem.data);
+        }
+    }
+
     stopCompile(isCompleted, stopInfo){
-        this.isCompleted = isCompleted;
         var project = this.project;
         var logManager = project.logManager;
+        var errCount = logManager.getCount(LogTag_Error);
+        this.isCompleted = errCount == 0 && isCompleted;
         if(!IsEmptyString(stopInfo)){
             logManager.log("发生错误,项目编译已终止");
+            this.isCompleted = false;
         }
         logManager.log('项目编译完成,共' + logManager.getCount(LogTag_Warning) + '条警告,' + logManager.getCount(LogTag_Error) + '条错误,');
         this.fireEvent('completed');
@@ -31,6 +54,7 @@ class ProjectCompiler extends EventEmitter{
     compile(){
         var project = this.project;
         var logManager = project.logManager;
+        this.midData_map = {};
         logManager.clear();
         logManager.log('执行项目编译');
         
@@ -79,7 +103,7 @@ class ContentCompiler extends EventEmitter{
         this.projectCompiler = projectCompiler;
         this.serverSide = projectCompiler.serverSide;
         this.logManager = projectCompiler.logManager;
-        this.handlebars = new CP_HandleBarsItem(this);
+        //this.handlebars = new CP_HandleBarsItem(this);
 
         this.clientSide = new CP_ClientSide(projectCompiler);
     }
@@ -93,29 +117,6 @@ class ContentCompiler extends EventEmitter{
     }
 }
 
-class MobileContentCompiler extends ContentCompiler{
-    constructor(projectCompiler){
-        super(projectCompiler);
-        autoBind(this);
-        
-        this.conetents_arr = this.project.content_Mobile;
-    }
-
-    compile(){
-        this.handlebars.pushScriptPath('clientJS','/js/views/erp/' + this.projectCompiler.projectName + '_mb.js');
-        
-        var clientSide = this.clientSide;
-        return true;
-    }
-
-    compileEnd(){
-        super.compileEnd();
-    }
-    
-    getString(){
-        return this.clientSide.getString();
-    }
-}
 
 class CP_HandleBarsItem{
     constructor(belongCompiler){

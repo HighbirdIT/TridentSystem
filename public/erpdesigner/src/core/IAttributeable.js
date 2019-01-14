@@ -13,6 +13,10 @@ class IAttributeable extends EventEmitter{
 
     findAttributeByName(attrName){
         var foundAttr = null;
+        var rlt = this.cacheObj[attrName + '_c'];
+        if(rlt != null){
+            return rlt;
+        }
         this.attrbuteGroups.find(group=>{
             var t = group.attrs_arr.find(attr=>{
                 return attr.name === attrName ? attr : null;
@@ -23,14 +27,22 @@ class IAttributeable extends EventEmitter{
             }
             return false;
         });
+        this.cacheObj[attrName + '_c'] = foundAttr;
         return foundAttr;
     }
 
-    __setAttribute(realAtrrName, value){
-        if(typeof value === 'string' && this.consignor[realAtrrName] == value){
+    __setAttribute(realAtrrName, value, attrName, indexInArray){
+        var oldValue = this.consignor[realAtrrName];
+        if(typeof value === 'string' && oldValue == value){
             return false;
         }
+        if(attrName == null){
+            attrName = realAtrrName;
+        }
         this.consignor[realAtrrName] = value;
+        if(this.__attributeChanged != null){
+            this.__attributeChanged(attrName, oldValue, value, realAtrrName, indexInArray);
+        }
         return true;
     }
 
@@ -41,7 +53,7 @@ class IAttributeable extends EventEmitter{
         else
         {
             var realAtrrName = attrName + (indexInArray >= 0 ? '_' + indexInArray : '');
-            if(this.__setAttribute(realAtrrName, value) != false){
+            if(this.__setAttribute(realAtrrName, value, attrName, indexInArray) != false){
                 this.attrChanged(attrName, {index:indexInArray});
             }
         }
@@ -75,6 +87,7 @@ class IAttributeable extends EventEmitter{
             if(rlt == null){
                 switch(attrItem.name){
                     case AttrNames.LayoutNames.StyleAttr:
+                    case AttrNames.Name:
                     break;
                     default:
                     console.warn('属性:' + attrName + '没有默认值');
@@ -155,23 +168,25 @@ class IAttributeable extends EventEmitter{
             group.attrs_arr.forEach(attr=>{
                 if(!attr.editable)
                     return;
+                var attrItemArray = null;
                 if(attr.isArray){
-                    var attrItemArray = this.getAttrArrayList(attr.name);
-                    attrItemArray.forEach(attrItemInArray=>{
-                        var val = this[attrItemInArray.name];
-                        if(val == null || val == attr.defaultVal){
-                            return;
-                        }
-                        rlt[attrItemInArray.name] = val;
-                    });
+                    attrItemArray = this.getAttrArrayList(attr.name).map(e=>{return e.name;});
                 }
                 else{
-                    var val = this[attr.name];
+                    attrItemArray = [attr.name];
+                }
+                attrItemArray.forEach(attrName=>{
+                    var val = this[attrName];
                     if(val == null || val == attr.defaultVal){
                         return;
                     }
-                    rlt[attr.name] = val;
-                }
+                    switch(attr.valueType){
+                        case ValueType.DataSource:
+                        val = val.code;
+                        break;
+                    }
+                    rlt[attrName] = val;
+                });
             });
         });
         return rlt;

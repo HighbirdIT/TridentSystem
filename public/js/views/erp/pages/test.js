@@ -35,8 +35,8 @@ var appInitState = {
 var appReducerSetting = { AT_FETCHBEGIN: fetchBeginHandler, AT_FETCHEND: fetchEndHandler };
 var appReducer = createReducer(appInitState, Object.assign(baseReducerSetting, appReducerSetting));
 
-var reducer = Redux.combineReducers({ app: appReducer });
-var store = Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));
+//let reducer = Redux.combineReducers({ app: appReducer });
+var store = Redux.createStore(appReducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));
 
 var appStateChangedAct_map = {
     'page1.testControl01.text': function page1TestControl01Text(state, path, newValue, visited) {
@@ -182,15 +182,15 @@ function TextControl_dispatchtorprops(dispatch, ownprops) {
 var VisibleTextControl = ReactRedux.connect(TextControl_mapstatetoprops, TextControl_dispatchtorprops)(TextControl);
 
 function pullDL01DataSource() {
-    store.dispatch(fetchJsonPost(appServerUrl, { action: 'getPersonList' }, makeFTD_Prop('page1', 'testControl01', 'options_arr'), EFetchKey.FetchPropValue));
+    store.dispatch(fetchJsonPost(appServerUrl, { action: 'getPersonList' }, makeFTD_Prop('page1', 'testControl01', 'options_arr', true), EFetchKey.FetchPropValue));
 }
 
 function pullControl01DataSource() {
-    store.dispatch(fetchJsonPost(appServerUrl, { action: 'getControl01_ds' }, makeFTD_Prop('page1', 'control01', 'options_arr'), EFetchKey.FetchPropValue));
+    store.dispatch(fetchJsonPost(appServerUrl, { action: 'getControl01_ds' }, makeFTD_Prop('page1', 'control01', 'options_arr', false), EFetchKey.FetchPropValue));
 }
 
 function pullControl02DataSource() {
-    store.dispatch(fetchJsonPost(appServerUrl, { action: 'getControl02_ds' }, makeFTD_Prop('page1', 'control02', 'options_arr'), EFetchKey.FetchPropValue));
+    store.dispatch(fetchJsonPost(appServerUrl, { action: 'getControl02_ds' }, makeFTD_Prop('page1', 'control02', 'options_arr', false), EFetchKey.FetchPropValue));
 }
 
 var App = function (_React$PureComponent3) {
@@ -219,101 +219,6 @@ var App = function (_React$PureComponent3) {
                     VisibleERPC_LabeledControl,
                     { id: 'test01_label', parentPath: 'page1', label: '\u6240\u5C5E\u90E8\u95E8' },
                     React.createElement(VisibleERPC_DropDown, { pullDataSource: pullControl01DataSource, label: '\u9009\u62E9\u5458\u5DE5\u59D3\u540D', id: 'control01', parentPath: 'page1', textAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D', valueAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801', groupAttr: '\u5458\u5DE5\u5728\u804C\u72B6\u6001,\u5458\u5DE5\u5DE5\u65F6\u72B6\u6001,\u6240\u5C5E\u7CFB\u7EDF\u540D\u79F0,\u6240\u5C5E\u90E8\u95E8\u540D\u79F0', recentCookieKey: 'recent_user' })
-                ),
-                React.createElement(
-                    VisibleERPC_LabeledControl,
-                    { id: 'test01_label', parentPath: 'page1', label: '\u9879\u76EE\u540D\u79F0' },
-                    React.createElement(VisibleERPC_DropDown, { pullDataSource: pullControl02DataSource, label: '\u9009\u62E9\u9879\u76EE\u540D\u79F0', id: 'control02', parentPath: 'page1', textAttrName: '\u9879\u76EE\u767B\u8BB0\u540D\u79F0', valueAttrName: '\u9879\u76EE\u767B\u8BB0\u540D\u79F0\u4EE3\u7801', groupAttr: '\u9879\u76EE\u8FD0\u884C\u9636\u6BB5', recentCookieKey: 'recent_projects' })
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'd-flex flex-shrink-0' },
-                    React.createElement(VisibleTextControl, { label: '\u4EE3\u7801', id: 'text01', parentPath: 'page1' }),
-                    React.createElement(VisibleTextControl, { label: '\u8EAB\u4EFD\u8BC1', id: 'text02', parentPath: 'page1' })
-                ),
-                React.createElement(
-                    VisibleERPC_LabeledControl,
-                    { id: 'test01_label', parentPath: 'page1', label: '\u5458\u5DE5\u59D3\u540D' },
-                    React.createElement(VisibleERPC_DropDown, { pullDataSource: pullDL01DataSource, id: 'testControl01', parentPath: 'page1', textAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D', valueAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801', recentCookieKey: 'recent_user' })
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'rowlFameOne' },
-                    React.createElement(
-                        'div',
-                        { className: 'rowlFameOne_Left' },
-                        '\u603B\u7ED3\u65F6\u95F4'
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'rowlFameOne_right' },
-                        React.createElement(VisibleERPC_Text, { id: 'text05', type: 'date', parentPath: 'page1' })
-                    )
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'rowlFameOne', last: 1 },
-                    React.createElement(
-                        'div',
-                        { className: 'rowlFameOne_Left' },
-                        '\u8017\u7528\u5C0F\u65F6'
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'rowlFameOne_right' },
-                        React.createElement(VisibleERPC_Text, { id: 'text06', type: 'number', parentPath: 'page1' })
-                    )
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'd-flex flex-shrink-0' },
-                    React.createElement(
-                        'div',
-                        { className: 'rowlFameOne w-50', hor: 1 },
-                        React.createElement(
-                            'div',
-                            { className: 'rowlFameOne_Left' },
-                            '\u603B\u7ED3\u65F6\u95F4'
-                        ),
-                        React.createElement(
-                            'div',
-                            { className: 'rowlFameOne_right' },
-                            React.createElement(VisibleERPC_Text, { id: 'text05', type: 'date', parentPath: 'page1' })
-                        )
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'rowlFameOne w-50', hor: 1 },
-                        React.createElement(
-                            'div',
-                            { className: 'rowlFameOne_Left' },
-                            '\u8017\u7528\u5C0F\u65F6'
-                        ),
-                        React.createElement(
-                            'div',
-                            { className: 'rowlFameOne_right' },
-                            React.createElement(VisibleERPC_Text, { id: 'text06', type: 'number', parentPath: 'page1' })
-                        )
-                    )
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'rowlFameOne', last: 1 },
-                    React.createElement(
-                        'div',
-                        { className: 'rowlFameOne_Left' },
-                        '\u5DE5\u4F5C\u5185\u5BB9'
-                    ),
-                    React.createElement(
-                        'div',
-                        { className: 'rowlFameOne_right' },
-                        React.createElement(VisibleERPC_Text, { id: 'textContent', type: 'multiline', parentPath: 'page1' })
-                    )
-                ),
-                React.createElement(
-                    VisibleERPC_LabeledControl,
-                    { id: 'test01_label', parentPath: 'page1', label: '\u6240\u5C5E\u90E8\u95E8' },
-                    React.createElement(VisibleERPC_DropDown, { pullDataSource: pullControl01DataSource, label: '\u9009\u62E9\u5458\u5DE5\u59D3\u540D', id: 'control01', parentPath: 'page1', textAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D', valueAttrName: '\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801', groupAttr: '\u5458\u5DE5\u5728\u804C\u72B6\u6001,\u5458\u5DE5\u5DE5\u65F6\u72B6\u6001,\u6240\u5C5E\u7CFB\u7EDF\u540D\u79F0,\u6240\u5C5E\u90E8\u95E8\u540D\u79F0', recentCookieKey: 'recent_user' })
                 )
             );
         }
@@ -328,6 +233,7 @@ var App = function (_React$PureComponent3) {
             return React.createElement(
                 'div',
                 { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 h-100' },
+                React.createElement(FixedContainer, { ref: gFixedContainerRef }),
                 this.renderLoadingTip(),
                 React.createElement(
                     'div',
@@ -340,8 +246,12 @@ var App = function (_React$PureComponent3) {
                 ),
                 React.createElement(
                     'div',
-                    { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 autoScroll' },
-                    this.renderContent()
+                    { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 autoScroll_Touch' },
+                    React.createElement(
+                        'form',
+                        { className: 'needs-validation' },
+                        this.renderContent()
+                    )
                 ),
                 React.createElement(
                     'div',
@@ -361,8 +271,8 @@ var App = function (_React$PureComponent3) {
 
 function App_mapstatetoprops(state) {
     return {
-        loaded: state.app.loaded,
-        fetchState: state.app.ui.fetchState
+        loaded: state.loaded,
+        fetchState: state.ui.fetchState
     };
 }
 

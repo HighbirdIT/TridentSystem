@@ -232,6 +232,15 @@ function IsEmptyString(val){
 	return val == null || val === '';
 }
 
+function IsEmptyObject(val){
+	for(var si in val){
+		if(val[si] != null){
+			return false;
+		}
+	}
+	return true;
+}
+
 function IsEmptyArray(val){
 	return val == null || val.length == 0;
 }
@@ -296,8 +305,16 @@ function bracketStr(val){
 	return '(' + val + ')';
 }
 
-function clampStr(val, char){
-	return char + val + char;
+function midbracketStr(val){
+	return '[' + val + ']';
+}
+
+function bigbracketStr(val){
+	return '{' + val + '}';
+}
+
+function clampStr(val, preChar, aftChar){
+	return preChar + val + aftChar;
 }
 
 function JsObjectToString(obj){
@@ -328,3 +345,34 @@ function JsObjectToString(obj){
 	return rltStr;
 }
 
+function makeLine_Assign(left, right){
+	return left + '=' + right + ';';
+}
+
+function makeLine_Return(str){
+	return 'return ' + str + ';';
+}
+
+function makeStr_DotProp(){
+	var rlt = '';
+    for (var i = 0; i < arguments.length; ++i) {
+        if (arguments[i] == null || arguments[i].length == 0)
+            continue;
+        rlt += (rlt.length == 0 ? '' : '.') + arguments[i];
+    }
+    return rlt;
+}
+
+function makeStr_join(joinChar){
+	var rlt = '';
+    for (var i = 1; i < arguments.length; ++i) {
+        if (arguments[i] == null || arguments[i].length == 0)
+            continue;
+        rlt += (rlt.length == 0 ? '' : joinChar) + arguments[i];
+    }
+    return rlt;
+}
+
+function makeStr_ThisProp(propName){
+	return VarNames.ThisProps + '.' + propName;
+}

@@ -1,13 +1,13 @@
-class ContainerKernelBase extends ControlKernelBase{
-    constructor(initData, type, description, attrbuteGroups, parentKernel, createHelper, kernelJson){
+class ContainerKernelBase extends ControlKernelBase {
+    constructor(initData, type, description, attrbuteGroups, parentKernel, createHelper, kernelJson) {
         super(initData, type, description, attrbuteGroups, parentKernel, createHelper, kernelJson);
         this.children = [];
 
-        if(kernelJson != null){
-            if(kernelJson.children != null){
-                kernelJson.children.forEach(childJson=>{
+        if (kernelJson != null) {
+            if (kernelJson.children != null) {
+                kernelJson.children.forEach(childJson => {
                     var ctlConfig = DesignerConfig.findConfigByType(childJson.type);
-                    if(ctlConfig == null){
+                    if (ctlConfig == null) {
                         console.warn('type:' + childJson.type + '未找到配置数据');
                         return;
                     }
@@ -17,14 +17,44 @@ class ContainerKernelBase extends ControlKernelBase{
         }
     }
 
+    getChildIndex(childKernel) {
+        return this.children.indexOf(childKernel);
+    }
+
     appandChild(childKernel, index) {
-        if (childKernel.parent == this){
-            if(index >= 0 && index < this.children.length){
+        var temp = null;
+        if (childKernel.parent == this) {
+            if (index >= this.children.length) {
+                index = this.children.length - 1;
+            }
+            if (index >= 0 && index <= this.children.length) {
                 var nowIndex = this.children.indexOf(childKernel);
-                if(nowIndex != index){
-                    var temp = this.children[index];
-                    this.children[index] = childKernel;
-                    this.children[nowIndex] = temp;
+                if (nowIndex != index) {
+                    if (nowIndex != -1) {
+                        var step = Math.sign(index - nowIndex);
+                        while (nowIndex != index) {
+                            this.children[nowIndex] = this.children[nowIndex + step];
+                            nowIndex += step;
+                        }
+                        this.children[index] = childKernel;
+                    }
+                    else {
+                        if (index == this.children.length) {
+                            this.children.push(childKernel);
+                        }
+                        else if (index == 0) {
+                            this.children.unshift(childKernel);
+                        }
+                        else {
+                            var moveingIndex = this.children.length + 1;
+                            while (moveingIndex != index) {
+                                this.children[moveingIndex] = this.children[moveingIndex - 1];
+                                --moveingIndex;
+                            }
+                            this.children[index] = childKernel;
+                        }
+                    }
+
                     this.attrChanged(AttrNames.Chidlren);
                     //console.log('swap:' + nowIndex + '->' + index);
                 }
@@ -34,15 +64,15 @@ class ContainerKernelBase extends ControlKernelBase{
         if (childKernel.parent) {
             childKernel.parent.removeChild(childKernel);
         }
-        if(index < 0)
+        if (index < 0)
             index = 0;
-        if(isNaN(index))
+        if (isNaN(index))
             index = this.children.length;
-        if(index > this.children.length)
+        if (index > this.children.length)
             index = this.children.length;
-        
+
         //console.log('appandIndex:' + index);
-        if(index == 0){
+        if (index == 0) {
             index = index;
         }
         this.children.splice(index, 0, childKernel)
@@ -58,16 +88,17 @@ class ContainerKernelBase extends ControlKernelBase{
             childKernel.parent = null;
             this.attrChanged(AttrNames.Chidlren);
         }
+        childKernel.parent = null;
     }
 
-    getChildIndex(childKernel){
+    getChildIndex(childKernel) {
         return this.children.indexOf(childKernel);
     }
 
-    getJson(){
+    getJson() {
         var rlt = super.getJson();
         rlt.children = [];
-        this.children.forEach(child=>{
+        this.children.forEach(child => {
             rlt.children.push(child.getJson());
         });
         return rlt;

@@ -1,5 +1,7 @@
 'use strict';
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -16,14 +18,28 @@ var DropDownControl = function (_React$PureComponent) {
 
         var _this = _possibleConstructorReturn(this, (DropDownControl.__proto__ || Object.getPrototypeOf(DropDownControl)).call(this, props));
 
-        var formated_arr = _this.formatData(_this.props.options_arr, _this.props.textAttrName, _this.props.valueAttrName);
-        var selectedOption = formated_arr.find(function (item) {
-            return item.value == _this.props.value;
-        });
+        var valueAttrName = _this.props.valueAttrName == null ? _this.props.textAttrName : _this.props.valueAttrName;
+        if (_this.props.editable && _this.props.valueAttrName != null && _this.props.valueAttrName != _this.props.textAttrName) {
+            //console.error('下拉框设置为editable 但同时设置了text和value属性明');
+            _this.editIsKeyword = true;
+        }
+
+        var selectedOption = null;
+        if (!_this.props.editable || _this.editIsKeyword) {
+            var formated_arr = _this.formatData(_this.props.options_arr, _this.props.textAttrName, _this.props.valueAttrName);
+            selectedOption = formated_arr.find(function (item) {
+                if (_typeof(_this.props.value) === 'object') {
+                    return item == _this.props.value || item.value == _this.props.value[valueAttrName];
+                }
+                return item.value == _this.props.value;
+            });
+        }
+
         autoBind(_this);
 
         _this.state = {
             keyword: '',
+            value: _this.props.value,
             opened: false,
             options_arr: selectedOption ? [selectedOption] : [],
             selectedOption: selectedOption
@@ -39,14 +55,20 @@ var DropDownControl = function (_React$PureComponent) {
     _createClass(DropDownControl, [{
         key: 'setValue',
         value: function setValue(val) {
-            var formated_arr = this.formatData(this.props.options_arr, this.props.textAttrName, this.props.valueAttrName);
-            var selectedOption = formated_arr.find(function (item) {
-                return item.value == val;
-            });
-            this.setState({
-                options_arr: formated_arr,
-                selectedOption: selectedOption
-            });
+            if (this.props.editable && !this.editIsKeyword) {
+                this.setState({
+                    value: val
+                });
+            } else {
+                var formated_arr = this.formatData(this.props.options_arr, this.props.textAttrName, this.props.valueAttrName);
+                var selectedOption = formated_arr.find(function (item) {
+                    return item.value == val;
+                });
+                this.setState({
+                    options_arr: formated_arr,
+                    selectedOption: selectedOption
+                });
+            }
         }
     }, {
         key: 'getSelectedData',
@@ -159,6 +181,12 @@ var DropDownControl = function (_React$PureComponent) {
     }, {
         key: 'formatData',
         value: function formatData(orginData_arr, textAttrName, valueAttrName) {
+            if (typeof orginData_arr === 'function') {
+                orginData_arr = orginData_arr();
+            }
+            if (valueAttrName == null) {
+                valueAttrName = textAttrName;
+            }
             return orginData_arr.map(function (item) {
                 return typeof item == 'string' ? { text: item, value: item } : { text: item[textAttrName], value: item[valueAttrName], data: item };
             });
@@ -172,15 +200,31 @@ var DropDownControl = function (_React$PureComponent) {
                 return item.text == keyword;
             });
 
-            if (this.props.editable) {
+            if (selectedOpt) {
                 this.setState({ keyword: keyword,
                     selectedOption: selectedOpt });
             } else {
-                if (selectedOpt) {
-                    this.setState({ keyword: keyword,
-                        selectedOption: selectedOpt });
-                } else {
-                    this.setState({ keyword: keyword });
+                this.setState({ keyword: keyword });
+            }
+        }
+    }, {
+        key: 'inputChangedHandler',
+        value: function inputChangedHandler(ev) {
+            if (this.editIsKeyword) {
+                this.keyChanged(ev);
+                return;
+            }
+            this.setState({
+                value: ev.target.value.trim()
+            });
+        }
+    }, {
+        key: 'inputBlurHandler',
+        value: function inputBlurHandler(ev) {
+            if (this.state.value != this.props.value) {
+                if (this.props.itemChanged) {
+                    //theOptionItem.data ? theOptionItem.data : theOptionItem.value
+                    this.props.itemChanged(this.state.value, this);
                 }
             }
         }
@@ -199,9 +243,11 @@ var DropDownControl = function (_React$PureComponent) {
             });
             this.setState({ selectedOption: theOptionItem,
                 keyword: '',
-                opened: false });
+                opened: false,
+                value: theOptionItem.text });
             if (this.props.itemChanged) {
-                this.props.itemChanged(theOptionItem.data ? theOptionItem.data : theOptionItem.value, this);
+                //theOptionItem.data ? theOptionItem.data : theOptionItem.value
+                this.props.itemChanged(value, this, theOptionItem.data);
             }
         }
     }, {
@@ -212,7 +258,7 @@ var DropDownControl = function (_React$PureComponent) {
             return React.createElement(
                 React.Fragment,
                 null,
-                this.state.options_arr.length <= 5 || this.props.editable ? null : React.createElement(
+                this.state.options_arr.length <= 5 || this.editIsKeyword == true ? null : React.createElement(
                     'div',
                     { className: 'd-flex border' },
                     React.createElement(
@@ -268,6 +314,7 @@ var DropDownControl = function (_React$PureComponent) {
                 return _this3.state.keyword.trim().length == 0 || item.text.indexOf(_this3.state.keyword) >= 0;
             });
             var selectedOption = this.state.selectedOption;
+            var inputValue = this.editIsKeyword ? this.state.keyword == '' ? selectedOption == null ? '' : selectedOption.text : this.state.keyword : this.state.value;
 
             return React.createElement(
                 'div',
@@ -278,7 +325,7 @@ var DropDownControl = function (_React$PureComponent) {
                     React.createElement(
                         'div',
                         { className: ' d-flex btn-group w-100 h-100', ref: this.dropDowmDivRefFun },
-                        this.props.editable ? React.createElement('input', { onFocus: this.editableInputFocushandler, ref: this.editableInputRef, type: 'text', className: 'flex-grow-1 flex-shrink-1 flexinput', onChange: this.keyChanged, value: selectedOption ? selectedOption.text : this.state.keyword }) : React.createElement(
+                        this.props.editable ? React.createElement('input', { onFocus: this.editableInputFocushandler, ref: this.editableInputRef, type: 'text', className: 'flex-grow-1 flex-shrink-1 flexinput', onChange: this.inputChangedHandler, onBlur: this.inputBlurHandler, value: inputValue }) : React.createElement(
                             'button',
                             { onClick: this.clickOpenHandler, style: { width: 'calc(100% - 30px)' }, type: 'button', className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1' + (selectedOption == null ? ' text-danger' : '') },
                             React.createElement(

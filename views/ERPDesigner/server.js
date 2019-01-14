@@ -598,7 +598,7 @@ function publishProject(req, res){
 
         if(compileResult.serverPart != null){
             jsServerName = projProfile.enName + '_s' + newVersion;
-            jsServerPath = 'views/erppage/server/pages' + jsServerName + ".js";
+            jsServerPath = 'views/erppage/server/pages/' + jsServerName + ".js";
             fs.writeFileSync(jsServerPath, compileResult.serverPart);
         }
         

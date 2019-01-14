@@ -31,7 +31,12 @@ var JoinType_Left = 'left join';
 var JoinType_Right = 'right join';
 var JoinType_Cross = 'cross join';
 var JoinTypes_arr = [JoinType_Inner, JoinType_Left, JoinType_Right, JoinType_Cross];
-
+var Aggregate_count = 'count';
+var Aggregate_sum = 'sum';
+var Aggregate_avg = 'avg';
+var Aggregate_max = 'max';
+var Aggregate_min = 'min';
+var Aggregate_arr = [Aggregate_count, Aggregate_sum, Aggregate_avg, Aggregate_max, Aggregate_min];
 var SqlOperator_IsNull = 'is null';
 var SqlOperator_IsNotNull = 'is not null';
 
@@ -143,10 +148,30 @@ DesignerConfig.findConfigByType = function (ctlType) {
     return this.controlConfig.configs_obj[ctlType];
 }.bind(DesignerConfig);
 
+DesignerConfig.getMobileCanLabeledControls = function () {
+    var rlt = [];
+    for (var si in this.controlConfig.configs_obj) {
+        var item = this.controlConfig.configs_obj[si];
+        if (item.canbeLabeled) {
+            rlt.push(item);
+        }
+    }
+    return rlt;
+}.bind(DesignerConfig);
+
 var ValueType = {
-    String: 'String',
-    Int: 'Int',
-    Boolean: 'Boolean',
+    String: 'string',
+    Int: 'int',
+    Boolean: 'boolean',
     Float: 'float',
-    StyleValues: 'StyleValues'
+    Date: 'date',
+    Time: 'time',
+    DateTime: 'datetime',
+    StyleValues: 'StyleValues',
+    DataSource: 'DataSource',
+    Unknown: 'Unknown'
 };
+
+var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
+
+var JsValueTypes = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
