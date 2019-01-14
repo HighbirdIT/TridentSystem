@@ -278,7 +278,7 @@ class C_SqlNode_Mathfun extends React.PureComponent {
 }
 
 /////日期函数整合
-class C_SqlNode_DateCon extends React.PureComponent {
+class C_SqlNode_DateFun extends React.PureComponent {
     constructor(props) {
         super(props);
         autoBind(this);

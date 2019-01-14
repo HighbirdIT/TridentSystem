@@ -549,7 +549,7 @@ class SqlNode_Mathfun extends SqlNode_Base {
 //日期函数整合
 class SqlNode_DateFun extends SqlNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, SQLNODE_DATECON, 'datecon', false, nodeJson);
+        super(initData, parentNode, createHelper, SQLNODE_DATEFUN, 'datefun', false, nodeJson);
         autoBind(this);
 
         if (nodeJson) {
@@ -600,8 +600,8 @@ class SqlNode_DateFun extends SqlNode_Base {
 
         }
         var nowCount = this.inputScokets_arr.length;
-        if (nowCount != inputCount) {
-            var step = Math.sign(inputCount - nowCount);
+        if (nowCount != inputLabels_arr.length) {
+            var step = Math.sign(inputLabels_arr.length - nowCount);
             for (var i = nowCount; i != inputLabels_arr.length; i += step) {
                 if (step > 0) {
                     this.addSocket(new NodeSocket('in' + i, this, true, { type: SqlVarType_Scalar, inputable: true }));
