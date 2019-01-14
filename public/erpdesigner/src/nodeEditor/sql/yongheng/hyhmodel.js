@@ -3,7 +3,7 @@ const SQLNODE_DATEDIFF = 'datediff';
 const SQLNODE_DATENAME = 'datename';
 const SQLNODE_DATEPART = 'datepart';
 const SQLNODE_MATHFUN = 'mathfun';
-const SQLNODE_DATECON = 'datecon';
+const SQLNODE_DATEFUN = 'datefun';
 const SQLNODE_CONVERT = 'convert';
 const SQLNODE_CHARFUN = 'charfun';
 const SQLNODE_NEWID = 'newid';
@@ -547,12 +547,9 @@ class SqlNode_Mathfun extends SqlNode_Base {
     }
 }
 //日期函数整合
-class SqlNode_DateCon extends SqlNode_Base {
+class SqlNode_DateFun extends SqlNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, SQLNODE_DATECON, 'datecon', false, nodeJson);
-        this.size_1 = ReplaceIfNaN(this.size_1, 0);
-        this.size_2 = ReplaceIfNaN(this.size_2, 0);
-        var inputNum;
         autoBind(this);
 
         if (nodeJson) {
@@ -581,30 +578,23 @@ class SqlNode_DateCon extends SqlNode_Base {
     }
 
     restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['mathType', 'datepartType']);
+        assginObjByProperties(this, attrsJson, ['dateType', 'datepartType']);
     }
 
     setDateType(newDateType) {
         this.dateType = newDateType;
-        var inputCount = 1;
         var inputLabels_arr = [];
         switch (newDateType) {
             case 'DateAdd':
-                inputCount = 2;
-                this.inputNum = inputCount;
                 inputLabels_arr.push('数值', '日期时间');
                 break;
             case 'DateDiff':
-                inputCount = 2;
-                this.inputNum = inputCount;
-                inputLabels_arr.push('日期时间', '日期时间');
+                inputLabels_arr.push('起始日期', '结束日期');
                 break;
             case 'DateName':
-                this.inputNum = inputCount;
                 inputLabels_arr.push('日期时间');
                 break;
             case 'DatePart':
-                this.inputNum = inputCount;
                 inputLabels_arr.push('日期时间');
                 break;
 
@@ -640,11 +630,10 @@ class SqlNode_DateCon extends SqlNode_Base {
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
         var finalStr = ' ' + this.dateType + '(' + this.datepartType + ',';
-        for (var i = 0; i < this.inputNum; i++) {
+        for (var i = 0; i < this.inputScokets_arr.length; i++) {
             var theSocket = this.inputScokets_arr[i];
             var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
             var tValue = null;
-            var socketVal_arr = [];
             if (tLinks.length == 0) {
                 tValue = theSocket.defval;//无link，就取输入框的值
                 if (tValue == null || tValue == '') {
@@ -665,7 +654,7 @@ class SqlNode_DateCon extends SqlNode_Base {
                                 thisNodeTitle
                                 , nodeThis
                                 , helper.clickLogBadgeItemHandler)
-                                , '该函数的该参数必须为数值']);
+                                , '该函数的第'+(i+1)+'个参数必须为数值']);
                             return false;
                         }
                     }
@@ -684,12 +673,12 @@ class SqlNode_DateCon extends SqlNode_Base {
                 }
                 tValue = compileRet.getSocketOut(link.outSocket).strContent;
             }
-            socketVal_arr.push(tValue);
+
             if (i == 0) {
-                finalStr += socketVal_arr[0]
+                finalStr += tValue
             }
             else {
-                finalStr += ',' + socketVal_arr[0]
+                finalStr += ',' + tValue
             }
         }
         finalStr += ')';
@@ -895,11 +884,11 @@ class SqlNode_Charfun extends SqlNode_Base {
             case CharfunType_RTRIM:
             case CharfunType_REVERSE:
             case CharfunType_LEN:
-                inputLabels_arr.push('字符串');
+                inputLabels_arrs.push('字符串');
                 this.inputLabels_arrs = inputLabels_arr;
                 break;
             case CharfunType_CHAR:
-                inputLabels_arr.push('数值');
+                inputLabels_arrs.push('数值');
                 this.inputLabels_arrs = inputLabels_arr;
                 break;
             case CharfunType_LEFT:
@@ -971,7 +960,7 @@ class SqlNode_Charfun extends SqlNode_Base {
             var theSocket = this.inputScokets_arr[i];
             var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
             var tValue = null;
-            var socketVal_arr = [];
+            //var socketVal_arr = [];
             if (tLinks.length == 0) {
                 tValue = theSocket.defval;//无link，就取输入框的值
                 if (tValue == null || tValue == '') {
@@ -1000,11 +989,26 @@ class SqlNode_Charfun extends SqlNode_Base {
                     }
 
                 }
-                //不是第一个输入
-                else {
-                    if (this.inputLabels_arrs[i] != '数值' && this.inputLabels_arrs[i] != '删除长度' && this.inputLabels_arrs[i] != '开始位置' && this.inputLabels_arrs[i] != '空格数量' && this.inputLabels_arrs[i] != '起始位置' && this.inputLabels_arrs[i] != '截取长度') {
-                        tValue = singleQuotesStr(tValue);
+                var nowlabel =this.inputLabels_arrs[i];
+                if (nowlabel == '数值' ||
+                    nowlabel == '删除长度' ||
+                    nowlabel == '开始位置' ||
+                    nowlabel == '空格数量' ||
+                    nowlabel == '起始位置' ||
+                    nowlabel == '截取长度') {
+                    //tValue是一个数值型字符串
+                    if(isNaN(tValue)){
+                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                            thisNodeTitle
+                            , nodeThis
+                            , helper.clickLogBadgeItemHandler)
+                            , '第'+(i+1)+'个参数必须为数值']);
+                        return false;
                     }
+                }
+                else{
+                    //不是数值类型加引号
+                    tValue = singleQuotesStr(tValue);
                 }
             }
             //有连线
@@ -1018,30 +1022,28 @@ class SqlNode_Charfun extends SqlNode_Base {
                 tValue = compileRet.getSocketOut(link.outSocket).strContent;
             }
             //获取输入值
-            socketVal_arr.push(tValue);
+           // socketVal_arr.push(tValue);
             if (i == 0) {
                 if (this.charfunType == CharfunType_PATINDEX) {
-                    finalStr += singleQuotesStr('%' + socketVal_arr[0] + '%');
+                    finalStr += singleQuotesStr('%' + tValue+ '%');
                 }
                 else if (this.charfunType == CharfunType_SPACE) {
-                    finalStr = socketVal_arr[0] + ' + SPACE(';
+                    finalStr = ' '+tValue + ' + SPACE(';
                 }
                 else {
-                    finalStr += socketVal_arr[0];
+                    finalStr += tValue;
                 }
 
             }
-            else {
+            else { 
                 if (this.charfunType == CharfunType_SPACE) {
+                    finalStr += tValue;
                     if (i == 1) {
-                        finalStr += socketVal_arr[0] + ') + ';
-                    }
-                    else {
-                        finalStr += socketVal_arr[0];
+                        finalStr += ') + ';
                     }
                 }
                 else {
-                    finalStr += ',' + socketVal_arr[0];
+                    finalStr += ',' + tValue;
                 }
             }
         }
@@ -1121,9 +1123,9 @@ SqlNodeClassMap[SQLNODE_MATHFUN] = {
     modelClass: SqlNode_Mathfun,
     comClass: C_SqlNode_Mathfun,
 };
-SqlNodeClassMap[SQLNODE_DATECON] = {
-    modelClass: SqlNode_DateCon,
-    comClass: C_SqlNode_DateCon,
+SqlNodeClassMap[SQLNODE_DATEFUN] = {
+    modelClass: SqlNode_DateFun,
+    comClass: C_SqlNode_DateFun,
 };
 SqlNodeClassMap[SQLNODE_CONVERT] = {
     modelClass: SqlNode_Convert,
@@ -1165,7 +1167,7 @@ SqlNodeEditorControls_arr.push({
 });
 SqlNodeEditorControls_arr.push({
     label: 'date函数',
-    nodeClass: SqlNode_DateCon,
+    nodeClass: SqlNode_DateFun,
 });
 SqlNodeEditorControls_arr.push({
     label: '字符串函数',
