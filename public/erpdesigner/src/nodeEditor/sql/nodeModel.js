@@ -2343,7 +2343,7 @@ class SqlNode_Ret_Order extends SqlNode_Base {
             }
             var strContent = '';
             sortColumns_arr.forEach((x, i) => { strContent += (i == 0 ? '' : ',') + x.name + (x.type == OrderType_DESC ? ' desc' : '') });
-            selfCompileRet.setDirectOut(strContent);
+            selfCompileRet.setDirectOut(strContent,sortColumns_arr.name);
         }
         else {
             selfCompileRet.setDirectOut('');
