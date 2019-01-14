@@ -94,7 +94,7 @@ class C_Node_Socket extends React.PureComponent{
             }, 10);
             return null;
         }
-        var inputable = socket.isIn && SqlVarInputableTypes_arr.indexOf(socket.type) != -1;
+        var inputable = socket.isIn && (SqlVarInputableTypes_arr.indexOf(socket.type) != -1 || VarInputableTypes_arr.indexOf(socket.type) != -1 );
         if(socket.inputable == false){
             inputable = false;
         }
@@ -124,8 +124,14 @@ class C_Node_Socket extends React.PureComponent{
                 arrowsItem = <i className='fa fa-arrows' f-canmove={1} />
             }
         }
-
-        var iconElem = (<i ref={this.flagRef} onClick={this.clickHandler} className='fa fa-circle-o cursor-pointer nodesocket' vt={socket.type} /> );
+        var iconClass = 'fa cursor-pointer nodesocket ';
+        if(socket.isFlowSocket){
+            iconClass += 'text-light fa- fa-arrow-circle-right';
+        }
+        else{
+            iconClass += 'fa-circle-o';
+        }
+        var iconElem = (<i ref={this.flagRef} onClick={this.clickHandler} className={iconClass} vt={socket.type} /> );
         return <div className='d-flex align-items-center text-nowrap text-light socketCell' d-socketid={socket.id} isin={socket.isIn ? 1 : null} isout={!socket.isIn ? 1 : null}> 
                     {arrowsItem}
                     {

@@ -43,6 +43,7 @@ var CProject = function (_IAttributeable) {
         _this.controlId_map = {};
         _this.cacheState = {};
         _this.dataMaster = new DataMaster(_this);
+        _this.scriptMaster = new ScriptMaster(_this);
         _this.project = _this;
 
         _this.designeConfig = {
@@ -76,6 +77,7 @@ var CProject = function (_IAttributeable) {
             }
             var self = _this;
             _this.dataMaster.restoreFromJson(jsonData.dataMaster);
+            _this.scriptMaster.restoreFromJson(jsonData.scriptMaster);
 
             var ctlCreatioinHelper = new CtlKernelCreationHelper();
             jsonData.content_Mobile.pages.forEach(function (pageJson) {
@@ -261,6 +263,7 @@ var CProject = function (_IAttributeable) {
                 rlt.content_Mobile.pages.push(page.getJson());
             });
             rlt.dataMaster = this.dataMaster.getJson();
+            rlt.scriptMaster = this.scriptMaster.getJson();
             return rlt;
         }
     }]);

@@ -459,10 +459,22 @@
   border: 2px solid white;
 }
 
+.nodepath[linkflow]{
+  background:lightseagreen;
+}
+
+.nodepath[linkflow]:hover{
+  border: 2px solid lightseagreen;
+}
+
 .nodepath[draging]{
   background: transparent;
   border: 1px lightgreen dashed;
   pointer-events: none;
+}
+
+.nodepath[draging][linkflow]{
+  border: 1px lightseagreen dashed;
 }
 
 .tipwindowroot{

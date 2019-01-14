@@ -168,7 +168,10 @@ var ValueType = {
     Time: 'time',
     DateTime: 'datetime',
     StyleValues: 'StyleValues',
-    DataSource: 'DataSource'
+    DataSource: 'DataSource',
+    Unknown: 'Unknown'
 };
 
-var JsValueTypes = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time, ValueType.DateTime];
+var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
+
+var JsValueTypes = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

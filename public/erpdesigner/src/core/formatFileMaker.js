@@ -55,6 +55,10 @@ class FormatFile_Line extends FormatFile_ItemBase{
         this.content = content;
     }
 
+    clone(){
+        return new FormatFile_Line(this.content, this.indent, this.endChar);
+    }
+
     append(content){
         if(content == null){
             console.warn('FormatFile_Line append content is null');
@@ -87,6 +91,15 @@ class FormatFileBlock extends FormatFile_ItemBase{
         this.getStringCallbacker = [];
         this.nextLineIndent = 0;
         this.childs_map = {};
+    }
+
+    clone(){
+        var rlt = new FormatFileBlock(this.name, this.priority);
+        this.childs_arr.forEach(child=>{
+            rlt.pushChild(child.clone());
+        });
+        rlt.nextLineIndent = this.nextLineIndent;
+        return rlt;
     }
 
     addGetStringLisener(fun){
@@ -175,6 +188,18 @@ class FormatHtmlTag extends FormatFile_ItemBase{
         this.attrObj = {};
         this.childs_map = {};
         this.childs_arr = [];
+    }
+
+    clone(){
+        var rlt = new FormatHtmlTag(this.name, this.tagName, this.clientSide);
+        this.childs_arr.forEach(child=>{
+            rlt.pushChild(child.clone());
+        });
+        rlt.class = Object.assign({}, this.class);
+        rlt.style = Object.assign({}, this.style);
+        rlt.switch = Object.assign({}, this.switch);
+        rlt.attrObj = Object.assign({}, this.attrObj);
+        return rlt;
     }
 
     setAttr(name, value){
@@ -309,6 +334,18 @@ class FormatFileRegion extends FormatFile_ItemBase{
         this.priority = ReplaceIfNaN(priority,1);
         var defaultBlock = this.getBlock('default', true, 0);
         this.defaultBlock = defaultBlock;
+    }
+
+    clone(){
+        var rlt = new FormatFileRegion(this.name, this.priority);
+        rlt.blocks_map = {};
+        rlt.blocks_arr = [];
+        this.blocks_arr.forEach(block=>{
+            var newBlock = block.clone();
+            rlt.getBlock(newBlock.name, true, newBlock.priority);
+        });
+        rlt.defaultBlock = rlt.getBlock('default');
+        return rlt;
     }
 
     sortFun(a,b){

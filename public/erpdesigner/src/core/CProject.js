@@ -34,6 +34,7 @@ class CProject extends IAttributeable{
         this.controlId_map = {};
         this.cacheState = {};
         this.dataMaster = new DataMaster(this);
+        this.scriptMaster = new ScriptMaster(this);
         this.project = this;
 
         this.designeConfig={
@@ -68,6 +69,7 @@ class CProject extends IAttributeable{
             }
             var self = this;
             this.dataMaster.restoreFromJson(jsonData.dataMaster);
+            this.scriptMaster.restoreFromJson(jsonData.scriptMaster);
 
             var ctlCreatioinHelper = new CtlKernelCreationHelper();
             jsonData.content_Mobile.pages.forEach(pageJson=>{
@@ -242,6 +244,7 @@ class CProject extends IAttributeable{
             }
         );
         rlt.dataMaster = this.dataMaster.getJson();
+        rlt.scriptMaster = this.scriptMaster.getJson();
         return rlt;
     }
 }

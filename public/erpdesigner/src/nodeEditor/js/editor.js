@@ -1,55 +1,216 @@
-const SqlNodeEditorControls_arr =[
-    {
-        label:'源',
-        nodeClass:SqlNode_DBEntity,
-    },
-    {
-        label:'选择',
-        nodeClass:SqlNode_Select,
-    },
-    {
-        label:'多元运算',
-        nodeClass:SqlNode_NOperand,
-    }
-    ,
-    {
-        label:'比较运算',
-        nodeClass:SqlNode_Compare,
-    }
-    ,
-    {
-        label:'Join',
-        nodeClass:SqlNode_XJoin,
-    }
-    ,
+const JSNodeEditorControls_arr =[
     {
         label:'常量',
-        nodeClass:SqlNode_ConstValue,
-    }
-    ,
+        nodeClass:JSNode_ConstValue,
+        type:'基础'
+    },
     {
-        label:'RowNumber',
-        nodeClass:SqlNode_RowNumber,
-    }
-    ,
+        label:'Return',
+        nodeClass:JSNode_Return,
+        type:'流控制'
+    },
     {
-        label:'IsNull()',
-        nodeClass:SqlNode_IsNullFun,
-    }
-    ,
+        label:'IF',
+        nodeClass:JSNode_IF,
+        type:'流控制'
+    },
     {
-        label:'IsNullOperator',
-        nodeClass:SqlNode_IsNullOperator,
-    }
-    ,
+        label:'四则运算',
+        nodeClass:JSNode_NOperand,
+        type:'数学'
+    },
     {
-        label:'逻辑运算',
-        nodeClass:SqlNode_Logical_Operator,
-    }
-]; 
+        label:'比较',
+        nodeClass:JSNode_Compare,
+        type:'数学'
+    },
+];
 
+class JSNode_CompileHelper extends SqlNode_CompileHelper{
+    constructor(logManager,editor){
+        super(logManager,editor);
 
-class C_SqlNode_Editor extends React.PureComponent{
+        this.scope = new JSFile_Scope();
+        this.clickLogBadgeItemHandler = this.clickLogBadgeItemHandler.bind(this);
+    }
+}
+
+class JSNodeEditorLeftPanel extends React.PureComponent{
+    constructor(props){
+        super(props);
+
+        autoBind(this);
+    }
+
+    listenNode(node){
+        if(node){
+            node.on('changed', this.editingNodeChangedhandler);
+        }
+        this.listenedNode = node;
+    }
+
+    unlistenNode(node){
+        if(node){
+            node.off('changed', this.editingNodeChangedhandler);
+        }
+    }
+
+    componentWillMount(){
+        //listenNode(this.state.editingNode);
+    }
+
+    componentWillUnmount(){
+        this.unlistenNode(this.props.editingNode);
+    }
+
+    editingNodeChangedhandler(){
+        this.setState({
+            magicObj:{},
+        });
+    }
+
+    clickOutlineImteHandler(nodeData){
+        this.props.editor.showNodeData(nodeData);
+    }
+
+    render() {
+        if(this.listenedNode != this.props.editingNode){
+            this.unlistenNode(this.listenedNode);
+            this.listenNode(this.props.editingNode);
+        }
+        return (
+            <SplitPanel 
+                fixedOne={true}
+                maxSize={200}
+                defPercent={0.3}
+                flexColumn={true}
+                panel1={
+                    <div className='w-100 h-100 autoScroll d-flex flex-column'>
+                        {
+                            this.props.editingNode.nodes_arr.map(nodeData=>{
+                                return <SqlNodeOutlineItem key={nodeData.id} nodeData={nodeData} clickHandler={this.clickOutlineImteHandler} />
+                            })
+                        }
+                    </div>
+                }
+                panel2={
+                    <div className='d-flex flex-column h-100 w-100'>
+                        <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} />
+                        <JSNodeEditorCanUseNodePanel editingNode={this.props.editingNode} onMouseDown={this.props.onMouseDown} editor={this.props.editor} />
+                    </div>
+                }
+            />
+        );
+    }
+}
+
+class JSNodeEditorCanUseNodePanel extends React.PureComponent{
+    constructor(props){
+        super(props);
+
+        autoBind(this);
+    }
+
+    mouseDownHandler(ev){
+        var itemValue = getAttributeByNode(ev.target, 'data-value');
+        if(itemValue == null)
+            return;
+        var ctlItem = JSNodeEditorControls_arr.find(item=>{return item.label == itemValue});
+        if(ctlItem){
+            this.props.onMouseDown(ctlItem);
+        }
+    }
+
+    render() {
+        var targetID = this.props.editingNode.bluePrint.code + 'canUseNode';
+        return (
+            <React.Fragment>
+                <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>可用节点</button>
+                <div id={targetID} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
+                    <div className='mw-100 d-flex flex-column'>
+                        <div className='btn-group-vertical mw-100 flex-shrink-0'>
+                            {
+                                JSNodeEditorControls_arr.map(
+                                    item=>{
+                                        return <button key={item.label} onMouseDown={this.mouseDownHandler} data-value={item.label} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>
+                                    }
+                                )
+                            }
+                        </div>
+                    </div>
+                    </div>
+            </React.Fragment>
+        );
+    }
+}
+
+class JSNodeEditorVariables extends React.PureComponent{
+    constructor(props){
+        super(props);
+
+        autoBind(this);
+    }
+
+    clickAddHandler(ev){
+        this.props.editingNode.bluePrint.createEmptyVariable();
+    }
+
+    varChangedhandler(){
+        this.setState({
+            magicobj:{}
+        });
+    }
+
+    listenNode(node){
+        if(node){
+            node.on('varChanged', this.varChangedhandler);
+        }
+        this.listenedNode = node;
+    }
+
+    unlistenNode(node){
+        if(node){
+            node.off('varChanged', this.varChangedhandler);
+        }
+    }
+
+    componentWillMount(){
+    }
+
+    componentWillUnmount(){
+        this.unlistenNode(this.props.editingNode);
+    }
+
+    render() {
+        if(this.listenedNode != this.props.editingNode.bluePrint){
+            this.unlistenNode(this.listenedNode);
+            this.listenNode(this.props.editingNode.bluePrint);
+        }
+        var blueprintPrefix = this.props.editingNode.bluePrint.id + '_';
+        var targetID = blueprintPrefix + 'variables';
+        return (
+            <React.Fragment>
+                <div className='flex-grow-0 flex-shrink-0 bg-secondary d-flex align-items-center'>
+                    <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn bg-secondary flex-grow-1 flex-shrink-1 text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}> 变量</button>
+                    <i className='fa fa-plus fa-lg text-light cursor-pointer' onClick={this.clickAddHandler} style={{width:'30px'}} />
+                </div>
+                <div id={targetID} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
+                    <div className='mw-100 d-flex flex-column'>
+                        <div className='btn-group-vertical mw-100'>
+                            {
+                                this.props.editingNode.bluePrint.vars_arr.map(varData=>{
+                                    return <JSDef_Variable_Component belongNode={this.props.editingNode} key={blueprintPrefix + varData.id} varData={varData} editor={this.props.editor} />
+                                })
+                            }
+                        </div>
+                    </div>
+                    </div>
+            </React.Fragment>
+        );
+    }
+}
+
+class C_JSNode_Editor extends React.PureComponent{
     constructor(props){
         super(props);
 
@@ -64,7 +225,7 @@ class C_SqlNode_Editor extends React.PureComponent{
         setTimeout(() => {
             this.setState({
                 showLink:true,
-            })
+            });
         }, 50);
 
         autoBind(this);
@@ -74,9 +235,8 @@ class C_SqlNode_Editor extends React.PureComponent{
         this.topBarRef = React.createRef();
         this.zoomDivRef = React.createRef();
         this.selectRectRef = React.createRef();
-        this.logManager = new LogManager('sqlnodeEditorLogManager');
+        this.logManager = new LogManager('jsnodeEditorLogManager');
 
-        var editor = this;
         this.selectedNFManager=new SelectItemManager(this.cb_addNF, this.cb_removeNF);
     }
 
@@ -357,6 +517,9 @@ class C_SqlNode_Editor extends React.PureComponent{
                 //console.log('相同的node');
                 return;
             }
+            else if(srcSocket.isFlowSocket != dragingPath.state.startScoket.isFlowSocket){
+                return;
+            }
             else{
                 // 点击了不同的socket
                 if(srcSocket.isIn != dragingPath.state.startScoket.isIn){
@@ -395,7 +558,6 @@ class C_SqlNode_Editor extends React.PureComponent{
         }
         
         var editingNode = this.state.editingNode;
-        var scrollNode = this.editorDivRef.current.parentNode;
         if(editingNode){
             editingNode.editorLeft = parseUnitInt(this.editorDivRef.current.style.left);
             editingNode.editorTop = parseUnitInt(this.editorDivRef.current.style.top);
@@ -426,7 +588,7 @@ class C_SqlNode_Editor extends React.PureComponent{
         }
     }
 
-    genSqlNode_Component(CName, nodeData){
+    genJSNode_Component(CName, nodeData){
         var blueprintPrefix = this.state.editingNode.bluePrint.id + '_';
         return <CName key={blueprintPrefix + nodeData.id} nodedata={nodeData} editorDivRef={this.editorDivRef} editor={this} />
     }
@@ -434,12 +596,12 @@ class C_SqlNode_Editor extends React.PureComponent{
     renderNode(nodeData){
         if(nodeData == null)
             return null;
-        var settting = SqlNodeClassMap[nodeData.type];
+        var settting = JSNodeClassMap[nodeData.type];
         if(settting == null){
             console.warn(nodeData.type + ' 节点类型找不到映射');
             return null;
         }
-        return this.genSqlNode_Component(settting.comClass, nodeData);
+        return this.genJSNode_Component(settting.comClass, nodeData);
     }
 
     transToEditorPos(pt){
@@ -456,18 +618,13 @@ class C_SqlNode_Editor extends React.PureComponent{
 
     addVarGSNode(config, windPos){
         var editingNode = this.state.editingNode;
-        //var $zoomDivElem = $(this.zoomDivRef.current);
-        //var zoomOffset = $zoomDivElem.offset();
-        
-        //var x = -parseUnitInt(this.editorDivRef.current.style.left) + windPos.x - zoomOffset.left;
-        //var y = -parseUnitInt(this.editorDivRef.current.style.top) + windPos.y - zoomOffset.top;
         var editorPos = this.transToEditorPos(windPos);
         var newNodeData = null;
         if(config.isGet){
-            newNodeData = new SqlNode_Var_Get({left:editorPos.x,top:editorPos.y,varName:config.varName}, editingNode);
+            newNodeData = new JSNode_Var_Get({left:editorPos.x,top:editorPos.y,varName:config.varName}, editingNode);
         }
         else{
-            newNodeData = new SqlNode_Var_Set({left:editorPos.x,top:editorPos.y,varName:config.varName}, editingNode);
+            newNodeData = new JSNode_Var_Set({left:editorPos.x,top:editorPos.y,varName:config.varName}, editingNode);
         }
         this.setState({
             magicObj:{},
@@ -600,14 +757,15 @@ class C_SqlNode_Editor extends React.PureComponent{
         var theBluePrint = this.props.bluePrint;
         this.logManager.clear();
         this.logManager.log("开始编译[" + theBluePrint.name + ']');
-        var compileHelper = new SqlNode_CompileHelper(this.logManager, this);
+        var compileHelper = new JSNode_CompileHelper(this.logManager, this);
         var compileRet = theBluePrint.compile(compileHelper);
         if(compileRet == false){
             this.logManager.log('[' + theBluePrint.name + ']编译失败');
         }
         else{
             this.logManager.log('[' + theBluePrint.name + ']编译成功');
-            this.logManager.log(compileRet.varDeclareStr + compileRet.sql);
+            this.logManager.log(compileRet.getString('', '\t', '\n'));
+            console.log(compileRet.getString('', '\t', '\n'));
         }
         this.logManager.log('共' + this.logManager.getCount(LogTag_Warning) + '条警告,' + this.logManager.getCount(LogTag_Error) + '条错误,');
     }
@@ -622,14 +780,20 @@ class C_SqlNode_Editor extends React.PureComponent{
 
     render(){
         var editingNode = this.state.editingNode;
-        if(this.props.bluePrint != editingNode.bluePrint){
-            var self = this;
+        var self = this;
+        if(editingNode == null && this.props.bluePrint == null){
+            return null;
+        }
+        if(editingNode == null || this.props.bluePrint != editingNode.bluePrint){
             this.selectedNFManager.clear(false);
             clearTimeout(this.delaySetTO);
             this.delaySetTO = setTimeout(() => {
-                this.setEditeNode(self.props.bluePrint.editingNode ? self.props.bluePrint.editingNode : self.props.bluePrint); 
+                this.setEditeNode(self.props.bluePrint == null ? null : (self.props.bluePrint.editingNode ? self.props.bluePrint.editingNode : self.props.bluePrint)); 
                 self.delaySetTO = null;
             }, 10);
+        }
+        if(editingNode == null){
+            return null;
         }
         var nodeParentList = editingNode.bluePrint.getNodeParentList(editingNode);
         nodeParentList.push(editingNode);
@@ -649,7 +813,7 @@ class C_SqlNode_Editor extends React.PureComponent{
                 maxSize='400px'
                 barClass='bg-secondary'
                 panel1={
-                    <SqlNodeEditorLeftPanel onMouseDown={this.mouseDownNodeCtlrHandler} editingNode={editingNode} editorDivRef={this.editorDivRef} editor={self} />
+                    <JSNodeEditorLeftPanel onMouseDown={this.mouseDownNodeCtlrHandler} editingNode={editingNode} editorDivRef={this.editorDivRef} editor={self} />
                 }
                 panel2={
                     <SplitPanel
@@ -709,192 +873,7 @@ class C_SqlNode_Editor extends React.PureComponent{
     }
 }
 
-class SqlNodeEditorLeftPanel extends React.PureComponent{
-    constructor(props){
-        super(props);
-
-        autoBind(this);
-    }
-
-    listenNode(node){
-        if(node){
-            node.on('changed', this.editingNodeChangedhandler);
-        }
-        this.listenedNode = node;
-    }
-
-    unlistenNode(node){
-        if(node){
-            node.off('changed', this.editingNodeChangedhandler);
-        }
-    }
-
-    componentWillMount(){
-        //listenNode(this.state.editingNode);
-    }
-
-    componentWillUnmount(){
-        this.unlistenNode(this.props.editingNode);
-    }
-
-    editingNodeChangedhandler(){
-        this.setState({
-            magicObj:{},
-        });
-    }
-
-    clickOutlineImteHandler(nodeData){
-        this.props.editor.showNodeData(nodeData);
-    }
-
-    render() {
-        if(this.listenedNode != this.props.editingNode){
-            this.unlistenNode(this.listenedNode);
-            this.listenNode(this.props.editingNode);
-        }
-        return (
-            <SplitPanel 
-                fixedOne={true}
-                maxSize={200}
-                defPercent={0.3}
-                flexColumn={true}
-                panel1={
-                    <div className='w-100 h-100 autoScroll d-flex flex-column'>
-                        {
-                            this.props.editingNode.nodes_arr.map(nodeData=>{
-                                return <SqlNodeOutlineItem key={nodeData.id} nodeData={nodeData} clickHandler={this.clickOutlineImteHandler} />
-                            })
-                        }
-                    </div>
-                }
-                panel2={
-                    <div className='d-flex flex-column h-100 w-100'>
-                        <SqlNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} />
-                        <SqlNodeEditorCanUseNodePanel editingNode={this.props.editingNode} onMouseDown={this.props.onMouseDown} editor={this.props.editor} />
-                    </div>
-                }
-            />
-        );
-    }
-}
-
-class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
-    constructor(props){
-        super(props);
-
-        autoBind(this);
-    }
-
-    mouseDownHandler(ev){
-        var itemValue = getAttributeByNode(ev.target, 'data-value');
-        if(itemValue == null)
-            return;
-        var ctlItem = SqlNodeEditorControls_arr.find(item=>{return item.label == itemValue});
-        if(ctlItem){
-            this.props.onMouseDown(ctlItem);
-        }
-    }
-
-    render() {
-        var targetID = this.props.editingNode.bluePrint.code + 'canUseNode';
-        return (
-            <React.Fragment>
-                <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>可用节点</button>
-                <div id={targetID} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
-                    <div className='mw-100 d-flex flex-column'>
-                        <div className='btn-group-vertical mw-100 flex-shrink-0'>
-                            {
-                                SqlNodeEditorControls_arr.map(
-                                    item=>{
-                                        return <button key={item.label} onMouseDown={this.mouseDownHandler} data-value={item.label} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>
-                                    }
-                                )
-                            }
-                        </div>
-                    </div>
-                    </div>
-            </React.Fragment>
-        );
-    }
-}
-
-class SqlNodeEditorVariables extends React.PureComponent{
-    constructor(props){
-        super(props);
-
-        autoBind(this);
-    }
-
-    mouseDownHandler(ev){
-        var itemValue = getAttributeByNode(ev.target, 'data-value');
-        if(itemValue == null)
-            return;
-        var ctlItem = SqlNodeEditorControls_arr.find(item=>{return item.label == itemValue});
-        if(ctlItem && this.props.onMouseDown){
-            this.props.onMouseDown(ctlItem);
-        }
-    }
-
-    clickAddHandler(ev){
-        this.props.editingNode.bluePrint.createEmptyVariable();
-    }
-
-    varChangedhandler(){
-        this.setState({
-            magicobj:{}
-        });
-    }
-
-    listenNode(node){
-        if(node){
-            node.on('varChanged', this.varChangedhandler);
-        }
-        this.listenedNode = node;
-    }
-
-    unlistenNode(node){
-        if(node){
-            node.off('varChanged', this.varChangedhandler);
-        }
-    }
-
-    componentWillMount(){
-    }
-
-    componentWillUnmount(){
-        this.unlistenNode(this.props.editingNode);
-    }
-
-    render() {
-        if(this.listenedNode != this.props.editingNode.bluePrint){
-            this.unlistenNode(this.listenedNode);
-            this.listenNode(this.props.editingNode.bluePrint);
-        }
-        var blueprintPrefix = this.props.editingNode.bluePrint.id + '_';
-        var targetID = blueprintPrefix + 'variables';
-        return (
-            <React.Fragment>
-                <div className='flex-grow-0 flex-shrink-0 bg-secondary d-flex align-items-center'>
-                    <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn bg-secondary flex-grow-1 flex-shrink-1 text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}> 变量</button>
-                    <i className='fa fa-plus fa-lg text-light cursor-pointer' onClick={this.clickAddHandler} style={{width:'30px'}} />
-                </div>
-                <div id={targetID} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
-                    <div className='mw-100 d-flex flex-column'>
-                        <div className='btn-group-vertical mw-100'>
-                            {
-                                this.props.editingNode.bluePrint.vars_arr.map(varData=>{
-                                    return <SqlDef_Variable_Component belongNode={this.props.editingNode} key={blueprintPrefix + varData.id} varData={varData} editor={this.props.editor} />
-                                })
-                            }
-                        </div>
-                    </div>
-                    </div>
-            </React.Fragment>
-        );
-    }
-}
-
-class SqlNodeOutlineItem extends React.PureComponent{
+class JsNodeOutlineItem extends React.PureComponent{
     constructor(props){
         super(props);
 
@@ -950,7 +929,7 @@ class SqlNodeOutlineItem extends React.PureComponent{
     }
 }
 
-class SqlDef_Variable_Component extends React.PureComponent{
+class JSDef_Variable_Component extends React.PureComponent{
     constructor(props){
         super(props);
         var varData = this.props.varData;
@@ -958,8 +937,7 @@ class SqlDef_Variable_Component extends React.PureComponent{
             name:varData.name,
             valType:varData.valType,
             isParam:varData.isParam,
-            size_1:varData.size_1,
-            size_2:varData.size_2,
+            default:varData.default,
             editing:varData.needEdit == true,
         };
 
@@ -975,8 +953,8 @@ class SqlDef_Variable_Component extends React.PureComponent{
             name:varData.name,
             valType:varData.valType,
             isParam:varData.isParam,
-            size_1:varData.size_1,
-            size_2:varData.size_2,
+            editing:varData.editing,
+            default:varData.default,
         });
     }
 
@@ -1000,45 +978,16 @@ class SqlDef_Variable_Component extends React.PureComponent{
         });
     }
 
-    isParamChangedHandler(newData){
+    isParamChangedHandler(newCode){
         this.setState({
-            isParam:newData.code,
+            isParam:newCode,
         });
     }
 
-    size1InputChangedHandler(newVal){
+    defaultInputChangedHandler(ev){
         this.setState({
-            size_1:isNaN(newVal) ? 0 : parseInt(newVal),
+            default:ev.target.value,
         });
-    }
-
-    size2InputChangedHandler(newVal){
-        this.setState({
-            size_2:isNaN(newVal) ? 0 : parseInt(newVal),
-        });
-    }
-
-    renderSize(){
-        var sizeCount = 0;
-        switch(this.state.valType){
-            case SqlVarType_NVarchar:
-                sizeCount = 1;
-                break;
-            case SqlVarType_Decimal:
-                sizeCount = 2;
-                break;
-        }
-        if(sizeCount > 0){
-            return(<div className='d-flex flex-grow-0 flex-shrink-0 w-100'>
-                <NameInputRow isagent={true} label='S1' type='int' rootClass='flex-grow-1 flex-shrink-1' value={this.state.size_1} nameWidth='50px' nameColor='rgb(255,255,255)' onValueChanged={this.size1InputChangedHandler} />
-                {
-                    sizeCount == 2 ? 
-                    <NameInputRow isagent={true} label='S2' type='int' rootClass='flex-grow-1 flex-shrink-1' value={this.state.size_2} nameWidth='50px' nameColor='rgb(255,255,255)' onValueChanged={this.size2InputChangedHandler} />
-                    : null
-                }
-            </div>);
-        }
-        return null;
     }
 
     clickEditBtnHandler(){
@@ -1095,13 +1044,11 @@ class SqlDef_Variable_Component extends React.PureComponent{
     }
 
     dragEndHandler(pos){
-        // sql node 只支持var get
         var editorRect = this.props.editor.zoomDivRef.current.getBoundingClientRect();
         if(MyMath.isPointInRect(editorRect, pos)){
             var designer = this.props.varData.bluePrint.master.project.designer;
             var varData = this.props.varData;
-            this.dragMenuCallBack(new QuickMenuItem('Get ' + varData.name, 'GET'), pos);
-            return;
+            //this.dragMenuCallBack(new QuickMenuItem('Get ' + varData.name, 'GET'), pos);
             designer.propUpMenu([new QuickMenuItem('Set ' + varData.name, 'SET'),new QuickMenuItem('Get ' + varData.name, 'GET')]
                 ,pos
                 ,this.dragMenuCallBack
@@ -1118,117 +1065,26 @@ class SqlDef_Variable_Component extends React.PureComponent{
                     <i className={'fa fa-edit fa-lg'} onClick={this.clickEditBtnHandler} />
                     <div className='flex-grow-1 flex-shrink-1 text-nowrap cursor-arrow dragableItem'
                          onMouseDown={this.labelMouseDownHandler}>
-                        {'' + varData}
+                        {varData.name}
+                        {varData.isParam ? (<span className='m-1 badge badge-info' >参数</span>) : null}
+                        <span className='m-1 badge badge-secondary' >{varData.valType}</span>
                     </div>
                     <i className={'fa fa-trash fa-lg'} onClick={this.clickTrashHandler} />
                 </div>
-            )
+            );
         }
         return(
         <div className='d-flex flex-column flex-grow-0 flex-shrink-0 w-100 border border-primary'>
             <div className='d-flex bg-dark flex-grow-0 flex-shrink-0 w-100 align-items-center'>
                 <i className={'fa fa-edit fa-lg text-' + (editing ? 'success' : 'info')} onClick={this.clickEditBtnHandler} />
                 <input onChange={this.nameInputChangeHanlder} type='text' value={this.state.name} className='flexinput flex-grow-1 flex-shrink-1' />
+                <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={JsValueTypes} rootclass='flex-grow-0 flex-shrink-0' textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
             </div>
             <div className='d-flex w-100 flex-grow-0 flex-shrink-0 align-items-center'>
-                <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={SqlVarTypes_arr} rootclass='flex-grow-1 flex-shrink-1' textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
+                <span className='text-light'>默认值</span>
+                <input onChange={this.defaultInputChangedHandler} type='text' value={this.state.default} className='flexinput flex-grow-1 flex-shrink-1' />
                 <DropDownControl itemChanged={this.isParamChangedHandler} btnclass='btn-dark' options_arr={ISParam_Options_arr} rootclass='flex-grow-0 flex-shrink-0' textAttrName='name' valueAttrName='code' value={this.state.isParam} /> 
             </div>
-            {
-                this.renderSize()
-            }
         </div>);
-    }
-}
-
-class SqlNode_CompileHelper{
-    constructor(logManager,editor){
-        this.logManager = logManager;
-        this.startNode = null;
-        this.editor = editor;
-        this.cacheObj = {};
-        this.useEntities_arr = [];
-        this.useVariables_arr = [];
-
-        autoBind(this);
-    }
-
-    meetNode(theNode){
-        if(this.startNode == null){
-            this.startNode = theNode;
-        }
-    }
-
-    clickLogBadgeItemHandler(badgeItem){
-        //console.log('clickLogBadgeItemHandler');
-        //console.log(badgeItem);
-        if(this.editor && badgeItem.data){
-            this.editor.showNodeData(badgeItem.data);
-        }
-    }
-
-    getCache(id){
-        return this.cacheObj[id];
-    }
-
-    setCache(id, data){
-        this.cacheObj[id] = data;
-    }
-
-    getLinksByNode(theNode,type){
-        if(type == null){
-            type = '*';
-        }
-        var cacheID = 'linkcache-' + theNode.id + '-' + type;
-        var rlt = this.getCache(cacheID);
-        if(rlt == null){
-            rlt = theNode.bluePrint.linkPool.getLinksByNode(theNode,type);
-            this.setCache(cacheID, rlt);
-        }
-        return rlt;
-    }
-
-    getLinksBySocket(theSocket){
-        var cacheID = 'linkcache-' + theSocket.id;
-        var rlt = this.getCache(cacheID);
-        if(rlt == null){
-            rlt = theSocket.node.bluePrint.linkPool.getLinksBySocket(theSocket);
-            this.setCache(cacheID, rlt);
-        }
-        return rlt;
-    }
-
-    addUseEntity(target){
-        var index = this.useEntities_arr.indexOf(target);
-        if(index == -1){
-            this.useEntities_arr.push(target);
-        }
-    }
-
-    addUseVariable(name, type, declareStr){
-        if(this.useVariables_arr[name] == null){
-            this.useVariables_arr[name] = {name:name,type:type,declareStr:declareStr};
-        }
-    }
-
-    getContext(theNode, finder){
-        var cacheID = 'contextCache-' + theNode.id + '-' + finder.type;
-        var rlt = this.getCache(cacheID);
-        if(rlt == null){
-            theNode.getContext(finder, 0);
-            rlt = finder;
-            this.setCache(cacheID, rlt);
-        }
-        return rlt;
-    }
-
-    getCompileRetCache(theNode){
-        var cacheID = 'compileRet-' + theNode.id;
-        return this.getCache(cacheID);
-    }
-
-    setCompileRetCache(theNode, data){
-        var cacheID = 'compileRet-' + theNode.id;
-        this.setCache(cacheID, data);
     }
 }

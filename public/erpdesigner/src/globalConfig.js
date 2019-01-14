@@ -170,7 +170,10 @@ const ValueType={
     DateTime:'datetime',
     StyleValues:'StyleValues',
     DataSource:'DataSource',
+    Unknown:'Unknown'
 };
 
-const JsValueTypes = [ValueType.String,ValueType.Int,ValueType.Boolean,ValueType.Float,ValueType.Date,ValueType.Time,ValueType.DateTime];
+const VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
+
+const JsValueTypes = [ValueType.String,ValueType.Int,ValueType.Boolean,ValueType.Float,ValueType.Date,ValueType.Time];
 

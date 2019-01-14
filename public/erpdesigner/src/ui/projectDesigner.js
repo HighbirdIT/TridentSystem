@@ -11,6 +11,7 @@ class ProjectDesigner extends React.PureComponent {
         this.outlineRef = React.createRef();
         this.dataMasterPanelRef = React.createRef();
         this.quickMenuRef = React.createRef();
+        this.scriptMasterPanelRef = React.createRef();
         autoBind(this);
         this.props.project.designer = this;
 
@@ -163,6 +164,12 @@ class ProjectDesigner extends React.PureComponent {
                     this.dataMasterPanelRef.current.toggle();
                 }
             break;
+            case 'scriptmaster':
+                if(this.scriptMasterPanelRef.current){
+                    //this.dataMasterPanelRef.current.show();
+                    this.scriptMasterPanelRef.current.toggle();
+                }
+            break;
         }
     }
 
@@ -182,6 +189,7 @@ class ProjectDesigner extends React.PureComponent {
         return (
             <div className={this.props.className}>
                 <DataMasterPanel ref={this.dataMasterPanelRef} project={thisProject} />
+                <ScriptMasterPanel ref={this.scriptMasterPanelRef} project={thisProject} />
                 <SplitPanel
                     defPercent={0.15}
                     barClass='bg-secondary'
