@@ -954,8 +954,8 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
                 </div>
 
                 <div>Distinct:
-                    <input type='checkbox' id='distinct' className='flex-grow-1 flex-shrink-1' checked={distvalue} onChange={this.distinctChangeHandler} style={{display: 'none'}}></input>
-                    <label htmlFor="distinct"></label>
+                    <input type='checkbox' id='distinct' className='flex-grow-1 flex-shrink-1 distinct' checked={distvalue} onChange={this.distinctChangeHandler} style={{display: 'none'}}></input>
+                    <label htmlFor="distinct" className='distinct'></label>
                 </div>
             </div>               
             <div className='d-flex'>
