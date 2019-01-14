@@ -495,6 +495,14 @@ class JSFile_Switch extends FormatFileBlock{
         this.defaultBlock = new FormatFileBlock('default');
     }
 
+    clone(){
+        var rlt = new JSFile_Switch(this.name, this.flagName);
+        for(var ci in this.caseBloks_map){
+            rlt.caseBloks_map[ci] = this.caseBloks_map[ci].clone();
+        }
+        return rlt;
+    }
+
     getCaseBlock(caseVal){
         var rlt = this.caseBloks_map[caseVal];
         if(rlt == null){
@@ -534,6 +542,16 @@ class JSFile_IF extends FormatFileBlock{
         this.trueBlock = new FormatFileBlock('true');
         this.falseBlock = new FormatFileBlock('false');
         this.elseIfs_arr = [];
+    }
+
+    clone(){
+        var rlt = new JSFile_IF(this.name, this.condition);
+        rlt.trueBlock = this.trueBlock.clone();
+        rlt.falseBlock = this.falseBlock.clone();
+        for(var ci in this.elseIfs_arr){
+            rlt.elseIfs_arr.push(this.elseIfs_arr[ci].clone());
+        }
+        return rlt;
     }
 
     pushChild(){

@@ -623,8 +623,7 @@ class JSNode_Var_Set extends JSNode_Base {
             var scoketOutput = nextNodeCompileRet.getSocketOut(flowLink.inSocket);
             var item = scoketOutput.data;
             if(item.parent != belongBlock){
-                var newItem = Object.assign({}, item);
-                belongBlock.pushChild(newItem);
+                belongBlock.pushChild(item.clone());
             }
         }
 
@@ -1121,8 +1120,7 @@ class JSNode_IF extends JSNode_Base {
                 }
                 var socketOut = nextNodeCompileRet.getSocketOut(flowLink.inSocket);
                 if(socketOut.data.parent != useBlock){
-                    var newItem = Object.assign({}, nextNodeCompileRet.data);
-                    belongBlock.pushChild(newItem);
+                    belongBlock.pushChild(socketOut.data.clone());
                 }
             }
         }
