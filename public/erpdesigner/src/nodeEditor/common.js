@@ -304,7 +304,7 @@ class Node_Base extends EventEmitter {
             }
         }
         else{
-            if(this.outFlowSockets_arr != null){
+            if(!socketObj.isIn && socketObj.name != 'flow_o' && this.outFlowSockets_arr != null){
                 this.outFlowSockets_arr.push(socketObj);
             }
         }
@@ -415,7 +415,19 @@ class Node_Base extends EventEmitter {
     }
 
     processOutputFlowSockets(isPlus) {
-        
+        var retSocket = null;
+        if (isPlus) {
+            retSocket = this.genOutFlowSocket();
+            this.addSocket(retSocket);
+            this.fireEvent(Event_SocketNumChanged);
+        }
+        else {
+            var needRemoveSocket = this.outFlowSockets_arr[this.outFlowSockets_arr.length - 1];
+            this.removeSocket(needRemoveSocket);
+            this.fireEvent(Event_SocketNumChanged);
+            retSocket = needRemoveSocket;
+        }
+        return retSocket;
     }
 
     // can custom socket component

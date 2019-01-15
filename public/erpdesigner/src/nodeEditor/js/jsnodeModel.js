@@ -6,6 +6,8 @@ const JSNODE_CONSTVALUE = 'constvalue';
 const JSNODE_NOPERAND = 'noperand';
 const JSNODE_COMPARE = 'compare';
 const JSNODE_IF = 'jsif';
+const JSNODE_SWITCH = 'jsswitch';
+const JSNODE_BREAK = 'jsbreak';
 
 const JSDEF_VAR = 'def_variable';
 
@@ -15,6 +17,7 @@ const JS_OutSimpleValueNode_arr = [JSNODE_VAR_GET,JSNODE_CONSTVALUE];
 class JSNode_Base extends Node_Base{
     constructor(initData, parentNode, createHelper, type, label, isContainer, nodeJson){
         super(initData, parentNode, createHelper, type, label, isContainer, nodeJson);
+       this.processOutputFlowSockets = this.processOutputFlowSockets.bind(this);
     }
 }
 
@@ -134,6 +137,7 @@ class JSNode_BluePrint extends EventEmitter {
         this.id = this.code;
 
         if (this.startNode == null) {
+            this.startNode = new JSNode_Start({}, this);
         }
         else{
             this.startNode.isConstNode = true;
@@ -1049,7 +1053,7 @@ class JSNode_IF extends JSNode_Base {
             }
         }
         this.trueFlowSocket.label = "True";
-        this.falseFlowSocket.label = "Frue";
+        this.falseFlowSocket.label = "False";
     }
 
     getNodeTitle() {
@@ -1127,8 +1131,208 @@ class JSNode_IF extends JSNode_Base {
 
         return selfCompileRet;
     }
-
 }
+
+class JSNode_Switch extends JSNode_Base{
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_SWITCH, 'Switch', false, nodeJson);
+        autoBind(this);
+
+        if(this.inFlowSocket == null){
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+        if(this.outFlowSocket == null){
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+        if (this.inputScokets_arr.length > 0) {
+            this.inputSocket = this.inputScokets_arr[0];
+            this.inputSocket.inputable = false;
+        }
+        if(this.inputSocket == null){
+            this.inputSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inputSocket);
+        }
+        this.inputSocket.label = 'target';
+
+        if(this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0){
+            this.outFlowSockets_arr = [];
+        }
+        else{
+            this.outFlowSockets_arr.forEach(item=>{
+                item.inputable = true;
+            });
+        }
+    }
+
+    genOutFlowSocket(){
+        var nameI = this.outFlowSockets_arr.length;
+        while (nameI < 999) {
+            if (this.getScoketByName('case' + nameI, true) == null) {
+                break;
+            }
+            ++nameI;
+        }
+        return new NodeFlowSocket('case' + nameI, this, false, {inputable:true});
+    }
+
+    getNodeTitle() {
+        return 'Switch';
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketValue = '';
+
+        var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.inputSocket);
+        if(datalinks_arr.length == 0){
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '必须有输入']);
+            return false;
+        }
+        else{
+            var dataLink = datalinks_arr[0];
+            var outNode = dataLink.outSocket.node;
+            var compileRet = null;
+            if(outNode.isHadFlow()){
+                compileRet = helper.getCompileRetCache(outNode);
+                if(compileRet == null){
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle,
+                        nodeThis,
+                        helper.clickLogBadgeItemHandler),
+                        '输入接口设置错误']);
+                    return false;
+                }
+            }
+            else{
+                compileRet = outNode.compile(helper,usePreNodes_arr);
+            }
+            if(compileRet == false){
+                return false;
+            }
+            socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
+        }
+        
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+        myJSBlock.pushLine('switch(' + socketValue + '){');
+        myJSBlock.addNextIndent();
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if(this.outFlowSockets_arr.length == 0){
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '必须要有case设置']);
+            return false;
+        }
+
+        var flowLinks_arr = null;
+        var flowLink = null;
+        var nextNodeCompileRet = null;
+        var socketOut = null;
+        for(var oi in this.outFlowSockets_arr){
+            var caseFlowSocket = this.outFlowSockets_arr[oi];
+            if(IsEmptyString(caseFlowSocket.defval)){
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    'case输入不能为空']);
+                return false;
+            }
+            var caseStr = caseFlowSocket.defval;
+            if(isNaN(caseStr)){
+                if(caseStr != 'default'){
+                    caseStr = singleQuotesStr(caseStr);
+                }
+            }
+            flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(caseFlowSocket);
+            if(flowLinks_arr.length == 0){
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    'case 流程不能为空']);
+                return false;
+            }
+            flowLink = flowLinks_arr[0];
+            myJSBlock.pushLine((caseStr == 'default' ? '' : 'case ') + caseStr + ':{');
+            var caseBlock = new FormatFileBlock('case' + caseStr);
+            myJSBlock.pushChild(caseBlock);
+            myJSBlock.pushLine('}');
+
+            nextNodeCompileRet = flowLink.inSocket.node.compile(helper, usePreNodes_arr, caseBlock);
+            if(nextNodeCompileRet == false){
+                return false;
+            }
+            socketOut = nextNodeCompileRet.getSocketOut(flowLink.inSocket);
+            if(socketOut.data.parent != caseBlock){
+                caseBlock.pushChild(socketOut.data.clone());
+            }
+        }
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('}');
+        
+        flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.outFlowSocket);
+        if(flowLinks_arr.length > 0){
+            flowLink = flowLinks_arr[0];
+            nextNodeCompileRet = flowLink.inSocket.node.compile(helper, usePreNodes_arr, myJSBlock);
+            if(nextNodeCompileRet == false){
+                return false;
+            }
+            socketOut = nextNodeCompileRet.getSocketOut(flowLink.inSocket);
+            if(socketOut.data.parent != myJSBlock){
+                myJSBlock.pushChild(socketOut.data.clone());
+            }
+        }
+
+        return selfCompileRet;
+    }
+}
+
+class JSNode_Break extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_BREAK, 'break', false, nodeJson);
+        autoBind(this);
+        this.isConstNode = true;
+
+        if(this.inFlowSocket == null){
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var setLine = new FormatFile_Line('break;');
+        belongBlock.pushChild(setLine);
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', setLine);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        return selfCompileRet;
+    }
+}
+
 
 JSNodeClassMap[JSNODE_VAR_GET] = {
     modelClass: JSNode_Var_Get,
@@ -1167,5 +1371,14 @@ JSNodeClassMap[JSNODE_COMPARE] = {
 
 JSNodeClassMap[JSNODE_IF] = {
     modelClass: JSNode_IF,
+    comClass: C_Node_SimpleNode,
+};
+
+JSNodeClassMap[JSNODE_SWITCH] = {
+    modelClass: JSNode_Switch,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_BREAK] = {
+    modelClass: JSNode_Break,
     comClass: C_Node_SimpleNode,
 };
