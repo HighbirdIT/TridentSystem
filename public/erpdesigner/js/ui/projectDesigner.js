@@ -26,6 +26,7 @@ var ProjectDesigner = function (_React$PureComponent) {
         _this.dataMasterPanelRef = React.createRef();
         _this.quickMenuRef = React.createRef();
         _this.scriptMasterPanelRef = React.createRef();
+        _this.quickScriptEditPanelRef = React.createRef();
         autoBind(_this);
         _this.props.project.designer = _this;
 
@@ -215,6 +216,13 @@ var ProjectDesigner = function (_React$PureComponent) {
             }, 200);
         }
     }, {
+        key: 'editScriptBlueprint',
+        value: function editScriptBlueprint(jsbp) {
+            if (this.quickScriptEditPanelRef.current != null) {
+                this.quickScriptEditPanelRef.current.showBlueprint(jsbp);
+            }
+        }
+    }, {
         key: 'render',
         value: function render() {
             var thisProject = this.props.project;
@@ -223,6 +231,7 @@ var ProjectDesigner = function (_React$PureComponent) {
                 { className: this.props.className },
                 React.createElement(DataMasterPanel, { ref: this.dataMasterPanelRef, project: thisProject }),
                 React.createElement(ScriptMasterPanel, { ref: this.scriptMasterPanelRef, project: thisProject }),
+                React.createElement(QuickScriptEditPanel, { ref: this.quickScriptEditPanelRef, project: thisProject }),
                 React.createElement(SplitPanel, {
                     defPercent: 0.15,
                     barClass: 'bg-secondary',

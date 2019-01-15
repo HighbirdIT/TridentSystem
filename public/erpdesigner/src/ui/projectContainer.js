@@ -252,7 +252,7 @@ class ProjectContainer extends React.PureComponent {
                                 item.projectIndex = i;
                                 item.projectManager = projectManager;
                                 return (
-                                    <ProjectDesigner key={i} project={item} className={'flex-grow-1 flex-shrink-1 ' + (this.state.selectedIndex == i ? 'd-flex' : 'd-none')} savePanelRef={this.savePanelRef} />
+                                    <ProjectDesigner key={item.designeConfig.name} project={item} className={'flex-grow-1 flex-shrink-1 ' + (this.state.selectedIndex == i ? 'd-flex' : 'd-none')} savePanelRef={this.savePanelRef} />
                                 )
                             })
                         }

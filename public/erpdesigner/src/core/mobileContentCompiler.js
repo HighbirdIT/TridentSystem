@@ -13,6 +13,7 @@ class MobileContentCompiler extends ContentCompiler{
         var project = this.project;
         var logManager = project.logManager;
         this.compileChain = [];
+        this.compiledScriptBP_map = {};
 
         var theSwicth = new JSFile_Switch('switchpage', makeStr_ThisProp(VarNames.NowPage));
         this.appRenderSwicth = theSwicth;
@@ -65,8 +66,25 @@ class MobileContentCompiler extends ContentCompiler{
         return true;
     }
 
+    compileScriptBlueprint(targetBP){
+        if(this.compiledScriptBP_map[targetBP.id]){
+            return this.compiledScriptBP_map[targetBP.id];
+        }
+        var project = this.project;
+        var logManager = project.logManager;
+        var useScope = targetBP.type == FunType_Client ? this.clientSide.scope : this.serverSide.scope;
+        var compileHelper = new JSNode_CompileHelper(logManager, null, useScope);
+        var compileRet = targetBP.compile(compileHelper);
+        if(compileRet == false){
+            return false;
+        }
+        this.compiledScriptBP_map[targetBP.id] = compileRet;
+    }
+
     compilePage(pageKernel){
         var clientSide = this.clientSide;
+        var project = this.project;
+        var logManager = project.logManager;
         if(pageKernel.getAttribute(AttrNames.IsMain)){
             if(this.mianPageKernel == null){
                 this.mianPageKernel = pageKernel;
@@ -249,13 +267,45 @@ class MobileContentCompiler extends ContentCompiler{
         }
 
         var parentPath = this.getKernelParentPath(theKernel);
+        var textFieldParseRet = parseObj_CtlPropJsBind(label, project.scriptMaster);
         
         var labeledCtrlTag = new FormatHtmlTag(theKernel.id, 'VisibleERPC_LabeledControl', this.clientSide);
         labeledCtrlTag.class = layoutConfig.class;
         labeledCtrlTag.style = layoutConfig.style;
         labeledCtrlTag.setAttr('id', theKernel.id);
         labeledCtrlTag.setAttr('parentPath', parentPath);
-        labeledCtrlTag.setAttr('label', label);
+        if(textFieldParseRet.isScript){
+            if(textFieldParseRet.jsBp == null){
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '显示字段用到了脚本，但没有创建此脚本']);
+                return false;
+            }
+            this.compileScriptBlueprint(textFieldParseRet.jsBp);
+            var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
+            if(belongFormKernel == null){
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '必须放置在Form之中']);
+                return false;
+            }
+            var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
+            var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
+            formMidData.needSetKernels_arr.push(theKernel);
+            kernelMidData.needSetStates_arr = [
+                {
+                    name:'label',
+                    funName:textFieldParseRet.funName,
+                    isDynamic:true,
+                }
+            ];
+        }else{
+            labeledCtrlTag.setAttr('label', label);
+        }
         var childBlock = new FormatFileBlock('child');
         labeledCtrlTag.pushChild(childBlock);
         renderBlock.pushChild(labeledCtrlTag);
@@ -384,6 +434,8 @@ class MobileContentCompiler extends ContentCompiler{
         else{
             
         }
+        var dynamicSetBlock = new FormatFileBlock('dynamic');
+        bindFun.pushChild(dynamicSetBlock);
         
         bindFun.pushLine(makeStr_callFun('setManyStateByPath', [VarNames.ReState, singleQuotesStr(thisfullpath), VarNames.NeedSetState], ';'));
         
@@ -400,20 +452,24 @@ class MobileContentCompiler extends ContentCompiler{
                 var targetKernel = thisFormMidData.needSetKernels_arr[ci];
                 var targetKernelMidData = this.projectCompiler.getMidData(targetKernel.id);
                 if(targetKernelMidData.needSetStates_arr){
-                    if(useDS){
-                        targetKernelMidData.needSetStates_arr.forEach(stateItem=>{
-                            var stateName = makeStr_DotProp(targetKernel.id, stateItem.name);
-                            var state_Name = makeStr_join('_', targetKernel.id, stateItem.name);
-                            saveInsertIfBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, VarNames.InsertCache + '.' + state_Name), makeStr_getStateByPath('formState', singleQuotesStr(stateName))));
-
-                            if(stateItem.useColumn){
-                                hadInsertCacheIf.trueBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), VarNames.InsertCache + '.' + state_Name));
-                                hadInsertCacheIf.falseBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), "''"));
-
-                                insertModeIf.falseBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_DynamicAttr(VarNames.NowRecord, stateItem.useColumn.name)));
+                    targetKernelMidData.needSetStates_arr.forEach(stateItem=>{
+                        var stateName = makeStr_DotProp(targetKernel.id, stateItem.name);
+                        var state_Name = makeStr_join('_', targetKernel.id, stateItem.name);
+                        if(stateItem.isDynamic){
+                            if(stateItem.funName){
+                                dynamicSetBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName)));
                             }
-                        });
-                    }
+                        }else{
+                            if(useDS){
+                                saveInsertIfBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, VarNames.InsertCache + '.' + state_Name), makeStr_getStateByPath('formState', singleQuotesStr(stateName))));
+                                if(stateItem.useColumn){
+                                    hadInsertCacheIf.trueBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), VarNames.InsertCache + '.' + state_Name));
+                                    hadInsertCacheIf.falseBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), "''"));
+                                    insertModeIf.falseBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_DynamicAttr(VarNames.NowRecord, stateItem.useColumn.name)));
+                                }
+                            }
+                        }
+                    });
                 }
             }
         }

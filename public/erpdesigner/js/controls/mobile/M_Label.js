@@ -78,7 +78,8 @@ var M_Label = function (_React$PureComponent) {
             layoutConfig.addClass('M_Label');
             layoutConfig.addClass('border');
             layoutConfig.addClass('hb-control');
-            var showText = IsEmptyString(this.state.text) ? '[空标签]' : this.state.text;
+            var textParseRet = parseObj_CtlPropJsBind(this.state.text);
+            var showText = textParseRet.isScript ? '{脚本}' : IsEmptyString(textParseRet.string) ? '[空标签]' : textParseRet.string;
             return React.createElement(
                 'div',
                 { className: layoutConfig.getClassName(), style: layoutConfig.style, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },

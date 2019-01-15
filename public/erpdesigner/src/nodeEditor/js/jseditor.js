@@ -34,13 +34,19 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_Break,
         type:'流控制'
     },
+    {
+        label:'Sequence',
+        nodeClass:JSNode_Sequence,
+        type:'流控制'
+    },
+    
 ];
 
 class JSNode_CompileHelper extends SqlNode_CompileHelper{
-    constructor(logManager,editor){
+    constructor(logManager,editor,scope){
         super(logManager,editor);
 
-        this.scope = new JSFile_Scope();
+        this.scope = scope == null ? new JSFile_Scope() : scope;
         this.clickLogBadgeItemHandler = this.clickLogBadgeItemHandler.bind(this);
     }
 }
@@ -88,6 +94,10 @@ class JSNodeEditorLeftPanel extends React.PureComponent{
             this.unlistenNode(this.listenedNode);
             this.listenNode(this.props.editingNode);
         }
+        var nowBlueprint = null;
+        if(this.props.editingNode){
+            nowBlueprint = this.props.editingNode;
+        }
         return (
             <SplitPanel 
                 fixedOne={true}
@@ -106,7 +116,7 @@ class JSNodeEditorLeftPanel extends React.PureComponent{
                 panel2={
                     <div className='d-flex flex-column h-100 w-100'>
                         <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} />
-                        <JSNodeEditorCanUseNodePanel editingNode={this.props.editingNode} onMouseDown={this.props.onMouseDown} editor={this.props.editor} />
+                        <JSNodeEditorCanUseNodePanel bluePrint={nowBlueprint} onMouseDown={this.props.onMouseDown} editor={this.props.editor} />
                     </div>
                 }
             />
@@ -119,6 +129,26 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         super(props);
 
         autoBind(this);
+
+        this.scanBlueprint(this.props.bluePrint);
+    }
+
+    scanBlueprint(bluePrint){
+        this.scanedBP = bluePrint;
+        if(bluePrint == null){
+            return;
+        }
+        var scriptMaster = bluePrint.master;
+        var project = scriptMaster.project;
+        var logManager = this.props.editor.logManager;
+        if(bluePrint.group == 'ctl'){
+            // 控件类型,获取上下文
+            if(bluePrint.ctlID == null){
+                logManager.error('本蓝图没有找到相应的控件[' + bluePrint.ctlID + ']');
+            }
+        }
+        // 获取可用的数据源
+        this.props.editor.logManager.warn("开始");
     }
 
     mouseDownHandler(ev){
@@ -132,7 +162,11 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
     }
 
     render() {
-        var targetID = this.props.editingNode.bluePrint.code + 'canUseNode';
+        if(this.props.bluePrint != this.scanedBP){
+            this.scanBlueprint(this.props.bluePrint);
+            return null;
+        }
+        var targetID = this.props.bluePrint.code + 'canUseNode';
         return (
             <React.Fragment>
                 <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>可用节点</button>
@@ -798,9 +832,9 @@ class C_JSNode_Editor extends React.PureComponent{
             this.selectedNFManager.clear(false);
             clearTimeout(this.delaySetTO);
             this.delaySetTO = setTimeout(() => {
-                this.setEditeNode(self.props.bluePrint == null ? null : (self.props.bluePrint.editingNode ? self.props.bluePrint.editingNode : self.props.bluePrint)); 
+                self.setEditeNode(self.props.bluePrint == null ? null : (self.props.bluePrint.editingNode ? self.props.bluePrint.editingNode : self.props.bluePrint)); 
                 self.delaySetTO = null;
-            }, 10);
+            }, 1000);
         }
         if(editingNode == null){
             return null;

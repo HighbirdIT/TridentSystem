@@ -85,7 +85,8 @@ class M_Text extends React.PureComponent {
         layoutConfig.addClass('border');
         layoutConfig.addClass('hb-control');
         layoutConfig.addClass('w-100');
-        var showText = '编辑' + (IsEmptyString(this.state.text) ? '' : '[' + this.state.text + ']') + (IsEmptyString(this.state.defaultVal) ? '' : '[' + this.state.defaultVal + ']') + "[" + this.state.ValueType + ']';;
+        var textParseRet = parseObj_CtlPropJsBind(this.state.text);
+        var showText = textParseRet.isScript ? '文本框{脚本}' : '编辑' + (IsEmptyString(textParseRet.string) ? '' : '[' + textParseRet.string + ']') + (IsEmptyString(this.state.defaultVal) ? '' : '[' + this.state.defaultVal + ']') + "[" + this.state.ValueType + ']';
         return(
             <input className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}
                 value={showText}

@@ -46,10 +46,11 @@ class ScriptMaster extends EventEmitter{
         return this.blueprints_arr.find(item=>{return item.code == code;});
     }
 
-    createBP(name, type){
-        var newItem = new JSNode_BluePrint({name:name,type:type,master:this});
+    createBP(name, type, group){
+        var newItem = new JSNode_BluePrint({name:name,type:type,master:this,group:group});
         this.addBP(newItem);
         this.emit('bpchanged');
+        return newItem;
     }
 
     modifyBP(sqpBP, name, type){

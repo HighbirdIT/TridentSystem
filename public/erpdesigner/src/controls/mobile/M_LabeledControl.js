@@ -42,6 +42,10 @@ class M_LabeledControlKernel extends ControlKernelBase{
             this.__genEditor();
             break;
             case AttrNames.TextField:
+            var labelParseRet = parseObj_CtlPropJsBind(newValue);
+            if(labelParseRet.isScript){
+                return;
+            }
             var editorTextField = this.editor.getAttribute(AttrNames.TextField);
             if(editorTextField == '' || (oldValue ? oldValue : '') == editorTextField){
                 this.editor.setAttribute(AttrNames.TextField, newValue);
@@ -108,7 +112,8 @@ class M_LabeledControl extends React.PureComponent {
     render(){
         var ctlKernel = this.props.ctlKernel;
         var layoutConfig = ctlKernel.getLayoutConfig();
-        var showLabel = IsEmptyString(this.state.label) ? '[未设置]' : this.state.label;
+        var labelParseRet = parseObj_CtlPropJsBind(this.state.label);
+        var showLabel = labelParseRet.isScript ? '{脚本}' : (IsEmptyString(labelParseRet.string) ? '[未设置]' : labelParseRet.string);
         if(this.props.ctlKernel.__placing){
             layoutConfig.addClass('M_placingCtl');
             return (<div className={layoutConfig.getClassName()} style={layoutConfig.style} ref={this.rootElemRef}>{showLabel}</div>);

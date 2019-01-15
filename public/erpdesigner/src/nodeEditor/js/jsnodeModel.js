@@ -8,6 +8,7 @@ const JSNODE_COMPARE = 'compare';
 const JSNODE_IF = 'jsif';
 const JSNODE_SWITCH = 'jsswitch';
 const JSNODE_BREAK = 'jsbreak';
+const JSNODE_SEQUENCE = 'sequence';
 
 const JSDEF_VAR = 'def_variable';
 
@@ -18,6 +19,26 @@ class JSNode_Base extends Node_Base{
     constructor(initData, parentNode, createHelper, type, label, isContainer, nodeJson){
         super(initData, parentNode, createHelper, type, label, isContainer, nodeJson);
        this.processOutputFlowSockets = this.processOutputFlowSockets.bind(this);
+    }
+
+    compileFlowNode(flowLink, helper, usePreNodes_arr, belongBlock){
+        var nextNodeCompileRet = flowLink.inSocket.node.compile(helper, usePreNodes_arr, belongBlock);
+        if(nextNodeCompileRet == false){
+            return false;
+        }
+        var socketOut = nextNodeCompileRet.getSocketOut(flowLink.inSocket);
+        if(socketOut.data.parent != belongBlock){
+            belongBlock.pushChild(socketOut.data.clone());
+        }
+        return nextNodeCompileRet;
+    }
+
+    compileOutFlow(helper, usePreNodes_arr, belongBlock){
+        var flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.outFlowSocket);
+        if(flowLinks_arr.length > 0){
+            return this.compileFlowNode(flowLinks_arr[0], helper, usePreNodes_arr, belongBlock);
+        }
+        return null;
     }
 }
 
@@ -119,7 +140,7 @@ class JSNode_BluePrint extends EventEmitter {
         this.nodes_arr = [];
 
         if (bluePrintJson != null) {
-            assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'startNodeId', 'editorLeft', 'editorTop']);
+            assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'startNodeId', 'editorLeft', 'editorTop', 'group', 'ctlID']);
             if (!IsEmptyArray(bluePrintJson.variables_arr)) {
                 bluePrintJson.variables_arr.forEach(varJson => {
                     var newVar = new JSDef_Variable({}, this, createHelper, varJson);
@@ -135,6 +156,9 @@ class JSNode_BluePrint extends EventEmitter {
             this.linkPool.restorFromJson(bluePrintJson.links_arr, createHelper);
         }
         this.id = this.code;
+        if(this.group == null){
+            this.group = 'custom';
+        }
 
         if (this.startNode == null) {
             this.startNode = new JSNode_Start({}, this);
@@ -334,6 +358,11 @@ class JSNode_BluePrint extends EventEmitter {
             code: self.id,
             startNodeId: this.startNode.id,
             name: this.name,
+            type: this.type,
+            group: this.group,
+        }
+        if(this.ctlID){
+            theJson.ctlID = this.ctlID;
         }
         if (this.editorLeft) {
             theJson.editorLeft = this.editorLeft;
@@ -609,28 +638,17 @@ class JSNode_Var_Set extends JSNode_Base {
             socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
         }
 
-        var setLine = new FormatFile_Line(this.varData.name + ' = ' + socketValue + ';');
-        belongBlock.pushChild(setLine);
+        var myJSBlock = new FormatFileBlock(this.id);
+        myJSBlock.pushLine(this.varData.name + ' = ' + socketValue + ';');
+        belongBlock.pushChild(myJSBlock);
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.inFlowSocket, '', setLine);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         selfCompileRet.setSocketOut(this.outSocket, this.varData.name);
         helper.setCompileRetCache(this, selfCompileRet);
 
-        var flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.outFlowSocket);
-        if(flowLinks_arr.length != 0){
-            var flowLink = flowLinks_arr[0];
-            var nextNode = flowLink.inSocket.node;
-            var nextNodeCompileRet = nextNode.compile(helper,usePreNodes_arr,belongBlock);
-            if(nextNodeCompileRet == false){
-                return false;
-            }
-            var scoketOutput = nextNodeCompileRet.getSocketOut(flowLink.inSocket);
-            var item = scoketOutput.data;
-            if(item.parent != belongBlock){
-                belongBlock.pushChild(item.clone());
-            }
+        if(this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false){
+            return false;
         }
-
         return selfCompileRet;
     }
 
@@ -677,7 +695,6 @@ class JSNode_Return extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_RETURN, 'RETURN', false, nodeJson);
         autoBind(this);
-        this.isConstNode = true;
 
         if (nodeJson) {
             if (this.inputScokets_arr.length > 0) {
@@ -1023,6 +1040,10 @@ class JSNode_IF extends JSNode_Base {
             this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
             this.addSocket(this.inFlowSocket);
         }
+        if(this.outFlowSocket == null){
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
 
         if (this.inputScokets_arr.length > 0) {
             this.inputSocket = this.inputScokets_arr[0];
@@ -1105,28 +1126,33 @@ class JSNode_IF extends JSNode_Base {
             socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
         }
 
-        var myJS = new JSFile_IF(this.id, socketValue);
-        belongBlock.pushChild(myJS);
+        var myJSBlock = new FormatFileBlock(this.id);
+        var myJS = new JSFile_IF('if', socketValue);
+        myJSBlock.pushChild(myJS);
+        belongBlock.pushChild(myJSBlock);
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJS);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
+
+        var flowLinks_arr = null;
+        var flowLink = null;
+        var nextNodeCompileRet = null;
 
         for(var fi=0;fi<2;++fi){
             var theFlowSocket = fi == 0 ? this.trueFlowSocket : this.falseFlowSocket;
             var useBlock = fi == 0 ? myJS.trueBlock : myJS.falseBlock;
-            var flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(theFlowSocket);
+            flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(theFlowSocket);
             if(flowLinks_arr.length != 0){
-                var flowLink = flowLinks_arr[0];
-                var nextNode = flowLink.inSocket.node;
-                var nextNodeCompileRet = nextNode.compile(helper,usePreNodes_arr,useBlock);
+                flowLink = flowLinks_arr[0];
+                nextNodeCompileRet = this.compileFlowNode(flowLink, helper, usePreNodes_arr, useBlock);
                 if(nextNodeCompileRet == false){
                     return false;
                 }
-                var socketOut = nextNodeCompileRet.getSocketOut(flowLink.inSocket);
-                if(socketOut.data.parent != useBlock){
-                    belongBlock.pushChild(socketOut.data.clone());
-                }
             }
+        }
+
+        if(this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false){
+            return false;
         }
 
         return selfCompileRet;
@@ -1245,7 +1271,6 @@ class JSNode_Switch extends JSNode_Base{
         var flowLinks_arr = null;
         var flowLink = null;
         var nextNodeCompileRet = null;
-        var socketOut = null;
         for(var oi in this.outFlowSockets_arr){
             var caseFlowSocket = this.outFlowSockets_arr[oi];
             if(IsEmptyString(caseFlowSocket.defval)){
@@ -1277,29 +1302,16 @@ class JSNode_Switch extends JSNode_Base{
             myJSBlock.pushChild(caseBlock);
             myJSBlock.pushLine('}');
 
-            nextNodeCompileRet = flowLink.inSocket.node.compile(helper, usePreNodes_arr, caseBlock);
+            nextNodeCompileRet = this.compileFlowNode(flowLink, helper, usePreNodes_arr, caseBlock);
             if(nextNodeCompileRet == false){
                 return false;
-            }
-            socketOut = nextNodeCompileRet.getSocketOut(flowLink.inSocket);
-            if(socketOut.data.parent != caseBlock){
-                caseBlock.pushChild(socketOut.data.clone());
             }
         }
         myJSBlock.subNextIndent();
         myJSBlock.pushLine('}');
         
-        flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.outFlowSocket);
-        if(flowLinks_arr.length > 0){
-            flowLink = flowLinks_arr[0];
-            nextNodeCompileRet = flowLink.inSocket.node.compile(helper, usePreNodes_arr, myJSBlock);
-            if(nextNodeCompileRet == false){
-                return false;
-            }
-            socketOut = nextNodeCompileRet.getSocketOut(flowLink.inSocket);
-            if(socketOut.data.parent != myJSBlock){
-                myJSBlock.pushChild(socketOut.data.clone());
-            }
+        if(this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false){
+            return false;
         }
 
         return selfCompileRet;
@@ -1310,7 +1322,6 @@ class JSNode_Break extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_BREAK, 'break', false, nodeJson);
         autoBind(this);
-        this.isConstNode = true;
 
         if(this.inFlowSocket == null){
             this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
@@ -1328,6 +1339,86 @@ class JSNode_Break extends JSNode_Base {
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', setLine);
         helper.setCompileRetCache(this, selfCompileRet);
+
+        return selfCompileRet;
+    }
+}
+
+class JSNode_Sequence extends JSNode_Base{
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_SEQUENCE, 'Sequence', false, nodeJson);
+        autoBind(this);
+
+        if(this.inFlowSocket == null){
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if(this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0){
+            this.outFlowSockets_arr = [];
+        }
+    }
+
+    genOutFlowSocket(){
+        var nameI = this.outFlowSockets_arr.length;
+        while (nameI < 999) {
+            if (this.getScoketByName('outflow' + nameI, true) == null) {
+                break;
+            }
+            ++nameI;
+        }
+        return new NodeFlowSocket('outflow' + nameI, this, false);
+    }
+
+    getNodeTitle() {
+        return 'Sequence';
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+
+        if(this.outFlowSockets_arr.length == 0){
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '至少要有一个输出流！']);
+            return false;
+        }
+
+        var flowLinks_arr = null;
+        var flowLink = null;
+        var nextNodeCompileRet = null;
+        for(var oi in this.outFlowSockets_arr){
+            var flowSocket = this.outFlowSockets_arr[oi];
+            flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(flowSocket);
+            if(flowLinks_arr.length == 0){
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    '第' + (oi + 1) + '个输出流为空']);
+                return false;
+            }
+            flowLink = flowLinks_arr[0];
+            nextNodeCompileRet = this.compileFlowNode(flowLink, helper, usePreNodes_arr, myJSBlock);
+            if(nextNodeCompileRet == false){
+                return false;
+            }
+        }
 
         return selfCompileRet;
     }
@@ -1380,5 +1471,9 @@ JSNodeClassMap[JSNODE_SWITCH] = {
 };
 JSNodeClassMap[JSNODE_BREAK] = {
     modelClass: JSNode_Break,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_SEQUENCE] = {
+    modelClass: JSNode_Sequence,
     comClass: C_Node_SimpleNode,
 };
