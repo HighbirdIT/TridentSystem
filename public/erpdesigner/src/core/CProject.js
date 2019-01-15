@@ -157,6 +157,7 @@ class CProject extends IAttributeable{
         return useID;
     }
 
+
     createKernalByType(ctlType){
         var ctlConfig = DesignerConfig.findConfigByType(ctlType);
         if(ctlConfig == null){

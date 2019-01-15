@@ -90,6 +90,8 @@ var CharfunType_STUFF = 'STUFF'; //删除指定长度的字符,并在指定的�
 var CharfunType_SPACE = 'SPACE'; //--返回指定个数空格的字符串 --select 'A'+ space(2)+'B'--A  B
 var CharfunType_arr = [CharfunType_ASCII, CharfunType_CHAR, CharfunType_LEFT, CharfunType_RIGHT, CharfunType_SUBSTRING, CharfunType_LOWER, CharfunType_UPPER, CharfunType_LTRIM, CharfunType_RTRIM, CharfunType_CHARINDEX, CharfunType_PATINDEX, CharfunType_REPLACE, CharfunType_REPLICATE, CharfunType_REVERSE, CharfunType_LEN, CharfunType_STUFF, CharfunType_SPACE];
 
+var FunType_Client = 'client';
+var FunType_Server = 'server';
 /**
  * 逻辑运算符 and or not
  */

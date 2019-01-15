@@ -161,7 +161,7 @@ class FormatFileBlock extends FormatFile_ItemBase{
         this.childs_arr.forEach(child=>{
             var childStr = child.getString(prefixStr + indentString, indentChar, newLineChar);
             if(childStr.length > 0){
-                rlt += childStr + newLineChar;
+                rlt += childStr + (childStr[childStr.length - 1] == newLineChar ? '' : newLineChar);
             }
         });
 

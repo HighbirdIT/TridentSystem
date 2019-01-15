@@ -351,12 +351,7 @@ var ContentPanel = function (_React$PureComponent) {
                             React.createElement(
                                 'div',
                                 null,
-                                '\u7F16'
-                            ),
-                            React.createElement(
-                                'div',
-                                null,
-                                '\u8BD1'
+                                '\u7F16\u8BD1'
                             )
                         ),
                         React.createElement(
@@ -365,12 +360,7 @@ var ContentPanel = function (_React$PureComponent) {
                             React.createElement(
                                 'div',
                                 null,
-                                '\u4FDD'
-                            ),
-                            React.createElement(
-                                'div',
-                                null,
-                                '\u5B58'
+                                '\u4FDD\u5B58'
                             )
                         ),
                         React.createElement(
@@ -379,12 +369,7 @@ var ContentPanel = function (_React$PureComponent) {
                             React.createElement(
                                 'div',
                                 null,
-                                '\u53D1'
-                            ),
-                            React.createElement(
-                                'div',
-                                null,
-                                '\u5E03'
+                                '\u53D1\u5E03'
                             )
                         )
                     ),
