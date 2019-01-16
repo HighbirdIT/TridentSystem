@@ -111,7 +111,8 @@ var Event_FrameComUnMount = 'framecomunmount';
 var ContextType_DBEntity = 'ct-dbentity';
 
 var FrameButton_LineSocket = 'lineSocket';
-var FrameButton_ClearEmptySocket = 'ClearEmptySocket';
+var FrameButton_ClearEmptyInputSocket = 'ClearEmptyInputSocket';
+var FrameButton_ClearEmptyOutputSocket = 'ClearEmptyOutputSocket';
 
 var DesignerConfig = {
     controlConfig: {

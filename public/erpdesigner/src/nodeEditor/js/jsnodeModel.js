@@ -9,6 +9,7 @@ const JSNODE_IF = 'jsif';
 const JSNODE_SWITCH = 'jsswitch';
 const JSNODE_BREAK = 'jsbreak';
 const JSNODE_SEQUENCE = 'sequence';
+const JSNODE_CURRENTDATAROW = 'currentdatarow';
 
 const JSDEF_VAR = 'def_variable';
 
@@ -1388,8 +1389,6 @@ class JSNode_Sequence extends JSNode_Base{
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
-
-
         if(this.outFlowSockets_arr.length == 0){
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle,
@@ -1398,7 +1397,102 @@ class JSNode_Sequence extends JSNode_Base{
                 '至少要有一个输出流！']);
             return false;
         }
+        var flowLinks_arr = null;
+        var flowLink = null;
+        var nextNodeCompileRet = null;
+        for(var oi in this.outFlowSockets_arr){
+            var flowSocket = this.outFlowSockets_arr[oi];
+            flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(flowSocket);
+            if(flowLinks_arr.length == 0){
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    '第' + (oi + 1) + '个输出流为空']);
+                return false;
+            }
+            flowLink = flowLinks_arr[0];
+            nextNodeCompileRet = this.compileFlowNode(flowLink, helper, usePreNodes_arr, myJSBlock);
+            if(nextNodeCompileRet == false){
+                return false;
+            }
+        }
 
+        return selfCompileRet;
+    }
+}
+
+class JSNode_CurrentDataRow extends JSNode_Base{
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_CURRENTDATAROW, 'DATAROW', false, nodeJson);
+        autoBind(this);
+        this.addFrameButton(FrameButton_ClearEmptyOutputSocket, '清理');
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.formID = this.formID;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['varName','formID']);
+    }
+
+    getNodeTitle() {
+        return 'CurrentRow';
+    }
+
+    genOutSocket(){
+        var formKernel = this.bluePrint.master.project.getControlById(this.formID);
+        if(formKernel == null){
+            return null;
+        }
+        var theDS = formKernel.getAttribute(AttrNames.DataSource);
+        if(theDS == null){
+            return null;
+        }
+        var hadColumns_arr = [];
+        for(var si in this.outputScokets_arr){
+            var outSocket = this.outputScokets_arr[si];
+            var columnName = outSocket.getExtra('colName');
+            if(columnName != null){
+                hadColumns_arr.push(columnName);
+            }
+        }
+        var emptyCol = theDS.columns.find(colItem=>{
+            return hadColumns_arr.indexOf(colItem.name) == -1
+        });
+        if(emptyCol == null){
+            return null;
+        }
+        var newSocket = new NodeSocket(this.getUseableOutSocketName('col'), this, false);
+        newSocket.setExtra('colName', emptyCol.name);
+        return newSocket;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+        if(this.outFlowSockets_arr.length == 0){
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '至少要有一个输出流！']);
+            return false;
+        }
         var flowLinks_arr = null;
         var flowLink = null;
         var nextNodeCompileRet = null;
@@ -1429,42 +1523,34 @@ JSNodeClassMap[JSNODE_VAR_GET] = {
     modelClass: JSNode_Var_Get,
     comClass: C_JSNode_Var_Get,
 };
-
 JSNodeClassMap[JSNODE_VAR_SET] = {
     modelClass: JSNode_Var_Set,
     comClass: C_JSNode_Var_Set,
 };
-
 JSNodeClassMap[JSNODE_START] = {
     modelClass: JSNode_Start,
     comClass: C_Node_SimpleNode,
 };
-
 JSNodeClassMap[JSNODE_CONSTVALUE] = {
     modelClass: JSNode_ConstValue,
     comClass: C_Node_SimpleNode,
 };
-
 JSNodeClassMap[JSNODE_RETURN] = {
     modelClass: JSNode_Return,
     comClass: C_Node_SimpleNode,
 };
-
 JSNodeClassMap[JSNODE_NOPERAND] = {
     modelClass: JSNode_NOperand,
     comClass: C_SqlNode_NOperand,
 };
-
 JSNodeClassMap[JSNODE_COMPARE] = {
     modelClass: JSNode_Compare,
     comClass: C_SqlNode_Compare,
 };
-
 JSNodeClassMap[JSNODE_IF] = {
     modelClass: JSNode_IF,
     comClass: C_Node_SimpleNode,
 };
-
 JSNodeClassMap[JSNODE_SWITCH] = {
     modelClass: JSNode_Switch,
     comClass: C_Node_SimpleNode,
@@ -1476,4 +1562,8 @@ JSNodeClassMap[JSNODE_BREAK] = {
 JSNodeClassMap[JSNODE_SEQUENCE] = {
     modelClass: JSNode_Sequence,
     comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_CURRENTDATAROW] = {
+    modelClass: JSNode_CurrentDataRow,
+    comClass: C_JSNode_CurrentDataRow,
 };
