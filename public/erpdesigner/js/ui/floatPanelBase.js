@@ -65,7 +65,7 @@ var FloatPanelbase = function (_React$PureComponent) {
                 var newTop = newY - this.moveBase.y;
                 var windheight = $(window).height();
                 if (newTop > windheight - 100) {
-                    newY = windheight - 100 - rootHeight;
+                    newY = windheight - 100;
                 }
             }
             this.rootDivRef.current.style.left = newX + 'px';
@@ -137,7 +137,7 @@ var FloatPanelbase = function (_React$PureComponent) {
     }, {
         key: 'close',
         value: function close() {
-            if (this.props.preClose && this.props.preClose() == false) {
+            if (this.props.preClose && this.props.preClose(this) == false) {
                 return;
             }
 
