@@ -621,6 +621,9 @@ class SqlNode_DBEntity extends SqlNode_Base {
     }
 
     setEntity(entity) {
+        if(typeof entity === 'string'){
+            entity = this.bluePrint.master.getDataSourceByCode(entity);
+        }
         if (this.targetEntity == entity)
             return;
         if (this.targetEntity != null) {
@@ -2060,7 +2063,7 @@ class SqlNode_Ret_Columns extends SqlNode_Base {
         autoBind(this);
         this.isConstNode = true;
         this.addFrameButton(FrameButton_LineSocket, '拉平');
-        this.addFrameButton(FrameButton_ClearEmptySocket, '清理');
+        this.addFrameButton(FrameButton_ClearEmptyInputSocket, '清理');
         if (nodeJson) {
             this.inputScokets_arr.forEach(x => {
                 x.inputable = false;

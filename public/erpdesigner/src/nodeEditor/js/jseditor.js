@@ -129,8 +129,11 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         super(props);
 
         autoBind(this);
-
-        this.scanBlueprint(this.props.bluePrint);
+        this.state = {
+            canUseDS_arr:[],
+            canAccessKernel_arr:[],
+        };
+        var self = this;
     }
 
     scanBlueprint(bluePrint){
@@ -141,14 +144,38 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         var scriptMaster = bluePrint.master;
         var project = scriptMaster.project;
         var logManager = this.props.editor.logManager;
+        logManager.clear();
+        var canUseDS_arr = [];
+        var canAccessKernel_arr = [];
         if(bluePrint.group == 'ctl'){
             // 控件类型,获取上下文
-            if(bluePrint.ctlID == null){
+            var ctlKernel = project.getControlById(bluePrint.ctlID);
+            if(bluePrint.ctlID == null || ctlKernel == null){
                 logManager.error('本蓝图没有找到相应的控件[' + bluePrint.ctlID + ']');
+                return;
             }
+            // 获取可用的数据源
+            var parentForms_arr = ctlKernel.searchParentKernel(M_FormKernel_Type);
+            parentForms_arr.forEach(formKernel=>{
+                var useDS = formKernel.getAttribute(AttrNames.DataSource);
+                if(useDS != null){
+                    canUseDS_arr.push(
+                        {
+                            entity:useDS,
+                            label:formKernel.getReadableName() + '当前行',
+                            formID:formKernel.id
+                        }
+                    );
+                }
+            });
+
+            canAccessKernel_arr = ctlKernel.getAccessableKernels();
         }
-        // 获取可用的数据源
-        this.props.editor.logManager.warn("开始");
+        //console.log(canUseDS_arr);
+        this.setState({
+            canUseDS_arr:canUseDS_arr,
+            canAccessKernel_arr:canAccessKernel_arr,
+        });
     }
 
     mouseDownHandler(ev){
@@ -161,17 +188,53 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         }
     }
 
+    mouseDownCanUseDSHandler(ev){
+        var itemValue = getAttributeByNode(ev.target, 'data-value');
+        if(itemValue == null)
+            return;
+        var theDSItem = this.state.canUseDS_arr.find(e=>{return e.formID == itemValue});
+        if(theDSItem){
+            this.props.editor.createCanUseDS(theDSItem);
+        }
+    }
+
     render() {
         if(this.props.bluePrint != this.scanedBP){
-            this.scanBlueprint(this.props.bluePrint);
+            if(this.scanTimeout == null){
+                var self = this;
+                setTimeout(() => {
+                    self.scanBlueprint(self.props.bluePrint);
+                    self.scanTimeout = null;
+                }, 10);
+            }
             return null;
         }
+        var canUseDS_arr = this.state.canUseDS_arr;
+        var canAccessKernel_arr = this.state.canAccessKernel_arr;
         var targetID = this.props.bluePrint.code + 'canUseNode';
         return (
             <React.Fragment>
                 <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>可用节点</button>
                 <div id={targetID} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
                     <div className='mw-100 d-flex flex-column'>
+                        {
+                            canUseDS_arr.length > 0 &&
+                            <div className='btn-group-vertical mw-100 flex-shrink-0'>
+                                <span className='btn btn-info'>作用域数据</span>
+                                {canUseDS_arr.map(item=>{
+                                    return (<button key={item.formID} onMouseDown={this.mouseDownCanUseDSHandler} data-value={item.formID} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>);
+                                })}
+                            </div>
+                        }
+                        {
+                            canAccessKernel_arr.length > 0 &&
+                            <div className='btn-group-vertical mw-100 flex-shrink-0'>
+                                <span className='btn btn-info'>作用域控件</span>
+                                {canAccessKernel_arr.map(item=>{
+                                    return (<button key={item.id} onMouseDown={this.mouseDownCanUseDSHandler} data-value={item.id} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.getReadableName()}</button>);
+                                })}
+                            </div>
+                        }
                         <div className='btn-group-vertical mw-100 flex-shrink-0'>
                             {
                                 JSNodeEditorControls_arr.map(
@@ -675,6 +738,23 @@ class C_JSNode_Editor extends React.PureComponent{
         });
     }
 
+    createCanUseDS(dsconfig){
+        var editorDiv = this.editorDivRef.current;
+        var editingNode = this.state.editingNode;
+        var newNodeData = new JSNode_CurrentDataRow({
+            newborn:true,
+            left:-parseUnitInt(editorDiv.style.left),
+            top:-parseUnitInt(editorDiv.style.top),
+            formID:dsconfig.formID,
+            dscode:dsconfig.entity.code,
+            dsentity:dsconfig.entity,
+        },editingNode);
+
+        this.setState({
+            magicObj:{},
+        });
+    }
+
     mouseDownNodeCtlrHandler(ctlData){
         var editorDiv = this.editorDivRef.current;
         var editingNode = this.state.editingNode;
@@ -768,6 +848,8 @@ class C_JSNode_Editor extends React.PureComponent{
         console.log(ev);
     }
 
+    
+
     clickBigBtnHandler(ev){
         var newScale = Math.min(this.state.scale + 0.1,1);
         if(newScale != this.state.scale){
@@ -834,7 +916,7 @@ class C_JSNode_Editor extends React.PureComponent{
             this.delaySetTO = setTimeout(() => {
                 self.setEditeNode(self.props.bluePrint == null ? null : (self.props.bluePrint.editingNode ? self.props.bluePrint.editingNode : self.props.bluePrint)); 
                 self.delaySetTO = null;
-            }, 1000);
+            }, 10);
         }
         if(editingNode == null){
             return null;

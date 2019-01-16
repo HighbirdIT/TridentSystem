@@ -103,6 +103,11 @@ var ControlKernelBase = function (_IAttributeable) {
             var attrItem = this.findAttributeByName(attrName);
             if (attrItem.valueType == ValueType.DataSource) {
                 this.unlistenDS(oldValue, attrName);
+                if (typeof newValue === 'string') {
+                    newValue = this.project.dataMaster.getDataSourceByCode(newValue);
+                    this[realAtrrName] = newValue;
+                }
+
                 this.listenDS(newValue, attrName);
             }
         }
@@ -131,6 +136,11 @@ var ControlKernelBase = function (_IAttributeable) {
             if (this.parent) {
                 this.parent.removeChild(this);
             }
+        }
+    }, {
+        key: 'getReadableName',
+        value: function getReadableName() {
+            return this.id + (IsEmptyString(this.name) ? '' : '(' + this.name + ')');
         }
     }, {
         key: 'listenDS',
@@ -186,6 +196,8 @@ var ControlKernelBase = function (_IAttributeable) {
     }, {
         key: 'getReadableName',
         value: function getReadableName() {
+            var rlt = '';
+
             return this.id + (IsEmptyString(this[AttrNames.Name]) ? '' : '(' + this[AttrNames.Name] + ')');
         }
     }, {
@@ -284,8 +296,11 @@ var ControlKernelBase = function (_IAttributeable) {
         value: function searchParentKernel(targetType, justFirst) {
             var rlt = null;
             var tKernel = this.parent;
+            if (targetType == null) {
+                targetType = '*';
+            }
             while (tKernel != null) {
-                if (tKernel.type == targetType) {
+                if (targetType == '*' || tKernel.type == targetType) {
                     if (justFirst) {
                         return tKernel;
                     }
@@ -296,6 +311,60 @@ var ControlKernelBase = function (_IAttributeable) {
                     }
                 }
                 tKernel = tKernel.parent;
+            }
+            return rlt;
+        }
+    }, {
+        key: 'searchChildKernel',
+        value: function searchChildKernel(targetType, justFirst, deepSearch) {
+            var rlt = null;
+            if (targetType == null) {
+                targetType = '*';
+            }
+            if (this.children && this.children.length > 0) {
+                for (var ci in this.children) {
+                    var child = this.children[ci];
+                    if (targetType == '*' || child.type == targetType) {
+                        if (justFirst) {
+                            return child;
+                        }
+                        if (rlt == null) {
+                            rlt = [];
+                        }
+                        rlt.push(child);
+                    }
+                    if (deepSearch) {
+                        var childRet = child.searchChildKernel(targetType, justFirst, deepSearch);
+                        if (childRet != null) {
+                            if (justFirst) {
+                                return childRet;
+                            } else {
+                                if (rlt == null) {
+                                    rlt = [];
+                                }
+                                rlt = rlt.concat(childRet);
+                            }
+                        }
+                    }
+                }
+            }
+            return rlt;
+        }
+    }, {
+        key: 'getAccessableKernels',
+        value: function getAccessableKernels() {
+            var rlt = [this]; // 本身必可访问
+            var nowKernel = this;
+            var parent = nowKernel.parent;
+            while (parent != null) {
+                rlt.push(parent);
+                parent.children.forEach(function (child) {
+                    if (child != nowKernel) {
+                        rlt.push(child);
+                    }
+                });
+                nowKernel = parent;
+                parent = parent.parent;
             }
             return rlt;
         }

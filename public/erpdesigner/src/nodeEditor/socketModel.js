@@ -6,8 +6,12 @@ class NodeSocket extends EventEmitter{
         this.name =  name;
         this.node = tNode;
         this.isIn = isIn;
-        this.id = tNode.id + '$' + name;
+        this.setName(this.name);
         this.setCurrentComponent = CommonFun_SetCurrentComponent.bind(this);
+    }
+
+    setName(name){
+        this.id = this.node.id + '$' + name;
     }
     
     set(data){
