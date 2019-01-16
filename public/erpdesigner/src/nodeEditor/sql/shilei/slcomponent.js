@@ -44,3 +44,48 @@ render() {
     </C_Node_Frame>
 }
 }
+class C_SqlNode_XApply extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+
+        C_NodeCom_Base(this);
+        this.state = {
+            applyType: this.props.nodedata.applyType,
+        }
+    }
+
+    selectItemChangedHandler(newapplyType) {
+        var nodeData = this.props.nodedata;
+        nodeData.applyType = newapplyType;
+        this.setState({
+            applyType: newapplyType
+        });
+    }
+
+    cusHeaderFuc() {
+        if (this.ddcStyle == null) {
+            this.ddcStyle = {
+                width: '110px',
+                margin: 'auto',
+            }
+            this.outDivStyle = {
+                minWidth: '150px'
+            };
+        }
+        var nodeData = this.props.nodedata;
+        return (<div style={this.outDivStyle} f-canmove={1}>
+            <DropDownControl options_arr={['cross apply','outer apply']} value={nodeData.applyType} itemChanged={this.selectItemChangedHandler} style={this.ddcStyle} />
+        </div>);
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' cusHeaderFuc={this.cusHeaderFuc} >
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
+            </div>
+        </C_Node_Frame>
+    }
+}
