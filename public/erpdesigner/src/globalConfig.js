@@ -111,7 +111,8 @@ const Event_FrameComUnMount = 'framecomunmount';
 const ContextType_DBEntity = 'ct-dbentity';
 
 const FrameButton_LineSocket = 'lineSocket';
-const FrameButton_ClearEmptySocket = 'ClearEmptySocket';
+const FrameButton_ClearEmptyInputSocket = 'ClearEmptyInputSocket';
+const FrameButton_ClearEmptyOutputSocket = 'ClearEmptyOutputSocket';
 
 const DesignerConfig={
     controlConfig:{

@@ -85,6 +85,11 @@ class ControlKernelBase extends IAttributeable {
         var attrItem = this.findAttributeByName(attrName);
         if(attrItem.valueType == ValueType.DataSource){
             this.unlistenDS(oldValue, attrName);
+            if(typeof newValue === 'string'){
+                newValue = this.project.dataMaster.getDataSourceByCode(newValue);
+                this[realAtrrName] = newValue;
+            }
+            
             this.listenDS(newValue, attrName);
         }
     }
@@ -113,6 +118,10 @@ class ControlKernelBase extends IAttributeable {
         {
             this.parent.removeChild(this);
         }
+    }
+
+    getReadableName(){
+        return this.id + (IsEmptyString(this.name) ? '' : '(' + this.name + ')');
     }
 
     listenDS(target, attrName){
@@ -166,6 +175,8 @@ class ControlKernelBase extends IAttributeable {
     }
 
     getReadableName(){
+        var rlt = '';
+        
         return this.id + (IsEmptyString(this[AttrNames.Name]) ? '' : '(' + this[AttrNames.Name] + ')');
     }
 
@@ -255,8 +266,11 @@ class ControlKernelBase extends IAttributeable {
     searchParentKernel(targetType, justFirst){
         var rlt = null;
         var tKernel = this.parent;
+        if(targetType == null){
+            targetType = '*';
+        }
         while(tKernel != null){
-            if(tKernel.type == targetType){
+            if(targetType == '*' || tKernel.type == targetType){
                 if(justFirst){
                     return tKernel;
                 }
@@ -268,6 +282,60 @@ class ControlKernelBase extends IAttributeable {
                 }
             }
             tKernel = tKernel.parent;
+        }
+        return rlt;
+    }
+
+    searchChildKernel(targetType, justFirst, deepSearch){
+        var rlt = null;
+        if(targetType == null){
+            targetType = '*';
+        }
+        if(this.children && this.children.length > 0){
+            for(var ci in this.children){
+                var child = this.children[ci];
+                if(targetType == '*' || child.type == targetType){
+                    if(justFirst){
+                        return child;
+                    }
+                    if(rlt == null){
+                        rlt = [];
+                    }
+                    rlt.push(child);
+                }
+                if(deepSearch)
+                {
+                    var childRet = child.searchChildKernel(targetType, justFirst, deepSearch);
+                    if(childRet != null){
+                        if(justFirst){
+                            return childRet;
+                        }
+                        else{
+                            if(rlt == null){
+                                rlt = [];
+                            }
+                            rlt = rlt.concat(childRet);
+                        }
+                    }
+                }
+            }
+        }
+        return rlt;
+    }
+
+    getAccessableKernels(){
+        var rlt = [this];   // 本身必可访问
+        var nowKernel = this;
+        var parent = nowKernel.parent;
+        while(parent != null){
+            rlt.push(parent);
+            parent.children.forEach(child=>{
+                if(child != nowKernel){
+                    rlt.push(child);
+                }
+            });
+            nowKernel = parent;
+            parent = parent.parent;
         }
         return rlt;
     }

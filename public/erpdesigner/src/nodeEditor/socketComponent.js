@@ -116,7 +116,13 @@ class C_Node_Socket extends React.PureComponent{
         if(this.props.startDragAct){
             dragElem = (<div className={'btn btn-' + (this.state.draging ? 'primary' : 'dark')} onMouseDown={this.mouseDownDragIconHandler}><i className='fa fa-arrows-v cursor-pointer' /></div>);
         }
-        var cusElem = socket.node.customSocketRender(socket);
+        var cusElem = null;
+        if(this.props.customSocketRender){
+            cusElem = this.props.customSocketRender(socket);
+        }
+        else{
+            cusElem = socket.node.customSocketRender(socket);
+        }
         
         var arrowsItem = null;
         if(socket.node.isNeedMoveArrowBeforeSocket()){
@@ -266,7 +272,7 @@ class C_SqlNode_ScoketsPanel extends React.PureComponent{
         return (<div ref={this.socketParentRef} className={'d-flex flex-grow-1 flex-shrink-1 flex-column align-items-' + this.props.align}>
             {
                 this.props.data.map(socketObj=>{
-                    return <C_Node_Socket key={socketObj.id} socket={socketObj} align={this.props.align == 'start' ? 'left' : 'right'} editor={this.props.editor} nameMoveable={this.props.nameMoveable} startDragAct={isDynamic ? this.startDragSocket : null} draging={socketObj == this.dragingSocket} />
+                    return <C_Node_Socket key={socketObj.id} socket={socketObj} align={this.props.align == 'start' ? 'left' : 'right'} editor={this.props.editor} nameMoveable={this.props.nameMoveable} startDragAct={isDynamic ? this.startDragSocket : null} draging={socketObj == this.dragingSocket} customSocketRender={this.props.customSocketRender} />
                 })
             }
             {
