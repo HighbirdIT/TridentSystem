@@ -395,3 +395,95 @@ function makeStr_join(joinChar) {
 function makeStr_ThisProp(propName) {
 	return VarNames.ThisProps + '.' + propName;
 }
+
+function parseScriptableString(str, scriptMaster) {
+	/*
+ if(IsEmptyString(str)){
+ 	return{
+ 		isScript:false,
+ 		string:''
+ 	};
+ }
+ var oldValue = '';
+ var jsName = '';
+ var pos1;
+ var pos2;
+ var isScript = false;
+ var jsBp = null;
+ var jsGroup = null;
+ var funName = null;
+ var ctlID = null;
+ var propName = null;
+ var funSuffix = null;
+ pos1 = str.indexOf('|JS:');
+ if(pos1 != -1){
+ 	isScript = true;
+ 	pos1 += 4;
+ 	pos2 = str.indexOf('|', pos1);
+ 	if(pos2 != -1){
+ 		jsName = str.substring(pos1, pos2);
+ 		var t_arr = jsName.split('-');
+ 		jsGroup = t_arr[0];
+ 		funName = t_arr[1];
+ 		t_arr = funName.split('_');
+ 		ctlID = t_arr[0];
+ 		propName = t_arr[1];
+ 		funSuffix = t_arr[2];
+ 		if(scriptMaster){
+ 			jsBp = scriptMaster.getBPByName(funName);
+ 		}
+ 	}
+ }
+ pos1 = str.indexOf('|OLD:');
+ if(pos1 != -1){
+ 	pos1 += 5;
+ 	pos2 = str.indexOf('|', pos1);
+ 	if(pos2 != -1){
+ 		oldValue = str.substring(pos1, pos2);
+ 	}
+ }
+ return{
+ 	isScript:isScript,
+ 	oldValue:oldValue,
+ 	jsName:jsName,
+ 	jsBp:jsBp,
+ 	string:str,
+ 	jsGroup:jsGroup,
+ 	funName:funName,
+ 	ctlID:ctlID,
+ 	propName:propName,
+ 	funSuffix:funSuffix,
+ };
+ */
+}
+
+function makeObj_CtlPropJsBind(ctlID, propName, suffix, oldtext) {
+	return {
+		ctlID: ctlID,
+		propName: propName,
+		suffix: suffix,
+		oldtext: oldtext,
+		group: 'ctl',
+		isScript: true
+	};
+}
+
+function parseObj_CtlPropJsBind(str, scriptMaster) {
+	if (str == null || typeof str === 'string') {
+		return {
+			isScript: false,
+			string: str
+		};
+	}
+	var json = str;
+	var funName = json.ctlID + '_' + json.propName + '_' + json.suffix;
+	var jsBp = null;
+	if (scriptMaster) {
+		jsBp = scriptMaster.getBPByName(funName);
+	}
+	return Object.assign({
+		isScript: true,
+		jsBp: jsBp,
+		funName: funName
+	}, json);
+}

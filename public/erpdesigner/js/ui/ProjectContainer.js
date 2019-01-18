@@ -305,7 +305,7 @@ var ProjectContainer = function (_React$PureComponent2) {
                         this.state.projects.map(function (item, i) {
                             item.projectIndex = i;
                             item.projectManager = projectManager;
-                            return React.createElement(ProjectDesigner, { key: i, project: item, className: 'flex-grow-1 flex-shrink-1 ' + (_this3.state.selectedIndex == i ? 'd-flex' : 'd-none'), savePanelRef: _this3.savePanelRef });
+                            return React.createElement(ProjectDesigner, { key: item.designeConfig.name, project: item, className: 'flex-grow-1 flex-shrink-1 ' + (_this3.state.selectedIndex == i ? 'd-flex' : 'd-none'), savePanelRef: _this3.savePanelRef });
                         })
                     )
                 ),

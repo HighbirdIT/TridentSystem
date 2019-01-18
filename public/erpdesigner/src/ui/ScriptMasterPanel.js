@@ -33,7 +33,7 @@ class ScriptMasterPanel extends React.PureComponent {
 
     render() {
         return (
-            <FloatPanelbase title='脚本大师' ref={this.panelBaseRef} initShow={true} initMax={true}>
+            <FloatPanelbase title='脚本大师' ref={this.panelBaseRef} initShow={false} initMax={true}>
                 <JSBPItemPanel project={this.props.project} />
             </FloatPanelbase>
         );
@@ -99,7 +99,7 @@ class JSBPItemPanel extends React.PureComponent {
                 }
                 <SplitPanel
                 defPercent={0.45}
-                maxSize='200px'
+                maxSize='300px'
                 barClass='bg-secondary'
                 panel1={
                     <div className='d-flex flex-column flex-grow-1 flex-shrink-1' >
@@ -107,7 +107,7 @@ class JSBPItemPanel extends React.PureComponent {
                         <div className='list-group flex-grow-1 flex-shrink-1 bg-dark autoScroll'>
                             {
                                 this.state.items_arr.map(item=>{
-                                    return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>{item.name}</div>
+                                    return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>{item.name}<span className='badge badge-secondary'>{item.type}</span></div>
                                 })
                             }
                         </div>
@@ -140,6 +140,12 @@ class JSBPEditPanel extends React.PureComponent {
 
     clickConfirmHandler(){
         var targetBP = this.props.targetBP;
+        if(targetBP != null && targetBP.group != 'custom'){
+            this.setState({
+                errinfo:'这个不是自定义蓝图不可修改!'
+            });
+            return;
+        }
         var name = this.nameRef.current.getValue().trim();
         if(name.length <= 2){
             this.setState({
@@ -154,12 +160,19 @@ class JSBPEditPanel extends React.PureComponent {
             });
             return;
         }
+        var type = this.typeRef.current.getValue();
+        if(type.length == 0){
+            this.setState({
+                errinfo:'必须选择类型'
+            });
+            return;
+        }
         var targetBP = this.props.targetBP;
         if(targetBP == null){
-            targetBP = this.props.scriptMaster.createBP(name);
+            targetBP = this.props.scriptMaster.createBP(name, type, 'custom');
         }
         else{
-            targetBP = this.props.scriptMaster.modifyBP(targetBP, name);
+            targetBP = this.props.scriptMaster.modifyBP(targetBP, name, type);
         }
         this.props.onComplete(targetBP);
     }
@@ -175,11 +188,13 @@ class JSBPEditPanel extends React.PureComponent {
             title = '修改' + targetBP.name;
         }
         var value = targetBP == null ? '' : targetBP.name;
+        var type = targetBP == null ? 'client' : targetBP.type;
         var nameWidth = 100;
         return <FloatPanelbase title={title} width={480} height={320} initShow={true} sizeable={false} closeable={false} ismodel={true} >
                 <div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
                     <div className='d-flex flex-column autoScroll flex-grow-1 flex-shrink-1'>
                         <NameInputRow label='名称' type='text' rootClass='m-1' nameWidth={nameWidth} ref={this.nameRef} default={value} />
+                        <NameInputRow label='类型' type='select' rootClass='m-1' nameWidth={nameWidth} options_arr={[FunType_Client,FunType_Server]} default={type} ref={this.typeRef} />   
                         <div className='flex-grow-1 flex-shrink-1 text-info'>
                             {
                                 this.state.errinfo
@@ -192,5 +207,54 @@ class JSBPEditPanel extends React.PureComponent {
                     </div>
                 </div>
             </FloatPanelbase>
+    }
+}
+
+class QuickScriptEditPanel extends React.PureComponent{
+    constructor(props) {
+        super(props);
+        this.state={
+            blueprints_arr:[]
+        }
+        autoBind(this);
+    }
+
+    showBlueprint(target){
+        var index = this.state.blueprints_arr.indexOf(target);
+        if(index == -1){
+            this.setState({
+                blueprints_arr:this.state.blueprints_arr.concat(target),
+            });
+        }
+    }
+
+    hideBlueprint(target){
+        var index = this.state.blueprints_arr.indexOf(target);
+        if(index != -1){
+            var newArr = this.state.blueprints_arr.concat();
+            newArr.splice(index,1);
+            this.setState({
+                blueprints_arr:newArr,
+            });
+        }
+    }
+
+    prePanelCloseHandler(thePanel){
+        this.hideBlueprint(thePanel.props.targetBP);
+        return false;
+    }
+
+    render(){
+        var bpArr = this.state.blueprints_arr;
+        if(bpArr.length == 0){
+            return null;
+        }
+        return bpArr.map(bp=>{
+            return(<FloatPanelbase preClose={this.prePanelCloseHandler} key={bp.code} title={'编辑:' + bp.name} initShow={true} initMax={false} width={800} height={640} targetBP={bp}>
+                <div className='d-flex flex-grow-1 flex-shrink-1 bg-dark mw-100'>
+                    <C_JSNode_Editor bluePrint={bp} />
+                </div>
+            </FloatPanelbase>);
+        });
     }
 }

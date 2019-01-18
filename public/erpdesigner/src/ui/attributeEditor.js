@@ -155,6 +155,37 @@ class AttributeEditor extends React.PureComponent {
         this.doSetAttribute(nowVal);
     }
 
+    clickjsIconHandler(ev){
+        var nowValParseRet = parseObj_CtlPropJsBind(this.state.value);
+        var newVal = '';
+        if(nowValParseRet.isScript){
+            newVal = nowValParseRet.oldValue;
+        }
+        else{
+            newVal = makeObj_CtlPropJsBind(this.props.targetobj.id, this.props.targetattr.name, 'get', nowValParseRet.string);
+        }
+        this.doSetAttribute(newVal);
+    }
+
+    clickModifyJSBtnHandler(ev){
+        var project = this.props.targetobj.project;
+        if(project == null){
+            return;
+        }
+        var nowValParseRet = parseObj_CtlPropJsBind(this.state.value, project.scriptMaster);
+        if(!nowValParseRet.isScript){
+            return;
+        }
+        var targetBP = nowValParseRet.jsBp;
+        if(targetBP == null){
+            targetBP = project.scriptMaster.createBP(nowValParseRet.funName, this.props.targetattr.scriptSetting.type, nowValParseRet.jsGroup);
+            this.setState({
+                magicObj:{}
+            });
+        }
+        project.designer.editScriptBlueprint(targetBP);
+    }
+
     rednerEditor(theAttr,attrName,inputID) {
         var nowVal = this.state.value;
         if(theAttr.valueType == ValueType.StyleValues){
@@ -162,6 +193,25 @@ class AttributeEditor extends React.PureComponent {
         }
         if (!theAttr.editable) {
             return (<div className="form-control-plaintext text-light" id={inputID}>{nowVal}</div>);
+        }
+        var jsIconElem = null;
+        var project = this.props.targetobj.project;
+        var scriptable = theAttr.scriptSetting && theAttr.scriptSetting.scriptable;
+        if(scriptable && project){
+            // 可脚本化
+            var parseRet = parseObj_CtlPropJsBind(nowVal, project.scriptMaster);
+            jsIconElem = (
+                <span onClick={this.clickjsIconHandler} className={'fa-stack cursor-pointer text-' + (parseRet.isScript ? 'info' : 'light')}>
+                    <i className='fa fa-plug fa-stack-1x' />
+                    <i className='fa fa-square-o fa-stack-2x' />
+                </span>
+            );
+            if(parseRet.isScript){
+                return (<div className='d-flex w-100 h-100 align-items-center'>
+                            <span onClick={this.clickModifyJSBtnHandler} className='btn btn-dark flex-grow-1'>{parseRet.jsBp ? '编辑' : '创建'}</span>
+                            {jsIconElem}
+                        </div>);
+            }
         }
         if(theAttr.options_arr != null){
             var dropdownSetting = theAttr.dropdownSetting == null ? {} : theAttr.dropdownSetting;
@@ -179,7 +229,16 @@ class AttributeEditor extends React.PureComponent {
                     return (<div className='text-light'>加载中</div>);
                 }
             }
-            return (<DropDownControl options_arr={useOptioins_arr} value={nowVal} itemChanged={this.itemChangedHandler} textAttrName={dropdownSetting.text} valueAttrName={dropdownSetting.value} editable={dropdownSetting.editable}/>);
+            var ddc = (<DropDownControl options_arr={useOptioins_arr} value={nowVal} itemChanged={this.itemChangedHandler} textAttrName={dropdownSetting.text} valueAttrName={dropdownSetting.value} editable={dropdownSetting.editable}/>);
+            if(jsIconElem == null){
+                return ddc;
+            }
+            return (<div className='d-flex flex-grow-1 flex-shrink-1'>
+                <div className='d-flex flex-column flex-grow-1 flex-shrink-1'>
+                    <DropDownControl options_arr={useOptioins_arr} value={nowVal} itemChanged={this.itemChangedHandler} textAttrName={dropdownSetting.text} valueAttrName={dropdownSetting.value} editable={dropdownSetting.editable}/>
+                </div>
+                {jsIconElem}
+            </div>)
         }
         
         var inputType = 'text';
@@ -188,7 +247,12 @@ class AttributeEditor extends React.PureComponent {
             inputType = 'checkbox';
             break;
         }
-        return (<input type={inputType} className="form-control" id={inputID} checked={this.state.value} value={this.state.value} onChange={this.editorChanged} attrname={attrName} />);
+        return (
+            <React.Fragment>
+            {jsIconElem}
+            <input type={inputType} className="form-control" id={inputID} checked={this.state.value} value={this.state.value} onChange={this.editorChanged} attrname={attrName} />
+            </React.Fragment>
+        );
     }
 
     clickTrashHandler(ev){
@@ -218,10 +282,10 @@ class AttributeEditor extends React.PureComponent {
         var deleteElem = this.props.index >= 0 ? <div onClick={this.clickTrashHandler} className='btn btn-dark flex-grow-0 flex-shrink-0'><i className='fa fa-trash text-danger' /></div> : null;
         return (
             <div key={attrName} className="bg-dark d-flex align-items-center">
-                <label htmlFor={inputID} className="col-sm-4 col-form-label text-light">
+                <label htmlFor={inputID} className="col-form-label text-light flex-grow-0 flex-shrink-0 attrEditorLabel">
                     {label}
                 </label>
-                <div className="flex-grow-1 flex-shrink-1 p-1 border-left border-secondary">
+                <div className="p-1 border-left border-secondary attrEditorContent">
                     {
                         this.rednerEditor(theAttr,attrName,inputID)
                     }

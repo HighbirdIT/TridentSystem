@@ -190,6 +190,38 @@ var AttributeEditor = function (_React$PureComponent) {
             this.doSetAttribute(nowVal);
         }
     }, {
+        key: 'clickjsIconHandler',
+        value: function clickjsIconHandler(ev) {
+            var nowValParseRet = parseObj_CtlPropJsBind(this.state.value);
+            var newVal = '';
+            if (nowValParseRet.isScript) {
+                newVal = nowValParseRet.oldValue;
+            } else {
+                newVal = makeObj_CtlPropJsBind(this.props.targetobj.id, this.props.targetattr.name, 'get', nowValParseRet.string);
+            }
+            this.doSetAttribute(newVal);
+        }
+    }, {
+        key: 'clickModifyJSBtnHandler',
+        value: function clickModifyJSBtnHandler(ev) {
+            var project = this.props.targetobj.project;
+            if (project == null) {
+                return;
+            }
+            var nowValParseRet = parseObj_CtlPropJsBind(this.state.value, project.scriptMaster);
+            if (!nowValParseRet.isScript) {
+                return;
+            }
+            var targetBP = nowValParseRet.jsBp;
+            if (targetBP == null) {
+                targetBP = project.scriptMaster.createBP(nowValParseRet.funName, this.props.targetattr.scriptSetting.type, nowValParseRet.jsGroup);
+                this.setState({
+                    magicObj: {}
+                });
+            }
+            project.designer.editScriptBlueprint(targetBP);
+        }
+    }, {
         key: 'rednerEditor',
         value: function rednerEditor(theAttr, attrName, inputID) {
             var nowVal = this.state.value;
@@ -202,6 +234,31 @@ var AttributeEditor = function (_React$PureComponent) {
                     { className: 'form-control-plaintext text-light', id: inputID },
                     nowVal
                 );
+            }
+            var jsIconElem = null;
+            var project = this.props.targetobj.project;
+            var scriptable = theAttr.scriptSetting && theAttr.scriptSetting.scriptable;
+            if (scriptable && project) {
+                // 可脚本化
+                var parseRet = parseObj_CtlPropJsBind(nowVal, project.scriptMaster);
+                jsIconElem = React.createElement(
+                    'span',
+                    { onClick: this.clickjsIconHandler, className: 'fa-stack cursor-pointer text-' + (parseRet.isScript ? 'info' : 'light') },
+                    React.createElement('i', { className: 'fa fa-plug fa-stack-1x' }),
+                    React.createElement('i', { className: 'fa fa-square-o fa-stack-2x' })
+                );
+                if (parseRet.isScript) {
+                    return React.createElement(
+                        'div',
+                        { className: 'd-flex w-100 h-100 align-items-center' },
+                        React.createElement(
+                            'span',
+                            { onClick: this.clickModifyJSBtnHandler, className: 'btn btn-dark flex-grow-1' },
+                            parseRet.jsBp ? '编辑' : '创建'
+                        ),
+                        jsIconElem
+                    );
+                }
             }
             if (theAttr.options_arr != null) {
                 var dropdownSetting = theAttr.dropdownSetting == null ? {} : theAttr.dropdownSetting;
@@ -223,7 +280,20 @@ var AttributeEditor = function (_React$PureComponent) {
                         );
                     }
                 }
-                return React.createElement(DropDownControl, { options_arr: useOptioins_arr, value: nowVal, itemChanged: this.itemChangedHandler, textAttrName: dropdownSetting.text, valueAttrName: dropdownSetting.value, editable: dropdownSetting.editable });
+                var ddc = React.createElement(DropDownControl, { options_arr: useOptioins_arr, value: nowVal, itemChanged: this.itemChangedHandler, textAttrName: dropdownSetting.text, valueAttrName: dropdownSetting.value, editable: dropdownSetting.editable });
+                if (jsIconElem == null) {
+                    return ddc;
+                }
+                return React.createElement(
+                    'div',
+                    { className: 'd-flex flex-grow-1 flex-shrink-1' },
+                    React.createElement(
+                        'div',
+                        { className: 'd-flex flex-column flex-grow-1 flex-shrink-1' },
+                        React.createElement(DropDownControl, { options_arr: useOptioins_arr, value: nowVal, itemChanged: this.itemChangedHandler, textAttrName: dropdownSetting.text, valueAttrName: dropdownSetting.value, editable: dropdownSetting.editable })
+                    ),
+                    jsIconElem
+                );
             }
 
             var inputType = 'text';
@@ -232,7 +302,12 @@ var AttributeEditor = function (_React$PureComponent) {
                     inputType = 'checkbox';
                     break;
             }
-            return React.createElement('input', { type: inputType, className: 'form-control', id: inputID, checked: this.state.value, value: this.state.value, onChange: this.editorChanged, attrname: attrName });
+            return React.createElement(
+                React.Fragment,
+                null,
+                jsIconElem,
+                React.createElement('input', { type: inputType, className: 'form-control', id: inputID, checked: this.state.value, value: this.state.value, onChange: this.editorChanged, attrname: attrName })
+            );
         }
     }, {
         key: 'clickTrashHandler',
@@ -273,12 +348,12 @@ var AttributeEditor = function (_React$PureComponent) {
                 { key: attrName, className: 'bg-dark d-flex align-items-center' },
                 React.createElement(
                     'label',
-                    { htmlFor: inputID, className: 'col-sm-4 col-form-label text-light' },
+                    { htmlFor: inputID, className: 'col-form-label text-light flex-grow-0 flex-shrink-0 attrEditorLabel' },
                     label
                 ),
                 React.createElement(
                     'div',
-                    { className: 'flex-grow-1 flex-shrink-1 p-1 border-left border-secondary' },
+                    { className: 'p-1 border-left border-secondary attrEditorContent' },
                     this.rednerEditor(theAttr, attrName, inputID)
                 ),
                 deleteElem

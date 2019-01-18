@@ -4,11 +4,14 @@ function genTextFiledAttribute(label='显示字段', def='', editable = true){
         pullDataFun:GetKernelCanUseColumns,
         text:'name',
         editable:editable,
+    }, true, {
+        scriptable:true,
+        type:FunType_Client
     });
 }
 
 class CAttribute{
-    constructor(label,name,valueType,defaultVal,editable,isArray,options_arr, dropdownSetting, visible) {
+    constructor(label, name, valueType, defaultVal, editable, isArray, options_arr, dropdownSetting, visible, scriptSetting) {
         Object.assign(this,{
             label:label,
             name : name,
@@ -20,6 +23,7 @@ class CAttribute{
             defaultVal:defaultVal,
             dropdownSetting:dropdownSetting,
             visible:visible != false,
+            scriptSetting:scriptSetting,
         });
     }
 

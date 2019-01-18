@@ -15,11 +15,14 @@ function genTextFiledAttribute() {
         pullDataFun: GetKernelCanUseColumns,
         text: 'name',
         editable: editable
+    }, true, {
+        scriptable: true,
+        type: FunType_Client
     });
 }
 
 var CAttribute = function () {
-    function CAttribute(label, name, valueType, defaultVal, editable, isArray, options_arr, dropdownSetting, visible) {
+    function CAttribute(label, name, valueType, defaultVal, editable, isArray, options_arr, dropdownSetting, visible, scriptSetting) {
         _classCallCheck(this, CAttribute);
 
         Object.assign(this, {
@@ -32,7 +35,8 @@ var CAttribute = function () {
             options_arr: options_arr,
             defaultVal: defaultVal,
             dropdownSetting: dropdownSetting,
-            visible: visible != false
+            visible: visible != false,
+            scriptSetting: scriptSetting
         });
     }
 

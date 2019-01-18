@@ -587,3 +587,12 @@
 .rowlFameOne[hor]{
   flex-grow: 1;
 }
+
+.attrEditorLabel{
+  width: 6.5em;
+  padding: 2px;
+}
+
+.attrEditorContent{
+  width: calc(100% - 6.5em);
+}

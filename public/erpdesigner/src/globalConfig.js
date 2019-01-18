@@ -90,6 +90,8 @@ const CharfunType_arr = [CharfunType_ASCII,CharfunType_CHAR,CharfunType_LEFT,Cha
                          CharfunType_UPPER,CharfunType_LTRIM,CharfunType_RTRIM,CharfunType_CHARINDEX,CharfunType_PATINDEX,CharfunType_REPLACE,
                          CharfunType_REPLICATE,CharfunType_REVERSE,CharfunType_LEN,CharfunType_STUFF,CharfunType_SPACE];
 
+const FunType_Client = 'client';
+const FunType_Server = 'server';
 /**
  * 逻辑运算符 and or not
  */
@@ -109,7 +111,8 @@ const Event_FrameComUnMount = 'framecomunmount';
 const ContextType_DBEntity = 'ct-dbentity';
 
 const FrameButton_LineSocket = 'lineSocket';
-const FrameButton_ClearEmptySocket = 'ClearEmptySocket';
+const FrameButton_ClearEmptyInputSocket = 'ClearEmptyInputSocket';
+const FrameButton_ClearEmptyOutputSocket = 'ClearEmptyOutputSocket';
 
 const DesignerConfig={
     controlConfig:{

@@ -184,6 +184,9 @@ class Node_Base extends EventEmitter {
 
     clickFrameButton(btnName) {
         console.log('clickFrameButton:' + btnName);
+        var removeCount = 0;
+        var si;
+        var socket;
         switch (btnName) {
             case FrameButton_LineSocket:
                 {
@@ -193,11 +196,26 @@ class Node_Base extends EventEmitter {
                     });
                 }
                 break;
-            case FrameButton_ClearEmptySocket:
+            case FrameButton_ClearEmptyInputSocket:
                 {
-                    var removeCount = 0;
-                    for (var si = this.inputScokets_arr.length - 1; si >= this.minInSocketCount && this.inputScokets_arr.length > 0; --si) {
-                        var socket = this.inputScokets_arr[si];
+                    for (si = this.inputScokets_arr.length - 1; si >= this.minInSocketCount && this.inputScokets_arr.length > 0; --si) {
+                        socket = this.inputScokets_arr[si];
+                        if (this.bluePrint.linkPool.getLinksBySocket(socket).length == 0) {
+                            this.removeSocket(socket);
+                            ++removeCount;
+                        }
+                    }
+                    if (removeCount > 0) {
+                        this.fireEvent(Event_SocketNumChanged);
+                        this.fireMoved(10);
+                    }
+                }
+                break;
+            case FrameButton_ClearEmptyOutputSocket:
+                {
+                    removeCount = 0;
+                    for (si = this.outputScokets_arr.length - 1; si >= 0 && this.outputScokets_arr.length > 0; --si) {
+                        socket = this.outputScokets_arr[si];
                         if (this.bluePrint.linkPool.getLinksBySocket(socket).length == 0) {
                             this.removeSocket(socket);
                             ++removeCount;
@@ -217,6 +235,28 @@ class Node_Base extends EventEmitter {
                 }
         }
         return false;
+    }
+
+    getUseableInSocketName(prefix='in'){
+        var nameI = this.inputScokets_arr.length;
+        while (nameI < 999) {
+            if (this.getScoketByName(prefix + nameI, true) == null) {
+                break;
+            }
+            ++nameI;
+        }
+        return prefix + nameI;
+    }
+
+    getUseableOutSocketName(prefix='out'){
+        var nameI = this.outputScokets_arr.length;
+        while (nameI < 999) {
+            if (this.getScoketByName(prefix + nameI, false) == null) {
+                break;
+            }
+            ++nameI;
+        }
+        return prefix + nameI;
     }
 
     setTitle(newTitle) {
@@ -379,6 +419,9 @@ class Node_Base extends EventEmitter {
         var retSocket = null;
         if (isPlus) {
             retSocket = this.genInSocket();
+            if(retSocket == null){
+                return;
+            }
             this.addSocket(retSocket);
             this.fireEvent(Event_SocketNumChanged);
         }
@@ -400,6 +443,9 @@ class Node_Base extends EventEmitter {
         var retSocket = null;
         if (isPlus) {
             retSocket = this.genOutSocket();
+            if(retSocket == null){
+                return;
+            }
             this.addSocket(retSocket);
             this.fireEvent(Event_SocketNumChanged);
         }
@@ -418,6 +464,9 @@ class Node_Base extends EventEmitter {
         var retSocket = null;
         if (isPlus) {
             retSocket = this.genOutFlowSocket();
+            if(retSocket == null){
+                return;
+            }
             this.addSocket(retSocket);
             this.fireEvent(Event_SocketNumChanged);
         }
