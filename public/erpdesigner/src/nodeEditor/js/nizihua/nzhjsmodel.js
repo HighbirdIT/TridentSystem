@@ -23,15 +23,15 @@ class JSNode_While extends JSNode_Base{
         }
         this.inputSocket.label = 'condition';
 
-        if(this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 1){
-            return this.addSocket(new NodeFlowSocket('whilecode', this, false, {inputable:true}));
+        if(this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0){
+            this.outFlowSockets_arr = [];
         }
         else{
-            this.outFlowSockets_arr = this.outFlowSockets_arr[0];
+            this.outFlowSockets_arr.forEach(item=>{
+                item.inputable = true;
+            });
         }
-      
     }   
-        
 
     getNodeTitle() {
         return 'While';
