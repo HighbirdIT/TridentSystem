@@ -8,9 +8,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var M_ContainerKernelAttrsSetting = {
-    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('name', AttrNames.Name, ValueType.String), new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr)])]
-};
+var M_ContainerKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr)])]);
 
 var M_ContainerKernel = function (_ContainerKernelBase) {
     _inherits(M_ContainerKernel, _ContainerKernelBase);
@@ -18,7 +16,7 @@ var M_ContainerKernel = function (_ContainerKernelBase) {
     function M_ContainerKernel(initData, parentKernel, createHelper, kernelJson) {
         _classCallCheck(this, M_ContainerKernel);
 
-        var _this = _possibleConstructorReturn(this, (M_ContainerKernel.__proto__ || Object.getPrototypeOf(M_ContainerKernel)).call(this, initData, M_ContainerKernel_Type, 'Flex容器', M_ContainerKernelAttrsSetting.groups_arr.concat(), parentKernel, createHelper, kernelJson));
+        var _this = _possibleConstructorReturn(this, (M_ContainerKernel.__proto__ || Object.getPrototypeOf(M_ContainerKernel)).call(this, initData, M_ContainerKernel_Type, 'Flex容器', M_ContainerKernelAttrsSetting, parentKernel, createHelper, kernelJson));
 
         var self = _this;
         autoBind(self);

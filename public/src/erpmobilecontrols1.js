@@ -885,7 +885,7 @@ class ERPC_LabeledControl extends React.PureComponent {
 
 function ERPC_LabeledControl_mapstatetoprops(state, ownprops) {
     var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
-    var useLabel = ownprops.label ? ownprops.label : (ctlState.label ? ctlState.label : '未知名称');
+    var useLabel = ownprops.label != null ? ownprops.label : (ctlState.label != null ? ctlState.label : '');
     return {
         label: useLabel,
         fetching: ctlState.fetching,

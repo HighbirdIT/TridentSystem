@@ -39,8 +39,28 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_Sequence,
         type:'流控制'
     },
-    
+    {
+        label:'Insert',
+        nodeClass:JSNODE_Insert_table,
+        type:'数据库交互'
+    },
 ];
+
+const EApiType={
+    Prop:'prop',
+    Fun:'fun',
+};
+
+function gCreateControlApiItem(apiType, apiName){
+
+}
+
+const g_controlApi_arr = [];
+
+function gFindControlApi(ctltype){
+
+}
+
 
 class JSNode_CompileHelper extends SqlNode_CompileHelper{
     constructor(logManager,editor,scope){
@@ -48,6 +68,56 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
 
         this.scope = scope == null ? new JSFile_Scope() : scope;
         this.clickLogBadgeItemHandler = this.clickLogBadgeItemHandler.bind(this);
+        this.useForm_map = {};
+        this.useGlobalControls_map = {};
+    }
+
+    addUseColumn(formKernel, columnName){
+        var formObj = this.addUseForm(formKernel);
+        formObj.useNowRecord = true;
+        if(formObj.useColumns_map[columnName] == null){
+            formObj.useColumns_map[columnName] = 1;
+        }
+    }
+
+    addUseForm(formKernel){
+        if(this.useForm_map[formKernel.id] == null){
+            this.useForm_map[formKernel.id] = {
+                useColumns_map:{},
+                useControls_map:{},
+                useNowRecord:false,
+                formKernel:formKernel,
+            };
+        }
+        return this.useForm_map[formKernel.id];
+    }
+
+    addUseControlPropApi(ctrKernel, apiitem){
+        var rlt = null;
+        var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
+        if(belongFormKernel == null){
+            rlt = this.useGlobalControls_map[ctrKernel.id]
+            if(rlt == null){
+                rlt = {
+                    kernel:ctrKernel,
+                    useprops_map:{},
+                };
+                this.useGlobalControls_map[ctrKernel.id] = rlt;
+            }
+            return;
+        }
+        else{
+            var formObj = this.addUseForm(belongFormKernel);
+            rlt = formObj.useControls_map[ctrKernel.id];
+            if(rlt == null){
+                rlt = {
+                    kernel:ctrKernel,
+                    useprops_map:{},
+                };
+                formObj.useControls_map[ctrKernel.id] = rlt;
+            }
+        }
+        rlt.useprops_map[apiitem.attrItem.name] = apiitem;
     }
 }
 
@@ -132,6 +202,8 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         this.state = {
             canUseDS_arr:[],
             canAccessKernel_arr:[],
+            showCanUseDS:true,
+            showCanAccessCtl:false,
         };
         var self = this;
     }
@@ -147,7 +219,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         logManager.clear();
         var canUseDS_arr = [];
         var canAccessKernel_arr = [];
-        if(bluePrint.group == 'ctl'){
+        if(bluePrint.group == FunGroup.CtlAttr){
             // 控件类型,获取上下文
             var ctlKernel = project.getControlById(bluePrint.ctlID);
             if(bluePrint.ctlID == null || ctlKernel == null){
@@ -198,6 +270,41 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         }
     }
 
+    mouseDownCanAccessCtlHandler(ev){
+        var itemValue = getAttributeByNode(ev.target, 'data-value');
+        if(itemValue == null)
+            return;
+        this.props.editor.createCtrlKernel(itemValue);
+    }
+
+    clickCanUseDSHeader(ev){
+        this.setState(
+            {
+                showCanUseDS:!this.state.showCanUseDS
+            }
+        );
+    }
+
+    clickAccessCtlHeader(ev){
+        this.setState(
+            {
+                showCanAccessCtl:!this.state.showCanAccessCtl
+            }
+        );
+    }
+
+    clickControlAPIHandler(ev){
+        var ctltype = getAttributeByNode(ev.target, 'data-ctltype');
+        if(ctltype == null)
+            return;
+        var apiid = getAttributeByNode(ev.target, 'data-apiid');
+        if(apiid == null)
+            return;
+        var theApiObj = g_controlApi_arr.find(e=>{return e.ctltype == ctltype;});
+        var apiItem = theApiObj.getApiItemByid(apiid);
+        this.props.editor.createApiObj(theApiObj,apiItem);
+    }
+
     render() {
         if(this.props.bluePrint != this.scanedBP){
             if(this.scanTimeout == null){
@@ -212,6 +319,8 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         var canUseDS_arr = this.state.canUseDS_arr;
         var canAccessKernel_arr = this.state.canAccessKernel_arr;
         var targetID = this.props.bluePrint.code + 'canUseNode';
+        var showCanUseDS = this.state.showCanUseDS;
+        var showCanAccessCtl = this.state.showCanAccessCtl;
         return (
             <React.Fragment>
                 <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>可用节点</button>
@@ -219,23 +328,48 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
                     <div className='mw-100 d-flex flex-column'>
                         {
                             canUseDS_arr.length > 0 &&
-                            <div className='btn-group-vertical mw-100 flex-shrink-0'>
-                                <span className='btn btn-info'>作用域数据</span>
-                                {canUseDS_arr.map(item=>{
-                                    return (<button key={item.formID} onMouseDown={this.mouseDownCanUseDSHandler} data-value={item.formID} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>);
-                                })}
-                            </div>
+                            <React.Fragment>
+                                <div className='d-flex flex-shrink-0'>
+                                    <span onClick={this.clickCanUseDSHeader} className='btn btn-info flex-grow-1 flex-shrink-1'>作用域数据{showCanUseDS ? '-' : '+'}</span>
+                                </div>
+                                {showCanUseDS &&
+                                <div className='btn-group-vertical mw-100 flex-shrink-0'>
+                                    {canUseDS_arr.map(item=>{
+                                        return (<button key={item.formID} onMouseDown={this.mouseDownCanUseDSHandler} data-value={item.formID} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>);
+                                    })}
+                                </div>}
+                            </React.Fragment>
                         }
                         {
                             canAccessKernel_arr.length > 0 &&
-                            <div className='btn-group-vertical mw-100 flex-shrink-0'>
-                                <span className='btn btn-info'>作用域控件</span>
-                                {canAccessKernel_arr.map(item=>{
-                                    return (<button key={item.id} onMouseDown={this.mouseDownCanUseDSHandler} data-value={item.id} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.getReadableName()}</button>);
-                                })}
-                            </div>
+                            <React.Fragment>
+                                <div className='d-flex flex-shrink-0'>
+                                    <span onClick={this.clickAccessCtlHeader} className='btn btn-info flex-grow-1 flex-shrink-1'>作用域控件{showCanAccessCtl ? '-' : '+'}</span>
+                                </div>
+                                {showCanAccessCtl &&
+                                <div className='btn-group-vertical mw-100 flex-shrink-0'>
+                                    {canAccessKernel_arr.map(item=>{
+                                        return (<button key={item.id} onMouseDown={this.mouseDownCanAccessCtlHandler} data-value={item.id} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.getReadableName()}</button>);
+                                    })}
+                                </div>}
+                            </React.Fragment>
                         }
                         <div className='btn-group-vertical mw-100 flex-shrink-0'>
+                            <span className='btn btn-info'>控件接口</span>
+                            {
+                                g_controlApi_arr.map(
+                                    ctlApi=>{
+                                        var rlt = [];
+                                        ctlApi.allapi_arr.forEach((apiItem,index)=>{
+                                            rlt.push(<button key={apiItem.uniqueID} onMouseDown={this.clickControlAPIHandler} data-ctltype={ctlApi.ctltype} data-apiid={apiItem.id} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{apiItem.toString()}</button>);
+                                        });
+                                        return rlt;
+                                    }
+                                )
+                            }
+                        </div>
+                        <div className='btn-group-vertical mw-100 flex-shrink-0'>
+                            <span className='btn btn-info'>可用节点</span>
                             {
                                 JSNodeEditorControls_arr.map(
                                     item=>{
@@ -738,21 +872,47 @@ class C_JSNode_Editor extends React.PureComponent{
         });
     }
 
-    createCanUseDS(dsconfig){
+    createNewNode(nodeClass, initData){
         var editorDiv = this.editorDivRef.current;
         var editingNode = this.state.editingNode;
-        var newNodeData = new JSNode_CurrentDataRow({
-            newborn:true,
-            left:-parseUnitInt(editorDiv.style.left),
-            top:-parseUnitInt(editorDiv.style.top),
-            formID:dsconfig.formID,
-            dscode:dsconfig.entity.code,
-            dsentity:dsconfig.entity,
-        },editingNode);
+        var newNode = new nodeClass(
+            Object.assign({
+                newborn:true,
+                left:-parseUnitInt(editorDiv.style.left),
+                top:-parseUnitInt(editorDiv.style.top),
+            }, initData),
+            editingNode
+        );
 
         this.setState({
             magicObj:{},
         });
+        return newNode;
+    }
+
+    createCanUseDS(dsconfig){
+        this.createNewNode(JSNode_CurrentDataRow,{
+            formID:dsconfig.formID,
+            dscode:dsconfig.entity.code,
+            dsentity:dsconfig.entity,
+        });
+    }
+
+    createCtrlKernel(ctlID){
+        this.createNewNode(JSNODE_CtlKernel,{
+            ctlID:ctlID,
+        });
+    }
+
+    createApiObj(apiClass, apiItem){
+        switch(apiItem.type){
+            case EApiType.Prop:
+            this.createNewNode(JSNode_Control_Api_Prop,{
+                apiClass:apiClass,
+                apiItem:apiItem,
+            });
+            break;    
+        }
     }
 
     mouseDownNodeCtlrHandler(ctlData){

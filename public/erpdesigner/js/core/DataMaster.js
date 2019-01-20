@@ -19,6 +19,8 @@ var DataBase = function (_EventEmitter) {
         _this.entities_arr = [];
         _this.entityCode_map = {};
         _this.entityName_map = {};
+
+        autoBind(_this);
         return _this;
     }
 
@@ -84,6 +86,18 @@ var DataBase = function (_EventEmitter) {
     }, {
         key: 'synBykeyword',
         value: function synBykeyword(callback) {}
+    }, {
+        key: 'getEntitiesByType',
+        value: function getEntitiesByType(tType) {
+            return this.entities_arr.filter(function (e) {
+                return e.type == tType;
+            });
+        }
+    }, {
+        key: 'getAllTable',
+        value: function getAllTable() {
+            return this.getEntitiesByType('U');
+        }
     }]);
 
     return DataBase;
@@ -180,6 +194,11 @@ var DBEntity = function (_EventEmitter3) {
             return this.columns.find(function (x) {
                 return x.name == colName;
             });
+        }
+    }, {
+        key: 'toString',
+        value: function toString() {
+            return IsEmptyString(this.name) ? this.code : this.name;
         }
     }]);
 

@@ -5,6 +5,8 @@ class DataBase extends EventEmitter{
         this.entities_arr = [];
         this.entityCode_map = {};
         this.entityName_map = {};
+
+        autoBind(this);
     }
 
     synEnityFromFetch(data_arr){
@@ -64,6 +66,16 @@ class DataBase extends EventEmitter{
 
     synBykeyword(callback){
 
+    }
+
+    getEntitiesByType(tType){
+        return this.entities_arr.filter(e=>{
+            return e.type == tType;
+        });
+    }
+
+    getAllTable(){
+        return this.getEntitiesByType('U');
     }
 }
 
@@ -133,6 +145,10 @@ class DBEntity extends EventEmitter{
 
     getColumnByName(colName){
         return this.columns.find(x=>{return x.name == colName;});
+    }
+
+    toString(){
+        return IsEmptyString(this.name) ? this.code : this.name;
     }
 }
 

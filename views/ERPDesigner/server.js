@@ -473,13 +473,11 @@ function WriteEntity(库内对象_dr, 目标库内对象_dic) {
                 var columnName = columDR.name;
                 var Columns = {};
                 Columns.name = columnName;
-                var is_identity = columDR.is_identity;
-                if (is_identity == "True") {
-                    Columns.is_identity = is_identity;
+                if (columDR.is_identity) {
+                    Columns.is_identity = true;
                 }
-                var is_nullable = columDR.is_nullable;
-                if (is_nullable == "True") {
-                    Columns.is_nullable = is_nullable;
+                if (columDR.is_nullable) {
+                    Columns.is_nullable = true;
                 }
                 库内对象obj.columns.push(Columns);
 

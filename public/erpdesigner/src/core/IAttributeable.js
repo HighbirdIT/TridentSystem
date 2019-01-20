@@ -88,6 +88,8 @@ class IAttributeable extends EventEmitter{
                 switch(attrItem.name){
                     case AttrNames.LayoutNames.StyleAttr:
                     case AttrNames.Name:
+                    case AttrNames.DataSource:
+                    case AttrNames.ProcessTable:
                     break;
                     default:
                     console.warn('属性:' + attrName + '没有默认值');

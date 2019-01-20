@@ -195,7 +195,7 @@ var AttributeEditor = function (_React$PureComponent) {
             var nowValParseRet = parseObj_CtlPropJsBind(this.state.value);
             var newVal = '';
             if (nowValParseRet.isScript) {
-                newVal = nowValParseRet.oldValue;
+                newVal = nowValParseRet.oldtext == null ? '' : nowValParseRet.oldtext;
             } else {
                 newVal = makeObj_CtlPropJsBind(this.props.targetobj.id, this.props.targetattr.name, 'get', nowValParseRet.string);
             }
@@ -214,7 +214,9 @@ var AttributeEditor = function (_React$PureComponent) {
             }
             var targetBP = nowValParseRet.jsBp;
             if (targetBP == null) {
-                targetBP = project.scriptMaster.createBP(nowValParseRet.funName, this.props.targetattr.scriptSetting.type, nowValParseRet.jsGroup);
+                var theAttr = this.props.targetattr;
+                targetBP = project.scriptMaster.createBP(nowValParseRet.funName, this.props.targetattr.scriptSetting.type, theAttr.scriptSetting.group);
+                targetBP.ctlID = this.props.targetobj.id;
                 this.setState({
                     magicObj: {}
                 });

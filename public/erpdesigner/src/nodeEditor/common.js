@@ -923,6 +923,9 @@ class C_Node_Frame extends React.PureComponent {
 
     render() {
         var nodeData = this.props.nodedata;
+        if(nodeData.preRenderFrame){
+            nodeData.preRenderFrame();
+        }
         var posStyle = { left: parseInt(nodeData.left) + 'px', 'top': parseInt(nodeData.top), 'paddingTop': this.props.isPure ? '0.5em' : null };
         return (<div ref={this.rootDivRef} onMouseDown={this.moveBarMouseDownHandler} className='position-absolute d-flex flex-column nodeRoot' style={posStyle} d-selected={this.state.selected ? '1' : null}>
             {

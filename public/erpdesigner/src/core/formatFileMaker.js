@@ -93,6 +93,10 @@ class FormatFileBlock extends FormatFile_ItemBase{
         this.childs_map = {};
     }
 
+    isEmpty(){
+        return this.childs_arr.length == 0;
+    }
+
     clone(){
         var rlt = new FormatFileBlock(this.name, this.priority);
         this.childs_arr.forEach(child=>{
@@ -611,6 +615,9 @@ class JSFile_Funtion extends FormatFileBlock{
         this.retBlock = new FormatFileBlock('ret');
 
         this.scope = new JSFile_Scope('_localfun', this.getScope());
+        this.headBlock.parent = this;
+        this.bodyBlock.parent = this;
+        this.retBlock.parent = this;
         this.declareType = declareType;
     }
 
@@ -654,6 +661,9 @@ class JSFile_Funtion extends FormatFileBlock{
     getString(prefixStr, indentChar, newLineChar){
         var paramsStr = '';
         this.params_arr.forEach(e=>{
+            if(e == null){
+                return;
+            }
             paramsStr += (paramsStr.length == 0 ? '' : ',') + e;
         });
         var indentString = this.getIndentString(indentChar);

@@ -6,7 +6,8 @@ function genTextFiledAttribute(label='显示字段', def='', editable = true){
         editable:editable,
     }, true, {
         scriptable:true,
-        type:FunType_Client
+        type:FunType_Client,
+        group:FunGroup.CtlAttr,
     });
 }
 
@@ -55,11 +56,13 @@ function makeFName_pull(formKernel){
 }
 
 function makeStr_callFun(funName, params_arr, endChar = ''){
-    return funName + '(' + (params_arr == null || params_arr.length == 0 ? '' : params_arr.join(',')) + ')' + endChar;
+    var realParams_arr = params_arr == null ? null : params_arr.filter(e=>{return e!=null;});
+    
+    return funName + '(' + (realParams_arr == null || realParams_arr.length == 0 ? '' : realParams_arr.join(',')) + ')' + endChar;
 }
 
-function makeStr_getStateByPath(state, path){
-    return makeStr_callFun('getStateByPath', [state, path]);
+function makeStr_getStateByPath(state, path, defValue){
+    return makeStr_callFun('getStateByPath', [state, path, defValue]);
 }
 
 function makeStr_DynamicAttr(objStr, propName){
@@ -72,6 +75,10 @@ function makeActStr_pullKernel(formKernel){
 
 function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr, isModel = true, url = 'appServerUrl'){
     return "store.dispatch(fetchJsonPost(" + url + ", { action: '" + actStr + "' }, makeFTD_Prop(" + baseStr + "," + idStr + ',' + propStr + ',' + isModel + "), EFetchKey.FetchPropValue));";
+}
+
+function makeLine_Return(retStr){
+    return 'return ' + retStr + ';';
 }
 
 
@@ -90,6 +97,8 @@ const VarNames={
     Records_arr:'records_arr',
     RecordIndex:'recordIndex',
     InsertCache:'insertCache',
+    State:'state',
+    Bundle:'bundle',
 };
 
 const AttrNames={
@@ -102,6 +111,7 @@ const AttrNames={
     IsMain:'ismain',
     Label:'label',
     DataSource:'datasource',
+    ProcessTable:'processtable',
     Name:'name',
     ValueType:'valuetype',
     FloatNum:'floatnum',

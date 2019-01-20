@@ -125,7 +125,8 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
     }
 
     socketColumnSelectChanged(newVal, ddc) {
-        ddc.props.socket.setExtra('colName', newVal);
+        var socket = ddc.props.socket;
+        socket.setExtra('colName', newVal);
     }
 
     getCanUseColumns(){
@@ -171,5 +172,37 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.processOutputSockets} customSocketRender={this.customSocketRender} />
             </div>
         </C_Node_Frame>
+    }
+}
+
+class C_JSNODE_Insert_table extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        this.dropdownRef = React.createRef();
+
+        C_NodeCom_Base(this);
+    }
+
+    dbItemChanged(newCode){
+        console.log(newCode);
+        this.props.nodedata.setDSCode(newCode);
+    }
+
+    render() {
+        var nowVal = this.props.nodedata.dsCode;
+        var nodeData = this.props.nodedata;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={'Insert'} >
+                    <div className='flex-grow-1 flex-shrink-1'>
+                        <DropDownControl ref={this.dropdownRef} itemChanged={this.dbItemChanged} btnclass='btn-dark' options_arr={g_dataBase.getAllTable} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={nowVal ? nowVal : -1} />
+                    </div>
+                    <div className='d-flex'>
+                        <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
+                        <div className='d-flex flex-column'>
+                            <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutFlowScoketDynamic() ? nodeData.processOutputFlowSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+                            <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
+                        </div>
+                    </div>
+                </C_Node_Frame>
     }
 }

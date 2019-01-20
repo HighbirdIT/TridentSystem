@@ -1,29 +1,27 @@
-const M_PageKernelAttrsSetting = {
-    groups_arr: [
-        new CAttributeGroup('基本设置', [
-            new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'),
-            new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false),
-            new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
-        ]),
-        new CAttributeGroup('测试设置', [
-            new CAttribute('测试', AttrNames.Test, ValueType.String,'', true, 1),
-        ]),
-    ],
-};
+const M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([
+    new CAttributeGroup('基本设置', [
+        new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'),
+        new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false),
+        new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
+    ]),
+    new CAttributeGroup('测试设置', [
+        new CAttribute('测试', AttrNames.Test, ValueType.String, '', true, 1),
+    ]),
+],false);
 
 class M_PageKernel extends ContainerKernelBase {
     constructor(initData, parentKernel, createHelper, kernelJson) {
-        super(initData, 
-            M_PageKernel_Type, 
+        super(initData,
+            M_PageKernel_Type,
             '页面',
-            M_PageKernelAttrsSetting.groups_arr.concat(),
+            M_PageKernelAttrsSetting,
             parentKernel,
-            createHelper,kernelJson
+            createHelper, kernelJson
         );
 
         var self = this;
         autoBind(self);
-        
+
         /*
         var nowParent = this;
         for(var i=0;i<1;++i){
@@ -49,10 +47,10 @@ class M_PageKernel extends ContainerKernelBase {
         return flag;
     }
 
-    set_ismain(val){
+    set_ismain(val) {
         var flag = this.__setAttribute(AttrNames.IsMain, val);
         if (flag) {
-            if(val){
+            if (val) {
                 var project = this.project;
                 project.mainPageChanged(this);
             }
@@ -73,16 +71,16 @@ class M_Page extends React.PureComponent {
         };
 
         autoBind(this);
-        M_ControlBase(this,[AttrNames.Title, 
-                            AttrNames.Chidlren, 
-                            AttrNames.Orientation,
-                            AttrNames.LayoutNames.APDClass,
-                         ]);
+        M_ControlBase(this, [AttrNames.Title,
+        AttrNames.Chidlren,
+        AttrNames.Orientation,
+        AttrNames.LayoutNames.APDClass,
+        ]);
         M_ContainerBase(this);
     }
 
     aAttrChanged(changedAttrName) {
-        if(this.aAttrChangedBase(changedAttrName)){
+        if (this.aAttrChangedBase(changedAttrName)) {
             return;
         }
         var childrenVal = this.state.children;
@@ -106,7 +104,7 @@ class M_Page extends React.PureComponent {
         layoutConfig.addClass('d-flex');
         layoutConfig.addClass('flex-grow-1');
         layoutConfig.addClass('flex-shrink-0');
-        if(this.state.orientation == Orientation_V){
+        if (this.state.orientation == Orientation_V) {
             layoutConfig.addClass('flex-column');
         }
         return (

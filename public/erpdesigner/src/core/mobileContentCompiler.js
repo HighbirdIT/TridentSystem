@@ -1,3 +1,69 @@
+class ControlGraphNode{
+    constructor(kernel){
+        this.kernel = kernel;
+        this.id = kernel.id;
+        this.outpath_arr = [];
+        this.inpath_arr = [];
+    }
+
+    addOut(targetNode){
+        if(this.outpath_arr.indexOf(targetNode) == -1){
+            this.outpath_arr.push(targetNode);
+            targetNode.addIn(this);
+        }
+    }
+
+    addIn(targetNode){
+        if(this.inpath_arr.indexOf(targetNode) == -1){
+            this.inpath_arr.push(targetNode);
+        }
+    }
+}
+
+const ECtlReplyPathType={
+    SetAP_On_BPChanged:'SetAP_On_BPChanged',
+};
+
+class ControlGraphPath{
+    constructor(type,relyNode,berelyNode,initData){
+        this.type = type;
+        this.relyNode = relyNode;
+        this.berelyNode = berelyNode;
+        relyNode.addOut(berelyNode);
+        Object.assign(this, initData);
+    }
+}
+
+class ControlRelyOnGraph{
+    constructor(){
+        this.allpath_map = {};
+        this.allgraph_map = {};
+    }
+
+    addRely_setAPOnBPChanged(relyCtl, relyPropName, berelyCtl, berelyPropName, approach){
+        var pathid = 'set_' + relyCtl.id + '.' + relyPropName + '_on_' + berelyCtl.id + '.' + berelyPropName;
+        if(this.allpath_map[pathid]){
+            return this.allpath_map[pathid];
+        }
+        if(this.allgraph_map[relyCtl.id] == null){
+            this.allgraph_map[relyCtl.id] = new ControlGraphNode(relyCtl);
+        }
+        if(this.allgraph_map[berelyCtl.id] == null){
+            this.allgraph_map[berelyCtl.id] = new ControlGraphNode(berelyCtl);
+        }
+        var path = new ControlGraphPath(ECtlReplyPathType.SetAP_On_BPChanged, this.allgraph_map[relyCtl.id], this.allgraph_map[berelyCtl.id],{
+            approach:approach,
+            berelyPropName:berelyPropName,
+            relyPropName:relyPropName,
+            relyCtl:relyCtl,
+            berelyCtl:berelyCtl,
+        });
+        path.id = pathid;
+        this.allpath_map[pathid] = path;
+        return path;
+    }
+}
+
 class MobileContentCompiler extends ContentCompiler{
     constructor(projectCompiler){
         super(projectCompiler);
@@ -14,6 +80,7 @@ class MobileContentCompiler extends ContentCompiler{
         var logManager = project.logManager;
         this.compileChain = [];
         this.compiledScriptBP_map = {};
+        this.ctlRelyOnGraph = new ControlRelyOnGraph();
 
         var theSwicth = new JSFile_Switch('switchpage', makeStr_ThisProp(VarNames.NowPage));
         this.appRenderSwicth = theSwicth;
@@ -63,6 +130,31 @@ class MobileContentCompiler extends ContentCompiler{
             this.endKernelCompile(this.compileChain[ki]);
         }
 
+        // gen relyon code
+        for(var pid in this.ctlRelyOnGraph.allpath_map){
+            var relyPath = this.ctlRelyOnGraph.allpath_map[pid];
+            if(relyPath.type == ECtlReplyPathType.SetAP_On_BPChanged){
+                var propFulPath = relyPath.berelyCtl.getStatePath(relyPath.berelyPropName);
+                var propChangedHandlerName = relyPath.berelyCtl.id + '_' + relyPath.berelyPropName + '_changed';
+                var changedFun = clientSide.scope.getFunction(propChangedHandlerName);
+                if(changedFun == null)
+                {
+                    changedFun = clientSide.scope.getFunction(propChangedHandlerName, true, [VarNames.State,'newValue','oldValue','path','visited','delayActs']);
+                    changedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
+                    changedFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''", VarNames.NeedSetState], ';'));
+                    clientSide.stateChangedAct[singleQuotesStr(propFulPath)] = propChangedHandlerName + '.bind(window)';
+                }
+                var getValueStr = '';
+                if(relyPath.approach.funName){
+                    getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State]);
+                }
+                else{
+                    console.error('不支持的approach!');
+                }
+                changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName)), getValueStr));
+            }
+        }
+
         return true;
     }
 
@@ -74,11 +166,26 @@ class MobileContentCompiler extends ContentCompiler{
         var logManager = project.logManager;
         var useScope = targetBP.type == FunType_Client ? this.clientSide.scope : this.serverSide.scope;
         var compileHelper = new JSNode_CompileHelper(logManager, null, useScope);
+        logManager.log('编译脚本:' + targetBP.name);
         var compileRet = targetBP.compile(compileHelper);
         if(compileRet == false){
             return false;
         }
+        var cname;
+        for(var fi in compileHelper.useForm_map){
+            var formMidData = this.projectCompiler.getMidData(fi);
+            var useColumns_map = compileHelper.useForm_map[fi].useColumns_map;
+            var useControls_map = compileHelper.useForm_map[fi].useControls_map;
+            for(cname in useColumns_map){
+                formMidData.useColumns_map[cname] = 1;
+            }
+            for(cname in useControls_map){
+                formMidData.useControls_map[cname] = 1;
+            }
+        }
+        compileRet.useForm_map = compileHelper.useForm_map;
         this.compiledScriptBP_map[targetBP.id] = compileRet;
+        return compileRet;
     }
 
     compilePage(pageKernel){
@@ -214,6 +321,9 @@ class MobileContentCompiler extends ContentCompiler{
     }
 
     compileTextKernel(theKernel, renderBlock, renderFun){
+        var project = this.project;
+        var logManager = project.logManager;
+
         var ctlTag = new FormatHtmlTag(theKernel.id, 'VisibleERPC_Text', this.clientSide);
         var layoutConfig = theKernel.getLayoutConfig();
         
@@ -229,24 +339,117 @@ class MobileContentCompiler extends ContentCompiler{
         }
         renderBlock.pushChild(ctlTag);
 
-        var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
-        var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
-        if(belongFormKernel != null){
-            var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
-            var formDS = belongFormKernel.getAttribute(AttrNames.DataSource);
-            var textField = theKernel.getAttribute(AttrNames.TextField);
-            var useColumn = formDS.getColumnByName(textField);
-            if(useColumn){
+        var textField = theKernel.getAttribute(AttrNames.TextField);
+        var textFieldParseRet = parseObj_CtlPropJsBind(textField, project.scriptMaster);
+        if(textFieldParseRet.isScript){
+            this.compileScriptAttribute(textFieldParseRet, theKernel, 'value');
+        }
+        else{
+            var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
+            var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
+            if(belongFormKernel != null){
+                var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
+                var formDS = belongFormKernel.getAttribute(AttrNames.DataSource);
+                var setValueStateItem = null;
                 formMidData.needSetKernels_arr.push(theKernel);
-                formMidData.useColumns_map[useColumn.name] = 1;
-                kernelMidData.columnName = textField;
-                kernelMidData.needSetStates_arr = [
-                    {
-                        name:'value',
-                        useColumn:useColumn
+                if(formDS != null){
+                    var useColumn = formDS.getColumnByName(textField);
+                    if(useColumn){
+                        formMidData.useColumns_map[useColumn.name] = 1;
+                        kernelMidData.columnName = textField;
+                        setValueStateItem = {
+                            name:'value',
+                            useColumn:useColumn
+                        };
                     }
+                }
+                if(setValueStateItem == null){
+                    setValueStateItem = {
+                        name:'value',
+                        staticValue:textField
+                    };
+                }
+                kernelMidData.needSetStates_arr = [
+                    setValueStateItem
                 ];
             }
+        }
+    }
+
+    compileScriptAttribute(attrParseRet, theKernel, stateName){
+        var project = this.project;
+        var logManager = project.logManager;
+        if(attrParseRet.jsBp == null){
+            logManager.errorEx([logManager.createBadgeItem(
+                theKernel.getReadableName(),
+                theKernel,
+                this.projectCompiler.clickKernelLogBadgeItemHandler),
+                '显示字段用到了脚本，但没有创建此脚本']);
+            return false;
+        }
+        var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
+        if(belongFormKernel == null){
+            logManager.errorEx([logManager.createBadgeItem(
+                theKernel.getReadableName(),
+                theKernel,
+                this.projectCompiler.clickKernelLogBadgeItemHandler),
+                '必须放置在Form之中']);
+            return false;
+        }
+        var scriptCompileRet = this.compileScriptBlueprint(attrParseRet.jsBp);
+        if(scriptCompileRet == false){
+            return false;
+        }
+        var visibleStyle = VisibleStyle_Update;
+        var useFormData = scriptCompileRet.useForm_map[belongFormKernel.id];
+        var bindMode = ScriptBindMode.OnForm;
+        var useColumn = false;
+        var useControl = false;
+        if(useFormData){
+            useColumn = !IsEmptyObject(useFormData.useColumns_map);
+            useControl = !IsEmptyObject(useFormData.useControls_map);
+            if(useColumn){
+                visibleStyle = VisibleStyle_Update;
+            }
+            else{
+                if(useControl){
+                    bindMode = ScriptBindMode.OnRelAttrChanged;
+                    for(var cid in useFormData.useControls_map){
+                        var useCtlData = useFormData.useControls_map[cid];
+                        for(var pName in useCtlData.useprops_map){
+                            var propApiitem = useCtlData.useprops_map[pName];
+                            this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, stateName, useCtlData.kernel, propApiitem.stateName, {
+                                funName:attrParseRet.jsBp.name,
+                            });
+                        }
+                    }
+                }
+                else{
+                    visibleStyle = VisibleStyle_Update;
+                }
+            }
+        }
+        var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
+        var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
+        formMidData.needSetKernels_arr.push(theKernel);
+        kernelMidData.visibleStyle = visibleStyle;
+        kernelMidData.useFormData = useFormData;
+        if(bindMode == ScriptBindMode.OnRelAttrChanged){
+            kernelMidData.isSelfCare = true;
+        }
+        var setStateItem = {
+            name:stateName,
+            isDynamic:true,
+            funName:attrParseRet.funName,
+            bindMode:bindMode,
+            useColumn:useColumn,
+            useControl:useControl,
+        };
+        if(kernelMidData.needSetStates_arr == null){
+            kernelMidData.needSetStates_arr = [setStateItem];
+        }
+        else{
+            kernelMidData.needSetStates_arr.push(setStateItem);
         }
     }
 
@@ -275,34 +478,7 @@ class MobileContentCompiler extends ContentCompiler{
         labeledCtrlTag.setAttr('id', theKernel.id);
         labeledCtrlTag.setAttr('parentPath', parentPath);
         if(textFieldParseRet.isScript){
-            if(textFieldParseRet.jsBp == null){
-                logManager.errorEx([logManager.createBadgeItem(
-                    theKernel.getReadableName(),
-                    theKernel,
-                    this.projectCompiler.clickKernelLogBadgeItemHandler),
-                    '显示字段用到了脚本，但没有创建此脚本']);
-                return false;
-            }
-            this.compileScriptBlueprint(textFieldParseRet.jsBp);
-            var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
-            if(belongFormKernel == null){
-                logManager.errorEx([logManager.createBadgeItem(
-                    theKernel.getReadableName(),
-                    theKernel,
-                    this.projectCompiler.clickKernelLogBadgeItemHandler),
-                    '必须放置在Form之中']);
-                return false;
-            }
-            var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
-            var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
-            formMidData.needSetKernels_arr.push(theKernel);
-            kernelMidData.needSetStates_arr = [
-                {
-                    name:'label',
-                    funName:textFieldParseRet.funName,
-                    isDynamic:true,
-                }
-            ];
+            this.compileScriptAttribute(textFieldParseRet,theKernel,'label');
         }else{
             labeledCtrlTag.setAttr('label', label);
         }
@@ -316,6 +492,8 @@ class MobileContentCompiler extends ContentCompiler{
     }
 
     compileFormKernel(theKernel, renderBlock, renderFun){
+        var project = this.project;
+        var logManager = project.logManager;
         var clientSide = this.clientSide;
         var serverSide = this.serverSide;
         var layoutConfig = theKernel.getLayoutConfig();
@@ -367,25 +545,34 @@ class MobileContentCompiler extends ContentCompiler{
         renderBlock.pushChild(formTag);
 
         var thisfullpath = makeStr_DotProp(parentPath,theKernel.id);
+        var useDS = theKernel.getAttribute(AttrNames.DataSource);
 
         formReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "getStateByPath(state, '" + thisfullpath + "', {})");
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Fetching), makeStr_DotProp(VarNames.CtlState, VarNames.Fetching)));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FetchErr), makeStr_DotProp(VarNames.CtlState, VarNames.FetchErr)));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Records_arr), makeStr_DotProp(VarNames.CtlState, VarNames.Records_arr)));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.RecordIndex), makeStr_DotProp(VarNames.CtlState, VarNames.RecordIndex)));
-        formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'loaded'), makeStr_DotProp(VarNames.CtlState, VarNames.Records_arr) + ' != ' + null));
-
-        var useDS = theKernel.getAttribute(AttrNames.DataSource);
+        formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'loaded'), 
+                                                            useDS == null ? 'true' : makeStr_DotProp(VarNames.CtlState, VarNames.Records_arr) + ' != ' + null));
 
         var freshFun = clientSide.scope.getFunction(makeFName_freshForm(theKernel), true, [VarNames.ReState,VarNames.Records_arr]);
-        clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath,VarNames.Records_arr))] = freshFun.name + '.bind(window)';
-        clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath,VarNames.RecordIndex))] = makeFName_bindForm(theKernel) + '.bind(window)';
-        freshFun.pushLine(makeStr_callFun('simpleFreshFormFun', [VarNames.ReState,VarNames.Records_arr, singleQuotesStr(makeStr_DotProp(parentPath,theKernel.id))], ';'));
-        
         var bindFun = clientSide.scope.getFunction(makeFName_bindForm(theKernel), true, [VarNames.ReState,'newIndex','oldIndex']);
-        bindFun.scope.getVar('formState', true, makeStr_getStateByPath(VarNames.ReState, singleQuotesStr(thisfullpath)));
-        bindFun.scope.getVar(VarNames.Records_arr, true, makeStr_DotProp('formState', VarNames.Records_arr));
+        if(useDS){
+            clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath,VarNames.Records_arr))] = freshFun.name + '.bind(window)';
+            clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath,VarNames.RecordIndex))] = makeFName_bindForm(theKernel) + '.bind(window)';
+            freshFun.pushLine(makeStr_callFun('simpleFreshFormFun', [VarNames.ReState,VarNames.Records_arr, singleQuotesStr(makeStr_DotProp(parentPath,theKernel.id))], ';'));
+        }
+        else{
+            freshFun.pushLine(makeStr_callFun(bindFun.name, [VarNames.ReState]));
+        }
+        
+        bindFun.scope.getVar('formState', true, makeStr_getStateByPath(VarNames.ReState, singleQuotesStr(thisfullpath), '{}'));
+        if(useDS)
+        {
+            bindFun.scope.getVar(VarNames.Records_arr, true, makeStr_DotProp('formState', VarNames.Records_arr));
+        }
         bindFun.scope.getVar(VarNames.NeedSetState, true, '{}');
+        var bundleVar = bindFun.scope.getVar('bundle', true, '{}');
         var saveInsertIfBlock = null;
         var insertModeIf = null;
         var hadInsertCacheIf = null;
@@ -396,16 +583,25 @@ class MobileContentCompiler extends ContentCompiler{
         var thisFormMidData = this.projectCompiler.getMidData(theKernel.id);
         thisFormMidData.needSetKernels_arr = [];
         thisFormMidData.useColumns_map = [];
+        thisFormMidData.useControls_map = [];
+        var bindNowRecordBlock = null;
+        var formCanInsert = false;
+        var bindInersetBlock = null;
+
+        var pullFun = clientSide.scope.getFunction(makeFName_pull(theKernel), true, [VarNames.ReState]);
+        pullFun.retBlock.pushLine(makeLine_Return(VarNames.ReState));
+        var pageActiveFun = clientSide.scope.getFunction(makeFName_activePage(belongPage));
+        
+        if(!useDS){
+            pageActiveFun.pushLine(makeLine_Assign(VarNames.State,makeStr_callFun(bindFun.name, [VarNames.State])));
+            pullFun.pushLine(makeLine_Assign(VarNames.ReState, makeStr_callFun(bindFun.name, [VarNames.ReState])));
+        }
         if(useDS)
         {
-            // gen pull fun
-            var pullFun = clientSide.scope.getFunction(makeFName_pull(theKernel), true);
-            pullFun.pushLine(makeLine_FetchPropValue(makeActStr_pullKernel(theKernel), singleQuotesStr(parentPath), singleQuotesStr(theKernel.id), singleQuotesStr(VarNames.Records_arr), false));
-            
-            var pageActiveFun = clientSide.scope.getFunction(makeFName_activePage(belongPage));
             var timeoutBlock = pageActiveFun.getChild('timeout');
-            timeoutBlock.pushLine(pullFun.name + '();');
-
+            timeoutBlock.pushLine(makeStr_callFun(pullFun.name,[VarNames.State]));
+            // gen pull fun
+            pullFun.pushLine(makeLine_FetchPropValue(makeActStr_pullKernel(theKernel), singleQuotesStr(parentPath), singleQuotesStr(theKernel.id), singleQuotesStr(VarNames.Records_arr), false));
             // gen back pull
             var serverPullFun = serverSide.scope.getFunction(makeActStr_pullKernel(theKernel), true, ['req','res']);
             serverSide.initProcessFun(serverPullFun);
@@ -417,28 +613,33 @@ class MobileContentCompiler extends ContentCompiler{
             serverPullFun.pushLine("if (sql == null) {return serverhelper.createErrorRet('生成sql失败');}");
             serverPullFun.pushLine("var rcdRlt = yield dbhelper.asynQueryWithParams(sql, params_arr);");
             serverPullFun.pushLine("return rcdRlt.recordset;");
-
-            saveInsertIfBlock = new JSFile_IF('saveinsert', 'oldIndex == -1');
-            bindFun.saveInsertBlock = saveInsertIfBlock.trueBlock;
-            bindFun.pushChild(saveInsertIfBlock);
+            bindFun.scope.getVar(VarNames.NowRecord, true, 'null');
             insertModeIf = new JSFile_IF('validrow', 'records_arr == null || newIndex == -1');
             bindFun.pushLine('var useIndex = newIndex;');
             bindFun.pushChild(insertModeIf);
-            insertModeIf.trueBlock.pushLine(makeLine_Assign(VarNames.InsertCache, makeStr_getStateByPath("formState", singleQuotesStr(VarNames.InsertCache))));
-            hadInsertCacheIf = new JSFile_IF(VarNames.InsertCache, VarNames.InsertCache);
-            insertModeIf.trueBlock.pushChild(hadInsertCacheIf);
-            insertModeIf.falseBlock.pushLine('var ' + VarNames.NowRecord + '=' + VarNames.Records_arr + '[useIndex];');
-
+            insertModeIf.falseBlock.pushLine(VarNames.NowRecord + '=' + VarNames.Records_arr + '[useIndex];');
+            if(formCanInsert)
+            {
+                saveInsertIfBlock = new JSFile_IF('saveinsert', 'oldIndex == -1');
+                bindFun.saveInsertBlock = saveInsertIfBlock.trueBlock;
+                bindFun.pushChild(saveInsertIfBlock);
+                insertModeIf.trueBlock.pushLine(makeLine_Assign(VarNames.InsertCache, makeStr_getStateByPath("formState", singleQuotesStr(VarNames.InsertCache))));
+                hadInsertCacheIf = new JSFile_IF(VarNames.InsertCache, VarNames.InsertCache);
+                insertModeIf.trueBlock.pushChild(hadInsertCacheIf);
+            }
+            bindNowRecordBlock = insertModeIf.falseBlock;
+            bindInersetBlock = insertModeIf.trueBlock;
             //belongPageActiveFun.pushLine(makeStr_callFun('setStateByPath', [VarNames.ReState, singleQuotesStr(thisfullpath), 'false']));
         }
         else{
-            
         }
-        var dynamicSetBlock = new FormatFileBlock('dynamic');
-        bindFun.pushChild(dynamicSetBlock);
-        
-        bindFun.pushLine(makeStr_callFun('setManyStateByPath', [VarNames.ReState, singleQuotesStr(thisfullpath), VarNames.NeedSetState], ';'));
-        
+        var staticBindBlock = new FormatFileBlock('static');
+        bindFun.pushChild(staticBindBlock);
+        var bundleInitvar = {};
+        var initBundleBlock = new FormatFileBlock('initBundle');
+        var dynamicSetBlock_hadRecord = new FormatFileBlock('dynamic_hadRecord');
+        var dynamicSetBlock_noRecord = new FormatFileBlock('dynamic_norecord');
+        bindFun.pushChild(initBundleBlock);
 
         for(var ci in theKernel.children){
             var childKernel = theKernel.children[ci];
@@ -451,21 +652,63 @@ class MobileContentCompiler extends ContentCompiler{
             for(ci in thisFormMidData.needSetKernels_arr){
                 var targetKernel = thisFormMidData.needSetKernels_arr[ci];
                 var targetKernelMidData = this.projectCompiler.getMidData(targetKernel.id);
+                if(useDS){
+                    if(!targetKernelMidData.isSelfCare){
+                        if(formCanInsert)
+                        {
+                            // set visible attr
+                            var visibleStyle = targetKernelMidData.visibleStyle;
+                            if(visibleStyle == null){
+                                logManager.warnEx([logManager.createBadgeItem(
+                                    targetKernel.getReadableName(),
+                                    targetKernel,
+                                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                                    '没有提供VisibleStyle']);
+                                visibleStyle = VisibleStyle_Both;
+                            }
+                            if(visibleStyle == VisibleStyle_Insert || visibleStyle == VisibleStyle_Update){
+                                var visibleStateName = makeStr_DynamicAttr(VarNames.NeedSetState, makeStr_DotProp(targetKernel.id, 'visible'));
+                                if(targetKernel.parent.type == M_LabeledControlKernel_Type){
+                                    visibleStateName = makeStr_DynamicAttr(VarNames.NeedSetState, makeStr_DotProp(targetKernel.parent.id, 'visible'));
+                                }
+                                bindInersetBlock.pushLine(makeLine_Assign(visibleStateName, visibleStyle == VisibleStyle_Insert ? 'true' : 'false'));
+                                bindNowRecordBlock.pushLine(makeLine_Assign(visibleStateName, visibleStyle == VisibleStyle_Insert ? 'false' : 'true'));
+                            }
+                        }
+                    }
+                }
                 if(targetKernelMidData.needSetStates_arr){
                     targetKernelMidData.needSetStates_arr.forEach(stateItem=>{
                         var stateName = makeStr_DotProp(targetKernel.id, stateItem.name);
                         var state_Name = makeStr_join('_', targetKernel.id, stateItem.name);
                         if(stateItem.isDynamic){
-                            if(stateItem.funName){
-                                dynamicSetBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName)));
+                            if(stateItem.bindMode == ScriptBindMode.OnForm){
+                                var setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, bundleVar.name]));
+                                if(stateItem.useColumn){
+                                    if(bundleInitvar[theKernel.id + '_nowrecord'] == null){
+                                        bundleInitvar[theKernel.id + '_nowrecord'] = VarNames.NowRecord;
+                                    }
+                                    dynamicSetBlock_hadRecord.pushLine(setLine);
+                                }
+                                else{
+                                    dynamicSetBlock_noRecord.pushLine(setLine);
+                                }
                             }
                         }else{
-                            if(useDS){
-                                saveInsertIfBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, VarNames.InsertCache + '.' + state_Name), makeStr_getStateByPath('formState', singleQuotesStr(stateName))));
+                            if(stateItem.staticValue){
+                                staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), singleQuotesStr(stateItem.staticValue)));
+                            }
+                            else if(stateItem.useColumn){
+                                if(formCanInsert){
+                                    saveInsertIfBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, VarNames.InsertCache + '.' + state_Name), makeStr_getStateByPath('formState', singleQuotesStr(stateName))));
+                                }
                                 if(stateItem.useColumn){
-                                    hadInsertCacheIf.trueBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), VarNames.InsertCache + '.' + state_Name));
-                                    hadInsertCacheIf.falseBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), "''"));
-                                    insertModeIf.falseBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_DynamicAttr(VarNames.NowRecord, stateItem.useColumn.name)));
+                                    if(formCanInsert)
+                                    {
+                                        hadInsertCacheIf.trueBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), VarNames.InsertCache + '.' + state_Name));
+                                        hadInsertCacheIf.falseBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), "''"));
+                                    }
+                                    bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_DynamicAttr(VarNames.NowRecord, stateItem.useColumn.name)));
                                 }
                             }
                         }
@@ -473,6 +716,26 @@ class MobileContentCompiler extends ContentCompiler{
                 }
             }
         }
+
+        if(!IsEmptyObject(bundleInitvar)){
+            initBundleBlock.pushLine(makeLine_Assign(bundleVar.name, JsObjectToString(bundleInitvar)));
+        }
+        if(!dynamicSetBlock_hadRecord.isEmpty() || !dynamicSetBlock_noRecord.isEmpty()){
+            if(useDS)
+            {
+                var recordifBlock = new JSFile_IF('hadrecord', VarNames.NowRecord);
+                bindFun.pushChild(recordifBlock);
+                recordifBlock.trueBlock.pushChild(dynamicSetBlock_hadRecord);
+                recordifBlock.falseBlock.pushChild(dynamicSetBlock_noRecord);
+            }
+            else{
+                bindFun.pushChild(dynamicSetBlock_noRecord);
+            }
+        }
+        if(useDS){
+            bindFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, VarNames.NowRecord), VarNames.NowRecord));
+        }
+        bindFun.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.ReState, singleQuotesStr(thisfullpath), VarNames.NeedSetState], ';'));
     }
 
     compileContainerKernel(theKernel, renderBlock, renderFun){
@@ -503,6 +766,7 @@ class MobileContentCompiler extends ContentCompiler{
     }
 
     compileLabelKernel(theKernel, renderBlock, renderFun){
+        var project = this.project;
         var layoutConfig = theKernel.getLayoutConfig();
         layoutConfig.addClass('erp-control');
 
@@ -517,32 +781,36 @@ class MobileContentCompiler extends ContentCompiler{
         var textField = theKernel.getAttribute(AttrNames.TextField);
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
 
-        //var canUserComlumns_arr = GetKernelCanUseColumns(theKernel);
-        //var userColumn = canUserComlumns_arr.find(x=>{return x.name == textField;});
-        var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
-        if(belongFormKernel != null){
-            var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
-            if(formMidData.needSetKernels_arr == null){
-                formMidData.needSetKernels_arr = [];
-            }
-            var formDS = belongFormKernel.getAttribute(AttrNames.DataSource);
-            var useColumn = formDS.getColumnByName(textField);
-            if(useColumn){
-                formMidData.needSetKernels_arr.push(theKernel);
-                formMidData.useColumns_map[useColumn.name] = 1;
-                kernelMidData.columnName = textField;
-                kernelMidData.needSetStates_arr = [
-                    {
-                        name:'text',
-                        useColumn:useColumn
-                    }
-                ];
-            }else{
-                ctlTag.setAttr('text',textField);
-            }
+        var textFieldParseRet = parseObj_CtlPropJsBind(textField, project.scriptMaster);
+        if(textFieldParseRet.isScript){
+            this.compileScriptAttribute(textFieldParseRet, theKernel, 'text');
         }
         else{
-            ctlTag.setAttr('text',textField);
+            var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
+            if(belongFormKernel != null){
+                var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
+                if(formMidData.needSetKernels_arr == null){
+                    formMidData.needSetKernels_arr = [];
+                }
+                var formDS = belongFormKernel.getAttribute(AttrNames.DataSource);
+                var useColumn = formDS ? formDS.getColumnByName(textField) : null;
+                if(useColumn){
+                    formMidData.needSetKernels_arr.push(theKernel);
+                    formMidData.useColumns_map[useColumn.name] = 1;
+                    kernelMidData.columnName = textField;
+                    kernelMidData.needSetStates_arr = [
+                        {
+                            name:'text',
+                            useColumn:useColumn
+                        }
+                    ];
+                }else{
+                    ctlTag.setAttr('text',textField);
+                }
+            }
+            else{
+                ctlTag.setAttr('text',textField);
+            }
         }
     }
 
@@ -567,6 +835,7 @@ class MobileContentCompiler extends ContentCompiler{
     endFormKernelCompile(theKernel){
         var project = this.project;
         var logManager = project.logManager;
+        var clientSide = this.clientSide;
         var midData = this.projectCompiler.getMidData(theKernel.id);
         if(midData.useDS){
             if(IsEmptyObject(midData.useColumns_map)){

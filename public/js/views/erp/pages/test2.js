@@ -81,10 +81,21 @@ function BindCM_Form_0(retState, newIndex, oldIndex) {
 		}
 	} else {
 		var nowRecord = records_arr[useIndex];
-		needSetState['M_Label0.text'] = nowRecord['员工登记姓名'];
+		//needSetState['M_Label0.text'] = nowRecord['员工登记姓名'];
 		needSetState['M_Text_2.value'] = nowRecord['出生年月日期'];
+		needSetState['M_Label0.text'] = M_Label0_get(retState, {
+			form0_record: nowRecord
+		});
 	}
 	setManyStateByPath(retState, 'M_Page_0.M_Form_0', needSetState);
+}
+
+function M_Label0_get(state, bundle) {
+	var form0_record = bundle.form0_record;
+	if (form0_record == null) {
+		return '错误';
+	}
+	return form0_record.员工登记姓名 + '呵呵';
 }
 
 function pullCM_Form_0Data() {

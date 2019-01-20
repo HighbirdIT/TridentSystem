@@ -11,7 +11,8 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var M_ControlKernelBaseAttrsSetting = {
-    layoutGrop: new CAttributeGroup('布局设置', [new CAttribute('Style', AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true), new CAttribute('Class', AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true)])
+    layoutGrop: new CAttributeGroup('布局设置', [new CAttribute('Style', AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true), new CAttribute('Class', AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true)]),
+    baseGroup: new CAttributeGroup('基本设置', [new CAttribute('name', AttrNames.Name, ValueType.String)])
 };
 
 /*
@@ -20,6 +21,30 @@ new CAttribute('宽度',AttrNames.Width,ValueType.String,''),
             new CAttribute('FlexGrow',AttrNames.FlexGrow,ValueType.Boolean,true),
             new CAttribute('FlexShrink',AttrNames.FlexShrink,ValueType.Boolean,true),
 */
+
+function findAttrInGroupArrayByName(attName, groupArr) {
+    var rlt = null;
+    for (var gi in groupArr) {
+        rlt = groupArr[gi].findAttrByName(attName);
+        if (rlt != null) {
+            return rlt;
+        }
+    }
+    return null;
+}
+
+function GenControlKernelAttrsSetting(cusGroups_arr, includeDefault) {
+    var rlt = [M_ControlKernelBaseAttrsSetting.layoutGrop];
+
+    for (var si in cusGroups_arr) {
+        var cusGroup = cusGroups_arr[si];
+        if (includeDefault != false && cusGroup.label == M_ControlKernelBaseAttrsSetting.baseGroup.label) {
+            cusGroup.setAttrs(M_ControlKernelBaseAttrsSetting.baseGroup.attrs_arr.concat(cusGroup.attrs_arr));
+        }
+        rlt.push(cusGroup);
+    }
+    return rlt;
+}
 
 var LayoutAttrNames_arr = M_ControlKernelBaseAttrsSetting.layoutGrop.attrs_arr.map(function (e) {
     return e.name;
@@ -39,11 +64,9 @@ var ControlKernelBase = function (_IAttributeable) {
         if (attrbuteGroups == null) {
             attrbuteGroups = [];
         }
-        if (attrbuteGroups[0] != M_ControlKernelBaseAttrsSetting.layoutGrop) {
-            attrbuteGroups.unshift(M_ControlKernelBaseAttrsSetting.layoutGrop);
-        }
         _this.attrbuteGroups = attrbuteGroups;
         _this.clickHandler = _this.clickHandler.bind(_this);
+        _this.getAccessableKernels = _this.getAccessableKernels.bind(_this);
         _this.listendDS_map = {};
 
         if (kernelJson != null) {
@@ -94,6 +117,7 @@ var ControlKernelBase = function (_IAttributeable) {
         if (parentKernel.project != parentKernel) {
             parentKernel.appandChild(_this);
         }
+        _this.readableName = _this.getReadableName();
         return _this;
     }
 
@@ -109,6 +133,10 @@ var ControlKernelBase = function (_IAttributeable) {
                 }
 
                 this.listenDS(newValue, attrName);
+            }
+
+            if (attrItem.name == AttrNames.TextField || attrItem.name == AttrNames.Name) {
+                this.readableName = this.getReadableName();
             }
         }
     }, {
@@ -136,11 +164,6 @@ var ControlKernelBase = function (_IAttributeable) {
             if (this.parent) {
                 this.parent.removeChild(this);
             }
-        }
-    }, {
-        key: 'getReadableName',
-        value: function getReadableName() {
-            return this.id + (IsEmptyString(this.name) ? '' : '(' + this.name + ')');
         }
     }, {
         key: 'listenDS',
@@ -196,9 +219,18 @@ var ControlKernelBase = function (_IAttributeable) {
     }, {
         key: 'getReadableName',
         value: function getReadableName() {
-            var rlt = '';
-
-            return this.id + (IsEmptyString(this[AttrNames.Name]) ? '' : '(' + this[AttrNames.Name] + ')');
+            var rlt = null;
+            if (!IsEmptyString(this[AttrNames.Name])) {
+                rlt = this[AttrNames.Name];
+            } else {
+                var textField = this[AttrNames.TextField];
+                if (textField != null) {
+                    rlt = typeof textField === 'string' ? textField : '{脚本}';
+                } else {
+                    rlt = '';
+                }
+            }
+            return rlt + '[' + this.id + ']';
         }
     }, {
         key: 'getReactClassName',
@@ -352,20 +384,53 @@ var ControlKernelBase = function (_IAttributeable) {
         }
     }, {
         key: 'getAccessableKernels',
-        value: function getAccessableKernels() {
+        value: function getAccessableKernels(targetType) {
             var rlt = [this]; // 本身必可访问
+            var needFilt = targetType != null;
+            if (rlt.editor && (!needFilt || rlt.editor.type == targetType)) {
+                rlt.push(rlt.editor);
+            }
             var nowKernel = this;
             var parent = nowKernel.parent;
             while (parent != null) {
-                rlt.push(parent);
+                if (!needFilt || parent.type == targetType) {
+                    rlt.push(parent);
+                }
                 parent.children.forEach(function (child) {
                     if (child != nowKernel) {
-                        rlt.push(child);
+                        if (!needFilt || child.type == targetType) {
+                            rlt.push(child);
+                        }
+                        if (child.editor && (!needFilt || child.editor.type == targetType)) {
+                            rlt.push(child.editor);
+                        }
                     }
                 });
                 nowKernel = parent;
                 parent = parent.parent;
             }
+            return rlt;
+        }
+    }, {
+        key: 'getStatePath',
+        value: function getStatePath(stateName) {
+            var splitChar = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '.';
+
+            var nowKernel = this.parent;
+            var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
+            do {
+                switch (nowKernel.type) {
+                    case M_PageKernel_Type:
+                        rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
+                        break;
+                    case M_FormKernel_Type:
+                        rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
+                        break;
+                }
+                if (nowKernel) {
+                    nowKernel = nowKernel.parent;
+                }
+            } while (nowKernel != null);
             return rlt;
         }
     }]);

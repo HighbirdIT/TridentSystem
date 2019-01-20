@@ -76,11 +76,13 @@ class DropDownControl extends React.PureComponent {
 
     dropDownOpened() {
         console.log('菜单被打开了');
+        /*
         var srcOptions_arr = this.props.options_arr;
         if(typeof srcOptions_arr === 'function'){
             srcOptions_arr = srcOptions_arr();
         }
-        var formated_arr = this.formatData(srcOptions_arr, this.props.textAttrName, this.props.valueAttrName);
+        */
+        var formated_arr = this.formatData(this.props.options_arr, this.props.textAttrName, this.props.valueAttrName);
         this.setState({
             keyword:'',
             opened:true,
@@ -154,7 +156,7 @@ class DropDownControl extends React.PureComponent {
 
     formatData(orginData_arr, textAttrName, valueAttrName){
         if(typeof orginData_arr === 'function'){
-            orginData_arr = orginData_arr();
+            orginData_arr = orginData_arr(this.props.funparamobj);
         }
         if(valueAttrName == null){
             valueAttrName = textAttrName;
