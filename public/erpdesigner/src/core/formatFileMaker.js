@@ -930,6 +930,10 @@ class CP_ClientSide extends JSFileMaker{
         if(IsEmptyObject(styleObj)){
             return false;
         }
+        var rightSyleObj = {};
+        for(var sn in styleObj){
+            rightSyleObj[gStyleAttrNameToCssName(sn)] = styleObj[sn];
+        }
         if(this.styleDefBlock == null){
             this.styleDefBlock = this.defaultRegion.getBlock('styledef', true, 2);
         }
@@ -937,6 +941,7 @@ class CP_ClientSide extends JSFileMaker{
         if(styleBlock == null){
             styleBlock = new FormatFileBlock(styleId);
             this.styleDefBlock.pushChild(styleBlock);
+
             styleBlock.pushLine('const ' + styleId + '=' + JSON.stringify(styleObj) + ';');
         }
         return true;

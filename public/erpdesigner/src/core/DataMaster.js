@@ -1,4 +1,10 @@
 
+const EmptyDBEntity = {
+    loaded:true,
+    code:0,
+    columns:null,
+    name:'无',
+}
 class DataBase extends EventEmitter{
     constructor(){
         super();
@@ -71,7 +77,7 @@ class DataBase extends EventEmitter{
     getEntitiesByType(tType){
         return this.entities_arr.filter(e=>{
             return e.type == tType;
-        });
+        }).concat(EmptyDBEntity);
     }
 
     getAllTable(){
@@ -260,6 +266,9 @@ class DataMaster extends EventEmitter{
     }
 
     getDataSourceByCode(code){
+        if(code == 0){
+            return EmptyDBEntity;
+        }
         var rlt = this.getSqlBPByCode(code);
         if(rlt == null && !isNaN(code)){
             rlt = g_dataBase.getEntityByCode(code);

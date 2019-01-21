@@ -8,6 +8,13 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+var EmptyDBEntity = {
+    loaded: true,
+    code: 0,
+    columns: null,
+    name: '无'
+};
+
 var DataBase = function (_EventEmitter) {
     _inherits(DataBase, _EventEmitter);
 
@@ -91,7 +98,7 @@ var DataBase = function (_EventEmitter) {
         value: function getEntitiesByType(tType) {
             return this.entities_arr.filter(function (e) {
                 return e.type == tType;
-            });
+            }).concat(EmptyDBEntity);
         }
     }, {
         key: 'getAllTable',
@@ -336,6 +343,9 @@ var DataMaster = function (_EventEmitter4) {
     }, {
         key: 'getDataSourceByCode',
         value: function getDataSourceByCode(code) {
+            if (code == 0) {
+                return EmptyDBEntity;
+            }
             var rlt = this.getSqlBPByCode(code);
             if (rlt == null && !isNaN(code)) {
                 rlt = g_dataBase.getEntityByCode(code);

@@ -102,6 +102,7 @@ const VarNames={
 };
 
 const AttrNames={
+    ButtonClass:'btnclass',
     Title:'title',
     Text:'text',
     Test:'test',
@@ -119,6 +120,10 @@ const AttrNames={
     EditorType:'editortype',
     TextField:'textfield',
 
+    Event:{
+        OnClick:'onclik'
+    },
+
     LayoutNames:{
         APDClass:'apdClass',
         StyleAttr:'styleAttr',
@@ -128,6 +133,8 @@ const AttrNames={
         Display:'display',
         Width:'width',
         Height:'height',
+        MaxWidth:'maxWidth',
+        MaxHeight:'maxHeight',
         FlexGrow:'flex-grow',
         FlexShrink:'flex-shrink',
     },
@@ -142,6 +149,16 @@ const AttrNames={
         }
     }
 };
+
+function gStyleAttrNameToCssName(styleAttrName){
+    switch(styleAttrName){
+        case 'maxWidth':
+        return 'max-width';
+        case 'maxHeight':
+        return 'max-height';
+    }
+    return styleAttrName;
+}
 
 function InitAttrNames(target){
     var values_arr = [];
@@ -173,5 +190,7 @@ StyleAttrSetting[AttrNames.StyleAttrNames.FlexGrow] = {type:ValueType.Boolean, d
 StyleAttrSetting[AttrNames.StyleAttrNames.FlexShrink] = {type:ValueType.Boolean, def:true};
 StyleAttrSetting[AttrNames.StyleAttrNames.Width] = {type:ValueType.String, def:''};
 StyleAttrSetting[AttrNames.StyleAttrNames.Height] = {type:ValueType.String, def:''};
+StyleAttrSetting[AttrNames.StyleAttrNames.MaxWidth] = {type:ValueType.String, def:''};
+StyleAttrSetting[AttrNames.StyleAttrNames.MaxHeight] = {type:ValueType.String, def:''};
 
 const CouldAppendClasses_arr = [''];

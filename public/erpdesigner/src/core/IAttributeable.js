@@ -84,7 +84,7 @@ class IAttributeable extends EventEmitter{
                 console.error('访问不存在的属性:' + attrName);
             }
             rlt = attrItem.defaultVal;
-            if(rlt == null){
+            if(rlt == null && attrItem.valueType != ValueType.Event){
                 switch(attrItem.name){
                     case AttrNames.LayoutNames.StyleAttr:
                     case AttrNames.Name:

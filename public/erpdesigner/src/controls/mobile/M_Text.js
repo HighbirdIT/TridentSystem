@@ -3,7 +3,11 @@ const M_TextKernelAttrsSetting = GenControlKernelAttrsSetting([
         genTextFiledAttribute(),
         new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes),
         new CAttribute('小数精度', AttrNames.FloatNum, ValueType.Int, 2, true, false, null, null, false),
-        new CAttribute('默认值', AttrNames.DefaultValue, ValueType.String, ''),
+        new CAttribute('默认值', AttrNames.DefaultValue, ValueType.String, '', true, false, null, null,true,{
+            scriptable:true,
+            type:FunType_Client,
+            group:FunGroup.CtlAttr,
+        } ),
     ]),
 ]);
 
@@ -42,7 +46,7 @@ class M_TextKernel extends ControlKernelBase {
 
 var M_TextKernel_api = new ControlAPIClass(M_TextKernel_Type);
 M_TextKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.TextField,M_TextKernelAttrsSetting), 'value'));
-
+M_TextKernel_api.pushApi(new ApiItem_propsetter('value'));
 g_controlApi_arr.push(M_TextKernel_api);
 
 class M_Text extends React.PureComponent {
@@ -87,8 +91,9 @@ class M_Text extends React.PureComponent {
         layoutConfig.addClass('border');
         layoutConfig.addClass('hb-control');
         layoutConfig.addClass('w-100');
+        var defaultParseRet = parseObj_CtlPropJsBind(this.state.defaultVal);
         var textParseRet = parseObj_CtlPropJsBind(this.state.text);
-        var showText = textParseRet.isScript ? '文本框{脚本}' : '编辑' + (IsEmptyString(textParseRet.string) ? '' : '[' + textParseRet.string + ']') + (IsEmptyString(this.state.defaultVal) ? '' : '[' + this.state.defaultVal + ']') + "[" + this.state.ValueType + ']';
+        var showText = textParseRet.isScript ? '文本框{脚本}' : '编辑' + (IsEmptyString(textParseRet.string) ? '' : '[' + textParseRet.string + ']') + (defaultParseRet.isScript ? '{脚默}' : '[' + defaultParseRet.string + ']') + "[" + this.state.ValueType + ']';
         return (
             <input className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}
                 value={showText}

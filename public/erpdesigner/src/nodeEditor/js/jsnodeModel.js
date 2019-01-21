@@ -12,33 +12,35 @@ const JSNODE_SEQUENCE = 'sequence';
 const JSNODE_CURRENTDATAROW = 'currentdatarow';
 const JSNODE_CTLKERNEL = 'ctlkernel';
 const JSNODE_INSERT_TABLE = 'insert_table';
-const JSNODE_CONTROL_API_PROP='controlapiprop';
+const JSNODE_CONTROL_API_PROP = 'controlapiprop';
+const JSNODE_CONTROL_API_PROPSETTER = 'controlapipropsetter';
+const JSNODE_DATEFUN = 'jsdatefun';
 
 const JSDEF_VAR = 'def_variable';
 
 var JSNodeClassMap = {};
 
-class JSNode_Base extends Node_Base{
-    constructor(initData, parentNode, createHelper, type, label, isContainer, nodeJson){
+class JSNode_Base extends Node_Base {
+    constructor(initData, parentNode, createHelper, type, label, isContainer, nodeJson) {
         super(initData, parentNode, createHelper, type, label, isContainer, nodeJson);
-       this.processOutputFlowSockets = this.processOutputFlowSockets.bind(this);
+        this.processOutputFlowSockets = this.processOutputFlowSockets.bind(this);
     }
 
-    compileFlowNode(flowLink, helper, usePreNodes_arr, belongBlock){
+    compileFlowNode(flowLink, helper, usePreNodes_arr, belongBlock) {
         var nextNodeCompileRet = flowLink.inSocket.node.compile(helper, usePreNodes_arr, belongBlock);
-        if(nextNodeCompileRet == false){
+        if (nextNodeCompileRet == false) {
             return false;
         }
         var socketOut = nextNodeCompileRet.getSocketOut(flowLink.inSocket);
-        if(socketOut.data.parent != belongBlock){
+        if (socketOut.data.parent != belongBlock) {
             belongBlock.pushChild(socketOut.data.clone());
         }
         return nextNodeCompileRet;
     }
 
-    compileOutFlow(helper, usePreNodes_arr, belongBlock){
+    compileOutFlow(helper, usePreNodes_arr, belongBlock) {
         var flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.outFlowSocket);
-        if(flowLinks_arr.length > 0){
+        if (flowLinks_arr.length > 0) {
             return this.compileFlowNode(flowLinks_arr[0], helper, usePreNodes_arr, belongBlock);
         }
         return null;
@@ -72,11 +74,11 @@ class JSDef_Variable extends JSNode_Base {
     setProp(data) {
         if (data.name != null) {
             var newName = data.name;
-            if(newName.length == 0){
+            if (newName.length == 0) {
                 newName = '未命名';
             }
-            if(this.bluePrint){
-                if(this.bluePrint.getVariableByName(newName) != this){
+            if (this.bluePrint) {
+                if (this.bluePrint.getVariableByName(newName) != this) {
                     newName += '_1';
                 }
             }
@@ -153,16 +155,16 @@ class JSNode_BluePrint extends EventEmitter {
             this.startNode = newChildNodes_arr.find(node => {
                 return node.id == bluePrintJson.startNodeId;
             });
-            if(this.startNode == null){
+            if (this.startNode == null) {
                 this.startNode = new JSNode_Start({}, this, createHelper);
             }
             this.linkPool.restorFromJson(bluePrintJson.links_arr, createHelper);
         }
-        if(this.type == null){
+        if (this.type == null) {
             console.error('new JSNode_BluePrint type is null');
         }
         this.id = this.code;
-        if(this.group == null){
+        if (this.group == null) {
             console.error('new JSNode_BluePrint group is null');
             this.group = 'custom';
         }
@@ -170,7 +172,7 @@ class JSNode_BluePrint extends EventEmitter {
         if (this.startNode == null) {
             this.startNode = new JSNode_Start({}, this);
         }
-        else{
+        else {
             this.startNode.isConstNode = true;
         }
         createHelper.fireEvent('complete', createHelper);
@@ -368,7 +370,7 @@ class JSNode_BluePrint extends EventEmitter {
             type: this.type,
             group: this.group,
         }
-        if(this.ctlID){
+        if (this.ctlID) {
             theJson.ctlID = this.ctlID;
         }
         if (this.editorLeft) {
@@ -399,49 +401,56 @@ class JSNode_BluePrint extends EventEmitter {
     }
 
     compile(compilHelper) {
-        if(this.group == FunGroup.CtlAttr){
+        if (this.group == FunGroup.CtlAttr || this.group == FunGroup.CtlEvent) {
             var ctlKernel = this.master.project.getControlById(this.ctlID);
-            if(ctlKernel == null){
+            if (ctlKernel == null) {
                 compilHelper.logManager.error('蓝图关联控件' + this.ctlID + '无法找到');
-                return false; 
+                return false;
             }
             this.ctlKernel = ctlKernel;
         }
         var theFun = compilHelper.scope.getFunction(this.name, true);
         var params_arr = [];
         this.vars_arr.forEach(varData => {
-            if(varData.isParam){
+            if (varData.isParam) {
                 params_arr.push(varData.name);
             }
-            else{
+            else {
                 theFun.scope.getVar(varData.name, true, varData.default);
             }
         });
-        if(params_arr.length > 0){
-            if(this.group == FunGroup.CtlAttr){
+        if (params_arr.length > 0) {
+            if (this.group == FunGroup.CtlAttr) {
                 compilHelper.logManager.error('本蓝图种类不允许出现参数');
                 return false;
             }
         }
         var ret = this.startNode.compile(compilHelper, [], theFun.bodyBlock);
-        if(ret == false){
+        if (ret == false) {
             return false;
         }
         var initValue;
         var varName;
-        if(this.group == FunGroup.CtlAttr){
-            params_arr = [VarNames.State, VarNames.Bundle];
-            for(var formId in compilHelper.useForm_map){
+        var usectlid;
+        var useCtlData;
+        var propName;
+        var propApiitem;
+        if (this.group == FunGroup.CtlAttr || this.group == FunGroup.CtlEvent) {
+            if(this.group == FunGroup.CtlAttr)
+            {
+                params_arr = [VarNames.State, VarNames.Bundle];
+            }
+            for (var formId in compilHelper.useForm_map) {
                 var useFormData = compilHelper.useForm_map[formId];
                 var formStateVarName = null;
-                if(!IsEmptyObject(useFormData.useControls_map)){
+                if (!IsEmptyObject(useFormData.useControls_map)) {
                     formStateVarName = formId + '_state';
                     initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useFormData.formKernel.getStatePath()));
                     theFun.scope.getVar(formStateVarName, true, initValue);
 
-                    for(var usectlid in useFormData.useControls_map){
-                        var useCtlData = useFormData.useControls_map[usectlid];
-                        for(var propName in useCtlData.useprops_map){
+                    for (usectlid in useFormData.useControls_map) {
+                        useCtlData = useFormData.useControls_map[usectlid];
+                        for (var propName in useCtlData.useprops_map) {
                             var propApiitem = useCtlData.useprops_map[propName];
                             varName = usectlid + '_' + propApiitem.stateName;
                             initValue = "bundle != null && bundle['" + varName + "'] != null ? bundle['" + varName + "'] : " + makeStr_getStateByPath(formStateVarName, singleQuotesStr(useCtlData.kernel.id + '.' + propApiitem.stateName));
@@ -449,12 +458,25 @@ class JSNode_BluePrint extends EventEmitter {
                         }
                     }
                 }
-                if(!IsEmptyObject(useFormData.useColumns_map)){
+                if (!IsEmptyObject(useFormData.useColumns_map)) {
                     var nowRecordVarName = formId + '_nowrecord' + '';
                     initValue = 'bundle != null && bundle.' + nowRecordVarName + ' != null ? bundle.' + nowRecordVarName + ' : ' + makeStr_getStateByPath(formStateVarName == null ? VarNames.State : formStateVarName, singleQuotesStr(useFormData.formKernel.getStatePath(VarNames.NowRecord)));
                     theFun.scope.getVar(nowRecordVarName, true, initValue);
                 }
-                
+            }
+            for (usectlid in compilHelper.useGlobalControls_map) {
+                useCtlData = compilHelper.useGlobalControls_map[usectlid];
+                for (propName in useCtlData.useprops_map) {
+                    propApiitem = useCtlData.useprops_map[propName];
+                    varName = usectlid + '_' + propApiitem.stateName;
+                    if(this.group == FunGroup.CtlAttr ){
+                        initValue = "bundle != null && bundle['" + varName + "'] != null ? bundle['" + varName + "'] : " + makeStr_getStateByPath(formStateVarName, singleQuotesStr(useCtlData.kernel.id + '.' + propApiitem.stateName));
+                    }
+                    else{
+                        initValue = makeStr_getStateByPath('store.getState()', singleQuotesStr(useCtlData.kernel.getStatePath(propApiitem.stateName)));
+                    }
+                    theFun.scope.getVar(varName, true, initValue);
+                }
             }
         }
         theFun.params_arr = params_arr;
@@ -573,11 +595,11 @@ class JSNode_Var_Set extends JSNode_Base {
             this.inSocket = new NodeSocket('in', this, true);
             this.addSocket(this.inSocket);
         }
-        if(this.inFlowSocket == null){
+        if (this.inFlowSocket == null) {
             this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
             this.addSocket(this.inFlowSocket);
         }
-        if(this.outFlowSocket == null){
+        if (this.outFlowSocket == null) {
             this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
             this.addSocket(this.outFlowSocket);
         }
@@ -653,8 +675,8 @@ class JSNode_Var_Set extends JSNode_Base {
         }
 
         var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.inSocket);
-        if(datalinks_arr.length == 0){
-            if(IsEmptyString(this.inSocket.defval)){
+        if (datalinks_arr.length == 0) {
+            if (IsEmptyString(this.inSocket.defval)) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle,
                     nodeThis,
@@ -663,17 +685,17 @@ class JSNode_Var_Set extends JSNode_Base {
                 return false;
             }
             socketValue = this.inSocket.defval;
-            if(isNaN(socketValue)){
+            if (isNaN(socketValue)) {
                 socketValue = singleQuotesStr(socketValue);
             }
         }
-        else{
+        else {
             var dataLink = datalinks_arr[0];
             var outNode = dataLink.outSocket.node;
             var compileRet = null;
-            if(outNode.isHadFlow()){
+            if (outNode.isHadFlow()) {
                 compileRet = helper.getCompileRetCache(outNode);
-                if(compileRet == null){
+                if (compileRet == null) {
                     helper.logManager.errorEx([helper.logManager.createBadgeItem(
                         thisNodeTitle,
                         nodeThis,
@@ -682,10 +704,10 @@ class JSNode_Var_Set extends JSNode_Base {
                     return false;
                 }
             }
-            else{
-                compileRet = outNode.compile(helper,usePreNodes_arr);
+            else {
+                compileRet = outNode.compile(helper, usePreNodes_arr);
             }
-            if(compileRet == false){
+            if (compileRet == false) {
                 return false;
             }
             socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
@@ -699,7 +721,7 @@ class JSNode_Var_Set extends JSNode_Base {
         selfCompileRet.setSocketOut(this.outSocket, this.varData.name);
         helper.setCompileRetCache(this, selfCompileRet);
 
-        if(this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false){
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
             return false;
         }
         return selfCompileRet;
@@ -713,7 +735,7 @@ class JSNode_Start extends JSNode_Base {
         autoBind(this);
         this.isConstNode = true;
 
-        if(this.outFlowSocket == null){
+        if (this.outFlowSocket == null) {
             this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
             this.addSocket(this.outFlowSocket);
         }
@@ -726,15 +748,15 @@ class JSNode_Start extends JSNode_Base {
         }
         var usePreNodes_arr = preNodes_arr.concat(this);
         var flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.outFlowSocket);
-        if(flowLinks_arr.length == 0){
+        if (flowLinks_arr.length == 0) {
             helper.logManager.warnEx([helper.logManager.createBadgeItem(
                 this.bluePrint.name,
                 this.bluePrint,
                 helper.clickLogBadgeItemHandler),
                 '是个空蓝图']);
         }
-        else{
-            flowLinks_arr[0].inSocket.node.compile(helper,usePreNodes_arr,belongBlock);
+        else {
+            flowLinks_arr[0].inSocket.node.compile(helper, usePreNodes_arr, belongBlock);
         }
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outFlowSocket, '', belongBlock);
@@ -761,7 +783,7 @@ class JSNode_Return extends JSNode_Base {
         this.inSocket.inputable = true;
         this.inSocket.type = ValueType.Any;
 
-        if(this.inFlowSocket == null){
+        if (this.inFlowSocket == null) {
             this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
             this.addSocket(this.inFlowSocket);
         }
@@ -778,21 +800,21 @@ class JSNode_Return extends JSNode_Base {
 
         var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.inSocket);
         var socketValue = 'null';
-        if(datalinks_arr.length == 0){
-            if(!IsEmptyString(this.inSocket.defval)){
+        if (datalinks_arr.length == 0) {
+            if (!IsEmptyString(this.inSocket.defval)) {
                 socketValue = this.inSocket.defval;
-                if(isNaN(socketValue)){
+                if (isNaN(socketValue)) {
                     socketValue = singleQuotesStr(socketValue);
                 }
             }
         }
-        else{
+        else {
             var dataLink = datalinks_arr[0];
             var outNode = dataLink.outSocket.node;
             var compileRet = null;
-            if(outNode.isHadFlow()){
+            if (outNode.isHadFlow()) {
                 compileRet = helper.getCompileRetCache(outNode);
-                if(compileRet == null){
+                if (compileRet == null) {
                     helper.logManager.errorEx([helper.logManager.createBadgeItem(
                         thisNodeTitle,
                         nodeThis,
@@ -801,10 +823,10 @@ class JSNode_Return extends JSNode_Base {
                     return false;
                 }
             }
-            else{
-                compileRet = outNode.compile(helper,usePreNodes_arr,belongBlock);
+            else {
+                compileRet = outNode.compile(helper, usePreNodes_arr, belongBlock);
             }
-            if(compileRet == false){
+            if (compileRet == false) {
                 return false;
             }
             socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
@@ -957,9 +979,9 @@ class JSNode_NOperand extends JSNode_Base {
                 var dataLink = tLinks[0];
                 var outNode = dataLink.outSocket.node;
                 var compileRet = null;
-                if(outNode.isHadFlow()){
+                if (outNode.isHadFlow()) {
                     compileRet = helper.getCompileRetCache(outNode);
-                    if(compileRet == null){
+                    if (compileRet == null) {
                         helper.logManager.errorEx([helper.logManager.createBadgeItem(
                             thisNodeTitle,
                             nodeThis,
@@ -968,10 +990,10 @@ class JSNode_NOperand extends JSNode_Base {
                         return false;
                     }
                 }
-                else{
-                    compileRet = outNode.compile(helper,usePreNodes_arr, belongBlock);
+                else {
+                    compileRet = outNode.compile(helper, usePreNodes_arr, belongBlock);
                 }
-                if(compileRet == false){
+                if (compileRet == false) {
                     return false;
                 }
                 tValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
@@ -1012,7 +1034,7 @@ class JSNode_Compare extends JSNode_Base {
             }
         }
         if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false, { type: ValueType.Boolean});
+            this.outSocket = new NodeSocket('out', this, false, { type: ValueType.Boolean });
             this.addSocket(this.outSocket);
         }
         this.outSocket.isSimpleVal = false;
@@ -1106,11 +1128,11 @@ class JSNode_IF extends JSNode_Base {
         super(initData, parentNode, createHelper, JSNODE_IF, 'IF', false, nodeJson);
         autoBind(this);
 
-        if(this.inFlowSocket == null){
+        if (this.inFlowSocket == null) {
             this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
             this.addSocket(this.inFlowSocket);
         }
-        if(this.outFlowSocket == null){
+        if (this.outFlowSocket == null) {
             this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
             this.addSocket(this.outFlowSocket);
         }
@@ -1120,26 +1142,26 @@ class JSNode_IF extends JSNode_Base {
             this.inputSocket.inputable = false;
         }
 
-        if(this.inputSocket == null){
+        if (this.inputSocket == null) {
             this.inputSocket = new NodeSocket('in', this, true);
             this.addSocket(this.inputSocket);
         }
         this.inputSocket.label = 'flag';
         this.inputSocket.type = ValueType.Boolean;
 
-        if(this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0){
+        if (this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0) {
             this.outFlowSockets_arr = [];
             this.trueFlowSocket = new NodeFlowSocket('true', this, false);
             this.falseFlowSocket = new NodeFlowSocket('false', this, false);
             this.addSocket(this.trueFlowSocket);
             this.addSocket(this.falseFlowSocket);
         }
-        else{
-            for(var si in this.outFlowSockets_arr){
-                if(this.outFlowSockets_arr[si].name == 'true'){
+        else {
+            for (var si in this.outFlowSockets_arr) {
+                if (this.outFlowSockets_arr[si].name == 'true') {
                     this.trueFlowSocket = this.outFlowSockets_arr[si];
                 }
-                else{
+                else {
                     this.falseFlowSocket = this.outFlowSockets_arr[si];
                 }
             }
@@ -1165,7 +1187,7 @@ class JSNode_IF extends JSNode_Base {
 
 
         var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.inputSocket);
-        if(datalinks_arr.length == 0){
+        if (datalinks_arr.length == 0) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle,
                 nodeThis,
@@ -1173,13 +1195,13 @@ class JSNode_IF extends JSNode_Base {
                 '必须有输入值']);
             return false;
         }
-        else{
+        else {
             var dataLink = datalinks_arr[0];
             var outNode = dataLink.outSocket.node;
             var compileRet = null;
-            if(outNode.isHadFlow()){
+            if (outNode.isHadFlow()) {
                 compileRet = helper.getCompileRetCache(outNode);
-                if(compileRet == null){
+                if (compileRet == null) {
                     helper.logManager.errorEx([helper.logManager.createBadgeItem(
                         thisNodeTitle,
                         nodeThis,
@@ -1188,10 +1210,10 @@ class JSNode_IF extends JSNode_Base {
                     return false;
                 }
             }
-            else{
-                compileRet = outNode.compile(helper,usePreNodes_arr, belongBlock);
+            else {
+                compileRet = outNode.compile(helper, usePreNodes_arr, belongBlock);
             }
-            if(compileRet == false){
+            if (compileRet == false) {
                 return false;
             }
             socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
@@ -1209,20 +1231,20 @@ class JSNode_IF extends JSNode_Base {
         var flowLink = null;
         var nextNodeCompileRet = null;
 
-        for(var fi=0;fi<2;++fi){
+        for (var fi = 0; fi < 2; ++fi) {
             var theFlowSocket = fi == 0 ? this.trueFlowSocket : this.falseFlowSocket;
             var useBlock = fi == 0 ? myJS.trueBlock : myJS.falseBlock;
             flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(theFlowSocket);
-            if(flowLinks_arr.length != 0){
+            if (flowLinks_arr.length != 0) {
                 flowLink = flowLinks_arr[0];
                 nextNodeCompileRet = this.compileFlowNode(flowLink, helper, usePreNodes_arr, useBlock);
-                if(nextNodeCompileRet == false){
+                if (nextNodeCompileRet == false) {
                     return false;
                 }
             }
         }
 
-        if(this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false){
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
             return false;
         }
 
@@ -1230,16 +1252,16 @@ class JSNode_IF extends JSNode_Base {
     }
 }
 
-class JSNode_Switch extends JSNode_Base{
+class JSNode_Switch extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_SWITCH, 'Switch', false, nodeJson);
         autoBind(this);
 
-        if(this.inFlowSocket == null){
+        if (this.inFlowSocket == null) {
             this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
             this.addSocket(this.inFlowSocket);
         }
-        if(this.outFlowSocket == null){
+        if (this.outFlowSocket == null) {
             this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
             this.addSocket(this.outFlowSocket);
         }
@@ -1247,24 +1269,24 @@ class JSNode_Switch extends JSNode_Base{
             this.inputSocket = this.inputScokets_arr[0];
             this.inputSocket.inputable = false;
         }
-        if(this.inputSocket == null){
+        if (this.inputSocket == null) {
             this.inputSocket = new NodeSocket('in', this, true);
             this.addSocket(this.inputSocket);
         }
         this.inputSocket.label = 'target';
         this.inputSocket.type = ValueType.String;
 
-        if(this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0){
+        if (this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0) {
             this.outFlowSockets_arr = [];
         }
-        else{
-            this.outFlowSockets_arr.forEach(item=>{
+        else {
+            this.outFlowSockets_arr.forEach(item => {
                 item.inputable = true;
             });
         }
     }
 
-    genOutFlowSocket(){
+    genOutFlowSocket() {
         var nameI = this.outFlowSockets_arr.length;
         while (nameI < 999) {
             if (this.getScoketByName('case' + nameI, true) == null) {
@@ -1272,7 +1294,7 @@ class JSNode_Switch extends JSNode_Base{
             }
             ++nameI;
         }
-        return new NodeFlowSocket('case' + nameI, this, false, {inputable:true});
+        return new NodeFlowSocket('case' + nameI, this, false, { inputable: true });
     }
 
     getNodeTitle() {
@@ -1290,7 +1312,7 @@ class JSNode_Switch extends JSNode_Base{
         var socketValue = '';
 
         var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.inputSocket);
-        if(datalinks_arr.length == 0){
+        if (datalinks_arr.length == 0) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle,
                 nodeThis,
@@ -1298,13 +1320,13 @@ class JSNode_Switch extends JSNode_Base{
                 '必须有输入']);
             return false;
         }
-        else{
+        else {
             var dataLink = datalinks_arr[0];
             var outNode = dataLink.outSocket.node;
             var compileRet = null;
-            if(outNode.isHadFlow()){
+            if (outNode.isHadFlow()) {
                 compileRet = helper.getCompileRetCache(outNode);
-                if(compileRet == null){
+                if (compileRet == null) {
                     helper.logManager.errorEx([helper.logManager.createBadgeItem(
                         thisNodeTitle,
                         nodeThis,
@@ -1313,15 +1335,15 @@ class JSNode_Switch extends JSNode_Base{
                     return false;
                 }
             }
-            else{
-                compileRet = outNode.compile(helper,usePreNodes_arr);
+            else {
+                compileRet = outNode.compile(helper, usePreNodes_arr);
             }
-            if(compileRet == false){
+            if (compileRet == false) {
                 return false;
             }
             socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
         }
-        
+
         var myJSBlock = new FormatFileBlock(this.id);
         belongBlock.pushChild(myJSBlock);
         myJSBlock.pushLine('switch(' + socketValue + '){');
@@ -1331,7 +1353,7 @@ class JSNode_Switch extends JSNode_Base{
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
 
-        if(this.outFlowSockets_arr.length == 0){
+        if (this.outFlowSockets_arr.length == 0) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle,
                 nodeThis,
@@ -1343,9 +1365,9 @@ class JSNode_Switch extends JSNode_Base{
         var flowLinks_arr = null;
         var flowLink = null;
         var nextNodeCompileRet = null;
-        for(var oi in this.outFlowSockets_arr){
+        for (var oi in this.outFlowSockets_arr) {
             var caseFlowSocket = this.outFlowSockets_arr[oi];
-            if(IsEmptyString(caseFlowSocket.defval)){
+            if (IsEmptyString(caseFlowSocket.defval)) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle,
                     nodeThis,
@@ -1354,13 +1376,13 @@ class JSNode_Switch extends JSNode_Base{
                 return false;
             }
             var caseStr = caseFlowSocket.defval;
-            if(isNaN(caseStr)){
-                if(caseStr != 'default'){
+            if (isNaN(caseStr)) {
+                if (caseStr != 'default') {
                     caseStr = singleQuotesStr(caseStr);
                 }
             }
             flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(caseFlowSocket);
-            if(flowLinks_arr.length == 0){
+            if (flowLinks_arr.length == 0) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle,
                     nodeThis,
@@ -1375,14 +1397,14 @@ class JSNode_Switch extends JSNode_Base{
             myJSBlock.pushLine('}');
 
             nextNodeCompileRet = this.compileFlowNode(flowLink, helper, usePreNodes_arr, caseBlock);
-            if(nextNodeCompileRet == false){
+            if (nextNodeCompileRet == false) {
                 return false;
             }
         }
         myJSBlock.subNextIndent();
         myJSBlock.pushLine('}');
-        
-        if(this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false){
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
             return false;
         }
 
@@ -1395,7 +1417,7 @@ class JSNode_Break extends JSNode_Base {
         super(initData, parentNode, createHelper, JSNODE_BREAK, 'break', false, nodeJson);
         autoBind(this);
 
-        if(this.inFlowSocket == null){
+        if (this.inFlowSocket == null) {
             this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
             this.addSocket(this.inFlowSocket);
         }
@@ -1416,22 +1438,22 @@ class JSNode_Break extends JSNode_Base {
     }
 }
 
-class JSNode_Sequence extends JSNode_Base{
+class JSNode_Sequence extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_SEQUENCE, 'Sequence', false, nodeJson);
         autoBind(this);
 
-        if(this.inFlowSocket == null){
+        if (this.inFlowSocket == null) {
             this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
             this.addSocket(this.inFlowSocket);
         }
 
-        if(this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0){
+        if (this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0) {
             this.outFlowSockets_arr = [];
         }
     }
 
-    genOutFlowSocket(){
+    genOutFlowSocket() {
         var nameI = this.outFlowSockets_arr.length;
         while (nameI < 999) {
             if (this.getScoketByName('outflow' + nameI, true) == null) {
@@ -1460,7 +1482,7 @@ class JSNode_Sequence extends JSNode_Base{
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
-        if(this.outFlowSockets_arr.length == 0){
+        if (this.outFlowSockets_arr.length == 0) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle,
                 nodeThis,
@@ -1471,20 +1493,20 @@ class JSNode_Sequence extends JSNode_Base{
         var flowLinks_arr = null;
         var flowLink = null;
         var nextNodeCompileRet = null;
-        for(var oi in this.outFlowSockets_arr){
+        for (var oi in this.outFlowSockets_arr) {
             var flowSocket = this.outFlowSockets_arr[oi];
             flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(flowSocket);
-            if(flowLinks_arr.length == 0){
+            if (flowLinks_arr.length == 0) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle,
                     nodeThis,
                     helper.clickLogBadgeItemHandler),
-                    '第' + (oi + 1) + '个输出流为空']);
+                '第' + (oi + 1) + '个输出流为空']);
                 return false;
             }
             flowLink = flowLinks_arr[0];
             nextNodeCompileRet = this.compileFlowNode(flowLink, helper, usePreNodes_arr, myJSBlock);
-            if(nextNodeCompileRet == false){
+            if (nextNodeCompileRet == false) {
                 return false;
             }
         }
@@ -1493,7 +1515,7 @@ class JSNode_Sequence extends JSNode_Base{
     }
 }
 
-class JSNode_CurrentDataRow extends JSNode_Base{
+class JSNode_CurrentDataRow extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_CURRENTDATAROW, 'DATAROW', false, nodeJson);
         autoBind(this);
@@ -1507,7 +1529,7 @@ class JSNode_CurrentDataRow extends JSNode_Base{
     }
 
     restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['varName','formID']);
+        assginObjByProperties(this, attrsJson, ['varName', 'formID']);
     }
 
     /*
@@ -1529,30 +1551,30 @@ class JSNode_CurrentDataRow extends JSNode_Base{
         return 'CurrentRow';
     }
 
-    genOutSocket(){
+    genOutSocket() {
         var formKernel = this.bluePrint.master.project.getControlById(this.formID);
-        if(formKernel == null){
+        if (formKernel == null) {
             return null;
         }
         var theDS = formKernel.getAttribute(AttrNames.DataSource);
-        if(theDS == null){
+        if (theDS == null) {
             return null;
         }
         var hadColumns_arr = [];
-        for(var si in this.outputScokets_arr){
+        for (var si in this.outputScokets_arr) {
             var outSocket = this.outputScokets_arr[si];
             var columnName = outSocket.getExtra('colName');
-            if(columnName != null){
+            if (columnName != null) {
                 hadColumns_arr.push(columnName);
             }
         }
-        var emptyCol = theDS.columns.find(colItem=>{
+        var emptyCol = theDS.columns.find(colItem => {
             return hadColumns_arr.indexOf(colItem.name) == -1
         });
-        if(emptyCol == null){
+        if (emptyCol == null) {
             return null;
         }
-        var newSocket = new NodeSocket(this.getUseableOutSocketName('col'), this, false, {type:ValueType.String});
+        var newSocket = new NodeSocket(this.getUseableOutSocketName('col'), this, false, { type: ValueType.String });
         newSocket.setExtra('colName', emptyCol.name);
         return newSocket;
     }
@@ -1567,16 +1589,16 @@ class JSNode_CurrentDataRow extends JSNode_Base{
         var usePreNodes_arr = preNodes_arr.concat(this);
 
         var formKernel = this.bluePrint.master.project.getControlById(this.formID);
-        if(formKernel == null){
+        if (formKernel == null) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle,
                 nodeThis,
                 helper.clickLogBadgeItemHandler),
-                this.formID + '没找到！']);
+            this.formID + '没找到！']);
             return false;
         }
         var theDS = formKernel.getAttribute(AttrNames.DataSource);
-        if(theDS == null){
+        if (theDS == null) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle,
                 nodeThis,
@@ -1587,16 +1609,16 @@ class JSNode_CurrentDataRow extends JSNode_Base{
         var theScope = belongBlock.getScope();
         var selfCompileRet = new CompileResult(this);
         helper.setCompileRetCache(this, selfCompileRet);
-        for(var si in this.outputScokets_arr){
+        for (var si in this.outputScokets_arr) {
             var outSocket = this.outputScokets_arr[si];
             var colName = outSocket.getExtra('colName');
-            var columnItem = theDS.columns.find(x=>{return x.name == colName;});
-            if(columnItem == null){
+            var columnItem = theDS.columns.find(x => { return x.name == colName; });
+            if (columnItem == null) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle,
                     nodeThis,
                     helper.clickLogBadgeItemHandler),
-                    '第' + (si + 1) + '个输出接口列名无效！']);
+                '第' + (si + 1) + '个输出接口列名无效！']);
                 return false;
             }
             helper.addUseColumn(formKernel, colName);
@@ -1606,7 +1628,7 @@ class JSNode_CurrentDataRow extends JSNode_Base{
     }
 }
 
-class JSNODE_CtlKernel extends JSNode_Base{
+class JSNODE_CtlKernel extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_CTLKERNEL, 'CtlKernel', false, nodeJson);
         autoBind(this);
@@ -1624,14 +1646,14 @@ class JSNODE_CtlKernel extends JSNode_Base{
         this.outSocket.type = SocketType_CtlKernel;
     }
 
-    preRenderFrame(){
+    preRenderFrame() {
         var kernel = this.bluePrint.master.project.getControlById(this.ctlID);
-        if(this.outSocket.kernel != kernel){
+        if (this.outSocket.kernel != kernel) {
             this.outSocket.label = kernel.getReadableName();
             this.outSocket.kernelType = kernel.type;
-            this.outSocket.fireEvent('changed',10);
+            this.outSocket.fireEvent('changed', 10);
         }
-        else{
+        else {
             this.outSocket.kernelType = null;
             this.outSocket.label = this.ctlID + '(不存在)';
         }
@@ -1661,7 +1683,7 @@ class JSNODE_CtlKernel extends JSNode_Base{
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
-        if(this.outFlowSockets_arr.length == 0){
+        if (this.outFlowSockets_arr.length == 0) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle,
                 nodeThis,
@@ -1672,20 +1694,20 @@ class JSNODE_CtlKernel extends JSNode_Base{
         var flowLinks_arr = null;
         var flowLink = null;
         var nextNodeCompileRet = null;
-        for(var oi in this.outFlowSockets_arr){
+        for (var oi in this.outFlowSockets_arr) {
             var flowSocket = this.outFlowSockets_arr[oi];
             flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(flowSocket);
-            if(flowLinks_arr.length == 0){
+            if (flowLinks_arr.length == 0) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle,
                     nodeThis,
                     helper.clickLogBadgeItemHandler),
-                    '第' + (oi + 1) + '个输出流为空']);
+                '第' + (oi + 1) + '个输出流为空']);
                 return false;
             }
             flowLink = flowLinks_arr[0];
             nextNodeCompileRet = this.compileFlowNode(flowLink, helper, usePreNodes_arr, myJSBlock);
-            if(nextNodeCompileRet == false){
+            if (nextNodeCompileRet == false) {
                 return false;
             }
         }
@@ -1693,56 +1715,56 @@ class JSNODE_CtlKernel extends JSNode_Base{
     }
 }
 
-class JSNODE_Insert_table extends JSNode_Base{
+class JSNODE_Insert_table extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_INSERT_TABLE, 'Insert', false, nodeJson);
         autoBind(this);
         this.onlyServerside = true;
 
-        if(this.inFlowSocket == null){
+        if (this.inFlowSocket == null) {
             this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
             this.addSocket(this.inFlowSocket);
         }
         if (this.outputScokets_arr.length > 0) {
-            for(var si in this.outputScokets_arr){
+            for (var si in this.outputScokets_arr) {
                 var socket = this.outputScokets_arr[si];
-                if(socket.name == 'identity'){
+                if (socket.name == 'identity') {
                     this.identityOutSocket = socket;
                     socket.label = 'id';
                 }
-                else if(socket.name == 'err'){
+                else if (socket.name == 'err') {
                     this.errInfoOutSocket = socket;
                     socket.label = 'errinfo';
                 }
             }
         }
-        if(this.identityOutSocket == null){
-            this.identityOutSocket = new NodeSocket('identity', this, false, {label:'Identity',type:ValueType.Int});
+        if (this.identityOutSocket == null) {
+            this.identityOutSocket = new NodeSocket('identity', this, false, { label: 'Identity', type: ValueType.Int });
             this.addSocket(this.identityOutSocket);
         }
-        if(this.errInfoOutSocket == null){
-            this.errInfoOutSocket = new NodeSocket('err', this, false, {label:'错误信息',type:ValueType.String});
+        if (this.errInfoOutSocket == null) {
+            this.errInfoOutSocket = new NodeSocket('err', this, false, { label: '错误信息', type: ValueType.String });
             this.addSocket(this.errInfoOutSocket);
         }
 
-        if(this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0){
+        if (this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0) {
             this.outFlowSockets_arr = [];
             this.sucessFlowSocket = new NodeFlowSocket('sucess', this, false);
             this.failFlowSocket = new NodeFlowSocket('fail', this, false);
             this.addSocket(this.sucessFlowSocket);
             this.addSocket(this.failFlowSocket);
         }
-        else{
-            for(var si in this.outFlowSockets_arr){
-                if(this.outFlowSockets_arr[si].name == 'sucess'){
+        else {
+            for (var si in this.outFlowSockets_arr) {
+                if (this.outFlowSockets_arr[si].name == 'sucess') {
                     this.sucessFlowSocket = this.outFlowSockets_arr[si];
                 }
-                else{
+                else {
                     this.failFlowSocket = this.outFlowSockets_arr[si];
                 }
             }
         }
-        if(!IsEmptyString(this.dsCode)){
+        if (!IsEmptyString(this.dsCode)) {
             this.setDSCode(this.dsCode);
         }
         this.sucessFlowSocket.label = '成功';
@@ -1763,10 +1785,10 @@ class JSNODE_Insert_table extends JSNode_Base{
         return sa.index > sb.index;
     }
 
-    dsSynedHandler(){
+    dsSynedHandler() {
         var theDS = g_dataBase.getEntityByCode(this.dsCode);
-        if(theDS && theDS.loaded){
-            if(theDS.columns == null){
+        if (theDS && theDS.loaded) {
+            if (theDS.columns == null) {
                 this.bluePrint.master.project.logManager.warn('数据源:' + this.dsCode + '无效');
                 return;
             }
@@ -1776,7 +1798,7 @@ class JSNODE_Insert_table extends JSNode_Base{
             });
             var hadIdentity = false;
             theDS.columns.forEach((column, i) => {
-                if(column.is_identity){
+                if (column.is_identity) {
                     hadIdentity = true;
                     return;
                 }
@@ -1790,7 +1812,7 @@ class JSNODE_Insert_table extends JSNode_Base{
                     theSocket.set({ label: column.name });
                     theSocket.index = i;
                     //theSocket.type = column.cvalType;
-                    theSocket.fireEvent('changed',10);
+                    theSocket.fireEvent('changed', 10);
                 }
             });
             var needSort = false;
@@ -1817,42 +1839,42 @@ class JSNODE_Insert_table extends JSNode_Base{
         }
     }
 
-    listenDS(theDS){
-        if(theDS){
+    listenDS(theDS) {
+        if (theDS) {
             theDS.on('syned', this.dsSynedHandler);
         }
         this.listenedDS = theDS;
     }
 
-    unlistenDS(theDS){
-        if(theDS){
+    unlistenDS(theDS) {
+        if (theDS) {
             theDS.off('syned', this.dsSynedHandler);
         }
         this.listenedDS = null;
     }
 
-    setDSCode(code){
+    setDSCode(code) {
         this.dsCode = code;
         var theDS = g_dataBase.getEntityByCode(code);
         this.unlistenDS(this.listenedDS);
         this.listenDS(theDS);
-        if(theDS.loaded){
+        if (theDS.loaded) {
             this.dsSynedHandler();
         }
     }
 
-    customSocketRender(socket){
+    customSocketRender(socket) {
         return null;
-        if(socket.isIn){
+        if (socket.isIn) {
             return null;
         }
         var kernel = this.bluePrint.master.project.getControlById(this.ctlID);
         var type = '控件';
         var label = this.ctlID;
-        if(kernel == null){
+        if (kernel == null) {
             return (<span f-canmove={1} className='badge badge-danger'>{label}不存在</span>);
         }
-        else{
+        else {
             type = ReplaceIfNull(GetControlTypeReadableName(kernel.type), kernel.type);
         }
         return <span f-canmove={1}>{label}<span f-canmove={1} className='badge badge-primary'>{type}</span></span>;
@@ -1874,53 +1896,53 @@ class JSNODE_Insert_table extends JSNode_Base{
         helper.setCompileRetCache(this, selfCompileRet);
 
         var useDS = g_dataBase.getEntityByCode(this.dsCode);
-        if(!useDS.loaded){
+        if (!useDS.loaded) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle,
                 nodeThis,
                 helper.clickLogBadgeItemHandler),
-                useDS + '正在同步中，请稍后再试。']);
+            useDS + '正在同步中，请稍后再试。']);
             return false;
         }
-        if(useDS.columns == null){
+        if (useDS.columns == null) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle,
                 nodeThis,
                 helper.clickLogBadgeItemHandler),
-                useDS + '是个无效数据源']);
+            useDS + '是个无效数据源']);
             return false;
         }
         var needInsertColumns_arr = [];
-        for(var si in this.inputScokets_arr){
+        for (var si in this.inputScokets_arr) {
             var socket = this.inputScokets_arr[si];
             var column = useDS.getColumnByName(socket.name);
             var dataLinks_arr = this.bluePrint.linkPool.getLinksBySocket(socket);
             var socketValue = null;
-            if(dataLinks_arr.length == 0){
-                if(IsEmptyString(socket.defval)){
-                    if(!column.is_nullable || column.cdefault){
+            if (dataLinks_arr.length == 0) {
+                if (IsEmptyString(socket.defval)) {
+                    if (!column.is_nullable || column.cdefault) {
                         helper.logManager.errorEx([helper.logManager.createBadgeItem(
                             thisNodeTitle,
                             nodeThis,
                             helper.clickLogBadgeItemHandler),
-                            socket.name + '必须要有输入']);
+                        socket.name + '必须要有输入']);
                         return false;
                     }
                 }
-                else{
+                else {
                     socketValue = socket.defval;
-                    if(isNaN(socketValue)){
+                    if (isNaN(socketValue)) {
                         socketValue = singleQuotesStr(socketValue);
                     }
                 }
             }
-            else{
+            else {
                 var dataLink = dataLinks_arr[0];
                 var outNode = dataLink.outSocket.node;
                 var compileRet = null;
-                if(outNode.isHadFlow()){
+                if (outNode.isHadFlow()) {
                     compileRet = helper.getCompileRetCache(outNode);
-                    if(compileRet == null){
+                    if (compileRet == null) {
                         helper.logManager.errorEx([helper.logManager.createBadgeItem(
                             thisNodeTitle,
                             nodeThis,
@@ -1929,19 +1951,19 @@ class JSNODE_Insert_table extends JSNode_Base{
                         return false;
                     }
                 }
-                else{
-                    compileRet = outNode.compile(helper,usePreNodes_arr, belongBlock);
+                else {
+                    compileRet = outNode.compile(helper, usePreNodes_arr, belongBlock);
                 }
-                if(compileRet == false){
+                if (compileRet == false) {
                     return false;
                 }
                 socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
             }
 
-            if(socketValue != null){
+            if (socketValue != null) {
                 needInsertColumns_arr.push({
-                    name:column.name,
-                    value:socketValue,
+                    name: column.name,
+                    value: socketValue,
                 });
             }
         }
@@ -1953,7 +1975,7 @@ class JSNODE_Insert_table extends JSNode_Base{
         var paramArrVarBlock = new FormatFileBlock('paramarr');
         selfCompileRet.setSocketOut(this.identityOutSocket, newRecordIdVarName);
         paramArrVarBlock.pushLine("var " + paramArrVarName + '=[', 1);
-        needInsertColumns_arr.forEach((item, i)=>{
+        needInsertColumns_arr.forEach((item, i) => {
             insertSqlStr += (i == 0 ? '' : ',') + midbracketStr(item.name);
             valuesStr += (i == 0 ? '@' : ',@') + item.name;
             paramArrVarBlock.pushLine("dbhelper.makeSqlparam('" + item.name + "', sqlTypes.NVarChar, " + item.value + "),");
@@ -1962,29 +1984,29 @@ class JSNODE_Insert_table extends JSNode_Base{
         paramArrVarBlock.pushLine('];');
         myJSBlock.pushLine("var " + sqlVarName + "='" + insertSqlStr + ')values(' + valuesStr + ") select SCOPE_IDENTITY()';");
         myJSBlock.pushChild(paramArrVarBlock);
-        var retVarName =  this.id + '_queryRet';
-        var errVarName =  this.id + '_queryErrmsg';
+        var retVarName = this.id + '_queryRet';
+        var errVarName = this.id + '_queryErrmsg';
         selfCompileRet.setSocketOut(this.errInfoOutSocket, errVarName);
-        myJSBlock.pushLine("var " +  errVarName+ " = null;");
-        myJSBlock.pushLine("var " +  retVarName+ " = null;");
-        myJSBlock.pushLine('try{',1);
-        myJSBlock.pushLine(retVarName+ " = yield dbhelper.asynQueryWithParams(" + sqlVarName + ", " + paramArrVarName + ");");
+        myJSBlock.pushLine("var " + errVarName + " = null;");
+        myJSBlock.pushLine("var " + retVarName + " = null;");
+        myJSBlock.pushLine('try{', 1);
+        myJSBlock.pushLine(retVarName + " = yield dbhelper.asynQueryWithParams(" + sqlVarName + ", " + paramArrVarName + ");");
         myJSBlock.subNextIndent();
-        myJSBlock.pushLine('}catch(eo){',1);
+        myJSBlock.pushLine('}catch(eo){', 1);
         myJSBlock.pushLine(errVarName + '=eo.message;');
         myJSBlock.subNextIndent();
         myJSBlock.pushLine('}');
         var rcdIfBlock = new JSFile_IF('rcdif', retVarName + ' != null');
         myJSBlock.pushChild(rcdIfBlock);
         rcdIfBlock.trueBlock.pushLine('var ' + newRecordIdVarName + '=' + retVarName + ".recordset[0][''];");
-        
+
         var trueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.sucessFlowSocket);
-        if(trueFlowLinks_arr.length > 0){
+        if (trueFlowLinks_arr.length > 0) {
             this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, rcdIfBlock.trueBlock);
         }
 
         var falseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.failFlowSocket);
-        if(falseFlowLinks_arr.length > 0){
+        if (falseFlowLinks_arr.length > 0) {
             this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, rcdIfBlock.falseBlock);
         }
 
@@ -1994,16 +2016,16 @@ class JSNODE_Insert_table extends JSNode_Base{
     }
 }
 
-class JSNode_Control_Api_Prop extends JSNode_Base{
+class JSNode_Control_Api_Prop extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_CONTROL_API_PROP, 'CtlApiProp', false, nodeJson);
         autoBind(this);
         var apiItem = this.apiItem;
         var apiClass = this.apiClass;
-        if(apiItem == null){
-            apiClass = g_controlApi_arr.find(e=>{return e.ctltype == this.ctltype;});
+        if (apiItem == null) {
+            apiClass = g_controlApi_arr.find(e => { return e.ctltype == this.ctltype; });
             apiItem = apiClass.getApiItemByid(this.apiid);
-            if(apiClass == null || apiItem == null){
+            if (apiClass == null || apiItem == null) {
                 console.error('查询控件api失败！');
             }
             this.apiClass = apiClass;
@@ -2055,7 +2077,7 @@ class JSNode_Control_Api_Prop extends JSNode_Base{
 
         var selectedCtlid = this.inSocket.getExtra('ctlid');
         var selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
-        if(selectedKernel == null){
+        if (selectedKernel == null) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle,
                 nodeThis,
@@ -2065,7 +2087,7 @@ class JSNode_Control_Api_Prop extends JSNode_Base{
         }
         var relCtlKernel = this.bluePrint.ctlKernel;
         var canAccessCtls_arr = relCtlKernel.getAccessableKernels(this.ctltype);
-        if(canAccessCtls_arr.indexOf(selectedKernel) == -1){
+        if (canAccessCtls_arr.indexOf(selectedKernel) == -1) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle,
                 nodeThis,
@@ -2077,6 +2099,296 @@ class JSNode_Control_Api_Prop extends JSNode_Base{
 
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, selectedKernel.id + '_' + this.apiItem.stateName);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+
+class JSNode_Control_Api_PropSetter extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_CONTROL_API_PROPSETTER, 'CtlApiPropsetter', false, nodeJson);
+        autoBind(this);
+        var apiItem = this.apiItem;
+        var apiClass = this.apiClass;
+        if (apiItem == null) {
+            apiClass = g_controlApi_arr.find(e => { return e.ctltype == this.ctltype; });
+            apiItem = apiClass.getApiItemByid(this.apiid);
+            if (apiClass == null || apiItem == null) {
+                console.error('查询控件api失败！');
+            }
+            this.apiClass = apiClass;
+            this.apiItem = apiItem;
+        }
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+        this.label = 'Set:' + apiClass.ctllabel + '.' + apiItem.stateName;
+        if (nodeJson) {
+            if (this.inputScokets_arr.length > 0) {
+                this.ctlSocket = this.inputScokets_arr[0];
+                this.valueSocket = this.inputScokets_arr[1];
+            }
+        }
+        if (this.ctlSocket == null) {
+            this.ctlSocket = new NodeSocket('ctl', this, true);
+            this.addSocket(this.ctlSocket);
+        }
+        this.ctlSocket.inputable = false;
+        this.ctlSocket.type = SocketType_CtlKernel;
+        this.ctlSocket.kernelType = apiClass.ctltype;
+        if (this.valueSocket == null) {
+            this.valueSocket = new NodeSocket('val', this, true);
+            this.addSocket(this.valueSocket);
+        }
+        this.valueSocket.type = ValueType.Any;
+        this.valueSocket.inputable = true;
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.ctltype = this.apiClass.ctltype;
+        rlt.apiid = this.apiItem.id;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['ctltype', 'apiid']);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var selectedCtlid = this.ctlSocket.getExtra('ctlid');
+        var selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
+        if (selectedKernel == null) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '需要选择控件']);
+            return false;
+        }
+        var relCtlKernel = this.bluePrint.ctlKernel;
+        var canAccessCtls_arr = relCtlKernel.getAccessableKernels(this.ctltype);
+        if (canAccessCtls_arr.indexOf(selectedKernel) == -1) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '指定的控件不可访问']);
+            return false;
+        }
+        var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.valueSocket);
+        var valueStr = null;
+        if (datalinks_arr.length == 0) {
+            if (IsEmptyString(this.valueSocket.defval)) {
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    '必须有输入值']);
+                return false;
+            }
+            valueStr = this.inSocket.defval;
+            if (isNaN(socketValue)) {
+                valueStr = singleQuotesStr(socketValue);
+            }
+        }
+        else {
+            var dataLink = datalinks_arr[0];
+            var outNode = dataLink.outSocket.node;
+            var compileRet = null;
+            if (outNode.isHadFlow()) {
+                compileRet = helper.getCompileRetCache(outNode);
+                if (compileRet == null) {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle,
+                        nodeThis,
+                        helper.clickLogBadgeItemHandler),
+                        '输入接口设置错误']);
+                    return false;
+                }
+            }
+            else {
+                compileRet = outNode.compile(helper, usePreNodes_arr);
+            }
+            if (compileRet == false) {
+                return false;
+            }
+            valueStr = compileRet.getSocketOut(dataLink.outSocket).strContent;
+        }
+        var myJSBlock = new FormatFileBlock(this.id);
+        myJSBlock.pushLine("store.dispatch(makeAction_setStateByPath(" + valueStr + ",'" + selectedKernel.getStatePath(this.apiItem.stateName) + "'))");
+        belongBlock.pushChild(myJSBlock);
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
+        return selfCompileRet;
+    }
+}
+
+const gJSDateFuns_arr = [
+    {
+        name: 'CastDate',
+        inputs: [{ label: '', type: ValueType.String }],
+        outputs: [{ label: '', type: ValueType.Date }]
+    },
+    {
+        name: 'AddDay',
+        inputs: [{ label: '日期', type: ValueType.Date },
+                 { label: '偏移', type: ValueType.Int, inputable:true },
+        ],
+        outputs: [{ label: '', type: ValueType.Date }]
+    },
+    {
+        name: 'Format[yyyy-mm-hh]',
+        inputs: [{ label: '日期', type: ValueType.Date }],
+        outputs: [{ label: '', type: ValueType.String }]
+    },
+];
+
+class JSNode_DateFun extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_DATEFUN, 'datefun', false, nodeJson);
+        autoBind(this);
+        if (this.funName == null) {
+            this.setFunName(gJSDateFuns_arr[1].name);
+        }
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.funName = this.funName;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['funName']);
+    }
+
+    setFunName(funName) {
+        if (this.funName == funName) {
+            return;
+        }
+        this.funName = funName;
+        var funData = gJSDateFuns_arr.find(e => { return e.name == funName; });
+        var socket_i = 0;
+        for (; socket_i < funData.inputs.length; ++socket_i) {
+            var socketData = funData.inputs[socket_i];
+            var nowSocket = this.inputScokets_arr[socket_i];
+            if (nowSocket == null) {
+                nowSocket = this.addSocket(new NodeSocket('in' + socket_i, this, true, { label: socketData.label, type: socketData.type, inputable:socketData.inputable == true }));
+            }
+            else {
+                nowSocket.label = socketData.label;
+                nowSocket.type = socketData.type;
+                nowSocket.fireEvent('changed');
+            }
+        }
+        while (socket_i < this.inputScokets_arr.length) {
+            this.removeSocket(this.inputScokets_arr[this.inputScokets_arr.length - 1]);
+        }
+        socket_i = 0;
+        for (; socket_i < funData.outputs.length; ++socket_i) {
+            var socketData = funData.outputs[socket_i];
+            var nowSocket = this.outputScokets_arr[socket_i];
+            if (nowSocket == null) {
+                nowSocket = this.addSocket(new NodeSocket('out' + socket_i, this, false, { label: socketData.label, type: socketData.type }));
+            }
+            else {
+                nowSocket.label = socketData.label;
+                nowSocket.type = socketData.type;
+                nowSocket.fireEvent('changed');
+            }
+        }
+        while (socket_i < this.outputScokets_arr.length) {
+            this.removeSocket(this.outputScokets_arr[this.outputScokets_arr.length - 1]);
+        }
+        this.fireEvent(Event_SocketNumChanged,20);
+        this.fireMoved(10);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var socketVal_arr = [];
+        for(var socket_i=0;socket_i<this.inputScokets_arr.length;++socket_i){
+            var theSocket = this.inputScokets_arr[socket_i];
+            var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+            var tValue = null;
+            if (tLinks.length == 0) {
+                if (theSocket.inputable == false || IsEmptyString(theSocket.defval)) {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle,
+                        nodeThis,
+                        helper.clickLogBadgeItemHandler),
+                        '输入不能为空']);
+                    return false;
+                }
+                tValue = theSocket.defval;
+            }
+            else {
+                var dataLink = tLinks[0];
+                var outNode = dataLink.outSocket.node;
+                var compileRet = null;
+                if (outNode.isHadFlow()) {
+                    compileRet = helper.getCompileRetCache(outNode);
+                    if (compileRet == null) {
+                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                            thisNodeTitle,
+                            nodeThis,
+                            helper.clickLogBadgeItemHandler),
+                            '输入接口设置错误']);
+                        return false;
+                    }
+                }
+                else {
+                    compileRet = outNode.compile(helper, usePreNodes_arr, belongBlock);
+                }
+                if (compileRet == false) {
+                    return false;
+                }
+                tValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
+            }
+            socketVal_arr.push(tValue);
+        }
+        var outSocket = this.outputScokets_arr[0];
+        var selfCompileRet = new CompileResult(this);
+        switch(this.funName){
+            case 'Format[yyyy-mm-hh]':
+            selfCompileRet.setSocketOut(outSocket, 'getFormatDateString(' + socketVal_arr[0] + ')');
+            break;
+            case 'AddDay':
+            var varName = socketVal_arr[0];
+            selfCompileRet.setSocketOut(outSocket, varName + '.setDate(' + varName + '.getDate() + ' + socketVal_arr[1] + ')');
+            break;
+            case 'CastDate':
+            selfCompileRet.setSocketOut(outSocket, 'new Date(' + socketVal_arr[0] + ')');
+            break;
+        }
+
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -2143,4 +2455,11 @@ JSNodeClassMap[JSNODE_CONTROL_API_PROP] = {
     modelClass: JSNode_Control_Api_Prop,
     comClass: C_Node_SimpleNode,
 };
-
+JSNodeClassMap[JSNODE_DATEFUN] = {
+    modelClass: JSNode_DateFun,
+    comClass: C_JSNode_DateFun,
+};
+JSNodeClassMap[JSNODE_CONTROL_API_PROPSETTER] = {
+    modelClass: JSNode_Control_Api_PropSetter,
+    comClass: C_Node_SimpleNode,
+};

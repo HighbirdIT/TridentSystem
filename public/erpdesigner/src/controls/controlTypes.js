@@ -4,6 +4,7 @@ const M_ContainerKernel_Type = 'M_Div';
 const M_LabeledControlKernel_Type = 'M_LC';
 const M_FormKernel_Type = 'M_Form';
 const M_TextKernel_Type = 'M_Text';
+const ButtonKernel_Type = 'button';
 
 const M_LabelKernel_Prefix = 'M_Label';
 const M_PageKernel_Prefix = 'M_Page';
@@ -11,6 +12,7 @@ const M_ContainerKernel_Prefix = 'M_Div';
 const M_LabeledControlKernel_Prefix = 'M_LC';
 const M_FormKernel_Prefix = 'M_Form';
 const M_TextKernel_Prefix = 'M_Text';
+const ButtonKernel_Prefix = 'Btn';
 
 function GetControlTypeReadableName(type){
     switch(type){
@@ -26,6 +28,8 @@ function GetControlTypeReadableName(type){
         return 'Form';
         case M_TextKernel_Type:
         return '文本框';
+        case ButtonKernel_Type:
+        return '按钮';
     }
     return type;
 }
@@ -76,6 +80,21 @@ class ApiItem_prop{
     setApiClass(apiClass){
         this.apiClass = apiClass;
         this.id = 'P-' + this.attrItem.label;
+        this.uniqueID = apiClass.name + this.id;
+    }
+}
+
+class ApiItem_propsetter{
+    constructor(stateName){
+        this.type = EApiType.PropSetter;
+        this.stateName = stateName;
+    }
+    toString(){
+        return 'Set:' + this.apiClass + '.' + this.stateName;
+    }
+    setApiClass(apiClass){
+        this.apiClass = apiClass;
+        this.id = 'SP-' + this.stateName;
         this.uniqueID = apiClass.name + this.id;
     }
 }

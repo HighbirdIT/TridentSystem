@@ -105,22 +105,22 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
         }
     }
 
-    formAttrChangedHandler(ev){
-        if(ev.name == AttrNames.DataSource 
-            || ev.name == AttrNames.name){
+    formAttrChangedHandler(ev) {
+        if (ev.name == AttrNames.DataSource
+            || ev.name == AttrNames.name) {
             this.reDraw();
         }
     }
 
-    cus_componentWillMount(){
-        if(this.state.formKernel){
-            this.state.formKernel.on(EATTRCHANGED,this.formAttrChangedHandler);
+    cus_componentWillMount() {
+        if (this.state.formKernel) {
+            this.state.formKernel.on(EATTRCHANGED, this.formAttrChangedHandler);
         }
     }
 
-    cus_componentWillUnmount(){
-        if(this.state.formKernel){
-            this.state.formKernel.off(EATTRCHANGED,this.formAttrChangedHandler);
+    cus_componentWillUnmount() {
+        if (this.state.formKernel) {
+            this.state.formKernel.off(EATTRCHANGED, this.formAttrChangedHandler);
         }
     }
 
@@ -129,7 +129,7 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
         socket.setExtra('colName', newVal);
     }
 
-    getCanUseColumns(){
+    getCanUseColumns() {
         return this.canUseColumns_arr == null ? [] : this.canUseColumns_arr;
     }
 
@@ -146,22 +146,22 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
         var nodeData = this.props.nodedata;
         var formKernel = this.state.formKernel;
         var titleElem = null;
-        if(formKernel == null){
+        if (formKernel == null) {
             titleElem = (<span f-canmove={1} className='text-danger'>无效的FormID{nodeData.id}</span>);
         }
-        else{
+        else {
             var formDS = formKernel.getAttribute(AttrNames.DataSource);
             var newColumns = [];
-            formDS.columns.forEach(colItem=>{
+            formDS.columns.forEach(colItem => {
                 newColumns.push(colItem.name);
             });
             this.canUseColumns_arr = newColumns;
             titleElem = (<div f-canmove={1} className='d-flex flex-column'>
-                            <span f-canmove={1}>{formKernel.getReadableName()}</span>
-                            <span f-canmove={1} className='badge badge-info'>{formDS == null ? '无数据源' : formDS.name + '-当前行'}</span>
-                        </div>)
+                <span f-canmove={1}>{formKernel.getReadableName()}</span>
+                <span f-canmove={1} className='badge badge-info'>{formDS == null ? '无数据源' : formDS.name + '-当前行'}</span>
+            </div>)
         }
-        
+
         return titleElem;
     }
 
@@ -184,7 +184,7 @@ class C_JSNODE_Insert_table extends React.PureComponent {
         C_NodeCom_Base(this);
     }
 
-    dbItemChanged(newCode){
+    dbItemChanged(newCode) {
         console.log(newCode);
         this.props.nodedata.setDSCode(newCode);
     }
@@ -193,16 +193,51 @@ class C_JSNODE_Insert_table extends React.PureComponent {
         var nowVal = this.props.nodedata.dsCode;
         var nodeData = this.props.nodedata;
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={'Insert'} >
-                    <div className='flex-grow-1 flex-shrink-1'>
-                        <DropDownControl ref={this.dropdownRef} itemChanged={this.dbItemChanged} btnclass='btn-dark' options_arr={g_dataBase.getAllTable} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={nowVal ? nowVal : -1} />
-                    </div>
-                    <div className='d-flex'>
-                        <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
-                        <div className='d-flex flex-column'>
-                            <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutFlowScoketDynamic() ? nodeData.processOutputFlowSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
-                            <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
-                        </div>
-                    </div>
-                </C_Node_Frame>
+            <div className='flex-grow-1 flex-shrink-1'>
+                <DropDownControl ref={this.dropdownRef} itemChanged={this.dbItemChanged} btnclass='btn-dark' options_arr={g_dataBase.getAllTable} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={nowVal ? nowVal : -1} />
+            </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
+                <div className='d-flex flex-column'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutFlowScoketDynamic() ? nodeData.processOutputFlowSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
+                </div>
+            </div>
+        </C_Node_Frame>
+    }
+}
+
+class C_JSNode_DateFun extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+
+        C_NodeCom_Base(this);
+    }
+
+    funNameSelectChanged(newVal) {
+        this.props.nodedata.setFunName(newVal);
+    }
+
+
+    cusHeaderFuc() {
+        if (this.ddcStyle == null) {
+            this.ddcStyle = {
+                minWidth: '150px',
+                margin: 'auto',
+            }
+        }
+        var funName = this.props.nodedata.funName;
+        return (<DropDownControl style={this.ddcStyle} itemChanged={this.funNameSelectChanged} btnclass='btn-dark' options_arr={gJSDateFuns_arr} rootclass='flex-grow-0 flex-shrink-0' value={funName} textAttrName='name' />);
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' cusHeaderFuc={this.cusHeaderFuc} >
+                <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor}  />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} />
+            </div>
+        </C_Node_Frame>
     }
 }

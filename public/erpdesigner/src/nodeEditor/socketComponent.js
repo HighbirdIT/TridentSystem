@@ -142,7 +142,7 @@ class C_Node_Socket extends React.PureComponent{
                 if(socket.isIn){
                     if(socket.getLinks().length == 0){
                         var bluePrint = socket.node.bluePrint;
-                        if(bluePrint.group == FunGroup.CtlAttr)
+                        if(bluePrint.group == FunGroup.CtlAttr || bluePrint.group == FunGroup.CtlEvent)
                         {
                             var ctlKernel = bluePrint.master.project.getControlById(bluePrint.ctlID);
                             if(ctlKernel != null){

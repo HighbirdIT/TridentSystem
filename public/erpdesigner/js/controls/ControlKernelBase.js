@@ -129,10 +129,14 @@ var ControlKernelBase = function (_IAttributeable) {
                 this.unlistenDS(oldValue, attrName);
                 if (typeof newValue === 'string') {
                     newValue = this.project.dataMaster.getDataSourceByCode(newValue);
+                    if (newValue != null && newValue.code == 0) {
+                        newValue = null;
+                    }
                     this[realAtrrName] = newValue;
                 }
-
-                this.listenDS(newValue, attrName);
+                if (newValue) {
+                    this.listenDS(newValue, attrName);
+                }
             }
 
             if (attrItem.name == AttrNames.TextField || attrItem.name == AttrNames.Name) {
@@ -385,8 +389,11 @@ var ControlKernelBase = function (_IAttributeable) {
     }, {
         key: 'getAccessableKernels',
         value: function getAccessableKernels(targetType) {
-            var rlt = [this]; // 本身必可访问
+            var rlt = [];
             var needFilt = targetType != null;
+            if (!needFilt || this.type == targetType) {
+                rlt.push(this);
+            }
             if (rlt.editor && (!needFilt || rlt.editor.type == targetType)) {
                 rlt.push(rlt.editor);
             }

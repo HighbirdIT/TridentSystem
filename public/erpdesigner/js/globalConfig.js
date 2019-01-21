@@ -95,11 +95,15 @@ var CharfunType_arr = [CharfunType_ASCII, CharfunType_CHAR, CharfunType_LEFT, Ch
 var FunType_Client = 'client';
 var FunType_Server = 'server';
 var FunGroup = {
-    CtlAttr: 'ctlattr'
-    /**
-     * 逻辑运算符 and or not
-     */
-};var Logical_Operator_and = 'and';
+    CtlAttr: 'ctlattr',
+    CtlEvent: 'ctlevent'
+};
+
+var ButtonClasses_arr = ['btn-primary', 'btn-secondary', 'btn-success', 'btn-danger', 'btn-warning', 'btn-info', 'btn-light', 'btn-dark', 'btn-link'];
+/**
+ * 逻辑运算符 and or not
+ */
+var Logical_Operator_and = 'and';
 var Logical_Operator_or = 'or';
 //var Logical_Operator_not = 'not';
 var Logical_Operators_arr = [Logical_Operator_and, Logical_Operator_or];
@@ -186,7 +190,8 @@ var ValueType = {
     StyleValues: 'StyleValues',
     DataSource: 'DataSource',
     Unknown: 'Unknown',
-    Any: '任意'
+    Any: '任意',
+    Event: 'event'
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

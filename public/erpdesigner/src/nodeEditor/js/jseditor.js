@@ -44,11 +44,18 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNODE_Insert_table,
         type:'数据库交互'
     },
+    {
+        label:'日期函数',
+        nodeClass:JSNode_DateFun,
+        type:'运算'
+    },
 ];
+
 
 const EApiType={
     Prop:'prop',
     Fun:'fun',
+    PropSetter:'propsetter',
 };
 
 function gCreateControlApiItem(apiType, apiName){
@@ -104,6 +111,7 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
                 };
                 this.useGlobalControls_map[ctrKernel.id] = rlt;
             }
+            rlt.useprops_map[apiitem.attrItem.name] = apiitem;
             return;
         }
         else{
@@ -219,7 +227,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         logManager.clear();
         var canUseDS_arr = [];
         var canAccessKernel_arr = [];
-        if(bluePrint.group == FunGroup.CtlAttr){
+        if(bluePrint.group == FunGroup.CtlAttr || bluePrint.group == FunGroup.CtlEvent){
             // 控件类型,获取上下文
             var ctlKernel = project.getControlById(bluePrint.ctlID);
             if(bluePrint.ctlID == null || ctlKernel == null){
@@ -228,18 +236,20 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
             }
             // 获取可用的数据源
             var parentForms_arr = ctlKernel.searchParentKernel(M_FormKernel_Type);
-            parentForms_arr.forEach(formKernel=>{
-                var useDS = formKernel.getAttribute(AttrNames.DataSource);
-                if(useDS != null){
-                    canUseDS_arr.push(
-                        {
-                            entity:useDS,
-                            label:formKernel.getReadableName() + '当前行',
-                            formID:formKernel.id
-                        }
-                    );
-                }
-            });
+            if(parentForms_arr != null){
+                parentForms_arr.forEach(formKernel=>{
+                    var useDS = formKernel.getAttribute(AttrNames.DataSource);
+                    if(useDS != null){
+                        canUseDS_arr.push(
+                            {
+                                entity:useDS,
+                                label:formKernel.getReadableName() + '当前行',
+                                formID:formKernel.id
+                            }
+                        );
+                    }
+                });
+            }
 
             canAccessKernel_arr = ctlKernel.getAccessableKernels();
         }
@@ -435,7 +445,7 @@ class JSNodeEditorVariables extends React.PureComponent{
                     <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn bg-secondary flex-grow-1 flex-shrink-1 text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}> 变量</button>
                     <i className='fa fa-plus fa-lg text-light cursor-pointer' onClick={this.clickAddHandler} style={{width:'30px'}} />
                 </div>
-                <div id={targetID} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
+                <div id={targetID} className="list-group flex-grow-0 flex-shrink-0 collapse show" style={{ overflow: 'auto' }}>
                     <div className='mw-100 d-flex flex-column'>
                         <div className='btn-group-vertical mw-100'>
                             {
@@ -911,7 +921,13 @@ class C_JSNode_Editor extends React.PureComponent{
                 apiClass:apiClass,
                 apiItem:apiItem,
             });
-            break;    
+            break;
+            case EApiType.PropSetter:
+            this.createNewNode(JSNode_Control_Api_PropSetter,{
+                apiClass:apiClass,
+                apiItem:apiItem,
+            });
+            break;
         }
     }
 

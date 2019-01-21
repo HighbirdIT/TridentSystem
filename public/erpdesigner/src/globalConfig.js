@@ -95,8 +95,11 @@ const CharfunType_arr = [CharfunType_ASCII, CharfunType_CHAR, CharfunType_LEFT, 
 const FunType_Client = 'client';
 const FunType_Server = 'server';
 const FunGroup={
-    CtlAttr:'ctlattr'
+    CtlAttr:'ctlattr',
+    CtlEvent:'ctlevent',
 }
+
+const ButtonClasses_arr = ['btn-primary', 'btn-secondary', 'btn-success', 'btn-danger', 'btn-warning', 'btn-info', 'btn-light', 'btn-dark', 'btn-link'];
 /**
  * 逻辑运算符 and or not
  */
@@ -189,6 +192,7 @@ const ValueType = {
     DataSource: 'DataSource',
     Unknown: 'Unknown',
     Any: '任意',
+    Event:'event'
 };
 
 const VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

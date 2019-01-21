@@ -799,7 +799,7 @@ class ERPC_Text extends React.PureComponent {
             return null;
         }
         var contentElem = null;
-        var rootDivClassName = 'd-flex flex-grow-1 flex-shrink-1';
+        var rootDivClassName = 'd-flex ' + (this.props.class == null ? '' : this.props.class);
         if (this.props.fetching) {
             contentElem = (<i className='fa fa-spinner fa-pulse fa-fw' />);
         }
@@ -839,7 +839,7 @@ class ERPC_Text extends React.PureComponent {
                 contentElem = (<input className='flex-grow-1 flex-shrink-1 form-control invalid ' type={useType} value={useValue} checked={useChecked} onChange={this.inputChanged} />);
             }
         }
-        return (<div className={rootDivClassName} ref={this.rootDivRef}>
+        return (<div className={rootDivClassName} ref={this.rootDivRef} style={this.props.style}>
             {contentElem}
         </div>);
     }
