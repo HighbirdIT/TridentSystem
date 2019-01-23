@@ -31,6 +31,7 @@ class JSNode_While extends JSNode_Base{
                 item.inputable = true;
             });
         }
+
     }   
 
     getNodeTitle() {

@@ -7,6 +7,7 @@ const SQLNODE_LOGICAL_NOT = 'logical_not';
 const SQLNODE_IN_OPERATOR = 'in_operator';
 const SQLNODE_TOSTRING='makestring';
 const SQLNODE_UNION='union';
+const SQLNODE_CASEWHEN = 'casewhen'
 
 SQL_OutSimpleValueNode_arr.push(SQLNODE_GETDATE);
 
@@ -998,6 +999,103 @@ class SqlNode_Union extends SqlNode_Base {
     }
 }
 
+
+/*
+    case when(*)
+
+*/
+class SqlNode_CaseWhen extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, SQLNODE_CASEWHEN, 'case_when(*)', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+                this.outSocket.type = SqlVarType_Scalar;
+            }
+        }//给出标量
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Scalar });
+            this.addSocket(this.outSocket);
+        }
+
+        if (this.inputScokets_arr.length == 0) {
+            this.addSocket(new NodeSocket('input1', this, true, { type: SqlVarType_Scalar, inputable: false }));
+            this.addSocket(new NodeSocket('input2', this, true, { type: SqlVarType_Scalar, inputable: false }));
+        }
+        else {
+            this.inputScokets_arr.forEach(socket => {
+                socket.type = SqlVarType_Scalar;
+                socket.inputable = false;
+            });
+        }
+        var inputLabels_arr=['列名','变量'];
+        this.inputScokets_arr.forEach((soket, i) => {
+            soket.label = inputLabels_arr[i];
+            soket.fireEvent('changed');
+        });
+    }
+    customSocketRender(socket) {
+        return null;
+    }
+    getNodeTitle() {
+        return 'case when(*)';
+    }
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        return rlt;
+    }
+
+    getValue() {
+        return this.outSocket.defval;
+    }
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var tValue = null;
+        var column_value=null;
+        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+            var theSocket = this.inputScokets_arr[i];
+            var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+            
+            if (tLinks.length == 0) {
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle
+                    , nodeThis
+                    , helper.clickLogBadgeItemHandler)
+                    , '输入不能为空']);
+                return false;
+            }
+            else {
+                var link = tLinks[0];
+                var outNode = link.outSocket.node;
+                var compileRet = outNode.compile(helper, usePreNodes_arr);
+                if (compileRet == false) {
+                    return false;
+                }
+                if (i==0){
+                    column_value=compileRet.getSocketOut(link.outSocket).strContent;
+                }else{
+                    tValue = compileRet.getSocketOut(link.outSocket).strContent;
+                }
+            }
+        }
+        var finalSql = '';
+        finalSql = 'case when ' + tValue + "='*'" +' then 1 when ' +column_value+'=' +tValue+' then 1 else 0 end=1 ';
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, ' ' + finalSql);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+
+    }
+}
+
 SqlNodeClassMap[SQLNODE_EXISTS] = {
     modelClass: SqlNode_Exists,
     comClass: C_SqlNode_Exists,
@@ -1039,7 +1137,10 @@ SqlNodeClassMap[SQLNODE_UNION]={
     modelClass:SqlNode_Union,
     comClass:C_SqlNode_Union,
 };
-
+SqlNodeClassMap[SQLNODE_CASEWHEN]={
+    modelClass:SqlNode_CaseWhen,
+    comClass:C_Node_SimpleNode,
+};
 SqlNodeEditorControls_arr.push(
     {
         label:'exists',
@@ -1077,5 +1178,9 @@ SqlNodeEditorControls_arr.push(
     {
         label:'union',
         nodeClass:SqlNode_Union,
+    },
+    {
+        label:'casewhen(*)',
+        nodeClass:SqlNode_CaseWhen,
     }
 );
