@@ -17,7 +17,8 @@ function genTextFiledAttribute() {
         editable: editable
     }, true, {
         scriptable: true,
-        type: FunType_Client
+        type: FunType_Client,
+        group: FunGroup.CtlAttr
     });
 }
 
@@ -74,11 +75,15 @@ function makeFName_pull(formKernel) {
 function makeStr_callFun(funName, params_arr) {
     var endChar = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
 
-    return funName + '(' + (params_arr == null || params_arr.length == 0 ? '' : params_arr.join(',')) + ')' + endChar;
+    var realParams_arr = params_arr == null ? null : params_arr.filter(function (e) {
+        return e != null;
+    });
+
+    return funName + '(' + (realParams_arr == null || realParams_arr.length == 0 ? '' : realParams_arr.join(',')) + ')' + endChar;
 }
 
-function makeStr_getStateByPath(state, path) {
-    return makeStr_callFun('getStateByPath', [state, path]);
+function makeStr_getStateByPath(state, path, defValue) {
+    return makeStr_callFun('getStateByPath', [state, path, defValue]);
 }
 
 function makeStr_DynamicAttr(objStr, propName) {
@@ -96,6 +101,10 @@ function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr) {
     return "store.dispatch(fetchJsonPost(" + url + ", { action: '" + actStr + "' }, makeFTD_Prop(" + baseStr + "," + idStr + ',' + propStr + ',' + isModel + "), EFetchKey.FetchPropValue));";
 }
 
+function makeLine_Return(retStr) {
+    return 'return ' + retStr + ';';
+}
+
 var VarNames = {
     RetProps: 'retProps',
     ReState: 'retState',
@@ -110,10 +119,13 @@ var VarNames = {
     CtlState: 'ctlState',
     Records_arr: 'records_arr',
     RecordIndex: 'recordIndex',
-    InsertCache: 'insertCache'
+    InsertCache: 'insertCache',
+    State: 'state',
+    Bundle: 'bundle'
 };
 
 var AttrNames = {
+    ButtonClass: 'btnclass',
     Title: 'title',
     Text: 'text',
     Test: 'test',
@@ -123,12 +135,17 @@ var AttrNames = {
     IsMain: 'ismain',
     Label: 'label',
     DataSource: 'datasource',
+    ProcessTable: 'processtable',
     Name: 'name',
     ValueType: 'valuetype',
     FloatNum: 'floatnum',
     DefaultValue: 'defaultvalue',
     EditorType: 'editortype',
     TextField: 'textfield',
+
+    Event: {
+        OnClick: 'onclik'
+    },
 
     LayoutNames: {
         APDClass: 'apdClass',
@@ -139,6 +156,8 @@ var AttrNames = {
         Display: 'display',
         Width: 'width',
         Height: 'height',
+        MaxWidth: 'maxWidth',
+        MaxHeight: 'maxHeight',
         FlexGrow: 'flex-grow',
         FlexShrink: 'flex-shrink'
     },
@@ -153,6 +172,16 @@ var AttrNames = {
         }
     }
 };
+
+function gStyleAttrNameToCssName(styleAttrName) {
+    switch (styleAttrName) {
+        case 'maxWidth':
+            return 'max-width';
+        case 'maxHeight':
+            return 'max-height';
+    }
+    return styleAttrName;
+}
 
 function InitAttrNames(target) {
     var values_arr = [];
@@ -183,5 +212,7 @@ StyleAttrSetting[AttrNames.StyleAttrNames.FlexGrow] = { type: ValueType.Boolean,
 StyleAttrSetting[AttrNames.StyleAttrNames.FlexShrink] = { type: ValueType.Boolean, def: true };
 StyleAttrSetting[AttrNames.StyleAttrNames.Width] = { type: ValueType.String, def: '' };
 StyleAttrSetting[AttrNames.StyleAttrNames.Height] = { type: ValueType.String, def: '' };
+StyleAttrSetting[AttrNames.StyleAttrNames.MaxWidth] = { type: ValueType.String, def: '' };
+StyleAttrSetting[AttrNames.StyleAttrNames.MaxHeight] = { type: ValueType.String, def: '' };
 
 var CouldAppendClasses_arr = [''];

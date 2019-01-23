@@ -8,9 +8,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var M_PageKernelAttrsSetting = {
-    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'), new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false), new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr)]), new CAttributeGroup('测试设置', [new CAttribute('测试', AttrNames.Test, ValueType.String, '', true, 1)])]
-};
+var M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'), new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false), new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr)]), new CAttributeGroup('测试设置', [new CAttribute('测试', AttrNames.Test, ValueType.String, '', true, 1)])], false);
 
 var M_PageKernel = function (_ContainerKernelBase) {
     _inherits(M_PageKernel, _ContainerKernelBase);
@@ -18,7 +16,7 @@ var M_PageKernel = function (_ContainerKernelBase) {
     function M_PageKernel(initData, parentKernel, createHelper, kernelJson) {
         _classCallCheck(this, M_PageKernel);
 
-        var _this = _possibleConstructorReturn(this, (M_PageKernel.__proto__ || Object.getPrototypeOf(M_PageKernel)).call(this, initData, M_PageKernel_Type, '页面', M_PageKernelAttrsSetting.groups_arr.concat(), parentKernel, createHelper, kernelJson));
+        var _this = _possibleConstructorReturn(this, (M_PageKernel.__proto__ || Object.getPrototypeOf(M_PageKernel)).call(this, initData, M_PageKernel_Type, '页面', M_PageKernelAttrsSetting, parentKernel, createHelper, kernelJson));
 
         var self = _this;
         autoBind(self);

@@ -1,24 +1,23 @@
-const M_FormKernelAttrsSetting={
-    groups_arr:[
-        new CAttributeGroup('基本设置',[
-            new CAttribute('name',AttrNames.Name,ValueType.String),
-            new CAttribute('方向',AttrNames.Orientation,ValueType.String,Orientation_V,true,false, Orientation_Options_arr),
-            new CAttribute('数据源', AttrNames.DataSource, ValueType.DataSource, false, true, false, null, {text:'name', value:'code'}),
-        ]),
-    ],
-};
+const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
+    new CAttributeGroup('基本设置',[
+        new CAttribute('方向',AttrNames.Orientation,ValueType.String,Orientation_V,true,false, Orientation_Options_arr),
+        new CAttribute('数据源', AttrNames.DataSource, ValueType.DataSource, null, true, false, null, {text:'name', value:'code'}),
+        new CAttribute('操作表', AttrNames.ProcessTable, ValueType.DataSource, null, true, false, null, {text:'name', value:'code'}),
+    ]),
+]);
 
 class M_FormKernel extends ContainerKernelBase{
     constructor(initData, parentKernel, createHelper, kernelJson) {
         super(  initData,
                 M_FormKernel_Type,
                 '数据表单',
-                M_FormKernelAttrsSetting.groups_arr.concat(),
+                M_FormKernelAttrsSetting,
                 parentKernel,
                 createHelper,kernelJson
             );
         
         this.findAttributeByName(AttrNames.DataSource).options_arr = parentKernel.project.dataMaster.getAllEntities;
+        this.findAttributeByName(AttrNames.ProcessTable).options_arr = g_dataBase.getAllTable;
         var self = this;
         autoBind(self);
     }

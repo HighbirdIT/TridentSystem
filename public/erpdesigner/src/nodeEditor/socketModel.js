@@ -1,11 +1,12 @@
 class NodeSocket extends EventEmitter{
-    constructor(name, tNode, isIn, initData){
+    constructor(name, tNode, isIn, initData, isSimpleVal){
         super();
         Object.assign(this, initData);
         EnhanceEventEmiter(this);
         this.name =  name;
         this.node = tNode;
         this.isIn = isIn;
+        this.isSimpleVal = isSimpleVal != false;
         this.setName(this.name);
         this.setCurrentComponent = CommonFun_SetCurrentComponent.bind(this);
     }

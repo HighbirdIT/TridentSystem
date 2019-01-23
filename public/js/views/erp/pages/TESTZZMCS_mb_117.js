@@ -11,13 +11,40 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var Redux = window.Redux;
 var Provider = ReactRedux.Provider;
 var isDebug = false;
-var appServerUrl = '/erppage/server/ZZMCS_server';
+var appServerUrl = '/erppage/server/ZZMCS';
 var thisAppTitle = '赵智淼测试';
-var appInitState = { loaded: false, ui: {}, nowPage: 'M_Page_0' };
-var appReducerSetting = {};
-var appReducer = createReducer(appInitState, Object.assign(baseReducerSetting, appReducerSetting));;
-var reducer = appReducer;;
-var store = Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));;
+var appInitState = { loaded: false, ui: {} };
+var appReducerSetting = { AT_PAGELOADED: pageLoadedReducer.bind(window), AT_GOTOPAGE: gotoPageReducer.bind(window) };
+var appReducer = createReducer(appInitState, Object.assign(baseReducerSetting, appReducerSetting));
+var reducer = appReducer;
+var store = Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));
+var appStateChangedAct_map = {};
+
+function pageLoadedReducer(state) {
+	return gotoPage('M_Page_0', state);
+}
+function gotoPageReducer(state, action) {
+	return gotoPage(action.pageName, state);
+}
+function gotoPage(pageName, state) {
+	var retState = state;
+	if (state.nowPage == pageName) {
+		return state;
+	}
+	switch (pageName) {
+		case 'M_Page_0':
+			{
+				retState = active_M_Page_0(retState);
+				break;
+			}
+	}
+	return Object.assign({}, retState);
+}
+function active_M_Page_0(state) {
+	state.nowPage = 'M_Page_0';
+	setTimeout(function () {}, 50);
+	return state;
+}
 
 var App = function (_React$PureComponent) {
 	_inherits(App, _React$PureComponent);
@@ -35,62 +62,35 @@ var App = function (_React$PureComponent) {
 		key: 'render',
 		value: function render() {
 			var retElem = null;
+			var pageElem;
+			switch (this.props.nowPage) {
+				case 'M_Page_0':
+					{
+						pageElem = React.createElement(VisibleCM_Page_0, null);
+						break;
+					}
+			}
 			retElem = React.createElement(
 				'div',
-				{ className: 'd-flex flex-column flex-grow-1 flex-shrink-1 h-100' },
+				{ className: 'w-100 h-100' },
+				React.createElement(FixedContainer, { ref: gFixedContainerRef }),
 				this.renderLoadingTip(),
-				this.renderHead(),
-				React.createElement(
-					'div',
-					{ className: 'd-flex flex-column flex-grow-1 flex-shrink-1 autoScroll' },
-					this.renderContent()
-				),
-				this.renderFoot()
+				pageElem
 			);
 			return retElem;
-		}
-	}, {
-		key: 'renderContent',
-		value: function renderContent() {
-			var retElem;
-			var TargetPageName = 'VisibleC' + this.props.nowPage;
-			retElem = React.createElement(VisibleCM_Page_0, null);
-			return retElem;
-		}
-	}, {
-		key: 'renderHead',
-		value: function renderHead() {
-			return React.createElement(
-				'div',
-				{ className: 'd-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader' },
-				React.createElement(
-					'h3',
-					null,
-					thisAppTitle
-				)
-			);
-		}
-	}, {
-		key: 'renderFoot',
-		value: function renderFoot() {
-			return React.createElement(
-				'div',
-				{ className: 'flex-grow-0 flex-shrink-0 bg-primary text-light pageFooter' },
-				React.createElement(
-					'h3',
-					null,
-					'\u9875\u811A'
-				)
-			);
 		}
 	}]);
 
 	return App;
 }(React.PureComponent);
 
-function App_mapstatetoprops(state) {
+function App_mapstatetoprops(state, ownprops) {
 	var retProps = {};
 	retProps.nowPage = state.nowPage;
+	retProps.loaded = state.loaded;
+	if (!state.loaded) {
+		retProps.fetchState = state.ui.fetchState;
+	}
 	return retProps;
 }
 function App_disptchtoprops(dispatch, ownprops) {
@@ -112,6 +112,42 @@ var CM_Page_0 = function (_React$PureComponent2) {
 		key: 'render',
 		value: function render() {
 			var retElem = null;
+			retElem = React.createElement(
+				'div',
+				{ className: 'd-flex flex-column flex-grow-1 flex-shrink-1 h-100' },
+				this.renderHead(),
+				this.renderContent()
+			);
+			return retElem;
+		}
+	}, {
+		key: 'renderHead',
+		value: function renderHead() {
+			return React.createElement(
+				'div',
+				{ className: 'd-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader' },
+				React.createElement(
+					'h3',
+					null,
+					'\u8D75\u667A\u6DFC'
+				)
+			);
+		}
+	}, {
+		key: 'renderContent',
+		value: function renderContent() {
+			var retElem = null;
+			retElem = React.createElement(
+				'div',
+				{ className: 'd-flex flex-grow-1 flex-shrink-0 autoScroll_Touch flex-column ' },
+				React.createElement(
+					'div',
+					{ className: 'flex-grow-0 d-flex flex-shrink-1 erp-control ' },
+					React.createElement('div', { className: 'flex-grow-1 d-flex flex-shrink-1 erp-control ' }),
+					React.createElement(VisibleERPC_Label, { className: 'erp-control ', id: 'M_Label_0', parentPath: 'M_Page_0', text: '2019-1-9' }),
+					React.createElement('div', { className: 'flex-grow-1 d-flex flex-shrink-1 erp-control ' })
+				)
+			);
 			return retElem;
 		}
 	}]);
@@ -119,7 +155,7 @@ var CM_Page_0 = function (_React$PureComponent2) {
 	return CM_Page_0;
 }(React.PureComponent);
 
-function CM_Page_0_mapstatetoprops(state) {
+function CM_Page_0_mapstatetoprops(state, ownprops) {
 	var retProps = {};
 	return retProps;
 }
@@ -135,3 +171,4 @@ ReactDOM.render(React.createElement(
 	{ store: store },
 	React.createElement(VisibleApp, null)
 ), document.getElementById('reactRoot'));
+store.dispatch(fetchJsonPost(appServerUrl, { action: 'pageloaded' }, null, 'pageloaded', '正在加载[' + thisAppTitle + ']'));

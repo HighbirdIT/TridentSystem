@@ -370,10 +370,6 @@ function makeLine_Assign(left, right) {
 	return left + '=' + right + ';';
 }
 
-function makeLine_Return(str) {
-	return 'return ' + str + ';';
-}
-
 function makeStr_DotProp() {
 	var rlt = '';
 	for (var i = 0; i < arguments.length; ++i) {
@@ -463,7 +459,7 @@ function makeObj_CtlPropJsBind(ctlID, propName, suffix, oldtext) {
 		propName: propName,
 		suffix: suffix,
 		oldtext: oldtext,
-		group: 'ctl',
+		group: FunGroup.CtlAttr,
 		isScript: true
 	};
 }

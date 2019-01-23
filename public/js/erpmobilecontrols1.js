@@ -926,7 +926,7 @@ var ERPC_Text = function (_React$PureComponent4) {
                 return null;
             }
             var contentElem = null;
-            var rootDivClassName = 'd-flex flex-grow-1 flex-shrink-1';
+            var rootDivClassName = 'd-flex ' + (this.props.class == null ? '' : this.props.class);
             if (this.props.fetching) {
                 contentElem = React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw' });
             } else {
@@ -968,7 +968,7 @@ var ERPC_Text = function (_React$PureComponent4) {
             }
             return React.createElement(
                 'div',
-                { className: rootDivClassName, ref: this.rootDivRef },
+                { className: rootDivClassName, ref: this.rootDivRef, style: this.props.style },
                 contentElem
             );
         }
@@ -1033,7 +1033,7 @@ var ERPC_LabeledControl = function (_React$PureComponent5) {
 
 function ERPC_LabeledControl_mapstatetoprops(state, ownprops) {
     var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
-    var useLabel = ownprops.label ? ownprops.label : ctlState.label ? ctlState.label : '未知名称';
+    var useLabel = ownprops.label != null ? ownprops.label : ctlState.label != null ? ctlState.label : '';
     return {
         label: useLabel,
         fetching: ctlState.fetching,

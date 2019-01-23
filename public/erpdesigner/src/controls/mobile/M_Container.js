@@ -1,18 +1,15 @@
-const M_ContainerKernelAttrsSetting={
-    groups_arr:[
-        new CAttributeGroup('基本设置',[
-            new CAttribute('name',AttrNames.Name,ValueType.String),
-            new CAttribute('方向',AttrNames.Orientation,ValueType.String,Orientation_H,true,false, Orientation_Options_arr),
-        ]),
-    ],
-};
+const M_ContainerKernelAttrsSetting=GenControlKernelAttrsSetting([
+    new CAttributeGroup('基本设置',[
+        new CAttribute('方向',AttrNames.Orientation,ValueType.String,Orientation_H,true,false, Orientation_Options_arr),
+    ]),
+]);
 
 class M_ContainerKernel extends ContainerKernelBase{
     constructor(initData, parentKernel, createHelper, kernelJson) {
         super(  initData, 
                 M_ContainerKernel_Type, 
                 'Flex容器',
-                M_ContainerKernelAttrsSetting.groups_arr.concat(),
+                M_ContainerKernelAttrsSetting,
                 parentKernel,
                 createHelper,kernelJson
             );

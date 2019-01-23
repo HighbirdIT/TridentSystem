@@ -1,10 +1,18 @@
 
+const EmptyDBEntity = {
+    loaded:true,
+    code:0,
+    columns:null,
+    name:'无',
+}
 class DataBase extends EventEmitter{
     constructor(){
         super();
         this.entities_arr = [];
         this.entityCode_map = {};
         this.entityName_map = {};
+
+        autoBind(this);
     }
 
     synEnityFromFetch(data_arr){
@@ -64,6 +72,16 @@ class DataBase extends EventEmitter{
 
     synBykeyword(callback){
 
+    }
+
+    getEntitiesByType(tType){
+        return this.entities_arr.filter(e=>{
+            return e.type == tType;
+        }).concat(EmptyDBEntity);
+    }
+
+    getAllTable(){
+        return this.getEntitiesByType('U');
     }
 }
 
@@ -133,6 +151,10 @@ class DBEntity extends EventEmitter{
 
     getColumnByName(colName){
         return this.columns.find(x=>{return x.name == colName;});
+    }
+
+    toString(){
+        return IsEmptyString(this.name) ? this.code : this.name;
     }
 }
 
@@ -244,6 +266,9 @@ class DataMaster extends EventEmitter{
     }
 
     getDataSourceByCode(code){
+        if(code == 0){
+            return EmptyDBEntity;
+        }
         var rlt = this.getSqlBPByCode(code);
         if(rlt == null && !isNaN(code)){
             rlt = g_dataBase.getEntityByCode(code);
