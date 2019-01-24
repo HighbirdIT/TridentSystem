@@ -1067,6 +1067,7 @@ class SqlNode_DBEntity_ColumnSelector extends SqlNode_Base {
     }
 
     entitySynedHandler() {
+
         this.fireChanged();
     }
 
