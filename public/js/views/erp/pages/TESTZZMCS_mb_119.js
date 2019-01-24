@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -8,16 +8,65 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+var M_Text_0_style = { "maxWidth": "10em" };
 var Redux = window.Redux;
 var Provider = ReactRedux.Provider;
 var isDebug = false;
-var appServerUrl = '/erppage/server/ZZMCS_server';
+var appServerUrl = '/erppage/server/ZZMCS';
 var thisAppTitle = '赵智淼测试';
-var appInitState = { loaded: false, ui: {}, nowPage: 'M_Page_0' };
-var appReducerSetting = {};
-var appReducer = createReducer(appInitState, Object.assign(baseReducerSetting, appReducerSetting));;
-var reducer = appReducer;;
-var store = Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));;
+var appInitState = { loaded: false, ui: {} };
+var appReducerSetting = { AT_PAGELOADED: pageLoadedReducer.bind(window), AT_GOTOPAGE: gotoPageReducer.bind(window) };
+var appReducer = createReducer(appInitState, Object.assign(baseReducerSetting, appReducerSetting));
+var reducer = appReducer;
+var store = Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));
+var appStateChangedAct_map = {};
+
+function pageLoadedReducer(state) {
+	return gotoPage('M_Page_0', state);
+}
+function gotoPageReducer(state, action) {
+	return gotoPage(action.pageName, state);
+}
+function gotoPage(pageName, state) {
+	var retState = state;
+	if (state.nowPage == pageName) {
+		return state;
+	}
+	switch (pageName) {
+		case 'M_Page_0':
+			{
+				retState = active_M_Page_0(retState);
+				break;
+			}
+	}
+	return Object.assign({}, retState);
+}
+function active_M_Page_0(state) {
+	var needSetState = {};
+	needSetState['M_Page_0.M_Text_0.value'] = M_Text_0_defaultvalue_get(state);
+	state = setManyStateByPath(state, '', needSetState);
+	state.nowPage = 'M_Page_0';
+	setTimeout(function () {}, 50);
+	state = bind_M_Form_0(state);
+	return state;
+}
+function M_Text_0_defaultvalue_get(state, bundle) {
+	var nowDate_1 = new Date();
+	return '2018-5-1';
+}
+function fresh_M_Form_0(retState, records_arr) {
+	bind_M_Form_0(retState);
+}
+function bind_M_Form_0(retState, newIndex, oldIndex) {
+	var formState = getStateByPath(retState, 'M_Page_0.M_Form_0', {});
+	var needSetState = {};
+	var bundle = {};
+	return setManyStateByPath(retState, 'M_Page_0.M_Form_0', needSetState);
+}
+function pull_M_Form_0(retState) {
+	retState = bind_M_Form_0(retState);
+	return retState;
+}
 
 var App = function (_React$PureComponent) {
 	_inherits(App, _React$PureComponent);
@@ -32,7 +81,7 @@ var App = function (_React$PureComponent) {
 	}
 
 	_createClass(App, [{
-		key: 'render',
+		key: "render",
 		value: function render() {
 			var retElem = null;
 			var pageElem;
@@ -44,8 +93,8 @@ var App = function (_React$PureComponent) {
 					}
 			}
 			retElem = React.createElement(
-				'div',
-				{ className: 'w-100 h-100' },
+				"div",
+				{ className: "w-100 h-100" },
 				React.createElement(FixedContainer, { ref: gFixedContainerRef }),
 				this.renderLoadingTip(),
 				pageElem
@@ -57,9 +106,13 @@ var App = function (_React$PureComponent) {
 	return App;
 }(React.PureComponent);
 
-function App_mapstatetoprops(state) {
+function App_mapstatetoprops(state, ownprops) {
 	var retProps = {};
 	retProps.nowPage = state.nowPage;
+	retProps.loaded = state.loaded;
+	if (!state.loaded) {
+		retProps.fetchState = state.ui.fetchState;
+	}
 	return retProps;
 }
 function App_disptchtoprops(dispatch, ownprops) {
@@ -78,66 +131,46 @@ var CM_Page_0 = function (_React$PureComponent2) {
 	}
 
 	_createClass(CM_Page_0, [{
-		key: 'render',
+		key: "render",
 		value: function render() {
 			var retElem = null;
 			retElem = React.createElement(
-				'div',
-				{ className: 'd-flex flex-column flex-grow-1 flex-shrink-1 h-100' },
+				"div",
+				{ className: "d-flex flex-column flex-grow-1 flex-shrink-1 h-100" },
 				this.renderHead(),
-				this.renderContent(),
-				this.renderFoot()
+				this.renderContent()
 			);
 			return retElem;
 		}
 	}, {
-		key: 'renderHead',
+		key: "renderHead",
 		value: function renderHead() {
 			return React.createElement(
-				'div',
-				{ className: 'd-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader' },
+				"div",
+				{ className: "d-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader" },
 				React.createElement(
-					'h3',
+					"h3",
 					null,
-					'\u8D75\u667A\u6DFC'
+					"\u603B\u7ED3\u7BA1\u7406"
 				)
 			);
 		}
 	}, {
-		key: 'renderFoot',
-		value: function renderFoot() {
-			return React.createElement(
-				'div',
-				{ className: 'flex-grow-0 flex-shrink-0 bg-primary text-light pageFooter' },
-				React.createElement(
-					'h3',
-					null,
-					'\u9875\u811A'
-				)
-			);
-		}
-	}, {
-		key: 'renderContent',
+		key: "renderContent",
 		value: function renderContent() {
 			var retElem = null;
 			retElem = React.createElement(
-				'div',
-				{ className: 'd-flex flex-grow-1 flex-shrink-0 autoScroll_Touch flex-column ' },
+				"div",
+				{ className: "d-flex flex-grow-1 flex-shrink-0 autoScroll_Touch flex-column " },
 				React.createElement(
-					'span',
-					{ className: 'erp-control ' },
-					'\u672A\u547D\u540D\u9875\u9762'
+					"div",
+					{ className: "flex-grow-0 d-flex flex-shrink-1 erp-control " },
+					React.createElement("button", { className: "flex-grow-1 erp-control ", id: "button_0", parentPath: "M_Page_0" }),
+					React.createElement(VisibleERPC_Text, { style: M_Text_0_style, id: "M_Text_0", parentPath: "M_Page_0", type: "date" }),
+					React.createElement("button", { className: "flex-grow-1 erp-control ", id: "button_1", parentPath: "M_Page_0" })
 				),
-				React.createElement(
-					VisibleERPC_LabeledControl,
-					{ id: 'M_LC_0', parentPath: '', label: '\u7B2C\u4E00\u4E2A\u6807\u7B7E' },
-					React.createElement(
-						'div',
-						null,
-						'\u8FD9\u662F\u5185\u5BB9'
-					)
-				),
-				React.createElement(VisibleCM_Form_0, null)
+				React.createElement(VisibleERPC_Label, { className: "erp-control ", id: "M_Label_1", parentPath: "M_Page_0" }),
+				React.createElement(VisibleCM_Form_0, { id: "M_Form_0", parentPath: "M_Page_0" })
 			);
 			return retElem;
 		}
@@ -147,11 +180,11 @@ var CM_Page_0 = function (_React$PureComponent2) {
 }(React.PureComponent);
 
 function CM_Page_0_mapstatetoprops(state, ownprops) {
-	var retProps = ERPC_Form_mapstatetoprops(state, ownprops);
+	var retProps = {};
 	return retProps;
 }
 function CM_Page_0_disptchtoprops(dispatch, ownprops) {
-	var retDispath = ERPC_Form_dispatchtorprops(dispatch, ownprops);
+	var retDispath = {};
 	return retDispath;
 }
 var VisibleCM_Page_0 = ReactRedux.connect(CM_Page_0_mapstatetoprops, CM_Page_0_disptchtoprops)(CM_Page_0);
@@ -162,21 +195,34 @@ var CM_Form_0 = function (_React$PureComponent3) {
 	function CM_Form_0(props) {
 		_classCallCheck(this, CM_Form_0);
 
-		return _possibleConstructorReturn(this, (CM_Form_0.__proto__ || Object.getPrototypeOf(CM_Form_0)).call(this, props));
+		var _this3 = _possibleConstructorReturn(this, (CM_Form_0.__proto__ || Object.getPrototypeOf(CM_Form_0)).call(this, props));
+
+		ERPC_PageForm(_this3);
+		return _this3;
 	}
 
 	_createClass(CM_Form_0, [{
-		key: 'render',
+		key: "render",
 		value: function render() {
 			var retElem = null;
 			retElem = this.renderContent();
 			return retElem;
 		}
 	}, {
-		key: 'renderContent',
+		key: "renderContent",
 		value: function renderContent() {
 			var retElem = null;
-			retElem = React.createElement('div', { className: 'd-flex flex-grow-1 flex-shrink-1 erp-form flex-column ' });
+			if (this.props.fetchErr) {
+				return renderFetcingErrDiv(this.props.fetchErr.info);
+			}
+			if (!this.props.loaded || this.props.fetching) {
+				return renderFetcingTipDiv();
+			}
+			retElem = React.createElement(
+				"div",
+				{ className: "d-flex flex-grow-1 flex-shrink-1 erp-form flex-column " },
+				this.renderNavigater()
+			);
 			return retElem;
 		}
 	}]);
@@ -184,8 +230,14 @@ var CM_Form_0 = function (_React$PureComponent3) {
 	return CM_Form_0;
 }(React.PureComponent);
 
-function CM_Form_0_mapstatetoprops(state) {
+function CM_Form_0_mapstatetoprops(state, ownprops) {
 	var retProps = {};
+	var ctlState = getStateByPath(state, 'M_Page_0.M_Form_0', {});
+	retProps.fetching = ctlState.fetching;
+	retProps.fetchErr = ctlState.fetchErr;
+	retProps.records_arr = ctlState.records_arr;
+	retProps.recordIndex = ctlState.recordIndex;
+	retProps.loaded = true;
 	return retProps;
 }
 function CM_Form_0_disptchtoprops(dispatch, ownprops) {
@@ -200,3 +252,4 @@ ReactDOM.render(React.createElement(
 	{ store: store },
 	React.createElement(VisibleApp, null)
 ), document.getElementById('reactRoot'));
+store.dispatch(fetchJsonPost(appServerUrl, { action: 'pageloaded' }, null, 'pageloaded', '正在加载[' + thisAppTitle + ']'));

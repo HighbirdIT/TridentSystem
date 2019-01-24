@@ -14,7 +14,9 @@ class ProjectCompiler extends EventEmitter{
         }
         var rlt = this.midData_map[key];
         if(rlt== null){
-            rlt = {};
+            rlt = {
+                needSetStates_arr:[],
+            };
             this.midData_map[key] = rlt;
         }
         return rlt;

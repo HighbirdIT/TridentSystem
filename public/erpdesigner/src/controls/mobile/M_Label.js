@@ -1,11 +1,8 @@
-const M_LabelKernelAttrsSetting={
-    groups_arr:[
-        new CAttributeGroup('基本设置',[
-            new CAttribute('name',AttrNames.Name,ValueType.String),
-            genTextFiledAttribute(),
-        ]),
-    ],
-};
+const M_LabelKernelAttrsSetting = GenControlKernelAttrsSetting([
+    new CAttributeGroup('基本设置',[
+        genTextFiledAttribute(),
+    ]),
+]);
 
 
 class M_LabelKernel extends ControlKernelBase{
@@ -13,7 +10,7 @@ class M_LabelKernel extends ControlKernelBase{
         super(  initData,
                 M_LabelKernel_Type,
                 '标签',
-                M_LabelKernelAttrsSetting.groups_arr.concat(),
+                M_LabelKernelAttrsSetting,
                 parentKernel,
                 createHelper,kernelJson
             );

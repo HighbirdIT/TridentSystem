@@ -264,6 +264,14 @@
   -o-animation:blink 1s infinite; /* Opera */
 }
 
+.M_Container{
+  padding: 5px;
+}
+
+.M_Form{
+  padding: 5px;
+}
+
 .M_Container_Empty{
   min-height: 30px;
 }

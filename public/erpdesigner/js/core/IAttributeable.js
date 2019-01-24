@@ -103,10 +103,12 @@ var IAttributeable = function (_EventEmitter) {
                     console.error('访问不存在的属性:' + attrName);
                 }
                 rlt = attrItem.defaultVal;
-                if (rlt == null) {
+                if (rlt == null && attrItem.valueType != ValueType.Event) {
                     switch (attrItem.name) {
                         case AttrNames.LayoutNames.StyleAttr:
                         case AttrNames.Name:
+                        case AttrNames.DataSource:
+                        case AttrNames.ProcessTable:
                             break;
                         default:
                             console.warn('属性:' + attrName + '没有默认值');

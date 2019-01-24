@@ -467,8 +467,8 @@ function fetchJson(useGet, url, sendData, triggerData) {
             } else if (json.err != null) {
                 dispatch(makeAction_fetchError(key, createError(json.err.info, ErrType.SERVERSIDE, thisFetch), thisFetch));
             } else {
-                //setTimeout(function () {
-                    dispatch(makeAction_fetchend(key, json, thisFetch));
+                //setTimeout(() => {
+                dispatch(makeAction_fetchend(key, json, thisFetch));
                 //}, 2000);
             }
         });
@@ -594,17 +594,18 @@ function setStateByPath(state, path, value, visited) {
         newStateParent[newStateName] = updateObject(newStateParent[newStateName], newStateValue);
         retState = state;
     }
-    retState = aStateChanged(retState, path, value, oldValue, visited == null ? {} : visited);
+    var delayActs = {};
+    retState = aStateChanged(retState, path, value, oldValue, visited == null ? {} : visited, delayActs);
 
     return retState == state ? Object.assign({}, retState) : retState;
 }
 
 function setManyStateByPath(state, path, valuesObj, visited) {
-    if (path == null || path.length == 0 || valuesObj == null) {
+    if (path == null || valuesObj == null) {
         return state;
     }
     var t_arr = path.split('.');
-    var len = t_arr.length;
+    var len = path.length == 0 ? 0 : t_arr.length;
     var nowState = state;
     var newStateParent = null;
     //var newStateValue = null;
@@ -707,15 +708,17 @@ function setManyStateByPath(state, path, valuesObj, visited) {
     if (visited == null) {
         visited = {};
     }
+    var delayActs = {};
     for (i in changed_arr) {
         var changedInfo = changed_arr[i];
-        retState = aStateChanged(retState, changedInfo.path, changedInfo.newValue, changedInfo.oldValue, visited);
+        retState = aStateChanged(retState, changedInfo.path, changedInfo.newValue, changedInfo.oldValue, visited, delayActs);
     }
     return retState == state ? Object.assign({}, retState) : retState;
 }
 
 function aStateChanged(state, path, newValue, oldValue) {
     var visited = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
+    var delayActs = arguments[5];
 
     if (visited[path] != null) {
         console.error('aStateChanged回路访问:' + path);
@@ -725,7 +728,7 @@ function aStateChanged(state, path, newValue, oldValue) {
     if (appStateChangedAct_map != null) {
         var theAct = appStateChangedAct_map[path];
         if (theAct) {
-            var actRet = theAct(retState, newValue, oldValue, path, visited);
+            var actRet = theAct(retState, newValue, oldValue, path, visited, delayActs);
             if (actRet != null) {
                 retState = actRet;
             }
