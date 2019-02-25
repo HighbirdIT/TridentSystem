@@ -1012,7 +1012,7 @@ class SqlNode_CaseWhen extends SqlNode_Base {
         if (nodeJson) {
             if (this.outputScokets_arr.length > 0) {
                 this.outSocket = this.outputScokets_arr[0];
-                this.outSocket.type = SqlVarType_Scalar;
+                this.outSocket.type = SqlVarType_Boolean;
             }
         }//给出标量
         if (this.outSocket == null) {
@@ -1033,7 +1033,6 @@ class SqlNode_CaseWhen extends SqlNode_Base {
         var inputLabels_arr=['列名','变量'];
         this.inputScokets_arr.forEach((soket, i) => {
             soket.label = inputLabels_arr[i];
-            soket.fireEvent('changed');
         });
     }
     customSocketRender(socket) {
@@ -1047,9 +1046,7 @@ class SqlNode_CaseWhen extends SqlNode_Base {
         return rlt;
     }
 
-    getValue() {
-        return this.outSocket.defval;
-    }
+    
     compile(helper, preNodes_arr) {
         var superRet = super.compile(helper, preNodes_arr);
         if (superRet == false || superRet != null) {
