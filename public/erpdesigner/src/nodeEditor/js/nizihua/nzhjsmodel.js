@@ -89,29 +89,12 @@ class JSNode_While extends JSNode_Base{
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
-
-        if(this.outFlowSockets_arr.length == 0){
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                '必须要有case设置']);
-            return false;
-        }
-
         var flowLinks_arr = null;
         var flowLink = null;
         var nextNodeCompileRet = null;
         for(var oi in this.outFlowSockets_arr){
             var caseFlowSocket = this.outFlowSockets_arr[oi];
-            if(IsEmptyString(caseFlowSocket.defval)){
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle,
-                    nodeThis,
-                    helper.clickLogBadgeItemHandler),
-                    'case输入不能为空']);
-                return false;
-            }
+          
             var caseStr = caseFlowSocket.defval;
             if(isNaN(caseStr)){
                 if(caseStr != 'default'){
@@ -124,7 +107,7 @@ class JSNode_While extends JSNode_Base{
                     thisNodeTitle,
                     nodeThis,
                     helper.clickLogBadgeItemHandler),
-                    'case 流程不能为空']);
+                    '']);
                 return false;
             }
             flowLink = flowLinks_arr[0];

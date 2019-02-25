@@ -1016,7 +1016,7 @@ class SqlNode_CaseWhen extends SqlNode_Base {
             }
         }//给出标量
         if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Scalar });
+            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Boolean });
             this.addSocket(this.outSocket);
         }
 
