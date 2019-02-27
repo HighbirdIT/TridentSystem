@@ -2,26 +2,48 @@ const JSNODE_JSFOR = 'jsfor';
 
 class JSNode_JsFor extends JSNode_Base{
     constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, JSNODE_SWITCH, 'For', false, nodeJson);
+        super(initData, parentNode, createHelper, JSNODE_COMPARE, '比较', false, nodeJson);
         autoBind(this);
 
-        if(this.inFlowSocket == null){
-            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
-            this.addSocket(this.inFlowSocket);
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+                this.outSocket.type = ValueType.Boolean;
+            }
         }
-        if(this.inputSocket == null){
-            this.inputSocket = new NodeSocket('in', this, true);
-            this.addSocket(this.inputSocket);
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false, { type: ValueType.Boolean});
+            this.addSocket(this.outSocket);
         }
-        this.inputSocket.label = 'target';
-        if(this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0){
-            this.outFlowSockets_arr = [];
+        this.insocketInitVal = {
+            type: ValueType.String,
+        };
+        if (this.inputScokets_arr.length == 0) {
+            this.addSocket(new NodeSocket('in0', this, true, { type: ValueType.String }));
+            this.addSocket(new NodeSocket('in1', this, true, { type: ValueType.String }));
         }
-        else{
-            this.outFlowSockets_arr.forEach(item=>{
-                item.inputable = true;
-            });
+        else {
+            this.inputScokets_arr.forEach(socket => {
+                socket.set(this.insocketInitVal);
+            })
         }
+        if (this.operator == null) {
+            this.operator = '==';
+        }
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.operator = this.operator;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['operator']);
+    }
+
+    getNodeTitle() {
+        return '比较:' + this.operator;
     }
 
 
