@@ -8,6 +8,13 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+var EmptyDBEntity = {
+    loaded: true,
+    code: 0,
+    columns: null,
+    name: '无'
+};
+
 var DataBase = function (_EventEmitter) {
     _inherits(DataBase, _EventEmitter);
 
@@ -19,6 +26,8 @@ var DataBase = function (_EventEmitter) {
         _this.entities_arr = [];
         _this.entityCode_map = {};
         _this.entityName_map = {};
+
+        autoBind(_this);
         return _this;
     }
 
@@ -84,6 +93,18 @@ var DataBase = function (_EventEmitter) {
     }, {
         key: 'synBykeyword',
         value: function synBykeyword(callback) {}
+    }, {
+        key: 'getEntitiesByType',
+        value: function getEntitiesByType(tType) {
+            return this.entities_arr.filter(function (e) {
+                return e.type == tType;
+            }).concat(EmptyDBEntity);
+        }
+    }, {
+        key: 'getAllTable',
+        value: function getAllTable() {
+            return this.getEntitiesByType('U');
+        }
     }]);
 
     return DataBase;
@@ -181,6 +202,11 @@ var DBEntity = function (_EventEmitter3) {
                 return x.name == colName;
             });
         }
+    }, {
+        key: 'toString',
+        value: function toString() {
+            return IsEmptyString(this.name) ? this.code : this.name;
+        }
     }]);
 
     return DBEntity;
@@ -266,10 +292,14 @@ var DataMaster = function (_EventEmitter4) {
         }
     }, {
         key: 'createSqlBP',
-        value: function createSqlBP(name, type) {
-            var newItem = new SqlNode_BluePrint({ name: name, type: type, master: this });
+        value: function createSqlBP(name, type, group) {
+            if (group == null) {
+                group = 'custom';
+            }
+            var newItem = new SqlNode_BluePrint({ name: name, type: type, master: this, group: group });
             this.addSqlBP(newItem);
             this.emit('sqlbpchanged');
+            return newItem;
         }
     }, {
         key: 'modifySqlBP',
@@ -277,6 +307,16 @@ var DataMaster = function (_EventEmitter4) {
             sqpBP.name = name;
             sqpBP.type = type;
             this.emit('sqlbpchanged');
+        }
+    }, {
+        key: 'deleteSqlBP',
+        value: function deleteSqlBP(sqpBP) {
+            var index = this.BP_sql_arr.indexOf(sqpBP);
+            if (index == -1) {
+                return;
+            }
+            this.BP_sql_arr.splice(index, 1);
+            sqpBP.master = null;
         }
     }, {
         key: 'usedDBEnitiesChangedHandler',
@@ -311,12 +351,16 @@ var DataMaster = function (_EventEmitter4) {
             };
             this.BP_sql_arr.forEach(function (bp) {
                 rlt.BP_sql_arr.push(bp.getJson());
+                //console.log(JSON.stringify(rlt.BP_sql_arr[rlt.BP_sql_arr.length - 1]));
             });
             return rlt;
         }
     }, {
         key: 'getDataSourceByCode',
         value: function getDataSourceByCode(code) {
+            if (code == 0) {
+                return EmptyDBEntity;
+            }
             var rlt = this.getSqlBPByCode(code);
             if (rlt == null && !isNaN(code)) {
                 rlt = g_dataBase.getEntityByCode(code);
@@ -326,7 +370,9 @@ var DataMaster = function (_EventEmitter4) {
     }, {
         key: 'getAllEntities',
         value: function getAllEntities() {
-            return this.BP_sql_arr.concat(g_dataBase.entities_arr);
+            return this.BP_sql_arr.filter(function (x) {
+                return x.group == 'custom';
+            }).concat(g_dataBase.entities_arr);
         }
     }, {
         key: 'restoreFromJson',

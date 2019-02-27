@@ -6,7 +6,29 @@ function genTextFiledAttribute(label='显示字段', def='', editable = true){
         editable:editable,
     }, true, {
         scriptable:true,
-        type:FunType_Client
+        type:FunType_Client,
+        group:EJsBluePrintFunGroup.CtlAttr,
+    });
+}
+
+function genValueFiledAttribute(label='码值字段', def='', editable = true){
+    return new CAttribute(label,AttrNames.ValueField,ValueType.String, def, true, false, [], 
+    {
+        pullDataFun:GetKernelCanUseColumns,
+        text:'name',
+        editable:editable,
+    }, true, {
+        scriptable:true,
+        type:FunType_Client,
+        group:EJsBluePrintFunGroup.CtlAttr,
+    });
+}
+
+function genIsdisplayAttribute(){
+    return new CAttribute('是否显示', AttrNames.Isdisplay, ValueType.Boolean, true, true, false, null, null,true,{
+        scriptable:true,
+        type:FunType_Client,
+        group:EJsBluePrintFunGroup.CtlAttr,
     });
 }
 
@@ -55,11 +77,13 @@ function makeFName_pull(formKernel){
 }
 
 function makeStr_callFun(funName, params_arr, endChar = ''){
-    return funName + '(' + (params_arr == null || params_arr.length == 0 ? '' : params_arr.join(',')) + ')' + endChar;
+    var realParams_arr = params_arr == null ? null : params_arr.filter(e=>{return e!=null;});
+    
+    return funName + '(' + (realParams_arr == null || realParams_arr.length == 0 ? '' : realParams_arr.join(',')) + ')' + endChar;
 }
 
-function makeStr_getStateByPath(state, path){
-    return makeStr_callFun('getStateByPath', [state, path]);
+function makeStr_getStateByPath(state, path, defValue){
+    return makeStr_callFun('getStateByPath', [state, path, defValue]);
 }
 
 function makeStr_DynamicAttr(objStr, propName){
@@ -70,8 +94,18 @@ function makeActStr_pullKernel(formKernel){
     return 'pulldata_' + formKernel.id;
 }
 
-function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr, isModel = true, url = 'appServerUrl'){
-    return "store.dispatch(fetchJsonPost(" + url + ", { action: '" + actStr + "' }, makeFTD_Prop(" + baseStr + "," + idStr + ',' + propStr + ',' + isModel + "), EFetchKey.FetchPropValue));";
+function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr, paramObj, isModel = true, url = 'appServerUrl'){
+    if(paramObj == null){
+        paramObj = {action:singleQuotesStr(actStr)};
+    }
+    else{
+        paramObj.action = singleQuotesStr(actStr);
+    }
+    return "store.dispatch(fetchJsonPost(" + url + ", " + JsObjectToString(paramObj) + ", makeFTD_Prop(" + baseStr + "," + idStr + ',' + propStr + ',' + isModel + "), EFetchKey.FetchPropValue));";
+}
+
+function makeLine_Return(retStr){
+    return 'return ' + retStr + ';';
 }
 
 
@@ -84,15 +118,19 @@ const VarNames={
     NowRecord:'nowRecord',
     RetElem:'retElem',
     ThisProps:'this.props',
-    FetchErr:'fetchErr',
+    FetchErr:'fetchingErr',
     Fetching:'fetching',
     CtlState:'ctlState',
     Records_arr:'records_arr',
     RecordIndex:'recordIndex',
     InsertCache:'insertCache',
+    State:'state',
+    Bundle:'bundle',
+    InvalidBundle:'invalidbundle',
 };
 
 const AttrNames={
+    ButtonClass:'btnclass',
     Title:'title',
     Text:'text',
     Test:'test',
@@ -102,12 +140,25 @@ const AttrNames={
     IsMain:'ismain',
     Label:'label',
     DataSource:'datasource',
+    CustomDataSource:'customdatasource',
+    ProcessTable:'processtable',
     Name:'name',
     ValueType:'valuetype',
     FloatNum:'floatnum',
     DefaultValue:'defaultvalue',
     EditorType:'editortype',
     TextField:'textfield',
+    ValueField:'valuefield',
+    FormType:'formtype',
+    FromTextField:'fromtextfield',
+    FromValueField:'fromvaluefield',
+    AutoClearValue:'autoclearvalue',
+    Editeable:'editeable',
+    Isdisplay:'isdisplay',
+
+    Event:{
+        OnClick:'onclik'
+    },
 
     LayoutNames:{
         APDClass:'apdClass',
@@ -118,6 +169,8 @@ const AttrNames={
         Display:'display',
         Width:'width',
         Height:'height',
+        MaxWidth:'maxWidth',
+        MaxHeight:'maxHeight',
         FlexGrow:'flex-grow',
         FlexShrink:'flex-shrink',
     },
@@ -132,6 +185,16 @@ const AttrNames={
         }
     }
 };
+
+function gStyleAttrNameToCssName(styleAttrName){
+    switch(styleAttrName){
+        case 'maxWidth':
+        return 'max-width';
+        case 'maxHeight':
+        return 'max-height';
+    }
+    return styleAttrName;
+}
 
 function InitAttrNames(target){
     var values_arr = [];
@@ -163,5 +226,7 @@ StyleAttrSetting[AttrNames.StyleAttrNames.FlexGrow] = {type:ValueType.Boolean, d
 StyleAttrSetting[AttrNames.StyleAttrNames.FlexShrink] = {type:ValueType.Boolean, def:true};
 StyleAttrSetting[AttrNames.StyleAttrNames.Width] = {type:ValueType.String, def:''};
 StyleAttrSetting[AttrNames.StyleAttrNames.Height] = {type:ValueType.String, def:''};
+StyleAttrSetting[AttrNames.StyleAttrNames.MaxWidth] = {type:ValueType.String, def:''};
+StyleAttrSetting[AttrNames.StyleAttrNames.MaxHeight] = {type:ValueType.String, def:''};
 
 const CouldAppendClasses_arr = [''];

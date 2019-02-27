@@ -11,15 +11,65 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var M_ControlKernelBaseAttrsSetting = {
-    layoutGrop: new CAttributeGroup('布局设置', [new CAttribute('Style', AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true), new CAttribute('Class', AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true)])
+    layoutGrop: new CAttributeGroup('布局设置', [new CAttribute('Style', AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true), new CAttribute('Class', AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true)]),
+    baseGroup: new CAttributeGroup('基本设置', [new CAttribute('name', AttrNames.Name, ValueType.String)])
 };
 
+var M_ControlKernel_api = new ControlAPIClass(M_AllKernel_Type);
+M_ControlKernel_api.pushApi(new ApiItem_prop(genIsdisplayAttribute(), 'visible'));
+M_ControlKernel_api.pushApi(new ApiItem_propsetter('visible'));
+g_controlApi_arr.push(M_ControlKernel_api);
 /*
 new CAttribute('宽度',AttrNames.Width,ValueType.String,''),
             new CAttribute('高度',AttrNames.Height,ValueType.String,''),
             new CAttribute('FlexGrow',AttrNames.FlexGrow,ValueType.Boolean,true),
             new CAttribute('FlexShrink',AttrNames.FlexShrink,ValueType.Boolean,true),
 */
+
+function findAttrInGroupArrayByName(attName, groupArr) {
+    var rlt = null;
+    for (var gi in groupArr) {
+        rlt = groupArr[gi].findAttrByName(attName);
+        if (rlt != null) {
+            return rlt;
+        }
+    }
+    return null;
+}
+
+function GenControlKernelAttrsSetting(cusGroups_arr, includeDefault) {
+    var rlt = [M_ControlKernelBaseAttrsSetting.layoutGrop];
+
+    for (var si in cusGroups_arr) {
+        var cusGroup = cusGroups_arr[si];
+        if (includeDefault != false && cusGroup.label == M_ControlKernelBaseAttrsSetting.baseGroup.label) {
+            cusGroup.setAttrs(M_ControlKernelBaseAttrsSetting.baseGroup.attrs_arr.concat(cusGroup.attrs_arr));
+        }
+        rlt.push(cusGroup);
+    }
+    return rlt;
+}
+
+function getDSAttrCanuseColumns(dsAttrName, csAttrName) {
+    var useDS = this.getAttribute(dsAttrName);
+    if (useDS == null) {
+        return [];
+    }
+    var rlt = useDS.columns.map(function (col) {
+        return col.name;
+    });
+    if (csAttrName != null) {
+        var cusDS_bp = this.getAttribute(csAttrName);
+        if (cusDS_bp != null) {
+            var retColumnNode = cusDS_bp.finalSelectNode.columnNode;
+            retColumnNode.inputScokets_arr.forEach(function (socket) {
+                var alias = socket.getExtra('alias');
+                if (!IsEmptyString(alias)) rlt.push(alias);
+            });
+        }
+    }
+    return rlt;
+}
 
 var LayoutAttrNames_arr = M_ControlKernelBaseAttrsSetting.layoutGrop.attrs_arr.map(function (e) {
     return e.name;
@@ -39,11 +89,9 @@ var ControlKernelBase = function (_IAttributeable) {
         if (attrbuteGroups == null) {
             attrbuteGroups = [];
         }
-        if (attrbuteGroups[0] != M_ControlKernelBaseAttrsSetting.layoutGrop) {
-            attrbuteGroups.unshift(M_ControlKernelBaseAttrsSetting.layoutGrop);
-        }
         _this.attrbuteGroups = attrbuteGroups;
         _this.clickHandler = _this.clickHandler.bind(_this);
+        _this.getAccessableKernels = _this.getAccessableKernels.bind(_this);
         _this.listendDS_map = {};
 
         if (kernelJson != null) {
@@ -94,6 +142,7 @@ var ControlKernelBase = function (_IAttributeable) {
         if (parentKernel.project != parentKernel) {
             parentKernel.appandChild(_this);
         }
+        _this.readableName = _this.getReadableName();
         return _this;
     }
 
@@ -105,18 +154,37 @@ var ControlKernelBase = function (_IAttributeable) {
                 this.unlistenDS(oldValue, attrName);
                 if (typeof newValue === 'string') {
                     newValue = this.project.dataMaster.getDataSourceByCode(newValue);
+                    if (newValue != null && newValue.code == 0) {
+                        newValue = null;
+                    }
                     this[realAtrrName] = newValue;
                 }
+                if (newValue) {
+                    this.listenDS(newValue, attrName);
+                }
+            }
 
-                this.listenDS(newValue, attrName);
+            if (attrItem.name == AttrNames.TextField || attrItem.name == AttrNames.Name) {
+                this.readableName = this.getReadableName();
             }
         }
     }, {
         key: 'delete',
-        value: function _delete() {
-            if (this.isfixed) {
+        value: function _delete(forceDelete) {
+            var _this2 = this;
+
+            if (!forceDelete && this.isfixed) {
                 return;
             }
+            // delete all customdatasource
+            var cusdsAttr_arr = this.filterAttributesByValType(ValueType.CustomDataSource);
+            cusdsAttr_arr.forEach(function (cusdsAttr) {
+                var cusds = _this2.getAttribute(cusdsAttr.name);
+                if (cusds != null) {
+                    _this2.project.dataMaster.deleteSqlBP(cusds);
+                }
+            });
+
             for (var dsCode in this.listendDS_map) {
                 var t_arr = this.listendDS_map[dsCode];
                 if (t_arr == null) {
@@ -129,18 +197,13 @@ var ControlKernelBase = function (_IAttributeable) {
             }
             if (this.children) {
                 for (var ci in this.children) {
-                    this.children[ci].delete();
+                    this.children[ci].delete(true);
                 }
             }
             this.project.unRegisterControl(this);
             if (this.parent) {
                 this.parent.removeChild(this);
             }
-        }
-    }, {
-        key: 'getReadableName',
-        value: function getReadableName() {
-            return this.id + (IsEmptyString(this.name) ? '' : '(' + this.name + ')');
         }
     }, {
         key: 'listenDS',
@@ -196,9 +259,18 @@ var ControlKernelBase = function (_IAttributeable) {
     }, {
         key: 'getReadableName',
         value: function getReadableName() {
-            var rlt = '';
-
-            return this.id + (IsEmptyString(this[AttrNames.Name]) ? '' : '(' + this[AttrNames.Name] + ')');
+            var rlt = null;
+            if (!IsEmptyString(this[AttrNames.Name])) {
+                rlt = this[AttrNames.Name];
+            } else {
+                var textField = this[AttrNames.TextField];
+                if (textField != null) {
+                    rlt = typeof textField === 'string' ? textField : '{脚本}';
+                } else {
+                    rlt = '';
+                }
+            }
+            return rlt + '[' + this.id + ']';
         }
     }, {
         key: 'getReactClassName',
@@ -237,19 +309,19 @@ var ControlKernelBase = function (_IAttributeable) {
     }, {
         key: 'getLayoutConfig',
         value: function getLayoutConfig() {
-            var _this2 = this;
+            var _this3 = this;
 
             var rlt = new ControlLayoutConfig();
             var apdAttrList = this.getAttrArrayList(AttrNames.LayoutNames.APDClass);
             var self = this;
             apdAttrList.forEach(function (attrArrayItem) {
-                var val = _this2.getAttribute(attrArrayItem.name);
+                var val = _this3.getAttribute(attrArrayItem.name);
                 rlt.addClass(val);
             });
 
             var styleAttrList = this.getAttrArrayList(AttrNames.LayoutNames.StyleAttr);
             styleAttrList.forEach(function (attrArrayItem) {
-                var val = _this2.getAttribute(attrArrayItem.name);
+                var val = _this3.getAttribute(attrArrayItem.name);
                 if (val != null && !IsEmptyString(val.name) && !IsEmptyString(val.value)) {
                     var styleName = val.name;
                     var styleValue = val.value;
@@ -352,20 +424,59 @@ var ControlKernelBase = function (_IAttributeable) {
         }
     }, {
         key: 'getAccessableKernels',
-        value: function getAccessableKernels() {
-            var rlt = [this]; // 本身必可访问
+        value: function getAccessableKernels(targetType) {
+            var rlt = [];
+            if (targetType == M_AllKernel_Type) {
+                targetType = null;
+            }
+            var needFilt = targetType != null;
+            if (!needFilt || this.type == targetType) {
+                rlt.push(this);
+            }
+            if (rlt.editor && (!needFilt || rlt.editor.type == targetType)) {
+                rlt.push(rlt.editor);
+            }
             var nowKernel = this;
             var parent = nowKernel.parent;
             while (parent != null) {
-                rlt.push(parent);
+                if (!needFilt || parent.type == targetType) {
+                    rlt.push(parent);
+                }
                 parent.children.forEach(function (child) {
                     if (child != nowKernel) {
-                        rlt.push(child);
+                        if (!needFilt || child.type == targetType) {
+                            rlt.push(child);
+                        }
+                        if (child.editor && (!needFilt || child.editor.type == targetType)) {
+                            rlt.push(child.editor);
+                        }
                     }
                 });
                 nowKernel = parent;
                 parent = parent.parent;
             }
+            return rlt;
+        }
+    }, {
+        key: 'getStatePath',
+        value: function getStatePath(stateName) {
+            var splitChar = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '.';
+
+            var nowKernel = this.parent;
+            var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
+            do {
+                switch (nowKernel.type) {
+                    case M_PageKernel_Type:
+                        rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
+                        break;
+                    case M_FormKernel_Type:
+                        rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
+                        break;
+                }
+                if (nowKernel) {
+                    nowKernel = nowKernel.parent;
+                }
+            } while (nowKernel != null);
             return rlt;
         }
     }]);
@@ -447,13 +558,13 @@ var CtlKernelCreationHelper = function (_EventEmitter) {
     function CtlKernelCreationHelper() {
         _classCallCheck(this, CtlKernelCreationHelper);
 
-        var _this3 = _possibleConstructorReturn(this, (CtlKernelCreationHelper.__proto__ || Object.getPrototypeOf(CtlKernelCreationHelper)).call(this));
+        var _this4 = _possibleConstructorReturn(this, (CtlKernelCreationHelper.__proto__ || Object.getPrototypeOf(CtlKernelCreationHelper)).call(this));
 
-        EnhanceEventEmiter(_this3);
-        _this3.orginID_map = {};
-        _this3.newID_map = {};
-        _this3.idTracer = {};
-        return _this3;
+        EnhanceEventEmiter(_this4);
+        _this4.orginID_map = {};
+        _this4.newID_map = {};
+        _this4.idTracer = {};
+        return _this4;
     }
 
     _createClass(CtlKernelCreationHelper, [{

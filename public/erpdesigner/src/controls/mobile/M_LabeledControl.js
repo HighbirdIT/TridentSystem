@@ -1,20 +1,17 @@
-const M_LabeledControlKernelAttrsSetting={
-    groups_arr:[
-        new CAttributeGroup('基本设置',[
-            new CAttribute('name',AttrNames.Name,ValueType.String),
-            genTextFiledAttribute(),
-            new CAttribute('控件类型',AttrNames.EditorType,ValueType.String, M_TextKernel_Type, true, false,DesignerConfig.getMobileCanLabeledControls, {text:'label', value:'type'}),
-        ]),
-    ],
-};
-
+const M_LabeledControlKernelAttrsSetting=GenControlKernelAttrsSetting([
+    new CAttributeGroup('基本设置',[
+        genTextFiledAttribute(),
+        new CAttribute('控件类型',AttrNames.EditorType,ValueType.String, M_TextKernel_Type, true, false,DesignerConfig.getMobileCanLabeledControls, {text:'label', value:'type'}),
+        genIsdisplayAttribute(),
+    ]),
+]);
 
 class M_LabeledControlKernel extends ControlKernelBase{
     constructor(initData, parentKernel, createHelper, kernelJson) {
         super(  initData,
                 M_LabeledControlKernel_Type,
                 '操作控件',
-                M_LabeledControlKernelAttrsSetting.groups_arr.concat(),
+                M_LabeledControlKernelAttrsSetting,
                 parentKernel,
                 createHelper,
                 kernelJson
@@ -22,6 +19,7 @@ class M_LabeledControlKernel extends ControlKernelBase{
         
         var self = this;
         autoBind(self);
+        this.newAdded = kernelJson == null;
 
         this.__genEditor(createHelper, kernelJson == null ? null : kernelJson.editor);
     }
@@ -57,20 +55,26 @@ class M_LabeledControlKernel extends ControlKernelBase{
     __genEditor(createHelper, editorKernelJson){
         if(this.editor != null){
             this.editor.parent = null;
-            this.editor.delete();
+            this.editor.delete(true);
             this.editor = null;
             this.children.length = 0;
         }
         var editorKernelConfig = DesignerConfig.findConfigByType(this.getAttribute(AttrNames.EditorType));
         if(editorKernelConfig != null){
             this.editor = new editorKernelConfig.kernelClass({}, this, createHelper, editorKernelJson);
-            var editorTextField = this.editor.getAttribute(AttrNames.TextField);
-            if(IsEmptyString(editorTextField)){
-                this.editor.setAttribute(AttrNames.TextField, this.getAttribute(AttrNames.TextField));
+            if(createHelper == null){
+                var editorTextField = this.editor.getAttribute(AttrNames.TextField);
+                if(IsEmptyString(editorTextField)){
+                    this.editor.setAttribute(AttrNames.TextField, this.getAttribute(AttrNames.TextField));
+                }
             }
             this.editor.isfixed = true;
             this.children = [this.editor];
         }
+    }
+
+    removeChild(){
+        // valid
     }
 
     getJson(){
@@ -80,6 +84,10 @@ class M_LabeledControlKernel extends ControlKernelBase{
     }
 }
 
+var M_LabeledControl_api = new ControlAPIClass(M_LabeledControlKernel_Type);
+M_LabeledControl_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.TextField,M_LabeledControlKernelAttrsSetting), 'label'));
+
+g_controlApi_arr.push(M_LabeledControl_api);
 
 class M_LabeledControl extends React.PureComponent {
     constructor(props){

@@ -2,15 +2,15 @@
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var M_PageKernelAttrsSetting = {
-    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'), new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false), new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr)]), new CAttributeGroup('测试设置', [new CAttribute('测试', AttrNames.Test, ValueType.String, '', true, 1)])]
-};
+var M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'), new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false), new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr)]), new CAttributeGroup('测试设置', [new CAttribute('测试', AttrNames.Test, ValueType.String, '', true, 1)])], false);
 
 var M_PageKernel = function (_ContainerKernelBase) {
     _inherits(M_PageKernel, _ContainerKernelBase);
@@ -18,7 +18,7 @@ var M_PageKernel = function (_ContainerKernelBase) {
     function M_PageKernel(initData, parentKernel, createHelper, kernelJson) {
         _classCallCheck(this, M_PageKernel);
 
-        var _this = _possibleConstructorReturn(this, (M_PageKernel.__proto__ || Object.getPrototypeOf(M_PageKernel)).call(this, initData, M_PageKernel_Type, '页面', M_PageKernelAttrsSetting.groups_arr.concat(), parentKernel, createHelper, kernelJson));
+        var _this = _possibleConstructorReturn(this, (M_PageKernel.__proto__ || Object.getPrototypeOf(M_PageKernel)).call(this, initData, M_PageKernel_Type, '页面', M_PageKernelAttrsSetting, parentKernel, createHelper, kernelJson));
 
         var self = _this;
         autoBind(self);
@@ -166,12 +166,12 @@ var M_Page = function (_React$PureComponent) {
                 this.unlistenTarget(this.state.ctlKernel);
                 this.listenTarget(this.props.ctlKernel);
                 setTimeout(function () {
-                    self.setState({
+                    self.setState(_defineProperty({
                         title: _this3.props.ctlKernel.getAttribute('title'),
                         ctlKernel: _this3.props.ctlKernel,
                         children: _this3.props.ctlKernel.children,
                         orientation: _this3.props.ctlKernel.orientation
-                    });
+                    }, 'orientation', _this3.props.ctlKernel.getAttribute(AttrNames.Orientation)));
                 }, 1);
                 return null;
             }

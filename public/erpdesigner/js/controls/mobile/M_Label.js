@@ -8,9 +8,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var M_LabelKernelAttrsSetting = {
-    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('name', AttrNames.Name, ValueType.String), genTextFiledAttribute()])]
-};
+var M_LabelKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [genTextFiledAttribute(), genIsdisplayAttribute()])]);
 
 var M_LabelKernel = function (_ControlKernelBase) {
     _inherits(M_LabelKernel, _ControlKernelBase);
@@ -18,7 +16,7 @@ var M_LabelKernel = function (_ControlKernelBase) {
     function M_LabelKernel(initData, parentKernel, createHelper, kernelJson) {
         _classCallCheck(this, M_LabelKernel);
 
-        var _this = _possibleConstructorReturn(this, (M_LabelKernel.__proto__ || Object.getPrototypeOf(M_LabelKernel)).call(this, initData, M_LabelKernel_Type, '标签', M_LabelKernelAttrsSetting.groups_arr.concat(), parentKernel, createHelper, kernelJson));
+        var _this = _possibleConstructorReturn(this, (M_LabelKernel.__proto__ || Object.getPrototypeOf(M_LabelKernel)).call(this, initData, M_LabelKernel_Type, '标签', M_LabelKernelAttrsSetting, parentKernel, createHelper, kernelJson));
 
         var self = _this;
         autoBind(self);
@@ -34,6 +32,11 @@ var M_LabelKernel = function (_ControlKernelBase) {
 
     return M_LabelKernel;
 }(ControlKernelBase);
+
+var M_LabelKernel_api = new ControlAPIClass(M_LabelKernel_Type);
+M_LabelKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.TextField, M_LabelKernelAttrsSetting), 'text'));
+M_LabelKernel_api.pushApi(new ApiItem_propsetter('text'));
+g_controlApi_arr.push(M_LabelKernel_api);
 
 var M_Label = function (_React$PureComponent) {
     _inherits(M_Label, _React$PureComponent);

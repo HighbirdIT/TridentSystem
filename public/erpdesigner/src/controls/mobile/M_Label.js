@@ -1,11 +1,9 @@
-const M_LabelKernelAttrsSetting={
-    groups_arr:[
-        new CAttributeGroup('基本设置',[
-            new CAttribute('name',AttrNames.Name,ValueType.String),
-            genTextFiledAttribute(),
-        ]),
-    ],
-};
+const M_LabelKernelAttrsSetting = GenControlKernelAttrsSetting([
+    new CAttributeGroup('基本设置',[
+        genTextFiledAttribute(),
+        genIsdisplayAttribute(),
+    ]),
+]);
 
 
 class M_LabelKernel extends ControlKernelBase{
@@ -13,7 +11,7 @@ class M_LabelKernel extends ControlKernelBase{
         super(  initData,
                 M_LabelKernel_Type,
                 '标签',
-                M_LabelKernelAttrsSetting.groups_arr.concat(),
+                M_LabelKernelAttrsSetting,
                 parentKernel,
                 createHelper,kernelJson
             );
@@ -26,6 +24,11 @@ class M_LabelKernel extends ControlKernelBase{
         return (<M_Label key={this.id} ctlKernel={this} onClick={this.clickHandler} />)
     }
 }
+
+var M_LabelKernel_api = new ControlAPIClass(M_LabelKernel_Type);
+M_LabelKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.TextField,M_LabelKernelAttrsSetting), 'text'));
+M_LabelKernel_api.pushApi(new ApiItem_propsetter('text'));
+g_controlApi_arr.push(M_LabelKernel_api);
 
 class M_Label extends React.PureComponent {
     constructor(props){
@@ -73,6 +76,7 @@ class M_Label extends React.PureComponent {
         );
     }
 }
+
 
 DesignerConfig.registerControl(
     {

@@ -1,10 +1,19 @@
 
+const EmptyDBEntity = {
+    loaded:true,
+    code:0,
+    columns:null,
+    name:'无',
+}
+
 class DataBase extends EventEmitter{
     constructor(){
         super();
         this.entities_arr = [];
         this.entityCode_map = {};
         this.entityName_map = {};
+
+        autoBind(this);
     }
 
     synEnityFromFetch(data_arr){
@@ -64,6 +73,16 @@ class DataBase extends EventEmitter{
 
     synBykeyword(callback){
 
+    }
+
+    getEntitiesByType(tType){
+        return this.entities_arr.filter(e=>{
+            return e.type == tType;
+        }).concat(EmptyDBEntity);
+    }
+
+    getAllTable(){
+        return this.getEntitiesByType('U');
     }
 }
 
@@ -134,6 +153,10 @@ class DBEntity extends EventEmitter{
     getColumnByName(colName){
         return this.columns.find(x=>{return x.name == colName;});
     }
+
+    toString(){
+        return IsEmptyString(this.name) ? this.code : this.name;
+    }
 }
 
 var g_dataBase = new DataBase();
@@ -201,16 +224,29 @@ class DataMaster extends EventEmitter{
         return this.BP_sql_arr.find(item=>{return item.code == code});
     }
 
-    createSqlBP(name, type){
-        var newItem = new SqlNode_BluePrint({name:name,type:type,master:this});
+    createSqlBP(name, type, group){
+        if(group == null){
+            group = 'custom';
+        }
+        var newItem = new SqlNode_BluePrint({name:name,type:type,master:this,group:group});
         this.addSqlBP(newItem);
         this.emit('sqlbpchanged');
+        return newItem;
     }
 
     modifySqlBP(sqpBP, name, type){
         sqpBP.name = name;
         sqpBP.type = type;
         this.emit('sqlbpchanged');
+    }
+
+    deleteSqlBP(sqpBP){
+        var index = this.BP_sql_arr.indexOf(sqpBP);
+        if(index == -1){
+            return;
+        }
+        this.BP_sql_arr.splice(index,1);
+        sqpBP.master = null;
     }
 
     usedDBEnitiesChangedHandler(source){
@@ -239,11 +275,15 @@ class DataMaster extends EventEmitter{
         };
         this.BP_sql_arr.forEach(bp=>{
             rlt.BP_sql_arr.push(bp.getJson());
+            //console.log(JSON.stringify(rlt.BP_sql_arr[rlt.BP_sql_arr.length - 1]));
         });
         return rlt;
     }
 
     getDataSourceByCode(code){
+        if(code == 0){
+            return EmptyDBEntity;
+        }
         var rlt = this.getSqlBPByCode(code);
         if(rlt == null && !isNaN(code)){
             rlt = g_dataBase.getEntityByCode(code);
@@ -252,7 +292,7 @@ class DataMaster extends EventEmitter{
     }
 
     getAllEntities(){
-        return this.BP_sql_arr.concat(g_dataBase.entities_arr);
+        return this.BP_sql_arr.filter(x=>{return x.group == 'custom';}).concat(g_dataBase.entities_arr);
     }
 
     restoreFromJson(json){

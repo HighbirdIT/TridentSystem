@@ -54,6 +54,8 @@ var Datepart_seconds = 'seconds'; //秒
 var Datepart_ms = 'ms'; //毫秒
 var Datepart_arr = [Datepart_year, Datepart_quarter, Datepart_month, Datepart_dy, Datepart_day, Datepart_wk, Datepart_week, Datepart_hours, Datepart_minutes, Datepart_seconds, Datepart_ms];
 
+var SocketType_CtlKernel = 'st_ctlkernel';
+
 //2018-12-25黄永恒编辑math
 var Math_ABS = 'ABS'; //计算绝对值
 var Math_CEILING = 'CEILING'; //计算大于等于参数的最小整数
@@ -92,6 +94,23 @@ var CharfunType_arr = [CharfunType_ASCII, CharfunType_CHAR, CharfunType_LEFT, Ch
 
 var FunType_Client = 'client';
 var FunType_Server = 'server';
+var EJsBluePrintFunGroup = {
+    CtlAttr: 'ctlattr',
+    CtlEvent: 'ctlevent'
+};
+
+var ESqlBluePrintGroup = {
+    Custom: 'custom',
+    ControlCustom: 'ctlcus'
+};
+
+var EFormType = {
+    Page: 'page',
+    List: 'list'
+};
+
+var FormTypes_arr = [EFormType.Page, EFormType.List];
+var ButtonClasses_arr = ['btn-primary', 'btn-secondary', 'btn-success', 'btn-danger', 'btn-warning', 'btn-info', 'btn-light', 'btn-dark', 'btn-link'];
 /**
  * 逻辑运算符 and or not
  */
@@ -113,6 +132,15 @@ var ContextType_DBEntity = 'ct-dbentity';
 var FrameButton_LineSocket = 'lineSocket';
 var FrameButton_ClearEmptyInputSocket = 'ClearEmptyInputSocket';
 var FrameButton_ClearEmptyOutputSocket = 'ClearEmptyOutputSocket';
+
+var VisibleStyle_Insert = 'insert';
+var VisibleStyle_Update = 'update';
+var VisibleStyle_Both = 'both';
+
+var ScriptBindMode = {
+    OnForm: 'OnForm',
+    OnRelAttrChanged: 'OnRelAttrChanged'
+};
 
 var DesignerConfig = {
     controlConfig: {
@@ -172,9 +200,56 @@ var ValueType = {
     DateTime: 'datetime',
     StyleValues: 'StyleValues',
     DataSource: 'DataSource',
-    Unknown: 'Unknown'
+    CustomDataSource: 'CustomDataSource',
+    Unknown: 'Unknown',
+    Any: '任意',
+    Event: 'event'
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
 
 var JsValueTypes = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
+
+function TransSVTToJSVT(sqlType) {
+    switch (sqlType) {
+        case 'bigint':
+            return ValueType.Int;
+        case 'bit':
+            return ValueType.Boolean;
+        case 'char':
+            return ValueType.String;
+        case 'date':
+            return ValueType.Date;
+        case 'datetime':
+            return ValueType.Date;
+        case 'datetime2':
+            return ValueType.Date;
+        case 'decimal':
+            return ValueType.Float;
+        case 'float':
+            return ValueType.Float;
+        case 'int':
+            return ValueType.Int;
+        case 'money':
+            return ValueType.Float;
+        case 'nchar':
+            return ValueType.String;
+        case 'numeric':
+            return ValueType.Float;
+        case 'nvarchar':
+            return ValueType.String;
+        case 'smalldatetime':
+            return ValueType.Date;
+        case 'smallint':
+            return ValueType.Int;
+        case 'text':
+            return ValueType.String;
+        case 'time':
+            return ValueType.Date;
+        case 'tinyint':
+            return ValueType.Int;
+        case 'varchar':
+            return ValueType.String;
+    }
+    return sqlType;
+}

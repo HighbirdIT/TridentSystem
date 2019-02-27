@@ -69,6 +69,15 @@ class C_Node_Socket extends React.PureComponent{
         socket.set({defval:ev.target.value});
     }
 
+    checkInputChangedHandler(ev){
+        var socket = this.props.socket;
+        socket.set({defval:ev.target.checked});
+    }
+
+    inputDDCChangedHandler(newvalue, ddc){
+        ddc.props.socket.set({defval:newvalue});
+    }
+
     mouseDownDragIconHandler(ev){
         if(this.props.startDragAct != null){
             this.props.startDragAct(this);
@@ -79,6 +88,10 @@ class C_Node_Socket extends React.PureComponent{
         this.setState({
             draging:val == true,
         });
+    }
+
+    kernelChangedHandler(newid, ddc){
+        ddc.props.socket.setExtra('ctlid', newid);
     }
 
     render(){
@@ -110,7 +123,15 @@ class C_Node_Socket extends React.PureComponent{
         }
         if(inputable)
         {
-            inputElem = (<input type='text' ref={this.inputRef} className='socketInputer' onChange={this.inputChangedHandler} value={socket.defval == null ? '' : socket.defval} />);
+            if(socket.inputDDC_setting){
+                inputElem = (<DropDownControl socket={socket} options_arr={socket.inputDDC_setting.options_arr} value={socket.defval == null ? '' : socket.defval} itemChanged={this.inputDDCChangedHandler} textAttrName={socket.inputDDC_setting.textAttrName} valueAttrName={socket.inputDDC_setting.valueAttrName} />);
+            }
+            else if(socket.type == ValueType.Boolean){
+                inputElem = (<input type='checkbox' ref={this.inputRef} checked={parseBoolean(socket.defval)} onChange={this.checkInputChangedHandler}/>);
+            }
+            else{
+                inputElem = (<input type='text' ref={this.inputRef} className='socketInputer' onChange={this.inputChangedHandler} value={socket.defval == null ? '' : socket.defval} />);
+            }
         }
         var dragElem = null;
         if(this.props.startDragAct){
@@ -123,13 +144,52 @@ class C_Node_Socket extends React.PureComponent{
         else{
             cusElem = socket.node.customSocketRender(socket);
         }
+        var valTypeElem = null;
+        if(socket.type == SocketType_CtlKernel){
+            var kernelType = socket.kernelType;
+            if(kernelType == null){
+                if(socket.isIn){
+                    valTypeElem = <span f-canmove={1} className='badge badge-primary'>任意控件</span>
+                }
+                else{
+                    valTypeElem = <span f-canmove={1} className='badge badge-danger'>无效</span>
+                }
+            }
+            else{
+                if(socket.isIn){
+                    if(socket.getLinks().length == 0){
+                        var bluePrint = socket.node.bluePrint;
+                        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == ESqlBluePrintGroup.ControlCustom)
+                        {
+                            var ctlKernel = bluePrint.master.project.getControlById(bluePrint.ctlID);
+                            if(ctlKernel != null){
+                                var nowCtlId = socket.getExtra('ctlid');
+                                if(nowCtlId == null){
+                                    nowCtlId = 0;
+                                }
+                                inputElem = (<DropDownControl socket={socket} options_arr={ctlKernel.getAccessableKernels} funparamobj={kernelType} value={nowCtlId} itemChanged={this.kernelChangedHandler} textAttrName='readableName' valueAttrName='id' />);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    valTypeElem = <span f-canmove={1} className='badge badge-primary'>{GetControlTypeReadableName(kernelType)}</span>
+                }
+            }
+        }
+        else if(socket.type != 'flow'){
+            valTypeElem = (<span f-canmove={1} className='badge badge-info'>{socket.type}</span>);
+        }
         
         var arrowsItem = null;
+        /*
         if(socket.node.isNeedMoveArrowBeforeSocket()){
             if(!this.props.nameMoveable){
                 arrowsItem = <i className='fa fa-arrows' f-canmove={1} />
             }
         }
+        */
         var iconClass = 'fa cursor-pointer nodesocket ';
         if(socket.isFlowSocket){
             iconClass += 'text-light fa- fa-arrow-circle-right';
@@ -144,18 +204,20 @@ class C_Node_Socket extends React.PureComponent{
                         this.props.align == 'left' &&
                         <React.Fragment>
                             {iconElem}
+                            {valTypeElem}
                             {dragElem}
                             {inputElem}
                             {cusElem}
                         </React.Fragment>
                     }
-                    <div f-canmove={this.props.nameMoveable ? '1' : null}>{socket.label}</div>
+                    <div f-canmove={1}>{socket.label}</div>
                     {
                         this.props.align != 'left' &&
                         <React.Fragment>
                             {cusElem}
                             {inputElem}
                             {dragElem}
+                            {valTypeElem}
                             {iconElem}
                         </React.Fragment>
                     }

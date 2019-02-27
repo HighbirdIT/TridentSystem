@@ -24,6 +24,7 @@ class DropDownControl extends React.PureComponent {
         this.state = {
             keyword:'',
             value:this.props.value,
+            prePropsValue:this.props.value,
             opened:false,
             options_arr:selectedOption ? [selectedOption] : [],
             selectedOption:selectedOption,
@@ -76,11 +77,13 @@ class DropDownControl extends React.PureComponent {
 
     dropDownOpened() {
         console.log('菜单被打开了');
+        /*
         var srcOptions_arr = this.props.options_arr;
         if(typeof srcOptions_arr === 'function'){
             srcOptions_arr = srcOptions_arr();
         }
-        var formated_arr = this.formatData(srcOptions_arr, this.props.textAttrName, this.props.valueAttrName);
+        */
+        var formated_arr = this.formatData(this.props.options_arr, this.props.textAttrName, this.props.valueAttrName);
         this.setState({
             keyword:'',
             opened:true,
@@ -120,7 +123,7 @@ class DropDownControl extends React.PureComponent {
         }
         popMenu.css(popUpCss);
         popMenu.find('#listDIV').css({
-            "max-height":(popToUp ? divBottom - windowTop : windowBottom - divBottom) + 'px',
+            "max-height":(popToUp ? divTop - windowTop - 50 : windowBottom - divBottom - 50) + 'px',
         });
     }
 
@@ -154,7 +157,7 @@ class DropDownControl extends React.PureComponent {
 
     formatData(orginData_arr, textAttrName, valueAttrName){
         if(typeof orginData_arr === 'function'){
-            orginData_arr = orginData_arr();
+            orginData_arr = orginData_arr(this.props.funparamobj);
         }
         if(valueAttrName == null){
             valueAttrName = textAttrName;
@@ -233,7 +236,7 @@ class DropDownControl extends React.PureComponent {
                     {
                         filted_arr.map((item, i) => {
                             return (<div onClick={this.listItemClick} className={'d-flex flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedOption && item.value == selectedOption.value ? ' active' : '')} menuitem={1} miniitem={1} key={item.value} value={item.value}>
-                                <div>{item.text}</div>
+                                <div>{item.text.length == 0 ? '(空值)' : item.text}</div>
                             </div>)
                         })
                     }
@@ -264,6 +267,15 @@ class DropDownControl extends React.PureComponent {
             return this.state.keyword.trim().length == 0 || item.text.indexOf(this.state.keyword) >= 0;
         });
         var selectedOption = this.state.selectedOption;
+        if(this.state.prePropsValue != this.props.value){
+            var self = this;
+            setTimeout(() => {
+                self.setState({
+                    value:self.props.value,
+                    prePropsValue:self.props.value,
+                });
+            }, 50);
+        }
         var inputValue = this.editIsKeyword ? (this.state.keyword == '' ? (selectedOption == null ? '' : selectedOption.text) : this.state.keyword) : this.state.value;
 
         return (
@@ -273,7 +285,7 @@ class DropDownControl extends React.PureComponent {
                         {
                             this.props.editable ? <input onFocus={this.editableInputFocushandler} ref={this.editableInputRef} type='text' className='flex-grow-1 flex-shrink-1 flexinput' onChange={this.inputChangedHandler} onBlur={this.inputBlurHandler} value={inputValue} />
                             :
-                            <button onClick={this.clickOpenHandler} style={{width:'calc(100% - 30px)'}} type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1' + (selectedOption == null ? ' text-danger' : '')} ><div style={{overflow:'hidden'}}>{selectedOption ? selectedOption.text : '请选择'}</div></button>
+                            <button onClick={this.clickOpenHandler} style={{width:'calc(100% - 30px)',minHeight:'38px'}} type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1' + (selectedOption == null ? ' text-danger' : '')} ><div style={{overflow:'hidden'}}>{selectedOption ? selectedOption.text : '请选择'}</div></button>
                         }
                         {
                             this.props.miniBtn && <button ref={this.dropdownbtnRef} style={{width:'30px'}} type='button' onClick={this.clickOpenHandler} className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdown-toggle dropdown-toggle-split'} ></button>

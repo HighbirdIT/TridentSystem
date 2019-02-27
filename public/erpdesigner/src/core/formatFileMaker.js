@@ -93,6 +93,10 @@ class FormatFileBlock extends FormatFile_ItemBase{
         this.childs_map = {};
     }
 
+    isEmpty(){
+        return this.childs_arr.length == 0;
+    }
+
     clone(){
         var rlt = new FormatFileBlock(this.name, this.priority);
         this.childs_arr.forEach(child=>{
@@ -611,6 +615,9 @@ class JSFile_Funtion extends FormatFileBlock{
         this.retBlock = new FormatFileBlock('ret');
 
         this.scope = new JSFile_Scope('_localfun', this.getScope());
+        this.headBlock.parent = this;
+        this.bodyBlock.parent = this;
+        this.retBlock.parent = this;
         this.declareType = declareType;
     }
 
@@ -654,6 +661,9 @@ class JSFile_Funtion extends FormatFileBlock{
     getString(prefixStr, indentChar, newLineChar){
         var paramsStr = '';
         this.params_arr.forEach(e=>{
+            if(e == null){
+                return;
+            }
             paramsStr += (paramsStr.length == 0 ? '' : ',') + e;
         });
         var indentString = this.getIndentString(indentChar);
@@ -904,10 +914,14 @@ class CP_ClientSide extends JSFileMaker{
         this.appReducerSettingVar.initVal = JsObjectToString(this.reducers_map);
         this.stateChangedAct_mapVar.initVal = JsObjectToString(this.stateChangedAct);
 
-        this.endBlock.pushLine('ErpControlInit();');
-        this.endBlock.pushLine('ReactDOM.render(<Provider store={store}>', 1);
-        this.endBlock.pushLine('<VisibleApp />', -1);
-        this.endBlock.pushLine("</Provider>, document.getElementById('reactRoot'));");
+        var ifLoginBK = new JSFile_IF('iflogin', 'g_envVar.userid != null');
+        this.endBlock.pushChild(ifLoginBK);
+        ifLoginBK.trueBlock.pushLine('ErpControlInit();');
+        ifLoginBK.trueBlock.pushLine('ReactDOM.render(<Provider store={store}>', 1);
+        ifLoginBK.trueBlock.pushLine('<VisibleApp />', -1);
+        ifLoginBK.trueBlock.pushLine("</Provider>, document.getElementById('reactRoot'));");
+
+        ifLoginBK.falseBlock.pushLine("location.href = '/?goto=' + location.pathname;");
 
         this.endBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, { action: 'pageloaded' }, null, 'pageloaded', '正在加载[' + thisAppTitle + ']'));");
     }
@@ -920,6 +934,10 @@ class CP_ClientSide extends JSFileMaker{
         if(IsEmptyObject(styleObj)){
             return false;
         }
+        var rightSyleObj = {};
+        for(var sn in styleObj){
+            rightSyleObj[gStyleAttrNameToCssName(sn)] = styleObj[sn];
+        }
         if(this.styleDefBlock == null){
             this.styleDefBlock = this.defaultRegion.getBlock('styledef', true, 2);
         }
@@ -927,6 +945,7 @@ class CP_ClientSide extends JSFileMaker{
         if(styleBlock == null){
             styleBlock = new FormatFileBlock(styleId);
             this.styleDefBlock.pushChild(styleBlock);
+
             styleBlock.pushLine('const ' + styleId + '=' + JSON.stringify(styleObj) + ';');
         }
         return true;

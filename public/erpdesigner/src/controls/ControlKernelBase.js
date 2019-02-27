@@ -3,14 +3,68 @@ const M_ControlKernelBaseAttrsSetting = {
         new CAttribute('Style', AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
         new CAttribute('Class', AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true),
     ]),
+    baseGroup: new CAttributeGroup('基本设置',[
+        new CAttribute('name',AttrNames.Name,ValueType.String),
+    ]),
 };
 
+var M_ControlKernel_api = new ControlAPIClass(M_AllKernel_Type);
+M_ControlKernel_api.pushApi(new ApiItem_prop(genIsdisplayAttribute(), 'visible'));
+M_ControlKernel_api.pushApi(new ApiItem_propsetter('visible'));
+g_controlApi_arr.push(M_ControlKernel_api);
 /*
 new CAttribute('宽度',AttrNames.Width,ValueType.String,''),
             new CAttribute('高度',AttrNames.Height,ValueType.String,''),
             new CAttribute('FlexGrow',AttrNames.FlexGrow,ValueType.Boolean,true),
             new CAttribute('FlexShrink',AttrNames.FlexShrink,ValueType.Boolean,true),
 */
+
+function findAttrInGroupArrayByName(attName, groupArr){
+    var rlt = null;
+    for(var gi in groupArr){
+        rlt = groupArr[gi].findAttrByName(attName);
+        if(rlt != null){
+            return rlt;
+        }
+    }
+    return null;
+}
+
+
+function GenControlKernelAttrsSetting(cusGroups_arr, includeDefault){
+    var rlt = [M_ControlKernelBaseAttrsSetting.layoutGrop];
+    
+    for(var si in cusGroups_arr){
+        var cusGroup = cusGroups_arr[si];
+        if(includeDefault != false && cusGroup.label == M_ControlKernelBaseAttrsSetting.baseGroup.label){
+            cusGroup.setAttrs(M_ControlKernelBaseAttrsSetting.baseGroup.attrs_arr.concat(cusGroup.attrs_arr));
+        }
+        rlt.push(cusGroup);
+    }
+    return rlt;
+}
+
+function getDSAttrCanuseColumns(dsAttrName, csAttrName){
+    var useDS = this.getAttribute(dsAttrName);
+    if(useDS == null){
+        return [];
+    }
+    var rlt = useDS.columns.map(col=>{
+        return col.name;
+    });
+    if(csAttrName != null){
+        var cusDS_bp = this.getAttribute(csAttrName);
+        if(cusDS_bp != null){
+            var retColumnNode = cusDS_bp.finalSelectNode.columnNode;
+            retColumnNode.inputScokets_arr.forEach(socket=>{
+                var alias = socket.getExtra('alias');
+                if(!IsEmptyString(alias))
+                    rlt.push(alias);
+            });
+        }
+    }
+    return rlt;
+}
 
 const LayoutAttrNames_arr = M_ControlKernelBaseAttrsSetting.layoutGrop.attrs_arr.map(e => { return e.name; });
 
@@ -23,11 +77,9 @@ class ControlKernelBase extends IAttributeable {
         if (attrbuteGroups == null) {
             attrbuteGroups = [];
         }
-        if (attrbuteGroups[0] != M_ControlKernelBaseAttrsSetting.layoutGrop) {
-            attrbuteGroups.unshift(M_ControlKernelBaseAttrsSetting.layoutGrop);
-        }
         this.attrbuteGroups = attrbuteGroups;
         this.clickHandler = this.clickHandler.bind(this);
+        this.getAccessableKernels = this.getAccessableKernels.bind(this);
         this.listendDS_map = {};
 
         if (kernelJson != null) {
@@ -79,6 +131,7 @@ class ControlKernelBase extends IAttributeable {
         if (parentKernel.project != parentKernel) {
             parentKernel.appandChild(this);
         }
+        this.readableName = this.getReadableName();
     }
 
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray){
@@ -87,17 +140,35 @@ class ControlKernelBase extends IAttributeable {
             this.unlistenDS(oldValue, attrName);
             if(typeof newValue === 'string'){
                 newValue = this.project.dataMaster.getDataSourceByCode(newValue);
+                if(newValue != null && newValue.code == 0){
+                    newValue = null;
+                }
                 this[realAtrrName] = newValue;
             }
+            if(newValue){
+                this.listenDS(newValue, attrName);
+            }
             
-            this.listenDS(newValue, attrName);
+        }
+
+        if(attrItem.name == AttrNames.TextField || attrItem.name == AttrNames.Name){
+            this.readableName = this.getReadableName();
         }
     }
 
-    delete(){
-        if(this.isfixed){
+    delete(forceDelete){
+        if(!forceDelete && this.isfixed){
             return;
         }
+        // delete all customdatasource
+        var cusdsAttr_arr = this.filterAttributesByValType(ValueType.CustomDataSource);
+        cusdsAttr_arr.forEach(cusdsAttr=>{
+            var cusds = this.getAttribute(cusdsAttr.name);
+            if(cusds != null){
+                this.project.dataMaster.deleteSqlBP(cusds);
+            }
+        });
+
         for(var dsCode in this.listendDS_map){
             var t_arr = this.listendDS_map[dsCode];
             if(t_arr == null){
@@ -110,7 +181,7 @@ class ControlKernelBase extends IAttributeable {
         }
         if(this.children){
             for(var ci in this.children){
-                this.children[ci].delete();
+                this.children[ci].delete(true);
             }
         }
         this.project.unRegisterControl(this);
@@ -118,10 +189,6 @@ class ControlKernelBase extends IAttributeable {
         {
             this.parent.removeChild(this);
         }
-    }
-
-    getReadableName(){
-        return this.id + (IsEmptyString(this.name) ? '' : '(' + this.name + ')');
     }
 
     listenDS(target, attrName){
@@ -175,9 +242,20 @@ class ControlKernelBase extends IAttributeable {
     }
 
     getReadableName(){
-        var rlt = '';
-        
-        return this.id + (IsEmptyString(this[AttrNames.Name]) ? '' : '(' + this[AttrNames.Name] + ')');
+        var rlt = null;
+        if(!IsEmptyString(this[AttrNames.Name])){
+            rlt = this[AttrNames.Name];
+        }
+        else{
+            var textField = this[AttrNames.TextField];
+            if(textField != null){
+                rlt = typeof textField === 'string' ? textField : '{脚本}';
+            }
+            else{
+                rlt = '';
+            }
+        }
+        return rlt + '[' + this.id + ']';
     }
 
     getReactClassName(isRedux) {
@@ -323,20 +401,58 @@ class ControlKernelBase extends IAttributeable {
         return rlt;
     }
 
-    getAccessableKernels(){
-        var rlt = [this];   // 本身必可访问
+    getAccessableKernels(targetType){
+        var rlt = [];
+        if(targetType == M_AllKernel_Type){
+            targetType = null;
+        }
+        var needFilt = targetType != null;
+        if(!needFilt || this.type == targetType){
+            rlt.push(this);
+        }
+        if(rlt.editor && (!needFilt || rlt.editor.type == targetType)){
+            rlt.push(rlt.editor);
+        }
         var nowKernel = this;
         var parent = nowKernel.parent;
         while(parent != null){
-            rlt.push(parent);
+            if(!needFilt|| parent.type == targetType)
+            {
+                rlt.push(parent);
+            }
             parent.children.forEach(child=>{
                 if(child != nowKernel){
-                    rlt.push(child);
+                    if(!needFilt || child.type == targetType)
+                    {
+                        rlt.push(child);
+                    }
+                    if(child.editor && (!needFilt || child.editor.type == targetType)){
+                        rlt.push(child.editor);
+                    }
                 }
             });
             nowKernel = parent;
             parent = parent.parent;
         }
+        return rlt;
+    }
+
+    getStatePath(stateName, splitChar = '.'){
+        var nowKernel = this.parent;
+        var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
+        do{
+            switch(nowKernel.type){
+                case M_PageKernel_Type:
+                rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
+                break;
+                case M_FormKernel_Type:
+                rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
+                break;
+            }
+            if(nowKernel){
+                nowKernel = nowKernel.parent;
+            }
+        }while(nowKernel != null)
         return rlt;
     }
 }

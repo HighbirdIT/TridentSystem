@@ -13,11 +13,22 @@ class ProjectDesigner extends React.PureComponent {
         this.quickMenuRef = React.createRef();
         this.scriptMasterPanelRef = React.createRef();
         this.quickScriptEditPanelRef = React.createRef();
+        this.quickSqlBPEditPanelRef = React.createRef();
         autoBind(this);
         this.props.project.designer = this;
 
         this.placingCtonrols = {};
         this.selectedKernel = null;
+
+        var rightPanelNavItems = [
+            CreateNavItemData('属性', <AttributePanel project={this.props.project} ref={this.attrbutePanelRef} />),
+            CreateNavItemData('项目管理', <ProjectResPanel project={this.props.project} />),
+        ];
+        
+        this.rightPanelNavData = {
+            selectedItem: rightPanelNavItems[0],
+            items: rightPanelNavItems,
+        };
     }
 
     saveProject(){
@@ -111,6 +122,7 @@ class ProjectDesigner extends React.PureComponent {
             this.placeEndCallBack(this.placingKernel);
             this.placeEndCallBack = null;
         }
+        this.placingCtonrols[this.placingKernel.type] = null;
         this.placingKernel = null;
         //console.log('mouseUpInPlacingHandler');
         return;
@@ -191,6 +203,18 @@ class ProjectDesigner extends React.PureComponent {
         }
     }
 
+    editSqlBlueprint(sqlbp){
+        if(this.quickSqlBPEditPanelRef.current != null){
+            this.quickSqlBPEditPanelRef.current.showBlueprint(sqlbp);
+        }
+    }
+
+    rightNavChanged(oldItem, newItem) {
+        this.setState({
+            magicObj: {}
+        });
+    }
+
     render() {
         var thisProject = this.props.project;
         return (
@@ -198,6 +222,7 @@ class ProjectDesigner extends React.PureComponent {
                 <DataMasterPanel ref={this.dataMasterPanelRef} project={thisProject} />
                 <ScriptMasterPanel ref={this.scriptMasterPanelRef} project={thisProject} />
                 <QuickScriptEditPanel ref={this.quickScriptEditPanelRef} project={thisProject} />
+                <QuickSqlBPEditPanel ref={this.quickSqlBPEditPanelRef} project={thisProject} />
                 <SplitPanel
                     defPercent={0.15}
                     barClass='bg-secondary'
@@ -222,7 +247,20 @@ class ProjectDesigner extends React.PureComponent {
                                         panel2={<LogOutputPanel source={thisProject.logManager} />}
                                 />
                              }
-                             panel2={<AttributePanel project={thisProject} ref={this.attrbutePanelRef} />}
+                             panel2={
+                                 <div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
+                                    <div className='d-flex flex-grow-0 flex-shrink-0 bg-secondary'>
+                                        <TabNavBar ref={this.navbarRef} navData={this.rightPanelNavData} navChanged={this.rightNavChanged} />
+                                    </div>
+                                    {
+                                        this.rightPanelNavData.items.map(item => {
+                                            return (<div key={item.text} className={'flex-grow-1 flex-shrink-1 ' + (item == this.rightPanelNavData.selectedItem ? ' d-flex' : ' d-none')}>
+                                                {item.content}
+                                            </div>)
+                                        })
+                                    }
+                                </div>
+                             }
                             />
                             }
                 />

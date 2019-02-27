@@ -349,8 +349,8 @@ function makeLine_Assign(left, right){
 	return left + '=' + right + ';';
 }
 
-function makeLine_Return(str){
-	return 'return ' + str + ';';
+function makeLine_RetServerError(info, code, data){
+	return "return serverhelper.createErrorRet('" + info + "'," + (code == null ? 0 : code) + "," + (data == null ? 'null' : data) + ");";
 }
 
 function makeStr_DotProp(){
@@ -444,13 +444,13 @@ function makeObj_CtlPropJsBind(ctlID, propName, suffix, oldtext){
 		propName:propName,
 		suffix:suffix,
 		oldtext:oldtext,
-		group:'ctl',
+		group:EJsBluePrintFunGroup.CtlAttr,
 		isScript:true,
 	};
 }
 
 function parseObj_CtlPropJsBind(str, scriptMaster){
-	if(str == null || typeof str === 'string'){
+	if(str == null || typeof str === 'string' || typeof str === 'boolean'){
 		return{
 			isScript:false,
 			string:str

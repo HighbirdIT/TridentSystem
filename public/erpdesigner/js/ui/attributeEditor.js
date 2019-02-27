@@ -30,7 +30,7 @@ var AttributeEditor = function (_React$PureComponent) {
 
     _createClass(AttributeEditor, [{
         key: 'getAttrNowValue',
-        value: function getAttrNowValue() {
+        value: function getAttrNowValue(notclone) {
             var rlt = this.props.targetobj.getAttribute(this.props.targetattr.name, this.props.index);
             if (rlt == null) {
                 switch (this.props.targetattr.valueType) {
@@ -42,7 +42,7 @@ var AttributeEditor = function (_React$PureComponent) {
                 }
             } else {
                 if ((typeof rlt === 'undefined' ? 'undefined' : _typeof(rlt)) === 'object') {
-                    rlt = Object.assign({}, rlt);
+                    rlt = notclone ? rlt : Object.assign({}, rlt);
                 }
             }
             switch (this.props.targetattr.valueType) {
@@ -195,7 +195,7 @@ var AttributeEditor = function (_React$PureComponent) {
             var nowValParseRet = parseObj_CtlPropJsBind(this.state.value);
             var newVal = '';
             if (nowValParseRet.isScript) {
-                newVal = nowValParseRet.oldValue;
+                newVal = nowValParseRet.oldtext == null ? '' : nowValParseRet.oldtext;
             } else {
                 newVal = makeObj_CtlPropJsBind(this.props.targetobj.id, this.props.targetattr.name, 'get', nowValParseRet.string);
             }
@@ -214,7 +214,9 @@ var AttributeEditor = function (_React$PureComponent) {
             }
             var targetBP = nowValParseRet.jsBp;
             if (targetBP == null) {
-                targetBP = project.scriptMaster.createBP(nowValParseRet.funName, this.props.targetattr.scriptSetting.type, nowValParseRet.jsGroup);
+                var theAttr = this.props.targetattr;
+                targetBP = project.scriptMaster.createBP(nowValParseRet.funName, this.props.targetattr.scriptSetting.type, theAttr.scriptSetting.group);
+                targetBP.ctlID = this.props.targetobj.id;
                 this.setState({
                     magicObj: {}
                 });
@@ -222,11 +224,78 @@ var AttributeEditor = function (_React$PureComponent) {
             project.designer.editScriptBlueprint(targetBP);
         }
     }, {
+        key: 'clickModifyEbentBtnHandler',
+        value: function clickModifyEbentBtnHandler(ev) {
+            var project = this.props.targetobj.project;
+            if (project == null) {
+                return;
+            }
+            var theAttr = this.props.targetattr;
+            var funName = this.props.targetobj.id + '_' + theAttr.name;
+            var targetBP = project.scriptMaster.getBPByName(funName);
+            if (targetBP == null) {
+                targetBP = project.scriptMaster.createBP(funName, FunType_Client, EJsBluePrintFunGroup.CtlEvent);
+                targetBP.ctlID = this.props.targetobj.id;
+                targetBP.eventName = theAttr.name;
+                this.setState({
+                    magicObj: {}
+                });
+            }
+            project.designer.editScriptBlueprint(targetBP);
+        }
+    }, {
+        key: 'renderEventAttrEditor',
+        value: function renderEventAttrEditor(nowVal, theAttr, attrName, inputID) {
+            var project = this.props.targetobj.project;
+            var funName = this.props.targetobj.id + '_' + attrName;
+            var jsBP = project.scriptMaster.getBPByName(funName);
+            var trushIconElem = React.createElement(
+                'span',
+                { onClick: this.clickjsIconHandler, className: 'fa-stack cursor-pointer text-danger' },
+                React.createElement('i', { className: 'fa fa-trash fa-stack-1x' }),
+                React.createElement('i', { className: 'fa fa-square-o fa-stack-2x' })
+            );
+            return React.createElement(
+                'div',
+                { className: 'd-flex w-100 h-100 align-items-center' },
+                React.createElement(
+                    'span',
+                    { onClick: this.clickModifyEbentBtnHandler, className: 'btn btn-dark flex-grow-1' },
+                    jsBP ? '编辑' : '创建'
+                ),
+                trushIconElem
+            );
+        }
+    }, {
+        key: 'clickCusdatasourcebtn',
+        value: function clickCusdatasourcebtn() {
+            var theBP = this.getAttrNowValue(true);
+            if (theBP) {
+                var project = this.props.targetobj.project;
+                project.designer.editSqlBlueprint(theBP);
+            }
+        }
+    }, {
+        key: 'renderCustomDataSource',
+        value: function renderCustomDataSource(nowVal, theAttr, attrName, inputID) {
+            return React.createElement(
+                'button',
+                { type: 'button', className: 'btn btn-dark w-100', onClick: this.clickCusdatasourcebtn },
+                '\u5B9A\u5236\u6570\u636E\u6E90'
+            );
+        }
+    }, {
         key: 'rednerEditor',
         value: function rednerEditor(theAttr, attrName, inputID) {
             var nowVal = this.state.value;
+            if (theAttr.valueType == ValueType.Event) {
+                return this.renderEventAttrEditor(nowVal, theAttr, attrName, inputID);
+            }
             if (theAttr.valueType == ValueType.StyleValues) {
                 return this.renderStyleAttrEditor(nowVal, theAttr, attrName, inputID);
+            }
+            if (theAttr.valueType == ValueType.CustomDataSource) {
+                return this.renderCustomDataSource(nowVal, theAttr, attrName, inputID);
             }
             if (!theAttr.editable) {
                 return React.createElement(
@@ -270,6 +339,12 @@ var AttributeEditor = function (_React$PureComponent) {
                         return pullDataFun(nowTarget);
                     };
                 }
+                if (typeof theAttr.options_arr === 'string') {
+                    useOptioins_arr = this.props.targetobj[theAttr.options_arr];
+                    if (useOptioins_arr == null) {
+                        console.error('没有找到:' + theAttr.options_arr);
+                    }
+                }
 
                 if (theAttr.valueType == ValueType.DataSource) {
                     if (nowVal && nowVal.loaded == false) {
@@ -303,10 +378,10 @@ var AttributeEditor = function (_React$PureComponent) {
                     break;
             }
             return React.createElement(
-                React.Fragment,
-                null,
-                jsIconElem,
-                React.createElement('input', { type: inputType, className: 'form-control', id: inputID, checked: this.state.value, value: this.state.value, onChange: this.editorChanged, attrname: attrName })
+                'div',
+                { className: 'd-flex flex-grow-1 flex-shrink-1 align-items-center' },
+                React.createElement('input', { type: inputType, className: 'form-control', id: inputID, checked: this.state.value, value: this.state.value, onChange: this.editorChanged, attrname: attrName }),
+                jsIconElem
             );
         }
     }, {
