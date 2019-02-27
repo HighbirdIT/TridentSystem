@@ -30,7 +30,7 @@ var AttributeEditor = function (_React$PureComponent) {
 
     _createClass(AttributeEditor, [{
         key: 'getAttrNowValue',
-        value: function getAttrNowValue() {
+        value: function getAttrNowValue(notclone) {
             var rlt = this.props.targetobj.getAttribute(this.props.targetattr.name, this.props.index);
             if (rlt == null) {
                 switch (this.props.targetattr.valueType) {
@@ -42,7 +42,7 @@ var AttributeEditor = function (_React$PureComponent) {
                 }
             } else {
                 if ((typeof rlt === 'undefined' ? 'undefined' : _typeof(rlt)) === 'object') {
-                    rlt = Object.assign({}, rlt);
+                    rlt = notclone ? rlt : Object.assign({}, rlt);
                 }
             }
             switch (this.props.targetattr.valueType) {
@@ -234,7 +234,7 @@ var AttributeEditor = function (_React$PureComponent) {
             var funName = this.props.targetobj.id + '_' + theAttr.name;
             var targetBP = project.scriptMaster.getBPByName(funName);
             if (targetBP == null) {
-                targetBP = project.scriptMaster.createBP(funName, FunType_Client, FunGroup.CtlEvent);
+                targetBP = project.scriptMaster.createBP(funName, FunType_Client, EJsBluePrintFunGroup.CtlEvent);
                 targetBP.ctlID = this.props.targetobj.id;
                 targetBP.eventName = theAttr.name;
                 this.setState({
@@ -267,6 +267,24 @@ var AttributeEditor = function (_React$PureComponent) {
             );
         }
     }, {
+        key: 'clickCusdatasourcebtn',
+        value: function clickCusdatasourcebtn() {
+            var theBP = this.getAttrNowValue(true);
+            if (theBP) {
+                var project = this.props.targetobj.project;
+                project.designer.editSqlBlueprint(theBP);
+            }
+        }
+    }, {
+        key: 'renderCustomDataSource',
+        value: function renderCustomDataSource(nowVal, theAttr, attrName, inputID) {
+            return React.createElement(
+                'button',
+                { type: 'button', className: 'btn btn-dark w-100', onClick: this.clickCusdatasourcebtn },
+                '\u5B9A\u5236\u6570\u636E\u6E90'
+            );
+        }
+    }, {
         key: 'rednerEditor',
         value: function rednerEditor(theAttr, attrName, inputID) {
             var nowVal = this.state.value;
@@ -275,6 +293,9 @@ var AttributeEditor = function (_React$PureComponent) {
             }
             if (theAttr.valueType == ValueType.StyleValues) {
                 return this.renderStyleAttrEditor(nowVal, theAttr, attrName, inputID);
+            }
+            if (theAttr.valueType == ValueType.CustomDataSource) {
+                return this.renderCustomDataSource(nowVal, theAttr, attrName, inputID);
             }
             if (!theAttr.editable) {
                 return React.createElement(
@@ -317,6 +338,12 @@ var AttributeEditor = function (_React$PureComponent) {
                     useOptioins_arr = function useOptioins_arr() {
                         return pullDataFun(nowTarget);
                     };
+                }
+                if (typeof theAttr.options_arr === 'string') {
+                    useOptioins_arr = this.props.targetobj[theAttr.options_arr];
+                    if (useOptioins_arr == null) {
+                        console.error('没有找到:' + theAttr.options_arr);
+                    }
                 }
 
                 if (theAttr.valueType == ValueType.DataSource) {

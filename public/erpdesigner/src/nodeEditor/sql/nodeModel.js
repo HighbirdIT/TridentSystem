@@ -16,9 +16,11 @@ const SQLNODE_ISNULL = 'isnullfun';
 const SQLNODE_ISNULLOPERATOR = 'isnulloperator';
 const SQLNODE_LOGICAL_OPERATOR = 'logical_operator';
 const SQLDEF_VAR = 'def_variable';
+const SQLNODE_CONTROL_API_PROP = 'controlapiprop';
+const SQLNODE_ENV_VAR = 'envvar';
 var SqlNodeClassMap = {};
 // CONSTSQLNODES_ARR output是常量的节点类型
-const SQL_OutSimpleValueNode_arr = [SQLNODE_COLUMN, SQLNODE_VAR_GET, SQLNODE_CONSTVALUE];
+const SQL_OutSimpleValueNode_arr = [SQLNODE_COLUMN, SQLNODE_VAR_GET, SQLNODE_CONSTVALUE, SQLNODE_CONTROL_API_PROP, SQLNODE_ENV_VAR];
 
 
 class NodeCreationHelper extends EventEmitter {
@@ -151,7 +153,7 @@ class SqlNode_BluePrint extends EventEmitter {
         this.nodes_arr = [];
 
         if (bluePrintJson != null) {
-            assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'retNodeId', 'editorLeft', 'editorTop']);
+            assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'retNodeId', 'editorLeft', 'editorTop', 'group']);
             if (!IsEmptyArray(bluePrintJson.variables_arr)) {
                 bluePrintJson.variables_arr.forEach(varJson => {
                     var newVar = new SqlDef_Variable({}, this, createHelper, varJson);
@@ -164,6 +166,10 @@ class SqlNode_BluePrint extends EventEmitter {
             this.linkPool.restorFromJson(bluePrintJson.links_arr, createHelper);
         }
         this.id = this.code;
+
+        if (this.group == null) {
+            this.group = 'custom';
+        }
 
         /*
         this.nodes_arr = this.nodes_arr.map((nodeData,i)=>{
@@ -181,7 +187,12 @@ class SqlNode_BluePrint extends EventEmitter {
             this.finalSelectNode.removeSocket(this.finalSelectNode.outSocket);
         }
         this.finalSelectNode.isConstNode = true;
+        this.genColumns();
         createHelper.fireEvent('complete', createHelper);
+    }
+
+    genColumns(){
+        this.columns = this.finalSelectNode.getColumns_arr();
     }
 
     preEditing(editor) {
@@ -190,6 +201,7 @@ class SqlNode_BluePrint extends EventEmitter {
 
     postEditing(editor) {
         // call leve eidting
+        this.genColumns();
     }
 
     getNodeParentList(theNode) {
@@ -310,6 +322,9 @@ class SqlNode_BluePrint extends EventEmitter {
     }
 
     deleteNodes(nodes_arr) {
+        if(nodes_arr.length == 0){
+            return;
+        }
         this.banEvent('changed');
         nodes_arr.forEach(node => { this.deleteNode(node) });
         this.allowEvent('changed');
@@ -371,6 +386,7 @@ class SqlNode_BluePrint extends EventEmitter {
             retNodeId: this.finalSelectNode.id,
             name: this.name,
             type: this.type,
+            group: this.group,
         }
         if (this.editorLeft) {
             theJson.editorLeft = this.editorLeft;
@@ -937,11 +953,47 @@ class SqlNode_Column extends SqlNode_Base {
         assginObjByProperties(this, attrsJson, ['tableAlias', 'tableName', 'columnName', 'tableCode']);
     }
 
+    setFromObj(obj){
+        var changed = false;
+        if(obj.hasOwnProperty('tableCode') && obj.tableCode != this.tableCode){
+            this.tableCode = obj.tableCode;
+            changed = true;
+        }
+        if(obj.hasOwnProperty('tableAlias') && obj.tableAlias != this.tableAlias){
+            this.tableAlias = obj.tableAlias;
+            changed = true;
+        }
+        if(obj.hasOwnProperty('tableName') && obj.tableName != this.tableName){
+            this.tableName = obj.tableName;
+            changed = true;
+        }
+        if(obj.hasOwnProperty('columnName') && obj.columnName != this.columnName){
+            this.columnName = obj.columnName;
+            changed = true;
+        }
+        if(obj.hasOwnProperty('cvalType') && obj.cvalType != this.cvalType){
+            this.cvalType = obj.cvalType;
+            changed = true;
+        }
+        if(changed){
+            this.freshSocketLabel();
+            this.outSocket.fireEvent('changed');
+            return true;
+        }
+    }
+
     getNodeTitle() {
         return '列:' + this.getSocketLabel();
     }
 
     getSocketLabel() {
+        if(this.tableAlias == null && this.tableName == null && this.tableCode != null && !isNaN(this.tableCode)){
+            var ds = g_dataBase.getEntityByCode(this.tableCode);
+            if(ds.name != null){
+                this.tableName = ds.name;
+                this.freshSocketLabel();
+            }
+        }
         return (this.tableAlias == null ? this.tableName : this.tableAlias) + '.' + this.columnName;
     }
 
@@ -1239,7 +1291,7 @@ class SqlNode_Select extends SqlNode_Base {
         this.bluePrint.allowEvent('changed');
     }
 
-    postEditing(editor) {
+    getColumns_arr(){
         var colSockets = this.columnNode.inputScokets_arr;
         var newColumns_arr = [];
         var temMap = {};
@@ -1265,11 +1317,15 @@ class SqlNode_Select extends SqlNode_Base {
                 }
             }
         }
-        this.columns_arr = newColumns_arr;
+        return newColumns_arr;
+    }
+
+    postEditing(editor) {
+        this.columns_arr = this.getColumns_arr();
 
         var orderBySockets = this.orderNode.inputScokets_arr;
         var newOrderByColumns_arr = [];
-        temMap = {};
+        var temMap = {};
         for (var i in orderBySockets) {
             var socket = orderBySockets[i];
             var tlinks = this.bluePrint.linkPool.getLinksBySocket(socket);
@@ -2769,6 +2825,180 @@ class SqlNode_Logical_Operator extends SqlNode_Base {
     }
 }
 
+class SqlNode_Control_Api_Prop extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, SQLNODE_CONTROL_API_PROP, 'CtlApiProp', false, nodeJson);
+        autoBind(this);
+        var apiItem = this.apiItem;
+        var apiClass = this.apiClass;
+        if (apiItem == null) {
+            apiClass = g_controlApi_arr.find(e => { return e.ctltype == this.ctltype; });
+            apiItem = apiClass.getApiItemByid(this.apiid);
+            if (apiClass == null || apiItem == null) {
+                console.error('查询控件api失败！');
+            }
+            this.apiClass = apiClass;
+            this.apiItem = apiItem;
+        }
+        this.label = apiClass.ctllabel + '.' + apiItem.attrItem.label;
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+            }
+        }
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inSocket);
+        }
+        this.inSocket.inputable = false;
+        this.inSocket.type = SocketType_CtlKernel;
+        this.inSocket.kernelType = apiClass.ctltype;
+
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.type = apiItem.attrItem.valueType;
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.ctltype = this.apiClass.ctltype;
+        rlt.apiid = this.apiItem.id;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['ctltype', 'apiid']);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+
+        var selectedCtlid = this.inSocket.getExtra('ctlid');
+        var selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
+        if (selectedKernel == null) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '需要选择控件']);
+            return false;
+        }
+        var relCtlKernel = this.bluePrint.ctlKernel;
+        var canAccessCtls_arr = relCtlKernel.getAccessableKernels(this.ctltype);
+        if (canAccessCtls_arr.indexOf(selectedKernel) == -1) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '指定的控件不可访问']);
+            return false;
+        }
+        helper.addUseControlPropApi(selectedKernel, this.apiItem);
+
+        var finalStr = '@' + selectedCtlid + '_' + this.apiItem.stateName;
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+const EnvVariable={
+    userid:'ENV:用户代码',
+    username:'ENV:用户姓名',
+    workRegionCode:'ENV:常驻工作地域代码',
+    companyCode:'ENV:所属公司名称代码',
+    wokerTypeCode:'ENV:员工工时状态代码',
+    departmentCode:'ENV:所属部门名称代码',
+    systemCode:'ENV:所属系统名称代码',
+    nowDate:'EBV:当前日期',
+}
+
+const EnvVariables_arr = [];
+for(var ei in EnvVariable){
+    EnvVariables_arr.push({text:EnvVariable[ei], value:ei});
+}
+
+class SqlNode_Env_Var extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, SQLNODE_ENV_VAR, '环境变量', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.type = SqlVarType_Scalar;
+        this.outSocket.inputable = true;
+        this.outSocket.inputDDC_setting = {
+            options_arr:EnvVariables_arr,
+            textAttrName:'text',
+            valueAttrName:'value'
+        };
+        this.headType = 'empty';
+
+        var self = this;
+    }
+
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var enName = this.outSocket.defval;
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        if (EnvVariable[enName] == null) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle
+                , nodeThis
+                , helper.clickLogBadgeItemHandler)
+                , '无效值']);
+            return false;
+        }
+
+        var selfCompileRet = new CompileResult(this);
+        switch(EnvVariable[enName]){
+            case EnvVariable.userid:
+            case EnvVariable.username:
+            case EnvVariable.workRegionCode:
+            case EnvVariable.companyCode:
+            case EnvVariable.wokerTypeCode:
+            case EnvVariable.departmentCode:
+            case EnvVariable.systemCode:
+                helper.addUseEnvVars(enName);
+                selfCompileRet.setSocketOut(this.outSocket, '@' + enName);
+            break;
+            default:
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle
+                , nodeThis
+                , helper.clickLogBadgeItemHandler)
+                , '不支持的环境变量:' + enName]);
+            return false;
+            break;
+        }
+
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
 SqlNodeClassMap[SQLNODE_DBENTITY] = {
     modelClass: SqlNode_DBEntity,
     comClass: C_SqlNode_DBEntity,
@@ -2841,3 +3071,13 @@ SqlNodeClassMap[SQLDEF_VAR] = {
     modelClass: SqlDef_Variable,
     comClass: C_Node_SimpleNode,
 };
+
+SqlNodeClassMap[SQLNODE_CONTROL_API_PROP] = {
+    modelClass: SqlNode_Control_Api_Prop,
+    comClass: C_Node_SimpleNode,
+};
+SqlNodeClassMap[SQLNODE_ENV_VAR] = {
+    modelClass: SqlNode_Env_Var,
+    comClass: C_Node_SimpleNode,
+};
+

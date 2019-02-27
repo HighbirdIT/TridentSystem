@@ -6,8 +6,10 @@ const M_TextKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('默认值', AttrNames.DefaultValue, ValueType.String, '', true, false, null, null,true,{
             scriptable:true,
             type:FunType_Client,
-            group:FunGroup.CtlAttr,
+            group:EJsBluePrintFunGroup.CtlAttr,
         } ),
+        new CAttribute('可否编辑', AttrNames.Editeable, ValueType.Boolean, true),
+        genIsdisplayAttribute(),
     ]),
 ]);
 

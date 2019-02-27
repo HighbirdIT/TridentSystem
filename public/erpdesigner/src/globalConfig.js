@@ -94,11 +94,22 @@ const CharfunType_arr = [CharfunType_ASCII, CharfunType_CHAR, CharfunType_LEFT, 
 
 const FunType_Client = 'client';
 const FunType_Server = 'server';
-const FunGroup={
+const EJsBluePrintFunGroup={
     CtlAttr:'ctlattr',
     CtlEvent:'ctlevent',
 }
 
+const ESqlBluePrintGroup={
+    Custom:'custom',
+    ControlCustom:'ctlcus',
+}
+
+const EFormType={
+    Page:'page',
+    List:'list',
+}
+
+const FormTypes_arr = [EFormType.Page, EFormType.List];
 const ButtonClasses_arr = ['btn-primary', 'btn-secondary', 'btn-success', 'btn-danger', 'btn-warning', 'btn-info', 'btn-light', 'btn-dark', 'btn-link'];
 /**
  * 逻辑运算符 and or not
@@ -190,6 +201,7 @@ const ValueType = {
     DateTime: 'datetime',
     StyleValues: 'StyleValues',
     DataSource: 'DataSource',
+    CustomDataSource: 'CustomDataSource',
     Unknown: 'Unknown',
     Any: '任意',
     Event:'event'

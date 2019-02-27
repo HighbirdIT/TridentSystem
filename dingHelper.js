@@ -143,9 +143,14 @@ dingHelper.aysnLoginfFromRcdID = (logrcdid, req, res) => {
             var rlt = {
                 username: firstRow['员工姓名'],
                 userid: firstRow['员工代码'],
+                workRegionCode:firstRow['常驻工作地域代码'],
+                companyCode:firstRow['所属公司名称代码'],
+                wokerTypeCode:firstRow['员工工时状态代码'],
+                departmentCode:firstRow['所属部门名称代码'],
+                systemCode:firstRow['所属系统名称代码'],
             };
-            req.session.userid = rlt.userid;
-            req.session.username = rlt.username;
+            req.session.g_envVar = rlt;
+
             return rlt;
         }
         return null;

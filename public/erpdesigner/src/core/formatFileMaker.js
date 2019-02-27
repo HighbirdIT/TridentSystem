@@ -914,10 +914,14 @@ class CP_ClientSide extends JSFileMaker{
         this.appReducerSettingVar.initVal = JsObjectToString(this.reducers_map);
         this.stateChangedAct_mapVar.initVal = JsObjectToString(this.stateChangedAct);
 
-        this.endBlock.pushLine('ErpControlInit();');
-        this.endBlock.pushLine('ReactDOM.render(<Provider store={store}>', 1);
-        this.endBlock.pushLine('<VisibleApp />', -1);
-        this.endBlock.pushLine("</Provider>, document.getElementById('reactRoot'));");
+        var ifLoginBK = new JSFile_IF('iflogin', 'g_envVar.userid != null');
+        this.endBlock.pushChild(ifLoginBK);
+        ifLoginBK.trueBlock.pushLine('ErpControlInit();');
+        ifLoginBK.trueBlock.pushLine('ReactDOM.render(<Provider store={store}>', 1);
+        ifLoginBK.trueBlock.pushLine('<VisibleApp />', -1);
+        ifLoginBK.trueBlock.pushLine("</Provider>, document.getElementById('reactRoot'));");
+
+        ifLoginBK.falseBlock.pushLine("location.href = '/?goto=' + location.pathname;");
 
         this.endBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, { action: 'pageloaded' }, null, 'pageloaded', '正在加载[' + thisAppTitle + ']'));");
     }

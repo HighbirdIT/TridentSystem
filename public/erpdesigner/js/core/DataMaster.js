@@ -292,10 +292,14 @@ var DataMaster = function (_EventEmitter4) {
         }
     }, {
         key: 'createSqlBP',
-        value: function createSqlBP(name, type) {
-            var newItem = new SqlNode_BluePrint({ name: name, type: type, master: this });
+        value: function createSqlBP(name, type, group) {
+            if (group == null) {
+                group = 'custom';
+            }
+            var newItem = new SqlNode_BluePrint({ name: name, type: type, master: this, group: group });
             this.addSqlBP(newItem);
             this.emit('sqlbpchanged');
+            return newItem;
         }
     }, {
         key: 'modifySqlBP',
@@ -303,6 +307,16 @@ var DataMaster = function (_EventEmitter4) {
             sqpBP.name = name;
             sqpBP.type = type;
             this.emit('sqlbpchanged');
+        }
+    }, {
+        key: 'deleteSqlBP',
+        value: function deleteSqlBP(sqpBP) {
+            var index = this.BP_sql_arr.indexOf(sqpBP);
+            if (index == -1) {
+                return;
+            }
+            this.BP_sql_arr.splice(index, 1);
+            sqpBP.master = null;
         }
     }, {
         key: 'usedDBEnitiesChangedHandler',
@@ -337,6 +351,7 @@ var DataMaster = function (_EventEmitter4) {
             };
             this.BP_sql_arr.forEach(function (bp) {
                 rlt.BP_sql_arr.push(bp.getJson());
+                //console.log(JSON.stringify(rlt.BP_sql_arr[rlt.BP_sql_arr.length - 1]));
             });
             return rlt;
         }
@@ -355,7 +370,9 @@ var DataMaster = function (_EventEmitter4) {
     }, {
         key: 'getAllEntities',
         value: function getAllEntities() {
-            return this.BP_sql_arr.concat(g_dataBase.entities_arr);
+            return this.BP_sql_arr.filter(function (x) {
+                return x.group == 'custom';
+            }).concat(g_dataBase.entities_arr);
         }
     }, {
         key: 'restoreFromJson',

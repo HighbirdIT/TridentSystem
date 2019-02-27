@@ -182,6 +182,13 @@ class MainApp extends React.PureComponent{
     }
 
     userLogin(userid, username){
+        if(userid > 0){
+            var gotourl = getQueryVariable('goto');
+            if(gotourl != false){
+                location.href = gotourl;
+                return;
+            }
+        }
         var newState = {
             userid : userid,
             username : username,

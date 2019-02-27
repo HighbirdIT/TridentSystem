@@ -740,12 +740,31 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
                     barClass: 'bg-secondary',
                     panel1: React.createElement(
                         'div',
-                        { className: 'd-flex flex-column flex-grow-1 flex-shrink-1' },
+                        { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 w-100' },
                         '\u5DF2\u521B\u5EFA\u7684:',
                         React.createElement(
                             'div',
                             { className: 'list-group flex-grow-1 flex-shrink-1 bg-dark autoScroll' },
                             this.state.items_arr.map(function (item) {
+                                if (item.group != 'custom') {
+                                    return null;
+                                }
+                                return React.createElement(
+                                    'div',
+                                    { onClick: _this10.clickListItemHandler, key: item.code, 'data-itemvalue': item.code, className: 'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '') },
+                                    item.name + '-' + item.type
+                                );
+                            }),
+                            React.createElement('span', { className: 'dropdown-divider' }),
+                            React.createElement(
+                                'span',
+                                { className: 'text-light' },
+                                '\u4EE5\u4E0B\u662F\u63A7\u4EF6\u5B9A\u5236\u6570\u636E\u6E90'
+                            ),
+                            this.state.items_arr.map(function (item) {
+                                if (item.group == 'custom') {
+                                    return null;
+                                }
                                 return React.createElement(
                                     'div',
                                     { onClick: _this10.clickListItemHandler, key: item.code, 'data-itemvalue': item.code, className: 'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '') },
@@ -867,4 +886,73 @@ var DataMasterPanel = function (_React$PureComponent8) {
     }]);
 
     return DataMasterPanel;
+}(React.PureComponent);
+
+var QuickSqlBPEditPanel = function (_React$PureComponent9) {
+    _inherits(QuickSqlBPEditPanel, _React$PureComponent9);
+
+    function QuickSqlBPEditPanel(props) {
+        _classCallCheck(this, QuickSqlBPEditPanel);
+
+        var _this13 = _possibleConstructorReturn(this, (QuickSqlBPEditPanel.__proto__ || Object.getPrototypeOf(QuickSqlBPEditPanel)).call(this, props));
+
+        _this13.state = {
+            blueprints_arr: []
+        };
+        autoBind(_this13);
+        return _this13;
+    }
+
+    _createClass(QuickSqlBPEditPanel, [{
+        key: 'showBlueprint',
+        value: function showBlueprint(target) {
+            var index = this.state.blueprints_arr.indexOf(target);
+            if (index == -1) {
+                this.setState({
+                    blueprints_arr: this.state.blueprints_arr.concat(target)
+                });
+            }
+        }
+    }, {
+        key: 'hideBlueprint',
+        value: function hideBlueprint(target) {
+            var index = this.state.blueprints_arr.indexOf(target);
+            if (index != -1) {
+                var newArr = this.state.blueprints_arr.concat();
+                newArr.splice(index, 1);
+                this.setState({
+                    blueprints_arr: newArr
+                });
+            }
+        }
+    }, {
+        key: 'prePanelCloseHandler',
+        value: function prePanelCloseHandler(thePanel) {
+            this.hideBlueprint(thePanel.props.targetBP);
+            return false;
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var _this14 = this;
+
+            var bpArr = this.state.blueprints_arr;
+            if (bpArr.length == 0) {
+                return null;
+            }
+            return bpArr.map(function (bp) {
+                return React.createElement(
+                    FloatPanelbase,
+                    { preClose: _this14.prePanelCloseHandler, key: bp.code, title: '编辑:' + bp.name, initShow: true, initMax: false, width: 800, height: 640, targetBP: bp },
+                    React.createElement(
+                        'div',
+                        { className: 'd-flex flex-grow-1 flex-shrink-1 bg-dark mw-100' },
+                        React.createElement(C_SqlNode_Editor, { bluePrint: bp })
+                    )
+                );
+            });
+        }
+    }]);
+
+    return QuickSqlBPEditPanel;
 }(React.PureComponent);

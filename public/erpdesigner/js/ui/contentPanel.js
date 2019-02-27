@@ -95,8 +95,8 @@ var ContentPanel = function (_React$PureComponent) {
         key: 'changeEditingPageBtnClickHandler',
         value: function changeEditingPageBtnClickHandler(ev) {
             var target = ev.target;
-            var targetPageName = target.getAttribute('pagename');
-            this.props.project.setEditingPageByName(targetPageName);
+            var targetPageid = target.getAttribute('pageid');
+            this.props.project.setEditingPageById(targetPageid);
         }
     }, {
         key: 'clickProjSettingBtnHandler',
@@ -293,21 +293,11 @@ var ContentPanel = function (_React$PureComponent) {
                             (isPC ? project.content_PC.pages : project.content_Mobile.pages).map(function (page) {
                                 return page == editingPage ? null : React.createElement(
                                     'button',
-                                    { key: page.name, onClick: _this3.changeEditingPageBtnClickHandler, className: 'dropdown-item', type: 'button', pagename: page.name },
+                                    { key: page.id, onClick: _this3.changeEditingPageBtnClickHandler, className: 'dropdown-item', type: 'button', pageid: page.id },
                                     page.title
                                 );
                             }),
-                            React.createElement('div', { className: 'dropdown-divider' }),
-                            React.createElement(
-                                'button',
-                                { className: 'dropdown-item text-success', type: 'button' },
-                                '\u521B\u5EFA\u9875\u9762'
-                            ),
-                            React.createElement(
-                                'button',
-                                { className: 'dropdown-item text-danger', type: 'button' },
-                                '\u5220\u9664\u9875\u9762'
-                            )
+                            React.createElement('div', { className: 'dropdown-divider' })
                         )
                     )
                 ),
