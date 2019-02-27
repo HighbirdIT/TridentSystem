@@ -560,6 +560,29 @@
   transform:translate(-50%,-50%);
   z-index:1000; 
 }
+.distinct + label{
+  background-color: white;
+  border-radius: 5px;
+  border:1px solid #d3d3d3;
+  width:30px;
+  height:30px;
+  display: inline-block;
+  text-align: center;
+  vertical-align: middle;
+  line-height: 20px;
+}
+.distinct:checked + label{
+  background-color: #eee;
+}
+.distinct:checked + label:after{
+  content:"\2714";
+}
+/**
+ * 隐藏默认的checkbox
+ 
+#distinct+input[type=checkbox] {
+	visibility: hidden;
+}*/
 
 .rowlFameOne{
   height: auto;

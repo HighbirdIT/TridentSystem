@@ -489,9 +489,31 @@ class C_SqlNode_Editor extends React.PureComponent{
     mouseDownNodeCtlrHandler(ctlData){
         var editorDiv = this.editorDivRef.current;
         var editingNode = this.state.editingNode;
-        var newNodeData = new ctlData.nodeClass({newborn:true,left:-parseUnitInt(editorDiv.style.left),top:-parseUnitInt(editorDiv.style.top)},editingNode);
+        var posLeft = -parseUnitInt(editorDiv.style.left);
+        var posTop = -parseUnitInt(editorDiv.style.top);
+        var newNodeData = new ctlData.nodeClass({newborn:true,left:posLeft,top:posTop},editingNode);
+        if(newNodeData.type == SQLNODE_CASE_WHEN){
+
+            var newCWNode = new SqlNode_CW_When({left:posLeft, top:posTop},editingNode);
+            editingNode.bluePrint.linkPool.addLink(newCWNode.outSocket, newNodeData.inputScokets_arr[0]);
+            var self = this;
+          
+            var newElseNode = new SqlNode_CW_Else({left:posLeft, top:posTop},editingNode);
+            editingNode.bluePrint.linkPool.addLink(newElseNode.outSocket, newNodeData.inputScokets_arr[1]);
+            setTimeout(() => {
+                newCWNode.left = newNodeData.left - 200;
+                newCWNode.top = newNodeData.top - 50;
+                self.setSelectedNF(newCWNode.currentFrameCom, true);
+             
+                newElseNode.left = newNodeData.left - 200;
+                newElseNode.top = newNodeData.top +100;
+                self.setSelectedNF(newElseNode.currentFrameCom, true);
+                self.nodeFrameStartMove(newNodeData.currentFrameCom);
+            }, 100);
+        }
         this.setState({
             magicObj:{},
+            
         });
     }
 

@@ -1239,7 +1239,7 @@ class SqlNode_Select extends SqlNode_Base {
 
         // 其他情况下只返回自身即可
         var retLinks = this.bluePrint.linkPool.getLinksByNode(this.columnNode, 'i');
-        if (retLinks.length == 0) {
+        if (retLinks.length == 0) { 
             return;
         }
         var temEntity = new DBEntityAgency(this.getNodeTitle(), this.id);
@@ -1612,7 +1612,7 @@ class SqlNode_Select extends SqlNode_Base {
 
         var conditionNodeCompileRet = this.conditionNode.compile(helper, usePreNodes_arr);
         if (conditionNodeCompileRet == false) {
-            return false;
+            return false; 
         }
         var whereString = conditionNodeCompileRet.getDirectOut().strContent;
 
@@ -3071,6 +3071,7 @@ SqlNodeClassMap[SQLDEF_VAR] = {
     modelClass: SqlDef_Variable,
     comClass: C_Node_SimpleNode,
 };
+
 SqlNodeClassMap[SQLNODE_CONTROL_API_PROP] = {
     modelClass: SqlNode_Control_Api_Prop,
     comClass: C_Node_SimpleNode,
@@ -3079,3 +3080,4 @@ SqlNodeClassMap[SQLNODE_ENV_VAR] = {
     modelClass: SqlNode_Env_Var,
     comClass: C_Node_SimpleNode,
 };
+
