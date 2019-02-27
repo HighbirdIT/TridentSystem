@@ -62,3 +62,5 @@ JSNodeClassMap[JSNODE_JSFOR] = {
     modelClass: JSNode_JsFor,
     comClass: C_Node_SimpleNode,
 };
+
+////
