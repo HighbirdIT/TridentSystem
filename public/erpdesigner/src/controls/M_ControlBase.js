@@ -122,14 +122,13 @@ function GetKernelCanUseColumns(theKernel){
     var rlt = null;
     var nowKernel = theKernel.parent;
     do{
-        var theDS = null;
         switch(nowKernel.type){
             case M_FormKernel_Type:
-            theDS = nowKernel.getAttribute(AttrNames.DataSource);
+            rlt = nowKernel.getCanuseColumns();
             break;
         }
-        if(theDS != null){
-            rlt = theDS.columns;
+        if(rlt != null){
+            break;
         }
         nowKernel = nowKernel.parent;
     }while(nowKernel != null);

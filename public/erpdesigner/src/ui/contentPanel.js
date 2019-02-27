@@ -76,8 +76,8 @@ class ContentPanel extends React.PureComponent {
 
     changeEditingPageBtnClickHandler(ev) {
         var target = ev.target;
-        var targetPageName = target.getAttribute('pagename');
-        this.props.project.setEditingPageByName(targetPageName);
+        var targetPageid = target.getAttribute('pageid');
+        this.props.project.setEditingPageById(targetPageid);
     }
 
     clickProjSettingBtnHandler(ev) {
@@ -238,12 +238,10 @@ class ContentPanel extends React.PureComponent {
                         </button>
                         <div className="dropdown-menu">
                             {(isPC ? project.content_PC.pages : project.content_Mobile.pages).map(page => {
-                                return page == editingPage ? null : (<button key={page.name} onClick={this.changeEditingPageBtnClickHandler} className="dropdown-item" type="button" pagename={page.name}>{page.title}</button>)
+                                return page == editingPage ? null : (<button key={page.id} onClick={this.changeEditingPageBtnClickHandler} className="dropdown-item" type="button" pageid={page.id}>{page.title}</button>)
                             })
                             }
                             <div className="dropdown-divider"></div>
-                            <button className="dropdown-item text-success" type="button">创建页面</button>
-                            <button className="dropdown-item text-danger" type="button">删除页面</button>
                         </div>
                     </div>
                 </div>

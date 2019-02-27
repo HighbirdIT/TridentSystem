@@ -46,18 +46,28 @@ const SqlNodeEditorControls_arr =[
         label:'逻辑运算',
         nodeClass:SqlNode_Logical_Operator,
     }
+    ,
+    {
+        label:'环境变量',
+        nodeClass:SqlNode_Env_Var,
+    }
 ]; 
 
 
 class C_SqlNode_Editor extends React.PureComponent{
     constructor(props){
         super(props);
+        
+        var editingNode = this.props.bluePrint;
+        if(this.props.bluePrint.group != 'custom'){
+            editingNode = this.props.bluePrint.finalSelectNode;
+        }
 
         this.state={
             draing:false,
-            editingNode:this.props.bluePrint,
             showLink:false,
             scale:1,
+            editingNode:editingNode,
         }
 
         var self = this;
@@ -78,6 +88,9 @@ class C_SqlNode_Editor extends React.PureComponent{
 
         var editor = this;
         this.selectedNFManager=new SelectItemManager(this.cb_addNF, this.cb_removeNF);
+        if(editingNode){
+            editingNode.preEditing(this);
+        }
     }
 
     reDraw(){
@@ -395,8 +408,7 @@ class C_SqlNode_Editor extends React.PureComponent{
         }
         
         var editingNode = this.state.editingNode;
-        var scrollNode = this.editorDivRef.current.parentNode;
-        if(editingNode){
+        if(editingNode && this.editorDivRef.current){
             editingNode.editorLeft = parseUnitInt(this.editorDivRef.current.style.left);
             editingNode.editorTop = parseUnitInt(this.editorDivRef.current.style.top);
             editingNode.postEditing(this);
@@ -620,6 +632,35 @@ class C_SqlNode_Editor extends React.PureComponent{
         console.log(text);
     }
 
+    createNewNode(nodeClass, initData){
+        var editorDiv = this.editorDivRef.current;
+        var editingNode = this.state.editingNode;
+        var newNode = new nodeClass(
+            Object.assign({
+                newborn:true,
+                left:-parseUnitInt(editorDiv.style.left),
+                top:-parseUnitInt(editorDiv.style.top),
+            }, initData),
+            editingNode
+        );
+
+        this.setState({
+            magicObj:{},
+        });
+        return newNode;
+    }
+
+    createApiObj(apiClass, apiItem){
+        switch(apiItem.type){
+            case EApiType.Prop:
+            this.createNewNode(SqlNode_Control_Api_Prop,{
+                apiClass:apiClass,
+                apiItem:apiItem,
+            });
+            break;
+        }
+    }
+
     render(){
         var editingNode = this.state.editingNode;
         if(this.props.bluePrint != editingNode.bluePrint){
@@ -783,6 +824,11 @@ class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
         super(props);
 
         autoBind(this);
+        this.state = {
+            canUseDS_arr:[],
+            showCanUseDS:true,
+            showCtlApi:false,
+        };
     }
 
     mouseDownHandler(ev){
@@ -795,14 +841,114 @@ class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
         }
     }
 
+    scanBlueprint(bluePrint){
+        this.scanedBP = bluePrint;
+        if(bluePrint == null){
+            return;
+        }
+        var scriptMaster = bluePrint.master;
+        var project = scriptMaster.project;
+        var logManager = this.props.editor.logManager;
+        logManager.clear();
+        var canUseDS_arr = [];
+        if(bluePrint.group == 'ctlcus'){
+            // 控件类型,获取上下文
+            var ctlKernel = project.getControlById(bluePrint.ctlID);
+            if(bluePrint.ctlID == null || ctlKernel == null){
+                logManager.error('本蓝图没有找到相应的控件[' + bluePrint.ctlID + ']');
+                return;
+            }
+            // 获取可用的数据源
+            var parentForms_arr = ctlKernel.searchParentKernel(M_FormKernel_Type);
+            if(parentForms_arr != null){
+                parentForms_arr.forEach(formKernel=>{
+                    var useDS = formKernel.getAttribute(AttrNames.DataSource);
+                    if(useDS != null){
+                        canUseDS_arr.push(
+                            {
+                                entity:useDS,
+                                label:formKernel.getReadableName() + '当前行',
+                                formID:formKernel.id
+                            }
+                        );
+                    }
+                });
+            }
+        }
+        logManager.log(canUseDS_arr.length);
+        console.log(canUseDS_arr);
+        //console.log(canUseDS_arr);
+        this.setState({
+            canUseDS_arr:canUseDS_arr,
+        });
+    }
+
+    clickCanUseDSHeader(ev){
+        this.setState({showCanUseDS:!this.state.showCanUseDS});
+    }
+
+    clickCtlApiHeader(ev){
+        this.setState({showCtlApi:!this.state.showCtlApi});
+    }
+
+    clickControlAPIHandler(ev){
+        var ctltype = getAttributeByNode(ev.target, 'data-ctltype');
+        if(ctltype == null)
+            return;
+        var apiid = getAttributeByNode(ev.target, 'data-apiid');
+        if(apiid == null)
+            return;
+        var theApiObj = g_controlApi_arr.find(e=>{return e.ctltype == ctltype;});
+        var apiItem = theApiObj.getApiItemByid(apiid);
+        this.props.editor.createApiObj(theApiObj,apiItem);
+    }
+
     render() {
+        var editingBP = this.props.editingNode.bluePrint;
+        if(editingBP != this.scanedBP){
+            if(this.scanTimeout == null){
+                var self = this;
+                setTimeout(() => {
+                    self.scanBlueprint(editingBP);
+                    self.scanTimeout = null;
+                }, 10);
+            }
+            return null;
+        }
+
+        var canUseDS_arr = this.state.canUseDS_arr;
+        var showCanUseDS = this.state.showCanUseDS;
+        var showCtlApi = this.state.showCtlApi;
+        if(editingBP.ctlID == null){
+            showCtlApi = null;
+            showCanUseDS = null;
+        }
         var targetID = this.props.editingNode.bluePrint.code + 'canUseNode';
         return (
             <React.Fragment>
-                <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>可用节点</button>
+                <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>节点</button>
                 <div id={targetID} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
                     <div className='mw-100 d-flex flex-column'>
                         <div className='btn-group-vertical mw-100 flex-shrink-0'>
+                            {editingBP.ctlID != null && <span className='btn btn-info' onClick={this.clickCtlApiHeader}>控件接口{showCtlApi ? '-' : '+'}</span>}
+                            {showCtlApi &&
+                                g_controlApi_arr.map(
+                                    ctlApi=>{
+                                        var rlt = [];
+                                        ctlApi.allapi_arr.forEach((apiItem,index)=>{
+                                            if(apiItem.type != EApiType.Prop){
+                                                return;
+                                            }
+                                            rlt.push(<button key={apiItem.uniqueID} onMouseDown={this.clickControlAPIHandler} data-ctltype={ctlApi.ctltype} data-apiid={apiItem.id} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{apiItem.toString()}</button>);
+                                        });
+                                        return rlt;
+                                    }
+                                )
+                            }
+                        </div>
+                        
+                        <div className='btn-group-vertical mw-100 flex-shrink-0'>
+                            <span className='btn btn-info'>SQL节点</span>
                             {
                                 SqlNodeEditorControls_arr.map(
                                     item=>{
@@ -1149,6 +1295,9 @@ class SqlNode_CompileHelper{
         this.cacheObj = {};
         this.useEntities_arr = [];
         this.useVariables_arr = [];
+        this.useGlobalControls_map = {};
+        this.useForm_map = {};
+        this.useEnvVars = {};
 
         autoBind(this);
     }
@@ -1157,6 +1306,10 @@ class SqlNode_CompileHelper{
         if(this.startNode == null){
             this.startNode = theNode;
         }
+    }
+
+    addUseEnvVars(varKey){
+        this.useEnvVars[varKey] = 1;
     }
 
     clickLogBadgeItemHandler(badgeItem){
@@ -1230,5 +1383,46 @@ class SqlNode_CompileHelper{
     setCompileRetCache(theNode, data){
         var cacheID = 'compileRet-' + theNode.id;
         this.setCache(cacheID, data);
+    }
+
+    addUseForm(formKernel){
+        if(this.useForm_map[formKernel.id] == null){
+            this.useForm_map[formKernel.id] = {
+                useColumns_map:{},
+                useControls_map:{},
+                useNowRecord:false,
+                formKernel:formKernel,
+            };
+        }
+        return this.useForm_map[formKernel.id];
+    }
+
+    addUseControlPropApi(ctrKernel, apiitem){
+        var rlt = null;
+        var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
+        if(belongFormKernel == null){
+            rlt = this.useGlobalControls_map[ctrKernel.id]
+            if(rlt == null){
+                rlt = {
+                    kernel:ctrKernel,
+                    useprops_map:{},
+                };
+                this.useGlobalControls_map[ctrKernel.id] = rlt;
+            }
+            rlt.useprops_map[apiitem.attrItem.name] = apiitem;
+            return;
+        }
+        else{
+            var formObj = this.addUseForm(belongFormKernel);
+            rlt = formObj.useControls_map[ctrKernel.id];
+            if(rlt == null){
+                rlt = {
+                    kernel:ctrKernel,
+                    useprops_map:{},
+                };
+                formObj.useControls_map[ctrKernel.id] = rlt;
+            }
+        }
+        rlt.useprops_map[apiitem.attrItem.name] = apiitem;
     }
 }

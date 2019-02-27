@@ -40,6 +40,28 @@ function GenControlKernelAttrsSetting(cusGroups_arr, includeDefault){
     return rlt;
 }
 
+function getDSAttrCanuseColumns(dsAttrName, csAttrName){
+    var useDS = this.getAttribute(dsAttrName);
+    if(useDS == null){
+        return [];
+    }
+    var rlt = useDS.columns.map(col=>{
+        return col.name;
+    });
+    if(csAttrName != null){
+        var cusDS_bp = this.getAttribute(csAttrName);
+        if(cusDS_bp != null){
+            var retColumnNode = cusDS_bp.finalSelectNode.columnNode;
+            retColumnNode.inputScokets_arr.forEach(socket=>{
+                var alias = socket.getExtra('alias');
+                if(!IsEmptyString(alias))
+                    rlt.push(alias);
+            });
+        }
+    }
+    return rlt;
+}
+
 const LayoutAttrNames_arr = M_ControlKernelBaseAttrsSetting.layoutGrop.attrs_arr.map(e => { return e.name; });
 
 class ControlKernelBase extends IAttributeable {
@@ -130,10 +152,19 @@ class ControlKernelBase extends IAttributeable {
         }
     }
 
-    delete(){
-        if(this.isfixed){
+    delete(forceDelete){
+        if(!forceDelete && this.isfixed){
             return;
         }
+        // delete all customdatasource
+        var cusdsAttr_arr = this.filterAttributesByValType(ValueType.CustomDataSource);
+        cusdsAttr_arr.forEach(cusdsAttr=>{
+            var cusds = this.getAttribute(cusdsAttr.name);
+            if(cusds != null){
+                this.project.dataMaster.deleteSqlBP(cusds);
+            }
+        });
+
         for(var dsCode in this.listendDS_map){
             var t_arr = this.listendDS_map[dsCode];
             if(t_arr == null){
@@ -146,7 +177,7 @@ class ControlKernelBase extends IAttributeable {
         }
         if(this.children){
             for(var ci in this.children){
-                this.children[ci].delete();
+                this.children[ci].delete(true);
             }
         }
         this.project.unRegisterControl(this);

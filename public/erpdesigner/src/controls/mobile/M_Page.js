@@ -140,6 +140,7 @@ class M_Page extends React.PureComponent {
                     ctlKernel: this.props.ctlKernel,
                     children: this.props.ctlKernel.children,
                     orientation: this.props.ctlKernel.orientation,
+                    orientation: this.props.ctlKernel.getAttribute(AttrNames.Orientation),
                 });
             }, 1);
             return null;

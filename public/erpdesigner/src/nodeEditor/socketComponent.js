@@ -69,6 +69,10 @@ class C_Node_Socket extends React.PureComponent{
         socket.set({defval:ev.target.value});
     }
 
+    inputDDCChangedHandler(newvalue, ddc){
+        ddc.props.socket.set({defval:newvalue});
+    }
+
     mouseDownDragIconHandler(ev){
         if(this.props.startDragAct != null){
             this.props.startDragAct(this);
@@ -114,7 +118,12 @@ class C_Node_Socket extends React.PureComponent{
         }
         if(inputable)
         {
-            inputElem = (<input type='text' ref={this.inputRef} className='socketInputer' onChange={this.inputChangedHandler} value={socket.defval == null ? '' : socket.defval} />);
+            if(socket.inputDDC_setting){
+                inputElem = (<DropDownControl socket={socket} options_arr={socket.inputDDC_setting.options_arr} value={socket.defval == null ? '' : socket.defval} itemChanged={this.inputDDCChangedHandler} textAttrName={socket.inputDDC_setting.textAttrName} valueAttrName={socket.inputDDC_setting.valueAttrName} />);
+            }
+            else{
+                inputElem = (<input type='text' ref={this.inputRef} className='socketInputer' onChange={this.inputChangedHandler} value={socket.defval == null ? '' : socket.defval} />);
+            }
         }
         var dragElem = null;
         if(this.props.startDragAct){
@@ -142,7 +151,7 @@ class C_Node_Socket extends React.PureComponent{
                 if(socket.isIn){
                     if(socket.getLinks().length == 0){
                         var bluePrint = socket.node.bluePrint;
-                        if(bluePrint.group == FunGroup.CtlAttr || bluePrint.group == FunGroup.CtlEvent)
+                        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == ESqlBluePrintGroup.ControlCustom)
                         {
                             var ctlKernel = bluePrint.master.project.getControlById(bluePrint.ctlID);
                             if(ctlKernel != null){

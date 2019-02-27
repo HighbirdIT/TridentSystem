@@ -4,6 +4,8 @@ const M_ContainerKernel_Type = 'M_Div';
 const M_LabeledControlKernel_Type = 'M_LC';
 const M_FormKernel_Type = 'M_Form';
 const M_TextKernel_Type = 'M_Text';
+const M_ListKernel_Type = 'M_List';
+const M_DropdownKernel_Type = 'M_Dropdown';
 const ButtonKernel_Type = 'button';
 
 const M_LabelKernel_Prefix = 'M_Label';
@@ -12,6 +14,8 @@ const M_ContainerKernel_Prefix = 'M_Div';
 const M_LabeledControlKernel_Prefix = 'M_LC';
 const M_FormKernel_Prefix = 'M_Form';
 const M_TextKernel_Prefix = 'M_Text';
+const M_ListKernel_Prefix = 'M_List';
+const M_DropdownKernel_Prefix = 'M_Dropdown';
 const ButtonKernel_Prefix = 'Btn';
 
 function GetControlTypeReadableName(type){
@@ -28,8 +32,12 @@ function GetControlTypeReadableName(type){
         return 'Form';
         case M_TextKernel_Type:
         return '文本框';
+        case M_ListKernel_Type:
+        return '列表';
         case ButtonKernel_Type:
         return '按钮';
+        case M_DropdownKernel_Type:
+        return '下拉框';
     }
     return type;
 }

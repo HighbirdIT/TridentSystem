@@ -2,6 +2,7 @@ const M_LabeledControlKernelAttrsSetting=GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置',[
         genTextFiledAttribute(),
         new CAttribute('控件类型',AttrNames.EditorType,ValueType.String, M_TextKernel_Type, true, false,DesignerConfig.getMobileCanLabeledControls, {text:'label', value:'type'}),
+        genIsdisplayAttribute(),
     ]),
 ]);
 
@@ -54,7 +55,7 @@ class M_LabeledControlKernel extends ControlKernelBase{
     __genEditor(createHelper, editorKernelJson){
         if(this.editor != null){
             this.editor.parent = null;
-            this.editor.delete();
+            this.editor.delete(true);
             this.editor = null;
             this.children.length = 0;
         }
@@ -70,6 +71,10 @@ class M_LabeledControlKernel extends ControlKernelBase{
             this.editor.isfixed = true;
             this.children = [this.editor];
         }
+    }
+
+    removeChild(){
+        // valid
     }
 
     getJson(){

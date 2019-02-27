@@ -40,6 +40,7 @@ var DropDownControl = function (_React$PureComponent) {
         _this.state = {
             keyword: '',
             value: _this.props.value,
+            prePropsValue: _this.props.value,
             opened: false,
             options_arr: selectedOption ? [selectedOption] : [],
             selectedOption: selectedOption
@@ -145,7 +146,7 @@ var DropDownControl = function (_React$PureComponent) {
             };
             popMenu.css(popUpCss);
             popMenu.find('#listDIV').css({
-                "max-height": (popToUp ? divBottom - windowTop : windowBottom - divBottom) + 'px'
+                "max-height": (popToUp ? divTop - windowTop - 50 : windowBottom - divBottom - 50) + 'px'
             });
         }
     }, {
@@ -280,7 +281,7 @@ var DropDownControl = function (_React$PureComponent) {
                             React.createElement(
                                 'div',
                                 null,
-                                item.text
+                                item.text.length == 0 ? '(空值)' : item.text
                             )
                         );
                     })
@@ -316,6 +317,15 @@ var DropDownControl = function (_React$PureComponent) {
                 return _this3.state.keyword.trim().length == 0 || item.text.indexOf(_this3.state.keyword) >= 0;
             });
             var selectedOption = this.state.selectedOption;
+            if (this.state.prePropsValue != this.props.value) {
+                var self = this;
+                setTimeout(function () {
+                    self.setState({
+                        value: self.props.value,
+                        prePropsValue: self.props.value
+                    });
+                }, 50);
+            }
             var inputValue = this.editIsKeyword ? this.state.keyword == '' ? selectedOption == null ? '' : selectedOption.text : this.state.keyword : this.state.value;
 
             return React.createElement(
@@ -329,7 +339,7 @@ var DropDownControl = function (_React$PureComponent) {
                         { className: ' d-flex btn-group w-100 h-100', ref: this.dropDowmDivRefFun },
                         this.props.editable ? React.createElement('input', { onFocus: this.editableInputFocushandler, ref: this.editableInputRef, type: 'text', className: 'flex-grow-1 flex-shrink-1 flexinput', onChange: this.inputChangedHandler, onBlur: this.inputBlurHandler, value: inputValue }) : React.createElement(
                             'button',
-                            { onClick: this.clickOpenHandler, style: { width: 'calc(100% - 30px)' }, type: 'button', className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1' + (selectedOption == null ? ' text-danger' : '') },
+                            { onClick: this.clickOpenHandler, style: { width: 'calc(100% - 30px)', minHeight: '38px' }, type: 'button', className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1' + (selectedOption == null ? ' text-danger' : '') },
                             React.createElement(
                                 'div',
                                 { style: { overflow: 'hidden' } },

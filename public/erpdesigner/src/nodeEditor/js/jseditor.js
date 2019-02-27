@@ -5,6 +5,11 @@ const JSNodeEditorControls_arr =[
         type:'基础'
     },
     {
+        label:'环境变量',
+        nodeClass:JSNode_Env_Var,
+        type:'基础'
+    },
+    {
         label:'Return',
         nodeClass:JSNode_Return,
         type:'流控制'
@@ -211,6 +216,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
             canUseDS_arr:[],
             canAccessKernel_arr:[],
             showCanUseDS:true,
+            showCtlApi:false,
             showCanAccessCtl:false,
         };
         var self = this;
@@ -227,7 +233,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         logManager.clear();
         var canUseDS_arr = [];
         var canAccessKernel_arr = [];
-        if(bluePrint.group == FunGroup.CtlAttr || bluePrint.group == FunGroup.CtlEvent){
+        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent){
             // 控件类型,获取上下文
             var ctlKernel = project.getControlById(bluePrint.ctlID);
             if(bluePrint.ctlID == null || ctlKernel == null){
@@ -288,19 +294,15 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
     }
 
     clickCanUseDSHeader(ev){
-        this.setState(
-            {
-                showCanUseDS:!this.state.showCanUseDS
-            }
-        );
+        this.setState({showCanUseDS:!this.state.showCanUseDS});
     }
 
     clickAccessCtlHeader(ev){
-        this.setState(
-            {
-                showCanAccessCtl:!this.state.showCanAccessCtl
-            }
-        );
+        this.setState({showCanAccessCtl:!this.state.showCanAccessCtl});
+    }
+
+    clickCtlApuHeader(ev){
+        this.setState({showCtlApi:!this.state.showCtlApi});
     }
 
     clickControlAPIHandler(ev){
@@ -331,6 +333,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         var targetID = this.props.bluePrint.code + 'canUseNode';
         var showCanUseDS = this.state.showCanUseDS;
         var showCanAccessCtl = this.state.showCanAccessCtl;
+        var showCtlApi = this.state.showCtlApi;
         return (
             <React.Fragment>
                 <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>可用节点</button>
@@ -365,8 +368,8 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
                             </React.Fragment>
                         }
                         <div className='btn-group-vertical mw-100 flex-shrink-0'>
-                            <span className='btn btn-info'>控件接口</span>
-                            {
+                            <span className='btn btn-info' onClick={this.clickCtlApuHeader}>控件接口{showCtlApi ? '-' : '+'}</span>
+                            {showCtlApi &&
                                 g_controlApi_arr.map(
                                     ctlApi=>{
                                         var rlt = [];
@@ -379,7 +382,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
                             }
                         </div>
                         <div className='btn-group-vertical mw-100 flex-shrink-0'>
-                            <span className='btn btn-info'>可用节点</span>
+                            <span className='btn btn-info'>节点</span>
                             {
                                 JSNodeEditorControls_arr.map(
                                     item=>{

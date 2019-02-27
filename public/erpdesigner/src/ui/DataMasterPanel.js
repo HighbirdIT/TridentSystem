@@ -569,11 +569,24 @@ class SqlBPItemPanel extends React.PureComponent {
                 maxSize='200px'
                 barClass='bg-secondary'
                 panel1={
-                    <div className='d-flex flex-column flex-grow-1 flex-shrink-1' >
+                    <div className='d-flex flex-column flex-grow-1 flex-shrink-1 w-100' >
                         已创建的:
                         <div className='list-group flex-grow-1 flex-shrink-1 bg-dark autoScroll'>
                             {
                                 this.state.items_arr.map(item=>{
+                                    if(item.group != 'custom'){
+                                        return null;
+                                    }
+                                    return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>{item.name + '-' + item.type}</div>
+                                })
+                            }
+                            <span className='dropdown-divider' />
+                            <span className='text-light' >以下是控件定制数据源</span>
+                            {
+                                this.state.items_arr.map(item=>{
+                                    if(item.group == 'custom'){
+                                        return null;
+                                    }
                                     return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>{item.name + '-' + item.type}</div>
                                 })
                             }
@@ -662,5 +675,54 @@ class DataMasterPanel extends React.PureComponent {
                 }
             </FloatPanelbase>
         );
+    }
+}
+
+class QuickSqlBPEditPanel extends React.PureComponent{
+    constructor(props) {
+        super(props);
+        this.state={
+            blueprints_arr:[]
+        }
+        autoBind(this);
+    }
+
+    showBlueprint(target){
+        var index = this.state.blueprints_arr.indexOf(target);
+        if(index == -1){
+            this.setState({
+                blueprints_arr:this.state.blueprints_arr.concat(target),
+            });
+        }
+    }
+
+    hideBlueprint(target){
+        var index = this.state.blueprints_arr.indexOf(target);
+        if(index != -1){
+            var newArr = this.state.blueprints_arr.concat();
+            newArr.splice(index,1);
+            this.setState({
+                blueprints_arr:newArr,
+            });
+        }
+    }
+
+    prePanelCloseHandler(thePanel){
+        this.hideBlueprint(thePanel.props.targetBP);
+        return false;
+    }
+
+    render(){
+        var bpArr = this.state.blueprints_arr;
+        if(bpArr.length == 0){
+            return null;
+        }
+        return bpArr.map(bp=>{
+            return(<FloatPanelbase preClose={this.prePanelCloseHandler} key={bp.code} title={'编辑:' + bp.name} initShow={true} initMax={false} width={800} height={640} targetBP={bp}>
+                <div className='d-flex flex-grow-1 flex-shrink-1 bg-dark mw-100'>
+                    <C_SqlNode_Editor bluePrint={bp} />
+                </div>
+            </FloatPanelbase>);
+        });
     }
 }

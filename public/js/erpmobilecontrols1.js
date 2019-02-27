@@ -330,7 +330,9 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             var contentElem = null;
             var recentElem = null;
             var recentItems_arr = [];
-            if (this.state.fetching) {
+            if (this.state.fetchingErr) {
+                contentElem = renderFetcingErrDiv(this.state.fetchingErr.info);
+            } else if (this.state.fetching) {
                 contentElem = React.createElement(
                     'div',
                     { className: 'd-flex align-items-center m-auto' },
@@ -647,6 +649,9 @@ var ERPC_DropDown = function (_React$PureComponent3) {
     }, {
         key: 'clickOpenHandler',
         value: function clickOpenHandler() {
+            if (this.props.fetching) {
+                return;
+            }
             if (!this.state.opened) {
                 this.dropDownOpened();
             } else {
@@ -656,8 +661,8 @@ var ERPC_DropDown = function (_React$PureComponent3) {
     }, {
         key: 'selectItem',
         value: function selectItem(theOptionItem) {
-            var value = '';
-            var text = '';
+            var value = null;
+            var text = null;
             if (theOptionItem) {
                 value = theOptionItem.value.toString();
                 text = theOptionItem.text;
@@ -687,12 +692,13 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             return {
                 selectedVal: this.props.value,
                 fetching: this.props.fetching,
+                fetchingErr: this.props.fetchingErr,
                 optionsData: this.props.optionsData,
                 maxCount: 50,
                 keyword: '',
                 recentValues_arr: this.recentValues_arr,
                 recentUsed: this.recentUsed,
-                label: this.props.label
+                label: ReplaceIfNull(this.props.label, this.props.textAttrName)
             };
         }
     }, {
@@ -704,8 +710,33 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             var hadMini = this.props.miniBtn != false;
             var selectedVal = this.props.value;
             var selectedText = this.props.text;
-            if (selectedText == null) {
-                selectedText = '请选择';
+            var self = this;
+            if (!IsEmptyString(selectedVal) && IsEmptyString(selectedText)) {
+                if (this.props.fetchingErr != null) {
+                    setTimeout(function () {
+                        self.selectItem(null);
+                    }, 50);
+                } else {
+                    if (this.props.optionsData.options_arr == null) {
+                        selectedVal = null;
+                        if (!this.props.fetching) {
+                            if (this.autoPullTO == null) {
+                                this.autoPullTO = setTimeout(function () {
+                                    self.props.pullDataSource();
+                                    self.autoPullTO = null;
+                                }, 50);
+                            }
+                        }
+                    } else {
+                        var theOptionItem = this.props.optionsData.options_arr.find(function (item) {
+                            return item.value == selectedVal;
+                        });
+                        selectedText = theOptionItem.text;
+                        setTimeout(function () {
+                            self.selectItem(theOptionItem);
+                        }, 50);
+                    }
+                }
             }
 
             if (this.state.opened) {
@@ -714,6 +745,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                     var newState = {
                         selectedVal: selectedVal,
                         fetching: this.props.fetching,
+                        fetchingErr: this.props.fetchingErr,
                         optionsData: this.props.optionsData
                     };
                     setTimeout(function () {
@@ -721,21 +753,38 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                     }, 50);
                 }
             }
+            var textElem = null;
+            var textColor = '';
+            if (!this.state.opened && this.props.fetching) {
+                textElem = React.createElement(
+                    'div',
+                    { className: 'm-auto d-flex align-items-center' },
+                    React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw fa-2x' }),
+                    React.createElement(
+                        'div',
+                        { className: 'text-nowrap' },
+                        '\u52A0\u8F7D\u4E2D'
+                    )
+                );
+            } else {
+                textColor = selectedVal == null ? ' text-danger' : '';
+                textElem = React.createElement(
+                    'div',
+                    null,
+                    selectedText == null ? '请选择' : selectedText
+                );
+            }
             //{this.renderPopPanel(selectedVal)}
             return React.createElement(
                 'div',
                 { className: "d-flex btn-group flex-grow-1 flex-shrink-0 erpc_dropdown", style: this.props.style, ref: this.rootDivRef },
                 this.props.editable ? React.createElement('input', { onFocus: this.editableInputFocushandler, ref: this.editableInputRef, type: 'text', className: 'flex-grow-1 flex-shrink-1 flexinput', onChange: this.keyChanged, value: selectedOption ? selectedOption.text : this.state.keyword }) : React.createElement(
                     'button',
-                    { onClick: this.clickOpenHandler, type: 'button', className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1 erpc_dropdownMainBtn' + (selectedVal == null ? ' text-danger' : ''), hadmini: hadMini ? 1 : null },
+                    { onClick: this.clickOpenHandler, type: 'button', className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1 erpc_dropdownMainBtn' + textColor, hadmini: hadMini ? 1 : null },
                     React.createElement(
                         'div',
                         { style: { overflow: 'hidden' }, className: 'flex-grow-1 flex-shrink-1' },
-                        React.createElement(
-                            'div',
-                            null,
-                            selectedText
-                        )
+                        textElem
                     )
                 ),
                 hadMini && React.createElement('button', { type: 'button', onClick: this.clickOpenHandler, className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdownbtn dropdown-toggle-split' })
@@ -820,6 +869,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         value: ctlState.value,
         text: ctlState.text,
         fetching: ctlState.fetching,
+        fetchingErr: ctlState.fetchingErr,
         optionsData: ERPC_DropDown_optionsSelector(state, ownprops),
         visible: ctlState.visible
     };

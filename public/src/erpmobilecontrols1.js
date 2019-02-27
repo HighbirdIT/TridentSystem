@@ -285,7 +285,10 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
         var contentElem = null;
         var recentElem = null;
         var recentItems_arr = [];
-        if (this.state.fetching) {
+        if (this.state.fetchingErr) {
+            contentElem = renderFetcingErrDiv(this.state.fetchingErr.info);
+        }
+        else if (this.state.fetching) {
             contentElem = (<div className='d-flex align-items-center m-auto'>正在获取数据<i className='fa fa-spinner fa-pulse fa-fw fa-2x' /></div>);
         }
         else {
@@ -533,6 +536,9 @@ class ERPC_DropDown extends React.PureComponent {
     }
 
     clickOpenHandler() {
+        if(this.props.fetching){
+            return;
+        }
         if (!this.state.opened) {
             this.dropDownOpened();
         } else {
@@ -541,8 +547,8 @@ class ERPC_DropDown extends React.PureComponent {
     }
 
     selectItem(theOptionItem) {
-        var value = '';
-        var text = '';
+        var value = null;
+        var text = null;
         if(theOptionItem){
             value = theOptionItem.value.toString();
             text = theOptionItem.text;
@@ -571,12 +577,13 @@ class ERPC_DropDown extends React.PureComponent {
         return {
             selectedVal:this.props.value,
             fetching:this.props.fetching,
+            fetchingErr: this.props.fetchingErr,
             optionsData:this.props.optionsData,
             maxCount:50,
             keyword: '',
             recentValues_arr:this.recentValues_arr,
             recentUsed:this.recentUsed,
-            label:this.props.label,
+            label:ReplaceIfNull(this.props.label,this.props.textAttrName),
         }
     }
 
@@ -587,8 +594,36 @@ class ERPC_DropDown extends React.PureComponent {
         var hadMini = this.props.miniBtn != false;
         var selectedVal = this.props.value;
         var selectedText = this.props.text;
-        if (selectedText == null) {
-            selectedText = '请选择';
+        var self = this;
+        if(!IsEmptyString(selectedVal) && IsEmptyString(selectedText)){
+            if(this.props.fetchingErr != null){
+                setTimeout(() => {
+                    self.selectItem(null);
+                }, 50);
+            }
+            else{
+                if(this.props.optionsData.options_arr == null){
+                    selectedVal = null;
+                    if(!this.props.fetching)
+                    {
+                        if(this.autoPullTO == null){
+                            this.autoPullTO = setTimeout(() => {
+                                self.props.pullDataSource();
+                                self.autoPullTO = null;
+                            }, 50);
+                        }
+                    }
+                }
+                else{
+                    var theOptionItem = this.props.optionsData.options_arr.find(item => {
+                        return item.value == selectedVal;
+                    });
+                    selectedText = theOptionItem.text;
+                    setTimeout(() => {
+                        self.selectItem(theOptionItem);
+                    }, 50);
+                }
+            }
         }
 
         if(this.state.opened){
@@ -598,12 +633,25 @@ class ERPC_DropDown extends React.PureComponent {
                 var newState = {
                     selectedVal:selectedVal,
                     fetching:this.props.fetching,
+                    fetchingErr:this.props.fetchingErr,
                     optionsData:this.props.optionsData,
                 };
                 setTimeout(() => {
                     popPanelRefCurrent.setState(newState);
                 }, 50);
             }
+        }
+        var textElem = null;
+        var textColor = '';
+        if(!this.state.opened && this.props.fetching){
+            textElem = (<div className='m-auto d-flex align-items-center'>
+                            <i className='fa fa-spinner fa-pulse fa-fw fa-2x' />
+                            <div className='text-nowrap'>加载中</div>
+                        </div>);
+        }
+        else{
+            textColor = selectedVal == null ? ' text-danger' : '';
+            textElem = (<div>{selectedText == null ? '请选择' : selectedText}</div>);
         }
         //{this.renderPopPanel(selectedVal)}
         return (
@@ -612,11 +660,9 @@ class ERPC_DropDown extends React.PureComponent {
                     this.props.editable ?
                         <input onFocus={this.editableInputFocushandler} ref={this.editableInputRef} type='text' className='flex-grow-1 flex-shrink-1 flexinput' onChange={this.keyChanged} value={selectedOption ? selectedOption.text : this.state.keyword} />
                         :
-                        <button onClick={this.clickOpenHandler} type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1 erpc_dropdownMainBtn' + (selectedVal == null ? ' text-danger' : '')} hadmini={hadMini ? 1 : null} >
+                        <button onClick={this.clickOpenHandler} type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1 erpc_dropdownMainBtn' + textColor} hadmini={hadMini ? 1 : null} >
                             <div style={{ overflow: 'hidden' }} className='flex-grow-1 flex-shrink-1'>
-                                <div>
-                                    {selectedText}
-                                </div>
+                                {textElem}
                             </div>
                         </button>
                 }
@@ -702,6 +748,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         value: ctlState.value,
         text: ctlState.text,
         fetching: ctlState.fetching,
+        fetchingErr: ctlState.fetchingErr,
         optionsData: ERPC_DropDown_optionsSelector(state, ownprops),
         visible:ctlState.visible,
     };

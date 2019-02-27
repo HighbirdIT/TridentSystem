@@ -15,10 +15,12 @@ const JSNODE_INSERT_TABLE = 'insert_table';
 const JSNODE_CONTROL_API_PROP = 'controlapiprop';
 const JSNODE_CONTROL_API_PROPSETTER = 'controlapipropsetter';
 const JSNODE_DATEFUN = 'jsdatefun';
+const JSNODE_ENV_VAR = 'envvar';
 
 const JSDEF_VAR = 'def_variable';
 
 var JSNodeClassMap = {};
+
 
 class JSNode_Base extends Node_Base {
     constructor(initData, parentNode, createHelper, type, label, isContainer, nodeJson) {
@@ -401,7 +403,7 @@ class JSNode_BluePrint extends EventEmitter {
     }
 
     compile(compilHelper) {
-        if (this.group == FunGroup.CtlAttr || this.group == FunGroup.CtlEvent) {
+        if (this.group == EJsBluePrintFunGroup.CtlAttr || this.group == EJsBluePrintFunGroup.CtlEvent) {
             var ctlKernel = this.master.project.getControlById(this.ctlID);
             if (ctlKernel == null) {
                 compilHelper.logManager.error('蓝图关联控件' + this.ctlID + '无法找到');
@@ -420,7 +422,7 @@ class JSNode_BluePrint extends EventEmitter {
             }
         });
         if (params_arr.length > 0) {
-            if (this.group == FunGroup.CtlAttr) {
+            if (this.group == EJsBluePrintFunGroup.CtlAttr) {
                 compilHelper.logManager.error('本蓝图种类不允许出现参数');
                 return false;
             }
@@ -435,8 +437,8 @@ class JSNode_BluePrint extends EventEmitter {
         var useCtlData;
         var propName;
         var propApiitem;
-        if (this.group == FunGroup.CtlAttr || this.group == FunGroup.CtlEvent) {
-            if(this.group == FunGroup.CtlAttr)
+        if (this.group == EJsBluePrintFunGroup.CtlAttr || this.group == EJsBluePrintFunGroup.CtlEvent) {
+            if(this.group == EJsBluePrintFunGroup.CtlAttr)
             {
                 params_arr = [VarNames.State, VarNames.Bundle];
             }
@@ -469,7 +471,7 @@ class JSNode_BluePrint extends EventEmitter {
                 for (propName in useCtlData.useprops_map) {
                     propApiitem = useCtlData.useprops_map[propName];
                     varName = usectlid + '_' + propApiitem.stateName;
-                    if(this.group == FunGroup.CtlAttr ){
+                    if(this.group == EJsBluePrintFunGroup.CtlAttr ){
                         initValue = "bundle != null && bundle['" + varName + "'] != null ? bundle['" + varName + "'] : " + makeStr_getStateByPath(formStateVarName, singleQuotesStr(useCtlData.kernel.id + '.' + propApiitem.stateName));
                     }
                     else{
@@ -2257,7 +2259,17 @@ const gJSDateFuns_arr = [
         outputs: [{ label: '', type: ValueType.Date }]
     },
     {
-        name: 'Format[yyyy-mm-hh]',
+        name: 'Format[yyyy-mm-dd]',
+        inputs: [{ label: '日期', type: ValueType.Date }],
+        outputs: [{ label: '', type: ValueType.String }]
+    },
+    {
+        name: 'Format[hh:mm:ss]',
+        inputs: [{ label: '日期', type: ValueType.Date }],
+        outputs: [{ label: '', type: ValueType.String }]
+    },
+    {
+        name: 'Format[hh:mm]',
         inputs: [{ label: '日期', type: ValueType.Date }],
         outputs: [{ label: '', type: ValueType.String }]
     },
@@ -2377,7 +2389,7 @@ class JSNode_DateFun extends JSNode_Base {
         var outSocket = this.outputScokets_arr[0];
         var selfCompileRet = new CompileResult(this);
         switch(this.funName){
-            case 'Format[yyyy-mm-hh]':
+            case 'Format[yyyy-mm-dd]':
             selfCompileRet.setSocketOut(outSocket, 'getFormatDateString(' + socketVal_arr[0] + ')');
             break;
             case 'AddDay':
@@ -2386,6 +2398,92 @@ class JSNode_DateFun extends JSNode_Base {
             break;
             case 'CastDate':
             selfCompileRet.setSocketOut(outSocket, 'new Date(' + socketVal_arr[0] + ')');
+            break;
+            case 'Format[hh:mm:ss]':
+            selfCompileRet.setSocketOut(outSocket, 'getFormatTimeString(' + socketVal_arr[0] + ')');
+            case 'Format[hh:mm]':
+            selfCompileRet.setSocketOut(outSocket, 'getFormatTimeString(' + socketVal_arr[0] + ',false)');
+            break;
+            default:
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    '不支持的日期方法']);
+                return false;
+            break;
+        }
+
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+class JSNode_Env_Var extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_ENV_VAR, '环境变量', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.type = SqlVarType_Scalar;
+        this.outSocket.inputable = true;
+        this.outSocket.inputDDC_setting = {
+            options_arr:EnvVariables_arr,
+            textAttrName:'text',
+            valueAttrName:'value'
+        };
+        this.headType = 'empty'
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var enName = this.outSocket.defval;
+        if (EnvVariable[enName] == null) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle
+                , nodeThis
+                , helper.clickLogBadgeItemHandler)
+                , '无效值']);
+            return false;
+        }
+
+        var outSocket = this.outSocket;
+        var selfCompileRet = new CompileResult(this);
+        switch(EnvVariable[enName]){
+            case EnvVariable.userid:
+            case EnvVariable.username:
+            case EnvVariable.workRegionCode:
+            case EnvVariable.companyCode:
+            case EnvVariable.wokerTypeCode:
+            case EnvVariable.departmentCode:
+            case EnvVariable.systemCode:
+                selfCompileRet.setSocketOut(outSocket, 'g_envVar.' + enName);
+            break;
+            case EnvVariable.nowDate:
+                selfCompileRet.setSocketOut(outSocket, 'new Date()');
+            break;
+            default:
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle
+                , nodeThis
+                , helper.clickLogBadgeItemHandler)
+                , '不支持的环境变量:' + enName]);
+            return false;
             break;
         }
 
@@ -2461,5 +2559,9 @@ JSNodeClassMap[JSNODE_DATEFUN] = {
 };
 JSNodeClassMap[JSNODE_CONTROL_API_PROPSETTER] = {
     modelClass: JSNode_Control_Api_PropSetter,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_ENV_VAR] = {
+    modelClass: JSNode_Env_Var,
     comClass: C_Node_SimpleNode,
 };

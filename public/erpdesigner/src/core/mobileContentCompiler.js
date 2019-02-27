@@ -22,6 +22,7 @@ class ControlGraphNode{
 
 const ECtlReplyPathType={
     SetAP_On_BPChanged:'SetAP_On_BPChanged',
+    CallFun_On_BPChanged:'CallFun_On_BPChanged',
 };
 
 class ControlGraphPath{
@@ -29,7 +30,9 @@ class ControlGraphPath{
         this.type = type;
         this.relyNode = relyNode;
         this.berelyNode = berelyNode;
-        relyNode.addOut(berelyNode);
+        if(relyNode){
+            relyNode.addOut(berelyNode);
+        }
         Object.assign(this, initData);
     }
 }
@@ -57,6 +60,22 @@ class ControlRelyOnGraph{
             relyPropName:relyPropName,
             relyCtl:relyCtl,
             berelyCtl:berelyCtl,
+        });
+        path.id = pathid;
+        this.allpath_map[pathid] = path;
+        return path;
+    }
+
+    addRely_CallFunOnBPChanged(funName, berelyCtl, berelyPropName){
+        var pathid = 'callfun_' + funName + '_on_' + berelyCtl.id + '.' + berelyPropName;
+        if(this.allpath_map[pathid]){
+            return this.allpath_map[pathid];
+        }
+
+        var path = new ControlGraphPath(ECtlReplyPathType.CallFun_On_BPChanged, null, null,{
+            berelyPropName:berelyPropName,
+            berelyCtl:berelyCtl,
+            funName:funName,
         });
         path.id = pathid;
         this.allpath_map[pathid] = path;
@@ -133,10 +152,15 @@ class MobileContentCompiler extends ContentCompiler{
         // gen relyon code
         for(var pid in this.ctlRelyOnGraph.allpath_map){
             var relyPath = this.ctlRelyOnGraph.allpath_map[pid];
-            if(relyPath.type == ECtlReplyPathType.SetAP_On_BPChanged){
-                var propFulPath = relyPath.berelyCtl.getStatePath(relyPath.berelyPropName);
-                var propChangedHandlerName = relyPath.berelyCtl.id + '_' + relyPath.berelyPropName + '_changed';
-                var changedFun = clientSide.scope.getFunction(propChangedHandlerName);
+            var propFulPath;
+            var propChangedHandlerName;
+            var changedFun;
+            switch(relyPath.type){
+                case ECtlReplyPathType.SetAP_On_BPChanged:
+                case ECtlReplyPathType.CallFun_On_BPChanged:
+                propFulPath = relyPath.berelyCtl.getStatePath(relyPath.berelyPropName);
+                propChangedHandlerName = relyPath.berelyCtl.id + '_' + relyPath.berelyPropName + '_changed';
+                changedFun = clientSide.scope.getFunction(propChangedHandlerName);
                 if(changedFun == null)
                 {
                     changedFun = clientSide.scope.getFunction(propChangedHandlerName, true, [VarNames.State,'newValue','oldValue','path','visited','delayActs']);
@@ -144,14 +168,24 @@ class MobileContentCompiler extends ContentCompiler{
                     changedFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''", VarNames.NeedSetState], ';'));
                     clientSide.stateChangedAct[singleQuotesStr(propFulPath)] = propChangedHandlerName + '.bind(window)';
                 }
-                var getValueStr = '';
-                if(relyPath.approach.funName){
-                    getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State]);
+                if(relyPath.type == ECtlReplyPathType.SetAP_On_BPChanged){
+                    var getValueStr = '';
+                    if(relyPath.approach.funName){
+                        getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State]);
+                    }
+                    else if(relyPath.approach.value){
+                        getValueStr = relyPath.approach.value;
+                    }
+                    else{
+                        console.error('不支持的approach!');
+                    }
+                    changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName)), getValueStr));
                 }
                 else{
-                    console.error('不支持的approach!');
+                    var actKey = 'call_' + relyPath.funName;
+                    changedFun.pushLine("if(delayActs['" + actKey + "'] == null){delayActs['" + actKey + "'] = {callfun:" + relyPath.funName + "};};");
                 }
-                changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName)), getValueStr));
+                break;
             }
         }
 
@@ -311,7 +345,8 @@ class MobileContentCompiler extends ContentCompiler{
             if(nowKernel){
                 nowKernel = nowKernel.parent;
             }
-        }while(nowKernel != null)
+        }while(nowKernel != null);
+        theKernel.parentPath = rlt;
         return rlt;
     }
 
@@ -338,6 +373,9 @@ class MobileContentCompiler extends ContentCompiler{
             break;
             case ButtonKernel_Type:
             rlt = this.compileButtonKernel(theKernel, renderBlock, renderFun);
+            break;
+            case M_DropdownKernel_Type:
+            rlt = this.compileDropdownKernel(theKernel, renderBlock, renderFun);
             break;
             default:
             logManager.error('不支持的编译kernel type:' + theKernel.type);
@@ -371,6 +409,10 @@ class MobileContentCompiler extends ContentCompiler{
             ctlTag.setAttr('precision', theKernel.getAttribute(AttrNames.FloatNum));
         }
         renderBlock.pushChild(ctlTag);
+        var editeable = theKernel.getAttribute(AttrNames.Editeable);
+        if(!editeable){
+            ctlTag.setAttr('readonly', '{true}');
+        }
 
         var defaultVal = theKernel.getAttribute(AttrNames.DefaultValue);
         var defaultValParseRet = parseObj_CtlPropJsBind(defaultVal, project.scriptMaster);
@@ -397,18 +439,15 @@ class MobileContentCompiler extends ContentCompiler{
             var setValueStateItem = null;
             if(belongFormKernel != null){
                 var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
-                var formDS = belongFormKernel.getAttribute(AttrNames.DataSource);
+                var formColumns_arr = belongFormKernel.getCanuseColumns();
                 formMidData.needSetKernels_arr.push(theKernel);
-                if(formDS != null){
-                    var useColumn = formDS.getColumnByName(textField);
-                    if(useColumn){
-                        formMidData.useColumns_map[useColumn.name] = 1;
-                        kernelMidData.columnName = textField;
-                        setValueStateItem = {
-                            name:'value',
-                            useColumn:useColumn,
-                        };
-                    }
+                if(formColumns_arr.indexOf(textField) != -1){
+                    formMidData.useColumns_map[textField] = 1;
+                    kernelMidData.columnName = textField;
+                    setValueStateItem = {
+                        name:'value',
+                        useColumn:{name:textField},
+                    };
                 }
             }
             if(setValueStateItem == null){
@@ -565,6 +604,11 @@ class MobileContentCompiler extends ContentCompiler{
         formReactClass.renderContentFun = renderContentFun;
         renderContentFun.scope.getVar(VarNames.RetElem, true, 'null');
         renderContentFun.retBlock.pushLine(makeLine_Return(VarNames.RetElem));
+
+        var ifInvalidBundleBlock = new JSFile_IF(VarNames.InvalidBundle, makeStr_ThisProp(VarNames.InvalidBundle));
+        renderContentFun.pushChild(ifInvalidBundleBlock);
+        ifInvalidBundleBlock.pushLine("return renderInvalidBundleDiv();");
+
         var ifFetchErrBlock = new JSFile_IF(VarNames.FetchErr, makeStr_ThisProp(VarNames.FetchErr));
         renderContentFun.pushChild(ifFetchErrBlock);
         ifFetchErrBlock.pushLine("return renderFetcingErrDiv(" + makeStr_ThisProp(VarNames.FetchErr) + ".info);");
@@ -572,6 +616,11 @@ class MobileContentCompiler extends ContentCompiler{
         var ifFetingBlock = new JSFile_IF(VarNames.Fetching, "!this.props.loaded || this.props.fetching");
         ifFetingBlock.pushLine("return renderFetcingTipDiv();");
         renderContentFun.pushChild(ifFetingBlock);
+
+        var ifNowRecordBlock = new JSFile_IF('hadnowrecord', '!this.props.canInsert && this.props.nowRecord == null');
+        renderContentFun.pushChild(ifNowRecordBlock);
+        ifNowRecordBlock.pushLine("return <div>没有查询到数据</div>");
+
         renderContentFun.pushLine(VarNames.RetElem + " = (", 1);
         renderContentFun.pushLine("<div className='" + layoutConfig.getClassName() + "'>", 1);
 
@@ -600,6 +649,8 @@ class MobileContentCompiler extends ContentCompiler{
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FetchErr), makeStr_DotProp(VarNames.CtlState, VarNames.FetchErr)));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Records_arr), makeStr_DotProp(VarNames.CtlState, VarNames.Records_arr)));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.RecordIndex), makeStr_DotProp(VarNames.CtlState, VarNames.RecordIndex)));
+        formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.NowRecord), makeStr_DotProp(VarNames.CtlState, VarNames.NowRecord)));
+        formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.InvalidBundle), makeStr_DotProp(VarNames.CtlState, VarNames.InvalidBundle)));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'loaded'), 
                                                             useDS == null ? 'true' : makeStr_DotProp(VarNames.CtlState, VarNames.Records_arr) + ' != ' + null));
 
@@ -608,7 +659,7 @@ class MobileContentCompiler extends ContentCompiler{
         if(useDS){
             clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath,VarNames.Records_arr))] = freshFun.name + '.bind(window)';
             clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath,VarNames.RecordIndex))] = makeFName_bindForm(theKernel) + '.bind(window)';
-            freshFun.pushLine(makeStr_callFun('simpleFreshFormFun', [VarNames.ReState,VarNames.Records_arr, singleQuotesStr(makeStr_DotProp(parentPath,theKernel.id))], ';'));
+            freshFun.pushLine(makeStr_callFun('simpleFreshFormFun', [VarNames.ReState,VarNames.Records_arr, singleQuotesStr(makeStr_DotProp(parentPath,theKernel.id)), bindFun.name], ';'));
         }
         else{
             freshFun.pushLine(makeStr_callFun(bindFun.name, [VarNames.ReState]));
@@ -632,6 +683,7 @@ class MobileContentCompiler extends ContentCompiler{
         thisFormMidData.needSetKernels_arr = [];
         thisFormMidData.useColumns_map = [];
         thisFormMidData.useControls_map = [];
+        thisFormMidData.useDS = useDS;
         var bindNowRecordBlock = null;
         var formCanInsert = false;
         var bindInersetBlock = null;
@@ -649,20 +701,32 @@ class MobileContentCompiler extends ContentCompiler{
             var timeoutBlock = pageActiveFun.getChild('timeout');
             timeoutBlock.pushLine(makeStr_callFun(pullFun.name,[VarNames.State]));
             // gen pull fun
-            pullFun.pushLine(makeLine_FetchPropValue(makeActStr_pullKernel(theKernel), singleQuotesStr(parentPath), singleQuotesStr(theKernel.id), singleQuotesStr(VarNames.Records_arr), false));
+            pullFun.pushLine('var bundle = {};');
+            pullFun.pushLine('var useState = ' + VarNames.ReState + ' == null ? store.getState() : ' + VarNames.ReState + ';');
+            var initbundleBlock = new FormatFileBlock('initbundle');
+            pullFun.pushChild(initbundleBlock);
+            pullFun.initbundleBlock = initbundleBlock;
+            pullFun.pushLine(makeLine_FetchPropValue(makeActStr_pullKernel(theKernel), singleQuotesStr(parentPath), singleQuotesStr(theKernel.id), singleQuotesStr(VarNames.Records_arr),{bundle:'bundle'}, false));
             // gen back pull
             var serverPullFun = serverSide.scope.getFunction(makeActStr_pullKernel(theKernel), true, ['req','res']);
             serverSide.initProcessFun(serverPullFun);
             serverSide.processesMapVarInitVal[serverPullFun.name] = serverPullFun.name;
+            var bodyCheckblock = new FormatFileBlock('bodyCheckblock');
+            serverPullFun.pushChild(bodyCheckblock);
+            thisFormMidData.bodyCheckblock = bodyCheckblock;
+            thisFormMidData.pullFun = pullFun;
             serverPullFun.pushLine("var params_arr = null;");
+            var paramsetblock = new FormatFileBlock('paramset');
+            serverPullFun.pushChild(paramsetblock);
             thisFormMidData.serverSqlLine = new FormatFile_Line("var sql='';");
+            thisFormMidData.serverSqlParamsetBLK = paramsetblock;
             thisFormMidData.useDS = useDS;
             serverPullFun.pushLine(thisFormMidData.serverSqlLine);
-            serverPullFun.pushLine("if (sql == null) {return serverhelper.createErrorRet('生成sql失败');}");
+            serverPullFun.pushLine("if (sql == null || sql.length == 0) {return serverhelper.createErrorRet('生成sql失败');}");
             serverPullFun.pushLine("var rcdRlt = yield dbhelper.asynQueryWithParams(sql, params_arr);");
             serverPullFun.pushLine("return rcdRlt.recordset;");
             bindFun.scope.getVar(VarNames.NowRecord, true, 'null');
-            insertModeIf = new JSFile_IF('validrow', 'records_arr == null || newIndex == -1');
+            insertModeIf = new JSFile_IF('validrow', 'records_arr == null || newIndex == -1 || records_arr.length == 0');
             bindFun.pushLine('var useIndex = newIndex;');
             bindFun.pushChild(insertModeIf);
             insertModeIf.falseBlock.pushLine(VarNames.NowRecord + '=' + VarNames.Records_arr + '[useIndex];');
@@ -779,6 +843,7 @@ class MobileContentCompiler extends ContentCompiler{
         if(useDS){
             bindFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, VarNames.NowRecord), VarNames.NowRecord));
         }
+        bindFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, VarNames.InvalidBundle), 'false'));
         bindFun.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.ReState, singleQuotesStr(thisfullpath), VarNames.NeedSetState], ';'));
     }
 
@@ -833,19 +898,15 @@ class MobileContentCompiler extends ContentCompiler{
             var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
             if(belongFormKernel != null){
                 var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
-                if(formMidData.needSetKernels_arr == null){
-                    formMidData.needSetKernels_arr = [];
-                }
-                var formDS = belongFormKernel.getAttribute(AttrNames.DataSource);
-                var useColumn = formDS ? formDS.getColumnByName(textField) : null;
-                if(useColumn){
-                    formMidData.needSetKernels_arr.push(theKernel);
-                    formMidData.useColumns_map[useColumn.name] = 1;
+                var formColumns_arr = belongFormKernel.getCanuseColumns();
+                formMidData.needSetKernels_arr.push(theKernel);
+                if(formColumns_arr.indexOf(textField) != -1){
+                    formMidData.useColumns_map[textField] = 1;
                     kernelMidData.columnName = textField;
                     kernelMidData.needSetStates_arr.push(
                         {
                             name:'text',
-                            useColumn:useColumn
+                            useColumn:{name:textField}
                         }
                     );
                 }else{
@@ -879,6 +940,259 @@ class MobileContentCompiler extends ContentCompiler{
         }
     }
 
+    compileDropdownKernel(theKernel, renderBlock, renderFun){
+        var project = this.project;
+        var logManager = project.logManager;
+        var clientSide = this.clientSide;
+        var serverSide = this.serverSide;
+
+        var ctlTag = new FormatHtmlTag(theKernel.id, 'VisibleERPC_DropDown', this.clientSide);
+        var layoutConfig = theKernel.getLayoutConfig();
+        
+        ctlTag.class = layoutConfig.class;
+        ctlTag.style = layoutConfig.style;
+        var parentPath = this.getKernelParentPath(theKernel);
+        var thisfullpath = makeStr_DotProp(parentPath,theKernel.id);
+        ctlTag.setAttr('id', theKernel.id);
+        ctlTag.setAttr('parentPath', parentPath);
+        renderBlock.pushChild(ctlTag);
+
+        var defaultVal = theKernel.getAttribute(AttrNames.DefaultValue);
+        var defaultValParseRet = parseObj_CtlPropJsBind(defaultVal, project.scriptMaster);
+        if(defaultValParseRet.isScript){
+            this.compileScriptAttribute(defaultValParseRet, theKernel, 'value');
+        }
+
+        var useDS = theKernel.getAttribute(AttrNames.DataSource);
+        if(useDS == null){
+            logManager.errorEx([logManager.createBadgeItem(
+                theKernel.getReadableName(),
+                theKernel,
+                this.projectCompiler.clickKernelLogBadgeItemHandler),
+                '需要数据源']);
+            return false;
+        }
+        var canUseColumns_arr = theKernel.getCanuseColumns();
+        var fromTextfield = theKernel.getAttribute(AttrNames.FromTextField);
+        var fromValuefield = theKernel.getAttribute(AttrNames.FromValueField);
+        var textField = theKernel.getAttribute(AttrNames.TextField);
+        var valueField = theKernel.getAttribute(AttrNames.ValueField);
+        var hadValueField = !IsEmptyString(fromValuefield);
+        if(!useDS.containColumn(fromTextfield)){
+            logManager.errorEx([logManager.createBadgeItem(
+                theKernel.getReadableName(),
+                theKernel,
+                this.projectCompiler.clickKernelLogBadgeItemHandler),
+                '来源文本字段设置错误']);
+            return false;
+        }
+        if(hadValueField && !useDS.containColumn(fromValuefield)){
+            logManager.errorEx([logManager.createBadgeItem(
+                theKernel.getReadableName(),
+                theKernel,
+                this.projectCompiler.clickKernelLogBadgeItemHandler),
+                '来源码值字段设置错误']);
+            return false;
+        }
+        if(IsEmptyString(textField)){
+            logManager.errorEx([logManager.createBadgeItem(
+                theKernel.getReadableName(),
+                theKernel,
+                this.projectCompiler.clickKernelLogBadgeItemHandler),
+                '未设置显示字段']);
+            return false;
+        }
+        if(hadValueField && IsEmptyString(valueField)){
+            logManager.errorEx([logManager.createBadgeItem(
+                theKernel.getReadableName(),
+                theKernel,
+                this.projectCompiler.clickKernelLogBadgeItemHandler),
+                '未设置码值字段']);
+            return false;
+        }
+        if(!hadValueField && !IsEmptyString(valueField)){
+            logManager.errorEx([logManager.createBadgeItem(
+                theKernel.getReadableName(),
+                theKernel,
+                this.projectCompiler.clickKernelLogBadgeItemHandler),
+                '码值字段设置错误']);
+            return false;
+        }
+
+        var dataGroupAttr_arr = theKernel.getAttrArrayList('datagroup');
+        var groupCols_arr = [];
+        if(dataGroupAttr_arr.length > 0){
+            for(var agai in dataGroupAttr_arr){
+                var atrrItem = dataGroupAttr_arr[agai];
+                var colName = theKernel[atrrItem.name];
+                if(IsEmptyString(colName)){
+                    continue;
+                }
+                if(groupCols_arr.indexOf(colName) != -1){
+                    logManager.errorEx([logManager.createBadgeItem(
+                        theKernel.getReadableName(),
+                        theKernel,
+                        this.projectCompiler.clickKernelLogBadgeItemHandler),
+                        '重复设置分层列:' + colName]);
+                    return false;
+                }
+                groupCols_arr.push(colName);
+                if(colName == fromValuefield || colName == fromTextfield || canUseColumns_arr.indexOf(colName) == -1){
+                    logManager.errorEx([logManager.createBadgeItem(
+                        theKernel.getReadableName(),
+                        theKernel,
+                        this.projectCompiler.clickKernelLogBadgeItemHandler),
+                        '错误的分层列:' + colName]);
+                    return false;
+                }
+            }
+            if(groupCols_arr.length > 0){
+                ctlTag.setAttr('groupAttr', groupCols_arr.join(','));
+            }
+        }
+        
+
+        theKernel.autoSetCusDataSource(groupCols_arr);
+        var cusDS_bp = theKernel.getAttribute(AttrNames.CustomDataSource);
+        logManager.log("编译[" + cusDS_bp.name + ']');
+        var bpCompileHelper = new SqlNode_CompileHelper(logManager, null);
+        bpCompileHelper.clickLogBadgeItemHandler = this.projectCompiler.clickSqlCompilerLogBadgeItemHandler;
+        var compileRet = cusDS_bp.compile(bpCompileHelper);
+        if(compileRet == false){
+            return false;
+        }
+
+        // create pull fun
+        var pullFun = clientSide.scope.getFunction(makeFName_pull(theKernel), true);
+        ctlTag.setAttr('pullDataSource', '{' + pullFun.name + '}');
+        ctlTag.setAttr('textAttrName', fromTextfield);
+        ctlTag.setAttr('valueAttrName', fromValuefield);
+        if(theKernel.parent.type == M_LabeledControlKernel_Type){
+            ctlTag.setAttr('label', theKernel.parent.getAttribute(AttrNames.TextField));
+        }
+        //clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath,VarNames.Records_arr))] = freshFun.name + '.bind(window)';
+        pullFun.pushLine('var bundle = {};');
+        pullFun.pushLine('var useState = store.getState();');
+        var initbundleBlock = new FormatFileBlock('initbundle');
+        pullFun.pushChild(initbundleBlock);
+        pullFun.initbundleBlock = initbundleBlock;
+        pullFun.pushLine(makeLine_FetchPropValue(makeActStr_pullKernel(theKernel), singleQuotesStr(parentPath), singleQuotesStr(theKernel.id), singleQuotesStr('options_arr'),{bundle:'bundle'}, false));
+
+        var serverPullFun = serverSide.scope.getFunction(makeActStr_pullKernel(theKernel), true, ['req','res']);
+        serverSide.initProcessFun(serverPullFun);
+        serverSide.processesMapVarInitVal[serverPullFun.name] = serverPullFun.name;
+        var bodyCheckblock = new FormatFileBlock('bodyCheckblock');
+        serverPullFun.pushChild(bodyCheckblock);
+        serverPullFun.pushLine("var params_arr = null;");
+        var paramsetblock = new FormatFileBlock('paramset');
+        serverPullFun.pushChild(paramsetblock);
+        serverPullFun.pushLine("var sql = '" + compileRet.sql + "';");
+        serverPullFun.pushLine("if (sql == null || sql.length == 0) {return serverhelper.createErrorRet('生成sql失败');}");
+        serverPullFun.pushLine("var rcdRlt = yield dbhelper.asynQueryWithParams(sql, params_arr);");
+        serverPullFun.pushLine("return rcdRlt.recordset;");
+
+        var autoClearValue = theKernel.getAttribute(AttrNames.AutoClearValue);
+        var needSetParams_arr = [];
+        if (!IsEmptyObject(bpCompileHelper.useGlobalControls_map)) {
+            for (var ctlSI in bpCompileHelper.useGlobalControls_map) {
+                var useCtl = bpCompileHelper.useGlobalControls_map[ctlSI];
+                for (var useProp in useCtl.useprops_map) {
+                    var propApi = useCtl.useprops_map[useProp];
+                    var useName = useCtl.kernel.id + '_' + propApi.stateName;
+                    needSetParams_arr.push({ name: useName, value: 'req.body.bundle.' + useName });
+
+                    if(autoClearValue)
+                    {
+                        this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'text', useCtl.kernel, propApi.stateName,{
+                            value:'null',
+                        });
+                        this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'value', useCtl.kernel, propApi.stateName,{
+                            value:'null',
+                        });
+                    }
+                    initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', useName), makeStr_getStateByPath('useState', singleQuotesStr(makeStr_DotProp(useCtl.kernel.parentPath, useCtl.kernel.id + '.' + propApi.stateName)))));
+                }
+            }
+        }
+        if (needSetParams_arr.length > 0) {
+            bodyCheckblock.pushLine("if(req.body.bundle == null){" + makeLine_RetServerError('没有提供bundle') + '};');
+            paramsetblock.pushLine("params_arr=[", 1);
+            for (var si in needSetParams_arr) {
+                var useParam = needSetParams_arr[si];
+                paramsetblock.pushLine("dbhelper.makeSqlparam('" + useParam.name + "', sqlTypes.NVarChar(4000), " + useParam.value + "),");
+                bodyCheckblock.pushLine("if(req.body.bundle." + useParam.name + " == null){" + makeLine_RetServerError('没有提供' + useParam.value) + '};');
+            }
+        }
+
+        if (!IsEmptyObject(bpCompileHelper.useEnvVars)) {
+            if(paramsetblock.childs_arr.length == 0){
+                paramsetblock.pushLine("params_arr=[", 1);
+            }
+            bodyCheckblock.pushLine("if(req.session == null){" + makeLine_RetServerError('no session 无法使用') + '};');
+            for (var useEnvName in bpCompileHelper.useEnvVars) {
+                paramsetblock.pushLine("dbhelper.makeSqlparam('" + useEnvName + "', sqlTypes.NVarChar(4000), req.session.g_envVar." + useEnvName + "),");
+            }
+        }
+        if(paramsetblock.childs_arr.length > 0){
+            paramsetblock.subNextIndent();
+            paramsetblock.pushLine('];');
+        }
+
+        var textFieldParseRet = parseObj_CtlPropJsBind(textField, project.scriptMaster);
+        if(textFieldParseRet.isScript){
+            logManager.errorEx([logManager.createBadgeItem(
+                theKernel.getReadableName(),
+                theKernel,
+                this.projectCompiler.clickKernelLogBadgeItemHandler),
+                '请不要为下拉框显示字段设置脚本']);
+            return false;
+        }
+        else{
+            var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
+            var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
+            kernelMidData.hadValueField = hadValueField;
+            var setTextStateItem = null;
+            var setValueStateItem = null;
+            if(belongFormKernel != null){
+                var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
+                var formColumns_arr = belongFormKernel.getCanuseColumns();
+                formMidData.needSetKernels_arr.push(theKernel);
+
+                if(formColumns_arr.indexOf(textField) != -1){
+                    formMidData.useColumns_map[textField] = 1;
+                    kernelMidData.columnName = textField;
+                    setTextStateItem = {
+                        name:'text',
+                        useColumn:{name:textField},
+                    };
+                }
+
+                if(hadValueField && formColumns_arr.indexOf(valueField) != -1){
+                    formMidData.useColumns_map[valueField] = 1;
+                    kernelMidData.columnName = valueField;
+                    setValueStateItem = {
+                        name:'text',
+                        useColumn:{name:textField},
+                    };
+                }
+            }
+            if(setValueStateItem == null && setValueStateItem == null){
+                if(!defaultValParseRet.isScript){
+                    setValueStateItem = {
+                        name:'value',
+                        staticValue:defaultValParseRet.string
+                    };
+                }
+            }
+            if(setTextStateItem != null){
+                kernelMidData.needSetStates_arr.push(setTextStateItem);
+            }
+            if(setValueStateItem != null){
+                kernelMidData.needSetStates_arr.push(setValueStateItem);
+            }
+        }
+    }
+
     compileEnd(){
         var clientSide = this.clientSide;
 
@@ -903,7 +1217,11 @@ class MobileContentCompiler extends ContentCompiler{
         var clientSide = this.clientSide;
         var midData = this.projectCompiler.getMidData(theKernel.id);
         if(midData.useDS){
-            if(IsEmptyObject(midData.useColumns_map)){
+            var mustSelectColumns_arr = [];
+            for(var colName in midData.useColumns_map){
+                mustSelectColumns_arr.push(colName);
+            }
+            if(mustSelectColumns_arr.length == 0){
                 logManager.errorEx([logManager.createBadgeItem(
                     theKernel.getReadableName(),
                     theKernel,
@@ -911,11 +1229,70 @@ class MobileContentCompiler extends ContentCompiler{
                     '没有任何列被使用']);
             }
             else{
+                theKernel.autoSetCusDataSource(mustSelectColumns_arr);
+                var cusDS_bp = theKernel.getAttribute(AttrNames.CustomDataSource);
+                logManager.log("编译[" + cusDS_bp.name + ']');
+                var bpCompileHelper = new SqlNode_CompileHelper(logManager, null);
+                bpCompileHelper.clickLogBadgeItemHandler = this.projectCompiler.clickSqlCompilerLogBadgeItemHandler;
+                var compileRet = cusDS_bp.compile(bpCompileHelper);
+                if(compileRet == false){
+                    return false;
+                }
+                
+                var initbundleBlock = midData.pullFun.initbundleBlock;
+                var needSetParams_arr = [];
+                var bundleValidCheckStr = '';
+                if(!IsEmptyObject(bpCompileHelper.useGlobalControls_map)){
+                    for(var ctlSI in bpCompileHelper.useGlobalControls_map){
+                        var useCtl = bpCompileHelper.useGlobalControls_map[ctlSI];
+                        for(var useProp in useCtl.useprops_map){
+                            var propApi = useCtl.useprops_map[useProp];
+                            var useName = useCtl.kernel.id + '_' + propApi.stateName;
+                            needSetParams_arr.push({name:useName, value:'req.body.bundle.' + useName});
+
+                            this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(makeFName_pull(theKernel), useCtl.kernel, propApi.stateName);
+                            initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle',useName),makeStr_getStateByPath('useState', singleQuotesStr(makeStr_DotProp(useCtl.kernel.parentPath,useCtl.kernel.id + '.' + propApi.stateName)))));
+                            bundleValidCheckStr += (bundleValidCheckStr.length == 0 ? 'IsEmptyString(' : ' || IsEmptyString(') + makeStr_DotProp('bundle',useName) + ')';
+                        }
+                    }
+                }
+                initbundleBlock.pushLine('if(' + bundleValidCheckStr + '){', 1);
+                initbundleBlock.pushLine("store.dispatch(makeAction_setStateByPath(true,'" + theKernel.getStatePath(VarNames.InvalidBundle) + "'))", -1);
+                initbundleBlock.pushLine('}');
+                var serverBodyCheckblock = midData.bodyCheckblock;
+                var paramsetblock = midData.serverSqlParamsetBLK;
+                if(needSetParams_arr.length > 0){
+                    serverBodyCheckblock.pushLine("if(req.body.bundle == null){" + makeLine_RetServerError('没有提供bundle') + '};');
+                    paramsetblock.pushLine("params_arr=[", 1);
+                    for(var si in needSetParams_arr){
+                        var useParam = needSetParams_arr[si];
+                        paramsetblock.pushLine("dbhelper.makeSqlparam('" + useParam.name + "', sqlTypes.NVarChar(4000), " + useParam.value + "),");
+                        serverBodyCheckblock.pushLine("if(req.body.bundle." + useParam.name + " == null){" + makeLine_RetServerError('没有提供' + useParam.value) + '};');
+                    }
+                }
+                if (!IsEmptyObject(bpCompileHelper.useEnvVars)) {
+                    if(paramsetblock.childs_arr.length == 0){
+                        paramsetblock.pushLine("params_arr=[", 1);
+                    }
+                    serverBodyCheckblock.pushLine("if(req.session == null){" + makeLine_RetServerError('no session 无法使用') + '};');
+                    for (var useEnvName in bpCompileHelper.useEnvVars) {
+                        paramsetblock.pushLine("dbhelper.makeSqlparam('" + useEnvName + "', sqlTypes.NVarChar(4000), req.session.g_envVar." + useEnvName + "),");
+                    }
+                }
+                if(paramsetblock.childs_arr.length > 0){
+                    paramsetblock.subNextIndent();
+                    paramsetblock.pushLine('];');
+                }
+                
+                midData.serverSqlLine.content = 'var sql = "' + compileRet.sql + '";';
+
+                /*
                 var sqlStr = '';
                 for(var pname in midData.useColumns_map){
                     sqlStr += (sqlStr.length == 0 ? '' : ',') + pname;
                 }
                 midData.serverSqlLine.content = "var sql = 'select " + sqlStr + ' from '  + midData.useDS.name + "';";
+                */
             }
         }
     }

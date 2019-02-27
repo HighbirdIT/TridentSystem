@@ -46,6 +46,27 @@ function GenControlKernelAttrsSetting(cusGroups_arr, includeDefault) {
     return rlt;
 }
 
+function getDSAttrCanuseColumns(dsAttrName, csAttrName) {
+    var useDS = this.getAttribute(dsAttrName);
+    if (useDS == null) {
+        return [];
+    }
+    var rlt = useDS.columns.map(function (col) {
+        return col.name;
+    });
+    if (csAttrName != null) {
+        var cusDS_bp = this.getAttribute(csAttrName);
+        if (cusDS_bp != null) {
+            var retColumnNode = cusDS_bp.finalSelectNode.columnNode;
+            retColumnNode.inputScokets_arr.forEach(function (socket) {
+                var alias = socket.getExtra('alias');
+                if (!IsEmptyString(alias)) rlt.push(alias);
+            });
+        }
+    }
+    return rlt;
+}
+
 var LayoutAttrNames_arr = M_ControlKernelBaseAttrsSetting.layoutGrop.attrs_arr.map(function (e) {
     return e.name;
 });
@@ -145,10 +166,21 @@ var ControlKernelBase = function (_IAttributeable) {
         }
     }, {
         key: 'delete',
-        value: function _delete() {
-            if (this.isfixed) {
+        value: function _delete(forceDelete) {
+            var _this2 = this;
+
+            if (!forceDelete && this.isfixed) {
                 return;
             }
+            // delete all customdatasource
+            var cusdsAttr_arr = this.filterAttributesByValType(ValueType.CustomDataSource);
+            cusdsAttr_arr.forEach(function (cusdsAttr) {
+                var cusds = _this2.getAttribute(cusdsAttr.name);
+                if (cusds != null) {
+                    _this2.project.dataMaster.deleteSqlBP(cusds);
+                }
+            });
+
             for (var dsCode in this.listendDS_map) {
                 var t_arr = this.listendDS_map[dsCode];
                 if (t_arr == null) {
@@ -161,7 +193,7 @@ var ControlKernelBase = function (_IAttributeable) {
             }
             if (this.children) {
                 for (var ci in this.children) {
-                    this.children[ci].delete();
+                    this.children[ci].delete(true);
                 }
             }
             this.project.unRegisterControl(this);
@@ -273,19 +305,19 @@ var ControlKernelBase = function (_IAttributeable) {
     }, {
         key: 'getLayoutConfig',
         value: function getLayoutConfig() {
-            var _this2 = this;
+            var _this3 = this;
 
             var rlt = new ControlLayoutConfig();
             var apdAttrList = this.getAttrArrayList(AttrNames.LayoutNames.APDClass);
             var self = this;
             apdAttrList.forEach(function (attrArrayItem) {
-                var val = _this2.getAttribute(attrArrayItem.name);
+                var val = _this3.getAttribute(attrArrayItem.name);
                 rlt.addClass(val);
             });
 
             var styleAttrList = this.getAttrArrayList(AttrNames.LayoutNames.StyleAttr);
             styleAttrList.forEach(function (attrArrayItem) {
-                var val = _this2.getAttribute(attrArrayItem.name);
+                var val = _this3.getAttribute(attrArrayItem.name);
                 if (val != null && !IsEmptyString(val.name) && !IsEmptyString(val.value)) {
                     var styleName = val.name;
                     var styleValue = val.value;
@@ -519,13 +551,13 @@ var CtlKernelCreationHelper = function (_EventEmitter) {
     function CtlKernelCreationHelper() {
         _classCallCheck(this, CtlKernelCreationHelper);
 
-        var _this3 = _possibleConstructorReturn(this, (CtlKernelCreationHelper.__proto__ || Object.getPrototypeOf(CtlKernelCreationHelper)).call(this));
+        var _this4 = _possibleConstructorReturn(this, (CtlKernelCreationHelper.__proto__ || Object.getPrototypeOf(CtlKernelCreationHelper)).call(this));
 
-        EnhanceEventEmiter(_this3);
-        _this3.orginID_map = {};
-        _this3.newID_map = {};
-        _this3.idTracer = {};
-        return _this3;
+        EnhanceEventEmiter(_this4);
+        _this4.orginID_map = {};
+        _this4.newID_map = {};
+        _this4.idTracer = {};
+        return _this4;
     }
 
     _createClass(CtlKernelCreationHelper, [{

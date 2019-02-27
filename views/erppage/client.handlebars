@@ -1,4 +1,7 @@
 {{#section 'script'}}
+  <script>
+      var g_envVar = {{encodeMyString g_envVar}};
+  </script>
   <script src='{{clientJs}}'></script>
 {{/section}}
 
@@ -6,7 +9,6 @@
   <meta name="apple-mobile-web-app-title" content={{title}}>
   <title>{{title}}</title>
 {{/section}}
-
 
 {{#section 'postScript'}}
 {{/section}}

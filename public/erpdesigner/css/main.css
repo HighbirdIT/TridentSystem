@@ -337,6 +337,7 @@
 
 .hb-control{
   cursor:auto;
+  min-height: 30px;
 }
 
 .hb-control[ctlselected]{

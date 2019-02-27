@@ -31,6 +31,18 @@ class IAttributeable extends EventEmitter{
         return foundAttr;
     }
 
+    filterAttributesByValType(targetvaluetype){
+        var rlt_arr = [];
+        this.attrbuteGroups.forEach(group=>{
+            group.attrs_arr.forEach(attr=>{
+                if(attr.valueType === targetvaluetype){
+                    rlt_arr.push(attr);
+                }
+            });
+        });
+        return rlt_arr;
+    }
+
     __setAttribute(realAtrrName, value, attrName, indexInArray){
         var oldValue = this.consignor[realAtrrName];
         if(typeof value === 'string' && oldValue == value){
@@ -90,8 +102,12 @@ class IAttributeable extends EventEmitter{
                     case AttrNames.Name:
                     case AttrNames.DataSource:
                     case AttrNames.ProcessTable:
+                    case AttrNames.CustomDataSource:
                     break;
                     default:
+                    if(attrItem.valueType == ValueType.CustomDataSource){
+                        break;
+                    }
                     console.warn('属性:' + attrName + '没有默认值');
                 }
             }
@@ -113,7 +129,7 @@ class IAttributeable extends EventEmitter{
     }
 
     attrNameArraySortFun(a,b){
-        return a.index < b.index;
+        return a.index > b.index;
     }
 
     getAttrArrayList(attrName){
@@ -170,6 +186,10 @@ class IAttributeable extends EventEmitter{
             group.attrs_arr.forEach(attr=>{
                 if(!attr.editable)
                     return;
+                switch(attr.valueType){
+                    case ValueType.CustomDataSource:
+                    return;
+                }
                 var attrItemArray = null;
                 if(attr.isArray){
                     attrItemArray = this.getAttrArrayList(attr.name).map(e=>{return e.name;});

@@ -152,9 +152,11 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
         else {
             var formDS = formKernel.getAttribute(AttrNames.DataSource);
             var newColumns = [];
-            formDS.columns.forEach(colItem => {
-                newColumns.push(colItem.name);
-            });
+            if(formDS != null){
+                formDS.columns.forEach(colItem => {
+                    newColumns.push(colItem.name);
+                });
+            }
             this.canUseColumns_arr = newColumns;
             titleElem = (<div f-canmove={1} className='d-flex flex-column'>
                 <span f-canmove={1}>{formKernel.getReadableName()}</span>

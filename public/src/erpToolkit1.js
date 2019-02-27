@@ -562,6 +562,16 @@ function setStateByPath(state, path, value, visited) {
     }
     var delayActs = {};
     retState = aStateChanged(retState, path, value, oldValue, visited == null ? {} : visited, delayActs);
+    if(!IsEmptyObject(delayActs)){
+        setTimeout(() => {
+            for(var acti in delayActs){
+                var theAct = delayActs[acti];
+                if(typeof(theAct.callfun) === 'function'){
+                    theAct.callfun();
+                }
+            }
+        }, 50);
+    }
 
     return retState == state ? Object.assign({}, retState) : retState;
 }
@@ -612,6 +622,7 @@ function setManyStateByPath(state, path, valuesObj, visited) {
         len = t_arr.length;
         var aidPreStateName = null;
         var aidPidPreState = null;
+        var valueParentPath = path;
         for (i = 0; i < len; ++i) {
             name = t_arr[i];
             if (i >= len - 1) {
@@ -625,11 +636,13 @@ function setManyStateByPath(state, path, valuesObj, visited) {
                             state:nowState,
                             preState:aidPidPreState,
                             preStateName:aidPreStateName,
+                            parentPath:valueParentPath,
                         }
                     );
                 }
             }
             else {
+                valueParentPath += '.' + name;
                 if (nowState[name] == null) {
                     nowState[name] = {};
                     newStateObj_arr.push(nowState[name]);
@@ -644,21 +657,28 @@ function setManyStateByPath(state, path, valuesObj, visited) {
         return state;
     }
 
-    var assginedObjs_arr = [];
+    var changeState_map = {};
     for (i in changed_arr) {
         var changedInfo = changed_arr[i];
+        if(changeState_map[changedInfo.parentPath]){
+            changedInfo.state = changeState_map[changedInfo.parentPath];
+        }
         if(changedInfo.preState == null){
             changedInfo.state[changedInfo.name] = changedInfo.newValue;
+            changedInfo.changed == false;
             continue;
         }
 
-        if(assginedObjs_arr.indexOf(changedInfo.state) == -1){
-            assginedObjs_arr.push(changedInfo.state);
+        //if(assginedObjs_arr.indexOf(changedInfo.state) == -1){
+            //assginedObjs_arr.push(changedInfo.state);
             if(newStateObj_arr.indexOf(changedInfo.state) == -1){
-                changedInfo.state = Object.assign({}, changedInfo.state);
-                changedInfo.preState[changedInfo.preStateName] = changedInfo.state;
+                var newState = Object.assign({}, changedInfo.state);
+                changeState_map[changedInfo.parentPath] = newState;
+                changedInfo.state = newState;
+                changedInfo.preState[changedInfo.preStateName] = newState;
+                newStateObj_arr.push(newState);
             }
-        }
+        //}
         changedInfo.state[changedInfo.name] = changedInfo.newValue;
     }
 
@@ -680,7 +700,19 @@ function setManyStateByPath(state, path, valuesObj, visited) {
     var delayActs = {};
     for (i in changed_arr) {
         var changedInfo = changed_arr[i];
+        if(changedInfo.changed == false)
+            continue;
         retState = aStateChanged(retState, changedInfo.path, changedInfo.newValue, changedInfo.oldValue, visited, delayActs);
+    }
+    if(!IsEmptyObject(delayActs)){
+        setTimeout(() => {
+            for(var acti in delayActs){
+                var theAct = delayActs[acti];
+                if(typeof(theAct.callfun) === 'function'){
+                    theAct.callfun();
+                }
+            }
+        }, 50);
     }
     return retState == state ? Object.assign({}, retState) : retState;
 }
@@ -874,6 +906,17 @@ function renderFetcingErrDiv(errInfo) {
     );
 }
 
+function renderInvalidBundleDiv() {
+    return (
+        <div className='w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch'>
+            <div className='m-auto d-flex align-items-center border rounded flex-shrink-0 mw-100'>
+                <i className='fa fa-warning fa-fw fa-2x' />
+                <div className='text'>前置条件不足</div>
+            </div>
+        </div>
+    );
+}
+
 function getFormatDateString(date){
     var y = date.getFullYear();
     var m = date.getMonth() + 1;
@@ -881,7 +924,14 @@ function getFormatDateString(date){
     return y + (m < 10 ? '-0' : '-') + m + (d < 10 ? '-0' : '-') + d;
 }
 
-function simpleFreshFormFun(retState, records_arr, formFullID){
+function getFormatTimeString(date, hadSec = true) {
+    var h = date.getHours();
+    var m = date.getMinutes();
+    var s = date.getSeconds();
+    return (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m +(hadSec ? (s < 10 ? ':0' : ':') + s : '');
+}
+
+function simpleFreshFormFun(retState, records_arr, formFullID, directBindFun){
     var formState = getStateByPath(retState, formFullID);
 	var needSetState = {};
 	if (records_arr == null || records_arr.length == 0) {
@@ -891,8 +941,37 @@ function simpleFreshFormFun(retState, records_arr, formFullID){
 		var useIndex = formState.recordIndex == null ? 0 : parseInt(formState.recordIndex);
 		if (useIndex >= records_arr.length) {
 			useIndex = records_arr.length - 1;
-		}
+        }
+        else if(useIndex <= -1){
+            useIndex = 0;
+        }
 		needSetState.recordIndex = useIndex;
+    }
+    if(formState.recordIndex == useIndex){
+        if(directBindFun != null){
+            return directBindFun(retState, useIndex, useIndex);
+        }
+        return retState;
+    }
+	return setManyStateByPath(retState, formFullID, needSetState);
+}
+
+function IsEmptyObject(val){
+	for(var si in val){
+		if(val[si] != null){
+			return false;
+		}
 	}
-	setManyStateByPath(retState, formFullID, needSetState);
+	return true;
+}
+
+function getQueryVariable(variable)
+{
+    var query = window.location.search.substring(1);
+    var vars = query.split("&");
+    for (var i=0;i<vars.length;i++) {
+        var pair = vars[i].split("=");
+        if(pair[0] == variable){return pair[1];}
+    }
+    return(false);
 }

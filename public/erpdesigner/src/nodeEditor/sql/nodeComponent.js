@@ -318,8 +318,33 @@ class C_Node_SimpleNode extends React.PureComponent {
         }
     }
 
+    listenNode(theNode){
+        /*
+        if(theNode){
+            theNode.on('changed', this.reDraw);
+        }
+        */
+        this.listenedNode = theNode;
+    }
+
+    unlistenNode(theNode){
+        /*
+        if(theNode){
+            theNode.off('changed', this.reDraw);
+        }
+        */
+    }
+
+    cus_componentWillUnmount(){
+        this.unlistenNode(this.props.nodedata);
+    }
+
     render() {
         var nodeData = this.props.nodedata;
+        if(this.listenedNode != nodeData){
+            this.unlistenNode(this.listenedNode);
+            this.listenNode(nodeData);
+        }
         var headType = nodeData.headType == null ? 'tiny' : nodeData.headType;
         var rightElem = null;
         if(nodeData.outFlowSockets_arr == null){
