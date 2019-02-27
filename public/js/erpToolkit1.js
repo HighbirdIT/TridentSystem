@@ -662,7 +662,7 @@ function setManyStateByPath(state, path, valuesObj, visited) {
             if (i >= len - 1) {
                 if (value != nowState[name]) {
                     changed_arr.push({
-                        path: path + '.' + vi,
+                        path: valueParentPath + '.' + name,
                         name: name,
                         oldValue: nowState[name],
                         newValue: value,
@@ -673,7 +673,7 @@ function setManyStateByPath(state, path, valuesObj, visited) {
                     });
                 }
             } else {
-                valueParentPath += '.' + name;
+                valueParentPath += (valueParentPath.length == 0 ? '' : '.') + name;
                 if (nowState[name] == null) {
                     nowState[name] = {};
                     newStateObj_arr.push(nowState[name]);

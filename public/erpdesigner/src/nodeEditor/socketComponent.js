@@ -69,6 +69,11 @@ class C_Node_Socket extends React.PureComponent{
         socket.set({defval:ev.target.value});
     }
 
+    checkInputChangedHandler(ev){
+        var socket = this.props.socket;
+        socket.set({defval:ev.target.checked});
+    }
+
     inputDDCChangedHandler(newvalue, ddc){
         ddc.props.socket.set({defval:newvalue});
     }
@@ -120,6 +125,9 @@ class C_Node_Socket extends React.PureComponent{
         {
             if(socket.inputDDC_setting){
                 inputElem = (<DropDownControl socket={socket} options_arr={socket.inputDDC_setting.options_arr} value={socket.defval == null ? '' : socket.defval} itemChanged={this.inputDDCChangedHandler} textAttrName={socket.inputDDC_setting.textAttrName} valueAttrName={socket.inputDDC_setting.valueAttrName} />);
+            }
+            else if(socket.type == ValueType.Boolean){
+                inputElem = (<input type='checkbox' ref={this.inputRef} checked={parseBoolean(socket.defval)} onChange={this.checkInputChangedHandler}/>);
             }
             else{
                 inputElem = (<input type='text' ref={this.inputRef} className='socketInputer' onChange={this.inputChangedHandler} value={socket.defval == null ? '' : socket.defval} />);

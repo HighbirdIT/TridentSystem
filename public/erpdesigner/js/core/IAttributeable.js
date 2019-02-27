@@ -90,6 +90,11 @@ var IAttributeable = function (_EventEmitter) {
             }
         }
     }, {
+        key: 'hasAttribute',
+        value: function hasAttribute(attrName) {
+            return this.findAttributeByName(attrName) != null;
+        }
+    }, {
         key: 'getAttribute',
         value: function getAttribute(attrName, index) {
             if (index == null) {

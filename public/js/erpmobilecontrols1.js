@@ -1151,6 +1151,9 @@ var ERPC_Label = function (_React$PureComponent7) {
     _createClass(ERPC_Label, [{
         key: 'render',
         value: function render() {
+            if (this.props.visible == false) {
+                return null;
+            }
             return React.createElement(
                 'span',
                 { className: this.props.className },

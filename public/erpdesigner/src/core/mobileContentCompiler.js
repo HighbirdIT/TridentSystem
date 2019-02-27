@@ -218,6 +218,7 @@ class MobileContentCompiler extends ContentCompiler{
             }
         }
         compileRet.useForm_map = compileHelper.useForm_map;
+        compileRet.useGlobalControls_map = compileHelper.useGlobalControls_map;
         this.compiledScriptBP_map[targetBP.id] = compileRet;
         return compileRet;
     }
@@ -409,6 +410,7 @@ class MobileContentCompiler extends ContentCompiler{
             ctlTag.setAttr('precision', theKernel.getAttribute(AttrNames.FloatNum));
         }
         renderBlock.pushChild(ctlTag);
+        this.compileIsdisplayAttribute(theKernel,ctlTag);
         var editeable = theKernel.getAttribute(AttrNames.Editeable);
         if(!editeable){
             ctlTag.setAttr('readonly', '{true}');
@@ -417,7 +419,7 @@ class MobileContentCompiler extends ContentCompiler{
         var defaultVal = theKernel.getAttribute(AttrNames.DefaultValue);
         var defaultValParseRet = parseObj_CtlPropJsBind(defaultVal, project.scriptMaster);
         if(defaultValParseRet.isScript){
-            this.compileScriptAttribute(defaultValParseRet, theKernel, 'value');
+            this.compileScriptAttribute(defaultValParseRet, theKernel, 'value', AttrNames.DefaultValue);
         }
 
         var textField = theKernel.getAttribute(AttrNames.TextField);
@@ -431,7 +433,7 @@ class MobileContentCompiler extends ContentCompiler{
                     '为默认值、显示字段同时设置了脚本']);
                 return false;
             }
-            this.compileScriptAttribute(textFieldParseRet, theKernel, 'value');
+            this.compileScriptAttribute(textFieldParseRet, theKernel, 'value', AttrNames.TextField);
         }
         else{
             var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
@@ -464,7 +466,7 @@ class MobileContentCompiler extends ContentCompiler{
         }
     }
 
-    compileScriptAttribute(attrParseRet, theKernel, stateName){
+    compileScriptAttribute(attrParseRet, theKernel, stateName, attrLabel){
         var project = this.project;
         var logManager = project.logManager;
         if(attrParseRet.jsBp == null){
@@ -472,7 +474,7 @@ class MobileContentCompiler extends ContentCompiler{
                 theKernel.getReadableName(),
                 theKernel,
                 this.projectCompiler.clickKernelLogBadgeItemHandler),
-                '显示字段用到了脚本，但没有创建此脚本']);
+                attrLabel + '用到了脚本，但没有创建此脚本']);
             return false;
         }
         var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
@@ -487,7 +489,7 @@ class MobileContentCompiler extends ContentCompiler{
             return false;
         }
         */
-       var bindParentKernel = belongFormKernel ? belongFormKernel : belongPageKernel;
+        var bindParentKernel = belongFormKernel ? belongFormKernel : belongPageKernel;
         var scriptCompileRet = this.compileScriptBlueprint(attrParseRet.jsBp);
         if(scriptCompileRet == false){
             return false;
@@ -497,6 +499,9 @@ class MobileContentCompiler extends ContentCompiler{
         var bindMode = ScriptBindMode.OnForm;
         var useColumn = false;
         var useControl = false;
+        var useCtlData = null;
+        var pName;
+        var propApiitem;
         if(useFormData){
             useColumn = !IsEmptyObject(useFormData.useColumns_map);
             useControl = !IsEmptyObject(useFormData.useControls_map);
@@ -507,9 +512,9 @@ class MobileContentCompiler extends ContentCompiler{
                 if(useControl){
                     bindMode = ScriptBindMode.OnRelAttrChanged;
                     for(var cid in useFormData.useControls_map){
-                        var useCtlData = useFormData.useControls_map[cid];
-                        for(var pName in useCtlData.useprops_map){
-                            var propApiitem = useCtlData.useprops_map[pName];
+                        useCtlData = useFormData.useControls_map[cid];
+                        for(pName in useCtlData.useprops_map){
+                            propApiitem = useCtlData.useprops_map[pName];
                             this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, stateName, useCtlData.kernel, propApiitem.stateName, {
                                 funName:attrParseRet.jsBp.name,
                             });
@@ -521,11 +526,25 @@ class MobileContentCompiler extends ContentCompiler{
                 }
             }
         }
+        if(!IsEmptyObject(scriptCompileRet.useGlobalControls_map)){
+            //bindMode = ScriptBindMode.OnRelAttrChanged;
+            // 关联的是全局控件的话，不影响其在所在容器中进行初始绑定
+            for(var useGCSI in scriptCompileRet.useGlobalControls_map){
+                useCtlData = scriptCompileRet.useGlobalControls_map[useGCSI];
+                for(pName in useCtlData.useprops_map){
+                    propApiitem = useCtlData.useprops_map[pName];
+                    this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, stateName, useCtlData.kernel, propApiitem.stateName, {
+                        funName:attrParseRet.jsBp.name,
+                    });
+                }
+            }
+        }
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
         var bindParentMidData = this.projectCompiler.getMidData(bindParentKernel.id);
         bindParentMidData.needSetKernels_arr.push(theKernel);
         kernelMidData.visibleStyle = visibleStyle;
         kernelMidData.useFormData = useFormData;
+
         if(bindMode == ScriptBindMode.OnRelAttrChanged){
             kernelMidData.isSelfCare = true;
         }
@@ -538,6 +557,24 @@ class MobileContentCompiler extends ContentCompiler{
             useControl:useControl,
         };
         kernelMidData.needSetStates_arr.push(setStateItem);
+    }
+
+    compileIsdisplayAttribute(theKernel,ctelTag){
+        if(!theKernel.hasAttribute(AttrNames.Isdisplay))
+        {
+            return;
+        }
+        var project = this.project;
+        var isdisplay = theKernel.getAttribute(AttrNames.Isdisplay);
+        var isdisplayParseRet = parseObj_CtlPropJsBind(isdisplay, project.scriptMaster);
+        if(isdisplayParseRet.isScript){
+            this.compileScriptAttribute(isdisplayParseRet, theKernel, 'visible', AttrNames.Isdisplay);
+        }
+        else{
+            if(!isdisplay){
+                ctelTag.setAttr('visible', '{false}');
+            }
+        }
     }
 
     compileLabeledControlKernel(theKernel, renderBlock, renderFun){
@@ -565,7 +602,7 @@ class MobileContentCompiler extends ContentCompiler{
         labeledCtrlTag.setAttr('id', theKernel.id);
         labeledCtrlTag.setAttr('parentPath', parentPath);
         if(textFieldParseRet.isScript){
-            this.compileScriptAttribute(textFieldParseRet,theKernel,'label');
+            this.compileScriptAttribute(textFieldParseRet,theKernel,'label',AttrNames.TextField);
         }else{
             labeledCtrlTag.setAttr('label', label);
         }
@@ -573,9 +610,13 @@ class MobileContentCompiler extends ContentCompiler{
         labeledCtrlTag.pushChild(childBlock);
         renderBlock.pushChild(labeledCtrlTag);
 
+        this.compileIsdisplayAttribute(theKernel,labeledCtrlTag);
+
         if(theKernel.editor){
             this.compileKernel(theKernel.editor, childBlock, renderFun);
         }
+
+        return labeledCtrlTag;
     }
 
     compileFormKernel(theKernel, renderBlock, renderFun){
@@ -887,12 +928,14 @@ class MobileContentCompiler extends ContentCompiler{
         ctlTag.setAttr('parentPath', this.getKernelParentPath(theKernel));
         renderBlock.pushChild(ctlTag);
 
+        this.compileIsdisplayAttribute(theKernel,ctlTag);
+
         var textField = theKernel.getAttribute(AttrNames.TextField);
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
 
         var textFieldParseRet = parseObj_CtlPropJsBind(textField, project.scriptMaster);
         if(textFieldParseRet.isScript){
-            this.compileScriptAttribute(textFieldParseRet, theKernel, 'text');
+            this.compileScriptAttribute(textFieldParseRet, theKernel, 'text', AttrNames.TextField);
         }
         else{
             var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
@@ -956,11 +999,12 @@ class MobileContentCompiler extends ContentCompiler{
         ctlTag.setAttr('id', theKernel.id);
         ctlTag.setAttr('parentPath', parentPath);
         renderBlock.pushChild(ctlTag);
+        this.compileIsdisplayAttribute(theKernel, ctlTag);
 
         var defaultVal = theKernel.getAttribute(AttrNames.DefaultValue);
         var defaultValParseRet = parseObj_CtlPropJsBind(defaultVal, project.scriptMaster);
         if(defaultValParseRet.isScript){
-            this.compileScriptAttribute(defaultValParseRet, theKernel, 'value');
+            this.compileScriptAttribute(defaultValParseRet, theKernel, 'value', AttrNames.DefaultValue);
         }
 
         var useDS = theKernel.getAttribute(AttrNames.DataSource);

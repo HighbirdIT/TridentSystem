@@ -1,3 +1,4 @@
+const M_AllKernel_Type = 'M_All';
 const M_LabelKernel_Type = 'M_Label';
 const M_PageKernel_Type = 'M_Page';
 const M_ContainerKernel_Type = 'M_Div';
@@ -38,6 +39,8 @@ function GetControlTypeReadableName(type){
         return '按钮';
         case M_DropdownKernel_Type:
         return '下拉框';
+        case M_AllKernel_Type:
+        return '任意';
     }
     return type;
 }

@@ -10,6 +10,7 @@ const M_DropdownKernelAttrsSetting = GenControlKernelAttrsSetting([
             type:FunType_Client,
             group:EJsBluePrintFunGroup.CtlAttr,
         } ),
+        genIsdisplayAttribute(),
         new CAttribute('', AttrNames.CustomDataSource, ValueType.CustomDataSource, null, true),
         new CAttribute('自动感应消值', AttrNames.AutoClearValue, ValueType.Boolean, true),
         new CAttribute('数据分层', 'datagroup', ValueType.String, '', true, true, 'getCanuseColumns'),

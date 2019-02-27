@@ -16,6 +16,7 @@ const JSNODE_CONTROL_API_PROP = 'controlapiprop';
 const JSNODE_CONTROL_API_PROPSETTER = 'controlapipropsetter';
 const JSNODE_DATEFUN = 'jsdatefun';
 const JSNODE_ENV_VAR = 'envvar';
+const JSNODE_BOOLEANVALUE = 'booleanvalue';
 
 const JSDEF_VAR = 'def_variable';
 
@@ -472,7 +473,7 @@ class JSNode_BluePrint extends EventEmitter {
                     propApiitem = useCtlData.useprops_map[propName];
                     varName = usectlid + '_' + propApiitem.stateName;
                     if(this.group == EJsBluePrintFunGroup.CtlAttr ){
-                        initValue = "bundle != null && bundle['" + varName + "'] != null ? bundle['" + varName + "'] : " + makeStr_getStateByPath(formStateVarName, singleQuotesStr(useCtlData.kernel.id + '.' + propApiitem.stateName));
+                        initValue = "bundle != null && bundle['" + varName + "'] != null ? bundle['" + varName + "'] : " + makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.getStatePath(propApiitem.stateName)));
                     }
                     else{
                         initValue = makeStr_getStateByPath('store.getState()', singleQuotesStr(useCtlData.kernel.getStatePath(propApiitem.stateName)));
@@ -2492,6 +2493,58 @@ class JSNode_Env_Var extends JSNode_Base {
     }
 }
 
+class JSNode_BooleanValue extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_BOOLEANVALUE, '布尔值', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.type = ValueType.Boolean;
+        this.outSocket.inputable = true;
+        this.headType = 'empty';
+    }
+
+    getValue() {
+        return this.outSocket.defval;
+    }
+
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var value = this.getValue();
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        if (IsEmptyString(value)) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '无效值']);
+            return false;
+        }
+        if (value == true || value == 'true') {
+            value = true;
+        }
+        else{
+            value = false;
+        }
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, value);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
 
 JSNodeClassMap[JSNODE_VAR_GET] = {
     modelClass: JSNode_Var_Get,
@@ -2563,5 +2616,9 @@ JSNodeClassMap[JSNODE_CONTROL_API_PROPSETTER] = {
 };
 JSNodeClassMap[JSNODE_ENV_VAR] = {
     modelClass: JSNode_Env_Var,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_BOOLEANVALUE] = {
+    modelClass: JSNode_BooleanValue,
     comClass: C_Node_SimpleNode,
 };

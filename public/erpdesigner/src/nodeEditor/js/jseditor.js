@@ -5,6 +5,11 @@ const JSNodeEditorControls_arr =[
         type:'基础'
     },
     {
+        label:'布尔常量',
+        nodeClass:JSNode_BooleanValue,
+        type:'基础'
+    },
+    {
         label:'环境变量',
         nodeClass:JSNode_Env_Var,
         type:'基础'
@@ -108,7 +113,7 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         var rlt = null;
         var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
         if(belongFormKernel == null){
-            rlt = this.useGlobalControls_map[ctrKernel.id]
+            rlt = this.useGlobalControls_map[ctrKernel.id];
             if(rlt == null){
                 rlt = {
                     kernel:ctrKernel,

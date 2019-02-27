@@ -8,6 +8,10 @@ const M_ControlKernelBaseAttrsSetting = {
     ]),
 };
 
+var M_ControlKernel_api = new ControlAPIClass(M_AllKernel_Type);
+M_ControlKernel_api.pushApi(new ApiItem_prop(genIsdisplayAttribute(), 'visible'));
+M_ControlKernel_api.pushApi(new ApiItem_propsetter('visible'));
+g_controlApi_arr.push(M_ControlKernel_api);
 /*
 new CAttribute('宽度',AttrNames.Width,ValueType.String,''),
             new CAttribute('高度',AttrNames.Height,ValueType.String,''),
@@ -399,6 +403,9 @@ class ControlKernelBase extends IAttributeable {
 
     getAccessableKernels(targetType){
         var rlt = [];
+        if(targetType == M_AllKernel_Type){
+            targetType = null;
+        }
         var needFilt = targetType != null;
         if(!needFilt || this.type == targetType){
             rlt.push(this);
