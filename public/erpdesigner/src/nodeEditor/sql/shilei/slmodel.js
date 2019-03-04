@@ -1,9 +1,9 @@
 const SQLNODE_RET_HAVING = 'ret_having';
-const SQLNODE_AGGREGATE='aggregate';
+const SQLNODE_AGGREGATE = 'aggregate';
 const SQLNODE_RET_GROUP = 'ret_group';
 const SQLNODE_BETWEEN = 'between';
-const SQLNODE_XAPPLY='apply';
-const SQLNODE_PARAMETER='parameter';
+const SQLNODE_XAPPLY = 'apply';
+const SQLNODE_PARAMETER = 'parameter';
 SQL_OutSimpleValueNode_arr.push(SQLNODE_AGGREGATE);
 
 class SqlNode_Ret_Having extends SqlNode_Base {
@@ -213,8 +213,7 @@ class SqlNode_Aggregate extends SqlNode_Base {
             }
             tValue = compileRet.getSocketOut(link.outSocket).strContent;
         }
-        if(helper[belongSelectNode.id + '_complingSocket_complingSocket'] != null)
-        {
+        if (helper[belongSelectNode.id + '_complingSocket_complingSocket'] != null) {
             if (helper[belongSelectNode.id + '_complingSocket_isolated'] == true) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle
@@ -329,7 +328,7 @@ class SqlNode_XApply extends SqlNode_Base {
         super(initData, parentNode, createHelper, SQLNODE_XAPPLY, 'apply', true, nodeJson);
         autoBind(this);
         if (this.xapplyType == null) {
-            this.xapplyType = 'cross apply';
+            this.xapplyType = 'Cross Apply';
         }
 
         if (nodeJson) {
@@ -344,27 +343,48 @@ class SqlNode_XApply extends SqlNode_Base {
         }
 
         if (this.inputScokets_arr.length == 0) {
-            this.addSocket(new NodeSocket('in0', this, true, { type: SqlVarType_Table }));   }
+            this.addSocket(new NodeSocket('in0', this, true, { type: SqlVarType_Table }));
+        }
         else {
             this.inputScokets_arr.forEach(socket => {
                 socket.type = SqlVarType_Table;
             });
         }
-
+        if (this.targetEntity != null) {
+            var tem_arr = this.targetEntity.split('-');
+            if (tem_arr[0] == 'dbe') {
+                this.targetEntity = g_dataBase.getEntityByCode(tem_arr[1]);
+                //this.targetEntity.on('syned', this.entitySynedHandler);
+                //console.log(this.targetEntity);
+            }
+            else {
+                this.targetEntity = null;
+            }
+        }
         this.contextEntities_arr = [];
         this.entityNodes_arr = [];
         this.autoCreateHelper = {};
         this.entityNodesParameter = null;
+        for (var i = this.nodes_arr.length - 1; i >= 0; --i) {
+            if (this.nodes_arr[i].type == SQLNODE_PARAMETER) {
+                this.entityNodesParameter = this.nodes_arr[i];
+                break;
+            }
+        }
+
     }
 
     requestSaveAttrs() {
         var rlt = super.requestSaveAttrs();
         rlt.xapplyType = this.xapplyType;
+        if (this.targetEntity != null) {
+            rlt.targetEntity = 'dbe-' + this.targetEntity.code;
+        }
         return rlt;
     }
 
     restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['xapplyType']);
+        assginObjByProperties(this, attrsJson, ['xapplyType', 'targetEntity']);
     }
 
     preEditing(editor) {
@@ -379,27 +399,11 @@ class SqlNode_XApply extends SqlNode_Base {
             var theNode = this.entityNodes_arr.find(x => { return x.label == contextEntity.label });
             if (theNode == null) {
                 theNode = new SqlNode_DBEntity_ColumnSelector({ left: (i + 1) * -200 }, this, null);
-                theNode.setEntity(contextEntity.label,contextEntity.data);
+                theNode.setEntity(contextEntity.label, contextEntity.data);
                 this.entityNodes_arr.push(theNode);
             }
             theNode.valid = true;
-            var entityParam='';
-            var entityParmLength= contextEntity.data.params.length;
-            var parmeterNode =null;
-            if(entityParmLength>0)
-            {
-                for(var j = 0; j < entityParmLength; j++)
-                {
-            
-                    entityParam=contextEntity.data;
-                
-                if(this.entityNodesParameter==null)
-                {
-                    this.entityNodesParameter = new SqlNode_Parameter({ left: (j + 1) * -200 }, this, null);
-                }
-                this.entityNodesParameter.entitySynedHandler(entityParam); 
-                }
-            }
+        }
         this.bluePrint.banEvent('changed');
         for (var k = 0; k < this.entityNodes_arr.length; ++k) {
             var tNode = this.entityNodes_arr[k];
@@ -412,7 +416,6 @@ class SqlNode_XApply extends SqlNode_Base {
         }
         this.bluePrint.allowEvent('changed');
     }
-}
     addNewColumn(tableCode, tableAlias, tableName, columnName, cvalType, x, y, newborn) {
         return new SqlNode_Column({
             tableCode: tableCode,
@@ -428,74 +431,19 @@ class SqlNode_XApply extends SqlNode_Base {
     inputSocketSortFun(sa, sb) {
         return sa.index > sb.index;
     }
-    getEntityParams()
-    {
-        
-    }
-    entitySynedHandler() {
-        var entity = this.targetEntity;
-        if (entity && entity.loaded) {
-            var paramCount = entity.params.length;
-            this.inputScokets_arr.forEach(item => {
-                item._validparam = false;
-            });
-            var hadChanged = false;
-            entity.params.forEach((param, i) => {
-                var theSocket = this.getScoketByName(param.name);
-                if (theSocket == null) {
-                    //this.addSocket(new NodeSocket(param.name, this, true, { type: SqlVarType_Scalar, label: param.name, index: i }));
-                    hadChanged = true;
-                }
-                else {
-                    theSocket._validparam = true;
-                    if (theSocket.label != param.name) {
-                        theSocket.set({ label: param.name });
-                    }
-                    theSocket.index = i;
-                }
-            });
-            var needSort = false;
-            for (var si = 1; si < this.inputScokets_arr.length; ++si) {
-                var theSocket = this.inputScokets_arr[si];
-                if (theSocket._validparam == false) {
-                    this.removeSocket(theSocket);
-                    --si;
-                    hadChanged = true;
-                }
-                else {
-                    if (!needSort) {
-                        needSort = theSocket.index == si;
-                    }
-                }
-            }
-            if (needSort) {
-                this.inputScokets_arr.sort(this.inputSocketSortFun);
-            }
-            if (hadChanged || needSort) {
-                this.fireEvent(Event_SocketNumChanged, 20);
-                this.bluePrint.fireChanged();
-            }
-        }
-
-        this.fireChanged();
-        this.fireMoved(10);
-    }
-
     setEntity(entity) {
-        if(typeof entity === 'string'){
+        if (typeof entity === 'string') {
             entity = this.bluePrint.master.getDataSourceByCode(entity);
         }
         if (this.targetEntity == entity)
             return;
-        if (this.targetEntity != null) {
-            this.targetEntity.off('syned', this.entitySynedHandler);
-        }
+        //添加SqlNode_Parameter
         this.targetEntity = entity;
-        if (entity) {
-            entity.on('syned', this.entitySynedHandler);
+        if (this.entityNodesParameter == null) {
+            this.entityNodesParameter = new SqlNode_Parameter({ left: 1 * -200 }, this, null);
         }
-        this.entitySynedHandler();
-        this.preEditing();
+        this.entityNodesParameter.entitySynedHandler(entity);
+
     }
 
     getContext(finder) {
@@ -524,82 +472,101 @@ class SqlNode_XApply extends SqlNode_Base {
         if (superRet == false || superRet != null) {
             return superRet;
         }
-        var belongSelectNode = null;
-        for (var i = preNodes_arr.length - 1; i >= 0; --i) {
-            if (preNodes_arr[i].type == SQLNODE_SELECT) {
-                belongSelectNode = preNodes_arr[i];
-                break;
-            }
-        }
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
         var socketOuts_arr = [];
-        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
-            var socket = this.inputScokets_arr[i];
-            var tLinks = this.bluePrint.linkPool.getLinksBySocket(socket);
-            if (tLinks.length == 0) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle,
-                    nodeThis,
-                    helper.clickLogBadgeItemHandler),
-                    '必须有输入']);
-                return false;
-            }
-            var theLink = tLinks[0];
-            var outNode = theLink.outSocket.node;
-            var compileRet = outNode.compile(helper, usePreNodes_arr);
-            if (compileRet == false) {
-                // child compile fail
-                return false;
-            }
-            var socketOut = compileRet.getSocketOut(theLink.outSocket);
-            if (outNode.type == SQLNODE_SELECT) {
-                // select node 需要嵌套括号以及别名
-                socketOut.strContent = bracketStr(compileRet.strContent) + ' as ' + outNode.title;
-            }
-            if (socketOut.data && socketOut.data.tableName) {
-                var tableKey = belongSelectNode.id + '_tables_' + socketOut.data.tableName;
-                var cacheNode = helper.getCache(tableKey);
-                if (cacheNode != null) {
-                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                        thisNodeTitle,
-                        nodeThis,
-                        helper.clickLogBadgeItemHandler),
-                    '数据源:[' + socketOut.data.tableName + ']有同名节点']);
-                    return false;
-                }
-                helper.setCache(tableKey, outNode);
-            }
-            socketOuts_arr.push(socketOut);
+        var socket = this.inputScokets_arr[0];
+        var tLinks = this.bluePrint.linkPool.getLinksBySocket(socket);
+        if (tLinks.length == 0) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '必须有输入']);
+            return false;
         }
-            if(nodeThis.entityNodesParameter==null)
-            {   var parmeterCount = nodeThis.entityNodesParameter
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle,
-                    nodeThis,
-                    helper.clickLogBadgeItemHandler),
-                    '数据源未设置']);
-                return false;
-            }
-            var parameterInputScokets_arr = nodeThis.entityNodesParameter.inputScokets_arr;
+        if (nodeThis.targetEntity.type != 'FT') {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '数据源不是FT表']);
+            return false;
+        }
+
+
+        var theLink = tLinks[0];
+        var outNode = theLink.outSocket.node;
+        var compileRet = outNode.compile(helper, usePreNodes_arr);
+        if (compileRet == false) {
+            // child compile fail
+            return false;
+        }
+        var socketOut = compileRet.getSocketOut(theLink.outSocket);
+        if (outNode.type == SQLNODE_SELECT) {
+            // select node 需要嵌套括号以及别名
+            socketOut.strContent = bracketStr(compileRet.strContent) + ' as ' + outNode.title;
+        }
+        socketOuts_arr.push(socketOut);
+
+        if (nodeThis.targetEntity == null) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '数据源未设置']);
+            return false;
+        }
+        else {
+            nodeThis.preEditing();
+        }
+        if (nodeThis.entityNodesParameter != null) {
+            var parameterInputScokets_arr = nodeThis.entityNodesParameter.inputScokets_arr;  //判断无效名字
             var parmeterTitle = nodeThis.entityNodesParameter.getNodeTitle()
+            var parmetervals = [];
             for (var i = 0; i < parameterInputScokets_arr.length; ++i) {
-                var socket = parameterInputScokets_arr[i];
-                var tLinks = nodeThis.entityNodesParameter.bluePrint.linkPool.getLinksBySocket(socket);
+                var theSocket = parameterInputScokets_arr[i];
+                var tLinks = nodeThis.entityNodesParameter.bluePrint.linkPool.getLinksBySocket(theSocket);  //修改参数名字NodesParameter
+                var tValue = null
                 if (tLinks.length == 0) {
-                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                        parmeterTitle,
-                        nodeThis.entityNodesParameter,
-                        helper.clickLogBadgeItemHandler),
-                        '输入接口不能为空']);
-                    return false;
+                    if (IsEmptyString(theSocket.defval)) {
+                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                            parmeterTitle,
+                            nodeThis.entityNodesParameter,
+                            helper.clickLogBadgeItemHandler),
+                            '输入不能为空']);
+                        return false;
+                    }
+                    tValue = theSocket.defval;
+                    if (isNaN(tValue)) {
+                        tValue = "'" + tValue + "'";
+                    }
                 }
+                else {
+                    var link = tLinks[0];
+                    var outNode = link.outSocket.node;
+                    var compileRet = outNode.compile(helper, usePreNodes_arr);
+                    if (compileRet == false) {
+                        return false;
+                    }
+                    tValue = compileRet.getSocketOut(link.outSocket).strContent;
+                    if (!outNode.outputIsSimpleValue()) {
+                        tValue = '(' + tValue + ')';
+                    }
+                }
+                parmetervals.push(tValue);
+
+            }
         }
-    
-        var joinString = socketOuts_arr[0].strContent + clampStr(this.xapplyType, ' ', ' ') ;
+        var entityString = this.targetEntity.name + '( ';
+        parmetervals.forEach((x, i) => {
+            entityString += (i == 0 ? '' : ',') + x;
+        });
+        entityString += ' )';
+        var applyString = socketOuts_arr[0].strContent + clampStr(this.xapplyType, ' ', ' ') + entityString;
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, joinString  );
+        selfCompileRet.setSocketOut(this.outSocket, applyString);
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -611,8 +578,10 @@ class SqlNode_Parameter extends SqlNode_Base {
         this.isConstNode = true;
         if (nodeJson) {
             this.inputScokets_arr.forEach(x => {
-                x.inputable = false;
+                x.inputable = true;
                 x.type = SqlVarType_Scalar;
+                x.label = x.name;
+                //x.label = param.name;
             });
         }
     }
@@ -684,59 +653,6 @@ class SqlNode_Parameter extends SqlNode_Base {
         this.fireChanged();
         this.fireMoved(10);
     }
-    // setEntityParam(entity)
-    // {
-    //     for(var i = 0; i < entity.length; i++ )
-    //     {
-    //         this.inSocket = new NodeSocket('in', this, true);
-    //         this.addSocket(this.inSocket);
-    //     }
-    // }
-    linkAdded(link) {
-        super.linkAdded(link);
-        var outNode = link.outSocket.node;
-        if (outNode.type == SQLNODE_COLUMN) {
-            this.parent.fireEvent('selectchanged', 0, {
-                tableCode: outNode.tableCode,
-                tableAlias: outNode.tableAlias,
-                columnName: outNode.columnName
-            });
-        }
-    }
-
-    linkRemoved(link) {
-        super.linkRemoved(link);
-        var outNode = link.outSocket.node;
-        if (outNode.type == SQLNODE_COLUMN) {
-            this.parent.fireEvent('selectchanged', 0, {
-                tableCode: outNode.tableCode,
-                tableAlias: outNode.tableAlias,
-                columnName: outNode.columnName
-            });
-        }
-    }
-
-    aliasInputChangedHanlder(ev) {
-        var theSocketID = getAttributeByNode(ev.target, 'd-socketid');
-        if (theSocketID == null)
-            return;
-        var theSocket = this.getSocketById(theSocketID);
-        if (theSocket == null)
-            return;
-        theSocket.setExtra('alias', ev.target.value);
-        theSocket.fireEvent('changed');
-    }
-
-    // customSocketRender(socket) {
-    //     if (!socket.isIn) {
-    //         return;
-    //     }
-    //     var alias = socket.getExtra('alias');
-    //     if (alias == null) {
-    //         alias = '';
-    //     }
-    //     return (<div>AS:<input type='text' className='socketInputer' big='1' onChange={this.aliasInputChangedHanlder} value={alias} /></div>)
-    // }
 }
 
 SqlNodeClassMap[SQLNODE_AGGREGATE] = {
@@ -765,17 +681,12 @@ SqlNodeClassMap[SQLNODE_PARAMETER] = {
 };
 SqlNodeEditorControls_arr.push(
     {
-        label:'BetWeen',
-        nodeClass:SqlNode_BetWeen,
+        label: 'BetWeen',
+        nodeClass: SqlNode_BetWeen,
     },
     {
-        label:'Apply',
-        nodeClass:SqlNode_XApply,
+        label: 'Apply',
+        nodeClass: SqlNode_XApply,
     }
-    ,
-    {
-        label:'Parameter',
-        nodeClass:SqlNode_Parameter,
-    }
-    
+
 );
