@@ -41,7 +41,7 @@ class CProject extends IAttributeable{
             name:genProjectName(),
             editingType:'MB',
             editingPage:{
-                name:''
+                id:jsonData.lastEditingPageID
             },
             description:'页面'
         }
@@ -85,7 +85,7 @@ class CProject extends IAttributeable{
         if(index != -1){
             this.content_PC.pages.forEach(pk=>{
                 if(pk != pagekernel){
-                    pk.__setAttribute(AttrNames.isMain, false);
+                    pk.__setAttribute(AttrNames.IsMain, false);
                 }
             });
         }
@@ -94,7 +94,7 @@ class CProject extends IAttributeable{
             if(index != -1){
                 this.content_Mobile.pages.forEach(pk=>{
                     if(pk != pagekernel){
-                        pk.__setAttribute(AttrNames.isMain, false);
+                        pk.__setAttribute(AttrNames.IsMain, false);
                     }
                 });
             }
@@ -167,34 +167,52 @@ class CProject extends IAttributeable{
         return new ctlConfig.kernelClass({}, this);
     }
 
-    setEditingPageByName(pageName){
-        var thePage = this.getPageByName(pageName);
+    setEditingPageById(pageID){
+        var thePage = this.getPageById(pageID);
         if(thePage == null)
             return false;
-        this.designeConfig.editingPage.name = thePage.name;
+        this.designeConfig.editingPage.id = thePage.id;
         this.attrChanged('editingPage');
     }
 
-    getPageByName(pageName){
-        var rlt = null;
-        if(this.designeConfig.editingType == 'PC'){
-            rlt = this.content_PC.pages.find(item=>{return item.name == pageName;});
-            if(rlt == null){
-                rlt = this.content_PC.pages.length > 0 ? this.content_PC.pages[0] : null;
-            }
-        }
-        else{
-            rlt = this.content_Mobile.pages.find(item=>{return item.name == pageName;});
-            if(rlt == null){
-                rlt = this.content_Mobile.pages.length > 0 ? this.content_Mobile.pages[0] : null;
-            }
+    getPageById(pageID){
+        var rlt = this.content_PC.pages.find(item=>{return item.id == pageID;});
+        if(rlt == null){
+            rlt = this.content_Mobile.pages.find(item=>{return item.id == pageID;});
         }
         return rlt;
     }
 
+    createEmptyPage(isPC){
+        var newPage = new M_PageKernel(null, this);
+        newPage.project = this;
+        newPage.set_ismain(false);
+        var newTitle;
+        for(var i=1;i<999;++i){
+            var hadItem = null;
+            newTitle = (!isPC ? '手机页面_' : 'PC页面_') + i;
+            if(isPC){
+                hadItem = this.content_PC.pages.find(item=>{return item.getAttribute('title') == newTitle;});
+            }
+            else{
+                hadItem = this.content_Mobile.pages.find(item=>{return item.getAttribute('title') == newTitle;});
+            }
+            if(hadItem == null){
+                break;
+            }
+        }
+        newPage.set_title(newTitle);
+        if(isPC){
+            this.content_PC.pages.push(newPage);
+        }
+        else{
+            this.content_Mobile.pages.push(newPage);
+        }
+        return newPage;
+    }
+
     getEditingPage(){
-        var nowEditingPageName = this.designeConfig.editingPage.name;
-        return this.getPageByName(this.designeConfig.editingPage.name);
+        return this.getPageById(this.designeConfig.editingPage.id);
     }
 
     setEditingType(newValue){
@@ -226,6 +244,7 @@ class CProject extends IAttributeable{
         var attrJson=super.getJson();
         var rlt = {
             attr:attrJson,
+            lastEditingPageID:this.designeConfig.editingPage.id
         };
         rlt.content_PC={
             pages:[],

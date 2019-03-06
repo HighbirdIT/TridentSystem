@@ -7,7 +7,28 @@ function genTextFiledAttribute(label='显示字段', def='', editable = true){
     }, true, {
         scriptable:true,
         type:FunType_Client,
-        group:FunGroup.CtlAttr,
+        group:EJsBluePrintFunGroup.CtlAttr,
+    });
+}
+
+function genValueFiledAttribute(label='码值字段', def='', editable = true){
+    return new CAttribute(label,AttrNames.ValueField,ValueType.String, def, true, false, [], 
+    {
+        pullDataFun:GetKernelCanUseColumns,
+        text:'name',
+        editable:editable,
+    }, true, {
+        scriptable:true,
+        type:FunType_Client,
+        group:EJsBluePrintFunGroup.CtlAttr,
+    });
+}
+
+function genIsdisplayAttribute(){
+    return new CAttribute('是否显示', AttrNames.Isdisplay, ValueType.Boolean, true, true, false, null, null,true,{
+        scriptable:true,
+        type:FunType_Client,
+        group:EJsBluePrintFunGroup.CtlAttr,
     });
 }
 
@@ -73,8 +94,14 @@ function makeActStr_pullKernel(formKernel){
     return 'pulldata_' + formKernel.id;
 }
 
-function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr, isModel = true, url = 'appServerUrl'){
-    return "store.dispatch(fetchJsonPost(" + url + ", { action: '" + actStr + "' }, makeFTD_Prop(" + baseStr + "," + idStr + ',' + propStr + ',' + isModel + "), EFetchKey.FetchPropValue));";
+function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr, paramObj, isModel = true, url = 'appServerUrl'){
+    if(paramObj == null){
+        paramObj = {action:singleQuotesStr(actStr)};
+    }
+    else{
+        paramObj.action = singleQuotesStr(actStr);
+    }
+    return "store.dispatch(fetchJsonPost(" + url + ", " + JsObjectToString(paramObj) + ", makeFTD_Prop(" + baseStr + "," + idStr + ',' + propStr + ',' + isModel + "), EFetchKey.FetchPropValue));";
 }
 
 function makeLine_Return(retStr){
@@ -91,7 +118,7 @@ const VarNames={
     NowRecord:'nowRecord',
     RetElem:'retElem',
     ThisProps:'this.props',
-    FetchErr:'fetchErr',
+    FetchErr:'fetchingErr',
     Fetching:'fetching',
     CtlState:'ctlState',
     Records_arr:'records_arr',
@@ -99,6 +126,7 @@ const VarNames={
     InsertCache:'insertCache',
     State:'state',
     Bundle:'bundle',
+    InvalidBundle:'invalidbundle',
 };
 
 const AttrNames={
@@ -112,6 +140,7 @@ const AttrNames={
     IsMain:'ismain',
     Label:'label',
     DataSource:'datasource',
+    CustomDataSource:'customdatasource',
     ProcessTable:'processtable',
     Name:'name',
     ValueType:'valuetype',
@@ -119,6 +148,13 @@ const AttrNames={
     DefaultValue:'defaultvalue',
     EditorType:'editortype',
     TextField:'textfield',
+    ValueField:'valuefield',
+    FormType:'formtype',
+    FromTextField:'fromtextfield',
+    FromValueField:'fromvaluefield',
+    AutoClearValue:'autoclearvalue',
+    Editeable:'editeable',
+    Isdisplay:'isdisplay',
 
     Event:{
         OnClick:'onclik'

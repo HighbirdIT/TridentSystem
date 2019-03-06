@@ -318,8 +318,33 @@ class C_Node_SimpleNode extends React.PureComponent {
         }
     }
 
+    listenNode(theNode){
+        /*
+        if(theNode){
+            theNode.on('changed', this.reDraw);
+        }
+        */
+        this.listenedNode = theNode;
+    }
+
+    unlistenNode(theNode){
+        /*
+        if(theNode){
+            theNode.off('changed', this.reDraw);
+        }
+        */
+    }
+
+    cus_componentWillUnmount(){
+        this.unlistenNode(this.props.nodedata);
+    }
+
     render() {
         var nodeData = this.props.nodedata;
+        if(this.listenedNode != nodeData){
+            this.unlistenNode(this.listenedNode);
+            this.listenNode(nodeData);
+        }
         var headType = nodeData.headType == null ? 'tiny' : nodeData.headType;
         var rightElem = null;
         if(nodeData.outFlowSockets_arr == null){
@@ -561,8 +586,8 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
                 </div>
 
                 <div>Distinct:
-                    <input type='checkbox' id='distinct' className='flex-grow-1 flex-shrink-1' checked={distvalue} onChange={this.distinctChangeHandler} style={{display: 'none'}}></input>
-                    <label htmlFor="distinct"></label>
+                    <input type='checkbox' id='distinct' className='flex-grow-1 flex-shrink-1 distinct' checked={distvalue} onChange={this.distinctChangeHandler} style={{display: 'none'}}></input>
+                    <label htmlFor="distinct" className='distinct'></label>
                 </div>
             </div>               
             <div className='d-flex'>

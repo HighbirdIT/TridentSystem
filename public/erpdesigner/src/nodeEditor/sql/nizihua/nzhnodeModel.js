@@ -7,6 +7,8 @@ const SQLNODE_LOGICAL_NOT = 'logical_not';
 const SQLNODE_IN_OPERATOR = 'in_operator';
 const SQLNODE_TOSTRING='makestring';
 const SQLNODE_UNION='union';
+const SQLNODE_CASEWHEN = 'casewhen'
+const SQLNODE_FBSOURCE ='fbsource'
 
 SQL_OutSimpleValueNode_arr.push(SQLNODE_GETDATE);
 
@@ -998,6 +1000,316 @@ class SqlNode_Union extends SqlNode_Base {
     }
 }
 
+
+/*
+    case when(*)
+
+*/
+class SqlNode_CaseWhen extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, SQLNODE_CASEWHEN, 'case_when(*)', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+                this.outSocket.type = SqlVarType_Boolean;
+            }
+        }//给出标量
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Boolean });
+            this.addSocket(this.outSocket);
+        }
+
+        if (this.inputScokets_arr.length == 0) {
+            this.addSocket(new NodeSocket('input1', this, true, { type: SqlVarType_Scalar, inputable: false }));
+            this.addSocket(new NodeSocket('input2', this, true, { type: SqlVarType_Scalar, inputable: false }));
+        }
+        else {
+            this.inputScokets_arr.forEach(socket => {
+                socket.type = SqlVarType_Scalar;
+                socket.inputable = false;
+            });
+        }
+        var inputLabels_arr=['列名','变量'];
+        this.inputScokets_arr.forEach((soket, i) => {
+            soket.label = inputLabels_arr[i];
+        });
+    }
+    customSocketRender(socket) {
+        return null;
+    }
+    getNodeTitle() {
+        return 'case when(*)';
+    }
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        return rlt;
+    }
+
+    
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var tValue = null;
+        var column_value=null;
+        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+            var theSocket = this.inputScokets_arr[i];
+            var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+            
+            if (tLinks.length == 0) {
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle
+                    , nodeThis
+                    , helper.clickLogBadgeItemHandler)
+                    , '输入不能为空']);
+                return false;
+            }
+            else {
+                var link = tLinks[0];
+                var outNode = link.outSocket.node;
+                var compileRet = outNode.compile(helper, usePreNodes_arr);
+                if (compileRet == false) {
+                    return false;
+                }
+                if (i==0){
+                    column_value=compileRet.getSocketOut(link.outSocket).strContent;
+                }else{
+                    tValue = compileRet.getSocketOut(link.outSocket).strContent;
+                }
+            }
+        }
+        var finalSql = '';
+        finalSql = 'case when ' + tValue + "='*'" +' then 1 when ' +column_value+'=' +tValue+' then 1 else 0 end=1 ';
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, ' ' + finalSql);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+
+    }
+}
+class SqlNode_FbSource extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, SQLNODE_FBSOURCE, 'FB', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+                this.outSocket.type = SqlVarType_Scalar;
+            }
+        }
+        else {
+            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Scalar });
+            this.addSocket(this.outSocket);
+        }
+
+        if (this.targetEntity != null) {
+            var tem_arr = this.targetEntity.split('-');
+            if (tem_arr[0] == 'dbe') {
+                this.targetEntity = g_dataBase.getEntityByCode(tem_arr[1]);
+                this.targetEntity.on('syned', this.entitySynedHandler);
+                //console.log(this.targetEntity);
+            }
+            else {
+                this.targetEntity = null;
+            }
+        }
+
+        var self = this;
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        if (this.targetEntity != null) {
+            rlt.targetEntity = 'dbe-' + this.targetEntity.code;
+        }
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['targetEntity']);
+    }
+
+    cusTitleChanged(oldTitle, newTitle) {
+        if (this.targetEntity == null) {
+            return;
+        }
+        if (IsEmptyString(newTitle)) {
+            return;
+        }
+        var compareType = IsEmptyString(oldTitle) ? 'code' : 'alias';
+        var key = IsEmptyString(oldTitle) ? this.targetEntity.code : oldTitle;
+        var newTool = new SqlNodeTool_SynColumnNodeAlias(this, compareType, key, newTitle);
+    }
+
+    inputSocketSortFun(sa, sb) {
+        return sa.index > sb.index;
+    }
+
+    entitySynedHandler() {
+        var entity = this.targetEntity;
+        if (entity && entity.loaded) {
+            var paramCount = entity.params.length;
+            var entity_param_arr = [];
+            entity.params.forEach((param,i) =>{
+                if(param.isreturn == false){
+                    entity_param_arr.push(param);
+                }
+            })
+            //alert(entity_param_arr);
+            this.inputScokets_arr.forEach(item => {
+                item._validparam = false;
+            });
+            var hadChanged = false;
+            entity_param_arr.forEach((param, i) => {
+                var theSocket = this.getScoketByName(param.name);
+                if (theSocket == null) {
+                    this.addSocket(new NodeSocket(param.name, this, true, { type: SqlVarType_Scalar, label: param.name, index: i }));
+                    hadChanged = true;
+                }
+                else {
+                    theSocket._validparam = true;
+                    if (theSocket.label != param.name) {
+                        theSocket.set({ label: param.name });
+                    }
+                    theSocket.index = i;
+                }
+            }
+            );
+            var needSort = false;
+            for (var si = 0; si < this.inputScokets_arr.length; ++si) {
+                var theSocket = this.inputScokets_arr[si];
+                if (theSocket._validparam == false) {
+                    this.removeSocket(theSocket);
+                    --si;
+                    hadChanged = true;
+                }
+                else {
+                    if (!needSort) {
+                        needSort = theSocket.index == si;
+                    }
+                }
+            }
+            if (needSort) {
+                this.inputScokets_arr.sort(this.inputSocketSortFun);
+            }
+            if (hadChanged || needSort) {
+                this.fireEvent(Event_SocketNumChanged, 20);
+                this.bluePrint.fireChanged();
+            }
+        }
+
+        this.fireChanged();
+        this.fireMoved(10);
+    }
+
+    setEntity(entity) {
+        
+        if(typeof entity === 'string'){
+            entity = this.bluePrint.master.getDataSourceByCode(entity);
+        }
+        var fbtype = this.targetEntity.type
+
+        if (this.targetEntity == entity)
+            return;
+        if (this.targetEntity != null) {
+            this.targetEntity.off('syned', this.entitySynedHandler);
+        }
+        this.targetEntity = entity;
+        if (entity) {
+            entity.on('syned', this.entitySynedHandler);
+        }
+        this.entitySynedHandler();
+        
+        
+    }
+
+    getContext(finder) {
+        finder.setTest(this.id);
+        if (this.targetEntity == null) {
+            return;
+        }
+        if (finder.type == ContextType_DBEntity) {
+            var theLabel = this.title;
+            if (IsEmptyString(theLabel)) {
+                theLabel = this.targetEntity.loaded ? this.targetEntity.name : this.targetEntity.code;
+            }
+            finder.addItem(theLabel, this.targetEntity);
+        }
+    }
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        if (this.targetEntity == null) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '没有选择FB']);
+            return false;
+        }
+        if (this.targetEntity.loaded == false) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                'FB数据尚未加载完成']);
+            return false;
+        }
+        var paramsStr = '';
+        var params_arr = [];
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        if (this.inputScokets_arr.length > 0) {
+            for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+                var theSocket = this.inputScokets_arr[i];
+                var paramValue = null;
+                var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+                if (tLinks.length == 0) {
+                    paramValue = IsEmptyString(theSocket.defval) ? null : theSocket.defval;
+                    if (isNaN(paramValue)) {
+                        paramValue = "'" + theSocket.defval + "'";
+                    }
+                }
+                else {
+                    var compileRet = tLinks[0].outSocket.node.compile(helper, usePreNodes_arr);
+                    if (compileRet == false) {
+                        // child compile fail
+                        return false;
+                    }
+                    paramValue = compileRet.getSocketOut(tLinks[0].outSocket).strContent;
+                }
+                if (IsEmptyString(paramValue)) {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle,
+                        nodeThis,
+                        helper.clickLogBadgeItemHandler),
+                    '参数:"' + theSocket.name + '"未设置']);
+                    return false;
+                }
+                params_arr.push({ name: theSocket.name, value: paramValue });
+            }
+            params_arr.forEach((item, index) => {
+                paramsStr += (index == 0 ? '' : ',') + item.value;
+            });
+        }
+        helper.addUseEntity(this.targetEntity);
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, 'DBO.'+this.targetEntity.name + (paramsStr.length == 0 ? '' : '(' + paramsStr + ')') +
+            (IsEmptyString(this.title) ? '' : ' as [' + this.title + ']'), { tableName: IsEmptyString(this.title) ? this.targetEntity.name : this.title });
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
 SqlNodeClassMap[SQLNODE_EXISTS] = {
     modelClass: SqlNode_Exists,
     comClass: C_SqlNode_Exists,
@@ -1039,7 +1351,14 @@ SqlNodeClassMap[SQLNODE_UNION]={
     modelClass:SqlNode_Union,
     comClass:C_SqlNode_Union,
 };
-
+SqlNodeClassMap[SQLNODE_CASEWHEN]={
+    modelClass:SqlNode_CaseWhen,
+    comClass:C_Node_SimpleNode,
+};
+SqlNodeClassMap[SQLNODE_FBSOURCE]={
+    modelClass:SqlNode_FbSource,
+    comClass:C_SqlNode_FbSource,
+};
 SqlNodeEditorControls_arr.push(
     {
         label:'exists',
@@ -1077,5 +1396,13 @@ SqlNodeEditorControls_arr.push(
     {
         label:'union',
         nodeClass:SqlNode_Union,
+    },
+    {
+        label:'casewhen(*)',
+        nodeClass:SqlNode_CaseWhen,
+    },
+    {
+        label:'DBO.FB()',
+        nodeClass:SqlNode_FbSource,
     }
 );

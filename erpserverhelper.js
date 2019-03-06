@@ -59,4 +59,32 @@ helper.commonProcess = (req, res, next, action_map) => {
     }
 };
 
+helper.JsObjectToString = (obj)=>{
+	var objtype = typeof obj;
+	if(objtype === 'string' || objtype === 'number' || objtype === 'boolean'){
+		return obj;
+	}
+	else if(objtype != 'object'){
+		console.error('what is ' + objtype);
+	}
+	var rltStr = '{';
+	if(obj.length != null && typeof obj.length === 'function'){
+		rltStr = '[';
+		obj.forEach(
+			(e,i)=>{
+				rltStr += (i == 0 ? '' : ',') + helper.JsObjectToString(e);
+			}
+		);
+		rltStr += ']';
+	}
+	else{
+		for(var si in obj){
+			rltStr += si + ':' + helper.JsObjectToString(obj[si]) + ',';
+		}
+		rltStr += '}';
+	}
+	
+	return rltStr;
+};
+
 module.exports = helper;

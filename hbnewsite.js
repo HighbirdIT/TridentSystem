@@ -11,6 +11,8 @@ var co = require('co');
 var dingHelper = require('./dingHelper');
 var developconfig = require('./developconfig');
 var debug = require('debug');
+const serverhelper = require('./erpserverhelper.js');
+
 debug.enabled = ()=>{
     return false;
 }
@@ -31,6 +33,10 @@ var handlebars = require('express3-handlebars').create({
             }
             this._sections[name] = options.fn(this);
             return null;
+        },
+        encodeMyString: function(inputData){
+            var t = this;
+            return new handlebars.handlebars.SafeString(inputData);
         }
     }
 });
@@ -126,34 +132,36 @@ app.use('/', function (req, res, next) {
             res.locals.isProduction = app.get('env') == 'production';
 
             if(!res.locals.isProduction){
-                res.locals.cacheUserid = developconfig.userID;
-                res.locals.cacheUserName = developconfig.userName;
-                req.session.userid = developconfig.userID;
-                req.session.username = developconfig.userName;
+                res.locals.cacheUserid = developconfig.envVar.userid;
+                res.locals.cacheUserName = developconfig.envVar.username;
+                res.locals.g_envVar = JSON.stringify(developconfig.envVar);
+                req.session.g_envVar = developconfig.envVar;
             }
             else{
                 var cookiesUer = {
-                    id:-1,
-                    name:'未知用户',
+                    userid:-1,
+                    username:'未知用户',
+                    envVar:{},
                 };
                 var logrcd = req.signedCookies._erplogrcdid;
-                logrcd='5FE1EC04-4271-4650-AB4D-193A9F9D1DEA';
+                //logrcd='5FE1EC04-4271-4650-AB4D-193A9F9D1DEA';
                 if(logrcd != null){
                     dingHelper.aysnLoginfFromRcdID(logrcd, req, res).then(
                         userData=>{
                             if(userData != null){
-                                cookiesUer.id = userData.userid;
-                                cookiesUer.name = userData.username;
+                                cookiesUer = userData;
                             }
-                            res.locals.cacheUserid = cookiesUer.id;
-                            res.locals.cacheUserName = cookiesUer.name;
+                            res.locals.cacheUserid = cookiesUer.userid;
+                            res.locals.cacheUserName = cookiesUer.username;
+                            res.locals.g_envVar=JSON.stringify(cookiesUer);
                             return res.render('erppage/mobileerp', { layout: 'erppagetype_MA' });
                         }
                     );
                     return;
                 }
-                res.locals.cacheUserid = cookiesUer.id;
-                res.locals.cacheUserName = cookiesUer.name;
+                res.locals.cacheUserid = cookiesUer.userid;
+                res.locals.cacheUserName = cookiesUer.username;
+                res.locals.g_envVar=JSON.stringify(cookiesUer);
             }
     
             return res.render('erppage/mobileerp', { layout: 'erppagetype_MA' });
@@ -163,7 +171,6 @@ app.use('/', function (req, res, next) {
 
     next();
 });
-
 
 app.use('/dingUtility', function (req, res, next) {
     if(req.path == '/')
@@ -391,6 +398,7 @@ app.use('/erppage', function (req, res, next) {
                 if (fs.existsSync(__dirname + '/public' + jsFilePath)) {
                     res.locals.clientJs = jsFilePath;
                     res.locals.title = cache.title;
+                    res.locals.g_envVar = req.session.g_envVar == null ? '{}' : JSON.stringify(req.session.g_envVar);
                     return res.render('erppage/client', { layout: layoutName });
                 }
                 else {
@@ -398,8 +406,6 @@ app.use('/erppage', function (req, res, next) {
                     return res.render('404');
                 }
             });
-
-
     }
     else {
         var layoutName = isPC ? cache.pcLayoutName : cache.mobileLayoutName;
@@ -407,6 +413,7 @@ app.use('/erppage', function (req, res, next) {
         if (fs.existsSync(__dirname + '/public' + jsFilePath)) {
             res.locals.clientJs = jsFilePath;
             res.locals.title = cache.title;
+            res.locals.g_envVar = req.session.g_envVar == null ? '{}' : JSON.stringify(req.session.g_envVar);
             return res.render('erppage/client', { layout: layoutName });
         }
         else {

@@ -65,6 +65,9 @@ class ProjectCompiler extends EventEmitter{
         var BP_sql_arr = project.dataMaster.BP_sql_arr;
         for(ti in BP_sql_arr){
             var sql_blueprint = BP_sql_arr[ti];
+            if(sql_blueprint.group != 'custom'){
+                continue;
+            }
             logManager.log("编译[" + sql_blueprint.name + ']');
             var bpCompileHelper = new SqlNode_CompileHelper(logManager, null);
             bpCompileHelper.clickLogBadgeItemHandler = this.clickSqlCompilerLogBadgeItemHandler;

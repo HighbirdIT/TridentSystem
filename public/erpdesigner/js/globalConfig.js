@@ -94,11 +94,22 @@ var CharfunType_arr = [CharfunType_ASCII, CharfunType_CHAR, CharfunType_LEFT, Ch
 
 var FunType_Client = 'client';
 var FunType_Server = 'server';
-var FunGroup = {
+var EJsBluePrintFunGroup = {
     CtlAttr: 'ctlattr',
     CtlEvent: 'ctlevent'
 };
 
+var ESqlBluePrintGroup = {
+    Custom: 'custom',
+    ControlCustom: 'ctlcus'
+};
+
+var EFormType = {
+    Page: 'page',
+    List: 'list'
+};
+
+var FormTypes_arr = [EFormType.Page, EFormType.List];
 var ButtonClasses_arr = ['btn-primary', 'btn-secondary', 'btn-success', 'btn-danger', 'btn-warning', 'btn-info', 'btn-light', 'btn-dark', 'btn-link'];
 /**
  * 逻辑运算符 and or not
@@ -189,6 +200,7 @@ var ValueType = {
     DateTime: 'datetime',
     StyleValues: 'StyleValues',
     DataSource: 'DataSource',
+    CustomDataSource: 'CustomDataSource',
     Unknown: 'Unknown',
     Any: '任意',
     Event: 'event'

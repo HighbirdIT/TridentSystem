@@ -256,6 +256,13 @@ var MainApp = function (_React$PureComponent3) {
     _createClass(MainApp, [{
         key: 'userLogin',
         value: function userLogin(userid, username) {
+            if (userid > 0) {
+                var gotourl = getQueryVariable('goto');
+                if (gotourl != false) {
+                    location.href = gotourl;
+                    return;
+                }
+            }
             var newState = {
                 userid: userid,
                 username: username
