@@ -310,7 +310,7 @@ class AttributeEditor extends React.PureComponent {
         }
         return (
             <div className='d-flex flex-grow-1 flex-shrink-1 align-items-center'>
-            <input type={inputType} className="form-control" id={inputID} checked={this.state.value} value={this.state.value} onChange={this.editorChanged} attrname={attrName} />
+            <input autoComplete='off'  type={inputType} className="form-control" id={inputID} checked={this.state.value} value={this.state.value} onChange={this.editorChanged} attrname={attrName} />
             {jsIconElem}
             </div>
         );

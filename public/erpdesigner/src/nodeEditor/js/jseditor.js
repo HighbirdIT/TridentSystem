@@ -20,6 +20,11 @@ const JSNodeEditorControls_arr =[
         type:'流控制'
     },
     {
+        label:'CallOnFetchEnd',
+        nodeClass:JSNode_CallOnFetchEnd,
+        type:'流控制'
+    },
+    {
         label:'IF',
         nodeClass:JSNode_IF,
         type:'流控制'
@@ -58,6 +63,11 @@ const JSNodeEditorControls_arr =[
         label:'日期函数',
         nodeClass:JSNode_DateFun,
         type:'运算'
+    },
+    {
+        label:'查询FB',
+        nodeClass:JSNode_QueryFB,
+        type:'数据库交互'
     },
 ];
 

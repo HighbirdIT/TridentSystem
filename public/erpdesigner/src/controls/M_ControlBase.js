@@ -134,3 +134,30 @@ function GetKernelCanUseColumns(theKernel){
     }while(nowKernel != null);
     return rlt == null ? [] : rlt;
 }
+
+function GetCanInteractiveColumns(theKernel){
+    var rlt = [''];
+    var parentKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
+    if(parentKernel == null){
+        parentKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
+    }
+    var buttons_arr = parentKernel.searchChildKernel(ButtonKernel_Type, false, true);
+    var processTables_map = {};
+    buttons_arr.forEach(btnKernel=>{
+        var wts_arr = btnKernel.getWantInsertTables();
+        if(wts_arr != null){
+            wts_arr.forEach(code=>{
+                processTables_map[code] = 1;
+            });
+        }
+    });
+    for(var dsCode in processTables_map){
+        var theDS = g_dataBase.getEntityByCode(dsCode);
+        if(theDS != null && theDS.loaded && theDS.columns != null){
+            theDS.columns.forEach(column=>{
+                rlt.push(column.name);
+            });
+        }
+    }
+    return rlt;
+}

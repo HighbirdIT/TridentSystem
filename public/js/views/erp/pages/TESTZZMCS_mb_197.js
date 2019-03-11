@@ -19,7 +19,7 @@ var appReducerSetting = { AT_PAGELOADED: pageLoadedReducer.bind(window), AT_GOTO
 var appReducer = createReducer(appInitState, Object.assign(baseReducerSetting, appReducerSetting));
 var reducer = appReducer;
 var store = Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));
-var appStateChangedAct_map = { 'M_Page_2.M_Dropdown_1.value': M_Dropdown_1_value_changed.bind(window) };
+var appStateChangedAct_map = { 'M_Page_2.M_Dropdown_1.text': M_Dropdown_1_text_changed.bind(window), 'M_Page_2.M_Dropdown_1.value': M_Dropdown_1_value_changed.bind(window), 'M_Page_2.M_LC_3.visible': M_LC_3_visible_changed.bind(window) };
 
 function pageLoadedReducer(state) {
 	return gotoPage('M_Page_2', state);
@@ -102,8 +102,11 @@ function active_M_Page_1(state) {
 function active_M_Page_2(state) {
 	var needSetState = {};
 	needSetState['M_Page_2.M_Dropdown_0.value'] = M_Dropdown_0_defaultvalue_get(state);
+	needSetState['M_Page_2.M_Text_4.value'] = M_Text_4_defaultvalue_get(state);
 	needSetState['M_Page_2.M_Text_1.value'] = M_Text_1_defaultvalue_get(state);
+	needSetState['M_Page_2.M_LC_3.visible'] = M_LC_3_isdisplay_get(state);
 	needSetState['M_Page_2.M_Text_2.value'] = M_Text_2_defaultvalue_get(state);
+	needSetState['M_Page_2.M_Label_0.visible'] = M_Label_0_isdisplay_get(state);
 	state = setManyStateByPath(state, '', needSetState);
 	state.nowPage = 'M_Page_2';
 	setTimeout(function () {}, 50);
@@ -122,6 +125,10 @@ function pull_M_Dropdown_1() {
 	var useState = store.getState();
 	store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle, action: 'pulldata_M_Dropdown_1' }, makeFTD_Prop('M_Page_2', 'M_Dropdown_1', 'options_arr', false), EFetchKey.FetchPropValue));
 }
+function M_Text_4_defaultvalue_get(state, bundle) {
+	var M_Dropdown_1_text = bundle != null && bundle['M_Dropdown_1_text'] != null ? bundle['M_Dropdown_1_text'] : getStateByPath(state, 'M_Page_2.M_Dropdown_1.text');
+	return M_Dropdown_1_text;
+}
 function M_Text_1_defaultvalue_get(state, bundle) {
 	return getFormatDateString(new Date());
 }
@@ -132,9 +139,23 @@ function M_LC_3_isdisplay_get(state, bundle) {
 function M_Text_2_defaultvalue_get(state, bundle) {
 	return getFormatTimeString(new Date(), false);
 }
+function M_Label_0_isdisplay_get(state, bundle) {
+	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : getStateByPath(state, 'M_Page_2.M_LC_3.visible');
+	return M_LC_3_visible == true;
+}
+function M_Dropdown_1_text_changed(state, newValue, oldValue, path, visited, delayActs) {
+	var needSetState = {};
+	needSetState['M_Page_2.M_Text_4.value'] = M_Text_4_defaultvalue_get(state);
+	return setManyStateByPath(state, '', needSetState);
+}
 function M_Dropdown_1_value_changed(state, newValue, oldValue, path, visited, delayActs) {
 	var needSetState = {};
 	needSetState['M_Page_2.M_LC_3.visible'] = M_LC_3_isdisplay_get(state);
+	return setManyStateByPath(state, '', needSetState);
+}
+function M_LC_3_visible_changed(state, newValue, oldValue, path, visited, delayActs) {
+	var needSetState = {};
+	needSetState['M_Page_2.M_Label_0.visible'] = M_Label_0_isdisplay_get(state);
 	return setManyStateByPath(state, '', needSetState);
 }
 
@@ -463,12 +484,17 @@ var CM_Page_2 = function (_React$PureComponent5) {
 				React.createElement(
 					VisibleERPC_LabeledControl,
 					{ id: "M_LC_0", parentPath: "M_Page_2", label: "\u8BF7\u5047\u4EBA\u5458" },
-					React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_0", parentPath: "M_Page_2", pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u8BF7\u5047\u4EBA\u5458" })
+					React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_0", parentPath: "M_Page_2", groupAttr: "\u6240\u5C5E\u7CFB\u7EDF\u540D\u79F0,\u6240\u5C5E\u90E8\u95E8\u540D\u79F0", pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u8BF7\u5047\u4EBA\u5458" })
 				),
 				React.createElement(
 					VisibleERPC_LabeledControl,
 					{ id: "M_LC_1", parentPath: "M_Page_2", label: "\u5047\u671F\u79CD\u7C7B" },
 					React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_1", parentPath: "M_Page_2", pullDataSource: pull_M_Dropdown_1, textAttrName: "\u5458\u5DE5\u5047\u671F\u79CD\u7C7B", valueAttrName: "\u5458\u5DE5\u5047\u671F\u79CD\u7C7B\u4EE3\u7801", label: "\u5047\u671F\u79CD\u7C7B" })
+				),
+				React.createElement(
+					VisibleERPC_LabeledControl,
+					{ id: "M_LC_5", parentPath: "M_Page_2", label: "\u5F53\u524D\u72B6\u6001" },
+					React.createElement(VisibleERPC_Text, { id: "M_Text_4", parentPath: "M_Page_2", type: "string", readonly: true })
 				),
 				React.createElement(
 					VisibleERPC_LabeledControl,

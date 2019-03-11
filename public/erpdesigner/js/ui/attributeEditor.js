@@ -380,7 +380,7 @@ var AttributeEditor = function (_React$PureComponent) {
             return React.createElement(
                 'div',
                 { className: 'd-flex flex-grow-1 flex-shrink-1 align-items-center' },
-                React.createElement('input', { type: inputType, className: 'form-control', id: inputID, checked: this.state.value, value: this.state.value, onChange: this.editorChanged, attrname: attrName }),
+                React.createElement('input', { autoComplete: 'off', type: inputType, className: 'form-control', id: inputID, checked: this.state.value, value: this.state.value, onChange: this.editorChanged, attrname: attrName }),
                 jsIconElem
             );
         }

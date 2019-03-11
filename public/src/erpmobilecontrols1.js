@@ -848,7 +848,12 @@ class ERPC_Text extends React.PureComponent {
         var contentElem = null;
         var rootDivClassName = 'd-flex ' + (this.props.class == null ? '' : this.props.class);
         if (this.props.fetching) {
-            contentElem = (<i className='fa fa-spinner fa-pulse fa-fw' />);
+            rootDivClassName += 'rounded border p-1'
+            contentElem = <div className='flex-grow-1 flex-shrink-1'><i className='fa fa-spinner fa-pulse fa-fw' />通讯中</div>;
+        }
+        else if(this.props.fetchingErr){
+            rootDivClassName += 'rounded border p-1 text-danger'
+            contentElem = <div className='flex-grow-1 flex-shrink-1'><i className='fa fa-warning' />{this.props.fetchingErr.info}</div>;
         }
         else {
             if (this.props.readonly) {
@@ -863,8 +868,8 @@ class ERPC_Text extends React.PureComponent {
                 }
                 contentElem = <div className='flex-grow-1 flex-shrink-1'>{nowValue}</div>
             }
-            else if (this.props.type == 'multiline') {
-                contentElem = <textarea onChange={this.inputChanged} className='flex-grow-1 flex-shrink-1 form-control textarea-2x' value={this.props.value} />
+            else if (this.props.type == 'string' && this.props.linetype != null && this.props.linetype != 'single') {
+                contentElem = <textarea onChange={this.inputChanged} className={'flex-grow-1 flex-shrink-1 form-control textarea-' + this.props.linetype} value={this.props.value} />
             }
             else {
                 var useType = this.props.type;
@@ -897,7 +902,8 @@ function ERPC_Text_mapstatetoprops(state, ownprops) {
     return {
         value: ctlState.value == null ? '' : ctlState.value,
         fetching: ctlState.fetching,
-        visible:ctlState.visible,
+        visible: ctlState.visible,
+        fetchingErr : ctlState.fetchingErr,
     };
 }
 

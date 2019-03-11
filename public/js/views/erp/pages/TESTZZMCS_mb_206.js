@@ -19,7 +19,7 @@ var appReducerSetting = { AT_PAGELOADED: pageLoadedReducer.bind(window), AT_GOTO
 var appReducer = createReducer(appInitState, Object.assign(baseReducerSetting, appReducerSetting));
 var reducer = appReducer;
 var store = Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));
-var appStateChangedAct_map = { 'M_Page_2.M_Dropdown_1.value': M_Dropdown_1_value_changed.bind(window) };
+var appStateChangedAct_map = { 'M_Page_2.M_Dropdown_0.value': M_Dropdown_0_value_changed.bind(window), 'M_Page_2.M_Dropdown_1.value': M_Dropdown_1_value_changed.bind(window), 'M_Page_2.M_LC_3.visible': M_LC_3_visible_changed.bind(window) };
 
 function pageLoadedReducer(state) {
 	return gotoPage('M_Page_2', state);
@@ -102,8 +102,11 @@ function active_M_Page_1(state) {
 function active_M_Page_2(state) {
 	var needSetState = {};
 	needSetState['M_Page_2.M_Dropdown_0.value'] = M_Dropdown_0_defaultvalue_get(state);
+	needSetState['M_Page_2.M_Text_4.value'] = M_Text_4_defaultvalue_get(state);
 	needSetState['M_Page_2.M_Text_1.value'] = M_Text_1_defaultvalue_get(state);
+	needSetState['M_Page_2.M_LC_3.visible'] = M_LC_3_isdisplay_get(state);
 	needSetState['M_Page_2.M_Text_2.value'] = M_Text_2_defaultvalue_get(state);
+	needSetState['M_Page_2.M_Label_0.visible'] = M_Label_0_isdisplay_get(state);
 	state = setManyStateByPath(state, '', needSetState);
 	state.nowPage = 'M_Page_2';
 	setTimeout(function () {}, 50);
@@ -122,6 +125,54 @@ function pull_M_Dropdown_1() {
 	var useState = store.getState();
 	store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle, action: 'pulldata_M_Dropdown_1' }, makeFTD_Prop('M_Page_2', 'M_Dropdown_1', 'options_arr', false), EFetchKey.FetchPropValue));
 }
+function M_Text_4_defaultvalue_get(state, bundle) {
+	var M_Dropdown_0_value = bundle != null && bundle['M_Dropdown_0_value'] != null ? bundle['M_Dropdown_0_value'] : getStateByPath(state, 'M_Page_2.M_Dropdown_0.value');
+	var M_Dropdown_1_value = bundle != null && bundle['M_Dropdown_1_value'] != null ? bundle['M_Dropdown_1_value'] : getStateByPath(state, 'M_Page_2.M_Dropdown_1.value');
+	var callback_final = function callback_final(state, data) {
+		var needSetState = {};
+		needSetState.value = data;
+		needSetState.fetching = false;
+		needSetState.fetchingErr = null;
+		return setManyStateByPath(state, 'M_Page_2.M_Text_4', needSetState);
+	};
+	if (IsEmptyString(M_Dropdown_0_value) || IsEmptyString(M_Dropdown_1_value)) {
+		setStateByPath(state, 'M_Page_2.M_Text_4.fetching', false);
+		setStateByPath(state, 'M_Page_2.M_Text_4.fetchingErr', { info: '条件不足' });
+		return null;
+	}
+	var fetchid = Math.round(Math.random() * 999999);
+	fetchTracer['M_Text_4_defaultvalue_get'] = fetchid;
+	setStateByPath(state, 'M_Page_2.M_Text_4.fetching', true);
+	var bundle_queryfb_0 = {
+		员工代码: M_Dropdown_0_value,
+		假期种类代码: M_Dropdown_1_value
+	};
+	setTimeout(function () {
+		console.log('_query_FB员工请假提示:' + M_Dropdown_0_value);
+		if (fetchTracer['M_Text_4_defaultvalue_get'] != fetchid) {
+			console.log('已过时，停止fetch' + M_Dropdown_0_value);
+			return;
+		}
+		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_queryfb_0, action: '_query_FB员工请假提示' }, makeFTD_Callback(function (state, data_queryfb_0) {
+			if (IsEmptyString(M_Dropdown_0_value)) {}
+			var bundle_queryfb_1 = {
+				员工代码: M_Dropdown_0_value
+			};
+			setTimeout(function () {
+				console.log('_query_FB查询RTX状态:' + M_Dropdown_0_value);
+				if (fetchTracer['M_Text_4_defaultvalue_get'] != fetchid) {
+					console.log('已过时，停止fetch' + M_Dropdown_0_value);
+					return;
+				}
+				store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_queryfb_1, action: '_query_FB查询RTX状态' }, makeFTD_Callback(function (state, data_queryfb_1) {
+					var ret = callback_final(state, data_queryfb_0 + '[RTX:' + data_queryfb_1 + ']');
+					return ret == null ? state : ret;
+				}, false)));
+			}, 2000);
+		}, false)));
+	}, 2000);
+	return null;
+}
 function M_Text_1_defaultvalue_get(state, bundle) {
 	return getFormatDateString(new Date());
 }
@@ -132,9 +183,24 @@ function M_LC_3_isdisplay_get(state, bundle) {
 function M_Text_2_defaultvalue_get(state, bundle) {
 	return getFormatTimeString(new Date(), false);
 }
+function M_Label_0_isdisplay_get(state, bundle) {
+	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : getStateByPath(state, 'M_Page_2.M_LC_3.visible');
+	return M_LC_3_visible == true;
+}
+function M_Dropdown_0_value_changed(state, newValue, oldValue, path, visited, delayActs) {
+	var needSetState = {};
+	needSetState['M_Page_2.M_Text_4.value'] = M_Text_4_defaultvalue_get(state);
+	return setManyStateByPath(state, '', needSetState);
+}
 function M_Dropdown_1_value_changed(state, newValue, oldValue, path, visited, delayActs) {
 	var needSetState = {};
+	needSetState['M_Page_2.M_Text_4.value'] = M_Text_4_defaultvalue_get(state);
 	needSetState['M_Page_2.M_LC_3.visible'] = M_LC_3_isdisplay_get(state);
+	return setManyStateByPath(state, '', needSetState);
+}
+function M_LC_3_visible_changed(state, newValue, oldValue, path, visited, delayActs) {
+	var needSetState = {};
+	needSetState['M_Page_2.M_Label_0.visible'] = M_Label_0_isdisplay_get(state);
 	return setManyStateByPath(state, '', needSetState);
 }
 
@@ -472,13 +538,18 @@ var CM_Page_2 = function (_React$PureComponent5) {
 				),
 				React.createElement(
 					VisibleERPC_LabeledControl,
+					{ id: "M_LC_5", parentPath: "M_Page_2", label: "\u5F53\u524D\u72B6\u6001" },
+					React.createElement(VisibleERPC_Text, { id: "M_Text_4", parentPath: "M_Page_2", type: "string", readonly: true })
+				),
+				React.createElement(
+					VisibleERPC_LabeledControl,
 					{ id: "M_LC_2", parentPath: "M_Page_2", label: "\u8D77\u59CB\u65E5\u671F" },
 					React.createElement(VisibleERPC_Text, { id: "M_Text_1", parentPath: "M_Page_2", type: "date" })
 				),
 				React.createElement(
 					VisibleERPC_LabeledControl,
 					{ id: "M_LC_3", parentPath: "M_Page_2", label: "\u8D77\u59CB\u65F6\u95F4" },
-					React.createElement(VisibleERPC_Text, { id: "M_Text_2", parentPath: "M_Page_2", type: "time", readonly: true })
+					React.createElement(VisibleERPC_Text, { id: "M_Text_2", parentPath: "M_Page_2", type: "time" })
 				),
 				React.createElement(VisibleERPC_Label, { className: "text-primary erp-control ", id: "M_Label_0", parentPath: "M_Page_2", text: "\u5F53\u65E5\u4E34\u65F6\u5047\u7684\u8D77\u59CB\u65F6\u95F4\u4ECE\u767B\u8BB0\u7684\u4E00\u523B\u5F00\u59CB\uFF0C\u4E0D\u53EF\u53D8\u66F4\u3002" }),
 				React.createElement(

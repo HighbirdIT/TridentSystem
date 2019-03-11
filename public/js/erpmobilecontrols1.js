@@ -978,7 +978,21 @@ var ERPC_Text = function (_React$PureComponent4) {
             var contentElem = null;
             var rootDivClassName = 'd-flex ' + (this.props.class == null ? '' : this.props.class);
             if (this.props.fetching) {
-                contentElem = React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw' });
+                rootDivClassName += 'rounded border p-1';
+                contentElem = React.createElement(
+                    'div',
+                    { className: 'flex-grow-1 flex-shrink-1' },
+                    React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw' }),
+                    '\u901A\u8BAF\u4E2D'
+                );
+            } else if (this.props.fetchingErr) {
+                rootDivClassName += 'rounded border p-1 text-danger';
+                contentElem = React.createElement(
+                    'div',
+                    { className: 'flex-grow-1 flex-shrink-1' },
+                    React.createElement('i', { className: 'fa fa-warning' }),
+                    this.props.fetchingErr.info
+                );
             } else {
                 if (this.props.readonly) {
                     rootDivClassName += ' bg-secondary rounded border p-1';
@@ -994,8 +1008,8 @@ var ERPC_Text = function (_React$PureComponent4) {
                         { className: 'flex-grow-1 flex-shrink-1' },
                         nowValue
                     );
-                } else if (this.props.type == 'multiline') {
-                    contentElem = React.createElement('textarea', { onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 form-control textarea-2x', value: this.props.value });
+                } else if (this.props.type == 'string' && this.props.linetype != null && this.props.linetype != 'single') {
+                    contentElem = React.createElement('textarea', { onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 form-control textarea-' + this.props.linetype, value: this.props.value });
                 } else {
                     var useType = this.props.type;
                     var useChecked = null;
@@ -1032,7 +1046,8 @@ function ERPC_Text_mapstatetoprops(state, ownprops) {
     return {
         value: ctlState.value == null ? '' : ctlState.value,
         fetching: ctlState.fetching,
-        visible: ctlState.visible
+        visible: ctlState.visible,
+        fetchingErr: ctlState.fetchingErr
     };
 }
 

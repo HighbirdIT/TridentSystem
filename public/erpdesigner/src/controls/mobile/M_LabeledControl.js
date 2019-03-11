@@ -3,6 +3,10 @@ const M_LabeledControlKernelAttrsSetting=GenControlKernelAttrsSetting([
         genTextFiledAttribute(),
         new CAttribute('控件类型',AttrNames.EditorType,ValueType.String, M_TextKernel_Type, true, false,DesignerConfig.getMobileCanLabeledControls, {text:'label', value:'type'}),
         genIsdisplayAttribute(),
+        new CAttribute('交互类型',AttrNames.InteractiveType,ValueType.String, EInterActiveType.ReadWrite, true, false, EInterActiveTypes_arr, {text:'text', value:'value'}),
+        new CAttribute('交互字段',AttrNames.InteractiveField,ValueType.String, '', true, false, [], {
+            pullDataFun:GetCanInteractiveColumns,
+        }),
     ]),
 ]);
 
@@ -102,6 +106,7 @@ class M_LabeledControl extends React.PureComponent {
         M_ControlBase(this,[
             AttrNames.TextField,
             AttrNames.EditorType,
+            AttrNames.InteractiveType,
             AttrNames.LayoutNames.APDClass,
             AttrNames.LayoutNames.StyleAttr,
         ]);
@@ -129,11 +134,31 @@ class M_LabeledControl extends React.PureComponent {
         var editor = ctlKernel.editor;
         layoutConfig.addClass('rowlFameOne');
         layoutConfig.addClass('hb-control');
+        var interType = ctlKernel.getAttribute(AttrNames.InteractiveType);
+        var interField = ctlKernel.getAttribute(AttrNames.InteractiveField);
+        var interFlag = interType == EInterActiveType.ReadOnly ? (<i className='fa fa-long-arrow-down text-info' />) : null;
+        var interFieldElem = IsEmptyString(interField) ? null : <span className='badge badge-info'>{interField}</span>;
+        var leftElem = null;
+        if(interFieldElem == null){
+            leftElem = <div className='rowlFameOne_Left'>
+                {showLabel}
+                {interFlag}
+            </div>;
+        }
+        else{
+            leftElem = <div className='rowlFameOne_Left'>
+                <div className='d-flex flex-column'>
+                    <div className='d-flex'>
+                        {showLabel}
+                        {interFlag}
+                    </div>
+                    {interFieldElem}
+                </div>
+            </div>;
+        }
         return(
             <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
-                <div className='rowlFameOne_Left'>
-                    {showLabel}
-                </div>
+                {leftElem}
                 <div className='rowlFameOne_right'>
                     {editor != null && editor.renderSelf()}
                 </div>

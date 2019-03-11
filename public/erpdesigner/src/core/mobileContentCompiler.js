@@ -200,6 +200,7 @@ class MobileContentCompiler extends ContentCompiler{
         var logManager = project.logManager;
         var useScope = targetBP.type == FunType_Client ? this.clientSide.scope : this.serverSide.scope;
         var compileHelper = new JSNode_CompileHelper(logManager, null, useScope);
+        compileHelper.serverSide = this.serverSide;
         logManager.log('编译脚本:' + targetBP.name);
         var compileRet = targetBP.compile(compileHelper);
         if(compileRet == false){
@@ -409,6 +410,16 @@ class MobileContentCompiler extends ContentCompiler{
         if(valType == ValueType.Float){
             ctlTag.setAttr('precision', theKernel.getAttribute(AttrNames.FloatNum));
         }
+        else if(valType == ValueType.String){
+            var linetype = theKernel.getAttribute(AttrNames.LineType);
+            switch(linetype){
+                case LineType_BigMulti:
+                ctlTag.setAttr('linetype', '2x');
+                break;
+                default:
+                ctlTag.setAttr('linetype', '1x');
+            }
+        }
         renderBlock.pushChild(ctlTag);
         this.compileIsdisplayAttribute(theKernel,ctlTag);
         var editeable = theKernel.getAttribute(AttrNames.Editeable);
@@ -419,7 +430,7 @@ class MobileContentCompiler extends ContentCompiler{
         var defaultVal = theKernel.getAttribute(AttrNames.DefaultValue);
         var defaultValParseRet = parseObj_CtlPropJsBind(defaultVal, project.scriptMaster);
         if(defaultValParseRet.isScript){
-            this.compileScriptAttribute(defaultValParseRet, theKernel, 'value', AttrNames.DefaultValue);
+            this.compileScriptAttribute(defaultValParseRet, theKernel, 'value', AttrNames.DefaultValue, {autoSetFetchState:true});
         }
 
         var textField = theKernel.getAttribute(AttrNames.TextField);
@@ -433,7 +444,7 @@ class MobileContentCompiler extends ContentCompiler{
                     '为默认值、显示字段同时设置了脚本']);
                 return false;
             }
-            this.compileScriptAttribute(textFieldParseRet, theKernel, 'value', AttrNames.TextField);
+            this.compileScriptAttribute(textFieldParseRet, theKernel, 'value', AttrNames.TextField, {autoSetFetchState:true});
         }
         else{
             var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
@@ -466,7 +477,7 @@ class MobileContentCompiler extends ContentCompiler{
         }
     }
 
-    compileScriptAttribute(attrParseRet, theKernel, stateName, attrLabel){
+    compileScriptAttribute(attrParseRet, theKernel, stateName, attrLabel, config){
         var project = this.project;
         var logManager = project.logManager;
         if(attrParseRet.jsBp == null){
@@ -494,6 +505,21 @@ class MobileContentCompiler extends ContentCompiler{
         if(scriptCompileRet == false){
             return false;
         }
+        if(scriptCompileRet.finalCallBackBody_bk){
+            scriptCompileRet.finalCallBackBody_bk.pushLine("var needSetState = {};");
+            scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState." + stateName + " = err == null ? data : null;");
+            if(config != null){
+                if(config.autoSetFetchState){
+                    scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState.fetching = false;");
+                    scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState.fetchingErr = err;");
+
+                    scriptCompileRet.startFtech_bk.pushLine("state = " + makeStr_callFun('setManyStateByPath', [VarNames.State, singleQuotesStr(theKernel.getStatePath()), '{fetching:true,fetchingErr:null}']));
+                }
+            }
+            scriptCompileRet.finalCallBackReturn_bk.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, singleQuotesStr(theKernel.getStatePath()), 'needSetState']) + ';');
+            scriptCompileRet.pushLine("return null;");
+        }
+
         var visibleStyle = VisibleStyle_Update;
         var useFormData = scriptCompileRet.useForm_map[bindParentKernel.id];
         var bindMode = ScriptBindMode.OnForm;
@@ -602,7 +628,7 @@ class MobileContentCompiler extends ContentCompiler{
         labeledCtrlTag.setAttr('id', theKernel.id);
         labeledCtrlTag.setAttr('parentPath', parentPath);
         if(textFieldParseRet.isScript){
-            this.compileScriptAttribute(textFieldParseRet,theKernel,'label',AttrNames.TextField);
+            this.compileScriptAttribute(textFieldParseRet,theKernel,'label',AttrNames.TextField, {autoSetFetchState:true});
         }else{
             labeledCtrlTag.setAttr('label', label);
         }
@@ -935,7 +961,7 @@ class MobileContentCompiler extends ContentCompiler{
 
         var textFieldParseRet = parseObj_CtlPropJsBind(textField, project.scriptMaster);
         if(textFieldParseRet.isScript){
-            this.compileScriptAttribute(textFieldParseRet, theKernel, 'text', AttrNames.TextField);
+            this.compileScriptAttribute(textFieldParseRet, theKernel, 'text', AttrNames.TextField, {autoSetFetchState:true});
         }
         else{
             var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
@@ -1004,7 +1030,7 @@ class MobileContentCompiler extends ContentCompiler{
         var defaultVal = theKernel.getAttribute(AttrNames.DefaultValue);
         var defaultValParseRet = parseObj_CtlPropJsBind(defaultVal, project.scriptMaster);
         if(defaultValParseRet.isScript){
-            this.compileScriptAttribute(defaultValParseRet, theKernel, 'value', AttrNames.DefaultValue);
+            this.compileScriptAttribute(defaultValParseRet, theKernel, 'value', AttrNames.DefaultValue, {autoSetFetchState:true});
         }
 
         var useDS = theKernel.getAttribute(AttrNames.DataSource);

@@ -155,6 +155,9 @@ const AttrNames={
     AutoClearValue:'autoclearvalue',
     Editeable:'editeable',
     Isdisplay:'isdisplay',
+    LineType:'linetype',
+    InteractiveType:'interactivetype',
+    InteractiveField:'interactivefield',
 
     Event:{
         OnClick:'onclik'

@@ -17,7 +17,6 @@ var CAttributeGroup = function (_EventEmitter) {
         var _this = _possibleConstructorReturn(this, (CAttributeGroup.__proto__ || Object.getPrototypeOf(CAttributeGroup)).call(this));
 
         EnhanceEventEmiter(_this);
-        var self = _this;
         _this.label = label;
         _this.setAttrs(attrs_arr);
         return _this;
@@ -26,6 +25,7 @@ var CAttributeGroup = function (_EventEmitter) {
     _createClass(CAttributeGroup, [{
         key: "appandAttr",
         value: function appandAttr(target) {
+            var self = this;
             if (Array.isArray(target)) {
                 this.attrs_arr = this.attrs_arr.concat(target);
                 target.forEach(function (attr) {
@@ -39,6 +39,7 @@ var CAttributeGroup = function (_EventEmitter) {
     }, {
         key: "setAttrs",
         value: function setAttrs(attrs_arr) {
+            var self = this;
             this.attrs_arr = attrs_arr;
             attrs_arr.forEach(function (attr) {
                 attr.group = self;

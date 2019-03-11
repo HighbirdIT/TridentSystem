@@ -111,6 +111,14 @@ var EFormType = {
 
 var FormTypes_arr = [EFormType.Page, EFormType.List];
 var ButtonClasses_arr = ['btn-primary', 'btn-secondary', 'btn-success', 'btn-danger', 'btn-warning', 'btn-info', 'btn-light', 'btn-dark', 'btn-link'];
+
+var EInterActiveType = {
+    ReadOnly: 'readonly',
+    ReadWrite: 'readwrite'
+};
+
+var EInterActiveTypes_arr = [{ text: '只读', value: EInterActiveType.ReadOnly }, { text: '读写', value: EInterActiveType.ReadWrite }];
+
 /**
  * 逻辑运算符 and or not
  */
@@ -119,6 +127,10 @@ var Logical_Operator_or = 'or';
 //var Logical_Operator_not = 'not';
 var Logical_Operators_arr = [Logical_Operator_and, Logical_Operator_or];
 
+var LineType_Single = '单行';
+var LineType_SmallMulti = '多行-小';
+var LineType_BigMulti = '多行-大';
+var LinteTypes_arr = [LineType_Single, LineType_SmallMulti, LineType_BigMulti];
 // union union all
 
 var Event_CurrentComponentchanged = 'currentComponentchanged';

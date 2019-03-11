@@ -34,6 +34,26 @@ class ButtonKernel extends ControlKernelBase{
         rlt.addClass(this.getAttribute(AttrNames.ButtonClass));
         return rlt;
     }
+
+    getWantInsertTables(){
+        var funName = this.id + '_' + AttrNames.Event.OnClick;
+        var eventBP = this.project.scriptMaster.getBPByName(funName);
+        var rlt = null;
+        if(eventBP){
+            var processTableNodes_arr = eventBP.getNodesByTypes([JSNODE_INSERT_TABLE,JSNODE_UPDATE_TABLE], true);
+            processTableNodes_arr.forEach(node=>{
+                if(!IsEmptyString(node.dsCode)){
+                    if(rlt == null){
+                        rlt = [node.dsCode];
+                    }
+                    else{
+                        rlt.push(node.dsCode);
+                    }
+                }
+            });
+        }
+        return rlt;
+    }
 }
 
 class CButton extends React.PureComponent {

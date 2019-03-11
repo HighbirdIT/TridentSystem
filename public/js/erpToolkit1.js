@@ -90,6 +90,8 @@ function makeAction_fetchError(key, err, fetchData) {
     };
 }
 
+function delayAction() {}
+
 var makeAction_setStateByPath = makeActionCreator(AT_SETSTATEBYPATH, 'value', 'path');
 var makeAction_setManyStateByPath = makeActionCreator(AT_SETMANYSTATEBYPATH, 'value', 'path');
 var makeAction_gotoPage = makeActionCreator(AT_GOTOPAGE, 'pageName');
@@ -374,6 +376,15 @@ function makeFTD_Prop(basePath, id, propName) {
         base: basePath,
         id: id,
         propName: propName,
+        isModel: isModel
+    };
+}
+
+function makeFTD_Callback(callBack) {
+    var isModel = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
+    return {
+        callBack: callBack,
         isModel: isModel
     };
 }
@@ -841,11 +852,19 @@ function fetchEndHandler(state, action) {
             retState.ui.fetchState = newFetchState;
         } else {
             if (triggerData) {
-                var propPath = MakePath(triggerData.base, triggerData.id);
-                retState = setManyStateByPath(retState, propPath, {
-                    fetching: false,
-                    fetchingErr: action.err
-                });
+                if (triggerData.base != null && triggerData.id != null) {
+                    var propPath = MakePath(triggerData.base, triggerData.id);
+                    retState = setManyStateByPath(retState, propPath, {
+                        fetching: false,
+                        fetchingErr: action.err
+                    });
+                }
+                if (triggerData.callBack) {
+                    var callbackret = triggerData.callBack(retState, null, action.err);
+                    if (callbackret != null) {
+                        retState = callbackret;
+                    }
+                }
             }
         }
         return retState == state ? Object.assign({}, retState) : retState;
@@ -873,6 +892,14 @@ function fetchEndHandler(state, action) {
                 var propPath = MakePath(triggerData.base, triggerData.id, triggerData.propName);
                 return setStateByPath(retState, propPath, action.json.data);
             }
+        default:
+            if (triggerData.callBack) {
+                var callbackret = triggerData.callBack(retState, action.json.data);
+                if (callbackret != null) {
+                    retState = callbackret;
+                }
+            }
+            break;
     }
     return retState == state ? Object.assign({}, retState) : retState;
 }

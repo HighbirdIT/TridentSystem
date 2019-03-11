@@ -459,7 +459,7 @@ function WriteEntity(库内对象_dr, 目标库内对象_dic) {
 
         //DataTable columnDT = Column(theName);
         if (列信息_dt.recordset.length == 0 && 参数信息_dt.recordset.length == 0) {
-            return;   // 无列信息
+            return 库内对象obj;   // 无列信息
         }
         var isP = 库内对象名称[0] == 'P';
         if (列信息_dt.recordset.length > 0) {
