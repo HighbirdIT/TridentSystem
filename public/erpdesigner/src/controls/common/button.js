@@ -19,6 +19,11 @@ class ButtonKernel extends ControlKernelBase{
                 createHelper,kernelJson
             );
         
+        var funName = this.id + '_' + AttrNames.Event.OnClick;
+        var eventBP = this.project.scriptMaster.getBPByName(funName);
+        if(eventBP){
+            eventBP.ctlID = this.id;
+        }
         this.findAttributeByName(AttrNames.ProcessTable).options_arr = g_dataBase.getAllTable;
         var self = this;
         autoBind(self);

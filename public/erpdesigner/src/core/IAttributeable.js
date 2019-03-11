@@ -76,6 +76,9 @@ class IAttributeable extends EventEmitter{
     }
 
     getAttribute(attrName, index){
+        if(attrName == null){
+            console.error('attrName is null');
+        }
         if(index == null){
             var keypos = attrName.lastIndexOf('_');
             if(keypos != -1){

@@ -184,8 +184,9 @@ var CProject = function (_IAttributeable) {
         key: 'setEditingPageById',
         value: function setEditingPageById(pageID) {
             var thePage = this.getPageById(pageID);
-            if (thePage == null) return false;
-            this.designeConfig.editingPage.id = thePage.id;
+            //if(thePage == null)
+            //return false;
+            this.designeConfig.editingPage.id = pageID;
             this.attrChanged('editingPage');
         }
     }, {
@@ -200,6 +201,26 @@ var CProject = function (_IAttributeable) {
                 });
             }
             return rlt;
+        }
+    }, {
+        key: 'deletePage',
+        value: function deletePage(pageID) {
+            var thePage = this.getPageById(pageID);
+            if (thePage == null) {
+                return;
+            }
+            var index = this.content_PC.pages.indexOf(thePage);
+            if (index != -1) {
+                this.content_PC.pages.splice(index, 1);
+            } else {
+                index = this.content_Mobile.pages.indexOf(thePage);
+                if (index != -1) {
+                    this.content_Mobile.pages.splice(index, 1);
+                }
+            }
+            if (this.designeConfig.editingPage.id == pageID) {
+                this.setEditingPageById(-1);
+            }
         }
     }, {
         key: 'createEmptyPage',

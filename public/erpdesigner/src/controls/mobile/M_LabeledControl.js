@@ -23,6 +23,7 @@ class M_LabeledControlKernel extends ControlKernelBase{
         
         var self = this;
         autoBind(self);
+        this.staticChild = true;
         this.newAdded = kernelJson == null;
 
         this.__genEditor(createHelper, kernelJson == null ? null : kernelJson.editor);

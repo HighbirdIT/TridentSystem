@@ -2040,6 +2040,16 @@ class JSNODE_Insert_table extends JSNode_Base {
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
 
+        var relKernel = this.bluePrint.ctlKernel;
+        if(relKernel == null){
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '这个脚本蓝图必须关联到一个控件中']);
+            return false;
+        }
+
         var myJSBlock = new FormatFileBlock(this.id);
         belongBlock.pushChild(myJSBlock);
         var selfCompileRet = new CompileResult(this);
@@ -2047,6 +2057,14 @@ class JSNODE_Insert_table extends JSNode_Base {
         helper.setCompileRetCache(this, selfCompileRet);
 
         var useDS = g_dataBase.getEntityByCode(this.dsCode);
+        if(useDS == null || useDS.columns == null || useDS.type != 'U'){
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+            useDS + '必须选择一个数据表']);
+            return false;
+        }
         if (!useDS.loaded) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle,
@@ -2055,37 +2073,51 @@ class JSNODE_Insert_table extends JSNode_Base {
             useDS + '正在同步中，请稍后再试。']);
             return false;
         }
-        if (useDS.columns == null) {
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-            useDS + '是个无效数据源']);
-            return false;
-        }
+        var columnProfile_obj = {};
+        useDS.columns.forEach(column=>{
+            if(column.is_identity){
+                return;
+            }
+            column.is_nullable ;
+            column.cdefault
+            columnProfile_obj[column.name] = {
+                name:column.name,
+                nullable:column.is_nullable || column.cdefault != null,
+                value:null,
+            };
+        });
+
+        var columnProfile = null;
+        // 优先使用设置的节点
         var needInsertColumns_arr = [];
         for (var si in this.inputScokets_arr) {
             var socket = this.inputScokets_arr[si];
-            var column = useDS.getColumnByName(socket.name);
+            columnProfile = columnProfile_obj[socket.defval];
+            if(columnProfile == null){
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    '第' + (si) + '个输入接口不是有效的列名[' + socket.defval + ']']);
+                return false;
+            }
+            if(columnProfile.value != null){
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    '第' + (si) + '个输入接口重复设置了[' + socket.defval + ']']);
+                return false;
+            }
             var dataLinks_arr = this.bluePrint.linkPool.getLinksBySocket(socket);
             var socketValue = null;
             if (dataLinks_arr.length == 0) {
-                if (IsEmptyString(socket.defval)) {
-                    if (!column.is_nullable || column.cdefault) {
-                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                            thisNodeTitle,
-                            nodeThis,
-                            helper.clickLogBadgeItemHandler),
-                        socket.name + '必须要有输入']);
-                        return false;
-                    }
-                }
-                else {
-                    socketValue = socket.defval;
-                    if (isNaN(socketValue)) {
-                        socketValue = singleQuotesStr(socketValue);
-                    }
-                }
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                socket.name + '必须要有输入']);
+                return false;
             }
             else {
                 var dataLink = dataLinks_arr[0];
@@ -2110,20 +2142,166 @@ class JSNODE_Insert_table extends JSNode_Base {
                 }
                 socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
             }
-
-            if (socketValue != null) {
-                needInsertColumns_arr.push({
-                    name: column.name,
-                    value: socketValue,
+            columnProfile.value = socketValue;
+        }
+        // 在所属Form中搜集交互类型为读写的可访问控件
+        var formKernel = relKernel.searchParentKernel([M_FormKernel_Type],true);
+        if(formKernel != null){
+            var accessableLabelKernels = formKernel.searchChildKernel(M_LabeledControlKernel_Type, false, true, [M_FormKernel_Type]);
+            if(accessableLabelKernels != null)
+            {
+                accessableLabelKernels.forEach(labelKernel=>{
+                    var interType = labelKernel.getAttribute(AttrNames.InteractiveType);
+                    if(interType != EInterActiveType.ReadWrite){
+                        // 只要读写的
+                        return;
+                    }
+                    var interField = labelKernel.getAttribute(AttrNames.InteractiveField);
+                    columnProfile = columnProfile_obj[interField];
+                    if(columnProfile == null){
+                        var textField = labelKernel.getAttribute(AttrNames.TextField);
+                        columnProfile = columnProfile_obj[textField];
+                    }
+                    if(columnProfile == null || columnProfile.value != null){
+                        // not found or already had values
+                        return;
+                    }
+                    var theEditor = labelKernel.editor;
+                    var apiItem = null;
+                    if(theEditor.hasAttribute(AttrNames.ValueField)){
+                        apiItem = gFindPropApiItem(theEditor.type, AttrNames.ValueField);
+                    }
+                    if(apiItem == null){
+                        apiItem = gFindPropApiItem(theEditor.type, AttrNames.TextField);
+                    }
+                    if(apiItem)
+                    {
+                        helper.addUseControlPropApi(theEditor, apiItem);
+                        columnProfile.value = theEditor.id + '_' + apiItem.stateName;
+                    }
                 });
             }
         }
-        var insertSqlStr = 'insert ' + midbracketStr(useDS.name) + '(';
+
+        // make server side code
+        var theServerSide = helper.serverSide;// ? helper.serverSide : new JSFileMaker();
+        var serverClickFun = null;
+        var paramInitBlock = null;
+        var postCheckBlock = null;
+        var insertPartVar = null;
+        var valuePartVar = null;
+        var insertSqlStr = '';
         var valuesStr = '';
+
         var sqlVarName = this.id + '_sql';
         var paramArrVarName = this.id + '_paramArr';
         var newRecordIdVarName = this.id + '_newrcdid';
         var paramArrVarBlock = new FormatFileBlock('paramarr');
+
+        if (theServerSide != null) {
+            var serverSideActName = '_' + this.bluePrint.id + '_onClick';
+            serverClickFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
+            theServerSide.initProcessFun(serverClickFun);
+            var paramVarName = 'params_arr';
+            serverClickFun.scope.getVar(paramVarName, true, 'null');
+            insertPartVar = serverClickFun.scope.getVar(this.id + '_insert', true, "''");
+            valuePartVar = serverClickFun.scope.getVar(this.id + '_values', true, "''");
+            
+            postCheckBlock = new FormatFileBlock('postCheckBlock');
+            serverClickFun.pushChild(postCheckBlock);
+            paramInitBlock = new FormatFileBlock('initparam');
+            serverClickFun.pushChild(paramInitBlock);
+            paramInitBlock.pushLine("params_arr=[", 1);
+
+            serverClickFun.pushLine("var " + sqlVarName + " = " + insertPartVar.name + ' + ' + valuePartVar.name);
+            serverClickFun.pushLine("var " + newRecordIdVarName + " = yield dbhelper.asynGetScalar(" + sqlVarName + " + ' select SCOPE_IDENTITY()', " + paramVarName + ");");
+            var completeBlock = new FormatFileBlock('complete');
+            serverClickFun.pushChild(completeBlock);
+            serverClickFun.pushLine("return " + newRecordIdVarName + ";");
+            theServerSide.processesMapVarInitVal[serverClickFun.name] = serverClickFun.name;
+        }
+
+        var mustHadColumns_arr = [];
+        var optioniHadColumns_arr = [];
+        for(var columnName in columnProfile_obj){
+            columnProfile = columnProfile_obj[columnName];
+            if(columnProfile.value == null){
+                switch(columnName){
+                    case '登记确认状态':
+                    columnProfile.value = '1';
+                    columnProfile.isStatic = true;
+                    break;
+                    case '登记确认时间':
+                    columnProfile.value = 'getdate()';
+                    columnProfile.isStatic = true;
+                    break;
+                    case '登记确认用户':
+                    columnProfile.value = '@_operator';
+                    columnProfile.isStatic = true;
+                    break;
+                    default:
+                    if(!columnProfile.nullable){
+                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                            thisNodeTitle,
+                            nodeThis,
+                            helper.clickLogBadgeItemHandler),
+                            'Insert[' + useDS.name + ']时搜寻不到[' + columnProfile.name + ']的匹配值']);
+                        return false;
+                    }
+                }
+            }
+            if(columnProfile.value == null){
+                continue;
+            }
+            if(columnProfile.nullable){
+                optioniHadColumns_arr.push(columnProfile);
+            }
+            else{
+                mustHadColumns_arr.push(columnProfile);
+            }
+            if(paramInitBlock){
+                if(columnProfile.isStatic){
+                    insertSqlStr += (insertSqlStr.length == 0 ? '' : ',') + midbracketStr(columnProfile.name);
+                    valuesStr += valuesStr.length == 0 ? columnProfile.value : ',' + columnProfile.value;
+                }
+                else{
+                    if(!columnProfile.nullable){
+                        insertSqlStr += (insertSqlStr.length == 0 ? '' : ',') + midbracketStr(columnProfile.name);
+                        valuesStr += (valuesStr.length == 0 ? '@' : ',@') + midbracketStr(columnProfile.name);
+                        postCheckBlock.pushLine("if(IsEmptyString(req.body." + columnProfile.name + '){return serverhelper.createErrorRet("缺少参数[' + columnProfile.name + ']");}');
+                    }
+                    else{
+                        postCheckBlock.pushLine("if(!IsEmptyString(req.body." + columnProfile.name + '){', 1);
+                        //postCheckBlock.pushLine(insertPartVar.name + "+=" + insertPartVar.name + ".length == 0 ? '[" + columnProfile.name + "]' : ',[" + columnProfile.name + "]';");
+                        //postCheckBlock.pushLine(valuePartVar.name + "+=" + valuePartVar.name + ".length == 0 ? '@" + columnProfile.name + "' : ',@" + columnProfile.name + "';");
+                        postCheckBlock.pushLine(insertPartVar.name + "+= ',[" + columnProfile.name + "]';");
+                        postCheckBlock.pushLine(valuePartVar.name + "+= ',@" + columnProfile.name + "';");
+                        postCheckBlock.subNextIndent();
+                        postCheckBlock.pushLine('}');
+                    }
+                    paramInitBlock.pushLine("dbhelper.makeSqlparam('" + columnProfile.name + "', sqlTypes.NVarChar(4000), req.body." + columnProfile.name + "),");
+                }
+            }
+        }
+
+        if(optioniHadColumns_arr.length == 0){
+            insertSqlStr += ')';
+            valuesStr += ')';
+        }
+        else{
+            postCheckBlock.pushLine(insertPartVar.name + " += ')';");
+            postCheckBlock.pushLine(valuePartVar.name + " += ')';");
+        }
+        if(insertPartVar){
+            insertPartVar.initVal = "'insert into " + midbracketStr(useDS.name) + "(" + insertSqlStr;
+            valuePartVar.initVal = "'values(" + valuesStr;
+
+            paramInitBlock.subNextIndent();
+            paramInitBlock.pushLine('];');
+        }
+
+        return selfCompileRet;
+        
         selfCompileRet.setSocketOut(this.identityOutSocket, newRecordIdVarName);
         paramArrVarBlock.pushLine("var " + paramArrVarName + '=[', 1);
         needInsertColumns_arr.forEach((item, i) => {
@@ -2885,9 +3063,9 @@ class JSNode_QueryFB extends JSNode_Base {
             var serverSideActName = '_query_' + fbEntity.name;
             var queryFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
             theServerSide.initProcessFun(queryFun);
-            1
             var paramVarName = 'params_arr';
-            queryFun.pushLine("var " + paramVarName + " = null;");
+            queryFun.scope.getVar(paramVarName, true, 'null');
+            queryFun.pushLine("params_arr = null;");
             var paramListStr = '';
             if (params_arr.length > 0) {
                 var paramInitBlock = new FormatFileBlock('initparam');

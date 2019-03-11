@@ -661,6 +661,9 @@ class MobileContentCompiler extends ContentCompiler{
             layoutConfig.addClass('flex-column');
         }
 
+        var thisfullpath = makeStr_DotProp(parentPath,theKernel.id);
+        var useDS = theKernel.getAttribute(AttrNames.DataSource);
+
         var formReactClass = clientSide.getReactClass(theKernel.getReactClassName(), true);
         var isPageForm = true;
         if(isPageForm)
@@ -684,9 +687,12 @@ class MobileContentCompiler extends ContentCompiler{
         ifFetingBlock.pushLine("return renderFetcingTipDiv();");
         renderContentFun.pushChild(ifFetingBlock);
 
-        var ifNowRecordBlock = new JSFile_IF('hadnowrecord', '!this.props.canInsert && this.props.nowRecord == null');
-        renderContentFun.pushChild(ifNowRecordBlock);
-        ifNowRecordBlock.pushLine("return <div>没有查询到数据</div>");
+        if(useDS != null)
+        {
+            var ifNowRecordBlock = new JSFile_IF('hadnowrecord', '!this.props.canInsert && this.props.nowRecord == null');
+            renderContentFun.pushChild(ifNowRecordBlock);
+            ifNowRecordBlock.pushLine("return <div>没有查询到数据</div>");
+        }
 
         renderContentFun.pushLine(VarNames.RetElem + " = (", 1);
         renderContentFun.pushLine("<div className='" + layoutConfig.getClassName() + "'>", 1);
@@ -707,9 +713,6 @@ class MobileContentCompiler extends ContentCompiler{
         formTag.setAttr('id', theKernel.id);
         formTag.setAttr('parentPath', this.getKernelParentPath(theKernel));
         renderBlock.pushChild(formTag);
-
-        var thisfullpath = makeStr_DotProp(parentPath,theKernel.id);
-        var useDS = theKernel.getAttribute(AttrNames.DataSource);
 
         formReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "getStateByPath(state, '" + thisfullpath + "', {})");
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Fetching), makeStr_DotProp(VarNames.CtlState, VarNames.Fetching)));

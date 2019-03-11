@@ -19,7 +19,7 @@ var appReducerSetting = { AT_PAGELOADED: pageLoadedReducer.bind(window), AT_GOTO
 var appReducer = createReducer(appInitState, Object.assign(baseReducerSetting, appReducerSetting));
 var reducer = appReducer;
 var store = Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));
-var appStateChangedAct_map = { 'M_Page_2.M_Dropdown_1.value': M_Dropdown_1_value_changed.bind(window), 'M_Page_2.M_LC_3.visible': M_LC_3_visible_changed.bind(window) };
+var appStateChangedAct_map = { 'M_Page_2.M_Form_1.M_Dropdown_0.value': M_Dropdown_0_value_changed.bind(window), 'M_Page_2.M_Form_1.M_Dropdown_0.text': M_Dropdown_0_text_changed.bind(window), 'M_Page_2.M_Form_1.M_Dropdown_1.value': M_Dropdown_1_value_changed.bind(window), 'M_Page_2.M_Form_1.M_LC_3.visible': M_LC_3_visible_changed.bind(window) };
 
 function pageLoadedReducer(state) {
 	return gotoPage('M_Page_2', state);
@@ -101,15 +101,27 @@ function active_M_Page_1(state) {
 	return state;
 }
 function active_M_Page_2(state) {
-	var needSetState = {};
-	needSetState['M_Page_2.M_Dropdown_0.value'] = M_Dropdown_0_defaultvalue_get(state);
-	needSetState['M_Page_2.M_Text_4.value'] = M_Text_4_textfield_get(state);
-	needSetState['M_Page_2.M_LC_3.visible'] = M_LC_3_isdisplay_get(state);
-	needSetState['M_Page_2.M_Label_0.visible'] = M_Label_0_isdisplay_get(state);
-	state = setManyStateByPath(state, '', needSetState);
 	state.nowPage = 'M_Page_2';
 	setTimeout(function () {}, 50);
+	state = bind_M_Form_1(state);
 	return state;
+}
+function fresh_M_Form_1(retState, records_arr) {
+	bind_M_Form_1(retState);
+}
+function bind_M_Form_1(retState, newIndex, oldIndex) {
+	var formState = getStateByPath(retState, 'M_Page_2.M_Form_1', {});
+	var needSetState = {};
+	var bundle = {};
+	needSetState['M_Dropdown_0.value'] = M_Dropdown_0_defaultvalue_get(retState, bundle);
+	needSetState['M_Dropdown_0.value'] = M_Dropdown_0_defaultvalue_get(retState, bundle);
+	needSetState['M_Text_5.value'] = '17:30';
+	needSetState['invalidbundle'] = false;
+	return setManyStateByPath(retState, 'M_Page_2.M_Form_1', needSetState);
+}
+function pull_M_Form_1(retState) {
+	retState = bind_M_Form_1(retState);
+	return retState;
 }
 function M_Dropdown_0_defaultvalue_get(state, bundle) {
 	return g_envVar.userid;
@@ -117,22 +129,59 @@ function M_Dropdown_0_defaultvalue_get(state, bundle) {
 function pull_M_Dropdown_0() {
 	var bundle = {};
 	var useState = store.getState();
-	store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle, action: 'pulldata_M_Dropdown_0' }, makeFTD_Prop('M_Page_2', 'M_Dropdown_0', 'options_arr', false), EFetchKey.FetchPropValue));
+	store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle, action: 'pulldata_M_Dropdown_0' }, makeFTD_Prop('M_Page_2.M_Form_1', 'M_Dropdown_0', 'options_arr', false), EFetchKey.FetchPropValue));
 }
 function pull_M_Dropdown_1() {
 	var bundle = {};
 	var useState = store.getState();
-	store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle, action: 'pulldata_M_Dropdown_1' }, makeFTD_Prop('M_Page_2', 'M_Dropdown_1', 'options_arr', false), EFetchKey.FetchPropValue));
+	store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle, action: 'pulldata_M_Dropdown_1' }, makeFTD_Prop('M_Page_2.M_Form_1', 'M_Dropdown_1', 'options_arr', false), EFetchKey.FetchPropValue));
 }
-function M_Text_4_textfield_get(state, bundle) {
-	return 324;
+function M_Text_4_defaultvalue_get(state, bundle) {
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
+	var M_Dropdown_0_value = bundle != null && bundle['M_Dropdown_0_value'] != null ? bundle['M_Dropdown_0_value'] : getStateByPath(M_Form_1_state, 'M_Dropdown_0.value');
+	var M_Dropdown_0_text = bundle != null && bundle['M_Dropdown_0_text'] != null ? bundle['M_Dropdown_0_text'] : getStateByPath(M_Form_1_state, 'M_Dropdown_0.text');
+	var M_Dropdown_1_value = bundle != null && bundle['M_Dropdown_1_value'] != null ? bundle['M_Dropdown_1_value'] : getStateByPath(M_Form_1_state, 'M_Dropdown_1.value');
+	var callback_final = function callback_final(state, data, err) {
+		var needSetState = {};
+		needSetState.value = err == null ? data : null;
+		needSetState.fetching = false;
+		needSetState.fetchingErr = err;
+		return setManyStateByPath(state, 'M_Page_2.M_Form_1.M_Text_4', needSetState);
+	};
+	if (IsEmptyString(M_Dropdown_0_value) || IsEmptyString(M_Dropdown_0_text) || IsEmptyString(M_Dropdown_1_value)) {
+		return callback_final(state, null, { info: '条件不足' });
+	}
+	var fetchid = Math.round(Math.random() * 999999);
+	fetchTracer['M_Text_4_defaultvalue_get'] = fetchid;
+	state = setManyStateByPath(state, 'M_Page_2.M_Form_1.M_Text_4', { fetching: true, fetchingErr: null });
+	var bundle_queryfb_0 = {
+		员工代码: M_Dropdown_0_value,
+		假期种类代码: M_Dropdown_1_value
+	};
+	setTimeout(function () {
+		if (fetchTracer['M_Text_4_defaultvalue_get'] != fetchid) return;
+		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_queryfb_0, action: '_query_FB员工请假提示' }, makeFTD_Callback(function (state, data_queryfb_0, err) {
+			var bundle_queryfb_1 = {
+				员工代码: M_Dropdown_0_value
+			};
+			setTimeout(function () {
+				if (fetchTracer['M_Text_4_defaultvalue_get'] != fetchid) return;
+				store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_queryfb_1, action: '_query_FB查询RTX状态' }, makeFTD_Callback(function (state, data_queryfb_1, err) {
+					var ret = callback_final(state, data_queryfb_0 + '[RTX:' + data_queryfb_1 + ']' + M_Dropdown_0_text, err);
+					return ret == null ? state : ret;
+				}, false)));
+			}, 50);
+		}, false)));
+	}, 50);
+	return null;
 }
 function M_LC_3_isdisplay_get(state, bundle) {
-	var M_Dropdown_1_value = bundle != null && bundle['M_Dropdown_1_value'] != null ? bundle['M_Dropdown_1_value'] : getStateByPath(state, 'M_Page_2.M_Dropdown_1.value');
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
+	var M_Dropdown_1_value = bundle != null && bundle['M_Dropdown_1_value'] != null ? bundle['M_Dropdown_1_value'] : getStateByPath(M_Form_1_state, 'M_Dropdown_1.value');
 	var callback_final = function callback_final(state, data, err) {
 		var needSetState = {};
 		needSetState.visible = err == null ? data : null;
-		return setManyStateByPath(state, 'M_Page_2.M_LC_3', needSetState);
+		return setManyStateByPath(state, 'M_Page_2.M_Form_1.M_LC_3', needSetState);
 	};
 	if (IsEmptyString(M_Dropdown_1_value)) {
 		return callback_final(state, null, { info: '条件不足' });
@@ -141,11 +190,12 @@ function M_LC_3_isdisplay_get(state, bundle) {
 	return null;
 }
 function M_Label_0_isdisplay_get(state, bundle) {
-	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : getStateByPath(state, 'M_Page_2.M_LC_3.visible');
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
+	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : getStateByPath(M_Form_1_state, 'M_LC_3.visible');
 	var callback_final = function callback_final(state, data, err) {
 		var needSetState = {};
 		needSetState.visible = err == null ? data : null;
-		return setManyStateByPath(state, 'M_Page_2.M_Label_0', needSetState);
+		return setManyStateByPath(state, 'M_Page_2.M_Form_1.M_Label_0', needSetState);
 	};
 	if (IsEmptyString(M_LC_3_visible)) {
 		return callback_final(state, null, { info: '条件不足' });
@@ -153,14 +203,41 @@ function M_Label_0_isdisplay_get(state, bundle) {
 	return M_LC_3_visible == true;
 	return null;
 }
+function M_LC_6_isdisplay_get(state, bundle) {
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
+	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : getStateByPath(M_Form_1_state, 'M_LC_3.visible');
+	var callback_final = function callback_final(state, data, err) {
+		var needSetState = {};
+		needSetState.visible = err == null ? data : null;
+		return setManyStateByPath(state, 'M_Page_2.M_Form_1.M_LC_6', needSetState);
+	};
+	if (IsEmptyString(M_LC_3_visible)) {
+		return callback_final(state, null, { info: '条件不足' });
+	}
+	return M_LC_3_visible;
+	return null;
+}
+function button_4_onclik() {}
+function M_Dropdown_0_value_changed(state, newValue, oldValue, path, visited, delayActs) {
+	var needSetState = {};
+	needSetState['M_Page_2.M_Form_1.M_Text_4.value'] = M_Text_4_defaultvalue_get(state);
+	return setManyStateByPath(state, '', needSetState);
+}
+function M_Dropdown_0_text_changed(state, newValue, oldValue, path, visited, delayActs) {
+	var needSetState = {};
+	needSetState['M_Page_2.M_Form_1.M_Text_4.value'] = M_Text_4_defaultvalue_get(state);
+	return setManyStateByPath(state, '', needSetState);
+}
 function M_Dropdown_1_value_changed(state, newValue, oldValue, path, visited, delayActs) {
 	var needSetState = {};
-	needSetState['M_Page_2.M_LC_3.visible'] = M_LC_3_isdisplay_get(state);
+	needSetState['M_Page_2.M_Form_1.M_Text_4.value'] = M_Text_4_defaultvalue_get(state);
+	needSetState['M_Page_2.M_Form_1.M_LC_3.visible'] = M_LC_3_isdisplay_get(state);
 	return setManyStateByPath(state, '', needSetState);
 }
 function M_LC_3_visible_changed(state, newValue, oldValue, path, visited, delayActs) {
 	var needSetState = {};
-	needSetState['M_Page_2.M_Label_0.visible'] = M_Label_0_isdisplay_get(state);
+	needSetState['M_Page_2.M_Form_1.M_Label_0.visible'] = M_Label_0_isdisplay_get(state);
+	needSetState['M_Page_2.M_Form_1.M_LC_6.visible'] = M_LC_6_isdisplay_get(state);
 	return setManyStateByPath(state, '', needSetState);
 }
 
@@ -486,37 +563,7 @@ var CM_Page_2 = function (_React$PureComponent5) {
 			retElem = React.createElement(
 				"div",
 				{ className: "d-flex flex-grow-1 flex-shrink-0 autoScroll_Touch flex-column " },
-				React.createElement(
-					VisibleERPC_LabeledControl,
-					{ id: "M_LC_0", parentPath: "M_Page_2", label: "\u8BF7\u5047\u4EBA\u5458" },
-					React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_0", parentPath: "M_Page_2", pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u8BF7\u5047\u4EBA\u5458" })
-				),
-				React.createElement(
-					VisibleERPC_LabeledControl,
-					{ id: "M_LC_1", parentPath: "M_Page_2", label: "\u5047\u671F\u79CD\u7C7B" },
-					React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_1", parentPath: "M_Page_2", pullDataSource: pull_M_Dropdown_1, textAttrName: "\u5458\u5DE5\u5047\u671F\u79CD\u7C7B", valueAttrName: "\u5458\u5DE5\u5047\u671F\u79CD\u7C7B\u4EE3\u7801", label: "\u5047\u671F\u79CD\u7C7B" })
-				),
-				React.createElement(
-					VisibleERPC_LabeledControl,
-					{ id: "M_LC_5", parentPath: "M_Page_2", label: "\u5F53\u524D\u72B6\u6001" },
-					React.createElement(VisibleERPC_Text, { id: "M_Text_4", parentPath: "M_Page_2", type: "string", readonly: true })
-				),
-				React.createElement(
-					VisibleERPC_LabeledControl,
-					{ id: "M_LC_2", parentPath: "M_Page_2", label: "\u8D77\u59CB\u65E5\u671F" },
-					React.createElement(VisibleERPC_Text, { id: "M_Text_1", parentPath: "M_Page_2", type: "date" })
-				),
-				React.createElement(
-					VisibleERPC_LabeledControl,
-					{ id: "M_LC_3", parentPath: "M_Page_2", label: "\u8D77\u59CB\u65F6\u95F4" },
-					React.createElement(VisibleERPC_Text, { id: "M_Text_2", parentPath: "M_Page_2", type: "time" })
-				),
-				React.createElement(VisibleERPC_Label, { className: "text-primary erp-control ", id: "M_Label_0", parentPath: "M_Page_2", text: "\u5F53\u65E5\u4E34\u65F6\u5047\u7684\u8D77\u59CB\u65F6\u95F4\u4ECE\u767B\u8BB0\u7684\u4E00\u523B\u5F00\u59CB\uFF0C\u4E0D\u53EF\u53D8\u66F4\u3002" }),
-				React.createElement(
-					VisibleERPC_LabeledControl,
-					{ id: "M_LC_4", parentPath: "M_Page_2", label: "\u7ED3\u675F\u65E5\u671F" },
-					React.createElement(VisibleERPC_Text, { id: "M_Text_3", parentPath: "M_Page_2", type: "date" })
-				)
+				React.createElement(VisibleCM_Form_1, { id: "M_Form_1", parentPath: "M_Page_2" })
 			);
 			return retElem;
 		}
@@ -534,6 +581,121 @@ function CM_Page_2_disptchtoprops(dispatch, ownprops) {
 	return retDispath;
 }
 var VisibleCM_Page_2 = ReactRedux.connect(CM_Page_2_mapstatetoprops, CM_Page_2_disptchtoprops)(CM_Page_2);
+
+var CM_Form_1 = function (_React$PureComponent6) {
+	_inherits(CM_Form_1, _React$PureComponent6);
+
+	function CM_Form_1(props) {
+		_classCallCheck(this, CM_Form_1);
+
+		var _this6 = _possibleConstructorReturn(this, (CM_Form_1.__proto__ || Object.getPrototypeOf(CM_Form_1)).call(this, props));
+
+		ERPC_PageForm(_this6);
+		return _this6;
+	}
+
+	_createClass(CM_Form_1, [{
+		key: "render",
+		value: function render() {
+			var retElem = null;
+			retElem = this.renderContent();
+			return retElem;
+		}
+	}, {
+		key: "renderContent",
+		value: function renderContent() {
+			var retElem = null;
+			if (this.props.invalidbundle) {
+				return renderInvalidBundleDiv();
+			}
+			if (this.props.fetchingErr) {
+				return renderFetcingErrDiv(this.props.fetchingErr.info);
+			}
+			if (!this.props.loaded || this.props.fetching) {
+				return renderFetcingTipDiv();
+			}
+			if (!this.props.canInsert && this.props.nowRecord == null) {
+				return React.createElement(
+					"div",
+					null,
+					"\u6CA1\u6709\u67E5\u8BE2\u5230\u6570\u636E"
+				);
+			}
+			retElem = React.createElement(
+				"div",
+				{ className: "d-flex flex-grow-1 flex-shrink-1 erp-form flex-column " },
+				React.createElement(
+					VisibleERPC_LabeledControl,
+					{ id: "M_LC_0", parentPath: "M_Page_2.M_Form_1", label: "\u8BF7\u5047\u4EBA\u5458" },
+					React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_0", parentPath: "M_Page_2.M_Form_1", pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u8BF7\u5047\u4EBA\u5458" })
+				),
+				React.createElement(
+					VisibleERPC_LabeledControl,
+					{ id: "M_LC_1", parentPath: "M_Page_2.M_Form_1", label: "\u5047\u671F\u79CD\u7C7B" },
+					React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_1", parentPath: "M_Page_2.M_Form_1", pullDataSource: pull_M_Dropdown_1, textAttrName: "\u5458\u5DE5\u5047\u671F\u79CD\u7C7B", valueAttrName: "\u5458\u5DE5\u5047\u671F\u79CD\u7C7B\u4EE3\u7801", label: "\u5047\u671F\u79CD\u7C7B" })
+				),
+				React.createElement(
+					VisibleERPC_LabeledControl,
+					{ id: "M_LC_5", parentPath: "M_Page_2.M_Form_1", label: "\u5F53\u524D\u72B6\u6001" },
+					React.createElement(VisibleERPC_Text, { id: "M_Text_4", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "1x", readonly: true })
+				),
+				React.createElement(
+					VisibleERPC_LabeledControl,
+					{ id: "M_LC_2", parentPath: "M_Page_2.M_Form_1", label: "\u8D77\u59CB\u65E5\u671F" },
+					React.createElement(VisibleERPC_Text, { id: "M_Text_1", parentPath: "M_Page_2.M_Form_1", type: "date" })
+				),
+				React.createElement(
+					VisibleERPC_LabeledControl,
+					{ id: "M_LC_3", parentPath: "M_Page_2.M_Form_1", label: "\u8D77\u59CB\u65F6\u95F4" },
+					React.createElement(VisibleERPC_Text, { id: "M_Text_2", parentPath: "M_Page_2.M_Form_1", type: "time" })
+				),
+				React.createElement(VisibleERPC_Label, { className: "text-primary erp-control ", id: "M_Label_0", parentPath: "M_Page_2.M_Form_1", text: "\u5F53\u65E5\u4E34\u65F6\u5047\u7684\u8D77\u59CB\u65F6\u95F4\u4ECE\u767B\u8BB0\u7684\u4E00\u523B\u5F00\u59CB\uFF0C\u4E0D\u53EF\u53D8\u66F4\u3002" }),
+				React.createElement(
+					VisibleERPC_LabeledControl,
+					{ id: "M_LC_4", parentPath: "M_Page_2.M_Form_1", label: "\u7ED3\u675F\u65E5\u671F" },
+					React.createElement(VisibleERPC_Text, { id: "M_Text_3", parentPath: "M_Page_2.M_Form_1", type: "date" })
+				),
+				React.createElement(
+					VisibleERPC_LabeledControl,
+					{ id: "M_LC_6", parentPath: "M_Page_2.M_Form_1", label: "\u7ED3\u675F\u65F6\u95F4" },
+					React.createElement(VisibleERPC_Text, { id: "M_Text_5", parentPath: "M_Page_2.M_Form_1", type: "time" })
+				),
+				React.createElement(
+					VisibleERPC_LabeledControl,
+					{ id: "M_LC_7", parentPath: "M_Page_2.M_Form_1", label: "\u4E8B\u7531\u8BF4\u660E" },
+					React.createElement(VisibleERPC_Text, { id: "M_Text_6", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "1x" })
+				),
+				React.createElement(
+					"button",
+					{ className: "btn btn-primary erp-control ", id: "button_4", onClick: button_4_onclik },
+					"\u63D0\u4EA4\u7533\u8BF7"
+				),
+				this.renderNavigater()
+			);
+			return retElem;
+		}
+	}]);
+
+	return CM_Form_1;
+}(React.PureComponent);
+
+function CM_Form_1_mapstatetoprops(state, ownprops) {
+	var retProps = {};
+	var ctlState = getStateByPath(state, 'M_Page_2.M_Form_1', {});
+	retProps.fetching = ctlState.fetching;
+	retProps.fetchingErr = ctlState.fetchingErr;
+	retProps.records_arr = ctlState.records_arr;
+	retProps.recordIndex = ctlState.recordIndex;
+	retProps.nowRecord = ctlState.nowRecord;
+	retProps.invalidbundle = ctlState.invalidbundle;
+	retProps.loaded = true;
+	return retProps;
+}
+function CM_Form_1_disptchtoprops(dispatch, ownprops) {
+	var retDispath = {};
+	return retDispath;
+}
+var VisibleCM_Form_1 = ReactRedux.connect(CM_Form_1_mapstatetoprops, CM_Form_1_disptchtoprops)(CM_Form_1);
 
 if (g_envVar.userid != null) {
 	ErpControlInit();

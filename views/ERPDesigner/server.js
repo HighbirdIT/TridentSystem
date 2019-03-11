@@ -378,7 +378,7 @@ function syndata_bykeyword(keyword) {
         if (keyword[0] != '%') {
             keyword = "%" + keyword;
         }
-        if (keyword[keyword.Length - 1] != '%') {
+        if (keyword[keyword.length - 1] != '%') {
             keyword = keyword + "%";
         }
         var sql = "select 库内对象名称代码 from T000E库内对象名称 where 终止确认状态=0 and 库内对象名称 like @param";
@@ -484,9 +484,9 @@ function WriteEntity(库内对象_dr, 目标库内对象_dic) {
                 var 列模式_dr = 列模式信息_dic[columnName];
                 if (列模式_dr != null) {
                     var 默认值 = 列模式_dr.默认值;
-                    if (默认值 && 默认值.Length > 0) {
+                    if (默认值 && 默认值.length > 0) {
                         while (默认值[0] == '(') {
-                            默认值 = 默认值.Substring(1, 默认值.Length - 2);
+                            默认值 = 默认值.substring(1, 默认值.length - 1);
                         }
                         Columns.cdefault = 默认值;
                     }

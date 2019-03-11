@@ -137,10 +137,18 @@ function GetKernelCanUseColumns(theKernel){
 
 function GetCanInteractiveColumns(theKernel){
     var rlt = [''];
-    var parentKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
-    if(parentKernel == null){
-        parentKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
+    var formKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
+    if(formKernel == null){
+        //parentKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
+        return rlt;
     }
+    var processTable = formKernel.getAttribute(AttrNames.ProcessTable);
+    if(processTable != null && processTable.loaded && processTable.columns != null){
+        processTable.columns.forEach(column=>{
+            rlt.push(column.name);
+        });
+    }
+    /*
     var buttons_arr = parentKernel.searchChildKernel(ButtonKernel_Type, false, true);
     var processTables_map = {};
     buttons_arr.forEach(btnKernel=>{
@@ -159,5 +167,6 @@ function GetCanInteractiveColumns(theKernel){
             });
         }
     }
+    */
     return rlt;
 }

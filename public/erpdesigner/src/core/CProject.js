@@ -169,9 +169,9 @@ class CProject extends IAttributeable{
 
     setEditingPageById(pageID){
         var thePage = this.getPageById(pageID);
-        if(thePage == null)
-            return false;
-        this.designeConfig.editingPage.id = thePage.id;
+        //if(thePage == null)
+            //return false;
+        this.designeConfig.editingPage.id = pageID;
         this.attrChanged('editingPage');
     }
 
@@ -181,6 +181,27 @@ class CProject extends IAttributeable{
             rlt = this.content_Mobile.pages.find(item=>{return item.id == pageID;});
         }
         return rlt;
+    }
+
+    deletePage(pageID){
+        var thePage = this.getPageById(pageID);
+        if(thePage == null){
+            return;
+        }
+        var index = this.content_PC.pages.indexOf(thePage);
+        if(index != -1){
+            this.content_PC.pages.splice(index, 1);
+        }
+        else{
+            index = this.content_Mobile.pages.indexOf(thePage);
+            if(index != -1){
+                this.content_Mobile.pages.splice(index, 1);
+            }
+        }
+        if(this.designeConfig.editingPage.id == pageID)
+        {
+            this.setEditingPageById(-1);
+        }
     }
 
     createEmptyPage(isPC){

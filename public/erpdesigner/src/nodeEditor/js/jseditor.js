@@ -84,8 +84,13 @@ function gCreateControlApiItem(apiType, apiName){
 
 const g_controlApi_arr = [];
 
-function gFindControlApi(ctltype){
-
+function gFindPropApiItem(ctltype, attrName){
+    var rlt = null;
+    var ctlApi = g_controlApi_arr.find(item=>{return item.ctltype == ctltype;});
+    if(ctlApi != null){
+        rlt = ctlApi.propapi_arr.find(item=>{return item.attrItem.name == attrName;});
+    }
+    return rlt;
 }
 
 
