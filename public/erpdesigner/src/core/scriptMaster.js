@@ -59,6 +59,14 @@ class ScriptMaster extends EventEmitter{
         this.emit('bpchanged');
     }
 
+    deleteBP(sqpBP){
+        var index = this.blueprints_arr.indexOf(sqpBP);
+        if(index != -1){
+            this.blueprints_arr.splice(index, 1);
+        }
+        sqpBP.master = null;
+    }
+
     getJson(){
         var rlt = {
             blueprints_arr:[]

@@ -54,7 +54,8 @@ function bind_M_Form_1(retState, newIndex, oldIndex) {
 	var needSetState = {};
 	var bundle = {};
 	needSetState['M_Dropdown_0.value'] = M_Dropdown_0_defaultvalue_get(retState, bundle);
-	needSetState['M_Dropdown_0.value'] = M_Dropdown_0_defaultvalue_get(retState, bundle);
+	needSetState['M_Text_1.value'] = M_Text_1_defaultvalue_get(retState, bundle);
+	needSetState['M_Text_2.value'] = M_Text_2_defaultvalue_get(retState, bundle);
 	needSetState['M_Text_5.value'] = '17:30';
 	needSetState['invalidbundle'] = false;
 	return setManyStateByPath(retState, 'M_Page_2.M_Form_1', needSetState);
@@ -64,7 +65,7 @@ function pull_M_Form_1(retState) {
 	return retState;
 }
 function M_Dropdown_0_defaultvalue_get(state, bundle) {
-	return g_envVar.userid;
+	return 2;
 }
 function pull_M_Dropdown_0() {
 	var bundle = {};
@@ -113,51 +114,102 @@ function M_Text_4_defaultvalue_get(state, bundle) {
 			}, 50);
 		}, false)));
 	}, 50);
-	return null;
 }
-function M_LC_3_isdisplay_get(state, bundle) {
+function M_Text_1_validchecker(nowValue) {
+	var startDate_1;
+	var nowDate_1;
+	var 间隔天_1;
+	var state = store.getState();
 	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
-	var M_Dropdown_1_value = bundle != null && bundle['M_Dropdown_1_value'] != null ? bundle['M_Dropdown_1_value'] : getStateByPath(M_Form_1_state, 'M_Dropdown_1.value');
+	var M_Dropdown_1_value = getStateByPath(M_Form_1_state, 'M_Dropdown_1.value');
 	var callback_final = function callback_final(state, data, err) {
-		var needSetState = {};
-		needSetState.visible = err == null ? data : null;
-		return setManyStateByPath(state, 'M_Page_2.M_Form_1.M_LC_3', needSetState);
+		return err == null ? null : err.info;
 	};
 	if (IsEmptyString(M_Dropdown_1_value)) {
 		return callback_final(state, null, { info: '条件不足' });
 	}
+	startDate_1 = new Date(nowValue);
+	nowDate_1 = getNowDate();
+	间隔天_1 = getDateDiff('天', startDate_1, nowDate_1);
+	if (M_Dropdown_1_value == 11) {
+		if (间隔天_1 < 0) {
+			return '过去的临时假不能补请';
+		}
+	} else {
+		if (间隔天_1 < -2) {
+			return '只能补2天之内的请假';
+		}
+	}
+}
+function M_Text_1_defaultvalue_get(state, bundle) {
+	return getFormatDateString(getNowDate());
+}
+function M_LC_3_isdisplay_get(state, bundle) {
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
+	var M_Dropdown_1_value = bundle != null && bundle['M_Dropdown_1_value'] != null ? bundle['M_Dropdown_1_value'] : getStateByPath(M_Form_1_state, 'M_Dropdown_1.value');
+	var callback_final = function callback_final(state, data, err) {};
+	if (IsEmptyString(M_Dropdown_1_value)) {
+		return callback_final(state, null, { info: '条件不足' });
+	}
 	return M_Dropdown_1_value == 11;
-	return null;
+	return err == null ? data : null;
+}
+function M_Text_2_defaultvalue_get(state, bundle) {
+	return getFormatTimeString(getNowDate(), false);
 }
 function M_Label_0_isdisplay_get(state, bundle) {
 	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
 	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : getStateByPath(M_Form_1_state, 'M_LC_3.visible');
-	var callback_final = function callback_final(state, data, err) {
-		var needSetState = {};
-		needSetState.visible = err == null ? data : null;
-		return setManyStateByPath(state, 'M_Page_2.M_Form_1.M_Label_0', needSetState);
-	};
+	var callback_final = function callback_final(state, data, err) {};
 	if (IsEmptyString(M_LC_3_visible)) {
 		return callback_final(state, null, { info: '条件不足' });
 	}
 	return M_LC_3_visible == true;
-	return null;
+	return err == null ? data : null;
 }
 function M_LC_6_isdisplay_get(state, bundle) {
 	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
 	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : getStateByPath(M_Form_1_state, 'M_LC_3.visible');
-	var callback_final = function callback_final(state, data, err) {
-		var needSetState = {};
-		needSetState.visible = err == null ? data : null;
-		return setManyStateByPath(state, 'M_Page_2.M_Form_1.M_LC_6', needSetState);
-	};
+	var callback_final = function callback_final(state, data, err) {};
 	if (IsEmptyString(M_LC_3_visible)) {
 		return callback_final(state, null, { info: '条件不足' });
 	}
 	return M_LC_3_visible;
-	return null;
+	return err == null ? data : null;
 }
-function button_4_onclik() {}
+function button_4_onclik() {
+	var state = store.getState();
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
+	var M_Dropdown_0_value = getStateByPath(M_Form_1_state, 'M_Dropdown_0.value');
+	var M_Dropdown_1_value = getStateByPath(M_Form_1_state, 'M_Dropdown_1.value');
+	var M_Text_4_value = getStateByPath(M_Form_1_state, 'M_Text_4.value');
+	var M_Text_1_value = getStateByPath(M_Form_1_state, 'M_Text_1.value');
+	var M_Text_2_value = getStateByPath(M_Form_1_state, 'M_Text_2.value');
+	var M_Text_3_value = getStateByPath(M_Form_1_state, 'M_Text_3.value');
+	var M_Text_5_value = getStateByPath(M_Form_1_state, 'M_Text_5.value');
+	var M_Text_6_value = getStateByPath(M_Form_1_state, 'M_Text_6.value');
+	var callback_final = function callback_final(state, data, err) {};
+	if (IsEmptyString(M_Dropdown_0_value) || IsEmptyString(M_Dropdown_1_value) || IsEmptyString(M_Text_4_value) || IsEmptyString(M_Text_1_value) || IsEmptyString(M_Text_2_value) || IsEmptyString(M_Text_3_value) || IsEmptyString(M_Text_5_value) || IsEmptyString(M_Text_6_value)) {
+		return callback_final(state, null, { info: '条件不足' });
+	}
+	var fetchid = Math.round(Math.random() * 999999);
+	fetchTracer['button_4_onclik'] = fetchid;
+	var bundle_insert_table_0 = {
+		M_Dropdown_0_value: M_Dropdown_0_value,
+		M_Dropdown_1_value: M_Dropdown_1_value,
+		M_Text_2_value: M_Text_2_value,
+		M_Text_5_value: M_Text_5_value,
+		M_Text_1_value: M_Text_1_value,
+		M_Text_3_value: M_Text_3_value,
+		M_Text_6_value: M_Text_6_value,
+		M_Text_4_value: M_Text_4_value
+	};
+	setTimeout(function () {
+		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_insert_table_0, action: '_insert_table_0' }, makeFTD_Callback(function (state, data_insert_table_0, err_insert_table_0) {
+			if (err_insert_table_0 == null) {}
+		})));
+	}, 50);
+}
 function M_Dropdown_0_value_changed(state, newValue, oldValue, path, visited, delayActs) {
 	var needSetState = {};
 	needSetState['M_Page_2.M_Form_1.M_Text_4.value'] = M_Text_4_defaultvalue_get(state);
@@ -402,6 +454,7 @@ function CM_Form_1_disptchtoprops(dispatch, ownprops) {
 }
 var VisibleCM_Form_1 = ReactRedux.connect(CM_Form_1_mapstatetoprops, CM_Form_1_disptchtoprops)(CM_Form_1);
 
+gCusValidChecker_map['M_Text_1'] = M_Text_1_validchecker;
 if (g_envVar.userid != null) {
 	ErpControlInit();
 	ReactDOM.render(React.createElement(

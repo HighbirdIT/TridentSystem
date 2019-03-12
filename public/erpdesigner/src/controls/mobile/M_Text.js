@@ -11,6 +11,8 @@ const M_TextKernelAttrsSetting = GenControlKernelAttrsSetting([
         }),
         new CAttribute('可否编辑', AttrNames.Editeable, ValueType.Boolean, true),
         genIsdisplayAttribute(),
+        genNullableAttribute(),
+        genValidCheckerAttribute(),
     ]),
 ]);
 

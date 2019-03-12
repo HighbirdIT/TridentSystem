@@ -898,6 +898,10 @@ class CP_ClientSide extends JSFileMaker{
         this.stateChangedAct = {};
 
         this.appClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps,VarNames.NowPage), makeStr_DotProp('state',VarNames.NowPage)));
+
+        var setCusValidCheckerBlock = new FormatFileBlock('setCusValidChecker');
+        this.endBlock.pushChild(setCusValidCheckerBlock);
+        this.setCusValidCheckerBlock = setCusValidCheckerBlock;
     }
 
     compile(){

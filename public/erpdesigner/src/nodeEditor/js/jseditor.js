@@ -30,6 +30,11 @@ const JSNodeEditorControls_arr =[
         type:'流控制'
     },
     {
+        label:'逻辑运算',
+        nodeClass:JSNode_Logical_Operator,
+        type:'数学'
+    },
+    {
         label:'四则运算',
         nodeClass:JSNode_NOperand,
         type:'数学'
@@ -253,7 +258,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         logManager.clear();
         var canUseDS_arr = [];
         var canAccessKernel_arr = [];
-        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent){
+        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == EJsBluePrintFunGroup.CtlValid){
             // 控件类型,获取上下文
             var ctlKernel = project.getControlById(bluePrint.ctlID);
             if(bluePrint.ctlID == null || ctlKernel == null){

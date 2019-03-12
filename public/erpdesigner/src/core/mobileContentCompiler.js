@@ -201,6 +201,7 @@ class MobileContentCompiler extends ContentCompiler{
         var useScope = targetBP.type == FunType_Client ? this.clientSide.scope : this.serverSide.scope;
         var compileHelper = new JSNode_CompileHelper(logManager, null, useScope);
         compileHelper.serverSide = this.serverSide;
+        compileHelper.clientSide = this.clientSide;
         logManager.log('编译脚本:' + targetBP.name);
         var compileRet = targetBP.compile(compileHelper);
         if(compileRet == false){
@@ -420,8 +421,19 @@ class MobileContentCompiler extends ContentCompiler{
                 ctlTag.setAttr('linetype', '1x');
             }
         }
+        var isnullable = false;
+        if(theKernel.isAEditor()){
+            isnullable = theKernel.parent.getAttribute(AttrNames.Nullable);
+        }
+        else{
+            isnullable = theKernel.getAttribute(AttrNames.Nullable);
+        }
+        if(isnullable){
+            ctlTag.setAttr('nullable', '{true}');
+        }
         renderBlock.pushChild(ctlTag);
         this.compileIsdisplayAttribute(theKernel,ctlTag);
+        this.compileValidCheckerAttribute(theKernel);
         var editeable = theKernel.getAttribute(AttrNames.Editeable);
         if(!editeable){
             ctlTag.setAttr('readonly', '{true}');
@@ -453,7 +465,10 @@ class MobileContentCompiler extends ContentCompiler{
             if(belongFormKernel != null){
                 var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
                 var formColumns_arr = belongFormKernel.getCanuseColumns();
-                formMidData.needSetKernels_arr.push(theKernel);
+                if(formMidData.needSetKernels_arr.indexOf(theKernel) == -1)
+                {
+                    formMidData.needSetKernels_arr.push(theKernel);
+                }
                 if(formColumns_arr.indexOf(textField) != -1){
                     formMidData.useColumns_map[textField] = 1;
                     kernelMidData.columnName = textField;
@@ -506,18 +521,22 @@ class MobileContentCompiler extends ContentCompiler{
             return false;
         }
         if(scriptCompileRet.finalCallBackBody_bk){
-            scriptCompileRet.finalCallBackBody_bk.pushLine("var needSetState = {};");
-            scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState." + stateName + " = err == null ? data : null;");
-            if(config != null){
-                if(config.autoSetFetchState){
-                    scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState.fetching = false;");
-                    scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState.fetchingErr = err;");
+            if(scriptCompileRet.hadServerFetch){
+                scriptCompileRet.finalCallBackBody_bk.pushLine("var needSetState = {};");
+                scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState." + stateName + " = err == null ? data : null;");
+                if(config != null){
+                    if(config.autoSetFetchState){
+                        scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState.fetching = false;");
+                        scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState.fetchingErr = err;");
 
-                    scriptCompileRet.startFtech_bk.pushLine("state = " + makeStr_callFun('setManyStateByPath', [VarNames.State, singleQuotesStr(theKernel.getStatePath()), '{fetching:true,fetchingErr:null}']));
+                        scriptCompileRet.startFtech_bk.pushLine("state = " + makeStr_callFun('setManyStateByPath', [VarNames.State, singleQuotesStr(theKernel.getStatePath()), '{fetching:true,fetchingErr:null}']));
+                    }
                 }
+                scriptCompileRet.finalCallBackReturn_bk.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, singleQuotesStr(theKernel.getStatePath()), 'needSetState']) + ';');
             }
-            scriptCompileRet.finalCallBackReturn_bk.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, singleQuotesStr(theKernel.getStatePath()), 'needSetState']) + ';');
-            scriptCompileRet.pushLine("return null;");
+            else{
+                scriptCompileRet.finalCallBackReturn_bk.pushLine("return err == null ? data : null;");
+            }
         }
 
         var visibleStyle = VisibleStyle_Update;
@@ -567,7 +586,10 @@ class MobileContentCompiler extends ContentCompiler{
         }
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
         var bindParentMidData = this.projectCompiler.getMidData(bindParentKernel.id);
-        bindParentMidData.needSetKernels_arr.push(theKernel);
+        if(bindParentMidData.needSetKernels_arr.indexOf(theKernel) == -1)
+        {
+            bindParentMidData.needSetKernels_arr.push(theKernel);
+        }
         kernelMidData.visibleStyle = visibleStyle;
         kernelMidData.useFormData = useFormData;
 
@@ -583,22 +605,49 @@ class MobileContentCompiler extends ContentCompiler{
             useControl:useControl,
         };
         kernelMidData.needSetStates_arr.push(setStateItem);
+
+        return scriptCompileRet;
     }
 
-    compileIsdisplayAttribute(theKernel,ctelTag){
+    compileIsdisplayAttribute(theKernel,ctlTag){
         if(!theKernel.hasAttribute(AttrNames.Isdisplay))
         {
+            return;
+        }
+        if(theKernel.parent && theKernel.parent.editor == theKernel){
+            // eidtor
             return;
         }
         var project = this.project;
         var isdisplay = theKernel.getAttribute(AttrNames.Isdisplay);
         var isdisplayParseRet = parseObj_CtlPropJsBind(isdisplay, project.scriptMaster);
         if(isdisplayParseRet.isScript){
-            this.compileScriptAttribute(isdisplayParseRet, theKernel, 'visible', AttrNames.Isdisplay);
+            var scriptCompileRet = this.compileScriptAttribute(isdisplayParseRet, theKernel, 'visible', AttrNames.Isdisplay);
+            /*
+            if(theKernel.editor){
+                scriptCompileRet.finalCallBackBody_bk.pushLine("state = " + makeStr_callFun('setStateByPath', [VarNames.State, singleQuotesStr(theKernel.editor.getStatePath()), '{visible:needSetState.visible}']));
+            }
+            */
         }
         else{
             if(!isdisplay){
-                ctelTag.setAttr('visible', '{false}');
+                ctlTag.setAttr('visible', '{false}');
+            }
+        }
+    }
+
+    compileValidCheckerAttribute(theKernel){
+        if(!theKernel.hasAttribute(AttrNames.ValidChecker))
+        {
+            return;
+        }
+        var project = this.project;
+        var funName = theKernel.id + '_' + AttrNames.ValidChecker;
+        var jsBP = project.scriptMaster.getBPByName(funName);
+        if(jsBP){
+            var scriptCompileRet = this.compileScriptBlueprint(jsBP);
+            if(scriptCompileRet.finalCallBackBody_bk){
+                scriptCompileRet.finalCallBackBody_bk.pushLine("return err == null ? null : err.info;");
             }
         }
     }
@@ -971,7 +1020,10 @@ class MobileContentCompiler extends ContentCompiler{
             if(belongFormKernel != null){
                 var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
                 var formColumns_arr = belongFormKernel.getCanuseColumns();
-                formMidData.needSetKernels_arr.push(theKernel);
+                if(formMidData.needSetKernels_arr.indexOf(theKernel) == -1)
+                {
+                    formMidData.needSetKernels_arr.push(theKernel);
+                }
                 if(formColumns_arr.indexOf(textField) != -1){
                     formMidData.useColumns_map[textField] = 1;
                     kernelMidData.columnName = textField;
@@ -1229,7 +1281,10 @@ class MobileContentCompiler extends ContentCompiler{
             if(belongFormKernel != null){
                 var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
                 var formColumns_arr = belongFormKernel.getCanuseColumns();
-                formMidData.needSetKernels_arr.push(theKernel);
+                if(formMidData.needSetKernels_arr.indexOf(theKernel) == -1)
+                {
+                    formMidData.needSetKernels_arr.push(theKernel);
+                }
 
                 if(formColumns_arr.indexOf(textField) != -1){
                     formMidData.useColumns_map[textField] = 1;

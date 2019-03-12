@@ -97,6 +97,7 @@ const FunType_Server = 'server';
 const EJsBluePrintFunGroup={
     CtlAttr:'ctlattr',
     CtlEvent:'ctlevent',
+    CtlValid: 'ctlvalid',
 }
 
 const ESqlBluePrintGroup={
@@ -216,7 +217,8 @@ const ValueType = {
     CustomDataSource: 'CustomDataSource',
     Unknown: 'Unknown',
     Any: '任意',
-    Event:'event'
+    Event:'event',
+    Script:'script'
 };
 
 const VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

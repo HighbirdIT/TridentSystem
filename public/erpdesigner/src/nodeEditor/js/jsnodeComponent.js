@@ -308,3 +308,44 @@ class C_JSNode_QueryFB extends React.PureComponent {
         </C_Node_Frame>
     }
 }
+
+class C_JSNode_Logical_Operator extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+
+        C_NodeCom_Base(this);
+        this.state = {
+            LogicalType: this.props.nodedata.LogicalType,
+        }
+    }
+
+    selectItemChangedHandler(newLogicalType) {
+        var nodeData = this.props.nodedata;
+        nodeData.LogicalType = newLogicalType;
+        this.setState({
+            LogicalType: newLogicalType
+        });
+    }
+
+    cusHeaderFuc() {
+        if (this.ddcStyle == null) {
+            this.ddcStyle = {
+                width: '100px',
+                margin: '10px',
+            }
+        }
+        var nodeData = this.props.nodedata;
+        return (<DropDownControl options_arr={Logical_Operators_arr} value={nodeData.LogicalType} itemChanged={this.selectItemChangedHandler} style={this.ddcStyle} />);
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' cusHeaderFuc={this.cusHeaderFuc} >
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
+            </div>
+        </C_Node_Frame>
+    }
+}

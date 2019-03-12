@@ -488,6 +488,11 @@ var ControlKernelBase = function (_IAttributeable) {
             } while (nowKernel != null);
             return rlt;
         }
+    }, {
+        key: 'isAEditor',
+        value: function isAEditor() {
+            return this.parent && this.parent.editor == this;
+        }
     }]);
 
     return ControlKernelBase;

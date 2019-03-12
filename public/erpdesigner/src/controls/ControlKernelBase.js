@@ -463,8 +463,12 @@ class ControlKernelBase extends IAttributeable {
             if(nowKernel){
                 nowKernel = nowKernel.parent;
             }
-        }while(nowKernel != null)
+        }while(nowKernel != null);
         return rlt;
+    }
+
+    isAEditor(){
+        return this.parent && this.parent.editor == this;
     }
 }
 

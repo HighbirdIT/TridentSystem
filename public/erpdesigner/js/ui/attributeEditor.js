@@ -224,8 +224,8 @@ var AttributeEditor = function (_React$PureComponent) {
             project.designer.editScriptBlueprint(targetBP);
         }
     }, {
-        key: 'clickModifyEbentBtnHandler',
-        value: function clickModifyEbentBtnHandler(ev) {
+        key: 'clickModifyScriptBtnHandler',
+        value: function clickModifyScriptBtnHandler(ev) {
             var project = this.props.targetobj.project;
             if (project == null) {
                 return;
@@ -234,7 +234,17 @@ var AttributeEditor = function (_React$PureComponent) {
             var funName = this.props.targetobj.id + '_' + theAttr.name;
             var targetBP = project.scriptMaster.getBPByName(funName);
             if (targetBP == null) {
-                targetBP = project.scriptMaster.createBP(funName, FunType_Client, EJsBluePrintFunGroup.CtlEvent);
+                var jsGroup = null;
+                if (theAttr.scriptSetting != null) {
+                    jsGroup = theAttr.scriptSetting.group;
+                } else if (theAttr.valueType == ValueType.Event) {
+                    jsGroup = EJsBluePrintFunGroup.CtlEvent;
+                }
+
+                if (jsGroup == null) {
+                    console.error("bad jsgroup!");
+                }
+                targetBP = project.scriptMaster.createBP(funName, FunType_Client, jsGroup);
                 targetBP.ctlID = this.props.targetobj.id;
                 targetBP.eventName = theAttr.name;
                 this.setState({
@@ -244,14 +254,35 @@ var AttributeEditor = function (_React$PureComponent) {
             project.designer.editScriptBlueprint(targetBP);
         }
     }, {
-        key: 'renderEventAttrEditor',
-        value: function renderEventAttrEditor(nowVal, theAttr, attrName, inputID) {
+        key: 'clickTrshScriptBtnHandler',
+        value: function clickTrshScriptBtnHandler(ev) {
+            var theAttr = this.props.targetattr;
+            var funName = this.props.targetobj.id + '_' + theAttr.name;
+            var project = this.props.targetobj.project;
+            var jsBP = project.scriptMaster.getBPByName(funName);
+            if (jsBP != null) {
+                gTipWindow.popAlert(makeAlertData('警告', '确定要删除这个脚本:' + jsBP.name, this.clickDeleteJSTipCallback, [makeAlertBtnData('确定', 'ok'), makeAlertBtnData('取消', 'cancel')], jsBP));
+            }
+        }
+    }, {
+        key: 'clickDeleteJSTipCallback',
+        value: function clickDeleteJSTipCallback(key, jsBP) {
+            if (key == 'ok') {
+                jsBP.master.deleteBP(jsBP);
+                this.setState({
+                    magicObj: {}
+                });
+            }
+        }
+    }, {
+        key: 'renderPureScriptAttrEditor',
+        value: function renderPureScriptAttrEditor(nowVal, theAttr, attrName, inputID) {
             var project = this.props.targetobj.project;
             var funName = this.props.targetobj.id + '_' + attrName;
             var jsBP = project.scriptMaster.getBPByName(funName);
-            var trushIconElem = React.createElement(
+            var trushIconElem = jsBP == null ? null : React.createElement(
                 'span',
-                { onClick: this.clickjsIconHandler, className: 'fa-stack cursor-pointer text-danger' },
+                { onClick: this.clickTrshScriptBtnHandler, className: 'fa-stack cursor-pointer text-danger' },
                 React.createElement('i', { className: 'fa fa-trash fa-stack-1x' }),
                 React.createElement('i', { className: 'fa fa-square-o fa-stack-2x' })
             );
@@ -260,7 +291,7 @@ var AttributeEditor = function (_React$PureComponent) {
                 { className: 'd-flex w-100 h-100 align-items-center' },
                 React.createElement(
                     'span',
-                    { onClick: this.clickModifyEbentBtnHandler, className: 'btn btn-dark flex-grow-1' },
+                    { onClick: this.clickModifyScriptBtnHandler, className: 'btn btn-dark flex-grow-1' },
                     jsBP ? '编辑' : '创建'
                 ),
                 trushIconElem
@@ -288,8 +319,8 @@ var AttributeEditor = function (_React$PureComponent) {
         key: 'rednerEditor',
         value: function rednerEditor(theAttr, attrName, inputID) {
             var nowVal = this.state.value;
-            if (theAttr.valueType == ValueType.Event) {
-                return this.renderEventAttrEditor(nowVal, theAttr, attrName, inputID);
+            if (theAttr.valueType == ValueType.Event || theAttr.valueType == ValueType.Script) {
+                return this.renderPureScriptAttrEditor(nowVal, theAttr, attrName, inputID);
             }
             if (theAttr.valueType == ValueType.StyleValues) {
                 return this.renderStyleAttrEditor(nowVal, theAttr, attrName, inputID);
@@ -297,12 +328,18 @@ var AttributeEditor = function (_React$PureComponent) {
             if (theAttr.valueType == ValueType.CustomDataSource) {
                 return this.renderCustomDataSource(nowVal, theAttr, attrName, inputID);
             }
-            if (!theAttr.editable) {
-                return React.createElement(
-                    'div',
-                    { className: 'form-control-plaintext text-light', id: inputID },
-                    nowVal
-                );
+            var attrEditable = ReplaceIfNull(this.props.targetobj[attrName + '_editable'], theAttr.editable);
+            if (!attrEditable) {
+                switch (theAttr.valueType) {
+                    case ValueType.Boolean:
+                        return React.createElement('input', { autoComplete: 'off', type: 'checkbox', readOnly: 'readonly', className: 'form-control', id: inputID, checked: nowVal, value: nowVal });
+                    default:
+                        return React.createElement(
+                            'div',
+                            { className: 'form-control-plaintext text-light', id: inputID },
+                            nowVal.toString()
+                        );
+                }
             }
             var jsIconElem = null;
             var project = this.props.targetobj.project;
@@ -527,7 +564,7 @@ var AttributeGroup = function (_React$PureComponent2) {
         key: 'renderAttribute',
         value: function renderAttribute(attr) {
             var target = this.state.target;
-            if (!attr.visible && !target[attr.name + '_visible']) {
+            if (!attr.visible || target[attr.name + '_visible'] == false) {
                 return null;
             }
             if (attr.isArray) {

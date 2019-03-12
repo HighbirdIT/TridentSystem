@@ -13,6 +13,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var ctrlCurrentComponent_map = {};
 var gFixedContainerRef = React.createRef();
 var gFixedItemCounter = 0;
+var gCusValidChecker_map = {};
 
 var HashKey_FixItem = 'fixitem';
 
@@ -731,7 +732,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                         var theOptionItem = this.props.optionsData.options_arr.find(function (item) {
                             return item.value == selectedVal;
                         });
-                        selectedText = theOptionItem.text;
+                        selectedText = theOptionItem ? theOptionItem.text : null;
                         setTimeout(function () {
                             self.selectItem(theOptionItem);
                         }, 50);
@@ -898,7 +899,11 @@ var ERPC_Text = function (_React$PureComponent4) {
         key: 'inputChanged',
         value: function inputChanged(ev) {
             var text = ev.target.value;
-            store.dispatch(makeAction_setStateByPath(text, MakePath(this.props.parentPath, this.props.id, 'value')));
+            var invalidInfo = BaseIsValueValid(null, null, text, this.props.type, this.props.nullable, this.props.id);
+            store.dispatch(makeAction_setManyStateByPath({
+                value: text,
+                invalidinfo: invalidInfo
+            }, MakePath(this.props.parentPath, this.props.id)));
         }
     }, {
         key: 'formatValue',
@@ -970,12 +975,19 @@ var ERPC_Text = function (_React$PureComponent4) {
             return rlt;
         }
     }, {
+        key: 'endInputHandler',
+        value: function endInputHandler() {
+            var invalidInfo = BaseIsValueValid(null, null, this.props.value, this.props.type, this.props.nullable, this.props.id);
+            store.dispatch(makeAction_setStateByPath(invalidInfo, MakePath(this.props.parentPath, this.props.id, 'invalidinfo')));
+        }
+    }, {
         key: 'render',
         value: function render() {
             if (this.props.visible == false) {
                 return null;
             }
             var contentElem = null;
+            var errTipElem = null;
             var rootDivClassName = 'd-flex ' + (this.props.class == null ? '' : this.props.class);
             if (this.props.fetching) {
                 rootDivClassName += 'rounded border p-1';
@@ -1009,7 +1021,7 @@ var ERPC_Text = function (_React$PureComponent4) {
                         nowValue
                     );
                 } else if (this.props.type == 'string' && this.props.linetype != null && this.props.linetype != 'single') {
-                    contentElem = React.createElement('textarea', { onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 form-control textarea-' + this.props.linetype, value: this.props.value });
+                    contentElem = React.createElement('textarea', { onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 w-100 form-control textarea-' + this.props.linetype, value: this.props.value, onBlur: this.endInputHandler });
                 } else {
                     var useType = this.props.type;
                     var useChecked = null;
@@ -1027,13 +1039,24 @@ var ERPC_Text = function (_React$PureComponent4) {
                             break;
                     }
                     var useValue = this.formatInputValue(this.props.value);
-                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control invalid ', type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged });
+                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control invalid ', type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged, onBlur: this.endInputHandler });
+                }
+
+                if (this.props.invalidinfo) {
+                    rootDivClassName += ' flex-column';
+                    errTipElem = React.createElement(
+                        'span',
+                        { className: 'text-danger' },
+                        React.createElement('i', { className: 'fa fa-warning' }),
+                        this.props.invalidinfo
+                    );
                 }
             }
             return React.createElement(
                 'div',
                 { className: rootDivClassName, ref: this.rootDivRef, style: this.props.style },
-                contentElem
+                contentElem,
+                errTipElem
             );
         }
     }]);
@@ -1047,7 +1070,8 @@ function ERPC_Text_mapstatetoprops(state, ownprops) {
         value: ctlState.value == null ? '' : ctlState.value,
         fetching: ctlState.fetching,
         visible: ctlState.visible,
-        fetchingErr: ctlState.fetchingErr
+        fetchingErr: ctlState.fetchingErr,
+        invalidinfo: ctlState.invalidinfo
     };
 }
 
@@ -1304,4 +1328,44 @@ function ERPC_PageForm_renderNavigater() {
         plushBtnItem,
         exitPlushBtnItem
     );
+}
+
+function BaseIsValueValid(visibleBelongState, ctlState, value, valueType, nullable, ctlID) {
+    if (visibleBelongState && visibleBelongState.visible == false) {
+        // not visible is always valid
+        return null;
+    }
+    if (ctlState != null) {
+        if (ctlState.fetching) {
+            return '等待通讯完成';
+        } else if (ctlState.fetchingErr) {
+            return ctlState.fetchingErr.info;
+        }
+    }
+    if (nullable != true && IsEmptyString(value)) {
+        return '不能为空值';
+    }
+    switch (valueType) {
+        case 'int':
+        case 'float':
+            if (isNaN(value)) {
+                return '必须是数字';
+            }
+            break;
+        case 'date':
+        case 'datetime':
+            if (!checkDate(value)) {
+                return '不是有效的日期格式';
+            }
+            break;
+        case 'time':
+            if (!checkTime(value)) {
+                return '不是有效的时间格式';
+            }
+            break;
+    }
+    if (gCusValidChecker_map[ctlID]) {
+        return gCusValidChecker_map[ctlID](value);
+    }
+    return null;
 }

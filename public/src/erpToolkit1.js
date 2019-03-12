@@ -99,6 +99,10 @@ function myTrim(x) {
     return x.replace(/^\s+|\s+$/gm, '');
 }
 
+function getNowDate(){
+    return new Date(getFormatDateString(new Date()));
+}
+
 function checkDate(date) {
     var dateVal = new Date(Date.parse(date));
     return !isNaN(dateVal.getDate());
@@ -107,6 +111,55 @@ function checkDate(date) {
 function checkTime(str) {
     var dateVal = new Date(Date.parse('2000-1-1 ' + str));
     return !isNaN(dateVal.getDate());
+}
+
+function cutTimePart(date){
+    var rlt = new Date(date);
+    rlt.setHours(0);
+    rlt.setMinutes(0);
+    rlt.setMilliseconds(0);
+    rlt.setSeconds(0);
+    return rlt;
+}
+
+function convertTimeToDate(str){
+    var now = new Date();
+    return combineDateAndTime(getFormatDateString(now), str);
+}
+
+function combineDateAndTime(dateStr, timeStr){
+    return new Date(Date.parse(dateStr + ' ' + timeStr));
+}
+
+function getDateDiff(type, dateA, dateB){
+    var divNum = 0;
+    switch(type.toLowerCase()){
+        case '秒':
+        divNum = 1000;
+        break;
+        case '分':
+        divNum = 1000 * 60;
+        break;
+        case '时':
+        divNum = 1000 * 60 * 60;
+        break;
+        case '天':
+        divNum = 1000 * 60 * 60 * 24;
+        break;
+        case '月':
+        divNum = 1000 * 60 * 60 * 24 * 30;
+        break;
+        case '年':
+        divNum = 1000 * 60 * 60 * 24 * 365;
+        break;
+    }
+    if(typeof dateA === 'string'){
+        dateA = new Date(dateA);
+    }
+    if(typeof dateB === 'string'){
+        dateB = new Date(dateB);
+    }
+    return (dateA.getTime() - dateB.getTime()) / divNum;
 }
 
 // commonreducer
