@@ -214,6 +214,9 @@ app.use('/ERPDesigner/main', function (req, res, next) {
 app.use('/HelloReact', function (req, res, next) {
     return res.render('study/HelloReact', { layout: null });
 });
+app.use('/MessageBox', function (req, res, next) {
+    return res.render('study/MessageBox', { layout: null });
+});
 
 app.use('/ReactKeyList', function (req, res, next) {
     return res.render('study/ReactKeyList', { layout: null });

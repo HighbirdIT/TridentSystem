@@ -37,7 +37,7 @@ var Calculator = function (_React$PureComponent) {
             switch (id) {
                 case this.props.name + 'a_input':
                     newState.a = target.value;
-                    break;
+                    break;52;
                 case this.props.name + 'b_input':
                     newState.b = target.value;
                     break;
@@ -94,6 +94,11 @@ var Calculator = function (_React$PureComponent) {
             return React.createElement(
                 'div',
                 { name: 'CalculatorDiv', className: 'w-100 d-flex align-items-center' },
+                React.createElement(
+                    'div',
+                    { className: 'topMsg' },
+                    'finfinienf'
+                ),
                 React.createElement(
                     'div',
                     { className: 'badge badge-primary' },
@@ -195,7 +200,7 @@ var MyApp = function (_React$PureComponent2) {
     }, {
         key: 'render',
         value: function render() {
-            return this.renderCalculator(100);
+            return this.renderCalculator(1);
             /*
             return (
             <div className="w-100 h-100 d-flex flex-column">
