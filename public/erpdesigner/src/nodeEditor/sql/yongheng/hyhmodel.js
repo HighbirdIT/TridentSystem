@@ -1098,6 +1098,7 @@ SqlNodeClassMap[SQLNODE_LIKE] = {
 };
 
 ////////////////////////////////////////////////////////
+////////////////////
 SqlNodeEditorControls_arr.push({
     label: 'CONVERT',
     nodeClass: SqlNode_Convert,
