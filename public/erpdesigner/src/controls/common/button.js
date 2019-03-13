@@ -19,6 +19,11 @@ class ButtonKernel extends ControlKernelBase{
                 createHelper,kernelJson
             );
         
+        var funName = this.id + '_' + AttrNames.Event.OnClick;
+        var eventBP = this.project.scriptMaster.getBPByName(funName);
+        if(eventBP){
+            eventBP.ctlID = this.id;
+        }
         this.findAttributeByName(AttrNames.ProcessTable).options_arr = g_dataBase.getAllTable;
         var self = this;
         autoBind(self);
@@ -32,6 +37,26 @@ class ButtonKernel extends ControlKernelBase{
         var rlt = super.getLayoutConfig();
         rlt.addClass('btn');
         rlt.addClass(this.getAttribute(AttrNames.ButtonClass));
+        return rlt;
+    }
+
+    getWantInsertTables(){
+        var funName = this.id + '_' + AttrNames.Event.OnClick;
+        var eventBP = this.project.scriptMaster.getBPByName(funName);
+        var rlt = null;
+        if(eventBP){
+            var processTableNodes_arr = eventBP.getNodesByTypes([JSNODE_INSERT_TABLE,JSNODE_UPDATE_TABLE], true);
+            processTableNodes_arr.forEach(node=>{
+                if(!IsEmptyString(node.dsCode)){
+                    if(rlt == null){
+                        rlt = [node.dsCode];
+                    }
+                    else{
+                        rlt.push(node.dsCode);
+                    }
+                }
+            });
+        }
         return rlt;
     }
 }

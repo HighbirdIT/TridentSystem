@@ -8,6 +8,10 @@ const M_ControlKernelBaseAttrsSetting = {
     ]),
 };
 
+var M_ControlKernel_api = new ControlAPIClass(M_AllKernel_Type);
+M_ControlKernel_api.pushApi(new ApiItem_prop(genIsdisplayAttribute(), 'visible'));
+M_ControlKernel_api.pushApi(new ApiItem_propsetter('visible'));
+g_controlApi_arr.push(M_ControlKernel_api);
 /*
 new CAttribute('宽度',AttrNames.Width,ValueType.String,''),
             new CAttribute('高度',AttrNames.Height,ValueType.String,''),
@@ -36,6 +40,28 @@ function GenControlKernelAttrsSetting(cusGroups_arr, includeDefault){
             cusGroup.setAttrs(M_ControlKernelBaseAttrsSetting.baseGroup.attrs_arr.concat(cusGroup.attrs_arr));
         }
         rlt.push(cusGroup);
+    }
+    return rlt;
+}
+
+function getDSAttrCanuseColumns(dsAttrName, csAttrName){
+    var useDS = this.getAttribute(dsAttrName);
+    if(useDS == null){
+        return [];
+    }
+    var rlt = useDS.columns.map(col=>{
+        return col.name;
+    });
+    if(csAttrName != null){
+        var cusDS_bp = this.getAttribute(csAttrName);
+        if(cusDS_bp != null){
+            var retColumnNode = cusDS_bp.finalSelectNode.columnNode;
+            retColumnNode.inputScokets_arr.forEach(socket=>{
+                var alias = socket.getExtra('alias');
+                if(!IsEmptyString(alias))
+                    rlt.push(alias);
+            });
+        }
     }
     return rlt;
 }
@@ -130,10 +156,19 @@ class ControlKernelBase extends IAttributeable {
         }
     }
 
-    delete(){
-        if(this.isfixed){
+    delete(forceDelete){
+        if(!forceDelete && this.isfixed){
             return;
         }
+        // delete all customdatasource
+        var cusdsAttr_arr = this.filterAttributesByValType(ValueType.CustomDataSource);
+        cusdsAttr_arr.forEach(cusdsAttr=>{
+            var cusds = this.getAttribute(cusdsAttr.name);
+            if(cusds != null){
+                this.project.dataMaster.deleteSqlBP(cusds);
+            }
+        });
+
         for(var dsCode in this.listendDS_map){
             var t_arr = this.listendDS_map[dsCode];
             if(t_arr == null){
@@ -146,7 +181,7 @@ class ControlKernelBase extends IAttributeable {
         }
         if(this.children){
             for(var ci in this.children){
-                this.children[ci].delete();
+                this.children[ci].delete(true);
             }
         }
         this.project.unRegisterControl(this);
@@ -309,11 +344,15 @@ class ControlKernelBase extends IAttributeable {
     searchParentKernel(targetType, justFirst){
         var rlt = null;
         var tKernel = this.parent;
+        var isArray = false;
         if(targetType == null){
             targetType = '*';
         }
+        else if(Array.isArray(targetType)){
+            isArray = true;
+        }
         while(tKernel != null){
-            if(targetType == '*' || tKernel.type == targetType){
+            if(targetType == '*' || (!isArray && tKernel.type == targetType) || (isArray && targetType.indexOf(tKernel.type)!=-1)) {
                 if(justFirst){
                     return tKernel;
                 }
@@ -329,15 +368,22 @@ class ControlKernelBase extends IAttributeable {
         return rlt;
     }
 
-    searchChildKernel(targetType, justFirst, deepSearch){
+    searchChildKernel(targetType, justFirst, deepSearch, ignoreTypes){
         var rlt = null;
+        var isArray = false;
         if(targetType == null){
             targetType = '*';
+        }
+        else if(Array.isArray(targetType)){
+            isArray = true;
         }
         if(this.children && this.children.length > 0){
             for(var ci in this.children){
                 var child = this.children[ci];
-                if(targetType == '*' || child.type == targetType){
+                if(ignoreTypes != null && ignoreTypes.indexOf(child.type) != -1){
+                    continue;
+                }
+                if(targetType == '*' || (!isArray && child.type == targetType) || (isArray && targetType.indexOf(child.type)!=-1)) {
                     if(justFirst){
                         return child;
                     }
@@ -368,6 +414,9 @@ class ControlKernelBase extends IAttributeable {
 
     getAccessableKernels(targetType){
         var rlt = [];
+        if(targetType == M_AllKernel_Type){
+            targetType = null;
+        }
         var needFilt = targetType != null;
         if(!needFilt || this.type == targetType){
             rlt.push(this);
@@ -414,8 +463,12 @@ class ControlKernelBase extends IAttributeable {
             if(nowKernel){
                 nowKernel = nowKernel.parent;
             }
-        }while(nowKernel != null)
+        }while(nowKernel != null);
         return rlt;
+    }
+
+    isAEditor(){
+        return this.parent && this.parent.editor == this;
     }
 }
 

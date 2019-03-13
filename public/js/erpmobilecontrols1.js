@@ -13,6 +13,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var ctrlCurrentComponent_map = {};
 var gFixedContainerRef = React.createRef();
 var gFixedItemCounter = 0;
+var gCusValidChecker_map = {};
 
 var HashKey_FixItem = 'fixitem';
 
@@ -330,7 +331,9 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             var contentElem = null;
             var recentElem = null;
             var recentItems_arr = [];
-            if (this.state.fetching) {
+            if (this.state.fetchingErr) {
+                contentElem = renderFetcingErrDiv(this.state.fetchingErr.info);
+            } else if (this.state.fetching) {
                 contentElem = React.createElement(
                     'div',
                     { className: 'd-flex align-items-center m-auto' },
@@ -647,6 +650,9 @@ var ERPC_DropDown = function (_React$PureComponent3) {
     }, {
         key: 'clickOpenHandler',
         value: function clickOpenHandler() {
+            if (this.props.fetching) {
+                return;
+            }
             if (!this.state.opened) {
                 this.dropDownOpened();
             } else {
@@ -656,8 +662,8 @@ var ERPC_DropDown = function (_React$PureComponent3) {
     }, {
         key: 'selectItem',
         value: function selectItem(theOptionItem) {
-            var value = '';
-            var text = '';
+            var value = null;
+            var text = null;
             if (theOptionItem) {
                 value = theOptionItem.value.toString();
                 text = theOptionItem.text;
@@ -676,9 +682,12 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 }
             }
             this.dropDownClosed();
+
+            var invalidInfo = BaseIsValueValid(null, null, null, value == null || text == null ? null : value, this.props.type, this.props.nullable, this.props.id);
             store.dispatch(makeAction_setManyStateByPath({
                 value: value,
-                text: text
+                text: text,
+                invalidInfo: invalidInfo
             }, MakePath(this.props.parentPath, this.props.id)));
         }
     }, {
@@ -687,12 +696,13 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             return {
                 selectedVal: this.props.value,
                 fetching: this.props.fetching,
+                fetchingErr: this.props.fetchingErr,
                 optionsData: this.props.optionsData,
                 maxCount: 50,
                 keyword: '',
                 recentValues_arr: this.recentValues_arr,
                 recentUsed: this.recentUsed,
-                label: this.props.label
+                label: ReplaceIfNull(this.props.label, this.props.textAttrName)
             };
         }
     }, {
@@ -704,8 +714,33 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             var hadMini = this.props.miniBtn != false;
             var selectedVal = this.props.value;
             var selectedText = this.props.text;
-            if (selectedText == null) {
-                selectedText = '请选择';
+            var self = this;
+            if (!IsEmptyString(selectedVal) && IsEmptyString(selectedText)) {
+                if (this.props.fetchingErr != null) {
+                    setTimeout(function () {
+                        self.selectItem(null);
+                    }, 50);
+                } else {
+                    if (this.props.optionsData.options_arr == null) {
+                        selectedVal = null;
+                        if (!this.props.fetching) {
+                            if (this.autoPullTO == null) {
+                                this.autoPullTO = setTimeout(function () {
+                                    self.props.pullDataSource();
+                                    self.autoPullTO = null;
+                                }, 50);
+                            }
+                        }
+                    } else {
+                        var theOptionItem = this.props.optionsData.options_arr.find(function (item) {
+                            return item.value == selectedVal;
+                        });
+                        selectedText = theOptionItem ? theOptionItem.text : null;
+                        setTimeout(function () {
+                            self.selectItem(theOptionItem);
+                        }, 50);
+                    }
+                }
             }
 
             if (this.state.opened) {
@@ -714,6 +749,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                     var newState = {
                         selectedVal: selectedVal,
                         fetching: this.props.fetching,
+                        fetchingErr: this.props.fetchingErr,
                         optionsData: this.props.optionsData
                     };
                     setTimeout(function () {
@@ -721,24 +757,58 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                     }, 50);
                 }
             }
-            //{this.renderPopPanel(selectedVal)}
-            return React.createElement(
+            var textElem = null;
+            var textColor = '';
+            if (!this.state.opened && this.props.fetching) {
+                textElem = React.createElement(
+                    'div',
+                    { className: 'm-auto d-flex align-items-center' },
+                    React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw fa-2x' }),
+                    React.createElement(
+                        'div',
+                        { className: 'text-nowrap' },
+                        '\u52A0\u8F7D\u4E2D'
+                    )
+                );
+            } else {
+                textColor = selectedVal == null ? ' text-danger' : '';
+                textElem = React.createElement(
+                    'div',
+                    null,
+                    selectedText == null ? '请选择' : selectedText
+                );
+            }
+            var errTipElem = null;
+            if (this.props.invalidInfo) {
+                errTipElem = React.createElement(
+                    'span',
+                    { className: 'text-danger' },
+                    React.createElement('i', { className: 'fa fa-warning' }),
+                    this.props.invalidInfo
+                );
+            }
+            var dropDownElem = React.createElement(
                 'div',
                 { className: "d-flex btn-group flex-grow-1 flex-shrink-0 erpc_dropdown", style: this.props.style, ref: this.rootDivRef },
                 this.props.editable ? React.createElement('input', { onFocus: this.editableInputFocushandler, ref: this.editableInputRef, type: 'text', className: 'flex-grow-1 flex-shrink-1 flexinput', onChange: this.keyChanged, value: selectedOption ? selectedOption.text : this.state.keyword }) : React.createElement(
                     'button',
-                    { onClick: this.clickOpenHandler, type: 'button', className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1 erpc_dropdownMainBtn' + (selectedVal == null ? ' text-danger' : ''), hadmini: hadMini ? 1 : null },
+                    { onClick: this.clickOpenHandler, type: 'button', className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1 erpc_dropdownMainBtn' + textColor, hadmini: hadMini ? 1 : null },
                     React.createElement(
                         'div',
                         { style: { overflow: 'hidden' }, className: 'flex-grow-1 flex-shrink-1' },
-                        React.createElement(
-                            'div',
-                            null,
-                            selectedText
-                        )
+                        textElem
                     )
                 ),
                 hadMini && React.createElement('button', { type: 'button', onClick: this.clickOpenHandler, className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdownbtn dropdown-toggle-split' })
+            );
+            if (errTipElem == null) {
+                return dropDownElem;
+            }
+            return React.createElement(
+                'div',
+                { className: 'd-flex flex-column flex-grow-1 flex-shrink-1' },
+                dropDownElem,
+                errTipElem
             );
         }
     }]);
@@ -820,8 +890,10 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         value: ctlState.value,
         text: ctlState.text,
         fetching: ctlState.fetching,
+        fetchingErr: ctlState.fetchingErr,
         optionsData: ERPC_DropDown_optionsSelector(state, ownprops),
-        visible: ctlState.visible
+        visible: ctlState.visible,
+        invalidInfo: ctlState.invalidInfo
     };
 }
 
@@ -848,7 +920,11 @@ var ERPC_Text = function (_React$PureComponent4) {
         key: 'inputChanged',
         value: function inputChanged(ev) {
             var text = ev.target.value;
-            store.dispatch(makeAction_setStateByPath(text, MakePath(this.props.parentPath, this.props.id, 'value')));
+            var invalidInfo = BaseIsValueValid(null, null, null, text, this.props.type, this.props.nullable, this.props.id);
+            store.dispatch(makeAction_setManyStateByPath({
+                value: text,
+                invalidInfo: invalidInfo
+            }, MakePath(this.props.parentPath, this.props.id)));
         }
     }, {
         key: 'formatValue',
@@ -920,15 +996,36 @@ var ERPC_Text = function (_React$PureComponent4) {
             return rlt;
         }
     }, {
+        key: 'endInputHandler',
+        value: function endInputHandler() {
+            var invalidInfo = BaseIsValueValid(null, null, null, this.props.value, this.props.type, this.props.nullable, this.props.id);
+            store.dispatch(makeAction_setStateByPath(invalidInfo, MakePath(this.props.parentPath, this.props.id, 'invalidInfo')));
+        }
+    }, {
         key: 'render',
         value: function render() {
             if (this.props.visible == false) {
                 return null;
             }
             var contentElem = null;
+            var errTipElem = null;
             var rootDivClassName = 'd-flex ' + (this.props.class == null ? '' : this.props.class);
             if (this.props.fetching) {
-                contentElem = React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw' });
+                rootDivClassName += 'rounded border p-1';
+                contentElem = React.createElement(
+                    'div',
+                    { className: 'flex-grow-1 flex-shrink-1' },
+                    React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw' }),
+                    '\u901A\u8BAF\u4E2D'
+                );
+            } else if (this.props.fetchingErr) {
+                rootDivClassName += 'rounded border p-1 text-danger';
+                contentElem = React.createElement(
+                    'div',
+                    { className: 'flex-grow-1 flex-shrink-1' },
+                    React.createElement('i', { className: 'fa fa-warning' }),
+                    this.props.fetchingErr.info
+                );
             } else {
                 if (this.props.readonly) {
                     rootDivClassName += ' bg-secondary rounded border p-1';
@@ -944,8 +1041,8 @@ var ERPC_Text = function (_React$PureComponent4) {
                         { className: 'flex-grow-1 flex-shrink-1' },
                         nowValue
                     );
-                } else if (this.props.type == 'multiline') {
-                    contentElem = React.createElement('textarea', { onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 form-control textarea-2x', value: this.props.value });
+                } else if (this.props.type == 'string' && this.props.linetype != null && this.props.linetype != 'single') {
+                    contentElem = React.createElement('textarea', { onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 w-100 form-control textarea-' + this.props.linetype, value: this.props.value, onBlur: this.endInputHandler });
                 } else {
                     var useType = this.props.type;
                     var useChecked = null;
@@ -963,13 +1060,24 @@ var ERPC_Text = function (_React$PureComponent4) {
                             break;
                     }
                     var useValue = this.formatInputValue(this.props.value);
-                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control invalid ', type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged });
+                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control invalid ', type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged, onBlur: this.endInputHandler });
+                }
+
+                if (this.props.invalidInfo) {
+                    rootDivClassName += ' flex-column';
+                    errTipElem = React.createElement(
+                        'span',
+                        { className: 'text-danger' },
+                        React.createElement('i', { className: 'fa fa-warning' }),
+                        this.props.invalidInfo
+                    );
                 }
             }
             return React.createElement(
                 'div',
                 { className: rootDivClassName, ref: this.rootDivRef, style: this.props.style },
-                contentElem
+                contentElem,
+                errTipElem
             );
         }
     }]);
@@ -982,7 +1090,9 @@ function ERPC_Text_mapstatetoprops(state, ownprops) {
     return {
         value: ctlState.value == null ? '' : ctlState.value,
         fetching: ctlState.fetching,
-        visible: ctlState.visible
+        visible: ctlState.visible,
+        fetchingErr: ctlState.fetchingErr,
+        invalidInfo: ctlState.invalidInfo
     };
 }
 
@@ -1101,6 +1211,9 @@ var ERPC_Label = function (_React$PureComponent7) {
     _createClass(ERPC_Label, [{
         key: 'render',
         value: function render() {
+            if (this.props.visible == false) {
+                return null;
+            }
             return React.createElement(
                 'span',
                 { className: this.props.className },
@@ -1237,3 +1350,149 @@ function ERPC_PageForm_renderNavigater() {
         exitPlushBtnItem
     );
 }
+
+function BaseIsValueValid(nowState, visibleBelongState, ctlState, value, valueType, nullable, ctlID, validErrState) {
+    if (visibleBelongState && visibleBelongState.visible == false) {
+        // not visible is always valid
+        return null;
+    }
+    if (ctlState != null) {
+        if (ctlState.fetching) {
+            return '等待通讯完成';
+        } else if (ctlState.fetchingErr) {
+            return ctlState.fetchingErr.info;
+        }
+    }
+    if (nullable != true && IsEmptyString(value)) {
+        return '不能为空值';
+    }
+    switch (valueType) {
+        case 'int':
+        case 'float':
+            if (isNaN(value)) {
+                return '必须是数字';
+            }
+            break;
+        case 'date':
+        case 'datetime':
+            if (!checkDate(value)) {
+                return '不是有效的日期格式';
+            }
+            break;
+        case 'time':
+            if (!checkTime(value)) {
+                return '不是有效的时间格式';
+            }
+            break;
+    }
+    if (gCusValidChecker_map[ctlID]) {
+        return gCusValidChecker_map[ctlID](value, nowState, validErrState);
+    }
+    return null;
+}
+
+var EToastTime = {
+    Normal: 5,
+    Long: 10,
+    Small: 3
+};
+
+var EToastType = {
+    Info: 'info',
+    Warning: 'warning',
+    Error: 'error'
+};
+
+var gCToastMangerRef = React.createRef();
+function SendToast(info, type, timeTime) {
+    if (gCToastMangerRef.current) {
+        gCToastMangerRef.current.toast(info, type, timeTime);
+    }
+}
+
+var CToastManger = function (_React$PureComponent8) {
+    _inherits(CToastManger, _React$PureComponent8);
+
+    function CToastManger(props) {
+        _classCallCheck(this, CToastManger);
+
+        var _this10 = _possibleConstructorReturn(this, (CToastManger.__proto__ || Object.getPrototypeOf(CToastManger)).call(this, props));
+
+        autoBind(_this10);
+
+        _this10.state = {
+            msg_arr: []
+        };
+        _this10.ticker = null;
+        _this10.msgID = 0;
+        return _this10;
+    }
+
+    _createClass(CToastManger, [{
+        key: 'toast',
+        value: function toast(info, type, timeTime) {
+            if (info.length > 50) {
+                info = info.substr(0, 50) + '……';
+            }
+            var newMsg = { text: info,
+                timeType: timeTime == null ? EToastTime.Normal : timeTime,
+                type: type == null ? EToastType.Info : type
+            };
+            newMsg.id = this.msgID++;
+            this.setState({
+                msg_arr: this.state.msg_arr.concat(newMsg)
+            });
+        }
+    }, {
+        key: 'tickHandler',
+        value: function tickHandler() {
+            var msg_arr = this.state.msg_arr;
+            var new_arr = [];
+            msg_arr.forEach(function (msg) {
+                if (msg.time == null) {
+                    msg.time = msg.timeType;
+                    msg.opacity = 1;
+                } else {
+                    msg.time -= 0.2;
+                    if (msg.time <= 1) {
+                        msg.opacity = 0;
+                    }
+                }
+                if (msg.time > 0) {
+                    new_arr.push(msg);
+                }
+            });
+            this.setState({
+                msg_arr: new_arr
+            });
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var msg_arr = this.state.msg_arr;
+            if (msg_arr.length == 0) {
+                if (this.ticker) {
+                    clearInterval(this.ticker);
+                    this.ticker = null;
+                }
+                return null;
+            }
+            if (this.ticker == null) {
+                this.ticker = setInterval(this.tickHandler, 200);
+            }
+            return React.createElement(
+                'div',
+                { className: 'toastMsgContainer', style: { zIndex: 10000 } },
+                msg_arr.map(function (msg, index) {
+                    return React.createElement(
+                        'div',
+                        { key: msg.id, type: msg.type, className: 'toastMsg bg-light rounded shadow', style: { opacity: msg.opacity == null ? 0 : msg.opacity } },
+                        msg.text
+                    );
+                })
+            );
+        }
+    }]);
+
+    return CToastManger;
+}(React.PureComponent);

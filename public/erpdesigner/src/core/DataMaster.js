@@ -5,6 +5,7 @@ const EmptyDBEntity = {
     columns:null,
     name:'无',
 }
+
 class DataBase extends EventEmitter{
     constructor(){
         super();
@@ -128,7 +129,7 @@ class DBEntity extends EventEmitter{
             this.synErr = err;
             return;
         }
-        else if(json.data.length == 0){
+        else if(json.data.length == 0 || json.data[0] == null){
             console.warn(this.code + '没有在数据库中找到');
             this.synErr = {info:'不存在了' + this.code};
             return;
@@ -223,16 +224,29 @@ class DataMaster extends EventEmitter{
         return this.BP_sql_arr.find(item=>{return item.code == code});
     }
 
-    createSqlBP(name, type){
-        var newItem = new SqlNode_BluePrint({name:name,type:type,master:this});
+    createSqlBP(name, type, group){
+        if(group == null){
+            group = 'custom';
+        }
+        var newItem = new SqlNode_BluePrint({name:name,type:type,master:this,group:group});
         this.addSqlBP(newItem);
         this.emit('sqlbpchanged');
+        return newItem;
     }
 
     modifySqlBP(sqpBP, name, type){
         sqpBP.name = name;
         sqpBP.type = type;
         this.emit('sqlbpchanged');
+    }
+
+    deleteSqlBP(sqpBP){
+        var index = this.BP_sql_arr.indexOf(sqpBP);
+        if(index == -1){
+            return;
+        }
+        this.BP_sql_arr.splice(index,1);
+        sqpBP.master = null;
     }
 
     usedDBEnitiesChangedHandler(source){
@@ -261,6 +275,7 @@ class DataMaster extends EventEmitter{
         };
         this.BP_sql_arr.forEach(bp=>{
             rlt.BP_sql_arr.push(bp.getJson());
+            //console.log(JSON.stringify(rlt.BP_sql_arr[rlt.BP_sql_arr.length - 1]));
         });
         return rlt;
     }
@@ -277,7 +292,7 @@ class DataMaster extends EventEmitter{
     }
 
     getAllEntities(){
-        return this.BP_sql_arr.concat(g_dataBase.entities_arr);
+        return this.BP_sql_arr.filter(x=>{return x.group == 'custom';}).concat(g_dataBase.entities_arr);
     }
 
     restoreFromJson(json){

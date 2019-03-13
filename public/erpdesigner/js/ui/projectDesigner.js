@@ -27,11 +27,19 @@ var ProjectDesigner = function (_React$PureComponent) {
         _this.quickMenuRef = React.createRef();
         _this.scriptMasterPanelRef = React.createRef();
         _this.quickScriptEditPanelRef = React.createRef();
+        _this.quickSqlBPEditPanelRef = React.createRef();
         autoBind(_this);
         _this.props.project.designer = _this;
 
         _this.placingCtonrols = {};
         _this.selectedKernel = null;
+
+        var rightPanelNavItems = [CreateNavItemData('属性', React.createElement(AttributePanel, { project: _this.props.project, ref: _this.attrbutePanelRef })), CreateNavItemData('项目管理', React.createElement(ProjectResPanel, { project: _this.props.project }))];
+
+        _this.rightPanelNavData = {
+            selectedItem: rightPanelNavItems[0],
+            items: rightPanelNavItems
+        };
         return _this;
     }
 
@@ -88,6 +96,9 @@ var ProjectDesigner = function (_React$PureComponent) {
         value: function mouseDownControlIcon(ctltype) {
             this.contenPanelRef.current.endPlace();
             var thisProject = this.props.project;
+            if (thisProject.getEditingPage() == null) {
+                return;
+            }
             var newKernel = null;
             if (this.placingCtonrols[ctltype] && this.placingCtonrols[ctltype].parent == null) {
                 newKernel = this.placingCtonrols[ctltype];
@@ -135,6 +146,7 @@ var ProjectDesigner = function (_React$PureComponent) {
                 this.placeEndCallBack(this.placingKernel);
                 this.placeEndCallBack = null;
             }
+            this.placingCtonrols[this.placingKernel.type] = null;
             this.placingKernel = null;
             //console.log('mouseUpInPlacingHandler');
             return;
@@ -223,8 +235,24 @@ var ProjectDesigner = function (_React$PureComponent) {
             }
         }
     }, {
+        key: 'editSqlBlueprint',
+        value: function editSqlBlueprint(sqlbp) {
+            if (this.quickSqlBPEditPanelRef.current != null) {
+                this.quickSqlBPEditPanelRef.current.showBlueprint(sqlbp);
+            }
+        }
+    }, {
+        key: 'rightNavChanged',
+        value: function rightNavChanged(oldItem, newItem) {
+            this.setState({
+                magicObj: {}
+            });
+        }
+    }, {
         key: 'render',
         value: function render() {
+            var _this2 = this;
+
             var thisProject = this.props.project;
             return React.createElement(
                 'div',
@@ -232,6 +260,7 @@ var ProjectDesigner = function (_React$PureComponent) {
                 React.createElement(DataMasterPanel, { ref: this.dataMasterPanelRef, project: thisProject }),
                 React.createElement(ScriptMasterPanel, { ref: this.scriptMasterPanelRef, project: thisProject }),
                 React.createElement(QuickScriptEditPanel, { ref: this.quickScriptEditPanelRef, project: thisProject }),
+                React.createElement(QuickSqlBPEditPanel, { ref: this.quickSqlBPEditPanelRef, project: thisProject }),
                 React.createElement(SplitPanel, {
                     defPercent: 0.15,
                     barClass: 'bg-secondary',
@@ -253,7 +282,22 @@ var ProjectDesigner = function (_React$PureComponent) {
                             panel1: React.createElement(ContentPanel, { project: thisProject, ref: this.contenPanelRef, wantOpenPanel: this.wantOpenPanel }),
                             panel2: React.createElement(LogOutputPanel, { source: thisProject.logManager })
                         }),
-                        panel2: React.createElement(AttributePanel, { project: thisProject, ref: this.attrbutePanelRef })
+                        panel2: React.createElement(
+                            'div',
+                            { className: 'd-flex flex-grow-1 flex-shrink-1 flex-column' },
+                            React.createElement(
+                                'div',
+                                { className: 'd-flex flex-grow-0 flex-shrink-0 bg-secondary' },
+                                React.createElement(TabNavBar, { ref: this.navbarRef, navData: this.rightPanelNavData, navChanged: this.rightNavChanged })
+                            ),
+                            this.rightPanelNavData.items.map(function (item) {
+                                return React.createElement(
+                                    'div',
+                                    { key: item.text, className: 'flex-grow-1 flex-shrink-1 ' + (item == _this2.rightPanelNavData.selectedItem ? ' d-flex' : ' d-none') },
+                                    item.content
+                                );
+                            })
+                        )
                     })
                 }),
                 React.createElement(FlowMouseContainer, { project: thisProject, ref: this.flowMCRef, positionChanged: this.FMpositionChanged }),

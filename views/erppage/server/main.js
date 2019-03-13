@@ -12,7 +12,7 @@ var processes_map={
 };
 
 function process(req,res,next){
-    if(req.session.userid == null){
+    if(req.session.g_envVar == null || req.session.g_envVar.userid == null){
         return res.json(serverhelper.createErrorRet('请登录后使用', 1001));
     }
 	serverhelper.commonProcess(req, res, next, processes_map);

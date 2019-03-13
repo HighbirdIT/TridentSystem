@@ -1,6 +1,7 @@
 var ctrlCurrentComponent_map = {};
 var gFixedContainerRef = React.createRef();
 var gFixedItemCounter = 0;
+var gCusValidChecker_map = {};
 
 const HashKey_FixItem = 'fixitem';
 
@@ -285,7 +286,10 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
         var contentElem = null;
         var recentElem = null;
         var recentItems_arr = [];
-        if (this.state.fetching) {
+        if (this.state.fetchingErr) {
+            contentElem = renderFetcingErrDiv(this.state.fetchingErr.info);
+        }
+        else if (this.state.fetching) {
             contentElem = (<div className='d-flex align-items-center m-auto'>正在获取数据<i className='fa fa-spinner fa-pulse fa-fw fa-2x' /></div>);
         }
         else {
@@ -533,6 +537,9 @@ class ERPC_DropDown extends React.PureComponent {
     }
 
     clickOpenHandler() {
+        if(this.props.fetching){
+            return;
+        }
         if (!this.state.opened) {
             this.dropDownOpened();
         } else {
@@ -541,8 +548,8 @@ class ERPC_DropDown extends React.PureComponent {
     }
 
     selectItem(theOptionItem) {
-        var value = '';
-        var text = '';
+        var value = null;
+        var text = null;
         if(theOptionItem){
             value = theOptionItem.value.toString();
             text = theOptionItem.text;
@@ -561,9 +568,12 @@ class ERPC_DropDown extends React.PureComponent {
             }
         }
         this.dropDownClosed();
+
+        var invalidInfo = BaseIsValueValid(null,null, null, value == null || text == null ? null : value, this.props.type, this.props.nullable, this.props.id);
         store.dispatch(makeAction_setManyStateByPath({
             value: value,
             text: text,
+            invalidInfo : invalidInfo,
         }, MakePath(this.props.parentPath, this.props.id)));
     }
 
@@ -571,12 +581,13 @@ class ERPC_DropDown extends React.PureComponent {
         return {
             selectedVal:this.props.value,
             fetching:this.props.fetching,
+            fetchingErr: this.props.fetchingErr,
             optionsData:this.props.optionsData,
             maxCount:50,
             keyword: '',
             recentValues_arr:this.recentValues_arr,
             recentUsed:this.recentUsed,
-            label:this.props.label,
+            label:ReplaceIfNull(this.props.label,this.props.textAttrName),
         }
     }
 
@@ -587,8 +598,36 @@ class ERPC_DropDown extends React.PureComponent {
         var hadMini = this.props.miniBtn != false;
         var selectedVal = this.props.value;
         var selectedText = this.props.text;
-        if (selectedText == null) {
-            selectedText = '请选择';
+        var self = this;
+        if(!IsEmptyString(selectedVal) && IsEmptyString(selectedText)){
+            if(this.props.fetchingErr != null){
+                setTimeout(() => {
+                    self.selectItem(null);
+                }, 50);
+            }
+            else{
+                if(this.props.optionsData.options_arr == null){
+                    selectedVal = null;
+                    if(!this.props.fetching)
+                    {
+                        if(this.autoPullTO == null){
+                            this.autoPullTO = setTimeout(() => {
+                                self.props.pullDataSource();
+                                self.autoPullTO = null;
+                            }, 50);
+                        }
+                    }
+                }
+                else{
+                    var theOptionItem = this.props.optionsData.options_arr.find(item => {
+                        return item.value == selectedVal;
+                    });
+                    selectedText = theOptionItem ? theOptionItem.text : null;
+                    setTimeout(() => {
+                        self.selectItem(theOptionItem);
+                    }, 50);
+                }
+            }
         }
 
         if(this.state.opened){
@@ -598,6 +637,7 @@ class ERPC_DropDown extends React.PureComponent {
                 var newState = {
                     selectedVal:selectedVal,
                     fetching:this.props.fetching,
+                    fetchingErr:this.props.fetchingErr,
                     optionsData:this.props.optionsData,
                 };
                 setTimeout(() => {
@@ -605,18 +645,31 @@ class ERPC_DropDown extends React.PureComponent {
                 }, 50);
             }
         }
-        //{this.renderPopPanel(selectedVal)}
-        return (
+        var textElem = null;
+        var textColor = '';
+        if(!this.state.opened && this.props.fetching){
+            textElem = (<div className='m-auto d-flex align-items-center'>
+                            <i className='fa fa-spinner fa-pulse fa-fw fa-2x' />
+                            <div className='text-nowrap'>加载中</div>
+                        </div>);
+        }
+        else{
+            textColor = selectedVal == null ? ' text-danger' : '';
+            textElem = (<div>{selectedText == null ? '请选择' : selectedText}</div>);
+        }
+        var errTipElem = null;
+        if(this.props.invalidInfo){
+            errTipElem = <span className='text-danger'><i className='fa fa-warning'/>{this.props.invalidInfo}</span>
+        }
+        var dropDownElem = (
             <div className={"d-flex btn-group flex-grow-1 flex-shrink-0 erpc_dropdown"} style={this.props.style} ref={this.rootDivRef}>
                 {
                     this.props.editable ?
                         <input onFocus={this.editableInputFocushandler} ref={this.editableInputRef} type='text' className='flex-grow-1 flex-shrink-1 flexinput' onChange={this.keyChanged} value={selectedOption ? selectedOption.text : this.state.keyword} />
                         :
-                        <button onClick={this.clickOpenHandler} type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1 erpc_dropdownMainBtn' + (selectedVal == null ? ' text-danger' : '')} hadmini={hadMini ? 1 : null} >
+                        <button onClick={this.clickOpenHandler} type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1 erpc_dropdownMainBtn' + textColor} hadmini={hadMini ? 1 : null} >
                             <div style={{ overflow: 'hidden' }} className='flex-grow-1 flex-shrink-1'>
-                                <div>
-                                    {selectedText}
-                                </div>
+                                {textElem}
                             </div>
                         </button>
                 }
@@ -625,6 +678,13 @@ class ERPC_DropDown extends React.PureComponent {
                 }
             </div>
         );
+        if(errTipElem == null){
+            return dropDownElem;
+        }
+        return <div className='d-flex flex-column flex-grow-1 flex-shrink-1'>
+                    {dropDownElem}
+                    {errTipElem}
+                </div>
     }
 }
 
@@ -702,8 +762,10 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         value: ctlState.value,
         text: ctlState.text,
         fetching: ctlState.fetching,
+        fetchingErr: ctlState.fetchingErr,
         optionsData: ERPC_DropDown_optionsSelector(state, ownprops),
         visible:ctlState.visible,
+        invalidInfo:ctlState.invalidInfo,
     };
 }
 
@@ -724,7 +786,11 @@ class ERPC_Text extends React.PureComponent {
 
     inputChanged(ev) {
         var text = ev.target.value;
-        store.dispatch(makeAction_setStateByPath(text, MakePath(this.props.parentPath, this.props.id, 'value')));
+        var invalidInfo = BaseIsValueValid(null, null, null, text, this.props.type, this.props.nullable, this.props.id);
+        store.dispatch(makeAction_setManyStateByPath({
+            value:text,
+            invalidInfo:invalidInfo,
+        }, MakePath(this.props.parentPath, this.props.id)));
     }
 
     formatValue(val){
@@ -794,14 +860,25 @@ class ERPC_Text extends React.PureComponent {
         return rlt;
     }
 
+    endInputHandler(){
+        var invalidInfo = BaseIsValueValid(null,null, null, this.props.value, this.props.type, this.props.nullable, this.props.id);
+        store.dispatch(makeAction_setStateByPath(invalidInfo, MakePath(this.props.parentPath, this.props.id, 'invalidInfo')));
+    }
+
     render() {
         if(this.props.visible == false){
             return null;
         }
         var contentElem = null;
+        var errTipElem = null;
         var rootDivClassName = 'd-flex ' + (this.props.class == null ? '' : this.props.class);
         if (this.props.fetching) {
-            contentElem = (<i className='fa fa-spinner fa-pulse fa-fw' />);
+            rootDivClassName += 'rounded border p-1'
+            contentElem = <div className='flex-grow-1 flex-shrink-1'><i className='fa fa-spinner fa-pulse fa-fw' />通讯中</div>;
+        }
+        else if(this.props.fetchingErr){
+            rootDivClassName += 'rounded border p-1 text-danger'
+            contentElem = <div className='flex-grow-1 flex-shrink-1'><i className='fa fa-warning' />{this.props.fetchingErr.info}</div>;
         }
         else {
             if (this.props.readonly) {
@@ -816,8 +893,8 @@ class ERPC_Text extends React.PureComponent {
                 }
                 contentElem = <div className='flex-grow-1 flex-shrink-1'>{nowValue}</div>
             }
-            else if (this.props.type == 'multiline') {
-                contentElem = <textarea onChange={this.inputChanged} className='flex-grow-1 flex-shrink-1 form-control textarea-2x' value={this.props.value} />
+            else if (this.props.type == 'string' && this.props.linetype != null && this.props.linetype != 'single') {
+                contentElem = <textarea onChange={this.inputChanged} className={'flex-grow-1 flex-shrink-1 w-100 form-control textarea-' + this.props.linetype} value={this.props.value} onBlur={this.endInputHandler} />
             }
             else {
                 var useType = this.props.type;
@@ -836,11 +913,17 @@ class ERPC_Text extends React.PureComponent {
                     break;
                 }
                 var useValue = this.formatInputValue(this.props.value);
-                contentElem = (<input className='flex-grow-1 flex-shrink-1 form-control invalid ' type={useType} value={useValue} checked={useChecked} onChange={this.inputChanged} />);
+                contentElem = (<input className='flex-grow-1 flex-shrink-1 form-control invalid ' type={useType} value={useValue} checked={useChecked} onChange={this.inputChanged} onBlur={this.endInputHandler} />);
+            }
+
+            if(this.props.invalidInfo){
+                rootDivClassName += ' flex-column';
+                errTipElem = <span className='text-danger'><i className='fa fa-warning'/>{this.props.invalidInfo}</span>
             }
         }
         return (<div className={rootDivClassName} ref={this.rootDivRef} style={this.props.style}>
             {contentElem}
+            {errTipElem}
         </div>);
     }
 }
@@ -850,7 +933,9 @@ function ERPC_Text_mapstatetoprops(state, ownprops) {
     return {
         value: ctlState.value == null ? '' : ctlState.value,
         fetching: ctlState.fetching,
-        visible:ctlState.visible,
+        visible: ctlState.visible,
+        fetchingErr : ctlState.fetchingErr,
+        invalidInfo : ctlState.invalidInfo,
     };
 }
 
@@ -934,6 +1019,9 @@ class ERPC_Label extends React.PureComponent {
     }
 
     render() {
+        if(this.props.visible == false){
+            return null;
+        }
         return (<span className={this.props.className} >{this.props.text}</span>);
     }
 }
@@ -1045,4 +1133,134 @@ function ERPC_PageForm_renderNavigater(){
             {exitPlushBtnItem}
         </div>
     );
+}
+
+function BaseIsValueValid(nowState,visibleBelongState, ctlState, value, valueType, nullable, ctlID, validErrState){
+    if(visibleBelongState && visibleBelongState.visible == false){
+        // not visible is always valid
+        return null;
+    }
+    if(ctlState != null){
+        if(ctlState.fetching){
+            return '等待通讯完成';
+        }
+        else if(ctlState.fetchingErr){
+            return ctlState.fetchingErr.info;
+        }
+    }
+    if(nullable != true && IsEmptyString(value)){
+        return '不能为空值';
+    }
+    switch(valueType){
+        case 'int':
+        case 'float':
+        if(isNaN(value)){
+            return '必须是数字';
+        }
+        break;
+        case 'date':
+        case 'datetime':
+        if(!checkDate(value)){
+            return '不是有效的日期格式';
+        }
+        break;
+        case 'time':
+        if(!checkTime(value)){
+            return '不是有效的时间格式';
+        }
+        break;
+    }
+    if(gCusValidChecker_map[ctlID]){
+        return gCusValidChecker_map[ctlID](value, nowState, validErrState);
+    }
+    return null;
+}
+
+const EToastTime = {
+	Normal:5,
+	Long:10,
+	Small:3,
+};
+
+const EToastType = {
+	Info:'info',
+	Warning:'warning',
+	Error:'error',
+};
+
+var gCToastMangerRef = React.createRef();
+function SendToast(info, type, timeTime){
+    if(gCToastMangerRef.current){
+        gCToastMangerRef.current.toast(info, type, timeTime)
+    }
+}
+class CToastManger extends React.PureComponent{
+	constructor(props){
+		super(props);
+		autoBind(this);
+		
+		this.state={
+			msg_arr:[],
+		};
+		this.ticker = null;
+		this.msgID = 0;
+	}
+
+	toast(info, type, timeTime){
+		if(info.length > 50){
+			info = info.substr(0,50) + '……';
+		}
+		var newMsg = {text:info, 
+			timeType:timeTime == null ? EToastTime.Normal : timeTime,
+			type:type == null ? EToastType.Info : type,
+        };
+        newMsg.id = this.msgID++;
+		this.setState({
+			msg_arr:this.state.msg_arr.concat(newMsg),
+		});
+	}
+
+	tickHandler(){
+		var msg_arr = this.state.msg_arr;
+		var new_arr = [];
+		msg_arr.forEach(msg=>{
+			if(msg.time == null){
+				msg.time = msg.timeType;
+                msg.opacity = 1;
+			}
+			else{
+				msg.time -= 0.2;
+				if(msg.time <= 1){
+                    msg.opacity = 0;
+				}
+			}
+			if(msg.time > 0){
+				new_arr.push(msg);
+			}
+		});
+		this.setState({
+			msg_arr:new_arr,
+		});
+	}
+
+	render(){
+		var msg_arr = this.state.msg_arr;
+		if(msg_arr.length == 0){
+			if(this.ticker){
+				clearInterval(this.ticker);
+				this.ticker = null;
+			}
+			return null;
+		}
+		if(this.ticker == null){
+			this.ticker = setInterval(this.tickHandler, 200);
+		}
+		return (<div className='toastMsgContainer' style={{zIndex:10000}}>
+				{
+					msg_arr.map((msg,index)=>{
+						return <div key={msg.id} type={msg.type} className='toastMsg bg-light rounded shadow' style={{opacity:(msg.opacity == null ? 0 : msg.opacity)}}>{msg.text}</div>
+					})
+				}
+		</div>);
+	}
 }

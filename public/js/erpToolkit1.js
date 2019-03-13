@@ -90,6 +90,8 @@ function makeAction_fetchError(key, err, fetchData) {
     };
 }
 
+function delayAction() {}
+
 var makeAction_setStateByPath = makeActionCreator(AT_SETSTATEBYPATH, 'value', 'path');
 var makeAction_setManyStateByPath = makeActionCreator(AT_SETMANYSTATEBYPATH, 'value', 'path');
 var makeAction_gotoPage = makeActionCreator(AT_GOTOPAGE, 'pageName');
@@ -106,6 +108,10 @@ function myTrim(x) {
     return x.replace(/^\s+|\s+$/gm, '');
 }
 
+function getNowDate() {
+    return new Date(getFormatDateString(new Date()));
+}
+
 function checkDate(date) {
     var dateVal = new Date(Date.parse(date));
     return !isNaN(dateVal.getDate());
@@ -114,6 +120,55 @@ function checkDate(date) {
 function checkTime(str) {
     var dateVal = new Date(Date.parse('2000-1-1 ' + str));
     return !isNaN(dateVal.getDate());
+}
+
+function cutTimePart(date) {
+    var rlt = new Date(date);
+    rlt.setHours(0);
+    rlt.setMinutes(0);
+    rlt.setMilliseconds(0);
+    rlt.setSeconds(0);
+    return rlt;
+}
+
+function convertTimeToDate(str) {
+    var now = new Date();
+    return combineDateAndTime(getFormatDateString(now), str);
+}
+
+function combineDateAndTime(dateStr, timeStr) {
+    return new Date(Date.parse(dateStr + ' ' + timeStr));
+}
+
+function getDateDiff(type, dateA, dateB) {
+    var divNum = 0;
+    switch (type.toLowerCase()) {
+        case '秒':
+            divNum = 1000;
+            break;
+        case '分':
+            divNum = 1000 * 60;
+            break;
+        case '时':
+            divNum = 1000 * 60 * 60;
+            break;
+        case '天':
+            divNum = 1000 * 60 * 60 * 24;
+            break;
+        case '月':
+            divNum = 1000 * 60 * 60 * 24 * 30;
+            break;
+        case '年':
+            divNum = 1000 * 60 * 60 * 24 * 365;
+            break;
+    }
+    if (typeof dateA === 'string') {
+        dateA = new Date(dateA);
+    }
+    if (typeof dateB === 'string') {
+        dateB = new Date(dateB);
+    }
+    return (dateA.getTime() - dateB.getTime()) / divNum;
 }
 
 // commonreducer
@@ -378,6 +433,15 @@ function makeFTD_Prop(basePath, id, propName) {
     };
 }
 
+function makeFTD_Callback(callBack) {
+    var isModel = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
+    return {
+        callBack: callBack,
+        isModel: isModel
+    };
+}
+
 function fetchJsonPost(url, sendData, triggerData) {
     var key = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
     var tip = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '加载中';
@@ -596,6 +660,16 @@ function setStateByPath(state, path, value, visited) {
     }
     var delayActs = {};
     retState = aStateChanged(retState, path, value, oldValue, visited == null ? {} : visited, delayActs);
+    if (!IsEmptyObject(delayActs)) {
+        setTimeout(function () {
+            for (var acti in delayActs) {
+                var theAct = delayActs[acti];
+                if (typeof theAct.callfun === 'function') {
+                    theAct.callfun();
+                }
+            }
+        }, 50);
+    }
 
     return retState == state ? Object.assign({}, retState) : retState;
 }
@@ -646,21 +720,24 @@ function setManyStateByPath(state, path, valuesObj, visited) {
         len = t_arr.length;
         var aidPreStateName = null;
         var aidPidPreState = null;
+        var valueParentPath = path;
         for (i = 0; i < len; ++i) {
             name = t_arr[i];
             if (i >= len - 1) {
                 if (value != nowState[name]) {
                     changed_arr.push({
-                        path: path + '.' + vi,
+                        path: valueParentPath + '.' + name,
                         name: name,
                         oldValue: nowState[name],
                         newValue: value,
                         state: nowState,
                         preState: aidPidPreState,
-                        preStateName: aidPreStateName
+                        preStateName: aidPreStateName,
+                        parentPath: valueParentPath
                     });
                 }
             } else {
+                valueParentPath += (valueParentPath.length == 0 ? '' : '.') + name;
                 if (nowState[name] == null) {
                     nowState[name] = {};
                     newStateObj_arr.push(nowState[name]);
@@ -675,21 +752,28 @@ function setManyStateByPath(state, path, valuesObj, visited) {
         return state;
     }
 
-    var assginedObjs_arr = [];
+    var changeState_map = {};
     for (i in changed_arr) {
         var changedInfo = changed_arr[i];
+        if (changeState_map[changedInfo.parentPath]) {
+            changedInfo.state = changeState_map[changedInfo.parentPath];
+        }
         if (changedInfo.preState == null) {
             changedInfo.state[changedInfo.name] = changedInfo.newValue;
+            changedInfo.changed == false;
             continue;
         }
 
-        if (assginedObjs_arr.indexOf(changedInfo.state) == -1) {
-            assginedObjs_arr.push(changedInfo.state);
-            if (newStateObj_arr.indexOf(changedInfo.state) == -1) {
-                changedInfo.state = Object.assign({}, changedInfo.state);
-                changedInfo.preState[changedInfo.preStateName] = changedInfo.state;
-            }
+        //if(assginedObjs_arr.indexOf(changedInfo.state) == -1){
+        //assginedObjs_arr.push(changedInfo.state);
+        if (newStateObj_arr.indexOf(changedInfo.state) == -1) {
+            var newState = Object.assign({}, changedInfo.state);
+            changeState_map[changedInfo.parentPath] = newState;
+            changedInfo.state = newState;
+            changedInfo.preState[changedInfo.preStateName] = newState;
+            newStateObj_arr.push(newState);
         }
+        //}
         changedInfo.state[changedInfo.name] = changedInfo.newValue;
     }
 
@@ -711,7 +795,18 @@ function setManyStateByPath(state, path, valuesObj, visited) {
     var delayActs = {};
     for (i in changed_arr) {
         var changedInfo = changed_arr[i];
+        if (changedInfo.changed == false) continue;
         retState = aStateChanged(retState, changedInfo.path, changedInfo.newValue, changedInfo.oldValue, visited, delayActs);
+    }
+    if (!IsEmptyObject(delayActs)) {
+        setTimeout(function () {
+            for (var acti in delayActs) {
+                var theAct = delayActs[acti];
+                if (typeof theAct.callfun === 'function') {
+                    theAct.callfun();
+                }
+            }
+        }, 50);
     }
     return retState == state ? Object.assign({}, retState) : retState;
 }
@@ -810,11 +905,19 @@ function fetchEndHandler(state, action) {
             retState.ui.fetchState = newFetchState;
         } else {
             if (triggerData) {
-                var propPath = MakePath(triggerData.base, triggerData.id);
-                retState = setManyStateByPath(retState, propPath, {
-                    fetching: false,
-                    fetchingErr: action.err
-                });
+                if (triggerData.base != null && triggerData.id != null) {
+                    var propPath = MakePath(triggerData.base, triggerData.id);
+                    retState = setManyStateByPath(retState, propPath, {
+                        fetching: false,
+                        fetchingErr: action.err
+                    });
+                }
+                if (triggerData.callBack) {
+                    var callbackret = triggerData.callBack(retState, null, action.err);
+                    if (callbackret != null) {
+                        retState = callbackret;
+                    }
+                }
             }
         }
         return retState == state ? Object.assign({}, retState) : retState;
@@ -842,6 +945,14 @@ function fetchEndHandler(state, action) {
                 var propPath = MakePath(triggerData.base, triggerData.id, triggerData.propName);
                 return setStateByPath(retState, propPath, action.json.data);
             }
+        default:
+            if (triggerData.callBack) {
+                var callbackret = triggerData.callBack(retState, action.json.data);
+                if (callbackret != null) {
+                    retState = callbackret;
+                }
+            }
+            break;
     }
     return retState == state ? Object.assign({}, retState) : retState;
 }
@@ -942,6 +1053,23 @@ function renderFetcingErrDiv(errInfo) {
     );
 }
 
+function renderInvalidBundleDiv() {
+    return React.createElement(
+        'div',
+        { className: 'w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch' },
+        React.createElement(
+            'div',
+            { className: 'm-auto d-flex align-items-center border rounded flex-shrink-0 mw-100' },
+            React.createElement('i', { className: 'fa fa-warning fa-fw fa-2x' }),
+            React.createElement(
+                'div',
+                { className: 'text' },
+                '\u524D\u7F6E\u6761\u4EF6\u4E0D\u8DB3'
+            )
+        )
+    );
+}
+
 function getFormatDateString(date) {
     var y = date.getFullYear();
     var m = date.getMonth() + 1;
@@ -949,7 +1077,16 @@ function getFormatDateString(date) {
     return y + (m < 10 ? '-0' : '-') + m + (d < 10 ? '-0' : '-') + d;
 }
 
-function simpleFreshFormFun(retState, records_arr, formFullID) {
+function getFormatTimeString(date) {
+    var hadSec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
+    var h = date.getHours();
+    var m = date.getMinutes();
+    var s = date.getSeconds();
+    return (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m + (hadSec ? (s < 10 ? ':0' : ':') + s : '');
+}
+
+function simpleFreshFormFun(retState, records_arr, formFullID, directBindFun) {
     var formState = getStateByPath(retState, formFullID);
     var needSetState = {};
     if (records_arr == null || records_arr.length == 0) {
@@ -958,8 +1095,37 @@ function simpleFreshFormFun(retState, records_arr, formFullID) {
         var useIndex = formState.recordIndex == null ? 0 : parseInt(formState.recordIndex);
         if (useIndex >= records_arr.length) {
             useIndex = records_arr.length - 1;
+        } else if (useIndex <= -1) {
+            useIndex = 0;
         }
         needSetState.recordIndex = useIndex;
     }
-    setManyStateByPath(retState, formFullID, needSetState);
+    if (formState.recordIndex == useIndex) {
+        if (directBindFun != null) {
+            return directBindFun(retState, useIndex, useIndex);
+        }
+        return retState;
+    }
+    return setManyStateByPath(retState, formFullID, needSetState);
+}
+
+function IsEmptyObject(val) {
+    for (var si in val) {
+        if (val[si] != null) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function getQueryVariable(variable) {
+    var query = window.location.search.substring(1);
+    var vars = query.split("&");
+    for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split("=");
+        if (pair[0] == variable) {
+            return pair[1];
+        }
+    }
+    return false;
 }

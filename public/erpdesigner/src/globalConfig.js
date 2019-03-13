@@ -94,12 +94,32 @@ const CharfunType_arr = [CharfunType_ASCII, CharfunType_CHAR, CharfunType_LEFT, 
 
 const FunType_Client = 'client';
 const FunType_Server = 'server';
-const FunGroup={
+const EJsBluePrintFunGroup={
     CtlAttr:'ctlattr',
     CtlEvent:'ctlevent',
+    CtlValid: 'ctlvalid',
 }
 
+const ESqlBluePrintGroup={
+    Custom:'custom',
+    ControlCustom:'ctlcus',
+}
+
+const EFormType={
+    Page:'page',
+    List:'list',
+}
+
+const FormTypes_arr = [EFormType.Page, EFormType.List];
 const ButtonClasses_arr = ['btn-primary', 'btn-secondary', 'btn-success', 'btn-danger', 'btn-warning', 'btn-info', 'btn-light', 'btn-dark', 'btn-link'];
+
+const EInterActiveType={
+    ReadOnly:'readonly',
+    ReadWrite:'readwrite',
+}
+
+const EInterActiveTypes_arr = [{text:'只读', value:EInterActiveType.ReadOnly}, {text:'读写', value:EInterActiveType.ReadWrite}];
+
 /**
  * 逻辑运算符 and or not
  */
@@ -108,6 +128,10 @@ var Logical_Operator_or = 'or';
 //var Logical_Operator_not = 'not';
 var Logical_Operators_arr = [Logical_Operator_and, Logical_Operator_or];
 
+const LineType_Single = '单行';
+const LineType_SmallMulti = '多行-小';
+const LineType_BigMulti = '多行-大';
+const LinteTypes_arr = [LineType_Single, LineType_SmallMulti, LineType_BigMulti];
 // union union all
 
 const Event_CurrentComponentchanged = 'currentComponentchanged';
@@ -190,9 +214,11 @@ const ValueType = {
     DateTime: 'datetime',
     StyleValues: 'StyleValues',
     DataSource: 'DataSource',
+    CustomDataSource: 'CustomDataSource',
     Unknown: 'Unknown',
     Any: '任意',
-    Event:'event'
+    Event:'event',
+    Script:'script'
 };
 
 const VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

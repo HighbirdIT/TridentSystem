@@ -10,7 +10,7 @@ class AttributeEditor extends React.PureComponent {
         this.state = initState;
     }
 
-    getAttrNowValue() {
+    getAttrNowValue(notclone) {
         var rlt = this.props.targetobj.getAttribute(this.props.targetattr.name, this.props.index);
         if(rlt == null){
             switch(this.props.targetattr.valueType){
@@ -23,7 +23,7 @@ class AttributeEditor extends React.PureComponent {
         }
         else{
             if(typeof rlt === 'object'){
-                rlt = Object.assign({},rlt);
+                rlt = notclone ? rlt : Object.assign({},rlt);
             }
         }
         switch(this.props.targetattr.valueType){
@@ -188,7 +188,7 @@ class AttributeEditor extends React.PureComponent {
         project.designer.editScriptBlueprint(targetBP);
     }
 
-    clickModifyEbentBtnHandler(ev){
+    clickModifyScriptBtnHandler(ev){
         var project = this.props.targetobj.project;
         if(project == null){
             return;
@@ -197,7 +197,18 @@ class AttributeEditor extends React.PureComponent {
         var funName = this.props.targetobj.id + '_' + theAttr.name;
         var targetBP = project.scriptMaster.getBPByName(funName);
         if(targetBP == null){
-            targetBP = project.scriptMaster.createBP(funName, FunType_Client, FunGroup.CtlEvent);
+            var jsGroup = null;
+            if(theAttr.scriptSetting != null){
+                jsGroup = theAttr.scriptSetting.group;
+            }
+            else if(theAttr.valueType == ValueType.Event){
+                jsGroup = EJsBluePrintFunGroup.CtlEvent;
+            }
+            
+            if(jsGroup == null){
+                console.error("bad jsgroup!");
+            }
+            targetBP = project.scriptMaster.createBP(funName, FunType_Client, jsGroup);
             targetBP.ctlID = this.props.targetobj.id;
             targetBP.eventName = theAttr.name;
             this.setState({
@@ -207,32 +218,72 @@ class AttributeEditor extends React.PureComponent {
         project.designer.editScriptBlueprint(targetBP);
     }
 
-    renderEventAttrEditor(nowVal,theAttr,attrName,inputID){
+    clickTrshScriptBtnHandler(ev){
+        var theAttr = this.props.targetattr;
+        var funName = this.props.targetobj.id + '_' + theAttr.name;
+        var project = this.props.targetobj.project;
+        var jsBP = project.scriptMaster.getBPByName(funName);
+        if(jsBP != null){
+            gTipWindow.popAlert(makeAlertData('警告', '确定要删除这个脚本:' + jsBP.name,this.clickDeleteJSTipCallback,[makeAlertBtnData('确定', 'ok'),makeAlertBtnData('取消', 'cancel')], jsBP));
+        }
+    }
+
+    clickDeleteJSTipCallback(key, jsBP){
+        if(key == 'ok'){
+            jsBP.master.deleteBP(jsBP);
+            this.setState({
+                magicObj:{}
+            });
+        }
+    }
+
+    renderPureScriptAttrEditor(nowVal,theAttr,attrName,inputID){
         var project = this.props.targetobj.project;
         var funName = this.props.targetobj.id + '_' + attrName;
         var jsBP = project.scriptMaster.getBPByName(funName);
-        var trushIconElem = (
-            <span onClick={this.clickjsIconHandler} className={'fa-stack cursor-pointer text-danger'}>
+        var trushIconElem = jsBP == null ? null : (
+            <span onClick={this.clickTrshScriptBtnHandler} className={'fa-stack cursor-pointer text-danger'}>
                 <i className='fa fa-trash fa-stack-1x' />
                 <i className='fa fa-square-o fa-stack-2x' />
             </span>
         );
         return (<div className='d-flex w-100 h-100 align-items-center'>
-                    <span onClick={this.clickModifyEbentBtnHandler} className='btn btn-dark flex-grow-1'>{jsBP ? '编辑' : '创建'}</span>
+                    <span onClick={this.clickModifyScriptBtnHandler} className='btn btn-dark flex-grow-1'>{jsBP ? '编辑' : '创建'}</span>
                     {trushIconElem}
                 </div>);
     }
 
+    clickCusdatasourcebtn(){
+        var theBP = this.getAttrNowValue(true);
+        if(theBP){
+            var project = this.props.targetobj.project;
+            project.designer.editSqlBlueprint(theBP);
+        }
+    }
+
+    renderCustomDataSource(nowVal,theAttr,attrName,inputID){
+        return (<button type='button' className='btn btn-dark w-100' onClick={this.clickCusdatasourcebtn}>定制数据源</button>);
+    }
+
     rednerEditor(theAttr,attrName,inputID) {
         var nowVal = this.state.value;
-        if(theAttr.valueType == ValueType.Event){
-            return this.renderEventAttrEditor(nowVal,theAttr,attrName,inputID);
+        if(theAttr.valueType == ValueType.Event || theAttr.valueType == ValueType.Script){
+            return this.renderPureScriptAttrEditor(nowVal,theAttr,attrName,inputID);
         }
         if(theAttr.valueType == ValueType.StyleValues){
             return this.renderStyleAttrEditor(nowVal,theAttr,attrName,inputID);
         }
-        if (!theAttr.editable) {
-            return (<div className="form-control-plaintext text-light" id={inputID}>{nowVal}</div>);
+        if(theAttr.valueType == ValueType.CustomDataSource){
+            return this.renderCustomDataSource(nowVal,theAttr,attrName,inputID);
+        }
+        var attrEditable = ReplaceIfNull(this.props.targetobj[attrName + '_editable'], theAttr.editable);
+        if (!attrEditable) {
+            switch(theAttr.valueType){
+                case ValueType.Boolean:
+                return <input autoComplete='off' type='checkbox' readOnly='readonly' className="form-control" id={inputID} checked={nowVal} value={nowVal} />
+                default:
+                return (<div className="form-control-plaintext text-light" id={inputID}>{nowVal.toString()}</div>);
+            }
         }
         var jsIconElem = null;
         var project = this.props.targetobj.project;
@@ -263,6 +314,12 @@ class AttributeEditor extends React.PureComponent {
                     return pullDataFun(nowTarget);
                 }
             }
+            if(typeof(theAttr.options_arr) === 'string'){
+                useOptioins_arr = this.props.targetobj[theAttr.options_arr];
+                if(useOptioins_arr == null){
+                    console.error('没有找到:' + theAttr.options_arr);
+                }
+            }
             
             if(theAttr.valueType == ValueType.DataSource){
                 if(nowVal && nowVal.loaded == false){
@@ -289,7 +346,7 @@ class AttributeEditor extends React.PureComponent {
         }
         return (
             <div className='d-flex flex-grow-1 flex-shrink-1 align-items-center'>
-            <input type={inputType} className="form-control" id={inputID} checked={this.state.value} value={this.state.value} onChange={this.editorChanged} attrname={attrName} />
+            <input autoComplete='off' type={inputType} className="form-control" id={inputID} checked={this.state.value} value={this.state.value} onChange={this.editorChanged} attrname={attrName} />
             {jsIconElem}
             </div>
         );
@@ -410,7 +467,7 @@ class AttributeGroup extends React.PureComponent {
 
     renderAttribute(attr){
         var target = this.state.target;
-        if(!attr.visible && !target[attr.name + '_visible']){
+        if(!attr.visible || target[attr.name + '_visible'] == false){
             return null;
         }
         if(attr.isArray){

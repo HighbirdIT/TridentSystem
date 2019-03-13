@@ -18,7 +18,43 @@ function genTextFiledAttribute() {
     }, true, {
         scriptable: true,
         type: FunType_Client,
-        group: FunGroup.CtlAttr
+        group: EJsBluePrintFunGroup.CtlAttr
+    });
+}
+
+function genValueFiledAttribute() {
+    var label = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '码值字段';
+    var def = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+    var editable = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+
+    return new CAttribute(label, AttrNames.ValueField, ValueType.String, def, true, false, [], {
+        pullDataFun: GetKernelCanUseColumns,
+        text: 'name',
+        editable: editable
+    }, true, {
+        scriptable: true,
+        type: FunType_Client,
+        group: EJsBluePrintFunGroup.CtlAttr
+    });
+}
+
+function genIsdisplayAttribute() {
+    return new CAttribute('是否显示', AttrNames.Isdisplay, ValueType.Boolean, true, true, false, null, null, true, {
+        scriptable: true,
+        type: FunType_Client,
+        group: EJsBluePrintFunGroup.CtlAttr
+    });
+}
+
+function genNullableAttribute() {
+    return new CAttribute('允许空值', AttrNames.Nullable, ValueType.Boolean, false, true);
+}
+
+function genValidCheckerAttribute() {
+    return new CAttribute('值验证', AttrNames.ValidChecker, ValueType.Script, true, true, false, null, null, true, {
+        scriptable: true,
+        type: FunType_Client,
+        group: EJsBluePrintFunGroup.CtlValid
     });
 }
 
@@ -49,6 +85,16 @@ var CAttribute = function () {
                 return;
             }
             target[this.name + '_visible'] = val;
+            this.group.fireEvent('changed');
+        }
+    }, {
+        key: 'setEditable',
+        value: function setEditable(target, val) {
+            var nowVisible = target[this.name + '_editable'];
+            if (nowVisible == val) {
+                return;
+            }
+            target[this.name + '_editable'] = val;
             this.group.fireEvent('changed');
         }
     }]);
@@ -94,11 +140,16 @@ function makeActStr_pullKernel(formKernel) {
     return 'pulldata_' + formKernel.id;
 }
 
-function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr) {
-    var isModel = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : true;
-    var url = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 'appServerUrl';
+function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr, paramObj) {
+    var isModel = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : true;
+    var url = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 'appServerUrl';
 
-    return "store.dispatch(fetchJsonPost(" + url + ", { action: '" + actStr + "' }, makeFTD_Prop(" + baseStr + "," + idStr + ',' + propStr + ',' + isModel + "), EFetchKey.FetchPropValue));";
+    if (paramObj == null) {
+        paramObj = { action: singleQuotesStr(actStr) };
+    } else {
+        paramObj.action = singleQuotesStr(actStr);
+    }
+    return "store.dispatch(fetchJsonPost(" + url + ", " + JsObjectToString(paramObj) + ", makeFTD_Prop(" + baseStr + "," + idStr + ',' + propStr + ',' + isModel + "), EFetchKey.FetchPropValue));";
 }
 
 function makeLine_Return(retStr) {
@@ -114,14 +165,15 @@ var VarNames = {
     NowRecord: 'nowRecord',
     RetElem: 'retElem',
     ThisProps: 'this.props',
-    FetchErr: 'fetchErr',
+    FetchErr: 'fetchingErr',
     Fetching: 'fetching',
     CtlState: 'ctlState',
     Records_arr: 'records_arr',
     RecordIndex: 'recordIndex',
     InsertCache: 'insertCache',
     State: 'state',
-    Bundle: 'bundle'
+    Bundle: 'bundle',
+    InvalidBundle: 'invalidbundle'
 };
 
 var AttrNames = {
@@ -135,6 +187,7 @@ var AttrNames = {
     IsMain: 'ismain',
     Label: 'label',
     DataSource: 'datasource',
+    CustomDataSource: 'customdatasource',
     ProcessTable: 'processtable',
     Name: 'name',
     ValueType: 'valuetype',
@@ -142,6 +195,18 @@ var AttrNames = {
     DefaultValue: 'defaultvalue',
     EditorType: 'editortype',
     TextField: 'textfield',
+    ValueField: 'valuefield',
+    FormType: 'formtype',
+    FromTextField: 'fromtextfield',
+    FromValueField: 'fromvaluefield',
+    AutoClearValue: 'autoclearvalue',
+    Editeable: 'editeable',
+    Isdisplay: 'isdisplay',
+    Nullable: 'nullable',
+    LineType: 'linetype',
+    InteractiveType: 'interactivetype',
+    InteractiveField: 'interactivefield',
+    ValidChecker: 'validchecker',
 
     Event: {
         OnClick: 'onclik'

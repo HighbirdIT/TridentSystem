@@ -2,6 +2,12 @@ const M_LabeledControlKernelAttrsSetting=GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置',[
         genTextFiledAttribute(),
         new CAttribute('控件类型',AttrNames.EditorType,ValueType.String, M_TextKernel_Type, true, false,DesignerConfig.getMobileCanLabeledControls, {text:'label', value:'type'}),
+        genIsdisplayAttribute(),
+        new CAttribute('交互类型',AttrNames.InteractiveType,ValueType.String, EInterActiveType.ReadWrite, true, false, EInterActiveTypes_arr, {text:'text', value:'value'}),
+        new CAttribute('交互字段',AttrNames.InteractiveField,ValueType.String, '', true, false, [], {
+            pullDataFun:GetCanInteractiveColumns,
+        }),
+        genNullableAttribute(),
     ]),
 ]);
 
@@ -18,6 +24,7 @@ class M_LabeledControlKernel extends ControlKernelBase{
         
         var self = this;
         autoBind(self);
+        this.staticChild = true;
         this.newAdded = kernelJson == null;
 
         this.__genEditor(createHelper, kernelJson == null ? null : kernelJson.editor);
@@ -48,13 +55,18 @@ class M_LabeledControlKernel extends ControlKernelBase{
                 this.editor.setAttribute(AttrNames.TextField, newValue);
             }
             break;
+            case AttrNames.Nullable:
+            if(this.editor.hasAttribute(AttrNames.Nullable)){
+                this.editor.setAttribute(AttrNames.Nullable, newValue);
+            }
+            break;
         }
     }
 
     __genEditor(createHelper, editorKernelJson){
         if(this.editor != null){
             this.editor.parent = null;
-            this.editor.delete();
+            this.editor.delete(true);
             this.editor = null;
             this.children.length = 0;
         }
@@ -67,9 +79,22 @@ class M_LabeledControlKernel extends ControlKernelBase{
                     this.editor.setAttribute(AttrNames.TextField, this.getAttribute(AttrNames.TextField));
                 }
             }
+            var editorNullableAttr = this.editor.findAttributeByName(AttrNames.Nullable);
+            if(editorNullableAttr){
+                this.editor.setAttribute(AttrNames.Nullable, this.getAttribute(AttrNames.Nullable));
+                editorNullableAttr.setVisible(this.editor, false);
+            }
+            var editorIsDisplayAttr = this.editor.findAttributeByName(AttrNames.Isdisplay);
+            if(editorIsDisplayAttr){
+                editorIsDisplayAttr.setVisible(this.editor, false);
+            }
             this.editor.isfixed = true;
             this.children = [this.editor];
         }
+    }
+
+    removeChild(){
+        // valid
     }
 
     getJson(){
@@ -97,6 +122,8 @@ class M_LabeledControl extends React.PureComponent {
         M_ControlBase(this,[
             AttrNames.TextField,
             AttrNames.EditorType,
+            AttrNames.InteractiveType,
+            AttrNames.Nullable,
             AttrNames.LayoutNames.APDClass,
             AttrNames.LayoutNames.StyleAttr,
         ]);
@@ -124,11 +151,35 @@ class M_LabeledControl extends React.PureComponent {
         var editor = ctlKernel.editor;
         layoutConfig.addClass('rowlFameOne');
         layoutConfig.addClass('hb-control');
+        var interType = ctlKernel.getAttribute(AttrNames.InteractiveType);
+        var interField = ctlKernel.getAttribute(AttrNames.InteractiveField);
+        var nullable = ctlKernel.getAttribute(AttrNames.Nullable);
+        var interFlag = interType == EInterActiveType.ReadOnly ? (<i className='fa fa-long-arrow-down text-info' />) : null;
+        var nullableFlag = nullable ? (<i className='fa fa-square-o text-info' />) : null;
+        var interFieldElem = IsEmptyString(interField) ? null : <span className='badge badge-info'>{interField}</span>;
+        var leftElem = null;
+        if(interFieldElem == null){
+            leftElem = <div className='rowlFameOne_Left'>
+                {showLabel}
+                {interFlag}
+                {nullableFlag}
+            </div>;
+        }
+        else{
+            leftElem = <div className='rowlFameOne_Left'>
+                <div className='d-flex flex-column'>
+                    <div className='d-flex align-items-center'>
+                        {showLabel}
+                        {interFlag}
+                        {nullableFlag}
+                    </div>
+                    {interFieldElem}
+                </div>
+            </div>;
+        }
         return(
             <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
-                <div className='rowlFameOne_Left'>
-                    {showLabel}
-                </div>
+                {leftElem}
                 <div className='rowlFameOne_right'>
                     {editor != null && editor.renderSelf()}
                 </div>
@@ -147,3 +198,4 @@ DesignerConfig.registerControl(
         kernelClass:M_LabeledControlKernel,
         reactClass:M_LabeledControl,
     }, '基础');
+    

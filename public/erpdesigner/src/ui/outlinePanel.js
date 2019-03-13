@@ -321,17 +321,28 @@ class OutlinePanel extends React.PureComponent {
                     break;
             }
             if(hitResult && hitResult.kernel){
-                if(hitResult.kernel == targetKernel)
+                var hitKernel = hitResult.kernel;
+                if(hitKernel.isfixed){
                     return;
-                if(hitResult.kernel.children != null){
+                }
+                /*
+                var specialParent = hitKernel.searchParentKernel([M_LabeledControlKernel_Type], true);
+                if(specialParent){
+                    hitKernel = specialParent;
+                }
+                */
+
+                if(hitKernel == targetKernel)
+                    return;
+                if(hitKernel.children != null && hitKernel.staticChild != true){
                     if(newPos.y - hitResult.rect.top <= 5){
-                        hitResult.kernel.parent.appandChild(targetKernel,hitResult.kernel.parent.getChildIndex(hitResult.kernel));
+                        hitKernel.parent.appandChild(targetKernel,hitKernel.parent.getChildIndex(hitResult.kernel));
                     }
                     else{
-                        hitResult.kernel.appandChild(targetKernel);
+                        hitKernel.appandChild(targetKernel);
                     }
-                }else if(hitResult.kernel.parent){
-                    hitResult.kernel.parent.appandChild(targetKernel, hitResult.kernel.parent.getChildIndex(hitResult.kernel));
+                }else if(hitKernel.parent){
+                    hitKernel.parent.appandChild(targetKernel, hitKernel.parent.getChildIndex(hitResult.kernel));
                 }
             }
             else{
