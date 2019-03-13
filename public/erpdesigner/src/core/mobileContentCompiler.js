@@ -140,6 +140,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         clientSide.appClass.renderFun.pushLine(VarNames.RetElem + " = (", 1);
         clientSide.appClass.renderFun.pushLine("<div className='w-100 h-100'>");
+        clientSide.appClass.renderFun.pushLine("<CToastManger ref={gCToastMangerRef} />");
         clientSide.appClass.renderFun.pushLine("<FixedContainer ref={gFixedContainerRef} />");
         clientSide.appClass.renderFun.pushLine("{this.renderLoadingTip()}");
         clientSide.appClass.renderFun.pushLine("{pageElem}", -1);
@@ -1278,7 +1279,7 @@ class MobileContentCompiler extends ContentCompiler {
             if (paramsetblock.childs_arr.length == 0) {
                 paramsetblock.pushLine("params_arr=[", 1);
             }
-            bodyCheckblock.pushLine("if(req.session == null){" + makeLine_RetServerError('no session 无法使用') + '};');
+            //bodyCheckblock.pushLine("if(req.session.g_envVar == null){" + makeLine_RetServerError('登录信息失效，无法使用') + '};');
             for (var useEnvName in bpCompileHelper.useEnvVars) {
                 paramsetblock.pushLine("dbhelper.makeSqlparam('" + useEnvName + "', sqlTypes.NVarChar(4000), req.session.g_envVar." + useEnvName + "),");
             }

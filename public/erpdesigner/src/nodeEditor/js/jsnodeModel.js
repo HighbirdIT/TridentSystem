@@ -646,10 +646,16 @@ class JSNode_BluePrint extends EventEmitter {
             if(checkVarValidStr.length > 0){
                 var checkVarValidIf = new JSFile_IF('checkVar', checkVarValidStr);
                 theFun.headBlock.pushChild(checkVarValidIf);
-                checkVarValidIf.trueBlock.pushLine("return callback_final(state, null, {info:'前置条件不足'});");
+                checkVarValidIf.trueBlock.pushLine("return callback_final(null, null, {info:gPreconditionInvalidInfo});");
             }
             theFun.headBlock.pushChild(validKernelBlock);
-            theFun.headBlock.pushLine("if(hadValidErr){return callback_final(state, null, {info:'前置条件不足'});}");
+            var stateParam = 'null';
+            switch(this.group){
+                case EJsBluePrintFunGroup.CtlAttr:
+                stateParam = VarNames.State;
+                break;
+            }
+            theFun.headBlock.pushLine("if(hadValidErr){return callback_final(" + stateParam +", null, {info:gPreconditionInvalidInfo});}");
         }
         if(theFun.needFetchEndCallBack){
             // 需要callbackmain
@@ -685,7 +691,12 @@ class JSNode_BluePrint extends EventEmitter {
                 //hadValidErrIf.trueBlock.pushLine("return err.info;");
             }
             else if(this.group == EJsBluePrintFunGroup.CtlEvent){
-                setInvalidStateBlock.pushLine("store.dispatch(makeAction_setManyStateByPath(validErrState, ''));");
+                setInvalidStateBlock.pushLine("if(state == null){store.dispatch(makeAction_setManyStateByPath(validErrState, ''));}");
+                setInvalidStateBlock.pushLine("else{setManyStateByPath(state,'',validErrState);}");
+                setInvalidStateBlock.pushLine("if(hadValidErr){SendToast('验证失败，无法执行', EToastType.Warning);return;}");
+                setInvalidStateBlock.pushLine("if(err){SendToast(err.info, EToastType.Error);return;}");
+
+                finalCallBackReturn_bk.pushLine("SendToast('执行成功');");
             }
             else{
                 setInvalidStateBlock.pushLine("setManyStateByPath(" + VarNames.State + ", '', validErrState);");
@@ -2340,6 +2351,9 @@ class JSNODE_Insert_table extends JSNode_Base {
         var paramArrVarName = this.id + '_paramArr';
         var newRecordIdVarName = this.id + '_newrcdid';
         var paramArrVarBlock = new FormatFileBlock('paramarr');
+        var postBundleVarName = this.id + '_bundle';
+        var serverCompleteBlock = new FormatFileBlock('complete');;
+        var serverFailBlock = new FormatFileBlock('fail');;
 
         if (theServerSide != null) {
             var serverSideActName = '_' + this.id;
@@ -2349,9 +2363,11 @@ class JSNODE_Insert_table extends JSNode_Base {
             serverClickFun.scope.getVar(paramVarName, true, 'null');
             insertPartVar = serverClickFun.scope.getVar(this.id + '_insert', true, "''");
             valuePartVar = serverClickFun.scope.getVar(this.id + '_values', true, "''");
+            serverClickFun.scope.getVar(postBundleVarName, true, "req.body." + VarNames.Bundle);
             
             postCheckBlock = new FormatFileBlock('postCheckBlock');
             serverClickFun.pushChild(postCheckBlock);
+            postCheckBlock.pushLine("if(" + postBundleVarName + "==null){return serverhelper.createErrorRet('缺少参数bundle');}");
             paramInitBlock = new FormatFileBlock('initparam');
             serverClickFun.pushChild(paramInitBlock);
             paramInitBlock.pushLine("params_arr=[", 1);
@@ -2362,11 +2378,11 @@ class JSNODE_Insert_table extends JSNode_Base {
             serverClickFun.pushLine(newRecordIdVarName + " = yield dbhelper.asynGetScalar(" + sqlVarName + " + ' select SCOPE_IDENTITY()', " + paramVarName + ");");
             serverClickFun.subNextIndent();
             serverClickFun.pushLine("}catch(eo){", 1);
+            serverClickFun.pushChild(serverFailBlock);
             serverClickFun.pushLine('return serverhelper.createErrorRet(eo.message)');
             serverClickFun.subNextIndent();
             serverClickFun.pushLine('}');
-            var completeBlock = new FormatFileBlock('complete');
-            serverClickFun.pushChild(completeBlock);
+            serverClickFun.pushChild(serverCompleteBlock);
             serverClickFun.pushLine("return " + newRecordIdVarName + ";");
             theServerSide.processesMapVarInitVal[serverClickFun.name] = serverClickFun.name;
         }
@@ -2389,6 +2405,9 @@ class JSNODE_Insert_table extends JSNode_Base {
                     case '登记确认用户':
                     columnProfile.value = '@_operator';
                     columnProfile.isStatic = true;
+                    if(paramInitBlock){
+                        paramInitBlock.pushLine("dbhelper.makeSqlparam('_operator', sqlTypes.Int, req.session.g_envVar.userid),");
+                    }
                     break;
                     default:
                     if(!columnProfile.nullable){
@@ -2420,10 +2439,10 @@ class JSNODE_Insert_table extends JSNode_Base {
                     if(!columnProfile.nullable){
                         insertSqlStr += (insertSqlStr.length == 0 ? '' : ',') + midbracketStr(columnProfile.name);
                         valuesStr += (valuesStr.length == 0 ? '@' : ',@') + postName;
-                        postCheckBlock.pushLine("if(IsEmptyString(req.body." + postName + ')){return serverhelper.createErrorRet("缺少参数[' + postName + ']");}');
+                        postCheckBlock.pushLine("if(serverhelper.IsEmptyString(" + postBundleVarName + '.' + postName + ')){return serverhelper.createErrorRet("缺少参数[' + postName + ']");}');
                     }
                     else{
-                        postCheckBlock.pushLine("if(!IsEmptyString(req.body." + postName + ')){', 1);
+                        postCheckBlock.pushLine("if(!serverhelper.IsEmptyString(" + postBundleVarName + '.' + postName + ')){', 1);
                         //postCheckBlock.pushLine(insertPartVar.name + "+=" + insertPartVar.name + ".length == 0 ? '[" + columnProfile.name + "]' : ',[" + columnProfile.name + "]';");
                         //postCheckBlock.pushLine(valuePartVar.name + "+=" + valuePartVar.name + ".length == 0 ? '@" + columnProfile.name + "' : ',@" + columnProfile.name + "';");
                         postCheckBlock.pushLine(insertPartVar.name + "+= ',[" + columnProfile.name + "]';");
@@ -2431,7 +2450,7 @@ class JSNODE_Insert_table extends JSNode_Base {
                         postCheckBlock.subNextIndent();
                         postCheckBlock.pushLine('}');
                     }
-                    paramInitBlock.pushLine("dbhelper.makeSqlparam('" + postName + "', sqlTypes.NVarChar(4000), req.body." + postName + "),");
+                    paramInitBlock.pushLine("dbhelper.makeSqlparam('" + postName + "', sqlTypes.NVarChar(4000), " + postBundleVarName + '.' + postName + "),");
                     initBundleBlock.pushLine(postName + ':' + columnProfile.value + ',');
                 }
             }
@@ -2481,44 +2500,31 @@ class JSNODE_Insert_table extends JSNode_Base {
         selfCompileRet.setSocketOut(this.identityOutSocket, dataVarName);
         selfCompileRet.setSocketOut(this.errInfoOutSocket, errorVarName + ".info");
         helper.setCompileRetCache(this, selfCompileRet);
-
-        return selfCompileRet;
         
-        selfCompileRet.setSocketOut(this.identityOutSocket, newRecordIdVarName);
-        paramArrVarBlock.pushLine("var " + paramArrVarName + '=[', 1);
-        needInsertColumns_arr.forEach((item, i) => {
-            insertSqlStr += (i == 0 ? '' : ',') + midbracketStr(item.name);
-            valuesStr += (i == 0 ? '@' : ',@') + item.name;
-            paramArrVarBlock.pushLine("dbhelper.makeSqlparam('" + item.name + "', sqlTypes.NVarChar, " + item.value + "),");
-        });
-        paramArrVarBlock.subNextIndent();
-        paramArrVarBlock.pushLine('];');
-        myJSBlock.pushLine("var " + sqlVarName + "='" + insertSqlStr + ')values(' + valuesStr + ") select SCOPE_IDENTITY()';");
-        myJSBlock.pushChild(paramArrVarBlock);
-        var retVarName = this.id + '_queryRet';
-        var errVarName = this.id + '_queryErrmsg';
-        selfCompileRet.setSocketOut(this.errInfoOutSocket, errVarName);
-        myJSBlock.pushLine("var " + errVarName + " = null;");
-        myJSBlock.pushLine("var " + retVarName + " = null;");
-        myJSBlock.pushLine('try{', 1);
-        myJSBlock.pushLine(retVarName + " = yield dbhelper.asynQueryWithParams(" + sqlVarName + ", " + paramArrVarName + ");");
-        myJSBlock.subNextIndent();
-        myJSBlock.pushLine('}catch(eo){', 1);
-        myJSBlock.pushLine(errVarName + '=eo.message;');
-        myJSBlock.subNextIndent();
-        myJSBlock.pushLine('}');
-        var rcdIfBlock = new JSFile_IF('rcdif', retVarName + ' != null');
-        myJSBlock.pushChild(rcdIfBlock);
-        rcdIfBlock.trueBlock.pushLine('var ' + newRecordIdVarName + '=' + retVarName + ".recordset[0][''];");
-
         var trueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.sucessFlowSocket);
         if (trueFlowLinks_arr.length > 0) {
-            this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, rcdIfBlock.trueBlock);
+            this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock);
+        }
+        else{
+            errCheckIf.trueBlock.pushLine(makeStr_callFun('return callback_final', ['state',dataVarName,errorVarName]) + ';');
         }
 
         var falseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.failFlowSocket);
         if (falseFlowLinks_arr.length > 0) {
-            this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, rcdIfBlock.falseBlock);
+            this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock);
+        }
+        else{
+            errCheckIf.falseBlock.pushLine(makeStr_callFun('return callback_final', ['state',dataVarName,errorVarName]) + ';');
+        }
+
+        var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
+        if (serverTrueFlowLinks_arr.length > 0) {
+            this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock);
+        }
+
+        var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
+        if (serverFalseFlowLinks_arr.length > 0) {
+            this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock);
         }
 
         //var finalStr = 'insert ' + midbracketStr(useDS.name) + '(' + insertColumnStr + ') values(' + insertValueStr + ')'
@@ -3274,12 +3280,15 @@ class JSNode_QueryFB extends JSNode_Base {
         var fbEntity = this.targetEntity;
         // make server side code
         var theServerSide = helper.serverSide;// ? helper.serverSide : new JSFileMaker();
+        var postBundleVarName = this.id + '_bundle';
         if (theServerSide != null) {
             var serverSideActName = '_query_' + fbEntity.name;
             var queryFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
             theServerSide.initProcessFun(queryFun);
             var paramVarName = 'params_arr';
             queryFun.scope.getVar(paramVarName, true, 'null');
+            queryFun.scope.getVar(postBundleVarName, true, "req.body." + VarNames.Bundle);
+            queryFun.pushLine("if(" + postBundleVarName + "==null){return serverhelper.createErrorRet('缺少参数bundle');}");
             queryFun.pushLine("params_arr = null;");
             var paramListStr = '';
             if (params_arr.length > 0) {
@@ -3287,8 +3296,8 @@ class JSNode_QueryFB extends JSNode_Base {
                 paramInitBlock.pushLine("params_arr=[", 1);
                 params_arr.forEach(param => {
                     paramListStr += (paramListStr.length == 0 ? '@' : ',@') + param.name;
-                    queryFun.bodyBlock.pushLine("if(req.body." + VarNames.Bundle + "." + param.name + ' == null' + '){return serverhelper.createErrorRet("缺少参数[' + param.name + ']");}');
-                    paramInitBlock.pushLine("dbhelper.makeSqlparam('" + param.name + "', sqlTypes.NVarChar(4000), req.body." + VarNames.Bundle + "." + param.name + "),");
+                    queryFun.bodyBlock.pushLine("if(" + postBundleVarName + '.' + param.name + ' == null' + '){return serverhelper.createErrorRet("缺少参数[' + param.name + ']");}');
+                    paramInitBlock.pushLine("dbhelper.makeSqlparam('" + param.name + "', sqlTypes.NVarChar(4000), " + postBundleVarName + "." + param.name + "),");
                 });
                 paramInitBlock.subNextIndent();
                 paramInitBlock.pushLine('];');

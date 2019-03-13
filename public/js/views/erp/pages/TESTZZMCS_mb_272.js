@@ -2,11 +2,11 @@
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Redux = window.Redux;
 var Provider = ReactRedux.Provider;
@@ -59,12 +59,6 @@ function bind_M_Form_1(retState, newIndex, oldIndex) {
 	needSetState['M_Text_3.value'] = M_Text_3_defaultvalue_get(retState, bundle);
 	needSetState['M_Text_5.value'] = '17:30';
 	needSetState['invalidbundle'] = false;
-
-	needSetState['M_Dropdown_1.invalidInfo'] = null;
-	needSetState['M_Text_1.invalidInfo'] = null;
-	needSetState['M_Text_2.invalidInfo'] = null;
-	needSetState['M_Text_3.invalidInfo'] = null;
-	needSetState['M_Text_5.invalidInfo'] = null;
 	return setManyStateByPath(retState, 'M_Page_2.M_Form_1', needSetState);
 }
 function pull_M_Form_1(retState) {
@@ -72,7 +66,7 @@ function pull_M_Form_1(retState) {
 	return retState;
 }
 function M_Dropdown_0_defaultvalue_get(state, bundle) {
-	return 2;
+	return g_envVar.userid;
 }
 function pull_M_Dropdown_0() {
 	var bundle = {};
@@ -111,7 +105,7 @@ function M_Text_4_defaultvalue_get(state, bundle) {
 	validErrState['M_Page_2.M_Form_1.M_Dropdown_1.invalidInfo'] = validErr;
 	if (validErr != null) hadValidErr = true;
 	if (hadValidErr) {
-		return callback_final(state, null, { info: '前置条件不足' });
+		return callback_final(state, null, { info: gPreconditionInvalidInfo });
 	}
 	var fetchid = Math.round(Math.random() * 999999);
 	fetchTracer['M_Text_4_defaultvalue_get'] = fetchid;
@@ -168,7 +162,7 @@ function M_Text_1_validchecker(nowValue, comeState, comeValidErrState) {
 	}
 	if (validErr != null) hadValidErr = true;
 	if (hadValidErr) {
-		return callback_final(state, null, { info: '前置条件不足' });
+		return callback_final(null, null, { info: gPreconditionInvalidInfo });
 	}
 	startDate_1 = new Date(nowValue);
 	nowDate_1 = getNowDate();
@@ -202,18 +196,12 @@ function M_LC_3_isdisplay_get(state, bundle) {
 	validErrState['M_Page_2.M_Form_1.M_Dropdown_1.invalidInfo'] = validErr;
 	if (validErr != null) hadValidErr = true;
 	if (hadValidErr) {
-		return callback_final(state, null, { info: '前置条件不足' });
+		return callback_final(state, null, { info: gPreconditionInvalidInfo });
 	}
 	return M_Dropdown_1_value == 11;
 }
 function M_Text_2_defaultvalue_get(state, bundle) {
 	return getFormatTimeString(getNowDate(), false);
-}
-function M_Label_0_isdisplay_get(state, bundle) {
-	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1', {});
-	var M_LC_3_state = getStateByPath(M_Form_1_state, 'M_LC_3', {});
-	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : M_LC_3_state.visible;
-	return M_LC_3_visible == true;
 }
 function M_Text_3_validchecker(nowValue, comeState, comeValidErrState) {
 	var state = store.getState();
@@ -244,7 +232,7 @@ function M_Text_3_validchecker(nowValue, comeState, comeValidErrState) {
 	}
 	if (validErr != null) hadValidErr = true;
 	if (hadValidErr) {
-		return callback_final(state, null, { info: '前置条件不足' });
+		return callback_final(null, null, { info: gPreconditionInvalidInfo });
 	}
 	if (getDateDiff('天', nowValue, M_Text_1_value) < 0) {
 		return '必须大于等于起始日期';
@@ -290,8 +278,18 @@ function button_4_onclik() {
 	var hadValidErr = false;
 	var validErrState = {};
 	var callback_final = function callback_final(state, data, err) {
-		store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
-		SendToast('验证失败，无法执行', EToastType.Warning);
+		if (state == null) {
+			store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
+		} else {
+			setManyStateByPath(state, '', validErrState);
+		}
+		if (hadValidErr) {
+			SendToast('验证失败，无法执行', EToastType.Warning);return;
+		}
+		if (err) {
+			SendToast(err.info, EToastType.Error);return;
+		}
+		SendToast('执行成功');
 	};
 	validErr = BaseIsValueValid(state, M_LC_0_state, M_Dropdown_0_state, M_Dropdown_0_value, 'string', 'false', 'M_Dropdown_0', validErrState);
 	validErrState['M_Page_2.M_Form_1.M_Dropdown_0.invalidInfo'] = validErr;
@@ -318,7 +316,7 @@ function button_4_onclik() {
 	validErrState['M_Page_2.M_Form_1.M_Text_6.invalidInfo'] = validErr;
 	if (validErr != null) hadValidErr = true;
 	if (hadValidErr) {
-		return callback_final(state, null, { info: '前置条件不足' });
+		return callback_final(null, null, { info: gPreconditionInvalidInfo });
 	}
 	var fetchid = Math.round(Math.random() * 999999);
 	fetchTracer['button_4_onclik'] = fetchid;
@@ -334,7 +332,11 @@ function button_4_onclik() {
 	};
 	setTimeout(function () {
 		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_insert_table_0, action: '_insert_table_0' }, makeFTD_Callback(function (state, data_insert_table_0, err_insert_table_0) {
-			if (err_insert_table_0 == null) {}
+			if (err_insert_table_0 == null) {
+				return callback_final(state, data_insert_table_0, err_insert_table_0);
+			} else {
+				return callback_final(state, data_insert_table_0, err_insert_table_0);
+			}
 		})));
 	}, 50);
 }
@@ -356,21 +358,372 @@ function M_Dropdown_1_value_changed(state, newValue, oldValue, path, visited, de
 }
 function M_LC_3_visible_changed(state, newValue, oldValue, path, visited, delayActs) {
 	var needSetState = {};
-	needSetState['M_Page_2.M_Form_1.M_Label_0.visible'] = M_Label_0_isdisplay_get(state);
 	needSetState['M_Page_2.M_Form_1.M_LC_6.visible'] = M_LC_6_isdisplay_get(state);
 	return setManyStateByPath(state, '', needSetState);
 }
 
-var App = function (_React$PureComponent) {
-	_inherits(App, _React$PureComponent);
+var gCMessageBoxMangerRef = React.createRef();
+function PopUpMessage(info, type, timeTime) {
+	if (gCMessageBoxMangerRef.current) {
+		gCMessageBoxMangerRef.current.toast(info, type, timeTime);
+	} else {
+		console.warn('gCMessageBoxMangerRef为空');
+	}
+}
+
+var EMessageBoxType = {
+	Tip: 'tip',
+	Warning: 'warning',
+	Error: 'error',
+	Loading: 'loading'
+};
+
+var EMessageBoxBtnType = {
+	Ok: {
+		label: '确认',
+		key: 'OK',
+		class: 'btn btn-success'
+	},
+	Aware: {
+		label: '知道了',
+		key: 'OK',
+		class: 'btn btn-info'
+	},
+	Cancel: {
+		label: '取消',
+		key: 'CANCEL',
+		class: 'btn btn-danger'
+	}
+};
+
+var MessageBoxItem = function () {
+	function MessageBoxItem(text, type, title, btns) {
+		_classCallCheck(this, MessageBoxItem);
+
+		this.type = type;
+		this.text = text;
+		this.btns = btns;
+		this.title = title;
+	}
+
+	_createClass(MessageBoxItem, [{
+		key: 'setData',
+		value: function setData(data) {
+			var changed = false;
+			if (data.hasOwnProperty('type')) {
+				this.type = data.type;
+				changed = true;
+			}
+			if (data.hasOwnProperty('text')) {
+				this.text = data.text;
+				changed = true;
+			}
+			if (data.hasOwnProperty('title')) {
+				this.title = data.title;
+				changed = true;
+			}
+			if (data.hasOwnProperty('btns')) {
+				this.btns = data.btns;
+				changed = true;
+			}
+			if (changed) {
+				this.fireChanged();
+			}
+		}
+	}, {
+		key: 'fireChanged',
+		value: function fireChanged() {
+			if (this.changedAct != null) {
+				this.changedAct();
+			}
+		}
+	}, {
+		key: 'setType',
+		value: function setType(val) {
+			this.type = val;
+			this.fireChanged();
+		}
+	}, {
+		key: 'setType',
+		value: function setType(val) {
+			this.type = val;
+			this.fireChanged();
+		}
+	}, {
+		key: 'setTitle',
+		value: function setTitle(val) {
+			this.title = val;
+			this.fireChanged();
+		}
+	}, {
+		key: 'setBtns',
+		value: function setBtns(val) {
+			this.btns = val;
+			this.fireChanged();
+		}
+	}]);
+
+	return MessageBoxItem;
+}();
+
+var CMessageBox = function (_React$PureComponent) {
+	_inherits(CMessageBox, _React$PureComponent);
+
+	function CMessageBox(props) {
+		_classCallCheck(this, CMessageBox);
+
+		var _this = _possibleConstructorReturn(this, (CMessageBox.__proto__ || Object.getPrototypeOf(CMessageBox)).call(this, props));
+
+		autoBind(_this);
+
+		_this.state = {};
+		_this.props.msgItem.changedAct = _this.msgItemChanedHandler;
+		return _this;
+	}
+
+	_createClass(CMessageBox, [{
+		key: 'msgItemChanedHandler',
+		value: function msgItemChanedHandler(ev) {
+			this.setState({
+				magicObj: {}
+			});
+		}
+	}, {
+		key: 'componentWillUnmount',
+		value: function componentWillUnmount() {
+			this.props.msgItem.changedAct = null;
+			if (this.timeInt) {
+				clearInterval(this.timeInt);
+				this.timeInt = null;
+			}
+		}
+	}, {
+		key: 'timerHander',
+		value: function timerHander(ev) {
+			var now = new Date().getTime();
+			var pssSec = Math.round((now - this.startTime) / 100) / 10;
+			this.setState({
+				passSec: pssSec
+			});
+		}
+	}, {
+		key: 'clickBtnHandler',
+		value: function clickBtnHandler(ev) {
+			var msgItem = this.props.msgItem;
+			this.props.manager.delete(this);
+			console.log('sdfer');
+		}
+	}, {
+		key: 'render',
+		value: function render() {
+			var _this2 = this;
+
+			var msgItem = this.props.msgItem;
+			var type = msgItem.type;
+
+			var contentElem = null;
+			var headerElem = null;
+			var btnsElem = null;
+
+			if (type == EMessageBoxType.Loading) {
+				headerElem = React.createElement(
+					'span',
+					null,
+					msgItem.title,
+					React.createElement(
+						'span',
+						{ className: 'badge badge-primary' },
+						'\u5904\u7406\u4E2D'
+					),
+					React.createElement('i', { className: 'fa fa-spinner fa-spin' })
+				);
+				var passSec = 0;
+				if (this.timeInt == null) {
+					this.startTime = new Date().getTime();
+					this.timeInt = setInterval(this.timerHander, 200);
+				} else {
+					passSec = this.state.passSec;
+				}
+				contentElem = React.createElement(
+					'p',
+					null,
+					'\u5DF2\u7528\u65F6',
+					passSec,
+					's'
+				);
+			} else {
+				if (this.timeInt != null) {
+					clearInterval(this.timeInt);
+					this.timeInt = null;
+				}
+				switch (type) {
+					case EMessageBoxType.Tip:
+						headerElem = React.createElement(
+							'span',
+							null,
+							React.createElement(
+								'span',
+								{ className: 'badge badge-info' },
+								'\u4FE1\u606F'
+							),
+							msgItem.title
+						);
+						break;
+					case EMessageBoxType.Error:
+						headerElem = React.createElement(
+							'span',
+							null,
+							React.createElement(
+								'span',
+								{ className: 'badge badge-danger' },
+								'\u9519\u8BEF'
+							),
+							msgItem.title
+						);
+						btnsElem = React.createElement(
+							'button',
+							{ type: 'button', className: 'btn btn-danger' },
+							'\u4E86\u89E3'
+						);
+						break;
+					case EMessageBoxType.Warning:
+						headerElem = React.createElement(
+							'span',
+							null,
+							React.createElement(
+								'span',
+								{ className: 'badge badge-warning' },
+								'\u8B66\u544A'
+							),
+							msgItem.title
+						);
+						btnsElem = React.createElement(
+							'button',
+							{ type: 'button', className: 'btn btn-warning' },
+							'\u4E86\u89E3'
+						);
+						break;
+				}
+				if (msgItem.btns == null) {
+					btnsElem = React.createElement(
+						'button',
+						{ onClick: this.clickBtnHandler, 'd-type': EMessageBoxBtnType.Aware.key, type: 'button', className: EMessageBoxBtnType.Aware.class },
+						EMessageBoxBtnType.Aware.label
+					);
+				} else {
+					btnsElem = msgItem.btns.map(function (btn) {
+						return React.createElement(
+							'button',
+							{ onClick: _this2.clickBtnHandler, key: btn.label, 'd-type': btn.key, type: 'button', className: btn.class },
+							btn.label
+						);
+					});
+				}
+				contentElem = React.createElement(
+					'p',
+					{ className: 'messageBoxContent' },
+					msgItem.text
+				);
+				/*
+    iconElem = <i className='fa fa-window-close text-danger' />
+    times-circle
+    exclamation-circle
+    commenting
+    */
+			}
+
+			return React.createElement(
+				'div',
+				{ className: 'messageBox autoScroll_Touch', tabIndex: '-1', role: 'dialog' },
+				React.createElement(
+					'div',
+					{ className: 'modal-content' },
+					React.createElement(
+						'div',
+						{ className: 'modal-header' },
+						React.createElement(
+							'h5',
+							{ className: 'modal-title' },
+							headerElem
+						)
+					),
+					React.createElement(
+						'div',
+						{ className: 'modal-body' },
+						contentElem
+					),
+					React.createElement(
+						'div',
+						{ className: 'modal-footer' },
+						btnsElem
+					)
+				)
+			);
+		}
+	}]);
+
+	return CMessageBox;
+}(React.PureComponent);
+
+var CMessageBoxManger = function (_React$PureComponent2) {
+	_inherits(CMessageBoxManger, _React$PureComponent2);
+
+	function CMessageBoxManger(props) {
+		_classCallCheck(this, CMessageBoxManger);
+
+		var _this3 = _possibleConstructorReturn(this, (CMessageBoxManger.__proto__ || Object.getPrototypeOf(CMessageBoxManger)).call(this, props));
+
+		autoBind(_this3);
+
+		_this3.state = {
+			msg_arr: [new MessageBoxItem('息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息这是信息', EMessageBoxType.Warning, '申请提交', [EMessageBoxBtnType.Ok, EMessageBoxBtnType.Cancel])]
+		};
+		_this3.msgID = 0;
+		return _this3;
+	}
+
+	_createClass(CMessageBoxManger, [{
+		key: 'delete',
+		value: function _delete(item) {
+			var newarr = this.state.msg_arr.filter(function (msg) {
+				return item == msg;
+			});
+			this.setState({
+				msg_arr: newarr
+			});
+		}
+	}, {
+		key: 'render',
+		value: function render() {
+			var _this4 = this;
+
+			var msg_arr = this.state.msg_arr;
+			if (msg_arr.length == 0) {
+				return null;
+			}
+			return React.createElement(
+				'div',
+				{ className: 'messageBoxMask' },
+				msg_arr.map(function (msg, index) {
+					return React.createElement(CMessageBox, { key: 1, msgItem: msg, manager: _this4 });
+				})
+			);
+		}
+	}]);
+
+	return CMessageBoxManger;
+}(React.PureComponent);
+
+var App = function (_React$PureComponent3) {
+	_inherits(App, _React$PureComponent3);
 
 	function App(props) {
 		_classCallCheck(this, App);
 
-		var _this = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this, props));
+		var _this5 = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this, props));
 
-		_this.renderLoadingTip = baseRenderLoadingTip.bind(_this);
-		return _this;
+		_this5.renderLoadingTip = baseRenderLoadingTip.bind(_this5);
+		return _this5;
 	}
 
 	_createClass(App, [{
@@ -389,6 +742,7 @@ var App = function (_React$PureComponent) {
 				'div',
 				{ className: 'w-100 h-100' },
 				React.createElement(CToastManger, { ref: gCToastMangerRef }),
+				React.createElement(CMessageBoxManger, { ref: gCMessageBoxMangerRef }),
 				React.createElement(FixedContainer, { ref: gFixedContainerRef }),
 				this.renderLoadingTip(),
 				pageElem
@@ -415,8 +769,8 @@ function App_disptchtoprops(dispatch, ownprops) {
 }
 var VisibleApp = ReactRedux.connect(App_mapstatetoprops, App_disptchtoprops)(App);
 
-var CM_Page_2 = function (_React$PureComponent2) {
-	_inherits(CM_Page_2, _React$PureComponent2);
+var CM_Page_2 = function (_React$PureComponent4) {
+	_inherits(CM_Page_2, _React$PureComponent4);
 
 	function CM_Page_2(props) {
 		_classCallCheck(this, CM_Page_2);
@@ -475,16 +829,16 @@ function CM_Page_2_disptchtoprops(dispatch, ownprops) {
 }
 var VisibleCM_Page_2 = ReactRedux.connect(CM_Page_2_mapstatetoprops, CM_Page_2_disptchtoprops)(CM_Page_2);
 
-var CM_Form_1 = function (_React$PureComponent3) {
-	_inherits(CM_Form_1, _React$PureComponent3);
+var CM_Form_1 = function (_React$PureComponent5) {
+	_inherits(CM_Form_1, _React$PureComponent5);
 
 	function CM_Form_1(props) {
 		_classCallCheck(this, CM_Form_1);
 
-		var _this3 = _possibleConstructorReturn(this, (CM_Form_1.__proto__ || Object.getPrototypeOf(CM_Form_1)).call(this, props));
+		var _this7 = _possibleConstructorReturn(this, (CM_Form_1.__proto__ || Object.getPrototypeOf(CM_Form_1)).call(this, props));
 
-		ERPC_PageForm(_this3);
-		return _this3;
+		ERPC_PageForm(_this7);
+		return _this7;
 	}
 
 	_createClass(CM_Form_1, [{
@@ -535,7 +889,6 @@ var CM_Form_1 = function (_React$PureComponent3) {
 					{ id: 'M_LC_3', parentPath: 'M_Page_2.M_Form_1', label: '\u8D77\u59CB\u65F6\u95F4' },
 					React.createElement(VisibleERPC_Text, { id: 'M_Text_2', parentPath: 'M_Page_2.M_Form_1', type: 'time' })
 				),
-				React.createElement(VisibleERPC_Label, { className: 'text-primary erp-control ', id: 'M_Label_0', parentPath: 'M_Page_2.M_Form_1', text: '\u5F53\u65E5\u4E34\u65F6\u5047\u7684\u8D77\u59CB\u65F6\u95F4\u4ECE\u767B\u8BB0\u7684\u4E00\u523B\u5F00\u59CB\uFF0C\u4E0D\u53EF\u53D8\u66F4\u3002' }),
 				React.createElement(
 					VisibleERPC_LabeledControl,
 					{ id: 'M_LC_4', parentPath: 'M_Page_2.M_Form_1', label: '\u7ED3\u675F\u65E5\u671F' },

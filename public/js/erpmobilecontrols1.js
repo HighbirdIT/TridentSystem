@@ -14,6 +14,8 @@ var ctrlCurrentComponent_map = {};
 var gFixedContainerRef = React.createRef();
 var gFixedItemCounter = 0;
 var gCusValidChecker_map = {};
+var gPreconditionInvalidInfo = '前置条件不足';
+var gCantNullInfo = '不能为空值';
 
 var HashKey_FixItem = 'fixitem';
 
@@ -886,6 +888,11 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
     if (ctlState.fetching) {
         console.log('ctlState.fetching');
     }
+    var invalidInfo = null;
+    if (ctlState.invalidInfo != gPreconditionInvalidInfo && ctlState.invalidInfo != gCantNullInfo) {
+        invalidInfo = ctlState.invalidInfo;
+    }
+
     return {
         value: ctlState.value,
         text: ctlState.text,
@@ -893,7 +900,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         fetchingErr: ctlState.fetchingErr,
         optionsData: ERPC_DropDown_optionsSelector(state, ownprops),
         visible: ctlState.visible,
-        invalidInfo: ctlState.invalidInfo
+        invalidInfo: invalidInfo
     };
 }
 
@@ -1020,11 +1027,15 @@ var ERPC_Text = function (_React$PureComponent4) {
                 );
             } else if (this.props.fetchingErr) {
                 rootDivClassName += 'rounded border p-1 text-danger';
+                var errInfo = this.props.fetchingErr.info;
+                if (errInfo == gPreconditionInvalidInfo) {
+                    errInfo = '';
+                }
                 contentElem = React.createElement(
                     'div',
                     { className: 'flex-grow-1 flex-shrink-1' },
                     React.createElement('i', { className: 'fa fa-warning' }),
-                    this.props.fetchingErr.info
+                    errInfo
                 );
             } else {
                 if (this.props.readonly) {
@@ -1092,7 +1103,7 @@ function ERPC_Text_mapstatetoprops(state, ownprops) {
         fetching: ctlState.fetching,
         visible: ctlState.visible,
         fetchingErr: ctlState.fetchingErr,
-        invalidInfo: ctlState.invalidInfo
+        invalidInfo: ctlState.invalidInfo == gPreconditionInvalidInfo ? null : ctlState.invalidInfo
     };
 }
 
@@ -1364,7 +1375,7 @@ function BaseIsValueValid(nowState, visibleBelongState, ctlState, value, valueTy
         }
     }
     if (nullable != true && IsEmptyString(value)) {
-        return '不能为空值';
+        return gCantNullInfo;
     }
     switch (valueType) {
         case 'int':
@@ -1407,6 +1418,8 @@ var gCToastMangerRef = React.createRef();
 function SendToast(info, type, timeTime) {
     if (gCToastMangerRef.current) {
         gCToastMangerRef.current.toast(info, type, timeTime);
+    } else {
+        console.warn('gCToastMangerRef为空');
     }
 }
 
@@ -1482,7 +1495,7 @@ var CToastManger = function (_React$PureComponent8) {
             }
             return React.createElement(
                 'div',
-                { className: 'toastMsgContainer', style: { zIndex: 10000 } },
+                { className: 'toastMsgContainer' },
                 msg_arr.map(function (msg, index) {
                     return React.createElement(
                         'div',
