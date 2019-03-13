@@ -56,6 +56,7 @@ function bind_M_Form_1(retState, newIndex, oldIndex) {
 	needSetState['M_Dropdown_0.value'] = M_Dropdown_0_defaultvalue_get(retState, bundle);
 	needSetState['M_Text_1.value'] = M_Text_1_defaultvalue_get(retState, bundle);
 	needSetState['M_Text_2.value'] = M_Text_2_defaultvalue_get(retState, bundle);
+	needSetState['M_Text_3.value'] = M_Text_3_defaultvalue_get(retState, bundle);
 	needSetState['M_Text_5.value'] = '17:30';
 	needSetState['invalidbundle'] = false;
 	return setManyStateByPath(retState, 'M_Page_2.M_Form_1', needSetState);
@@ -71,6 +72,10 @@ function pull_M_Dropdown_0() {
 	var bundle = {};
 	var useState = store.getState();
 	store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle, action: 'pulldata_M_Dropdown_0' }, makeFTD_Prop('M_Page_2.M_Form_1', 'M_Dropdown_0', 'options_arr', false), EFetchKey.FetchPropValue));
+}
+function M_Dropdown_1_validchecker(nowValue) {
+	var state = store.getState();
+	return '不能请假！';
 }
 function pull_M_Dropdown_1() {
 	var bundle = {};
@@ -114,7 +119,6 @@ function M_Text_4_defaultvalue_get(state, bundle) {
 			}, 50);
 		}, false)));
 	}, 50);
-	return null;
 }
 function M_Text_1_validchecker(nowValue) {
 	var startDate_1;
@@ -123,7 +127,9 @@ function M_Text_1_validchecker(nowValue) {
 	var state = store.getState();
 	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
 	var M_Dropdown_1_value = getStateByPath(M_Form_1_state, 'M_Dropdown_1.value');
-	var callback_final = function callback_final(state, data, err) {};
+	var callback_final = function callback_final(state, data, err) {
+		return err == null ? null : err.info;
+	};
 	if (IsEmptyString(M_Dropdown_1_value)) {
 		return callback_final(state, null, { info: '条件不足' });
 	}
@@ -147,15 +153,12 @@ function M_LC_3_isdisplay_get(state, bundle) {
 	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
 	var M_Dropdown_1_value = bundle != null && bundle['M_Dropdown_1_value'] != null ? bundle['M_Dropdown_1_value'] : getStateByPath(M_Form_1_state, 'M_Dropdown_1.value');
 	var callback_final = function callback_final(state, data, err) {
-		var needSetState = {};
-		needSetState.visible = err == null ? data : null;
-		return setManyStateByPath(state, 'M_Page_2.M_Form_1.M_LC_3', needSetState);
+		return err == null ? data : null;
 	};
 	if (IsEmptyString(M_Dropdown_1_value)) {
 		return callback_final(state, null, { info: '条件不足' });
 	}
 	return M_Dropdown_1_value == 11;
-	return null;
 }
 function M_Text_2_defaultvalue_get(state, bundle) {
 	return getFormatTimeString(getNowDate(), false);
@@ -164,29 +167,40 @@ function M_Label_0_isdisplay_get(state, bundle) {
 	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
 	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : getStateByPath(M_Form_1_state, 'M_LC_3.visible');
 	var callback_final = function callback_final(state, data, err) {
-		var needSetState = {};
-		needSetState.visible = err == null ? data : null;
-		return setManyStateByPath(state, 'M_Page_2.M_Form_1.M_Label_0', needSetState);
+		return err == null ? data : null;
 	};
 	if (IsEmptyString(M_LC_3_visible)) {
 		return callback_final(state, null, { info: '条件不足' });
 	}
 	return M_LC_3_visible == true;
-	return null;
+}
+function M_Text_3_validchecker(nowValue) {
+	var state = store.getState();
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
+	var M_Text_1_value = getStateByPath(M_Form_1_state, 'M_Text_1.value');
+	var callback_final = function callback_final(state, data, err) {
+		return err == null ? null : err.info;
+	};
+	if (IsEmptyString(M_Text_1_value)) {
+		return callback_final(state, null, { info: '条件不足' });
+	}
+	if (getDateDiff('天', nowValue, M_Text_1_value) < 0) {
+		return '必须大于等于起始日期';
+	}
+}
+function M_Text_3_defaultvalue_get(state, bundle) {
+	return getFormatDateString(getNowDate());
 }
 function M_LC_6_isdisplay_get(state, bundle) {
 	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
 	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : getStateByPath(M_Form_1_state, 'M_LC_3.visible');
 	var callback_final = function callback_final(state, data, err) {
-		var needSetState = {};
-		needSetState.visible = err == null ? data : null;
-		return setManyStateByPath(state, 'M_Page_2.M_Form_1.M_LC_6', needSetState);
+		return err == null ? data : null;
 	};
 	if (IsEmptyString(M_LC_3_visible)) {
 		return callback_final(state, null, { info: '条件不足' });
 	}
 	return M_LC_3_visible;
-	return null;
 }
 function button_4_onclik() {
 	var state = store.getState();
@@ -465,7 +479,9 @@ function CM_Form_1_disptchtoprops(dispatch, ownprops) {
 }
 var VisibleCM_Form_1 = ReactRedux.connect(CM_Form_1_mapstatetoprops, CM_Form_1_disptchtoprops)(CM_Form_1);
 
+gCusValidChecker_map['M_Dropdown_1'] = M_Dropdown_1_validchecker;
 gCusValidChecker_map['M_Text_1'] = M_Text_1_validchecker;
+gCusValidChecker_map['M_Text_3'] = M_Text_3_validchecker;
 if (g_envVar.userid != null) {
 	ErpControlInit();
 	ReactDOM.render(React.createElement(

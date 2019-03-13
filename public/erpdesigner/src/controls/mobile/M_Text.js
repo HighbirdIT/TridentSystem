@@ -54,7 +54,7 @@ class M_TextKernel extends ControlKernelBase {
 }
 
 var M_TextKernel_api = new ControlAPIClass(M_TextKernel_Type);
-M_TextKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.TextField,M_TextKernelAttrsSetting), 'value'));
+M_TextKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.TextField,M_TextKernelAttrsSetting), 'value', true));
 M_TextKernel_api.pushApi(new ApiItem_propsetter('value'));
 g_controlApi_arr.push(M_TextKernel_api);
 

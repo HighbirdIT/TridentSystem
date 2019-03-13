@@ -485,7 +485,7 @@ class JSNode_BluePrint extends EventEmitter {
             return false;
         }
         if(this.group == EJsBluePrintFunGroup.CtlValid){
-            params_arr = ['nowValue'];
+            params_arr = ['nowValue','comeState','comeValidErrState'];
             if(compilHelper.clientSide){
                 compilHelper.clientSide.setCusValidCheckerBlock.pushLine("gCusValidChecker_map['" + ctlKernel.id + "'] = " + theFun.name + ";");
             }
@@ -497,6 +497,10 @@ class JSNode_BluePrint extends EventEmitter {
         var propName;
         var propApiitem;
         var needCheckVars_arr = [];
+        var needCheckKernels_map = {};
+        var ctlStateVarName;
+        var ctlParentStateVarName;
+        var nullableChecker = null;
         if (this.group == EJsBluePrintFunGroup.CtlAttr || this.group == EJsBluePrintFunGroup.CtlEvent || this.group == EJsBluePrintFunGroup.CtlValid) {
             var hadCallParm = this.group == EJsBluePrintFunGroup.CtlAttr;
             if (!hadCallParm) {
@@ -508,24 +512,47 @@ class JSNode_BluePrint extends EventEmitter {
             for (var formId in compilHelper.useForm_map) {
                 var useFormData = compilHelper.useForm_map[formId];
                 var formStateVarName = null;
+                ctlParentStateVarName = null;
+                ctlStateVarName = null;
                 if (!IsEmptyObject(useFormData.useControls_map)) {
                     formStateVarName = formId + '_state';
-                    initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useFormData.formKernel.getStatePath()));
+                    initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
                     theFun.scope.getVar(formStateVarName, true, initValue);
 
                     for (usectlid in useFormData.useControls_map) {
                         useCtlData = useFormData.useControls_map[usectlid];
-                        for (var propName in useCtlData.useprops_map) {
-                            var propApiitem = useCtlData.useprops_map[propName];
+                        ctlStateVarName = usectlid + '_state';
+                        initValue = makeStr_getStateByPath(formStateVarName, singleQuotesStr(usectlid), '{}');
+                        theFun.scope.getVar(ctlStateVarName, true, initValue);
+                        if(useCtlData.kernel.isAEditor()){
+                            ctlParentStateVarName = useCtlData.kernel.parent.id + '_state';
+                            initValue = makeStr_getStateByPath(formStateVarName, singleQuotesStr(useCtlData.kernel.parent.id), '{}');
+                            theFun.scope.getVar(ctlParentStateVarName, true, initValue);
+                        }
+
+                        for (propName in useCtlData.useprops_map) {
+                            propApiitem = useCtlData.useprops_map[propName];
                             varName = usectlid + '_' + propApiitem.stateName;
                             if(hadCallParm){
-                                initValue = "bundle != null && bundle['" + varName + "'] != null ? bundle['" + varName + "'] : " + makeStr_getStateByPath(formStateVarName, singleQuotesStr(useCtlData.kernel.id + '.' + propApiitem.stateName));
+                                initValue = "bundle != null && bundle['" + varName + "'] != null ? bundle['" + varName + "'] : " + ctlStateVarName + '.' + propApiitem.stateName;
+                                //initValue = "bundle != null && bundle['" + varName + "'] != null ? bundle['" + varName + "'] : " + makeStr_getStateByPath(formStateVarName, singleQuotesStr(useCtlData.kernel.id + '.' + propApiitem.stateName));
                             }
                             else{
-                                initValue = makeStr_getStateByPath(formStateVarName, singleQuotesStr(useCtlData.kernel.id + '.' + propApiitem.stateName));
+                                initValue = ctlStateVarName + '.' + propApiitem.stateName;
+                                //makeStr_getStateByPath(formStateVarName, singleQuotesStr(useCtlData.kernel.id + '.' + propApiitem.stateName));
                             }
                             theFun.scope.getVar(varName, true, initValue);
-                            needCheckVars_arr.push(varName);
+                            if(propApiitem.needValid && needCheckKernels_map[usectlid] == null){
+                                needCheckKernels_map[usectlid] = 1;
+                                nullableChecker = ctlParentStateVarName ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
+                                needCheckVars_arr.push({
+                                    kernel:useCtlData.kernel,
+                                    nullable:nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : null,
+                                    visibleStateVar:ctlParentStateVarName == null ? ctlStateVarName : ctlParentStateVarName,
+                                    ctlStateVar:ctlStateVarName,
+                                    valueVar:varName
+                                });
+                            }
                         }
                     }
                 }
@@ -543,17 +570,30 @@ class JSNode_BluePrint extends EventEmitter {
             }
             for (usectlid in compilHelper.useGlobalControls_map) {
                 useCtlData = compilHelper.useGlobalControls_map[usectlid];
+                ctlStateVarName = usectlid + '_state';
+                if (this.group == EJsBluePrintFunGroup.CtlAttr) {
+                    initValue = "bundle != null && bundle['" + varName + "'] != null ? bundle['" + varName + "'] : " + makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.getStatePath()));
+                }
+                else {
+                    initValue = makeStr_getStateByPath('store.getState()', singleQuotesStr(useCtlData.kernel.getStatePath()));
+                }
+                theFun.scope.getVar(ctlStateVarName, true, initValue);
+
                 for (propName in useCtlData.useprops_map) {
                     propApiitem = useCtlData.useprops_map[propName];
                     varName = usectlid + '_' + propApiitem.stateName;
-                    if (this.group == EJsBluePrintFunGroup.CtlAttr) {
-                        initValue = "bundle != null && bundle['" + varName + "'] != null ? bundle['" + varName + "'] : " + makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.getStatePath(propApiitem.stateName)));
+                    theFun.scope.getVar(varName, true, ctlStateVarName + '.' + propApiitem.stateName);
+                    if(propApiitem.needValid && needCheckKernels_map[usectlid] == null){
+                        needCheckKernels_map[usectlid] = 1;
+                        nullableChecker = ctlParentStateVarName ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
+                        needCheckVars_arr.push({
+                            kernel:useCtlData.kernel,
+                            nullable:nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : null,
+                            visibleStateVar:ctlStateVarName,
+                            ctlStateVar:ctlStateVarName,
+                            valueVar:varName
+                        });
                     }
-                    else {
-                        initValue = makeStr_getStateByPath('store.getState()', singleQuotesStr(useCtlData.kernel.getStatePath(propApiitem.stateName)));
-                    }
-                    theFun.scope.getVar(varName, true, initValue);
-                    needCheckVars_arr.push(varName);
                 }
             }
         }
@@ -561,14 +601,55 @@ class JSNode_BluePrint extends EventEmitter {
         theFun.headBlock.pushChild(finalCallBack_bk);
         var needFinalCallback = false;
         if(needCheckVars_arr.length > 0){
+            var validErrVar = theFun.scope.getVar('validErr', true);
+            var hadValidErrVar = theFun.scope.getVar('hadValidErr', true, 'false');
+            var validErrStateVarInitval = '{}';
+            if(this.group == EJsBluePrintFunGroup.CtlValid){
+                validErrStateVarInitval = 'comeValidErrState == null ? {} : comeValidErrState';
+            }
+            var validErrStateVar = theFun.scope.getVar('validErrState', true, validErrStateVarInitval);
             needFinalCallback = true;
             var checkVarValidStr = '';
-            needCheckVars_arr.forEach(varName=>{
-                checkVarValidStr += (checkVarValidStr.length == 0 ? 'IsEmptyString(' : ' || IsEmptyString(') + varName + ')';
+            var validKernelBlock = new FormatFileBlock('validkernel');
+            needCheckVars_arr.forEach(varObj=>{
+                if(typeof varObj === 'string'){
+                    checkVarValidStr += (checkVarValidStr.length == 0 ? 'IsEmptyString(' : ' || IsEmptyString(') + varName + ')';
+                    return;
+                }
+                var valueType = 'string';
+                if(varObj.kernel.hasAttribute(AttrNames.ValueType)){
+                    valueType = varObj.kernel.getAttribute(AttrNames.ValueType);
+                }
+                var infoStatePath = varObj.kernel.getStatePath('invalidInfo');
+                if(this.group == EJsBluePrintFunGroup.CtlValid){
+                    validKernelBlock.pushLine("if(validErrState.hasOwnProperty('" + infoStatePath +"')){validErr=validErrState['" + infoStatePath + "'];}");
+                    validKernelBlock.pushLine('else{',1);
+                }
+                validKernelBlock.pushLine('validErr = ' + makeStr_callFun('BaseIsValueValid', [
+                    this.group == EJsBluePrintFunGroup.CtlValid ? 'comeState' : VarNames.State,
+                    varObj.visibleStateVar,
+                    varObj.ctlStateVar,
+                    varObj.valueVar,
+                    singleQuotesStr(valueType),
+                    singleQuotesStr(varObj.nullable.toString()),
+                    singleQuotesStr(varObj.kernel.id),
+                    validErrStateVar.name
+                ])+";");
+                validKernelBlock.pushLine("validErrState['" + infoStatePath + "']=validErr;");
+                if(this.group == EJsBluePrintFunGroup.CtlValid){
+                    validKernelBlock.subNextIndent();
+                    validKernelBlock.pushLine('}');
+                }
+                validKernelBlock.pushLine("if(validErr != null) hadValidErr = true;");
+                //checkVarValidStr += (checkVarValidStr.length == 0 ? 'IsEmptyString(' : ' || IsEmptyString(') + varName + ')';
             });
-            var checkVarValidIf = new JSFile_IF('checkVar', checkVarValidStr);
-            theFun.headBlock.pushChild(checkVarValidIf);
-            checkVarValidIf.trueBlock.pushLine("return callback_final(state, null, {info:'条件不足'});");
+            if(checkVarValidStr.length > 0){
+                var checkVarValidIf = new JSFile_IF('checkVar', checkVarValidStr);
+                theFun.headBlock.pushChild(checkVarValidIf);
+                checkVarValidIf.trueBlock.pushLine("return callback_final(state, null, {info:'前置条件不足'});");
+            }
+            theFun.headBlock.pushChild(validKernelBlock);
+            theFun.headBlock.pushLine("if(hadValidErr){return callback_final(state, null, {info:'前置条件不足'});}");
         }
         if(theFun.needFetchEndCallBack){
             // 需要callbackmain
@@ -592,6 +673,23 @@ class JSNode_BluePrint extends EventEmitter {
             finalCallBack_bk.pushLine('};');
             theFun.finalCallBackBody_bk = finalCallBackBody_bk;
             theFun.finalCallBackReturn_bk = finalCallBackReturn_bk;
+
+            var setInvalidStateBlock = new FormatFileBlock('setvalidstate');
+            finalCallBackBody_bk.pushChild(setInvalidStateBlock);
+            if(this.group == EJsBluePrintFunGroup.CtlValid){
+                setInvalidStateBlock.pushLine("if(comeValidErrState == null){", 1);
+                setInvalidStateBlock.pushLine("if(comeState){setManyStateByPath(comeState, '', validErrState);}");
+                setInvalidStateBlock.pushLine("else{setTimeout(() => {store.dispatch(makeAction_setManyStateByPath(validErrState, ''));}, 50);}}");
+                //var hadValidErrIf = new JSFile_IF('hadValidErr', 'hadValidErr');
+                //setInvalidStateBlock.pushChild(hadValidErrIf);
+                //hadValidErrIf.trueBlock.pushLine("return err.info;");
+            }
+            else if(this.group == EJsBluePrintFunGroup.CtlEvent){
+                setInvalidStateBlock.pushLine("store.dispatch(makeAction_setManyStateByPath(validErrState, ''));");
+            }
+            else{
+                setInvalidStateBlock.pushLine("setManyStateByPath(" + VarNames.State + ", '', validErrState);");
+            }
         }
         theFun.params_arr = params_arr;
         theFun.useForm_map = compilHelper.useForm_map;

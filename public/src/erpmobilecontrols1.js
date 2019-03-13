@@ -568,9 +568,12 @@ class ERPC_DropDown extends React.PureComponent {
             }
         }
         this.dropDownClosed();
+
+        var invalidInfo = BaseIsValueValid(null,null, null, value == null || text == null ? null : value, this.props.type, this.props.nullable, this.props.id);
         store.dispatch(makeAction_setManyStateByPath({
             value: value,
             text: text,
+            invalidInfo : invalidInfo,
         }, MakePath(this.props.parentPath, this.props.id)));
     }
 
@@ -654,8 +657,11 @@ class ERPC_DropDown extends React.PureComponent {
             textColor = selectedVal == null ? ' text-danger' : '';
             textElem = (<div>{selectedText == null ? '请选择' : selectedText}</div>);
         }
-        //{this.renderPopPanel(selectedVal)}
-        return (
+        var errTipElem = null;
+        if(this.props.invalidInfo){
+            errTipElem = <span className='text-danger'><i className='fa fa-warning'/>{this.props.invalidInfo}</span>
+        }
+        var dropDownElem = (
             <div className={"d-flex btn-group flex-grow-1 flex-shrink-0 erpc_dropdown"} style={this.props.style} ref={this.rootDivRef}>
                 {
                     this.props.editable ?
@@ -672,6 +678,13 @@ class ERPC_DropDown extends React.PureComponent {
                 }
             </div>
         );
+        if(errTipElem == null){
+            return dropDownElem;
+        }
+        return <div className='d-flex flex-column flex-grow-1 flex-shrink-1'>
+                    {dropDownElem}
+                    {errTipElem}
+                </div>
     }
 }
 
@@ -752,6 +765,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         fetchingErr: ctlState.fetchingErr,
         optionsData: ERPC_DropDown_optionsSelector(state, ownprops),
         visible:ctlState.visible,
+        invalidInfo:ctlState.invalidInfo,
     };
 }
 
@@ -772,10 +786,10 @@ class ERPC_Text extends React.PureComponent {
 
     inputChanged(ev) {
         var text = ev.target.value;
-        var invalidInfo = BaseIsValueValid(null, null, text, this.props.type, this.props.nullable, this.props.id);
+        var invalidInfo = BaseIsValueValid(null, null, null, text, this.props.type, this.props.nullable, this.props.id);
         store.dispatch(makeAction_setManyStateByPath({
             value:text,
-            invalidinfo:invalidInfo,
+            invalidInfo:invalidInfo,
         }, MakePath(this.props.parentPath, this.props.id)));
     }
 
@@ -847,8 +861,8 @@ class ERPC_Text extends React.PureComponent {
     }
 
     endInputHandler(){
-        var invalidInfo = BaseIsValueValid(null, null, this.props.value, this.props.type, this.props.nullable, this.props.id);
-        store.dispatch(makeAction_setStateByPath(invalidInfo, MakePath(this.props.parentPath, this.props.id, 'invalidinfo')));
+        var invalidInfo = BaseIsValueValid(null,null, null, this.props.value, this.props.type, this.props.nullable, this.props.id);
+        store.dispatch(makeAction_setStateByPath(invalidInfo, MakePath(this.props.parentPath, this.props.id, 'invalidInfo')));
     }
 
     render() {
@@ -902,9 +916,9 @@ class ERPC_Text extends React.PureComponent {
                 contentElem = (<input className='flex-grow-1 flex-shrink-1 form-control invalid ' type={useType} value={useValue} checked={useChecked} onChange={this.inputChanged} onBlur={this.endInputHandler} />);
             }
 
-            if(this.props.invalidinfo){
+            if(this.props.invalidInfo){
                 rootDivClassName += ' flex-column';
-                errTipElem = <span className='text-danger'><i className='fa fa-warning'/>{this.props.invalidinfo}</span>
+                errTipElem = <span className='text-danger'><i className='fa fa-warning'/>{this.props.invalidInfo}</span>
             }
         }
         return (<div className={rootDivClassName} ref={this.rootDivRef} style={this.props.style}>
@@ -921,7 +935,7 @@ function ERPC_Text_mapstatetoprops(state, ownprops) {
         fetching: ctlState.fetching,
         visible: ctlState.visible,
         fetchingErr : ctlState.fetchingErr,
-        invalidinfo : ctlState.invalidinfo,
+        invalidInfo : ctlState.invalidInfo,
     };
 }
 
@@ -1121,7 +1135,7 @@ function ERPC_PageForm_renderNavigater(){
     );
 }
 
-function BaseIsValueValid(visibleBelongState, ctlState, value, valueType, nullable, ctlID){
+function BaseIsValueValid(nowState,visibleBelongState, ctlState, value, valueType, nullable, ctlID, validErrState){
     if(visibleBelongState && visibleBelongState.visible == false){
         // not visible is always valid
         return null;
@@ -1157,7 +1171,96 @@ function BaseIsValueValid(visibleBelongState, ctlState, value, valueType, nullab
         break;
     }
     if(gCusValidChecker_map[ctlID]){
-        return gCusValidChecker_map[ctlID](value);
+        return gCusValidChecker_map[ctlID](value, nowState, validErrState);
     }
     return null;
+}
+
+const EToastTime = {
+	Normal:5,
+	Long:10,
+	Small:3,
+};
+
+const EToastType = {
+	Info:'info',
+	Warning:'warning',
+	Error:'error',
+};
+
+var gCToastMangerRef = React.createRef();
+function SendToast(info, type, timeTime){
+    if(gCToastMangerRef.current){
+        gCToastMangerRef.current.toast(info, type, timeTime)
+    }
+}
+class CToastManger extends React.PureComponent{
+	constructor(props){
+		super(props);
+		autoBind(this);
+		
+		this.state={
+			msg_arr:[],
+		};
+		this.ticker = null;
+		this.msgID = 0;
+	}
+
+	toast(info, type, timeTime){
+		if(info.length > 50){
+			info = info.substr(0,50) + '……';
+		}
+		var newMsg = {text:info, 
+			timeType:timeTime == null ? EToastTime.Normal : timeTime,
+			type:type == null ? EToastType.Info : type,
+        };
+        newMsg.id = this.msgID++;
+		this.setState({
+			msg_arr:this.state.msg_arr.concat(newMsg),
+		});
+	}
+
+	tickHandler(){
+		var msg_arr = this.state.msg_arr;
+		var new_arr = [];
+		msg_arr.forEach(msg=>{
+			if(msg.time == null){
+				msg.time = msg.timeType;
+                msg.opacity = 1;
+			}
+			else{
+				msg.time -= 0.2;
+				if(msg.time <= 1){
+                    msg.opacity = 0;
+				}
+			}
+			if(msg.time > 0){
+				new_arr.push(msg);
+			}
+		});
+		this.setState({
+			msg_arr:new_arr,
+		});
+	}
+
+	render(){
+		var msg_arr = this.state.msg_arr;
+		if(msg_arr.length == 0){
+			if(this.ticker){
+				clearInterval(this.ticker);
+				this.ticker = null;
+			}
+			return null;
+		}
+		if(this.ticker == null){
+			this.ticker = setInterval(this.tickHandler, 200);
+		}
+		return (<div className='toastMsgContainer' style={{zIndex:10000}}>
+				{
+					msg_arr.map((msg,index)=>{
+						return <div key={msg.id} type={msg.type} className='toastMsg bg-light rounded shadow' style={{opacity:(msg.opacity == null ? 0 : msg.opacity)}}>{msg.text}</div>
+					})
+				}
+		</div>);
+	}
 }

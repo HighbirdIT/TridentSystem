@@ -80,9 +80,10 @@ class ControlAPIClass{
 }
 
 class ApiItem_prop{
-    constructor(attrItem, stateName){
+    constructor(attrItem, stateName, needValid){
         this.type = EApiType.Prop;
         this.attrItem = attrItem;
+        this.needValid = needValid == true;
         this.stateName = stateName == null ? attrItem.name : stateName;
     }
     toString(){

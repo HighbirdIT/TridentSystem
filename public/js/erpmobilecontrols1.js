@@ -682,9 +682,12 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 }
             }
             this.dropDownClosed();
+
+            var invalidInfo = BaseIsValueValid(null, null, null, value == null || text == null ? null : value, this.props.type, this.props.nullable, this.props.id);
             store.dispatch(makeAction_setManyStateByPath({
                 value: value,
-                text: text
+                text: text,
+                invalidInfo: invalidInfo
             }, MakePath(this.props.parentPath, this.props.id)));
         }
     }, {
@@ -775,8 +778,16 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                     selectedText == null ? '请选择' : selectedText
                 );
             }
-            //{this.renderPopPanel(selectedVal)}
-            return React.createElement(
+            var errTipElem = null;
+            if (this.props.invalidInfo) {
+                errTipElem = React.createElement(
+                    'span',
+                    { className: 'text-danger' },
+                    React.createElement('i', { className: 'fa fa-warning' }),
+                    this.props.invalidInfo
+                );
+            }
+            var dropDownElem = React.createElement(
                 'div',
                 { className: "d-flex btn-group flex-grow-1 flex-shrink-0 erpc_dropdown", style: this.props.style, ref: this.rootDivRef },
                 this.props.editable ? React.createElement('input', { onFocus: this.editableInputFocushandler, ref: this.editableInputRef, type: 'text', className: 'flex-grow-1 flex-shrink-1 flexinput', onChange: this.keyChanged, value: selectedOption ? selectedOption.text : this.state.keyword }) : React.createElement(
@@ -789,6 +800,15 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                     )
                 ),
                 hadMini && React.createElement('button', { type: 'button', onClick: this.clickOpenHandler, className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdownbtn dropdown-toggle-split' })
+            );
+            if (errTipElem == null) {
+                return dropDownElem;
+            }
+            return React.createElement(
+                'div',
+                { className: 'd-flex flex-column flex-grow-1 flex-shrink-1' },
+                dropDownElem,
+                errTipElem
             );
         }
     }]);
@@ -872,7 +892,8 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         fetching: ctlState.fetching,
         fetchingErr: ctlState.fetchingErr,
         optionsData: ERPC_DropDown_optionsSelector(state, ownprops),
-        visible: ctlState.visible
+        visible: ctlState.visible,
+        invalidInfo: ctlState.invalidInfo
     };
 }
 
@@ -899,10 +920,10 @@ var ERPC_Text = function (_React$PureComponent4) {
         key: 'inputChanged',
         value: function inputChanged(ev) {
             var text = ev.target.value;
-            var invalidInfo = BaseIsValueValid(null, null, text, this.props.type, this.props.nullable, this.props.id);
+            var invalidInfo = BaseIsValueValid(null, null, null, text, this.props.type, this.props.nullable, this.props.id);
             store.dispatch(makeAction_setManyStateByPath({
                 value: text,
-                invalidinfo: invalidInfo
+                invalidInfo: invalidInfo
             }, MakePath(this.props.parentPath, this.props.id)));
         }
     }, {
@@ -977,8 +998,8 @@ var ERPC_Text = function (_React$PureComponent4) {
     }, {
         key: 'endInputHandler',
         value: function endInputHandler() {
-            var invalidInfo = BaseIsValueValid(null, null, this.props.value, this.props.type, this.props.nullable, this.props.id);
-            store.dispatch(makeAction_setStateByPath(invalidInfo, MakePath(this.props.parentPath, this.props.id, 'invalidinfo')));
+            var invalidInfo = BaseIsValueValid(null, null, null, this.props.value, this.props.type, this.props.nullable, this.props.id);
+            store.dispatch(makeAction_setStateByPath(invalidInfo, MakePath(this.props.parentPath, this.props.id, 'invalidInfo')));
         }
     }, {
         key: 'render',
@@ -1042,13 +1063,13 @@ var ERPC_Text = function (_React$PureComponent4) {
                     contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control invalid ', type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged, onBlur: this.endInputHandler });
                 }
 
-                if (this.props.invalidinfo) {
+                if (this.props.invalidInfo) {
                     rootDivClassName += ' flex-column';
                     errTipElem = React.createElement(
                         'span',
                         { className: 'text-danger' },
                         React.createElement('i', { className: 'fa fa-warning' }),
-                        this.props.invalidinfo
+                        this.props.invalidInfo
                     );
                 }
             }
@@ -1071,7 +1092,7 @@ function ERPC_Text_mapstatetoprops(state, ownprops) {
         fetching: ctlState.fetching,
         visible: ctlState.visible,
         fetchingErr: ctlState.fetchingErr,
-        invalidinfo: ctlState.invalidinfo
+        invalidInfo: ctlState.invalidInfo
     };
 }
 
@@ -1330,7 +1351,7 @@ function ERPC_PageForm_renderNavigater() {
     );
 }
 
-function BaseIsValueValid(visibleBelongState, ctlState, value, valueType, nullable, ctlID) {
+function BaseIsValueValid(nowState, visibleBelongState, ctlState, value, valueType, nullable, ctlID, validErrState) {
     if (visibleBelongState && visibleBelongState.visible == false) {
         // not visible is always valid
         return null;
@@ -1365,7 +1386,113 @@ function BaseIsValueValid(visibleBelongState, ctlState, value, valueType, nullab
             break;
     }
     if (gCusValidChecker_map[ctlID]) {
-        return gCusValidChecker_map[ctlID](value);
+        return gCusValidChecker_map[ctlID](value, nowState, validErrState);
     }
     return null;
 }
+
+var EToastTime = {
+    Normal: 5,
+    Long: 10,
+    Small: 3
+};
+
+var EToastType = {
+    Info: 'info',
+    Warning: 'warning',
+    Error: 'error'
+};
+
+var gCToastMangerRef = React.createRef();
+function SendToast(info, type, timeTime) {
+    if (gCToastMangerRef.current) {
+        gCToastMangerRef.current.toast(info, type, timeTime);
+    }
+}
+
+var CToastManger = function (_React$PureComponent8) {
+    _inherits(CToastManger, _React$PureComponent8);
+
+    function CToastManger(props) {
+        _classCallCheck(this, CToastManger);
+
+        var _this10 = _possibleConstructorReturn(this, (CToastManger.__proto__ || Object.getPrototypeOf(CToastManger)).call(this, props));
+
+        autoBind(_this10);
+
+        _this10.state = {
+            msg_arr: []
+        };
+        _this10.ticker = null;
+        _this10.msgID = 0;
+        return _this10;
+    }
+
+    _createClass(CToastManger, [{
+        key: 'toast',
+        value: function toast(info, type, timeTime) {
+            if (info.length > 50) {
+                info = info.substr(0, 50) + '……';
+            }
+            var newMsg = { text: info,
+                timeType: timeTime == null ? EToastTime.Normal : timeTime,
+                type: type == null ? EToastType.Info : type
+            };
+            newMsg.id = this.msgID++;
+            this.setState({
+                msg_arr: this.state.msg_arr.concat(newMsg)
+            });
+        }
+    }, {
+        key: 'tickHandler',
+        value: function tickHandler() {
+            var msg_arr = this.state.msg_arr;
+            var new_arr = [];
+            msg_arr.forEach(function (msg) {
+                if (msg.time == null) {
+                    msg.time = msg.timeType;
+                    msg.opacity = 1;
+                } else {
+                    msg.time -= 0.2;
+                    if (msg.time <= 1) {
+                        msg.opacity = 0;
+                    }
+                }
+                if (msg.time > 0) {
+                    new_arr.push(msg);
+                }
+            });
+            this.setState({
+                msg_arr: new_arr
+            });
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var msg_arr = this.state.msg_arr;
+            if (msg_arr.length == 0) {
+                if (this.ticker) {
+                    clearInterval(this.ticker);
+                    this.ticker = null;
+                }
+                return null;
+            }
+            if (this.ticker == null) {
+                this.ticker = setInterval(this.tickHandler, 200);
+            }
+            return React.createElement(
+                'div',
+                { className: 'toastMsgContainer', style: { zIndex: 10000 } },
+                msg_arr.map(function (msg, index) {
+                    return React.createElement(
+                        'div',
+                        { key: msg.id, type: msg.type, className: 'toastMsg bg-light rounded shadow', style: { opacity: msg.opacity == null ? 0 : msg.opacity } },
+                        msg.text
+                    );
+                })
+            );
+        }
+    }]);
+
+    return CToastManger;
+}(React.PureComponent);

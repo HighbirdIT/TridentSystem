@@ -56,6 +56,7 @@ function bind_M_Form_1(retState, newIndex, oldIndex) {
 	needSetState['M_Dropdown_0.value'] = M_Dropdown_0_defaultvalue_get(retState, bundle);
 	needSetState['M_Text_1.value'] = M_Text_1_defaultvalue_get(retState, bundle);
 	needSetState['M_Text_2.value'] = M_Text_2_defaultvalue_get(retState, bundle);
+	needSetState['M_Text_3.value'] = M_Text_3_defaultvalue_get(retState, bundle);
 	needSetState['M_Text_5.value'] = '17:30';
 	needSetState['invalidbundle'] = false;
 	return setManyStateByPath(retState, 'M_Page_2.M_Form_1', needSetState);
@@ -78,19 +79,33 @@ function pull_M_Dropdown_1() {
 	store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle, action: 'pulldata_M_Dropdown_1' }, makeFTD_Prop('M_Page_2.M_Form_1', 'M_Dropdown_1', 'options_arr', false), EFetchKey.FetchPropValue));
 }
 function M_Text_4_defaultvalue_get(state, bundle) {
-	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
-	var M_Dropdown_0_value = bundle != null && bundle['M_Dropdown_0_value'] != null ? bundle['M_Dropdown_0_value'] : getStateByPath(M_Form_1_state, 'M_Dropdown_0.value');
-	var M_Dropdown_0_text = bundle != null && bundle['M_Dropdown_0_text'] != null ? bundle['M_Dropdown_0_text'] : getStateByPath(M_Form_1_state, 'M_Dropdown_0.text');
-	var M_Dropdown_1_value = bundle != null && bundle['M_Dropdown_1_value'] != null ? bundle['M_Dropdown_1_value'] : getStateByPath(M_Form_1_state, 'M_Dropdown_1.value');
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1', {});
+	var M_Dropdown_0_state = getStateByPath(M_Form_1_state, 'M_Dropdown_0', {});
+	var M_LC_0_state = getStateByPath(M_Form_1_state, 'M_LC_0', {});
+	var M_Dropdown_0_value = bundle != null && bundle['M_Dropdown_0_value'] != null ? bundle['M_Dropdown_0_value'] : M_Dropdown_0_state.value;
+	var M_Dropdown_0_text = bundle != null && bundle['M_Dropdown_0_text'] != null ? bundle['M_Dropdown_0_text'] : M_Dropdown_0_state.text;
+	var M_Dropdown_1_state = getStateByPath(M_Form_1_state, 'M_Dropdown_1', {});
+	var M_LC_1_state = getStateByPath(M_Form_1_state, 'M_LC_1', {});
+	var M_Dropdown_1_value = bundle != null && bundle['M_Dropdown_1_value'] != null ? bundle['M_Dropdown_1_value'] : M_Dropdown_1_state.value;
+	var validErr;
+	var hadValidErr = false;
+	var validErrState = {};
 	var callback_final = function callback_final(state, data, err) {
+		setManyStateByPath(state, '', validErrState);
 		var needSetState = {};
 		needSetState.value = err == null ? data : null;
 		needSetState.fetching = false;
 		needSetState.fetchingErr = err;
 		return setManyStateByPath(state, 'M_Page_2.M_Form_1.M_Text_4', needSetState);
 	};
-	if (IsEmptyString(M_Dropdown_0_value) || IsEmptyString(M_Dropdown_0_text) || IsEmptyString(M_Dropdown_1_value)) {
-		return callback_final(state, null, { info: '条件不足' });
+	validErr = BaseIsValueValid(state, M_LC_0_state, M_Dropdown_0_state, M_Dropdown_0_value, 'string', 'false', M_Dropdown_0, validErrState);
+	validErrState['M_Page_2.M_Form_1.M_Dropdown_0.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
+	validErr = BaseIsValueValid(state, M_LC_1_state, M_Dropdown_1_state, M_Dropdown_1_value, 'string', 'false', M_Dropdown_1, validErrState);
+	validErrState['M_Page_2.M_Form_1.M_Dropdown_1.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
+	if (hadValidErr) {
+		return callback_final(state, null, { info: '前置条件不足' });
 	}
 	var fetchid = Math.round(Math.random() * 999999);
 	fetchTracer['M_Text_4_defaultvalue_get'] = fetchid;
@@ -114,18 +129,40 @@ function M_Text_4_defaultvalue_get(state, bundle) {
 			}, 50);
 		}, false)));
 	}, 50);
-	return null;
 }
-function M_Text_1_validchecker(nowValue) {
+function M_Text_1_validchecker(nowValue, comeState, comeValidErrState) {
 	var startDate_1;
 	var nowDate_1;
 	var 间隔天_1;
 	var state = store.getState();
-	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
-	var M_Dropdown_1_value = getStateByPath(M_Form_1_state, 'M_Dropdown_1.value');
-	var callback_final = function callback_final(state, data, err) {};
-	if (IsEmptyString(M_Dropdown_1_value)) {
-		return callback_final(state, null, { info: '条件不足' });
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1', {});
+	var M_Dropdown_1_state = getStateByPath(M_Form_1_state, 'M_Dropdown_1', {});
+	var M_LC_1_state = getStateByPath(M_Form_1_state, 'M_LC_1', {});
+	var M_Dropdown_1_value = M_Dropdown_1_state.value;
+	var validErr;
+	var hadValidErr = false;
+	var validErrState = comeValidErrState == null ? {} : comeValidErrState;
+	var callback_final = function callback_final(state, data, err) {
+		if (comeValidErrState == null) {
+			if (comeState) {
+				setManyStateByPath(comeState, '', validErrState);
+			} else {
+				setTimeout(function () {
+					store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
+				}, 50);
+			}
+		}
+		return err == null ? null : err.info;
+	};
+	if (validErrState.hasOwnProperty('M_Page_2.M_Form_1.M_Dropdown_1.invalidInfo')) {
+		validErr = validErrState['M_Page_2.M_Form_1.M_Dropdown_1.invalidInfo'];
+	} else {
+		validErr = BaseIsValueValid(comeState, M_LC_1_state, M_Dropdown_1_state, M_Dropdown_1_value, 'string', 'false', M_Dropdown_1, validErrState);
+		validErrState['M_Page_2.M_Form_1.M_Dropdown_1.invalidInfo'] = validErr;
+	}
+	if (validErr != null) hadValidErr = true;
+	if (hadValidErr) {
+		return callback_final(state, null, { info: '前置条件不足' });
 	}
 	startDate_1 = new Date(nowValue);
 	nowDate_1 = getNowDate();
@@ -144,64 +181,137 @@ function M_Text_1_defaultvalue_get(state, bundle) {
 	return getFormatDateString(getNowDate());
 }
 function M_LC_3_isdisplay_get(state, bundle) {
-	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
-	var M_Dropdown_1_value = bundle != null && bundle['M_Dropdown_1_value'] != null ? bundle['M_Dropdown_1_value'] : getStateByPath(M_Form_1_state, 'M_Dropdown_1.value');
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1', {});
+	var M_Dropdown_1_state = getStateByPath(M_Form_1_state, 'M_Dropdown_1', {});
+	var M_LC_1_state = getStateByPath(M_Form_1_state, 'M_LC_1', {});
+	var M_Dropdown_1_value = bundle != null && bundle['M_Dropdown_1_value'] != null ? bundle['M_Dropdown_1_value'] : M_Dropdown_1_state.value;
+	var validErr;
+	var hadValidErr = false;
+	var validErrState = {};
 	var callback_final = function callback_final(state, data, err) {
-		var needSetState = {};
-		needSetState.visible = err == null ? data : null;
-		return setManyStateByPath(state, 'M_Page_2.M_Form_1.M_LC_3', needSetState);
+		setManyStateByPath(state, '', validErrState);
+		return err == null ? data : null;
 	};
-	if (IsEmptyString(M_Dropdown_1_value)) {
-		return callback_final(state, null, { info: '条件不足' });
+	validErr = BaseIsValueValid(state, M_LC_1_state, M_Dropdown_1_state, M_Dropdown_1_value, 'string', 'false', M_Dropdown_1, validErrState);
+	validErrState['M_Page_2.M_Form_1.M_Dropdown_1.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
+	if (hadValidErr) {
+		return callback_final(state, null, { info: '前置条件不足' });
 	}
 	return M_Dropdown_1_value == 11;
-	return null;
 }
 function M_Text_2_defaultvalue_get(state, bundle) {
 	return getFormatTimeString(getNowDate(), false);
 }
 function M_Label_0_isdisplay_get(state, bundle) {
-	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
-	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : getStateByPath(M_Form_1_state, 'M_LC_3.visible');
-	var callback_final = function callback_final(state, data, err) {
-		var needSetState = {};
-		needSetState.visible = err == null ? data : null;
-		return setManyStateByPath(state, 'M_Page_2.M_Form_1.M_Label_0', needSetState);
-	};
-	if (IsEmptyString(M_LC_3_visible)) {
-		return callback_final(state, null, { info: '条件不足' });
-	}
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1', {});
+	var M_LC_3_state = getStateByPath(M_Form_1_state, 'M_LC_3', {});
+	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : M_LC_3_state.visible;
 	return M_LC_3_visible == true;
-	return null;
+}
+function M_Text_3_validchecker(nowValue, comeState, comeValidErrState) {
+	var state = store.getState();
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1', {});
+	var M_Text_1_state = getStateByPath(M_Form_1_state, 'M_Text_1', {});
+	var M_LC_2_state = getStateByPath(M_Form_1_state, 'M_LC_2', {});
+	var M_Text_1_value = M_Text_1_state.value;
+	var validErr;
+	var hadValidErr = false;
+	var validErrState = comeValidErrState == null ? {} : comeValidErrState;
+	var callback_final = function callback_final(state, data, err) {
+		if (comeValidErrState == null) {
+			if (comeState) {
+				setManyStateByPath(comeState, '', validErrState);
+			} else {
+				setTimeout(function () {
+					store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
+				}, 50);
+			}
+		}
+		return err == null ? null : err.info;
+	};
+	if (validErrState.hasOwnProperty('M_Page_2.M_Form_1.M_Text_1.invalidInfo')) {
+		validErr = validErrState['M_Page_2.M_Form_1.M_Text_1.invalidInfo'];
+	} else {
+		validErr = BaseIsValueValid(comeState, M_LC_2_state, M_Text_1_state, M_Text_1_value, 'date', 'false', M_Text_1, validErrState);
+		validErrState['M_Page_2.M_Form_1.M_Text_1.invalidInfo'] = validErr;
+	}
+	if (validErr != null) hadValidErr = true;
+	if (hadValidErr) {
+		return callback_final(state, null, { info: '前置条件不足' });
+	}
+	if (getDateDiff('天', nowValue, M_Text_1_value) < 0) {
+		return '必须大于等于起始日期';
+	}
+}
+function M_Text_3_defaultvalue_get(state, bundle) {
+	return getFormatDateString(getNowDate());
 }
 function M_LC_6_isdisplay_get(state, bundle) {
-	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
-	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : getStateByPath(M_Form_1_state, 'M_LC_3.visible');
-	var callback_final = function callback_final(state, data, err) {
-		var needSetState = {};
-		needSetState.visible = err == null ? data : null;
-		return setManyStateByPath(state, 'M_Page_2.M_Form_1.M_LC_6', needSetState);
-	};
-	if (IsEmptyString(M_LC_3_visible)) {
-		return callback_final(state, null, { info: '条件不足' });
-	}
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1', {});
+	var M_LC_3_state = getStateByPath(M_Form_1_state, 'M_LC_3', {});
+	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : M_LC_3_state.visible;
 	return M_LC_3_visible;
-	return null;
 }
 function button_4_onclik() {
 	var state = store.getState();
-	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1');
-	var M_Dropdown_0_value = getStateByPath(M_Form_1_state, 'M_Dropdown_0.value');
-	var M_Dropdown_1_value = getStateByPath(M_Form_1_state, 'M_Dropdown_1.value');
-	var M_Text_4_value = getStateByPath(M_Form_1_state, 'M_Text_4.value');
-	var M_Text_1_value = getStateByPath(M_Form_1_state, 'M_Text_1.value');
-	var M_Text_2_value = getStateByPath(M_Form_1_state, 'M_Text_2.value');
-	var M_Text_3_value = getStateByPath(M_Form_1_state, 'M_Text_3.value');
-	var M_Text_5_value = getStateByPath(M_Form_1_state, 'M_Text_5.value');
-	var M_Text_6_value = getStateByPath(M_Form_1_state, 'M_Text_6.value');
-	var callback_final = function callback_final(state, data, err) {};
-	if (IsEmptyString(M_Dropdown_0_value) || IsEmptyString(M_Dropdown_1_value) || IsEmptyString(M_Text_4_value) || IsEmptyString(M_Text_1_value) || IsEmptyString(M_Text_2_value) || IsEmptyString(M_Text_3_value) || IsEmptyString(M_Text_5_value) || IsEmptyString(M_Text_6_value)) {
-		return callback_final(state, null, { info: '条件不足' });
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1', {});
+	var M_Dropdown_0_state = getStateByPath(M_Form_1_state, 'M_Dropdown_0', {});
+	var M_LC_0_state = getStateByPath(M_Form_1_state, 'M_LC_0', {});
+	var M_Dropdown_0_value = M_Dropdown_0_state.value;
+	var M_Dropdown_1_state = getStateByPath(M_Form_1_state, 'M_Dropdown_1', {});
+	var M_LC_1_state = getStateByPath(M_Form_1_state, 'M_LC_1', {});
+	var M_Dropdown_1_value = M_Dropdown_1_state.value;
+	var M_Text_4_state = getStateByPath(M_Form_1_state, 'M_Text_4', {});
+	var M_LC_5_state = getStateByPath(M_Form_1_state, 'M_LC_5', {});
+	var M_Text_4_value = M_Text_4_state.value;
+	var M_Text_1_state = getStateByPath(M_Form_1_state, 'M_Text_1', {});
+	var M_LC_2_state = getStateByPath(M_Form_1_state, 'M_LC_2', {});
+	var M_Text_1_value = M_Text_1_state.value;
+	var M_Text_2_state = getStateByPath(M_Form_1_state, 'M_Text_2', {});
+	var M_LC_3_state = getStateByPath(M_Form_1_state, 'M_LC_3', {});
+	var M_Text_2_value = M_Text_2_state.value;
+	var M_Text_3_state = getStateByPath(M_Form_1_state, 'M_Text_3', {});
+	var M_LC_4_state = getStateByPath(M_Form_1_state, 'M_LC_4', {});
+	var M_Text_3_value = M_Text_3_state.value;
+	var M_Text_5_state = getStateByPath(M_Form_1_state, 'M_Text_5', {});
+	var M_LC_6_state = getStateByPath(M_Form_1_state, 'M_LC_6', {});
+	var M_Text_5_value = M_Text_5_state.value;
+	var M_Text_6_state = getStateByPath(M_Form_1_state, 'M_Text_6', {});
+	var M_LC_7_state = getStateByPath(M_Form_1_state, 'M_LC_7', {});
+	var M_Text_6_value = M_Text_6_state.value;
+	var validErr;
+	var hadValidErr = false;
+	var validErrState = {};
+	var callback_final = function callback_final(state, data, err) {
+		setManyStateByPath(state, '', validErrState);
+	};
+	validErr = BaseIsValueValid(state, M_LC_0_state, M_Dropdown_0_state, M_Dropdown_0_value, 'string', 'false', M_Dropdown_0, validErrState);
+	validErrState['M_Page_2.M_Form_1.M_Dropdown_0.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
+	validErr = BaseIsValueValid(state, M_LC_1_state, M_Dropdown_1_state, M_Dropdown_1_value, 'string', 'false', M_Dropdown_1, validErrState);
+	validErrState['M_Page_2.M_Form_1.M_Dropdown_1.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
+	validErr = BaseIsValueValid(state, M_LC_5_state, M_Text_4_state, M_Text_4_value, 'string', 'false', M_Text_4, validErrState);
+	validErrState['M_Page_2.M_Form_1.M_Text_4.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
+	validErr = BaseIsValueValid(state, M_LC_2_state, M_Text_1_state, M_Text_1_value, 'date', 'false', M_Text_1, validErrState);
+	validErrState['M_Page_2.M_Form_1.M_Text_1.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
+	validErr = BaseIsValueValid(state, M_LC_3_state, M_Text_2_state, M_Text_2_value, 'time', 'false', M_Text_2, validErrState);
+	validErrState['M_Page_2.M_Form_1.M_Text_2.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
+	validErr = BaseIsValueValid(state, M_LC_4_state, M_Text_3_state, M_Text_3_value, 'date', 'false', M_Text_3, validErrState);
+	validErrState['M_Page_2.M_Form_1.M_Text_3.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
+	validErr = BaseIsValueValid(state, M_LC_6_state, M_Text_5_state, M_Text_5_value, 'time', 'false', M_Text_5, validErrState);
+	validErrState['M_Page_2.M_Form_1.M_Text_5.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
+	validErr = BaseIsValueValid(state, M_LC_7_state, M_Text_6_state, M_Text_6_value, 'string', 'false', M_Text_6, validErrState);
+	validErrState['M_Page_2.M_Form_1.M_Text_6.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
+	if (hadValidErr) {
+		return callback_final(state, null, { info: '前置条件不足' });
 	}
 	var fetchid = Math.round(Math.random() * 999999);
 	fetchTracer['button_4_onclik'] = fetchid;
@@ -466,6 +576,7 @@ function CM_Form_1_disptchtoprops(dispatch, ownprops) {
 var VisibleCM_Form_1 = ReactRedux.connect(CM_Form_1_mapstatetoprops, CM_Form_1_disptchtoprops)(CM_Form_1);
 
 gCusValidChecker_map['M_Text_1'] = M_Text_1_validchecker;
+gCusValidChecker_map['M_Text_3'] = M_Text_3_validchecker;
 if (g_envVar.userid != null) {
 	ErpControlInit();
 	ReactDOM.render(React.createElement(
