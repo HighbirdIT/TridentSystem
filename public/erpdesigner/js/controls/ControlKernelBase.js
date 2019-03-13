@@ -368,11 +368,14 @@ var ControlKernelBase = function (_IAttributeable) {
         value: function searchParentKernel(targetType, justFirst) {
             var rlt = null;
             var tKernel = this.parent;
+            var isArray = false;
             if (targetType == null) {
                 targetType = '*';
+            } else if (Array.isArray(targetType)) {
+                isArray = true;
             }
             while (tKernel != null) {
-                if (targetType == '*' || tKernel.type == targetType) {
+                if (targetType == '*' || !isArray && tKernel.type == targetType || isArray && targetType.indexOf(tKernel.type) != -1) {
                     if (justFirst) {
                         return tKernel;
                     }
@@ -388,15 +391,21 @@ var ControlKernelBase = function (_IAttributeable) {
         }
     }, {
         key: 'searchChildKernel',
-        value: function searchChildKernel(targetType, justFirst, deepSearch) {
+        value: function searchChildKernel(targetType, justFirst, deepSearch, ignoreTypes) {
             var rlt = null;
+            var isArray = false;
             if (targetType == null) {
                 targetType = '*';
+            } else if (Array.isArray(targetType)) {
+                isArray = true;
             }
             if (this.children && this.children.length > 0) {
                 for (var ci in this.children) {
                     var child = this.children[ci];
-                    if (targetType == '*' || child.type == targetType) {
+                    if (ignoreTypes != null && ignoreTypes.indexOf(child.type) != -1) {
+                        continue;
+                    }
+                    if (targetType == '*' || !isArray && child.type == targetType || isArray && targetType.indexOf(child.type) != -1) {
                         if (justFirst) {
                             return child;
                         }
@@ -478,6 +487,11 @@ var ControlKernelBase = function (_IAttributeable) {
                 }
             } while (nowKernel != null);
             return rlt;
+        }
+    }, {
+        key: 'isAEditor',
+        value: function isAEditor() {
+            return this.parent && this.parent.editor == this;
         }
     }]);
 

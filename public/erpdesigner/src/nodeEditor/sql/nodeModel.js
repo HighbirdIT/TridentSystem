@@ -2922,6 +2922,7 @@ const EnvVariable={
     departmentCode:'ENV:所属部门名称代码',
     systemCode:'ENV:所属系统名称代码',
     nowDate:'EBV:当前日期',
+    nowTime:'EBV:当前日期时间',
 }
 
 const EnvVariables_arr = [];

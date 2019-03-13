@@ -175,7 +175,7 @@ var DBEntity = function (_EventEmitter3) {
                 console.error(json.err);
                 this.synErr = err;
                 return;
-            } else if (json.data.length == 0) {
+            } else if (json.data.length == 0 || json.data[0] == null) {
                 console.warn(this.code + '没有在数据库中找到');
                 this.synErr = { info: '不存在了' + this.code };
                 return;

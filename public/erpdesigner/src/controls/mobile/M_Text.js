@@ -3,13 +3,16 @@ const M_TextKernelAttrsSetting = GenControlKernelAttrsSetting([
         genTextFiledAttribute(),
         new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes),
         new CAttribute('小数精度', AttrNames.FloatNum, ValueType.Int, 2, true, false, null, null, false),
+        new CAttribute('行类型', AttrNames.LineType, ValueType.String, LineType_Single, true, false, LinteTypes_arr, null, false),
         new CAttribute('默认值', AttrNames.DefaultValue, ValueType.String, '', true, false, null, null,true,{
             scriptable:true,
             type:FunType_Client,
             group:EJsBluePrintFunGroup.CtlAttr,
-        } ),
+        }),
         new CAttribute('可否编辑', AttrNames.Editeable, ValueType.Boolean, true),
         genIsdisplayAttribute(),
+        genNullableAttribute(),
+        genValidCheckerAttribute(),
     ]),
 ]);
 
@@ -28,7 +31,9 @@ class M_TextKernel extends ControlKernelBase {
         autoBind(self);
 
 
-        this[AttrNames.FloatNum + '_visible'] = this[AttrNames.ValueType] == ValueType.Float;
+        var nowvt = this.getAttribute(AttrNames.ValueType);
+        this[AttrNames.FloatNum + '_visible'] = nowvt == ValueType.Float;
+        this[AttrNames.LineType + '_visible'] = nowvt == ValueType.String;
     }
 
     renderSelf() {
@@ -42,6 +47,8 @@ class M_TextKernel extends ControlKernelBase {
             // 数据类型更改
             var floatNumAttr = this.findAttributeByName(AttrNames.FloatNum);
             floatNumAttr.setVisible(this, newValue == ValueType.Float);
+            var lineTypeAttr = this.findAttributeByName(AttrNames.LineType);
+            lineTypeAttr.setVisible(this, newValue == ValueType.String);
         }
     }
 }

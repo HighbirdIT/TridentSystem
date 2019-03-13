@@ -2,12 +2,12 @@ class CAttributeGroup extends EventEmitter{
     constructor(label,attrs_arr) {
         super();
         EnhanceEventEmiter(this);
-        var self = this;
         this.label = label;
         this.setAttrs(attrs_arr);
     }
 
     appandAttr(target){
+        var self = this;
         if(Array.isArray(target)){
             this.attrs_arr = this.attrs_arr.concat(target);
             target.forEach(attr=>{
@@ -21,6 +21,7 @@ class CAttributeGroup extends EventEmitter{
     }
 
     setAttrs(attrs_arr){
+        var self = this;
         this.attrs_arr = attrs_arr;
         attrs_arr.forEach(attr=>{
             attr.group = self;

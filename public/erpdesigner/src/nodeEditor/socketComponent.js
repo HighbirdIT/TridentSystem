@@ -159,7 +159,7 @@ class C_Node_Socket extends React.PureComponent{
                 if(socket.isIn){
                     if(socket.getLinks().length == 0){
                         var bluePrint = socket.node.bluePrint;
-                        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == ESqlBluePrintGroup.ControlCustom)
+                        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == ESqlBluePrintGroup.ControlCustom || bluePrint.group == EJsBluePrintFunGroup.CtlValid)
                         {
                             var ctlKernel = bluePrint.master.project.getControlById(bluePrint.ctlID);
                             if(ctlKernel != null){

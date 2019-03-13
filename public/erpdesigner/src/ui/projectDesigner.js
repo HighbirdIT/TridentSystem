@@ -79,6 +79,9 @@ class ProjectDesigner extends React.PureComponent {
     mouseDownControlIcon(ctltype) {
         this.contenPanelRef.current.endPlace();
         var thisProject = this.props.project;
+        if(thisProject.getEditingPage() == null){
+            return;
+        }
         var newKernel = null;
         if(this.placingCtonrols[ctltype] && this.placingCtonrols[ctltype].parent == null){
             newKernel = this.placingCtonrols[ctltype];

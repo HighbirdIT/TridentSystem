@@ -79,6 +79,10 @@ function makeAction_fetchError(key, err, fetchData) {
     };
 }
 
+function delayAction(){
+    
+}
+
 const makeAction_setStateByPath = makeActionCreator(AT_SETSTATEBYPATH, 'value', 'path');
 const makeAction_setManyStateByPath = makeActionCreator(AT_SETMANYSTATEBYPATH, 'value', 'path');
 const makeAction_gotoPage = makeActionCreator(AT_GOTOPAGE, 'pageName');
@@ -95,6 +99,10 @@ function myTrim(x) {
     return x.replace(/^\s+|\s+$/gm, '');
 }
 
+function getNowDate(){
+    return new Date(getFormatDateString(new Date()));
+}
+
 function checkDate(date) {
     var dateVal = new Date(Date.parse(date));
     return !isNaN(dateVal.getDate());
@@ -103,6 +111,55 @@ function checkDate(date) {
 function checkTime(str) {
     var dateVal = new Date(Date.parse('2000-1-1 ' + str));
     return !isNaN(dateVal.getDate());
+}
+
+function cutTimePart(date){
+    var rlt = new Date(date);
+    rlt.setHours(0);
+    rlt.setMinutes(0);
+    rlt.setMilliseconds(0);
+    rlt.setSeconds(0);
+    return rlt;
+}
+
+function convertTimeToDate(str){
+    var now = new Date();
+    return combineDateAndTime(getFormatDateString(now), str);
+}
+
+function combineDateAndTime(dateStr, timeStr){
+    return new Date(Date.parse(dateStr + ' ' + timeStr));
+}
+
+function getDateDiff(type, dateA, dateB){
+    var divNum = 0;
+    switch(type.toLowerCase()){
+        case '秒':
+        divNum = 1000;
+        break;
+        case '分':
+        divNum = 1000 * 60;
+        break;
+        case '时':
+        divNum = 1000 * 60 * 60;
+        break;
+        case '天':
+        divNum = 1000 * 60 * 60 * 24;
+        break;
+        case '月':
+        divNum = 1000 * 60 * 60 * 24 * 30;
+        break;
+        case '年':
+        divNum = 1000 * 60 * 60 * 24 * 365;
+        break;
+    }
+    if(typeof dateA === 'string'){
+        dateA = new Date(dateA);
+    }
+    if(typeof dateB === 'string'){
+        dateB = new Date(dateB);
+    }
+    return (dateA.getTime() - dateB.getTime()) / divNum;
 }
 
 // commonreducer
@@ -336,6 +393,13 @@ function makeFTD_Prop(basePath, id, propName, isModel = true) {
         base: basePath,
         id: id,
         propName: propName,
+        isModel: isModel,
+    };
+}
+
+function makeFTD_Callback(callBack, isModel = true) {
+    return {
+        callBack: callBack,
         isModel: isModel,
     };
 }
@@ -810,11 +874,19 @@ function fetchEndHandler(state, action) {
         }
         else {
             if (triggerData) {
-                var propPath = MakePath(triggerData.base, triggerData.id);
-                retState = setManyStateByPath(retState, propPath, {
-                    fetching: false,
-                    fetchingErr: action.err,
-                });
+                if (triggerData.base != null && triggerData.id != null) {
+                    var propPath = MakePath(triggerData.base, triggerData.id);
+                    retState = setManyStateByPath(retState, propPath, {
+                        fetching: false,
+                        fetchingErr: action.err,
+                    });
+                }
+                if(triggerData.callBack){
+                    var callbackret = triggerData.callBack(retState, null, action.err);
+                    if(callbackret != null){
+                        retState = callbackret;
+                    }
+                }
             }
         }
         return retState == state ? Object.assign({}, retState) : retState;
@@ -842,6 +914,14 @@ function fetchEndHandler(state, action) {
                 var propPath = MakePath(triggerData.base, triggerData.id, triggerData.propName);
                 return setStateByPath(retState, propPath, action.json.data);
             }
+        default:
+        if(triggerData.callBack){
+            var callbackret = triggerData.callBack(retState, action.json.data);
+            if(callbackret != null){
+                retState = callbackret;
+            }
+        }
+        break;
     }
     return retState == state ? Object.assign({}, retState) : retState;
 }

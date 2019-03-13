@@ -32,6 +32,18 @@ function genIsdisplayAttribute(){
     });
 }
 
+function genNullableAttribute(){
+    return new CAttribute('允许空值', AttrNames.Nullable, ValueType.Boolean, false, true);
+}
+
+function genValidCheckerAttribute(){
+    return new CAttribute('值验证', AttrNames.ValidChecker, ValueType.Script, true, true, false, null, null,true,{
+        scriptable:true,
+        type:FunType_Client,
+        group:EJsBluePrintFunGroup.CtlValid,
+    });
+}
+
 class CAttribute{
     constructor(label, name, valueType, defaultVal, editable, isArray, options_arr, dropdownSetting, visible, scriptSetting) {
         Object.assign(this,{
@@ -56,6 +68,16 @@ class CAttribute{
             return;
         }
         target[this.name + '_visible'] = val;
+        this.group.fireEvent('changed');
+    }
+
+    setEditable(target, val) {
+        var nowVisible = target[this.name + '_editable'];
+        if(nowVisible == val)
+        {
+            return;
+        }
+        target[this.name + '_editable'] = val;
         this.group.fireEvent('changed');
     }
 }
@@ -155,6 +177,11 @@ const AttrNames={
     AutoClearValue:'autoclearvalue',
     Editeable:'editeable',
     Isdisplay:'isdisplay',
+    Nullable:'nullable',
+    LineType:'linetype',
+    InteractiveType:'interactivetype',
+    InteractiveField:'interactivefield',
+    ValidChecker:'validchecker',
 
     Event:{
         OnClick:'onclik'
