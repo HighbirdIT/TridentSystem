@@ -881,11 +881,13 @@ function fetchEndHandler(state, action) {
                         fetchingErr: action.err,
                     });
                 }
-                if(triggerData.callBack){
-                    var callbackret = triggerData.callBack(retState, null, action.err);
-                    if(callbackret != null){
-                        retState = callbackret;
-                    }
+            }
+        }
+        if(triggerData){
+            if(triggerData.callBack){
+                var callbackret = triggerData.callBack(retState, null, action.err);
+                if(callbackret != null){
+                    retState = callbackret;
                 }
             }
         }
@@ -980,7 +982,7 @@ function renderFetcingErrDiv(errInfo) {
         <div className='w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch'>
             <div className='m-auto d-flex align-items-center border rounded text-danger flex-shrink-0 mw-100'>
                 <i className='fa fa-warning fa-fw fa-2x' />
-                <div className='text'>出错了:{errInfo}联系信息部吧。</div>
+                <div className='text'>出错了:{errInfo}</div>
             </div>
         </div>
     );

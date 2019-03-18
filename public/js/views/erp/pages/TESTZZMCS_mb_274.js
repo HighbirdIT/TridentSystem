@@ -247,8 +247,7 @@ function M_LC_6_isdisplay_get(state, bundle) {
 	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : M_LC_3_state.visible;
 	return M_LC_3_visible;
 }
-function button_4_onclik() {
-	var msgBox = null;
+function button_4_onclick() {
 	var state = store.getState();
 	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1', {});
 	var M_Dropdown_0_state = getStateByPath(M_Form_1_state, 'M_Dropdown_0', {});
@@ -278,6 +277,7 @@ function button_4_onclik() {
 	var validErr;
 	var hadValidErr = false;
 	var validErrState = {};
+	var scriptBP_21_msg = null;
 	var callback_final = function callback_final(state, data, err) {
 		if (state == null) {
 			store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
@@ -288,13 +288,15 @@ function button_4_onclik() {
 			SendToast('验证失败，无法执行', EToastType.Warning);return;
 		}
 		if (err) {
-			if (msgBox) {
-				msgBox.setData(err.info, EMessageBoxType.Error, '申请提交');
+			if (scriptBP_21_msg) {
+				scriptBP_21_msg.setData(err.info, EMessageBoxType.Error, '提交申请');
+			} else {
+				SendToast(err.info, EToastType.Error);
 			}
 			return;
 		}
-		if (msgBox) {
-			msgBox.fireClose();
+		if (scriptBP_21_msg) {
+			scriptBP_21_msg.fireClose();
 		}
 		SendToast('执行成功');
 	};
@@ -326,7 +328,8 @@ function button_4_onclik() {
 		return callback_final(null, null, { info: gPreconditionInvalidInfo });
 	}
 	var fetchid = Math.round(Math.random() * 999999);
-	fetchTracer['button_4_onclik'] = fetchid;
+	fetchTracer['button_4_onclick'] = fetchid;
+	scriptBP_21_msg = PopMessageBox('', EMessageBoxType.Loading, '提交申请');;
 	var bundle_insert_table_0 = {
 		M_Dropdown_0_value: M_Dropdown_0_value,
 		M_Dropdown_1_value: M_Dropdown_1_value,
@@ -337,8 +340,6 @@ function button_4_onclik() {
 		M_Text_6_value: M_Text_6_value,
 		M_Text_4_value: M_Text_4_value
 	};
-	msgBox = PopMessageBox('', EMessageBoxType.Loading, ' 提交申请');
-
 	setTimeout(function () {
 		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_insert_table_0, action: '_insert_table_0' }, makeFTD_Callback(function (state, data_insert_table_0, err_insert_table_0) {
 			if (err_insert_table_0 == null) {
@@ -347,7 +348,7 @@ function button_4_onclik() {
 				return callback_final(state, data_insert_table_0, err_insert_table_0);
 			}
 		})));
-	}, 2000);
+	}, 50);
 }
 function M_Dropdown_0_value_changed(state, newValue, oldValue, path, visited, delayActs) {
 	var needSetState = {};
@@ -563,7 +564,7 @@ var CM_Form_1 = function (_React$PureComponent3) {
 				),
 				React.createElement(
 					'button',
-					{ className: 'btn btn-primary erp-control ', id: 'button_4', onClick: button_4_onclik },
+					{ className: 'btn btn-primary erp-control ', id: 'button_4', onClick: button_4_onclick },
 					'\u63D0\u4EA4\u7533\u8BF7'
 				),
 				this.renderNavigater()

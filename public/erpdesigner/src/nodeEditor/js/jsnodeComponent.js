@@ -244,7 +244,7 @@ class C_JSNode_DateFun extends React.PureComponent {
     }
 }
 
-class C_JSNode_QueryFB extends React.PureComponent {
+class C_JSNode_Query_Sql extends React.PureComponent {
     constructor(props) {
         super(props);
         autoBind(this);
@@ -295,10 +295,10 @@ class C_JSNode_QueryFB extends React.PureComponent {
         var entity = nodeData.targetEntity;
         var dataloaded = entity ? entity.loaded : false;
 
-        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='查询FB'>
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='查询SQL'>
             <div className='d-flex'>
                 <div className='flex-grow-1 flex-shrink-1'>
-                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={g_dataBase.getEntitiesByType} funparamobj='FB' rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
+                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={nodeData.bluePrint.master.project.dataMaster.getAllEntities} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
                 </div>
             </div>
             <div className='d-flex'>

@@ -141,6 +141,7 @@ class MobileContentCompiler extends ContentCompiler {
         clientSide.appClass.renderFun.pushLine(VarNames.RetElem + " = (", 1);
         clientSide.appClass.renderFun.pushLine("<div className='w-100 h-100'>");
         clientSide.appClass.renderFun.pushLine("<CToastManger ref={gCToastMangerRef} />");
+        clientSide.appClass.renderFun.pushLine("<CMessageBoxManger ref={gCMessageBoxMangerRef} />");
         clientSide.appClass.renderFun.pushLine("<FixedContainer ref={gFixedContainerRef} />");
         clientSide.appClass.renderFun.pushLine("{this.renderLoadingTip()}");
         clientSide.appClass.renderFun.pushLine("{pageElem}", -1);
@@ -202,6 +203,7 @@ class MobileContentCompiler extends ContentCompiler {
         var compileHelper = new JSNode_CompileHelper(logManager, null, useScope);
         compileHelper.serverSide = this.serverSide;
         compileHelper.clientSide = this.clientSide;
+        compileHelper.sqlBPCacheManager = this.projectCompiler;
         logManager.log('编译脚本:' + targetBP.name);
         var compileRet = targetBP.compile(compileHelper);
         if (compileRet == false) {
@@ -321,6 +323,9 @@ class MobileContentCompiler extends ContentCompiler {
                         } else {
                             if (stateItem.staticValue) {
                                 controlInitBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), singleQuotesStr(stateItem.staticValue)));
+                            }
+                            else if (stateItem.setNull) {
+                                controlInitBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), 'null'));
                             }
                             else {
                                 console.error('无法处理的kernel');
@@ -481,11 +486,12 @@ class MobileContentCompiler extends ContentCompiler {
                 if (!defaultValParseRet.isScript) {
                     setValueStateItem = {
                         name: 'value',
-                        staticValue: defaultValParseRet.string
+                        staticValue: IsEmptyString(defaultValParseRet.string) ? null : defaultValParseRet.string,
+                        setNull: IsEmptyString(defaultValParseRet.string),
                     };
                 }
             }
-            if (setValueStateItem != null) {
+            if(setValueStateItem != null){
                 kernelMidData.needSetStates_arr.push(setValueStateItem);
             }
         }
@@ -970,6 +976,9 @@ class MobileContentCompiler extends ContentCompiler {
                                     bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_DynamicAttr(VarNames.NowRecord, stateItem.useColumn.name)));
                                 }
                             }
+                            else if (stateItem.setNull) {
+                                staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), 'null'));
+                            }
                         }
                     });
                 }
@@ -1329,14 +1338,34 @@ class MobileContentCompiler extends ContentCompiler {
                     };
                 }
             }
-            if (setValueStateItem == null && setValueStateItem == null) {
+
+            if(setValueStateItem == null && setTextStateItem != null){
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '下拉框的显示字段能找到匹配但是数值字段找不到匹配']);
+                return false;
+            }
+
+            if (setValueStateItem == null && setTextStateItem == null) {
                 if (!defaultValParseRet.isScript) {
+                    var hadDefaultStr = !IsEmptyString(defaultValParseRet.string);
                     setValueStateItem = {
                         name: 'value',
-                        staticValue: defaultValParseRet.string
+                        staticValue: hadDefaultStr ? defaultValParseRet.string : null,
+                        setNull: !hadDefaultStr,
                     };
+
+                    if(!hadDefaultStr){
+                        setTextStateItem = {
+                            name: 'text',
+                            setNull: true,
+                        };
+                    }
                 }
             }
+
             if (setTextStateItem != null) {
                 kernelMidData.needSetStates_arr.push(setTextStateItem);
             }

@@ -912,11 +912,13 @@ function fetchEndHandler(state, action) {
                         fetchingErr: action.err
                     });
                 }
-                if (triggerData.callBack) {
-                    var callbackret = triggerData.callBack(retState, null, action.err);
-                    if (callbackret != null) {
-                        retState = callbackret;
-                    }
+            }
+        }
+        if (triggerData) {
+            if (triggerData.callBack) {
+                var callbackret = triggerData.callBack(retState, null, action.err);
+                if (callbackret != null) {
+                    retState = callbackret;
                 }
             }
         }
@@ -1046,8 +1048,7 @@ function renderFetcingErrDiv(errInfo) {
                 'div',
                 { className: 'text' },
                 '\u51FA\u9519\u4E86:',
-                errInfo,
-                '\u8054\u7CFB\u4FE1\u606F\u90E8\u5427\u3002'
+                errInfo
             )
         )
     );

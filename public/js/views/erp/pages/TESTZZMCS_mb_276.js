@@ -116,14 +116,20 @@ function M_Text_4_defaultvalue_get(state, bundle) {
 	};
 	setTimeout(function () {
 		if (fetchTracer['M_Text_4_defaultvalue_get'] != fetchid) return;
-		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_queryfb_0, action: '_query_FB员工请假提示' }, makeFTD_Callback(function (state, data_queryfb_0, err) {
+		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_queryfb_0, action: '_query_FB员工请假提示' }, makeFTD_Callback(function (state, data_queryfb_0, error_queryfb_0) {
+			if (error_queryfb_0) {
+				callback_final(state, null, error_queryfb_0);
+			}
 			var bundle_queryfb_1 = {
 				员工代码: M_Dropdown_0_value
 			};
 			setTimeout(function () {
 				if (fetchTracer['M_Text_4_defaultvalue_get'] != fetchid) return;
-				store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_queryfb_1, action: '_query_FB查询RTX状态' }, makeFTD_Callback(function (state, data_queryfb_1, err) {
-					var ret = callback_final(state, data_queryfb_0 + '[RTX:' + data_queryfb_1 + ']' + M_Dropdown_0_text, err);
+				store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_queryfb_1, action: '_query_FB查询RTX状态' }, makeFTD_Callback(function (state, data_queryfb_1, error_queryfb_1) {
+					if (error_queryfb_1) {
+						callback_final(state, null, error_queryfb_1);
+					}
+					var ret = callback_final(state, data_queryfb_0 + '[RTX:' + data_queryfb_1 + ']' + M_Dropdown_0_text, null);
 					return ret == null ? state : ret;
 				}, false)));
 			}, 50);
@@ -247,37 +253,9 @@ function M_LC_6_isdisplay_get(state, bundle) {
 	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : M_LC_3_state.visible;
 	return M_LC_3_visible;
 }
-function button_4_onclik() {
-	var msgBox = null;
+function button_4_onclick() {
 	var state = store.getState();
-	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1', {});
-	var M_Dropdown_0_state = getStateByPath(M_Form_1_state, 'M_Dropdown_0', {});
-	var M_LC_0_state = getStateByPath(M_Form_1_state, 'M_LC_0', {});
-	var M_Dropdown_0_value = M_Dropdown_0_state.value;
-	var M_Dropdown_1_state = getStateByPath(M_Form_1_state, 'M_Dropdown_1', {});
-	var M_LC_1_state = getStateByPath(M_Form_1_state, 'M_LC_1', {});
-	var M_Dropdown_1_value = M_Dropdown_1_state.value;
-	var M_Text_4_state = getStateByPath(M_Form_1_state, 'M_Text_4', {});
-	var M_LC_5_state = getStateByPath(M_Form_1_state, 'M_LC_5', {});
-	var M_Text_4_value = M_Text_4_state.value;
-	var M_Text_1_state = getStateByPath(M_Form_1_state, 'M_Text_1', {});
-	var M_LC_2_state = getStateByPath(M_Form_1_state, 'M_LC_2', {});
-	var M_Text_1_value = M_Text_1_state.value;
-	var M_Text_2_state = getStateByPath(M_Form_1_state, 'M_Text_2', {});
-	var M_LC_3_state = getStateByPath(M_Form_1_state, 'M_LC_3', {});
-	var M_Text_2_value = M_Text_2_state.value;
-	var M_Text_3_state = getStateByPath(M_Form_1_state, 'M_Text_3', {});
-	var M_LC_4_state = getStateByPath(M_Form_1_state, 'M_LC_4', {});
-	var M_Text_3_value = M_Text_3_state.value;
-	var M_Text_5_state = getStateByPath(M_Form_1_state, 'M_Text_5', {});
-	var M_LC_6_state = getStateByPath(M_Form_1_state, 'M_LC_6', {});
-	var M_Text_5_value = M_Text_5_state.value;
-	var M_Text_6_state = getStateByPath(M_Form_1_state, 'M_Text_6', {});
-	var M_LC_7_state = getStateByPath(M_Form_1_state, 'M_LC_7', {});
-	var M_Text_6_value = M_Text_6_state.value;
-	var validErr;
-	var hadValidErr = false;
-	var validErrState = {};
+	var scriptBP_21_msg = null;
 	var callback_final = function callback_final(state, data, err) {
 		if (state == null) {
 			store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
@@ -288,66 +266,37 @@ function button_4_onclik() {
 			SendToast('验证失败，无法执行', EToastType.Warning);return;
 		}
 		if (err) {
-			if (msgBox) {
-				msgBox.setData(err.info, EMessageBoxType.Error, '申请提交');
+			if (scriptBP_21_msg) {
+				scriptBP_21_msg.setData(err.info, EMessageBoxType.Error, '提交申请');
+			} else {
+				SendToast(err.info, EToastType.Error);
 			}
 			return;
 		}
-		if (msgBox) {
-			msgBox.fireClose();
+		if (scriptBP_21_msg) {
+			scriptBP_21_msg.fireClose();
 		}
 		SendToast('执行成功');
 	};
-	validErr = BaseIsValueValid(state, M_LC_0_state, M_Dropdown_0_state, M_Dropdown_0_value, 'string', 'false', 'M_Dropdown_0', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Dropdown_0.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	validErr = BaseIsValueValid(state, M_LC_1_state, M_Dropdown_1_state, M_Dropdown_1_value, 'string', 'false', 'M_Dropdown_1', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Dropdown_1.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	validErr = BaseIsValueValid(state, M_LC_5_state, M_Text_4_state, M_Text_4_value, 'string', 'false', 'M_Text_4', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Text_4.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	validErr = BaseIsValueValid(state, M_LC_2_state, M_Text_1_state, M_Text_1_value, 'date', 'false', 'M_Text_1', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Text_1.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	validErr = BaseIsValueValid(state, M_LC_3_state, M_Text_2_state, M_Text_2_value, 'time', 'false', 'M_Text_2', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Text_2.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	validErr = BaseIsValueValid(state, M_LC_4_state, M_Text_3_state, M_Text_3_value, 'date', 'false', 'M_Text_3', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Text_3.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	validErr = BaseIsValueValid(state, M_LC_6_state, M_Text_5_state, M_Text_5_value, 'time', 'false', 'M_Text_5', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Text_5.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	validErr = BaseIsValueValid(state, M_LC_7_state, M_Text_6_state, M_Text_6_value, 'string', 'false', 'M_Text_6', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Text_6.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	if (hadValidErr) {
-		return callback_final(null, null, { info: gPreconditionInvalidInfo });
-	}
 	var fetchid = Math.round(Math.random() * 999999);
-	fetchTracer['button_4_onclik'] = fetchid;
-	var bundle_insert_table_0 = {
-		M_Dropdown_0_value: M_Dropdown_0_value,
-		M_Dropdown_1_value: M_Dropdown_1_value,
-		M_Text_2_value: M_Text_2_value,
-		M_Text_5_value: M_Text_5_value,
-		M_Text_1_value: M_Text_1_value,
-		M_Text_3_value: M_Text_3_value,
-		M_Text_6_value: M_Text_6_value,
-		M_Text_4_value: M_Text_4_value
-	};
-	msgBox = PopMessageBox('', EMessageBoxType.Loading, ' 提交申请');
-
+	fetchTracer['button_4_onclick'] = fetchid;
+	scriptBP_21_msg = PopMessageBox('', EMessageBoxType.Loading, '提交申请');;
+	var bundle_querysql_0 = {};
 	setTimeout(function () {
-		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_insert_table_0, action: '_insert_table_0' }, makeFTD_Callback(function (state, data_insert_table_0, err_insert_table_0) {
-			if (err_insert_table_0 == null) {
-				return callback_final(state, data_insert_table_0, err_insert_table_0);
-			} else {
-				return callback_final(state, data_insert_table_0, err_insert_table_0);
+		if (fetchTracer['button_4_onclick'] != fetchid) return;
+		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_querysql_0, action: '_query_T105C员工请假记录' }, makeFTD_Callback(function (state, data_querysql_0, error_querysql_0) {
+			if (error_querysql_0) {
+				callback_final(state, null, error_querysql_0);
 			}
-		})));
-	}, 2000);
+			if (data_querysql_0.length > 0) {
+				var ret = callback_final(state, null, { info: 当天已经有请假了 });
+				return ret == null ? state : ret;
+			} else {
+				var ret = callback_final(state, null, { info: 当天已经有请假了 });
+				return ret == null ? state : ret;
+			}
+		}, false)));
+	}, 50);
 }
 function M_Dropdown_0_value_changed(state, newValue, oldValue, path, visited, delayActs) {
 	var needSetState = {};
@@ -563,7 +512,7 @@ var CM_Form_1 = function (_React$PureComponent3) {
 				),
 				React.createElement(
 					'button',
-					{ className: 'btn btn-primary erp-control ', id: 'button_4', onClick: button_4_onclik },
+					{ className: 'btn btn-primary erp-control ', id: 'button_4', onClick: button_4_onclick },
 					'\u63D0\u4EA4\u7533\u8BF7'
 				),
 				this.renderNavigater()

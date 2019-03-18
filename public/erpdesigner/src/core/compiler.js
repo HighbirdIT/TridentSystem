@@ -22,6 +22,17 @@ class ProjectCompiler extends EventEmitter{
         return rlt;
     }
 
+    getCache(key){
+        if(typeof key !== 'string'){
+            console.error('getCache key must string');
+        }
+        return this.cache_map[key];
+    }
+
+    setCache(key, value){
+        this.cache_map[key] = value;
+    }
+
     clickSqlCompilerLogBadgeItemHandler(badgeItem){
         console.log('clickSqlCompilerLogBadgeItemHandler');
         if(badgeItem.data){
@@ -57,6 +68,7 @@ class ProjectCompiler extends EventEmitter{
         var project = this.project;
         var logManager = project.logManager;
         this.midData_map = {};
+        this.cache_map = {};
         logManager.clear();
         logManager.log('执行项目编译');
         
@@ -76,7 +88,9 @@ class ProjectCompiler extends EventEmitter{
                 this.stopCompile(false, "发生错误,项目编译已终止");
                 return false;
             }
+            this.setCache(sql_blueprint.code + '_sql', compileRet.sql);
         }
+
 
         this.projectName = this.projProfile ? this.projProfile.enName : project.getAttribute(AttrNames.RealName);
         this.flowName = this.projProfile ? this.projProfile.flowName : '';

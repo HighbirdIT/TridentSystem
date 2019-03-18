@@ -601,32 +601,53 @@ class ERPC_DropDown extends React.PureComponent {
         var selectedVal = this.props.value;
         var selectedText = this.props.text;
         var self = this;
-        if(!IsEmptyString(selectedVal) && IsEmptyString(selectedText)){
-            if(this.props.fetchingErr != null){
-                setTimeout(() => {
-                    self.selectItem(null);
-                }, 50);
-            }
-            else{
-                if(this.props.optionsData.options_arr == null){
-                    selectedVal = null;
-                    if(!this.props.fetching)
-                    {
-                        if(this.autoPullTO == null){
-                            this.autoPullTO = setTimeout(() => {
-                                self.props.pullDataSource();
-                                self.autoPullTO = null;
-                            }, 50);
+
+        if(!IsEmptyString(selectedVal)){
+            if(IsEmptyString(selectedText))
+            {
+                if(this.props.fetchingErr != null){
+                    setTimeout(() => {
+                        self.selectItem(null);
+                    }, 50);
+                }
+                else{
+                    if(this.props.optionsData.options_arr == null){
+                        selectedVal = null;
+                        if(!this.props.fetching)
+                        {
+                            if(this.autoPullTO == null){
+                                this.autoPullTO = setTimeout(() => {
+                                    self.props.pullDataSource();
+                                    self.autoPullTO = null;
+                                }, 50);
+                            }
                         }
+                    }
+                    else{
+                        var theOptionItem = this.props.optionsData.options_arr.find(item => {
+                            return item.value == selectedVal;
+                        });
+                        selectedText = theOptionItem ? theOptionItem.text : null;
+                        setTimeout(() => {
+                            self.selectItem(theOptionItem);
+                        }, 50);
+                    }
+                }
+            }
+            else if(this.props.optionsData.options_arr){
+                var selectedOptionItem = this.props.optionsData.options_arr.find(item => {
+                    return item.value == selectedVal;
+                });
+                if(selectedOptionItem){
+                    if(selectedOptionItem.text != selectedText){
+                        setTimeout(() => {
+                            self.selectItem(selectedOptionItem);
+                        }, 50);
                     }
                 }
                 else{
-                    var theOptionItem = this.props.optionsData.options_arr.find(item => {
-                        return item.value == selectedVal;
-                    });
-                    selectedText = theOptionItem ? theOptionItem.text : null;
                     setTimeout(() => {
-                        self.selectItem(theOptionItem);
+                        self.selectItem(null);
                     }, 50);
                 }
             }
@@ -753,10 +774,11 @@ const formatERPC_DropDown_options = (orginData_arr, textAttrName, valueAttrName,
     return rlt;
 }
 
-const ERPC_DropDown_optionsSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName, formatERPC_DropDown_options);
+const ERPC_selector_map = {};
 
 function ERPC_DropDown_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
+    var fullPath = MakePath(ownprops.parentPath, ownprops.id);
+    var ctlState = getStateByPath(state, fullPath, {});
     if(ctlState.fetching){
         console.log('ctlState.fetching');
     }
@@ -764,13 +786,19 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
     if(ctlState.invalidInfo != gPreconditionInvalidInfo && ctlState.invalidInfo != gCantNullInfo){
         invalidInfo = ctlState.invalidInfo;
     }
+    var selectorid = fullPath + 'optionsData';
+    var optionsDataSelector = ERPC_selector_map[selectorid];
+    if(optionsDataSelector == null){
+        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName, formatERPC_DropDown_options);
+        ERPC_selector_map[selectorid] = optionsDataSelector;
+    }
     
     return {
         value: ctlState.value,
         text: ctlState.text,
         fetching: ctlState.fetching,
         fetchingErr: ctlState.fetchingErr,
-        optionsData: ERPC_DropDown_optionsSelector(state, ownprops),
+        optionsData: optionsDataSelector(state, ownprops),
         visible:ctlState.visible,
         invalidInfo : invalidInfo,
     };
@@ -1187,6 +1215,28 @@ function BaseIsValueValid(nowState,visibleBelongState, ctlState, value, valueTyp
     return null;
 }
 
+var gCToastMangerRef = React.createRef();
+var gCMessageBoxMangerRef = React.createRef();
+function SendToast(info, type, timeTime){
+    if(gCToastMangerRef.current){
+        gCToastMangerRef.current.toast(info, type, timeTime)
+    }
+    else{
+        console.warn('gCToastMangerRef为空');
+    }
+}
+
+function PopMessageBox(text,type,title,btns,callBack){
+    if(gCMessageBoxMangerRef.current){
+		var msg = new MessageBoxItem(text,type,title,btns,callBack);
+		gCMessageBoxMangerRef.current.addMessage(msg);
+        return msg;
+    }
+    else{
+        console.warn('gCMessageBoxMangerRef为空');
+    }
+}
+
 const EToastTime = {
 	Normal:5,
 	Long:10,
@@ -1199,15 +1249,6 @@ const EToastType = {
 	Error:'error',
 };
 
-var gCToastMangerRef = React.createRef();
-function SendToast(info, type, timeTime){
-    if(gCToastMangerRef.current){
-        gCToastMangerRef.current.toast(info, type, timeTime)
-    }
-    else{
-        console.warn('gCToastMangerRef为空');
-    }
-}
 class CToastManger extends React.PureComponent{
 	constructor(props){
 		super(props);
@@ -1278,3 +1319,257 @@ class CToastManger extends React.PureComponent{
 		</div>);
 	}
 }
+
+const EMessageBoxType={
+	Tip:'tip',
+	Warning:'warning',
+	Error:'error',
+	Loading:'loading',
+};
+
+const EMessageBoxBtnType={
+	Ok:{
+		label:'确认',
+		key:'OK',
+		class:'btn btn-success',
+	},
+	Aware:{
+		label:'知道了',
+		key:'OK',
+		class:'btn btn-info',
+	},
+	Cancel:{
+		label:'取消',
+		key:'CANCEL',
+		class:'btn btn-danger',
+	},
+};
+
+class MessageBoxItem{
+	constructor(text,type,title,btns,callBack){
+		this.type = type;
+		this.text = text;
+		this.btns = btns;
+		this.title = title;
+		this.callBack = callBack;
+	}
+
+	setData(text,type,title,btns){
+		var changed = false;
+		if(type != this.type)
+		{
+			this.type = type;
+			changed = true;
+		}
+		if(text != this.text)
+		{
+			this.text = text;
+			changed = true;
+		}
+		if(title != this.title)
+		{
+			this.title = title;
+			changed = true;
+		}
+		if(btns != this.btns)
+		{
+			this.btns = btns;
+			changed = true;
+		}
+		if(changed){
+			this.fireChanged();
+		}
+	}
+
+	fireChanged(){
+		if(this.changedAct != null){
+			this.changedAct();
+		}
+	}
+
+	fireClose(){
+		if(this.closeAct != null){
+			this.closeAct();
+		}
+	}
+
+	setType(val){
+		this.type = val;
+		this.fireChanged();
+	}
+
+	setText(val){
+		this.text = val;
+		this.fireChanged();
+	}
+
+	setTitle(val){
+		this.title = val;
+		this.fireChanged();
+	}
+
+	setBtns(val){
+		this.btns = val;
+		this.fireChanged();
+	}
+}
+
+
+
+class CMessageBox extends React.PureComponent{
+	constructor(props){
+		super(props);
+		autoBind(this);
+		
+		this.state={
+		};
+		this.props.msgItem.changedAct = this.msgItemChanedHandler;
+		this.props.msgItem.closeAct = this.msgItemCloseHandler;
+	}
+
+	msgItemChanedHandler(ev){
+		this.setState({
+			magicObj:{},
+		});
+	}
+
+	componentWillUnmount(){
+		this.props.msgItem.changedAct = null;
+		this.props.msgItem.closeAct = null;
+		
+		if(this.timeInt){
+			clearInterval(this.timeInt);
+			this.timeInt = null;
+		}
+	}
+
+	timerHander(ev){
+		var now = (new Date()).getTime();
+		var pssSec =  Math.round((now - this.startTime) / 100) / 10;
+		this.setState({
+			passSec:pssSec,
+		});
+	}
+
+	clickBtnHandler(ev){
+		var msgItem = this.props.msgItem;
+		this.props.manager.delete(this);
+		if(msgItem.callBack){
+			msgItem.callBack(ev.target.getAttrbute('d-type'));
+		}
+	}
+
+	msgItemCloseHandler(ev){
+		this.props.manager.delete(this);
+	}
+
+	render(){
+		var msgItem = this.props.msgItem;
+		var type = msgItem.type;
+		
+		var contentElem = null;
+		var headerElem = null;
+		var btnsElem = null;
+		
+		if(type == EMessageBoxType.Loading){
+			var passSec = 0;
+			if(this.timeInt == null){
+				this.startTime = (new Date()).getTime();
+				this.timeInt = setInterval(this.timerHander, 200);
+			}
+			else{
+				passSec = this.state.passSec;
+			}
+			headerElem = (<span>{msgItem.title}<span className='badge badge-primary'>处理中</span><i className='fa fa-spinner fa-spin' />{passSec}s</span>);
+			contentElem = (<p className='messageBoxContent'>{msgItem.text}</p>);
+		}
+		else{
+			if(this.timeInt != null){
+				clearInterval(this.timeInt);
+				this.timeInt = null;
+			}
+			switch(type){
+				case EMessageBoxType.Tip:
+				headerElem = (<span><span className='badge badge-info'>信息</span>{msgItem.title}</span>);
+				break;
+				case EMessageBoxType.Error:
+				headerElem = (<span><span className='badge badge-danger'>错误</span>{msgItem.title}</span>);
+				btnsElem = (<button type='button' className='btn btn-danger'>了解</button>);
+				break;
+				case EMessageBoxType.Warning:
+				headerElem = (<span><span className='badge badge-warning'>警告</span>{msgItem.title}</span>);
+				btnsElem = (<button type='button' className='btn btn-warning'>了解</button>);
+				break;
+			}
+			if(msgItem.btns == null){
+				btnsElem = (<button onClick={this.clickBtnHandler} d-type={EMessageBoxBtnType.Aware.key} type='button' className={EMessageBoxBtnType.Aware.class}>{EMessageBoxBtnType.Aware.label}</button>);
+			}
+			else{
+				btnsElem = msgItem.btns.map(btn=>{
+					return (<button onClick={this.clickBtnHandler} key={btn.label} d-type={btn.key} type='button' className={btn.class}>{btn.label}</button>);
+				});
+			}
+			contentElem = (<p className='messageBoxContent'>{msgItem.text}</p>);
+			/*
+			iconElem = <i className='fa fa-window-close text-danger' />
+			times-circle
+			exclamation-circle
+			commenting
+			*/
+		}
+		
+		return (<div className="messageBox autoScroll_Touch" tabIndex="-1" role="dialog">
+			<div className="modal-content">
+				<div className="modal-header">
+				<h5 className="modal-title">{headerElem}</h5>
+				</div>
+				<div className="modal-body">
+					{contentElem}
+				</div>
+				<div className="modal-footer">
+					{btnsElem}
+				</div>
+			</div>
+		</div>);
+	}
+}
+
+class CMessageBoxManger extends React.PureComponent{
+	constructor(props){
+		super(props);
+		autoBind(this);
+		
+		this.state={
+			msg_arr:[],
+		};
+		this.msgID = 0;
+	}
+
+	addMessage(msgItem){
+		this.setState({
+			msg_arr:this.state.msg_arr.concat(msgItem),
+		});
+	}
+
+	delete(item){
+		var newarr = this.state.msg_arr.filter(msg=>{return item == msg;});
+		this.setState({
+			msg_arr:newarr,
+		});
+	}
+
+	render(){
+		var msg_arr = this.state.msg_arr;
+		if(msg_arr.length == 0){
+			return null;
+		}
+		return (<div className='messageBoxMask'>
+					{
+						msg_arr.map((msg,index)=>{
+							return <CMessageBox key={1} msgItem={msg} manager={this} />
+						})
+					}
+				</div>);
+	}
+}
+

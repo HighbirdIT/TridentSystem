@@ -210,7 +210,7 @@ var AttrNames = {
     InvalidInfo: 'invalidInfo',
 
     Event: {
-        OnClick: 'onclik'
+        OnClick: 'onclick'
     },
 
     LayoutNames: {
