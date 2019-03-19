@@ -182,9 +182,10 @@ const AttrNames={
     InteractiveType:'interactivetype',
     InteractiveField:'interactivefield',
     ValidChecker:'validchecker',
+    InvalidInfo:'invalidInfo',
 
     Event:{
-        OnClick:'onclik'
+        OnClick:'onclick'
     },
 
     LayoutNames:{

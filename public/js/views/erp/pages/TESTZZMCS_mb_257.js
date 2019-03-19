@@ -59,12 +59,6 @@ function bind_M_Form_1(retState, newIndex, oldIndex) {
 	needSetState['M_Text_3.value'] = M_Text_3_defaultvalue_get(retState, bundle);
 	needSetState['M_Text_5.value'] = '17:30';
 	needSetState['invalidbundle'] = false;
-
-	needSetState['M_Dropdown_1.invalidInfo'] = null;
-	needSetState['M_Text_1.invalidInfo'] = null;
-	needSetState['M_Text_2.invalidInfo'] = null;
-	needSetState['M_Text_3.invalidInfo'] = null;
-	needSetState['M_Text_5.invalidInfo'] = null;
 	return setManyStateByPath(retState, 'M_Page_2.M_Form_1', needSetState);
 }
 function pull_M_Form_1(retState) {
@@ -290,8 +284,8 @@ function button_4_onclik() {
 	var hadValidErr = false;
 	var validErrState = {};
 	var callback_final = function callback_final(state, data, err) {
-		store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
 		SendToast('验证失败，无法执行', EToastType.Warning);
+		store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
 	};
 	validErr = BaseIsValueValid(state, M_LC_0_state, M_Dropdown_0_state, M_Dropdown_0_value, 'string', 'false', 'M_Dropdown_0', validErrState);
 	validErrState['M_Page_2.M_Form_1.M_Dropdown_0.invalidInfo'] = validErr;

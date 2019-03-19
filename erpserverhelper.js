@@ -26,6 +26,12 @@ helper.commonProcess = (req, res, next, action_map) => {
         };
         res.json(rlt);
     }
+    else if(req.session.g_envVar == null){
+        rlt.err = {
+            info: '登录信息失效，无法使用'
+        };
+        res.json(rlt);
+    }
     else{
         var processer = action_map[req.body.action];
         if(processer == null){
@@ -85,6 +91,23 @@ helper.JsObjectToString = (obj)=>{
 	}
 	
 	return rltStr;
+};
+
+helper.IsEmptyObject = (val)=>{
+	for(var si in val){
+		if(val[si] != null){
+			return false;
+		}
+	}
+	return true;
+};
+
+helper.IsEmptyString = (val)=>{
+    return val == null || val === '';
+};
+
+helper.IsEmptyArray = (val)=>{
+    return Array.isArray(val) && val.length == 0;
 };
 
 module.exports = helper;

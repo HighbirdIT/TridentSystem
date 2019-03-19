@@ -62,6 +62,9 @@ class DataBase extends EventEmitter{
     }
 
     getEntityByCode(code){
+        if(isNaN(code)){
+            console.error('getDataSourceByCode只接受整数');
+        }
         var rlt = this.entityCode_map[code.toString()];
         if(rlt == null){
             rlt = this.createEnity({code:code});
@@ -76,7 +79,13 @@ class DataBase extends EventEmitter{
     }
 
     getEntitiesByType(tType){
+        if(tType == null){
+            tType = '*';
+        }
         return this.entities_arr.filter(e=>{
+            if(tType == '*'){
+                return true;
+            }
             return e.type == tType;
         }).concat(EmptyDBEntity);
     }
@@ -156,6 +165,18 @@ class DBEntity extends EventEmitter{
 
     toString(){
         return IsEmptyString(this.name) ? this.code : this.name;
+    }
+
+    isScalar(){
+        return this.type == 'FB';
+    }
+
+    isFunction(){
+        return this.type == 'FB' || this.type == 'FT';
+    }
+
+    getParams(){
+        return this.params;
     }
 }
 

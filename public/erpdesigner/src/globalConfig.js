@@ -206,6 +206,7 @@ DesignerConfig.getMobileCanLabeledControls = (function () {
 
 const ValueType = {
     String: 'string',
+    Array: 'array',
     Int: 'int',
     Boolean: 'boolean',
     Float: 'float',
@@ -218,7 +219,8 @@ const ValueType = {
     Unknown: 'Unknown',
     Any: '任意',
     Event:'event',
-    Script:'script'
+    Script:'script',
+    Object:'Object',
 };
 
 const VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

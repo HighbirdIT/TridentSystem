@@ -70,9 +70,19 @@ const JSNodeEditorControls_arr =[
         type:'运算'
     },
     {
-        label:'查询FB',
-        nodeClass:JSNode_QueryFB,
+        label:'查询SQL',
+        nodeClass:JSNode_Query_Sql,
         type:'数据库交互'
+    },
+    {
+        label:'数组-长度',
+        nodeClass:JSNode_Array_Length,
+        type:'数组操纵'
+    },
+    {
+        label:'创建自订错误',
+        nodeClass:JSNode_Create_Cuserror,
+        type:'错误控制'
     },
 ];
 

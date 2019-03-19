@@ -601,6 +601,40 @@ class JSFile_IF extends FormatFileBlock{
     }
 }
 
+class JSFile_Try extends FormatFileBlock{
+    constructor(name){
+        super(name);
+
+        this.bodyBlock = new FormatFileBlock('body');
+        this.errorBlock = new FormatFileBlock('error');
+    }
+
+    clone(){
+        var rlt = new JSFile_Try(this.name);
+        rlt.bodyBlock = this.bodyBlock.clone();
+        rlt.errorBlock = this.errorBlock.clone();
+        return rlt;
+    }
+
+    pushChild(){
+        console.error("try block can't call pushChild");
+    }
+
+    pushLine(lineItem, indentOffset){
+        this.bodyBlock.pushLine(lineItem, indentOffset);
+    }
+
+    getString(prefixStr, indentChar, newLineChar){
+        var rlt = prefixStr + 'try{' + newLineChar;
+        rlt += this.bodyBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
+        rlt += prefixStr + '}' + newLineChar;
+        rlt += prefixStr + 'catch(eo){' + newLineChar;
+        rlt += this.errorBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
+        rlt += prefixStr + '}' + newLineChar;
+        return rlt;
+    }
+}
+
 class JSFile_Funtion extends FormatFileBlock{
     constructor(name, params_arr, declareType){
         super(name);

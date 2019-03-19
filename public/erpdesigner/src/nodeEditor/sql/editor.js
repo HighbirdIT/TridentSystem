@@ -1170,7 +1170,7 @@ class SqlDef_Variable_Component extends React.PureComponent{
 
     isParamChangedHandler(newData){
         this.setState({
-            isParam:newData.code,
+            isParam:newData,
         });
     }
 

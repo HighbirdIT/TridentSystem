@@ -59,12 +59,6 @@ function bind_M_Form_1(retState, newIndex, oldIndex) {
 	needSetState['M_Text_3.value'] = M_Text_3_defaultvalue_get(retState, bundle);
 	needSetState['M_Text_5.value'] = '17:30';
 	needSetState['invalidbundle'] = false;
-
-	needSetState['M_Dropdown_1.invalidInfo'] = null;
-	needSetState['M_Text_1.invalidInfo'] = null;
-	needSetState['M_Text_2.invalidInfo'] = null;
-	needSetState['M_Text_3.invalidInfo'] = null;
-	needSetState['M_Text_5.invalidInfo'] = null;
 	return setManyStateByPath(retState, 'M_Page_2.M_Form_1', needSetState);
 }
 function pull_M_Form_1(retState) {
@@ -72,7 +66,7 @@ function pull_M_Form_1(retState) {
 	return retState;
 }
 function M_Dropdown_0_defaultvalue_get(state, bundle) {
-	return 2;
+	return g_envVar.userid;
 }
 function pull_M_Dropdown_0() {
 	var bundle = {};
@@ -111,7 +105,7 @@ function M_Text_4_defaultvalue_get(state, bundle) {
 	validErrState['M_Page_2.M_Form_1.M_Dropdown_1.invalidInfo'] = validErr;
 	if (validErr != null) hadValidErr = true;
 	if (hadValidErr) {
-		return callback_final(state, null, { info: '前置条件不足' });
+		return callback_final(state, null, { info: gPreconditionInvalidInfo });
 	}
 	var fetchid = Math.round(Math.random() * 999999);
 	fetchTracer['M_Text_4_defaultvalue_get'] = fetchid;
@@ -168,7 +162,7 @@ function M_Text_1_validchecker(nowValue, comeState, comeValidErrState) {
 	}
 	if (validErr != null) hadValidErr = true;
 	if (hadValidErr) {
-		return callback_final(state, null, { info: '前置条件不足' });
+		return callback_final(state, null, { info: gPreconditionInvalidInfo });
 	}
 	startDate_1 = new Date(nowValue);
 	nowDate_1 = getNowDate();
@@ -202,18 +196,12 @@ function M_LC_3_isdisplay_get(state, bundle) {
 	validErrState['M_Page_2.M_Form_1.M_Dropdown_1.invalidInfo'] = validErr;
 	if (validErr != null) hadValidErr = true;
 	if (hadValidErr) {
-		return callback_final(state, null, { info: '前置条件不足' });
+		return callback_final(state, null, { info: gPreconditionInvalidInfo });
 	}
 	return M_Dropdown_1_value == 11;
 }
 function M_Text_2_defaultvalue_get(state, bundle) {
 	return getFormatTimeString(getNowDate(), false);
-}
-function M_Label_0_isdisplay_get(state, bundle) {
-	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1', {});
-	var M_LC_3_state = getStateByPath(M_Form_1_state, 'M_LC_3', {});
-	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : M_LC_3_state.visible;
-	return M_LC_3_visible == true;
 }
 function M_Text_3_validchecker(nowValue, comeState, comeValidErrState) {
 	var state = store.getState();
@@ -244,7 +232,7 @@ function M_Text_3_validchecker(nowValue, comeState, comeValidErrState) {
 	}
 	if (validErr != null) hadValidErr = true;
 	if (hadValidErr) {
-		return callback_final(state, null, { info: '前置条件不足' });
+		return callback_final(state, null, { info: gPreconditionInvalidInfo });
 	}
 	if (getDateDiff('天', nowValue, M_Text_1_value) < 0) {
 		return '必须大于等于起始日期';
@@ -290,8 +278,9 @@ function button_4_onclik() {
 	var hadValidErr = false;
 	var validErrState = {};
 	var callback_final = function callback_final(state, data, err) {
-		store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
 		SendToast('验证失败，无法执行', EToastType.Warning);
+		store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
+		SendToast('执行成功');
 	};
 	validErr = BaseIsValueValid(state, M_LC_0_state, M_Dropdown_0_state, M_Dropdown_0_value, 'string', 'false', 'M_Dropdown_0', validErrState);
 	validErrState['M_Page_2.M_Form_1.M_Dropdown_0.invalidInfo'] = validErr;
@@ -318,7 +307,7 @@ function button_4_onclik() {
 	validErrState['M_Page_2.M_Form_1.M_Text_6.invalidInfo'] = validErr;
 	if (validErr != null) hadValidErr = true;
 	if (hadValidErr) {
-		return callback_final(state, null, { info: '前置条件不足' });
+		return callback_final(state, null, { info: gPreconditionInvalidInfo });
 	}
 	var fetchid = Math.round(Math.random() * 999999);
 	fetchTracer['button_4_onclik'] = fetchid;
@@ -356,7 +345,6 @@ function M_Dropdown_1_value_changed(state, newValue, oldValue, path, visited, de
 }
 function M_LC_3_visible_changed(state, newValue, oldValue, path, visited, delayActs) {
 	var needSetState = {};
-	needSetState['M_Page_2.M_Form_1.M_Label_0.visible'] = M_Label_0_isdisplay_get(state);
 	needSetState['M_Page_2.M_Form_1.M_LC_6.visible'] = M_LC_6_isdisplay_get(state);
 	return setManyStateByPath(state, '', needSetState);
 }
@@ -535,7 +523,6 @@ var CM_Form_1 = function (_React$PureComponent3) {
 					{ id: 'M_LC_3', parentPath: 'M_Page_2.M_Form_1', label: '\u8D77\u59CB\u65F6\u95F4' },
 					React.createElement(VisibleERPC_Text, { id: 'M_Text_2', parentPath: 'M_Page_2.M_Form_1', type: 'time' })
 				),
-				React.createElement(VisibleERPC_Label, { className: 'text-primary erp-control ', id: 'M_Label_0', parentPath: 'M_Page_2.M_Form_1', text: '\u5F53\u65E5\u4E34\u65F6\u5047\u7684\u8D77\u59CB\u65F6\u95F4\u4ECE\u767B\u8BB0\u7684\u4E00\u523B\u5F00\u59CB\uFF0C\u4E0D\u53EF\u53D8\u66F4\u3002' }),
 				React.createElement(
 					VisibleERPC_LabeledControl,
 					{ id: 'M_LC_4', parentPath: 'M_Page_2.M_Form_1', label: '\u7ED3\u675F\u65E5\u671F' },
