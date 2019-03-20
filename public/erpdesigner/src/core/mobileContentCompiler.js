@@ -419,6 +419,9 @@ class MobileContentCompiler extends ContentCompiler {
         else if (valType == ValueType.String) {
             var linetype = theKernel.getAttribute(AttrNames.LineType);
             switch (linetype) {
+                case LineType_Single:
+                    ctlTag.setAttr('linetype', 'single');
+                    break;
                 case LineType_BigMulti:
                     ctlTag.setAttr('linetype', '2x');
                     break;

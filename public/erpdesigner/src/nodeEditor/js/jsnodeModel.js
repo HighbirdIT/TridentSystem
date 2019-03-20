@@ -23,6 +23,7 @@ const JSNODE_QUERY_SQL = 'querysql';
 const JSNODE_CALLONFETCHEND = 'callonfetchend';
 const JSNODE_ARRAY_LENGTH = 'arraylength';
 const JSNODE_CREATE_CUSERROR = 'createcuserror';
+const JSNODE_FRESH_FORM = 'freshform';
 
 const JSDEF_VAR = 'def_variable';
 
@@ -633,7 +634,7 @@ class JSNode_BluePrint extends EventEmitter {
                     varObj.ctlStateVar,
                     varObj.valueVar,
                     singleQuotesStr(valueType),
-                    singleQuotesStr(varObj.nullable.toString()),
+                    varObj.nullable.toString(),
                     singleQuotesStr(varObj.kernel.id),
                     validErrStateVar.name
                 ]) + ";");
@@ -666,11 +667,28 @@ class JSNode_BluePrint extends EventEmitter {
         var startFtech_bk = null;
         if (theFun.hadServerFetch) {
             needFinalCallback = true;
+
             theFun.headBlock.pushLine("var fetchid = Math.round(Math.random() * 999999);");
             theFun.headBlock.pushLine("fetchTracer['" + theFun.name + "'] = fetchid;");
             startFtech_bk = new FormatFileBlock('startfetch');
             theFun.headBlock.pushChild(startFtech_bk);
             theFun.startFtech_bk = startFtech_bk;
+            /*
+            var hadActiveCallFinal = compilHelper.compileSeq.find(node=>{return node.type == JSNODE_CALLONFETCHEND;});
+            if (!hadActiveCallFinal) {
+                // 检查有没有主动调用final
+                if(this.group != EJsBluePrintFunGroup.CtlEvent){
+                    compilHelper.logManager.error('蓝图有后台fetch，但没有主动callfetchend');
+                    return false;
+                }
+                // CtlEvent 的蓝图自动加上callfetchend
+                if(theFun.defaultBlock == null){
+                    compilHelper.logManager.error('没有设置defaultBlock');
+                    return false;
+                }
+                theFun.defaultBlock.pushLine("return callback_final(state,null,null);");
+            }
+            */
         }
         if (needFinalCallback) {
             finalCallBack_bk.pushLine('var callback_final = (state, data, err)=>{', 1);
@@ -698,8 +716,7 @@ class JSNode_BluePrint extends EventEmitter {
                 var msgBoxVarName = this.id + '_msg';
                 theFun.scope.getVar(msgBoxVarName, true, 'null');
                 var ctlName = ctlKernel.getAttribute(AttrNames.Name);
-                if(startFtech_bk)
-                {
+                if (startFtech_bk) {
                     startFtech_bk.pushLine(makeLine_Assign(msgBoxVarName, "PopMessageBox('',EMessageBoxType.Loading, '" + ctlName + "');"));
                 }
 
@@ -2479,7 +2496,7 @@ class JSNODE_Insert_table extends JSNode_Base {
             insertSqlStr += ')';
             valuesStr += ')';
         }
-        else if(postCheckBlock){
+        else if (postCheckBlock) {
             postCheckBlock.pushLine(insertPartVar.name + " += ')';");
             postCheckBlock.pushLine(valuePartVar.name + " += ')';");
         }
@@ -2490,7 +2507,7 @@ class JSNODE_Insert_table extends JSNode_Base {
             paramInitBlock.subNextIndent();
             paramInitBlock.pushLine('];');
         }
-        
+
 
         // make client
         helper.compilingFun.hadServerFetch = true;
@@ -2521,6 +2538,8 @@ class JSNODE_Insert_table extends JSNode_Base {
         selfCompileRet.setSocketOut(this.errInfoOutSocket, errorVarName + ".info");
         helper.setCompileRetCache(this, selfCompileRet);
 
+        helper.compilingFun.defaultBlock = errCheckIf.trueBlock;
+
         var trueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.sucessFlowSocket);
         if (trueFlowLinks_arr.length > 0) {
             this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock);
@@ -2546,6 +2565,7 @@ class JSNODE_Insert_table extends JSNode_Base {
         if (serverFalseFlowLinks_arr.length > 0) {
             this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock);
         }
+        
 
         //var finalStr = 'insert ' + midbracketStr(useDS.name) + '(' + insertColumnStr + ') values(' + insertValueStr + ')'
         //console.log(finalStr);
@@ -3146,7 +3166,7 @@ class JSNode_Query_Sql extends JSNode_Base {
                 this.targetEntity = project.dataMaster.getDataSourceByCode(tem_arr[1]);
                 if (this.targetEntity) {
                     this.targetEntity.on('syned', this.entitySynedHandler);
-                    if(this.targetEntity.isCustomDS){
+                    if (this.targetEntity.isCustomDS) {
                         this.entitySynedHandler();
                     }
                 }
@@ -3436,6 +3456,8 @@ class JSNode_Query_Sql extends JSNode_Base {
         myJSBlock.pushLine('},false)));');
         myJSBlock.subNextIndent();
         myJSBlock.pushLine('}, 50);');
+
+        helper.compilingFun.defaultBlock = fetchEndBlock;
 
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
@@ -3824,6 +3846,118 @@ class JSNode_Create_Cuserror extends JSNode_Base {
     }
 }
 
+class JSNode_FreshForm extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_FRESH_FORM, 'FreshForm', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+            }
+        }
+
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inSocket);
+        }
+
+        this.inSocket.inputable = false;
+        this.inSocket.type = SocketType_CtlKernel;
+        this.inSocket.kernelType = M_FormKernel_Type;
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketValue = null;
+        var theSocket = this.inSocket;
+        var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+        if (datalinks_arr.length == 0) {
+            var selectedCtlid = theSocket.getExtra('ctlid');
+            var selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
+            if (selectedKernel != null) {
+                socketValue = selectedCtlid;
+            }
+        }
+        else {
+            var dataLink = datalinks_arr[0];
+            var outNode = dataLink.outSocket.node;
+            var compileRet = null;
+            if (outNode.isHadFlow()) {
+                compileRet = helper.getCompileRetCache(outNode);
+                if (compileRet == null) {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle,
+                        nodeThis,
+                        helper.clickLogBadgeItemHandler),
+                        '输入接口设置错误']);
+                    return false;
+                }
+            }
+            else {
+                compileRet = outNode.compile(helper, usePreNodes_arr);
+            }
+            if (compileRet == false) {
+                return false;
+            }
+            socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
+        }
+        if(IsEmptyString(socketValue)){
+            // 探寻目标formkernel
+            if(this.bluePrint.ctlKernel == null){
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    '无法定目标FORM']);
+                return false;
+            }
+            var formKernel = this.bluePrint.ctlKernel.searchParentKernel([M_FormKernel_Type], true);
+            if(formKernel == null){
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    '无法定目标FORM']);
+                return false;
+            }
+            socketValue = formKernel.id;
+        }
+        var freshFunName = 'fresh_' + socketValue;
+
+        var myJSBlock = new FormatFileBlock('ret');
+        myJSBlock.pushLine(makeStr_callFun(freshFunName, ['state']));
+        belongBlock.pushChild(myJSBlock);
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
+
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_VAR_GET] = {
     modelClass: JSNode_Var_Get,
     comClass: C_JSNode_Var_Get,
@@ -3918,5 +4052,9 @@ JSNodeClassMap[JSNODE_ARRAY_LENGTH] = {
 };
 JSNodeClassMap[JSNODE_CREATE_CUSERROR] = {
     modelClass: JSNode_Create_Cuserror,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_FRESH_FORM] = {
+    modelClass: JSNode_FreshForm,
     comClass: C_Node_SimpleNode,
 };

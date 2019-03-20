@@ -1320,6 +1320,7 @@ class SqlNode_CompileHelper{
         this.useGlobalControls_map = {};
         this.useForm_map = {};
         this.useEnvVars = {};
+        this.compileSeq = [];
 
         autoBind(this);
     }
@@ -1328,6 +1329,7 @@ class SqlNode_CompileHelper{
         if(this.startNode == null){
             this.startNode = theNode;
         }
+        this.compileSeq.push(theNode);
     }
 
     addUseEnvVars(varKey){

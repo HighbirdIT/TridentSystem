@@ -84,6 +84,11 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_Create_Cuserror,
         type:'错误控制'
     },
+    {
+        label:'刷新表单',
+        nodeClass:JSNode_FreshForm,
+        type:'表单控制'
+    },
 ];
 
 

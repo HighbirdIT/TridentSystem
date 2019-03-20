@@ -183,6 +183,7 @@ const AttrNames={
     InteractiveField:'interactivefield',
     ValidChecker:'validchecker',
     InvalidInfo:'invalidInfo',
+    ListFormContent:'listFormContent',
 
     Event:{
         OnClick:'onclick'

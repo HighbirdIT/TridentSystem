@@ -169,8 +169,8 @@ class M_DropdownKernel extends ControlKernelBase {
         return getDSAttrCanuseColumns.call(this,AttrNames.DataSource,AttrNames.CustomDataSource);
     }
 
-    renderSelf() {
-        return (<M_Dropdown key={this.id} ctlKernel={this} onClick={this.clickHandler} />)
+    renderSelf(clickHandler) {
+        return (<M_Dropdown key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {

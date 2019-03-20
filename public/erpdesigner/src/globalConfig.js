@@ -216,6 +216,7 @@ const ValueType = {
     StyleValues: 'StyleValues',
     DataSource: 'DataSource',
     CustomDataSource: 'CustomDataSource',
+    ListFormContent:'listFormContent',
     Unknown: 'Unknown',
     Any: '任意',
     Event:'event',

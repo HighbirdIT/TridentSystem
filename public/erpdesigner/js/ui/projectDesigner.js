@@ -28,6 +28,7 @@ var ProjectDesigner = function (_React$PureComponent) {
         _this.scriptMasterPanelRef = React.createRef();
         _this.quickScriptEditPanelRef = React.createRef();
         _this.quickSqlBPEditPanelRef = React.createRef();
+        _this.quickListFormContentEditPanelRef = React.createRef();
         autoBind(_this);
         _this.props.project.designer = _this;
 
@@ -242,6 +243,13 @@ var ProjectDesigner = function (_React$PureComponent) {
             }
         }
     }, {
+        key: 'editListFormContent',
+        value: function editListFormContent(formKernel) {
+            if (this.quickListFormContentEditPanelRef.current != null) {
+                this.quickListFormContentEditPanelRef.current.showKernel(formKernel);
+            }
+        }
+    }, {
         key: 'rightNavChanged',
         value: function rightNavChanged(oldItem, newItem) {
             this.setState({
@@ -261,6 +269,7 @@ var ProjectDesigner = function (_React$PureComponent) {
                 React.createElement(ScriptMasterPanel, { ref: this.scriptMasterPanelRef, project: thisProject }),
                 React.createElement(QuickScriptEditPanel, { ref: this.quickScriptEditPanelRef, project: thisProject }),
                 React.createElement(QuickSqlBPEditPanel, { ref: this.quickSqlBPEditPanelRef, project: thisProject }),
+                React.createElement(QuickListFormContentEditPanel, { ref: this.quickListFormContentEditPanelRef, project: thisProject }),
                 React.createElement(SplitPanel, {
                     defPercent: 0.15,
                     barClass: 'bg-secondary',
