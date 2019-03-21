@@ -593,13 +593,13 @@ var SqlBPEditPanel = function (_React$PureComponent6) {
                 return;
             }
             var type = this.typeRef.current.getValue();
+            var title = this.typeRef;
             if (type.length == 0) {
                 this.setState({
                     errinfo: '必须选择类型'
                 });
                 return;
             }
-            var targetBP = this.props.targetBP;
             if (targetBP == null) {
                 targetBP = this.props.dataMaster.createSqlBP(name, type);
             } else {

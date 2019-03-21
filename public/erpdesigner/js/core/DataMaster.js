@@ -331,6 +331,7 @@ var DataMaster = function (_EventEmitter4) {
             sqpBP.name = name;
             sqpBP.type = type;
             this.emit('sqlbpchanged');
+            sqpBP.fireChanged();
         }
     }, {
         key: 'deleteSqlBP',
