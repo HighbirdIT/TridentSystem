@@ -27,7 +27,6 @@
   <div id="reactRoot" class="w-100 h-100">
   </div>
     <script src="https://cdn.bootcss.com/prop-types/15.6.2/prop-types.min.js"></script>
-    <script src="https://cdn.bootcss.com/reselect/4.0.0-beta.1/reselect.min.js"></script>
     <script src="https://cdn.bootcss.com/babel-polyfill/7.2.5/polyfill.min.js"></script>
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.slim.min.js"></script>
     <script src="https://cdn.bootcss.com/popper.js/1.14.6/umd/popper.min.js"></script>
@@ -44,9 +43,11 @@
     {{#if isProduction}}
     <script src="https://cdn.bootcss.com/redux/4.0.1/redux.min.js"></script>
     <script src="/vendor/js/react-redux.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reselect/3.0.1/reselect.min.js"></script>
     {{else}}
     <script src="https://cdn.bootcss.com/redux/4.0.1/redux.js"></script>
     <script src="/vendor/js/react-redux.js"></script>
+    <script src="https://cdn.bootcss.com/reselect/4.0.0-beta.1/reselect.js"></script>
     {{/if}}
     <script src="https://cdn.bootcss.com/fetch/2.0.4/fetch.min.js"></script>
     <script src="https://cdn.bootcss.com/EventEmitter/5.2.5/EventEmitter.min.js"></script>

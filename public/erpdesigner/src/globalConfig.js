@@ -97,6 +97,7 @@ const FunType_Server = 'server';
 const EJsBluePrintFunGroup={
     CtlAttr:'ctlattr',
     CtlEvent:'ctlevent',
+    CtlValid: 'ctlvalid',
 }
 
 const ESqlBluePrintGroup={
@@ -111,6 +112,14 @@ const EFormType={
 
 const FormTypes_arr = [EFormType.Page, EFormType.List];
 const ButtonClasses_arr = ['btn-primary', 'btn-secondary', 'btn-success', 'btn-danger', 'btn-warning', 'btn-info', 'btn-light', 'btn-dark', 'btn-link'];
+
+const EInterActiveType={
+    ReadOnly:'readonly',
+    ReadWrite:'readwrite',
+}
+
+const EInterActiveTypes_arr = [{text:'只读', value:EInterActiveType.ReadOnly}, {text:'读写', value:EInterActiveType.ReadWrite}];
+
 /**
  * 逻辑运算符 and or not
  */
@@ -119,6 +128,10 @@ var Logical_Operator_or = 'or';
 //var Logical_Operator_not = 'not';
 var Logical_Operators_arr = [Logical_Operator_and, Logical_Operator_or];
 
+const LineType_Single = '单行';
+const LineType_SmallMulti = '多行-小';
+const LineType_BigMulti = '多行-大';
+const LinteTypes_arr = [LineType_Single, LineType_SmallMulti, LineType_BigMulti];
 // union union all
 
 const Event_CurrentComponentchanged = 'currentComponentchanged';
@@ -193,6 +206,7 @@ DesignerConfig.getMobileCanLabeledControls = (function () {
 
 const ValueType = {
     String: 'string',
+    Array: 'array',
     Int: 'int',
     Boolean: 'boolean',
     Float: 'float',
@@ -202,9 +216,12 @@ const ValueType = {
     StyleValues: 'StyleValues',
     DataSource: 'DataSource',
     CustomDataSource: 'CustomDataSource',
+    ListFormContent:'listFormContent',
     Unknown: 'Unknown',
     Any: '任意',
-    Event:'event'
+    Event:'event',
+    Script:'script',
+    Object:'Object',
 };
 
 const VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

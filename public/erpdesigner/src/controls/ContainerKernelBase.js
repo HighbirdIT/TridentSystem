@@ -91,8 +91,20 @@ class ContainerKernelBase extends ControlKernelBase {
         childKernel.parent = null;
     }
 
-    getChildIndex(childKernel) {
-        return this.children.indexOf(childKernel);
+    swapChild(srcIndex, dstIndex) {
+        if(srcIndex == dstIndex){
+            return false;
+        }
+        if(srcIndex >= 0 && srcIndex < this.children.length){
+            if(dstIndex >= 0 && dstIndex < this.children.length){
+                var temp = this.children[srcIndex];
+                this.children[srcIndex] = this.children[dstIndex];
+                this.children[dstIndex] = temp;
+                this.attrChanged(AttrNames.Chidlren);
+                return true;
+            }
+        }
+        return false;
     }
 
     getJson() {

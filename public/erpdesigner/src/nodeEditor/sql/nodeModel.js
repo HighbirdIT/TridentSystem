@@ -151,6 +151,8 @@ class SqlNode_BluePrint extends EventEmitter {
         this.allNode_map = {};
         this.allVars_map = {};
         this.nodes_arr = [];
+        this.loaded = true;
+        this.isCustomDS = true;
 
         if (bluePrintJson != null) {
             assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'retNodeId', 'editorLeft', 'editorTop', 'group']);
@@ -192,6 +194,19 @@ class SqlNode_BluePrint extends EventEmitter {
         rlt.inSocket.type = this.finalSelectNode.inSocket.type;
         rlt.inSocket.inputable=this.finalSelectNode.inSocket.inputable;
         return rlt;
+    }
+
+    isScalar(){
+        return false;
+    }
+
+    isFunction(){
+        return false;
+    }
+
+    getParams(){
+        var rlt = this.vars_arr.filter(varData=>{return varData.isParam}); 
+        return rlt.length == 0 ? null : rlt;
     }
 
     genColumns(){
@@ -444,6 +459,7 @@ class SqlNode_BluePrint extends EventEmitter {
     }
 
     compile(compilHelper) {
+        this.genColumns();
         var ret = this.finalSelectNode.compile(compilHelper, []);
         if (ret == false) {
             return false;
@@ -3008,7 +3024,8 @@ const EnvVariable={
     wokerTypeCode:'ENV:员工工时状态代码',
     departmentCode:'ENV:所属部门名称代码',
     systemCode:'ENV:所属系统名称代码',
-    nowDate:'EBV:当前日期',
+    nowDate:'ENV:当前日期',
+    nowTime:'ENV:当前日期时间',
 }
 
 const EnvVariables_arr = [];

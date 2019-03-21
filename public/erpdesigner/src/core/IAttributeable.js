@@ -76,6 +76,9 @@ class IAttributeable extends EventEmitter{
     }
 
     getAttribute(attrName, index){
+        if(attrName == null){
+            console.error('attrName is null');
+        }
         if(index == null){
             var keypos = attrName.lastIndexOf('_');
             if(keypos != -1){
@@ -107,6 +110,7 @@ class IAttributeable extends EventEmitter{
                     case AttrNames.DataSource:
                     case AttrNames.ProcessTable:
                     case AttrNames.CustomDataSource:
+                    case AttrNames.ListFormContent:
                     break;
                     default:
                     if(attrItem.valueType == ValueType.CustomDataSource){
@@ -208,6 +212,9 @@ class IAttributeable extends EventEmitter{
                     }
                     switch(attr.valueType){
                         case ValueType.DataSource:
+                        val = val.code;
+                        break;
+                        case ValueType.ListFormContent:
                         val = val.code;
                         break;
                     }

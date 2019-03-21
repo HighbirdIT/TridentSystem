@@ -344,11 +344,15 @@ class ControlKernelBase extends IAttributeable {
     searchParentKernel(targetType, justFirst){
         var rlt = null;
         var tKernel = this.parent;
+        var isArray = false;
         if(targetType == null){
             targetType = '*';
         }
+        else if(Array.isArray(targetType)){
+            isArray = true;
+        }
         while(tKernel != null){
-            if(targetType == '*' || tKernel.type == targetType){
+            if(targetType == '*' || (!isArray && tKernel.type == targetType) || (isArray && targetType.indexOf(tKernel.type)!=-1)) {
                 if(justFirst){
                     return tKernel;
                 }
@@ -364,15 +368,22 @@ class ControlKernelBase extends IAttributeable {
         return rlt;
     }
 
-    searchChildKernel(targetType, justFirst, deepSearch){
+    searchChildKernel(targetType, justFirst, deepSearch, ignoreTypes){
         var rlt = null;
+        var isArray = false;
         if(targetType == null){
             targetType = '*';
+        }
+        else if(Array.isArray(targetType)){
+            isArray = true;
         }
         if(this.children && this.children.length > 0){
             for(var ci in this.children){
                 var child = this.children[ci];
-                if(targetType == '*' || child.type == targetType){
+                if(ignoreTypes != null && ignoreTypes.indexOf(child.type) != -1){
+                    continue;
+                }
+                if(targetType == '*' || (!isArray && child.type == targetType) || (isArray && targetType.indexOf(child.type)!=-1)) {
                     if(justFirst){
                         return child;
                     }
@@ -452,7 +463,28 @@ class ControlKernelBase extends IAttributeable {
             if(nowKernel){
                 nowKernel = nowKernel.parent;
             }
-        }while(nowKernel != null)
+        }while(nowKernel != null);
+        return rlt;
+    }
+
+    isAEditor(){
+        return this.parent && this.parent.editor == this;
+    }
+
+    canAppand(){
+        return true;
+    }
+
+    getTextValueFieldValue(){
+        var rlt = {};
+        var textAttr = this.findAttributeByName(AttrNames.TextField);
+        if(textAttr){
+            rlt.text = this.getAttribute(AttrNames.TextField);
+        }
+        var valueAttr = this.findAttributeByName(AttrNames.ValueField);
+        if(valueAttr){
+            rlt.value = this.getAttribute(AttrNames.ValueField);
+        }
         return rlt;
     }
 }

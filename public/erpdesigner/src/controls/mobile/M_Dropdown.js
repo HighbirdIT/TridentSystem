@@ -11,6 +11,8 @@ const M_DropdownKernelAttrsSetting = GenControlKernelAttrsSetting([
             group:EJsBluePrintFunGroup.CtlAttr,
         } ),
         genIsdisplayAttribute(),
+        genNullableAttribute(),
+        genValidCheckerAttribute(),
         new CAttribute('', AttrNames.CustomDataSource, ValueType.CustomDataSource, null, true),
         new CAttribute('自动感应消值', AttrNames.AutoClearValue, ValueType.Boolean, true),
         new CAttribute('数据分层', 'datagroup', ValueType.String, '', true, true, 'getCanuseColumns'),
@@ -167,8 +169,8 @@ class M_DropdownKernel extends ControlKernelBase {
         return getDSAttrCanuseColumns.call(this,AttrNames.DataSource,AttrNames.CustomDataSource);
     }
 
-    renderSelf() {
-        return (<M_Dropdown key={this.id} ctlKernel={this} onClick={this.clickHandler} />)
+    renderSelf(clickHandler) {
+        return (<M_Dropdown key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {
@@ -198,9 +200,9 @@ class M_DropdownKernel extends ControlKernelBase {
 }
 
 var M_DropdownKernel_api = new ControlAPIClass(M_DropdownKernel_Type);
-M_DropdownKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.TextField,M_DropdownKernelAttrsSetting), 'text'));
+M_DropdownKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.TextField,M_DropdownKernelAttrsSetting), 'text', true));
 M_DropdownKernel_api.pushApi(new ApiItem_propsetter('value'));
-M_DropdownKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.ValueField,M_DropdownKernelAttrsSetting), 'value'));
+M_DropdownKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.ValueField,M_DropdownKernelAttrsSetting), 'value', true));
 g_controlApi_arr.push(M_DropdownKernel_api);
 
 class M_Dropdown extends React.PureComponent {

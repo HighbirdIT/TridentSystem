@@ -13,6 +13,9 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var ctrlCurrentComponent_map = {};
 var gFixedContainerRef = React.createRef();
 var gFixedItemCounter = 0;
+var gCusValidChecker_map = {};
+var gPreconditionInvalidInfo = '前置条件不足';
+var gCantNullInfo = '不能为空值';
 
 var HashKey_FixItem = 'fixitem';
 
@@ -681,9 +684,12 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 }
             }
             this.dropDownClosed();
+
+            var invalidInfo = BaseIsValueValid(null, null, null, value == null || text == null ? null : value, this.props.type, this.props.nullable, this.props.id);
             store.dispatch(makeAction_setManyStateByPath({
                 value: value,
-                text: text
+                text: text,
+                invalidInfo: invalidInfo
             }, MakePath(this.props.parentPath, this.props.id)));
         }
     }, {
@@ -711,29 +717,47 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             var selectedVal = this.props.value;
             var selectedText = this.props.text;
             var self = this;
-            if (!IsEmptyString(selectedVal) && IsEmptyString(selectedText)) {
-                if (this.props.fetchingErr != null) {
-                    setTimeout(function () {
-                        self.selectItem(null);
-                    }, 50);
-                } else {
-                    if (this.props.optionsData.options_arr == null) {
-                        selectedVal = null;
-                        if (!this.props.fetching) {
-                            if (this.autoPullTO == null) {
-                                this.autoPullTO = setTimeout(function () {
-                                    self.props.pullDataSource();
-                                    self.autoPullTO = null;
-                                }, 50);
+
+            if (!IsEmptyString(selectedVal)) {
+                if (IsEmptyString(selectedText)) {
+                    if (this.props.fetchingErr != null) {
+                        setTimeout(function () {
+                            self.selectItem(null);
+                        }, 50);
+                    } else {
+                        if (this.props.optionsData.options_arr == null) {
+                            selectedVal = null;
+                            if (!this.props.fetching) {
+                                if (this.autoPullTO == null) {
+                                    this.autoPullTO = setTimeout(function () {
+                                        self.props.pullDataSource();
+                                        self.autoPullTO = null;
+                                    }, 50);
+                                }
                             }
+                        } else {
+                            var theOptionItem = this.props.optionsData.options_arr.find(function (item) {
+                                return item.value == selectedVal;
+                            });
+                            selectedText = theOptionItem ? theOptionItem.text : null;
+                            setTimeout(function () {
+                                self.selectItem(theOptionItem);
+                            }, 50);
+                        }
+                    }
+                } else if (this.props.optionsData.options_arr) {
+                    var selectedOptionItem = this.props.optionsData.options_arr.find(function (item) {
+                        return item.value == selectedVal;
+                    });
+                    if (selectedOptionItem) {
+                        if (selectedOptionItem.text != selectedText) {
+                            setTimeout(function () {
+                                self.selectItem(selectedOptionItem);
+                            }, 50);
                         }
                     } else {
-                        var theOptionItem = this.props.optionsData.options_arr.find(function (item) {
-                            return item.value == selectedVal;
-                        });
-                        selectedText = theOptionItem.text;
                         setTimeout(function () {
-                            self.selectItem(theOptionItem);
+                            self.selectItem(null);
                         }, 50);
                     }
                 }
@@ -774,8 +798,16 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                     selectedText == null ? '请选择' : selectedText
                 );
             }
-            //{this.renderPopPanel(selectedVal)}
-            return React.createElement(
+            var errTipElem = null;
+            if (this.props.invalidInfo) {
+                errTipElem = React.createElement(
+                    'span',
+                    { className: 'text-danger' },
+                    React.createElement('i', { className: 'fa fa-warning' }),
+                    this.props.invalidInfo
+                );
+            }
+            var dropDownElem = React.createElement(
                 'div',
                 { className: "d-flex btn-group flex-grow-1 flex-shrink-0 erpc_dropdown", style: this.props.style, ref: this.rootDivRef },
                 this.props.editable ? React.createElement('input', { onFocus: this.editableInputFocushandler, ref: this.editableInputRef, type: 'text', className: 'flex-grow-1 flex-shrink-1 flexinput', onChange: this.keyChanged, value: selectedOption ? selectedOption.text : this.state.keyword }) : React.createElement(
@@ -788,6 +820,15 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                     )
                 ),
                 hadMini && React.createElement('button', { type: 'button', onClick: this.clickOpenHandler, className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdownbtn dropdown-toggle-split' })
+            );
+            if (errTipElem == null) {
+                return dropDownElem;
+            }
+            return React.createElement(
+                'div',
+                { className: 'd-flex flex-column flex-grow-1 flex-shrink-1' },
+                dropDownElem,
+                errTipElem
             );
         }
     }]);
@@ -858,20 +899,33 @@ var formatERPC_DropDown_options = function formatERPC_DropDown_options(orginData
     return rlt;
 };
 
-var ERPC_DropDown_optionsSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName, formatERPC_DropDown_options);
+var ERPC_selector_map = {};
 
 function ERPC_DropDown_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
+    var fullPath = MakePath(ownprops.parentPath, ownprops.id);
+    var ctlState = getStateByPath(state, fullPath, {});
     if (ctlState.fetching) {
         console.log('ctlState.fetching');
     }
+    var invalidInfo = null;
+    if (ctlState.invalidInfo != gPreconditionInvalidInfo && ctlState.invalidInfo != gCantNullInfo) {
+        invalidInfo = ctlState.invalidInfo;
+    }
+    var selectorid = fullPath + 'optionsData';
+    var optionsDataSelector = ERPC_selector_map[selectorid];
+    if (optionsDataSelector == null) {
+        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName, formatERPC_DropDown_options);
+        ERPC_selector_map[selectorid] = optionsDataSelector;
+    }
+
     return {
         value: ctlState.value,
         text: ctlState.text,
         fetching: ctlState.fetching,
         fetchingErr: ctlState.fetchingErr,
-        optionsData: ERPC_DropDown_optionsSelector(state, ownprops),
-        visible: ctlState.visible
+        optionsData: optionsDataSelector(state, ownprops),
+        visible: ctlState.visible,
+        invalidInfo: invalidInfo
     };
 }
 
@@ -898,7 +952,11 @@ var ERPC_Text = function (_React$PureComponent4) {
         key: 'inputChanged',
         value: function inputChanged(ev) {
             var text = ev.target.value;
-            store.dispatch(makeAction_setStateByPath(text, MakePath(this.props.parentPath, this.props.id, 'value')));
+            var invalidInfo = BaseIsValueValid(null, null, null, text, this.props.type, this.props.nullable, this.props.id);
+            store.dispatch(makeAction_setManyStateByPath({
+                value: text,
+                invalidInfo: invalidInfo
+            }, MakePath(this.props.parentPath, this.props.id)));
         }
     }, {
         key: 'formatValue',
@@ -970,15 +1028,40 @@ var ERPC_Text = function (_React$PureComponent4) {
             return rlt;
         }
     }, {
+        key: 'endInputHandler',
+        value: function endInputHandler() {
+            var invalidInfo = BaseIsValueValid(null, null, null, this.props.value, this.props.type, this.props.nullable, this.props.id);
+            store.dispatch(makeAction_setStateByPath(invalidInfo, MakePath(this.props.parentPath, this.props.id, 'invalidInfo')));
+        }
+    }, {
         key: 'render',
         value: function render() {
             if (this.props.visible == false) {
                 return null;
             }
             var contentElem = null;
+            var errTipElem = null;
             var rootDivClassName = 'd-flex ' + (this.props.class == null ? '' : this.props.class);
             if (this.props.fetching) {
-                contentElem = React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw' });
+                rootDivClassName += 'rounded border p-1';
+                contentElem = React.createElement(
+                    'div',
+                    { className: 'flex-grow-1 flex-shrink-1' },
+                    React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw' }),
+                    '\u901A\u8BAF\u4E2D'
+                );
+            } else if (this.props.fetchingErr) {
+                rootDivClassName += 'rounded border p-1 text-danger';
+                var errInfo = this.props.fetchingErr.info;
+                if (errInfo == gPreconditionInvalidInfo) {
+                    errInfo = '';
+                }
+                contentElem = React.createElement(
+                    'div',
+                    { className: 'flex-grow-1 flex-shrink-1' },
+                    React.createElement('i', { className: 'fa fa-warning' }),
+                    errInfo
+                );
             } else {
                 if (this.props.readonly) {
                     rootDivClassName += ' bg-secondary rounded border p-1';
@@ -994,8 +1077,8 @@ var ERPC_Text = function (_React$PureComponent4) {
                         { className: 'flex-grow-1 flex-shrink-1' },
                         nowValue
                     );
-                } else if (this.props.type == 'multiline') {
-                    contentElem = React.createElement('textarea', { onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 form-control textarea-2x', value: this.props.value });
+                } else if (this.props.type == 'string' && this.props.linetype != null && this.props.linetype != 'single') {
+                    contentElem = React.createElement('textarea', { onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 w-100 form-control textarea-' + this.props.linetype, value: this.props.value, onBlur: this.endInputHandler });
                 } else {
                     var useType = this.props.type;
                     var useChecked = null;
@@ -1013,13 +1096,24 @@ var ERPC_Text = function (_React$PureComponent4) {
                             break;
                     }
                     var useValue = this.formatInputValue(this.props.value);
-                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control invalid ', type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged });
+                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control invalid ', type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged, onBlur: this.endInputHandler });
+                }
+
+                if (this.props.invalidInfo) {
+                    rootDivClassName += ' flex-column';
+                    errTipElem = React.createElement(
+                        'span',
+                        { className: 'text-danger' },
+                        React.createElement('i', { className: 'fa fa-warning' }),
+                        this.props.invalidInfo
+                    );
                 }
             }
             return React.createElement(
                 'div',
                 { className: rootDivClassName, ref: this.rootDivRef, style: this.props.style },
-                contentElem
+                contentElem,
+                errTipElem
             );
         }
     }]);
@@ -1032,7 +1126,9 @@ function ERPC_Text_mapstatetoprops(state, ownprops) {
     return {
         value: ctlState.value == null ? '' : ctlState.value,
         fetching: ctlState.fetching,
-        visible: ctlState.visible
+        visible: ctlState.visible,
+        fetchingErr: ctlState.fetchingErr,
+        invalidInfo: ctlState.invalidInfo == gPreconditionInvalidInfo ? null : ctlState.invalidInfo
     };
 }
 
@@ -1156,7 +1252,7 @@ var ERPC_Label = function (_React$PureComponent7) {
             }
             return React.createElement(
                 'span',
-                { className: this.props.className },
+                { className: 'erpc_label ' + (this.props.className == null ? '' : this.props.className) },
                 this.props.text
             );
         }
@@ -1290,3 +1386,530 @@ function ERPC_PageForm_renderNavigater() {
         exitPlushBtnItem
     );
 }
+
+function BaseIsValueValid(nowState, visibleBelongState, ctlState, value, valueType, nullable, ctlID, validErrState) {
+    if (visibleBelongState && visibleBelongState.visible == false) {
+        // not visible is always valid
+        return null;
+    }
+    if (ctlState != null) {
+        if (ctlState.fetching) {
+            return '等待通讯完成';
+        } else if (ctlState.fetchingErr) {
+            return ctlState.fetchingErr.info;
+        }
+    }
+    if (nullable != true && IsEmptyString(value)) {
+        return gCantNullInfo;
+    }
+    switch (valueType) {
+        case 'int':
+        case 'float':
+            if (isNaN(value)) {
+                return '必须是数字';
+            }
+            break;
+        case 'date':
+        case 'datetime':
+            if (!checkDate(value)) {
+                return '不是有效的日期格式';
+            }
+            break;
+        case 'time':
+            if (!checkTime(value)) {
+                return '不是有效的时间格式';
+            }
+            break;
+    }
+    if (gCusValidChecker_map[ctlID]) {
+        return gCusValidChecker_map[ctlID](value, nowState, validErrState);
+    }
+    return null;
+}
+
+var gCToastMangerRef = React.createRef();
+var gCMessageBoxMangerRef = React.createRef();
+function SendToast(info, type, timeTime) {
+    if (gCToastMangerRef.current) {
+        gCToastMangerRef.current.toast(info, type, timeTime);
+    } else {
+        console.warn('gCToastMangerRef为空');
+    }
+}
+
+function PopMessageBox(text, type, title, btns, callBack) {
+    if (gCMessageBoxMangerRef.current) {
+        var msg = new MessageBoxItem(text, type, title, btns, callBack);
+        gCMessageBoxMangerRef.current.addMessage(msg);
+        return msg;
+    } else {
+        console.warn('gCMessageBoxMangerRef为空');
+    }
+}
+
+var EToastTime = {
+    Normal: 5,
+    Long: 10,
+    Small: 3
+};
+
+var EToastType = {
+    Info: 'info',
+    Warning: 'warning',
+    Error: 'error'
+};
+
+var CToastManger = function (_React$PureComponent8) {
+    _inherits(CToastManger, _React$PureComponent8);
+
+    function CToastManger(props) {
+        _classCallCheck(this, CToastManger);
+
+        var _this10 = _possibleConstructorReturn(this, (CToastManger.__proto__ || Object.getPrototypeOf(CToastManger)).call(this, props));
+
+        autoBind(_this10);
+
+        _this10.state = {
+            msg_arr: []
+        };
+        _this10.ticker = null;
+        _this10.msgID = 0;
+        return _this10;
+    }
+
+    _createClass(CToastManger, [{
+        key: 'toast',
+        value: function toast(info, type, timeTime) {
+            if (info.length > 50) {
+                info = info.substr(0, 50) + '……';
+            }
+            var newMsg = { text: info,
+                timeType: timeTime == null ? EToastTime.Normal : timeTime,
+                type: type == null ? EToastType.Info : type
+            };
+            newMsg.id = this.msgID++;
+            this.setState({
+                msg_arr: this.state.msg_arr.concat(newMsg)
+            });
+        }
+    }, {
+        key: 'tickHandler',
+        value: function tickHandler() {
+            var msg_arr = this.state.msg_arr;
+            var new_arr = [];
+            msg_arr.forEach(function (msg) {
+                if (msg.time == null) {
+                    msg.time = msg.timeType;
+                    msg.opacity = 1;
+                } else {
+                    msg.time -= 0.2;
+                    if (msg.time <= 1) {
+                        msg.opacity = 0;
+                    }
+                }
+                if (msg.time > 0) {
+                    new_arr.push(msg);
+                }
+            });
+            this.setState({
+                msg_arr: new_arr
+            });
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var msg_arr = this.state.msg_arr;
+            if (msg_arr.length == 0) {
+                if (this.ticker) {
+                    clearInterval(this.ticker);
+                    this.ticker = null;
+                }
+                return null;
+            }
+            if (this.ticker == null) {
+                this.ticker = setInterval(this.tickHandler, 200);
+            }
+            return React.createElement(
+                'div',
+                { className: 'toastMsgContainer' },
+                msg_arr.map(function (msg, index) {
+                    return React.createElement(
+                        'div',
+                        { key: msg.id, type: msg.type, className: 'toastMsg bg-light rounded shadow', style: { opacity: msg.opacity == null ? 0 : msg.opacity } },
+                        msg.text
+                    );
+                })
+            );
+        }
+    }]);
+
+    return CToastManger;
+}(React.PureComponent);
+
+var EMessageBoxType = {
+    Tip: 'tip',
+    Warning: 'warning',
+    Error: 'error',
+    Loading: 'loading'
+};
+
+var EMessageBoxBtnType = {
+    Ok: {
+        label: '确认',
+        key: 'OK',
+        class: 'btn btn-success'
+    },
+    Aware: {
+        label: '知道了',
+        key: 'OK',
+        class: 'btn btn-info'
+    },
+    Cancel: {
+        label: '取消',
+        key: 'CANCEL',
+        class: 'btn btn-danger'
+    }
+};
+
+var MessageBoxItem = function () {
+    function MessageBoxItem(text, type, title, btns, callBack) {
+        _classCallCheck(this, MessageBoxItem);
+
+        this.type = type;
+        this.text = text;
+        this.btns = btns;
+        this.title = title;
+        this.callBack = callBack;
+    }
+
+    _createClass(MessageBoxItem, [{
+        key: 'setData',
+        value: function setData(text, type, title, btns) {
+            var changed = false;
+            if (type != this.type) {
+                this.type = type;
+                changed = true;
+            }
+            if (text != this.text) {
+                this.text = text;
+                changed = true;
+            }
+            if (title != this.title) {
+                this.title = title;
+                changed = true;
+            }
+            if (btns != this.btns) {
+                this.btns = btns;
+                changed = true;
+            }
+            if (changed) {
+                this.fireChanged();
+            }
+        }
+    }, {
+        key: 'fireChanged',
+        value: function fireChanged() {
+            if (this.changedAct != null) {
+                this.changedAct();
+            }
+        }
+    }, {
+        key: 'fireClose',
+        value: function fireClose() {
+            if (this.closeAct != null) {
+                this.closeAct();
+            }
+        }
+    }, {
+        key: 'setType',
+        value: function setType(val) {
+            this.type = val;
+            this.fireChanged();
+        }
+    }, {
+        key: 'setText',
+        value: function setText(val) {
+            this.text = val;
+            this.fireChanged();
+        }
+    }, {
+        key: 'setTitle',
+        value: function setTitle(val) {
+            this.title = val;
+            this.fireChanged();
+        }
+    }, {
+        key: 'setBtns',
+        value: function setBtns(val) {
+            this.btns = val;
+            this.fireChanged();
+        }
+    }]);
+
+    return MessageBoxItem;
+}();
+
+var CMessageBox = function (_React$PureComponent9) {
+    _inherits(CMessageBox, _React$PureComponent9);
+
+    function CMessageBox(props) {
+        _classCallCheck(this, CMessageBox);
+
+        var _this11 = _possibleConstructorReturn(this, (CMessageBox.__proto__ || Object.getPrototypeOf(CMessageBox)).call(this, props));
+
+        autoBind(_this11);
+
+        _this11.state = {};
+        _this11.props.msgItem.changedAct = _this11.msgItemChanedHandler;
+        _this11.props.msgItem.closeAct = _this11.msgItemCloseHandler;
+        return _this11;
+    }
+
+    _createClass(CMessageBox, [{
+        key: 'msgItemChanedHandler',
+        value: function msgItemChanedHandler(ev) {
+            this.setState({
+                magicObj: {}
+            });
+        }
+    }, {
+        key: 'componentWillUnmount',
+        value: function componentWillUnmount() {
+            this.props.msgItem.changedAct = null;
+            this.props.msgItem.closeAct = null;
+
+            if (this.timeInt) {
+                clearInterval(this.timeInt);
+                this.timeInt = null;
+            }
+        }
+    }, {
+        key: 'timerHander',
+        value: function timerHander(ev) {
+            var now = new Date().getTime();
+            var pssSec = Math.round((now - this.startTime) / 100) / 10;
+            this.setState({
+                passSec: pssSec
+            });
+        }
+    }, {
+        key: 'clickBtnHandler',
+        value: function clickBtnHandler(ev) {
+            var msgItem = this.props.msgItem;
+            this.props.manager.delete(this);
+            if (msgItem.callBack) {
+                msgItem.callBack(ev.target.getAttrbute('d-type'));
+            }
+        }
+    }, {
+        key: 'msgItemCloseHandler',
+        value: function msgItemCloseHandler(ev) {
+            this.props.manager.delete(this);
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var _this12 = this;
+
+            var msgItem = this.props.msgItem;
+            var type = msgItem.type;
+
+            var contentElem = null;
+            var headerElem = null;
+            var btnsElem = null;
+
+            if (type == EMessageBoxType.Loading) {
+                var passSec = 0;
+                if (this.timeInt == null) {
+                    this.startTime = new Date().getTime();
+                    this.timeInt = setInterval(this.timerHander, 200);
+                } else {
+                    passSec = this.state.passSec;
+                }
+                headerElem = React.createElement(
+                    'span',
+                    null,
+                    msgItem.title,
+                    React.createElement(
+                        'span',
+                        { className: 'badge badge-primary' },
+                        '\u5904\u7406\u4E2D'
+                    ),
+                    React.createElement('i', { className: 'fa fa-spinner fa-spin' }),
+                    passSec,
+                    's'
+                );
+                contentElem = React.createElement(
+                    'p',
+                    { className: 'messageBoxContent' },
+                    msgItem.text
+                );
+            } else {
+                if (this.timeInt != null) {
+                    clearInterval(this.timeInt);
+                    this.timeInt = null;
+                }
+                switch (type) {
+                    case EMessageBoxType.Tip:
+                        headerElem = React.createElement(
+                            'span',
+                            null,
+                            React.createElement(
+                                'span',
+                                { className: 'badge badge-info' },
+                                '\u4FE1\u606F'
+                            ),
+                            msgItem.title
+                        );
+                        break;
+                    case EMessageBoxType.Error:
+                        headerElem = React.createElement(
+                            'span',
+                            null,
+                            React.createElement(
+                                'span',
+                                { className: 'badge badge-danger' },
+                                '\u9519\u8BEF'
+                            ),
+                            msgItem.title
+                        );
+                        btnsElem = React.createElement(
+                            'button',
+                            { type: 'button', className: 'btn btn-danger' },
+                            '\u4E86\u89E3'
+                        );
+                        break;
+                    case EMessageBoxType.Warning:
+                        headerElem = React.createElement(
+                            'span',
+                            null,
+                            React.createElement(
+                                'span',
+                                { className: 'badge badge-warning' },
+                                '\u8B66\u544A'
+                            ),
+                            msgItem.title
+                        );
+                        btnsElem = React.createElement(
+                            'button',
+                            { type: 'button', className: 'btn btn-warning' },
+                            '\u4E86\u89E3'
+                        );
+                        break;
+                }
+                if (msgItem.btns == null) {
+                    btnsElem = React.createElement(
+                        'button',
+                        { onClick: this.clickBtnHandler, 'd-type': EMessageBoxBtnType.Aware.key, type: 'button', className: EMessageBoxBtnType.Aware.class },
+                        EMessageBoxBtnType.Aware.label
+                    );
+                } else {
+                    btnsElem = msgItem.btns.map(function (btn) {
+                        return React.createElement(
+                            'button',
+                            { onClick: _this12.clickBtnHandler, key: btn.label, 'd-type': btn.key, type: 'button', className: btn.class },
+                            btn.label
+                        );
+                    });
+                }
+                contentElem = React.createElement(
+                    'p',
+                    { className: 'messageBoxContent' },
+                    msgItem.text
+                );
+                /*
+                iconElem = <i className='fa fa-window-close text-danger' />
+                times-circle
+                exclamation-circle
+                commenting
+                */
+            }
+
+            return React.createElement(
+                'div',
+                { className: 'messageBox autoScroll_Touch', tabIndex: '-1', role: 'dialog' },
+                React.createElement(
+                    'div',
+                    { className: 'modal-content' },
+                    React.createElement(
+                        'div',
+                        { className: 'modal-header' },
+                        React.createElement(
+                            'h5',
+                            { className: 'modal-title' },
+                            headerElem
+                        )
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'modal-body' },
+                        contentElem
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'modal-footer' },
+                        btnsElem
+                    )
+                )
+            );
+        }
+    }]);
+
+    return CMessageBox;
+}(React.PureComponent);
+
+var CMessageBoxManger = function (_React$PureComponent10) {
+    _inherits(CMessageBoxManger, _React$PureComponent10);
+
+    function CMessageBoxManger(props) {
+        _classCallCheck(this, CMessageBoxManger);
+
+        var _this13 = _possibleConstructorReturn(this, (CMessageBoxManger.__proto__ || Object.getPrototypeOf(CMessageBoxManger)).call(this, props));
+
+        autoBind(_this13);
+
+        _this13.state = {
+            msg_arr: []
+        };
+        _this13.msgID = 0;
+        return _this13;
+    }
+
+    _createClass(CMessageBoxManger, [{
+        key: 'addMessage',
+        value: function addMessage(msgItem) {
+            this.setState({
+                msg_arr: this.state.msg_arr.concat(msgItem)
+            });
+        }
+    }, {
+        key: 'delete',
+        value: function _delete(item) {
+            var newarr = this.state.msg_arr.filter(function (msg) {
+                return item == msg;
+            });
+            this.setState({
+                msg_arr: newarr
+            });
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var _this14 = this;
+
+            var msg_arr = this.state.msg_arr;
+            if (msg_arr.length == 0) {
+                return null;
+            }
+            return React.createElement(
+                'div',
+                { className: 'messageBoxMask' },
+                msg_arr.map(function (msg, index) {
+                    return React.createElement(CMessageBox, { key: 1, msgItem: msg, manager: _this14 });
+                })
+            );
+        }
+    }]);
+
+    return CMessageBoxManger;
+}(React.PureComponent);

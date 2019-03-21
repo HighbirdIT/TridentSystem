@@ -319,6 +319,9 @@ class C_SqlNode_Editor extends React.PureComponent{
     }
 
     componentWillUnmount(){
+        if(this.props.bluePrint){
+            this.props.bluePrint.genColumns();
+        }
         window.removeEventListener('mousemove', this.mousemoveWidthDragingHandler);
         window.removeEventListener('mouseup', this.mouseupWidthDragingHandler);
         window.removeEventListener('keyup', this.keyUpHandler);
@@ -1170,7 +1173,7 @@ class SqlDef_Variable_Component extends React.PureComponent{
 
     isParamChangedHandler(newData){
         this.setState({
-            isParam:newData.code,
+            isParam:newData,
         });
     }
 
@@ -1320,6 +1323,7 @@ class SqlNode_CompileHelper{
         this.useGlobalControls_map = {};
         this.useForm_map = {};
         this.useEnvVars = {};
+        this.compileSeq = [];
 
         autoBind(this);
     }
@@ -1328,6 +1332,7 @@ class SqlNode_CompileHelper{
         if(this.startNode == null){
             this.startNode = theNode;
         }
+        this.compileSeq.push(theNode);
     }
 
     addUseEnvVars(varKey){

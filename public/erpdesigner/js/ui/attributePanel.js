@@ -16,12 +16,15 @@ var AttributePanel = function (_React$PureComponent) {
 
         var _this = _possibleConstructorReturn(this, (AttributePanel.__proto__ || Object.getPrototypeOf(AttributePanel)).call(this, props));
 
-        var editingPage = _this.props.project.getEditingPage();
-        var initState = {
-            target: editingPage == null ? _this.props.project : editingPage
-        };
+        var initState = {};
+        if (_this.props.project) {
+            var editingPage = _this.props.project.getEditingPage();
+            initState = {
+                target: editingPage == null ? _this.props.project : editingPage
+            };
+            _this.props.project.designer.attributePanel = _this;
+        }
         _this.state = initState;
-        _this.props.project.designer.attributePanel = _this;
 
         autoBind(_this, { exclude: ['renderAttribute'] });
         return _this;
@@ -83,7 +86,9 @@ var AttributePanel = function (_React$PureComponent) {
             if (newTarget && newTarget.setSelected) {
                 newTarget.setSelected(true);
             }
-            this.props.project.emit(ESELECTEDCHANGED);
+            if (this.props.project) {
+                this.props.project.emit(ESELECTEDCHANGED);
+            }
             this.listenTarget(newTarget);
             this.setState({
                 target: newTarget
@@ -106,7 +111,7 @@ var AttributePanel = function (_React$PureComponent) {
                     '\u6B64\u5BF9\u8C61\u6CA1\u6709\u5C5E\u6027'
                 );
             }
-            var projectName = this.props.project.designeConfig.name;
+            var projectName = this.props.project ? this.props.project.designeConfig.name : '未知';
             return target.attrbuteGroups.map(function (attrGroup, attrGroupIndex) {
                 return React.createElement(AttributeGroup, { key: attrGroup.label, projectName: projectName, attrGroup: attrGroup, attrGroupIndex: attrGroupIndex, target: target });
             });

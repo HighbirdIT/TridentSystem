@@ -5,6 +5,7 @@ const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
         new CAttribute('操作表', AttrNames.ProcessTable, ValueType.DataSource, null, true, false, g_dataBase.getAllTable, {text:'name', value:'code'}),
         new CAttribute('表单类别', AttrNames.FormType, ValueType.String, EFormType.Page, true, false, FormTypes_arr),
         new CAttribute('', AttrNames.CustomDataSource, ValueType.CustomDataSource, null, true),
+        new CAttribute('内容定制', AttrNames.ListFormContent, ValueType.ListFormContent, null, true, false, null, null, false),
     ]),
 ]);
 
@@ -28,9 +29,21 @@ class M_FormKernel extends ContainerKernelBase{
         cusDS_bp.group = 'ctlcus';
         this.setAttribute(AttrNames.CustomDataSource, cusDS_bp);
         this.autoSetCusDataSource();
+        var listFormContentValue = this.getAttribute(AttrNames.ListFormContent);
+        if(listFormContentValue == null){
+            listFormContentValue = new ListFormContent(this);
+            this.setAttribute(AttrNames.ListFormContent, listFormContentValue);
+        }
+
+        var nowft = this.getAttribute(AttrNames.FormType);
+        this[AttrNames.ListFormContent + '_visible'] = nowft == EFormType.List;
 
         var self = this;
         autoBind(self);
+    }
+
+    canAppand(){
+        return this.getAttribute(AttrNames.FormType) == EFormType.Page;
     }
 
     getCanUseDataSource(){
@@ -40,6 +53,11 @@ class M_FormKernel extends ContainerKernelBase{
     autoSetCusDataSource(mustSelectColumns_arr){
         if(mustSelectColumns_arr == null){
             mustSelectColumns_arr = [];
+        }
+        var useDS = this.getAttribute(AttrNames.DataSource);
+        if(useDS && useDS.loaded == false){
+            // ds 元数据还未加载
+            return;
         }
         var cusDS_bp = this.getAttribute(AttrNames.CustomDataSource);
         var theLinks = cusDS_bp.linkPool.getLinksBySocket(cusDS_bp.finalSelectNode.inSocket);
@@ -58,7 +76,6 @@ class M_FormKernel extends ContainerKernelBase{
             }
             cusDS_bp.linkPool.addLink(dsnode.outSocket, cusDS_bp.finalSelectNode.inSocket);
         }
-        var useDS = this.getAttribute(AttrNames.DataSource);
         dsnode.setEntity(useDS);
         if(useDS == null){
             return;
@@ -113,6 +130,7 @@ class M_FormKernel extends ContainerKernelBase{
                 });
             };
         });
+        cusDS_bp.genColumns();
     }
 
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {
@@ -122,6 +140,9 @@ class M_FormKernel extends ContainerKernelBase{
             case AttrNames.DataSource:
                 this.autoSetCusDataSource();
                 break;
+            case AttrNames.FormType:
+                this.findAttributeByName(AttrNames.ListFormContent).setVisible(this, newValue == EFormType.List);
+                break;
         }
     }
 
@@ -129,8 +150,8 @@ class M_FormKernel extends ContainerKernelBase{
         return getDSAttrCanuseColumns.call(this,AttrNames.DataSource,AttrNames.CustomDataSource);
     }
     
-    renderSelf(){
-        return (<M_Form key={this.id} ctlKernel={this} onClick={this.clickHandler} />)
+    renderSelf(clickHandler){
+        return (<M_Form key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 }
 
@@ -140,11 +161,12 @@ class M_Form extends React.PureComponent {
         autoBind(this);
 
         var ctlKernel = this.props.ctlKernel;
-        var inintState = M_ControlBase(this,LayoutAttrNames_arr.concat([AttrNames.Orientation,AttrNames.Chidlren], inintState));
+        var inintState = M_ControlBase(this,LayoutAttrNames_arr.concat([AttrNames.Orientation,AttrNames.Chidlren,AttrNames.FormType], inintState));
         M_ContainerBase(this);
 
         inintState.orientation = ctlKernel.getAttribute(AttrNames.Orientation);
         inintState.children = ctlKernel.children;
+        inintState.formType = ctlKernel.getAttribute(AttrNames.FormType);
 
         this.state = inintState;
     }
@@ -161,6 +183,7 @@ class M_Form extends React.PureComponent {
         this.setState({
             orientation:ctlKernel.getAttribute(AttrNames.Orientation),
             children: childrenVal,
+            formType:ctlKernel.getAttribute(AttrNames.FormType),
         });
     }
 
@@ -186,6 +209,33 @@ class M_Form extends React.PureComponent {
         if(this.props.ctlKernel.children.length ==0){
             layoutConfig.addClass('M_Form_Empty');
         }
+        if(this.state.formType == EFormType.List){
+            var labelControls_arr = this.props.ctlKernel.searchChildKernel(M_LabeledControlKernel_Type, false);
+            var tableWidth = labelControls_arr.length * 150;
+            return(
+                <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id}  ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    <div className='mw-100 autoScroll'>
+                        <table className='table' style={{width:tableWidth + 'px'}}>
+                        <thead className="thead-dark">
+                            <tr>
+                            {
+                                this.props.ctlKernel.children.length == 0 ? 
+                                    <th scope="col">空</th> :
+                                    this.props.ctlKernel.children.map(childKernel=>{
+                                        if(childKernel.type == M_LabeledControlKernel_Type){
+                                            return (<th key={childKernel.id} scope="col">{childKernel.getAttribute(AttrNames.TextField)}
+                                                <span className='badge badge-primary'>{GetControlTypeReadableName(childKernel.editor.type)}</span>
+                                                </th>);
+                                        }
+                                    })
+                            }
+                            </tr>
+                        </thead>
+                        </table>
+                    </div>
+                </div>
+            );
+        }
 
         return(
             <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id}  ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
@@ -210,3 +260,22 @@ DesignerConfig.registerControl(
         kernelClass:M_FormKernel,
         reactClass:M_Form,
     }, '布局');
+
+class ListFormContent extends EventEmitter
+{
+    constructor(kernel) {
+        super();
+        EnhanceEventEmiter(this);
+        this.formKernel = kernel;
+        this.selectColumns_map = {};
+    }
+
+    createControl(){
+        var newCtl = new M_LabeledControlKernel({}, this.formKernel, null, null);
+        return newCtl;
+    }
+
+    getJson(){
+        return {};
+    }
+}

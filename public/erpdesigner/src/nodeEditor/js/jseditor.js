@@ -20,9 +20,19 @@ const JSNodeEditorControls_arr =[
         type:'流控制'
     },
     {
+        label:'CallOnFetchEnd',
+        nodeClass:JSNode_CallOnFetchEnd,
+        type:'流控制'
+    },
+    {
         label:'IF',
         nodeClass:JSNode_IF,
         type:'流控制'
+    },
+    {
+        label:'逻辑运算',
+        nodeClass:JSNode_Logical_Operator,
+        type:'数学'
     },
     {
         label:'四则运算',
@@ -59,6 +69,26 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_DateFun,
         type:'运算'
     },
+    {
+        label:'查询SQL',
+        nodeClass:JSNode_Query_Sql,
+        type:'数据库交互'
+    },
+    {
+        label:'数组-长度',
+        nodeClass:JSNode_Array_Length,
+        type:'数组操纵'
+    },
+    {
+        label:'创建自订错误',
+        nodeClass:JSNode_Create_Cuserror,
+        type:'错误控制'
+    },
+    {
+        label:'刷新表单',
+        nodeClass:JSNode_FreshForm,
+        type:'表单控制'
+    },
 ];
 
 
@@ -74,8 +104,13 @@ function gCreateControlApiItem(apiType, apiName){
 
 const g_controlApi_arr = [];
 
-function gFindControlApi(ctltype){
-
+function gFindPropApiItem(ctltype, attrName){
+    var rlt = null;
+    var ctlApi = g_controlApi_arr.find(item=>{return item.ctltype == ctltype;});
+    if(ctlApi != null){
+        rlt = ctlApi.propapi_arr.find(item=>{return item.attrItem.name == attrName;});
+    }
+    return rlt;
 }
 
 
@@ -238,7 +273,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         logManager.clear();
         var canUseDS_arr = [];
         var canAccessKernel_arr = [];
-        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent){
+        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == EJsBluePrintFunGroup.CtlValid){
             // 控件类型,获取上下文
             var ctlKernel = project.getControlById(bluePrint.ctlID);
             if(bluePrint.ctlID == null || ctlKernel == null){

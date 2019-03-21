@@ -46,6 +46,18 @@ function genIsdisplayAttribute() {
     });
 }
 
+function genNullableAttribute() {
+    return new CAttribute('允许空值', AttrNames.Nullable, ValueType.Boolean, false, true);
+}
+
+function genValidCheckerAttribute() {
+    return new CAttribute('值验证', AttrNames.ValidChecker, ValueType.Script, true, true, false, null, null, true, {
+        scriptable: true,
+        type: FunType_Client,
+        group: EJsBluePrintFunGroup.CtlValid
+    });
+}
+
 var CAttribute = function () {
     function CAttribute(label, name, valueType, defaultVal, editable, isArray, options_arr, dropdownSetting, visible, scriptSetting) {
         _classCallCheck(this, CAttribute);
@@ -73,6 +85,16 @@ var CAttribute = function () {
                 return;
             }
             target[this.name + '_visible'] = val;
+            this.group.fireEvent('changed');
+        }
+    }, {
+        key: 'setEditable',
+        value: function setEditable(target, val) {
+            var nowVisible = target[this.name + '_editable'];
+            if (nowVisible == val) {
+                return;
+            }
+            target[this.name + '_editable'] = val;
             this.group.fireEvent('changed');
         }
     }]);
@@ -180,9 +202,16 @@ var AttrNames = {
     AutoClearValue: 'autoclearvalue',
     Editeable: 'editeable',
     Isdisplay: 'isdisplay',
+    Nullable: 'nullable',
+    LineType: 'linetype',
+    InteractiveType: 'interactivetype',
+    InteractiveField: 'interactivefield',
+    ValidChecker: 'validchecker',
+    InvalidInfo: 'invalidInfo',
+    ListFormContent: 'listFormContent',
 
     Event: {
-        OnClick: 'onclik'
+        OnClick: 'onclick'
     },
 
     LayoutNames: {

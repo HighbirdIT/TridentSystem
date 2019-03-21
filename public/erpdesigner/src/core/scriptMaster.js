@@ -59,6 +59,14 @@ class ScriptMaster extends EventEmitter{
         this.emit('bpchanged');
     }
 
+    deleteBP(sqpBP){
+        var index = this.blueprints_arr.indexOf(sqpBP);
+        if(index != -1){
+            this.blueprints_arr.splice(index, 1);
+        }
+        sqpBP.master = null;
+    }
+
     getJson(){
         var rlt = {
             blueprints_arr:[]
@@ -76,6 +84,7 @@ class ScriptMaster extends EventEmitter{
         if(json.blueprints_arr){
             json.blueprints_arr.forEach(bpjson=>{
                 var creationHelper = new NodeCreationHelper(); 
+                creationHelper.project = this.project;
                 var newbp = new JSNode_BluePrint(null, bpjson, creationHelper);
                 this.addBP(newbp);
             });

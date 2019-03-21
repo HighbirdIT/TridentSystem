@@ -18,8 +18,8 @@ class M_ContainerKernel extends ContainerKernelBase{
         autoBind(self);
     }
     
-    renderSelf(){
-        return (<M_Container key={this.id} ctlKernel={this} onClick={this.clickHandler} />)
+    renderSelf(clickHandler){
+        return (<M_Container key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 }
 
