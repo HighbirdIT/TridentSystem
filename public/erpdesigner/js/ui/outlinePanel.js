@@ -350,6 +350,9 @@ var OutlinePanel = function (_React$PureComponent2) {
                     if (hitKernel.isfixed) {
                         return;
                     }
+                    if (!hitKernel.canAppand(targetKernelRect)) {
+                        return;
+                    }
                     /*
                     var specialParent = hitKernel.searchParentKernel([M_LabeledControlKernel_Type], true);
                     if(specialParent){

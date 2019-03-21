@@ -319,6 +319,9 @@ class C_SqlNode_Editor extends React.PureComponent{
     }
 
     componentWillUnmount(){
+        if(this.props.bluePrint){
+            this.props.bluePrint.genColumns();
+        }
         window.removeEventListener('mousemove', this.mousemoveWidthDragingHandler);
         window.removeEventListener('mouseup', this.mouseupWidthDragingHandler);
         window.removeEventListener('keyup', this.keyUpHandler);

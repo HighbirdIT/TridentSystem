@@ -42,6 +42,10 @@ class M_FormKernel extends ContainerKernelBase{
         autoBind(self);
     }
 
+    canAppand(){
+        return this.getAttribute(AttrNames.FormType) == EFormType.Page;
+    }
+
     getCanUseDataSource(){
         return this.project.dataMaster.getAllEntities();
     }
@@ -126,6 +130,7 @@ class M_FormKernel extends ContainerKernelBase{
                 });
             };
         });
+        cusDS_bp.genColumns();
     }
 
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {
@@ -205,9 +210,29 @@ class M_Form extends React.PureComponent {
             layoutConfig.addClass('M_Form_Empty');
         }
         if(this.state.formType == EFormType.List){
+            var labelControls_arr = this.props.ctlKernel.searchChildKernel(M_LabeledControlKernel_Type, false);
+            var tableWidth = labelControls_arr.length * 150;
             return(
                 <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id}  ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
-                    列表式容器
+                    <div className='mw-100 autoScroll'>
+                        <table className='table' style={{width:tableWidth + 'px'}}>
+                        <thead className="thead-dark">
+                            <tr>
+                            {
+                                this.props.ctlKernel.children.length == 0 ? 
+                                    <th scope="col">空</th> :
+                                    this.props.ctlKernel.children.map(childKernel=>{
+                                        if(childKernel.type == M_LabeledControlKernel_Type){
+                                            return (<th key={childKernel.id} scope="col">{childKernel.getAttribute(AttrNames.TextField)}
+                                                <span className='badge badge-primary'>{GetControlTypeReadableName(childKernel.editor.type)}</span>
+                                                </th>);
+                                        }
+                                    })
+                            }
+                            </tr>
+                        </thead>
+                        </table>
+                    </div>
                 </div>
             );
         }
@@ -241,7 +266,6 @@ class ListFormContent extends EventEmitter
     constructor(kernel) {
         super();
         EnhanceEventEmiter(this);
-        this.controls_arr = [new M_LabeledControlKernel({}, kernel, null, null)];
         this.formKernel = kernel;
         this.selectColumns_map = {};
     }

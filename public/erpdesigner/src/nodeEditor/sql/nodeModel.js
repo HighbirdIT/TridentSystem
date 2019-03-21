@@ -431,6 +431,7 @@ class SqlNode_BluePrint extends EventEmitter {
     }
 
     compile(compilHelper) {
+        this.genColumns();
         var ret = this.finalSelectNode.compile(compilHelper, []);
         if (ret == false) {
             return false;

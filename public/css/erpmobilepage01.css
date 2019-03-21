@@ -245,3 +245,7 @@ body{
     }
 }
 
+
+.erpc_label{
+    word-break: break-all;
+}

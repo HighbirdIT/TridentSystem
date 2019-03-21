@@ -38,6 +38,10 @@ class M_LabeledControlKernel extends ControlKernelBase{
         return (<M_LabeledControl key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />);
     }
 
+    canAppand(){
+        return false;
+    }
+
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray){
         super.__attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray);
         var attrItem = this.findAttributeByName(attrName);
@@ -95,6 +99,14 @@ class M_LabeledControlKernel extends ControlKernelBase{
 
     removeChild(){
         // valid
+    }
+
+    getTextValueFieldValue(){
+        var rlt = super.getTextValueFieldValue();
+        if(this.getAttribute(AttrNames.InteractiveType) == EInterActiveType.ReadWrite){
+            rlt.interact = this.getAttribute(AttrNames.InteractiveField);
+        }
+        return rlt;
     }
 
     getJson(){
@@ -181,7 +193,7 @@ class M_LabeledControl extends React.PureComponent {
             <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {leftElem}
                 <div className='rowlFameOne_right'>
-                    {editor != null && editor.renderSelf(this.props.onClick)}
+                    {editor != null && editor.renderSelf(this.props.onClick == ctlKernel.clickHandler ? null : this.props.onClick)}
                 </div>
             </div>
         );

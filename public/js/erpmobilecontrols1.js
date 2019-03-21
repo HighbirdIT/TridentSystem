@@ -1252,7 +1252,7 @@ var ERPC_Label = function (_React$PureComponent7) {
             }
             return React.createElement(
                 'span',
-                { className: this.props.className },
+                { className: 'erpc_label ' + (this.props.className == null ? '' : this.props.className) },
                 this.props.text
             );
         }

@@ -1061,7 +1061,7 @@ class ERPC_Label extends React.PureComponent {
         if(this.props.visible == false){
             return null;
         }
-        return (<span className={this.props.className} >{this.props.text}</span>);
+        return (<span className={'erpc_label ' + (this.props.className == null ? '' : this.props.className)} >{this.props.text}</span>);
     }
 }
 

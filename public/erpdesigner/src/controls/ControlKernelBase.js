@@ -470,6 +470,23 @@ class ControlKernelBase extends IAttributeable {
     isAEditor(){
         return this.parent && this.parent.editor == this;
     }
+
+    canAppand(){
+        return true;
+    }
+
+    getTextValueFieldValue(){
+        var rlt = {};
+        var textAttr = this.findAttributeByName(AttrNames.TextField);
+        if(textAttr){
+            rlt.text = this.getAttribute(AttrNames.TextField);
+        }
+        var valueAttr = this.findAttributeByName(AttrNames.ValueField);
+        if(valueAttr){
+            rlt.value = this.getAttribute(AttrNames.ValueField);
+        }
+        return rlt;
+    }
 }
 
 const g_switchClassNameReg = /-\d+$/;
