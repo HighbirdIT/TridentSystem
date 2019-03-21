@@ -182,19 +182,47 @@ class SqlNode_BluePrint extends EventEmitter {
             }
         });
         */
-        if (this.finalSelectNode == null) {
-            this.finalSelectNode = new SqlNode_Select({ title: '返回表' }, this, createHelper);
-            this.finalSelectNode.removeSocket(this.finalSelectNode.outSocket);
-        }
+       this.returnSelectNode(createHelper);
         this.finalSelectNode.isConstNode = true;
         this.genColumns();
         createHelper.fireEvent('complete', createHelper);
+    }
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.inSocket.type = this.finalSelectNode.inSocket.type;
+        rlt.inSocket.inputable=this.finalSelectNode.inSocket.inputable;
+        return rlt;
     }
 
     genColumns(){
         this.columns = this.finalSelectNode.getColumns_arr();
     }
-
+    returnSelectNode(createHelper)
+    {
+        if (this.finalSelectNode == null) {
+            if(this.type == "标量值")
+            {
+                this.finalSelectNode = new SqlNode_Select({ title: '返回值' }, this, createHelper);
+            }
+            else
+            {
+                this.finalSelectNode = new SqlNode_Select({ title: '返回表' }, this, createHelper);
+            }       
+            this.finalSelectNode.removeSocket(this.finalSelectNode.outSocket);
+        }
+        else
+        {
+            if(this.type == "标量值")
+            {
+                this.finalSelectNode.title='返回值';
+            }
+            else
+            {
+                this.finalSelectNode.title='返回表';
+            }
+            this.finalSelectNode.removeSocket(this.finalSelectNode.outSocket);
+        }
+    }
     preEditing(editor) {
         // call pre enter Editing
     }
@@ -1079,11 +1107,12 @@ class SqlNode_DBEntity_ColumnSelector extends SqlNode_Base {
         this.isConstNode = true;
 
         var bCanSlect = parentNode.isSelectColumn != null;
-        if (bCanSlect) {
-            this.addFrameButton('select-all', '全选');
-            this.addFrameButton('unselect-all', '全不选');
-            this.addFrameButton('fresh', '刷新');
-        }
+            if (bCanSlect) {
+                this.addFrameButton('select-all', '全选');
+                this.addFrameButton('unselect-all', '全不选');
+                this.addFrameButton('fresh', '刷新');
+            }
+        
     }
 
     requestSaveAttrs() {
@@ -1094,6 +1123,10 @@ class SqlNode_DBEntity_ColumnSelector extends SqlNode_Base {
     clickFrameButton(btnName) {
         if (super.clickFrameButton(btnName)) {
             return;
+        }
+        if (this.bluePrint.type == "标量值") 
+        {
+            return false;
         }
         switch (btnName) {
             case 'select-all':
@@ -1275,6 +1308,29 @@ class SqlNode_Select extends SqlNode_Base {
             }
             theNode.valid = true;
         }
+        if (this.bluePrint.type =="标量值")
+        {
+            if(this.columnNode.inputScokets_arr.length == 0)
+            {
+                this.columnNode.addSocket(this.columnNode.genInSocket());
+            }
+            for (var i = 1;i < this.columnNode.inputScokets_arr.length; i++) {
+                var socket = this.columnNode.inputScokets_arr[i];
+                var tlinks = this.columnNode.bluePrint.linkPool.getLinksBySocket(socket);
+                var colNode = null;
+                if (tlinks.length > 0) {
+                    var theLink = tlinks[0];
+                     {
+                        this.columnNode.bluePrint.deleteNode(theLink.outSocket.node);
+                    }
+                }
+            }
+            for (var i = this.columnNode.inputScokets_arr.length -1;i>0 ;i--) {
+                this.columnNode.removeSocket(this.columnNode.inputScokets_arr[i]);
+            }
+
+        }
+
         this.bluePrint.banEvent('changed');
         for (var i = 0; i < this.entityNodes_arr.length; ++i) {
             var tNode = this.entityNodes_arr[i];
@@ -1345,6 +1401,19 @@ class SqlNode_Select extends SqlNode_Base {
         return this.getSelectColumnLink(compareKey) != null;
     }
 
+    addNewColumn(tableCode, tableAlias, tableName, columnName, cvalType, x, y, newborn) {
+        return new SqlNode_Column({
+            tableCode: tableCode,
+            tableAlias: tableAlias,
+            tableName: tableName,
+            columnName: columnName,
+            cvalType: cvalType,
+            left: x,
+            top: y,
+            newborn: newborn
+        }, this, null);
+    }
+
     getSelectColumnLink(compareKey) {
         if (this.autoCreateHelper[compareKey + '_creating']) {
             return true;
@@ -1364,19 +1433,6 @@ class SqlNode_Select extends SqlNode_Base {
             }
         }
         return null;
-    }
-
-    addNewColumn(tableCode, tableAlias, tableName, columnName, cvalType, x, y, newborn) {
-        return new SqlNode_Column({
-            tableCode: tableCode,
-            tableAlias: tableAlias,
-            tableName: tableName,
-            columnName: columnName,
-            cvalType: cvalType,
-            left: x,
-            top: y,
-            newborn: newborn
-        }, this, null);
     }
 
     columnCheckChanged(tableCode, tableAlias, tableName, columnName, cvalType, isCheck) {
@@ -1401,6 +1457,21 @@ class SqlNode_Select extends SqlNode_Base {
                 tableCode: tableCode,
                 compareKey: compareKey,
             };
+            if (this.bluePrint.type == "标量值") {
+                if (newSocket.currentComponent) {
+                    this.socketComponentCreated(newSocket);
+                }
+                if (this.columnNode.inputScokets_arr.length > 1) {
+                    var inSocket = this.columnNode.inputScokets_arr[0];
+                    var link = this.bluePrint.linkPool.getLinksBySocket(inSocket);
+                    if (link != null) {
+                        this.columnNode.bluePrint.deleteNode(link[0].outSocket.node);
+                    }
+                    this.columnNode.removeSocket(this.columnNode.inputScokets_arr[0]);
+                    this.columnNode.fireEvent(Event_SocketNumChanged);
+                }
+            }
+
         }
         else {
             // 删除
@@ -1409,7 +1480,9 @@ class SqlNode_Select extends SqlNode_Base {
             }
             var needRemoveSocket = theLink.inSocket;
             this.bluePrint.deleteNode(theLink.outSocket.node);
-            this.columnNode.removeSocket(needRemoveSocket);
+            if(this.bluePrint.type != "标量值")
+            {   this.columnNode.removeSocket(needRemoveSocket);
+            }
             this.columnNode.fireEvent(Event_SocketNumChanged);
         }
         return true;
@@ -1489,6 +1562,14 @@ class SqlNode_Select extends SqlNode_Base {
                 , columnNode
                 , helper.clickLogBadgeItemHandler)
                 , '没有选择任何返回列。']);
+            return false;
+        }
+        if (this.bluePrint.type == "标量值" && columnNode_inSockets.length > 1)
+        {       helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle
+                , columnNode
+                , helper.clickLogBadgeItemHandler)
+                , '返回列不能大于1。']);
             return false;
         }
         var emptySocket = null;
@@ -1654,40 +1735,45 @@ class SqlNode_Select extends SqlNode_Base {
         selectColumns_arr.forEach((x, i) => { columnsStr += (i == 0 ? '' : ',') + x.strContent + (x.alias == null ? '' : ' as [' + x.alias + ']') });
 
         var topString = '';
-        if (!IsEmptyString(columnNode.topValue)) {
-            if (isNaN(columnNode.topValue)) {
-                var reg = /^\d+%$/;
-                if (!reg.test(columnNode.topValue)) {
-                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                        thisNodeTitle
-                        , columnNode
-                        , helper.clickLogBadgeItemHandler)
-                        , "top值不合法"]);
-                    return false;
-                }
-                var num = columnNode.topValue.substr(0, columnNode.topValue.length - 1);
-                if (num == 0) {
-                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                        thisNodeTitle
-                        , columnNode
-                        , helper.clickLogBadgeItemHandler)
-                        , "top值不合法"]);
-                    return false;
-                }
-                else if (num > 100) {
-                    helper.logManager.warnEx(
-                        [helper.logManager.createBadgeItem(
+        if (this.bluePrint.type == "标量值") {
+            topString = 'top 1 ';
+        }
+        else {
+            if (!IsEmptyString(columnNode.topValue)) {
+                if (isNaN(columnNode.topValue)) {
+                    var reg = /^\d+%$/;
+                    if (!reg.test(columnNode.topValue)) {
+                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
                             thisNodeTitle
                             , columnNode
                             , helper.clickLogBadgeItemHandler)
-                            , "top百分比值被修改为100%"]
-                    );
-                    num = 100;
+                            , "top值不合法"]);
+                        return false;
+                    }
+                    var num = columnNode.topValue.substr(0, columnNode.topValue.length - 1);
+                    if (num == 0) {
+                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                            thisNodeTitle
+                            , columnNode
+                            , helper.clickLogBadgeItemHandler)
+                            , "top值不合法"]);
+                        return false;
+                    }
+                    else if (num > 100) {
+                        helper.logManager.warnEx(
+                            [helper.logManager.createBadgeItem(
+                                thisNodeTitle
+                                , columnNode
+                                , helper.clickLogBadgeItemHandler)
+                                , "top百分比值被修改为100%"]
+                        );
+                        num = 100;
+                    }
+                    topString = 'top ' + num + ' percent ';
                 }
-                topString = 'top ' + num + ' percent ';
-            }
-            else {
-                topString = 'top ' + columnNode.topValue + ' ';
+                else {
+                    topString = 'top ' + columnNode.topValue + ' ';
+                }
             }
         }
         var isCheckedString = ''
@@ -2126,6 +2212,10 @@ class SqlNode_Ret_Columns extends SqlNode_Base {
                 x.inputable = false;
                 x.type = SqlVarType_Scalar;
             });
+        }
+        if (parentNode.bluePrint.type == "标量值" &&  this.inputScokets_arr.length == 0) {
+            this.inSocket = new NodeSocket('in0', this, true, { type: SqlVarType_Scalar, inputable: false });
+            this.addSocket(this.inSocket);
         }
     }
 
@@ -3068,8 +3158,6 @@ SqlNodeClassMap[SQLDEF_VAR] = {
     modelClass: SqlDef_Variable,
     comClass: C_Node_SimpleNode,
 };
-<<<<<<< HEAD
-=======
 
 SqlNodeClassMap[SQLNODE_CONTROL_API_PROP] = {
     modelClass: SqlNode_Control_Api_Prop,
@@ -3080,4 +3168,3 @@ SqlNodeClassMap[SQLNODE_ENV_VAR] = {
     comClass: C_Node_SimpleNode,
 };
 
->>>>>>> master

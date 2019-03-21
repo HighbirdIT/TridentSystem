@@ -234,10 +234,11 @@ class DataMaster extends EventEmitter{
         return newItem;
     }
 
-    modifySqlBP(sqpBP, name, type){
+    modifySqlBP(sqpBP, name, type ){
         sqpBP.name = name;
         sqpBP.type = type;
         this.emit('sqlbpchanged');
+        sqpBP.fireChanged();
     }
 
     deleteSqlBP(sqpBP){

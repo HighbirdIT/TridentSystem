@@ -440,8 +440,21 @@ class C_SqlNode_DBEntity_ColumnSelector extends React.PureComponent {
         var entity = nodeData.entity;
         var columnName = getAttributeByNode(ev.target, 'data-colname', true, 5);
         var column = entity.columns.find(x => { return x.name == columnName });
-        if (column) {
-            parentNodeData.columnCheckChanged(entity.code, nodeData.alias, entity.name, columnName, column.cvalType, !this.checkmap[columnName]);
+        if (column) 
+        {
+            if(parentNodeData.bluePrint.type == "标量值")
+            {
+                nodeData.clickFrameButton('unselect-all');
+                if(!this.checkmap[columnName])
+                setTimeout(()=>{
+                    parentNodeData.columnCheckChanged(entity.code, nodeData.alias, entity.name, columnName, column.cvalType, true);
+                },10);
+            }
+            else
+            {
+                parentNodeData.columnCheckChanged(entity.code, nodeData.alias, entity.name, columnName, column.cvalType,  !this.checkmap[columnName]);
+            }
+
         }
     }
 
@@ -572,8 +585,14 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
         var nodeData = this.props.nodedata;
         var topVal = this.state.topValue;
         var distvalue = this.state.distChecked;
+        var disabled = null;
         if (topVal == null) {
             topVal = '';
+        }
+        if(nodeData.bluePrint.type =="标量值")
+        {
+            topVal = 1 ;
+            disabled = "disabled";
         }
         if(distvalue == null){
             distvalue = false;
@@ -582,7 +601,7 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType={headType} headText={nodeData.label} >
             <div className='d-flex'>
                 <div>Top:
-                    <input type='text' className='flex-grow-1 flex-shrink-1' value={topVal} onChange={this.topInputChangeHandler} style={{width:'60px',height:'30px'}}/>
+                    <input type='text' className='flex-grow-1 flex-shrink-1' value={topVal} onChange={this.topInputChangeHandler} style={{width:'60px',height:'30px'}} disabled={disabled} />
                 </div>
 
                 <div>Distinct:
@@ -591,7 +610,7 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
                 </div>
             </div>               
             <div className='d-flex'>
-                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.bluePrint.type == '表值' ? nodeData.processInputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
             </div>
         </C_Node_Frame>
