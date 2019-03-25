@@ -107,11 +107,19 @@ var ESqlBluePrintGroup = {
 
 var EFormType = {
     Page: 'page',
-    List: 'list'
+    Grid: 'grid'
 };
 
-var FormTypes_arr = [EFormType.Page, EFormType.List];
+var FormTypes_arr = [EFormType.Page, EFormType.Grid];
 var ButtonClasses_arr = ['btn-primary', 'btn-secondary', 'btn-success', 'btn-danger', 'btn-warning', 'btn-info', 'btn-light', 'btn-dark', 'btn-link'];
+
+var GridHead_PerCharWidth = 1.4;
+var EGridWidthType = {
+    Auto: 'auto',
+    Fixed: 'fixed'
+};
+
+var EGridWidthTypes_arr = [{ text: '自动列宽', value: EGridWidthType.Auto }, { text: '固定列宽', value: EGridWidthType.Fixed }];
 
 var EInterActiveType = {
     ReadOnly: 'readonly',

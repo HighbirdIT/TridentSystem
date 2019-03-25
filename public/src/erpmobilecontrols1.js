@@ -1066,7 +1066,8 @@ class ERPC_Label extends React.PureComponent {
 }
 
 function ERPC_Label_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
+    var ctlPath = MakePath(ownprops.parentPath, 'row_' + ownprops.rowIndex, ownprops.id);
+    var ctlState = getStateByPath(state, ctlPath, {});
     var useText = ctlState.text ? ctlState.text : (ownprops.text ? ownprops.text : '');
     return {
         text: useText,
@@ -1172,6 +1173,90 @@ function ERPC_PageForm_renderNavigater(){
             {exitPlushBtnItem}
         </div>
     );
+}
+
+function ERPC_GridForm(target){
+    target.rowPerPageChangedHandler = ERPC_GridForm_RowPerPageChangedHandler.bind(target);
+    target.pageIndexChangedHandler = ERPC_GridForm_PageIndexChangedHandler.bind(target);
+    target.prePageClickHandler = ERPC_GridForm_PrePageClickHandler.bind(target);
+    target.nxtPageClickHandler = ERPC_GridForm_NxtPageClickHandler.bind(target);
+    target.setRowPerPage = ERPC_GridForm_SetRowPerPage.bind(target);
+    target.setPageIndex = ERPC_GridForm_SetPageIndex.bind(target);
+}
+
+function ERPC_GridForm_RowPerPageChangedHandler(ev){
+    this.setRowPerPage(ev.target.value);
+}
+
+function ERPC_GridForm_PageIndexChangedHandler(ev){
+    this.setPageIndex(ev.target.value);
+}
+
+function ERPC_GridForm_PrePageClickHandler(ev){
+    this.setPageIndex(this.props.pageIndex-1);
+}
+
+function ERPC_GridForm_NxtPageClickHandler(ev){
+    this.setPageIndex(this.props.pageIndex+1);
+}
+
+function ERPC_GridForm_SetRowPerPage(value){
+    if(value == this.props.rowPerPage){
+        return;
+    }
+    value = parseInt(value);
+    var pageCount = Math.ceil(this.props.records_arr.length / value);
+    var pageIndex = this.props.pageIndex >= pageCount ? pageCount - 1 : this.props.pageIndex;
+    var pageIndexChanaged = pageIndex != this.props.pageIndex;
+    var formPath = MakePath(this.props.parentPath, (this.props.rowIndex == null ? null : 'row_' + this.props.rowIndex), this.props.id);
+    store.dispatch(makeAction_setManyStateByPath({
+        rowPerPage:value,
+        pageIndex:pageIndex,
+        pageCount:pageCount,
+    }, formPath));
+    if(!pageIndexChanaged){
+        store.dispatch({type:this.props.reBindAT});
+    }
+}
+
+function ERPC_GridForm_SetPageIndex(value){
+    value = parseInt(value);
+    if(value == this.props.pageIndex){
+        return;
+    }
+    if(value < 0){
+        value = this.props.pageCount - 1;
+    }
+    else if(value >= this.props.pageCount){
+        value = 0;
+    }
+    var statePath = MakePath(this.props.parentPath, (this.props.rowIndex == null ? null : 'row_' + this.props.rowIndex), this.props.id, 'pageIndex');
+    store.dispatch(makeAction_setStateByPath(value, statePath));
+}
+
+class CBaseGridFormNavBar extends React.PureComponent {
+	constructor(props) {
+		super(props);
+	}
+	render() {
+		var pageOptions_arr = [];
+		for (var pi = 0; pi < this.props.pageCount; ++pi) {
+			pageOptions_arr.push(<option key={pi} value={pi}>第{pi + 1}页</option>);
+		}
+		return(<div className='btn-group flex-shrink-0'>
+			<button onClick={this.props.prePageClickHandler} type='button' className='btn btn-dark flex-grow-1'><i className='fa fa-long-arrow-left' /></button>
+			<button onClick={this.props.nxtPageClickHandler} type='button' className='btn btn-dark flex-grow-1'><i className='fa fa-long-arrow-right' /></button>
+			<select className='btn btn-dark' value={this.props.rowPerPage} onChange={this.props.rowPerPageChangedHandler}>
+				<option value={20}>20条/页</option>
+				<option value={50}>50条/页</option>
+				<option value={100}>100条/页</option>
+				<option value={200}>200条/页</option>
+			</select>
+			<select className='btn btn-dark' value={this.props.pageIndex} onChange={this.props.pageIndexChangedHandler}>
+				{pageOptions_arr}
+			</select>
+		</div>);
+	}
 }
 
 function BaseIsValueValid(nowState,visibleBelongState, ctlState, value, valueType, nullable, ctlID, validErrState){

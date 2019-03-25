@@ -58,81 +58,6 @@ class NodeCreationHelper extends EventEmitter {
     }
 }
 
-class C_SqlNode_DBEntity extends React.PureComponent {
-    constructor(props) {
-        super(props);
-        autoBind(this);
-        C_NodeCom_Base(this);
-
-        this.state = {
-        }
-
-        this.dropdownRef = React.createRef();
-    }
-
-    nodeDataChangedHandler() {
-        var nodeData = this.props.nodedata;
-        var entity = nodeData.targetEntity;
-        if (entity) {
-            this.dropdownRef.current.setValue(entity.code);
-        }
-        this.setState({ magicObj: {} });
-    }
-
-    cus_componentWillMount() {
-        this.listenData(this.props.nodedata);
-    }
-
-    cus_componentWillUnmount() {
-        this.unlistenData(this.props.nodedata);
-    }
-
-    listenData(nodeData) {
-        if (nodeData) {
-            nodeData.on('changed', this.nodeDataChangedHandler);
-        }
-    }
-
-    unlistenData(nodeData) {
-        if (nodeData) {
-            nodeData.off('changed', this.nodeDataChangedHandler);
-        }
-    }
-
-    dropdownCtlChangedHandler(selectedDBE) {
-        var nodeData = this.props.nodedata;
-        nodeData.setEntity(selectedDBE);
-    }
-
-    getNodeTitle() {
-        var nodeData = this.props.nodedata;
-        var entity = nodeData.targetEntity;
-        if (nodeData.title && nodeData.title.length > 0) {
-            return nodeData.title;
-        }
-        var nodeTitle = entity == null ? '' : (entity.loaded ? '' : '正在加载:' + entity.code);
-        return nodeTitle;
-    }
-
-    render() {
-        var nodeData = this.props.nodedata;
-        var entity = nodeData.targetEntity;
-        var dataloaded = entity ? entity.loaded : false;
-
-        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor}>
-            <div className='d-flex'>
-                <div className='flex-grow-1 flex-shrink-1'>
-                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={g_dataBase.entities_arr} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
-                </div>
-            </div>
-            <div className='d-flex'>
-                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} />
-                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} />
-            </div>
-        </C_Node_Frame>
-    }
-}
-
 class SqlNode_BluePrint extends EventEmitter {
     constructor(initData, bluePrintJson, createHelper) {
         super();
@@ -197,7 +122,7 @@ class SqlNode_BluePrint extends EventEmitter {
     }
 
     isScalar(){
-        return false;
+        return this.type == "标量值";
     }
 
     isFunction(){
@@ -237,6 +162,9 @@ class SqlNode_BluePrint extends EventEmitter {
             }
             this.finalSelectNode.removeSocket(this.finalSelectNode.outSocket);
         }
+    }
+    getColumnByName(colName){
+        return this.columns.find(col=>{return col.name == colName;});
     }
     preEditing(editor) {
         // call pre enter Editing
@@ -591,8 +519,21 @@ class SqlNode_DBEntity extends SqlNode_Base {
         if (this.targetEntity != null) {
             var tem_arr = this.targetEntity.split('-');
             if (tem_arr[0] == 'dbe') {
-                this.targetEntity = g_dataBase.getEntityByCode(tem_arr[1]);
-                this.targetEntity.on('syned', this.entitySynedHandler);
+                if(isNaN(tem_arr[1])){
+                    var self = this;
+                    this.targetEntity = null;
+                    setTimeout(()=>{
+                        var targetEntity = self.bluePrint.master.getDataSourceByCode(tem_arr[1]);
+                        if(targetEntity){
+                            self.targetEntity = targetEntity;
+                            targetEntity.on('syned', self.entitySynedHandler);
+                        }
+                    }, 50);
+                }
+                else{
+                    this.targetEntity = g_dataBase.getEntityByCode(tem_arr[1]);
+                    this.targetEntity.on('syned', this.entitySynedHandler);
+                }
                 //console.log(this.targetEntity);
             }
             else {
@@ -634,12 +575,12 @@ class SqlNode_DBEntity extends SqlNode_Base {
     entitySynedHandler() {
         var entity = this.targetEntity;
         if (entity && entity.loaded) {
-            var paramCount = entity.params.length;
+            var entity_param_arr = entity.getParams();
             this.inputScokets_arr.forEach(item => {
                 item._validparam = false;
             });
             var hadChanged = false;
-            entity.params.forEach((param, i) => {
+            entity_param_arr.forEach((param, i) => {
                 var theSocket = this.getScoketByName(param.name);
                 if (theSocket == null) {
                     this.addSocket(new NodeSocket(param.name, this, true, { type: SqlVarType_Scalar, label: param.name, index: i }));
@@ -732,7 +673,17 @@ class SqlNode_DBEntity extends SqlNode_Base {
                 '数据源尚未加载完成']);
             return false;
         }
-        var paramsStr = '';
+        if(this.targetEntity.isCustomDS){
+            if(this.targetEntity == this.bluePrint){
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    '不能选择自身作为数据源']);
+                return false;
+            }
+        }
+        this.entitySynedHandler();
         var params_arr = [];
         var usePreNodes_arr = preNodes_arr.concat(this);
         if (this.inputScokets_arr.length > 0) {
@@ -761,14 +712,35 @@ class SqlNode_DBEntity extends SqlNode_Base {
                 }
                 params_arr.push({ name: theSocket.name, value: paramValue });
             }
-            params_arr.forEach((item, index) => {
-                paramsStr += (index == 0 ? '' : ',') + item.value;
-            });
         }
         helper.addUseEntity(this.targetEntity);
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, this.targetEntity.name + (paramsStr.length == 0 ? '' : '(' + paramsStr + ')') +
+        if(!this.targetEntity.isCustomDS){
+            var paramsStr = '';
+            params_arr.forEach((item, index) => {
+                paramsStr += (index == 0 ? '' : ',') + item.value;
+            });
+            selfCompileRet.setSocketOut(this.outSocket, this.targetEntity.name + (paramsStr.length == 0 ? '' : '(' + paramsStr + ')') +
             (IsEmptyString(this.title) ? '' : ' as [' + this.title + ']'), { tableName: IsEmptyString(this.title) ? this.targetEntity.name : this.title });
+        }
+        else{
+            helper.logManager.log('开始编译自定数据源:' + this.targetEntity.name);
+            var varMap = {};
+            params_arr.forEach((item) => {
+                varMap[item.name] = item.value;
+            });
+            var targetEntityCompileHelper = new SqlNode_CompileHelper(helper.logManager, null);
+            targetEntityCompileHelper.varValue_map = varMap;
+            var targetEntityCompileRet = this.targetEntity.finalSelectNode.compile(targetEntityCompileHelper, []);
+            if(targetEntityCompileRet == false){
+                return false;
+            }
+            var targetEntitySqlStr = targetEntityCompileRet.getSocketOut(this.targetEntity.finalSelectNode.outSocket).strContent;
+            selfCompileRet.setSocketOut(this.outSocket, '(' + targetEntitySqlStr + ') as [' +
+            (IsEmptyString(this.title) ? this.targetEntity.name :this.title) + ']', { tableName: IsEmptyString(this.title) ? this.targetEntity.name : this.title });
+            helper.logManager.log('完成编译自定数据源:' + this.targetEntity.name);
+        }
+        
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -908,7 +880,7 @@ class SqlNode_XJoin extends SqlNode_Base {
             var socketOut = compileRet.getSocketOut(theLink.outSocket);
             if (outNode.type == SQLNODE_SELECT) {
                 // select node 需要嵌套括号以及别名
-                socketOut.strContent = bracketStr(compileRet.strContent) + ' as ' + outNode.title;
+                socketOut.strContent = bracketStr(socketOut.strContent) + ' as ' + outNode.title;
             }
             if (socketOut.data && socketOut.data.tableName) {
                 var tableKey = belongSelectNode.id + '_tables_' + socketOut.data.tableName;
@@ -1105,9 +1077,9 @@ class SqlNode_Column extends SqlNode_Base {
                 , '没有在上下文中找到:' + compareLabel]);
             return false;
         }
-            if (this.outSocket.type != columnItem.cvalType) {
-                this.outSocket.set({ type: columnItem.cvalType });
-            }
+        if (columnItem.cvalType != null && this.outSocket.type != columnItem.cvalType) {
+            this.outSocket.set({ type: columnItem.cvalType });
+        }
         var selfCompileRet = new CompileResult(this);
         var columnLabel = '[' + compareLabel + '].[' + this.columnName + ']';
         selfCompileRet.setSocketOut(this.outSocket, columnLabel);
@@ -1480,7 +1452,7 @@ class SqlNode_Select extends SqlNode_Base {
                 if (this.columnNode.inputScokets_arr.length > 1) {
                     var inSocket = this.columnNode.inputScokets_arr[0];
                     var link = this.bluePrint.linkPool.getLinksBySocket(inSocket);
-                    if (link != null) {
+                    if (link.length > 0) {
                         this.columnNode.bluePrint.deleteNode(link[0].outSocket.node);
                     }
                     this.columnNode.removeSocket(this.columnNode.inputScokets_arr[0]);
@@ -1892,8 +1864,13 @@ class SqlNode_Var_Get extends SqlNode_Base {
             return false;
         }
         var selfCompileRet = new CompileResult(this);
-        helper.addUseVariable(this.varData.name, this.varData.valType, this.varData.getDefineString());
-        selfCompileRet.setSocketOut(this.outSocket, this.varData.getRealName());
+        if(helper.varValue_map[this.varData.name]){
+            selfCompileRet.setSocketOut(this.outSocket, helper.varValue_map[this.varData.name]);    
+        }
+        else{
+            helper.addUseVariable(this.varData.name, this.varData.valType, this.varData.getDefineString());
+            selfCompileRet.setSocketOut(this.outSocket, this.varData.getRealName());
+        }
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }

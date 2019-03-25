@@ -383,11 +383,20 @@ function makeStr_DotProp() {
 	return rlt;
 }
 
-function makeStr_join(joinChar) {
+function makeStr_Join(joinChar) {
 	var rlt = '';
 	for (var i = 1; i < arguments.length; ++i) {
 		if (arguments[i] == null || arguments[i].length == 0) continue;
 		rlt += (rlt.length == 0 ? '' : joinChar) + arguments[i];
+	}
+	return rlt;
+}
+
+function makeStr_AddAll() {
+	var rlt = '';
+	for (var i = 0; i < arguments.length; ++i) {
+		if (arguments[i] == null || arguments[i].length == 0) continue;
+		rlt += arguments[i];
 	}
 	return rlt;
 }

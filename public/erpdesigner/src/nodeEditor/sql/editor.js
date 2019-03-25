@@ -46,11 +46,11 @@ const SqlNodeEditorControls_arr =[
         label:'逻辑运算',
         nodeClass:SqlNode_Logical_Operator,
     }
-    // ,
-    // {
-    //     label:'环境变量',
-    //     nodeClass:SqlNode_Env_Var,
-    // }
+    ,
+    {
+         label:'环境变量',
+         nodeClass:SqlNode_Env_Var,
+    }
 ]; 
 
 
@@ -1324,6 +1324,7 @@ class SqlNode_CompileHelper{
         this.useForm_map = {};
         this.useEnvVars = {};
         this.compileSeq = [];
+        this.varValue_map = {};
 
         autoBind(this);
     }

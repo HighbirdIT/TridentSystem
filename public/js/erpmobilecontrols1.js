@@ -1262,7 +1262,8 @@ var ERPC_Label = function (_React$PureComponent7) {
 }(React.PureComponent);
 
 function ERPC_Label_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
+    var ctlPath = MakePath(ownprops.parentPath, 'row_' + ownprops.rowIndex, ownprops.id);
+    var ctlState = getStateByPath(state, ctlPath, {});
     var useText = ctlState.text ? ctlState.text : ownprops.text ? ownprops.text : '';
     return {
         text: useText,
@@ -1387,6 +1388,135 @@ function ERPC_PageForm_renderNavigater() {
     );
 }
 
+function ERPC_GridForm(target) {
+    target.rowPerPageChangedHandler = ERPC_GridForm_RowPerPageChangedHandler.bind(target);
+    target.pageIndexChangedHandler = ERPC_GridForm_PageIndexChangedHandler.bind(target);
+    target.prePageClickHandler = ERPC_GridForm_PrePageClickHandler.bind(target);
+    target.nxtPageClickHandler = ERPC_GridForm_NxtPageClickHandler.bind(target);
+    target.setRowPerPage = ERPC_GridForm_SetRowPerPage.bind(target);
+    target.setPageIndex = ERPC_GridForm_SetPageIndex.bind(target);
+}
+
+function ERPC_GridForm_RowPerPageChangedHandler(ev) {
+    this.setRowPerPage(ev.target.value);
+}
+
+function ERPC_GridForm_PageIndexChangedHandler(ev) {
+    this.setPageIndex(ev.target.value);
+}
+
+function ERPC_GridForm_PrePageClickHandler(ev) {
+    this.setPageIndex(this.props.pageIndex - 1);
+}
+
+function ERPC_GridForm_NxtPageClickHandler(ev) {
+    this.setPageIndex(this.props.pageIndex + 1);
+}
+
+function ERPC_GridForm_SetRowPerPage(value) {
+    if (value == this.props.rowPerPage) {
+        return;
+    }
+    value = parseInt(value);
+    var pageCount = Math.ceil(this.props.records_arr.length / value);
+    var pageIndex = this.props.pageIndex >= pageCount ? pageCount - 1 : this.props.pageIndex;
+    var pageIndexChanaged = pageIndex != this.props.pageIndex;
+    var formPath = MakePath(this.props.parentPath, this.props.rowIndex == null ? null : 'row_' + this.props.rowIndex, this.props.id);
+    store.dispatch(makeAction_setManyStateByPath({
+        rowPerPage: value,
+        pageIndex: pageIndex,
+        pageCount: pageCount
+    }, formPath));
+    if (!pageIndexChanaged) {
+        store.dispatch({ type: this.props.reBindAT });
+    }
+}
+
+function ERPC_GridForm_SetPageIndex(value) {
+    value = parseInt(value);
+    if (value == this.props.pageIndex) {
+        return;
+    }
+    if (value < 0) {
+        value = this.props.pageCount - 1;
+    } else if (value >= this.props.pageCount) {
+        value = 0;
+    }
+    var statePath = MakePath(this.props.parentPath, this.props.rowIndex == null ? null : 'row_' + this.props.rowIndex, this.props.id, 'pageIndex');
+    store.dispatch(makeAction_setStateByPath(value, statePath));
+}
+
+var CBaseGridFormNavBar = function (_React$PureComponent8) {
+    _inherits(CBaseGridFormNavBar, _React$PureComponent8);
+
+    function CBaseGridFormNavBar(props) {
+        _classCallCheck(this, CBaseGridFormNavBar);
+
+        return _possibleConstructorReturn(this, (CBaseGridFormNavBar.__proto__ || Object.getPrototypeOf(CBaseGridFormNavBar)).call(this, props));
+    }
+
+    _createClass(CBaseGridFormNavBar, [{
+        key: 'render',
+        value: function render() {
+            var pageOptions_arr = [];
+            for (var pi = 0; pi < this.props.pageCount; ++pi) {
+                pageOptions_arr.push(React.createElement(
+                    'option',
+                    { key: pi, value: pi },
+                    '\u7B2C',
+                    pi + 1,
+                    '\u9875'
+                ));
+            }
+            return React.createElement(
+                'div',
+                { className: 'btn-group flex-shrink-0' },
+                React.createElement(
+                    'button',
+                    { onClick: this.props.prePageClickHandler, type: 'button', className: 'btn btn-dark flex-grow-1' },
+                    React.createElement('i', { className: 'fa fa-long-arrow-left' })
+                ),
+                React.createElement(
+                    'button',
+                    { onClick: this.props.nxtPageClickHandler, type: 'button', className: 'btn btn-dark flex-grow-1' },
+                    React.createElement('i', { className: 'fa fa-long-arrow-right' })
+                ),
+                React.createElement(
+                    'select',
+                    { className: 'btn btn-dark', value: this.props.rowPerPage, onChange: this.props.rowPerPageChangedHandler },
+                    React.createElement(
+                        'option',
+                        { value: 20 },
+                        '20\u6761/\u9875'
+                    ),
+                    React.createElement(
+                        'option',
+                        { value: 50 },
+                        '50\u6761/\u9875'
+                    ),
+                    React.createElement(
+                        'option',
+                        { value: 100 },
+                        '100\u6761/\u9875'
+                    ),
+                    React.createElement(
+                        'option',
+                        { value: 200 },
+                        '200\u6761/\u9875'
+                    )
+                ),
+                React.createElement(
+                    'select',
+                    { className: 'btn btn-dark', value: this.props.pageIndex, onChange: this.props.pageIndexChangedHandler },
+                    pageOptions_arr
+                )
+            );
+        }
+    }]);
+
+    return CBaseGridFormNavBar;
+}(React.PureComponent);
+
 function BaseIsValueValid(nowState, visibleBelongState, ctlState, value, valueType, nullable, ctlID, validErrState) {
     if (visibleBelongState && visibleBelongState.visible == false) {
         // not visible is always valid
@@ -1459,22 +1589,22 @@ var EToastType = {
     Error: 'error'
 };
 
-var CToastManger = function (_React$PureComponent8) {
-    _inherits(CToastManger, _React$PureComponent8);
+var CToastManger = function (_React$PureComponent9) {
+    _inherits(CToastManger, _React$PureComponent9);
 
     function CToastManger(props) {
         _classCallCheck(this, CToastManger);
 
-        var _this10 = _possibleConstructorReturn(this, (CToastManger.__proto__ || Object.getPrototypeOf(CToastManger)).call(this, props));
+        var _this11 = _possibleConstructorReturn(this, (CToastManger.__proto__ || Object.getPrototypeOf(CToastManger)).call(this, props));
 
-        autoBind(_this10);
+        autoBind(_this11);
 
-        _this10.state = {
+        _this11.state = {
             msg_arr: []
         };
-        _this10.ticker = null;
-        _this10.msgID = 0;
-        return _this10;
+        _this11.ticker = null;
+        _this11.msgID = 0;
+        return _this11;
     }
 
     _createClass(CToastManger, [{
@@ -1649,20 +1779,20 @@ var MessageBoxItem = function () {
     return MessageBoxItem;
 }();
 
-var CMessageBox = function (_React$PureComponent9) {
-    _inherits(CMessageBox, _React$PureComponent9);
+var CMessageBox = function (_React$PureComponent10) {
+    _inherits(CMessageBox, _React$PureComponent10);
 
     function CMessageBox(props) {
         _classCallCheck(this, CMessageBox);
 
-        var _this11 = _possibleConstructorReturn(this, (CMessageBox.__proto__ || Object.getPrototypeOf(CMessageBox)).call(this, props));
+        var _this12 = _possibleConstructorReturn(this, (CMessageBox.__proto__ || Object.getPrototypeOf(CMessageBox)).call(this, props));
 
-        autoBind(_this11);
+        autoBind(_this12);
 
-        _this11.state = {};
-        _this11.props.msgItem.changedAct = _this11.msgItemChanedHandler;
-        _this11.props.msgItem.closeAct = _this11.msgItemCloseHandler;
-        return _this11;
+        _this12.state = {};
+        _this12.props.msgItem.changedAct = _this12.msgItemChanedHandler;
+        _this12.props.msgItem.closeAct = _this12.msgItemCloseHandler;
+        return _this12;
     }
 
     _createClass(CMessageBox, [{
@@ -1709,7 +1839,7 @@ var CMessageBox = function (_React$PureComponent9) {
     }, {
         key: 'render',
         value: function render() {
-            var _this12 = this;
+            var _this13 = this;
 
             var msgItem = this.props.msgItem;
             var type = msgItem.type;
@@ -1807,7 +1937,7 @@ var CMessageBox = function (_React$PureComponent9) {
                     btnsElem = msgItem.btns.map(function (btn) {
                         return React.createElement(
                             'button',
-                            { onClick: _this12.clickBtnHandler, key: btn.label, 'd-type': btn.key, type: 'button', className: btn.class },
+                            { onClick: _this13.clickBtnHandler, key: btn.label, 'd-type': btn.key, type: 'button', className: btn.class },
                             btn.label
                         );
                     });
@@ -1858,21 +1988,21 @@ var CMessageBox = function (_React$PureComponent9) {
     return CMessageBox;
 }(React.PureComponent);
 
-var CMessageBoxManger = function (_React$PureComponent10) {
-    _inherits(CMessageBoxManger, _React$PureComponent10);
+var CMessageBoxManger = function (_React$PureComponent11) {
+    _inherits(CMessageBoxManger, _React$PureComponent11);
 
     function CMessageBoxManger(props) {
         _classCallCheck(this, CMessageBoxManger);
 
-        var _this13 = _possibleConstructorReturn(this, (CMessageBoxManger.__proto__ || Object.getPrototypeOf(CMessageBoxManger)).call(this, props));
+        var _this14 = _possibleConstructorReturn(this, (CMessageBoxManger.__proto__ || Object.getPrototypeOf(CMessageBoxManger)).call(this, props));
 
-        autoBind(_this13);
+        autoBind(_this14);
 
-        _this13.state = {
+        _this14.state = {
             msg_arr: []
         };
-        _this13.msgID = 0;
-        return _this13;
+        _this14.msgID = 0;
+        return _this14;
     }
 
     _createClass(CMessageBoxManger, [{
@@ -1895,7 +2025,7 @@ var CMessageBoxManger = function (_React$PureComponent10) {
     }, {
         key: 'render',
         value: function render() {
-            var _this14 = this;
+            var _this15 = this;
 
             var msg_arr = this.state.msg_arr;
             if (msg_arr.length == 0) {
@@ -1905,7 +2035,7 @@ var CMessageBoxManger = function (_React$PureComponent10) {
                 'div',
                 { className: 'messageBoxMask' },
                 msg_arr.map(function (msg, index) {
-                    return React.createElement(CMessageBox, { key: 1, msgItem: msg, manager: _this14 });
+                    return React.createElement(CMessageBox, { key: 1, msgItem: msg, manager: _this15 });
                 })
             );
         }

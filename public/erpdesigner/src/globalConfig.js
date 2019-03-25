@@ -107,11 +107,19 @@ const ESqlBluePrintGroup={
 
 const EFormType={
     Page:'page',
-    List:'list',
+    Grid:'grid',
 }
 
-const FormTypes_arr = [EFormType.Page, EFormType.List];
+const FormTypes_arr = [EFormType.Page, EFormType.Grid];
 const ButtonClasses_arr = ['btn-primary', 'btn-secondary', 'btn-success', 'btn-danger', 'btn-warning', 'btn-info', 'btn-light', 'btn-dark', 'btn-link'];
+
+const GridHead_PerCharWidth = 1.4;
+const EGridWidthType={
+    Auto:'auto',
+    Fixed:'fixed',
+}
+
+const EGridWidthTypes_arr = [{text:'自动列宽', value:EGridWidthType.Auto}, {text:'固定列宽', value:EGridWidthType.Fixed}];
 
 const EInterActiveType={
     ReadOnly:'readonly',

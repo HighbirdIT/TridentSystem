@@ -500,7 +500,7 @@ class JSNode_BluePrint extends EventEmitter {
         var propName;
         var propApiitem;
         var needCheckVars_arr = [];
-        var needCheckKernels_map = {};
+        var needCheckProps_map = {};
         var ctlStateVarName;
         var ctlParentStateVarName;
         var nullableChecker = null;
@@ -545,8 +545,8 @@ class JSNode_BluePrint extends EventEmitter {
                                 //makeStr_getStateByPath(formStateVarName, singleQuotesStr(useCtlData.kernel.id + '.' + propApiitem.stateName));
                             }
                             theFun.scope.getVar(varName, true, initValue);
-                            if (propApiitem.needValid && needCheckKernels_map[usectlid] == null) {
-                                needCheckKernels_map[usectlid] = 1;
+                            if (propApiitem.needValid && needCheckProps_map[varName] == null) {
+                                needCheckProps_map[varName] = 1;
                                 nullableChecker = ctlParentStateVarName ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
                                 needCheckVars_arr.push({
                                     kernel: useCtlData.kernel,
@@ -586,8 +586,8 @@ class JSNode_BluePrint extends EventEmitter {
                     propApiitem = useCtlData.useprops_map[propName];
                     varName = usectlid + '_' + propApiitem.stateName;
                     theFun.scope.getVar(varName, true, ctlStateVarName + '.' + propApiitem.stateName);
-                    if (propApiitem.needValid && needCheckKernels_map[usectlid] == null) {
-                        needCheckKernels_map[usectlid] = 1;
+                    if (propApiitem.needValid && needCheckProps_map[varName] == null) {
+                        needCheckProps_map[varName] = 1;
                         nullableChecker = ctlParentStateVarName ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
                         needCheckVars_arr.push({
                             kernel: useCtlData.kernel,

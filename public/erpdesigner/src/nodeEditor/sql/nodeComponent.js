@@ -709,3 +709,78 @@ class C_SqlNode_Like extends React.PureComponent {
         </C_Node_Frame>
     }
 }
+
+class C_SqlNode_DBEntity extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        C_NodeCom_Base(this);
+
+        this.state = {
+        }
+
+        this.dropdownRef = React.createRef();
+    }
+
+    nodeDataChangedHandler() {
+        var nodeData = this.props.nodedata;
+        var entity = nodeData.targetEntity;
+        if (entity) {
+            this.dropdownRef.current.setValue(entity.code);
+        }
+        this.setState({ magicObj: {} });
+    }
+
+    cus_componentWillMount() {
+        this.listenData(this.props.nodedata);
+    }
+
+    cus_componentWillUnmount() {
+        this.unlistenData(this.props.nodedata);
+    }
+
+    listenData(nodeData) {
+        if (nodeData) {
+            nodeData.on('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    unlistenData(nodeData) {
+        if (nodeData) {
+            nodeData.off('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    dropdownCtlChangedHandler(selectedDBE) {
+        var nodeData = this.props.nodedata;
+        nodeData.setEntity(selectedDBE);
+    }
+
+    getNodeTitle() {
+        var nodeData = this.props.nodedata;
+        var entity = nodeData.targetEntity;
+        if (nodeData.title && nodeData.title.length > 0) {
+            return nodeData.title;
+        }
+        var nodeTitle = entity == null ? '' : (entity.loaded ? '' : '正在加载:' + entity.code);
+        return nodeTitle;
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        var entity = nodeData.targetEntity;
+        var dataloaded = entity ? entity.loaded : false;
+
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor}>
+            <div className='d-flex'>
+                <div className='flex-grow-1 flex-shrink-1'>
+                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={nodeData.bluePrint.master.getAllEntities} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
+                </div>
+            </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} />
+            </div>
+        </C_Node_Frame>
+    }
+}

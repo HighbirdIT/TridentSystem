@@ -97,6 +97,12 @@ class FormatFileBlock extends FormatFile_ItemBase{
         return this.childs_arr.length == 0;
     }
 
+    clear(){
+        this.childs_arr = [];
+        this.nextLineIndent = 0;
+        this.childs_map = {};
+    }
+
     clone(){
         var rlt = new FormatFileBlock(this.name, this.priority);
         this.childs_arr.forEach(child=>{
@@ -647,6 +653,7 @@ class JSFile_Funtion extends FormatFileBlock{
         this.headBlock = new FormatFileBlock('head');
         this.bodyBlock = new FormatFileBlock('body');
         this.retBlock = new FormatFileBlock('ret');
+        this.beforeRetBlock = new FormatFileBlock('beforeRet');
 
         this.scope = new JSFile_Scope('_localfun', this.getScope());
         this.headBlock.parent = this;
@@ -726,9 +733,13 @@ class JSFile_Funtion extends FormatFileBlock{
             bodyStr = this.bodyBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
         }
         var retStr = '';
-        if(this.retBlock.childs_arr.length > 0){
-            retStr = this.retBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
+        if(this.beforeRetBlock.childs_arr.length > 0){
+            retStr = this.beforeRetBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
         }
+        if(this.retBlock.childs_arr.length > 0){
+            retStr += this.retBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
+        }
+        
         var varDeclareStr = this.scope.getVarDeclareString(prefixStr + indentString + indentChar, newLineChar);
         return prefixStr + indentString + declareLine + newLineChar + varDeclareStr + headStr + bodyStr + retStr + endDeclareLine;
     }
@@ -789,6 +800,19 @@ class JSFile_ReactClass extends JSFile_Class{
     }
 }
 
+class JSFile_PureReactClass extends JSFile_Class{
+    constructor(name, outScope){
+        super(name, outScope);
+        this.parentClassName = 'React.PureComponent';
+        this.constructorFun.params_arr = ['props'];
+        this.constructorFun.pushLine('super(props);');
+
+        this.renderFun = this.getFunction('render', true);
+        this.renderFun.scope.getVar(VarNames.RetElem, true, 'null');
+        this.renderFun.retBlock.pushLine(makeLine_Return(VarNames.RetElem));
+    }
+}
+
 
 class JSFileMaker  extends FormatFileMaker{
     constructor(){
@@ -843,10 +867,16 @@ class JSFileMaker  extends FormatFileMaker{
         return rlt;
     }
 
-    getReactClass(name, autoCreate){
+    getReactClass(name, autoCreate, noVisibleCom){
         var rlt = this.classes_map[name];
         if(rlt == null && autoCreate){
-            rlt = new JSFile_ReactClass(name, this.scope);
+            if(noVisibleCom){
+                rlt = new JSFile_PureReactClass(name, this.scope);
+            }
+            else
+            {
+                rlt = new JSFile_ReactClass(name, this.scope);
+            }
             this.classes_map[name] = rlt;
         }
         return rlt;

@@ -94,6 +94,10 @@ function makeFName_bindForm(formKernel){
     return 'bind_' + formKernel.id;
 }
 
+function makeFName_bindFormPage(formKernel){
+    return 'bind_' + formKernel.id + 'Page';
+}
+
 function makeFName_pull(formKernel){
     return 'pull_' + formKernel.id;
 }
@@ -137,8 +141,11 @@ const VarNames={
     RetDispather:'retDispather',
     NowPage:'nowPage',
     NeedSetState:'needSetState',
+    InvalidBundle:'invalidbundle',
     NowRecord:'nowRecord',
     RetElem:'retElem',
+    ContentElem:'contentElem',
+    NavElem:'navElem',
     ThisProps:'this.props',
     FetchErr:'fetchingErr',
     Fetching:'fetching',
@@ -148,7 +155,12 @@ const VarNames={
     InsertCache:'insertCache',
     State:'state',
     Bundle:'bundle',
-    InvalidBundle:'invalidbundle',
+    StartRowIndex:'startRowIndex',
+    EndRowIndex:'endRowIndex',
+    PageCount:'pageCount',
+    PageIndex:'pageIndex',
+    RowPerPage:'rowPerPage',
+    HadStateParam:'hadStateParam',
 };
 
 const AttrNames={
@@ -184,6 +196,12 @@ const AttrNames={
     ValidChecker:'validchecker',
     InvalidInfo:'invalidInfo',
     ListFormContent:'listFormContent',
+    PageBreak:'pageBreak',
+    RowPerPage:'rowPerPage',
+    WidthType:'widthType',
+    ColumnWidth:'columnWidth',
+    AutoHeight:'autoHeight',
+    AutoIndexColumn:'autoIndexColumn',
 
     Event:{
         OnClick:'onclick'
