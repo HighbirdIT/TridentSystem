@@ -916,6 +916,7 @@ class FlowScriptFile extends JSFileMaker{
         theFun.bodyBlock.addNextIndent();
         theFun.retBlock.pushLine("});");
         theFun.inited = true;
+        theFun.scope.isServerSide = true;
     }
 }
 
@@ -964,6 +965,7 @@ class CP_ServerSide extends JSFileMaker{
         theFun.bodyBlock.addNextIndent();
         theFun.retBlock.pushLine("});");
         theFun.inited = true;
+        theFun.scope.isServerSide = true;
     }
 }
 

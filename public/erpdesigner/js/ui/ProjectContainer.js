@@ -77,6 +77,8 @@ var TitleHeaderItem = function (_React$PureComponent) {
     return TitleHeaderItem;
 }(React.PureComponent);
 
+var gFlowMasterRef = React.createRef();
+
 var ProjectContainer = function (_React$PureComponent2) {
     _inherits(ProjectContainer, _React$PureComponent2);
 
@@ -281,7 +283,7 @@ var ProjectContainer = function (_React$PureComponent2) {
             return React.createElement(
                 React.Fragment,
                 null,
-                React.createElement(CFlowMaster, null),
+                React.createElement(CFlowMaster, { ref: gFlowMasterRef }),
                 React.createElement(
                     'div',
                     { className: 'flex-grow-1 flex-shrink-1 d-flex flex-column' },

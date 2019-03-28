@@ -332,45 +332,8 @@ function M_LC_6_isdisplay_get(state, bundle) {
 }
 function button_4_onclick() {
 	var state = store.getState();
-	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1', {});
-	var M_Dropdown_0_state = getStateByPath(M_Form_1_state, 'M_Dropdown_0', {});
-	var M_LC_0_state = getStateByPath(M_Form_1_state, 'M_LC_0', {});
-	var M_Dropdown_0_value = M_Dropdown_0_state.value;
-	var M_Dropdown_0_text = M_Dropdown_0_state.text;
-	var M_Text_1_state = getStateByPath(M_Form_1_state, 'M_Text_1', {});
-	var M_LC_2_state = getStateByPath(M_Form_1_state, 'M_LC_2', {});
-	var M_Text_1_value = M_Text_1_state.value;
-	var M_Text_3_state = getStateByPath(M_Form_1_state, 'M_Text_3', {});
-	var M_LC_4_state = getStateByPath(M_Form_1_state, 'M_LC_4', {});
-	var M_Text_3_value = M_Text_3_state.value;
-	var M_Dropdown_1_state = getStateByPath(M_Form_1_state, 'M_Dropdown_1', {});
-	var M_LC_1_state = getStateByPath(M_Form_1_state, 'M_LC_1', {});
-	var M_Dropdown_1_value = M_Dropdown_1_state.value;
-	var M_Text_4_state = getStateByPath(M_Form_1_state, 'M_Text_4', {});
-	var M_LC_5_state = getStateByPath(M_Form_1_state, 'M_LC_5', {});
-	var M_Text_4_value = M_Text_4_state.value;
-	var M_Text_2_state = getStateByPath(M_Form_1_state, 'M_Text_2', {});
-	var M_LC_3_state = getStateByPath(M_Form_1_state, 'M_LC_3', {});
-	var M_Text_2_value = M_Text_2_state.value;
-	var M_Text_5_state = getStateByPath(M_Form_1_state, 'M_Text_5', {});
-	var M_LC_6_state = getStateByPath(M_Form_1_state, 'M_LC_6', {});
-	var M_Text_5_value = M_Text_5_state.value;
-	var M_Text_6_state = getStateByPath(M_Form_1_state, 'M_Text_6', {});
-	var M_LC_7_state = getStateByPath(M_Form_1_state, 'M_LC_7', {});
-	var M_Text_6_value = M_Text_6_state.value;
-	var validErr;
-	var hadValidErr = false;
-	var validErrState = {};
 	var scriptBP_21_msg = null;
 	var callback_final = function callback_final(state, data, err) {
-		if (state == null) {
-			store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
-		} else {
-			setManyStateByPath(state, '', validErrState);
-		}
-		if (hadValidErr) {
-			SendToast('验证失败，无法执行', EToastType.Warning);return;
-		}
 		if (err) {
 			if (scriptBP_21_msg) {
 				scriptBP_21_msg.setData(err.info, EMessageBoxType.Error, '提交申请');
@@ -384,78 +347,21 @@ function button_4_onclick() {
 		}
 		SendToast('执行成功');
 	};
-	validErr = BaseIsValueValid(state, M_LC_0_state, M_Dropdown_0_state, M_Dropdown_0_value, 'string', false, 'M_Dropdown_0', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Dropdown_0.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	validErr = BaseIsValueValid(state, M_LC_0_state, M_Dropdown_0_state, M_Dropdown_0_text, 'string', false, 'M_Dropdown_0', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Dropdown_0.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	validErr = BaseIsValueValid(state, M_LC_2_state, M_Text_1_state, M_Text_1_value, 'date', false, 'M_Text_1', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Text_1.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	validErr = BaseIsValueValid(state, M_LC_4_state, M_Text_3_state, M_Text_3_value, 'date', false, 'M_Text_3', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Text_3.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	validErr = BaseIsValueValid(state, M_LC_1_state, M_Dropdown_1_state, M_Dropdown_1_value, 'string', false, 'M_Dropdown_1', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Dropdown_1.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	validErr = BaseIsValueValid(state, M_LC_5_state, M_Text_4_state, M_Text_4_value, 'string', false, 'M_Text_4', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Text_4.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	validErr = BaseIsValueValid(state, M_LC_3_state, M_Text_2_state, M_Text_2_value, 'time', false, 'M_Text_2', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Text_2.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	validErr = BaseIsValueValid(state, M_LC_6_state, M_Text_5_state, M_Text_5_value, 'time', false, 'M_Text_5', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Text_5.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	validErr = BaseIsValueValid(state, M_LC_7_state, M_Text_6_state, M_Text_6_value, 'string', false, 'M_Text_6', validErrState);
-	validErrState['M_Page_2.M_Form_1.M_Text_6.invalidInfo'] = validErr;
-	if (validErr != null) hadValidErr = true;
-	if (hadValidErr) {
-		return callback_final(null, null, { info: gPreconditionInvalidInfo });
-	}
 	var fetchid = Math.round(Math.random() * 999999);
 	fetchTracer['button_4_onclick'] = fetchid;
 	scriptBP_21_msg = PopMessageBox('', EMessageBoxType.Loading, '提交申请');;
-	var bundle_querysql_0 = {
-		员工代码: M_Dropdown_0_value,
-		起始日期: M_Text_1_value,
-		结束日期: M_Text_3_value
+	var bundle_doflowstep_0 = {
+		doflowstep_0_记录代码: 5
 	};
 	setTimeout(function () {
 		if (fetchTracer['button_4_onclick'] != fetchid) return;
-		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_querysql_0, action: '_query_已有请假记录' }, makeFTD_Callback(function (state, data_querysql_0, error_querysql_0) {
-			if (error_querysql_0) {
-				callback_final(state, null, error_querysql_0);
-			}
-			if (data_querysql_0.length > 0) {
-				var ret = callback_final(state, null, { info: M_Dropdown_0_text + '在' + M_Text_1_value + '已经有一条生效中的请假记录了' });
-				return ret == null ? state : ret;
-			} else {
-				var bundle_insert_table_0 = {
-					M_Dropdown_0_value: M_Dropdown_0_value,
-					M_Dropdown_1_value: M_Dropdown_1_value,
-					M_Text_2_value: M_Text_2_value,
-					M_Text_5_value: M_Text_5_value,
-					M_Text_1_value: M_Text_1_value,
-					M_Text_3_value: M_Text_3_value,
-					M_Text_6_value: M_Text_6_value,
-					M_Text_4_value: M_Text_4_value
-				};
-				setTimeout(function () {
-					store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_insert_table_0, action: '_insert_table_0' }, makeFTD_Callback(function (state, data_insert_table_0, err_insert_table_0) {
-						if (err_insert_table_0 == null) {
-							fresh_M_Form_1(state);
-							var ret = callback_final(state, data_insert_table_0, null);
-							return ret == null ? state : ret;
-						} else {
-							return callback_final(state, data_insert_table_0, err_insert_table_0);
-						}
-					})));
-				}, 50);
+		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_doflowstep_0, action: '_doflowStep_2' }, makeFTD_Callback(function (state, data_doflowstep_0, error_doflowstep_0) {
+			if (error_doflowstep_0) {
+				callback_final(state, null, error_doflowstep_0);
 			}
 		}, false)));
 	}, 50);
+	return 5;
 }
 function M_Dropdown_0_value_changed(state, newValue, oldValue, path, visited, delayActs) {
 	var needSetState = {};

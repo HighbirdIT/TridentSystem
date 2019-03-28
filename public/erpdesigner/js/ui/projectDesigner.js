@@ -214,6 +214,12 @@ var ProjectDesigner = function (_React$PureComponent) {
                         this.scriptMasterPanelRef.current.toggle();
                     }
                     break;
+                case 'flowmaster':
+                    if (gFlowMasterRef.current) {
+                        //this.dataMasterPanelRef.current.show();
+                        gFlowMasterRef.current.toggle();
+                    }
+                    break;
             }
         }
     }, {

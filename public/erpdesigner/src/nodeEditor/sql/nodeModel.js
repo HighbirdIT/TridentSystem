@@ -585,7 +585,21 @@ class SqlNode_DBEntity extends SqlNode_Base {
     entitySynedHandler() {
         var entity = this.targetEntity;
         if (entity && entity.loaded) {
-            var entity_param_arr = entity.getParams();
+            var entity_param_arr = [];
+            var params_arr = entity.getParams();
+            if (params_arr) {
+                if (!entity.isCustomDS) {
+                    params_arr.forEach((param, i) => {
+                        if (param.isreturn == false) {
+                            // param.parent != null 说明是自订数据源中的参数
+                            entity_param_arr.push(param);
+                        }
+                    });
+                }
+                else {
+                    entity_param_arr = params_arr;
+                }
+            }
             this.inputScokets_arr.forEach(item => {
                 item._validparam = false;
             });

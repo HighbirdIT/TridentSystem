@@ -404,6 +404,7 @@ class CFlowMaster extends React.PureComponent
             selectedFlowBP:null,
             flowBPLoading:false,
         };
+        this.panelBaseRef = React.createRef();
     }
 
     flowFileLoadedHandler(flow){
@@ -473,10 +474,21 @@ class CFlowMaster extends React.PureComponent
             });
         }
     }
+
+    show() {
+        this.panelBaseRef.current.show();
+    }
+    close() {
+        this.panelBaseRef.current.close();
+    }
+
+    toggle() {
+        this.panelBaseRef.current.toggle();
+    }
     
     render(){
         var selectedFlow = this.state.selectedFlow;
-        return (<FloatPanelbase title={'流程大师'} initShow={false} initMax={true}>
+        return (<FloatPanelbase title={'流程大师'} initShow={false} initMax={true} ref={this.panelBaseRef}>
                 <div className='d-flex flex-grow-0 flex-shrink-0 w-100 h-100'>
                     <SplitPanel 
                         defPercent={0.2}
