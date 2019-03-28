@@ -312,7 +312,7 @@ class SqlNode_BluePrint extends EventEmitter {
     getSocketById(socketID) {
         var pos = socketID.indexOf('$');
         var nodeId = socketID.substr(0, pos);
-        var theNode = getNodeByID(nodeId);
+        var theNode = this.getNodeByID(nodeId);
         if (theNode == null)
             return null;
         return theNode.sockets_map[socketID];
@@ -440,7 +440,17 @@ class SqlDef_Variable extends SqlNode_Base {
 
     setProp(data) {
         if (data.name != null) {
-            this.name = data.name;
+            var newName = data.name;
+            if (newName.length == 0) {
+                newName = '未命名';
+            }
+            if (this.bluePrint) {
+                var hadVar = this.bluePrint.getVariableByName(newName);
+                if (hadVar && hadVar != this) {
+                    newName += '_1';
+                }
+            }
+            this.name = newName;
         }
         if (data.valType != null) {
             this.valType = data.valType;

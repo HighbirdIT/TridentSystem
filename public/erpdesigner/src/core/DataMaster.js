@@ -178,6 +178,10 @@ class DBEntity extends EventEmitter{
     getParams(){
         return this.params;
     }
+
+    getColumns(){
+        return this.columns;
+    }
 }
 
 var g_dataBase = new DataBase();

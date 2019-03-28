@@ -883,6 +883,42 @@ class JSFileMaker  extends FormatFileMaker{
     }
 }
 
+class FlowScriptFile extends JSFileMaker{
+    constructor(flow){
+        super();
+        this.flow = flow;
+        this.fileName = 'serverFlow' + flow.code;
+
+        this.importBlock.pushLine("const dbhelper = require('../../../../dbhelper.js');");
+        this.importBlock.pushLine("const serverhelper = require('../../../../erpserverhelper.js');");
+        this.importBlock.pushLine("const co = require('co');");
+        this.importBlock.pushLine("const sqlTypes = dbhelper.Types;");
+        this.importBlock.pushLine("const fs = require('fs');");
+        this.importBlock.pushLine("const forge = require('node-forge');");
+
+        this.processFun = this.scope.getFunction('process', true, ['stepCode', 'pram1', 'param2', 'param3']);
+        
+    }
+
+    compile(){
+        return true;
+    }
+
+    compileEnd(){
+        this.endBlock.pushLine('module.exports = process;');
+    }
+
+    initProcessFun(theFun){
+        if(theFun.inited){
+            return;
+        }
+        theFun.headBlock.pushLine("return co(function* () {");
+        theFun.bodyBlock.addNextIndent();
+        theFun.retBlock.pushLine("});");
+        theFun.inited = true;
+    }
+}
+
 class CP_ServerSide extends JSFileMaker{
     constructor(projectCompiler){
         super();

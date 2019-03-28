@@ -160,6 +160,10 @@ function makeLine_Return(retStr) {
     return 'return ' + retStr + ';';
 }
 
+function makeLine_DeclareVar(varName, initVal) {
+    return 'var ' + varName + '=' + (initVal == null ? 'null' : singleQuotesStr(initVal)) + ';';
+}
+
 var VarNames = {
     RetProps: 'retProps',
     ReState: 'retState',

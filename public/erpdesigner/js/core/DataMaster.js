@@ -231,6 +231,11 @@ var DBEntity = function (_EventEmitter3) {
         value: function getParams() {
             return this.params;
         }
+    }, {
+        key: 'getColumns',
+        value: function getColumns() {
+            return this.columns;
+        }
     }]);
 
     return DBEntity;

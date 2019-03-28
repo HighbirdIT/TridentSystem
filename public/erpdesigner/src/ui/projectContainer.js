@@ -230,6 +230,7 @@ class ProjectContainer extends React.PureComponent {
         var projectManager = this;
         return (
             <React.Fragment>
+                <CFlowMaster />
                 <div className='flex-grow-1 flex-shrink-1 d-flex flex-column'>
                     <div className="btn-group flex-grow-0 flex-shrink-0" role="group">
                         <MenuItem id='MI_HB' text={"HB" + (LoginUser == null ? '' : LoginUser.name)} className='text-primary' >

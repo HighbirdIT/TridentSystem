@@ -281,6 +281,7 @@ var ProjectContainer = function (_React$PureComponent2) {
             return React.createElement(
                 React.Fragment,
                 null,
+                React.createElement(CFlowMaster, null),
                 React.createElement(
                     'div',
                     { className: 'flex-grow-1 flex-shrink-1 d-flex flex-column' },

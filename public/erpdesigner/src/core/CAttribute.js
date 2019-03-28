@@ -134,6 +134,9 @@ function makeLine_Return(retStr){
     return 'return ' + retStr + ';';
 }
 
+function makeLine_DeclareVar(varName, initVal){
+    return 'var ' + varName + '=' + (initVal == null ? 'null' : singleQuotesStr(initVal)) + ';';
+}
 
 const VarNames={
     RetProps:'retProps',

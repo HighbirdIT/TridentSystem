@@ -1,4 +1,4 @@
-const JSNodeEditorControls_arr =[
+const FlowNodeEditorControls_arr =[
     {
         label:'常量',
         nodeClass:JSNode_ConstValue,
@@ -10,18 +10,8 @@ const JSNodeEditorControls_arr =[
         type:'基础'
     },
     {
-        label:'环境变量',
-        nodeClass:JSNode_Env_Var,
-        type:'基础'
-    },
-    {
         label:'Return',
         nodeClass:JSNode_Return,
-        type:'流控制'
-    },
-    {
-        label:'CallOnFetchEnd',
-        nodeClass:JSNode_CallOnFetchEnd,
         type:'流控制'
     },
     {
@@ -60,23 +50,18 @@ const JSNodeEditorControls_arr =[
         type:'流控制'
     },
     {
-        label:'Insert',
-        nodeClass:JSNODE_Insert_table,
+        label:'查询关键记录',
+        nodeClass:FlowNode_QueryKeyRecord,
         type:'数据库交互'
-    },
-    {
-        label:'日期函数',
-        nodeClass:JSNode_DateFun,
-        type:'运算'
     },
     {
         label:'查询SQL',
-        nodeClass:JSNode_Query_Sql,
+        nodeClass:FlowNode_QuerySql,
         type:'数据库交互'
     },
     {
-        label:'执行流程步骤',
-        nodeClass:JSNode_Do_FlowStep,
+        label:'创建错误',
+        nodeClass:FlowNode_Create_ServerError,
         type:'数据库交互'
     },
     {
@@ -85,101 +70,23 @@ const JSNodeEditorControls_arr =[
         type:'数组操纵'
     },
     {
-        label:'创建自订错误',
-        nodeClass:JSNode_Create_Cuserror,
-        type:'错误控制'
-    },
-    {
-        label:'刷新表单',
-        nodeClass:JSNode_FreshForm,
-        type:'表单控制'
+        label:'日期函数',
+        nodeClass:JSNode_DateFun,
+        type:'运算'
     },
 ];
 
 
-const EApiType={
-    Prop:'prop',
-    Fun:'fun',
-    PropSetter:'propsetter',
-};
-
-function gCreateControlApiItem(apiType, apiName){
-
-}
-
-const g_controlApi_arr = [];
-
-function gFindPropApiItem(ctltype, attrName){
-    var rlt = null;
-    var ctlApi = g_controlApi_arr.find(item=>{return item.ctltype == ctltype;});
-    if(ctlApi != null){
-        rlt = ctlApi.propapi_arr.find(item=>{return item.attrItem.name == attrName;});
-    }
-    return rlt;
-}
-
-
-class JSNode_CompileHelper extends SqlNode_CompileHelper{
+class FlowNode_CompileHelper extends SqlNode_CompileHelper{
     constructor(logManager,editor,scope){
         super(logManager,editor);
 
         this.scope = scope == null ? new JSFile_Scope() : scope;
         this.clickLogBadgeItemHandler = this.clickLogBadgeItemHandler.bind(this);
-        this.useForm_map = {};
-        this.useGlobalControls_map = {};
-    }
-
-    addUseColumn(formKernel, columnName){
-        var formObj = this.addUseForm(formKernel);
-        formObj.useNowRecord = true;
-        if(formObj.useColumns_map[columnName] == null){
-            formObj.useColumns_map[columnName] = 1;
-        }
-    }
-
-    addUseForm(formKernel){
-        if(this.useForm_map[formKernel.id] == null){
-            this.useForm_map[formKernel.id] = {
-                useColumns_map:{},
-                useControls_map:{},
-                useNowRecord:false,
-                formKernel:formKernel,
-            };
-        }
-        return this.useForm_map[formKernel.id];
-    }
-
-    addUseControlPropApi(ctrKernel, apiitem){
-        var rlt = null;
-        var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
-        if(belongFormKernel == null){
-            rlt = this.useGlobalControls_map[ctrKernel.id];
-            if(rlt == null){
-                rlt = {
-                    kernel:ctrKernel,
-                    useprops_map:{},
-                };
-                this.useGlobalControls_map[ctrKernel.id] = rlt;
-            }
-            rlt.useprops_map[apiitem.attrItem.name] = apiitem;
-            return;
-        }
-        else{
-            var formObj = this.addUseForm(belongFormKernel);
-            rlt = formObj.useControls_map[ctrKernel.id];
-            if(rlt == null){
-                rlt = {
-                    kernel:ctrKernel,
-                    useprops_map:{},
-                };
-                formObj.useControls_map[ctrKernel.id] = rlt;
-            }
-        }
-        rlt.useprops_map[apiitem.attrItem.name] = apiitem;
     }
 }
 
-class JSNodeEditorLeftPanel extends React.PureComponent{
+class FlowNodeEditorLeftPanel extends React.PureComponent{
     constructor(props){
         super(props);
 
@@ -236,15 +143,15 @@ class JSNodeEditorLeftPanel extends React.PureComponent{
                     <div className='w-100 h-100 autoScroll d-flex flex-column'>
                         {
                             this.props.editingNode.nodes_arr.map(nodeData=>{
-                                return <SqlNodeOutlineItem key={nodeData.id} nodeData={nodeData} clickHandler={this.clickOutlineImteHandler} />
+                                return <FlowNodeOutlineItem key={nodeData.id} nodeData={nodeData} clickHandler={this.clickOutlineImteHandler} />
                             })
                         }
                     </div>
                 }
                 panel2={
                     <div className='d-flex flex-column h-100 w-100'>
-                        <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} />
-                        <JSNodeEditorCanUseNodePanel bluePrint={nowBlueprint} onMouseDown={this.props.onMouseDown} editor={this.props.editor} />
+                        <FlowNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} />
+                        <FlowNodeEditorCanUseNodePanel bluePrint={nowBlueprint} onMouseDown={this.props.onMouseDown} editor={this.props.editor} />
                     </div>
                 }
             />
@@ -252,198 +159,48 @@ class JSNodeEditorLeftPanel extends React.PureComponent{
     }
 }
 
-class JSNodeEditorCanUseNodePanel extends React.PureComponent{
+class FlowNodeEditorCanUseNodePanel extends React.PureComponent{
     constructor(props){
         super(props);
 
         autoBind(this);
         this.state = {
-            canUseDS_arr:[],
-            canAccessKernel_arr:[],
-            showCanUseDS:true,
-            showCtlApi:false,
-            showCanAccessCtl:false,
         };
         var self = this;
-    }
-
-    scanBlueprint(bluePrint){
-        this.scanedBP = bluePrint;
-        if(bluePrint == null){
-            return;
-        }
-        var scriptMaster = bluePrint.master;
-        var project = scriptMaster.project;
-        var logManager = this.props.editor.logManager;
-        logManager.clear();
-        var canUseDS_arr = [];
-        var canAccessKernel_arr = [];
-        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == EJsBluePrintFunGroup.CtlValid){
-            // 控件类型,获取上下文
-            var ctlKernel = project.getControlById(bluePrint.ctlID);
-            if(bluePrint.ctlID == null || ctlKernel == null){
-                logManager.error('本蓝图没有找到相应的控件[' + bluePrint.ctlID + ']');
-                return;
-            }
-            // 获取可用的数据源
-            var parentForms_arr = ctlKernel.searchParentKernel(M_FormKernel_Type);
-            if(parentForms_arr != null){
-                parentForms_arr.forEach(formKernel=>{
-                    var useDS = formKernel.getAttribute(AttrNames.DataSource);
-                    if(useDS != null){
-                        canUseDS_arr.push(
-                            {
-                                entity:useDS,
-                                label:formKernel.getReadableName() + '当前行',
-                                formID:formKernel.id
-                            }
-                        );
-                    }
-                });
-            }
-
-            canAccessKernel_arr = ctlKernel.getAccessableKernels();
-        }
-        //console.log(canUseDS_arr);
-        this.setState({
-            canUseDS_arr:canUseDS_arr,
-            canAccessKernel_arr:canAccessKernel_arr,
-        });
     }
 
     mouseDownHandler(ev){
         var itemValue = getAttributeByNode(ev.target, 'data-value');
         if(itemValue == null)
             return;
-        var ctlItem = JSNodeEditorControls_arr.find(item=>{return item.label == itemValue});
+        var ctlItem = FlowNodeEditorControls_arr.find(item=>{return item.label == itemValue});
         if(ctlItem){
             this.props.onMouseDown(ctlItem);
         }
     }
-
-    mouseDownCanUseDSHandler(ev){
-        var itemValue = getAttributeByNode(ev.target, 'data-value');
-        if(itemValue == null)
-            return;
-        var theDSItem = this.state.canUseDS_arr.find(e=>{return e.formID == itemValue});
-        if(theDSItem){
-            this.props.editor.createCanUseDS(theDSItem);
-        }
-    }
-
-    mouseDownCanAccessCtlHandler(ev){
-        var itemValue = getAttributeByNode(ev.target, 'data-value');
-        if(itemValue == null)
-            return;
-        this.props.editor.createCtrlKernel(itemValue);
-    }
-
-    clickCanUseDSHeader(ev){
-        this.setState({showCanUseDS:!this.state.showCanUseDS});
-    }
-
-    clickAccessCtlHeader(ev){
-        this.setState({showCanAccessCtl:!this.state.showCanAccessCtl});
-    }
-
-    clickCtlApuHeader(ev){
-        this.setState({showCtlApi:!this.state.showCtlApi});
-    }
-
-    clickControlAPIHandler(ev){
-        var ctltype = getAttributeByNode(ev.target, 'data-ctltype');
-        if(ctltype == null)
-            return;
-        var apiid = getAttributeByNode(ev.target, 'data-apiid');
-        if(apiid == null)
-            return;
-        var theApiObj = g_controlApi_arr.find(e=>{return e.ctltype == ctltype;});
-        var apiItem = theApiObj.getApiItemByid(apiid);
-        this.props.editor.createApiObj(theApiObj,apiItem);
-    }
-
     render() {
-        if(this.props.bluePrint != this.scanedBP){
-            if(this.scanTimeout == null){
-                var self = this;
-                setTimeout(() => {
-                    self.scanBlueprint(self.props.bluePrint);
-                    self.scanTimeout = null;
-                }, 10);
-            }
-            return null;
-        }
-        var canUseDS_arr = this.state.canUseDS_arr;
-        var canAccessKernel_arr = this.state.canAccessKernel_arr;
         var targetID = this.props.bluePrint.code + 'canUseNode';
-        var showCanUseDS = this.state.showCanUseDS;
-        var showCanAccessCtl = this.state.showCanAccessCtl;
-        var showCtlApi = this.state.showCtlApi;
         return (
             <React.Fragment>
                 <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>可用节点</button>
                 <div id={targetID} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
-                    <div className='mw-100 d-flex flex-column'>
-                        {
-                            canUseDS_arr.length > 0 &&
-                            <React.Fragment>
-                                <div className='d-flex flex-shrink-0'>
-                                    <span onClick={this.clickCanUseDSHeader} className='btn btn-info flex-grow-1 flex-shrink-1'>作用域数据{showCanUseDS ? '-' : '+'}</span>
-                                </div>
-                                {showCanUseDS &&
-                                <div className='btn-group-vertical mw-100 flex-shrink-0'>
-                                    {canUseDS_arr.map(item=>{
-                                        return (<button key={item.formID} onMouseDown={this.mouseDownCanUseDSHandler} data-value={item.formID} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>);
-                                    })}
-                                </div>}
-                            </React.Fragment>
-                        }
-                        {
-                            canAccessKernel_arr.length > 0 &&
-                            <React.Fragment>
-                                <div className='d-flex flex-shrink-0'>
-                                    <span onClick={this.clickAccessCtlHeader} className='btn btn-info flex-grow-1 flex-shrink-1'>作用域控件{showCanAccessCtl ? '-' : '+'}</span>
-                                </div>
-                                {showCanAccessCtl &&
-                                <div className='btn-group-vertical mw-100 flex-shrink-0'>
-                                    {canAccessKernel_arr.map(item=>{
-                                        return (<button key={item.id} onMouseDown={this.mouseDownCanAccessCtlHandler} data-value={item.id} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.getReadableName()}</button>);
-                                    })}
-                                </div>}
-                            </React.Fragment>
-                        }
-                        <div className='btn-group-vertical mw-100 flex-shrink-0'>
-                            <span className='btn btn-info' onClick={this.clickCtlApuHeader}>控件接口{showCtlApi ? '-' : '+'}</span>
-                            {showCtlApi &&
-                                g_controlApi_arr.map(
-                                    ctlApi=>{
-                                        var rlt = [];
-                                        ctlApi.allapi_arr.forEach((apiItem,index)=>{
-                                            rlt.push(<button key={apiItem.uniqueID} onMouseDown={this.clickControlAPIHandler} data-ctltype={ctlApi.ctltype} data-apiid={apiItem.id} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{apiItem.toString()}</button>);
-                                        });
-                                        return rlt;
-                                    }
-                                )
-                            }
-                        </div>
                         <div className='btn-group-vertical mw-100 flex-shrink-0'>
                             <span className='btn btn-info'>节点</span>
                             {
-                                JSNodeEditorControls_arr.map(
+                                FlowNodeEditorControls_arr.map(
                                     item=>{
                                         return <button key={item.label} onMouseDown={this.mouseDownHandler} data-value={item.label} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>
                                     }
                                 )
                             }
                         </div>
-                    </div>
-                    </div>
+                </div>
             </React.Fragment>
         );
     }
 }
 
-class JSNodeEditorVariables extends React.PureComponent{
+class FlowNodeEditorVariables extends React.PureComponent{
     constructor(props){
         super(props);
 
@@ -498,7 +255,7 @@ class JSNodeEditorVariables extends React.PureComponent{
                         <div className='btn-group-vertical mw-100'>
                             {
                                 this.props.editingNode.bluePrint.vars_arr.map(varData=>{
-                                    return <JSDef_Variable_Component belongNode={this.props.editingNode} key={blueprintPrefix + varData.id} varData={varData} editor={this.props.editor} />
+                                    return <FlowNodeDef_Variable_Component belongNode={this.props.editingNode} key={blueprintPrefix + varData.id} varData={varData} editor={this.props.editor} />
                                 })
                             }
                         </div>
@@ -509,7 +266,7 @@ class JSNodeEditorVariables extends React.PureComponent{
     }
 }
 
-class C_JSNode_Editor extends React.PureComponent{
+class C_FlowNode_Editor extends React.PureComponent{
     constructor(props){
         super(props);
 
@@ -534,9 +291,44 @@ class C_JSNode_Editor extends React.PureComponent{
         this.topBarRef = React.createRef();
         this.zoomDivRef = React.createRef();
         this.selectRectRef = React.createRef();
-        this.logManager = new LogManager('jsnodeEditorLogManager');
+        this.logManager = new LogManager('flownodeEditorLogManager');
+        this.flowMCRef = React.createRef();
+        this.quickMenuRef = React.createRef();
 
         this.selectedNFManager=new SelectItemManager(this.cb_addNF, this.cb_removeNF);
+    }
+
+    startDrag(dragData, callBack, contentFun){
+        if(dragData.info == null){
+            dragData.info = '位置drag';
+        }
+        if(contentFun == null){
+            this.flowMCRef.current.setGetContentFun(() => {
+                return (<span className='text-nowrap border bg-dark text-light'>{dragData.info}</span>)
+            });
+        }
+        else{
+            this.flowMCRef.current.setGetContentFun(() => {
+                return contentFun();
+            });
+        }
+
+        window.addEventListener('mouseup', this.mouseUpInDragingHandler);
+        this.dragEndCallBack = callBack;
+        this.dragingData = dragData;
+    }
+
+    mouseUpInDragingHandler(ev) {
+        this.flowMCRef.current.setGetContentFun(null);
+        window.removeEventListener('mouseup', this.mouseUpInDragingHandler);
+        if(this.dragEndCallBack){
+            this.dragEndCallBack({x:ev.x, y:ev.y},this.dragingData);
+            this.dragingData = null;
+        }
+    }
+
+    propUpMenu(items_arr, pos, callBack){
+        this.quickMenuRef.current.popMenu(items_arr, pos, callBack);
     }
 
     reDraw(){
@@ -887,7 +679,7 @@ class C_JSNode_Editor extends React.PureComponent{
         }
     }
 
-    genJSNode_Component(CName, nodeData){
+    genFlowNode_Component(CName, nodeData){
         var blueprintPrefix = this.state.editingNode.bluePrint.id + '_';
         return <CName key={blueprintPrefix + nodeData.id} nodedata={nodeData} editorDivRef={this.editorDivRef} editor={this} />
     }
@@ -895,12 +687,12 @@ class C_JSNode_Editor extends React.PureComponent{
     renderNode(nodeData){
         if(nodeData == null)
             return null;
-        var settting = JSNodeClassMap[nodeData.type];
+        var settting = FlowNodeClassMap[nodeData.type];
         if(settting == null){
             console.warn(nodeData.type + ' 节点类型找不到映射');
             return null;
         }
-        return this.genJSNode_Component(settting.comClass, nodeData);
+        return this.genFlowNode_Component(settting.comClass, nodeData);
     }
 
     transToEditorPos(pt){
@@ -920,10 +712,10 @@ class C_JSNode_Editor extends React.PureComponent{
         var editorPos = this.transToEditorPos(windPos);
         var newNodeData = null;
         if(config.isGet){
-            newNodeData = new JSNode_Var_Get({left:editorPos.x,top:editorPos.y,varName:config.varName}, editingNode);
+            newNodeData = new FlowNode_Var_Get({left:editorPos.x,top:editorPos.y,varName:config.varName}, editingNode);
         }
         else{
-            newNodeData = new JSNode_Var_Set({left:editorPos.x,top:editorPos.y,varName:config.varName}, editingNode);
+            newNodeData = new FlowNode_Var_Set({left:editorPos.x,top:editorPos.y,varName:config.varName}, editingNode);
         }
         this.setState({
             magicObj:{},
@@ -947,38 +739,6 @@ class C_JSNode_Editor extends React.PureComponent{
         });
         return newNode;
     }
-
-    createCanUseDS(dsconfig){
-        this.createNewNode(JSNode_CurrentDataRow,{
-            formID:dsconfig.formID,
-            dscode:dsconfig.entity.code,
-            dsentity:dsconfig.entity,
-        });
-    }
-
-    createCtrlKernel(ctlID){
-        this.createNewNode(JSNODE_CtlKernel,{
-            ctlID:ctlID,
-        });
-    }
-
-    createApiObj(apiClass, apiItem){
-        switch(apiItem.type){
-            case EApiType.Prop:
-            this.createNewNode(JSNode_Control_Api_Prop,{
-                apiClass:apiClass,
-                apiItem:apiItem,
-            });
-            break;
-            case EApiType.PropSetter:
-            this.createNewNode(JSNode_Control_Api_PropSetter,{
-                apiClass:apiClass,
-                apiItem:apiItem,
-            });
-            break;
-        }
-    }
-
     mouseDownNodeCtlrHandler(ctlData){
         var editorDiv = this.editorDivRef.current;
         var editingNode = this.state.editingNode;
@@ -1107,15 +867,16 @@ class C_JSNode_Editor extends React.PureComponent{
         var theBluePrint = this.props.bluePrint;
         this.logManager.clear();
         this.logManager.log("开始编译[" + theBluePrint.name + ']');
-        var compileHelper = new JSNode_CompileHelper(this.logManager, this);
+        var compileHelper = new FlowNode_CompileHelper(this.logManager, this);
         var compileRet = theBluePrint.compile(compileHelper);
         if(compileRet == false){
             this.logManager.log('[' + theBluePrint.name + ']编译失败');
         }
         else{
             this.logManager.log('[' + theBluePrint.name + ']编译成功');
-            this.logManager.log(compileRet.getString('', '\t', '\n'));
-            console.log(compileRet.getString('', '\t', '\n'));
+            var retStr = compileRet.getString('\t', '\n');
+            this.logManager.log(retStr);
+            console.log(retStr);
         }
         this.logManager.log('共' + this.logManager.getCount(LogTag_Warning) + '条警告,' + this.logManager.getCount(LogTag_Error) + '条错误,');
     }
@@ -1126,6 +887,65 @@ class C_JSNode_Editor extends React.PureComponent{
         var json = editingNode.bluePrint.getJson();
         var text = JSON.stringify(json);
         console.log(text);
+    }
+
+    clickSaveBtnHandler(ev){
+        this.logManager.clear();
+        if(this.props.bluePrint == null){
+            this.logManager.error('没有蓝图');
+            return;
+        }
+        if(this.props.bluePrint.flow == null){
+            this.logManager.error('蓝图没有关联流程');
+            return;
+        }
+        if(this.saving){
+            this.logManager.log('有保存正在进行中');
+            return;
+        }
+        this.saving = true;
+        var flowJson = this.props.bluePrint.getJson();
+        fetchJsonPost('server', { action: 'saveFlowFile', flowJson:flowJson}, this.saveFetchCallBack);
+    }
+
+    saveFetchCallBack(ev){
+        this.saving = false;
+        if(ev.json.err != null){
+            this.logManager.error('保存出错:' + ev.json.err.info);
+            return;
+        }
+        this.logManager.log('保存完成:' + (new Date()).toLocaleTimeString());
+    }
+
+    clickPublishBtnHandler(ev){
+        if(this.publishing){
+            this.logManager.log('有发布正在进行中');
+            return;
+        }
+        this.publishing = true;
+        var theBluePrint = this.props.bluePrint;
+        this.logManager.clear();
+        this.logManager.log("准备发布");
+        var compileHelper = new FlowNode_CompileHelper(this.logManager, this);
+        var compileRet = theBluePrint.compile(compileHelper);
+        if(compileRet == false){
+            this.logManager.log('发布失败');
+            return;
+        }
+
+        this.logManager.log('准备上传');
+        var fileStr = compileRet.getString('\t', '\n');
+        console.log(fileStr);
+        fetchJsonPost('server', { action: 'publishFlow', flowCode:theBluePrint.flow.code, flowFile:fileStr}, this.publishFetchCallBack);
+    }
+
+    publishFetchCallBack(ev){
+        this.publishing = false;
+        if(ev.json.err != null){
+            this.logManager.error('发布出错:' + ev.json.err.info);
+            return;
+        }
+        this.logManager.log('发布完成:' + (new Date()).toLocaleTimeString());
     }
 
     render(){
@@ -1163,7 +983,7 @@ class C_JSNode_Editor extends React.PureComponent{
                 maxSize='400px'
                 barClass='bg-secondary'
                 panel1={
-                    <JSNodeEditorLeftPanel onMouseDown={this.mouseDownNodeCtlrHandler} editingNode={editingNode} editorDivRef={this.editorDivRef} editor={self} />
+                    <FlowNodeEditorLeftPanel onMouseDown={this.mouseDownNodeCtlrHandler} editingNode={editingNode} editorDivRef={this.editorDivRef} editor={self} />
                 }
                 panel2={
                     <SplitPanel
@@ -1187,6 +1007,8 @@ class C_JSNode_Editor extends React.PureComponent{
                                         }
                                     </ul>
                                     <div className='btn-group flex-grow-0 flex-shrink-0'>
+                                        <button type='button' onClick={this.clickPublishBtnHandler} className='btn btn-dark' >发布</button>
+                                        <button type='button' onClick={this.clickSaveBtnHandler} className='btn btn-dark' >保存</button>
                                         <button type='button' onClick={this.clickCompileBtnHandler} className='btn btn-dark' >编译</button>
                                         <button type='button' onClick={this.clickExportBtnHandler} className='btn btn-dark' >导出</button>
                                         <button type='button' onClick={this.clickBigBtnHandler} className='btn btn-dark' ><i className='fa fa-search-plus' /></button>
@@ -1214,6 +1036,8 @@ class C_JSNode_Editor extends React.PureComponent{
                     }
                     panel2={
                         <div className='bg-dark m-100 h-100 flex-grow-1 flex-shrink-1'>
+                            <FlowMouseContainer ref={this.flowMCRef} />
+                            <QuickMenuContainer ref={this.quickMenuRef} />
                             <LogOutputPanel source={this.logManager} />
                         </div>
                     }
@@ -1223,7 +1047,7 @@ class C_JSNode_Editor extends React.PureComponent{
     }
 }
 
-class JsNodeOutlineItem extends React.PureComponent{
+class FlowNodeOutlineItem extends React.PureComponent{
     constructor(props){
         super(props);
 
@@ -1279,14 +1103,13 @@ class JsNodeOutlineItem extends React.PureComponent{
     }
 }
 
-class JSDef_Variable_Component extends React.PureComponent{
+class FlowNodeDef_Variable_Component extends React.PureComponent{
     constructor(props){
         super(props);
         var varData = this.props.varData;
         this.state = {
             name:varData.name,
             valType:varData.valType,
-            isParam:varData.isParam,
             default:varData.default,
             editing:varData.needEdit == true,
         };
@@ -1302,7 +1125,6 @@ class JSDef_Variable_Component extends React.PureComponent{
         this.setState({
             name:varData.name,
             valType:varData.valType,
-            isParam:varData.isParam,
             editing:varData.editing,
             default:varData.default,
         });
@@ -1325,12 +1147,6 @@ class JSDef_Variable_Component extends React.PureComponent{
     valTypeChangedHandler(newData){
         this.setState({
             valType:newData,
-        });
-    }
-
-    isParamChangedHandler(newCode){
-        this.setState({
-            isParam:newCode,
         });
     }
 
@@ -1378,8 +1194,7 @@ class JSDef_Variable_Component extends React.PureComponent{
     }
 
     dragTimeOutHandler() {
-        var designer = this.props.varData.bluePrint.master.project.designer;
-        designer.startDrag({info:'放置变量'}, this.dragEndHandler, this.genDragContentFun);
+        this.props.editor.startDrag({info:'放置变量'}, this.dragEndHandler, this.genDragContentFun);
     }
 
     dragMenuCallBack(menuItem, pos){
@@ -1396,10 +1211,8 @@ class JSDef_Variable_Component extends React.PureComponent{
     dragEndHandler(pos){
         var editorRect = this.props.editor.zoomDivRef.current.getBoundingClientRect();
         if(MyMath.isPointInRect(editorRect, pos)){
-            var designer = this.props.varData.bluePrint.master.project.designer;
             var varData = this.props.varData;
-            //this.dragMenuCallBack(new QuickMenuItem('Get ' + varData.name, 'GET'), pos);
-            designer.propUpMenu([new QuickMenuItem('Set ' + varData.name, 'SET'),new QuickMenuItem('Get ' + varData.name, 'GET')]
+            this.props.editor.propUpMenu([new QuickMenuItem('Set ' + varData.name, 'SET'),new QuickMenuItem('Get ' + varData.name, 'GET')]
                 ,pos
                 ,this.dragMenuCallBack
             );
@@ -1416,7 +1229,6 @@ class JSDef_Variable_Component extends React.PureComponent{
                     <div className='flex-grow-1 flex-shrink-1 text-nowrap cursor-arrow dragableItem'
                          onMouseDown={this.labelMouseDownHandler}>
                         {varData.name}
-                        {varData.isParam ? (<span className='m-1 badge badge-info' >参数</span>) : null}
                         <span className='m-1 badge badge-secondary' >{varData.valType}</span>
                     </div>
                     <i className={'fa fa-trash fa-lg'} onClick={this.clickTrashHandler} />
@@ -1433,7 +1245,6 @@ class JSDef_Variable_Component extends React.PureComponent{
             <div className='d-flex w-100 flex-grow-0 flex-shrink-0 align-items-center'>
                 <span className='text-light'>默认值</span>
                 <input onChange={this.defaultInputChangedHandler} type='text' value={this.state.default} className='flexinput flex-grow-1 flex-shrink-1' />
-                <DropDownControl itemChanged={this.isParamChangedHandler} btnclass='btn-dark' options_arr={ISParam_Options_arr} rootclass='flex-grow-0 flex-shrink-0' textAttrName='name' valueAttrName='code' value={this.state.isParam} /> 
             </div>
         </div>);
     }
