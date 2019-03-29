@@ -1,5 +1,6 @@
 const JSNODE_WHILE = 'jswhile';
-const JSNODE_ARRAY_CONCAT='concat'
+const JSNODE_ARRAY_CONCAT='concat';
+const JSNODE_TERNARY_OPERATOR='ternary_operator';
 
 class JSNode_While extends JSNode_Base{
     constructor(initData, parentNode, createHelper, nodeJson) {
@@ -230,6 +231,104 @@ class JSNode_Array_Concat extends JSNode_Base {
     }
 }
 
+/*
+    三元运算符
+
+*/
+class JSNode_Ternary_Operator extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_ARRAY_CONCAT, 'concat', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+        }
+        if (this.inSocket == null) {
+            this.addSocket(new NodeSocket('input1', this, true, { type: ValueType.Array, inputable: false }));
+            this.addSocket(new NodeSocket('input2',this,true, { type:ValueType.Object, inputable: false }))
+        }else{
+            this.inputScokets_arr.forEach(socket => {
+                if (socket.type == ValueType.Array) {
+                    socket.type = ValueType.Array;
+                    socket.inputable = false;
+                }
+                else if (socket.type == ValueType.Object) {
+                    socket.type = ValueType.Object;
+                    socket.inputable = false;
+                }
+            });
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        //this.inSocket.type = ValueType.Array;
+        //this.inSocket.inputable = false;
+        this.outSocket.type = ValueType.Array;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var theSocket = this.inSocket;
+        var socketValue = null;
+        var arrar_addValue = null;
+        for(var i = 0; i < this.inputScokets_arr.length; ++i){
+            var theSocket = this.inputScokets_arr[i];
+            var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+            if (datalinks_arr.length == 0) {
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    '需要设置参数']);
+                return false;
+            }
+            else {
+                var dataLink = datalinks_arr[0];
+                var outNode = dataLink.outSocket.node;
+                
+                var socket_type = theSocket.type
+                var compileRet = null;
+                if (outNode.isHadFlow()) {
+                    compileRet = helper.getCompileRetCache(outNode);
+                    if (compileRet == null) {
+                            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                            thisNodeTitle,
+                            nodeThis,
+                            helper.clickLogBadgeItemHandler),
+                            '输入接口设置错误']);
+                        return false;
+                    }
+                }
+                else {
+                    compileRet = outNode.compile(helper, usePreNodes_arr);
+                }
+                if (compileRet == false) {
+                    return false;
+                }
+                if (socket_type == 'array'){
+                    socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
+                }else{
+                    arrar_addValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
+                }
+        }
+    }
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, socketValue + '.concat('+arrar_addValue+')');
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_WHILE] = {
     modelClass: JSNode_While,
     comClass: C_Node_SimpleNode,
@@ -237,6 +336,11 @@ JSNodeClassMap[JSNODE_WHILE] = {
 
 JSNodeClassMap[JSNODE_ARRAY_CONCAT] = {
     modelClass: JSNode_Array_Concat,
+    comClass: C_Node_SimpleNode,
+};
+
+JSNodeClassMap[JSNODE_TERNARY_OPERATOR] = {
+    modelClass: JSNode_Ternary_Operator,
     comClass: C_Node_SimpleNode,
 };
 JSNodeEditorControls_arr.push(
@@ -248,6 +352,11 @@ JSNodeEditorControls_arr.push(
     {
         label:'数组-添加',
         nodeClass:JSNode_Array_Concat,
+        type:'数组操控'
+    },
+    {
+        label:'三元运算',
+        nodeClass:JSNode_Ternary_Operator,
         type:'数组操控'
     },
 )
