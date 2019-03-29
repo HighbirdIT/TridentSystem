@@ -1064,7 +1064,7 @@ class FlowNode_QuerySql extends JSNode_Base {
             }
         }
         var sqlVarName = this.id + 'sql';
-        myCodeBlock.pushLine(makeLine_DeclareVar(sqlVarName, sqlInitValue));
+        myCodeBlock.pushLine(makeLine_DeclareVar(sqlVarName, doubleQuotesStr(sqlInitValue)));
         var rcdResultVarName = this.id + '_value';
         myCodeBlock.pushLine(makeLine_DeclareVar(rcdResultVarName));
         var tryBlock = new JSFile_Try('try');

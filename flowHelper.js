@@ -22,9 +22,11 @@ function startFlowProcess(){
         catch(eo){
             serverhelper.InformSysManager(eo.toString(), 'startFlowProcess');
         }
-        for(var si in ret.recordset){
-            var record = ret.recordset[si];
-            doStepRecord(record);
+        if(ret.recordset){
+            for(var si in ret.recordset){
+                var record = ret.recordset[si];
+                doStepRecord(record);
+            }
         }
         started = false;
     });

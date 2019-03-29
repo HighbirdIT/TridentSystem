@@ -160,8 +160,22 @@ function makeLine_Return(retStr) {
     return 'return ' + retStr + ';';
 }
 
-function makeLine_DeclareVar(varName, initVal) {
-    return 'var ' + varName + '=' + (initVal == null ? 'null' : singleQuotesStr(initVal)) + ';';
+function makeLine_DeclareVar(varName, initVal, noAutoQuote) {
+    if (initVal != null) {
+        if (isNaN(initVal) && noAutoQuote != false) {
+            switch (initVal[0]) {
+                case "'":
+                case '"':
+                case '{':
+                    break;
+                default:
+                    initVal = singleQuotesStr(initVal);
+            }
+        }
+    } else {
+        initVal = 'null';
+    }
+    if (!isNaN(initVal) && initVal[initVal.le]) return 'var ' + varName + '=' + initVal + ';';
 }
 
 var VarNames = {

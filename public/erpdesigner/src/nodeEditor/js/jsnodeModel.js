@@ -3413,7 +3413,7 @@ class JSNode_Query_Sql extends JSNode_Base {
                 }
             }
             var sqlVarName = this.id + 'sql';
-            queryFun.scope.getVar(sqlVarName, true, singleQuotesStr(sqlInitValue));
+            queryFun.scope.getVar(sqlVarName, true, doubleQuotesStr(sqlInitValue));
             var rcdRltVarName = this.id + '_rcdRlt';
             if (!isScalar) {
                 queryFun.pushLine("var " + rcdRltVarName + " = null;");

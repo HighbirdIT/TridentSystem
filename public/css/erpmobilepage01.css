@@ -261,3 +261,7 @@ body{
     white-space: nowrap;
     overflow: hidden;
 }
+
+.erpc_checkbox{
+    cursor: pointer;
+}

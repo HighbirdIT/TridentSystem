@@ -1066,7 +1066,7 @@ class ERPC_Label extends React.PureComponent {
 }
 
 function ERPC_Label_mapstatetoprops(state, ownprops) {
-    var ctlPath = MakePath(ownprops.parentPath, 'row_' + ownprops.rowIndex, ownprops.id);
+    var ctlPath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
     var ctlState = getStateByPath(state, ctlPath, {});
     var useText = ctlState.text ? ctlState.text : (ownprops.text ? ownprops.text : '');
     return {
@@ -1080,19 +1080,66 @@ function ERPC_Label_dispatchtorprops(dispatch, ownprops) {
     };
 }
 
+class ERPC_CheckBox extends React.PureComponent {
+    constructor(props) {
+        super();
+        autoBind(this);
 
+        ERPControlBase(this);
+        this.state = this.initState;
+    }
 
+    clickHandler(ev){
+        store.dispatch(makeAction_setManyStateByPath({
+            value: this.checked ? 0 : 1,
+        }, MakePath(this.props.parentPath, this.props.id)));
+    }
+
+    render() {
+        if(this.props.visible == false){
+            return null;
+        }
+        var checked = false;
+        var value = this.props.value;
+        if(value != null){
+            checked = !(value == false || value == 0 || value == 'false' || value == 'FALSE');
+        }
+        this.checked = checked;
+        return (<span className={'erpc_checkbox ' + (this.props.className == null ? '' : this.props.className)} >
+                <span onClick={this.props.readonly ? null : this.clickHandler} className="fa-stack fa-lg">
+                    <i className={"fa fa-square-o fa-stack-2x" + (this.props.readonly ? ' text-secondary' : '')}></i>
+                    {checked && <i className={'fa fa-stack-1x fa-check' + (this.props.readonly ? ' text-secondary' : ' text-success')}></i>}
+                </span>
+            </span>);
+    }
+}
+
+function ERPC_CheckBox_mapstatetoprops(state, ownprops) {
+    var ctlPath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
+    var ctlState = getStateByPath(state, ctlPath, {});
+    return {
+        value:ctlState.value,
+        visible:ctlState.visible,
+    };
+}
+
+function ERPC_CheckBox_dispatchtorprops(dispatch, ownprops) {
+    return {
+    };
+}
 
 var VisibleERPC_DropDown = null;
 var VisibleERPC_Text = null;
 var VisibleERPC_LabeledControl = null;
 var VisibleERPC_Label = null;
+var VisibleERPC_CheckBox = null;
 
 function ErpControlInit() {
     VisibleERPC_DropDown = ReactRedux.connect(ERPC_DropDown_mapstatetoprops, ERPC_DropDown_dispatchtoprops)(ERPC_DropDown);
     VisibleERPC_Text = ReactRedux.connect(ERPC_Text_mapstatetoprops, ERPC_Text_dispatchtorprops)(ERPC_Text);
     VisibleERPC_LabeledControl = ReactRedux.connect(ERPC_LabeledControl_mapstatetoprops, ERPC_LabeledControl_dispatchtorprops)(ERPC_LabeledControl);
     VisibleERPC_Label = ReactRedux.connect(ERPC_Label_mapstatetoprops, ERPC_Label_dispatchtorprops)(ERPC_Label);
+    VisibleERPC_CheckBox = ReactRedux.connect(ERPC_CheckBox_mapstatetoprops, ERPC_CheckBox_dispatchtorprops)(ERPC_CheckBox);
 }
 
 function ERPC_PageForm(target){

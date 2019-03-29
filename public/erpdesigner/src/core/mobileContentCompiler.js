@@ -399,6 +399,9 @@ class MobileContentCompiler extends ContentCompiler {
             case M_DropdownKernel_Type:
                 rlt = this.compileDropdownKernel(theKernel, renderBlock, renderFun);
                 break;
+            case M_CheckBoxKernel_Type:
+                rlt = this.compileCheckBoxKernel(theKernel, renderBlock, renderFun);
+                break;
             default:
                 logManager.error('不支持的编译kernel type:' + theKernel.type);
         }
@@ -506,6 +509,79 @@ class MobileContentCompiler extends ContentCompiler {
                         name: 'value',
                         staticValue: IsEmptyString(defaultValParseRet.string) ? null : defaultValParseRet.string,
                         setNull: IsEmptyString(defaultValParseRet.string),
+                    };
+                }
+            }
+            if (setValueStateItem != null) {
+                kernelMidData.needSetStates_arr.push(setValueStateItem);
+            }
+        }
+    }
+
+    compileCheckBoxKernel(theKernel, renderBlock, renderFun) {
+        var project = this.project;
+        var logManager = project.logManager;
+
+        var ctlTag = new FormatHtmlTag(theKernel.id, 'VisibleERPC_CheckBox', this.clientSide);
+        this.modifyControlTag(theKernel,ctlTag);
+        var layoutConfig = theKernel.getLayoutConfig();
+
+        ctlTag.class = layoutConfig.class;
+        ctlTag.style = layoutConfig.style;
+        var parentPath = this.getKernelParentPath(theKernel);
+        ctlTag.setAttr('id', theKernel.id);
+        ctlTag.setAttr('parentPath', parentPath);
+        renderBlock.pushChild(ctlTag);
+        this.compileIsdisplayAttribute(theKernel, ctlTag);
+        this.compileValidCheckerAttribute(theKernel);
+        var editeable = theKernel.getAttribute(AttrNames.Editeable);
+        if (!editeable) {
+            ctlTag.setAttr('readonly', '{true}');
+        }
+
+        var defaultVal = theKernel.getAttribute(AttrNames.DefaultValue);
+        var defaultValParseRet = parseObj_CtlPropJsBind(defaultVal, project.scriptMaster);
+        if (defaultValParseRet.isScript) {
+            this.compileScriptAttribute(defaultValParseRet, theKernel, 'value', AttrNames.DefaultValue, { autoSetFetchState: true });
+        }
+
+        var textField = theKernel.getAttribute(AttrNames.TextField);
+        var textFieldParseRet = parseObj_CtlPropJsBind(textField, project.scriptMaster);
+        if (textFieldParseRet.isScript) {
+            if (defaultValParseRet.isScript) {
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '为默认值、显示字段同时设置了脚本']);
+                return false;
+            }
+            this.compileScriptAttribute(textFieldParseRet, theKernel, 'value', AttrNames.TextField, { autoSetFetchState: true });
+        }
+        else {
+            var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
+            var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
+            var setValueStateItem = null;
+            if (belongFormKernel != null) {
+                var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
+                var formColumns_arr = belongFormKernel.getCanuseColumns();
+                if (formMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
+                    formMidData.needSetKernels_arr.push(theKernel);
+                }
+                if (formColumns_arr.indexOf(textField) != -1) {
+                    formMidData.useColumns_map[textField] = 1;
+                    kernelMidData.columnName = textField;
+                    setValueStateItem = {
+                        name: 'value',
+                        useColumn: { name: textField },
+                    };
+                }
+            }
+            if (setValueStateItem == null) {
+                if (!defaultValParseRet.isScript) {
+                    setValueStateItem = {
+                        name: 'value',
+                        staticValue: IsEmptyString(defaultValParseRet.string) ? '0' : defaultValParseRet.string,
                     };
                 }
             }
@@ -759,7 +835,6 @@ class MobileContentCompiler extends ContentCompiler {
 
         return labeledCtrlTag;
     }
-
 
     compileFormKernel(theKernel, renderBlock, renderFun) {
         var project = this.project;
@@ -1580,7 +1655,7 @@ class MobileContentCompiler extends ContentCompiler {
         serverPullFun.pushLine("var params_arr = null;");
         var paramsetblock = new FormatFileBlock('paramset');
         serverPullFun.pushChild(paramsetblock);
-        serverPullFun.pushLine("var sql = '" + compileRet.sql + "';");
+        serverPullFun.pushLine('var sql = "' + compileRet.sql + '";');
         serverPullFun.pushLine("if (sql == null || sql.length == 0) {return serverhelper.createErrorRet('生成sql失败');}");
         serverPullFun.pushLine("var rcdRlt = yield dbhelper.asynQueryWithParams(sql, params_arr);");
         serverPullFun.pushLine("return rcdRlt.recordset;");
@@ -1671,13 +1746,13 @@ class MobileContentCompiler extends ContentCompiler {
                     };
                 }
             }
-
-            if (setValueStateItem == null && setTextStateItem != null) {
+            
+            if (setValueStateItem != null && setTextStateItem == null) {
                 logManager.errorEx([logManager.createBadgeItem(
                     theKernel.getReadableName(),
                     theKernel,
                     this.projectCompiler.clickKernelLogBadgeItemHandler),
-                    '下拉框的显示字段能找到匹配但是数值字段找不到匹配']);
+                    '下拉框的码值字段能找到匹配但是显示字段找不到匹配']);
                 return false;
             }
 

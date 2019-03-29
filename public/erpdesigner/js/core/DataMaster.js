@@ -402,7 +402,7 @@ var DataMaster = function (_EventEmitter4) {
         value: function getAllEntities() {
             return this.BP_sql_arr.filter(function (x) {
                 return x.group == 'custom';
-            }).concat(g_dataBase.entities_arr);
+            }).concat(g_dataBase.entities_arr).concat(EmptyDBEntity);
         }
     }, {
         key: 'restoreFromJson',

@@ -18,6 +18,7 @@ const SQLNODE_LOGICAL_OPERATOR = 'logical_operator';
 const SQLDEF_VAR = 'def_variable';
 const SQLNODE_CONTROL_API_PROP = 'controlapiprop';
 const SQLNODE_ENV_VAR = 'envvar';
+
 var SqlNodeClassMap = {};
 // CONSTSQLNODES_ARR output是常量的节点类型
 const SQL_OutSimpleValueNode_arr = [SQLNODE_COLUMN, SQLNODE_VAR_GET, SQLNODE_CONSTVALUE, SQLNODE_CONTROL_API_PROP, SQLNODE_ENV_VAR];
@@ -136,6 +137,12 @@ class SqlNode_BluePrint extends EventEmitter {
 
     genColumns(){
         this.columns = this.finalSelectNode.getColumns_arr();
+    }
+    containColumn(colname){
+        if(this.columns == null){
+            this.genColumns();
+        }
+        return this.getColumnByName(colname) != null;
     }
     returnSelectNode(createHelper)
     {
@@ -1796,7 +1803,7 @@ class SqlNode_Select extends SqlNode_Base {
             isCheckedString = ''
         }
         
-        var finalSql = 'select ' +isCheckedString+topString+ columnsStr + ' from ' + fromString
+        var finalSql = 'select ' +isCheckedString+topString+ columnsStr + (IsEmptyString(fromString) ? '' : ' from ' + fromString)
             + (IsEmptyString(whereString) ? '' : ' where ' + whereString)
             + (IsEmptyString(groupstring) ? '' : ' group by ' + groupstring)
             + (IsEmptyString(havingString) ? '' : ' having ' + havingString)
