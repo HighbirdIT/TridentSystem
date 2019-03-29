@@ -488,7 +488,7 @@ class CFlowMaster extends React.PureComponent
     
     render(){
         var selectedFlow = this.state.selectedFlow;
-        return (<FloatPanelbase title={'流程大师'} initShow={false} initMax={true} ref={this.panelBaseRef}>
+        return (<FloatPanelbase title={'流程大师'} initShow={true} initMax={true} ref={this.panelBaseRef}>
                 <div className='d-flex flex-grow-0 flex-shrink-0 w-100 h-100'>
                     <SplitPanel 
                         defPercent={0.2}

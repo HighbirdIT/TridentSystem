@@ -74,6 +74,11 @@ const FlowNodeEditorControls_arr =[
         nodeClass:JSNode_DateFun,
         type:'运算'
     },
+    {
+        label:'发送通知',
+        nodeClass:FlowNode_Send_Message,
+        type:'流程交互'
+    },
 ];
 
 

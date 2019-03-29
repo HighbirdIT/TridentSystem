@@ -10,6 +10,28 @@ const OrderType_DESC = 'desc';
 const OrderType_ASCE = 'asce';
 const OrderTypes_arr = [OrderType_DESC, OrderType_ASCE];
 
+const EMessageType={
+    Normal:0,
+    Process:2,
+};
+const MessageTypes_arr=[{text:'要求阅读',value:EMessageType.Normal},{text:'要求处置',value:EMessageType.Process}];
+
+const EMessageSendType={
+    Normal:1,
+    Fortwith:2,
+};
+const MessageSendTypes_arr=[{text:'普通消息',value:EMessageSendType.Normal},{text:'即时消息',value:EMessageSendType.Fortwith}];
+
+const EMessageTargetType={
+    Person:1,
+    Post:2,
+};
+const MessageTargetTypes_arr=[{text:'指定人员',value:EMessageTargetType.Person},{text:'指定岗位',value:EMessageTargetType.Post}];
+
+const PersonEductOptions_arr = [];
+const AllPosts_arr = [];
+const ProjectRecords_arr = [];
+
 const SqlVarType_Unknown = 'unknown';
 const SqlVarType_Int = 'int';
 const SqlVarType_NVarchar = 'nvarchar';

@@ -37,6 +37,10 @@ class LoginPanel extends React.PureComponent {
                 return;
             }
             gFlowMaster.synFromJson(respon.json.data.flows);
+            PersonEductOptions_arr = respon.json.data.personEducts_arr;
+            AllPosts_arr = respon.json.data.posts_arr;
+            ProjectRecords_arr = respon.json.data.projects_arr;
+
             this.endFetch('获取成功');
             var self = this;
             setTimeout(()=>{
