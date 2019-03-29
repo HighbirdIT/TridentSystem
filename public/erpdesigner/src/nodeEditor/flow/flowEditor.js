@@ -35,6 +35,11 @@ const FlowNodeEditorControls_arr =[
         type:'数学'
     },
     {
+        label: '三元运算',
+        nodeClass: JSNode_Ternary_Operator,
+        type: '表达式'
+    },
+    {
         label:'Switch',
         nodeClass:JSNode_Switch,
         type:'流控制'

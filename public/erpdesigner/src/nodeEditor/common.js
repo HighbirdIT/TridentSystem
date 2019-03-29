@@ -311,7 +311,7 @@ class Node_Base extends EventEmitter {
             bottom: this.top + bcr.height,
             width: bcr.width,
             height: bcr.height,
-        }
+        };
     }
 
     getNodeTitle() {
@@ -599,6 +599,54 @@ class Node_Base extends EventEmitter {
         var cacheRet = helper.getCompileRetCache(this);
         return cacheRet;
     }
+
+    getSocketCompileValue(helper,theSocket,usePreNodes_arr,belongBlock,canUseDefval,nullable) {
+        var socketValue = null;
+        var theNode = theSocket.node;
+        var tLinks = theNode.bluePrint.linkPool.getLinksBySocket(theSocket);
+        if (tLinks.length == 0) {
+            if(canUseDefval){
+                socketValue = IsEmptyString(theSocket.defval) ? null : theSocket.defval;
+                if (isNaN(socketValue)) {
+                    socketValue = "'" + theSocket.defval + "'";
+                }
+            }
+        }
+        else {
+            var outNode = tLinks[0].outSocket.node;
+            var compileRet = null;
+            if (outNode.isHadFlow()) {
+                compileRet = helper.getCompileRetCache(outNode);
+                if (compileRet == null) {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        theNode.getNodeTitle(),
+                        theNode,
+                        helper.clickLogBadgeItemHandler),
+                        '输入接口设置错误']);
+                    return {err:1};
+                }
+            }
+            else {
+                compileRet = outNode.compile(helper, usePreNodes_arr, belongBlock);
+            }
+    
+            if (compileRet == false) {
+                return {err:1};
+            }
+            socketValue = compileRet.getSocketOut(tLinks[0].outSocket).strContent;
+        }
+        if(!nullable && IsEmptyString(socketValue)){
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                theNode.getNodeTitle(),
+                theNode,
+                helper.clickLogBadgeItemHandler),
+                '接口' + theSocket.label + '需要一个值']);
+            return {err:1};
+        }
+        return {value:socketValue};
+    }
+
+    
 }
 
 
