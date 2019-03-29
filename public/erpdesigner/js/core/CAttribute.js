@@ -175,7 +175,7 @@ function makeLine_DeclareVar(varName, initVal, noAutoQuote) {
     } else {
         initVal = 'null';
     }
-    if (!isNaN(initVal) && initVal[initVal.le]) return 'var ' + varName + '=' + initVal + ';';
+    return 'var ' + varName + '=' + initVal + ';';
 }
 
 var VarNames = {
