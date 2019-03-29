@@ -5,6 +5,7 @@ const FLOWNODE_QUERY_SQL = 'querysql';
 const FLOWNODE_CREATE_SERVERERROR = 'createservererror';
 const FLOWNODE_QUERY_KEYRECORD = 'querykeyrecord';
 const FLOWNODE_COLUMN_VAR = 'columnvar';
+const FLOWNODE_SEND_MESSAGE = 'sendmessage';
 
 
 var FlowNodeClassMap = {
@@ -57,7 +58,7 @@ class FlowNode_Base extends Node_Base {
     }
 }
 
-class JSDef_Variable extends FlowNode_Base {
+class FlowDef_Variable extends FlowNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSDEF_VAR, '变量', false, nodeJson);
 
@@ -155,7 +156,7 @@ class FlowNode_BluePrint extends EventEmitter {
             assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'editorLeft', 'editorTop', 'group', 'ctlID']);
             if (!IsEmptyArray(bluePrintJson.variables_arr)) {
                 bluePrintJson.variables_arr.forEach(varJson => {
-                    var newVar = new JSDef_Variable({}, this, createHelper, varJson);
+                    var newVar = new FlowDef_Variable({}, this, createHelper, varJson);
                 });
             }
             this.genNodesByJsonArr(this, bluePrintJson.nodes_arr, createHelper);
@@ -276,7 +277,7 @@ class FlowNode_BluePrint extends EventEmitter {
             if (this.getVariableByName(varName) == null)
                 break;
         }
-        var rlt = new JSDef_Variable({ name: varName, valType: ValueType.String }, this);
+        var rlt = new FlowDef_Variable({ name: varName, valType: ValueType.String }, this);
         rlt.needEdit = true;
         return rlt;
     }
@@ -1643,6 +1644,299 @@ class FlowNode_ColumnVar extends JSNode_Base {
     }
 }
 
+class FlowNode_Send_Message extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, FLOWNODE_SEND_MESSAGE, '发送通知', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            this.inputScokets_arr.forEach(socket=>{
+                switch(socket.name){
+                    case 'sendType':
+                    this.sendTypeScoket = socket;
+                    break;
+                    case 'targetType':
+                    this.targetTypeScoket = socket;
+                    break;
+                    case 'targetPerson':
+                    this.targetPersonScoket = socket;
+                    break;
+                    case 'personEduct':
+                    this.personEductScoket = socket;
+                    break;
+                    case 'targetPost':
+                    this.targetPostScoket = socket;
+                    break;
+                    case 'encrypted':
+                    this.encrytedScoket = socket;
+                    break;
+                    case 'title':
+                    this.titleScoket = socket;
+                    break;
+                    case 'content':
+                    this.contentScoket = socket;
+                    break;
+                    case 'flowStep':
+                    this.flowStepScoket = socket;
+                    break;
+                    case 'msgType':
+                    this.msgTypeScoket = socket;
+                    break;
+                    case 'project':
+                    this.projectScoket = socket;
+                    break;
+                    case 'intdata':
+                    this.intdataScoket = socket;
+                    break;
+                    default:
+                    console.warn('无法正确识别的接口:' + socket.name);
+                }
+            });
+            if (this.inputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+        }
+
+        if(this.targetTypeScoket == null){
+            this.targetTypeScoket = new NodeSocket('targetType', this, true,{defval:EMessageTargetType.Person});
+            this.addSocket(this.targetTypeScoket);
+        }
+        this.targetTypeScoket.set({
+            inputable:true,
+            inputDDC_setting:{
+                textAttrName:'text',
+                valueAttrName:'value',
+                options_arr : MessageTargetTypes_arr,
+            },
+            hideIcon:true,
+        });
+        this.targetTypeScoket.on('changed', this.targetTypeChanged);
+
+        if(this.encrytedScoket == null){
+            this.encrytedScoket = new NodeSocket('encrypted', this, true);
+            this.addSocket(this.encrytedScoket);
+        }
+        this.encrytedScoket.set({
+            label:'是否加密',
+            hideIcon:true,
+            inputable:true,
+            type:ValueType.Boolean
+        });
+
+        if(this.targetPersonScoket == null){
+            this.targetPersonScoket = new NodeSocket('targetPerson', this, true);
+            this.addSocket(this.targetPersonScoket);
+        }
+        this.targetPersonScoket.label = '目标人员';
+
+        if(this.personEductScoket == null){
+            this.personEductScoket = new NodeSocket('personEduct', this, true, {defval:0});
+            this.addSocket(this.personEductScoket);
+        }
+        this.personEductScoket.set({
+            label:'人员推算',
+            inputable:true,
+            inputDDC_setting:{
+                textAttrName:'text',
+                valueAttrName:'value',
+                options_arr : PersonEductOptions_arr,
+            },
+            hideIcon:true,
+        });
+
+        if(this.targetPostScoket == null){
+            this.targetPostScoket = new NodeSocket('targetPost', this, true);
+            this.addSocket(this.targetPostScoket);
+        }
+        this.targetPostScoket.set({
+            label:'目标岗位',
+            inputable:true,
+            inputDDC_setting:{
+                textAttrName:'所属岗位名称',
+                valueAttrName:'所属岗位名称代码',
+                options_arr : AllPosts_arr,
+            },
+            hideIcon:true,
+        });
+
+        if(this.sendTypeScoket == null){
+            this.sendTypeScoket = new NodeSocket('sendType', this, true,{defval:EMessageSendType.Normal});
+            this.addSocket(this.sendTypeScoket);
+        }
+        this.sendTypeScoket.set({
+            inputable:true,
+            inputDDC_setting:{
+                textAttrName:'text',
+                valueAttrName:'value',
+                options_arr : MessageSendTypes_arr,
+            },
+            hideIcon:true,
+        });
+
+        if(this.msgTypeScoket == null){
+            this.msgTypeScoket = new NodeSocket('msgType', this, true,{defval:EMessageType.Normal});
+            this.addSocket(this.msgTypeScoket);
+        }
+        this.msgTypeScoket.set({
+            inputable:true,
+            inputDDC_setting:{
+                textAttrName:'text',
+                valueAttrName:'value',
+                options_arr : MessageTypes_arr,
+            },
+            hideIcon:true,
+        });
+        this.msgTypeScoket.on('changed', this.msgTypeChanged);
+
+        if(this.flowStepScoket == null){
+            this.flowStepScoket = new NodeSocket('flowStep', this, true);
+            this.addSocket(this.flowStepScoket);
+        }
+        this.flowStepScoket.set({
+            inputable:true,
+            inputDDC_setting:{
+                textAttrName:'fullName',
+                valueAttrName:'code',
+                options_arr : gFlowMaster.getAllSteps,
+            },
+            hideIcon:true,
+            label:'关联流程步骤',
+        });
+
+        if(this.projectScoket == null){
+            this.projectScoket = new NodeSocket('project', this, true);
+            this.addSocket(this.projectScoket);
+        }
+        this.projectScoket.set({
+            inputable:true,
+            inputDDC_setting:{
+                textAttrName:'text',
+                valueAttrName:'value',
+                options_arr : ProjectRecords_arr,
+            },
+            hideIcon:true,
+            label:'关联方案',
+        });
+
+        if(this.intdataScoket == null){
+            this.intdataScoket = new NodeSocket('intdata', this, true);
+            this.addSocket(this.intdataScoket);
+        }
+        this.intdataScoket.set({
+            type:ValueType.Int,
+            label:'关联数据',
+        });
+
+
+        if(this.titleScoket == null){
+            this.titleScoket = new NodeSocket('title', this, true, {type:ValueType.String, inputable:true});
+            this.addSocket(this.titleScoket);
+        }
+        this.titleScoket.label = '标题';
+        if(this.contentScoket == null){
+            this.contentScoket = new NodeSocket('content', this, true, {type:ValueType.String, inputable:true});
+            this.addSocket(this.contentScoket);
+        }
+        this.contentScoket.label = '内容';
+
+        this.targetTypeChanged();
+        this.msgTypeChanged();
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+    }
+
+    msgTypeChanged(ev){
+        console.log('msgTypeChanged' + ev);
+        var isPorcess = this.msgTypeScoket.defval == EMessageType.Process;
+        this.flowStepScoket.set({
+            visible:isPorcess
+        });
+        this.projectScoket.set({
+            visible:isPorcess
+        });
+        this.intdataScoket.set({
+            visible:isPorcess
+        });
+    }
+
+    targetTypeChanged(ev){
+        console.log('targetTypeChanged' + ev);
+        var targetIsPerson = this.targetTypeScoket.defval == EMessageTargetType.Person;
+        var targetIsPost = this.targetTypeScoket.defval == EMessageTargetType.Post;
+        if(!targetIsPerson){
+            this.bluePrint.linkPool.clearSocketLink(this.targetPersonScoket);
+        }
+        this.targetPersonScoket.set({
+            visible:targetIsPerson
+        });
+        this.personEductScoket.set({
+            visible:targetIsPerson
+        });
+        this.targetPostScoket.set({
+            visible:targetIsPost
+        });
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, []);
+    }
+
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        this.freshLabel();
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+
+        if (this.keySocket == null) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '关联节点无效']);
+            return false;
+        }
+        var theColumn = null;
+        if(preNodes_arr.indexOf(this.keySocket.node) == -1){
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '不能早于关联的节点被访问到']);
+            return false;
+        }
+        if(this.keySocket.node.targetEntity != null){
+            theColumn = this.keySocket.node.targetEntity.getColumByName(this.columnName);
+        }
+        if(theColumn == null){
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '关联的列名是无效的']);
+            return false;
+        }
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, value);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
 FlowNodeClassMap[FLOWNODE_VAR_GET] = {
     modelClass: FlowNode_Var_Get,
     comClass: C_FlowNodeDef_Var_Get,
@@ -1671,7 +1965,10 @@ FlowNodeClassMap[FLOWNODE_COLUMN_VAR] = {
     modelClass: FlowNode_ColumnVar,
     comClass: C_Node_SimpleNode,
 };
-
+FlowNodeClassMap[FLOWNODE_SEND_MESSAGE] = {
+    modelClass: FlowNode_Send_Message,
+    comClass: C_Node_SimpleNode,
+};
 
 FlowNodeClassMap[JSNODE_ARRAY_LENGTH] = {
     modelClass: JSNode_Array_Length,
@@ -1721,3 +2018,4 @@ FlowNodeClassMap[JSNODE_DATEFUN] = {
     modelClass: JSNode_DateFun,
     comClass: C_JSNode_DateFun,
 };
+

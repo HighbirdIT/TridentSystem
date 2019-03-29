@@ -184,6 +184,10 @@ var DropDownControl = function (_React$PureComponent) {
     }, {
         key: 'formatData',
         value: function formatData(orginData_arr, textAttrName, valueAttrName) {
+            if (orginData_arr == null) {
+                console.warn('orginData_arr == null');
+                return [];
+            }
             if (typeof orginData_arr === 'function') {
                 orginData_arr = orginData_arr(this.props.funparamobj);
             }
@@ -275,13 +279,16 @@ var DropDownControl = function (_React$PureComponent) {
                     'div',
                     { id: 'listDIV', className: 'list-group flex-grow-1 flex-shrink-1 autoScroll', style: { overflow: 'auto', maxHeight: '500px', padding: '5px' } },
                     filted_arr.map(function (item, i) {
+                        if (item.text == null) {
+                            console.warn('item text 不能为null');
+                        }
                         return React.createElement(
                             'div',
                             { onClick: _this2.listItemClick, className: 'd-flex flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedOption && item.value == selectedOption.value ? ' active' : ''), menuitem: 1, miniitem: 1, key: item.value, value: item.value },
                             React.createElement(
                                 'div',
                                 null,
-                                item.text.length == 0 ? '(空值)' : item.text
+                                item.text == null || item.text.length == 0 ? '(空值)' : item.text
                             )
                         );
                     })

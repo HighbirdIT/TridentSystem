@@ -1,5 +1,5 @@
 const dbhelper = require('../../dbhelper.js');
-const sleep = require('sleep');
+//const sleep = require('sleep');
 const co = require('co');
 const sqlTypes = dbhelper.Types;
 const sharp = require('sharp');
@@ -290,7 +290,34 @@ function getBaseConfigData(req) {
         var rlt = {
         };
         rlt.flows = yield getAllFlow(req);
+        rlt.personEducts_arr = yield getPersonEductOptions();
+        rlt.posts_arr = yield getAllPost();
+        rlt.projects_arr = yield getAllProjectRecord();
         return rlt;
+    });
+}
+
+function getPersonEductOptions(){
+    return co(function* () {
+        var sql = 'SELECT [特别岗位名称代码] as value,[特别岗位名称] as text FROM [base1].[dbo].[T014A特别岗位名称]';
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
+        return rcdRlt.recordset;
+    });
+}
+
+function getAllPost(){
+    return co(function* () {
+        var sql = 'select 所属系统名称,所属系统名称代码,所属部门名称,所属部门名称代码,所属岗位名称,所属岗位名称代码 from V014A全部岗位名称 order by 所属岗位名称';
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
+        return rcdRlt.recordset;
+    });
+}
+
+function getAllProjectRecord(){
+    return co(function* () {
+        var sql = 'SELECT [系统方案名称] as text,[系统方案名称代码] as value FROM [base1].[dbo].[T002C系统方案名称] where 终止确认状态=0 order by 系统方案名称';
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
+        return rcdRlt.recordset;
     });
 }
 
@@ -867,7 +894,9 @@ function saveFlowFile(req){
             if (!fs.existsSync(flowDirPath))
                 fs.mkdirSync(flowDirPath);
             var startTime = null;
-            while(isLock(flowFilePath)){
+            if(isLock(flowFilePath)){
+                return { err: { info: '文件正被锁定,请稍后再试' } };
+                /*
                 var nowTime = (new Date()).getTime();
                 if(startTime == null){
                     startTime = nowTime;
@@ -877,7 +906,8 @@ function saveFlowFile(req){
                         return { err: { info: '文件一直未能锁定,请稍后再试' } };
                     }
                 }
-                sleep.sleep(1);
+                */
+                //sleep.sleep(1);
             }
             lockFile(flowFilePath);
             if(fs.existsSync(flowFilePath)){
