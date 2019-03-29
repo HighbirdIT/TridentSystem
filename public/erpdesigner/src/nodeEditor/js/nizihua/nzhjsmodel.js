@@ -247,17 +247,16 @@ class JSNode_Ternary_Operator extends JSNode_Base {
         }
         if (this.inputScokets_arr.length == 0) {
             this.addSocket(new NodeSocket('input1', this, true, { type: ValueType.Boolean, inputable: false }));
-            this.addSocket(new NodeSocket('input2',this,true, { type:ValueType.Object, inputable: false }));
-            this.addSocket(new NodeSocket('input3',this,true, { type:ValueType.Object, inputable: false }));
+            this.addSocket(new NodeSocket('input2',this,true, { type:ValueType.Object, inputable: true }));
+            this.addSocket(new NodeSocket('input3',this,true, { type:ValueType.Object, inputable: true }));
         }else{
             this.inputScokets_arr.forEach(socket => {
                 if (socket.type == ValueType.Boolean) {
-                    socket.type = ValueType.Boolean;
                     socket.inputable = false;
                 }
                 else if (socket.type == ValueType.Object) {
-                    socket.type = ValueType.Object;
-                    socket.inputable = false;
+                    //socket.type = ValueType.Object;
+                    socket.inputable = true;
                 }
             });
         }
@@ -298,7 +297,7 @@ class JSNode_Ternary_Operator extends JSNode_Base {
                 var dataLink = datalinks_arr[0];
                 var outNode = dataLink.outSocket.node;
                 
-                var socket_type = theSocket.type
+                //var socket_type = theSocket.type
                 var compileRet = null;
                 if (outNode.isHadFlow()) {
                     compileRet = helper.getCompileRetCache(outNode);
@@ -317,7 +316,7 @@ class JSNode_Ternary_Operator extends JSNode_Base {
                 if (compileRet == false) {
                     return false;
                 }
-                if (socket_type == 'boolean'){
+                if (i == 0 &&theSocket.name == 'input1'){
                     condition_value = compileRet.getSocketOut(dataLink.outSocket).strContent;
                 }else{
                     tvalue = compileRet.getSocketOut(dataLink.outSocket).strContent;
