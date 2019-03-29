@@ -91,7 +91,9 @@ sql.asynQueryWithParams = function (sqltext, params, config) {
             if(config.scalar){
                 if(data.recordset.length == 0)
                     return null;
-                return data.recordset[0][""];
+                for(var colName in data.recordset[0]){
+                    return data.recordset[0][colName];
+                }
             }
             
             return data;

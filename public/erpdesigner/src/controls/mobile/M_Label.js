@@ -20,8 +20,8 @@ class M_LabelKernel extends ControlKernelBase{
         autoBind(self);
     }
 
-    renderSelf(){
-        return (<M_Label key={this.id} ctlKernel={this} onClick={this.clickHandler} />)
+    renderSelf(clickHandler){
+        return (<M_Label key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 }
 

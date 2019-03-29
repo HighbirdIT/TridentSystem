@@ -1252,7 +1252,7 @@ var ERPC_Label = function (_React$PureComponent7) {
             }
             return React.createElement(
                 'span',
-                { className: this.props.className },
+                { className: 'erpc_label ' + (this.props.className == null ? '' : this.props.className) },
                 this.props.text
             );
         }
@@ -1262,7 +1262,8 @@ var ERPC_Label = function (_React$PureComponent7) {
 }(React.PureComponent);
 
 function ERPC_Label_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
+    var ctlPath = MakePath(ownprops.parentPath, ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex, ownprops.id);
+    var ctlState = getStateByPath(state, ctlPath, {});
     var useText = ctlState.text ? ctlState.text : ownprops.text ? ownprops.text : '';
     return {
         text: useText,
@@ -1274,16 +1275,81 @@ function ERPC_Label_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
+var ERPC_CheckBox = function (_React$PureComponent8) {
+    _inherits(ERPC_CheckBox, _React$PureComponent8);
+
+    function ERPC_CheckBox(props) {
+        _classCallCheck(this, ERPC_CheckBox);
+
+        var _this10 = _possibleConstructorReturn(this, (ERPC_CheckBox.__proto__ || Object.getPrototypeOf(ERPC_CheckBox)).call(this));
+
+        autoBind(_this10);
+
+        ERPControlBase(_this10);
+        _this10.state = _this10.initState;
+        return _this10;
+    }
+
+    _createClass(ERPC_CheckBox, [{
+        key: 'clickHandler',
+        value: function clickHandler(ev) {
+            store.dispatch(makeAction_setManyStateByPath({
+                value: this.checked ? 0 : 1
+            }, MakePath(this.props.parentPath, this.props.id)));
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            if (this.props.visible == false) {
+                return null;
+            }
+            var checked = false;
+            var value = this.props.value;
+            if (value != null) {
+                checked = !(value == false || value == 0 || value == 'false' || value == 'FALSE');
+            }
+            this.checked = checked;
+            return React.createElement(
+                'span',
+                { className: 'erpc_checkbox ' + (this.props.className == null ? '' : this.props.className) },
+                React.createElement(
+                    'span',
+                    { onClick: this.props.readonly ? null : this.clickHandler, className: 'fa-stack fa-lg' },
+                    React.createElement('i', { className: "fa fa-square-o fa-stack-2x" + (this.props.readonly ? ' text-secondary' : '') }),
+                    checked && React.createElement('i', { className: 'fa fa-stack-1x fa-check' + (this.props.readonly ? ' text-secondary' : ' text-success') })
+                )
+            );
+        }
+    }]);
+
+    return ERPC_CheckBox;
+}(React.PureComponent);
+
+function ERPC_CheckBox_mapstatetoprops(state, ownprops) {
+    var ctlPath = MakePath(ownprops.parentPath, ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex, ownprops.id);
+    var ctlState = getStateByPath(state, ctlPath, {});
+    return {
+        value: ctlState.value,
+        visible: ctlState.visible
+    };
+}
+
+function ERPC_CheckBox_dispatchtorprops(dispatch, ownprops) {
+    return {};
+}
+
 var VisibleERPC_DropDown = null;
 var VisibleERPC_Text = null;
 var VisibleERPC_LabeledControl = null;
 var VisibleERPC_Label = null;
+var VisibleERPC_CheckBox = null;
 
 function ErpControlInit() {
     VisibleERPC_DropDown = ReactRedux.connect(ERPC_DropDown_mapstatetoprops, ERPC_DropDown_dispatchtoprops)(ERPC_DropDown);
     VisibleERPC_Text = ReactRedux.connect(ERPC_Text_mapstatetoprops, ERPC_Text_dispatchtorprops)(ERPC_Text);
     VisibleERPC_LabeledControl = ReactRedux.connect(ERPC_LabeledControl_mapstatetoprops, ERPC_LabeledControl_dispatchtorprops)(ERPC_LabeledControl);
     VisibleERPC_Label = ReactRedux.connect(ERPC_Label_mapstatetoprops, ERPC_Label_dispatchtorprops)(ERPC_Label);
+    VisibleERPC_CheckBox = ReactRedux.connect(ERPC_CheckBox_mapstatetoprops, ERPC_CheckBox_dispatchtorprops)(ERPC_CheckBox);
 }
 
 function ERPC_PageForm(target) {
@@ -1387,6 +1453,135 @@ function ERPC_PageForm_renderNavigater() {
     );
 }
 
+function ERPC_GridForm(target) {
+    target.rowPerPageChangedHandler = ERPC_GridForm_RowPerPageChangedHandler.bind(target);
+    target.pageIndexChangedHandler = ERPC_GridForm_PageIndexChangedHandler.bind(target);
+    target.prePageClickHandler = ERPC_GridForm_PrePageClickHandler.bind(target);
+    target.nxtPageClickHandler = ERPC_GridForm_NxtPageClickHandler.bind(target);
+    target.setRowPerPage = ERPC_GridForm_SetRowPerPage.bind(target);
+    target.setPageIndex = ERPC_GridForm_SetPageIndex.bind(target);
+}
+
+function ERPC_GridForm_RowPerPageChangedHandler(ev) {
+    this.setRowPerPage(ev.target.value);
+}
+
+function ERPC_GridForm_PageIndexChangedHandler(ev) {
+    this.setPageIndex(ev.target.value);
+}
+
+function ERPC_GridForm_PrePageClickHandler(ev) {
+    this.setPageIndex(this.props.pageIndex - 1);
+}
+
+function ERPC_GridForm_NxtPageClickHandler(ev) {
+    this.setPageIndex(this.props.pageIndex + 1);
+}
+
+function ERPC_GridForm_SetRowPerPage(value) {
+    if (value == this.props.rowPerPage) {
+        return;
+    }
+    value = parseInt(value);
+    var pageCount = Math.ceil(this.props.records_arr.length / value);
+    var pageIndex = this.props.pageIndex >= pageCount ? pageCount - 1 : this.props.pageIndex;
+    var pageIndexChanaged = pageIndex != this.props.pageIndex;
+    var formPath = MakePath(this.props.parentPath, this.props.rowIndex == null ? null : 'row_' + this.props.rowIndex, this.props.id);
+    store.dispatch(makeAction_setManyStateByPath({
+        rowPerPage: value,
+        pageIndex: pageIndex,
+        pageCount: pageCount
+    }, formPath));
+    if (!pageIndexChanaged) {
+        store.dispatch({ type: this.props.reBindAT });
+    }
+}
+
+function ERPC_GridForm_SetPageIndex(value) {
+    value = parseInt(value);
+    if (value == this.props.pageIndex) {
+        return;
+    }
+    if (value < 0) {
+        value = this.props.pageCount - 1;
+    } else if (value >= this.props.pageCount) {
+        value = 0;
+    }
+    var statePath = MakePath(this.props.parentPath, this.props.rowIndex == null ? null : 'row_' + this.props.rowIndex, this.props.id, 'pageIndex');
+    store.dispatch(makeAction_setStateByPath(value, statePath));
+}
+
+var CBaseGridFormNavBar = function (_React$PureComponent9) {
+    _inherits(CBaseGridFormNavBar, _React$PureComponent9);
+
+    function CBaseGridFormNavBar(props) {
+        _classCallCheck(this, CBaseGridFormNavBar);
+
+        return _possibleConstructorReturn(this, (CBaseGridFormNavBar.__proto__ || Object.getPrototypeOf(CBaseGridFormNavBar)).call(this, props));
+    }
+
+    _createClass(CBaseGridFormNavBar, [{
+        key: 'render',
+        value: function render() {
+            var pageOptions_arr = [];
+            for (var pi = 0; pi < this.props.pageCount; ++pi) {
+                pageOptions_arr.push(React.createElement(
+                    'option',
+                    { key: pi, value: pi },
+                    '\u7B2C',
+                    pi + 1,
+                    '\u9875'
+                ));
+            }
+            return React.createElement(
+                'div',
+                { className: 'btn-group flex-shrink-0' },
+                React.createElement(
+                    'button',
+                    { onClick: this.props.prePageClickHandler, type: 'button', className: 'btn btn-dark flex-grow-1' },
+                    React.createElement('i', { className: 'fa fa-long-arrow-left' })
+                ),
+                React.createElement(
+                    'button',
+                    { onClick: this.props.nxtPageClickHandler, type: 'button', className: 'btn btn-dark flex-grow-1' },
+                    React.createElement('i', { className: 'fa fa-long-arrow-right' })
+                ),
+                React.createElement(
+                    'select',
+                    { className: 'btn btn-dark', value: this.props.rowPerPage, onChange: this.props.rowPerPageChangedHandler },
+                    React.createElement(
+                        'option',
+                        { value: 20 },
+                        '20\u6761/\u9875'
+                    ),
+                    React.createElement(
+                        'option',
+                        { value: 50 },
+                        '50\u6761/\u9875'
+                    ),
+                    React.createElement(
+                        'option',
+                        { value: 100 },
+                        '100\u6761/\u9875'
+                    ),
+                    React.createElement(
+                        'option',
+                        { value: 200 },
+                        '200\u6761/\u9875'
+                    )
+                ),
+                React.createElement(
+                    'select',
+                    { className: 'btn btn-dark', value: this.props.pageIndex, onChange: this.props.pageIndexChangedHandler },
+                    pageOptions_arr
+                )
+            );
+        }
+    }]);
+
+    return CBaseGridFormNavBar;
+}(React.PureComponent);
+
 function BaseIsValueValid(nowState, visibleBelongState, ctlState, value, valueType, nullable, ctlID, validErrState) {
     if (visibleBelongState && visibleBelongState.visible == false) {
         // not visible is always valid
@@ -1459,22 +1654,22 @@ var EToastType = {
     Error: 'error'
 };
 
-var CToastManger = function (_React$PureComponent8) {
-    _inherits(CToastManger, _React$PureComponent8);
+var CToastManger = function (_React$PureComponent10) {
+    _inherits(CToastManger, _React$PureComponent10);
 
     function CToastManger(props) {
         _classCallCheck(this, CToastManger);
 
-        var _this10 = _possibleConstructorReturn(this, (CToastManger.__proto__ || Object.getPrototypeOf(CToastManger)).call(this, props));
+        var _this12 = _possibleConstructorReturn(this, (CToastManger.__proto__ || Object.getPrototypeOf(CToastManger)).call(this, props));
 
-        autoBind(_this10);
+        autoBind(_this12);
 
-        _this10.state = {
+        _this12.state = {
             msg_arr: []
         };
-        _this10.ticker = null;
-        _this10.msgID = 0;
-        return _this10;
+        _this12.ticker = null;
+        _this12.msgID = 0;
+        return _this12;
     }
 
     _createClass(CToastManger, [{
@@ -1649,20 +1844,20 @@ var MessageBoxItem = function () {
     return MessageBoxItem;
 }();
 
-var CMessageBox = function (_React$PureComponent9) {
-    _inherits(CMessageBox, _React$PureComponent9);
+var CMessageBox = function (_React$PureComponent11) {
+    _inherits(CMessageBox, _React$PureComponent11);
 
     function CMessageBox(props) {
         _classCallCheck(this, CMessageBox);
 
-        var _this11 = _possibleConstructorReturn(this, (CMessageBox.__proto__ || Object.getPrototypeOf(CMessageBox)).call(this, props));
+        var _this13 = _possibleConstructorReturn(this, (CMessageBox.__proto__ || Object.getPrototypeOf(CMessageBox)).call(this, props));
 
-        autoBind(_this11);
+        autoBind(_this13);
 
-        _this11.state = {};
-        _this11.props.msgItem.changedAct = _this11.msgItemChanedHandler;
-        _this11.props.msgItem.closeAct = _this11.msgItemCloseHandler;
-        return _this11;
+        _this13.state = {};
+        _this13.props.msgItem.changedAct = _this13.msgItemChanedHandler;
+        _this13.props.msgItem.closeAct = _this13.msgItemCloseHandler;
+        return _this13;
     }
 
     _createClass(CMessageBox, [{
@@ -1709,7 +1904,7 @@ var CMessageBox = function (_React$PureComponent9) {
     }, {
         key: 'render',
         value: function render() {
-            var _this12 = this;
+            var _this14 = this;
 
             var msgItem = this.props.msgItem;
             var type = msgItem.type;
@@ -1807,7 +2002,7 @@ var CMessageBox = function (_React$PureComponent9) {
                     btnsElem = msgItem.btns.map(function (btn) {
                         return React.createElement(
                             'button',
-                            { onClick: _this12.clickBtnHandler, key: btn.label, 'd-type': btn.key, type: 'button', className: btn.class },
+                            { onClick: _this14.clickBtnHandler, key: btn.label, 'd-type': btn.key, type: 'button', className: btn.class },
                             btn.label
                         );
                     });
@@ -1858,21 +2053,21 @@ var CMessageBox = function (_React$PureComponent9) {
     return CMessageBox;
 }(React.PureComponent);
 
-var CMessageBoxManger = function (_React$PureComponent10) {
-    _inherits(CMessageBoxManger, _React$PureComponent10);
+var CMessageBoxManger = function (_React$PureComponent12) {
+    _inherits(CMessageBoxManger, _React$PureComponent12);
 
     function CMessageBoxManger(props) {
         _classCallCheck(this, CMessageBoxManger);
 
-        var _this13 = _possibleConstructorReturn(this, (CMessageBoxManger.__proto__ || Object.getPrototypeOf(CMessageBoxManger)).call(this, props));
+        var _this15 = _possibleConstructorReturn(this, (CMessageBoxManger.__proto__ || Object.getPrototypeOf(CMessageBoxManger)).call(this, props));
 
-        autoBind(_this13);
+        autoBind(_this15);
 
-        _this13.state = {
+        _this15.state = {
             msg_arr: []
         };
-        _this13.msgID = 0;
-        return _this13;
+        _this15.msgID = 0;
+        return _this15;
     }
 
     _createClass(CMessageBoxManger, [{
@@ -1895,7 +2090,7 @@ var CMessageBoxManger = function (_React$PureComponent10) {
     }, {
         key: 'render',
         value: function render() {
-            var _this14 = this;
+            var _this16 = this;
 
             var msg_arr = this.state.msg_arr;
             if (msg_arr.length == 0) {
@@ -1905,7 +2100,7 @@ var CMessageBoxManger = function (_React$PureComponent10) {
                 'div',
                 { className: 'messageBoxMask' },
                 msg_arr.map(function (msg, index) {
-                    return React.createElement(CMessageBox, { key: 1, msgItem: msg, manager: _this14 });
+                    return React.createElement(CMessageBox, { key: 1, msgItem: msg, manager: _this16 });
                 })
             );
         }

@@ -337,6 +337,20 @@ var ContentPanel = function (_React$PureComponent) {
                         ),
                         React.createElement(
                             'button',
+                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickPanelNameBtn, pname: 'flowmaster' },
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u6D41\u7A0B'
+                            ),
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u5927\u5E08'
+                            )
+                        ),
+                        React.createElement(
+                            'button',
                             { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickCompileBtnHanlder },
                             React.createElement(
                                 'div',

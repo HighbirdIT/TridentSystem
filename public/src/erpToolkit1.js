@@ -631,7 +631,7 @@ function setStateByPath(state, path, value, visited) {
             for(var acti in delayActs){
                 var theAct = delayActs[acti];
                 if(typeof(theAct.callfun) === 'function'){
-                    theAct.callfun();
+                    theAct.callfun(retState);
                 }
             }
         }, 50);
@@ -773,7 +773,7 @@ function setManyStateByPath(state, path, valuesObj, visited) {
             for(var acti in delayActs){
                 var theAct = delayActs[acti];
                 if(typeof(theAct.callfun) === 'function'){
-                    theAct.callfun();
+                    theAct.callfun(retState);
                 }
             }
         }, 50);

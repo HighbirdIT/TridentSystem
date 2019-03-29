@@ -231,6 +231,11 @@ var DBEntity = function (_EventEmitter3) {
         value: function getParams() {
             return this.params;
         }
+    }, {
+        key: 'getColumns',
+        value: function getColumns() {
+            return this.columns;
+        }
     }]);
 
     return DBEntity;
@@ -331,6 +336,7 @@ var DataMaster = function (_EventEmitter4) {
             sqpBP.name = name;
             sqpBP.type = type;
             this.emit('sqlbpchanged');
+            sqpBP.fireChanged();
         }
     }, {
         key: 'deleteSqlBP',
@@ -396,7 +402,7 @@ var DataMaster = function (_EventEmitter4) {
         value: function getAllEntities() {
             return this.BP_sql_arr.filter(function (x) {
                 return x.group == 'custom';
-            }).concat(g_dataBase.entities_arr);
+            }).concat(g_dataBase.entities_arr).concat(EmptyDBEntity);
         }
     }, {
         key: 'restoreFromJson',

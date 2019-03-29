@@ -294,3 +294,24 @@ body{
         min-width: 90%;
     }
 }
+
+
+.erpc_label{
+    word-break: break-all;
+}
+
+.fixPageContent{
+    overflow: hidden;
+    height: calc(100% - 40px);
+}
+
+.indexTableHeader{
+    width: 3em;
+    max-width: 3em;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.erpc_checkbox{
+    cursor: pointer;
+}

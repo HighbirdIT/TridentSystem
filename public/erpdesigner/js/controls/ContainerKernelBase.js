@@ -107,9 +107,21 @@ var ContainerKernelBase = function (_ControlKernelBase) {
             childKernel.parent = null;
         }
     }, {
-        key: 'getChildIndex',
-        value: function getChildIndex(childKernel) {
-            return this.children.indexOf(childKernel);
+        key: 'swapChild',
+        value: function swapChild(srcIndex, dstIndex) {
+            if (srcIndex == dstIndex) {
+                return false;
+            }
+            if (srcIndex >= 0 && srcIndex < this.children.length) {
+                if (dstIndex >= 0 && dstIndex < this.children.length) {
+                    var temp = this.children[srcIndex];
+                    this.children[srcIndex] = this.children[dstIndex];
+                    this.children[dstIndex] = temp;
+                    this.attrChanged(AttrNames.Chidlren);
+                    return true;
+                }
+            }
+            return false;
         }
     }, {
         key: 'getJson',

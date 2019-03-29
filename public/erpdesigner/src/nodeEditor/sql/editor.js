@@ -48,8 +48,8 @@ const SqlNodeEditorControls_arr =[
     }
     ,
     {
-        label:'环境变量',
-        nodeClass:SqlNode_Env_Var,
+         label:'环境变量',
+         nodeClass:SqlNode_Env_Var,
     }
 ]; 
 
@@ -319,6 +319,9 @@ class C_SqlNode_Editor extends React.PureComponent{
     }
 
     componentWillUnmount(){
+        if(this.props.bluePrint){
+            this.props.bluePrint.genColumns();
+        }
         window.removeEventListener('mousemove', this.mousemoveWidthDragingHandler);
         window.removeEventListener('mouseup', this.mouseupWidthDragingHandler);
         window.removeEventListener('keyup', this.keyUpHandler);
@@ -1320,6 +1323,8 @@ class SqlNode_CompileHelper{
         this.useGlobalControls_map = {};
         this.useForm_map = {};
         this.useEnvVars = {};
+        this.compileSeq = [];
+        this.varValue_map = {};
 
         autoBind(this);
     }
@@ -1328,6 +1333,7 @@ class SqlNode_CompileHelper{
         if(this.startNode == null){
             this.startNode = theNode;
         }
+        this.compileSeq.push(theNode);
     }
 
     addUseEnvVars(varKey){

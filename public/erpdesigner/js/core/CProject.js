@@ -50,7 +50,7 @@ var CProject = function (_IAttributeable) {
             name: genProjectName(),
             editingType: 'MB',
             editingPage: {
-                id: jsonData.lastEditingPageID
+                id: jsonData == null ? -1 : jsonData.lastEditingPageID
             },
             description: '页面'
         };

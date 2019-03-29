@@ -25,8 +25,8 @@ var M_LabelKernel = function (_ControlKernelBase) {
 
     _createClass(M_LabelKernel, [{
         key: 'renderSelf',
-        value: function renderSelf() {
-            return React.createElement(M_Label, { key: this.id, ctlKernel: this, onClick: this.clickHandler });
+        value: function renderSelf(clickHandler) {
+            return React.createElement(M_Label, { key: this.id, ctlKernel: this, onClick: clickHandler ? clickHandler : this.clickHandler });
         }
     }]);
 

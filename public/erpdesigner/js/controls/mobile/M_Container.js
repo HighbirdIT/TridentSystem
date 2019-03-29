@@ -25,8 +25,8 @@ var M_ContainerKernel = function (_ContainerKernelBase) {
 
     _createClass(M_ContainerKernel, [{
         key: 'renderSelf',
-        value: function renderSelf() {
-            return React.createElement(M_Container, { key: this.id, ctlKernel: this, onClick: this.clickHandler });
+        value: function renderSelf(clickHandler) {
+            return React.createElement(M_Container, { key: this.id, ctlKernel: this, onClick: clickHandler ? clickHandler : this.clickHandler });
         }
     }]);
 

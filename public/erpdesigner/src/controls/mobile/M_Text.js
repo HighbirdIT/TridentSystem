@@ -36,8 +36,8 @@ class M_TextKernel extends ControlKernelBase {
         this[AttrNames.LineType + '_visible'] = nowvt == ValueType.String;
     }
 
-    renderSelf() {
-        return (<M_Text key={this.id} ctlKernel={this} onClick={this.clickHandler} />)
+    renderSelf(clickHandler) {
+        return (<M_Text key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {

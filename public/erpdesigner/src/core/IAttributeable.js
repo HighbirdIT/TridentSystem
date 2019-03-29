@@ -110,6 +110,7 @@ class IAttributeable extends EventEmitter{
                     case AttrNames.DataSource:
                     case AttrNames.ProcessTable:
                     case AttrNames.CustomDataSource:
+                    case AttrNames.ListFormContent:
                     break;
                     default:
                     if(attrItem.valueType == ValueType.CustomDataSource){
@@ -211,6 +212,9 @@ class IAttributeable extends EventEmitter{
                     }
                     switch(attr.valueType){
                         case ValueType.DataSource:
+                        val = val.code;
+                        break;
+                        case ValueType.ListFormContent:
                         val = val.code;
                         break;
                     }

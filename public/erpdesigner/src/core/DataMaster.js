@@ -178,6 +178,10 @@ class DBEntity extends EventEmitter{
     getParams(){
         return this.params;
     }
+
+    getColumns(){
+        return this.columns;
+    }
 }
 
 var g_dataBase = new DataBase();
@@ -255,10 +259,11 @@ class DataMaster extends EventEmitter{
         return newItem;
     }
 
-    modifySqlBP(sqpBP, name, type){
+    modifySqlBP(sqpBP, name, type ){
         sqpBP.name = name;
         sqpBP.type = type;
         this.emit('sqlbpchanged');
+        sqpBP.fireChanged();
     }
 
     deleteSqlBP(sqpBP){
@@ -313,7 +318,7 @@ class DataMaster extends EventEmitter{
     }
 
     getAllEntities(){
-        return this.BP_sql_arr.filter(x=>{return x.group == 'custom';}).concat(g_dataBase.entities_arr);
+        return this.BP_sql_arr.filter(x=>{return x.group == 'custom';}).concat(g_dataBase.entities_arr).concat(EmptyDBEntity);
     }
 
     restoreFromJson(json){

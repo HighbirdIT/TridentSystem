@@ -114,6 +114,10 @@ function makeFName_bindForm(formKernel) {
     return 'bind_' + formKernel.id;
 }
 
+function makeFName_bindFormPage(formKernel) {
+    return 'bind_' + formKernel.id + 'Page';
+}
+
 function makeFName_pull(formKernel) {
     return 'pull_' + formKernel.id;
 }
@@ -156,14 +160,35 @@ function makeLine_Return(retStr) {
     return 'return ' + retStr + ';';
 }
 
+function makeLine_DeclareVar(varName, initVal, noAutoQuote) {
+    if (initVal != null) {
+        if (isNaN(initVal) && noAutoQuote != false) {
+            switch (initVal[0]) {
+                case "'":
+                case '"':
+                case '{':
+                    break;
+                default:
+                    initVal = singleQuotesStr(initVal);
+            }
+        }
+    } else {
+        initVal = 'null';
+    }
+    if (!isNaN(initVal) && initVal[initVal.le]) return 'var ' + varName + '=' + initVal + ';';
+}
+
 var VarNames = {
     RetProps: 'retProps',
     ReState: 'retState',
     RetDispather: 'retDispather',
     NowPage: 'nowPage',
     NeedSetState: 'needSetState',
+    InvalidBundle: 'invalidbundle',
     NowRecord: 'nowRecord',
     RetElem: 'retElem',
+    ContentElem: 'contentElem',
+    NavElem: 'navElem',
     ThisProps: 'this.props',
     FetchErr: 'fetchingErr',
     Fetching: 'fetching',
@@ -173,7 +198,12 @@ var VarNames = {
     InsertCache: 'insertCache',
     State: 'state',
     Bundle: 'bundle',
-    InvalidBundle: 'invalidbundle'
+    StartRowIndex: 'startRowIndex',
+    EndRowIndex: 'endRowIndex',
+    PageCount: 'pageCount',
+    PageIndex: 'pageIndex',
+    RowPerPage: 'rowPerPage',
+    HadStateParam: 'hadStateParam'
 };
 
 var AttrNames = {
@@ -208,6 +238,13 @@ var AttrNames = {
     InteractiveField: 'interactivefield',
     ValidChecker: 'validchecker',
     InvalidInfo: 'invalidInfo',
+    ListFormContent: 'listFormContent',
+    PageBreak: 'pageBreak',
+    RowPerPage: 'rowPerPage',
+    WidthType: 'widthType',
+    ColumnWidth: 'columnWidth',
+    AutoHeight: 'autoHeight',
+    AutoIndexColumn: 'autoIndexColumn',
 
     Event: {
         OnClick: 'onclick'

@@ -587,6 +587,7 @@ class Node_Base extends EventEmitter {
     }
 
     compile(helper, preNodes_arr) {
+        helper.meetNode(this);
         if (preNodes_arr.indexOf(this) != -1) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 this.getNodeTitle(),

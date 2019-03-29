@@ -493,6 +493,25 @@ var ControlKernelBase = function (_IAttributeable) {
         value: function isAEditor() {
             return this.parent && this.parent.editor == this;
         }
+    }, {
+        key: 'canAppand',
+        value: function canAppand() {
+            return true;
+        }
+    }, {
+        key: 'getTextValueFieldValue',
+        value: function getTextValueFieldValue() {
+            var rlt = {};
+            var textAttr = this.findAttributeByName(AttrNames.TextField);
+            if (textAttr) {
+                rlt.text = this.getAttribute(AttrNames.TextField);
+            }
+            var valueAttr = this.findAttributeByName(AttrNames.ValueField);
+            if (valueAttr) {
+                rlt.value = this.getAttribute(AttrNames.ValueField);
+            }
+            return rlt;
+        }
     }]);
 
     return ControlKernelBase;

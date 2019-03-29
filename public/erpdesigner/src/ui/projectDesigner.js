@@ -14,6 +14,7 @@ class ProjectDesigner extends React.PureComponent {
         this.scriptMasterPanelRef = React.createRef();
         this.quickScriptEditPanelRef = React.createRef();
         this.quickSqlBPEditPanelRef = React.createRef();
+        this.quickListFormContentEditPanelRef = React.createRef();
         autoBind(this);
         this.props.project.designer = this;
 
@@ -186,6 +187,12 @@ class ProjectDesigner extends React.PureComponent {
                     this.scriptMasterPanelRef.current.toggle();
                 }
             break;
+            case 'flowmaster':
+                if(gFlowMasterRef.current){
+                    //this.dataMasterPanelRef.current.show();
+                    gFlowMasterRef.current.toggle();
+                }
+            break;
         }
     }
 
@@ -212,6 +219,12 @@ class ProjectDesigner extends React.PureComponent {
         }
     }
 
+    editListFormContent(formKernel){
+        if(this.quickListFormContentEditPanelRef.current != null){
+            this.quickListFormContentEditPanelRef.current.showKernel(formKernel);
+        }
+    }
+
     rightNavChanged(oldItem, newItem) {
         this.setState({
             magicObj: {}
@@ -226,6 +239,7 @@ class ProjectDesigner extends React.PureComponent {
                 <ScriptMasterPanel ref={this.scriptMasterPanelRef} project={thisProject} />
                 <QuickScriptEditPanel ref={this.quickScriptEditPanelRef} project={thisProject} />
                 <QuickSqlBPEditPanel ref={this.quickSqlBPEditPanelRef} project={thisProject} />
+                <QuickListFormContentEditPanel ref={this.quickListFormContentEditPanelRef} project={thisProject} />
                 <SplitPanel
                     defPercent={0.15}
                     barClass='bg-secondary'

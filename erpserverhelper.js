@@ -1,4 +1,6 @@
 const co = require('co');
+const dbhelper = require('./dbhelper.js');
+const sqlTypes = dbhelper.Types;
 
 var helper = {};
 
@@ -108,6 +110,13 @@ helper.IsEmptyString = (val)=>{
 
 helper.IsEmptyArray = (val)=>{
     return Array.isArray(val) && val.length == 0;
+};
+
+helper.InformSysManager = (text, identity)=>{
+    dbhelper.asynExcute('P000M通知系统管理员', [
+        dbhelper.makeSqlparam('发送者标识', sqlTypes.NVarChar(1000), identity),
+        dbhelper.makeSqlparam('通知内容', sqlTypes.NVarChar(1000), text),
+    ]);
 };
 
 module.exports = helper;

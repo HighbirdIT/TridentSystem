@@ -325,6 +325,9 @@ class OutlinePanel extends React.PureComponent {
                 if(hitKernel.isfixed){
                     return;
                 }
+                if(!hitKernel.canAppand(targetKernelRect)){
+                    return;
+                }
                 /*
                 var specialParent = hitKernel.searchParentKernel([M_LabeledControlKernel_Type], true);
                 if(specialParent){
