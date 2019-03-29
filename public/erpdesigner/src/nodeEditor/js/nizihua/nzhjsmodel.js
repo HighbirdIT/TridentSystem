@@ -147,9 +147,9 @@ class JSNode_Array_Concat extends JSNode_Base {
                 this.outSocket = this.outputScokets_arr[0];
             }
         }
-        if (this.inSocket == null) {
-            this.addSocket(new NodeSocket('input1', this, true, { type: ValueType.Array, inputable: false }));
-            this.addSocket(new NodeSocket('input2',this,true, { type:ValueType.Object, inputable: false }))
+        if (this.inputScokets_arr.length == 0) {
+            this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Array, inputable: false }));
+            this.addSocket(new NodeSocket('inputtwo',this,true, { type:ValueType.Object, inputable: false }));
         }else{
             this.inputScokets_arr.forEach(socket => {
                 if (socket.type == ValueType.Array) {
@@ -237,7 +237,7 @@ class JSNode_Array_Concat extends JSNode_Base {
 */
 class JSNode_Ternary_Operator extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, JSNODE_ARRAY_CONCAT, 'concat', false, nodeJson);
+        super(initData, parentNode, createHelper, JSNODE_TERNARY_OPERATOR, 'ternary_operator', false, nodeJson);
         autoBind(this);
 
         if (nodeJson) {
@@ -245,13 +245,14 @@ class JSNode_Ternary_Operator extends JSNode_Base {
                 this.outSocket = this.outputScokets_arr[0];
             }
         }
-        if (this.inSocket == null) {
-            this.addSocket(new NodeSocket('input1', this, true, { type: ValueType.Array, inputable: false }));
-            this.addSocket(new NodeSocket('input2',this,true, { type:ValueType.Object, inputable: false }))
+        if (this.inputScokets_arr.length == 0) {
+            this.addSocket(new NodeSocket('input1', this, true, { type: ValueType.Boolean, inputable: false }));
+            this.addSocket(new NodeSocket('input2',this,true, { type:ValueType.Object, inputable: false }));
+            this.addSocket(new NodeSocket('input3',this,true, { type:ValueType.Object, inputable: false }));
         }else{
             this.inputScokets_arr.forEach(socket => {
-                if (socket.type == ValueType.Array) {
-                    socket.type = ValueType.Array;
+                if (socket.type == ValueType.Boolean) {
+                    socket.type = ValueType.Boolean;
                     socket.inputable = false;
                 }
                 else if (socket.type == ValueType.Object) {
@@ -266,7 +267,7 @@ class JSNode_Ternary_Operator extends JSNode_Base {
         }
         //this.inSocket.type = ValueType.Array;
         //this.inSocket.inputable = false;
-        this.outSocket.type = ValueType.Array;
+        this.outSocket.type = ValueType.Any;
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -279,8 +280,9 @@ class JSNode_Ternary_Operator extends JSNode_Base {
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
         var theSocket = this.inSocket;
-        var socketValue = null;
-        var arrar_addValue = null;
+        var condition_value = null;
+        var execute_arr = new Array();
+        var tvalue=null;
         for(var i = 0; i < this.inputScokets_arr.length; ++i){
             var theSocket = this.inputScokets_arr[i];
             var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(theSocket);
@@ -315,17 +317,20 @@ class JSNode_Ternary_Operator extends JSNode_Base {
                 if (compileRet == false) {
                     return false;
                 }
-                if (socket_type == 'array'){
-                    socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
+                if (socket_type == 'boolean'){
+                    condition_value = compileRet.getSocketOut(dataLink.outSocket).strContent;
                 }else{
-                    arrar_addValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
+                    tvalue = compileRet.getSocketOut(dataLink.outSocket).strContent;
+                    execute_arr.push(tvalue);
                 }
         }
     }
-        var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, socketValue + '.concat('+arrar_addValue+')');
-        helper.setCompileRetCache(this, selfCompileRet);
-        return selfCompileRet;
+    var endstr =null;
+    endstr = "( "+condition_value+" ? ("+execute_arr[0]+') : ('+execute_arr[1]+"))"
+    var selfCompileRet = new CompileResult(this);
+    selfCompileRet.setSocketOut(this.outSocket, endstr);
+    helper.setCompileRetCache(this, selfCompileRet);
+    return selfCompileRet;
     }
 }
 
