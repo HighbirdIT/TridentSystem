@@ -1275,7 +1275,7 @@ class SqlNode_FbSource extends SqlNode_Base {
                 var paramValue = null;
                 var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
                 if (tLinks.length == 0) {
-                    paramValue = IsEmptyString(theSocket.defval) ? null : theSocket.defval;
+                    paramValue = IsEmptyString(theSocket.defval) ? null : theSocket.defval ;
                     if (isNaN(paramValue)) {
                         paramValue = "'" + theSocket.defval + "'";
                     }

@@ -20,7 +20,7 @@ class Calculator extends React.PureComponent{
         switch(id){
             case this.props.name + 'a_input':
             newState.a = target.value;
-            break;
+            break;52
             case this.props.name +'b_input':
             newState.b = target.value;
             break;
@@ -78,6 +78,7 @@ class Calculator extends React.PureComponent{
     render(){
         return(
             <div name='CalculatorDiv' className="w-100 d-flex align-items-center">
+            <div className='topMsg'>finfinienf</div>
                 <div className='badge badge-primary'>{this.props.name}</div>
                 <span>A:</span>
                 <input type='Number' value={this.state.a} id={this.props.name + 'a_input'} onChange={this.ctlOnchange}></input>
@@ -129,7 +130,7 @@ class MyApp extends React.PureComponent{
     }
 
     render(){
-        return this.renderCalculator(100);
+        return this.renderCalculator(1);
         /*
         return (
         <div className="w-100 h-100 d-flex flex-column">
