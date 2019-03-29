@@ -614,6 +614,7 @@ class Node_Base extends EventEmitter {
         }
         else {
             var outNode = tLinks[0].outSocket.node;
+            var compileRet = null;
             if (outNode.isHadFlow()) {
                 compileRet = helper.getCompileRetCache(outNode);
                 if (compileRet == null) {

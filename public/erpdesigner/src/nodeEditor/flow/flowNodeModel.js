@@ -1945,7 +1945,7 @@ class FlowNode_Send_Message extends JSNode_Base {
                 return false;
             }
         }
-
+/*
         @操作人ID int,
 	@发送人ID int, 
 	@接收人描述 nvarchar(1000),
@@ -1957,7 +1957,8 @@ class FlowNode_Send_Message extends JSNode_Base {
 	@加密内容 bit = 0,
 	@关联方案代码 int,
 	@关联步骤代码 int,
-	@关联步骤数据 int
+    @关联步骤数据 int
+    */
 
         socketComRet = this.getSocketCompileValue(helper,this.titleScoket, usePreNodes_arr, belongBlock, true);
         if(socketComRet.err){return false;}
@@ -2063,4 +2064,7 @@ FlowNodeClassMap[JSNODE_DATEFUN] = {
     modelClass: JSNode_DateFun,
     comClass: C_JSNode_DateFun,
 };
-
+FlowNodeClassMap[JSNODE_TERNARY_OPERATOR] = {
+    modelClass: JSNode_Ternary_Operator,
+    comClass: C_Node_SimpleNode,
+};
