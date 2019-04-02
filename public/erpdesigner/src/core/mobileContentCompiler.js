@@ -922,7 +922,7 @@ class MobileContentCompiler extends ContentCompiler {
         if (isPageForm) {
             renderContentBlock.pushLine(VarNames.RetElem + " = (", 1);
             renderContentBlock.pushLine("<div className='" + layoutConfig.getClassName() + "'>", 1);
-            renderContentBlock.pushLine("<div class='d-flex flex-grow-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + "'>", 1);
+            renderContentBlock.pushLine("<div className='d-flex flex-grow-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + "'>", 1);
             childRenderBlock = new FormatFileBlock(theKernel.id + 'child');
             renderContentBlock.pushChild(childRenderBlock);
             renderContentBlock.pushLine('</div>');

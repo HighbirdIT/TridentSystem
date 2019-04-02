@@ -352,6 +352,9 @@ class Node_Base extends EventEmitter {
     }
 
     removeSocket(socketObj) {
+        if(this.preRemoveSocket && this.preRemoveSocket(socketObj) == false){
+            return;
+        }
         if(!socketObj.isFlowSocket)
         {
             if (socketObj.isIn) {
@@ -586,7 +589,7 @@ class Node_Base extends EventEmitter {
         return rlt;
     }
 
-    compile(helper, preNodes_arr) {
+    compile(helper, preNodes_arr, isServerSide) {
         helper.meetNode(this);
         if (preNodes_arr.indexOf(this) != -1) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
@@ -596,7 +599,7 @@ class Node_Base extends EventEmitter {
                 '处产生了回路!']);
             return false;
         }
-        var cacheRet = helper.getCompileRetCache(this);
+        var cacheRet = helper.getCompileRetCache(this, isServerSide);
         return cacheRet;
     }
 

@@ -65,6 +65,11 @@ const JSNodeEditorControls_arr =[
         type:'数据库交互'
     },
     {
+        label:'Update',
+        nodeClass:JSNODE_Update_table,
+        type:'数据库交互'
+    },
+    {
         label:'日期函数',
         nodeClass:JSNode_DateFun,
         type:'运算'
@@ -127,13 +132,31 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         this.clickLogBadgeItemHandler = this.clickLogBadgeItemHandler.bind(this);
         this.useForm_map = {};
         this.useGlobalControls_map = {};
+        this.appendedOutputItems_arr = [];
+        this.clientInitBundleBlocks_arr = [];
     }
 
-    addUseColumn(formKernel, columnName){
+    appendOutputItem(item){
+        this.appendedOutputItems_arr.push(item);
+    }
+
+    addInitClientBundleBlock(block){
+        this.clientInitBundleBlocks_arr.push(block);
+    }
+
+    addUseColumn(formKernel, columnName, serverFun){
         var formObj = this.addUseForm(formKernel);
         formObj.useNowRecord = true;
         if(formObj.useColumns_map[columnName] == null){
-            formObj.useColumns_map[columnName] = 1;
+            formObj.useColumns_map[columnName] = {
+                serverFuns_arr:[],
+            };
+        }
+        if(serverFun){
+            var useColumnObj = formObj.useColumns_map[columnName];
+            if(useColumnObj.serverFuns_arr.indexOf(serverFun) == -1){
+                useColumnObj.serverFuns_arr.push(serverFun);
+            }
         }
     }
 
@@ -1116,6 +1139,9 @@ class C_JSNode_Editor extends React.PureComponent{
             this.logManager.log('[' + theBluePrint.name + ']编译成功');
             this.logManager.log(compileRet.getString('', '\t', '\n'));
             console.log(compileRet.getString('', '\t', '\n'));
+            compileHelper.appendedOutputItems_arr.forEach(item=>{
+                console.log(item.getString('', '\t', '\n'));
+            });
         }
         this.logManager.log('共' + this.logManager.getCount(LogTag_Warning) + '条警告,' + this.logManager.getCount(LogTag_Error) + '条错误,');
     }

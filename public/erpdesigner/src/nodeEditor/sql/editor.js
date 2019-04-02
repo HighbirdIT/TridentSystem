@@ -1435,13 +1435,13 @@ class SqlNode_CompileHelper{
         return rlt;
     }
 
-    getCompileRetCache(theNode){
-        var cacheID = 'compileRet-' + theNode.id;
+    getCompileRetCache(theNode, isServerSide){
+        var cacheID = 'compileRet-' + theNode.id + (isServerSide ? '-server' : '');
         return this.getCache(cacheID);
     }
 
-    setCompileRetCache(theNode, data){
-        var cacheID = 'compileRet-' + theNode.id;
+    setCompileRetCache(theNode, data, isServerSide){
+        var cacheID = 'compileRet-' + theNode.id + (isServerSide ? '-server' : '');
         this.setCache(cacheID, data);
     }
 

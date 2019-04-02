@@ -656,6 +656,7 @@ class JSFile_Funtion extends FormatFileBlock{
         this.beforeRetBlock = new FormatFileBlock('beforeRet');
 
         this.scope = new JSFile_Scope('_localfun', this.getScope());
+        this.scope.fun = this;
         this.headBlock.parent = this;
         this.bodyBlock.parent = this;
         this.retBlock.parent = this;

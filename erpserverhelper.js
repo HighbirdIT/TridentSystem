@@ -119,7 +119,15 @@ helper.InformSysManager = (text, identity)=>{
     ]);
 };
 
+function checkArrayData(val) {
+    if(Array.isArray(val)){
+        return val[0];
+    }
+    return val;
+}
+
 function GetFormatDateString(date) {
+    date = checkArrayData(date);
     var y = date.getFullYear();
     var m = date.getMonth() + 1;
     var d = date.getDate();
@@ -127,6 +135,7 @@ function GetFormatDateString(date) {
 }
 
 function GetFormatTimeString(date) {
+    date = checkArrayData(date);
     var hadSec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
 
     var h = date.getHours();
@@ -140,6 +149,7 @@ function GetNowDate() {
 }
 
 function CheckDate(date) {
+    date = checkArrayData(date);
     var dateVal = new Date(Date.parse(date));
     return !isNaN(dateVal.getDate());
 }
@@ -150,6 +160,7 @@ function CheckTime(str) {
 }
 
 function CutTimePart(date) {
+    date = checkArrayData(date);
     var rlt = new Date(date);
     rlt.setHours(0);
     rlt.setMinutes(0);
