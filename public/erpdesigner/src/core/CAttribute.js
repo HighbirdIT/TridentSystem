@@ -220,6 +220,7 @@ const AttrNames={
     ColumnWidth:'columnWidth',
     AutoHeight:'autoHeight',
     AutoIndexColumn:'autoIndexColumn',
+    NoDataTip:'noDataTip',
 
     Event:{
         OnClick:'onclick'

@@ -910,7 +910,11 @@ class MobileContentCompiler extends ContentCompiler {
                 ifNowRecordBlock.condition = "!this.props.canInsert && (this.props.records_arr == null || this.props.records_arr.length == 0)";
             }
             ifFetingBlock.falseBlock.pushChild(ifNowRecordBlock);
-            ifNowRecordBlock.pushLine(VarNames.RetElem + " = <div>没有查询到数据</div>;");
+            var noDataTip = theKernel.getAttribute(AttrNames.NoDataTip);
+            if(IsEmptyString(noDataTip)){
+                noDataTip = '没有查询到数据';
+            }
+            ifNowRecordBlock.pushLine(VarNames.RetElem + " = <div className='m-auto'>" + noDataTip + "</div>;");
             renderContentBlock = ifNowRecordBlock.falseBlock;
         }
 

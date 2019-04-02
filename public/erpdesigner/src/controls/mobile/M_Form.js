@@ -5,6 +5,7 @@ const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
         new CAttribute('数据源', AttrNames.DataSource, ValueType.DataSource, null, true, false, 'getCanUseDataSource', {text:'name', value:'code'}),
         new CAttribute('操作表', AttrNames.ProcessTable, ValueType.DataSource, null, true, false, g_dataBase.getAllTable, {text:'name', value:'code'}),
         new CAttribute('表单类别', AttrNames.FormType, ValueType.String, EFormType.Page, true, false, FormTypes_arr),
+        new CAttribute('无数据提示',AttrNames.NoDataTip,ValueType.String,''),
         new CAttribute('', AttrNames.CustomDataSource, ValueType.CustomDataSource, null, true),
         new CAttribute('内容定制', AttrNames.ListFormContent, ValueType.ListFormContent, null, true, false, null, null, false),
         new CAttribute('自动分页',AttrNames.PageBreak,ValueType.Boolean,true),
@@ -14,6 +15,7 @@ const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
         new CAttribute('自动滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
     ]),
 ]);
+
 
 class M_FormKernel extends ContainerKernelBase{
     constructor(initData, parentKernel, createHelper, kernelJson) {
