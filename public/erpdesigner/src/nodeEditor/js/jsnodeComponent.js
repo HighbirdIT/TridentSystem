@@ -101,7 +101,6 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
 
         this.state = {
             formKernel: formKernel,
-            operator: this.props.nodedata.operator,
         }
     }
 

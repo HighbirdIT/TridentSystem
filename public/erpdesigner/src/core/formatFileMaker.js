@@ -1027,7 +1027,8 @@ class CP_ClientSide extends JSFileMaker{
         ifLoginBK.trueBlock.pushLine('<VisibleApp />', -1);
         ifLoginBK.trueBlock.pushLine("</Provider>, document.getElementById('reactRoot'));");
 
-        ifLoginBK.falseBlock.pushLine("location.href = '/?goto=' + location.pathname;");
+        ifLoginBK.falseBlock.pushLine("var search = location.search.replace('?','');");
+        ifLoginBK.falseBlock.pushLine("location.href = '/?goto=' + location.pathname + '&' + search;");
 
         this.endBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, { action: 'pageloaded' }, null, 'pageloaded', '正在加载[' + thisAppTitle + ']'));");
     }

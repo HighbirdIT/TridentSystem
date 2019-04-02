@@ -959,45 +959,6 @@ var ERPC_Text = function (_React$PureComponent4) {
             }, MakePath(this.props.parentPath, this.props.id)));
         }
     }, {
-        key: 'formatValue',
-        value: function formatValue(val) {
-            if (IsEmptyString(val)) {
-                return '';
-            }
-            var type = this.props.type;
-            var rlt = val;
-            switch (type) {
-                case 'int':
-                    rlt = parseInt(val);
-                    if (isNaN(rlt)) {
-                        rlt = '';
-                    }
-                    break;
-                case 'boolean':
-                    rlt = parseBoolean(val) ? true : false;
-                    break;
-                case 'float':
-                    var precision = tihs.props.precision == null ? 2 : parseInt(tihs.props.precision);
-                    rlt = Math.round(val * Math.pow(10, precision));
-                    if (isNaN(rlt)) {
-                        rlt = '';
-                    }
-                    break;
-                case 'date':
-                case 'datetime':
-                    if (!checkDate(val)) {
-                        rlt = '';
-                    }
-                    break;
-                case 'time':
-                    if (!checkTime(val)) {
-                        rlt = '';
-                    }
-                    break;
-            }
-            return rlt;
-        }
-    }, {
         key: 'formatInputValue',
         value: function formatInputValue(val) {
             if (IsEmptyString(val)) {
@@ -1065,7 +1026,7 @@ var ERPC_Text = function (_React$PureComponent4) {
             } else {
                 if (this.props.readonly) {
                     rootDivClassName += ' bg-secondary rounded border p-1';
-                    var nowValue = this.props.value;
+                    var nowValue = FormatStringValue(this.props.value, this.props.type);
                     if (nowValue == null || nowValue.length == 0) {
                         rootDivClassName += ' text-secondary';
                         nowValue = '_';
@@ -1250,10 +1211,11 @@ var ERPC_Label = function (_React$PureComponent7) {
             if (this.props.visible == false) {
                 return null;
             }
+            var text = FormatStringValue(this.props.text, this.props.type);
             return React.createElement(
                 'span',
                 { className: 'erpc_label ' + (this.props.className == null ? '' : this.props.className) },
-                this.props.text
+                text
             );
         }
     }]);
@@ -1444,7 +1406,7 @@ function ERPC_PageForm_renderNavigater() {
 
     return React.createElement(
         'div',
-        { className: 'btn-group' },
+        { className: 'btn-group flex-grow-0 flex-shrink-0' },
         preBtnItem,
         infoItem,
         nextBtnItem,

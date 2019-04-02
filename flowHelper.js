@@ -101,6 +101,95 @@ function doStepRecord(record){
     });
 }
 
+function execFromNotify(req, res){
+    if(req.path == '/')
+    {
+        if(req.query.id == null){
+            res.locals.errTitle = '严重错误';
+            res.locals.errinfo = 'fromNotify没有关键参数';
+            res.render('erppage/errorpage', { layout: null });
+        }
+        else{
+            var isPC = req.query.isPC != null;
+            return co(function* (){
+                var sqlRet = null;
+                try{
+                    sqlRet = yield dbhelper.asynQueryWithParams('select 流程审批记录代码 FROM [T196C工作通知记录] where 工作通知记录代码 = @id', [dbhelper.makeSqlparam('id', sqlTypes.Int, req.query.id)]);
+                }
+                catch(eo){
+                    res.locals.errTitle = '严重错误';
+                    res.locals.errinfo = eo.toString();
+                    res.render('erppage/errorpage', { layout: null });
+                    return false;
+                }
+                if(sqlRet == null || sqlRet.recordset == null || sqlRet.recordset.length == 0){
+                    res.locals.errTitle = '严重错误';
+                    res.locals.errinfo = '指定的通知记录未找到-' + req.query.id;
+                    res.render('erppage/errorpage', { layout: null });
+                    return false;
+                }
+                var theRecord = sqlRet.recordset[0];
+                if(theRecord.流程审批记录代码 == 0){
+                    res.locals.errTitle = '严重错误';
+                    res.locals.errinfo = '指定的通知记录里没有处置信息-' + req.query.id;
+                    res.render('erppage/errorpage', { layout: null });
+                    return false;
+                }
+                try{
+                    sqlRet = yield dbhelper.asynQueryWithParams('SELECT [关联步骤代码],[关联步骤数据],[关联方案代码]  FROM [base1].[dbo].[T196D流程审批记录] where [流程审批记录代码] = @id', [dbhelper.makeSqlparam('id', sqlTypes.Int, theRecord.流程审批记录代码)]);
+                }
+                catch(eo){
+                    res.locals.errTitle = '严重错误';
+                    res.locals.errinfo = eo.toString();
+                    res.render('erppage/errorpage', { layout: null });
+                    return false;
+                }
+                if(sqlRet.recordset.length == 0){
+                    res.locals.errTitle = '严重错误';
+                    res.locals.errinfo = '无法找到通知关联的审批记录-' + theRecord.流程审批记录代码;
+                    res.render('erppage/errorpage', { layout: null });
+                    return false;
+                }
+                var shenpiRecord = sqlRet.recordset[0];
+                try{
+                    sqlRet = yield dbhelper.asynQueryWithParams('SELECT [方案英文名称],[桌面端名称],[移动端名称] FROM [V002C系统方案名称] where [系统方案名称代码]=@id', [dbhelper.makeSqlparam('id', sqlTypes.Int, shenpiRecord.关联方案代码)]);
+                }
+                catch(eo){
+                    res.locals.errTitle = '严重错误';
+                    res.locals.errinfo = eo.toString();
+                    res.render('erppage/errorpage', { layout: null });
+                    return false;
+                }
+                if(sqlRet == null || sqlRet.recordset == null || sqlRet.recordset.length == 0){
+                    res.locals.errTitle = '严重错误';
+                    res.locals.errinfo = '通知指定的页面未能找到-' + req.query.id + '.' + theRecord.关联方案代码;
+                    res.render('erppage/errorpage', { layout: null });
+                    return false;
+                }
+                var projectRecord = sqlRet.recordset[0];
+                if(isPC){
+                    if(projectRecord.桌面端名称.length == 0){
+                        isPC = false;
+                    }
+                }
+                else if(projectRecord.移动端名称.length == 0){
+                    isPC = true;
+                }
+                res.redirect('/erppage/' + (isPC ? 'pc/' : 'ma/') + projectRecord.方案英文名称 + '?flowStep=' + shenpiRecord.关联步骤代码 + '&flowStepData=' + shenpiRecord.关联步骤数据);
+
+                return true;
+                //[关联方案代码]
+                //,[关联步骤代码]
+                //,[关联步骤数据]
+                //res.json({err:'没有指定id'});
+            });
+        }
+        return true;
+    }
+    return false;
+}
+
 module.exports = {
     startFlowProcess:startFlowProcess,
+    execFromNotify:execFromNotify,
 };

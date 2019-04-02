@@ -11,6 +11,7 @@ const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
         new CAttribute('每页条数',AttrNames.RowPerPage,ValueType.String, '20', true, false, ['20','50','100','200']),
         new CAttribute('宽度类型',AttrNames.WidthType,ValueType.String,EGridWidthType.Auto,true,false,EGridWidthTypes_arr,{text:'text', value:'value'}),
         new CAttribute('首列序号',AttrNames.AutoIndexColumn,ValueType.Boolean,true),
+        new CAttribute('自动滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
     ]),
 ]);
 

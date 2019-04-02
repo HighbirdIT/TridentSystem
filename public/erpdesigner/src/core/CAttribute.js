@@ -134,9 +134,9 @@ function makeLine_Return(retStr){
     return 'return ' + retStr + ';';
 }
 
-function makeLine_DeclareVar(varName, initVal, noAutoQuote){
+function makeLine_DeclareVar(varName, initVal, autoQuote){
     if(initVal != null){
-        if(isNaN(initVal) && noAutoQuote != false){
+        if(isNaN(initVal) && autoQuote != false){
             switch(initVal[0]){
                 case "'":
                 case '"':
@@ -238,6 +238,8 @@ const AttrNames={
         MaxHeight:'maxHeight',
         FlexGrow:'flex-grow',
         FlexShrink:'flex-shrink',
+        MinWidth:'minWidth',
+        MinHeight:'minHeight',
     },
 
     StyleValues:{
@@ -257,6 +259,10 @@ function gStyleAttrNameToCssName(styleAttrName){
         return 'max-width';
         case 'maxHeight':
         return 'max-height';
+        case 'minWidth':
+        return 'min-width';
+        case 'minHeight':
+        return 'min-height';
     }
     return styleAttrName;
 }
@@ -293,5 +299,7 @@ StyleAttrSetting[AttrNames.StyleAttrNames.Width] = {type:ValueType.String, def:'
 StyleAttrSetting[AttrNames.StyleAttrNames.Height] = {type:ValueType.String, def:''};
 StyleAttrSetting[AttrNames.StyleAttrNames.MaxWidth] = {type:ValueType.String, def:''};
 StyleAttrSetting[AttrNames.StyleAttrNames.MaxHeight] = {type:ValueType.String, def:''};
+StyleAttrSetting[AttrNames.StyleAttrNames.MinWidth] = {type:ValueType.String, def:''};
+StyleAttrSetting[AttrNames.StyleAttrNames.MinHeight] = {type:ValueType.String, def:''};
 
 const CouldAppendClasses_arr = [''];

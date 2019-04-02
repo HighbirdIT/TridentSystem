@@ -602,7 +602,8 @@ class Node_Base extends EventEmitter {
 
     getSocketCompileValue(helper,theSocket,usePreNodes_arr,belongBlock,canUseDefval,nullable) {
         var socketValue = null;
-        var theNode = theSocket.node;
+        var theNode = this;
+        var theLink = null;
         var tLinks = theNode.bluePrint.linkPool.getLinksBySocket(theSocket);
         if (tLinks.length == 0) {
             if(canUseDefval){
@@ -613,16 +614,12 @@ class Node_Base extends EventEmitter {
             }
         }
         else {
-            var outNode = tLinks[0].outSocket.node;
+            theLink = tLinks[0];
+            var outNode = theLink.outSocket.node;
             var compileRet = null;
             if (outNode.isHadFlow()) {
                 compileRet = helper.getCompileRetCache(outNode);
-                if (compileRet == null) {
-                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                        theNode.getNodeTitle(),
-                        theNode,
-                        helper.clickLogBadgeItemHandler),
-                        '输入接口设置错误']);
+                if(this.checkCompileFlag(compileRet == null, '输入接口设置错误', helper)){
                     return {err:1};
                 }
             }
@@ -635,18 +632,23 @@ class Node_Base extends EventEmitter {
             }
             socketValue = compileRet.getSocketOut(tLinks[0].outSocket).strContent;
         }
-        if(!nullable && IsEmptyString(socketValue)){
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                theNode.getNodeTitle(),
-                theNode,
-                helper.clickLogBadgeItemHandler),
-                '接口' + theSocket.label + '需要一个值']);
+        if(this.checkCompileFlag(!nullable && IsEmptyString(socketValue), '接口' + theSocket.label + '需要一个值', helper)){
             return {err:1};
         }
-        return {value:socketValue};
+        return {value:socketValue,link:theLink};
     }
 
-    
+    checkCompileFlag(flag, errInfo, helper){
+        if(flag){
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                this.getNodeTitle(),
+                this,
+                helper.clickLogBadgeItemHandler),
+                errInfo]);
+            return true;
+        }
+        return false;
+    }
 }
 
 

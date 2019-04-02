@@ -828,44 +828,6 @@ class ERPC_Text extends React.PureComponent {
         }, MakePath(this.props.parentPath, this.props.id)));
     }
 
-    formatValue(val){
-        if(IsEmptyString(val)){
-            return '';
-        }
-        var type = this.props.type;
-        var rlt = val;
-        switch(type){
-            case 'int':
-            rlt = parseInt(val);
-            if(isNaN(rlt)){
-                rlt = '';
-            }
-            break;
-            case 'boolean':
-            rlt = parseBoolean(val) ? true : false;
-            break;
-            case 'float':
-            var precision = tihs.props.precision == null ? 2 : parseInt(tihs.props.precision);
-            rlt = Math.round(val * Math.pow(10, precision));
-            if(isNaN(rlt)){
-                rlt = '';
-            }
-            break;
-            case 'date':
-            case 'datetime':
-            if(!checkDate(val)){
-                rlt = '';
-            }
-            break;
-            case 'time':
-            if(!checkTime(val)){
-                rlt = '';
-            }
-            break;
-        }
-        return rlt;
-    }
-
     formatInputValue(val){
         if(IsEmptyString(val)){
             return '';
@@ -922,7 +884,7 @@ class ERPC_Text extends React.PureComponent {
         else {
             if (this.props.readonly) {
                 rootDivClassName += ' bg-secondary rounded border p-1'
-                var nowValue = this.props.value;
+                var nowValue = FormatStringValue(this.props.value, this.props.type);
                 if (nowValue == null || nowValue.length == 0) {
                     rootDivClassName += ' text-secondary';
                     nowValue = '_';
@@ -1061,7 +1023,8 @@ class ERPC_Label extends React.PureComponent {
         if(this.props.visible == false){
             return null;
         }
-        return (<span className={'erpc_label ' + (this.props.className == null ? '' : this.props.className)} >{this.props.text}</span>);
+        var text = FormatStringValue(this.props.text, this.props.type)
+        return (<span className={'erpc_label ' + (this.props.className == null ? '' : this.props.className)} >{text}</span>);
     }
 }
 
@@ -1212,7 +1175,7 @@ function ERPC_PageForm_renderNavigater(){
     }
     
     return (
-        <div className='btn-group'>
+        <div className='btn-group flex-grow-0 flex-shrink-0'>
             {preBtnItem}
             {infoItem}
             {nextBtnItem}

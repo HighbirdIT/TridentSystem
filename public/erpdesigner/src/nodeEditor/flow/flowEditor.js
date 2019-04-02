@@ -84,6 +84,12 @@ const FlowNodeEditorControls_arr =[
         nodeClass:FlowNode_Send_Message,
         type:'流程交互'
     },
+    {
+        label:'签阅处置通知',
+        nodeClass:FlowNode_Confirm_Flowstep,
+        type:'流程交互'
+    },
+    
 ];
 
 

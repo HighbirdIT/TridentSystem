@@ -237,7 +237,7 @@ class JSNode_Array_Concat extends JSNode_Base {
 */
 class JSNode_Ternary_Operator extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, JSNODE_TERNARY_OPERATOR, 'ternary_operator', false, nodeJson);
+        super(initData, parentNode, createHelper, JSNODE_TERNARY_OPERATOR, '?表达式', false, nodeJson);
         autoBind(this);
 
         if (nodeJson) {

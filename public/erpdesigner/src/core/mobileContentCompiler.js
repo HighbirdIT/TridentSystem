@@ -917,12 +917,15 @@ class MobileContentCompiler extends ContentCompiler {
         var formStyleID = theKernel.id + '_style';
         var hasFormStyle = this.clientSide.addStyleObject(formStyleID, layoutConfig.style);
 
+        var autoHeight = theKernel.getAttribute(AttrNames.AutoHeight);
         var childRenderBlock = null;
         if (isPageForm) {
             renderContentBlock.pushLine(VarNames.RetElem + " = (", 1);
             renderContentBlock.pushLine("<div className='" + layoutConfig.getClassName() + "'>", 1);
+            renderContentBlock.pushLine("<div class='d-flex flex-grow-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + "'>", 1);
             childRenderBlock = new FormatFileBlock(theKernel.id + 'child');
             renderContentBlock.pushChild(childRenderBlock);
+            renderContentBlock.pushLine('</div>');
             var navigaterBlock = new FormatFileBlock('navigater');
             navigaterBlock.pushLine("{this.renderNavigater()}");
             formReactClass.navigaterBlock = navigaterBlock;
@@ -1028,7 +1031,11 @@ class MobileContentCompiler extends ContentCompiler {
         thisFormMidData.bindFun = bindFun;
         thisFormMidData.belongPage = belongPage;
         thisFormMidData.belongForm = belongForm;
+        thisFormMidData.isPageForm = isPageForm;
+        thisFormMidData.isGridForm = isGridForm;
         var bindNowRecordBlock = new FormatFileBlock('bindbowrow');
+        var bindEndBlock = new FormatFileBlock('bindend');
+        bindFun.bindEndBlock = bindEndBlock;
         var formCanInsert = false;
         var bindInersetBlock = null;
 
@@ -1094,6 +1101,7 @@ class MobileContentCompiler extends ContentCompiler {
                 bindFun.scope.getVar('useIndex', true, 'newIndex');
                 bindFun.pushChild(insertModeIf);
                 insertModeIf.falseBlock.pushLine(VarNames.NowRecord + '=' + VarNames.Records_arr + '[useIndex];');
+                insertModeIf.falseBlock.pushLine(VarNames.Bundle + "." + theKernel.id + '_' + VarNames.NowRecord + "=" + VarNames.NowRecord + ';');
                 if (formCanInsert) {
                     saveInsertIfBlock = new JSFile_IF('saveinsert', 'oldIndex == -1');
                     bindFun.saveInsertBlock = saveInsertIfBlock.trueBlock;
@@ -1143,11 +1151,12 @@ class MobileContentCompiler extends ContentCompiler {
 
         var ci;
         var childKernel;
+        var contentBlock = new FormatFileBlock('content');
 
         if (isPageForm) {
             for (ci in theKernel.children) {
                 childKernel = theKernel.children[ci];
-                if (this.compileKernel(childKernel, childRenderBlock, renderFun) == false) {
+                if (this.compileKernel(childKernel, childRenderBlock, renderBlock) == false) {
                     return false;
                 }
             }
@@ -1404,7 +1413,9 @@ class MobileContentCompiler extends ContentCompiler {
         }
         
         bindFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, VarNames.InvalidBundle), 'false'));
-        bindFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.ReState, singleQuotesStr(thisfullpath), VarNames.NeedSetState], ';'));
+        bindFun.retBlock.pushLine(VarNames.ReState + '=' + makeStr_callFun('setManyStateByPath', [VarNames.ReState, singleQuotesStr(thisfullpath), VarNames.NeedSetState]) + ';');
+        bindFun.retBlock.pushChild(bindEndBlock);
+        bindFun.retBlock.pushLine('return ' + VarNames.ReState + ';');
     }
 
     compileContainerKernel(theKernel, renderBlock, renderFun) {
@@ -1446,6 +1457,11 @@ class MobileContentCompiler extends ContentCompiler {
 
         ctlTag.setAttr('id', theKernel.id);
         ctlTag.setAttr('parentPath', this.getKernelParentPath(theKernel));
+        var valType = theKernel.getAttribute(AttrNames.ValueType);
+        ctlTag.setAttr('type', valType);
+        if (valType == ValueType.Float) {
+            ctlTag.setAttr('precision', theKernel.getAttribute(AttrNames.FloatNum));
+        }
         renderBlock.pushChild(ctlTag);
 
         this.compileIsdisplayAttribute(theKernel, ctlTag);
@@ -1668,7 +1684,7 @@ class MobileContentCompiler extends ContentCompiler {
                 for (var useProp in useCtl.useprops_map) {
                     var propApi = useCtl.useprops_map[useProp];
                     var useName = useCtl.kernel.id + '_' + propApi.stateName;
-                    needSetParams_arr.push({ name: useName, value: 'req.body.bundle.' + useName });
+                    needSetParams_arr.push({bundleName: useName, clientValue: useName});
 
                     if (autoClearValue) {
                         this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'text', useCtl.kernel, propApi.stateName, {
@@ -1683,12 +1699,14 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
         if (needSetParams_arr.length > 0) {
+            bodyCheckblock.pushLine("var bundle=req.body.bundle;");
             bodyCheckblock.pushLine("if(req.body.bundle == null){" + makeLine_RetServerError('没有提供bundle') + '};');
             paramsetblock.pushLine("params_arr=[", 1);
             for (var si in needSetParams_arr) {
                 var useParam = needSetParams_arr[si];
-                paramsetblock.pushLine("dbhelper.makeSqlparam('" + useParam.name + "', sqlTypes.NVarChar(4000), " + useParam.value + "),");
-                bodyCheckblock.pushLine("if(req.body.bundle." + useParam.name + " == null){" + makeLine_RetServerError('没有提供' + useParam.value) + '};');
+                var serverValue = ReplaceIfNull(useParam.serverValue, 'bundle.' + useParam.bundleName);
+                paramsetblock.pushLine("dbhelper.makeSqlparam('" + useParam.bundleName + "', sqlTypes.NVarChar(4000), " + serverValue + "),");
+                bodyCheckblock.pushLine("if(req.body.bundle." + useParam.bundleName + " == null){" + makeLine_RetServerError('没有提供' + useParam.bundleName) + '};');
             }
         }
 
@@ -1855,6 +1873,7 @@ class MobileContentCompiler extends ContentCompiler {
 
                 for (var formId in compilHelper.useForm_map) {
                     var useFormData = compilHelper.useForm_map[formId];
+                    var useFormMidData = this.projectCompiler.getMidData(useFormData.formKernel.id);
                     var formStateVarName = null;
                     ctlParentStateVarName = null;
                     ctlStateVarName = null;
@@ -1891,15 +1910,24 @@ class MobileContentCompiler extends ContentCompiler {
                                         propApi: propApiitem
                                     });
                                 }
-                                needSetParams_arr.push({name:varName,value:varName});
+                                needSetParams_arr.push({bundleName:varName,clientValue:varName});
                             }
                         }
                     }
                     if (!IsEmptyObject(useFormData.useColumns_map)) {
-                        var nowRecordVarName = formId + '_nowrecord' + '';
+                        var nowRecordVarName = formId + '_' + VarNames.NowRecord + '';
                         initValue = makeStr_getStateByPath(formStateVarName == null ? VarNames.State : formStateVarName, singleQuotesStr(useFormData.formKernel.getStatePath(VarNames.NowRecord)));
                         theFun.scope.getVar(nowRecordVarName, true, initValue);
                         needCheckVars_arr.push(nowRecordVarName);
+                        for(var colName in useFormData.useColumns_map){
+                            needSetParams_arr.push({bundleName:useFormData.useDS.code + '_' + colName,clientValue:nowRecordVarName + '.' + colName});
+                        }
+                        if(IsEmptyObject(useFormData.useControls_map)){
+                            // 只用到了目标form的数据列，需要在其bind的时候进行重新bind
+                            if(useFormMidData.isPageForm){
+                                useFormMidData.bindFun.bindEndBlock.pushLine(makeStr_callFun(pullFun.name,[VarNames.ReState],';'));
+                            }
+                        }
                     }
                 }
 
@@ -1925,7 +1953,7 @@ class MobileContentCompiler extends ContentCompiler {
                                 propApi: propApiitem
                             });
                         }
-                        needSetParams_arr.push({name:varName,value:varName});
+                        needSetParams_arr.push({bundleName:varName,clientValue:varName});
                     }
                 }
 
@@ -1938,7 +1966,7 @@ class MobileContentCompiler extends ContentCompiler {
                     var validKernelBlock = new FormatFileBlock('validkernel');
                     needCheckVars_arr.forEach(varObj => {
                         if (typeof varObj === 'string') {
-                            checkVarValidStr += (checkVarValidStr.length == 0 ? 'IsEmptyString(' : ' || IsEmptyString(') + varName + ')';
+                            checkVarValidStr += (checkVarValidStr.length == 0 ? 'IsEmptyString(' : ' || IsEmptyString(') + varObj + ')';
                             return;
                         }
                         var valueType = 'string';
@@ -1991,15 +2019,15 @@ class MobileContentCompiler extends ContentCompiler {
                     paramsetblock.pushLine("params_arr=[", 1);
                     for (var si in needSetParams_arr) {
                         var useParam = needSetParams_arr[si];
-                        initbundleBlock.pushLine(makeLine_Assign(VarNames.Bundle + '.' + useParam.name, useParam.name));
-                        paramsetblock.pushLine("dbhelper.makeSqlparam('" + useParam.name + "', sqlTypes.NVarChar(4000), bundle." + useParam.value + "),");
-                        serverBodyCheckblock.pushLine("if(bundle." + useParam.name + " == null){" + makeLine_RetServerError('没有提供' + useParam.value) + '};');
+                        initbundleBlock.pushLine(makeLine_Assign(VarNames.Bundle + '.' + useParam.bundleName, useParam.clientValue));
+                        var serverValue = ReplaceIfNull(useParam.serverValue,'bundle.' + useParam.bundleName);
+                        paramsetblock.pushLine("dbhelper.makeSqlparam('" + useParam.bundleName + "', sqlTypes.NVarChar(4000), " + serverValue + "),");
+                        serverBodyCheckblock.pushLine("if(bundle." + useParam.bundleName + " == null){" + makeLine_RetServerError('没有提供' + useParam.bundleName) + '};');
                     }
                 }
 
                 if (needSetParams_arr.length > 0) {
                     // 有用到参数,等待参数变更时触发pullfun
-
                 }
                 else{
                     // 没有用到参数，父对象刷新时出发pullfun
