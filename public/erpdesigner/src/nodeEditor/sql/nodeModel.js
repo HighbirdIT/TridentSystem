@@ -1480,7 +1480,7 @@ class SqlNode_Select extends SqlNode_Base {
                 if (this.columnNode.inputScokets_arr.length > 1) {
                     var inSocket = this.columnNode.inputScokets_arr[0];
                     var link = this.bluePrint.linkPool.getLinksBySocket(inSocket);
-                    if (link != null) {
+                    if (link >0 ) {
                         this.columnNode.bluePrint.deleteNode(link[0].outSocket.node);
                     }
                     this.columnNode.removeSocket(this.columnNode.inputScokets_arr[0]);
