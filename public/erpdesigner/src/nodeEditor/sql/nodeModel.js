@@ -18,10 +18,11 @@ const SQLNODE_LOGICAL_OPERATOR = 'logical_operator';
 const SQLDEF_VAR = 'def_variable';
 const SQLNODE_CONTROL_API_PROP = 'controlapiprop';
 const SQLNODE_ENV_VAR = 'envvar';
+const SQLNODE_CURRENTDATAROW = 'currentdatarow';
 
 var SqlNodeClassMap = {};
 // CONSTSQLNODES_ARR output是常量的节点类型
-const SQL_OutSimpleValueNode_arr = [SQLNODE_COLUMN, SQLNODE_VAR_GET, SQLNODE_CONSTVALUE, SQLNODE_CONTROL_API_PROP, SQLNODE_ENV_VAR];
+const SQL_OutSimpleValueNode_arr = [SQLNODE_COLUMN, SQLNODE_VAR_GET, SQLNODE_CONSTVALUE, SQLNODE_CONTROL_API_PROP, SQLNODE_ENV_VAR, SQLNODE_CURRENTDATAROW];
 
 
 class NodeCreationHelper extends EventEmitter {
@@ -2986,7 +2987,7 @@ class SqlNode_Control_Api_Prop extends SqlNode_Base {
         assginObjByProperties(this, attrsJson, ['ctltype', 'apiid']);
     }
 
-    compile(helper, preNodes_arr, belongBlock) {
+    compile(helper, preNodes_arr) {
         var superRet = super.compile(helper, preNodes_arr);
         if (superRet == false || superRet != null) {
             return superRet;
@@ -3103,10 +3104,95 @@ class SqlNode_Env_Var extends SqlNode_Base {
                 , helper.clickLogBadgeItemHandler)
                 , '不支持的环境变量:' + enName]);
             return false;
-            break;
         }
 
         helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+class SqlNode_CurrentDataRow extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, SQLNODE_CURRENTDATAROW, '作用域数据行', false, nodeJson);
+        autoBind(this);
+        this.addFrameButton(FrameButton_ClearEmptyOutputSocket, '清理');
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.formID = this.formID;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['formID']);
+    }
+
+    getNodeTitle() {
+        return 'CurrentRow';
+    }
+
+    genOutSocket() {
+        var formKernel = this.bluePrint.master.project.getControlById(this.formID);
+        if (formKernel == null) {
+            return null;
+        }
+        var theDS = formKernel.getAttribute(AttrNames.DataSource);
+        if (theDS == null) {
+            return null;
+        }
+        var hadColumns_arr = [];
+        for (var si in this.outputScokets_arr) {
+            var outSocket = this.outputScokets_arr[si];
+            var columnName = outSocket.getExtra('colName');
+            if (columnName != null) {
+                hadColumns_arr.push(columnName);
+            }
+        }
+        var emptyCol = theDS.columns.find(colItem => {
+            return hadColumns_arr.indexOf(colItem.name) == -1
+        });
+        if (emptyCol == null) {
+            return null;
+        }
+        var newSocket = new NodeSocket(this.getUseableOutSocketName('col'), this, false, { type: ValueType.String });
+        newSocket.setExtra('colName', emptyCol.name);
+        return newSocket;
+    }
+
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+
+        var formKernel = this.bluePrint.master.project.getControlById(this.formID);
+        if(this.checkCompileFlag(formKernel == null, this.formID + '没找到！', helper)){
+            return false;
+        }
+        var theDS = formKernel.getAttribute(AttrNames.DataSource);
+        if(this.checkCompileFlag(theDS == null, '关联Form没有数据源！', helper)){
+            return false;
+        }
+
+        var selfCompileRet = new CompileResult(this);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        var columns_arr = [];
+        for(var si in this.outputScokets_arr){
+            var outSocket = this.outputScokets_arr[si];
+            var columnName = outSocket.getExtra('colName');
+            var columnVar = theDS.code + '_' + columnName;
+            if(this.checkCompileFlag(theDS.getColumnByName(columnName) == null, columnName + '不是数据源中的有效列名', helper)){
+                return false;
+            }
+            selfCompileRet.setSocketOut(outSocket, '@' + columnVar);
+            columns_arr.push(columnName);
+        }
+        helper.addUseFormDS(formKernel, columns_arr);
+
         return selfCompileRet;
     }
 }
@@ -3192,4 +3278,7 @@ SqlNodeClassMap[SQLNODE_ENV_VAR] = {
     modelClass: SqlNode_Env_Var,
     comClass: C_Node_SimpleNode,
 };
-
+SqlNodeClassMap[SQLNODE_CURRENTDATAROW] = {
+    modelClass: SqlNode_CurrentDataRow,
+    comClass: C_JSNode_CurrentDataRow,
+};

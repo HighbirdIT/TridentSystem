@@ -121,12 +121,13 @@ var M_Page = function (_React$PureComponent) {
             if (this.state.orientation == Orientation_V) {
                 layoutConfig.addClass('flex-column');
             }
+            layoutConfig.addClass('bg-light');
             return React.createElement(
                 React.Fragment,
                 null,
                 React.createElement(
                     'div',
-                    { className: 'd-flex flex-grow-0 flex-shrink-1 text-light bg-primary align-items-baseline' },
+                    { className: 'd-flex flex-grow-0 flex-shrink-0 text-light bg-primary align-items-baseline' },
                     React.createElement(
                         'div',
                         { className: 'ml-1', href: '#' },

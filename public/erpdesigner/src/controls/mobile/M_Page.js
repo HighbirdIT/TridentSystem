@@ -105,9 +105,10 @@ class M_Page extends React.PureComponent {
         if (this.state.orientation == Orientation_V) {
             layoutConfig.addClass('flex-column');
         }
+        layoutConfig.addClass('bg-light');
         return (
             <React.Fragment>
-                <div className="d-flex flex-grow-0 flex-shrink-1 text-light bg-primary align-items-baseline">
+                <div className="d-flex flex-grow-0 flex-shrink-0 text-light bg-primary align-items-baseline">
                     <div className="ml-1" href="#"><h5 className='icon icon-left-nav'></h5></div>
 
 

@@ -118,7 +118,7 @@ class C_Node_Socket extends React.PureComponent{
             inputable = true;
         }
         var inputElem = null;
-        if(socket.isIn && inputable){
+        if(socket.isIn && inputable && socket.autoHideInput != false){
             var links = socket.getLinks();
             if(links.length > 0){
                 inputable = false;

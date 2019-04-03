@@ -183,11 +183,19 @@ class MainApp extends React.PureComponent{
 
     userLogin(userid, username){
         if(userid > 0){
-            var gotourl = getQueryVariable('goto');
-            if(gotourl != false){
-                location.href = gotourl;
+            var query = getQueryObject();
+            if(query.goto){
+                var gotourl = query.goto;
+                var search = '';
+                for(var si in query){
+                    if(si != 'goto' && query[si]){
+                        search += (search.length == 0 ? '?' : '&') + si + '=' + query[si];
+                    }
+                }
+                location.href = gotourl + search;
                 return;
             }
+            
         }
         var newState = {
             userid : userid,

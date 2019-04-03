@@ -2,13 +2,15 @@
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var M_LabelKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [genTextFiledAttribute(), genIsdisplayAttribute()])]);
+var M_LabelKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [genTextFiledAttribute(), new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes), new CAttribute('小数精度', AttrNames.FloatNum, ValueType.Int, 2, true, false, null, null, false), genIsdisplayAttribute()])]);
 
 var M_LabelKernel = function (_ControlKernelBase) {
     _inherits(M_LabelKernel, _ControlKernelBase);
@@ -18,12 +20,26 @@ var M_LabelKernel = function (_ControlKernelBase) {
 
         var _this = _possibleConstructorReturn(this, (M_LabelKernel.__proto__ || Object.getPrototypeOf(M_LabelKernel)).call(this, initData, M_LabelKernel_Type, '标签', M_LabelKernelAttrsSetting, parentKernel, createHelper, kernelJson));
 
+        var nowvt = _this.getAttribute(AttrNames.ValueType);
+        _this[AttrNames.FloatNum + '_visible'] = nowvt == ValueType.Float;
+
         var self = _this;
         autoBind(self);
         return _this;
     }
 
     _createClass(M_LabelKernel, [{
+        key: '__attributeChanged',
+        value: function __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {
+            _get(M_LabelKernel.prototype.__proto__ || Object.getPrototypeOf(M_LabelKernel.prototype), '__attributeChanged', this).call(this, attrName, oldValue, newValue, realAtrrName, indexInArray);
+            var attrItem = this.findAttributeByName(attrName);
+            if (attrItem.name == AttrNames.ValueType) {
+                // 数据类型更改
+                var floatNumAttr = this.findAttributeByName(AttrNames.FloatNum);
+                floatNumAttr.setVisible(this, newValue == ValueType.Float);
+            }
+        }
+    }, {
         key: 'renderSelf',
         value: function renderSelf(clickHandler) {
             return React.createElement(M_Label, { key: this.id, ctlKernel: this, onClick: clickHandler ? clickHandler : this.clickHandler });

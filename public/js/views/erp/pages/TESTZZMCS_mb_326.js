@@ -191,6 +191,7 @@ function M_Text_4_defaultvalue_get(state, bundle) {
 		员工代码: M_Dropdown_0_value,
 		假期种类代码: M_Dropdown_1_value
 	};
+
 	setTimeout(function () {
 		if (fetchTracer['M_Text_4_defaultvalue_get'] != fetchid) return;
 		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_queryfb_0, action: '_query_FB员工请假提示' }, makeFTD_Callback(function (state, data_queryfb_0, error_queryfb_0) {

@@ -1,6 +1,7 @@
 'use strict';
 var express = require('express');
 var http = require('http');
+var url = require('url');
 var fortune = require('./lib/fortune.js');
 var bodyParser = require('body-parser');
 var credentials = require('./credentials.js');
@@ -178,6 +179,12 @@ app.use('/', function (req, res, next) {
     }
 
     next();
+});
+
+app.use('/fromNotify', function (req, res, next) {
+    if(!flowhelper.execFromNotify(req, res, next)){
+        next();
+    }
 });
 
 app.use('/dingUtility', function (req, res, next) {
