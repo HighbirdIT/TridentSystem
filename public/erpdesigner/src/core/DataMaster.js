@@ -62,6 +62,12 @@ class DataBase extends EventEmitter{
     }
 
     getEntityByCode(code){
+        if(isNaN(code)){
+            console.error('getDataSourceByCode只接受整数');
+        }
+        if(code == 0){
+            return null;
+        }
         var rlt = this.entityCode_map[code.toString()];
         if(rlt == null){
             rlt = this.createEnity({code:code});
@@ -76,7 +82,13 @@ class DataBase extends EventEmitter{
     }
 
     getEntitiesByType(tType){
+        if(tType == null){
+            tType = '*';
+        }
         return this.entities_arr.filter(e=>{
+            if(tType == '*'){
+                return true;
+            }
             return e.type == tType;
         }).concat(EmptyDBEntity);
     }
@@ -157,6 +169,22 @@ class DBEntity extends EventEmitter{
     toString(){
         return IsEmptyString(this.name) ? this.code : this.name;
     }
+
+    isScalar(){
+        return this.type == 'FB';
+    }
+
+    isFunction(){
+        return this.type == 'FB' || this.type == 'FT';
+    }
+
+    getParams(){
+        return this.params;
+    }
+
+    getColumns(){
+        return this.columns;
+    }
 }
 
 var g_dataBase = new DataBase();
@@ -234,10 +262,11 @@ class DataMaster extends EventEmitter{
         return newItem;
     }
 
-    modifySqlBP(sqpBP, name, type){
+    modifySqlBP(sqpBP, name, type ){
         sqpBP.name = name;
         sqpBP.type = type;
         this.emit('sqlbpchanged');
+        sqpBP.fireChanged();
     }
 
     deleteSqlBP(sqpBP){
@@ -292,7 +321,7 @@ class DataMaster extends EventEmitter{
     }
 
     getAllEntities(){
-        return this.BP_sql_arr.filter(x=>{return x.group == 'custom';}).concat(g_dataBase.entities_arr);
+        return this.BP_sql_arr.filter(x=>{return x.group == 'custom';}).concat(g_dataBase.entities_arr).concat(EmptyDBEntity);
     }
 
     restoreFromJson(json){

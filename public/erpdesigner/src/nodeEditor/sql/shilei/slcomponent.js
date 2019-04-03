@@ -44,3 +44,122 @@ render() {
     </C_Node_Frame>
 }
 }
+class C_SqlNode_XApply extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+    
+        C_NodeCom_Base(this);
+        this.state = {
+            xapplyType: this.props.nodedata.xapplyType,
+        }
+        this.dropdownRef = React.createRef();
+    }
+    
+    nodeDataChangedHandler() {
+        var nodeData = this.props.nodedata;
+        var entity = nodeData.targetEntity;
+        if (entity) {
+            this.dropdownRef.current.setValue(entity.code);
+        }
+        this.setState({ magicObj: {} });
+    }
+
+    cus_componentWillMount() {
+        this.listenData(this.props.nodedata);
+    }
+
+    cus_componentWillUnmount() {
+        this.unlistenData(this.props.nodedata);
+    }
+
+    listenData(nodeData) {
+        if (nodeData) {
+            nodeData.on('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    unlistenData(nodeData) {
+        if (nodeData) {
+            nodeData.off('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    dropdownCtlChangedHandler(selectedDBE) {
+        var nodeData = this.props.nodedata;
+        nodeData.setEntity(selectedDBE);
+        this.setState({ magicObj: {} });
+    }
+
+    getNodeTitle() {
+        var nodeData = this.props.nodedata;
+        var entity = nodeData.targetEntity;
+        if (nodeData.title && nodeData.title.length > 0) {
+            return nodeData.title;
+        }
+        var nodeTitle = entity == null ? '' : (entity.loaded ? '' : '正在加载:' + entity.code);
+        return nodeTitle;
+    }
+
+    LikeChangedHandler(newoperator) {
+        var nodeData = this.props.nodedata;
+        nodeData.xapplyType = newoperator;
+        this.setState({
+            xapply: newoperator
+        });
+    }
+    
+    cusHeaderFuc() {
+        if (this.ddcStyle == null) {
+            this.ddcStyle = {
+                width: '120px',
+                margin: 'auto',
+            }
+            this.outDivStyle = {
+                minWidth: '150px'
+            };
+        }
+        var nodeData = this.props.nodedata;
+        var entity = nodeData.targetEntity;
+        var dataloaded = entity ? entity.loaded : false;
+        return (<div style={this.outDivStyle} f-canmove={1}>
+            <DropDownControl options_arr={['cross apply','outer apply']} value={nodeData.xapplyType} itemChanged={this.LikeChangedHandler} rootclass='flex-grow-1 flex-shrink-1' style={this.ddcStyle} />
+            <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={g_dataBase.entities_arr} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
+        </div>)
+    }
+    renderParams() {
+        var nodeData = this.props.nodedata;
+        var entity = nodeData.targetEntity;
+        if (entity == null || entity.params.length == 0) {
+            return <div>
+                    <div className="dropdown-divider"></div>
+                    <div>无参数</div>
+                    </div>
+        }
+        return <div className='d-flex flex-column'>
+            <div className="dropdown-divider"></div>
+            {
+                entity.params.map(param => {
+                    return <div key={param.position} className='text-nowrap'>{param.name + '  ' + param.cvalType}</div>
+                })}
+        </div>
+    }
+    render() {
+        var nodeData = this.props.nodedata;
+        var entity = nodeData.targetEntity;
+        var headType = nodeData.headType == null ? 'tiny' : nodeData.headType;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} getTitleFun={this.getNodeTitle}>
+            <div className='d-flex'>
+                <div className='flex-grow-1 flex-shrink-1' >
+                <DropDownControl options_arr={['Cross Apply','Outer Apply']} value={nodeData.xapplyType} itemChanged={this.LikeChangedHandler} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} />
+                <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={g_dataBase.entities_arr} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
+                </div>
+            </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+                {this.renderParams()}
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+            </div>  
+        </C_Node_Frame>
+    }
+    }

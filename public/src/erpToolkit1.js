@@ -104,12 +104,18 @@ function getNowDate(){
 }
 
 function checkDate(date) {
-    var dateVal = new Date(Date.parse(date));
+    var dateVal = new Date(date);
+    if(isNaN(dateVal.getDate())){
+        if(typeof date === 'string'){
+            date = date.replace(/-/g,'/');
+        }
+        dateVal = new Date(date);
+    }
     return !isNaN(dateVal.getDate());
 }
 
 function checkTime(str) {
-    var dateVal = new Date(Date.parse('2000-1-1 ' + str));
+    var dateVal = new Date('2000/1/1 ' + str);
     return !isNaN(dateVal.getDate());
 }
 
@@ -631,7 +637,7 @@ function setStateByPath(state, path, value, visited) {
             for(var acti in delayActs){
                 var theAct = delayActs[acti];
                 if(typeof(theAct.callfun) === 'function'){
-                    theAct.callfun();
+                    theAct.callfun(retState);
                 }
             }
         }, 50);
@@ -773,7 +779,7 @@ function setManyStateByPath(state, path, valuesObj, visited) {
             for(var acti in delayActs){
                 var theAct = delayActs[acti];
                 if(typeof(theAct.callfun) === 'function'){
-                    theAct.callfun();
+                    theAct.callfun(retState);
                 }
             }
         }, 50);
@@ -881,11 +887,13 @@ function fetchEndHandler(state, action) {
                         fetchingErr: action.err,
                     });
                 }
-                if(triggerData.callBack){
-                    var callbackret = triggerData.callBack(retState, null, action.err);
-                    if(callbackret != null){
-                        retState = callbackret;
-                    }
+            }
+        }
+        if(triggerData){
+            if(triggerData.callBack){
+                var callbackret = triggerData.callBack(retState, null, action.err);
+                if(callbackret != null){
+                    retState = callbackret;
                 }
             }
         }
@@ -980,7 +988,7 @@ function renderFetcingErrDiv(errInfo) {
         <div className='w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch'>
             <div className='m-auto d-flex align-items-center border rounded text-danger flex-shrink-0 mw-100'>
                 <i className='fa fa-warning fa-fw fa-2x' />
-                <div className='text'>出错了:{errInfo}联系信息部吧。</div>
+                <div className='text'>出错了:{errInfo}</div>
             </div>
         </div>
     );
@@ -1045,6 +1053,17 @@ function IsEmptyObject(val){
 	return true;
 }
 
+function getQueryObject(){
+    var rlt = {};
+    var query = window.location.search.substring(1);
+    var vars = query.split("&");
+    for (var i=0;i<vars.length;i++) {
+        var pair = vars[i].split("=");
+        rlt[pair[0]] = pair[1];
+    }
+    return rlt;
+}
+
 function getQueryVariable(variable)
 {
     var query = window.location.search.substring(1);
@@ -1054,4 +1073,51 @@ function getQueryVariable(variable)
         if(pair[0] == variable){return pair[1];}
     }
     return(false);
+}
+
+var gTimeReg = /\d+:\d+:\d+/;
+
+function FormatStringValue(val, type){
+    if(IsEmptyString(val)){
+        return '';
+    }
+    var rlt = val;
+    switch(type){
+        case 'int':
+        rlt = parseInt(val);
+        if(isNaN(rlt)){
+            rlt = '';
+        }
+        break;
+        case 'boolean':
+        rlt = parseBoolean(val) ? true : false;
+        break;
+        case 'float':
+        var precision = tihs.props.precision == null ? 2 : parseInt(tihs.props.precision);
+        rlt = Math.round(val * Math.pow(10, precision));
+        if(isNaN(rlt)){
+            rlt = '';
+        }
+        break;
+        case 'date':
+        case 'datetime':
+        if(!checkDate(val)){
+            rlt = '';
+        }
+        else if(val.length > 10){
+            var theDate = new Date(val)
+            rlt = getFormatDateString(theDate) + (type == 'datetime' ? ' ' + getFormatTimeString(theDate) : '');
+        }
+        break;
+        case 'time':
+        if(val && val.length > 8 && checkDate(val)){
+            var regRlt = gTimeReg.exec(val);
+            return regRlt[0];
+        }
+        else if(!checkTime(val)){
+            rlt = '';
+        }
+        break;
+    }
+    return rlt;
 }

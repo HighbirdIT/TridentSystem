@@ -36,8 +36,8 @@ class M_TextKernel extends ControlKernelBase {
         this[AttrNames.LineType + '_visible'] = nowvt == ValueType.String;
     }
 
-    renderSelf() {
-        return (<M_Text key={this.id} ctlKernel={this} onClick={this.clickHandler} />)
+    renderSelf(clickHandler) {
+        return (<M_Text key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {
@@ -54,7 +54,7 @@ class M_TextKernel extends ControlKernelBase {
 }
 
 var M_TextKernel_api = new ControlAPIClass(M_TextKernel_Type);
-M_TextKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.TextField,M_TextKernelAttrsSetting), 'value'));
+M_TextKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.TextField,M_TextKernelAttrsSetting), 'value', true));
 M_TextKernel_api.pushApi(new ApiItem_propsetter('value'));
 g_controlApi_arr.push(M_TextKernel_api);
 

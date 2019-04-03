@@ -97,6 +97,12 @@ class FormatFileBlock extends FormatFile_ItemBase{
         return this.childs_arr.length == 0;
     }
 
+    clear(){
+        this.childs_arr = [];
+        this.nextLineIndent = 0;
+        this.childs_map = {};
+    }
+
     clone(){
         var rlt = new FormatFileBlock(this.name, this.priority);
         this.childs_arr.forEach(child=>{
@@ -601,6 +607,40 @@ class JSFile_IF extends FormatFileBlock{
     }
 }
 
+class JSFile_Try extends FormatFileBlock{
+    constructor(name){
+        super(name);
+
+        this.bodyBlock = new FormatFileBlock('body');
+        this.errorBlock = new FormatFileBlock('error');
+    }
+
+    clone(){
+        var rlt = new JSFile_Try(this.name);
+        rlt.bodyBlock = this.bodyBlock.clone();
+        rlt.errorBlock = this.errorBlock.clone();
+        return rlt;
+    }
+
+    pushChild(){
+        console.error("try block can't call pushChild");
+    }
+
+    pushLine(lineItem, indentOffset){
+        this.bodyBlock.pushLine(lineItem, indentOffset);
+    }
+
+    getString(prefixStr, indentChar, newLineChar){
+        var rlt = prefixStr + 'try{' + newLineChar;
+        rlt += this.bodyBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
+        rlt += prefixStr + '}' + newLineChar;
+        rlt += prefixStr + 'catch(eo){' + newLineChar;
+        rlt += this.errorBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
+        rlt += prefixStr + '}' + newLineChar;
+        return rlt;
+    }
+}
+
 class JSFile_Funtion extends FormatFileBlock{
     constructor(name, params_arr, declareType){
         super(name);
@@ -613,8 +653,10 @@ class JSFile_Funtion extends FormatFileBlock{
         this.headBlock = new FormatFileBlock('head');
         this.bodyBlock = new FormatFileBlock('body');
         this.retBlock = new FormatFileBlock('ret');
+        this.beforeRetBlock = new FormatFileBlock('beforeRet');
 
         this.scope = new JSFile_Scope('_localfun', this.getScope());
+        this.scope.fun = this;
         this.headBlock.parent = this;
         this.bodyBlock.parent = this;
         this.retBlock.parent = this;
@@ -692,9 +734,13 @@ class JSFile_Funtion extends FormatFileBlock{
             bodyStr = this.bodyBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
         }
         var retStr = '';
-        if(this.retBlock.childs_arr.length > 0){
-            retStr = this.retBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
+        if(this.beforeRetBlock.childs_arr.length > 0){
+            retStr = this.beforeRetBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
         }
+        if(this.retBlock.childs_arr.length > 0){
+            retStr += this.retBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
+        }
+        
         var varDeclareStr = this.scope.getVarDeclareString(prefixStr + indentString + indentChar, newLineChar);
         return prefixStr + indentString + declareLine + newLineChar + varDeclareStr + headStr + bodyStr + retStr + endDeclareLine;
     }
@@ -755,6 +801,19 @@ class JSFile_ReactClass extends JSFile_Class{
     }
 }
 
+class JSFile_PureReactClass extends JSFile_Class{
+    constructor(name, outScope){
+        super(name, outScope);
+        this.parentClassName = 'React.PureComponent';
+        this.constructorFun.params_arr = ['props'];
+        this.constructorFun.pushLine('super(props);');
+
+        this.renderFun = this.getFunction('render', true);
+        this.renderFun.scope.getVar(VarNames.RetElem, true, 'null');
+        this.renderFun.retBlock.pushLine(makeLine_Return(VarNames.RetElem));
+    }
+}
+
 
 class JSFileMaker  extends FormatFileMaker{
     constructor(){
@@ -809,13 +868,56 @@ class JSFileMaker  extends FormatFileMaker{
         return rlt;
     }
 
-    getReactClass(name, autoCreate){
+    getReactClass(name, autoCreate, noVisibleCom){
         var rlt = this.classes_map[name];
         if(rlt == null && autoCreate){
-            rlt = new JSFile_ReactClass(name, this.scope);
+            if(noVisibleCom){
+                rlt = new JSFile_PureReactClass(name, this.scope);
+            }
+            else
+            {
+                rlt = new JSFile_ReactClass(name, this.scope);
+            }
             this.classes_map[name] = rlt;
         }
         return rlt;
+    }
+}
+
+class FlowScriptFile extends JSFileMaker{
+    constructor(flow){
+        super();
+        this.flow = flow;
+        this.fileName = 'serverFlow' + flow.code;
+
+        this.importBlock.pushLine("const dbhelper = require('../../../../dbhelper.js');");
+        this.importBlock.pushLine("const serverhelper = require('../../../../erpserverhelper.js');");
+        this.importBlock.pushLine("const co = require('co');");
+        this.importBlock.pushLine("const sqlTypes = dbhelper.Types;");
+        this.importBlock.pushLine("const fs = require('fs');");
+        this.importBlock.pushLine("const forge = require('node-forge');");
+
+        this.processFun = this.scope.getFunction('process', true, ['stepCode', 'pram1', 'param2', 'param3']);
+        
+    }
+
+    compile(){
+        return true;
+    }
+
+    compileEnd(){
+        this.endBlock.pushLine('module.exports = process;');
+    }
+
+    initProcessFun(theFun){
+        if(theFun.inited){
+            return;
+        }
+        theFun.headBlock.pushLine("return co(function* () {");
+        theFun.bodyBlock.addNextIndent();
+        theFun.retBlock.pushLine("});");
+        theFun.inited = true;
+        theFun.scope.isServerSide = true;
     }
 }
 
@@ -864,6 +966,7 @@ class CP_ServerSide extends JSFileMaker{
         theFun.bodyBlock.addNextIndent();
         theFun.retBlock.pushLine("});");
         theFun.inited = true;
+        theFun.scope.isServerSide = true;
     }
 }
 
@@ -925,7 +1028,8 @@ class CP_ClientSide extends JSFileMaker{
         ifLoginBK.trueBlock.pushLine('<VisibleApp />', -1);
         ifLoginBK.trueBlock.pushLine("</Provider>, document.getElementById('reactRoot'));");
 
-        ifLoginBK.falseBlock.pushLine("location.href = '/?goto=' + location.pathname;");
+        ifLoginBK.falseBlock.pushLine("var search = location.search.replace('?','');");
+        ifLoginBK.falseBlock.pushLine("location.href = '/?goto=' + location.pathname + '&' + search;");
 
         this.endBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, { action: 'pageloaded' }, null, 'pageloaded', '正在加载[' + thisAppTitle + ']'));");
     }

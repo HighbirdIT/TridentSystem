@@ -9,6 +9,7 @@ public/erpdesigner/js
 public/erpdesigner/files
 public/src/views/erp/pages
 views/erppage/server/pages
+views/erppage/server/flows
 developconfig.js
 
 # put any other files you don;t want to check in here

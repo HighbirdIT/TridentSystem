@@ -101,7 +101,6 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
 
         this.state = {
             formKernel: formKernel,
-            operator: this.props.nodedata.operator,
         }
     }
 
@@ -244,7 +243,7 @@ class C_JSNode_DateFun extends React.PureComponent {
     }
 }
 
-class C_JSNode_QueryFB extends React.PureComponent {
+class C_JSNode_Query_Sql extends React.PureComponent {
     constructor(props) {
         super(props);
         autoBind(this);
@@ -295,10 +294,10 @@ class C_JSNode_QueryFB extends React.PureComponent {
         var entity = nodeData.targetEntity;
         var dataloaded = entity ? entity.loaded : false;
 
-        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='查询FB'>
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='查询SQL'>
             <div className='d-flex'>
                 <div className='flex-grow-1 flex-shrink-1'>
-                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={g_dataBase.getEntitiesByType} funparamobj='FB' rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
+                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={nodeData.bluePrint.master.project.dataMaster.getAllEntities} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
                 </div>
             </div>
             <div className='d-flex'>
@@ -345,6 +344,34 @@ class C_JSNode_Logical_Operator extends React.PureComponent {
             <div className='d-flex'>
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
+            </div>
+        </C_Node_Frame>
+    }
+}
+
+class C_JSNODE_Do_FlowStep extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        this.dropdownRef = React.createRef();
+
+        C_NodeCom_Base(this);
+    }
+
+    flowStepDDCChanged(code,ddc,flowStep) {
+        this.props.nodedata.setFlowStep(flowStep);
+    }
+
+    render() {
+        var nowVal = this.props.nodedata.flowStepCode;
+        var nodeData = this.props.nodedata;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={'申请执行流程步骤'} >
+            <div className='flex-grow-1 flex-shrink-1'>
+                <DropDownControl ref={this.dropdownRef} itemChanged={this.flowStepDDCChanged} btnclass='btn-dark' options_arr={gFlowMaster.getAllSteps} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='fullName' valueAttrName='code' value={nowVal ? nowVal : -1} />
+            </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutFlowScoketDynamic() ? nodeData.processOutputFlowSockets : null} />
             </div>
         </C_Node_Frame>
     }

@@ -12,6 +12,28 @@ var OrderType_DESC = 'desc';
 var OrderType_ASCE = 'asce';
 var OrderTypes_arr = [OrderType_DESC, OrderType_ASCE];
 
+var EMessageType = {
+    Normal: 0,
+    Process: 2
+};
+var MessageTypes_arr = [{ text: '要求阅读', value: EMessageType.Normal }, { text: '要求处置', value: EMessageType.Process }];
+
+var EMessageSendType = {
+    Normal: 1,
+    Fortwith: 2
+};
+var MessageSendTypes_arr = [{ text: '普通消息', value: EMessageSendType.Normal }, { text: '即时消息', value: EMessageSendType.Fortwith }];
+
+var EMessageTargetType = {
+    Person: 1,
+    Post: 2
+};
+var MessageTargetTypes_arr = [{ text: '指定人员', value: EMessageTargetType.Person }, { text: '指定岗位', value: EMessageTargetType.Post }];
+
+var PersonEductOptions_arr = [];
+var AllPosts_arr = [];
+var ProjectRecords_arr = [];
+
 var SqlVarType_Unknown = 'unknown';
 var SqlVarType_Int = 'int';
 var SqlVarType_NVarchar = 'nvarchar';
@@ -107,11 +129,19 @@ var ESqlBluePrintGroup = {
 
 var EFormType = {
     Page: 'page',
-    List: 'list'
+    Grid: 'grid'
 };
 
-var FormTypes_arr = [EFormType.Page, EFormType.List];
+var FormTypes_arr = [EFormType.Page, EFormType.Grid];
 var ButtonClasses_arr = ['btn-primary', 'btn-secondary', 'btn-success', 'btn-danger', 'btn-warning', 'btn-info', 'btn-light', 'btn-dark', 'btn-link'];
+
+var GridHead_PerCharWidth = 1.4;
+var EGridWidthType = {
+    Auto: 'auto',
+    Fixed: 'fixed'
+};
+
+var EGridWidthTypes_arr = [{ text: '自动列宽', value: EGridWidthType.Auto }, { text: '固定列宽', value: EGridWidthType.Fixed }];
 
 var EInterActiveType = {
     ReadOnly: 'readonly',
@@ -205,6 +235,7 @@ DesignerConfig.getMobileCanLabeledControls = function () {
 
 var ValueType = {
     String: 'string',
+    Array: 'array',
     Int: 'int',
     Boolean: 'boolean',
     Float: 'float',
@@ -214,10 +245,12 @@ var ValueType = {
     StyleValues: 'StyleValues',
     DataSource: 'DataSource',
     CustomDataSource: 'CustomDataSource',
+    ListFormContent: 'listFormContent',
     Unknown: 'Unknown',
     Any: '任意',
     Event: 'event',
-    Script: 'script'
+    Script: 'script',
+    Object: 'Object'
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

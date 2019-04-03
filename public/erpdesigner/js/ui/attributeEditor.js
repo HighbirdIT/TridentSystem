@@ -316,6 +316,21 @@ var AttributeEditor = function (_React$PureComponent) {
             );
         }
     }, {
+        key: 'clickListFormContent',
+        value: function clickListFormContent() {
+            var project = this.props.targetobj.project;
+            project.designer.editListFormContent(this.props.targetobj);
+        }
+    }, {
+        key: 'renderListFormContent',
+        value: function renderListFormContent(nowVal, theAttr, attrName, inputID) {
+            return React.createElement(
+                'button',
+                { type: 'button', className: 'btn btn-dark w-100', onClick: this.clickListFormContent },
+                '\u5B9A\u5236\u5217\u8868\u6570\u636E'
+            );
+        }
+    }, {
         key: 'rednerEditor',
         value: function rednerEditor(theAttr, attrName, inputID) {
             var nowVal = this.state.value;
@@ -327,6 +342,9 @@ var AttributeEditor = function (_React$PureComponent) {
             }
             if (theAttr.valueType == ValueType.CustomDataSource) {
                 return this.renderCustomDataSource(nowVal, theAttr, attrName, inputID);
+            }
+            if (theAttr.valueType == ValueType.ListFormContent) {
+                return this.renderListFormContent(nowVal, theAttr, attrName, inputID);
             }
             var attrEditable = ReplaceIfNull(this.props.targetobj[attrName + '_editable'], theAttr.editable);
             if (!attrEditable) {
@@ -564,7 +582,11 @@ var AttributeGroup = function (_React$PureComponent2) {
         key: 'renderAttribute',
         value: function renderAttribute(attr) {
             var target = this.state.target;
-            if (!attr.visible || target[attr.name + '_visible'] == false) {
+            if (attr.visible) {
+                if (target[attr.name + '_visible'] == false) {
+                    return null;
+                }
+            } else if (target[attr.name + '_visible'] != true) {
                 return null;
             }
             if (attr.isArray) {

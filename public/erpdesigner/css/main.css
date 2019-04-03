@@ -628,3 +628,10 @@
 .attrEditorContent{
   width: calc(100% - 6.5em);
 }
+
+.indexTableHeader{
+  width: 3em;
+  max-width: 3em;
+  white-space: nowrap;
+  overflow: hidden;
+}

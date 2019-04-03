@@ -265,6 +265,15 @@ class AttributeEditor extends React.PureComponent {
         return (<button type='button' className='btn btn-dark w-100' onClick={this.clickCusdatasourcebtn}>定制数据源</button>);
     }
 
+    clickListFormContent(){
+        var project = this.props.targetobj.project;
+        project.designer.editListFormContent(this.props.targetobj);
+    }
+
+    renderListFormContent(nowVal,theAttr,attrName,inputID){
+        return (<button type='button' className='btn btn-dark w-100' onClick={this.clickListFormContent}>定制列表数据</button>);
+    }
+
     rednerEditor(theAttr,attrName,inputID) {
         var nowVal = this.state.value;
         if(theAttr.valueType == ValueType.Event || theAttr.valueType == ValueType.Script){
@@ -275,6 +284,9 @@ class AttributeEditor extends React.PureComponent {
         }
         if(theAttr.valueType == ValueType.CustomDataSource){
             return this.renderCustomDataSource(nowVal,theAttr,attrName,inputID);
+        }
+        if(theAttr.valueType == ValueType.ListFormContent){
+            return this.renderListFormContent(nowVal,theAttr,attrName,inputID);
         }
         var attrEditable = ReplaceIfNull(this.props.targetobj[attrName + '_editable'], theAttr.editable);
         if (!attrEditable) {
@@ -467,7 +479,12 @@ class AttributeGroup extends React.PureComponent {
 
     renderAttribute(attr){
         var target = this.state.target;
-        if(!attr.visible || target[attr.name + '_visible'] == false){
+        if(attr.visible){
+            if(target[attr.name + '_visible'] == false){
+                return null;
+            }
+        }
+        else if(target[attr.name + '_visible'] != true){
             return null;
         }
         if(attr.isArray){

@@ -2,12 +2,16 @@ class AttributePanel extends React.PureComponent {
     constructor(props) {
         super(props);
 
-        var editingPage = this.props.project.getEditingPage();
-        var initState = {
-            target:editingPage == null ? this.props.project : editingPage,
-        };
+        var initState = {};
+        if(this.props.project)
+        {
+            var editingPage = this.props.project.getEditingPage();
+            initState = {
+                target:editingPage == null ? this.props.project : editingPage,
+            };
+            this.props.project.designer.attributePanel = this;
+        }
         this.state = initState;
-        this.props.project.designer.attributePanel = this;
 
         autoBind(this,{exclude:['renderAttribute']});
     }
@@ -59,7 +63,9 @@ class AttributePanel extends React.PureComponent {
         if(newTarget && newTarget.setSelected){
             newTarget.setSelected(true);
         }
-        this.props.project.emit(ESELECTEDCHANGED);
+        if(this.props.project){
+            this.props.project.emit(ESELECTEDCHANGED);
+        }
         this.listenTarget(newTarget);
         this.setState({
             target:newTarget,
@@ -73,7 +79,7 @@ class AttributePanel extends React.PureComponent {
         if(target.attrbuteGroups == null){
             return (<div>此对象没有属性</div>);
         }
-        var projectName = this.props.project.designeConfig.name;
+        var projectName = this.props.project ? this.props.project.designeConfig.name : '未知';
         return(
             target.attrbuteGroups.map((attrGroup,attrGroupIndex)=>{
                 return(

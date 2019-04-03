@@ -131,6 +131,7 @@ var IAttributeable = function (_EventEmitter) {
                         case AttrNames.DataSource:
                         case AttrNames.ProcessTable:
                         case AttrNames.CustomDataSource:
+                        case AttrNames.ListFormContent:
                             break;
                         default:
                             if (attrItem.valueType == ValueType.CustomDataSource) {
@@ -246,6 +247,9 @@ var IAttributeable = function (_EventEmitter) {
                         }
                         switch (attr.valueType) {
                             case ValueType.DataSource:
+                                val = val.code;
+                                break;
+                            case ValueType.ListFormContent:
                                 val = val.code;
                                 break;
                         }

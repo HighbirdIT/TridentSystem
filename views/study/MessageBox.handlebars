@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html style="height:100%">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/vendor/bootstrap4/css/bootstrap.css">
+        <link rel="stylesheet" href="/css/erpmobilepage01.css">
+        <title>HelloReact</title>
+    </head>
+
+    <body class="w-100 h-100">
+        <div id="reactRoot" class="w-100 h-100 bg-light">
+            HelloReact
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.6.1/prop-types.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/reselect/3.0.1/reselect.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/7.0.0-beta.49/polyfill.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+        <script src="/vendor/bootstrap4/js/bootstrap.js"></script>
+        {{#if isproduction}}
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.4.0/umd/react.production.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.4.0/umd/react-dom.production.min.js"></script>
+        {{else}}
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/16.4.0/umd/react.development.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.4.0/umd/react-dom.development.js"></script>
+        {{/if}}
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/fetch/2.0.4/fetch.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/latest/js.cookie.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/EventEmitter/5.2.4/EventEmitter.min.js"></script>
+        <script src="/js/views/study/MessageBox.js"></script>
+    </body>
+</html>

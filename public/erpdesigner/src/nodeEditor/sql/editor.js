@@ -48,8 +48,8 @@ const SqlNodeEditorControls_arr =[
     }
     ,
     {
-        label:'环境变量',
-        nodeClass:SqlNode_Env_Var,
+         label:'环境变量',
+         nodeClass:SqlNode_Env_Var,
     }
 ]; 
 
@@ -319,6 +319,9 @@ class C_SqlNode_Editor extends React.PureComponent{
     }
 
     componentWillUnmount(){
+        if(this.props.bluePrint){
+            this.props.bluePrint.genColumns();
+        }
         window.removeEventListener('mousemove', this.mousemoveWidthDragingHandler);
         window.removeEventListener('mouseup', this.mouseupWidthDragingHandler);
         window.removeEventListener('keyup', this.keyUpHandler);
@@ -672,6 +675,14 @@ class C_SqlNode_Editor extends React.PureComponent{
         return newNode;
     }
 
+    createCanUseDS(dsconfig){
+        this.createNewNode(SqlNode_CurrentDataRow,{
+            formID:dsconfig.formID,
+            dscode:dsconfig.entity.code,
+            dsentity:dsconfig.entity,
+        });
+    }
+
     createApiObj(apiClass, apiItem){
         switch(apiItem.type){
             case EApiType.Prop:
@@ -905,6 +916,16 @@ class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
         });
     }
 
+    mouseDownCanUseDSHandler(ev){
+        var itemValue = getAttributeByNode(ev.target, 'data-value');
+        if(itemValue == null)
+            return;
+        var theDSItem = this.state.canUseDS_arr.find(e=>{return e.formID == itemValue});
+        if(theDSItem){
+            this.props.editor.createCanUseDS(theDSItem);
+        }
+    }
+
     clickCanUseDSHeader(ev){
         this.setState({showCanUseDS:!this.state.showCanUseDS});
     }
@@ -951,6 +972,20 @@ class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
                 <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>节点</button>
                 <div id={targetID} className="list-group flex-grow-1 flex-shrink-1 collapse show" style={{ overflow: 'auto' }}>
                     <div className='mw-100 d-flex flex-column'>
+                        {
+                            canUseDS_arr.length > 0 &&
+                            <React.Fragment>
+                                <div className='d-flex flex-shrink-0'>
+                                    <span onClick={this.clickCanUseDSHeader} className='btn btn-info flex-grow-1 flex-shrink-1'>作用域数据{showCanUseDS ? '-' : '+'}</span>
+                                </div>
+                                {showCanUseDS &&
+                                <div className='btn-group-vertical mw-100 flex-shrink-0'>
+                                    {canUseDS_arr.map(item=>{
+                                        return (<button key={item.formID} onMouseDown={this.mouseDownCanUseDSHandler} data-value={item.formID} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>);
+                                    })}
+                                </div>}
+                            </React.Fragment>
+                        }
                         <div className='btn-group-vertical mw-100 flex-shrink-0'>
                             {editingBP.ctlID != null && <span className='btn btn-info' onClick={this.clickCtlApiHeader}>控件接口{showCtlApi ? '-' : '+'}</span>}
                             {showCtlApi &&
@@ -1170,7 +1205,7 @@ class SqlDef_Variable_Component extends React.PureComponent{
 
     isParamChangedHandler(newData){
         this.setState({
-            isParam:newData.code,
+            isParam:newData,
         });
     }
 
@@ -1320,6 +1355,8 @@ class SqlNode_CompileHelper{
         this.useGlobalControls_map = {};
         this.useForm_map = {};
         this.useEnvVars = {};
+        this.compileSeq = [];
+        this.varValue_map = {};
 
         autoBind(this);
     }
@@ -1328,6 +1365,7 @@ class SqlNode_CompileHelper{
         if(this.startNode == null){
             this.startNode = theNode;
         }
+        this.compileSeq.push(theNode);
     }
 
     addUseEnvVars(varKey){
@@ -1397,13 +1435,13 @@ class SqlNode_CompileHelper{
         return rlt;
     }
 
-    getCompileRetCache(theNode){
-        var cacheID = 'compileRet-' + theNode.id;
+    getCompileRetCache(theNode, isServerSide){
+        var cacheID = 'compileRet-' + theNode.id + (isServerSide ? '-server' : '');
         return this.getCache(cacheID);
     }
 
-    setCompileRetCache(theNode, data){
-        var cacheID = 'compileRet-' + theNode.id;
+    setCompileRetCache(theNode, data, isServerSide){
+        var cacheID = 'compileRet-' + theNode.id + (isServerSide ? '-server' : '');
         this.setCache(cacheID, data);
     }
 
@@ -1417,6 +1455,14 @@ class SqlNode_CompileHelper{
             };
         }
         return this.useForm_map[formKernel.id];
+    }
+
+    addUseFormDS(formKernel, columns_arr){
+        var useForm = this.addUseForm(formKernel);
+        useForm.useDS = formKernel.getAttribute(AttrNames.DataSource);
+        columns_arr.forEach(col=>{
+            useForm.useColumns_map[col] = 1;
+        });
     }
 
     addUseControlPropApi(ctrKernel, apiitem){

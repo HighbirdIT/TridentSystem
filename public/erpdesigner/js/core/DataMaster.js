@@ -82,6 +82,12 @@ var DataBase = function (_EventEmitter) {
     }, {
         key: 'getEntityByCode',
         value: function getEntityByCode(code) {
+            if (isNaN(code)) {
+                console.error('getDataSourceByCode只接受整数');
+            }
+            if (code == 0) {
+                return null;
+            }
             var rlt = this.entityCode_map[code.toString()];
             if (rlt == null) {
                 rlt = this.createEnity({ code: code });
@@ -96,7 +102,13 @@ var DataBase = function (_EventEmitter) {
     }, {
         key: 'getEntitiesByType',
         value: function getEntitiesByType(tType) {
+            if (tType == null) {
+                tType = '*';
+            }
             return this.entities_arr.filter(function (e) {
+                if (tType == '*') {
+                    return true;
+                }
                 return e.type == tType;
             }).concat(EmptyDBEntity);
         }
@@ -207,6 +219,26 @@ var DBEntity = function (_EventEmitter3) {
         value: function toString() {
             return IsEmptyString(this.name) ? this.code : this.name;
         }
+    }, {
+        key: 'isScalar',
+        value: function isScalar() {
+            return this.type == 'FB';
+        }
+    }, {
+        key: 'isFunction',
+        value: function isFunction() {
+            return this.type == 'FB' || this.type == 'FT';
+        }
+    }, {
+        key: 'getParams',
+        value: function getParams() {
+            return this.params;
+        }
+    }, {
+        key: 'getColumns',
+        value: function getColumns() {
+            return this.columns;
+        }
     }]);
 
     return DBEntity;
@@ -307,6 +339,7 @@ var DataMaster = function (_EventEmitter4) {
             sqpBP.name = name;
             sqpBP.type = type;
             this.emit('sqlbpchanged');
+            sqpBP.fireChanged();
         }
     }, {
         key: 'deleteSqlBP',
@@ -372,7 +405,7 @@ var DataMaster = function (_EventEmitter4) {
         value: function getAllEntities() {
             return this.BP_sql_arr.filter(function (x) {
                 return x.group == 'custom';
-            }).concat(g_dataBase.entities_arr);
+            }).concat(g_dataBase.entities_arr).concat(EmptyDBEntity);
         }
     }, {
         key: 'restoreFromJson',

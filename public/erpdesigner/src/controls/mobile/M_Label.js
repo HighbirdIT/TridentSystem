@@ -1,6 +1,8 @@
 const M_LabelKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置',[
         genTextFiledAttribute(),
+        new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes),
+        new CAttribute('小数精度', AttrNames.FloatNum, ValueType.Int, 2, true, false, null, null, false),
         genIsdisplayAttribute(),
     ]),
 ]);
@@ -16,12 +18,25 @@ class M_LabelKernel extends ControlKernelBase{
                 createHelper,kernelJson
             );
 
+        var nowvt = this.getAttribute(AttrNames.ValueType);
+        this[AttrNames.FloatNum + '_visible'] = nowvt == ValueType.Float;
+
         var self = this;
         autoBind(self);
     }
 
-    renderSelf(){
-        return (<M_Label key={this.id} ctlKernel={this} onClick={this.clickHandler} />)
+    __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {
+        super.__attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray);
+        var attrItem = this.findAttributeByName(attrName);
+        if (attrItem.name == AttrNames.ValueType) {
+            // 数据类型更改
+            var floatNumAttr = this.findAttributeByName(AttrNames.FloatNum);
+            floatNumAttr.setVisible(this, newValue == ValueType.Float);
+        }
+    }
+
+    renderSelf(clickHandler){
+        return (<M_Label key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 }
 

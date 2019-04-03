@@ -16,8 +16,16 @@ class NodeSocket extends EventEmitter{
     }
     
     set(data){
-        Object.assign(this, data);
-        this.fireEvent('changed');
+        var changed = false;
+        for(var name in data){
+            if(data[name] != this[name]){
+                this[name] = data[name];
+                changed = true;
+            }
+        }
+        if(changed){
+            this.fireEvent('changed', data);
+        }
     }
 
     getLinks(){
@@ -53,6 +61,9 @@ class NodeSocket extends EventEmitter{
             id:this.id,
             type:this.type,
         };
+        if(this.visible == false){
+            rlt.visible = false;
+        }
         if(this.defval != null){
             rlt.defval = this.defval;
         }

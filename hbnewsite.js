@@ -1,12 +1,14 @@
 'use strict';
 var express = require('express');
 var http = require('http');
+var url = require('url');
 var fortune = require('./lib/fortune.js');
 var bodyParser = require('body-parser');
 var credentials = require('./credentials.js');
 var connect = require('connect');
 var React = require('react');
 var dbhelper = require('./dbhelper.js');
+var flowhelper = require('./flowhelper.js');
 var co = require('co');
 var dingHelper = require('./dingHelper');
 var developconfig = require('./developconfig');
@@ -15,7 +17,7 @@ const serverhelper = require('./erpserverhelper.js');
 
 debug.enabled = ()=>{
     return false;
-}
+};
 
 
 const sqlTypes = dbhelper.Types;
@@ -50,21 +52,28 @@ if (app.get('env') == 'production') {
     app.set('view cache', true);
 }
 
-function getIPAdress() {
+function getIPV4() {
     var interfaces = require('os').networkInterfaces();
     for (var devName in interfaces) {
         var iface = interfaces[devName];
         for (var i = 0; i < iface.length; i++) {
             var alias = iface[i];
             if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) {
-                return alias.address;
+                return alias;
             }
         }
     }
     return 'NaN';
 }
 
-app.set('hostip', getIPAdress());
+var localIP = getIPV4();
+if(localIP.mac == '80:fa:5b:59:48:09'){
+    setInterval(()=>{
+        flowhelper.startFlowProcess();
+    },5 * 1000);
+}
+
+app.set('hostip', localIP.address);
 app.set('hostDirName', __dirname);
 
 //3600000
@@ -172,6 +181,12 @@ app.use('/', function (req, res, next) {
     next();
 });
 
+app.use('/fromNotify', function (req, res, next) {
+    if(!flowhelper.execFromNotify(req, res, next)){
+        next();
+    }
+});
+
 app.use('/dingUtility', function (req, res, next) {
     if(req.path == '/')
     {
@@ -220,6 +235,9 @@ app.use('/ERPDesigner/main', function (req, res, next) {
 
 app.use('/HelloReact', function (req, res, next) {
     return res.render('study/HelloReact', { layout: null });
+});
+app.use('/MessageBox', function (req, res, next) {
+    return res.render('study/MessageBox', { layout: null });
 });
 
 app.use('/ReactKeyList', function (req, res, next) {

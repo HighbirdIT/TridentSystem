@@ -22,15 +22,37 @@ class LoginPanel extends React.PureComponent {
 
     logComplete(useData){
         //console.log(useData);
-        LoginUser = new Account(useData);
-        var self = this;
-        
-        setTimeout(()=>{
-            self.panelBaseRef.current.close();
-            if(self.props.logCompleteFun != null){
-                self.props.logCompleteFun();
+        LoginUser = new Account(useData)
+
+        this.setState({
+            info:'获取基础配置信息',
+        });
+        fetchJsonPost('server', { action: 'getBaseConfigData'}, this.getBaseConfigDataCallBack);
+    }
+
+    getBaseConfigDataCallBack(respon){
+        if(respon.success){
+            if(respon.json.err != null){
+                this.endFetch(respon.json.err.info);
+                return;
             }
-        },200);
+            gFlowMaster.synFromJson(respon.json.data.flows);
+            PersonEductOptions_arr = respon.json.data.personEducts_arr;
+            AllPosts_arr = respon.json.data.posts_arr;
+            ProjectRecords_arr = respon.json.data.projects_arr;
+
+            this.endFetch('获取成功');
+            var self = this;
+            setTimeout(()=>{
+                self.panelBaseRef.current.close();
+                if(self.props.logCompleteFun != null){
+                    self.props.logCompleteFun();
+                }
+            },200);
+        }
+        else{
+            this.endFetch(respon.json.err.info);
+        }
     }
 
     loginUseCookieCallBack(respon){
@@ -39,7 +61,7 @@ class LoginPanel extends React.PureComponent {
                 this.endFetch(respon.json.err.info);
                 return;
             }
-            this.endFetch('缓存登录成功');
+            //this.endFetch('缓存登录成功');
             this.logComplete(respon.json.data);
         }
         else{

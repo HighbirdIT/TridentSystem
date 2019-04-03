@@ -3,9 +3,7 @@ const M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'),
         new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false),
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
-    ]),
-    new CAttributeGroup('测试设置', [
-        new CAttribute('测试', AttrNames.Test, ValueType.String, '', true, 1),
+        new CAttribute('高度适应', AttrNames.AutoHeight, ValueType.Boolean, true),
     ]),
 ],false);
 
@@ -107,9 +105,10 @@ class M_Page extends React.PureComponent {
         if (this.state.orientation == Orientation_V) {
             layoutConfig.addClass('flex-column');
         }
+        layoutConfig.addClass('bg-light');
         return (
             <React.Fragment>
-                <div className="d-flex flex-grow-0 flex-shrink-1 text-light bg-primary align-items-baseline">
+                <div className="d-flex flex-grow-0 flex-shrink-0 text-light bg-primary align-items-baseline">
                     <div className="ml-1" href="#"><h5 className='icon icon-left-nav'></h5></div>
 
 

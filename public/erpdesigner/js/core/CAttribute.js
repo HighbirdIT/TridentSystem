@@ -114,6 +114,10 @@ function makeFName_bindForm(formKernel) {
     return 'bind_' + formKernel.id;
 }
 
+function makeFName_bindFormPage(formKernel) {
+    return 'bind_' + formKernel.id + 'Page';
+}
+
 function makeFName_pull(formKernel) {
     return 'pull_' + formKernel.id;
 }
@@ -156,14 +160,35 @@ function makeLine_Return(retStr) {
     return 'return ' + retStr + ';';
 }
 
+function makeLine_DeclareVar(varName, initVal, autoQuote) {
+    if (initVal != null) {
+        if (isNaN(initVal) && autoQuote != false) {
+            switch (initVal[0]) {
+                case "'":
+                case '"':
+                case '{':
+                    break;
+                default:
+                    initVal = singleQuotesStr(initVal);
+            }
+        }
+    } else {
+        initVal = 'null';
+    }
+    return 'var ' + varName + '=' + initVal + ';';
+}
+
 var VarNames = {
     RetProps: 'retProps',
     ReState: 'retState',
     RetDispather: 'retDispather',
     NowPage: 'nowPage',
     NeedSetState: 'needSetState',
+    InvalidBundle: 'invalidbundle',
     NowRecord: 'nowRecord',
     RetElem: 'retElem',
+    ContentElem: 'contentElem',
+    NavElem: 'navElem',
     ThisProps: 'this.props',
     FetchErr: 'fetchingErr',
     Fetching: 'fetching',
@@ -173,7 +198,12 @@ var VarNames = {
     InsertCache: 'insertCache',
     State: 'state',
     Bundle: 'bundle',
-    InvalidBundle: 'invalidbundle'
+    StartRowIndex: 'startRowIndex',
+    EndRowIndex: 'endRowIndex',
+    PageCount: 'pageCount',
+    PageIndex: 'pageIndex',
+    RowPerPage: 'rowPerPage',
+    HadStateParam: 'hadStateParam'
 };
 
 var AttrNames = {
@@ -207,9 +237,18 @@ var AttrNames = {
     InteractiveType: 'interactivetype',
     InteractiveField: 'interactivefield',
     ValidChecker: 'validchecker',
+    InvalidInfo: 'invalidInfo',
+    ListFormContent: 'listFormContent',
+    PageBreak: 'pageBreak',
+    RowPerPage: 'rowPerPage',
+    WidthType: 'widthType',
+    ColumnWidth: 'columnWidth',
+    AutoHeight: 'autoHeight',
+    AutoIndexColumn: 'autoIndexColumn',
+    NoDataTip: 'noDataTip',
 
     Event: {
-        OnClick: 'onclik'
+        OnClick: 'onclick'
     },
 
     LayoutNames: {
@@ -224,7 +263,9 @@ var AttrNames = {
         MaxWidth: 'maxWidth',
         MaxHeight: 'maxHeight',
         FlexGrow: 'flex-grow',
-        FlexShrink: 'flex-shrink'
+        FlexShrink: 'flex-shrink',
+        MinWidth: 'minWidth',
+        MinHeight: 'minHeight'
     },
 
     StyleValues: {
@@ -244,6 +285,10 @@ function gStyleAttrNameToCssName(styleAttrName) {
             return 'max-width';
         case 'maxHeight':
             return 'max-height';
+        case 'minWidth':
+            return 'min-width';
+        case 'minHeight':
+            return 'min-height';
     }
     return styleAttrName;
 }
@@ -279,5 +324,7 @@ StyleAttrSetting[AttrNames.StyleAttrNames.Width] = { type: ValueType.String, def
 StyleAttrSetting[AttrNames.StyleAttrNames.Height] = { type: ValueType.String, def: '' };
 StyleAttrSetting[AttrNames.StyleAttrNames.MaxWidth] = { type: ValueType.String, def: '' };
 StyleAttrSetting[AttrNames.StyleAttrNames.MaxHeight] = { type: ValueType.String, def: '' };
+StyleAttrSetting[AttrNames.StyleAttrNames.MinWidth] = { type: ValueType.String, def: '' };
+StyleAttrSetting[AttrNames.StyleAttrNames.MinHeight] = { type: ValueType.String, def: '' };
 
 var CouldAppendClasses_arr = [''];

@@ -15,6 +15,9 @@ function M_ContainerBase_tryPlaceKernel(theKernel, mousePos) {
         }) != null;
 
         if (!placedInChildren) {
+            if (!selfKernel.canAppand(theKernel)) {
+                return false;
+            }
             var selfIsHor = selfKernel.getAttribute(AttrNames.Orientation) == Orientation_H;
             var appandIndex = selfKernel.children.length;
             var theKernelNowIndex = -1;
