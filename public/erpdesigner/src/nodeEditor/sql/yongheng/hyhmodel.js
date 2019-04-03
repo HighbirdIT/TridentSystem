@@ -1285,7 +1285,7 @@ class SqlNode_Cast extends SqlNode_Base {
         var sizeStr = '';
         if (hadSizeOne) {
             var sizeValue = parseInt(inSocket.getExtra('size1'));
-            if (sizeValue == null || sizeValue < 0) {
+            if (isNaN(sizeValue) || sizeValue == null || sizeValue < 0) {
                 sizeValue = 0;
             }
             if (sizeValue > sizeOneMax) {
@@ -1312,7 +1312,7 @@ class SqlNode_Cast extends SqlNode_Base {
         }
         if (hadSizeTwo) {
             var sizeValue = parseInt(inSocket.getExtra('size2'));
-            if (sizeValue == null || sizeValue < 0) {
+            if (isNaN(sizeValue) || sizeValue == null || sizeValue < 0) {
                 sizeValue = 0;
             }
             if (sizeValue > sizeTwoMax) {
@@ -1325,7 +1325,6 @@ class SqlNode_Cast extends SqlNode_Base {
                         , "size2已被重置为:" + sizeTwoMax]
                 );
             }
-            sizeStr += ',' + sizeValue;
         }
         if (sizeStr.length > 0) {
             sizeStr += ')';

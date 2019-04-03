@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html style="height:100%">
+<head lang="zh-cn">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="description" content="">
+  <meta name="keywords" content="">
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <meta name="renderer" content="webkit">
+
+  <meta http-equiv="Cache-Control" content="no-siteapp">
+  <link rel="alternate icon" type="image/png" href="i/favicon.png">
+  <link rel="apple-touch-icon-precomposed" href="i/app-icon72x72@2x.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <link rel="stylesheet" href="/vendor/bootstrap4/css/bootstrap.css">
+  <link rel="stylesheet" href="/css/erpmobilepage01.css">
+  <link rel="stylesheet" href="/vendor/font-awesome-4.7.0/css/font-awesome.min.css">
+  <meta name="apple-mobile-web-app-title" content="错误页">
+  <script>
+    {{{_sections.headScript}}}
+  </script>
+</head>
+<body class="w-100 h-100" >
+  {{{body}}}
+  <div id="reactRoot" class="w-100 h-100 text-danger">
+    <div class="card">
+      <div class="card-header">
+        出错了!
+      </div>
+      <div class="card-body">
+        <h5 class="card-title">{{errTitle}}</h5>
+        <p class="card-text"> {{errinfo}}</p>
+      </div>
+    </div>
+  </div>
+    <script src="https://cdn.bootcss.com/prop-types/15.6.2/prop-types.min.js"></script>
+    <script src="https://cdn.bootcss.com/babel-polyfill/7.2.5/polyfill.min.js"></script>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.slim.min.js"></script>
+    <script src="https://cdn.bootcss.com/popper.js/1.14.6/umd/popper.min.js"></script>
+    <script src="https://cdn.bootcss.com/js-cookie/latest/js.cookie.min.js"></script>
+    <script src="/vendor/bootstrap4/js/bootstrap.js"></script>
+    <script src="https://cdn.bootcss.com/EventEmitter/5.2.5/EventEmitter.min.js"></script>
+    {{{_sections.script}}}
+    <script>
+    {{{_sections.postScript}}}
+  </script>
+</body>
+</html>

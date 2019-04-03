@@ -186,6 +186,56 @@ body{
     min-height: 3em;
     flex-flow: 1;
 }
+.topMsg{
+    position:fixed;
+    width:300px;
+    height:80px;
+    /*left: 30px;*/
+    padding:10px;
+    border-radius:5px;
+    color: #0066cc;
+    box-sizing: border-box;
+    background-color: #f5faff;
+    border:1px solid #0066cc;
+    transition: top ease-in 550ms;
+    animation-fill-mode: forwards;
+}
+.fadeIn{
+        display: inline;
+        animation: topMsg-fade-in ease-in 100ms;
+    }
+.fadeOut{
+        display: none;
+        animation: topMsg-fade-out ease-out 100ms;
+    }
+    @keyframes topMsg-fade-in {
+        0% {
+            opacity: 0;
+        }
+        30% {
+            opacity: .2;
+        }
+        80% {
+            opacity: .4;
+        }
+        100% {
+            opacity: 1;
+        }
+    }
+    @keyframes topMsg-fade-out {
+        0% {
+        }
+        30% {
+            opacity: .2;
+        }
+        80% {
+            opacity: .4;
+        }
+        100% {
+            opacity: 0;
+        }
+    }
+
 
 .toastMsg{
     font-size: 1em;
@@ -248,4 +298,20 @@ body{
 
 .erpc_label{
     word-break: break-all;
+}
+
+.fixPageContent{
+    overflow: hidden;
+    height: calc(100% - 40px);
+}
+
+.indexTableHeader{
+    width: 3em;
+    max-width: 3em;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.erpc_checkbox{
+    cursor: pointer;
 }

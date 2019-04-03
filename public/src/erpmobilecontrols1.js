@@ -828,44 +828,6 @@ class ERPC_Text extends React.PureComponent {
         }, MakePath(this.props.parentPath, this.props.id)));
     }
 
-    formatValue(val){
-        if(IsEmptyString(val)){
-            return '';
-        }
-        var type = this.props.type;
-        var rlt = val;
-        switch(type){
-            case 'int':
-            rlt = parseInt(val);
-            if(isNaN(rlt)){
-                rlt = '';
-            }
-            break;
-            case 'boolean':
-            rlt = parseBoolean(val) ? true : false;
-            break;
-            case 'float':
-            var precision = tihs.props.precision == null ? 2 : parseInt(tihs.props.precision);
-            rlt = Math.round(val * Math.pow(10, precision));
-            if(isNaN(rlt)){
-                rlt = '';
-            }
-            break;
-            case 'date':
-            case 'datetime':
-            if(!checkDate(val)){
-                rlt = '';
-            }
-            break;
-            case 'time':
-            if(!checkTime(val)){
-                rlt = '';
-            }
-            break;
-        }
-        return rlt;
-    }
-
     formatInputValue(val){
         if(IsEmptyString(val)){
             return '';
@@ -922,7 +884,7 @@ class ERPC_Text extends React.PureComponent {
         else {
             if (this.props.readonly) {
                 rootDivClassName += ' bg-secondary rounded border p-1'
-                var nowValue = this.props.value;
+                var nowValue = FormatStringValue(this.props.value, this.props.type);
                 if (nowValue == null || nowValue.length == 0) {
                     rootDivClassName += ' text-secondary';
                     nowValue = '_';
@@ -1061,12 +1023,14 @@ class ERPC_Label extends React.PureComponent {
         if(this.props.visible == false){
             return null;
         }
-        return (<span className={'erpc_label ' + (this.props.className == null ? '' : this.props.className)} >{this.props.text}</span>);
+        var text = FormatStringValue(this.props.text, this.props.type)
+        return (<span className={'erpc_label ' + (this.props.className == null ? '' : this.props.className)} >{text}</span>);
     }
 }
 
 function ERPC_Label_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
+    var ctlPath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
+    var ctlState = getStateByPath(state, ctlPath, {});
     var useText = ctlState.text ? ctlState.text : (ownprops.text ? ownprops.text : '');
     return {
         text: useText,
@@ -1079,19 +1043,66 @@ function ERPC_Label_dispatchtorprops(dispatch, ownprops) {
     };
 }
 
+class ERPC_CheckBox extends React.PureComponent {
+    constructor(props) {
+        super();
+        autoBind(this);
 
+        ERPControlBase(this);
+        this.state = this.initState;
+    }
 
+    clickHandler(ev){
+        store.dispatch(makeAction_setManyStateByPath({
+            value: this.checked ? 0 : 1,
+        }, MakePath(this.props.parentPath, this.props.id)));
+    }
+
+    render() {
+        if(this.props.visible == false){
+            return null;
+        }
+        var checked = false;
+        var value = this.props.value;
+        if(value != null){
+            checked = !(value == false || value == 0 || value == 'false' || value == 'FALSE');
+        }
+        this.checked = checked;
+        return (<span className={'erpc_checkbox ' + (this.props.className == null ? '' : this.props.className)} >
+                <span onClick={this.props.readonly ? null : this.clickHandler} className="fa-stack fa-lg">
+                    <i className={"fa fa-square-o fa-stack-2x" + (this.props.readonly ? ' text-secondary' : '')}></i>
+                    {checked && <i className={'fa fa-stack-1x fa-check' + (this.props.readonly ? ' text-secondary' : ' text-success')}></i>}
+                </span>
+            </span>);
+    }
+}
+
+function ERPC_CheckBox_mapstatetoprops(state, ownprops) {
+    var ctlPath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
+    var ctlState = getStateByPath(state, ctlPath, {});
+    return {
+        value:ctlState.value,
+        visible:ctlState.visible,
+    };
+}
+
+function ERPC_CheckBox_dispatchtorprops(dispatch, ownprops) {
+    return {
+    };
+}
 
 var VisibleERPC_DropDown = null;
 var VisibleERPC_Text = null;
 var VisibleERPC_LabeledControl = null;
 var VisibleERPC_Label = null;
+var VisibleERPC_CheckBox = null;
 
 function ErpControlInit() {
     VisibleERPC_DropDown = ReactRedux.connect(ERPC_DropDown_mapstatetoprops, ERPC_DropDown_dispatchtoprops)(ERPC_DropDown);
     VisibleERPC_Text = ReactRedux.connect(ERPC_Text_mapstatetoprops, ERPC_Text_dispatchtorprops)(ERPC_Text);
     VisibleERPC_LabeledControl = ReactRedux.connect(ERPC_LabeledControl_mapstatetoprops, ERPC_LabeledControl_dispatchtorprops)(ERPC_LabeledControl);
     VisibleERPC_Label = ReactRedux.connect(ERPC_Label_mapstatetoprops, ERPC_Label_dispatchtorprops)(ERPC_Label);
+    VisibleERPC_CheckBox = ReactRedux.connect(ERPC_CheckBox_mapstatetoprops, ERPC_CheckBox_dispatchtorprops)(ERPC_CheckBox);
 }
 
 function ERPC_PageForm(target){
@@ -1164,7 +1175,7 @@ function ERPC_PageForm_renderNavigater(){
     }
     
     return (
-        <div className='btn-group'>
+        <div className='btn-group flex-grow-0 flex-shrink-0'>
             {preBtnItem}
             {infoItem}
             {nextBtnItem}
@@ -1172,6 +1183,90 @@ function ERPC_PageForm_renderNavigater(){
             {exitPlushBtnItem}
         </div>
     );
+}
+
+function ERPC_GridForm(target){
+    target.rowPerPageChangedHandler = ERPC_GridForm_RowPerPageChangedHandler.bind(target);
+    target.pageIndexChangedHandler = ERPC_GridForm_PageIndexChangedHandler.bind(target);
+    target.prePageClickHandler = ERPC_GridForm_PrePageClickHandler.bind(target);
+    target.nxtPageClickHandler = ERPC_GridForm_NxtPageClickHandler.bind(target);
+    target.setRowPerPage = ERPC_GridForm_SetRowPerPage.bind(target);
+    target.setPageIndex = ERPC_GridForm_SetPageIndex.bind(target);
+}
+
+function ERPC_GridForm_RowPerPageChangedHandler(ev){
+    this.setRowPerPage(ev.target.value);
+}
+
+function ERPC_GridForm_PageIndexChangedHandler(ev){
+    this.setPageIndex(ev.target.value);
+}
+
+function ERPC_GridForm_PrePageClickHandler(ev){
+    this.setPageIndex(this.props.pageIndex-1);
+}
+
+function ERPC_GridForm_NxtPageClickHandler(ev){
+    this.setPageIndex(this.props.pageIndex+1);
+}
+
+function ERPC_GridForm_SetRowPerPage(value){
+    if(value == this.props.rowPerPage){
+        return;
+    }
+    value = parseInt(value);
+    var pageCount = Math.ceil(this.props.records_arr.length / value);
+    var pageIndex = this.props.pageIndex >= pageCount ? pageCount - 1 : this.props.pageIndex;
+    var pageIndexChanaged = pageIndex != this.props.pageIndex;
+    var formPath = MakePath(this.props.parentPath, (this.props.rowIndex == null ? null : 'row_' + this.props.rowIndex), this.props.id);
+    store.dispatch(makeAction_setManyStateByPath({
+        rowPerPage:value,
+        pageIndex:pageIndex,
+        pageCount:pageCount,
+    }, formPath));
+    if(!pageIndexChanaged){
+        store.dispatch({type:this.props.reBindAT});
+    }
+}
+
+function ERPC_GridForm_SetPageIndex(value){
+    value = parseInt(value);
+    if(value == this.props.pageIndex){
+        return;
+    }
+    if(value < 0){
+        value = this.props.pageCount - 1;
+    }
+    else if(value >= this.props.pageCount){
+        value = 0;
+    }
+    var statePath = MakePath(this.props.parentPath, (this.props.rowIndex == null ? null : 'row_' + this.props.rowIndex), this.props.id, 'pageIndex');
+    store.dispatch(makeAction_setStateByPath(value, statePath));
+}
+
+class CBaseGridFormNavBar extends React.PureComponent {
+	constructor(props) {
+		super(props);
+	}
+	render() {
+		var pageOptions_arr = [];
+		for (var pi = 0; pi < this.props.pageCount; ++pi) {
+			pageOptions_arr.push(<option key={pi} value={pi}>第{pi + 1}页</option>);
+		}
+		return(<div className='btn-group flex-shrink-0'>
+			<button onClick={this.props.prePageClickHandler} type='button' className='btn btn-dark flex-grow-1'><i className='fa fa-long-arrow-left' /></button>
+			<button onClick={this.props.nxtPageClickHandler} type='button' className='btn btn-dark flex-grow-1'><i className='fa fa-long-arrow-right' /></button>
+			<select className='btn btn-dark' value={this.props.rowPerPage} onChange={this.props.rowPerPageChangedHandler}>
+				<option value={20}>20条/页</option>
+				<option value={50}>50条/页</option>
+				<option value={100}>100条/页</option>
+				<option value={200}>200条/页</option>
+			</select>
+			<select className='btn btn-dark' value={this.props.pageIndex} onChange={this.props.pageIndexChangedHandler}>
+				{pageOptions_arr}
+			</select>
+		</div>);
+	}
 }
 
 function BaseIsValueValid(nowState,visibleBelongState, ctlState, value, valueType, nullable, ctlID, validErrState){

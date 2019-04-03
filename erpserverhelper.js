@@ -1,4 +1,6 @@
 const co = require('co');
+const dbhelper = require('./dbhelper.js');
+const sqlTypes = dbhelper.Types;
 
 var helper = {};
 
@@ -108,6 +110,115 @@ helper.IsEmptyString = (val)=>{
 
 helper.IsEmptyArray = (val)=>{
     return Array.isArray(val) && val.length == 0;
+};
+
+helper.InformSysManager = (text, identity)=>{
+    dbhelper.asynExcute('P000M通知系统管理员', [
+        dbhelper.makeSqlparam('发送者标识', sqlTypes.NVarChar(1000), identity),
+        dbhelper.makeSqlparam('通知内容', sqlTypes.NVarChar(1000), text),
+    ]);
+};
+
+function checkArrayData(val) {
+    if(Array.isArray(val)){
+        return val[0];
+    }
+    return val;
+}
+
+function GetFormatDateString(date) {
+    date = checkArrayData(date);
+    var y = date.getFullYear();
+    var m = date.getMonth() + 1;
+    var d = date.getDate();
+    return y + (m < 10 ? '-0' : '-') + m + (d < 10 ? '-0' : '-') + d;
+}
+
+function GetFormatTimeString(date) {
+    date = checkArrayData(date);
+    var hadSec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
+    var h = date.getHours();
+    var m = date.getMinutes();
+    var s = date.getSeconds();
+    return (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m + (hadSec ? (s < 10 ? ':0' : ':') + s : '');
+}
+
+function GetNowDate() {
+    return new Date(getFormatDateString(new Date()));
+}
+
+function CheckDate(date) {
+    date = checkArrayData(date);
+    var dateVal = new Date(Date.parse(date));
+    return !isNaN(dateVal.getDate());
+}
+
+function CheckTime(str) {
+    var dateVal = new Date(Date.parse('2000-1-1 ' + str));
+    return !isNaN(dateVal.getDate());
+}
+
+function CutTimePart(date) {
+    date = checkArrayData(date);
+    var rlt = new Date(date);
+    rlt.setHours(0);
+    rlt.setMinutes(0);
+    rlt.setMilliseconds(0);
+    rlt.setSeconds(0);
+    return rlt;
+}
+
+function ConvertTimeToDate(str) {
+    var now = new Date();
+    return combineDateAndTime(getFormatDateString(now), str);
+}
+
+function CombineDateAndTime(dateStr, timeStr) {
+    return new Date(Date.parse(dateStr + ' ' + timeStr));
+}
+
+function GetDateDiff(type, dateA, dateB) {
+    var divNum = 0;
+    switch (type.toLowerCase()) {
+        case '秒':
+            divNum = 1000;
+            break;
+        case '分':
+            divNum = 1000 * 60;
+            break;
+        case '时':
+            divNum = 1000 * 60 * 60;
+            break;
+        case '天':
+            divNum = 1000 * 60 * 60 * 24;
+            break;
+        case '月':
+            divNum = 1000 * 60 * 60 * 24 * 30;
+            break;
+        case '年':
+            divNum = 1000 * 60 * 60 * 24 * 365;
+            break;
+    }
+    if (typeof dateA === 'string') {
+        dateA = new Date(dateA);
+    }
+    if (typeof dateB === 'string') {
+        dateB = new Date(dateB);
+    }
+    return (dateA.getTime() - dateB.getTime()) / divNum;
+}
+
+helper.DateFun={
+    getNowDate:GetNowDate,
+    checkDate:CheckDate,
+    checkTime:CheckTime,
+    cutTimePart:CutTimePart,
+    convertTimeToDate:ConvertTimeToDate,
+    combineDateAndTime:CombineDateAndTime,
+    getDateDiff:GetDateDiff,
+    getFormatDateString:GetFormatDateString,
+    getFormatTimeString:GetFormatTimeString,
 };
 
 module.exports = helper;

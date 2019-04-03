@@ -46,6 +46,8 @@ class TitleHeaderItem extends React.PureComponent {
     }
 }
 
+const gFlowMasterRef = React.createRef();
+
 class ProjectContainer extends React.PureComponent {
     constructor(props) {
         super(props);
@@ -230,6 +232,7 @@ class ProjectContainer extends React.PureComponent {
         var projectManager = this;
         return (
             <React.Fragment>
+                <CFlowMaster ref={gFlowMasterRef} />
                 <div className='flex-grow-1 flex-shrink-1 d-flex flex-column'>
                     <div className="btn-group flex-grow-0 flex-shrink-0" role="group">
                         <MenuItem id='MI_HB' text={"HB" + (LoginUser == null ? '' : LoginUser.name)} className='text-primary' >

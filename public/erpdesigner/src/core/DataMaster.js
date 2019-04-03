@@ -65,6 +65,9 @@ class DataBase extends EventEmitter{
         if(isNaN(code)){
             console.error('getDataSourceByCode只接受整数');
         }
+        if(code == 0){
+            return null;
+        }
         var rlt = this.entityCode_map[code.toString()];
         if(rlt == null){
             rlt = this.createEnity({code:code});
@@ -177,6 +180,10 @@ class DBEntity extends EventEmitter{
 
     getParams(){
         return this.params;
+    }
+
+    getColumns(){
+        return this.columns;
     }
 }
 
@@ -314,7 +321,7 @@ class DataMaster extends EventEmitter{
     }
 
     getAllEntities(){
-        return this.BP_sql_arr.filter(x=>{return x.group == 'custom';}).concat(g_dataBase.entities_arr);
+        return this.BP_sql_arr.filter(x=>{return x.group == 'custom';}).concat(g_dataBase.entities_arr).concat(EmptyDBEntity);
     }
 
     restoreFromJson(json){

@@ -18,7 +18,7 @@ class C_Node_Socket extends React.PureComponent{
     getCenterPos(){
         var socket = this.state.socket;
         var nodeData = socket.node;
-        if(nodeData.currentFrameCom == null || nodeData.currentFrameCom.rootDivRef.current == null){
+        if(nodeData.currentFrameCom == null || nodeData.currentFrameCom.rootDivRef.current == null || this.flagRef.current == null){
             return null;
         }
         var baseRect = nodeData.currentFrameCom.rootDivRef.current.getBoundingClientRect();
@@ -107,6 +107,9 @@ class C_Node_Socket extends React.PureComponent{
             }, 10);
             return null;
         }
+        if(socket.visible == false){
+            return null;
+        }
         var inputable = socket.isIn && (SqlVarInputableTypes_arr.indexOf(socket.type) != -1 || VarInputableTypes_arr.indexOf(socket.type) != -1 );
         if(socket.inputable == false){
             inputable = false;
@@ -115,7 +118,7 @@ class C_Node_Socket extends React.PureComponent{
             inputable = true;
         }
         var inputElem = null;
-        if(socket.isIn && inputable){
+        if(socket.isIn && inputable && socket.autoHideInput != false){
             var links = socket.getLinks();
             if(links.length > 0){
                 inputable = false;
@@ -198,6 +201,9 @@ class C_Node_Socket extends React.PureComponent{
             iconClass += 'fa-circle-o';
         }
         var iconElem = (<i ref={this.flagRef} onClick={this.clickHandler} className={iconClass} vt={socket.type} /> );
+        if(socket.hideIcon == true){
+            iconElem = null;
+        }
         return <div className='d-flex align-items-center text-nowrap text-light socketCell' d-socketid={socket.id} isin={socket.isIn ? 1 : null} isout={!socket.isIn ? 1 : null}> 
                     {arrowsItem}
                     {
@@ -276,8 +282,12 @@ class C_SqlNode_ScoketsPanel extends React.PureComponent{
         if(theLinks.length > 0){
             var theLink = theLinks[0];
             var otherNode = theLink.inSocket == this.dragingSocket ? theLink.outSocket.node : theLink.inSocket.node;
-            var designer = otherNode.bluePrint.master.project.designer;
-            designer.startDrag({info:otherNode.getNodeTitle()}, null, null);
+            if(otherNode.bluePrint.master && otherNode.bluePrint.master.project){
+                var designer = otherNode.bluePrint.master.project.designer;
+                if(designer){
+                    designer.startDrag({info:otherNode.getNodeTitle()}, null, null);
+                }
+            }
         }
     }
 

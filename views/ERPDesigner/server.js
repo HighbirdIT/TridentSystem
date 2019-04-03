@@ -1,4 +1,5 @@
 const dbhelper = require('../../dbhelper.js');
+//const sleep = require('sleep');
 const co = require('co');
 const sqlTypes = dbhelper.Types;
 const sharp = require('sharp');
@@ -13,7 +14,6 @@ const FileName_Projects = 'projects';
 
 var rsa = forge.pki.rsa;
 const baseFileDir = 'public/erpdesigner/files/';
-
 
 function lockFile(fileName) {
     if (fileLocker[fileName] == null) {
@@ -55,7 +55,7 @@ function process(req, res, next, app, erpPageCache) {
             };
             res.json(rlt);
             console.error(rlt);
-        })
+        });
 }
 
 function doProcess(req, res) {
@@ -74,12 +74,30 @@ function doProcess(req, res) {
             return loginUseCoockie(req);
         case 'getPreLogData':
             return getPreLogData(req, res);
+        case 'getBaseConfigData':
+            return getBaseConfigData(req, res);
         case 'saveProject':
             return saveProject(req, req.body.projJson);
         case 'getProjectProfile':
             return getProjectProfile(req);
         case 'publishProject':
             return publishProject(req, res);
+        case 'getAllFlow':
+            return getAllFlow(req, res);
+        case 'createFlow':
+            return createFlow(req);
+        case 'modifyFlow':
+            return modifyFlow(req);
+        case 'createFlowStep':
+            return createFlowStep(req);
+        case 'modifyFlowStep':
+            return modifyFlowStep(req);
+        case 'saveFlowFile':
+            return saveFlowFile(req);
+        case 'getFlowFile':
+            return getFlowFile(req);
+        case 'publishFlow':
+            return publishFlow(req);
     }
 
     return co(function* () {
@@ -204,10 +222,12 @@ function userLogin(req, res, account, password) {
             return { err: { info: '登录过程失败' } };
         }
         res.cookie('_designerlogRcdId', logProRet.output.登录标识, { signed: true, maxAge: 259200000, httpOnly: true });
-        return {
+        var rlt = {
             name: accountRow.权属姓名,
             id: accountRow.账号记录代码,
         };
+        req.session.userData = rlt;
+        return rlt;
     });
 }
 
@@ -262,6 +282,42 @@ function loginUseCoockie(req) {
         };
         req.session.userData = rlt;
         return rlt;
+    });
+}
+
+function getBaseConfigData(req) {
+    return co(function* () {
+        var rlt = {
+        };
+        rlt.flows = yield getAllFlow(req);
+        rlt.personEducts_arr = yield getPersonEductOptions();
+        rlt.posts_arr = yield getAllPost();
+        rlt.projects_arr = yield getAllProjectRecord();
+        return rlt;
+    });
+}
+
+function getPersonEductOptions(){
+    return co(function* () {
+        var sql = 'SELECT [特别岗位名称代码] as value,[特别岗位名称] as text FROM [base1].[dbo].[T014A特别岗位名称]';
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
+        return rcdRlt.recordset;
+    });
+}
+
+function getAllPost(){
+    return co(function* () {
+        var sql = 'select 所属系统名称,所属系统名称代码,所属部门名称,所属部门名称代码,所属岗位名称,所属岗位名称代码 from V014A全部岗位名称 order by 所属岗位名称';
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
+        return rcdRlt.recordset;
+    });
+}
+
+function getAllProjectRecord(){
+    return co(function* () {
+        var sql = 'SELECT [系统方案名称] as text,[系统方案名称代码] as value FROM [base1].[dbo].[T002C系统方案名称] where 终止确认状态=0 order by 系统方案名称';
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
+        return rcdRlt.recordset;
     });
 }
 
@@ -512,6 +568,14 @@ function WriteEntity(库内对象_dr, 目标库内对象_dic) {
     });
 }
 
+function getAllFlow(req){
+    return co(function* () {
+        var sql = 'SELECT [T007C系统流程名称].[系统流程名称代码],[系统流程名称],[系统流程简称],[流程操作步骤代码],[操作步骤名称],[参数数量],[参数1],[参数2],[参数3] FROM [base1].[dbo].[T007C系统流程名称]left join [T007D流程操作步骤] on [T007D流程操作步骤].[系统流程名称代码] = [T007C系统流程名称].[系统流程名称代码] where [终止确认状态] = 0';
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
+        return rcdRlt.recordset;
+    });
+}
+
 function publishProject(req, res){
     return co(function* () {
         var userData = yield getUserData(req);
@@ -670,6 +734,254 @@ function publishProject(req, res){
             mobileUrl:pageMobileUrl,
             pcUrl:pagePcUrl,
         };
+    });
+}
+
+function createFlow(req){
+    return co(function* () {
+        var userData = yield getUserData(req);
+        if (userData == null) {
+            return { err: { info: '你还没有登录' } };
+        }
+        if(req.body.name == null || req.body.name.length < 4 || req.body.name.length > 10){
+            return { err: { info: '名称不合法，必须是4-10位字符串' } };
+        }
+
+        var params_arr = [
+            dbhelper.makeSqlparam('name', sqlTypes.NVarChar(20), req.body.name),
+            dbhelper.makeSqlparam('userID', sqlTypes.Int, userData.id),
+        ];
+        var sql = 'INSERT INTO [dbo].[T007C系统流程名称]([系统流程名称],[登记确认状态],[登记确认用户],[登记确认时间])values(@name,1,@userID,getdate()) select SCOPE_IDENTITY()';
+        var newRcdid = yield dbhelper.asynGetScalar(sql, params_arr);
+        return newRcdid;
+    });
+}
+
+function modifyFlow(req){
+    return co(function* () {
+        var userData = yield getUserData(req);
+        if (userData == null) {
+            return { err: { info: '你还没有登录' } };
+        }
+        if(isNaN(req.body.code)){
+            return { err: { info: '代码不合法' } };
+        }
+        if(req.body.name == null || req.body.name.length < 4 || req.body.name.length > 10){
+            return { err: { info: '名称不合法，必须是4-10位字符串' } };
+        }
+
+        var params_arr = [
+            dbhelper.makeSqlparam('name', sqlTypes.NVarChar(20), req.body.name),
+            dbhelper.makeSqlparam('code', sqlTypes.NVarChar(20), req.body.code),
+            dbhelper.makeSqlparam('userID', sqlTypes.Int, userData.id),
+        ];
+
+        var sql = 'select * from [dbo].[T007C系统流程名称] where [系统流程名称]=@name and [系统流程名称代码]<>@code';
+        var rcds = yield dbhelper.asynQueryWithParams(sql, params_arr);
+        if(rcds.recordset.length > 0){
+            return { err: { info: '已有同名流程' } };
+        }
+
+        var updateSql = 'update [dbo].[T007C系统流程名称] set [系统流程名称]=@name where [系统流程名称代码]=@code';
+        yield dbhelper.asynQueryWithParams(updateSql, params_arr);
+        return true;
+    });
+}
+
+function createFlowStep(req){
+    return co(function* () {
+        var userData = yield getUserData(req);
+        if (userData == null) {
+            return { err: { info: '你还没有登录' } };
+        }
+        if(req.body.name == null || req.body.name.length < 2 || req.body.name.length > 10){
+            return { err: { info: '名称不合法，必须是2-10位字符串' } };
+        }
+        if(req.body.flowCode == null){
+            return { err: { info: '没有flowCode' } };
+        }
+        if(req.body.paramCount == null || isNaN(req.body.paramCount)){
+            return { err: { info: 'paramCount不合法' } };
+        }
+        var paramCount = parseInt(req.body.paramCount);
+        if(paramCount > 0 && (req.body.param1 == null || req.body.param1.length == 0)){
+            return { err: { info: '参数1不合法' } };
+        }
+        if(paramCount > 1 && (req.body.param2 == null || req.body.param2.length == 0)){
+            return { err: { info: '参数2不合法' } };
+        }
+        if(paramCount > 2 && (req.body.param3 == null || req.body.param3.length == 0)){
+            return { err: { info: '参数3不合法' } };
+        }
+
+        var params_arr = [
+            dbhelper.makeSqlparam('name', sqlTypes.NVarChar(20), req.body.name),
+            dbhelper.makeSqlparam('flowCode', sqlTypes.NVarChar(20), req.body.flowCode),
+            dbhelper.makeSqlparam('userID', sqlTypes.Int, userData.id),
+            dbhelper.makeSqlparam('paramCount', sqlTypes.Int, paramCount),
+            dbhelper.makeSqlparam('param1', sqlTypes.NVarChar(20), req.body.param1),
+            dbhelper.makeSqlparam('param2', sqlTypes.NVarChar(20), req.body.param2),
+            dbhelper.makeSqlparam('param3', sqlTypes.NVarChar(20), req.body.param3),
+        ];
+        var sql = "INSERT INTO [dbo].[T007D流程操作步骤]([系统流程名称代码],[操作步骤名称],[登记确认用户],[登记确认时间],[参数数量],[参数1],[参数2],[参数3])values(@flowCode,@name,@userID,getdate(),@paramCount,@param1,@param2,@param3) select SCOPE_IDENTITY()";
+        var newRcdid = yield dbhelper.asynGetScalar(sql, params_arr);
+        return newRcdid;
+    });
+}
+
+function modifyFlowStep(req){
+    return co(function* () {
+        var userData = yield getUserData(req);
+        if (userData == null) {
+            return { err: { info: '你还没有登录' } };
+        }
+        if(isNaN(req.body.code)){
+            return { err: { info: '代码不合法' } };
+        }
+        if(req.body.name == null || req.body.name.length < 2 || req.body.name.length > 10){
+            return { err: { info: '名称不合法，必须是2-10位字符串' } };
+        }
+        if(req.body.paramCount == null || isNaN(req.body.paramCount)){
+            return { err: { info: 'paramCount不合法' } };
+        }
+        var paramCount = parseInt(req.body.paramCount);
+        if(paramCount > 0 && (req.body.param1 == null || req.body.param1.length == 0)){
+            return { err: { info: '参数1不合法' } };
+        }
+        if(paramCount > 1 && (req.body.param2 == null || req.body.param2.length == 0)){
+            return { err: { info: '参数2不合法' } };
+        }
+        if(paramCount > 2 && (req.body.param3 == null || req.body.param3.length == 0)){
+            return { err: { info: '参数3不合法' } };
+        }
+
+        var params_arr = [
+            dbhelper.makeSqlparam('name', sqlTypes.NVarChar(20), req.body.name),
+            dbhelper.makeSqlparam('code', sqlTypes.NVarChar(20), req.body.code),
+            dbhelper.makeSqlparam('userID', sqlTypes.Int, userData.id),
+            dbhelper.makeSqlparam('paramCount', sqlTypes.Int, paramCount),
+            dbhelper.makeSqlparam('param1', sqlTypes.NVarChar(20), req.body.param1),
+            dbhelper.makeSqlparam('param2', sqlTypes.NVarChar(20), req.body.param2),
+            dbhelper.makeSqlparam('param3', sqlTypes.NVarChar(20), req.body.param3),
+        ];
+
+        var updateSql = 'update [dbo].[T007D流程操作步骤] set [操作步骤名称]=@name,[参数数量]=@paramCount,[参数1]=@param1,[参数2]=@param2,[参数3]=@param3 where [流程操作步骤代码]=@code';
+        yield dbhelper.asynQueryWithParams(updateSql, params_arr);
+        return true;
+    });
+}
+
+function saveFlowFile(req){
+    return co(function* () {
+        var userData = yield getUserData(req);
+        if (userData == null) {
+            return { err: { info: '你还没有登录' } };
+        }
+        var flowJson = req.body.flowJson;
+        if (flowJson == null) {
+            return { err: { info: '没有提供流程文件' } };
+        }
+        if(isNaN(flowJson.flowCode)){
+            return { err: { info: '流程文件不合法' } };
+        }
+        var rlt = {};
+        title = 'flow' + flowJson.flowCode;
+        var flowDirPath = baseFileDir + 'flow/';
+        var flowFilePath = flowDirPath + title + ".json";
+        try {
+            if (!fs.existsSync(baseFileDir))
+                fs.mkdirSync(baseFileDir);
+            if (!fs.existsSync(flowDirPath))
+                fs.mkdirSync(flowDirPath);
+            var startTime = null;
+            if(isLock(flowFilePath)){
+                return { err: { info: '文件正被锁定,请稍后再试' } };
+                /*
+                var nowTime = (new Date()).getTime();
+                if(startTime == null){
+                    startTime = nowTime;
+                }
+                else{
+                    if((nowTime - startTime) / 1000 > 5){
+                        return { err: { info: '文件一直未能锁定,请稍后再试' } };
+                    }
+                }
+                */
+                //sleep.sleep(1);
+            }
+            lockFile(flowFilePath);
+            if(fs.existsSync(flowFilePath)){
+                // rename
+                var backPath = flowDirPath + title + '_' + (new Date()).getTime() + ".json";
+                fs.renameSync(flowFilePath, backPath);
+            }
+            fs.writeFileSync(flowFilePath, JSON.stringify(flowJson));
+        }
+        catch (err) {
+            rlt.err = { info: err.toString() };
+        }
+        finally {
+            unlockFile(flowFilePath);
+        }
+
+        return rlt;
+    });
+}
+
+function getFlowFile(req) {
+    return co(function* () {
+        if(isNaN(req.body.flowCode)){
+            return { err: { info: '需要flowCode' } };
+        }
+        var filePath = baseFileDir + "flow/flow" + req.body.flowCode + ".json";
+        try {
+            var rlt = null;
+            if (fs.existsSync(filePath)) {
+                rlt = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            }
+            else {
+                return { err:{info:'NotFound'} };
+            }
+            return rlt;
+        }
+        catch (err) {
+            throw err;
+        }
+    });
+}
+
+function publishFlow(req){
+    return co(function* () {
+        var userData = yield getUserData(req);
+        if (userData == null) {
+            return { err: { info: '你还没有登录' } };
+        }
+        var flowFile = req.body.flowFile;
+        var flowCode = req.body.flowCode;
+        if(flowFile == null){
+            return {err:{info:'no flowFile'}};
+        }
+        if(isNaN(flowCode)){
+            return {err:{info:'no flowCode'}};
+        }
+
+        var sql = 'select [当前版本] from [dbo].[T007C系统流程名称] where [系统流程名称代码]=' + flowCode;
+        var fileVersion = yield dbhelper.asynGetScalar(sql, null);
+
+        var jsServerName = '';
+        var jsServerPath = '';
+
+        var fileDir = 'views/erppage/server/flows/';
+        if (!fs.existsSync(fileDir))
+            fs.mkdirSync(fileDir);
+
+        jsServerName = 'flow' + flowCode + '_' + fileVersion;
+        jsServerPath = fileDir + jsServerName + ".js";
+        fs.writeFileSync(jsServerPath, flowFile);
+        
+        var updateSql = 'update [T007C系统流程名称] set [当前版本]+=1 where [系统流程名称代码]=' + flowCode;
+        yield dbhelper.asynQueryWithParams(updateSql, null);
+        return jsServerPath;
     });
 }
 

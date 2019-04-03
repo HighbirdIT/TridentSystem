@@ -8,6 +8,7 @@ const M_LabeledControlKernelAttrsSetting=GenControlKernelAttrsSetting([
             pullDataFun:GetCanInteractiveColumns,
         }),
         genNullableAttribute(),
+        new CAttribute('列宽设置',AttrNames.ColumnWidth,ValueType.Int, 0),
     ]),
 ]);
 

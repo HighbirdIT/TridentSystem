@@ -85,6 +85,9 @@ var DataBase = function (_EventEmitter) {
             if (isNaN(code)) {
                 console.error('getDataSourceByCode只接受整数');
             }
+            if (code == 0) {
+                return null;
+            }
             var rlt = this.entityCode_map[code.toString()];
             if (rlt == null) {
                 rlt = this.createEnity({ code: code });
@@ -230,6 +233,11 @@ var DBEntity = function (_EventEmitter3) {
         key: 'getParams',
         value: function getParams() {
             return this.params;
+        }
+    }, {
+        key: 'getColumns',
+        value: function getColumns() {
+            return this.columns;
         }
     }]);
 
@@ -397,7 +405,7 @@ var DataMaster = function (_EventEmitter4) {
         value: function getAllEntities() {
             return this.BP_sql_arr.filter(function (x) {
                 return x.group == 'custom';
-            }).concat(g_dataBase.entities_arr);
+            }).concat(g_dataBase.entities_arr).concat(EmptyDBEntity);
         }
     }, {
         key: 'restoreFromJson',

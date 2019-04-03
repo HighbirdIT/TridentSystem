@@ -631,7 +631,7 @@ function setStateByPath(state, path, value, visited) {
             for(var acti in delayActs){
                 var theAct = delayActs[acti];
                 if(typeof(theAct.callfun) === 'function'){
-                    theAct.callfun();
+                    theAct.callfun(retState);
                 }
             }
         }, 50);
@@ -773,7 +773,7 @@ function setManyStateByPath(state, path, valuesObj, visited) {
             for(var acti in delayActs){
                 var theAct = delayActs[acti];
                 if(typeof(theAct.callfun) === 'function'){
-                    theAct.callfun();
+                    theAct.callfun(retState);
                 }
             }
         }, 50);
@@ -1047,6 +1047,17 @@ function IsEmptyObject(val){
 	return true;
 }
 
+function getQueryObject(){
+    var rlt = {};
+    var query = window.location.search.substring(1);
+    var vars = query.split("&");
+    for (var i=0;i<vars.length;i++) {
+        var pair = vars[i].split("=");
+        rlt[pair[0]] = pair[1];
+    }
+    return rlt;
+}
+
 function getQueryVariable(variable)
 {
     var query = window.location.search.substring(1);
@@ -1056,4 +1067,48 @@ function getQueryVariable(variable)
         if(pair[0] == variable){return pair[1];}
     }
     return(false);
+}
+
+function FormatStringValue(val, type){
+    if(IsEmptyString(val)){
+        return '';
+    }
+    var rlt = val;
+    switch(type){
+        case 'int':
+        rlt = parseInt(val);
+        if(isNaN(rlt)){
+            rlt = '';
+        }
+        break;
+        case 'boolean':
+        rlt = parseBoolean(val) ? true : false;
+        break;
+        case 'float':
+        var precision = tihs.props.precision == null ? 2 : parseInt(tihs.props.precision);
+        rlt = Math.round(val * Math.pow(10, precision));
+        if(isNaN(rlt)){
+            rlt = '';
+        }
+        break;
+        case 'date':
+        case 'datetime':
+        if(!checkDate(val)){
+            rlt = '';
+        }
+        else if(val.length > 10){
+            var theDate = new Date(val)
+            rlt = getFormatDateString(theDate) + (type == 'datetime' ? ' ' + getFormatTimeString(theDate) : '');
+        }
+        break;
+        case 'time':
+        if(val && val.length > 8 && checkDate(val)){
+            rlt = getFormatTimeString(new Date(val),false);
+        }
+        else if(!checkTime(val)){
+            rlt = '';
+        }
+        break;
+    }
+    return rlt;
 }

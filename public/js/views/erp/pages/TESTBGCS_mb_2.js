@@ -14,11 +14,11 @@ var isDebug = false;
 var appServerUrl = '/erppage/server/BGCS';
 var thisAppTitle = '表格测试';
 var appInitState = { loaded: false, ui: {} };
-var appReducerSetting = { AT_PAGELOADED: pageLoadedReducer.bind(window), AT_GOTOPAGE: gotoPageReducer.bind(window) };
+var appReducerSetting = { AT_PAGELOADED: pageLoadedReducer.bind(window), AT_GOTOPAGE: gotoPageReducer.bind(window), REBINGDM_FORM_0PAGE: bind_M_Form_0Page.bind(window) };
 var appReducer = createReducer(appInitState, Object.assign(baseReducerSetting, appReducerSetting));
 var reducer = appReducer;
 var store = Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));
-var appStateChangedAct_map = { 'M_Page_0.M_Form_0.records_arr': fresh_M_Form_0.bind(window), 'M_Page_0.M_Form_0.pageIndex': bind_M_Form_0.bind(window) };
+var appStateChangedAct_map = { 'M_Page_0.M_Form_0.records_arr': fresh_M_Form_0.bind(window), 'M_Page_0.M_Form_0.pageIndex': bind_M_Form_0Page.bind(window) };
 
 function pageLoadedReducer(state) {
 	return gotoPage('M_Page_0', state);
@@ -48,34 +48,49 @@ function active_M_Page_0(state) {
 	return state;
 }
 function fresh_M_Form_0(retState, records_arr) {
-	simpleFreshFormFun(retState, records_arr, 'M_Page_0.M_Form_0', bind_M_Form_0);
+	//simpleFreshFormFun(retState,records_arr,'M_Page_0.M_Form_0',bind_M_Form_0);
+	bind_M_Form_0(retState);
 }
+
+var pageBreak = true;
+
 function bind_M_Form_0(retState, newIndex, oldIndex) {
 	var formState = getStateByPath(retState, 'M_Page_0.M_Form_0', {});
 	var records_arr = formState.records_arr;
 	var needSetState = {};
+	var needActiveBindPage = false;
 
-	var pageCount = formState.pageCount;
-	var pageIndex = formState.pageIndex;
-	if (records_arr != null && records_arr.length == 0) {
-		var rowPerPage = formState.rowPerPage == null ? 20 : formState.rowPerPage;
-		needSetState.rowPerPage = rowPerPage;
+	if (pageBreak) {
+		var pageCount = formState.pageCount;
+		var pageIndex = formState.pageIndex;
+		if (records_arr != null && records_arr.length > 0) {
+			var rowPerPage = formState.rowPerPage == null ? 20 : formState.rowPerPage;
+			needSetState.rowPerPage = rowPerPage;
 
-		pageCount = Math.ceil(records_arr.length / rowPerPage);
-		if (pageIndex == null || pageIndex < 0) {
+			pageCount = Math.ceil(records_arr.length / rowPerPage);
+			if (pageIndex == null || pageIndex < 0) {
+				pageIndex = 0;
+			} else if (pageIndex >= pageCount) {
+				pageIndex = pageCount - 1;
+			}
+		} else {
+			pageCount = 0;
 			pageIndex = 0;
-		} else if (pageIndex >= pageCount) {
-			pageIndex = pageCount - 1;
 		}
+
+		needSetState.pageCount = pageCount;
+		needSetState.pageIndex = pageIndex;
+		needActiveBindPage = pageIndex == formState.pageIndex;
 	} else {
-		pageCount = 0;
-		pageIndex = 0;
+		needActiveBindPage = true;
 	}
 
-	needSetState.pageCount = pageCount;
-	needSetState.pageIndex = pageIndex;
 	needSetState['invalidbundle'] = false;
-	return setManyStateByPath(retState, 'M_Page_0.M_Form_0', needSetState);
+	retState = setManyStateByPath(retState, 'M_Page_0.M_Form_0', needSetState);
+	if (needActiveBindPage) {
+		retState = bind_M_Form_0Page(retState);
+	}
+	return retState;
 }
 
 function bind_M_Form_0Page(retState) {
@@ -83,20 +98,29 @@ function bind_M_Form_0Page(retState) {
 	var records_arr = formState.records_arr;
 	var needSetState = {};
 
-	var pageCount = formState.pageCount;
 	var pageIndex = formState.pageIndex;
 	var rowPerPage = formState.rowPerPage;
 	var startRowIndex = pageIndex * rowPerPage;
 	var endRowIndex = pageIndex * rowPerPage + rowPerPage - 1;
-
-	for (var rowIndex = startRowIndex; rowIndex < endRowIndex && rowIndex < records_arr.length; ++rowIndex) {
-		var rowRecord = records_arr[rowIndex];
-		needSetState['rowState' + rowIndex + '.员工登记姓名'] = rowRecord.员工登记姓名;
-		needSetState['rowState' + rowIndex + '.员工登记性别'] = rowRecord.员工登记性别;
-		needSetState['rowState' + rowIndex + '.身份证件号码'] = rowRecord.身份证件号码;
-		needSetState['rowState' + rowIndex + '.身份证件地址'] = rowRecord.身份证件地址;
-		needSetState['rowState' + rowIndex + '.出生年月日期'] = rowRecord.出生年月日期;
+	if (endRowIndex >= records_arr.length) {
+		endRowIndex = records_arr.length - 1;
 	}
+
+	if (!pageBreak) {
+		startRowIndex = 0;
+		endRowIndex = records_arr.length - 1;
+	}
+
+	for (var rowIndex = startRowIndex; rowIndex <= endRowIndex; ++rowIndex) {
+		var rowRecord = records_arr[rowIndex];
+		needSetState['row_' + rowIndex + '.M_Label_0.text'] = rowRecord.员工登记姓名;
+		needSetState['row_' + rowIndex + '.M_Label_1.text'] = rowRecord.员工登记性别;
+		needSetState['row_' + rowIndex + '.M_Label_2.text'] = rowRecord.身份证件号码;
+		needSetState['row_' + rowIndex + '.M_Label_3.text'] = rowRecord.身份证件地址;
+		needSetState['row_' + rowIndex + '.M_Label_4.text'] = rowRecord.出生年月日期;
+	}
+	needSetState.startRowIndex = startRowIndex;
+	needSetState.endRowIndex = endRowIndex;
 	return setManyStateByPath(retState, 'M_Page_0.M_Form_0', needSetState);
 }
 function pull_M_Form_0(retState) {
@@ -204,8 +228,8 @@ var CM_Page_0 = function (_React$PureComponent2) {
 			var retElem = null;
 			retElem = React.createElement(
 				'div',
-				{ className: 'd-flex flex-grow-1 flex-shrink-0 autoScroll flex-column ' },
-				React.createElement(VisibleCM_Form_0, { id: 'M_Form_0', parentPath: 'M_Page_0' })
+				{ className: 'd-flex flex-grow-1 flex-shrink-0 autoScroll flex-column fixPageContent' },
+				React.createElement(VisibleCM_Form_0, { title: '\u53BB\u5427', id: 'M_Form_0', parentPath: 'M_Page_0', pagebreak: pageBreak, reBindAT: 'REBINGDM_FORM_0PAGE' })
 			);
 			return retElem;
 		}
@@ -235,18 +259,132 @@ var Form_0_tdstyle1 = {
 	maxWidth: '8.4em'
 };
 
+var CM_Form_0_Table_Head = function (_React$PureComponent3) {
+	_inherits(CM_Form_0_Table_Head, _React$PureComponent3);
+
+	function CM_Form_0_Table_Head(props) {
+		_classCallCheck(this, CM_Form_0_Table_Head);
+
+		return _possibleConstructorReturn(this, (CM_Form_0_Table_Head.__proto__ || Object.getPrototypeOf(CM_Form_0_Table_Head)).call(this, props));
+	}
+
+	_createClass(CM_Form_0_Table_Head, [{
+		key: 'render',
+		value: function render() {
+			return React.createElement(
+				'thead',
+				{ className: 'thead-dark' },
+				React.createElement(
+					'tr',
+					null,
+					React.createElement(
+						'th',
+						{ scope: 'col', style: Form_0_headstyle1 },
+						'\u5458\u5DE5\u767B\u8BB0\u59D3\u540D'
+					),
+					React.createElement(
+						'th',
+						{ scope: 'col', style: Form_0_headstyle1 },
+						'\u5458\u5DE5\u767B\u8BB0\u6027\u522B'
+					),
+					React.createElement(
+						'th',
+						{ scope: 'col', style: Form_0_headstyle1 },
+						'\u8EAB\u4EFD\u8BC1\u4EF6\u53F7\u7801'
+					),
+					React.createElement(
+						'th',
+						{ scope: 'col', style: Form_0_headstyle1 },
+						'\u8EAB\u4EFD\u8BC1\u4EF6\u5730\u5740'
+					),
+					React.createElement(
+						'th',
+						{ scope: 'col', style: Form_0_headstyle1 },
+						'\u51FA\u751F\u5E74\u6708\u65E5\u671F'
+					)
+				)
+			);
+		}
+	}]);
+
+	return CM_Form_0_Table_Head;
+}(React.PureComponent);
+
+var CM_Form_0_Table_Body = function (_React$PureComponent4) {
+	_inherits(CM_Form_0_Table_Body, _React$PureComponent4);
+
+	function CM_Form_0_Table_Body(props) {
+		_classCallCheck(this, CM_Form_0_Table_Body);
+
+		return _possibleConstructorReturn(this, (CM_Form_0_Table_Body.__proto__ || Object.getPrototypeOf(CM_Form_0_Table_Body)).call(this, props));
+	}
+
+	_createClass(CM_Form_0_Table_Body, [{
+		key: 'render',
+		value: function render() {
+			var trs_arr = [];
+			var startRowIndex = this.props.startRowIndex;
+			var endRowIndex = this.props.endRowIndex;
+			for (var rowIndex = startRowIndex; rowIndex <= endRowIndex; ++rowIndex) {
+				trs_arr.push(React.createElement(
+					'tr',
+					{ key: rowIndex - startRowIndex },
+					React.createElement(
+						'td',
+						{ style: Form_0_tdstyle1 },
+						React.createElement(VisibleERPC_Label, { rowIndex: rowIndex, className: 'erp-control ', id: 'M_Label_0', parentPath: 'M_Page_0.M_Form_0' })
+					),
+					React.createElement(
+						'td',
+						{ style: Form_0_tdstyle1 },
+						React.createElement(VisibleERPC_Label, { rowIndex: rowIndex, className: 'erp-control ', id: 'M_Label_1', parentPath: 'M_Page_0.M_Form_0' })
+					),
+					React.createElement(
+						'td',
+						{ style: Form_0_tdstyle1 },
+						React.createElement(VisibleERPC_Label, { rowIndex: rowIndex, className: 'erp-control ', id: 'M_Label_2', parentPath: 'M_Page_0.M_Form_0' })
+					),
+					React.createElement(
+						'td',
+						{ style: Form_0_tdstyle1 },
+						React.createElement(VisibleERPC_Label, { rowIndex: rowIndex, className: 'erp-control ', id: 'M_Label_3', parentPath: 'M_Page_0.M_Form_0' })
+					),
+					React.createElement(
+						'td',
+						{ style: Form_0_tdstyle1 },
+						React.createElement(VisibleERPC_Label, { rowIndex: rowIndex, className: 'erp-control ', id: 'M_Label_4', parentPath: 'M_Page_0.M_Form_0' })
+					)
+				));
+			};
+			return React.createElement(
+				'table',
+				{ className: 'table table-striped table-hover ', style: { width: '42em', marginTop: '-50px' } },
+				React.createElement(CM_Form_0_Table_Head, null),
+				React.createElement(
+					'tbody',
+					null,
+					trs_arr
+				)
+			);
+		}
+	}]);
+
+	return CM_Form_0_Table_Body;
+}(React.PureComponent);
+
 var VisibleCM_Page_0 = ReactRedux.connect(CM_Page_0_mapstatetoprops, CM_Page_0_disptchtoprops)(CM_Page_0);
 
-var CM_Form_0 = function (_React$PureComponent3) {
-	_inherits(CM_Form_0, _React$PureComponent3);
+var CM_Form_0 = function (_React$PureComponent5) {
+	_inherits(CM_Form_0, _React$PureComponent5);
 
 	function CM_Form_0(props) {
 		_classCallCheck(this, CM_Form_0);
 
-		var _this3 = _possibleConstructorReturn(this, (CM_Form_0.__proto__ || Object.getPrototypeOf(CM_Form_0)).call(this, props));
+		var _this5 = _possibleConstructorReturn(this, (CM_Form_0.__proto__ || Object.getPrototypeOf(CM_Form_0)).call(this, props));
 
-		ERPC_PageForm(_this3);
-		return _this3;
+		ERPC_GridForm(_this5);
+
+		return _this5;
 	}
 
 	_createClass(CM_Form_0, [{
@@ -266,6 +404,8 @@ var CM_Form_0 = function (_React$PureComponent3) {
 		value: function renderContent() {
 			var retElem = null;
 			var contentElem = null;
+			var tipElem = null;
+			var navELem = null;
 			if (this.props.invalidbundle) {
 				contentElem = renderInvalidBundleDiv();
 			} else if (this.props.fetchingErr) {
@@ -283,133 +423,52 @@ var CM_Form_0 = function (_React$PureComponent3) {
 					'\u6CA1\u6709\u67E5\u8BE2\u5230\u6570\u636E'
 				);
 			} else {
-				contentElem = React.createElement(
-					'div',
-					{ onScroll: this.tableBodyScroll, id: 'tablebodydiv', className: 'mw-100 autoScroll', style: { height: '100%' } },
-					React.createElement(
-						'table',
-						{ className: 'table table-striped table-hover ', style: { width: '42em', marginTop: '-50px' } },
-						React.createElement(
-							'thead',
-							{ className: 'thead-dark' },
-							React.createElement(
-								'tr',
-								null,
-								React.createElement(
-									'th',
-									{ scope: 'col', style: Form_0_headstyle1 },
-									'\u5458\u5DE5\u767B\u8BB0\u59D3\u540D'
-								),
-								React.createElement(
-									'th',
-									{ scope: 'col', style: Form_0_headstyle1 },
-									'\u5458\u5DE5\u767B\u8BB0\u6027\u522B'
-								),
-								React.createElement(
-									'th',
-									{ scope: 'col', style: Form_0_headstyle1 },
-									'\u8EAB\u4EFD\u8BC1\u4EF6\u53F7\u7801'
-								),
-								React.createElement(
-									'th',
-									{ scope: 'col', style: Form_0_headstyle1 },
-									'\u8EAB\u4EFD\u8BC1\u4EF6\u5730\u5740'
-								),
-								React.createElement(
-									'th',
-									{ scope: 'col', style: Form_0_headstyle1 },
-									'\u51FA\u751F\u5E74\u6708\u65E5\u671F'
-								)
-							)
-						),
-						React.createElement(
-							'tbody',
-							null,
-							this.props.records_arr.map(function (record, index) {
-								return React.createElement(
-									'tr',
-									{ key: index },
-									React.createElement(
-										'td',
-										{ style: Form_0_tdstyle1 },
-										React.createElement(VisibleERPC_Label, { text: record.员工登记姓名, className: 'erp-control ', id: 'M_Label_1', parentPath: 'M_Page_0.M_Form_0' })
-									),
-									React.createElement(
-										'td',
-										{ style: Form_0_tdstyle1 },
-										React.createElement(VisibleERPC_Label, { text: record.员工登记性别, className: 'erp-control ', id: 'M_Label_1', parentPath: 'M_Page_0.M_Form_0' })
-									),
-									React.createElement(
-										'td',
-										{ style: Form_0_tdstyle1 },
-										React.createElement(VisibleERPC_Label, { text: record.身份证件号码, className: 'erp-control ', id: 'M_Label_1', parentPath: 'M_Page_0.M_Form_0' })
-									),
-									React.createElement(
-										'td',
-										{ style: Form_0_tdstyle1 },
-										React.createElement(VisibleERPC_Label, { text: record.身份证件地址, className: 'erp-control ', id: 'M_Label_1', parentPath: 'M_Page_0.M_Form_0' })
-									),
-									React.createElement(
-										'td',
-										{ style: Form_0_tdstyle1 },
-										React.createElement(VisibleERPC_Label, { text: record.出生年月日期, className: 'erp-control ', id: 'M_Label_1', parentPath: 'M_Page_0.M_Form_0' })
-									)
-								);
-							})
-						)
-					)
+				contentElem = React.createElement(CM_Form_0_Table_Body, { startRowIndex: this.props.startRowIndex, endRowIndex: this.props.endRowIndex, tableBodyScroll: this.tableBodyScroll });
+				tipElem = React.createElement(
+					'span',
+					null,
+					'\u5171',
+					this.props.records_arr.length,
+					'\u6761\u8BB0\u5F55'
 				);
+
+				if (this.props.pagebreak) {
+					navELem = React.createElement(CBaseGridFormNavBar, { pageIndex: this.props.pageIndex, rowPerPage: this.props.rowPerPage, rowPerPageChangedHandler: this.rowPerPageChangedHandler, pageCount: this.props.pageCount, prePageClickHandler: this.prePageClickHandler, nxtPageClickHandler: this.nxtPageClickHandler, pageIndexChangedHandler: this.pageIndexChangedHandler });
+				}
 			}
 
 			retElem = React.createElement(
 				'div',
-				{ className: 'd-flex flex-grow-1 flex-shrink-0 autoScroll flex-column ' },
+				{ className: 'd-flex flex-grow-1 flex-shrink-0 flex-column h-100' },
+				this.props.title && React.createElement(
+					'div',
+					{ className: 'bg-dark text-light justify-content-center d-flex' },
+					React.createElement(
+						'span',
+						null,
+						this.props.title
+					)
+				),
 				React.createElement(
 					'div',
-					{ className: 'mh-100 mw-100 hidenOverflow position-relative', style: { clear: 'both', height: '400px', paddingBottom: '50px' } },
+					{ className: 'flex-grow-1 flex-shrink-1 hidenOverflow position-relative h-100', style: { clear: 'both', paddingBottom: '50px' } },
 					React.createElement(
 						'div',
 						{ id: 'tableHeaderdiv', className: 'mw-100 hidenOverflow' },
 						React.createElement(
 							'table',
 							{ className: 'table', style: { width: '42em', marginBottom: '0px' } },
-							React.createElement(
-								'thead',
-								{ className: 'thead-dark' },
-								React.createElement(
-									'tr',
-									null,
-									React.createElement(
-										'th',
-										{ scope: 'col', style: Form_0_headstyle1 },
-										'\u5458\u5DE5\u767B\u8BB0\u59D3\u540D'
-									),
-									React.createElement(
-										'th',
-										{ scope: 'col', style: Form_0_headstyle1 },
-										'\u5458\u5DE5\u767B\u8BB0\u6027\u522B'
-									),
-									React.createElement(
-										'th',
-										{ scope: 'col', style: Form_0_headstyle1 },
-										'\u8EAB\u4EFD\u8BC1\u4EF6\u53F7\u7801'
-									),
-									React.createElement(
-										'th',
-										{ scope: 'col', style: Form_0_headstyle1 },
-										'\u8EAB\u4EFD\u8BC1\u4EF6\u5730\u5740'
-									),
-									React.createElement(
-										'th',
-										{ scope: 'col', style: Form_0_headstyle1 },
-										'\u51FA\u751F\u5E74\u6708\u65E5\u671F'
-									)
-								)
-							)
+							React.createElement(CM_Form_0_Table_Head, null)
 						)
 					),
-					contentElem
-				)
+					React.createElement(
+						'div',
+						{ onScroll: this.tableBodyScroll, id: 'tablebodydiv', className: 'mw-100 autoScroll', style: { height: '100%' } },
+						contentElem
+					),
+					';'
+				),
+				navELem
 			);
 			return retElem;
 		}
@@ -427,6 +486,11 @@ function CM_Form_0_mapstatetoprops(state, ownprops) {
 	retProps.recordIndex = ctlState.recordIndex;
 	retProps.nowRecord = ctlState.nowRecord;
 	retProps.invalidbundle = ctlState.invalidbundle;
+	retProps.startRowIndex = ctlState.startRowIndex;
+	retProps.endRowIndex = ctlState.endRowIndex;
+	retProps.pageCount = ctlState.pageCount;
+	retProps.pageIndex = ctlState.pageIndex;
+	retProps.rowPerPage = ctlState.rowPerPage;
 	retProps.loaded = ctlState.records_arr != null;
 	return retProps;
 }

@@ -249,6 +249,7 @@ class ContentPanel extends React.PureComponent {
                     <div className='d-flex flex-grow-0 flex-shrink-0 flex-column'>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} pname='datamaster' ><div>数据</div><div>大师</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} pname='scriptmaster' ><div>脚本</div><div>大师</div></button>
+                        <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} pname='flowmaster' ><div>流程</div><div>大师</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickCompileBtnHanlder} ><div>编译</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickSaveBtnHanlder} ><div>保存</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPublickBtnHandler} ><div>发布</div></button>
