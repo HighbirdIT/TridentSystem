@@ -104,12 +104,18 @@ function getNowDate(){
 }
 
 function checkDate(date) {
-    var dateVal = new Date(Date.parse(date));
+    var dateVal = new Date(date);
+    if(isNaN(dateVal.getDate())){
+        if(typeof date === 'string'){
+            date = date.replace(/-/g,'/');
+        }
+        dateVal = new Date(date);
+    }
     return !isNaN(dateVal.getDate());
 }
 
 function checkTime(str) {
-    var dateVal = new Date(Date.parse('2000-1-1 ' + str));
+    var dateVal = new Date('2000/1/1 ' + str);
     return !isNaN(dateVal.getDate());
 }
 
@@ -1069,6 +1075,8 @@ function getQueryVariable(variable)
     return(false);
 }
 
+var gTimeReg = /\d+:\d+:\d+/;
+
 function FormatStringValue(val, type){
     if(IsEmptyString(val)){
         return '';
@@ -1103,7 +1111,8 @@ function FormatStringValue(val, type){
         break;
         case 'time':
         if(val && val.length > 8 && checkDate(val)){
-            rlt = getFormatTimeString(new Date(val),false);
+            var regRlt = gTimeReg.exec(val);
+            return regRlt[0];
         }
         else if(!checkTime(val)){
             rlt = '';
