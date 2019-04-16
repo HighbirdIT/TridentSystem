@@ -79,7 +79,7 @@ function pull_M_Form_1(retState) {
 	return retState;
 }
 function M_Dropdown_0_defaultvalue_get(state, bundle) {
-	return g_envVar.userid;
+	return '<Data fNum="1" fn1="员工登记姓名代码"><Item f1="75" />dfgdrt<Item f1="14" /></Data>';
 }
 function pull_M_Dropdown_0() {
 	var bundle = {};
@@ -197,7 +197,7 @@ function M_Text_4_defaultvalue_get(state, bundle) {
 		if (fetchTracer['M_Text_4_defaultvalue_get'] != fetchid) return;
 		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_queryfb_0, action: '_query_FB员工请假提示' }, makeFTD_Callback(function (state, data_queryfb_0, error_queryfb_0) {
 			if (error_queryfb_0) {
-				callback_final(state, null, error_queryfb_0);
+				return callback_final(state, null, error_queryfb_0);
 			}
 			var bundle_queryfb_1 = {
 				员工代码: M_Dropdown_0_value
@@ -206,7 +206,7 @@ function M_Text_4_defaultvalue_get(state, bundle) {
 				if (fetchTracer['M_Text_4_defaultvalue_get'] != fetchid) return;
 				store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_queryfb_1, action: '_query_FB查询RTX状态' }, makeFTD_Callback(function (state, data_queryfb_1, error_queryfb_1) {
 					if (error_queryfb_1) {
-						callback_final(state, null, error_queryfb_1);
+						return callback_final(state, null, error_queryfb_1);
 					}
 					var ret = callback_final(state, data_queryfb_0 + '[RTX:' + data_queryfb_1 + ']' + M_Dropdown_0_text, null);
 					return ret == null ? state : ret;
@@ -255,6 +255,10 @@ function M_Text_1_validchecker(nowValue, comeState, comeValidErrState) {
 	if (M_Dropdown_1_value == 11) {
 		if (间隔天_1 < 0) {
 			return '过去的临时假不能补请';
+		} else {
+			if (间隔天_1 > 2) {
+				return '临时假只能请今明两天的。';
+			}
 		}
 	} else {
 		if (间隔天_1 < -2) {
@@ -337,6 +341,41 @@ function M_LC_6_isdisplay_get(state, bundle) {
 	var M_LC_3_state = getStateByPath(M_Form_1_state, 'M_LC_3', {});
 	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : M_LC_3_state.visible;
 	return M_LC_3_visible;
+}
+function M_Text_5_validchecker(nowValue, comeState, comeValidErrState) {
+	var state = store.getState();
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1', {});
+	var M_Text_2_state = getStateByPath(M_Form_1_state, 'M_Text_2', {});
+	var M_LC_3_state = getStateByPath(M_Form_1_state, 'M_LC_3', {});
+	var M_Text_2_value = M_Text_2_state.value;
+	var validErr;
+	var hadValidErr = false;
+	var validErrState = comeValidErrState == null ? {} : comeValidErrState;
+	var callback_final = function callback_final(state, data, err) {
+		if (comeValidErrState == null) {
+			if (comeState) {
+				setManyStateByPath(comeState, '', validErrState);
+			} else {
+				setTimeout(function () {
+					store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
+				}, 50);
+			}
+		}
+		return err == null ? null : err.info;
+	};
+	if (validErrState.hasOwnProperty('M_Page_2.M_Form_1.M_Text_2.invalidInfo')) {
+		validErr = validErrState['M_Page_2.M_Form_1.M_Text_2.invalidInfo'];
+	} else {
+		validErr = BaseIsValueValid(comeState, M_LC_3_state, M_Text_2_state, M_Text_2_value, 'time', false, 'M_Text_2', validErrState);
+		validErrState['M_Page_2.M_Form_1.M_Text_2.invalidInfo'] = validErr;
+	}
+	if (validErr != null) hadValidErr = true;
+	if (hadValidErr) {
+		return callback_final(null, null, { info: gPreconditionInvalidInfo });
+	}
+	if (getDateDiff('分', M_Text_2_value, nowValue) > 0) {
+		return '结束时间必须大于起始时间。';
+	}
 }
 function button_4_onclick() {
 	var state = store.getState();
@@ -466,20 +505,10 @@ function button_4_onclick() {
 	}, 50);
 }
 function M_Dropdown_0_value_changed(state, newValue, oldValue, path, visited, delayActs) {
-	var needSetState = {};
-	needSetState['M_Page_2.M_Form_1.M_Text_4.value'] = M_Text_4_defaultvalue_get(state);
-	if (delayActs['call_pull_M_Form_0'] == null) {
-		delayActs['call_pull_M_Form_0'] = { callfun: pull_M_Form_0 };
-	};
-	return setManyStateByPath(state, '', needSetState);
+	return null;
 }
 function M_Dropdown_0_text_changed(state, newValue, oldValue, path, visited, delayActs) {
-	var needSetState = {};
-	needSetState['M_Page_2.M_Form_1.M_Text_4.value'] = M_Text_4_defaultvalue_get(state);
-	if (delayActs['call_pull_M_Form_0'] == null) {
-		delayActs['call_pull_M_Form_0'] = { callfun: pull_M_Form_0 };
-	};
-	return setManyStateByPath(state, '', needSetState);
+	return null;
 }
 function M_Dropdown_1_value_changed(state, newValue, oldValue, path, visited, delayActs) {
 	var needSetState = {};
@@ -651,7 +680,7 @@ var CM_Form_1 = function (_React$PureComponent3) {
 								React.createElement(
 									VisibleERPC_LabeledControl,
 									{ id: "M_LC_0", parentPath: "M_Page_2.M_Form_1", label: "\u8BF7\u5047\u4EBA\u5458" },
-									React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_0", parentPath: "M_Page_2.M_Form_1", pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u8BF7\u5047\u4EBA\u5458" })
+									React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_0", multiselect: true, parentPath: "M_Page_2.M_Form_1", pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u8BF7\u5047\u4EBA\u5458" })
 								),
 								React.createElement(VisibleCM_Form_0, { id: "M_Form_0", parentPath: "M_Page_2.M_Form_1", title: "\u4ED6\u7684\u6700\u8FD1\u8BF7\u5047", pagebreak: false, reBindAT: "ReBindM_Form_0Page" }),
 								React.createElement(
@@ -933,6 +962,7 @@ var CM_Form_0_TBody = function (_React$PureComponent6) {
 
 gCusValidChecker_map['M_Text_1'] = M_Text_1_validchecker;
 gCusValidChecker_map['M_Text_3'] = M_Text_3_validchecker;
+gCusValidChecker_map['M_Text_5'] = M_Text_5_validchecker;
 if (g_envVar.userid != null) {
 	ErpControlInit();
 	ReactDOM.render(React.createElement(

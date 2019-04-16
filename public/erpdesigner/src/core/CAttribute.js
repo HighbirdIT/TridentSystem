@@ -221,6 +221,7 @@ const AttrNames={
     AutoHeight:'autoHeight',
     AutoIndexColumn:'autoIndexColumn',
     NoDataTip:'noDataTip',
+    MultiSelect:'multiselect',
 
     Event:{
         OnClick:'onclick'
