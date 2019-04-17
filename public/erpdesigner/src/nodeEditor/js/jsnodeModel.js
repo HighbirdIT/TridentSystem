@@ -3096,7 +3096,7 @@ class JSNode_Query_Sql extends JSNode_Base {
         myJSBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + serverSideActName + "',}, makeFTD_Callback((state, " + dataVarName + ", " + errVarName + ")=>{", 1);
         var fetchEndBlock = new FormatFileBlock('fetchend');
         myJSBlock.pushChild(fetchEndBlock);
-        fetchEndBlock.pushLine('if(' + errVarName + '){callback_final(state, null,' + errVarName + ');}');
+        fetchEndBlock.pushLine('if(' + errVarName + '){return callback_final(state, null,' + errVarName + ');}');
         myJSBlock.subNextIndent();
         myJSBlock.pushLine('},false)));');
         myJSBlock.subNextIndent();
@@ -3421,9 +3421,10 @@ class JSNode_FreshForm extends JSNode_Base {
         var socketValue = null;
         var theSocket = this.inSocket;
         var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+        var selectedKernel = null;
         if (datalinks_arr.length == 0) {
             var selectedCtlid = theSocket.getExtra('ctlid');
-            var selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
+            selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
             if (selectedKernel != null) {
                 socketValue = selectedCtlid;
             }
@@ -3463,9 +3464,16 @@ class JSNode_FreshForm extends JSNode_Base {
             socketValue = formKernel.id;
         }
         var freshFunName = 'fresh_' + socketValue;
-
+        var formDS = selectedKernel.getAttribute(AttrNames.DataSource);
+        
         var myJSBlock = new FormatFileBlock('ret');
-        myJSBlock.pushLine(makeStr_callFun(freshFunName, ['state']));
+        if(formDS != null){
+            freshFunName = makeFName_pull(selectedKernel);
+            myJSBlock.pushLine('setTimeout(() => {' + freshFunName + '();},50);');
+        }
+        else{
+            myJSBlock.pushLine(makeStr_callFun(freshFunName, ['state']));
+        }
         belongBlock.pushChild(myJSBlock);
 
         var selfCompileRet = new CompileResult(this);

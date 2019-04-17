@@ -126,7 +126,7 @@ function M_Label_10_textfield_get(state, bundle) {
 		if (fetchTracer['M_Label_10_textfield_get'] != fetchid) return;
 		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_querysql_0, action: '_query_FB员工请假提示' }, makeFTD_Callback(function (state, data_querysql_0, error_querysql_0) {
 			if (error_querysql_0) {
-				callback_final(state, null, error_querysql_0);
+				return callback_final(state, null, error_querysql_0);
 			}
 			var ret = callback_final(state, data_querysql_0, null);
 			return ret == null ? state : ret;
@@ -175,6 +175,68 @@ function M_LC_6_isdisplay_get(state, bundle) {
 }
 function button_4_onclick() {
 	var state = store.getState();
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1', {});
+	var M_Text_0_state = getStateByPath(M_Form_1_state, 'M_Text_0', {});
+	var M_LC_11_state = getStateByPath(M_Form_1_state, 'M_LC_11', {});
+	var M_Text_0_value = M_Text_0_state.value;
+	var M_Form_1_nowRecord = getStateByPath(M_Form_1_state, 'nowRecord');
+	var validErr;
+	var hadValidErr = false;
+	var validErrState = {};
+	var scriptBP_21_msg = null;
+	var callback_final = function callback_final(state, data, err) {
+		if (state == null) {
+			store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
+		} else {
+			setManyStateByPath(state, '', validErrState);
+		}
+		if (hadValidErr) {
+			SendToast('验证失败，无法执行', EToastType.Warning);return;
+		}
+		if (err) {
+			if (scriptBP_21_msg) {
+				scriptBP_21_msg.setData(err.info, EMessageBoxType.Error, '通过申请');
+			} else {
+				SendToast(err.info, EToastType.Error);
+			}
+			return;
+		}
+		if (scriptBP_21_msg) {
+			scriptBP_21_msg.fireClose();
+		}
+		SendToast('执行成功');
+	};
+	if (IsEmptyString(M_Form_1_nowRecord)) {
+		return callback_final(state, null, { info: gPreconditionInvalidInfo });
+	}
+	validErr = BaseIsValueValid(state, M_LC_11_state, M_Text_0_state, M_Text_0_value, 'string', false, 'M_Text_0', validErrState);
+	validErrState['M_Page_2.M_Form_1.M_Text_0.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
+	if (hadValidErr) {
+		return callback_final(null, null, { info: gPreconditionInvalidInfo });
+	}
+	var fetchid = Math.round(Math.random() * 999999);
+	fetchTracer['button_4_onclick'] = fetchid;
+	scriptBP_21_msg = PopMessageBox('', EMessageBoxType.Loading, '通过申请');;
+	var bundle_update_table_0 = {
+		RCDKEY: M_Form_1_nowRecord['员工请假记录代码'],
+		M_Text_0_value: M_Text_0_value,
+		审核确认状态: 1,
+		M_Form_1_员工请假记录代码: M_Form_1_nowRecord['员工请假记录代码']
+	};
+	setTimeout(function () {
+		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_update_table_0, action: '_update_table_0' }, makeFTD_Callback(function (state, data_update_table_0, err_update_table_0) {
+			if (err_update_table_0 == null) {
+				var ret = callback_final(state, data_update_table_0, null);
+				setTimeout(function () {
+					pull_M_Form_1();
+				}, 50);
+				return ret == null ? state : ret;
+			} else {
+				return callback_final(state, data_update_table_0, err_update_table_0);
+			}
+		})));
+	}, 50);
 }
 function button_0_onclick() {
 	var 当前日期_1;
@@ -184,6 +246,7 @@ function button_0_onclick() {
 	var M_Text_0_state = getStateByPath(M_Form_1_state, 'M_Text_0', {});
 	var M_LC_11_state = getStateByPath(M_Form_1_state, 'M_LC_11', {});
 	var M_Text_0_value = M_Text_0_state.value;
+	var M_Form_1_nowRecord = getStateByPath(M_Form_1_state, 'nowRecord');
 	var validErr;
 	var hadValidErr = false;
 	var validErrState = {};
@@ -210,15 +273,35 @@ function button_0_onclick() {
 		}
 		SendToast('执行成功');
 	};
+	if (IsEmptyString(M_Form_1_nowRecord)) {
+		return callback_final(state, null, { info: gPreconditionInvalidInfo });
+	}
 	validErr = BaseIsValueValid(state, M_LC_11_state, M_Text_0_state, M_Text_0_value, 'string', false, 'M_Text_0', validErrState);
 	validErrState['M_Page_2.M_Form_1.M_Text_0.invalidInfo'] = validErr;
 	if (validErr != null) hadValidErr = true;
 	if (hadValidErr) {
 		return callback_final(null, null, { info: gPreconditionInvalidInfo });
 	}
-	当前日期_1 = new Date(M_Text_0_value);
-	temp_1 = 当前日期_1.setDate(当前日期_1.getDate() + -1);
-	store.dispatch(makeAction_setStateByPath(getFormatDateString(当前日期_1), 'M_Page_2.M_Form_1.M_Text_0.value'));
+	var fetchid = Math.round(Math.random() * 999999);
+	fetchTracer['button_0_onclick'] = fetchid;
+	scriptBP_8_msg = PopMessageBox('', EMessageBoxType.Loading, '拒绝申请');;
+	var bundle_update_table_0 = {
+		RCDKEY: M_Form_1_nowRecord['员工请假记录代码'],
+		M_Text_0_value: M_Text_0_value,
+		审核确认状态: 2,
+		M_Form_1_员工请假记录代码: M_Form_1_nowRecord['员工请假记录代码']
+	};
+	setTimeout(function () {
+		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_update_table_0, action: '_update_table_0' }, makeFTD_Callback(function (state, data_update_table_0, err_update_table_0) {
+			if (err_update_table_0 == null) {
+				fresh_M_Form_1(state);
+				var ret = callback_final(state, data_update_table_0, null);
+				return ret == null ? state : ret;
+			} else {
+				return callback_final(state, data_update_table_0, err_update_table_0);
+			}
+		})));
+	}, 50);
 }
 function fresh_M_Form_0(retState, records_arr) {
 	bind_M_Form_0(retState);
@@ -438,8 +521,8 @@ var CM_Form_1 = function (_React$PureComponent3) {
 				if (!this.props.canInsert && this.props.nowRecord == null) {
 					retElem = React.createElement(
 						"div",
-						null,
-						"\u6CA1\u6709\u67E5\u8BE2\u5230\u6570\u636E"
+						{ className: "m-auto" },
+						"\u6CA1\u6709\u7B49\u5F85\u5BA1\u6838\u7684\u8BF7\u5047\u8BB0\u5F55\u4E86"
 					);
 				} else {
 					retElem = React.createElement(
@@ -447,7 +530,7 @@ var CM_Form_1 = function (_React$PureComponent3) {
 						{ className: "d-flex flex-grow-1 flex-shrink-1 erp-form flex-column " },
 						React.createElement(
 							"div",
-							{ "class": "d-flex flex-grow-1  flex-column autoScroll_Touch" },
+							{ className: "d-flex flex-grow-1  flex-column autoScroll_Touch" },
 							React.createElement(
 								VisibleERPC_LabeledControl,
 								{ id: "M_LC_0", parentPath: "M_Page_2.M_Form_1", label: "\u8BF7\u5047\u4EBA\u5458" },
@@ -581,7 +664,7 @@ var CM_Form_0 = function (_React$PureComponent4) {
 				if (!this.props.canInsert && (this.props.records_arr == null || this.props.records_arr.length == 0)) {
 					retElem = React.createElement(
 						"div",
-						null,
+						{ className: "m-auto" },
 						"\u6CA1\u6709\u67E5\u8BE2\u5230\u6570\u636E"
 					);
 				} else {

@@ -1543,6 +1543,9 @@ class MobileContentCompiler extends ContentCompiler {
         ctlTag.setAttr('id', theKernel.id);
         ctlTag.setAttr('parentPath', parentPath);
         renderBlock.pushChild(ctlTag);
+        if(theKernel.getAttribute(AttrNames.MultiSelect)){
+            ctlTag.setAttr('multiselect', '{true}');
+        }
         this.compileIsdisplayAttribute(theKernel, ctlTag);
         this.compileValidCheckerAttribute(theKernel);
 
@@ -2054,7 +2057,7 @@ class MobileContentCompiler extends ContentCompiler {
                     else{
                         var pageActiveFun = clientSide.scope.getFunction(makeFName_activePage(belongPage));
                         var timeoutBlock = pageActiveFun.getChild('timeout');
-                        timeoutBlock.pushLine(makeStr_callFun(pullFun.name));
+                        timeoutBlock.pushLine(makeStr_callFun(pullFun.name) + ';');
                     }
                     //timeoutBlock.pushLine(makeStr_callFun(pullFun.name, [VarNames.State]));
                 }
