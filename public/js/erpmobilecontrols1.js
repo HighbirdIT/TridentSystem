@@ -283,6 +283,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
         key: 'listItemClick',
         value: function listItemClick(ev) {
             var target = ev.target;
+            var multiselect = this.state.multiselect;
             var value = getAttributeByNode(target, 'value', true, 3);
             if (value == null) {
                 console.error('can not find value attr');
@@ -294,7 +295,29 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             if (theOptionItem == null) {
                 console.error('没有找到对应的item' + value);
             }
-            this.props.dropdownctl.selectItem(theOptionItem);
+            if (multiselect) {
+                if (this.state.selectOpt.find(function (item) {
+                    return item.value == theOptionItem.value;
+                }) == null) {
+                    this.props.dropdownctl.selectItem(this.state.selectOpt.concat(theOptionItem));
+                }
+            } else {
+                this.props.dropdownctl.selectItem(theOptionItem);
+            }
+        }
+    }, {
+        key: 'clickSelectedItemTag',
+        value: function clickSelectedItemTag(ev) {
+            var target = ev.target;
+            var value = getAttributeByNode(target, 'value', true, 3);
+            if (value == null) {
+                console.error('can not find value attr');
+            }
+            var selectedOption = this.state.selectOpt;
+            var newArr = selectedOption.filter(function (item) {
+                return item.value != value;
+            });
+            this.props.dropdownctl.selectItem(newArr);
         }
     }, {
         key: 'keyInputChanged',
@@ -308,7 +331,15 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
         value: function render() {
             var _this4 = this;
 
+            var multiselect = this.state.multiselect;
             var selectedVal = this.state.selectedVal;
+            var selectedOption = this.state.selectOpt;
+            if (multiselect) {
+                if (selectedVal == null) {
+                    selectedVal = [];
+                }
+            }
+            //console.log(selectedElem);
             if (!this.inited) {
                 return React.createElement(
                     'div',
@@ -412,6 +443,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                         recentItems_arr.push(recentUsed[value]);
                     }
                 }
+                var tItemSelected = false;
                 if (recentItems_arr.length > 0) {
                     if (groupCount > 0) {
                         groupItemCounter['g0_recent'] = recentItems_arr.length;
@@ -427,9 +459,14 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                             )
                         ));
                         recentItems_arr.forEach(function (item) {
+                            if (multiselect) {
+                                tItemSelected = selectedVal.indexOf(item.value + '') != -1;
+                            } else {
+                                tItemSelected = item.value == selectedVal;
+                            }
                             recentElem.push(React.createElement(
                                 'div',
-                                { onClick: _this4.listItemClick, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (item.value == selectedVal ? ' active' : ''), key: '_ck' + item.value, value: item.value },
+                                { onClick: _this4.listItemClick, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (tItemSelected ? ' active' : ''), key: '_ck' + item.value, value: item.value },
                                 React.createElement(
                                     'div',
                                     null,
@@ -479,6 +516,22 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                     });
                 }
 
+                var multiSelectedElem = null;
+                if (multiselect) {
+                    multiSelectedElem = React.createElement(
+                        'div',
+                        { className: 'd-flex flex-grow-0 flex-shrink-0 mb-1 flex-wrap' },
+                        selectedOption.map(function (item) {
+                            return React.createElement(
+                                'span',
+                                { key: item.value, onClick: _this4.clickSelectedItemTag, value: item.value, className: 'border btn' },
+                                item.text,
+                                React.createElement('i', { className: 'fa fa-close' })
+                            );
+                        }),
+                        React.createElement('input', { type: 'text', className: 'flex-grow-1 flex-shrink-0 multiddcsearchinput', placeholder: '\u641C\u7D22', value: keyword, onChange: this.keyInputChanged })
+                    );
+                }
                 if (filted_arr.length == 0) {
                     contentElem = React.createElement(
                         'span',
@@ -486,7 +539,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                         '\u6CA1\u6709\u627E\u5230'
                     );
                 }
-                if (options_arr.length > 20) {
+                if (!multiselect && options_arr.length > 20) {
                     searchItem = React.createElement(
                         'div',
                         { className: 'd-flex flex-shrink-0 align-items-center' },
@@ -506,9 +559,14 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                             if (i >= maxRowCount) {
                                 return null;
                             }
+                            if (multiselect) {
+                                tItemSelected = selectedVal.indexOf(item.value + '') != -1;
+                            } else {
+                                tItemSelected = item.value == selectedVal;
+                            }
                             return React.createElement(
                                 'div',
-                                { onClick: _this4.listItemClick, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (item.value == selectedVal ? ' active' : ''), key: item.value, value: item.value },
+                                { onClick: _this4.listItemClick, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (tItemSelected ? ' active' : ''), key: item.value, value: item.value },
                                 React.createElement(
                                     'div',
                                     null,
@@ -568,10 +626,12 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                             React.createElement(
                                 'span',
                                 { className: 'text-primary' },
-                                this.state.label
+                                this.state.label,
+                                multiselect ? '(可多选)' : ''
                             )
                         )
                     ),
+                    multiSelectedElem,
                     searchItem,
                     finalContentElem
                 )
@@ -662,39 +722,67 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             }
         }
     }, {
+        key: 'addSelectItem',
+        value: function addSelectItem(theOptionItem) {
+            if (theOptionItem == null || !this.props.multiselect) {
+                return;
+            }
+        }
+    }, {
         key: 'selectItem',
         value: function selectItem(theOptionItem) {
             var value = null;
             var text = null;
-            if (theOptionItem) {
-                value = theOptionItem.value.toString();
-                text = theOptionItem.text;
-            }
-            if (this.props.recentCookieKey) {
-                var index = this.recentValues_arr.indexOf(value);
-                if (index != 0) {
-                    if (index != -1) {
-                        this.recentValues_arr.splice(index, 1);
+            var multiselect = this.props.multiselect;
+            if (multiselect) {
+                if (!Array.isArray(theOptionItem)) {
+                    console.error("multiselect's selectItem theOptionItem must array!");
+                }
+                var values_arr = [];
+                theOptionItem.forEach(function (item) {
+                    values_arr.push(item.value);
+                    //value = (value == null ? '' : value + ',') + item.value;
+                    text = (text == null ? '' : text + ',') + item.text;
+                });
+                value = ERPXMLToolKit.convertToXmlString(values_arr, [this.props.valueAttrName]);
+            } else {
+                if (theOptionItem) {
+                    value = theOptionItem.value.toString();
+                    text = theOptionItem.text;
+                }
+                if (this.props.recentCookieKey) {
+                    var index = this.recentValues_arr.indexOf(value);
+                    if (index != 0) {
+                        if (index != -1) {
+                            this.recentValues_arr.splice(index, 1);
+                        }
+                        this.recentValues_arr.unshift(value);
+                        if (this.recentValues_arr.length >= 6) {
+                            this.recentValues_arr.pop();
+                        }
+                        Cookies.set(this.props.recentCookieKey, this.recentValues_arr.join(','), { expires: 7 });
                     }
-                    this.recentValues_arr.unshift(value);
-                    if (this.recentValues_arr.length >= 6) {
-                        this.recentValues_arr.pop();
-                    }
-                    Cookies.set(this.props.recentCookieKey, this.recentValues_arr.join(','), { expires: 7 });
                 }
             }
-            this.dropDownClosed();
+
+            if (!this.props.multiselect) {
+                this.dropDownClosed();
+            }
 
             var invalidInfo = BaseIsValueValid(null, null, null, value == null || text == null ? null : value, this.props.type, this.props.nullable, this.props.id);
             store.dispatch(makeAction_setManyStateByPath({
                 value: value,
                 text: text,
-                invalidInfo: invalidInfo
+                invalidInfo: invalidInfo,
+                selectOpt: theOptionItem
             }, MakePath(this.props.parentPath, this.props.id)));
         }
     }, {
         key: 'getPopPanelInitState',
         value: function getPopPanelInitState() {
+            var multiselect = this.props.multiselect;
+            var selectedVal = this.props.value;
+            if (multiselect) {}
             return {
                 selectedVal: this.props.value,
                 fetching: this.props.fetching,
@@ -704,6 +792,8 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 keyword: '',
                 recentValues_arr: this.recentValues_arr,
                 recentUsed: this.recentUsed,
+                multiselect: this.props.multiselect,
+                selectOpt: this.props.selectOpt,
                 label: ReplaceIfNull(this.props.label, this.props.textAttrName)
             };
         }
@@ -717,6 +807,8 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             var selectedVal = this.props.value;
             var selectedText = this.props.text;
             var self = this;
+            var multiselect = this.props.multiselect;
+            var selectedItems_arr;
 
             if (!IsEmptyString(selectedVal)) {
                 if (IsEmptyString(selectedText)) {
@@ -736,29 +828,59 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                                 }
                             }
                         } else {
-                            var theOptionItem = this.props.optionsData.options_arr.find(function (item) {
-                                return item.value == selectedVal;
-                            });
-                            selectedText = theOptionItem ? theOptionItem.text : null;
-                            setTimeout(function () {
-                                self.selectItem(theOptionItem);
-                            }, 50);
+                            if (multiselect) {
+                                selectedItems_arr = this.props.optionsData.options_arr.filter(function (item) {
+                                    return selectedVal.indexOf(item.value + '') != -1;
+                                });
+                                selectedText = '';
+                                selectedItems_arr.forEach(function (item) {
+                                    selectedText += item.text;
+                                });
+                                setTimeout(function () {
+                                    self.selectItem(selectedItems_arr);
+                                }, 50);
+                            } else {
+                                var theOptionItem = this.props.optionsData.options_arr.find(function (item) {
+                                    return item.value == selectedVal;
+                                });
+                                selectedText = theOptionItem ? theOptionItem.text : null;
+                                setTimeout(function () {
+                                    self.selectItem(theOptionItem);
+                                }, 50);
+                            }
                         }
                     }
                 } else if (this.props.optionsData.options_arr) {
-                    var selectedOptionItem = this.props.optionsData.options_arr.find(function (item) {
-                        return item.value == selectedVal;
-                    });
-                    if (selectedOptionItem) {
-                        if (selectedOptionItem.text != selectedText) {
+                    if (multiselect) {
+                        selectedItems_arr = this.props.optionsData.options_arr.filter(function (item) {
+                            return selectedVal.indexOf(item.value + '') != -1;
+                        });
+                        if (selectedItems_arr) {
+                            if (selectedItems_arr.length != this.props.selectOpt.length) {
+                                setTimeout(function () {
+                                    self.selectItem(selectedItems_arr);
+                                }, 50);
+                            }
+                        } else {
                             setTimeout(function () {
-                                self.selectItem(selectedOptionItem);
+                                self.selectItem(null);
                             }, 50);
                         }
                     } else {
-                        setTimeout(function () {
-                            self.selectItem(null);
-                        }, 50);
+                        var selectedOptionItem = this.props.optionsData.options_arr.find(function (item) {
+                            return item.value == selectedVal;
+                        });
+                        if (selectedOptionItem) {
+                            if (selectedOptionItem.text != selectedText) {
+                                setTimeout(function () {
+                                    self.selectItem(selectedOptionItem);
+                                }, 50);
+                            }
+                        } else {
+                            setTimeout(function () {
+                                self.selectItem(null);
+                            }, 50);
+                        }
                     }
                 }
             }
@@ -770,7 +892,8 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                         selectedVal: selectedVal,
                         fetching: this.props.fetching,
                         fetchingErr: this.props.fetchingErr,
-                        optionsData: this.props.optionsData
+                        optionsData: this.props.optionsData,
+                        selectOpt: this.props.selectOpt
                     };
                     setTimeout(function () {
                         popPanelRefCurrent.setState(newState);
@@ -842,6 +965,15 @@ var selectERPC_DropDown_options = function selectERPC_DropDown_options(state, ow
     }
     var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
     return ctlState.options_arr;
+};
+
+var selectERPC_DropDown_multiValues = function selectERPC_DropDown_multiValues(xmlstr) {
+    return ERPXMLToolKit.extractColumn(xmlstr, 1);
+};
+
+var selectERPC_DropDown_value = function selectERPC_DropDown_value(state, ownprops) {
+    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
+    return ctlState.value;
 };
 
 var selectERPC_DropDown_textName = function selectERPC_DropDown_textName(state, ownprops) {
@@ -918,14 +1050,33 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         ERPC_selector_map[selectorid] = optionsDataSelector;
     }
 
+    var useValue = ctlState.value;
+    if (useValue) {
+        if (ownprops.multiselect) {
+            if (useValue[0] == '<') {
+                selectorid = fullPath + 'value';
+                var valueSelector = ERPC_selector_map[selectorid];
+                if (valueSelector == null) {
+                    valueSelector = Reselect.createSelector(selectERPC_DropDown_value, selectERPC_DropDown_multiValues);
+                    ERPC_selector_map[selectorid] = valueSelector;
+                }
+                //useValue = ERPXMLToolKit.extractColumn(useValue, 1);
+                useValue = valueSelector(state, ownprops);
+            } else {
+                useValue = (useValue + '').split(',');
+            }
+        }
+    }
+
     return {
-        value: ctlState.value,
+        value: useValue,
         text: ctlState.text,
         fetching: ctlState.fetching,
         fetchingErr: ctlState.fetchingErr,
         optionsData: optionsDataSelector(state, ownprops),
         visible: ctlState.visible,
-        invalidInfo: invalidInfo
+        invalidInfo: invalidInfo,
+        selectOpt: ctlState.selectOpt
     };
 }
 
@@ -2070,3 +2221,70 @@ var CMessageBoxManger = function (_React$PureComponent12) {
 
     return CMessageBoxManger;
 }(React.PureComponent);
+
+var ERPXMLToolKit = {
+    createDocFromString: function createDocFromString(xmlString) {
+        var xmlDoc = null;
+        if (window.DOMParser) {
+            var parser = new DOMParser();
+            xmlDoc = parser.parseFromString(xmlString, "text/xml");
+        } else {
+            xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
+            xmlDoc.async = "false";
+            xmlDoc.loadXML(xmlString);
+        }
+        return xmlDoc;
+    },
+
+    extractColumn: function extractColumn(xmldoc, colIndex) {
+        var rlt = [];
+        if (typeof xmldoc === 'string' && xmldoc[0] == '<') {
+            xmldoc = ERPXMLToolKit.createDocFromString(xmldoc);
+        }
+        if (xmldoc == null || xmldoc.childNodes.length == 0) {
+            return rlt;
+        }
+        var rootNode = xmldoc.childNodes[0];
+        rootNode.childNodes.forEach(function (node) {
+            if (node.nodeType != 1) {
+                return;
+            }
+            var val = node.attributes['f' + colIndex];
+            if (val != null) {
+                rlt.push(val.value);
+            }
+            //console.log(val.value);
+        });
+        return rlt;
+    },
+
+    convertToXmlString: function convertToXmlString(item_arr, attrs_arr) {
+        if (item_arr == null || item_arr.length == 0) {
+            return '';
+        }
+        if (attrs_arr.length == 0) {
+            console.error('convertToXmlString attrs_arr length==0');
+        }
+        var itemStr_arr = item_arr.map(function (item) {
+            var itemType = typeof item === 'undefined' ? 'undefined' : _typeof(item);
+            var valueStr = '';
+            if (itemType === 'string' || itemType === 'number') {
+                valueStr = '<Item f1="' + item + '" />';
+            } else {
+                valueStr = '<Item ';
+                attrs_arr.forEach(function (attrName, i) {
+                    var fName = 'f' + (i + 1);
+                    valueStr += (i == 0 ? '' : ' ') + fName + '="' + item[attrName] + '"';
+                });
+                valueStr += ' />';
+            }
+            return valueStr;
+        });
+        var rltStr = '<Data fNum="' + attrs_arr.length + '"';
+        attrs_arr.forEach(function (name, i) {
+            rltStr += ' f' + (i + 1) + '="' + name + '"';
+        });
+        rltStr += '>' + itemStr_arr.join('') + '</Data>';
+        return rltStr;
+    }
+};
