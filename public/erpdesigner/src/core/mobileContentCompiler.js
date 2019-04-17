@@ -1282,6 +1282,7 @@ class MobileContentCompiler extends ContentCompiler {
                 bindPageFun.scope.getVar(VarNames.RowPerPage, true, 'formState.' + VarNames.RowPerPage);
                 bindPageFun.scope.getVar(VarNames.StartRowIndex, true, VarNames.PageIndex + '*' + VarNames.RowPerPage);
                 bindPageFun.scope.getVar(VarNames.EndRowIndex, true, '(' + VarNames.PageIndex + '+1)*' + VarNames.RowPerPage + '-1');
+                bindPageFun.pushLine('if(' + VarNames.EndRowIndex + '>=' + VarNames.Records_arr + '.length){' + VarNames.EndRowIndex  + '=' + VarNames.Records_arr + '.length-1;}');
             }
             else {
                 bindPageFun.scope.getVar(VarNames.StartRowIndex, true, '0');
@@ -1927,7 +1928,7 @@ class MobileContentCompiler extends ContentCompiler {
                         theFun.scope.getVar(nowRecordVarName, true, initValue);
                         needCheckVars_arr.push(nowRecordVarName);
                         for(var colName in useFormData.useColumns_map){
-                            needSetParams_arr.push({bundleName:useFormData.useDS.code + '_' + colName,clientValue:nowRecordVarName + '.' + colName});
+                            needSetParams_arr.push({bundleName:colName + '_' + useFormData.useDS.code,clientValue:nowRecordVarName + '.' + colName});
                         }
                         if(IsEmptyObject(useFormData.useControls_map)){
                             // 只用到了目标form的数据列，需要在其bind的时候进行重新bind
