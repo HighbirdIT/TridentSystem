@@ -3184,7 +3184,7 @@ class SqlNode_CurrentDataRow extends SqlNode_Base {
         for(var si in this.outputScokets_arr){
             var outSocket = this.outputScokets_arr[si];
             var columnName = outSocket.getExtra('colName');
-            var columnVar = theDS.code + '_' + columnName;
+            var columnVar =  columnName + '_' + theDS.code;
             if(this.checkCompileFlag(theDS.getColumnByName(columnName) == null, columnName + '不是数据源中的有效列名', helper)){
                 return false;
             }

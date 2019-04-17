@@ -120,8 +120,7 @@ function button_2_onclick() {
 		if (scriptBP_0_msg) {
 			scriptBP_0_msg.fireClose();
 		}
-		SendToast('执行成功'); 
-		location.reload(true);  
+		SendToast('执行成功');
 	};
 	if (IsEmptyString(M_Form_0_nowRecord)) {
 		return callback_final(state, null, { info: gPreconditionInvalidInfo });
