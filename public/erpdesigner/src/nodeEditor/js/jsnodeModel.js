@@ -2263,7 +2263,9 @@ class JSNODE_Insert_table extends JSNode_Base {
         }
 
         if (needOperator) {
-            paramInitBlock.pushLine("dbhelper.makeSqlparam('_operator', sqlTypes.Int, req.session.g_envVar.userid),");
+            if(paramInitBlock){
+                paramInitBlock.pushLine("dbhelper.makeSqlparam('_operator', sqlTypes.Int, req.session.g_envVar.userid),");
+            }
         }
 
         if (optioniHadColumns_arr.length == 0) {
@@ -3462,6 +3464,7 @@ class JSNode_FreshForm extends JSNode_Base {
                 return false;
             }
             socketValue = formKernel.id;
+            selectedKernel = formKernel;
         }
         var freshFunName = 'fresh_' + socketValue;
         var formDS = selectedKernel.getAttribute(AttrNames.DataSource);
@@ -4133,7 +4136,10 @@ class JSNODE_Update_table extends JSNode_Base {
             }
         }
         if (needOperator) {
-            paramInitBlock.pushLine("dbhelper.makeSqlparam('_operator', sqlTypes.Int, req.session.g_envVar.userid),");
+            if(paramInitBlock){
+
+                paramInitBlock.pushLine("dbhelper.makeSqlparam('_operator', sqlTypes.Int, req.session.g_envVar.userid),");
+            }
         }
 
         paramInitBlock.subNextIndent();

@@ -1,7 +1,6 @@
 var mssql = require('mssql');
 var sqlconfig = require('./dbconfig.js');
 var co = require('co');
-
 var sql = {};
 
 sql.Types = mssql.TYPES;
