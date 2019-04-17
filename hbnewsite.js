@@ -67,11 +67,11 @@ function getIPV4() {
 }
 
 var localIP = getIPV4();
-if(localIP.mac == '80:fa:5b:59:48:09'){
+//if(localIP.mac == '80:fa:5b:59:48:09'){
     setInterval(()=>{
         flowhelper.startFlowProcess();
     },5 * 1000);
-}
+//}
 
 app.set('hostip', localIP.address);
 app.set('hostDirName', __dirname);
