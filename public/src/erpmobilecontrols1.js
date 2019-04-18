@@ -7,6 +7,22 @@ const gCantNullInfo = '不能为空值';
 
 const HashKey_FixItem = 'fixitem';
 
+class DataCache{
+    constructor(label){
+        this.label = label;
+        this.data_map = {};
+    }
+
+    set(key, value){
+        this.data_map[key] = value;
+    }
+
+    get(key){
+        return this.data_map[key];
+    }
+}
+const gDataCache = new DataCache('global');
+
 window.onhashchange = function() {
     var fixedItemNum = 0;    
     if (location.hash.length > 0) {
@@ -862,7 +878,11 @@ const selectERPC_DropDown_groupAttrName = (state, ownprops) => {
     return ownprops.groupAttr;
 };
 
-const formatERPC_DropDown_options = (orginData_arr, textAttrName, valueAttrName, groupAttr) => {
+const selectERPC_DropDown_textType = (state, ownprops) => {
+    return ownprops.textType;
+};
+
+const formatERPC_DropDown_options = (orginData_arr, textAttrName, valueAttrName, groupAttr, textType) => {
     if (orginData_arr == null) {
         return [];
     }
@@ -887,6 +907,11 @@ const formatERPC_DropDown_options = (orginData_arr, textAttrName, valueAttrName,
             return { text: item, value: item };
         }
         var newItem = { text: item[textAttrName], value: item[valueAttrName], data: item };
+        switch(textType){
+            case 'date':
+            newItem.text = FormatStringValue(newItem.text, 'date');
+            break;
+        }
         groupData_arr.forEach((groupData, index) => {
             var data = item[groupData.name];
             if (groupData.options_map[data] == null) {
@@ -920,7 +945,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
     var selectorid = fullPath + 'optionsData';
     var optionsDataSelector = ERPC_selector_map[selectorid];
     if(optionsDataSelector == null){
-        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName, formatERPC_DropDown_options);
+        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName,selectERPC_DropDown_textType, formatERPC_DropDown_options);
         ERPC_selector_map[selectorid] = optionsDataSelector;
     }
 

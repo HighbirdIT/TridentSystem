@@ -752,7 +752,15 @@ class SqlNode_DBEntity extends SqlNode_Base {
             params_arr.forEach((item, index) => {
                 paramsStr += (index == 0 ? '' : ',') + item.value;
             });
-            selfCompileRet.setSocketOut(this.outSocket, this.targetEntity.name + (paramsStr.length == 0 ? '' : '(' + paramsStr + ')') +
+            if(params_arr.length == 0){
+                if(this.targetEntity.type == 'FT' || this.targetEntity.type == 'FB'){
+                    paramsStr = '()';
+                }
+            }
+            else{
+                paramsStr = '(' + paramsStr + ')';
+            }
+            selfCompileRet.setSocketOut(this.outSocket, this.targetEntity.name + paramsStr +
             (IsEmptyString(this.title) ? '' : ' as [' + this.title + ']'), { tableName: IsEmptyString(this.title) ? this.targetEntity.name : this.title });
         }
         else{

@@ -17,6 +17,7 @@ const M_DropdownKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('自动感应消值', AttrNames.AutoClearValue, ValueType.Boolean, true),
         new CAttribute('允许多选', AttrNames.MultiSelect, ValueType.Boolean, false),
         new CAttribute('数据分层', 'datagroup', ValueType.String, '', true, true, 'getCanuseColumns'),
+        new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes),
     ]),
 ]);
 

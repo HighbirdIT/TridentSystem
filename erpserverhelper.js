@@ -45,15 +45,15 @@ helper.commonProcess = (req, res, next, action_map) => {
         else{
             processer(req, res)
             .then((data) => {
-                if (data.err) {
-                    rlt.err = data.err;
+                if(data){
+                    if (data.err) {
+                        rlt.err = data.err;
+                    }
+                    else if (data.banAutoReturn) {
+                        return;
+                    }
                 }
-                else if (data.banAutoReturn) {
-                    return;
-                }
-                else {
-                    rlt.data = data;
-                }
+                rlt.data = data;
                 res.json(rlt);
             })
             .catch(err => {
@@ -206,7 +206,7 @@ function GetDateDiff(type, dateA, dateB) {
     if (typeof dateB === 'string') {
         dateB = new Date(dateB);
     }
-    return (dateA.getTime() - dateB.getTime()) / divNum;
+    return (dateB.getTime() - dateA.getTime()) / divNum;
 }
 
 helper.DateFun={

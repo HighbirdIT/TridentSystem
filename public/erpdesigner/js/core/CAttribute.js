@@ -144,6 +144,14 @@ function makeActStr_pullKernel(formKernel) {
     return 'pulldata_' + formKernel.id;
 }
 
+function makeActStr_getGDataCache(key) {
+    return VarNames.gDataCache + '.get(' + singleQuotesStr(key) + ')';
+}
+
+function makeLine_setGDataCache(key, value) {
+    return VarNames.gDataCache + '.set(' + singleQuotesStr(key) + ',' + value + ');';
+}
+
 function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr, paramObj) {
     var isModel = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : true;
     var url = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 'appServerUrl';
@@ -203,7 +211,9 @@ var VarNames = {
     PageCount: 'pageCount',
     PageIndex: 'pageIndex',
     RowPerPage: 'rowPerPage',
-    HadStateParam: 'hadStateParam'
+    HadStateParam: 'hadStateParam',
+    PageRouter: 'pageRouter',
+    gDataCache: 'gDataCache'
 };
 
 var AttrNames = {

@@ -376,3 +376,31 @@ class C_JSNODE_Do_FlowStep extends React.PureComponent {
         </C_Node_Frame>
     }
 }
+
+class C_JSNode_JumpPage extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        this.dropdownRef = React.createRef();
+
+        C_NodeCom_Base(this);
+    }
+
+    targetPageDDCChanged(code,ddc,pageCode) {
+        this.props.nodedata.pageCode = code;
+    }
+
+    render() {
+        var nowVal = this.props.nodedata.pageCode;
+        var nodeData = this.props.nodedata;
+        var theProject = nodeData.bluePrint.master.project;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={'打开页面'} >
+            <div className='flex-grow-1 flex-shrink-1'>
+                <DropDownControl ref={this.dropdownRef} itemChanged={this.targetPageDDCChanged} btnclass='btn-dark' options_arr={theProject.getAllPages} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='title' valueAttrName='id' value={nowVal ? nowVal : -1} />
+            </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
+            </div>
+        </C_Node_Frame>
+    }
+}

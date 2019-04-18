@@ -25,6 +25,7 @@ const JSNODE_ARRAY_LENGTH = 'arraylength';
 const JSNODE_CREATE_CUSERROR = 'createcuserror';
 const JSNODE_FRESH_FORM = 'freshform';
 const JSNODE_DO_FLOWSTEP = 'doflowstep';
+const JSNODE_JUMP_PAGE = 'jumppage';
 
 const JSDEF_VAR = 'def_variable';
 
@@ -1688,7 +1689,7 @@ class JSNode_CurrentDataRow extends JSNode_Base {
 
     compile(helper, preNodes_arr, belongBlock) {
         var theScope = belongBlock.getScope();
-        var blockInServer = theScope.isServerSide;
+        var blockInServer = theScope && theScope.isServerSide;
         var superRet = super.compile(helper, preNodes_arr, blockInServer);
         if (superRet == false || superRet != null) {
             return superRet;
@@ -1893,6 +1894,7 @@ class JSNODE_Insert_table extends JSNode_Base {
         }
         this.inputScokets_arr.forEach(socket => {
             socket.inputable = true;
+            socket.autoHideInput = false;
             socket.inputDDC_setting = this.insocketDDC_setting;
         });
         this.sucessFlowSocket.label = '成功';
@@ -1954,6 +1956,7 @@ class JSNODE_Insert_table extends JSNode_Base {
                 inputable: true,
                 defval: useColumn.name,
                 inputDDC_setting: this.insocketDDC_setting,
+                autoHideInput:false,
             });
         }
         return null;
@@ -2168,7 +2171,7 @@ class JSNODE_Insert_table extends JSNode_Base {
         var needOperator = false;
 
         if (theServerSide != null) {
-            var serverSideActName = '_' + this.id;
+            var serverSideActName = this.bluePrint.name + '_' + this.id;
             serverClickFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
             theServerSide.initProcessFun(serverClickFun);
             var paramVarName = this.id + 'params_arr';
@@ -2220,10 +2223,32 @@ class JSNODE_Insert_table extends JSNode_Base {
                         columnProfile.isStatic = true;
                         needOperator = true;
                         break;
+                        
                     default:
                         if (this.checkCompileFlag(!columnProfile.nullable, 'Insert[' + useDS.name + ']时搜寻不到[' + columnProfile.name + ']的匹配值', helper)) {
                             return false;
                         }
+                }
+            }
+            else{
+                var keyPos = columnName.indexOf('确认状态');
+                if (keyPos != -1) {
+                    var prefix = columnName.substring(0, keyPos);
+                    var tempColumnProfile = columnProfile_obj[prefix + '确认时间'];
+                    if (tempColumnProfile != null) {
+                        if (tempColumnProfile.value == null) {
+                            tempColumnProfile.value = 'getdate()';
+                            tempColumnProfile.isStatic = true;
+                        }
+                    }
+                    tempColumnProfile = columnProfile_obj[prefix + '确认用户'];
+                    if (tempColumnProfile != null) {
+                        if (tempColumnProfile.value == null) {
+                            needOperator = true;
+                            tempColumnProfile.value = '@_operator';
+                            tempColumnProfile.isStatic = true;
+                        }
+                    }
                 }
             }
             if (columnProfile.value == null) {
@@ -4033,7 +4058,7 @@ class JSNODE_Update_table extends JSNode_Base {
         var serverScope = theServerSide ? theServerSide.scope : null;
         var blockInServer = belongBlockScope.isServerSide;
 
-        var serverSideActName = '_' + this.id;
+        var serverSideActName = this.bluePrint.name + '_' + this.id;
         var paramVarName = this.id + 'params_arr';
         var myServerBlock = new FormatFileBlock('serverblock');
 
@@ -4216,6 +4241,58 @@ class JSNODE_Update_table extends JSNode_Base {
     }
 }
 
+class JSNode_JumpPage extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_JUMP_PAGE, '打开页面', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.pageCode = this.pageCode;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['pageCode']);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var theProject = this.bluePrint.master.project;
+        var thePage = theProject.getPageById(this.pageCode);
+        if(this.checkCompileFlag(thePage == null, '选择的不是有效的页面', helper)){
+            return false;
+        }
+        
+        var myJSBlock = new FormatFileBlock('');
+        myJSBlock.pushLine("setTimeout(() => {store.dispatch(makeAction_gotoPage('" + this.pageCode + "'));},50);");
+        belongBlock.pushChild(myJSBlock);
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
+
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_VAR_GET] = {
     modelClass: JSNode_Var_Get,
     comClass: C_JSNode_Var_Get,
@@ -4324,4 +4401,7 @@ JSNodeClassMap[JSNODE_DO_FLOWSTEP] = {
     modelClass: JSNode_Do_FlowStep,
     comClass: C_JSNODE_Do_FlowStep,
 };
-
+JSNodeClassMap[JSNODE_JUMP_PAGE] = {
+    modelClass: JSNode_JumpPage,
+    comClass: C_JSNode_JumpPage,
+};

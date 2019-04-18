@@ -165,7 +165,7 @@ function getDateDiff(type, dateA, dateB){
     if(typeof dateB === 'string'){
         dateB = new Date(dateB);
     }
-    return (dateA.getTime() - dateB.getTime()) / divNum;
+    return (dateB.getTime() - dateA.getTime()) / divNum;
 }
 
 // commonreducer
@@ -637,7 +637,7 @@ function setStateByPath(state, path, value, visited) {
             for(var acti in delayActs){
                 var theAct = delayActs[acti];
                 if(typeof(theAct.callfun) === 'function'){
-                    theAct.callfun(retState);
+                    theAct.callfun();
                 }
             }
         }, 50);
@@ -779,7 +779,7 @@ function setManyStateByPath(state, path, valuesObj, visited) {
             for(var acti in delayActs){
                 var theAct = delayActs[acti];
                 if(typeof(theAct.callfun) === 'function'){
-                    theAct.callfun(retState);
+                    theAct.callfun();
                 }
             }
         }, 50);
