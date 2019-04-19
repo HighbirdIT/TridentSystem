@@ -2036,7 +2036,7 @@ class JSNODE_Insert_table extends JSNode_Base {
         var theDS = g_dataBase.getEntityByCode(code);
         this.unlistenDS(this.listenedDS);
         this.listenDS(theDS);
-        if (theDS.loaded) {
+        if (theDS && theDS.loaded) {
             this.dsSynedHandler();
         }
     }
@@ -3286,15 +3286,24 @@ class JSNode_Logical_Operator extends SqlNode_Base {
             if (socketComRet.err) {
                 return false;
             }
-            tValue = socketComRet.value;
+            var tValue = socketComRet.value;
             if (socketComRet.link && !socketComRet.link.outSocket.isSimpleVal) {
                 tValue = '(' + tValue + ')';
             }
             socketVal_arr.push(tValue);
         }
         var finalStr = '';
+        var logicChar = '';
+        switch(nodeThis.LogicalType){
+            case Logical_Operator_and:
+            logicChar=' && '
+            break;
+            case Logical_Operator_or:
+            logicChar=' || '
+            break;
+        }
         socketVal_arr.forEach((x, i) => {
-            finalStr += (i == 0 ? '' : nodeThis.LogicalType) + x;
+            finalStr += (i == 0 ? '' : logicChar) + x;
         });
 
         var selfCompileRet = new CompileResult(this);
@@ -3753,6 +3762,7 @@ class JSNODE_Update_table extends JSNode_Base {
         super(initData, parentNode, createHelper, JSNODE_UPDATE_TABLE, 'Update', false, nodeJson);
         autoBind(this);
         this.onlyServerside = true;
+        var bluePrintIsServer = this.bluePrint.group == EJsBluePrintFunGroup.ServerScript;
 
         this.addFrameButton(FrameButton_LineSocket, '拉平');
         this.addFrameButton(FrameButton_ClearEmptyInputSocket, '清理');
@@ -3793,10 +3803,12 @@ class JSNODE_Update_table extends JSNode_Base {
 
         if (this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0) {
             this.outFlowSockets_arr = [];
-            this.sucessFlowSocket = new NodeFlowSocket('sucess', this, false);
-            this.failFlowSocket = new NodeFlowSocket('fail', this, false);
-            this.addSocket(this.sucessFlowSocket);
-            this.addSocket(this.failFlowSocket);
+            if(!bluePrintIsServer){
+                this.sucessFlowSocket = new NodeFlowSocket('sucess', this, false);
+                this.failFlowSocket = new NodeFlowSocket('fail', this, false);
+                this.addSocket(this.sucessFlowSocket);
+                this.addSocket(this.failFlowSocket);
+            }
             this.serverSucessFlowSocket = new NodeFlowSocket('serverSucess', this, false);
             this.serverFailFlowSocket = new NodeFlowSocket('serverFail', this, false);
             this.addSocket(this.serverSucessFlowSocket);
@@ -3819,6 +3831,14 @@ class JSNODE_Update_table extends JSNode_Base {
                         break;
                 }
             }
+            if(bluePrintIsServer){
+                if(this.sucessFlowSocket){
+                    this.removeSocket(this.sucessFlowSocket);
+                }
+                if(this.failFlowSocket){
+                    this.removeSocket(this.failFlowSocket);
+                }
+            }
         }
         if (!IsEmptyString(this.dsCode)) {
             this.setDSCode(this.dsCode);
@@ -3833,8 +3853,10 @@ class JSNODE_Update_table extends JSNode_Base {
                 socket.autoHideInput = false;
             }
         });
-        this.sucessFlowSocket.label = '成功';
-        this.failFlowSocket.label = '失败';
+        if(this.sucessFlowSocket){
+            this.sucessFlowSocket.label = '成功';
+            this.failFlowSocket.label = '失败';
+        }
         this.serverSucessFlowSocket.label = 'server成功';
         this.serverFailFlowSocket.label = 'server失败';
     }
@@ -3924,7 +3946,7 @@ class JSNODE_Update_table extends JSNode_Base {
         var theDS = g_dataBase.getEntityByCode(code);
         this.unlistenDS(this.listenedDS);
         this.listenDS(theDS);
-        if (theDS.loaded) {
+        if (theDS && theDS.loaded) {
             this.dsSynedHandler();
         }
     }
@@ -3933,11 +3955,133 @@ class JSNODE_Update_table extends JSNode_Base {
         return null;
     }
 
+    compileOnServer(helper, preNodes_arr, belongBlock){
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var useDS = g_dataBase.getEntityByCode(this.dsCode);
+        if (this.checkCompileFlag(useDS == null || useDS.columns == null || useDS.type != 'U', useDS + '必须选择一个数据表', helper)) {
+            return false;
+        }
+        if (this.checkCompileFlag(!useDS.loaded, useDS + '正在同步中，请稍后再试。', helper)) {
+            return false;
+        }
+        var columnProfile_obj = {};
+        var identityColumn = null;
+        useDS.columns.forEach(column => {
+            if (column.is_identity) {
+                identityColumn = column;
+                return;
+            }
+            columnProfile_obj[column.name] = {
+                name: column.name,
+                nullable: column.is_nullable,
+                value: null,
+            };
+        });
+
+        if (this.checkCompileFlag(identityColumn == null, useDS + '没有标识列!', helper)) {
+            return false;
+        }
+
+        var columnProfile = null;
+        // 优先使用设置的节点
+        var socketComRet;
+        var socketValue;
+
+        var updateSqlInitStr = '';
+        var paramInitBlock = new FormatFileBlock('initparam');
+        var paramVarName = this.id + 'params_arr';
+        paramInitBlock.pushLine(paramVarName + "=[", 1);
+        for (var si in this.inputScokets_arr) {
+            var socket = this.inputScokets_arr[si];
+            if (socket == this.keySocket) {
+                // 标识字段的设置
+                continue;
+            }
+            columnProfile = columnProfile_obj[socket.defval];
+            if (this.checkCompileFlag(columnProfile == null, '第' + (si) + '个输入接口不是有效的列名[' + socket.defval + ']', helper)) {
+                return false;
+            }
+            if (this.checkCompileFlag(columnProfile.value != null, '第' + (si) + '个输入接口重复设置了[' + socket.defval + ']', helper)) {
+                return false;
+            }
+            socketComRet = this.getSocketCompileValue(helper, socket, usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            socketValue = socketComRet.value;
+            columnProfile.value = socketValue;
+
+            updateSqlInitStr += (updateSqlInitStr.length == 0 ? '' : ',') + midbracketStr(columnProfile.name) + '=@' + columnProfile.name;
+            paramInitBlock.pushLine("dbhelper.makeSqlparam('" + columnProfile.name + "', sqlTypes.NVarChar(4000), " + socketComRet.value + '),');
+        }
+        if (this.checkCompileFlag(updateSqlInitStr.length == 0, '至少需要设置一个字段', helper)) {
+            return false;
+        }
+
+        updateSqlInitStr = 'update ' + useDS.name + ' set ' + updateSqlInitStr + " where [" + identityColumn.name + "]=@RCDKEY";
+
+        var serverCompleteBlock = new FormatFileBlock('complete');;
+        var serverFailBlock = new FormatFileBlock('fail');
+        var dataVarName = 'data_' + this.id;
+        var errorVarName = 'err_' + this.id;
+
+        var myServerBlock = new FormatFileBlock('serverblock');
+        belongBlock.pushChild(myServerBlock);
+
+        var sqlVarName = this.id + '_sql';
+        myServerBlock.pushLine("var " + sqlVarName + "='" + updateSqlInitStr + "';");
+        myServerBlock.pushChild(paramInitBlock);
+
+        socketComRet = this.getSocketCompileValue(helper, this.keySocket, usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        paramInitBlock.pushLine("dbhelper.makeSqlparam('RCDKEY', sqlTypes.Int, " + socketComRet.value + '),');
+
+        myServerBlock.pushLine("var " + dataVarName + " = -1;");
+        myServerBlock.pushLine("try{", 1);
+        myServerBlock.pushLine(dataVarName + " = yield dbhelper.asynGetScalar(" + sqlVarName + " + ' select @@ROWCOUNT', " + paramVarName + ");");
+        myServerBlock.subNextIndent();
+        myServerBlock.pushLine("}catch(" + errorVarName + "){", 1);
+        myServerBlock.pushChild(serverFailBlock);
+        myServerBlock.pushLine('return serverhelper.createErrorRet(' + errorVarName + '.message);');
+        myServerBlock.subNextIndent();
+        myServerBlock.pushLine('}');
+        myServerBlock.pushChild(serverCompleteBlock);
+        myServerBlock.pushLine("return " + dataVarName + ";");
+
+        paramInitBlock.subNextIndent();
+        paramInitBlock.pushLine('];');
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myServerBlock);
+        selfCompileRet.setSocketOut(this.rowCountOutSocket, dataVarName);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
+        if (serverTrueFlowLinks_arr.length > 0) {
+            this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock);
+        }
+
+        var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
+        if (serverFalseFlowLinks_arr.length > 0) {
+            this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock);
+        }
+        return selfCompileRet;
+    }
+
     compile(helper, preNodes_arr, belongBlock) {
         var superRet = super.compile(helper, preNodes_arr);
         if (superRet == false || superRet != null) {
             return superRet;
         }
+        if(this.bluePrint.group == EJsBluePrintFunGroup.ServerScript){
+            return  this.compileOnServer(helper, preNodes_arr, belongBlock);
+        }
+
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);

@@ -22,7 +22,14 @@ var appStateChangedAct_map = { 'M_Page_0.M_Form_0.records_arr': fresh_M_Form_0.b
 var pageRouter = [];
 
 function pageLoadedReducer(state) {
-	return gotoPage('M_Page_2', state);
+	var flowStep = parseInt(getQueryVariable('flowStep'));
+	var targetPage = 'M_Page_0';
+	switch (flowStep) {
+		case 19:
+			targetPage = 'M_Page_2';
+			break;
+	}
+	return gotoPage(targetPage, state);
 }
 function gotoPageReducer(state, action) {
 	return gotoPage(action.pageName, state);
@@ -79,6 +86,7 @@ function bind_M_Form_0(retState, newIndex, oldIndex) {
 	var bundle = {};
 	var nowRecord = null;
 	var useIndex = newIndex;
+	needSetState['M_Text_2.value'] = '无';
 	if (records_arr == null || newIndex == -1 || records_arr.length == 0) {} else {
 		nowRecord = records_arr[useIndex];
 		bundle.M_Form_0_nowRecord = nowRecord;
@@ -86,13 +94,15 @@ function bind_M_Form_0(retState, newIndex, oldIndex) {
 		needSetState['M_Label_1.text'] = nowRecord['凭证统计月份'];
 		needSetState['M_Label_2.text'] = nowRecord['凭证种类名称'];
 		needSetState['M_Label_10.text'] = nowRecord['凭证流水号码'];
+		needSetState['M_Label_26.text'] = nowRecord['子目流水号码'];
 		needSetState['M_Label_3.text'] = nowRecord['关联员工姓名'];
 		needSetState['M_Label_4.text'] = nowRecord['关联项目名称'];
 		needSetState['M_Label_5.text'] = nowRecord['关联客户名称'];
 		needSetState['M_Label_6.text'] = nowRecord['记帐发生金额'];
 		needSetState['M_Label_7.text'] = nowRecord['借方科目全称'];
 		needSetState['M_Label_8.text'] = nowRecord['贷方科目全称'];
-		needSetState['M_Text_0.value'] = nowRecord['凭证摘要说明'];
+		needSetState['M_Text_0.value'] = nowRecord['借方摘要'];
+		needSetState['M_Text_1.value'] = nowRecord['贷方摘要'];
 	}
 	needSetState['nowRecord'] = nowRecord;
 	needSetState['invalidbundle'] = false;
@@ -114,6 +124,12 @@ function button_0_onclick() {
 	var M_Text_0_state = getStateByPath(M_Form_0_state, 'M_Text_0', {});
 	var M_LC_10_state = getStateByPath(M_Form_0_state, 'M_LC_10', {});
 	var M_Text_0_value = M_Text_0_state.value;
+	var M_Text_1_state = getStateByPath(M_Form_0_state, 'M_Text_1', {});
+	var M_LC_9_state = getStateByPath(M_Form_0_state, 'M_LC_9', {});
+	var M_Text_1_value = M_Text_1_state.value;
+	var M_Text_2_state = getStateByPath(M_Form_0_state, 'M_Text_2', {});
+	var M_LC_30_state = getStateByPath(M_Form_0_state, 'M_LC_30', {});
+	var M_Text_2_value = M_Text_2_state.value;
 	var M_Form_0_nowRecord = getStateByPath(M_Form_0_state, 'nowRecord');
 	var validErr;
 	var hadValidErr = false;
@@ -130,7 +146,7 @@ function button_0_onclick() {
 		}
 		if (err) {
 			if (scriptBP_0_msg) {
-				scriptBP_0_msg.setData(err.info, EMessageBoxType.Error, '确认修改');
+				scriptBP_0_msg.setData(err.info, EMessageBoxType.Error, '提交修改');
 			} else {
 				SendToast(err.info, EToastType.Error);
 			}
@@ -147,20 +163,31 @@ function button_0_onclick() {
 	validErr = BaseIsValueValid(state, M_LC_10_state, M_Text_0_state, M_Text_0_value, 'string', false, 'M_Text_0', validErrState);
 	validErrState['M_Page_0.M_Form_0.M_Text_0.invalidInfo'] = validErr;
 	if (validErr != null) hadValidErr = true;
+	validErr = BaseIsValueValid(state, M_LC_9_state, M_Text_1_state, M_Text_1_value, 'string', false, 'M_Text_1', validErrState);
+	validErrState['M_Page_0.M_Form_0.M_Text_1.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
+	validErr = BaseIsValueValid(state, M_LC_30_state, M_Text_2_state, M_Text_2_value, 'string', false, 'M_Text_2', validErrState);
+	validErrState['M_Page_0.M_Form_0.M_Text_2.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
 	if (hadValidErr) {
 		return callback_final(null, null, { info: gPreconditionInvalidInfo });
 	}
 	var fetchid = Math.round(Math.random() * 999999);
 	fetchTracer['button_0_onclick'] = fetchid;
-	scriptBP_0_msg = PopMessageBox('', EMessageBoxType.Loading, '确认修改');;
-	if (M_Text_0_value == M_Form_0_nowRecord['凭证摘要说明']) {
+	scriptBP_0_msg = PopMessageBox('', EMessageBoxType.Loading, '提交修改');;
+	if (M_Text_0_value == M_Form_0_nowRecord['借方摘要'] && M_Form_0_nowRecord['贷方摘要'] == M_Text_1_value) {
 		var ret = callback_final(state, null, { info: '没有做任何编辑。' });
 		return ret == null ? state : ret;
 	} else {
 		var bundle_insert_table_0 = {
 			财务凭证记录代码: M_Form_0_nowRecord['财务凭证记录代码'],
-			原始摘要: M_Form_0_nowRecord['凭证摘要说明'],
+			借方明细记录代码: M_Form_0_nowRecord['借方明细记录代码'],
+			贷方明细记录代码: M_Form_0_nowRecord['贷方明细记录代码'],
+			原始借方摘要: M_Form_0_nowRecord['借方摘要'],
 			M_Text_0_value: M_Text_0_value,
+			原始贷方摘要: M_Form_0_nowRecord['贷方摘要'],
+			M_Text_1_value: M_Text_1_value,
+			M_Text_2_value: M_Text_2_value,
 			校核确认状态: 1
 		};
 		setTimeout(function () {
@@ -180,7 +207,11 @@ function button_0_onclick() {
 }
 function button_1_onclick() {
 	var state = store.getState();
-	var M_Form_0_nowRecord = getStateByPath(state, 'M_Page_0.M_Form_0.nowRecord');
+	var M_Form_0_state = getStateByPath(state, 'M_Page_0.M_Form_0', {});
+	var M_Text_2_state = getStateByPath(M_Form_0_state, 'M_Text_2', {});
+	var M_LC_30_state = getStateByPath(M_Form_0_state, 'M_LC_30', {});
+	var M_Text_2_value = M_Text_2_state.value;
+	var M_Form_0_nowRecord = getStateByPath(M_Form_0_state, 'nowRecord');
 	var validErr;
 	var hadValidErr = false;
 	var validErrState = {};
@@ -196,7 +227,7 @@ function button_1_onclick() {
 		}
 		if (err) {
 			if (scriptBP_1_msg) {
-				scriptBP_1_msg.setData(err.info, EMessageBoxType.Error, '不需修改');
+				scriptBP_1_msg.setData(err.info, EMessageBoxType.Error, '不做修改');
 			} else {
 				SendToast(err.info, EToastType.Error);
 			}
@@ -210,16 +241,24 @@ function button_1_onclick() {
 	if (IsEmptyString(M_Form_0_nowRecord)) {
 		return callback_final(state, null, { info: gPreconditionInvalidInfo });
 	}
+	validErr = BaseIsValueValid(state, M_LC_30_state, M_Text_2_state, M_Text_2_value, 'string', false, 'M_Text_2', validErrState);
+	validErrState['M_Page_0.M_Form_0.M_Text_2.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
 	if (hadValidErr) {
 		return callback_final(null, null, { info: gPreconditionInvalidInfo });
 	}
 	var fetchid = Math.round(Math.random() * 999999);
 	fetchTracer['button_1_onclick'] = fetchid;
-	scriptBP_1_msg = PopMessageBox('', EMessageBoxType.Loading, '不需修改');;
+	scriptBP_1_msg = PopMessageBox('', EMessageBoxType.Loading, '不做修改');;
 	var bundle_insert_table_0 = {
 		财务凭证记录代码: M_Form_0_nowRecord['财务凭证记录代码'],
-		原始摘要: M_Form_0_nowRecord['凭证摘要说明'],
-		校核摘要: M_Form_0_nowRecord['凭证摘要说明'],
+		借方明细记录代码: M_Form_0_nowRecord['借方明细记录代码'],
+		贷方明细记录代码: M_Form_0_nowRecord['贷方明细记录代码'],
+		原始借方摘要: M_Form_0_nowRecord['借方摘要'],
+		校核借方摘要: M_Form_0_nowRecord['借方摘要'],
+		原始贷方摘要: M_Form_0_nowRecord['贷方摘要'],
+		校核贷方摘要: M_Form_0_nowRecord['贷方摘要'],
+		M_Text_2_value: M_Text_2_value,
 		校核确认状态: 2
 	};
 	setTimeout(function () {
@@ -293,15 +332,16 @@ function bind_M_Form_1(retState, newIndex, oldIndex) {
 		needSetState['M_Label_12.text'] = nowRecord['凭证统计月份'];
 		needSetState['M_Label_13.text'] = nowRecord['凭证种类名称'];
 		needSetState['M_Label_14.text'] = nowRecord['凭证流水号码'];
+		needSetState['M_Label_25.text'] = nowRecord['子目流水号码'];
 		needSetState['M_Label_15.text'] = nowRecord['借方科目全称'];
 		needSetState['M_Label_16.text'] = nowRecord['贷方科目全称'];
 		needSetState['M_Label_17.text'] = nowRecord['关联员工姓名'];
 		needSetState['M_Label_18.text'] = nowRecord['关联项目名称'];
 		needSetState['M_Label_20.text'] = nowRecord['关联客户名称'];
 		needSetState['M_Label_19.text'] = nowRecord['记帐发生金额'];
-		needSetState['M_Label_21.text'] = nowRecord['原始摘要'];
-		needSetState['M_Label_22.text'] = nowRecord['凭证摘要说明'];
-		needSetState['M_Label_23.text'] = nowRecord['校核用户姓名'];
+		needSetState['M_Label_21.text'] = nowRecord['原始借方摘要'];
+		needSetState['M_Label_23.text'] = nowRecord['原始贷方摘要'];
+		needSetState['M_Label_9.text'] = nowRecord['贷方摘要'];
 		needSetState['M_Label_24.text'] = nowRecord['校核确认时间'];
 	}
 	needSetState['nowRecord'] = nowRecord;
@@ -551,6 +591,11 @@ var CM_Form_0 = function (_React$PureComponent3) {
 									),
 									React.createElement(
 										VisibleERPC_LabeledControl,
+										{ id: 'M_LC_29', parentPath: 'M_Page_0.M_Form_0', label: '\u5B50\u76EE\u6D41\u6C34\u53F7\u7801' },
+										React.createElement(VisibleERPC_Label, { className: 'erp-control ', id: 'M_Label_26', parentPath: 'M_Page_0.M_Form_0', type: 'string' })
+									),
+									React.createElement(
+										VisibleERPC_LabeledControl,
 										{ id: 'M_LC_3', parentPath: 'M_Page_0.M_Form_0', label: '\u5173\u8054\u5458\u5DE5\u59D3\u540D' },
 										React.createElement(VisibleERPC_Label, { className: 'erp-control ', id: 'M_Label_3', parentPath: 'M_Page_0.M_Form_0', type: 'string' })
 									),
@@ -581,13 +626,18 @@ var CM_Form_0 = function (_React$PureComponent3) {
 									),
 									React.createElement(
 										VisibleERPC_LabeledControl,
-										{ id: 'M_LC_9', parentPath: 'M_Page_0.M_Form_0', label: '\u5F53\u524D\u6458\u8981\u8BF4\u660E' },
-										React.createElement(VisibleERPC_Label, { className: 'erp-control ', id: 'M_Label_9', parentPath: 'M_Page_0.M_Form_0', type: 'string', text: '\u5F53\u524D\u6458\u8981\u8BF4\u660E' })
+										{ id: 'M_LC_10', parentPath: 'M_Page_0.M_Form_0', label: '\u6458\u8981\u501F\u65B9' },
+										React.createElement(VisibleERPC_Text, { id: 'M_Text_0', parentPath: 'M_Page_0.M_Form_0', type: 'string', linetype: '2x' })
 									),
 									React.createElement(
 										VisibleERPC_LabeledControl,
-										{ id: 'M_LC_10', parentPath: 'M_Page_0.M_Form_0', label: '\u6458\u8981\u7F16\u8F91' },
-										React.createElement(VisibleERPC_Text, { id: 'M_Text_0', parentPath: 'M_Page_0.M_Form_0', type: 'string', linetype: '2x' })
+										{ id: 'M_LC_9', parentPath: 'M_Page_0.M_Form_0', label: '\u8D37\u65B9\u6458\u8981' },
+										React.createElement(VisibleERPC_Text, { id: 'M_Text_1', parentPath: 'M_Page_0.M_Form_0', type: 'string', linetype: '2x' })
+									),
+									React.createElement(
+										VisibleERPC_LabeledControl,
+										{ id: 'M_LC_30', parentPath: 'M_Page_0.M_Form_0', label: '\u6821\u6838\u5907\u6CE8\u8BF4\u660E' },
+										React.createElement(VisibleERPC_Text, { id: 'M_Text_2', parentPath: 'M_Page_0.M_Form_0', type: 'string', linetype: 'single' })
 									),
 									React.createElement(
 										'div',
@@ -595,12 +645,12 @@ var CM_Form_0 = function (_React$PureComponent3) {
 										React.createElement(
 											'button',
 											{ className: 'flex-grow-1 btn btn-success erp-control ', id: 'button_0', onClick: button_0_onclick },
-											'\u786E\u8BA4\u4FEE\u6539'
+											'\u63D0\u4EA4\u4FEE\u6539'
 										),
 										React.createElement(
 											'button',
 											{ className: 'flex-grow-1 btn btn-secondary erp-control ', id: 'button_1', onClick: button_1_onclick },
-											'\u4E0D\u9700\u4FEE\u6539'
+											'\u4E0D\u505A\u4FEE\u6539'
 										)
 									)
 								),
@@ -752,7 +802,7 @@ var CM_Page_2 = function (_React$PureComponent5) {
 			var retElem = null;
 			retElem = React.createElement(
 				'div',
-				{ className: 'd-flex flex-grow-1 flex-shrink-0 autoScroll_Touch flex-column ' },
+				{ className: 'd-flex flex-grow-1 flex-shrink-0 autoScroll_Touch flex-column fixPageContent ' },
 				React.createElement(
 					VisibleERPC_LabeledControl,
 					{ id: 'M_LC_12', parentPath: 'M_Page_2', label: '\u5BA1\u6838\u65E5\u671F' },
@@ -827,7 +877,7 @@ var CM_Form_1 = function (_React$PureComponent6) {
 								{ className: 'd-flex flex-grow-1 flex-shrink-1 erp-form flex-column ' },
 								React.createElement(
 									'div',
-									{ className: 'd-flex flex-grow-1  flex-column' },
+									{ className: 'd-flex flex-grow-1  flex-column autoScroll_Touch' },
 									React.createElement(
 										VisibleERPC_LabeledControl,
 										{ id: 'M_LC_13', parentPath: 'M_Page_2.M_Form_1', label: '\u51ED\u8BC1\u7EDF\u8BA1\u5E74\u4EFD' },
@@ -847,6 +897,11 @@ var CM_Form_1 = function (_React$PureComponent6) {
 										VisibleERPC_LabeledControl,
 										{ id: 'M_LC_16', parentPath: 'M_Page_2.M_Form_1', label: '\u51ED\u8BC1\u6D41\u6C34\u53F7\u7801' },
 										React.createElement(VisibleERPC_Label, { className: 'erp-control ', id: 'M_Label_14', parentPath: 'M_Page_2.M_Form_1', type: 'string' })
+									),
+									React.createElement(
+										VisibleERPC_LabeledControl,
+										{ id: 'M_LC_28', parentPath: 'M_Page_2.M_Form_1', label: '\u5B50\u76EE\u6D41\u6C34\u53F7\u7801' },
+										React.createElement(VisibleERPC_Label, { className: 'erp-control ', id: 'M_Label_25', parentPath: 'M_Page_2.M_Form_1', type: 'string' })
 									),
 									React.createElement(
 										VisibleERPC_LabeledControl,
@@ -880,18 +935,23 @@ var CM_Form_1 = function (_React$PureComponent6) {
 									),
 									React.createElement(
 										VisibleERPC_LabeledControl,
-										{ id: 'M_LC_23', parentPath: 'M_Page_2.M_Form_1', label: '\u539F\u59CB\u6458\u8981' },
+										{ id: 'M_LC_23', parentPath: 'M_Page_2.M_Form_1', label: '\u65E7\u501F\u65B9\u6458\u8981' },
 										React.createElement(VisibleERPC_Label, { className: 'erp-control ', id: 'M_Label_21', parentPath: 'M_Page_2.M_Form_1', type: 'string' })
 									),
 									React.createElement(
 										VisibleERPC_LabeledControl,
-										{ id: 'M_LC_24', parentPath: 'M_Page_2.M_Form_1', label: '\u4FEE\u6539\u6458\u8981' },
-										React.createElement(VisibleERPC_Label, { className: 'erp-control ', id: 'M_Label_22', parentPath: 'M_Page_2.M_Form_1', type: 'string' })
+										{ id: 'M_LC_24', parentPath: 'M_Page_2.M_Form_1', label: '\u65B0\u501F\u65B9\u6458\u8981' },
+										React.createElement(VisibleERPC_Label, { className: 'erp-control ', id: 'M_Label_22', parentPath: 'M_Page_2.M_Form_1', type: 'string', text: '\u65B0\u501F\u65B9\u6458\u8981' })
 									),
 									React.createElement(
 										VisibleERPC_LabeledControl,
-										{ id: 'M_LC_25', parentPath: 'M_Page_2.M_Form_1', label: '\u4FEE\u6539\u7528\u6237' },
+										{ id: 'M_LC_25', parentPath: 'M_Page_2.M_Form_1', label: '\u65E7\u8D37\u65B9\u6458\u8981' },
 										React.createElement(VisibleERPC_Label, { className: 'erp-control ', id: 'M_Label_23', parentPath: 'M_Page_2.M_Form_1', type: 'string' })
+									),
+									React.createElement(
+										VisibleERPC_LabeledControl,
+										{ id: 'M_LC_31', parentPath: 'M_Page_2.M_Form_1', label: '\u65B0\u8D37\u65B9\u6458\u8981' },
+										React.createElement(VisibleERPC_Label, { className: 'erp-control ', id: 'M_Label_9', parentPath: 'M_Page_2.M_Form_1', type: 'string' })
 									),
 									React.createElement(
 										VisibleERPC_LabeledControl,

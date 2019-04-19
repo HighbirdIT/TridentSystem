@@ -344,7 +344,7 @@ class AttributeEditor extends React.PureComponent {
             }
             return (<div className='d-flex flex-grow-1 flex-shrink-1'>
                 <div className='d-flex flex-column flex-grow-1 flex-shrink-1'>
-                    <DropDownControl options_arr={useOptioins_arr} value={nowVal} itemChanged={this.itemChangedHandler} textAttrName={dropdownSetting.text} valueAttrName={dropdownSetting.value} editable={dropdownSetting.editable}/>
+                    <DropDownControl options_arr={useOptioins_arr} value={nowVal} itemChanged={this.itemChangedHandler} textAttrName={dropdownSetting.text} valueAttrName={dropdownSetting.value} editable={dropdownSetting.editable} />
                 </div>
                 {jsIconElem}
             </div>)
@@ -390,11 +390,11 @@ class AttributeEditor extends React.PureComponent {
         var inputID = this.getRealAttrInputID();
         var deleteElem = this.props.index >= 0 ? <div onClick={this.clickTrashHandler} className='btn btn-dark flex-grow-0 flex-shrink-0'><i className='fa fa-trash text-danger' /></div> : null;
         return (
-            <div key={attrName} className="bg-dark d-flex align-items-center">
+            <div key={attrName} className="bg-dark d-flex align-items-center flex-grow-0 flex-shrink-0">
                 <label htmlFor={inputID} className="col-form-label text-light flex-grow-0 flex-shrink-0 attrEditorLabel">
                     {label}
                 </label>
-                <div className="p-1 border-left border-secondary attrEditorContent">
+                <div className="p-1 border-left border-secondary attrEditorContent flex-grow-1 flex-shrink-1" hadtrash={deleteElem ? 1 : null}>
                     {
                         this.rednerEditor(theAttr,attrName,inputID)
                     }

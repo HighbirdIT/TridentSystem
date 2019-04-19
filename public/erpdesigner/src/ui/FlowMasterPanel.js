@@ -44,7 +44,8 @@ class FlowMaster extends EventEmitter{
             for(var i=0;i<参数数量;++i){
                 params_arr.push(record['参数' + (i+1)]);
             }
-            foundFlow.addStep(record.流程操作步骤代码, record.操作步骤名称, params_arr);
+            foundFlow.addStep(record.流程操作步骤代码, record.操作步骤名称, params_arr, record);
+
         }
         newFlows_arr.forEach(flow=>{
             flow.deleteInvalidStep();
@@ -109,11 +110,15 @@ class FlowObject extends EventEmitter{
         return this.steps_arr.find(step=>{return step.code == code;});
     }
 
-    addStep(code, name, params_arr){
+    addStep(code, name, params_arr, record){
         if(code == null){
             var newStep = new FlowStep(null,name,params_arr);
             this.steps_arr.push(newStep);
             newStep.flow = this;
+            newStep.是否周期步骤 = 0;
+            newStep.周期起始时间 = new Date();
+            newStep.周期类型 = '天';
+            newStep.周期值 = 1;
             return;
         }
         var theStep = this.findStepByCode(code);
@@ -123,6 +128,12 @@ class FlowObject extends EventEmitter{
         }
         if(theStep.name != name){
             theStep.name = name;
+        }
+        if(record){
+            theStep.是否周期步骤 = record.是否周期步骤;
+            theStep.周期起始时间 = new Date(record.周期起始时间);
+            theStep.周期类型 = record.周期类型;
+            theStep.周期值 = record.周期值;
         }
         theStep.params_arr = params_arr;
         theStep.valid = true;
@@ -265,7 +276,7 @@ class CFlowStep extends React.PureComponent{
     clickEditBtn(ev){
         var step = this.props.step;
         var newName = this.state.newName;
-        if(newName == null || newName.length < 2 || newName.length > 10){
+        if(newName == null || newName.length < 2 || newName.length > 25){
             alert('名称长度不合法');
             return;
         }
@@ -277,6 +288,29 @@ class CFlowStep extends React.PureComponent{
             param1:this.state.param1Name,
             param2:this.state.param2Name,
             param3:this.state.param3Name,
+            是否周期步骤:this.state.是否周期步骤,
+        }
+
+        if(this.state.是否周期步骤)
+        {
+            if(!checkDate(this.state.周期起始_日期))
+            {
+                alert('日期不合法');
+                return;
+            }
+            if(!checkTime(this.state.周期起始_时间))
+            {
+                alert('时间不合法');
+                return;
+            }
+            postData.周期起始时间 = this.state.周期起始_日期 + ' ' + this.state.周期起始_时间;
+            if(this.state.周期值<=0)
+            {
+                alert('数值不能小于1');
+                return;
+            }
+            postData.周期值=this.state.周期值;
+            postData.周期类型=this.state.周期类型;
         }
 
         var paramCount = 0;
@@ -310,6 +344,11 @@ class CFlowStep extends React.PureComponent{
             param1Name:params_arr.length > 0 ? params_arr[0] : '',
             param2Name:params_arr.length > 1 ? params_arr[1] : '',
             param3Name:params_arr.length > 2 ? params_arr[2] : '',
+            是否周期步骤:step.是否周期步骤,
+            周期起始_日期:getFormatDateString(step.周期起始时间 ? step.周期起始时间 : new Date()),
+            周期起始_时间:step.周期起始时间 ? getFormatTimeString(step.周期起始时间) : '08:00',
+            周期类型:step.周期类型 ? step.周期类型 : '天',
+            周期值:step.周期值 == null ? 1 : step.周期值,
         });
     }
 
@@ -330,6 +369,17 @@ class CFlowStep extends React.PureComponent{
             params_arr.push(ev.postData['param' + (i+1)]);
         }
         step.params_arr=params_arr;
+        step.是否周期步骤 = this.state.是否周期步骤;
+        if(step.是否周期步骤){
+            step.周期类型 = this.state.周期类型;
+            step.周期值 = this.state.周期值;
+            step.周期起始时间 = new Date(this.state.周期起始_日期 + ' ' + this.state.周期起始_时间);
+        }
+        else{
+            step.周期类型 = null;
+            step.周期值 = null;
+            step.周期起始时间 = null;
+        }
 
         this.setState({
             newName:null,
@@ -348,6 +398,14 @@ class CFlowStep extends React.PureComponent{
         this.setState(newState);
     }
 
+    是否周期步骤Changed(ev){
+        var newState = {
+            是否周期步骤:ev.target.checked,
+        };
+
+        this.setState(newState);
+    }
+
     render(){
         var step = this.props.step;
         var params_arr = step.params_arr ? step.params_arr : [];
@@ -355,6 +413,9 @@ class CFlowStep extends React.PureComponent{
             var param1Name = ReplaceIfNull(this.state.param1Name, params_arr.length > 0 ? params_arr[0] : '');
             var param2Name = ReplaceIfNull(this.state.param2Name, params_arr.length > 1 ? params_arr[1] : '');
             var param3Name = ReplaceIfNull(this.state.param3Name, params_arr.length > 2 ? params_arr[2] : '');
+            var 是否周期步骤 = this.state.是否周期步骤 == true;
+            var 周期起始_日期 = this.state.周期起始_日期 ? this.state.周期起始_日期 : '';
+            var 周期起始_时间 = this.state.周期起始_时间 ? this.state.周期起始_时间 : '';
             return (
                 <div className='list-group-item flex-shrink-0 d-flex align-items-center d-flex' style={{paddingLeft:'5px',paddingRight:'5px'}}>
                     <div className='d-flex flex-column'>
@@ -374,6 +435,36 @@ class CFlowStep extends React.PureComponent{
                             <span className='text-nowrap'>参数3:</span>
                             <input d-tag='param3Name' onChange={this.nameInputChanged} className='flex-grow-1 flex-shrink-1 w-100' value={param3Name} />
                         </div>
+                        <div className='d-flex flex-grow-1 align-items-center'>
+                            <span className='text-nowrap'>周期步骤:</span>
+                            <input type='checkbox' checked={是否周期步骤} onChange={this.是否周期步骤Changed} />
+                        </div>
+
+                        {是否周期步骤 && <React.Fragment>
+                            <div className='d-flex flex-grow-1'>
+                                <span className='text-nowrap'>起始日期:</span>
+                                <input d-tag='周期起始_日期' type='date' value={周期起始_日期} onChange={this.nameInputChanged}  />
+                            </div>
+                            <div className='d-flex flex-grow-1'>
+                                <span className='text-nowrap'>起始时间:</span>
+                                <input d-tag='周期起始_时间' type='time' value={周期起始_时间} onChange={this.nameInputChanged}  />
+                            </div>
+                            <div className='d-flex flex-grow-1'>
+                                <span className='text-nowrap'>周期类型:</span>
+                                <select d-tag='周期类型' value={this.state.周期类型} onChange={this.nameInputChanged}>
+                                    <option>小时</option>
+                                    <option>天</option>
+                                    <option>周</option>
+                                    <option>月</option>
+                                    <option>季度</option>
+                                    <option>年</option>
+                                </select>
+                            </div>
+                            <div className='d-flex flex-grow-1'>
+                                <span className='text-nowrap'>周期值:</span>
+                                <input d-tag='周期值' type='number'  value={this.state.周期值 == null ? '' : this.state.周期值} onChange={this.nameInputChanged}  />
+                            </div>
+                            </React.Fragment>}
                     </div>
                     <button onClick={this.clickEditBtn} className='btn'><i className='fa fa-check' /></button>
                 </div>
@@ -386,6 +477,11 @@ class CFlowStep extends React.PureComponent{
                     {params_arr.map((param,index)=>{
                         return <div key={index} className='list-group-item flex-shrink-0'>@{param}</div>;
                     })}
+                    {step.是否周期步骤 && 
+                    <div className='list-group-item'>
+                        自{getFormatDateTimeString(step.周期起始时间, false)}起每{step.周期值}{step.周期类型}执行一次
+                    </div>
+                    }
                 </div>
             </div>;
     }

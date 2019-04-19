@@ -152,9 +152,10 @@ class FlowNode_BluePrint extends EventEmitter {
         this.allNode_map = {};
         this.allVars_map = {};
         this.nodes_arr = [];
+        this.group = EJsBluePrintFunGroup.ServerScript;
 
         if (bluePrintJson != null) {
-            assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'editorLeft', 'editorTop', 'group', 'ctlID']);
+            assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'editorLeft', 'editorTop', 'ctlID']);
             if (!IsEmptyArray(bluePrintJson.variables_arr)) {
                 bluePrintJson.variables_arr.forEach(varJson => {
                     var newVar = new FlowDef_Variable({}, this, createHelper, varJson);
@@ -2175,4 +2176,12 @@ FlowNodeClassMap[JSNODE_DATEFUN] = {
 FlowNodeClassMap[JSNODE_TERNARY_OPERATOR] = {
     modelClass: JSNode_Ternary_Operator,
     comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_INSERT_TABLE] = {
+    modelClass: JSNODE_Insert_table,
+    comClass: C_JSNODE_Insert_table,
+};
+FlowNodeClassMap[JSNODE_UPDATE_TABLE] = {
+    modelClass: JSNODE_Update_table,
+    comClass: C_JSNODE_Insert_table,
 };

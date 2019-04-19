@@ -135,16 +135,30 @@ class MobileContentCompiler extends ContentCompiler {
         clientSide.addReducer('AT_GOTOPAGE', 'gotoPageReducer.bind(window)');
 
         this.mianPageKernel = null;
+        var flowStepSwitch = new JSFile_Switch('flowstepswitch', 'flowStep');
         for (var pi in project.content_Mobile.pages) {
-            this.compileChain.push(project.content_Mobile.pages[pi]);
-            if (this.compilePage(project.content_Mobile.pages[pi]) == false) {
+            var mobilePage = project.content_Mobile.pages[pi];
+            this.compileChain.push(mobilePage);
+            if (this.compilePage(mobilePage) == false) {
                 return false;
             }
+            mobilePage.getAttrArrayList(AttrNames.RelFlowStep).forEach(attr=>{
+                var flowStepCode = mobilePage[attr.name];
+                if(gFlowMaster.findStepByCode(flowStepCode)){
+                    var flowStepCaseBLK = flowStepSwitch.getCaseBlock(flowStepCode);
+                    flowStepCaseBLK.pushLine("targetPageID='" + mobilePage.id + "';");
+                }
+            });
         }
         if (this.mianPageKernel == null) {
             logManager.error('项目没有设置主页面');
         }
-        clientSide.pageLoadedReducerFun.pushLine("return gotoPage('" + this.mianPageKernel.id + "', state);");
+
+        clientSide.pageLoadedReducerFun.pushLine("var flowStep = parseInt(getQueryVariable('flowStep'));");
+        clientSide.pageLoadedReducerFun.pushLine("var targetPageID='" + this.mianPageKernel.id + "';");
+        clientSide.pageLoadedReducerFun.pushChild(flowStepSwitch);
+        clientSide.pageLoadedReducerFun.flowStepSwitch = flowStepSwitch;
+        clientSide.pageLoadedReducerFun.pushLine("return gotoPage(targetPageID, state);");
 
         clientSide.appClass.renderFun.pushLine(VarNames.RetElem + " = (", 1);
         clientSide.appClass.renderFun.pushLine("<div className='w-100 h-100'>");

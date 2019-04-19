@@ -4,6 +4,7 @@ const M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false),
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
         new CAttribute('高度适应', AttrNames.AutoHeight, ValueType.Boolean, true),
+        new CAttribute('关联步骤', AttrNames.RelFlowStep, ValueType.Int, null, true, true, gFlowMaster.getAllSteps, {text:'fullName', value:'code'}),
     ]),
 ],false);
 

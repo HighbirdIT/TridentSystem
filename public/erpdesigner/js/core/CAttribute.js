@@ -257,6 +257,7 @@ var AttrNames = {
     AutoIndexColumn: 'autoIndexColumn',
     NoDataTip: 'noDataTip',
     MultiSelect: 'multiselect',
+    RelFlowStep: 'relflowstep',
 
     Event: {
         OnClick: 'onclick'

@@ -65,6 +65,16 @@ const FlowNodeEditorControls_arr =[
         type:'数据库交互'
     },
     {
+        label:'Insert',
+        nodeClass:JSNODE_Insert_table,
+        type:'数据库交互'
+    },
+    {
+        label:'Update',
+        nodeClass:JSNODE_Update_table,
+        type:'数据库交互'
+    },
+    {
         label:'创建错误',
         nodeClass:FlowNode_Create_ServerError,
         type:'数据库交互'

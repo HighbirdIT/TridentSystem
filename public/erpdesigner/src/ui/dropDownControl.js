@@ -98,7 +98,8 @@ class DropDownControl extends React.PureComponent {
 
     componentDidUpdate(){
         if(this.state.opened){
-            var popMenu = this.$dropDowmDiv.find('.dropdown-menu');
+            var $dropDowmDiv = $(this.rootDivRef.current);
+            var popMenu = $dropDowmDiv.find('.dropdown-menu');
             if(this.popMenuHeight == popMenu.height()){
                 return;
             }
@@ -107,8 +108,9 @@ class DropDownControl extends React.PureComponent {
     }
 
     freshPopUpPos(){
-        var popMenu = this.$dropDowmDiv.find('.dropdown-menu');
-        var $current = this.$dropDowmDiv;
+        var $dropDowmDiv = $(this.rootDivRef.current);
+        var popMenu = $dropDowmDiv.find('.dropdown-menu');
+        var $current = $dropDowmDiv;
         var divTop = $current.offset().top;
         var divBottom = divTop + $current.outerHeight(true);
         var windowTop = document.body.scrollTop;
@@ -128,7 +130,8 @@ class DropDownControl extends React.PureComponent {
     }
 
     windowMouseUpWidthPopintg(ev){
-        if(isNodeHasParent(ev.target,this.$dropDowmDiv[0])){
+        var $dropDowmDiv = $(this.rootDivRef.current);
+        if(isNodeHasParent(ev.target,$dropDowmDiv[0])){
             return;
         }
         this.dropDownClosed();
@@ -286,13 +289,15 @@ class DropDownControl extends React.PureComponent {
         var inputValue = this.editIsKeyword ? (this.state.keyword == '' ? (selectedOption == null ? '' : selectedOption.text) : this.state.keyword) : this.state.value;
 
         return (
-            <div className={"d-flex flex-column " + (this.props.rootclass ? this.props.rootclass : '')} style={this.props.style} ref={this.rootDivRef}>
-                <div className='d-flex flex-grow-1 flex-shrink-1'>
-                    <div className=' d-flex btn-group w-100 h-100' ref={this.dropDowmDivRefFun}>
+            <div className={"d-flex btn-group flex-grow-1 flex-shrink-0 " + (this.props.rootclass ? this.props.rootclass : '')}  style={this.props.style} ref={this.rootDivRef}>
                         {
                             this.props.editable ? <input onFocus={this.editableInputFocushandler} ref={this.editableInputRef} type='text' className='flex-grow-1 flex-shrink-1 flexinput' onChange={this.inputChangedHandler} onBlur={this.inputBlurHandler} value={inputValue} />
                             :
-                            <button onClick={this.clickOpenHandler} style={{width:'calc(100% - 30px)',minHeight:'38px'}} type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1' + (selectedOption == null ? ' text-danger' : '')} ><div style={{overflow:'hidden'}}>{selectedOption ? selectedOption.text : '请选择'}</div></button>
+                            <button onClick={this.clickOpenHandler} style={{maxWidth:this.props.miniBtn ? 'calc(100% - 30px)' : '100%',minHeight:'38px'}} type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1' + (selectedOption == null ? ' text-danger' : '')} >
+                                <div style={{overflow:'hidden'}} className='flex-grow-1 flex-shrink-1'>
+                                    <div>{selectedOption ? selectedOption.text : '请选择'}</div>
+                                </div>
+                                </button>
                         }
                         {
                             this.props.miniBtn && <button ref={this.dropdownbtnRef} style={{width:'30px'}} type='button' onClick={this.clickOpenHandler} className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdown-toggle dropdown-toggle-split'} ></button>
@@ -301,8 +306,6 @@ class DropDownControl extends React.PureComponent {
                         <div className={"dropdown-menu " + (this.state.opened ? 'show' : '')} ref={this.dropmenudivRef}>
                             {(this.state.opened || this.state.options_arr.length > 0) && this.renderDropDown(filted_arr, selectedOption)}
                         </div>
-                    </div>
-                </div>
             </div>
         );
     }

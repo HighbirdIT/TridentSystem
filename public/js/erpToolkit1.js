@@ -124,6 +124,9 @@ function checkDate(date) {
 }
 
 function checkTime(str) {
+    if (str == null || str.length == 0) {
+        return false;
+    }
     var dateVal = new Date('2000/1/1 ' + str);
     return !isNaN(dateVal.getDate());
 }
@@ -1091,6 +1094,19 @@ function getFormatTimeString(date) {
     var m = date.getMinutes();
     var s = date.getSeconds();
     return (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m + (hadSec ? (s < 10 ? ':0' : ':') + s : '');
+}
+
+function getFormatDateTimeString(date) {
+    var hadSec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
+    var y = date.getFullYear();
+    var month = date.getMonth() + 1;
+    var d = date.getDate();
+    var h = date.getHours();
+    var m = date.getMinutes();
+    var s = date.getSeconds();
+
+    return y + (month < 10 ? '-0' : '-') + month + (d < 10 ? '-0' : '-') + d + ' ' + (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m + (hadSec ? (s < 10 ? ':0' : ':') + s : '');
 }
 
 function simpleFreshFormFun(retState, records_arr, formFullID, directBindFun) {

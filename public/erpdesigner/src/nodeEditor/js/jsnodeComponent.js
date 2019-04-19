@@ -193,7 +193,7 @@ class C_JSNODE_Insert_table extends React.PureComponent {
     render() {
         var nowVal = this.props.nodedata.dsCode;
         var nodeData = this.props.nodedata;
-        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={'Insert'} >
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={nodeData.label} >
             <div className='flex-grow-1 flex-shrink-1'>
                 <DropDownControl ref={this.dropdownRef} itemChanged={this.dbItemChanged} btnclass='btn-dark' options_arr={g_dataBase.getAllTable} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={nowVal ? nowVal : -1} />
             </div>
