@@ -14,6 +14,7 @@ var dingHelper = require('./dingHelper');
 var developconfig = require('./developconfig');
 var debug = require('debug');
 var serverhelper = require('./erpserverhelper.js');
+var cluster = require('cluster');
 
 debug.enabled = ()=>{
     return false;
@@ -68,9 +69,9 @@ function getIPV4() {
 
 var localIP = getIPV4();
 //if(localIP.mac == '80:fa:5b:59:48:09'){
-    setInterval(()=>{
-        flowhelper.startFlowProcess();
-    },5 * 1000);
+    //setInterval(()=>{
+        //flowhelper.startFlowProcess();
+    //},5 * 1000);
 //}
 
 app.set('hostip', localIP.address);
