@@ -293,11 +293,18 @@ class C_JSNode_Query_Sql extends React.PureComponent {
         var nodeData = this.props.nodedata;
         var entity = nodeData.targetEntity;
         var dataloaded = entity ? entity.loaded : false;
+        var dataMaster = null;
+        if(nodeData.bluePrint.master && nodeData.bluePrint.master.project){
+            dataMaster = nodeData.bluePrint.master.project.dataMaster;
+        }
+        else if(nodeData.bluePrint.dataMaster){
+            dataMaster = nodeData.bluePrint.dataMaster;
+        }
 
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='查询SQL'>
             <div className='d-flex'>
                 <div className='flex-grow-1 flex-shrink-1'>
-                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={nodeData.bluePrint.master.project.dataMaster.getAllEntities} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
+                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={dataMaster.getAllEntities} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
                 </div>
             </div>
             <div className='d-flex'>

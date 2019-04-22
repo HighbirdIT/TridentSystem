@@ -25,6 +25,11 @@ function pageLoadedReducer(state) {
 	var flowStep = parseInt(getQueryVariable('flowStep'));
 	var targetPageID = 'M_Page_1';
 	switch (flowStep) {
+		case 18:
+			{
+				targetPageID = 'M_Page_0';
+				break;
+			}
 		case 19:
 			{
 				targetPageID = 'M_Page_3';
@@ -485,7 +490,8 @@ function button_4_onclick() {
 	scriptBP_4_msg = PopMessageBox('', EMessageBoxType.Loading, '查阅确认');;
 	var bundle_update_table_0 = {
 		RCDKEY: M_Form_2_nowRecord['凭证摘要校核代码'],
-		查看确认状态: 1
+		查看确认状态: 1,
+		M_Form_2_凭证摘要校核代码: M_Form_2_nowRecord['凭证摘要校核代码']
 	};
 	setTimeout(function () {
 		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_update_table_0, action: 'button_4_onclick_update_table_0' }, makeFTD_Callback(function (state, data_update_table_0, err_update_table_0) {

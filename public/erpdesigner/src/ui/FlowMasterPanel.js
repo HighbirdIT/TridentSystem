@@ -245,7 +245,6 @@ class CFlowObject extends React.PureComponent
         });
     }
 
-    
     render(){
         var flow = this.props.flow;
         if(flow.code == null || this.state.editing){
@@ -501,6 +500,19 @@ class CFlowMaster extends React.PureComponent
             flowBPLoading:false,
         };
         this.panelBaseRef = React.createRef();
+
+        this.navbarRef = React.createRef();
+
+        var navItems = [
+            CreateNavItemData('流程设计', <div/>),
+            CreateNavItemData('数据设计', <div/>),
+        ];
+
+        this.navData = {
+            selectedItem: navItems[0],
+            items: navItems,
+        };
+        this.navItems = navItems;
     }
 
     flowFileLoadedHandler(flow){
@@ -581,8 +593,19 @@ class CFlowMaster extends React.PureComponent
     toggle() {
         this.panelBaseRef.current.toggle();
     }
+
+    navChanged(oldItem, newItem) {
+        this.setState({
+            magicObj: {}
+        });
+    }
     
     render(){
+        this.navItems[0].content = <C_FlowNode_Editor bluePrint={this.state.selectedFlowBP} />;
+        if(this.state.selectedFlowBP){
+            this.navItems[1].content = <FlowSqlBPItemPanel dataMaster={this.state.selectedFlowBP.dataMaster} />;
+        }
+
         var selectedFlow = this.state.selectedFlow;
         return (<FloatPanelbase title={'流程大师'} initShow={false} initMax={true} ref={this.panelBaseRef}>
                 <div className='d-flex flex-grow-0 flex-shrink-0 w-100 h-100'>
@@ -642,11 +665,111 @@ class CFlowMaster extends React.PureComponent
                         panel2={<div className='d-flex flex-grow-1 flex-shrink-1 bg-dark mw-100'>
                             {
                                 this.state.flowBPLoading ? <div className='w-100 h-100 text-light'><h1>正在加载文件</h1></div> 
-                                : <C_FlowNode_Editor bluePrint={this.state.selectedFlowBP} />
+                                : <div className='d-flex flex-grow-1 flex-column flex-shrink-1'>
+                                    <div className='d-flex flex-grow-0 flex-shrink-0'>
+                                        <TabNavBar ref={this.navbarRef} navData={this.navData} navChanged={this.navChanged} />
+                                    </div>
+                                    {
+                                        this.navItems.map(item => {
+                                            return (<div key={item.text} className={'flex-grow-1 flex-shrink-1 ' + (item == this.navData.selectedItem ? ' d-flex' : ' d-none')}>
+                                                {item.content}
+                                            </div>)
+                                        })
+                                    }
+                                </div>
                             }
                             </div>}
                     />
                 </div>
             </FloatPanelbase>);
+    }
+}
+
+class FlowSqlBPItemPanel extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        this.state={
+            items_arr:this.props.dataMaster.BP_sql_arr,
+            selectedItem:null,
+        }
+        this.sqlbpEditorRef = React.createRef();
+        autoBind(this);
+    }
+
+    clickListItemHandler(ev){
+        var targetCode = getAttributeByNode(ev.target, 'data-itemvalue', true, 5);
+        var targetItem = this.state.items_arr.find(item=>{return item.code == targetCode});
+        this.setState({selectedItem:targetItem});
+    }
+
+    clickAddBtnhandler(ev){
+        this.setState({
+            creating:true,
+        });
+    }
+
+    clickEditBtnHandler(ev){
+        if(this.state.selectedItem){
+            this.setState({
+                modifing:true,
+            });
+        }
+    }
+
+    newItemCompleteHandler(newDBE){
+        this.setState({
+            creating:false,
+            modifing:false,
+        });
+    }
+
+    forcusSqlNode(nodeData){
+        this.setState({selectedItem:nodeData.bluePrint});
+        var self = this;
+        setTimeout(() => {
+            if(self.sqlbpEditorRef.current == null){
+                return;
+            }
+            self.sqlbpEditorRef.current.forcusSqlNode(nodeData);
+        }, 200);
+    }
+
+    render() {
+        var selectedItem = this.state.selectedItem;
+        return (
+            <React.Fragment>
+                {
+                    this.state.creating || this.state.modifing ? <SqlBPEditPanel targetBP={this.state.modifing ? selectedItem : null} dataMaster={this.props.dataMaster} onComplete={this.newItemCompleteHandler} /> : null
+                }
+                <SplitPanel
+                defPercent={0.45}
+                maxSize='200px'
+                barClass='bg-secondary'
+                panel1={
+                    <div className='d-flex flex-column flex-grow-1 flex-shrink-1 w-100' >
+                        <span className='text-light'>已创建的:</span>
+                        <div className='list-group flex-grow-1 flex-shrink-1 bg-dark autoScroll'>
+                            {
+                                this.state.items_arr.map(item=>{
+                                    if(item.group != 'custom'){
+                                        return null;
+                                    }
+                                    return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>{item.name + '-' + item.type}</div>
+                                })
+                            }
+                        </div>
+                        <div className='flex-shrink-0 btn-group'>
+                            <button type='button' onClick={this.clickAddBtnhandler} className='btn btn-success flex-grow-1'><i className='fa fa-plus' /></button>
+                            <button type='button' onClick={this.clickEditBtnHandler} className='btn'><i className='fa fa-edit' /></button>
+                        </div>
+                    </div>
+                }
+                panel2={
+                    <div className='d-flex flex-grow-1 flex-shrink-1 bg-dark mw-100'>
+                        <SqlBPEditor ref={this.sqlbpEditorRef} item={selectedItem} />
+                    </div>
+                }
+                />
+            </React.Fragment>)
     }
 }

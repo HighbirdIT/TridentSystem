@@ -573,13 +573,13 @@ class JSNode_BluePrint extends EventEmitter {
                     theFun.scope.getVar(nowRecordVarName, true, initValue);
                     needCheckVars_arr.push(nowRecordVarName);
 
-                    for(var columnName in useFormData.useColumns_map){
+                    for (var columnName in useFormData.useColumns_map) {
                         var useFormColumn = useFormData.useColumns_map[columnName];
-                        if(useFormColumn.serverFuns_arr.length > 0){
-                            useFormColumn.serverFuns_arr.forEach(serverFun=>{
+                        if (useFormColumn.serverFuns_arr.length > 0) {
+                            useFormColumn.serverFuns_arr.forEach(serverFun => {
                                 serverFun.bundleCheckBlock.pushLine('if(req.body.' + VarNames.Bundle + '.' + formId + '_' + columnName + "==null){return serverhelper.createErrorRet('缺少参数" + columnName + "');}");
                             });
-                            compilHelper.clientInitBundleBlocks_arr.forEach(block=>{
+                            compilHelper.clientInitBundleBlocks_arr.forEach(block => {
                                 block.pushLine(formId + '_' + columnName + ':' + formId + '_' + VarNames.NowRecord + "['" + columnName + "']" + ',');
                             });
                         }
@@ -1721,10 +1721,10 @@ class JSNode_CurrentDataRow extends JSNode_Base {
                 return false;
             }
             helper.addUseColumn(formKernel, colName, blockInServer ? theScope.fun : null);
-            if(blockInServer){
+            if (blockInServer) {
                 selfCompileRet.setSocketOut(outSocket, 'req.body.' + VarNames.Bundle + '.' + this.formID + '_' + colName);
             }
-            else{
+            else {
                 selfCompileRet.setSocketOut(outSocket, this.formID + '_' + VarNames.NowRecord + "['" + colName + "']");
             }
         }
@@ -1956,7 +1956,7 @@ class JSNODE_Insert_table extends JSNode_Base {
                 inputable: true,
                 defval: useColumn.name,
                 inputDDC_setting: this.insocketDDC_setting,
-                autoHideInput:false,
+                autoHideInput: false,
             });
         }
         return null;
@@ -2223,14 +2223,14 @@ class JSNODE_Insert_table extends JSNode_Base {
                         columnProfile.isStatic = true;
                         needOperator = true;
                         break;
-                        
+
                     default:
                         if (this.checkCompileFlag(!columnProfile.nullable, 'Insert[' + useDS.name + ']时搜寻不到[' + columnProfile.name + ']的匹配值', helper)) {
                             return false;
                         }
                 }
             }
-            else{
+            else {
                 var keyPos = columnName.indexOf('确认状态');
                 if (keyPos != -1) {
                     var prefix = columnName.substring(0, keyPos);
@@ -2288,7 +2288,7 @@ class JSNODE_Insert_table extends JSNode_Base {
         }
 
         if (needOperator) {
-            if(paramInitBlock){
+            if (paramInitBlock) {
                 paramInitBlock.pushLine("dbhelper.makeSqlparam('_operator', sqlTypes.Int, req.session.g_envVar.userid),");
             }
         }
@@ -2861,7 +2861,14 @@ class JSNode_Query_Sql extends JSNode_Base {
             var tem_arr = this.targetEntity.split('-');
             if (tem_arr[0] == 'dbe') {
                 var project = createHelper.project;
-                this.targetEntity = project.dataMaster.getDataSourceByCode(tem_arr[1]);
+                var dataMaster = null;
+                if(createHelper.project){
+                    dataMaster = project.dataMaster;
+                }
+                else if(createHelper.dataMaster){
+                    dataMaster = createHelper.dataMaster
+                }
+                this.targetEntity = dataMaster.getDataSourceByCode(tem_arr[1]);
                 if (this.targetEntity) {
                     this.targetEntity.on('syned', this.entitySynedHandler);
                     if (this.targetEntity.isCustomDS) {
@@ -2965,9 +2972,16 @@ class JSNode_Query_Sql extends JSNode_Base {
     }
 
     setEntity(entity) {
+        var dataMaster = null;
+        if(this.bluePrint.master && this.bluePrint.master.project){
+            dataMaster = this.bluePrint.master.project.dataMaster;
+        }
+        else if(this.bluePrint.dataMaster){
+            dataMaster = this.bluePrint.dataMaster;
+        }
         if (typeof entity === 'string') {
             if (entity != '0') {
-                entity = this.bluePrint.master.project.dataMaster.getDataSourceByCode(entity);
+                entity = dataMaster.getDataSourceByCode(entity);
             }
             else {
                 entity = null;
@@ -2990,6 +3004,98 @@ class JSNode_Query_Sql extends JSNode_Base {
         this.outDataSocket.fireEvent('changed');
     }
 
+    compileOnServer(helper, preNodes_arr, belongBlock) {
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+
+        var params_arr = [];
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        if (this.inputScokets_arr.length > 0) {
+            for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+                var theSocket = this.inputScokets_arr[i];
+                var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
+                if (socketComRet.err) {
+                    return false;
+                }
+                var socketValue = socketComRet.value;
+                params_arr.push({ name: theSocket.name.replace('@', ''), value: socketValue });
+            }
+        }
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+
+        var targetEntity = this.targetEntity;
+        // make server side code
+        var isScalar = targetEntity.isScalar();
+        var paramVarName = this.id + 'params_arr';
+        var paramInitBlock = new FormatFileBlock('initparam');
+        paramInitBlock.pushLine('var ' + paramVarName + '=[', 1);
+        myJSBlock.pushChild(paramInitBlock);
+        params_arr.forEach(param => {
+            paramInitBlock.pushLine("dbhelper.makeSqlparam('" + param.name + "', sqlTypes.NVarChar(4000), " + param.value + "),");
+        });
+        paramInitBlock.subNextIndent();
+        paramInitBlock.pushLine('];');
+        var sqlInitValue = '';
+        if (targetEntity.group == 'custom') {
+            // 定制数据源
+            if (helper.sqlBPCacheManager) {
+                sqlInitValue = helper.sqlBPCacheManager.getCache(targetEntity.code + '_sql');
+            }
+            else {
+                var bpCompileHelper = new SqlNode_CompileHelper(helper.logManager, null);
+                bpCompileHelper.clickLogBadgeItemHandler = null;
+                var compileRet = targetEntity.compile(bpCompileHelper);
+                if (compileRet == false) {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle,
+                        nodeThis,
+                        helper.clickLogBadgeItemHandler),
+                    '自订数据源' + targetEntity.name + '编译发生错误，无法继续']);
+                    return false;
+                }
+                sqlInitValue = compileRet.sql;
+            }
+        }
+        else {
+            if (isScalar) {
+                sqlInitValue = 'select dbo.' + targetEntity.name + '(' + paramListStr + ')';
+            }
+            else {
+                sqlInitValue = 'select * from ' + targetEntity.name + (targetEntity.isFunction() ? '(' + paramListStr + ')' : '');
+            }
+        }
+        var sqlVarName = this.id + '_sql';
+        var dataVarName = this.id + '_data';
+        var errVarName = this.id + '_err';
+        myJSBlock.pushLine('var ' + sqlVarName + '=' + doubleQuotesStr(sqlInitValue) + ';');
+        var rcdRltVarName = this.id + '_rcdRlt';
+        myJSBlock.pushLine("var " + rcdRltVarName + " = null;");
+        myJSBlock.pushLine("var " + dataVarName + " = null;");
+        var tryBlock = new JSFile_Try('try');
+        tryBlock.errorBlock.pushLine('var ' + errVarName + '=eo.message;');
+        tryBlock.errorBlock.pushLine("return serverhelper.createErrorRet(eo.message);");
+        myJSBlock.pushChild(tryBlock);
+        if (isScalar) {
+            tryBlock.bodyBlock.pushLine(dataVarName + " = yield dbhelper.asynGetScalar(" + sqlVarName + ", " + paramVarName + ");");
+        }
+        else {
+            tryBlock.bodyBlock.pushLine(rcdRltVarName + " = yield dbhelper.asynQueryWithParams(" + sqlVarName + ", " + paramVarName + ");");
+            myJSBlock.pushLine(dataVarName + " = " + rcdRltVarName + '.recordset;');
+        }
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        selfCompileRet.setSocketOut(this.outDataSocket, dataVarName);
+        selfCompileRet.setSocketOut(this.outErrorSocket, errVarName);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, belongBlock) == false) {
+            return false;
+        }
+        return selfCompileRet;
+    }
+
     compile(helper, preNodes_arr, belongBlock) {
         var superRet = super.compile(helper, preNodes_arr);
         if (superRet == false || superRet != null) {
@@ -3002,6 +3108,9 @@ class JSNode_Query_Sql extends JSNode_Base {
         }
         if (this.checkCompileFlag(this.targetEntity.loaded == false, '数据实体元数据尚未加载完成', helper)) {
             return false;
+        }
+        if (this.bluePrint.group == EJsBluePrintFunGroup.ServerScript) {
+            return this.compileOnServer(helper, preNodes_arr, belongBlock);
         }
         var params_arr = [];
         var usePreNodes_arr = preNodes_arr.concat(this);
@@ -3294,13 +3403,13 @@ class JSNode_Logical_Operator extends SqlNode_Base {
         }
         var finalStr = '';
         var logicChar = '';
-        switch(nodeThis.LogicalType){
+        switch (nodeThis.LogicalType) {
             case Logical_Operator_and:
-            logicChar=' && '
-            break;
+                logicChar = ' && '
+                break;
             case Logical_Operator_or:
-            logicChar=' || '
-            break;
+                logicChar = ' || '
+                break;
         }
         socketVal_arr.forEach((x, i) => {
             finalStr += (i == 0 ? '' : logicChar) + x;
@@ -3502,13 +3611,13 @@ class JSNode_FreshForm extends JSNode_Base {
         }
         var freshFunName = 'fresh_' + socketValue;
         var formDS = selectedKernel.getAttribute(AttrNames.DataSource);
-        
+
         var myJSBlock = new FormatFileBlock('ret');
-        if(formDS != null){
+        if (formDS != null) {
             freshFunName = makeFName_pull(selectedKernel);
             myJSBlock.pushLine('setTimeout(() => {' + freshFunName + '();},50);');
         }
-        else{
+        else {
             myJSBlock.pushLine(makeStr_callFun(freshFunName, ['state']));
         }
         belongBlock.pushChild(myJSBlock);
@@ -3803,7 +3912,7 @@ class JSNODE_Update_table extends JSNode_Base {
 
         if (this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0) {
             this.outFlowSockets_arr = [];
-            if(!bluePrintIsServer){
+            if (!bluePrintIsServer) {
                 this.sucessFlowSocket = new NodeFlowSocket('sucess', this, false);
                 this.failFlowSocket = new NodeFlowSocket('fail', this, false);
                 this.addSocket(this.sucessFlowSocket);
@@ -3831,11 +3940,11 @@ class JSNODE_Update_table extends JSNode_Base {
                         break;
                 }
             }
-            if(bluePrintIsServer){
-                if(this.sucessFlowSocket){
+            if (bluePrintIsServer) {
+                if (this.sucessFlowSocket) {
                     this.removeSocket(this.sucessFlowSocket);
                 }
-                if(this.failFlowSocket){
+                if (this.failFlowSocket) {
                     this.removeSocket(this.failFlowSocket);
                 }
             }
@@ -3853,7 +3962,7 @@ class JSNODE_Update_table extends JSNode_Base {
                 socket.autoHideInput = false;
             }
         });
-        if(this.sucessFlowSocket){
+        if (this.sucessFlowSocket) {
             this.sucessFlowSocket.label = '成功';
             this.failFlowSocket.label = '失败';
         }
@@ -3955,7 +4064,7 @@ class JSNODE_Update_table extends JSNode_Base {
         return null;
     }
 
-    compileOnServer(helper, preNodes_arr, belongBlock){
+    compileOnServer(helper, preNodes_arr, belongBlock) {
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
@@ -4078,8 +4187,8 @@ class JSNODE_Update_table extends JSNode_Base {
         if (superRet == false || superRet != null) {
             return superRet;
         }
-        if(this.bluePrint.group == EJsBluePrintFunGroup.ServerScript){
-            return  this.compileOnServer(helper, preNodes_arr, belongBlock);
+        if (this.bluePrint.group == EJsBluePrintFunGroup.ServerScript) {
+            return this.compileOnServer(helper, preNodes_arr, belongBlock);
         }
 
         var nodeThis = this;
@@ -4213,10 +4322,10 @@ class JSNODE_Update_table extends JSNode_Base {
         }
         else {
             var temServerSide = theServerSide;
-            if(temServerSide == null){
+            if (temServerSide == null) {
                 temServerSide = new CP_ServerSide({});
             }
-            if(serverScope == null){
+            if (serverScope == null) {
                 serverScope = temServerSide.scope;
             }
             serverClickFun = serverScope.getFunction(serverSideActName, true, ['req', 'res']);
@@ -4305,7 +4414,7 @@ class JSNODE_Update_table extends JSNode_Base {
             }
         }
         if (needOperator) {
-            if(paramInitBlock){
+            if (paramInitBlock) {
 
                 paramInitBlock.pushLine("dbhelper.makeSqlparam('_operator', sqlTypes.Int, req.session.g_envVar.userid),");
             }
@@ -4347,27 +4456,27 @@ class JSNODE_Update_table extends JSNode_Base {
 
         var trueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.sucessFlowSocket);
         if (trueFlowLinks_arr.length > 0) {
-            if(this.checkCompileFlag(blockInServer,'节点是从服务端代码节点过来的，所以客户端成功出口无效',helper)){
+            if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端成功出口无效', helper)) {
                 return false;
             }
             this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock);
-            
+
         }
         else {
-            if(errCheckIf){
+            if (errCheckIf) {
                 errCheckIf.trueBlock.pushLine(makeStr_callFun('return callback_final', ['state', dataVarName, errorVarName]) + ';');
             }
         }
 
         var falseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.failFlowSocket);
         if (falseFlowLinks_arr.length > 0) {
-            if(this.checkCompileFlag(blockInServer,'节点是从服务端代码节点过来的，所以客户端失败出口无效',helper)){
+            if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端失败出口无效', helper)) {
                 return false;
             }
             this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock);
         }
         else {
-            if(errCheckIf){
+            if (errCheckIf) {
                 errCheckIf.falseBlock.pushLine(makeStr_callFun('return callback_final', ['state', dataVarName, errorVarName]) + ';');
             }
         }
@@ -4417,10 +4526,10 @@ class JSNode_JumpPage extends JSNode_Base {
         var usePreNodes_arr = preNodes_arr.concat(this);
         var theProject = this.bluePrint.master.project;
         var thePage = theProject.getPageById(this.pageCode);
-        if(this.checkCompileFlag(thePage == null, '选择的不是有效的页面', helper)){
+        if (this.checkCompileFlag(thePage == null, '选择的不是有效的页面', helper)) {
             return false;
         }
-        
+
         var myJSBlock = new FormatFileBlock('');
         myJSBlock.pushLine("setTimeout(() => {store.dispatch(makeAction_gotoPage('" + this.pageCode + "'));},50);");
         belongBlock.pushChild(myJSBlock);

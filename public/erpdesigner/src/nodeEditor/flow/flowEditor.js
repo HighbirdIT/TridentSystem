@@ -61,7 +61,7 @@ const FlowNodeEditorControls_arr =[
     },
     {
         label:'查询SQL',
-        nodeClass:FlowNode_QuerySql,
+        nodeClass:JSNode_Query_Sql,
         type:'数据库交互'
     },
     {

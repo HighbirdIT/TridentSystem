@@ -153,6 +153,8 @@ class FlowNode_BluePrint extends EventEmitter {
         this.allVars_map = {};
         this.nodes_arr = [];
         this.group = EJsBluePrintFunGroup.ServerScript;
+        this.dataMaster = new DataMaster(null);
+        this.dataMaster.flowBP = this;
 
         if (bluePrintJson != null) {
             assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'editorLeft', 'editorTop', 'ctlID']);
@@ -161,8 +163,12 @@ class FlowNode_BluePrint extends EventEmitter {
                     var newVar = new FlowDef_Variable({}, this, createHelper, varJson);
                 });
             }
+            this.dataMaster.restoreFromJson(bluePrintJson.dataMaster);
+            createHelper.dataMaster = this.dataMaster;
             this.genNodesByJsonArr(this, bluePrintJson.nodes_arr, createHelper);
             this.linkPool.restorFromJson(bluePrintJson.links_arr, createHelper);
+        }
+        else{
         }
         if (this.flow == null) {
             console.error('new FlowNode_BluePrint flow is null');
@@ -423,6 +429,7 @@ class FlowNode_BluePrint extends EventEmitter {
             theJson.nodes_arr = nodeJson_arr;
         }
         theJson.links_arr = this.linkPool.getJson();
+        theJson.dataMaster = this.dataMaster.getJson();
 
         return theJson;
     }
@@ -2104,9 +2111,9 @@ FlowNodeClassMap[FLOWNODE_QUERY_KEYRECORD] = {
     modelClass: FlowNode_QueryKeyRecord,
     comClass: C_FlowNode_QueryKeyRecord,
 };
-FlowNodeClassMap[FLOWNODE_QUERY_SQL] = {
-    modelClass: FlowNode_QuerySql,
-    comClass: C_FlowNode_Query_Sql,
+FlowNodeClassMap[JSNODE_QUERY_SQL] = {
+    modelClass: JSNode_Query_Sql,
+    comClass: C_JSNode_Query_Sql,
 };
 FlowNodeClassMap[FLOWNODE_CREATE_SERVERERROR] = {
     modelClass: FlowNode_Create_ServerError,
