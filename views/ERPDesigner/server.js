@@ -153,6 +153,9 @@ function saveProject(req, projJson) {
             if (projItem.history == null) {
                 projItem.history = [];
             }
+            if(projItem.history.length > 10){
+                projItem.history.splice(0, projItem.history.length - 10 + 1);
+            }
             projItem.history.push({
                 name: userData.name,
                 id: userData.name,
