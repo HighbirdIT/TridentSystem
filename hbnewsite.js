@@ -45,7 +45,7 @@ var handlebars = require('express3-handlebars').create({
 });
 
 app.set('port', process.env.PORT || 1330);
-//app.set('env', process.env.PORT || 'production');
+app.set('env', process.env.PORT || 'production');
 
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
