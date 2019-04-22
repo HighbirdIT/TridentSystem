@@ -4309,7 +4309,7 @@ class JSNODE_Update_table extends JSNode_Base {
 
         var belongBlockScope = belongBlock.getScope();
         var serverScope = theServerSide ? theServerSide.scope : null;
-        var blockInServer = belongBlockScope.isServerSide;
+        var blockInServer = belongBlockScope && belongBlockScope.isServerSide;
 
         var serverSideActName = this.bluePrint.name + '_' + this.id;
         var paramVarName = this.id + 'params_arr';
