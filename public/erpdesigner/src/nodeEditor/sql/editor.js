@@ -1368,6 +1368,13 @@ class SqlNode_CompileHelper{
         this.compileSeq.push(theNode);
     }
 
+    setAddFuncs(otherHelper){
+        otherHelper.addUseEnvVars = this.addUseEnvVars;
+        otherHelper.addUseForm = this.addUseForm;
+        otherHelper.addUseFormDS = this.addUseFormDS;
+        otherHelper.addUseControlPropApi = this.addUseControlPropApi;
+    }
+
     addUseEnvVars(varKey){
         this.useEnvVars[varKey] = 1;
     }
