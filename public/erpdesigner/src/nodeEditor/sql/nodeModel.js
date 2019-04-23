@@ -770,7 +770,9 @@ class SqlNode_DBEntity extends SqlNode_Base {
                 varMap[item.name] = item.value;
             });
             var targetEntityCompileHelper = new SqlNode_CompileHelper(helper.logManager, null);
+            helper.setAddFuncs(targetEntityCompileHelper);
             targetEntityCompileHelper.varValue_map = varMap;
+            
             var targetEntityCompileRet = this.targetEntity.finalSelectNode.compile(targetEntityCompileHelper, []);
             if(targetEntityCompileRet == false){
                 return false;
