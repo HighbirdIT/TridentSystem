@@ -289,6 +289,11 @@ class C_JSNode_Query_Sql extends React.PureComponent {
         nodeData.setEntity(selectedDBE);
     }
 
+    socketColumnSelectChanged(newVal, ddc) {
+        var socket = ddc.props.socket;
+        socket.setExtra('colName', newVal);
+    }
+
     customSocketRender(socket) {
         if (socket.isIn == true) {
             return null;
