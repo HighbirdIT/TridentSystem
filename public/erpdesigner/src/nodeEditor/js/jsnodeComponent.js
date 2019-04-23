@@ -289,6 +289,47 @@ class C_JSNode_Query_Sql extends React.PureComponent {
         nodeData.setEntity(selectedDBE);
     }
 
+    customSocketRender(socket) {
+        if (socket.isIn == true) {
+            return null;
+        }
+        var nodeData = this.props.nodedata;
+        if(socket == nodeData.outDataSocket || socket == nodeData.outErrorSocket){
+            return null;
+        }
+        var entity = nodeData.targetEntity;
+        var nowVal = socket.getExtra('colName');
+        return (<span className='d-flex align-items-center'><DropDownControl itemChanged={this.socketColumnSelectChanged} btnclass='btn-dark' options_arr={entity == null ? [] : entity.columns} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} socket={socket} textAttrName='name' />
+            <button onMouseDown={this.mouseDownOutSocketHand} d-colname={nowVal} type='button' className='btn btn-secondary'><i className='fa fa-hand-paper-o' /></button>
+        </span>);
+    }
+
+    mouseDownOutSocketHand(ev){
+        var colName = getAttributeByNode(ev.target,'d-colname', true, 5);
+        if(colName == null){
+            return;
+        }
+        var socketid = getAttributeByNode(ev.target,'d-socketid', true, 10);
+        if(socketid == null){
+            return;
+        }
+        var nodeData = this.props.nodedata;
+        var entity = nodeData.targetEntity;
+        if(entity == null){
+            return;
+        }
+        var theSocket = nodeData.bluePrint.getSocketById(socketid);
+        var bornPos = theSocket.currentComponent.getCenterPos();
+        if(entity.containColumn(colName)){
+            var newNode = new FlowNode_ColumnVar({
+                keySocketID:socketid,
+                newborn:true,
+                left:bornPos.x,
+                top:bornPos.y,
+            }, nodeData.parent);
+        }
+    }
+
     render() {
         var nodeData = this.props.nodedata;
         var entity = nodeData.targetEntity;
@@ -309,7 +350,10 @@ class C_JSNode_Query_Sql extends React.PureComponent {
             </div>
             <div className='d-flex'>
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} />
-                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} />
+                <div className='d-flex flex-column'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutFlowScoketDynamic() ? nodeData.processOutputFlowSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} customSocketRender={this.customSocketRender} />
+                </div>
             </div>
         </C_Node_Frame>
     }
