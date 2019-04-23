@@ -1449,7 +1449,7 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
             if(this.checkCompileFlag(!targetEntity.containColumn(colName), '第' + (si + 1) + '个输出接口列[' + colName + ']是非法的')){
                 return false;
             }
-            if (selectColumns_arr.indexOf(colName) == -1) {
+            if (selectColumns_arr.indexOf('[' + colName + ']') == -1) {
                 selectColumns_arr.push('[' + colName + ']');
             }
             defOutColumnBlock.pushLine('var ' + this.id + '_' + colName + '=' + rcdResultVarName + '.' + colName + ';');
