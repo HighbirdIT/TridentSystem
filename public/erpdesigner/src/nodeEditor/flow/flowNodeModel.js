@@ -2192,3 +2192,8 @@ FlowNodeClassMap[JSNODE_UPDATE_TABLE] = {
     modelClass: JSNODE_Update_table,
     comClass: C_JSNODE_Insert_table,
 };
+// 扩展jsnode
+JSNodeClassMap[FLOWNODE_COLUMN_VAR] = {
+    modelClass: FlowNode_ColumnVar,
+    comClass: C_Node_SimpleNode,
+};
