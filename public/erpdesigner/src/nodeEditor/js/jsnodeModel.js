@@ -2058,6 +2058,108 @@ class JSNODE_Insert_table extends JSNode_Base {
         return <span f-canmove={1}>{label}<span f-canmove={1} className='badge badge-primary'>{type}</span></span>;
     }
 
+    compileOnServer(helper, preNodes_arr, belongBlock) {
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var useDS = g_dataBase.getEntityByCode(this.dsCode);
+        var columnProfile_obj = {};
+        useDS.columns.forEach(column => {
+            if (column.is_identity) {
+                return;
+            }
+            column.is_nullable;
+            column.cdefault
+            columnProfile_obj[column.name] = {
+                name: column.name,
+                nullable: column.is_nullable || column.cdefault != null,
+                value: null,
+            };
+        });
+
+        var columnProfile = null;
+        // 优先使用设置的节点
+        for (var si in this.inputScokets_arr) {
+            var socket = this.inputScokets_arr[si];
+            columnProfile = columnProfile_obj[socket.defval];
+            if (this.checkCompileFlag(columnProfile == null, '第' + (si) + '个输入接口不是有效的列名[' + socket.defval + ']', helper)) {
+                return false;
+            }
+            if (this.checkCompileFlag(columnProfile.value != null, '第' + (si) + '个输入接口重复设置了[' + socket.defval + ']', helper)) {
+                return false;
+            }
+            var socketComRet = this.getSocketCompileValue(helper, socket, usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            var socketValue = socketComRet.value;
+            columnProfile.value = socketValue;
+        }
+
+        var myServerBlock = new FormatFileBlock('serverblock');
+        belongBlock.pushChild(myServerBlock);
+
+        // make server side code
+        var paramInitBlock = null;
+        var insertSqlStr = '';
+        var valuesStr = '';
+
+        var sqlVarName = this.id + '_sql';
+        var serverCompleteBlock = new FormatFileBlock('complete');;
+        var serverFailBlock = new FormatFileBlock('fail');
+        var dataVarName = 'data_' + this.id;
+        var errorVarName = 'err_' + this.id;
+
+        var paramVarName = this.id + 'params_arr';
+        var paramInitBlock = new FormatFileBlock('initparam');
+        myServerBlock.pushChild(paramInitBlock);
+        paramInitBlock.pushLine('var ' + paramVarName + "=[", 1);
+
+        for (var columnName in columnProfile_obj) {
+            columnProfile = columnProfile_obj[columnName];
+            if (columnProfile.value == null) {
+                if (this.checkCompileFlag(!columnProfile.nullable, 'Insert[' + useDS.name + ']时搜寻不到[' + columnProfile.name + ']的匹配值', helper)) {
+                    return false;
+                }
+                continue;
+            }
+            insertSqlStr += (insertSqlStr.length == 0 ? '' : ',') + midbracketStr(columnProfile.name);
+            valuesStr += (valuesStr.length == 0 ? '@' : ',@') + columnProfile.name;
+            paramInitBlock.pushLine("dbhelper.makeSqlparam('" + columnProfile.name + "', sqlTypes.NVarChar(4000), " + columnProfile.value + "),");
+        }
+        paramInitBlock.subNextIndent();
+        paramInitBlock.pushLine('];');
+        myServerBlock.pushLine("var " + sqlVarName + " = 'insert into " + midbracketStr(useDS.name) + '(' + insertSqlStr + ') values(' + valuesStr + ")';");
+        myServerBlock.pushLine("var " + dataVarName + " = -1;");
+        myServerBlock.pushLine("try{", 1);
+        myServerBlock.pushLine(dataVarName + " = yield dbhelper.asynGetScalar(" + sqlVarName + " + ' select SCOPE_IDENTITY()', " + paramVarName + ");");
+        myServerBlock.subNextIndent();
+        myServerBlock.pushLine("}catch(" + errorVarName + "){", 1);
+        myServerBlock.pushChild(serverFailBlock);
+        myServerBlock.pushLine('return serverhelper.createErrorRet(' + errorVarName + '.message);');
+        myServerBlock.subNextIndent();
+        myServerBlock.pushLine('}');
+        myServerBlock.pushChild(serverCompleteBlock);
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myServerBlock);
+        selfCompileRet.setSocketOut(this.identityOutSocket, dataVarName);
+        selfCompileRet.setSocketOut(this.errInfoOutSocket, errorVarName + ".info");
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
+        if (serverTrueFlowLinks_arr.length > 0) {
+            this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock);
+        }
+
+        var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
+        if (serverFalseFlowLinks_arr.length > 0) {
+            this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock);
+        }
+        return selfCompileRet;
+    }
+
     compile(helper, preNodes_arr, belongBlock) {
         var superRet = super.compile(helper, preNodes_arr);
         if (superRet == false || superRet != null) {
@@ -2067,16 +2169,19 @@ class JSNODE_Insert_table extends JSNode_Base {
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
 
-        var relKernel = this.bluePrint.ctlKernel;
-        if (this.checkCompileFlag(relKernel == null || relKernel.type != ButtonKernel_Type, '这个脚本蓝图必须关联到一个按钮控件中', helper)) {
-            return false;
-        }
-
         var useDS = g_dataBase.getEntityByCode(this.dsCode);
         if (this.checkCompileFlag(useDS == null || useDS.columns == null || useDS.type != 'U', useDS + '必须选择一个数据表', helper)) {
             return false;
         }
         if (this.checkCompileFlag(!useDS.loaded, useDS + '正在同步中，请稍后再试。', helper)) {
+            return false;
+        }
+        if (this.bluePrint.group == EJsBluePrintFunGroup.ServerScript) {
+            return this.compileOnServer(helper, preNodes_arr, belongBlock);
+        }
+
+        var relKernel = this.bluePrint.ctlKernel;
+        if (this.checkCompileFlag(relKernel == null || relKernel.type != ButtonKernel_Type, '这个脚本蓝图必须关联到一个按钮控件中', helper)) {
             return false;
         }
         var columnProfile_obj = {};
@@ -2862,10 +2967,10 @@ class JSNode_Query_Sql extends JSNode_Base {
             if (tem_arr[0] == 'dbe') {
                 var project = createHelper.project;
                 var dataMaster = null;
-                if(createHelper.project){
+                if (createHelper.project) {
                     dataMaster = project.dataMaster;
                 }
-                else if(createHelper.dataMaster){
+                else if (createHelper.dataMaster) {
                     dataMaster = createHelper.dataMaster
                 }
                 this.targetEntity = dataMaster.getDataSourceByCode(tem_arr[1]);
@@ -2973,10 +3078,10 @@ class JSNode_Query_Sql extends JSNode_Base {
 
     setEntity(entity) {
         var dataMaster = null;
-        if(this.bluePrint.master && this.bluePrint.master.project){
+        if (this.bluePrint.master && this.bluePrint.master.project) {
             dataMaster = this.bluePrint.master.project.dataMaster;
         }
-        else if(this.bluePrint.dataMaster){
+        else if (this.bluePrint.dataMaster) {
             dataMaster = this.bluePrint.dataMaster;
         }
         if (typeof entity === 'string') {
@@ -4102,7 +4207,7 @@ class JSNODE_Update_table extends JSNode_Base {
         var updateSqlInitStr = '';
         var paramInitBlock = new FormatFileBlock('initparam');
         var paramVarName = this.id + 'params_arr';
-        paramInitBlock.pushLine(paramVarName + "=[", 1);
+        paramInitBlock.pushLine('var ' + paramVarName + "=[", 1);
         for (var si in this.inputScokets_arr) {
             var socket = this.inputScokets_arr[si];
             if (socket == this.keySocket) {
@@ -4309,7 +4414,7 @@ class JSNODE_Update_table extends JSNode_Base {
 
         var belongBlockScope = belongBlock.getScope();
         var serverScope = theServerSide ? theServerSide.scope : null;
-        var blockInServer = belongBlockScope.isServerSide;
+        var blockInServer = belongBlockScope && belongBlockScope.isServerSide;
 
         var serverSideActName = this.bluePrint.name + '_' + this.id;
         var paramVarName = this.id + 'params_arr';

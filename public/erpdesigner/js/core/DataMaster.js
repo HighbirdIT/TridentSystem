@@ -82,12 +82,13 @@ var DataBase = function (_EventEmitter) {
     }, {
         key: 'getEntityByCode',
         value: function getEntityByCode(code) {
+            if (code == null || code == 0) {
+                return null;
+            }
             if (isNaN(code)) {
                 console.error('getDataSourceByCode只接受整数');
             }
-            if (code == 0) {
-                return null;
-            }
+
             var rlt = this.entityCode_map[code.toString()];
             if (rlt == null) {
                 rlt = this.createEnity({ code: code });
