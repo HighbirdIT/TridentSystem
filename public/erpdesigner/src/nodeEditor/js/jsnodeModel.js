@@ -3219,15 +3219,15 @@ class JSNode_Query_Sql extends JSNode_Base {
             }
             targetColumnSockets_arr.push(theSocket);
         }
-        if(this.checkCompileFlag(targetColumns_arr.length == 0,'请至少选择一个输出列', helper)){
+        var targetEntity = this.targetEntity;
+        var isScalar = targetEntity.isScalar();
+        if(this.checkCompileFlag(!isScalar && targetColumns_arr.length == 0,'请至少选择一个输出列', helper)){
             return false;
         }
         var myJSBlock = new FormatFileBlock(this.id);
         belongBlock.pushChild(myJSBlock);
 
-        var targetEntity = this.targetEntity;
         // make server side code
-        var isScalar = targetEntity.isScalar();
         var paramVarName = this.id + 'params_arr';
         var paramInitBlock = new FormatFileBlock('initparam');
         paramInitBlock.pushLine('var ' + paramVarName + '=[', 1);
@@ -3381,13 +3381,13 @@ class JSNode_Query_Sql extends JSNode_Base {
             }
             targetColumnSockets_arr.push(theSocket);
         }
-        if(this.checkCompileFlag(targetColumns_arr.length == 0,'请至少选择一个输出列', helper)){
+        var targetEntity = this.targetEntity;
+        var isScalar = targetEntity.isScalar();
+        if(this.checkCompileFlag(!isScalar && targetColumns_arr.length == 0,'请至少选择一个输出列', helper)){
             return false;
         }
 
-        var targetEntity = this.targetEntity;
         // make server side code
-        var isScalar = targetEntity.isScalar();
         var theServerSide = helper.serverSide;// ? helper.serverSide : new JSFileMaker();
         var postBundleVarName = this.bluePrint.id + '_bundle';
         var serverSideActName = this.id;
