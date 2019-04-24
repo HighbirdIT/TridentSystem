@@ -143,8 +143,8 @@ app.use('/', function (req, res, next) {
 
             if(!res.locals.isProduction){
                 
-                 res.locals.cacheUserid = developconfig.envVar.userid;
-                 res.locals.cacheUserName = developconfig.envVar.username;
+                res.locals.cacheUserid = developconfig.envVar.userid;
+                res.locals.cacheUserName = developconfig.envVar.username;
                 res.locals.g_envVar = JSON.stringify(developconfig.envVar);
                 req.session.g_envVar = developconfig.envVar;
             }

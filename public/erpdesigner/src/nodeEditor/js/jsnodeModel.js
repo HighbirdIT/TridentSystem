@@ -2986,7 +2986,7 @@ class JSNode_Query_Sql extends JSNode_Base {
                     dataMaster = project.dataMaster;
                 }
                 else if (createHelper.dataMaster) {
-                    dataMaster = createHelper.dataMaster
+                    dataMaster = createHelper.dataMaster;
                 }
                 this.targetEntity = dataMaster.getDataSourceByCode(tem_arr[1]);
                 if (this.targetEntity) {
