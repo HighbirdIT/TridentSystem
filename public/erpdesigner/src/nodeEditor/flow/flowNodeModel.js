@@ -1,7 +1,6 @@
 const FLOWNODE_VAR_GET = 'var_get';
 const FLOWNODE_VAR_SET = 'var_set';
 const FLOWNODE_STEP_START = 'stepstart';
-const FLOWNODE_QUERY_SQL = 'querysql';
 const FLOWNODE_CREATE_SERVERERROR = 'createservererror';
 const FLOWNODE_QUERY_KEYRECORD = 'querykeyrecord';
 const FLOWNODE_COLUMN_VAR = 'columnvar';
@@ -1208,10 +1207,13 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
         if (this.targetEntity != null) {
             var tem_arr = this.targetEntity.split('-');
             if (tem_arr[0] == 'dbe') {
-                var project = createHelper.project;
-                this.targetEntity = g_dataBase.getEntityByCode(tem_arr[1]);
+                var dataMaster = createHelper.dataMaster;
+                this.targetEntity = dataMaster.getDataSourceByCode(tem_arr[1]);
                 if (this.targetEntity) {
                     this.targetEntity.on('syned', this.entitySynedHandler);
+                    if (this.targetEntity.isCustomDS) {
+                        this.entitySynedHandler();
+                    }
                 }
             }
             else {
@@ -1311,9 +1313,10 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
     }
 
     setEntity(entity) {
+        var dataMaster = this.bluePrint.dataMaster;
         if (typeof entity === 'string') {
             if (entity != '0') {
-                entity = g_dataBase.getEntityByCode(entity);
+                entity = dataMaster.getDataSourceByCode(entity);
             }
             else {
                 entity = null;
@@ -1467,7 +1470,7 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
             else {
                 var bpCompileHelper = new SqlNode_CompileHelper(helper.logManager, null);
                 bpCompileHelper.clickLogBadgeItemHandler = null;
-                compileRet = targetEntity.compile(bpCompileHelper);
+                var compileRet = targetEntity.compile(bpCompileHelper);
                 if (compileRet == false) {
                     helper.logManager.errorEx([helper.logManager.createBadgeItem(
                         thisNodeTitle,
