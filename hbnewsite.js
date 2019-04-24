@@ -366,6 +366,21 @@ app.use('/erppage/server', function (req, res, next) {
     return require(jspath)(req, res, next, app);
 });
 
+app.use('/erppage/login', function (req, res, next) {
+    res.locals.isProduction = app.get('env') == 'production';
+    var jsFilePath = '/js/views/erp/loginpage.js';
+    if (fs.existsSync(__dirname + '/public' + jsFilePath)) {
+        res.locals.clientJs = jsFilePath;
+        res.locals.title = '用户登录';
+        res.locals.g_envVar = req.session.g_envVar == null ? '{}' : JSON.stringify(req.session.g_envVar);
+        return res.render('erppage/client', { layout: 'erppagetype_MA' });
+    }
+    else {
+        res.status(404);
+        return res.render('404');
+    }
+});
+
 app.use('/erppage', function (req, res, next) {
     res.locals.isProduction = app.get('env') == 'production';
     var childPath = req.path;
