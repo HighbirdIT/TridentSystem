@@ -99,6 +99,11 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_FreshForm,
         type:'表单控制'
     },
+    {
+        label:'打开页面',
+        nodeClass:JSNode_JumpPage,
+        type:'窗体控制'
+    },
 ];
 
 

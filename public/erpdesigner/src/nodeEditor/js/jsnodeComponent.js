@@ -193,7 +193,7 @@ class C_JSNODE_Insert_table extends React.PureComponent {
     render() {
         var nowVal = this.props.nodedata.dsCode;
         var nodeData = this.props.nodedata;
-        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={'Insert'} >
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={nodeData.label} >
             <div className='flex-grow-1 flex-shrink-1'>
                 <DropDownControl ref={this.dropdownRef} itemChanged={this.dbItemChanged} btnclass='btn-dark' options_arr={g_dataBase.getAllTable} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={nowVal ? nowVal : -1} />
             </div>
@@ -289,20 +289,76 @@ class C_JSNode_Query_Sql extends React.PureComponent {
         nodeData.setEntity(selectedDBE);
     }
 
+    socketColumnSelectChanged(newVal, ddc) {
+        var socket = ddc.props.socket;
+        socket.setExtra('colName', newVal);
+    }
+
+    customSocketRender(socket) {
+        if (socket.isIn == true) {
+            return null;
+        }
+        var nodeData = this.props.nodedata;
+        if(socket == nodeData.outDataSocket || socket == nodeData.outErrorSocket){
+            return null;
+        }
+        var entity = nodeData.targetEntity;
+        var nowVal = socket.getExtra('colName');
+        return (<span className='d-flex align-items-center'><DropDownControl itemChanged={this.socketColumnSelectChanged} btnclass='btn-dark' options_arr={entity == null ? [] : entity.columns} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} socket={socket} textAttrName='name' />
+            <button onMouseDown={this.mouseDownOutSocketHand} d-colname={nowVal} type='button' className='btn btn-secondary'><i className='fa fa-hand-paper-o' /></button>
+        </span>);
+    }
+
+    mouseDownOutSocketHand(ev){
+        var colName = getAttributeByNode(ev.target,'d-colname', true, 5);
+        if(colName == null){
+            return;
+        }
+        var socketid = getAttributeByNode(ev.target,'d-socketid', true, 10);
+        if(socketid == null){
+            return;
+        }
+        var nodeData = this.props.nodedata;
+        var entity = nodeData.targetEntity;
+        if(entity == null){
+            return;
+        }
+        var theSocket = nodeData.bluePrint.getSocketById(socketid);
+        var bornPos = theSocket.currentComponent.getCenterPos();
+        if(entity.containColumn(colName)){
+            var newNode = new FlowNode_ColumnVar({
+                keySocketID:socketid,
+                newborn:true,
+                left:bornPos.x,
+                top:bornPos.y,
+            }, nodeData.parent);
+        }
+    }
+
     render() {
         var nodeData = this.props.nodedata;
         var entity = nodeData.targetEntity;
         var dataloaded = entity ? entity.loaded : false;
+        var dataMaster = null;
+        if(nodeData.bluePrint.master && nodeData.bluePrint.master.project){
+            dataMaster = nodeData.bluePrint.master.project.dataMaster;
+        }
+        else if(nodeData.bluePrint.dataMaster){
+            dataMaster = nodeData.bluePrint.dataMaster;
+        }
 
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='查询SQL'>
             <div className='d-flex'>
                 <div className='flex-grow-1 flex-shrink-1'>
-                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={nodeData.bluePrint.master.project.dataMaster.getAllEntities} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
+                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={dataMaster.getAllEntities} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
                 </div>
             </div>
             <div className='d-flex'>
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} />
-                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} />
+                <div className='d-flex flex-column'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutFlowScoketDynamic() ? nodeData.processOutputFlowSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} customSocketRender={this.customSocketRender} />
+                </div>
             </div>
         </C_Node_Frame>
     }
@@ -372,6 +428,34 @@ class C_JSNODE_Do_FlowStep extends React.PureComponent {
             <div className='d-flex'>
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutFlowScoketDynamic() ? nodeData.processOutputFlowSockets : null} />
+            </div>
+        </C_Node_Frame>
+    }
+}
+
+class C_JSNode_JumpPage extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        this.dropdownRef = React.createRef();
+
+        C_NodeCom_Base(this);
+    }
+
+    targetPageDDCChanged(code,ddc,pageCode) {
+        this.props.nodedata.pageCode = code;
+    }
+
+    render() {
+        var nowVal = this.props.nodedata.pageCode;
+        var nodeData = this.props.nodedata;
+        var theProject = nodeData.bluePrint.master.project;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={'打开页面'} >
+            <div className='flex-grow-1 flex-shrink-1'>
+                <DropDownControl ref={this.dropdownRef} itemChanged={this.targetPageDDCChanged} btnclass='btn-dark' options_arr={theProject.getAllPages} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='title' valueAttrName='id' value={nowVal ? nowVal : -1} />
+            </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
             </div>
         </C_Node_Frame>
     }

@@ -132,6 +132,7 @@ var IAttributeable = function (_EventEmitter) {
                         case AttrNames.ProcessTable:
                         case AttrNames.CustomDataSource:
                         case AttrNames.ListFormContent:
+                        case AttrNames.RelFlowStep:
                             break;
                         default:
                             if (attrItem.valueType == ValueType.CustomDataSource) {

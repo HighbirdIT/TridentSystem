@@ -120,6 +120,7 @@ const EJsBluePrintFunGroup={
     CtlAttr:'ctlattr',
     CtlEvent:'ctlevent',
     CtlValid: 'ctlvalid',
+    ServerScript:'serverscript',
 }
 
 const ESqlBluePrintGroup={

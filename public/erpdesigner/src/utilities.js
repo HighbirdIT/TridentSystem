@@ -478,3 +478,55 @@ function parseObj_CtlPropJsBind(str, scriptMaster){
 		funName:funName,
 	},json);
 }
+
+function getFormatDateString(date){
+    var y = date.getFullYear();
+    var m = date.getMonth() + 1;
+    var d = date.getDate();
+    return y + (m < 10 ? '-0' : '-') + m + (d < 10 ? '-0' : '-') + d;
+}
+
+function getFormatTimeString(date, hadSec = true) {
+    var h = date.getHours();
+    var m = date.getMinutes();
+    var s = date.getSeconds();
+    return (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m +(hadSec ? (s < 10 ? ':0' : ':') + s : '');
+}
+
+function checkDate(date) {
+    var dateVal = new Date(date);
+    if(isNaN(dateVal.getDate())){
+        if(typeof date === 'string'){
+            date = date.replace(/-/g,'/');
+        }
+        dateVal = new Date(date);
+    }
+    return !isNaN(dateVal.getDate());
+}
+
+function checkTime(str) {
+	if(str == null || str.length == 0){
+		return false;
+	}
+    var dateVal = new Date('2000/1/1 ' + str);
+    return !isNaN(dateVal.getDate());
+}
+
+function getLocalDateTimeFromString(str){
+	var tDate = new Date(str);
+	if(str.indexOf('GMT') == -1 && str.indexOf('UTC') == -1){
+		return new Date(tDate.getTime() + tDate.getTimezoneOffset() * 60 * 1000);
+	}
+	return tDate;
+}
+
+function getFormatDateTimeString(date, hadSec = true){
+    var y = date.getFullYear();
+    var month = date.getMonth() + 1;
+    var d = date.getDate();
+    var h = date.getHours();
+    var m = date.getMinutes();
+    var s = date.getSeconds();
+
+    return y + (month < 10 ? '-0' : '-') + month + (d < 10 ? '-0' : '-') + d + ' ' + (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m +(hadSec ? (s < 10 ? ':0' : ':') + s : '');
+}

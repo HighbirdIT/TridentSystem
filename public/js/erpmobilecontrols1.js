@@ -4,11 +4,11 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var ctrlCurrentComponent_map = {};
 var gFixedContainerRef = React.createRef();
@@ -18,6 +18,31 @@ var gPreconditionInvalidInfo = '前置条件不足';
 var gCantNullInfo = '不能为空值';
 
 var HashKey_FixItem = 'fixitem';
+
+var DataCache = function () {
+    function DataCache(label) {
+        _classCallCheck(this, DataCache);
+
+        this.label = label;
+        this.data_map = {};
+    }
+
+    _createClass(DataCache, [{
+        key: 'set',
+        value: function set(key, value) {
+            this.data_map[key] = value;
+        }
+    }, {
+        key: 'get',
+        value: function get(key) {
+            return this.data_map[key];
+        }
+    }]);
+
+    return DataCache;
+}();
+
+var gDataCache = new DataCache('global');
 
 window.onhashchange = function () {
     var fixedItemNum = 0;
@@ -988,7 +1013,11 @@ var selectERPC_DropDown_groupAttrName = function selectERPC_DropDown_groupAttrNa
     return ownprops.groupAttr;
 };
 
-var formatERPC_DropDown_options = function formatERPC_DropDown_options(orginData_arr, textAttrName, valueAttrName, groupAttr) {
+var selectERPC_DropDown_textType = function selectERPC_DropDown_textType(state, ownprops) {
+    return ownprops.textType;
+};
+
+var formatERPC_DropDown_options = function formatERPC_DropDown_options(orginData_arr, textAttrName, valueAttrName, groupAttr, textType) {
     if (orginData_arr == null) {
         return [];
     }
@@ -1013,6 +1042,11 @@ var formatERPC_DropDown_options = function formatERPC_DropDown_options(orginData
             return { text: item, value: item };
         }
         var newItem = { text: item[textAttrName], value: item[valueAttrName], data: item };
+        switch (textType) {
+            case 'date':
+                newItem.text = FormatStringValue(newItem.text, 'date');
+                break;
+        }
         groupData_arr.forEach(function (groupData, index) {
             var data = item[groupData.name];
             if (groupData.options_map[data] == null) {
@@ -1046,7 +1080,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
     var selectorid = fullPath + 'optionsData';
     var optionsDataSelector = ERPC_selector_map[selectorid];
     if (optionsDataSelector == null) {
-        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName, formatERPC_DropDown_options);
+        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName, selectERPC_DropDown_textType, formatERPC_DropDown_options);
         ERPC_selector_map[selectorid] = optionsDataSelector;
     }
 

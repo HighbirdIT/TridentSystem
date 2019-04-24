@@ -232,6 +232,13 @@ class CProject extends IAttributeable{
         return newPage;
     }
 
+    getAllPages(isPC){
+        if(isPC == null){
+            isPC = this.designeConfig.editingType == 'PC';
+        }
+        return isPC ? this.content_PC.pages : this.content_Mobile.pages;
+    }
+
     getEditingPage(){
         return this.getPageById(this.designeConfig.editingPage.id);
     }

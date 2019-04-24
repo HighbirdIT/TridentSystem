@@ -119,7 +119,8 @@ var FunType_Server = 'server';
 var EJsBluePrintFunGroup = {
     CtlAttr: 'ctlattr',
     CtlEvent: 'ctlevent',
-    CtlValid: 'ctlvalid'
+    CtlValid: 'ctlvalid',
+    ServerScript: 'serverscript'
 };
 
 var ESqlBluePrintGroup = {

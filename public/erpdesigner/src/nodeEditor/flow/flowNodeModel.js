@@ -152,16 +152,23 @@ class FlowNode_BluePrint extends EventEmitter {
         this.allNode_map = {};
         this.allVars_map = {};
         this.nodes_arr = [];
+        this.group = EJsBluePrintFunGroup.ServerScript;
+        this.dataMaster = new DataMaster(null);
+        this.dataMaster.flowBP = this;
 
         if (bluePrintJson != null) {
-            assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'editorLeft', 'editorTop', 'group', 'ctlID']);
+            assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'editorLeft', 'editorTop', 'ctlID']);
             if (!IsEmptyArray(bluePrintJson.variables_arr)) {
                 bluePrintJson.variables_arr.forEach(varJson => {
                     var newVar = new FlowDef_Variable({}, this, createHelper, varJson);
                 });
             }
+            this.dataMaster.restoreFromJson(bluePrintJson.dataMaster);
+            createHelper.dataMaster = this.dataMaster;
             this.genNodesByJsonArr(this, bluePrintJson.nodes_arr, createHelper);
             this.linkPool.restorFromJson(bluePrintJson.links_arr, createHelper);
+        }
+        else{
         }
         if (this.flow == null) {
             console.error('new FlowNode_BluePrint flow is null');
@@ -422,6 +429,7 @@ class FlowNode_BluePrint extends EventEmitter {
             theJson.nodes_arr = nodeJson_arr;
         }
         theJson.links_arr = this.linkPool.getJson();
+        theJson.dataMaster = this.dataMaster.getJson();
 
         return theJson;
     }
@@ -1441,7 +1449,7 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
             if(this.checkCompileFlag(!targetEntity.containColumn(colName), '第' + (si + 1) + '个输出接口列[' + colName + ']是非法的')){
                 return false;
             }
-            if (selectColumns_arr.indexOf(colName) == -1) {
+            if (selectColumns_arr.indexOf('[' + colName + ']') == -1) {
                 selectColumns_arr.push('[' + colName + ']');
             }
             defOutColumnBlock.pushLine('var ' + this.id + '_' + colName + '=' + rcdResultVarName + '.' + colName + ';');
@@ -2103,9 +2111,9 @@ FlowNodeClassMap[FLOWNODE_QUERY_KEYRECORD] = {
     modelClass: FlowNode_QueryKeyRecord,
     comClass: C_FlowNode_QueryKeyRecord,
 };
-FlowNodeClassMap[FLOWNODE_QUERY_SQL] = {
-    modelClass: FlowNode_QuerySql,
-    comClass: C_FlowNode_Query_Sql,
+FlowNodeClassMap[JSNODE_QUERY_SQL] = {
+    modelClass: JSNode_Query_Sql,
+    comClass: C_JSNode_Query_Sql,
 };
 FlowNodeClassMap[FLOWNODE_CREATE_SERVERERROR] = {
     modelClass: FlowNode_Create_ServerError,
@@ -2174,5 +2182,18 @@ FlowNodeClassMap[JSNODE_DATEFUN] = {
 };
 FlowNodeClassMap[JSNODE_TERNARY_OPERATOR] = {
     modelClass: JSNode_Ternary_Operator,
+    comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_INSERT_TABLE] = {
+    modelClass: JSNODE_Insert_table,
+    comClass: C_JSNODE_Insert_table,
+};
+FlowNodeClassMap[JSNODE_UPDATE_TABLE] = {
+    modelClass: JSNODE_Update_table,
+    comClass: C_JSNODE_Insert_table,
+};
+// 扩展jsnode
+JSNodeClassMap[FLOWNODE_COLUMN_VAR] = {
+    modelClass: FlowNode_ColumnVar,
     comClass: C_Node_SimpleNode,
 };

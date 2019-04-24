@@ -254,6 +254,14 @@ var CProject = function (_IAttributeable) {
             return newPage;
         }
     }, {
+        key: 'getAllPages',
+        value: function getAllPages(isPC) {
+            if (isPC == null) {
+                isPC = this.designeConfig.editingType == 'PC';
+            }
+            return isPC ? this.content_PC.pages : this.content_Mobile.pages;
+        }
+    }, {
         key: 'getEditingPage',
         value: function getEditingPage() {
             return this.getPageById(this.designeConfig.editingPage.id);

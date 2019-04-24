@@ -7,6 +7,15 @@ const fs = require("fs");
 var flowJs_map = {};
 
 var started = false;
+var workInt = 0;
+
+function startWork(){
+    if(workInt == 0){
+        workInt = setInterval(()=>{
+            startFlowProcess();
+        },5 * 1000);
+    }
+}
 
 function startFlowProcess(){
     if(started){
@@ -192,4 +201,5 @@ function execFromNotify(req, res){
 module.exports = {
     startFlowProcess:startFlowProcess,
     execFromNotify:execFromNotify,
+    startWork:startWork,
 };

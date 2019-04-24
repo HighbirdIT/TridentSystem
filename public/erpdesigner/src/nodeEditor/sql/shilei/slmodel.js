@@ -687,6 +687,9 @@ SqlNodeEditorControls_arr.push(
     {
         label: 'Apply',
         nodeClass: SqlNode_XApply,
+    },
+    {
+        label: '聚合函数',
+        nodeClass: SqlNode_Aggregate,
     }
-
 );

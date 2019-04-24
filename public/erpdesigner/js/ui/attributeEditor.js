@@ -475,7 +475,7 @@ var AttributeEditor = function (_React$PureComponent) {
             ) : null;
             return React.createElement(
                 'div',
-                { key: attrName, className: 'bg-dark d-flex align-items-center' },
+                { key: attrName, className: 'bg-dark d-flex align-items-center flex-grow-0 flex-shrink-0' },
                 React.createElement(
                     'label',
                     { htmlFor: inputID, className: 'col-form-label text-light flex-grow-0 flex-shrink-0 attrEditorLabel' },
@@ -483,7 +483,7 @@ var AttributeEditor = function (_React$PureComponent) {
                 ),
                 React.createElement(
                     'div',
-                    { className: 'p-1 border-left border-secondary attrEditorContent' },
+                    { className: 'p-1 border-left border-secondary attrEditorContent flex-grow-1 flex-shrink-1', hadtrash: deleteElem ? 1 : null },
                     this.rednerEditor(theAttr, attrName, inputID)
                 ),
                 deleteElem
