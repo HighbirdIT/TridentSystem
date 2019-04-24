@@ -183,6 +183,13 @@ var ContentPanel = function (_React$PureComponent) {
             fetchJsonPost('server', { action: 'getProjectProfile', projTitle: project.title }, this.getProjectProfileCallBack);
         }
     }, {
+        key: 'clickExprotBtnHandler',
+        value: function clickExprotBtnHandler(ev) {
+            var project = this.props.project;
+            var jsonData = project.getJson();
+            console.log(JSON.stringify(jsonData));
+        }
+    }, {
         key: 'compileCompletedHandler',
         value: function compileCompletedHandler(theCompile) {
             var project = this.props.project;
@@ -374,6 +381,15 @@ var ContentPanel = function (_React$PureComponent) {
                                 'div',
                                 null,
                                 '\u53D1\u5E03'
+                            )
+                        ),
+                        React.createElement(
+                            'button',
+                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickExprotBtnHandler },
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u5BFC\u51FA'
                             )
                         )
                     ),
