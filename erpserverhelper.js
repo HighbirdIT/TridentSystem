@@ -14,7 +14,7 @@ helper.createErrorRet = (info, code, data) => {
     };
 };
 
-helper.commonProcess = (req, res, next, action_map) => {
+helper.commonProcess = (req, res, next, action_map, ignoreENVCheck) => {
     var rlt = {};
     if(req.body == null){
         rlt.err = {
@@ -28,7 +28,7 @@ helper.commonProcess = (req, res, next, action_map) => {
         };
         res.json(rlt);
     }
-    else if(req.session.g_envVar == null){
+    else if(ignoreENVCheck != true && req.session.g_envVar == null){
         rlt.err = {
             info: '登录信息失效，无法使用'
         };
