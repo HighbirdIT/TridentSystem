@@ -1585,7 +1585,6 @@ class SqlNode_Select extends SqlNode_Base {
             }
         }
 
-
         if (columnNode_inSockets.length == 0) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle
@@ -1670,6 +1669,9 @@ class SqlNode_Select extends SqlNode_Base {
             var isColumnNode = outNode.type == SQLNODE_COLUMN;
             var nodeType = outNode.type;
             var alias = socket.getExtra('alias');
+            if(alias){
+                alias.trim();
+            }
             var colName = alias;
             if (IsEmptyString(alias)) {
                 if (!isColumnNode) {
@@ -2312,7 +2314,7 @@ class SqlNode_Ret_Columns extends SqlNode_Base {
         var theSocket = this.getSocketById(theSocketID);
         if (theSocket == null)
             return;
-        theSocket.setExtra('alias', ev.target.value);
+        theSocket.setExtra('alias', ev.target.value.trim());
         theSocket.fireEvent('changed');
     }
 

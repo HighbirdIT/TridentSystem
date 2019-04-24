@@ -169,6 +169,7 @@ class MobileContentCompiler extends ContentCompiler {
         clientSide.appClass.renderFun.pushLine("{pageElem}", -1);
         clientSide.appClass.renderFun.pushLine("</div>);");
 
+        this.compileChain.reverse();
         for (var ki in this.compileChain) {
             this.endKernelCompile(this.compileChain[ki]);
         }

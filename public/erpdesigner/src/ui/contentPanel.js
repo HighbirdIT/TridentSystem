@@ -156,6 +156,12 @@ class ContentPanel extends React.PureComponent {
         fetchJsonPost('server', { action: 'getProjectProfile', projTitle:project.title}, this.getProjectProfileCallBack);
     }
 
+    clickExprotBtnHandler(ev){
+        var project = this.props.project;
+        var jsonData =  project.getJson();
+        console.log(JSON.stringify(jsonData));
+    }
+
     compileCompletedHandler(theCompile){
         var project = this.props.project;
         theCompile.off('completed', this.compileCompletedHandler);
@@ -253,6 +259,7 @@ class ContentPanel extends React.PureComponent {
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickCompileBtnHanlder} ><div>编译</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickSaveBtnHanlder} ><div>保存</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPublickBtnHandler} ><div>发布</div></button>
+                        <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickExprotBtnHandler} ><div>导出</div></button>
                     </div>
                     <div onClick={this.clickContentDivHander} className='flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center'>
                         {
