@@ -355,9 +355,9 @@ var ControlKernelBase = function (_IAttributeable) {
         }
     }, {
         key: 'getJson',
-        value: function getJson() {
+        value: function getJson(jsonProf) {
             var rlt = {
-                attr: _get(ControlKernelBase.prototype.__proto__ || Object.getPrototypeOf(ControlKernelBase.prototype), 'getJson', this).call(this),
+                attr: _get(ControlKernelBase.prototype.__proto__ || Object.getPrototypeOf(ControlKernelBase.prototype), 'getJson', this).call(this, jsonProf),
                 type: this.type,
                 id: this.id
             };

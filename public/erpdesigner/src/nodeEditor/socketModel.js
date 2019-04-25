@@ -54,7 +54,7 @@ class NodeSocket extends EventEmitter{
         this.extra[key] = val;
     }
 
-    getJson(){
+    getJson(jsonProf){
         var rlt = {
             name:this.name,
             isIn:this.isIn,

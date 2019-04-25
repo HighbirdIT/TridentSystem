@@ -110,9 +110,9 @@ class M_LabeledControlKernel extends ControlKernelBase{
         return rlt;
     }
 
-    getJson(){
-        var rlt = super.getJson();
-        rlt.editor = this.editor == null ? null : this.editor.getJson();
+    getJson(jsonProf){
+        var rlt = super.getJson(jsonProf);
+        rlt.editor = this.editor == null ? null : this.editor.getJson(jsonProf);
         return rlt;
     }
 }

@@ -154,8 +154,17 @@ class FlowObject extends EventEmitter{
             alert(ev.json.err.info);
             return;
         }
-        this.bluePrint = new FlowNode_BluePrint({flow:this}, ev.json.data);
-        this.emit('fileLoaded',this);
+        var self = this;
+        if(ev.json.data == null){
+            self.bluePrint = new FlowNode_BluePrint({flow:self}, ev.json.data);
+            self.emit('fileLoaded',this);
+        }
+        else{
+            g_dataBase.doSyn_Unload_bycodes(ev.json.data.useEntities_arr, ()=>{
+                self.bluePrint = new FlowNode_BluePrint({flow:self}, ev.json.data);
+                self.emit('fileLoaded',this);
+            });
+        }
     }
 
     loadFile(){

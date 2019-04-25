@@ -315,21 +315,22 @@ DesignerConfig.registerControl(
         reactClass:M_Form,
     }, '布局');
 
-class ListFormContent extends EventEmitter
-{
-    constructor(kernel) {
-        super();
-        EnhanceEventEmiter(this);
-        this.formKernel = kernel;
-        this.selectColumns_map = {};
+    
+    class ListFormContent extends EventEmitter
+    {
+        constructor(kernel) {
+            super();
+            EnhanceEventEmiter(this);
+            this.formKernel = kernel;
+            this.selectColumns_map = {};
+        }
+    
+        createControl(){
+            var newCtl = new M_LabeledControlKernel({}, this.formKernel, null, null);
+            return newCtl;
+        }
+    
+        getJson(){
+            return {};
+        }
     }
-
-    createControl(){
-        var newCtl = new M_LabeledControlKernel({}, this.formKernel, null, null);
-        return newCtl;
-    }
-
-    getJson(){
-        return {};
-    }
-}

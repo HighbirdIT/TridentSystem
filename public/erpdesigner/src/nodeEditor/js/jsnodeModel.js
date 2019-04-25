@@ -419,7 +419,10 @@ class JSNode_BluePrint extends EventEmitter {
         return rlt_arr;
     }
 
-    getJson() {
+    getJson(jsonProf) {
+        if(jsonProf == null){
+            jsonProf = new AttrJsonProfile();
+        }
         var self = this;
         // save base info
         var theJson = {
@@ -441,7 +444,7 @@ class JSNode_BluePrint extends EventEmitter {
         // save var info
         var varJson_arr = [];
         this.vars_arr.forEach(varData => {
-            varJson_arr.push(varData.getJson());
+            varJson_arr.push(varData.getJson(jsonProf));
         });
         if (varJson_arr.length > 0) {
             theJson.variables_arr = varJson_arr;
@@ -450,11 +453,11 @@ class JSNode_BluePrint extends EventEmitter {
         if (this.nodes_arr.length > 0) {
             var nodeJson_arr = [];
             this.nodes_arr.forEach(nodeData => {
-                nodeJson_arr.push(nodeData.getJson());
+                nodeJson_arr.push(nodeData.getJson(jsonProf));
             });
             theJson.nodes_arr = nodeJson_arr;
         }
-        theJson.links_arr = this.linkPool.getJson();
+        theJson.links_arr = this.linkPool.getJson(jsonProf);
 
         return theJson;
     }
@@ -1925,9 +1928,13 @@ class JSNODE_Insert_table extends JSNode_Base {
         return rlt;
     }
 
-    requestSaveAttrs() {
+    requestSaveAttrs(jsonProf) {
         var rlt = super.requestSaveAttrs();
         rlt.dsCode = this.dsCode;
+        var theDS = g_dataBase.getEntityByCode(this.dsCode);
+        if (theDS != null) {
+            jsonProf.useEntity(theDS);
+        }
         return rlt;
     }
 
@@ -3048,10 +3055,11 @@ class JSNode_Query_Sql extends JSNode_Base {
         return theSocket != this.outDataSocket && this.outErrorSocket != theSocket;
     }
 
-    requestSaveAttrs() {
+    requestSaveAttrs(jsonProf) {
         var rlt = super.requestSaveAttrs();
         if (this.targetEntity != null) {
             rlt.targetEntity = 'dbe-' + this.targetEntity.code;
+            jsonProf.useEntity(this.targetEntity);
         }
         return rlt;
     }
@@ -4302,9 +4310,13 @@ class JSNODE_Update_table extends JSNode_Base {
         return rlt;
     }
 
-    requestSaveAttrs() {
+    requestSaveAttrs(jsonProf) {
         var rlt = super.requestSaveAttrs();
         rlt.dsCode = this.dsCode;
+        var theDS = g_dataBase.getEntityByCode(this.dsCode);
+        if (theDS != null) {
+            jsonProf.useEntity(theDS);
+        }
         return rlt;
     }
 

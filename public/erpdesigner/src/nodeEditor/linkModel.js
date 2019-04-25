@@ -33,7 +33,7 @@ class SocketLink{
         outSocket.node.currentFrameCom.reDraw();
     }
 
-    getJson(){
+    getJson(jsonProf){
         if(this.inSocket && this.outSocket && this.inSocket.node && this.outSocket.node && this.inSocket.node.bluePrint && this.outSocket.node.bluePrint){
             return {
                 inSocketID:this.inSocket.id,
@@ -207,13 +207,13 @@ class ScoketLinkPool{
         return this.cacheData;
     }
 
-    getJson(){
+    getJson(jsonProf){
         var rlt_arr=[];
         for(var si in this.link_map){
             var theLink = this.link_map[si];
             if(theLink == null)
                 continue;
-            var linkJson = theLink.getJson();
+            var linkJson = theLink.getJson(jsonProf);
             if(linkJson != null){
                 rlt_arr.push(linkJson);
             }

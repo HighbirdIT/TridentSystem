@@ -189,7 +189,7 @@ class IAttributeable extends EventEmitter{
         return nowAttrArrayList.length;
     }
 
-    getJson(){
+    getJson(jsonProf){
         var rlt={};
         this.attrbuteGroups.forEach(group=>{
             group.attrs_arr.forEach(attr=>{
@@ -213,6 +213,7 @@ class IAttributeable extends EventEmitter{
                     }
                     switch(attr.valueType){
                         case ValueType.DataSource:
+                        jsonProf.useEntity(val);
                         val = val.code;
                         break;
                         case ValueType.ListFormContent:

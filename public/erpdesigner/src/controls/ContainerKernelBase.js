@@ -107,11 +107,11 @@ class ContainerKernelBase extends ControlKernelBase {
         return false;
     }
 
-    getJson() {
-        var rlt = super.getJson();
+    getJson(jsonProf) {
+        var rlt = super.getJson(jsonProf);
         rlt.children = [];
         this.children.forEach(child => {
-            rlt.children.push(child.getJson());
+            rlt.children.push(child.getJson(jsonProf));
         });
         return rlt;
     }

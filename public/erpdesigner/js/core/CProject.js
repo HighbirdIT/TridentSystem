@@ -295,8 +295,11 @@ var CProject = function (_IAttributeable) {
         }
     }, {
         key: 'getJson',
-        value: function getJson() {
-            var attrJson = _get(CProject.prototype.__proto__ || Object.getPrototypeOf(CProject.prototype), 'getJson', this).call(this);
+        value: function getJson(jsonProf) {
+            if (jsonProf == null) {
+                jsonProf = new AttrJsonProfile();
+            }
+            var attrJson = _get(CProject.prototype.__proto__ || Object.getPrototypeOf(CProject.prototype), 'getJson', this).call(this, jsonProf);
             var rlt = {
                 attr: attrJson,
                 lastEditingPageID: this.designeConfig.editingPage.id
@@ -305,20 +308,45 @@ var CProject = function (_IAttributeable) {
                 pages: []
             };
             this.content_PC.pages.forEach(function (page) {
-                rlt.content_PC.pages.push(page.getJson());
+                rlt.content_PC.pages.push(page.getJson(jsonProf));
             });
 
             rlt.content_Mobile = {
                 pages: []
             };
             this.content_Mobile.pages.forEach(function (page) {
-                rlt.content_Mobile.pages.push(page.getJson());
+                rlt.content_Mobile.pages.push(page.getJson(jsonProf));
             });
-            rlt.dataMaster = this.dataMaster.getJson();
-            rlt.scriptMaster = this.scriptMaster.getJson();
+            rlt.dataMaster = this.dataMaster.getJson(jsonProf);
+            rlt.scriptMaster = this.scriptMaster.getJson(jsonProf);
+            rlt.useEntities_arr = jsonProf.entities_arr.map(function (entity) {
+                return entity.code;
+            });
             return rlt;
         }
     }]);
 
     return CProject;
 }(IAttributeable);
+
+var AttrJsonProfile = function () {
+    function AttrJsonProfile() {
+        _classCallCheck(this, AttrJsonProfile);
+
+        this.entities_arr = [];
+    }
+
+    _createClass(AttrJsonProfile, [{
+        key: 'useEntity',
+        value: function useEntity(entity) {
+            if (isNaN(entity.code)) {
+                return;
+            }
+            if (this.entities_arr.indexOf(entity) == -1) {
+                this.entities_arr.push(entity);
+            }
+        }
+    }]);
+
+    return AttrJsonProfile;
+}();

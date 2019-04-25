@@ -378,8 +378,8 @@ class Node_Base extends EventEmitter {
     }
 
     setPos(newx, newy) {
-        this.left = newx;
-        this.top = newy;
+        this.left = Math.round(newx / 10) * 10;
+        this.top = Math.round(newy / 10) * 10;
         this.fireMoved();
     }
 
@@ -523,8 +523,8 @@ class Node_Base extends EventEmitter {
         this.extra[key] = val;
     }
 
-    getJson() {
-        var attrs = this.requestSaveAttrs();
+    getJson(jsonProf) {
+        var attrs = this.requestSaveAttrs(jsonProf);
         if (attrs == null) {
             return null;
         }
@@ -550,35 +550,35 @@ class Node_Base extends EventEmitter {
         if (this.inputScokets_arr.length > 0) {
             var t_insocketJson_arr = [];
             this.inputScokets_arr.forEach(data => {
-                t_insocketJson_arr.push(data.getJson());
+                t_insocketJson_arr.push(data.getJson(jsonProf));
             });
             rlt.inputScokets_arr = t_insocketJson_arr;
         }
         if (this.outputScokets_arr.length > 0) {
             var t_outsocketJson_arr = [];
             this.outputScokets_arr.forEach(data => {
-                t_outsocketJson_arr.push(data.getJson());
+                t_outsocketJson_arr.push(data.getJson(jsonProf));
             });
             rlt.outputScokets_arr = t_outsocketJson_arr;
         }
         if(this.outFlowSockets_arr && this.outFlowSockets_arr.length > 0){
             var t_outflowsocketJson_arr = [];
             this.outFlowSockets_arr.forEach(data => {
-                t_outflowsocketJson_arr.push(data.getJson());
+                t_outflowsocketJson_arr.push(data.getJson(jsonProf));
             });
             rlt.outFlowSockets_arr = t_outflowsocketJson_arr;
         }
         if(this.inFlowSocket){
-            rlt.inFlowSocket = this.inFlowSocket.getJson();
+            rlt.inFlowSocket = this.inFlowSocket.getJson(jsonProf);
         }
         if(this.outFlowSocket){
-            rlt.outFlowSocket = this.outFlowSocket.getJson();
+            rlt.outFlowSocket = this.outFlowSocket.getJson(jsonProf);
         }
         // child node
         if (this.nodes_arr && this.nodes_arr.length > 0) {
             var tNode_arr = [];
             this.nodes_arr.forEach(childNode => {
-                var childJson = childNode.getJson();
+                var childJson = childNode.getJson(jsonProf);
                 if (childJson) {
                     tNode_arr.push(childJson);
                 }
@@ -690,7 +690,7 @@ class C_Node_Frame extends React.PureComponent {
             editingTitle: false,
             title: ReplaceIfNull(props.nodedata.title, ''),
             moving: this.props.nodedata.newborn == true,
-        }
+        };
 
         this.rootDivRef = React.createRef();
 

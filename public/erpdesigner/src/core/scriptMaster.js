@@ -67,12 +67,12 @@ class ScriptMaster extends EventEmitter{
         sqpBP.master = null;
     }
 
-    getJson(){
+    getJson(jsonProf){
         var rlt = {
             blueprints_arr:[]
         };
         this.blueprints_arr.forEach(bp=>{
-            rlt.blueprints_arr.push(bp.getJson());
+            rlt.blueprints_arr.push(bp.getJson(jsonProf));
         });
         return rlt;
     }

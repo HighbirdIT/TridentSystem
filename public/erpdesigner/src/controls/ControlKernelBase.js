@@ -332,9 +332,9 @@ class ControlKernelBase extends IAttributeable {
         return rlt;
     }
 
-    getJson() {
+    getJson(jsonProf) {
         var rlt = {
-            attr: super.getJson(),
+            attr: super.getJson(jsonProf),
             type: this.type,
             id: this.id,
         };
