@@ -3405,7 +3405,7 @@ class JSNode_Query_Sql extends JSNode_Base {
         // make server side code
         var theServerSide = helper.serverSide;// ? helper.serverSide : new JSFileMaker();
         var postBundleVarName = this.bluePrint.id + '_bundle';
-        var serverSideActName = this.id;
+        var serverSideActName = this.bluePrint.id + '_' + this.id;
         var rcdRltVarName = this.id + '_rcdRlt';
         var serverForachBlock = new FormatFileBlock('serverForachBlock');
         var serverForachBodyBlock = new FormatFileBlock('serverForachBodyBlock');
