@@ -338,9 +338,16 @@ var DropDownControl = function (_React$PureComponent) {
             }
             var inputValue = this.editIsKeyword ? this.state.keyword == '' ? selectedOption == null ? '' : selectedOption.text : this.state.keyword : this.state.value;
 
+            var useClassName = this.props.rootclass ? this.props.rootclass : '';
+            if (useClassName.indexOf('flex-grow-') == -1) {
+                useClassName += ' flex-grow-1';
+            }
+            if (useClassName.indexOf('flex-shrink-') == -1) {
+                useClassName += ' flex-shrink-0';
+            }
             return React.createElement(
                 'div',
-                { className: "d-flex btn-group flex-grow-1 flex-shrink-0 " + (this.props.rootclass ? this.props.rootclass : ''), style: this.props.style, ref: this.rootDivRef },
+                { className: "d-flex btn-group " + useClassName, style: this.props.style, ref: this.rootDivRef },
                 this.props.editable ? React.createElement('input', { onFocus: this.editableInputFocushandler, ref: this.editableInputRef, type: 'text', className: 'flex-grow-1 flex-shrink-1 flexinput', onChange: this.inputChangedHandler, onBlur: this.inputBlurHandler, value: inputValue }) : React.createElement(
                     'button',
                     { onClick: this.clickOpenHandler, style: { maxWidth: this.props.miniBtn ? 'calc(100% - 30px)' : '100%', minHeight: '38px' }, type: 'button', className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1' + (selectedOption == null ? ' text-danger' : '') },

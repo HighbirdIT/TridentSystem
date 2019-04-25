@@ -1480,13 +1480,11 @@ class JSDef_Variable_Component extends React.PureComponent{
             <div className='d-flex bg-dark flex-grow-0 flex-shrink-0 w-100 align-items-center'>
                 <i className={'fa fa-edit fa-lg text-' + (editing ? 'success' : 'info')} onClick={this.clickEditBtnHandler} />
                 <input onChange={this.nameInputChangeHanlder} type='text' value={this.state.name} className='flexinput flex-grow-1 flex-shrink-1' />
-                <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={JsValueTypes} rootclass='flex-grow-0 flex-shrink-0' textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
-            </div>
-            <div className='d-flex w-100 flex-grow-0 flex-shrink-0 align-items-center'>
-                <span className='text-light'>默认值</span>
+                <span className='text-light flex-shrink-0'>默认值</span>
                 <input onChange={this.defaultInputChangedHandler} type='text' value={this.state.default} className='flexinput flex-grow-1 flex-shrink-1' />
-                <DropDownControl itemChanged={this.isParamChangedHandler} btnclass='btn-dark' options_arr={ISParam_Options_arr} rootclass='flex-grow-0 flex-shrink-0' textAttrName='name' valueAttrName='code' value={this.state.isParam} /> 
             </div>
+            <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={JsValueTypes} textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
+                <DropDownControl itemChanged={this.isParamChangedHandler} btnclass='btn-dark' options_arr={ISParam_Options_arr} textAttrName='name' valueAttrName='code' value={this.state.isParam} /> 
         </div>);
     }
 }
