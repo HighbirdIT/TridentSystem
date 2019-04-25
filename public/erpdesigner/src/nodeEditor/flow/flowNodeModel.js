@@ -1501,7 +1501,7 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
         tryBlock.errorBlock.pushLine("return serverhelper.createErrorRet('查询[" + this.targetEntity.name + "]出错:' +  eo.message);");
         myCodeBlock.pushChild(tryBlock);
         tryBlock.bodyBlock.pushLine(rcdRltVarName + " = yield dbhelper.asynQueryWithParams(" + sqlVarName + ", " + paramVarName + ");");
-        myCodeBlock.pushLine('if(' + rcdRltVarName + '.recordset.length!=1){return serverhelper.createErrorRet("在[' + targetEntity.name + ']的结果行数不是1。");}');
+        myCodeBlock.pushLine('if(' + rcdRltVarName + '.recordset.length!=1){return serverhelper.createErrorRet("关键记录查询[' + targetEntity.name + ']的结果行数是"+' + rcdRltVarName + '.recordset.length);}');
         myCodeBlock.pushLine('var ' + rcdResultVarName + '=' + rcdRltVarName + '.recordset[0];');
         myCodeBlock.pushChild(defOutColumnBlock);
 
