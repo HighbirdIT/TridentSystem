@@ -1487,7 +1487,7 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
                     '自订数据源' + targetEntity.name + '编译发生错误，无法继续']);
                     return false;
                 }
-                sqlInitValue = compileRet.sql;
+                sqlInitValue = 'select (' + compileRet.sql + ') as TRlt where ' + this.keyColumn + '=@' + this.inputScokets_arr[0].name;
             }
         }
         else {
@@ -1498,10 +1498,10 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
         var rcdRltVarName = this.id + '_rcdRlt';
         myCodeBlock.pushLine(makeLine_DeclareVar(rcdRltVarName));
         var tryBlock = new JSFile_Try('try');
-        tryBlock.errorBlock.pushLine("return serverhelper.createErrorRet(eo.message);");
+        tryBlock.errorBlock.pushLine("return serverhelper.createErrorRet('查询[" + this.targetEntity.name + "]出错:' +  eo.message);");
         myCodeBlock.pushChild(tryBlock);
         tryBlock.bodyBlock.pushLine(rcdRltVarName + " = yield dbhelper.asynQueryWithParams(" + sqlVarName + ", " + paramVarName + ");");
-        myCodeBlock.pushLine('if(' + rcdRltVarName + '.recordset.length!=1){return serverhelper.createErrorRet("在[' + targetEntity.name + ']中查到了" + ' + rcdResultVarName + '.recordset.length + "条符条件的数据");}');
+        myCodeBlock.pushLine('if(' + rcdRltVarName + '.recordset.length!=1){return serverhelper.createErrorRet("在[' + targetEntity.name + ']的结果行数不是1。");}');
         myCodeBlock.pushLine('var ' + rcdResultVarName + '=' + rcdRltVarName + '.recordset[0];');
         myCodeBlock.pushChild(defOutColumnBlock);
 
