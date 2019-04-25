@@ -481,7 +481,7 @@ class CFlowStep extends React.PureComponent{
         return <div d-code={step.code} onClick={this.props.onclick}  className={'list-group-item flex-shrink-0 d-flex'}>
                 <button onClick={this.clickdoEditBtn} className='btn flex-grow-0'><i className='fa fa-edit fa-1x' /></button>
                 <div className='d-flex flex-column flex-grow-1'>
-                    <div className='list-group-item'>{step.name}</div>
+                    <div className='list-group-item'>{step.name}[{step.code}]</div>
                     {params_arr.map((param,index)=>{
                         return <div key={index} className='list-group-item flex-shrink-0'>@{param}</div>;
                     })}
