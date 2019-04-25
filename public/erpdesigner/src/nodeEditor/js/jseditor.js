@@ -1085,11 +1085,12 @@ class C_JSNode_Editor extends React.PureComponent{
                     var rightMostPos = {x:null,y:null};
                     this.selectedNFManager.forEach(nf=>{
                         var nfRect = nf.rootDivRef.current.getBoundingClientRect();
-                        if(isNaN(rightMostPos.x) || nfRect.right > rightMostPos.x){
-                            rightMostPos.x = nfRect.right;
+                        var nfRightTop = {x:nf.props.nodedata.left + nfRect.width,y:nf.props.nodedata.top};
+                        if(rightMostPos.x == null || nfRightTop.x > rightMostPos.x){
+                            rightMostPos.x = nfRightTop.x;
                         }
-                        if(isNaN(rightMostPos.y) || nfRect.top > rightMostPos.y){
-                            rightMostPos.y = nfRect.top;
+                        if(rightMostPos.y == null || nfRightTop.y > rightMostPos.y){
+                            rightMostPos.y = nfRightTop.y;
                         }
                     });
                     this.selectedNFManager.forEach(nf=>{
