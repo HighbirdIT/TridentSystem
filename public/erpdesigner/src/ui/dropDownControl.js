@@ -288,8 +288,15 @@ class DropDownControl extends React.PureComponent {
         }
         var inputValue = this.editIsKeyword ? (this.state.keyword == '' ? (selectedOption == null ? '' : selectedOption.text) : this.state.keyword) : this.state.value;
 
+        var useClassName = this.props.rootclass ? this.props.rootclass : '';
+        if(useClassName.indexOf('flex-grow-') == -1){
+            useClassName += ' flex-grow-1';
+        }
+        if(useClassName.indexOf('flex-shrink-') == -1){
+            useClassName += ' flex-shrink-0';
+        }
         return (
-            <div className={"d-flex btn-group flex-grow-1 flex-shrink-0 " + (this.props.rootclass ? this.props.rootclass : '')}  style={this.props.style} ref={this.rootDivRef}>
+            <div className={"d-flex btn-group " + useClassName}  style={this.props.style} ref={this.rootDivRef}>
                         {
                             this.props.editable ? <input onFocus={this.editableInputFocushandler} ref={this.editableInputRef} type='text' className='flex-grow-1 flex-shrink-1 flexinput' onChange={this.inputChangedHandler} onBlur={this.inputBlurHandler} value={inputValue} />
                             :
