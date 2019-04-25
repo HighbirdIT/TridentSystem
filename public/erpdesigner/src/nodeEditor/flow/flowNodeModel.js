@@ -1487,7 +1487,7 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
                     '自订数据源' + targetEntity.name + '编译发生错误，无法继续']);
                     return false;
                 }
-                sqlInitValue = 'select (' + compileRet.sql + ') as TRlt where ' + this.keyColumn + '=@' + this.inputScokets_arr[0].name;
+                sqlInitValue = 'select * from (' + compileRet.sql + ') as TRlt where ' + this.keyColumn + '=@' + this.inputScokets_arr[0].name;
             }
         }
         else {
