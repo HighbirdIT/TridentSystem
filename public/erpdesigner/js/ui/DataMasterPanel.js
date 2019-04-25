@@ -276,9 +276,11 @@ var DataBasePanel = function (_React$PureComponent3) {
         _this4.state = initState;
         autoBind(_this4);
         var self = _this4;
-        setTimeout(function () {
-            self.startSynAction('keyword', 'T101');
+        /*
+        setTimeout(() => {
+            self.startSynAction('keyword','T101');
         }, 100);
+        */
         return _this4;
     }
 

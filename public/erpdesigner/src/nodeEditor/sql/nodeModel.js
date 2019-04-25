@@ -357,7 +357,10 @@ class SqlNode_BluePrint extends EventEmitter {
         return rlt_arr;
     }
 
-    getJson() {
+    getJson(jsonProf) {
+        if(jsonProf == null){
+            jsonProf = new AttrJsonProfile();
+        }
         var self = this;
         // save base info
         var theJson = {
@@ -376,7 +379,7 @@ class SqlNode_BluePrint extends EventEmitter {
         // save var info
         var varJson_arr = [];
         this.vars_arr.forEach(varData => {
-            varJson_arr.push(varData.getJson());
+            varJson_arr.push(varData.getJson(jsonProf));
         });
         if (varJson_arr.length > 0) {
             theJson.variables_arr = varJson_arr;
@@ -385,11 +388,11 @@ class SqlNode_BluePrint extends EventEmitter {
         if (this.nodes_arr.length > 0) {
             var nodeJson_arr = [];
             this.nodes_arr.forEach(nodeData => {
-                nodeJson_arr.push(nodeData.getJson());
+                nodeJson_arr.push(nodeData.getJson(jsonProf));
             });
             theJson.nodes_arr = nodeJson_arr;
         }
-        theJson.links_arr = this.linkPool.getJson();
+        theJson.links_arr = this.linkPool.getJson(jsonProf);
 
         return theJson;
     }
@@ -562,10 +565,11 @@ class SqlNode_DBEntity extends SqlNode_Base {
         var self = this;
     }
 
-    requestSaveAttrs() {
+    requestSaveAttrs(jsonProf) {
         var rlt = super.requestSaveAttrs();
         if (this.targetEntity != null) {
             rlt.targetEntity = 'dbe-' + this.targetEntity.code;
+            jsonProf.useEntity(this.targetEntity);
         }
         return rlt;
     }

@@ -398,7 +398,10 @@ class FlowNode_BluePrint extends EventEmitter {
         return rlt_arr;
     }
 
-    getJson() {
+    getJson(jsonProf) {
+        if(jsonProf == null){
+            jsonProf = new AttrJsonProfile();
+        }
         var self = this;
         // save base info
         var theJson = {
@@ -414,7 +417,7 @@ class FlowNode_BluePrint extends EventEmitter {
         // save var info
         var varJson_arr = [];
         this.vars_arr.forEach(varData => {
-            varJson_arr.push(varData.getJson());
+            varJson_arr.push(varData.getJson(jsonProf));
         });
         if (varJson_arr.length > 0) {
             theJson.variables_arr = varJson_arr;
@@ -423,12 +426,15 @@ class FlowNode_BluePrint extends EventEmitter {
         if (this.nodes_arr.length > 0) {
             var nodeJson_arr = [];
             this.nodes_arr.forEach(nodeData => {
-                nodeJson_arr.push(nodeData.getJson());
+                nodeJson_arr.push(nodeData.getJson(jsonProf));
             });
             theJson.nodes_arr = nodeJson_arr;
         }
-        theJson.links_arr = this.linkPool.getJson();
-        theJson.dataMaster = this.dataMaster.getJson();
+        theJson.links_arr = this.linkPool.getJson(jsonProf);
+        theJson.dataMaster = this.dataMaster.getJson(jsonProf);
+        theJson.useEntities_arr = jsonProf.entities_arr.map(entity=>{
+            return entity.code;
+        });
 
         return theJson;
     }
@@ -863,10 +869,11 @@ class FlowNode_QuerySql extends JSNode_Base {
         }
     }
 
-    requestSaveAttrs() {
+    requestSaveAttrs(jsonProf) {
         var rlt = super.requestSaveAttrs();
         if (this.targetEntity != null) {
             rlt.targetEntity = 'dbe-' + this.targetEntity.code;
+            jsonProf.useEntity(this.targetEntity);
         }
         return rlt;
     }
@@ -1231,11 +1238,12 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
         }
     }
 
-    requestSaveAttrs() {
+    requestSaveAttrs(jsonProf) {
         var rlt = super.requestSaveAttrs();
         if (this.targetEntity != null) {
             rlt.targetEntity = 'dbe-' + this.targetEntity.code;
             rlt.keyColumn = this.keyColumn;
+            jsonProf.useEntity(this.targetEntity);
         }
         return rlt;
     }
@@ -1811,7 +1819,7 @@ class FlowNode_Send_Message extends JSNode_Base {
     }
 
     msgTypeChanged(ev) {
-        console.log('msgTypeChanged' + ev);
+        //console.log('msgTypeChanged' + ev);
         var isPorcess = this.msgTypeScoket.defval == EMessageType.Process;
         this.flowStepScoket.set({
             visible: isPorcess
@@ -1825,7 +1833,7 @@ class FlowNode_Send_Message extends JSNode_Base {
     }
 
     targetTypeChanged(ev) {
-        console.log('targetTypeChanged' + ev);
+        //console.log('targetTypeChanged' + ev);
         var targetIsPerson = this.targetTypeScoket.defval == EMessageTargetType.Person;
         var targetIsPost = this.targetTypeScoket.defval == EMessageTargetType.Post;
         if (!targetIsPerson) {
