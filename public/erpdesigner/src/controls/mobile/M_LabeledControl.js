@@ -56,9 +56,16 @@ class M_LabeledControlKernel extends ControlKernelBase{
                 return;
             }
             var editorTextField = this.editor.getAttribute(AttrNames.TextField);
-            if(editorTextField == '' || (oldValue ? oldValue : '') == editorTextField){
+            if(editorTextField == ''){
                 this.editor.setAttribute(AttrNames.TextField, newValue);
             }
+            else{
+                var canUseCols_arr = GetKernelCanUseColumns(this);
+                if(canUseCols_arr.indexOf(newValue) != -1){
+                    this.editor.setAttribute(AttrNames.TextField, newValue);
+                }
+            }
+            GetKernelCanUseColumns
             break;
             case AttrNames.Nullable:
             if(this.editor.hasAttribute(AttrNames.Nullable)){
