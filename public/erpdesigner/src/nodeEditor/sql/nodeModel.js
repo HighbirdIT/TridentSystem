@@ -2050,7 +2050,14 @@ class SqlNode_NOperand extends SqlNode_Base {
     }
 
     genInSocket() {
-        return new NodeSocket('in' + this.inputScokets_arr.length, this, true, this.insocketInitVal);
+        var nameI = this.inputScokets_arr.length;
+        while (nameI < 999) {
+            if (this.getScoketByName('in' + nameI, true) == null) {
+                break;
+            }
+            ++nameI;
+        }
+        return new NodeSocket('in' + nameI, this, true, this.insocketInitVal);
     }
 
     compile(helper, preNodes_arr) {
