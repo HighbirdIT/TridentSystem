@@ -357,7 +357,7 @@ app.use('/erppage/server', function (req, res, next) {
         return res.json(serverhelper.createErrorRet(req.path + '.js未找到'));
     }
 
-    resoreUserLogin(req).then(envar=>{
+    resoreUserLogin(req, res).then(envar=>{
         jspath = __dirname + '/views/erppage/server/pages/' + cache.serverName + '.js';
         if (!fs.existsSync(jspath)) {
             return res.json(serverhelper.createErrorRet(req.path + '.js未找到'));
@@ -518,7 +518,7 @@ function freshPageCache() {
         });
 }
 
-function resoreUserLogin(req) {
+function resoreUserLogin(req, res) {
     return co(function* () {
         if(req.session.g_envVar != null){
             return req.session.g_envVar;
