@@ -438,7 +438,7 @@ class C_SqlNode_DBEntity_ColumnSelector extends React.PureComponent {
         var column = entity.columns.find(x => { return x.name == columnName });
         if (column) 
         {
-            if(parentNodeData.bluePrint.type == "标量值")
+            if(parentNodeData.bluePrint.type == "标量值" && parentNodeData == parentNodeData.bluePrint.finalSelectNode)
             {
                 nodeData.clickFrameButton('unselect-all');
                 if(!this.checkmap[columnName])

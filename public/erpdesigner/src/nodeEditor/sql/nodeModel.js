@@ -1491,7 +1491,7 @@ class SqlNode_Select extends SqlNode_Base {
                 tableCode: tableCode,
                 compareKey: compareKey,
             };
-            if (this.bluePrint.type == "标量值") {
+            if (this.bluePrint.type == "标量值" && this == this.bluePrint.finalSelectNode) {
                 if (newSocket.currentComponent) {
                     this.socketComponentCreated(newSocket);
                 }
@@ -1774,7 +1774,7 @@ class SqlNode_Select extends SqlNode_Base {
         selectColumns_arr.forEach((x, i) => { columnsStr += (i == 0 ? '' : ',') + x.strContent + (x.alias == null ? '' : ' as [' + x.alias + ']') });
 
         var topString = '';
-        if (this.bluePrint.type == "标量值") {
+        if (this.bluePrint.type == "标量值" && this == this.bluePrint.finalSelectNode) {
             topString = 'top 1 ';
         }
         else {
