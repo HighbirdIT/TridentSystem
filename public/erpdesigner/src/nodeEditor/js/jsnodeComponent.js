@@ -74,7 +74,7 @@ class C_JSNode_NOperand extends React.PureComponent {
         }
         var nodeData = this.props.nodedata;
         return (<div style={this.outDivStyle} f-canmove={1}>
-            <DropDownControl options_arr={['+', '-', '*', '/']} value={nodeData.operator} itemChanged={this.selectItemChangedHandler} style={this.ddcStyle} />
+            <DropDownControl options_arr={['+', '-', '*', '/', '%']} value={nodeData.operator} itemChanged={this.selectItemChangedHandler} style={this.ddcStyle} />
         </div>);
     }
 

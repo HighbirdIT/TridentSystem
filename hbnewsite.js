@@ -348,22 +348,23 @@ var fs = require('fs');
 app.use('/erppage/server', function (req, res, next) {
     var pageName = req.path.substr(1).toUpperCase();
     var cache = erpPageCache[pageName];
+    var jspath = null;
     if (cache == null) {
-        var jspath = __dirname + '/views/erppage/server' + req.path + '.js';
+        jspath = __dirname + '/views/erppage/server' + req.path + '.js';
         if (fs.existsSync(jspath)) {
             var jsModel = require(jspath);
             return jsModel(req, res, next, app);
         }
-        res.status(404);
-        return res.render('404');
-    }
-    var jspath = __dirname + '/views/erppage/server/pages/' + cache.serverName + '.js';
-    if (!fs.existsSync(jspath)) {
-        res.status(404);
-        return res.render('404');
+        return res.json(serverhelper.createErrorRet(req.path + '.js未找到'));
     }
 
-    return require(jspath)(req, res, next, app);
+    resoreUserLogin(req).then(envar=>{
+        jspath = __dirname + '/views/erppage/server/pages/' + cache.serverName + '.js';
+        if (!fs.existsSync(jspath)) {
+            return res.json(serverhelper.createErrorRet(req.path + '.js未找到'));
+        }
+        return require(jspath)(req, res, next, app);
+    });
 });
 
 app.use('/erppage/login', function (req, res, next) {
@@ -516,4 +517,18 @@ function freshPageCache() {
             );
             console.log('freshPageCache end');
         });
+}
+
+function resoreUserLogin(req) {
+    return co(function* () {
+        if(req.session.g_envVar != null){
+            return req.session.g_envVar;
+        }
+        var logrcd = req.signedCookies._erplogrcdid;
+        if(logrcd == null){
+            return null;
+        }
+        var envar = yield dingHelper.aysnLoginfFromRcdID(logrcd, req, res);
+        return envar;
+    });
 }
