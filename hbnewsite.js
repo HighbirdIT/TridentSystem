@@ -354,15 +354,13 @@ app.use('/erppage/server', function (req, res, next) {
             var jsModel = require(jspath);
             return jsModel(req, res, next, app);
         }
-        res.status(404);
-        return res.render('404');
+        return res.json(serverhelper.createErrorRet(req.path + '.js未找到'));
     }
 
     resoreUserLogin(req).then(envar=>{
         jspath = __dirname + '/views/erppage/server/pages/' + cache.serverName + '.js';
         if (!fs.existsSync(jspath)) {
-            res.status(404);
-            return res.render('404');
+            return res.json(serverhelper.createErrorRet(req.path + '.js未找到'));
         }
         return require(jspath)(req, res, next, app);
     });
