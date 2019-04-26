@@ -1061,7 +1061,7 @@ class ERPC_Text extends React.PureComponent {
         else {
             if (this.props.readonly) {
                 rootDivClassName += ' bg-secondary rounded border p-1'
-                var nowValue = FormatStringValue(this.props.value, this.props.type);
+                var nowValue = FormatStringValue(this.props.value, this.props.type, this.props.precision);
                 if (nowValue == null || nowValue.length == 0) {
                     rootDivClassName += ' text-secondary';
                     nowValue = '_';
@@ -1200,7 +1200,7 @@ class ERPC_Label extends React.PureComponent {
         if(this.props.visible == false){
             return null;
         }
-        var text = FormatStringValue(this.props.text, this.props.type)
+        var text = FormatStringValue(this.props.text, this.props.type, this.props.precision)
         return (<span className={'erpc_label ' + (this.props.className == null ? '' : this.props.className)} >{text}</span>);
     }
 }
