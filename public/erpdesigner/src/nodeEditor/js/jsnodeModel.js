@@ -1104,7 +1104,10 @@ class JSNode_ConstValue extends JSNode_Base {
             return false;
         }
         if (isNaN(value)) {
-            if(value != "''"){
+            if(value.toLocaleLowerCase() == 'null'){
+                value = 'null';
+            }
+            else if(value != "''"){
                 value = "'" + value + "'";
             }
         }
