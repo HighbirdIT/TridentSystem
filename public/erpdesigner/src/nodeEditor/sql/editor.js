@@ -84,6 +84,8 @@ class C_SqlNode_Editor extends React.PureComponent{
         this.topBarRef = React.createRef();
         this.zoomDivRef = React.createRef();
         this.selectRectRef = React.createRef();
+        this.flowMCRef = React.createRef();
+        this.quickMenuRef = React.createRef();
         this.logManager = new LogManager('sqlnodeEditorLogManager');
 
         var editor = this;
@@ -169,6 +171,13 @@ class C_SqlNode_Editor extends React.PureComponent{
     }
 
     keyUpHandler(ev){
+        if(this.zoomDivRef.current == null){
+            return;
+        }
+        var editorRect = this.zoomDivRef.current.getBoundingClientRect();
+        if(!MyMath.isPointInRect(editorRect, WindowMouse)){
+            return;
+        }
         //console.log(ev);
         switch(ev.keyCode){
             case 27:
@@ -302,6 +311,39 @@ class C_SqlNode_Editor extends React.PureComponent{
         if(bp){
             bp.off('changed', this.blueprinkChanged);
         }
+    }
+
+    startDrag(dragData, callBack, contentFun){
+        if(dragData.info == null){
+            dragData.info = '位置drag';
+        }
+        if(contentFun == null){
+            this.flowMCRef.current.setGetContentFun(() => {
+                return (<span className='text-nowrap border bg-dark text-light'>{dragData.info}</span>)
+            });
+        }
+        else{
+            this.flowMCRef.current.setGetContentFun(() => {
+                return contentFun();
+            });
+        }
+
+        window.addEventListener('mouseup', this.mouseUpInDragingHandler);
+        this.dragEndCallBack = callBack;
+        this.dragingData = dragData;
+    }
+
+    mouseUpInDragingHandler(ev) {
+        this.flowMCRef.current.setGetContentFun(null);
+        window.removeEventListener('mouseup', this.mouseUpInDragingHandler);
+        if(this.dragEndCallBack){
+            this.dragEndCallBack({x:ev.x, y:ev.y},this.dragingData);
+            this.dragingData = null;
+        }
+    }
+
+    propUpMenu(items_arr, pos, callBack){
+        this.quickMenuRef.current.popMenu(items_arr, pos, callBack);
     }
 
     componentWillMount(){
@@ -795,6 +837,8 @@ class C_SqlNode_Editor extends React.PureComponent{
                     }
                     panel2={
                         <div className='bg-dark m-100 h-100 flex-grow-1 flex-shrink-1'>
+                            <FlowMouseContainer ref={this.flowMCRef} />
+                            <QuickMenuContainer ref={this.quickMenuRef} />
                             <LogOutputPanel source={this.logManager} />
                         </div>
                     }
@@ -1303,8 +1347,7 @@ class SqlDef_Variable_Component extends React.PureComponent{
     }
 
     dragTimeOutHandler() {
-        var designer = this.props.varData.bluePrint.master.project.designer;
-        designer.startDrag({info:'放置变量'}, this.dragEndHandler, this.genDragContentFun);
+        this.props.editor.startDrag({info:'放置变量'}, this.dragEndHandler, this.genDragContentFun);
     }
 
     dragMenuCallBack(menuItem, pos){
@@ -1322,14 +1365,8 @@ class SqlDef_Variable_Component extends React.PureComponent{
         // sql node 只支持var get
         var editorRect = this.props.editor.zoomDivRef.current.getBoundingClientRect();
         if(MyMath.isPointInRect(editorRect, pos)){
-            var designer = this.props.varData.bluePrint.master.project.designer;
             var varData = this.props.varData;
             this.dragMenuCallBack(new QuickMenuItem('Get ' + varData.name, 'GET'), pos);
-            return;
-            designer.propUpMenu([new QuickMenuItem('Set ' + varData.name, 'SET'),new QuickMenuItem('Get ' + varData.name, 'GET')]
-                ,pos
-                ,this.dragMenuCallBack
-            );
         }
     }
 
