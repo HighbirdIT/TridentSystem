@@ -959,7 +959,9 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentBlock.pushChild(childRenderBlock);
             renderContentBlock.pushLine('</div>');
             var navigaterBlock = new FormatFileBlock('navigater');
-            navigaterBlock.pushLine("{this.renderNavigater()}");
+            if(theKernel.getAttribute(AttrNames.GenNavBar)){
+                navigaterBlock.pushLine("{this.renderNavigater()}");
+            }
             formReactClass.navigaterBlock = navigaterBlock;
             renderContentBlock.pushChild(navigaterBlock);
             renderContentBlock.subNextIndent();
