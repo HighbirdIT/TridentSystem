@@ -111,32 +111,54 @@ class MobileContentCompiler extends ContentCompiler {
         clientSide.appClass.mapStateFun.pushChild(unloadedIfBlock);
         unloadedIfBlock.pushLine(makeLine_Assign(VarNames.RetProps + '.fetchState', 'state.ui.fetchState'));
 
+        clientSide.scope.getVar(VarNames.PageRouter,true,'[]');
         clientSide.pageLoadedReducerFun = clientSide.scope.getFunction('pageLoadedReducer', true, ['state']);
         clientSide.gotoPageReducerFun = clientSide.scope.getFunction('gotoPageReducer', true, ['state', 'action']);
         clientSide.gotoPageReducerFun.pushLine("return gotoPage(action.pageName, state);");
 
         clientSide.gotoPageFun = clientSide.scope.getFunction('gotoPage', true, ['pageName', 'state']);
         clientSide.gotoPageFun.pushLine("if (state.nowPage == pageName){return state;}");
+        clientSide.gotoPageFun.pushLine(VarNames.PageRouter + '.push(pageName);');
         clientSide.gotoPageFun.scope.getVar(VarNames.ReState, true, 'state');
         var gotoPageSwitchBlock = new JSFile_Switch('gotopage', 'pageName');
         clientSide.gotoPageFun.pushChild(gotoPageSwitchBlock);
         clientSide.gotoPageFun.switchBlock = gotoPageSwitchBlock;
         clientSide.gotoPageFun.retBlock.pushLine("return Object.assign({}, " + VarNames.ReState + ");");
+        
+        clientSide.pageRouteBackFun = clientSide.scope.getFunction('pageRoute_Back', true);
+        clientSide.pageRouteBackFun.pushLine('if(' + VarNames.PageRouter + '.length > 1){',1);
+        clientSide.pageRouteBackFun.pushLine(VarNames.PageRouter + '.pop();');
+        clientSide.pageRouteBackFun.pushLine('store.dispatch(makeAction_gotoPage(' + VarNames.PageRouter + '.pop()));', -1);
+        clientSide.pageRouteBackFun.pushLine('}');
 
         clientSide.addReducer('AT_PAGELOADED', 'pageLoadedReducer.bind(window)');
         clientSide.addReducer('AT_GOTOPAGE', 'gotoPageReducer.bind(window)');
 
         this.mianPageKernel = null;
+        var flowStepSwitch = new JSFile_Switch('flowstepswitch', 'flowStep');
         for (var pi in project.content_Mobile.pages) {
-            this.compileChain.push(project.content_Mobile.pages[pi]);
-            if (this.compilePage(project.content_Mobile.pages[pi]) == false) {
+            var mobilePage = project.content_Mobile.pages[pi];
+            this.compileChain.push(mobilePage);
+            if (this.compilePage(mobilePage) == false) {
                 return false;
             }
+            mobilePage.getAttrArrayList(AttrNames.RelFlowStep).forEach(attr=>{
+                var flowStepCode = mobilePage[attr.name];
+                if(gFlowMaster.findStepByCode(flowStepCode)){
+                    var flowStepCaseBLK = flowStepSwitch.getCaseBlock(flowStepCode);
+                    flowStepCaseBLK.pushLine("targetPageID='" + mobilePage.id + "';");
+                }
+            });
         }
         if (this.mianPageKernel == null) {
             logManager.error('项目没有设置主页面');
         }
-        clientSide.pageLoadedReducerFun.pushLine("return gotoPage('" + this.mianPageKernel.id + "', state);");
+
+        clientSide.pageLoadedReducerFun.pushLine("var flowStep = parseInt(getQueryVariable('flowStep'));");
+        clientSide.pageLoadedReducerFun.pushLine("var targetPageID='" + this.mianPageKernel.id + "';");
+        clientSide.pageLoadedReducerFun.pushChild(flowStepSwitch);
+        clientSide.pageLoadedReducerFun.flowStepSwitch = flowStepSwitch;
+        clientSide.pageLoadedReducerFun.pushLine("return gotoPage(targetPageID, state);");
 
         clientSide.appClass.renderFun.pushLine(VarNames.RetElem + " = (", 1);
         clientSide.appClass.renderFun.pushLine("<div className='w-100 h-100'>");
@@ -147,6 +169,7 @@ class MobileContentCompiler extends ContentCompiler {
         clientSide.appClass.renderFun.pushLine("{pageElem}", -1);
         clientSide.appClass.renderFun.pushLine("</div>);");
 
+        this.compileChain.reverse();
         for (var ki in this.compileChain) {
             this.endKernelCompile(this.compileChain[ki]);
         }
@@ -262,8 +285,9 @@ class MobileContentCompiler extends ContentCompiler {
         var gotoPageCaseBlock = clientSide.gotoPageFun.switchBlock.getCaseBlock(singleQuotesStr(pageKernel.id));
         gotoPageCaseBlock.pushLine(makeLine_Assign(VarNames.ReState, makeStr_callFun(makeFName_activePage(pageKernel), [VarNames.ReState])));
 
+        pageReactClass.renderHeaderFun.pushLine("var routeElem = " + VarNames.PageRouter + ".length > 1 ? <i className='fa fa-arrow-left' /> : null;");
         pageReactClass.renderHeaderFun.pushLine("return (<div className='d-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader'>", 1);
-        pageReactClass.renderHeaderFun.pushLine("<h3>" + pageKernel.getAttribute(AttrNames.Title) + "</h3>", -1);
+        pageReactClass.renderHeaderFun.pushLine("<h3 onClick={pageRoute_Back}>{routeElem}" + pageKernel.getAttribute(AttrNames.Title) + "</h3>", -1);
         pageReactClass.renderHeaderFun.pushLine("</div>);");
 
         /*
@@ -305,8 +329,10 @@ class MobileContentCompiler extends ContentCompiler {
 
         var activePageFun = clientSide.scope.getFunction(makeFName_activePage(pageKernel), true, ['state']);
         var controlInitBlock = new FormatFileBlock('ctlinit');
-        activePageFun.pushChild(controlInitBlock);
         activePageFun.pushLine(makeLine_Assign('state.nowPage', singleQuotesStr(pageKernel.id)));
+        activePageFun.pushLine("if(" + makeActStr_getGDataCache(pageKernel.id + '_opened') + "){return state;}");
+        activePageFun.pushLine(makeLine_setGDataCache(pageKernel.id + '_opened', 1));
+        activePageFun.pushChild(controlInitBlock);
         activePageFun.pushLine('setTimeout(() => {', 1);
         var activeTimeoutBlock = new FormatFileBlock('timeout');
         activePageFun.pushChild(activeTimeoutBlock);
@@ -486,16 +512,17 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else {
             var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
+            var belongPageKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
             var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
             var setValueStateItem = null;
+            var parentMidData = this.projectCompiler.getMidData(belongFormKernel ? belongFormKernel.id : belongPageKernel.id);
+            if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
+                parentMidData.needSetKernels_arr.push(theKernel);
+            }
             if (belongFormKernel != null) {
-                var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
                 var formColumns_arr = belongFormKernel.getCanuseColumns();
-                if (formMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
-                    formMidData.needSetKernels_arr.push(theKernel);
-                }
                 if (formColumns_arr.indexOf(textField) != -1) {
-                    formMidData.useColumns_map[textField] = 1;
+                    parentMidData.useColumns_map[textField] = 1;
                     kernelMidData.columnName = textField;
                     setValueStateItem = {
                         name: 'value',
@@ -560,16 +587,17 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else {
             var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
+            var belongPageKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
             var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
             var setValueStateItem = null;
+            var parentMidData = this.projectCompiler.getMidData(belongFormKernel ? belongFormKernel.id : belongPageKernel.id);
+            if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
+                parentMidData.needSetKernels_arr.push(theKernel);
+            }
             if (belongFormKernel != null) {
-                var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
                 var formColumns_arr = belongFormKernel.getCanuseColumns();
-                if (formMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
-                    formMidData.needSetKernels_arr.push(theKernel);
-                }
                 if (formColumns_arr.indexOf(textField) != -1) {
-                    formMidData.useColumns_map[textField] = 1;
+                    parentMidData.useColumns_map[textField] = 1;
                     kernelMidData.columnName = textField;
                     setValueStateItem = {
                         name: 'value',
@@ -818,7 +846,7 @@ class MobileContentCompiler extends ContentCompiler {
             labeledCtrlTag.setAttr('label', label);
         }
         var childBlock = null;
-        if(parentForm && parentForm.getAttribute(AttrNames.FormType) == EFormType.Page){
+        if(parentForm == null || parentForm.getAttribute(AttrNames.FormType) == EFormType.Page){
             childBlock = new FormatFileBlock('child');
             labeledCtrlTag.pushChild(childBlock);
             renderBlock.pushChild(labeledCtrlTag);
@@ -909,7 +937,7 @@ class MobileContentCompiler extends ContentCompiler {
             if(isGridForm){
                 ifNowRecordBlock.condition = "!this.props.canInsert && (this.props.records_arr == null || this.props.records_arr.length == 0)";
             }
-            ifFetingBlock.falseBlock.pushChild(ifNowRecordBlock);
+            ifInvalidBundleBlock.falseBlock.pushChild(ifNowRecordBlock);
             var noDataTip = theKernel.getAttribute(AttrNames.NoDataTip);
             if(IsEmptyString(noDataTip)){
                 noDataTip = '没有查询到数据';
@@ -1282,6 +1310,7 @@ class MobileContentCompiler extends ContentCompiler {
                 bindPageFun.scope.getVar(VarNames.RowPerPage, true, 'formState.' + VarNames.RowPerPage);
                 bindPageFun.scope.getVar(VarNames.StartRowIndex, true, VarNames.PageIndex + '*' + VarNames.RowPerPage);
                 bindPageFun.scope.getVar(VarNames.EndRowIndex, true, '(' + VarNames.PageIndex + '+1)*' + VarNames.RowPerPage + '-1');
+                bindPageFun.pushLine('if(' + VarNames.EndRowIndex + '>=' + VarNames.Records_arr + '.length){' + VarNames.EndRowIndex  + '=' + VarNames.Records_arr + '.length-1;}');
             }
             else {
                 bindPageFun.scope.getVar(VarNames.StartRowIndex, true, '0');
@@ -1542,7 +1571,14 @@ class MobileContentCompiler extends ContentCompiler {
         var thisfullpath = makeStr_DotProp(parentPath, theKernel.id);
         ctlTag.setAttr('id', theKernel.id);
         ctlTag.setAttr('parentPath', parentPath);
+        var textValueType = theKernel.getAttribute(AttrNames.ValueType);
+        if(textValueType != ValueType.String){
+            ctlTag.setAttr('textType', textValueType);
+        }
         renderBlock.pushChild(ctlTag);
+        if(theKernel.getAttribute(AttrNames.MultiSelect)){
+            ctlTag.setAttr('multiselect', '{true}');
+        }
         this.compileIsdisplayAttribute(theKernel, ctlTag);
         this.compileValidCheckerAttribute(theKernel);
 
@@ -1739,19 +1775,21 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else {
             var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
+            var belongPageKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
             var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
             kernelMidData.hadValueField = hadValueField;
             var setTextStateItem = null;
             var setValueStateItem = null;
-            if (belongFormKernel != null) {
-                var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
-                var formColumns_arr = belongFormKernel.getCanuseColumns();
-                if (formMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
-                    formMidData.needSetKernels_arr.push(theKernel);
-                }
 
+            var parentMidData = this.projectCompiler.getMidData(belongFormKernel ? belongFormKernel.id : belongPageKernel.id);
+            if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
+                parentMidData.needSetKernels_arr.push(theKernel);
+            }
+
+            if (belongFormKernel != null) {
+                var formColumns_arr = belongFormKernel.getCanuseColumns();
                 if (formColumns_arr.indexOf(textField) != -1) {
-                    formMidData.useColumns_map[textField] = 1;
+                    parentMidData.useColumns_map[textField] = 1;
                     kernelMidData.columnName = textField;
                     setTextStateItem = {
                         name: 'text',
@@ -1760,7 +1798,7 @@ class MobileContentCompiler extends ContentCompiler {
                 }
 
                 if (hadValueField && formColumns_arr.indexOf(valueField) != -1) {
-                    formMidData.useColumns_map[valueField] = 1;
+                    parentMidData.useColumns_map[valueField] = 1;
                     kernelMidData.columnName = valueField;
                     setValueStateItem = {
                         name: 'text',
@@ -1924,7 +1962,8 @@ class MobileContentCompiler extends ContentCompiler {
                         theFun.scope.getVar(nowRecordVarName, true, initValue);
                         needCheckVars_arr.push(nowRecordVarName);
                         for(var colName in useFormData.useColumns_map){
-                            needSetParams_arr.push({bundleName:useFormData.useDS.code + '_' + colName,clientValue:nowRecordVarName + '.' + colName});
+                            needSetParams_arr.push({bundleName:colName + '_' + useFormData.useDS.code,clientValue:nowRecordVarName + '.' + colName});
+                            useFormMidData.useColumns_map[colName] = 1;
                         }
                         if(IsEmptyObject(useFormData.useControls_map)){
                             // 只用到了目标form的数据列，需要在其bind的时候进行重新bind
@@ -1987,7 +2026,7 @@ class MobileContentCompiler extends ContentCompiler {
                             varObj.ctlStateVar,
                             varObj.valueVar,
                             singleQuotesStr(valueType),
-                            varObj.nullable.toString(),
+                            varObj.nullable ? varObj.nullable.toString() : 'false',
                             singleQuotesStr(varObj.kernel.id),
                             validErrStateVar.name
                         ]) + ";");
@@ -2011,6 +2050,7 @@ class MobileContentCompiler extends ContentCompiler {
                     validKernelBlock.pushLine(setErrStateLine, -1);
                     validKernelBlock.pushLine('}');
                     validKernelBlock.pushLine('else{' + dispatchErrLine + '}', -1);
+                    validKernelBlock.pushLine('return;');
                     validKernelBlock.subNextIndent();
                     validKernelBlock.pushLine('}');
                 }
@@ -2054,7 +2094,7 @@ class MobileContentCompiler extends ContentCompiler {
                     else{
                         var pageActiveFun = clientSide.scope.getFunction(makeFName_activePage(belongPage));
                         var timeoutBlock = pageActiveFun.getChild('timeout');
-                        timeoutBlock.pushLine(makeStr_callFun(pullFun.name));
+                        timeoutBlock.pushLine(makeStr_callFun(pullFun.name) + ';');
                     }
                     //timeoutBlock.pushLine(makeStr_callFun(pullFun.name, [VarNames.State]));
                 }

@@ -44,7 +44,7 @@ function GetControlTypeReadableName(type){
         case M_AllKernel_Type:
         return '任意';
         case M_CheckBoxKernel_Type:
-        return '开关';
+        return '复选框';
     }
     return type;
 }

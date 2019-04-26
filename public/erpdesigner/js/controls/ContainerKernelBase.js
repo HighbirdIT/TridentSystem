@@ -125,11 +125,11 @@ var ContainerKernelBase = function (_ControlKernelBase) {
         }
     }, {
         key: 'getJson',
-        value: function getJson() {
-            var rlt = _get(ContainerKernelBase.prototype.__proto__ || Object.getPrototypeOf(ContainerKernelBase.prototype), 'getJson', this).call(this);
+        value: function getJson(jsonProf) {
+            var rlt = _get(ContainerKernelBase.prototype.__proto__ || Object.getPrototypeOf(ContainerKernelBase.prototype), 'getJson', this).call(this, jsonProf);
             rlt.children = [];
             this.children.forEach(function (child) {
-                rlt.children.push(child.getJson());
+                rlt.children.push(child.getJson(jsonProf));
             });
             return rlt;
         }

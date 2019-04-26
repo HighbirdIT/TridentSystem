@@ -153,6 +153,9 @@ function saveProject(req, projJson) {
             if (projItem.history == null) {
                 projItem.history = [];
             }
+            if(projItem.history.length > 10){
+                projItem.history.splice(0, projItem.history.length - 10 + 1);
+            }
             projItem.history.push({
                 name: userData.name,
                 id: userData.name,
@@ -570,7 +573,7 @@ function WriteEntity(库内对象_dr, 目标库内对象_dic) {
 
 function getAllFlow(req){
     return co(function* () {
-        var sql = 'SELECT [T007C系统流程名称].[系统流程名称代码],[系统流程名称],[系统流程简称],[流程操作步骤代码],[操作步骤名称],[参数数量],[参数1],[参数2],[参数3] FROM [base1].[dbo].[T007C系统流程名称]left join [T007D流程操作步骤] on [T007D流程操作步骤].[系统流程名称代码] = [T007C系统流程名称].[系统流程名称代码] where [终止确认状态] = 0';
+        var sql = 'SELECT [T007C系统流程名称].[系统流程名称代码],[系统流程名称],[系统流程简称],[流程操作步骤代码],[操作步骤名称],[参数数量],[参数1],[参数2],[参数3],[是否周期步骤],[周期起始时间],[周期类型],[周期值],[下次执行时间] FROM [base1].[dbo].[T007C系统流程名称] left join [T007D流程操作步骤] on [T007D流程操作步骤].[系统流程名称代码] = [T007C系统流程名称].[系统流程名称代码] where [终止确认状态] = 0';
         var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
         return rcdRlt.recordset;
     });
@@ -689,6 +692,7 @@ function publishProject(req, res){
             pcLayoutName: compileResult.pcLayoutName,
             serverName: jsServerName,
             title:projTitle,
+            version:newVersion,
         }
 
         if(compileResult.mobilePart != null){
@@ -794,8 +798,8 @@ function createFlowStep(req){
         if (userData == null) {
             return { err: { info: '你还没有登录' } };
         }
-        if(req.body.name == null || req.body.name.length < 2 || req.body.name.length > 10){
-            return { err: { info: '名称不合法，必须是2-10位字符串' } };
+        if(req.body.name == null || req.body.name.length < 2 || req.body.name.length > 25){
+            return { err: { info: '名称不合法，必须是2-25位字符串' } };
         }
         if(req.body.flowCode == null){
             return { err: { info: '没有flowCode' } };
@@ -814,6 +818,23 @@ function createFlowStep(req){
             return { err: { info: '参数3不合法' } };
         }
 
+        var insertPart = 'INSERT INTO [dbo].[T007D流程操作步骤]([系统流程名称代码],[操作步骤名称],[登记确认用户],[登记确认时间],[参数数量],[参数1],[参数2],[参数3]';
+        var valuePart = 'values(@flowCode,@name,@userID,getdate(),@paramCount,@param1,@param2,@param3';
+        if(req.body.是否周期步骤){
+            if(req.body.周期起始时间 == null){
+                return { err: { info: '没有周期起始时间' } };
+            }
+            if(req.body.周期值 == null){
+                return { err: { info: '没有周期值' } };
+            }
+            if(req.body.周期类型 == null){
+                return { err: { info: '没有周期类型' } };
+            }
+
+            insertPart += ',[是否周期步骤],[周期起始时间],[周期类型],[周期值],[下次执行时间]';
+            valuePart += ',1,@起始时间,@周期类型,@周期值,dbo.FB下个周期时间(@起始时间,@周期类型,@周期值)';
+        }
+
         var params_arr = [
             dbhelper.makeSqlparam('name', sqlTypes.NVarChar(20), req.body.name),
             dbhelper.makeSqlparam('flowCode', sqlTypes.NVarChar(20), req.body.flowCode),
@@ -822,8 +843,11 @@ function createFlowStep(req){
             dbhelper.makeSqlparam('param1', sqlTypes.NVarChar(20), req.body.param1),
             dbhelper.makeSqlparam('param2', sqlTypes.NVarChar(20), req.body.param2),
             dbhelper.makeSqlparam('param3', sqlTypes.NVarChar(20), req.body.param3),
+            dbhelper.makeSqlparam('起始时间', sqlTypes.NVarChar(20), req.body.周期起始时间),
+            dbhelper.makeSqlparam('周期值', sqlTypes.NVarChar(20), req.body.周期值),
+            dbhelper.makeSqlparam('周期类型', sqlTypes.NVarChar(20), req.body.周期类型),
         ];
-        var sql = "INSERT INTO [dbo].[T007D流程操作步骤]([系统流程名称代码],[操作步骤名称],[登记确认用户],[登记确认时间],[参数数量],[参数1],[参数2],[参数3])values(@flowCode,@name,@userID,getdate(),@paramCount,@param1,@param2,@param3) select SCOPE_IDENTITY()";
+        var sql = insertPart + ')' + valuePart + ") select SCOPE_IDENTITY()";
         var newRcdid = yield dbhelper.asynGetScalar(sql, params_arr);
         return newRcdid;
     });
@@ -838,8 +862,8 @@ function modifyFlowStep(req){
         if(isNaN(req.body.code)){
             return { err: { info: '代码不合法' } };
         }
-        if(req.body.name == null || req.body.name.length < 2 || req.body.name.length > 10){
-            return { err: { info: '名称不合法，必须是2-10位字符串' } };
+        if(req.body.name == null || req.body.name.length < 2 || req.body.name.length > 25){
+            return { err: { info: '名称不合法，必须是2-25位字符串' } };
         }
         if(req.body.paramCount == null || isNaN(req.body.paramCount)){
             return { err: { info: 'paramCount不合法' } };
@@ -855,6 +879,22 @@ function modifyFlowStep(req){
             return { err: { info: '参数3不合法' } };
         }
 
+        var updatePart = 'update [dbo].[T007D流程操作步骤] set [操作步骤名称]=@name,[参数数量]=@paramCount,[参数1]=@param1,[参数2]=@param2,[参数3]=@param3,[是否周期步骤]=' + (req.body.是否周期步骤 ? 1 : 0);
+        if(req.body.是否周期步骤){
+            if(req.body.周期起始时间 == null){
+                return { err: { info: '没有周期起始时间' } };
+            }
+            if(req.body.周期值 == null){
+                return { err: { info: '没有周期值' } };
+            }
+            if(req.body.周期类型 == null){
+                return { err: { info: '没有周期类型' } };
+            }
+
+            updatePart += ',[周期起始时间]=@起始时间,[周期类型]=@周期类型,[周期值]=@周期值,[下次执行时间]=dbo.FB下个周期时间(@起始时间,@周期类型,@周期值)';
+        }
+
+        
         var params_arr = [
             dbhelper.makeSqlparam('name', sqlTypes.NVarChar(20), req.body.name),
             dbhelper.makeSqlparam('code', sqlTypes.NVarChar(20), req.body.code),
@@ -863,9 +903,12 @@ function modifyFlowStep(req){
             dbhelper.makeSqlparam('param1', sqlTypes.NVarChar(20), req.body.param1),
             dbhelper.makeSqlparam('param2', sqlTypes.NVarChar(20), req.body.param2),
             dbhelper.makeSqlparam('param3', sqlTypes.NVarChar(20), req.body.param3),
+            dbhelper.makeSqlparam('起始时间', sqlTypes.NVarChar(20), req.body.周期起始时间),
+            dbhelper.makeSqlparam('周期值', sqlTypes.NVarChar(20), req.body.周期值),
+            dbhelper.makeSqlparam('周期类型', sqlTypes.NVarChar(20), req.body.周期类型),
         ];
 
-        var updateSql = 'update [dbo].[T007D流程操作步骤] set [操作步骤名称]=@name,[参数数量]=@paramCount,[参数1]=@param1,[参数2]=@param2,[参数3]=@param3 where [流程操作步骤代码]=@code';
+        var updateSql = updatePart + ' where [流程操作步骤代码]=@code';
         yield dbhelper.asynQueryWithParams(updateSql, params_arr);
         return true;
     });

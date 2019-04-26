@@ -629,6 +629,10 @@
   width: calc(100% - 6.5em);
 }
 
+.attrEditorContent[hadtrash]{
+  width: calc(100% - 6.5em - 39px);
+}
+
 .indexTableHeader{
   width: 3em;
   max-width: 3em;

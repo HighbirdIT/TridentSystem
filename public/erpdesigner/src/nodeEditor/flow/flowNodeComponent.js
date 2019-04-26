@@ -212,11 +212,12 @@ class C_FlowNode_QueryKeyRecord extends React.PureComponent {
         var nodeData = this.props.nodedata;
         var entity = nodeData.targetEntity;
         var dataloaded = entity ? entity.loaded : false;
+        var dataMaster = nodeData.bluePrint.dataMaster;
 
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='查询关键记录'>
             <div className='d-flex'>
                 <div className='flex-grow-1 flex-shrink-1'>
-                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={g_dataBase.getEntitiesByType} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
+                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={dataMaster.getAllEntities} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
                 </div>
             </div>
             <div className='flex-grow-1 flex-shrink-1'>

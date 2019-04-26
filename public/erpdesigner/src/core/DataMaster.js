@@ -16,6 +16,38 @@ class DataBase extends EventEmitter{
         autoBind(this);
     }
 
+    doSyn_Unload_bycodes(codes_arr, callBack){
+        console.log('doSyn_Unload_bycodes:' + codes_arr);
+        var needSynCodes_arr = [];
+        if(codes_arr)
+        {
+            codes_arr.forEach(code=>{
+                if(this.entityCode_map[code] == null){
+                    needSynCodes_arr.push(code);
+                }
+            });
+        }
+        if(needSynCodes_arr.length == 0){
+            if(callBack != null){
+                callBack();
+            }
+            return;
+        }
+        this.doSyn_Unload_bycodes_callback = callBack;
+        var self = this;
+        fetchJsonPost('server', { action: 'syndata_bycodes', codes_arr: needSynCodes_arr }, fetchData=>{
+            var json = fetchData.json;
+            if(json.err){
+                console.error(json.err);
+                return;
+            }
+            self.synEnityFromFetch(json.data);
+            if(callBack != null){
+                callBack();
+            }
+        });
+    }
+
     synEnityFromFetch(data_arr){
         var changed_arr = [];
         data_arr.forEach(entityData=>{
@@ -62,12 +94,13 @@ class DataBase extends EventEmitter{
     }
 
     getEntityByCode(code){
+        if(code == null || code == 0){
+            return null;
+        }
         if(isNaN(code)){
             console.error('getDataSourceByCode只接受整数');
         }
-        if(code == 0){
-            return null;
-        }
+        
         var rlt = this.entityCode_map[code.toString()];
         if(rlt == null){
             rlt = this.createEnity({code:code});
@@ -298,12 +331,12 @@ class DataMaster extends EventEmitter{
         return true;
     }
 
-    getJson(){
+    getJson(jsonProf){
         var rlt = {
             BP_sql_arr:[]
         };
         this.BP_sql_arr.forEach(bp=>{
-            rlt.BP_sql_arr.push(bp.getJson());
+            rlt.BP_sql_arr.push(bp.getJson(jsonProf));
             //console.log(JSON.stringify(rlt.BP_sql_arr[rlt.BP_sql_arr.length - 1]));
         });
         return rlt;

@@ -503,12 +503,14 @@ class JSFile_Switch extends FormatFileBlock{
 
         this.caseBloks_map = {};
         this.defaultBlock = new FormatFileBlock('default');
+        this.defaultBlock.parent = this;
     }
 
     clone(){
         var rlt = new JSFile_Switch(this.name, this.flagName);
         for(var ci in this.caseBloks_map){
             rlt.caseBloks_map[ci] = this.caseBloks_map[ci].clone();
+            rlt.caseBloks_map[ci].parent = rlt;
         }
         return rlt;
     }
@@ -518,6 +520,7 @@ class JSFile_Switch extends FormatFileBlock{
         if(rlt == null){
             rlt = new FormatFileBlock(caseVal);
             this.caseBloks_map[caseVal] = rlt;
+            rlt.parent = this;
         }
         return rlt;
     }
@@ -552,6 +555,9 @@ class JSFile_IF extends FormatFileBlock{
         this.trueBlock = new FormatFileBlock('true');
         this.falseBlock = new FormatFileBlock('false');
         this.elseIfs_arr = [];
+
+        this.trueBlock.parent = this;
+        this.falseBlock.parent = this;
     }
 
     clone(){
@@ -561,6 +567,8 @@ class JSFile_IF extends FormatFileBlock{
         for(var ci in this.elseIfs_arr){
             rlt.elseIfs_arr.push(this.elseIfs_arr[ci].clone());
         }
+        rlt.trueBlock.parent = rlt;
+        rlt.falseBlock.parent = rlt;
         return rlt;
     }
 
@@ -580,6 +588,7 @@ class JSFile_IF extends FormatFileBlock{
         }
         var rltBlock = new FormatFileBlock(name);
         rltBlock.pushLine('else if(' + condition + '){', 1);
+        rltBlock.parent = this;
     }
 
     getElseIfBlock(name){
@@ -613,12 +622,18 @@ class JSFile_Try extends FormatFileBlock{
 
         this.bodyBlock = new FormatFileBlock('body');
         this.errorBlock = new FormatFileBlock('error');
+
+        this.bodyBlock.parent = this;
+        this.errorBlock.parent = this;
     }
 
     clone(){
         var rlt = new JSFile_Try(this.name);
         rlt.bodyBlock = this.bodyBlock.clone();
         rlt.errorBlock = this.errorBlock.clone();
+
+        rlt.bodyBlock.parent = rlt;
+        rlt.errorBlock.parent = rlt;
         return rlt;
     }
 
@@ -660,6 +675,7 @@ class JSFile_Funtion extends FormatFileBlock{
         this.headBlock.parent = this;
         this.bodyBlock.parent = this;
         this.retBlock.parent = this;
+        this.beforeRetBlock.parent = this;
         this.declareType = declareType;
     }
 
@@ -1003,6 +1019,7 @@ class CP_ClientSide extends JSFileMaker{
         this.appClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps,VarNames.NowPage), makeStr_DotProp('state',VarNames.NowPage)));
 
         var setCusValidCheckerBlock = new FormatFileBlock('setCusValidChecker');
+        setCusValidCheckerBlock.parent = this;
         this.endBlock.pushChild(setCusValidCheckerBlock);
         this.setCusValidCheckerBlock = setCusValidCheckerBlock;
     }

@@ -232,6 +232,13 @@ class CProject extends IAttributeable{
         return newPage;
     }
 
+    getAllPages(isPC){
+        if(isPC == null){
+            isPC = this.designeConfig.editingType == 'PC';
+        }
+        return isPC ? this.content_PC.pages : this.content_Mobile.pages;
+    }
+
     getEditingPage(){
         return this.getPageById(this.designeConfig.editingPage.id);
     }
@@ -261,8 +268,11 @@ class CProject extends IAttributeable{
         return this.getAttribute(AttrNames.Title) + 'Real';
     }
 
-    getJson(){
-        var attrJson=super.getJson();
+    getJson(jsonProf){
+        if(jsonProf == null){
+            jsonProf = new AttrJsonProfile();
+        }
+        var attrJson=super.getJson(jsonProf);
         var rlt = {
             attr:attrJson,
             lastEditingPageID:this.designeConfig.editingPage.id
@@ -272,7 +282,7 @@ class CProject extends IAttributeable{
         }
         this.content_PC.pages.forEach(
             page=>{
-                rlt.content_PC.pages.push(page.getJson());
+                rlt.content_PC.pages.push(page.getJson(jsonProf));
             }
         );
 
@@ -281,11 +291,29 @@ class CProject extends IAttributeable{
         }
         this.content_Mobile.pages.forEach(
             page=>{
-                rlt.content_Mobile.pages.push(page.getJson());
+                rlt.content_Mobile.pages.push(page.getJson(jsonProf));
             }
         );
-        rlt.dataMaster = this.dataMaster.getJson();
-        rlt.scriptMaster = this.scriptMaster.getJson();
+        rlt.dataMaster = this.dataMaster.getJson(jsonProf);
+        rlt.scriptMaster = this.scriptMaster.getJson(jsonProf);
+        rlt.useEntities_arr = jsonProf.entities_arr.map(entity=>{
+            return entity.code;
+        });
         return rlt;
+    }
+}
+
+class AttrJsonProfile{
+    constructor(){
+        this.entities_arr = [];
+    }
+
+    useEntity(entity){
+        if(isNaN(entity.code)){
+            return;
+        }
+        if(this.entities_arr.indexOf(entity) == -1){
+            this.entities_arr.push(entity);
+        }
     }
 }

@@ -120,7 +120,8 @@ var DropDownControl = function (_React$PureComponent) {
         key: 'componentDidUpdate',
         value: function componentDidUpdate() {
             if (this.state.opened) {
-                var popMenu = this.$dropDowmDiv.find('.dropdown-menu');
+                var $dropDowmDiv = $(this.rootDivRef.current);
+                var popMenu = $dropDowmDiv.find('.dropdown-menu');
                 if (this.popMenuHeight == popMenu.height()) {
                     return;
                 }
@@ -130,8 +131,9 @@ var DropDownControl = function (_React$PureComponent) {
     }, {
         key: 'freshPopUpPos',
         value: function freshPopUpPos() {
-            var popMenu = this.$dropDowmDiv.find('.dropdown-menu');
-            var $current = this.$dropDowmDiv;
+            var $dropDowmDiv = $(this.rootDivRef.current);
+            var popMenu = $dropDowmDiv.find('.dropdown-menu');
+            var $current = $dropDowmDiv;
             var divTop = $current.offset().top;
             var divBottom = divTop + $current.outerHeight(true);
             var windowTop = document.body.scrollTop;
@@ -152,7 +154,8 @@ var DropDownControl = function (_React$PureComponent) {
     }, {
         key: 'windowMouseUpWidthPopintg',
         value: function windowMouseUpWidthPopintg(ev) {
-            if (isNodeHasParent(ev.target, this.$dropDowmDiv[0])) {
+            var $dropDowmDiv = $(this.rootDivRef.current);
+            if (isNodeHasParent(ev.target, $dropDowmDiv[0])) {
                 return;
             }
             this.dropDownClosed();
@@ -335,31 +338,34 @@ var DropDownControl = function (_React$PureComponent) {
             }
             var inputValue = this.editIsKeyword ? this.state.keyword == '' ? selectedOption == null ? '' : selectedOption.text : this.state.keyword : this.state.value;
 
+            var useClassName = this.props.rootclass ? this.props.rootclass : '';
+            if (useClassName.indexOf('flex-grow-') == -1) {
+                useClassName += ' flex-grow-1';
+            }
+            if (useClassName.indexOf('flex-shrink-') == -1) {
+                useClassName += ' flex-shrink-0';
+            }
             return React.createElement(
                 'div',
-                { className: "d-flex flex-column " + (this.props.rootclass ? this.props.rootclass : ''), style: this.props.style, ref: this.rootDivRef },
-                React.createElement(
-                    'div',
-                    { className: 'd-flex flex-grow-1 flex-shrink-1' },
+                { className: "d-flex btn-group " + useClassName, style: this.props.style, ref: this.rootDivRef },
+                this.props.editable ? React.createElement('input', { onFocus: this.editableInputFocushandler, ref: this.editableInputRef, type: 'text', className: 'flex-grow-1 flex-shrink-1 flexinput', onChange: this.inputChangedHandler, onBlur: this.inputBlurHandler, value: inputValue }) : React.createElement(
+                    'button',
+                    { onClick: this.clickOpenHandler, style: { maxWidth: this.props.miniBtn ? 'calc(100% - 30px)' : '100%', minHeight: '38px' }, type: 'button', className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1' + (selectedOption == null ? ' text-danger' : '') },
                     React.createElement(
                         'div',
-                        { className: ' d-flex btn-group w-100 h-100', ref: this.dropDowmDivRefFun },
-                        this.props.editable ? React.createElement('input', { onFocus: this.editableInputFocushandler, ref: this.editableInputRef, type: 'text', className: 'flex-grow-1 flex-shrink-1 flexinput', onChange: this.inputChangedHandler, onBlur: this.inputBlurHandler, value: inputValue }) : React.createElement(
-                            'button',
-                            { onClick: this.clickOpenHandler, style: { width: 'calc(100% - 30px)', minHeight: '38px' }, type: 'button', className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1' + (selectedOption == null ? ' text-danger' : '') },
-                            React.createElement(
-                                'div',
-                                { style: { overflow: 'hidden' } },
-                                selectedOption ? selectedOption.text : '请选择'
-                            )
-                        ),
-                        this.props.miniBtn && React.createElement('button', { ref: this.dropdownbtnRef, style: { width: '30px' }, type: 'button', onClick: this.clickOpenHandler, className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdown-toggle dropdown-toggle-split' }),
+                        { style: { overflow: 'hidden' }, className: 'flex-grow-1 flex-shrink-1' },
                         React.createElement(
                             'div',
-                            { className: "dropdown-menu " + (this.state.opened ? 'show' : ''), ref: this.dropmenudivRef },
-                            (this.state.opened || this.state.options_arr.length > 0) && this.renderDropDown(filted_arr, selectedOption)
+                            null,
+                            selectedOption ? selectedOption.text : '请选择'
                         )
                     )
+                ),
+                this.props.miniBtn && React.createElement('button', { ref: this.dropdownbtnRef, style: { width: '30px' }, type: 'button', onClick: this.clickOpenHandler, className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdown-toggle dropdown-toggle-split' }),
+                React.createElement(
+                    'div',
+                    { className: "dropdown-menu " + (this.state.opened ? 'show' : ''), ref: this.dropmenudivRef },
+                    (this.state.opened || this.state.options_arr.length > 0) && this.renderDropDown(filted_arr, selectedOption)
                 )
             );
         }

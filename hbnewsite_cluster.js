@@ -1,4 +1,5 @@
 var cluster = require('cluster');
+var flowhelper = require('./flowhelper.js');
 
 function startWorker(){
     var worker = cluster.fork();
@@ -18,6 +19,8 @@ if(cluster.isMaster){
         console.log('CLUSTER: Worker %d died with exit code %d (%s)', worker.id, code. signal);
         startWorker();
     });
+
+    flowhelper.startWork();
 }
 else{
     require('./hbnewsite.js')();

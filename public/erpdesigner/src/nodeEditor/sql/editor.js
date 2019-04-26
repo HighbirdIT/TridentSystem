@@ -68,13 +68,13 @@ class C_SqlNode_Editor extends React.PureComponent{
             showLink:false,
             scale:1,
             editingNode:editingNode,
-        }
+        };
 
         var self = this;
         setTimeout(() => {
             this.setState({
                 showLink:true,
-            })
+            });
         }, 50);
 
         autoBind(this);
@@ -84,6 +84,8 @@ class C_SqlNode_Editor extends React.PureComponent{
         this.topBarRef = React.createRef();
         this.zoomDivRef = React.createRef();
         this.selectRectRef = React.createRef();
+        this.flowMCRef = React.createRef();
+        this.quickMenuRef = React.createRef();
         this.logManager = new LogManager('sqlnodeEditorLogManager');
 
         var editor = this;
@@ -132,7 +134,7 @@ class C_SqlNode_Editor extends React.PureComponent{
         this.selectedNFManager.add(target);
     }
 
-    showNodeData(nodeData){
+    showNodeData(nodeData, autoSelect){
         var editingNode = this.state.editingNode;
         if(nodeData.bluePrint == null || nodeData.bluePrint != editingNode.bluePrint || nodeData.parent == null)
             return;
@@ -141,7 +143,7 @@ class C_SqlNode_Editor extends React.PureComponent{
             this.setEditeNode(nodeData.parent);
             var self = this;
             setTimeout(() => {
-                self.showNodeData(nodeData);
+                self.showNodeData(nodeData, autoSelect);
             }, 50);
             return;
         }
@@ -150,7 +152,9 @@ class C_SqlNode_Editor extends React.PureComponent{
             var frameElem = nodeData.currentComponent.frameRef.current;
             if(frameElem == null)
                 return null;
-            this.setSelectedNF(frameElem);
+            if(autoSelect != false){
+                this.setSelectedNF(frameElem);
+            }
             var frameRect = frameElem.rootDivRef.current.getBoundingClientRect();
             var zoomRect = this.zoomDivRef.current.getBoundingClientRect();
             
@@ -167,6 +171,13 @@ class C_SqlNode_Editor extends React.PureComponent{
     }
 
     keyUpHandler(ev){
+        if(this.zoomDivRef.current == null){
+            return;
+        }
+        var editorRect = this.zoomDivRef.current.getBoundingClientRect();
+        if(!MyMath.isPointInRect(editorRect, WindowMouse)){
+            return;
+        }
         //console.log(ev);
         switch(ev.keyCode){
             case 27:
@@ -300,6 +311,39 @@ class C_SqlNode_Editor extends React.PureComponent{
         if(bp){
             bp.off('changed', this.blueprinkChanged);
         }
+    }
+
+    startDrag(dragData, callBack, contentFun){
+        if(dragData.info == null){
+            dragData.info = '位置drag';
+        }
+        if(contentFun == null){
+            this.flowMCRef.current.setGetContentFun(() => {
+                return (<span className='text-nowrap border bg-dark text-light'>{dragData.info}</span>)
+            });
+        }
+        else{
+            this.flowMCRef.current.setGetContentFun(() => {
+                return contentFun();
+            });
+        }
+
+        window.addEventListener('mouseup', this.mouseUpInDragingHandler);
+        this.dragEndCallBack = callBack;
+        this.dragingData = dragData;
+    }
+
+    mouseUpInDragingHandler(ev) {
+        this.flowMCRef.current.setGetContentFun(null);
+        window.removeEventListener('mouseup', this.mouseUpInDragingHandler);
+        if(this.dragEndCallBack){
+            this.dragEndCallBack({x:ev.x, y:ev.y},this.dragingData);
+            this.dragingData = null;
+        }
+    }
+
+    propUpMenu(items_arr, pos, callBack){
+        this.quickMenuRef.current.popMenu(items_arr, pos, callBack);
     }
 
     componentWillMount(){
@@ -580,10 +624,29 @@ class C_SqlNode_Editor extends React.PureComponent{
                 x:parseUnitInt(this.editorDivRef.current.style.left),
                 y:parseUnitInt(this.editorDivRef.current.style.top),
             }
+            var editorPos = this.transToEditorPos({x:WindowMouse.x,y:WindowMouse.y});
             this.dragOrgin = {x:WindowMouse.x,y:WindowMouse.y, left:nowPos.x, top: nowPos.y};
+            if(ev.shiftKey){
+                if(!this.selectedNFManager.isEmpty()){
+                    var rightMostPos = {x:null,y:null};
+                    this.selectedNFManager.forEach(nf=>{
+                        var nfRect = nf.rootDivRef.current.getBoundingClientRect();
+                        var nfRightTop = {x:nf.props.nodedata.left + nfRect.width,y:nf.props.nodedata.top};
+                        if(rightMostPos.x == null || nfRightTop.x > rightMostPos.x){
+                            rightMostPos.x = nfRightTop.x;
+                        }
+                        if(rightMostPos.y == null || nfRightTop.y > rightMostPos.y){
+                            rightMostPos.y = nfRightTop.y;
+                        }
+                    });
+                    this.selectedNFManager.forEach(nf=>{
+                        nf.addOffset({x:editorPos.x - rightMostPos.x,y:editorPos.y - rightMostPos.y});
+                    });
+                    return;
+                }
+            }
             if(ev.button == 0){
                 // 拉取选择范围
-                var editorPos = this.transToEditorPos({x:WindowMouse.x,y:WindowMouse.y});
                 this.selectRectRef.current.setSize({
                     left:editorPos.x,
                     top:editorPos.y
@@ -652,7 +715,7 @@ class C_SqlNode_Editor extends React.PureComponent{
     clickExportBtnHandler(ev){
         console.log("Start export");
         var editingNode = this.state.editingNode;
-        var json = editingNode.bluePrint.getJson();
+        var json = editingNode.bluePrint.getJson(new AttrJsonProfile());
         var text = JSON.stringify(json);
         console.log(text);
     }
@@ -774,6 +837,8 @@ class C_SqlNode_Editor extends React.PureComponent{
                     }
                     panel2={
                         <div className='bg-dark m-100 h-100 flex-grow-1 flex-shrink-1'>
+                            <FlowMouseContainer ref={this.flowMCRef} />
+                            <QuickMenuContainer ref={this.quickMenuRef} />
                             <LogOutputPanel source={this.logManager} />
                         </div>
                     }
@@ -817,8 +882,8 @@ class SqlNodeEditorLeftPanel extends React.PureComponent{
         });
     }
 
-    clickOutlineImteHandler(nodeData){
-        this.props.editor.showNodeData(nodeData);
+    clickOutlineImteHandler(nodeData, ev){
+        this.props.editor.showNodeData(nodeData, ev.ctrlKey);
     }
 
     render() {
@@ -1132,7 +1197,7 @@ class SqlNodeOutlineItem extends React.PureComponent{
     }
 
     clickHandler(ev){
-        this.props.clickHandler(this.state.nodeData);
+        this.props.clickHandler(this.state.nodeData, ev);
     }
 
     render(){
@@ -1282,8 +1347,7 @@ class SqlDef_Variable_Component extends React.PureComponent{
     }
 
     dragTimeOutHandler() {
-        var designer = this.props.varData.bluePrint.master.project.designer;
-        designer.startDrag({info:'放置变量'}, this.dragEndHandler, this.genDragContentFun);
+        this.props.editor.startDrag({info:'放置变量'}, this.dragEndHandler, this.genDragContentFun);
     }
 
     dragMenuCallBack(menuItem, pos){
@@ -1301,14 +1365,8 @@ class SqlDef_Variable_Component extends React.PureComponent{
         // sql node 只支持var get
         var editorRect = this.props.editor.zoomDivRef.current.getBoundingClientRect();
         if(MyMath.isPointInRect(editorRect, pos)){
-            var designer = this.props.varData.bluePrint.master.project.designer;
             var varData = this.props.varData;
             this.dragMenuCallBack(new QuickMenuItem('Get ' + varData.name, 'GET'), pos);
-            return;
-            designer.propUpMenu([new QuickMenuItem('Set ' + varData.name, 'SET'),new QuickMenuItem('Get ' + varData.name, 'GET')]
-                ,pos
-                ,this.dragMenuCallBack
-            );
         }
     }
 
@@ -1366,6 +1424,13 @@ class SqlNode_CompileHelper{
             this.startNode = theNode;
         }
         this.compileSeq.push(theNode);
+    }
+
+    setAddFuncs(otherHelper){
+        otherHelper.addUseEnvVars = this.addUseEnvVars;
+        otherHelper.addUseForm = this.addUseForm;
+        otherHelper.addUseFormDS = this.addUseFormDS;
+        otherHelper.addUseControlPropApi = this.addUseControlPropApi;
     }
 
     addUseEnvVars(varKey){

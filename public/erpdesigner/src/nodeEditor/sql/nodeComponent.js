@@ -201,7 +201,7 @@ class C_SqlNode_NOperand extends React.PureComponent {
         }
         var nodeData = this.props.nodedata;
         return (<div style={this.outDivStyle} f-canmove={1}>
-            <DropDownControl options_arr={['+', '-', '*', '/']} value={nodeData.operator} itemChanged={this.selectItemChangedHandler} style={this.ddcStyle} />
+            <DropDownControl options_arr={['+', '-', '*', '/', '%']} value={nodeData.operator} itemChanged={this.selectItemChangedHandler} style={this.ddcStyle} />
         </div>);
     }
 
@@ -438,7 +438,7 @@ class C_SqlNode_DBEntity_ColumnSelector extends React.PureComponent {
         var column = entity.columns.find(x => { return x.name == columnName });
         if (column) 
         {
-            if(parentNodeData.bluePrint.type == "标量值")
+            if(parentNodeData.bluePrint.type == "标量值" && parentNodeData == parentNodeData.bluePrint.finalSelectNode)
             {
                 nodeData.clickFrameButton('unselect-all');
                 if(!this.checkmap[columnName])
@@ -587,8 +587,10 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
         }
         if(nodeData.bluePrint.type =="标量值")
         {
-            topVal = 1 ;
-            disabled = "disabled";
+            if(nodeData == nodeData.bluePrint.finalSelectNode){
+                topVal = 1 ;
+                disabled = "disabled";
+            }
         }
         if(distvalue == null){
             distvalue = false;

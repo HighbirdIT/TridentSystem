@@ -61,7 +61,17 @@ const FlowNodeEditorControls_arr =[
     },
     {
         label:'查询SQL',
-        nodeClass:FlowNode_QuerySql,
+        nodeClass:JSNode_Query_Sql,
+        type:'数据库交互'
+    },
+    {
+        label:'Insert',
+        nodeClass:JSNODE_Insert_table,
+        type:'数据库交互'
+    },
+    {
+        label:'Update',
+        nodeClass:JSNODE_Update_table,
         type:'数据库交互'
     },
     {
@@ -136,8 +146,8 @@ class FlowNodeEditorLeftPanel extends React.PureComponent{
         });
     }
 
-    clickOutlineImteHandler(nodeData){
-        this.props.editor.showNodeData(nodeData);
+    clickOutlineImteHandler(nodeData, ev){
+        this.props.editor.showNodeData(nodeData, ev.ctrlKey);
     }
 
     render() {
@@ -386,7 +396,7 @@ class C_FlowNode_Editor extends React.PureComponent{
         this.selectedNFManager.add(target);
     }
 
-    showNodeData(nodeData){
+    showNodeData(nodeData, autoSelect){
         var editingNode = this.state.editingNode;
         if(nodeData.bluePrint == null || nodeData.bluePrint != editingNode.bluePrint || nodeData.parent == null)
             return;
@@ -395,7 +405,7 @@ class C_FlowNode_Editor extends React.PureComponent{
             this.setEditeNode(nodeData.parent);
             var self = this;
             setTimeout(() => {
-                self.showNodeData(nodeData);
+                self.showNodeData(nodeData, autoSelect);
             }, 50);
             return;
         }
@@ -404,7 +414,9 @@ class C_FlowNode_Editor extends React.PureComponent{
             var frameElem = nodeData.currentComponent.frameRef.current;
             if(frameElem == null)
                 return null;
-            this.setSelectedNF(frameElem);
+            if(autoSelect != false){
+                this.setSelectedNF(frameElem);
+            }
             var frameRect = frameElem.rootDivRef.current.getBoundingClientRect();
             var zoomRect = this.zoomDivRef.current.getBoundingClientRect();
             
@@ -422,6 +434,13 @@ class C_FlowNode_Editor extends React.PureComponent{
 
     keyUpHandler(ev){
         //console.log(ev);
+        if(this.zoomDivRef.current == null){
+            return;
+        }
+        var editorRect = this.zoomDivRef.current.getBoundingClientRect();
+        if(!MyMath.isPointInRect(editorRect, WindowMouse)){
+            return;
+        }
         switch(ev.keyCode){
             case 27:
                 // esc
@@ -825,9 +844,28 @@ class C_FlowNode_Editor extends React.PureComponent{
                 y:parseUnitInt(this.editorDivRef.current.style.top),
             }
             this.dragOrgin = {x:WindowMouse.x,y:WindowMouse.y, left:nowPos.x, top: nowPos.y};
+            var editorPos = this.transToEditorPos({x:WindowMouse.x,y:WindowMouse.y});
+            if(ev.shiftKey){
+                if(!this.selectedNFManager.isEmpty()){
+                    var rightMostPos = {x:null,y:null};
+                    this.selectedNFManager.forEach(nf=>{
+                        var nfRect = nf.rootDivRef.current.getBoundingClientRect();
+                        var nfRightTop = {x:nf.props.nodedata.left + nfRect.width,y:nf.props.nodedata.top};
+                        if(rightMostPos.x == null || nfRightTop.x > rightMostPos.x){
+                            rightMostPos.x = nfRightTop.x;
+                        }
+                        if(rightMostPos.y == null || nfRightTop.y > rightMostPos.y){
+                            rightMostPos.y = nfRightTop.y;
+                        }
+                    });
+                    this.selectedNFManager.forEach(nf=>{
+                        nf.addOffset({x:editorPos.x - rightMostPos.x,y:editorPos.y - rightMostPos.y});
+                    });
+                    return;
+                }
+            }
             if(ev.button == 0){
                 // 拉取选择范围
-                var editorPos = this.transToEditorPos({x:WindowMouse.x,y:WindowMouse.y});
                 this.selectRectRef.current.setSize({
                     left:editorPos.x,
                     top:editorPos.y
@@ -900,7 +938,7 @@ class C_FlowNode_Editor extends React.PureComponent{
     clickExportBtnHandler(ev){
         console.log("Start export");
         var editingNode = this.state.editingNode;
-        var json = editingNode.bluePrint.getJson();
+        var json = editingNode.bluePrint.getJson(new AttrJsonProfile());
         var text = JSON.stringify(json);
         console.log(text);
     }
@@ -1098,7 +1136,7 @@ class FlowNodeOutlineItem extends React.PureComponent{
     }
 
     clickHandler(ev){
-        this.props.clickHandler(this.state.nodeData);
+        this.props.clickHandler(this.state.nodeData, ev);
     }
 
     render(){
@@ -1256,12 +1294,10 @@ class FlowNodeDef_Variable_Component extends React.PureComponent{
             <div className='d-flex bg-dark flex-grow-0 flex-shrink-0 w-100 align-items-center'>
                 <i className={'fa fa-edit fa-lg text-' + (editing ? 'success' : 'info')} onClick={this.clickEditBtnHandler} />
                 <input onChange={this.nameInputChangeHanlder} type='text' value={this.state.name} className='flexinput flex-grow-1 flex-shrink-1' />
-                <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={JsValueTypes} rootclass='flex-grow-0 flex-shrink-0' textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
-            </div>
-            <div className='d-flex w-100 flex-grow-0 flex-shrink-0 align-items-center'>
-                <span className='text-light'>默认值</span>
+                <span className='text-light flex-shrink-0'>默认值</span>
                 <input onChange={this.defaultInputChangedHandler} type='text' value={this.state.default} className='flexinput flex-grow-1 flex-shrink-1' />
             </div>
+            <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={JsValueTypes} rootclass='flex-grow-0 flex-shrink-0' textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
         </div>);
     }
 }

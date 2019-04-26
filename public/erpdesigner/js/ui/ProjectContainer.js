@@ -155,28 +155,36 @@ var ProjectContainer = function (_React$PureComponent2) {
             return true;
         }
     }, {
+        key: 'synProjUseEntitiesCallback',
+        value: function synProjUseEntitiesCallback(response) {
+            var newProject = new CProject(null, response.json);
+            var newProjects = this.state.projects.concat(newProject);
+            this.setState({
+                projects: newProjects
+            });
+
+            var openPage_his = ReplaceIfNull(Cookies.get('openPage_his'), '');
+            var t_arr = openPage_his.split('|P|');
+            var newProjTitle = this.openingProj.title;
+            var index = t_arr.indexOf(newProjTitle);
+            if (index != 0) {
+                var newHis = newProjTitle;
+                t_arr.forEach(function (item) {
+                    if (item != newProjTitle && item != null && item.length > 0) {
+                        newHis += '|P|' + item;
+                    }
+                });
+                Cookies.set('openPage_his', newHis, { expires: 7 });
+            }
+        }
+    }, {
         key: 'fetchProjJsonCallback',
         value: function fetchProjJsonCallback(response) {
             if (response.success) {
-                var newProject = new CProject(null, response.json);
-                var newProjects = this.state.projects.concat(newProject);
-                this.setState({
-                    projects: newProjects
+                var self = this;
+                g_dataBase.doSyn_Unload_bycodes(response.json.useEntities_arr, function () {
+                    self.synProjUseEntitiesCallback(response);
                 });
-
-                var openPage_his = ReplaceIfNull(Cookies.get('openPage_his'), '');
-                var t_arr = openPage_his.split('|P|');
-                var newProjTitle = this.openingProj.title;
-                var index = t_arr.indexOf(newProjTitle);
-                if (index != 0) {
-                    var newHis = newProjTitle;
-                    t_arr.forEach(function (item) {
-                        if (item != newProjTitle && item != null && item.length > 0) {
-                            newHis += '|P|' + item;
-                        }
-                    });
-                    Cookies.set('openPage_his', newHis, { expires: 7 });
-                }
             } else {
                 gTipWindow.popAlert(makeAlertData('错误', '[' + this.openingProj.path + ']文件未能在服务器中找到', null, [TipBtnOK]));
             }

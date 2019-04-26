@@ -44,7 +44,8 @@ class FlowMaster extends EventEmitter{
             for(var i=0;i<参数数量;++i){
                 params_arr.push(record['参数' + (i+1)]);
             }
-            foundFlow.addStep(record.流程操作步骤代码, record.操作步骤名称, params_arr);
+            foundFlow.addStep(record.流程操作步骤代码, record.操作步骤名称, params_arr, record);
+
         }
         newFlows_arr.forEach(flow=>{
             flow.deleteInvalidStep();
@@ -109,11 +110,15 @@ class FlowObject extends EventEmitter{
         return this.steps_arr.find(step=>{return step.code == code;});
     }
 
-    addStep(code, name, params_arr){
+    addStep(code, name, params_arr, record){
         if(code == null){
             var newStep = new FlowStep(null,name,params_arr);
             this.steps_arr.push(newStep);
             newStep.flow = this;
+            newStep.是否周期步骤 = 0;
+            newStep.周期起始时间 = new Date();
+            newStep.周期类型 = '天';
+            newStep.周期值 = 1;
             return;
         }
         var theStep = this.findStepByCode(code);
@@ -123,6 +128,12 @@ class FlowObject extends EventEmitter{
         }
         if(theStep.name != name){
             theStep.name = name;
+        }
+        if(record){
+            theStep.是否周期步骤 = record.是否周期步骤;
+            theStep.周期起始时间 = new Date(record.周期起始时间);
+            theStep.周期类型 = record.周期类型;
+            theStep.周期值 = record.周期值;
         }
         theStep.params_arr = params_arr;
         theStep.valid = true;
@@ -143,8 +154,17 @@ class FlowObject extends EventEmitter{
             alert(ev.json.err.info);
             return;
         }
-        this.bluePrint = new FlowNode_BluePrint({flow:this}, ev.json.data);
-        this.emit('fileLoaded',this);
+        var self = this;
+        if(ev.json.data == null){
+            self.bluePrint = new FlowNode_BluePrint({flow:self}, ev.json.data);
+            self.emit('fileLoaded',this);
+        }
+        else{
+            g_dataBase.doSyn_Unload_bycodes(ev.json.data.useEntities_arr, ()=>{
+                self.bluePrint = new FlowNode_BluePrint({flow:self}, ev.json.data);
+                self.emit('fileLoaded',this);
+            });
+        }
     }
 
     loadFile(){
@@ -234,7 +254,6 @@ class CFlowObject extends React.PureComponent
         });
     }
 
-    
     render(){
         var flow = this.props.flow;
         if(flow.code == null || this.state.editing){
@@ -265,7 +284,7 @@ class CFlowStep extends React.PureComponent{
     clickEditBtn(ev){
         var step = this.props.step;
         var newName = this.state.newName;
-        if(newName == null || newName.length < 2 || newName.length > 10){
+        if(newName == null || newName.length < 2 || newName.length > 25){
             alert('名称长度不合法');
             return;
         }
@@ -277,6 +296,29 @@ class CFlowStep extends React.PureComponent{
             param1:this.state.param1Name,
             param2:this.state.param2Name,
             param3:this.state.param3Name,
+            是否周期步骤:this.state.是否周期步骤,
+        }
+
+        if(this.state.是否周期步骤)
+        {
+            if(!checkDate(this.state.周期起始_日期))
+            {
+                alert('日期不合法');
+                return;
+            }
+            if(!checkTime(this.state.周期起始_时间))
+            {
+                alert('时间不合法');
+                return;
+            }
+            postData.周期起始时间 = this.state.周期起始_日期 + ' ' + this.state.周期起始_时间;
+            if(this.state.周期值<=0)
+            {
+                alert('数值不能小于1');
+                return;
+            }
+            postData.周期值=this.state.周期值;
+            postData.周期类型=this.state.周期类型;
         }
 
         var paramCount = 0;
@@ -310,6 +352,11 @@ class CFlowStep extends React.PureComponent{
             param1Name:params_arr.length > 0 ? params_arr[0] : '',
             param2Name:params_arr.length > 1 ? params_arr[1] : '',
             param3Name:params_arr.length > 2 ? params_arr[2] : '',
+            是否周期步骤:step.是否周期步骤,
+            周期起始_日期:getFormatDateString(step.周期起始时间 ? step.周期起始时间 : new Date()),
+            周期起始_时间:step.周期起始时间 ? getFormatTimeString(step.周期起始时间) : '08:00',
+            周期类型:step.周期类型 ? step.周期类型 : '天',
+            周期值:step.周期值 == null ? 1 : step.周期值,
         });
     }
 
@@ -330,6 +377,17 @@ class CFlowStep extends React.PureComponent{
             params_arr.push(ev.postData['param' + (i+1)]);
         }
         step.params_arr=params_arr;
+        step.是否周期步骤 = this.state.是否周期步骤;
+        if(step.是否周期步骤){
+            step.周期类型 = this.state.周期类型;
+            step.周期值 = this.state.周期值;
+            step.周期起始时间 = new Date(this.state.周期起始_日期 + ' ' + this.state.周期起始_时间);
+        }
+        else{
+            step.周期类型 = null;
+            step.周期值 = null;
+            step.周期起始时间 = null;
+        }
 
         this.setState({
             newName:null,
@@ -348,6 +406,14 @@ class CFlowStep extends React.PureComponent{
         this.setState(newState);
     }
 
+    是否周期步骤Changed(ev){
+        var newState = {
+            是否周期步骤:ev.target.checked,
+        };
+
+        this.setState(newState);
+    }
+
     render(){
         var step = this.props.step;
         var params_arr = step.params_arr ? step.params_arr : [];
@@ -355,6 +421,9 @@ class CFlowStep extends React.PureComponent{
             var param1Name = ReplaceIfNull(this.state.param1Name, params_arr.length > 0 ? params_arr[0] : '');
             var param2Name = ReplaceIfNull(this.state.param2Name, params_arr.length > 1 ? params_arr[1] : '');
             var param3Name = ReplaceIfNull(this.state.param3Name, params_arr.length > 2 ? params_arr[2] : '');
+            var 是否周期步骤 = this.state.是否周期步骤 == true;
+            var 周期起始_日期 = this.state.周期起始_日期 ? this.state.周期起始_日期 : '';
+            var 周期起始_时间 = this.state.周期起始_时间 ? this.state.周期起始_时间 : '';
             return (
                 <div className='list-group-item flex-shrink-0 d-flex align-items-center d-flex' style={{paddingLeft:'5px',paddingRight:'5px'}}>
                     <div className='d-flex flex-column'>
@@ -374,6 +443,36 @@ class CFlowStep extends React.PureComponent{
                             <span className='text-nowrap'>参数3:</span>
                             <input d-tag='param3Name' onChange={this.nameInputChanged} className='flex-grow-1 flex-shrink-1 w-100' value={param3Name} />
                         </div>
+                        <div className='d-flex flex-grow-1 align-items-center'>
+                            <span className='text-nowrap'>周期步骤:</span>
+                            <input type='checkbox' checked={是否周期步骤} onChange={this.是否周期步骤Changed} />
+                        </div>
+
+                        {是否周期步骤 && <React.Fragment>
+                            <div className='d-flex flex-grow-1'>
+                                <span className='text-nowrap'>起始日期:</span>
+                                <input d-tag='周期起始_日期' type='date' value={周期起始_日期} onChange={this.nameInputChanged}  />
+                            </div>
+                            <div className='d-flex flex-grow-1'>
+                                <span className='text-nowrap'>起始时间:</span>
+                                <input d-tag='周期起始_时间' type='time' value={周期起始_时间} onChange={this.nameInputChanged}  />
+                            </div>
+                            <div className='d-flex flex-grow-1'>
+                                <span className='text-nowrap'>周期类型:</span>
+                                <select d-tag='周期类型' value={this.state.周期类型} onChange={this.nameInputChanged}>
+                                    <option>小时</option>
+                                    <option>天</option>
+                                    <option>周</option>
+                                    <option>月</option>
+                                    <option>季度</option>
+                                    <option>年</option>
+                                </select>
+                            </div>
+                            <div className='d-flex flex-grow-1'>
+                                <span className='text-nowrap'>周期值:</span>
+                                <input d-tag='周期值' type='number'  value={this.state.周期值 == null ? '' : this.state.周期值} onChange={this.nameInputChanged}  />
+                            </div>
+                            </React.Fragment>}
                     </div>
                     <button onClick={this.clickEditBtn} className='btn'><i className='fa fa-check' /></button>
                 </div>
@@ -382,10 +481,15 @@ class CFlowStep extends React.PureComponent{
         return <div d-code={step.code} onClick={this.props.onclick}  className={'list-group-item flex-shrink-0 d-flex'}>
                 <button onClick={this.clickdoEditBtn} className='btn flex-grow-0'><i className='fa fa-edit fa-1x' /></button>
                 <div className='d-flex flex-column flex-grow-1'>
-                    <div className='list-group-item'>{step.name}</div>
+                    <div className='list-group-item'>{step.name}[{step.code}]</div>
                     {params_arr.map((param,index)=>{
                         return <div key={index} className='list-group-item flex-shrink-0'>@{param}</div>;
                     })}
+                    {step.是否周期步骤 && 
+                    <div className='list-group-item'>
+                        自{getFormatDateTimeString(step.周期起始时间, false)}起每{step.周期值}{step.周期类型}执行一次
+                    </div>
+                    }
                 </div>
             </div>;
     }
@@ -405,6 +509,19 @@ class CFlowMaster extends React.PureComponent
             flowBPLoading:false,
         };
         this.panelBaseRef = React.createRef();
+
+        this.navbarRef = React.createRef();
+
+        var navItems = [
+            CreateNavItemData('流程设计', <div/>),
+            CreateNavItemData('数据设计', <div/>),
+        ];
+
+        this.navData = {
+            selectedItem: navItems[0],
+            items: navItems,
+        };
+        this.navItems = navItems;
     }
 
     flowFileLoadedHandler(flow){
@@ -485,8 +602,19 @@ class CFlowMaster extends React.PureComponent
     toggle() {
         this.panelBaseRef.current.toggle();
     }
+
+    navChanged(oldItem, newItem) {
+        this.setState({
+            magicObj: {}
+        });
+    }
     
     render(){
+        this.navItems[0].content = <C_FlowNode_Editor bluePrint={this.state.selectedFlowBP} />;
+        if(this.state.selectedFlowBP){
+            this.navItems[1].content = <FlowSqlBPItemPanel dataMaster={this.state.selectedFlowBP.dataMaster} />;
+        }
+
         var selectedFlow = this.state.selectedFlow;
         return (<FloatPanelbase title={'流程大师'} initShow={false} initMax={true} ref={this.panelBaseRef}>
                 <div className='d-flex flex-grow-0 flex-shrink-0 w-100 h-100'>
@@ -546,11 +674,111 @@ class CFlowMaster extends React.PureComponent
                         panel2={<div className='d-flex flex-grow-1 flex-shrink-1 bg-dark mw-100'>
                             {
                                 this.state.flowBPLoading ? <div className='w-100 h-100 text-light'><h1>正在加载文件</h1></div> 
-                                : <C_FlowNode_Editor bluePrint={this.state.selectedFlowBP} />
+                                : <div className='d-flex flex-grow-1 flex-column flex-shrink-1'>
+                                    <div className='d-flex flex-grow-0 flex-shrink-0'>
+                                        <TabNavBar ref={this.navbarRef} navData={this.navData} navChanged={this.navChanged} />
+                                    </div>
+                                    {
+                                        this.navItems.map(item => {
+                                            return (<div key={item.text} className={'flex-grow-1 flex-shrink-1 ' + (item == this.navData.selectedItem ? ' d-flex' : ' d-none')}>
+                                                {item.content}
+                                            </div>)
+                                        })
+                                    }
+                                </div>
                             }
                             </div>}
                     />
                 </div>
             </FloatPanelbase>);
+    }
+}
+
+class FlowSqlBPItemPanel extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        this.state={
+            items_arr:this.props.dataMaster.BP_sql_arr,
+            selectedItem:null,
+        }
+        this.sqlbpEditorRef = React.createRef();
+        autoBind(this);
+    }
+
+    clickListItemHandler(ev){
+        var targetCode = getAttributeByNode(ev.target, 'data-itemvalue', true, 5);
+        var targetItem = this.state.items_arr.find(item=>{return item.code == targetCode});
+        this.setState({selectedItem:targetItem});
+    }
+
+    clickAddBtnhandler(ev){
+        this.setState({
+            creating:true,
+        });
+    }
+
+    clickEditBtnHandler(ev){
+        if(this.state.selectedItem){
+            this.setState({
+                modifing:true,
+            });
+        }
+    }
+
+    newItemCompleteHandler(newDBE){
+        this.setState({
+            creating:false,
+            modifing:false,
+        });
+    }
+
+    forcusSqlNode(nodeData){
+        this.setState({selectedItem:nodeData.bluePrint});
+        var self = this;
+        setTimeout(() => {
+            if(self.sqlbpEditorRef.current == null){
+                return;
+            }
+            self.sqlbpEditorRef.current.forcusSqlNode(nodeData);
+        }, 200);
+    }
+
+    render() {
+        var selectedItem = this.state.selectedItem;
+        return (
+            <React.Fragment>
+                {
+                    this.state.creating || this.state.modifing ? <SqlBPEditPanel targetBP={this.state.modifing ? selectedItem : null} dataMaster={this.props.dataMaster} onComplete={this.newItemCompleteHandler} /> : null
+                }
+                <SplitPanel
+                defPercent={0.45}
+                maxSize='200px'
+                barClass='bg-secondary'
+                panel1={
+                    <div className='d-flex flex-column flex-grow-1 flex-shrink-1 w-100' >
+                        <span className='text-light'>已创建的:</span>
+                        <div className='list-group flex-grow-1 flex-shrink-1 bg-dark autoScroll'>
+                            {
+                                this.state.items_arr.map(item=>{
+                                    if(item.group != 'custom'){
+                                        return null;
+                                    }
+                                    return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>{item.name + '-' + item.type}</div>
+                                })
+                            }
+                        </div>
+                        <div className='flex-shrink-0 btn-group'>
+                            <button type='button' onClick={this.clickAddBtnhandler} className='btn btn-success flex-grow-1'><i className='fa fa-plus' /></button>
+                            <button type='button' onClick={this.clickEditBtnHandler} className='btn'><i className='fa fa-edit' /></button>
+                        </div>
+                    </div>
+                }
+                panel2={
+                    <div className='d-flex flex-grow-1 flex-shrink-1 bg-dark mw-100'>
+                        <SqlBPEditor ref={this.sqlbpEditorRef} item={selectedItem} />
+                    </div>
+                }
+                />
+            </React.Fragment>)
     }
 }

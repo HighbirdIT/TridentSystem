@@ -132,6 +132,7 @@ var IAttributeable = function (_EventEmitter) {
                         case AttrNames.ProcessTable:
                         case AttrNames.CustomDataSource:
                         case AttrNames.ListFormContent:
+                        case AttrNames.RelFlowStep:
                             break;
                         default:
                             if (attrItem.valueType == ValueType.CustomDataSource) {
@@ -221,7 +222,7 @@ var IAttributeable = function (_EventEmitter) {
         }
     }, {
         key: 'getJson',
-        value: function getJson() {
+        value: function getJson(jsonProf) {
             var _this2 = this;
 
             var rlt = {};
@@ -247,6 +248,7 @@ var IAttributeable = function (_EventEmitter) {
                         }
                         switch (attr.valueType) {
                             case ValueType.DataSource:
+                                jsonProf.useEntity(val);
                                 val = val.code;
                                 break;
                             case ValueType.ListFormContent:

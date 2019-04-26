@@ -113,12 +113,21 @@ function getNowDate() {
 }
 
 function checkDate(date) {
-    var dateVal = new Date(Date.parse(date));
+    var dateVal = new Date(date);
+    if (isNaN(dateVal.getDate())) {
+        if (typeof date === 'string') {
+            date = date.replace(/-/g, '/');
+        }
+        dateVal = new Date(date);
+    }
     return !isNaN(dateVal.getDate());
 }
 
 function checkTime(str) {
-    var dateVal = new Date(Date.parse('2000-1-1 ' + str));
+    if (str == null || str.length == 0) {
+        return false;
+    }
+    var dateVal = new Date('2000/1/1 ' + str);
     return !isNaN(dateVal.getDate());
 }
 
@@ -168,7 +177,7 @@ function getDateDiff(type, dateA, dateB) {
     if (typeof dateB === 'string') {
         dateB = new Date(dateB);
     }
-    return (dateA.getTime() - dateB.getTime()) / divNum;
+    return (dateB.getTime() - dateA.getTime()) / divNum;
 }
 
 // commonreducer
@@ -665,7 +674,7 @@ function setStateByPath(state, path, value, visited) {
             for (var acti in delayActs) {
                 var theAct = delayActs[acti];
                 if (typeof theAct.callfun === 'function') {
-                    theAct.callfun(retState);
+                    theAct.callfun();
                 }
             }
         }, 50);
@@ -803,7 +812,7 @@ function setManyStateByPath(state, path, valuesObj, visited) {
             for (var acti in delayActs) {
                 var theAct = delayActs[acti];
                 if (typeof theAct.callfun === 'function') {
-                    theAct.callfun(retState);
+                    theAct.callfun();
                 }
             }
         }, 50);
@@ -1087,6 +1096,19 @@ function getFormatTimeString(date) {
     return (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m + (hadSec ? (s < 10 ? ':0' : ':') + s : '');
 }
 
+function getFormatDateTimeString(date) {
+    var hadSec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
+    var y = date.getFullYear();
+    var month = date.getMonth() + 1;
+    var d = date.getDate();
+    var h = date.getHours();
+    var m = date.getMinutes();
+    var s = date.getSeconds();
+
+    return y + (month < 10 ? '-0' : '-') + month + (d < 10 ? '-0' : '-') + d + ' ' + (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m + (hadSec ? (s < 10 ? ':0' : ':') + s : '');
+}
+
 function simpleFreshFormFun(retState, records_arr, formFullID, directBindFun) {
     var formState = getStateByPath(retState, formFullID);
     var needSetState = {};
@@ -1142,6 +1164,8 @@ function getQueryVariable(variable) {
     return false;
 }
 
+var gTimeReg = /\d+:\d+:\d+/;
+
 function FormatStringValue(val, type) {
     if (IsEmptyString(val)) {
         return '';
@@ -1175,7 +1199,8 @@ function FormatStringValue(val, type) {
             break;
         case 'time':
             if (val && val.length > 8 && checkDate(val)) {
-                rlt = getFormatTimeString(new Date(val), false);
+                var regRlt = gTimeReg.exec(val);
+                return regRlt[0];
             } else if (!checkTime(val)) {
                 rlt = '';
             }

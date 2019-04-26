@@ -7,6 +7,22 @@ const gCantNullInfo = '不能为空值';
 
 const HashKey_FixItem = 'fixitem';
 
+class DataCache{
+    constructor(label){
+        this.label = label;
+        this.data_map = {};
+    }
+
+    set(key, value){
+        this.data_map[key] = value;
+    }
+
+    get(key){
+        return this.data_map[key];
+    }
+}
+const gDataCache = new DataCache('global');
+
 window.onhashchange = function() {
     var fixedItemNum = 0;    
     if (location.hash.length > 0) {
@@ -246,6 +262,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
 
     listItemClick(ev) {
         var target = ev.target;
+        var multiselect = this.state.multiselect;
         var value = getAttributeByNode(target, 'value', true, 3);
         if (value == null) {
             console.error('can not find value attr');
@@ -257,7 +274,29 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
         if (theOptionItem == null) {
             console.error('没有找到对应的item' + value);
         }
-        this.props.dropdownctl.selectItem(theOptionItem);
+        if(multiselect){
+            if(this.state.selectOpt.find(item=>{
+                return item.value == theOptionItem.value;
+            }) == null){
+                this.props.dropdownctl.selectItem(this.state.selectOpt.concat(theOptionItem));
+            }
+        }
+        else{
+            this.props.dropdownctl.selectItem(theOptionItem);
+        }
+    }
+
+    clickSelectedItemTag(ev){
+        var target = ev.target;
+        var value = getAttributeByNode(target, 'value', true, 3);
+        if (value == null) {
+            console.error('can not find value attr');
+        }
+        var selectedOption = this.state.selectOpt;
+        var newArr = selectedOption.filter(item=>{
+            return item.value != value;
+        });
+        this.props.dropdownctl.selectItem(newArr);
     }
 
     keyInputChanged(ev) {
@@ -267,7 +306,15 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
     }
 
     render() {
+        var multiselect = this.state.multiselect;
         var selectedVal = this.state.selectedVal;
+        var selectedOption = this.state.selectOpt;
+        if(multiselect){
+            if(selectedVal == null){
+                selectedVal = [];
+            }
+        }
+        //console.log(selectedElem);
         if(!this.inited){
             return (<div className='fixedBackGround'>
                 <div className='dropDownItemContainer d-flex flex-column bg-light flex-shrink-0 rounded'>
@@ -366,6 +413,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
                     recentItems_arr.push(recentUsed[value]);
                 }
             }
+            var tItemSelected = false;
             if (recentItems_arr.length > 0) {
                 if(groupCount > 0){
                     groupItemCounter['g0_recent'] = recentItems_arr.length;
@@ -376,8 +424,14 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
                         <div>最近使用</div>
                     </div>);
                     recentItems_arr.forEach(item => {
+                        if(multiselect){
+                            tItemSelected = selectedVal.indexOf(item.value + '') != -1;
+                        }
+                        else{
+                            tItemSelected = item.value == selectedVal;
+                        }
                         recentElem.push(
-                            <div onClick={this.listItemClick} className={'d-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (item.value == selectedVal ? ' active' : '')} key={'_ck' + item.value} value={item.value}>
+                            <div onClick={this.listItemClick} className={'d-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (tItemSelected ? ' active' : '')} key={'_ck' + item.value} value={item.value}>
                                 <div>{item.text}</div>
                             </div>
                         );
@@ -417,11 +471,21 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
                 });
             }
 
-
+            var multiSelectedElem = null;
+            if(multiselect){
+                multiSelectedElem = (<div className='d-flex flex-grow-0 flex-shrink-0 mb-1 flex-wrap'>
+                    {
+                        selectedOption.map(item=>{
+                            return <span key={item.value} onClick={this.clickSelectedItemTag} value={item.value} className='border btn' >{item.text}<i className='fa fa-close' /></span>
+                        })
+                    }
+                    <input type='text' className='flex-grow-1 flex-shrink-0 multiddcsearchinput' placeholder='搜索' value={keyword} onChange={this.keyInputChanged} />
+                </div>);
+            }
             if (filted_arr.length == 0) {
                 contentElem = (<span className='text-nowrap'>没有找到</span>);
             }
-            if (options_arr.length > 20) {
+            if (!multiselect && options_arr.length > 20) {
                 searchItem = (<div className='d-flex flex-shrink-0 align-items-center'>
                     <span className='fa fa-search fa-2x text-primary' />
                     <input className='flex-grow-1 flex-shrink-1 flexinput' type='text' value={keyword} onChange={this.keyInputChanged} />
@@ -429,7 +493,6 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             }
 
             this.needListedCount = filted_arr.length;
-
 
             if (filted_arr.length > 0) {
                 contentElem = (<div ref={this.contentDivRef} className='list-group flex-grow-1 flex-shrink-0 autoScroll_Touch' onScroll={filted_arr.length > maxRowCount ? this.contentDivScrollHandler : null}>
@@ -439,7 +502,13 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
                             if (i >= maxRowCount) {
                                 return null;
                             }
-                            return (<div onClick={this.listItemClick} className={'d-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (item.value == selectedVal ? ' active' : '')} key={item.value} value={item.value}>
+                            if(multiselect){
+                                tItemSelected = selectedVal.indexOf(item.value + '') != -1;
+                            }
+                            else{
+                                tItemSelected = item.value == selectedVal;
+                            }
+                            return (<div onClick={this.listItemClick} className={'d-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (tItemSelected ? ' active' : '')} key={item.value} value={item.value}>
                                 <div>{item.text}</div>
                             </div>)
                         })
@@ -471,8 +540,9 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             <div className='fixedBackGround'>
                 <div className='dropDownItemContainer d-flex flex-column bg-light flex-shrink-0 rounded'>
                     <div className='d-flex flex-shrink-0'>
-                        <h3><span onClick={this.clickCloseHandler}><i className='fa fa-arrow-left text-primary' /></span><span className='text-primary'>{this.state.label}</span></h3>
+                        <h3><span onClick={this.clickCloseHandler}><i className='fa fa-arrow-left text-primary' /></span><span className='text-primary'>{this.state.label}{multiselect ? '(可多选)' : ''}</span></h3>
                     </div>
+                    {multiSelectedElem}
                     {searchItem}
                     {finalContentElem}
                 </div>
@@ -549,37 +619,67 @@ class ERPC_DropDown extends React.PureComponent {
         }
     }
 
+    addSelectItem(theOptionItem){
+        if(theOptionItem == null || !this.props.multiselect){
+            return;
+        }
+    }
+
     selectItem(theOptionItem) {
         var value = null;
         var text = null;
-        if(theOptionItem){
-            value = theOptionItem.value.toString();
-            text = theOptionItem.text;
+        var multiselect = this.props.multiselect;
+        if(multiselect){
+            if(!Array.isArray(theOptionItem)){
+                console.error("multiselect's selectItem theOptionItem must array!");
+            }
+            var values_arr = [];
+            theOptionItem.forEach(item=>{
+                values_arr.push(item.value);
+                //value = (value == null ? '' : value + ',') + item.value;
+                text = (text == null ? '' : text + ',') + item.text;
+            });
+            value = ERPXMLToolKit.convertToXmlString(values_arr,[this.props.valueAttrName]);
         }
-        if (this.props.recentCookieKey) {
-            var index = this.recentValues_arr.indexOf(value);
-            if (index != 0) {
-                if (index != -1) {
-                    this.recentValues_arr.splice(index, 1);
+        else{
+            if(theOptionItem){
+                value = theOptionItem.value.toString();
+                text = theOptionItem.text;
+            }
+            if (this.props.recentCookieKey) {
+                var index = this.recentValues_arr.indexOf(value);
+                if (index != 0) {
+                    if (index != -1) {
+                        this.recentValues_arr.splice(index, 1);
+                    }
+                    this.recentValues_arr.unshift(value);
+                    if (this.recentValues_arr.length >= 6) {
+                        this.recentValues_arr.pop();
+                    }
+                    Cookies.set(this.props.recentCookieKey, this.recentValues_arr.join(','), { expires: 7 });
                 }
-                this.recentValues_arr.unshift(value);
-                if (this.recentValues_arr.length >= 6) {
-                    this.recentValues_arr.pop();
-                }
-                Cookies.set(this.props.recentCookieKey, this.recentValues_arr.join(','), { expires: 7 });
             }
         }
-        this.dropDownClosed();
+        
+        if(!this.props.multiselect){
+            this.dropDownClosed();
+        }
 
         var invalidInfo = BaseIsValueValid(null,null, null, value == null || text == null ? null : value, this.props.type, this.props.nullable, this.props.id);
         store.dispatch(makeAction_setManyStateByPath({
             value: value,
             text: text,
             invalidInfo : invalidInfo,
+            selectOpt : theOptionItem,
         }, MakePath(this.props.parentPath, this.props.id)));
     }
 
     getPopPanelInitState(){
+        var multiselect = this.props.multiselect;
+        var selectedVal = this.props.value;
+        if(multiselect){
+            
+        }
         return {
             selectedVal:this.props.value,
             fetching:this.props.fetching,
@@ -589,6 +689,8 @@ class ERPC_DropDown extends React.PureComponent {
             keyword: '',
             recentValues_arr:this.recentValues_arr,
             recentUsed:this.recentUsed,
+            multiselect:this.props.multiselect,
+            selectOpt:this.props.selectOpt,
             label:ReplaceIfNull(this.props.label,this.props.textAttrName),
         }
     }
@@ -601,6 +703,8 @@ class ERPC_DropDown extends React.PureComponent {
         var selectedVal = this.props.value;
         var selectedText = this.props.text;
         var self = this;
+        var multiselect = this.props.multiselect;
+        var selectedItems_arr;
 
         if(!IsEmptyString(selectedVal)){
             if(IsEmptyString(selectedText))
@@ -624,31 +728,64 @@ class ERPC_DropDown extends React.PureComponent {
                         }
                     }
                     else{
-                        var theOptionItem = this.props.optionsData.options_arr.find(item => {
-                            return item.value == selectedVal;
-                        });
-                        selectedText = theOptionItem ? theOptionItem.text : null;
-                        setTimeout(() => {
-                            self.selectItem(theOptionItem);
-                        }, 50);
+                        if(multiselect){
+                            selectedItems_arr = this.props.optionsData.options_arr.filter(item=>{
+                                return selectedVal.indexOf(item.value + '') != -1;
+                            });
+                            selectedText = '';
+                            selectedItems_arr.forEach(item=>{
+                                selectedText += item.text;
+                            });
+                            setTimeout(() => {
+                                self.selectItem(selectedItems_arr);
+                            }, 50);
+                        }
+                        else{
+                            var theOptionItem = this.props.optionsData.options_arr.find(item => {
+                                return item.value == selectedVal;
+                            });
+                            selectedText = theOptionItem ? theOptionItem.text : null;
+                            setTimeout(() => {
+                                self.selectItem(theOptionItem);
+                            }, 50);
+                        }
                     }
                 }
             }
             else if(this.props.optionsData.options_arr){
-                var selectedOptionItem = this.props.optionsData.options_arr.find(item => {
-                    return item.value == selectedVal;
-                });
-                if(selectedOptionItem){
-                    if(selectedOptionItem.text != selectedText){
+                if(multiselect){
+                    selectedItems_arr = this.props.optionsData.options_arr.filter(item=>{
+                        return selectedVal.indexOf(item.value + '') != -1;
+                    });
+                    if(selectedItems_arr){
+                        if(selectedItems_arr.length != this.props.selectOpt.length){
+                            setTimeout(() => {
+                                self.selectItem(selectedItems_arr);
+                            }, 50);
+                        }
+                    }
+                    else{
                         setTimeout(() => {
-                            self.selectItem(selectedOptionItem);
+                            self.selectItem(null);
                         }, 50);
                     }
                 }
                 else{
-                    setTimeout(() => {
-                        self.selectItem(null);
-                    }, 50);
+                    var selectedOptionItem = this.props.optionsData.options_arr.find(item => {
+                        return item.value == selectedVal;
+                    });
+                    if(selectedOptionItem){
+                        if(selectedOptionItem.text != selectedText){
+                            setTimeout(() => {
+                                self.selectItem(selectedOptionItem);
+                            }, 50);
+                        }
+                    }
+                    else{
+                        setTimeout(() => {
+                            self.selectItem(null);
+                        }, 50);
+                    }
                 }
             }
         }
@@ -662,6 +799,7 @@ class ERPC_DropDown extends React.PureComponent {
                     fetching:this.props.fetching,
                     fetchingErr:this.props.fetchingErr,
                     optionsData:this.props.optionsData,
+                    selectOpt:this.props.selectOpt,
                 };
                 setTimeout(() => {
                     popPanelRefCurrent.setState(newState);
@@ -719,6 +857,15 @@ const selectERPC_DropDown_options = (state, ownprops) => {
     return ctlState.options_arr;
 };
 
+const selectERPC_DropDown_multiValues = (xmlstr) => {
+    return ERPXMLToolKit.extractColumn(xmlstr, 1);
+};
+
+const selectERPC_DropDown_value = (state, ownprops) => {
+    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
+    return ctlState.value;
+};
+
 const selectERPC_DropDown_textName = (state, ownprops) => {
     return ownprops.textAttrName;
 };
@@ -731,7 +878,11 @@ const selectERPC_DropDown_groupAttrName = (state, ownprops) => {
     return ownprops.groupAttr;
 };
 
-const formatERPC_DropDown_options = (orginData_arr, textAttrName, valueAttrName, groupAttr) => {
+const selectERPC_DropDown_textType = (state, ownprops) => {
+    return ownprops.textType;
+};
+
+const formatERPC_DropDown_options = (orginData_arr, textAttrName, valueAttrName, groupAttr, textType) => {
     if (orginData_arr == null) {
         return [];
     }
@@ -756,6 +907,11 @@ const formatERPC_DropDown_options = (orginData_arr, textAttrName, valueAttrName,
             return { text: item, value: item };
         }
         var newItem = { text: item[textAttrName], value: item[valueAttrName], data: item };
+        switch(textType){
+            case 'date':
+            newItem.text = FormatStringValue(newItem.text, 'date');
+            break;
+        }
         groupData_arr.forEach((groupData, index) => {
             var data = item[groupData.name];
             if (groupData.options_map[data] == null) {
@@ -789,18 +945,39 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
     var selectorid = fullPath + 'optionsData';
     var optionsDataSelector = ERPC_selector_map[selectorid];
     if(optionsDataSelector == null){
-        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName, formatERPC_DropDown_options);
+        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName,selectERPC_DropDown_textType, formatERPC_DropDown_options);
         ERPC_selector_map[selectorid] = optionsDataSelector;
+    }
+
+    var useValue = ctlState.value;
+    if(useValue)
+    {
+        if(ownprops.multiselect){
+            if(useValue[0] == '<'){
+                selectorid = fullPath + 'value';
+                var valueSelector = ERPC_selector_map[selectorid];
+                if(valueSelector == null){
+                    valueSelector = Reselect.createSelector(selectERPC_DropDown_value, selectERPC_DropDown_multiValues);
+                    ERPC_selector_map[selectorid] = valueSelector;
+                }
+                //useValue = ERPXMLToolKit.extractColumn(useValue, 1);
+                useValue = valueSelector(state, ownprops);
+            }
+            else{
+                useValue = (useValue + '').split(',');
+            }
+        }
     }
     
     return {
-        value: ctlState.value,
+        value: useValue,
         text: ctlState.text,
         fetching: ctlState.fetching,
         fetchingErr: ctlState.fetchingErr,
         optionsData: optionsDataSelector(state, ownprops),
         visible:ctlState.visible,
         invalidInfo : invalidInfo,
+        selectOpt : ctlState.selectOpt,
     };
 }
 
@@ -1070,8 +1247,8 @@ class ERPC_CheckBox extends React.PureComponent {
         this.checked = checked;
         return (<span className={'erpc_checkbox ' + (this.props.className == null ? '' : this.props.className)} >
                 <span onClick={this.props.readonly ? null : this.clickHandler} className="fa-stack fa-lg">
-                    <i className={"fa fa-square-o fa-stack-2x" + (this.props.readonly ? ' text-secondary' : '')}></i>
-                    {checked && <i className={'fa fa-stack-1x fa-check' + (this.props.readonly ? ' text-secondary' : ' text-success')}></i>}
+                    <i className={"fa fa-square-o fa-stack-2x" + (this.props.readonly ? ' text-secondary' : '') } />
+                    <i className={'fa fa-stack-1x ' + (checked ? ' fa-check text-success' : ' fa-close text-danger')} />
                 </span>
             </span>);
     }
@@ -1668,3 +1845,70 @@ class CMessageBoxManger extends React.PureComponent{
 	}
 }
 
+const ERPXMLToolKit={
+    createDocFromString:(xmlString)=>{
+        var xmlDoc = null;
+        if (window.DOMParser) {
+            var parser = new DOMParser();
+            xmlDoc = parser.parseFromString(xmlString, "text/xml");
+        } else {
+            xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
+            xmlDoc.async = "false";
+            xmlDoc.loadXML(xmlString);
+        }
+        return xmlDoc;
+    },
+
+    extractColumn:(xmldoc, colIndex)=>{
+        var rlt=[];
+        if(typeof xmldoc === 'string' && xmldoc[0] == '<'){
+            xmldoc = ERPXMLToolKit.createDocFromString(xmldoc);
+        }
+        if(xmldoc == null || xmldoc.childNodes.length == 0){
+            return rlt;
+        }
+        var rootNode = xmldoc.childNodes[0];
+        rootNode.childNodes.forEach(node=>{
+            if(node.nodeType != 1){
+                return;
+            }
+            var val = node.attributes['f' + colIndex];
+            if(val != null){
+                rlt.push(val.value);
+            }
+            //console.log(val.value);
+        });
+        return rlt;
+    },
+
+    convertToXmlString:(item_arr, attrs_arr)=>{
+        if(item_arr == null || item_arr.length == 0){
+            return '';
+        }
+        if(attrs_arr.length == 0){
+            console.error('convertToXmlString attrs_arr length==0');
+        }
+        var itemStr_arr = item_arr.map(item=>{
+            var itemType = typeof item;
+            var valueStr = '';
+            if(itemType === 'string' || itemType === 'number'){
+                valueStr = '<Item f1="' + item + '" />';
+            }
+            else{
+                valueStr = '<Item ';
+                attrs_arr.forEach((attrName,i)=>{
+                    var fName = 'f' + (i + 1);
+                    valueStr += (i == 0 ? '' : ' ') + fName + '="' + item[attrName] + '"';
+                });
+                valueStr += ' />'
+            }
+            return valueStr;
+        });
+        var rltStr = '<Data fNum="' + attrs_arr.length + '"';
+        attrs_arr.forEach((name,i)=>{
+            rltStr += ' f' + (i + 1) + '="' + name + '"';
+        });
+        rltStr += '>' + itemStr_arr.join('') + '</Data>';
+        return rltStr;
+    }
+}

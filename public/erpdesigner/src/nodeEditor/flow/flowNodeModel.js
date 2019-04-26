@@ -1,7 +1,6 @@
 const FLOWNODE_VAR_GET = 'var_get';
 const FLOWNODE_VAR_SET = 'var_set';
 const FLOWNODE_STEP_START = 'stepstart';
-const FLOWNODE_QUERY_SQL = 'querysql';
 const FLOWNODE_CREATE_SERVERERROR = 'createservererror';
 const FLOWNODE_QUERY_KEYRECORD = 'querykeyrecord';
 const FLOWNODE_COLUMN_VAR = 'columnvar';
@@ -152,16 +151,23 @@ class FlowNode_BluePrint extends EventEmitter {
         this.allNode_map = {};
         this.allVars_map = {};
         this.nodes_arr = [];
+        this.group = EJsBluePrintFunGroup.ServerScript;
+        this.dataMaster = new DataMaster(null);
+        this.dataMaster.flowBP = this;
 
         if (bluePrintJson != null) {
-            assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'editorLeft', 'editorTop', 'group', 'ctlID']);
+            assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'editorLeft', 'editorTop', 'ctlID']);
             if (!IsEmptyArray(bluePrintJson.variables_arr)) {
                 bluePrintJson.variables_arr.forEach(varJson => {
                     var newVar = new FlowDef_Variable({}, this, createHelper, varJson);
                 });
             }
+            this.dataMaster.restoreFromJson(bluePrintJson.dataMaster);
+            createHelper.dataMaster = this.dataMaster;
             this.genNodesByJsonArr(this, bluePrintJson.nodes_arr, createHelper);
             this.linkPool.restorFromJson(bluePrintJson.links_arr, createHelper);
+        }
+        else{
         }
         if (this.flow == null) {
             console.error('new FlowNode_BluePrint flow is null');
@@ -392,7 +398,10 @@ class FlowNode_BluePrint extends EventEmitter {
         return rlt_arr;
     }
 
-    getJson() {
+    getJson(jsonProf) {
+        if(jsonProf == null){
+            jsonProf = new AttrJsonProfile();
+        }
         var self = this;
         // save base info
         var theJson = {
@@ -408,7 +417,7 @@ class FlowNode_BluePrint extends EventEmitter {
         // save var info
         var varJson_arr = [];
         this.vars_arr.forEach(varData => {
-            varJson_arr.push(varData.getJson());
+            varJson_arr.push(varData.getJson(jsonProf));
         });
         if (varJson_arr.length > 0) {
             theJson.variables_arr = varJson_arr;
@@ -417,11 +426,15 @@ class FlowNode_BluePrint extends EventEmitter {
         if (this.nodes_arr.length > 0) {
             var nodeJson_arr = [];
             this.nodes_arr.forEach(nodeData => {
-                nodeJson_arr.push(nodeData.getJson());
+                nodeJson_arr.push(nodeData.getJson(jsonProf));
             });
             theJson.nodes_arr = nodeJson_arr;
         }
-        theJson.links_arr = this.linkPool.getJson();
+        theJson.links_arr = this.linkPool.getJson(jsonProf);
+        theJson.dataMaster = this.dataMaster.getJson(jsonProf);
+        theJson.useEntities_arr = jsonProf.entities_arr.map(entity=>{
+            return entity.code;
+        });
 
         return theJson;
     }
@@ -651,56 +664,16 @@ class FlowNode_Var_Set extends FlowNode_Base {
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
-        var socketValue = '';
 
-        if (this.varData == null || this.varData.removed) {
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                '无效变量']);
+        if (this.checkCompileFlag(this.varData == null || this.varData.removed, '无效变量', helper)) {
             return false;
         }
 
-        var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.inSocket);
-        if (datalinks_arr.length == 0) {
-            if (IsEmptyString(this.inSocket.defval)) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle,
-                    nodeThis,
-                    helper.clickLogBadgeItemHandler),
-                    '必须有输入值']);
-                return false;
-            }
-            socketValue = this.inSocket.defval;
-            if (isNaN(socketValue)) {
-                socketValue = singleQuotesStr(socketValue);
-            }
+        var socketComRet = this.getSocketCompileValue(helper, (this.inSocket), usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
         }
-        else {
-            var dataLink = datalinks_arr[0];
-            var outNode = dataLink.outSocket.node;
-            var compileRet = null;
-            if (outNode.isHadFlow()) {
-                compileRet = helper.getCompileRetCache(outNode);
-                if (compileRet == null) {
-                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                        thisNodeTitle,
-                        nodeThis,
-                        helper.clickLogBadgeItemHandler),
-                        '输入接口设置错误']);
-                    return false;
-                }
-            }
-            else {
-                compileRet = outNode.compile(helper, usePreNodes_arr);
-            }
-            if (compileRet == false) {
-                return false;
-            }
-            socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
-        }
-
+        var socketValue = socketComRet.value;
         belongBlock.getScope().getVar(this.varData.name, true, this.varData.default);
 
         var myJSBlock = new FormatFileBlock(this.id);
@@ -856,10 +829,11 @@ class FlowNode_QuerySql extends JSNode_Base {
         }
     }
 
-    requestSaveAttrs() {
+    requestSaveAttrs(jsonProf) {
         var rlt = super.requestSaveAttrs();
         if (this.targetEntity != null) {
             rlt.targetEntity = 'dbe-' + this.targetEntity.code;
+            jsonProf.useEntity(this.targetEntity);
         }
         return rlt;
     }
@@ -1200,10 +1174,13 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
         if (this.targetEntity != null) {
             var tem_arr = this.targetEntity.split('-');
             if (tem_arr[0] == 'dbe') {
-                var project = createHelper.project;
-                this.targetEntity = g_dataBase.getEntityByCode(tem_arr[1]);
+                var dataMaster = createHelper.dataMaster;
+                this.targetEntity = dataMaster.getDataSourceByCode(tem_arr[1]);
                 if (this.targetEntity) {
                     this.targetEntity.on('syned', this.entitySynedHandler);
+                    if (this.targetEntity.isCustomDS) {
+                        this.entitySynedHandler();
+                    }
                 }
             }
             else {
@@ -1221,11 +1198,12 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
         }
     }
 
-    requestSaveAttrs() {
+    requestSaveAttrs(jsonProf) {
         var rlt = super.requestSaveAttrs();
         if (this.targetEntity != null) {
             rlt.targetEntity = 'dbe-' + this.targetEntity.code;
             rlt.keyColumn = this.keyColumn;
+            jsonProf.useEntity(this.targetEntity);
         }
         return rlt;
     }
@@ -1303,9 +1281,10 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
     }
 
     setEntity(entity) {
+        var dataMaster = this.bluePrint.dataMaster;
         if (typeof entity === 'string') {
             if (entity != '0') {
-                entity = g_dataBase.getEntityByCode(entity);
+                entity = dataMaster.getDataSourceByCode(entity);
             }
             else {
                 entity = null;
@@ -1441,7 +1420,7 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
             if(this.checkCompileFlag(!targetEntity.containColumn(colName), '第' + (si + 1) + '个输出接口列[' + colName + ']是非法的')){
                 return false;
             }
-            if (selectColumns_arr.indexOf(colName) == -1) {
+            if (selectColumns_arr.indexOf('[' + colName + ']') == -1) {
                 selectColumns_arr.push('[' + colName + ']');
             }
             defOutColumnBlock.pushLine('var ' + this.id + '_' + colName + '=' + rcdResultVarName + '.' + colName + ';');
@@ -1459,7 +1438,7 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
             else {
                 var bpCompileHelper = new SqlNode_CompileHelper(helper.logManager, null);
                 bpCompileHelper.clickLogBadgeItemHandler = null;
-                compileRet = targetEntity.compile(bpCompileHelper);
+                var compileRet = targetEntity.compile(bpCompileHelper);
                 if (compileRet == false) {
                     helper.logManager.errorEx([helper.logManager.createBadgeItem(
                         thisNodeTitle,
@@ -1468,7 +1447,7 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
                     '自订数据源' + targetEntity.name + '编译发生错误，无法继续']);
                     return false;
                 }
-                sqlInitValue = compileRet.sql;
+                sqlInitValue = 'select * from (' + compileRet.sql + ') as TRlt where ' + this.keyColumn + '=@' + this.inputScokets_arr[0].name;
             }
         }
         else {
@@ -1479,10 +1458,10 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
         var rcdRltVarName = this.id + '_rcdRlt';
         myCodeBlock.pushLine(makeLine_DeclareVar(rcdRltVarName));
         var tryBlock = new JSFile_Try('try');
-        tryBlock.errorBlock.pushLine("return serverhelper.createErrorRet(eo.message);");
+        tryBlock.errorBlock.pushLine("return serverhelper.createErrorRet('查询[" + this.targetEntity.name + "]出错:' +  eo.message);");
         myCodeBlock.pushChild(tryBlock);
         tryBlock.bodyBlock.pushLine(rcdRltVarName + " = yield dbhelper.asynQueryWithParams(" + sqlVarName + ", " + paramVarName + ");");
-        myCodeBlock.pushLine('if(' + rcdRltVarName + '.recordset.length!=1){return serverhelper.createErrorRet("在[' + targetEntity.name + ']中查到了" + ' + rcdResultVarName + '.recordset.length + "条符条件的数据");}');
+        myCodeBlock.pushLine('if(' + rcdRltVarName + '.recordset.length!=1){return serverhelper.createErrorRet("关键记录查询[' + targetEntity.name + ']的结果行数是"+' + rcdRltVarName + '.recordset.length);}');
         myCodeBlock.pushLine('var ' + rcdResultVarName + '=' + rcdRltVarName + '.recordset[0];');
         myCodeBlock.pushChild(defOutColumnBlock);
 
@@ -1800,7 +1779,7 @@ class FlowNode_Send_Message extends JSNode_Base {
     }
 
     msgTypeChanged(ev) {
-        console.log('msgTypeChanged' + ev);
+        //console.log('msgTypeChanged' + ev);
         var isPorcess = this.msgTypeScoket.defval == EMessageType.Process;
         this.flowStepScoket.set({
             visible: isPorcess
@@ -1814,7 +1793,7 @@ class FlowNode_Send_Message extends JSNode_Base {
     }
 
     targetTypeChanged(ev) {
-        console.log('targetTypeChanged' + ev);
+        //console.log('targetTypeChanged' + ev);
         var targetIsPerson = this.targetTypeScoket.defval == EMessageTargetType.Person;
         var targetIsPost = this.targetTypeScoket.defval == EMessageTargetType.Post;
         if (!targetIsPerson) {
@@ -2103,9 +2082,9 @@ FlowNodeClassMap[FLOWNODE_QUERY_KEYRECORD] = {
     modelClass: FlowNode_QueryKeyRecord,
     comClass: C_FlowNode_QueryKeyRecord,
 };
-FlowNodeClassMap[FLOWNODE_QUERY_SQL] = {
-    modelClass: FlowNode_QuerySql,
-    comClass: C_FlowNode_Query_Sql,
+FlowNodeClassMap[JSNODE_QUERY_SQL] = {
+    modelClass: JSNode_Query_Sql,
+    comClass: C_JSNode_Query_Sql,
 };
 FlowNodeClassMap[FLOWNODE_CREATE_SERVERERROR] = {
     modelClass: FlowNode_Create_ServerError,
@@ -2174,5 +2153,18 @@ FlowNodeClassMap[JSNODE_DATEFUN] = {
 };
 FlowNodeClassMap[JSNODE_TERNARY_OPERATOR] = {
     modelClass: JSNode_Ternary_Operator,
+    comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_INSERT_TABLE] = {
+    modelClass: JSNODE_Insert_table,
+    comClass: C_JSNODE_Insert_table,
+};
+FlowNodeClassMap[JSNODE_UPDATE_TABLE] = {
+    modelClass: JSNODE_Update_table,
+    comClass: C_JSNODE_Insert_table,
+};
+// 扩展jsnode
+JSNodeClassMap[FLOWNODE_COLUMN_VAR] = {
+    modelClass: FlowNode_ColumnVar,
     comClass: C_Node_SimpleNode,
 };

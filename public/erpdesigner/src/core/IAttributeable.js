@@ -111,6 +111,7 @@ class IAttributeable extends EventEmitter{
                     case AttrNames.ProcessTable:
                     case AttrNames.CustomDataSource:
                     case AttrNames.ListFormContent:
+                    case AttrNames.RelFlowStep:
                     break;
                     default:
                     if(attrItem.valueType == ValueType.CustomDataSource){
@@ -188,7 +189,7 @@ class IAttributeable extends EventEmitter{
         return nowAttrArrayList.length;
     }
 
-    getJson(){
+    getJson(jsonProf){
         var rlt={};
         this.attrbuteGroups.forEach(group=>{
             group.attrs_arr.forEach(attr=>{
@@ -212,6 +213,7 @@ class IAttributeable extends EventEmitter{
                     }
                     switch(attr.valueType){
                         case ValueType.DataSource:
+                        jsonProf.useEntity(val);
                         val = val.code;
                         break;
                         case ValueType.ListFormContent:

@@ -196,9 +196,11 @@ class DataBasePanel extends React.PureComponent {
         this.state = initState;
         autoBind(this);
         var self = this;
+        /*
         setTimeout(() => {
             self.startSynAction('keyword','T101');
         }, 100);
+        */
     }
 
     matchKeywordInputChangedhandler(ev) {

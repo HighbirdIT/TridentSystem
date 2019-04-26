@@ -32,14 +32,48 @@ var DataBase = function (_EventEmitter) {
     }
 
     _createClass(DataBase, [{
+        key: 'doSyn_Unload_bycodes',
+        value: function doSyn_Unload_bycodes(codes_arr, callBack) {
+            var _this2 = this;
+
+            console.log('doSyn_Unload_bycodes:' + codes_arr);
+            var needSynCodes_arr = [];
+            if (codes_arr) {
+                codes_arr.forEach(function (code) {
+                    if (_this2.entityCode_map[code] == null) {
+                        needSynCodes_arr.push(code);
+                    }
+                });
+            }
+            if (needSynCodes_arr.length == 0) {
+                if (callBack != null) {
+                    callBack();
+                }
+                return;
+            }
+            this.doSyn_Unload_bycodes_callback = callBack;
+            var self = this;
+            fetchJsonPost('server', { action: 'syndata_bycodes', codes_arr: needSynCodes_arr }, function (fetchData) {
+                var json = fetchData.json;
+                if (json.err) {
+                    console.error(json.err);
+                    return;
+                }
+                self.synEnityFromFetch(json.data);
+                if (callBack != null) {
+                    callBack();
+                }
+            });
+        }
+    }, {
         key: 'synEnityFromFetch',
         value: function synEnityFromFetch(data_arr) {
-            var _this2 = this;
+            var _this3 = this;
 
             var changed_arr = [];
             data_arr.forEach(function (entityData) {
-                if (_this2.synEntity(entityData)) {
-                    changed_arr.push(_this2.getEntityByCode(entityData.code));
+                if (_this3.synEntity(entityData)) {
+                    changed_arr.push(_this3.getEntityByCode(entityData.code));
                 }
             });
             console.log(changed_arr);
@@ -82,12 +116,13 @@ var DataBase = function (_EventEmitter) {
     }, {
         key: 'getEntityByCode',
         value: function getEntityByCode(code) {
+            if (code == null || code == 0) {
+                return null;
+            }
             if (isNaN(code)) {
                 console.error('getDataSourceByCode只接受整数');
             }
-            if (code == 0) {
-                return null;
-            }
+
             var rlt = this.entityCode_map[code.toString()];
             if (rlt == null) {
                 rlt = this.createEnity({ code: code });
@@ -128,12 +163,12 @@ var DBEntityAgency = function (_EventEmitter2) {
     function DBEntityAgency(name, code) {
         _classCallCheck(this, DBEntityAgency);
 
-        var _this3 = _possibleConstructorReturn(this, (DBEntityAgency.__proto__ || Object.getPrototypeOf(DBEntityAgency)).call(this));
+        var _this4 = _possibleConstructorReturn(this, (DBEntityAgency.__proto__ || Object.getPrototypeOf(DBEntityAgency)).call(this));
 
-        _this3.columns = [];
-        _this3.name = name;
-        _this3.code = code;
-        return _this3;
+        _this4.columns = [];
+        _this4.name = name;
+        _this4.code = code;
+        return _this4;
     }
 
     _createClass(DBEntityAgency, [{
@@ -159,11 +194,11 @@ var DBEntity = function (_EventEmitter3) {
     function DBEntity(initData) {
         _classCallCheck(this, DBEntity);
 
-        var _this4 = _possibleConstructorReturn(this, (DBEntity.__proto__ || Object.getPrototypeOf(DBEntity)).call(this));
+        var _this5 = _possibleConstructorReturn(this, (DBEntity.__proto__ || Object.getPrototypeOf(DBEntity)).call(this));
 
-        Object.assign(_this4, initData);
-        autoBind(_this4);
-        return _this4;
+        Object.assign(_this5, initData);
+        autoBind(_this5);
+        return _this5;
     }
 
     _createClass(DBEntity, [{
@@ -254,19 +289,19 @@ var DataMaster = function (_EventEmitter4) {
     function DataMaster(project) {
         _classCallCheck(this, DataMaster);
 
-        var _this5 = _possibleConstructorReturn(this, (DataMaster.__proto__ || Object.getPrototypeOf(DataMaster)).call(this));
+        var _this6 = _possibleConstructorReturn(this, (DataMaster.__proto__ || Object.getPrototypeOf(DataMaster)).call(this));
 
-        autoBind(_this5);
-        _this5.database = g_dataBase;
-        _this5.usedDBEnities_arr = [];
-        _this5.dataView_usedDBEnities = new ListDataView(_this5.usedDBEnities_arr, 'name', 'code');
+        autoBind(_this6);
+        _this6.database = g_dataBase;
+        _this6.usedDBEnities_arr = [];
+        _this6.dataView_usedDBEnities = new ListDataView(_this6.usedDBEnities_arr, 'name', 'code');
         //var cus1 = new SqlNode_BluePrint({name:'test',code:project.genControlName('cusDBE'),type:'表值',master:this});
         //var tVar = cus1.createEmptyVariable();
         //tVar.needEdit = false;
-        _this5.BP_sql_arr = [];
-        _this5.project = project;
+        _this6.BP_sql_arr = [];
+        _this6.project = project;
 
-        _this5.dataView_usedDBEnities.on('changed', _this5.usedDBEnitiesChangedHandler);
+        _this6.dataView_usedDBEnities.on('changed', _this6.usedDBEnitiesChangedHandler);
 
         /*
         creationHelper = new NodeCreationHelper(); 
@@ -274,7 +309,7 @@ var DataMaster = function (_EventEmitter4) {
         var newCus2 = new SqlNode_BluePrint(null, testJson2,creationHelper);
         this.addSqlBP(newCus2);
         */
-        return _this5;
+        return _this6;
     }
 
     _createClass(DataMaster, [{
@@ -378,12 +413,12 @@ var DataMaster = function (_EventEmitter4) {
         }
     }, {
         key: 'getJson',
-        value: function getJson() {
+        value: function getJson(jsonProf) {
             var rlt = {
                 BP_sql_arr: []
             };
             this.BP_sql_arr.forEach(function (bp) {
-                rlt.BP_sql_arr.push(bp.getJson());
+                rlt.BP_sql_arr.push(bp.getJson(jsonProf));
                 //console.log(JSON.stringify(rlt.BP_sql_arr[rlt.BP_sql_arr.length - 1]));
             });
             return rlt;
@@ -410,7 +445,7 @@ var DataMaster = function (_EventEmitter4) {
     }, {
         key: 'restoreFromJson',
         value: function restoreFromJson(json) {
-            var _this6 = this;
+            var _this7 = this;
 
             if (json == null) {
                 return;
@@ -419,7 +454,7 @@ var DataMaster = function (_EventEmitter4) {
                 json.BP_sql_arr.forEach(function (bpjson) {
                     var creationHelper = new NodeCreationHelper();
                     var newbp = new SqlNode_BluePrint(null, bpjson, creationHelper);
-                    _this6.addSqlBP(newbp);
+                    _this7.addSqlBP(newbp);
                 });
             }
         }
