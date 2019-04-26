@@ -214,7 +214,6 @@ var C_ProjectList = function (_React$PureComponent2) {
                                 '\u5F00\u53D1\u4E2D'
                             );
                         } else {
-                            useable = false;
                             appendElem = React.createElement(
                                 'span',
                                 { className: 'badge badge-secondary' },

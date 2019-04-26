@@ -159,7 +159,6 @@ class C_ProjectList extends React.PureComponent{
                                 appendElem = <span className='badge badge-info'>开发中</span>
                             }
                             else{
-                                useable = false;
                                 appendElem = <span className='badge badge-secondary'>不可用</span>
                             }
                         }
