@@ -664,56 +664,16 @@ class FlowNode_Var_Set extends FlowNode_Base {
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
-        var socketValue = '';
 
-        if (this.varData == null || this.varData.removed) {
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                '无效变量']);
+        if (this.checkCompileFlag(this.varData == null || this.varData.removed, '无效变量', helper)) {
             return false;
         }
 
-        var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.inSocket);
-        if (datalinks_arr.length == 0) {
-            if (IsEmptyString(this.inSocket.defval)) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle,
-                    nodeThis,
-                    helper.clickLogBadgeItemHandler),
-                    '必须有输入值']);
-                return false;
-            }
-            socketValue = this.inSocket.defval;
-            if (isNaN(socketValue)) {
-                socketValue = singleQuotesStr(socketValue);
-            }
+        var socketComRet = this.getSocketCompileValue(helper, (this.inSocket), usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
         }
-        else {
-            var dataLink = datalinks_arr[0];
-            var outNode = dataLink.outSocket.node;
-            var compileRet = null;
-            if (outNode.isHadFlow()) {
-                compileRet = helper.getCompileRetCache(outNode);
-                if (compileRet == null) {
-                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                        thisNodeTitle,
-                        nodeThis,
-                        helper.clickLogBadgeItemHandler),
-                        '输入接口设置错误']);
-                    return false;
-                }
-            }
-            else {
-                compileRet = outNode.compile(helper, usePreNodes_arr);
-            }
-            if (compileRet == false) {
-                return false;
-            }
-            socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
-        }
-
+        var socketValue = socketComRet.value;
         belongBlock.getScope().getVar(this.varData.name, true, this.varData.default);
 
         var myJSBlock = new FormatFileBlock(this.id);

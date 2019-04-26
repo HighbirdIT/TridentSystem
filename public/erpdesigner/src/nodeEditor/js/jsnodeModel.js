@@ -1104,7 +1104,9 @@ class JSNode_ConstValue extends JSNode_Base {
             return false;
         }
         if (isNaN(value)) {
-            value = "'" + value + "'";
+            if(value != "''"){
+                value = "'" + value + "'";
+            }
         }
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, value);
