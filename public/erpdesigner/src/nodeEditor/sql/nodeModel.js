@@ -1598,12 +1598,15 @@ class SqlNode_Select extends SqlNode_Base {
             return false;
         }
         if (this.bluePrint.type == "标量值" && columnNode_inSockets.length > 1)
-        {       helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle
-                , columnNode
-                , helper.clickLogBadgeItemHandler)
-                , '返回列不能大于1。']);
-            return false;
+        {
+            if(this == this.bluePrint.finalSelectNode){
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle
+                    , columnNode
+                    , helper.clickLogBadgeItemHandler)
+                    , '返回列不能大于1。']);
+                return false;
+            }
         }
         var emptySocket = null;
         var emptySocketIndex = 0;
