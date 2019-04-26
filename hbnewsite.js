@@ -477,7 +477,7 @@ else {
 
 function freshPageCache() {
     console.log('freshPageCache');
-    var sql = 'SELECT [系统方案名称],[桌面端名称],[移动端名称],[桌面端LN],[移动端LN],[后台名称],[当前版本] FROM [base1].[dbo].[V002C系统方案名称] where (len([桌面端名称]) > 0 or len([移动端名称]) > 0)';
+    var sql = 'SELECT [系统方案名称],[桌面端名称],[移动端名称],[桌面端LN],[移动端LN],[后台名称],[当前版本],[方案英文名称] FROM [base1].[dbo].[V002C系统方案名称] where (len([桌面端名称]) > 0 or len([移动端名称]) > 0)';
     dbhelper.asynQueryWithParams(sql)
         .then(ret => {
             ret.recordset.forEach(
@@ -510,7 +510,7 @@ function freshPageCache() {
                         title: row.系统方案名称,
                         version: row.当前版本,
                     };
-                    erpPageCache[row.系统方案名称] = nowCache;
+                    erpPageCache[row.方案英文名称] = nowCache;
                 }
             );
             console.log('freshPageCache end');
