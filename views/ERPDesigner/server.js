@@ -692,6 +692,7 @@ function publishProject(req, res){
             pcLayoutName: compileResult.pcLayoutName,
             serverName: jsServerName,
             title:projTitle,
+            version:newVersion,
         }
 
         if(compileResult.mobilePart != null){

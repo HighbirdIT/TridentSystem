@@ -1247,8 +1247,8 @@ class ERPC_CheckBox extends React.PureComponent {
         this.checked = checked;
         return (<span className={'erpc_checkbox ' + (this.props.className == null ? '' : this.props.className)} >
                 <span onClick={this.props.readonly ? null : this.clickHandler} className="fa-stack fa-lg">
-                    <i className={"fa fa-square-o fa-stack-2x" + (this.props.readonly ? ' text-secondary' : '')}></i>
-                    {checked && <i className={'fa fa-stack-1x fa-check' + (this.props.readonly ? ' text-secondary' : ' text-success')}></i>}
+                    <i className={"fa fa-square-o fa-stack-2x" + (this.props.readonly ? ' text-secondary' : '') } />
+                    <i className={'fa fa-stack-1x ' + (checked ? ' fa-check text-success' : ' fa-close text-danger')} />
                 </span>
             </span>);
     }

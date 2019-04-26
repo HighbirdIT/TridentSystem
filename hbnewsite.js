@@ -16,7 +16,7 @@ var debug = require('debug');
 var serverhelper = require('./erpserverhelper.js');
 var cluster = require('cluster');
 
-debug.enabled = ()=>{
+debug.enabled = () => {
     return false;
 };
 
@@ -37,7 +37,7 @@ var handlebars = require('express3-handlebars').create({
             this._sections[name] = options.fn(this);
             return null;
         },
-        encodeMyString: function(inputData){
+        encodeMyString: function (inputData) {
             var t = this;
             return new handlebars.handlebars.SafeString(inputData);
         }
@@ -69,9 +69,9 @@ function getIPV4() {
 
 var localIP = getIPV4();
 //if(localIP.mac == '80:fa:5b:59:48:09'){
-    //setInterval(()=>{
-        //flowhelper.startFlowProcess();
-    //},5 * 1000);
+//setInterval(()=>{
+//flowhelper.startFlowProcess();
+//},5 * 1000);
 //}
 
 app.set('hostip', localIP.address);
@@ -120,7 +120,7 @@ app.use(function (req, res, next) {
 });
 
 app.use('/', function (req, res, next) {
-    if(req.path == '/' || req.path == '#'){
+    if (req.path == '/' || req.path == '#') {
         /*
         res.locals.clientJs = '/js/views/erp/pages/test2.js';
         res.locals.title = '测试';
@@ -134,37 +134,37 @@ app.use('/', function (req, res, next) {
         res.locals.isMobile = android || ipad || ipod || iphone;
         res.locals.isMobileStr = res.locals.isMobile ? 'true' : 'false';
 
-        dingHelper.asynGetDingDingTicket('http://' + req.headers.host + req.originalUrl).then((data)=>{
-            res.locals.Signature = data.Signature == null? '' : data.Signature;
-            res.locals.TimeStamp = data.TimeStamp == null? '' : data.TimeStamp;
-            res.locals.NonceStr = data.NonceStr == null? '' : data.NonceStr;
-            res.locals.DingErrInfo = data.errInfo == null? '' : data.errInfo;
+        dingHelper.asynGetDingDingTicket('http://' + req.headers.host + req.originalUrl).then((data) => {
+            res.locals.Signature = data.Signature == null ? '' : data.Signature;
+            res.locals.TimeStamp = data.TimeStamp == null ? '' : data.TimeStamp;
+            res.locals.NonceStr = data.NonceStr == null ? '' : data.NonceStr;
+            res.locals.DingErrInfo = data.errInfo == null ? '' : data.errInfo;
             res.locals.isProduction = app.get('env') == 'production';
 
-            if(!res.locals.isProduction){
-                
+            if (!res.locals.isProduction) {
+
                 res.locals.cacheUserid = developconfig.envVar.userid;
                 res.locals.cacheUserName = developconfig.envVar.username;
                 res.locals.g_envVar = JSON.stringify(developconfig.envVar);
                 req.session.g_envVar = developconfig.envVar;
             }
-            else{
+            else {
                 var cookiesUer = {
-                    userid:-1,
-                    username:'未知用户',
-                    envVar:{},
+                    userid: -1,
+                    username: '未知用户',
+                    envVar: {},
                 };
                 var logrcd = req.signedCookies._erplogrcdid;
                 //logrcd='5FE1EC04-4271-4650-AB4D-193A9F9D1DEA';
-                if(logrcd != null){
+                if (logrcd != null) {
                     dingHelper.aysnLoginfFromRcdID(logrcd, req, res).then(
-                        userData=>{
-                            if(userData != null){
+                        userData => {
+                            if (userData != null) {
                                 cookiesUer = userData;
                             }
                             res.locals.cacheUserid = cookiesUer.userid;
                             res.locals.cacheUserName = cookiesUer.username;
-                            res.locals.g_envVar=JSON.stringify(cookiesUer);
+                            res.locals.g_envVar = JSON.stringify(cookiesUer);
                             return res.render('erppage/mobileerp', { layout: 'erppagetype_MA' });
                         }
                     );
@@ -172,9 +172,9 @@ app.use('/', function (req, res, next) {
                 }
                 res.locals.cacheUserid = cookiesUer.userid;
                 res.locals.cacheUserName = cookiesUer.username;
-                res.locals.g_envVar=JSON.stringify(cookiesUer);
+                res.locals.g_envVar = JSON.stringify(cookiesUer);
             }
-    
+
             return res.render('erppage/mobileerp', { layout: 'erppagetype_MA' });
         });
         return;
@@ -184,15 +184,14 @@ app.use('/', function (req, res, next) {
 });
 
 app.use('/fromNotify', function (req, res, next) {
-    if(!flowhelper.execFromNotify(req, res, next)){
+    if (!flowhelper.execFromNotify(req, res, next)) {
         next();
     }
 });
 
 app.use('/dingUtility', function (req, res, next) {
-    if(req.path == '/')
-    {
-        dingHelper.doAction(req, res).then(rlt=>{
+    if (req.path == '/') {
+        dingHelper.doAction(req, res).then(rlt => {
             res.json(rlt);
         });
         return;
@@ -362,7 +361,7 @@ app.use('/erppage/server', function (req, res, next) {
         res.status(404);
         return res.render('404');
     }
-    
+
     return require(jspath)(req, res, next, app);
 });
 
@@ -392,57 +391,7 @@ app.use('/erppage', function (req, res, next) {
     var pageName = t_arr[2].toUpperCase();
     var isPC = t_arr[1].toLowerCase() == 'pc';
     var cache = erpPageCache[pageName];
-    if (cache == null) {
-        var sql = 'SELECT [系统方案名称],[桌面端名称],[移动端名称],[桌面端LN],[移动端LN],[后台名称] FROM [base1].[dbo].[V002C系统方案名称] where [方案英文名称]=@name and (len([桌面端名称]) > 0 or len([移动端名称]) > 0)';
-        dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('name', sqlTypes.NVarChar, pageName)])
-            .then(ret => {
-                if (ret.recordset.length == 0) {
-                    res.status(404);
-                    res.render('404');
-                    return;
-                }
-
-                var row = ret.recordset[0];
-                var mobileJsPath = row['移动端名称'];
-                var mobileLayoutName = row['移动端LN'];
-                var pcJsPath = row['桌面端名称'];
-                var pcLayoutName = row['桌面端LN'];
-                var serverName = row['后台名称'];
-
-                if (mobileJsPath.length == 0) {
-                    mobileJsPath = pcJsPath;
-                    mobileLayoutName = pcLayoutName;
-                }
-                else if (pcJsPath.length == 0) {
-                    pcJsPath = mobileJsPath;
-                    pcLayoutName = mobileLayoutName;
-                }
-
-                cache = {
-                    mobileJsPath: mobileJsPath,
-                    mobileLayoutName: mobileLayoutName,
-                    pcJsPath: pcJsPath,
-                    pcLayoutName: pcLayoutName,
-                    serverName: serverName,
-                    title:row['系统方案名称'],
-                };
-                erpPageCache[pageName] = cache;
-                var layoutName = isPC ? cache.pcLayoutName : cache.mobileLayoutName;
-                var jsFilePath = '/js/views/erp/pages/' + (isPC ? cache.pcJsPath : cache.mobileJsPath) + '.js';
-
-                if (fs.existsSync(__dirname + '/public' + jsFilePath)) {
-                    res.locals.clientJs = jsFilePath;
-                    res.locals.title = cache.title;
-                    res.locals.g_envVar = req.session.g_envVar == null ? '{}' : JSON.stringify(req.session.g_envVar);
-                    return res.render('erppage/client', { layout: layoutName });
-                }
-                else {
-                    res.status(404);
-                    return res.render('404');
-                }
-            });
-    }
-    else {
+    if (cache != null) {
         var layoutName = isPC ? cache.pcLayoutName : cache.mobileLayoutName;
         var jsFilePath = '/js/views/erp/pages/' + (isPC ? cache.pcJsPath : cache.mobileJsPath) + '.js';
         if (fs.existsSync(__dirname + '/public' + jsFilePath)) {
@@ -451,11 +400,9 @@ app.use('/erppage', function (req, res, next) {
             res.locals.g_envVar = req.session.g_envVar == null ? '{}' : JSON.stringify(req.session.g_envVar);
             return res.render('erppage/client', { layout: layoutName });
         }
-        else {
-            res.status(404);
-            return res.render('404');
-        }
     }
+    res.status(404);
+    return res.render('404');
 });
 
 app.use('/interview', function (req, res, next) {
@@ -513,6 +460,8 @@ app.use(function (err, req, res, next) {
 });
 
 function startServer() {
+    freshPageCache();
+    setInterval(freshPageCache, 1000 * 30);
     http.createServer(app).listen(app.get('port'), function () {
         console.log('Express started on http://' + app.get('hostip') + ':' + app.get('port') + '; press Ctl-C to terminate.');
         console.log('env:' + app.get('env'));
@@ -524,4 +473,46 @@ if (require.main == module) {
 }
 else {
     module.exports = startServer;
+}
+
+function freshPageCache() {
+    console.log('freshPageCache');
+    var sql = 'SELECT [系统方案名称],[桌面端名称],[移动端名称],[桌面端LN],[移动端LN],[后台名称],[当前版本] FROM [base1].[dbo].[V002C系统方案名称] where (len([桌面端名称]) > 0 or len([移动端名称]) > 0)';
+    dbhelper.asynQueryWithParams(sql)
+        .then(ret => {
+            ret.recordset.forEach(
+                row => {
+                    var mobileJsPath = row.移动端名称;
+                    var mobileLayoutName = row.移动端LN;
+                    var pcJsPath = row.桌面端名称;
+                    var pcLayoutName = row.桌面端LN;
+                    var serverName = row.后台名称;
+                    var nowCache = erpPageCache[row.系统方案名称];
+                    if (nowCache != null && nowCache.version == row.当前版本) {
+                        return;
+                    }
+
+                    if (mobileJsPath.length == 0) {
+                        mobileJsPath = pcJsPath;
+                        mobileLayoutName = pcLayoutName;
+                    }
+                    else if (pcJsPath.length == 0) {
+                        pcJsPath = mobileJsPath;
+                        pcLayoutName = mobileLayoutName;
+                    }
+
+                    nowCache = {
+                        mobileJsPath: mobileJsPath,
+                        mobileLayoutName: mobileLayoutName,
+                        pcJsPath: pcJsPath,
+                        pcLayoutName: pcLayoutName,
+                        serverName: serverName,
+                        title: row.系统方案名称,
+                        version: row.当前版本,
+                    };
+                    erpPageCache[row.系统方案名称] = nowCache;
+                }
+            );
+            console.log('freshPageCache end');
+        });
 }
