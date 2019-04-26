@@ -1091,7 +1091,7 @@ function getQueryVariable(variable)
 
 var gTimeReg = /\d+:\d+:\d+/;
 
-function FormatStringValue(val, type){
+function FormatStringValue(val, type, precision){
     if(IsEmptyString(val)){
         return '';
     }
@@ -1107,7 +1107,7 @@ function FormatStringValue(val, type){
         rlt = parseBoolean(val) ? true : false;
         break;
         case 'float':
-        var precision = this.props.precision == null ? 2 : parseInt(this.props.precision);
+        precision = precision == null ? 2 : parseInt(precision);
         rlt = Math.round(val * Math.pow(10, precision));
         if(isNaN(rlt)){
             rlt = '';
