@@ -1210,12 +1210,9 @@ class SqlNode_FbSource extends SqlNode_Base {
     }
 
     setEntity(entity) {
-        
         if(typeof entity === 'string'){
             entity = this.bluePrint.master.getDataSourceByCode(entity);
         }
-        var fbtype = this.targetEntity.type
-
         if (this.targetEntity == entity)
             return;
         if (this.targetEntity != null) {
@@ -1226,8 +1223,6 @@ class SqlNode_FbSource extends SqlNode_Base {
             entity.on('syned', this.entitySynedHandler);
         }
         this.entitySynedHandler();
-        
-        
     }
 
     getContext(finder) {
