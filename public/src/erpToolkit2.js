@@ -1107,7 +1107,7 @@ function FormatStringValue(val, type){
         rlt = parseBoolean(val) ? true : false;
         break;
         case 'float':
-        var precision = tihs.props.precision == null ? 2 : parseInt(tihs.props.precision);
+        var precision = this.props.precision == null ? 2 : parseInt(this.props.precision);
         rlt = Math.round(val * Math.pow(10, precision));
         if(isNaN(rlt)){
             rlt = '';

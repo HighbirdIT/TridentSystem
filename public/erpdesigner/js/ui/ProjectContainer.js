@@ -280,6 +280,12 @@ var ProjectContainer = function (_React$PureComponent2) {
                     {
                         this.createEmptyProject();
                     }
+                case 'openflowmaster':
+                    {
+                        if (gFlowMasterRef.current) {
+                            gFlowMasterRef.current.toggle();
+                        }
+                    }
             }
         }
     }, {
@@ -302,7 +308,8 @@ var ProjectContainer = function (_React$PureComponent2) {
                             MenuItem,
                             { id: 'MI_HB', text: "HB" + (LoginUser == null ? '' : LoginUser.name), className: 'text-primary' },
                             React.createElement(MenuCammandItem, { text: '\u6253\u5F00\u9879\u76EE', cmd: 'open', executFun: this.executCmd }),
-                            React.createElement(MenuCammandItem, { text: '\u521B\u5EFA\u7A7A\u9879\u76EE', cmd: 'create', executFun: this.executCmd })
+                            React.createElement(MenuCammandItem, { text: '\u521B\u5EFA\u7A7A\u9879\u76EE', cmd: 'create', executFun: this.executCmd }),
+                            React.createElement(MenuCammandItem, { text: '\u6253\u5F00\u6D41\u7A0B\u5927\u5E08', cmd: 'openflowmaster', executFun: this.executCmd })
                         ),
                         this.state.projects.map(function (item, i) {
                             return React.createElement(TitleHeaderItem, { key: item.designeConfig.name, project: item, index: i, clickTitlehandler: _this3.clickTitlehandler, clickClosehandler: _this3.clickClosehandler, active: i == _this3.state.selectedIndex });
