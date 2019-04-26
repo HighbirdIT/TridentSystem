@@ -770,6 +770,16 @@ class FlowSqlBPItemPanel extends React.PureComponent {
     }
 
     render() {
+        if(this.props.items_arr != this.props.dataMaster.BP_sql_arr){
+            var self = this;
+            setTimeout(() => {
+                var newSelectedItem = this.props.dataMaster.BP_sql_arr.indexOf(this.state.selectedItem) == -1 ? null : this.state.selectedItem;
+                self.setState({
+                    items_arr : this.props.dataMaster.BP_sql_arr,
+                    selectedItem : newSelectedItem,
+                });
+            }, 50);
+        }
         var selectedItem = this.state.selectedItem;
         return (
             <React.Fragment>
