@@ -587,8 +587,10 @@ class C_SqlNode_Ret_Columns extends React.PureComponent {
         }
         if(nodeData.bluePrint.type =="标量值")
         {
-            topVal = 1 ;
-            disabled = "disabled";
+            if(nodeData == nodeData.bluePrint.finalSelectNode){
+                topVal = 1 ;
+                disabled = "disabled";
+            }
         }
         if(distvalue == null){
             distvalue = false;
