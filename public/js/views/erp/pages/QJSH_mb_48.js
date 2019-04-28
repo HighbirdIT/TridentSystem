@@ -81,8 +81,10 @@ function bind_M_Form_1(retState, newIndex, oldIndex) {
 	var bundle = {};
 	var nowRecord = null;
 	var useIndex = newIndex;
-	needSetState['M_CheckBox_0.value'] = '0';
+	needSetState['M_LC_11.visible'] = false;
 	needSetState['M_Text_0.value'] = '同意';
+	needSetState['M_LC_12.visible'] = false;
+	needSetState['M_Text_1.value'] = null;
 	if (records_arr == null || newIndex == -1 || records_arr.length == 0) {} else {
 		nowRecord = records_arr[useIndex];
 		bundle.M_Form_1_nowRecord = nowRecord;
@@ -568,11 +570,6 @@ var CM_Form_1 = function (_React$PureComponent3) {
 									),
 									React.createElement(
 										VisibleERPC_LabeledControl,
-										{ id: "M_LC_12", parentPath: "M_Page_2.M_Form_1", label: "wer" },
-										React.createElement(VisibleERPC_CheckBox, { id: "M_CheckBox_0", parentPath: "M_Page_2.M_Form_1" })
-									),
-									React.createElement(
-										VisibleERPC_LabeledControl,
 										{ id: "M_LC_2", parentPath: "M_Page_2.M_Form_1", label: "\u8D77\u59CB\u65E5\u671F" },
 										React.createElement(VisibleERPC_Label, { className: "erp-control ", id: "M_Label_5", parentPath: "M_Page_2.M_Form_1", type: "date" })
 									),
@@ -600,6 +597,11 @@ var CM_Form_1 = function (_React$PureComponent3) {
 										VisibleERPC_LabeledControl,
 										{ id: "M_LC_11", parentPath: "M_Page_2.M_Form_1", label: "\u5BA1\u6838\u8BF4\u660E", visible: false },
 										React.createElement(VisibleERPC_Text, { id: "M_Text_0", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "1x" })
+									),
+									React.createElement(
+										VisibleERPC_LabeledControl,
+										{ id: "M_LC_12", parentPath: "M_Page_2.M_Form_1", label: "test", visible: false },
+										React.createElement(VisibleERPC_Text, { id: "M_Text_1", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "single" })
 									),
 									React.createElement(
 										"div",

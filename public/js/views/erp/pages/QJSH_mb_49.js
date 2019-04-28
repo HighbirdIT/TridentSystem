@@ -27,7 +27,7 @@ var appReducerSetting = { AT_PAGELOADED: pageLoadedReducer.bind(window), AT_GOTO
 var appReducer = createReducer(appInitState, Object.assign(baseReducerSetting, appReducerSetting));
 var reducer = appReducer;
 var store = Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReporter, createThunkMiddleware()));
-var appStateChangedAct_map = { 'M_Page_2.M_Form_1.records_arr': fresh_M_Form_1.bind(window), 'M_Page_2.M_Form_1.recordIndex': bind_M_Form_1.bind(window), 'M_Page_2.M_Form_1.M_Form_0.records_arr': fresh_M_Form_0.bind(window), 'M_Page_2.M_Form_1.M_Form_0.pageIndex': bind_M_Form_0.bind(window), 'M_Page_2.M_Form_1.M_LC_3.visible': M_LC_3_visible_changed.bind(window) };
+var appStateChangedAct_map = { 'M_Page_2.M_Form_1.records_arr': fresh_M_Form_1.bind(window), 'M_Page_2.M_Form_1.recordIndex': bind_M_Form_1.bind(window), 'M_Page_2.M_Form_1.M_Form_0.records_arr': fresh_M_Form_0.bind(window), 'M_Page_2.M_Form_1.M_Form_0.pageIndex': bind_M_Form_0.bind(window), 'M_Page_2.M_Form_1.M_LC_3.visible': M_LC_3_visible_changed.bind(window), 'M_Page_2.M_Form_1.M_Text_0.value': M_Text_0_value_changed.bind(window) };
 var pageRouter = [];
 
 function pageLoadedReducer(state) {
@@ -81,8 +81,10 @@ function bind_M_Form_1(retState, newIndex, oldIndex) {
 	var bundle = {};
 	var nowRecord = null;
 	var useIndex = newIndex;
-	needSetState['M_CheckBox_0.value'] = '0';
 	needSetState['M_Text_0.value'] = '同意';
+	needSetState['M_LC_12.visible'] = false;
+	needSetState['M_Text_1.value'] = null;
+	needSetState['button_3.visible'] = false;
 	if (records_arr == null || newIndex == -1 || records_arr.length == 0) {} else {
 		nowRecord = records_arr[useIndex];
 		bundle.M_Form_1_nowRecord = nowRecord;
@@ -96,6 +98,7 @@ function bind_M_Form_1(retState, newIndex, oldIndex) {
 		needSetState['M_Label_10.text'] = M_Label_10_textfield_get(retState, bundle);
 		needSetState['M_LC_3.visible'] = M_LC_3_isdisplay_get(retState, bundle);
 		needSetState['M_LC_4.visible'] = M_LC_4_isdisplay_get(retState, bundle);
+		needSetState['button_2.visible'] = button_2_isdisplay_get(retState, bundle);
 	}
 	needSetState['nowRecord'] = nowRecord;
 	needSetState['invalidbundle'] = false;
@@ -188,6 +191,43 @@ function M_LC_6_isdisplay_get(state, bundle) {
 	var M_LC_3_state = getStateByPath(M_Form_1_state, 'M_LC_3', {});
 	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : M_LC_3_state.visible;
 	return M_LC_3_visible;
+}
+function button_2_isdisplay_get(state, bundle) {
+	var M_Form_1_nowRecord = bundle != null && bundle.M_Form_1_nowRecord != null ? bundle.M_Form_1_nowRecord : getStateByPath(state, 'M_Page_2.M_Form_1.nowRecord');
+	var validErr;
+	var hadValidErr = false;
+	var validErrState = {};
+	var callback_final = function callback_final(state, data, err) {
+		setManyStateByPath(state, '', validErrState);
+		return err == null ? data : null;
+	};
+	if (IsEmptyString(M_Form_1_nowRecord)) {
+		return callback_final(state, null, { info: gPreconditionInvalidInfo });
+	}
+	if (hadValidErr) {
+		return callback_final(state, null, { info: gPreconditionInvalidInfo });
+	}
+	return M_Form_1_nowRecord['员工登记姓名代码'] == 8;
+}
+function button_1_isdisplay_get(state, bundle) {
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1', {});
+	var M_Text_0_state = getStateByPath(M_Form_1_state, 'M_Text_0', {});
+	var M_LC_11_state = getStateByPath(M_Form_1_state, 'M_LC_11', {});
+	var M_Text_0_value = bundle != null && bundle['M_Text_0_value'] != null ? bundle['M_Text_0_value'] : M_Text_0_state.value;
+	var validErr;
+	var hadValidErr = false;
+	var validErrState = {};
+	var callback_final = function callback_final(state, data, err) {
+		setManyStateByPath(state, '', validErrState);
+		return err == null ? data : null;
+	};
+	validErr = BaseIsValueValid(state, M_LC_11_state, M_Text_0_state, M_Text_0_value, 'string', false, 'M_Text_0', validErrState);
+	validErrState['M_Page_2.M_Form_1.M_Text_0.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
+	if (hadValidErr) {
+		return callback_final(state, null, { info: gPreconditionInvalidInfo });
+	}
+	return M_Text_0_value == '同意';
 }
 function button_4_onclick() {
 	var state = store.getState();
@@ -387,6 +427,11 @@ function M_LC_3_visible_changed(state, newValue, oldValue, path, visited, delayA
 	needSetState['M_Page_2.M_Form_1.M_LC_6.visible'] = M_LC_6_isdisplay_get(state);
 	return setManyStateByPath(state, '', needSetState);
 }
+function M_Text_0_value_changed(state, newValue, oldValue, path, visited, delayActs) {
+	var needSetState = {};
+	needSetState['M_Page_2.M_Form_1.button_1.visible'] = button_1_isdisplay_get(state);
+	return setManyStateByPath(state, '', needSetState);
+}
 
 var App = function (_React$PureComponent) {
 	_inherits(App, _React$PureComponent);
@@ -568,11 +613,6 @@ var CM_Form_1 = function (_React$PureComponent3) {
 									),
 									React.createElement(
 										VisibleERPC_LabeledControl,
-										{ id: "M_LC_12", parentPath: "M_Page_2.M_Form_1", label: "wer" },
-										React.createElement(VisibleERPC_CheckBox, { id: "M_CheckBox_0", parentPath: "M_Page_2.M_Form_1" })
-									),
-									React.createElement(
-										VisibleERPC_LabeledControl,
 										{ id: "M_LC_2", parentPath: "M_Page_2.M_Form_1", label: "\u8D77\u59CB\u65E5\u671F" },
 										React.createElement(VisibleERPC_Label, { className: "erp-control ", id: "M_Label_5", parentPath: "M_Page_2.M_Form_1", type: "date" })
 									),
@@ -598,8 +638,28 @@ var CM_Form_1 = function (_React$PureComponent3) {
 									),
 									React.createElement(
 										VisibleERPC_LabeledControl,
-										{ id: "M_LC_11", parentPath: "M_Page_2.M_Form_1", label: "\u5BA1\u6838\u8BF4\u660E", visible: false },
+										{ id: "M_LC_11", parentPath: "M_Page_2.M_Form_1", label: "\u5BA1\u6838\u8BF4\u660E" },
 										React.createElement(VisibleERPC_Text, { id: "M_Text_0", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "1x" })
+									),
+									React.createElement(
+										VisibleERPC_LabeledControl,
+										{ id: "M_LC_12", parentPath: "M_Page_2.M_Form_1", label: "test", visible: false },
+										React.createElement(VisibleERPC_Text, { id: "M_Text_1", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "single" })
+									),
+									React.createElement(
+										VisibleERPC_Button,
+										{ parentPath: "M_Page_2.M_Form_1", className: "btn btn-primary erp-control ", id: "button_3", visible: false },
+										"1"
+									),
+									React.createElement(
+										VisibleERPC_Button,
+										{ parentPath: "M_Page_2.M_Form_1", className: "btn btn-primary erp-control ", id: "button_2" },
+										"\u5C0F\u59DC"
+									),
+									React.createElement(
+										VisibleERPC_Button,
+										{ parentPath: "M_Page_2.M_Form_1", className: "btn btn-primary erp-control ", id: "button_1" },
+										"\u540C\u610F\u4E13\u7528"
 									),
 									React.createElement(
 										"div",

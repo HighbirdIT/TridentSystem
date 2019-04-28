@@ -188,11 +188,9 @@ function ERPC_Fun_ComponentWillMount() {
     }
 }
 
-function ERPControlBase(target) {
+function ERPControlBase(target, initState) {
     target.rootDivRef = React.createRef();
-    target.initState = {
-        keyword: '',
-    };
+    target.initState = initState == null ? {} : initState;
     target.componentWillUnmount = ERPC_Fun_ComponentWillUnmount.bind(target);
     target.componentWillMount = ERPC_Fun_ComponentWillMount.bind(target);
 }
@@ -1152,7 +1150,7 @@ function ERPC_LabeledControl_mapstatetoprops(state, ownprops) {
     return {
         label: useLabel,
         fetching: ctlState.fetching,
-        visible:ctlState.visible,
+        visible: ctlState.visible,
     };
 }
 
@@ -1268,11 +1266,44 @@ function ERPC_CheckBox_dispatchtorprops(dispatch, ownprops) {
     };
 }
 
+class ERPC_Button extends React.PureComponent {
+    constructor(props) {
+        super();
+        autoBind(this);
+
+        ERPControlBase(this);
+        this.state = this.initState;
+    }
+
+    render() {
+        if(this.props.visible == false){
+            return null;
+        }
+        return <button className={this.props.className}>
+                {this.props.children}
+            </button>
+    }
+}
+
+function ERPC_Button_mapstatetoprops(state, ownprops) {
+    var ctlPath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
+    var ctlState = getStateByPath(state, ctlPath, {});
+    return {
+        visible:ctlState.visible,
+    };
+}
+
+function ERPC_Button_dispatchtorprops(dispatch, ownprops) {
+    return {
+    };
+}
+
 var VisibleERPC_DropDown = null;
 var VisibleERPC_Text = null;
 var VisibleERPC_LabeledControl = null;
 var VisibleERPC_Label = null;
 var VisibleERPC_CheckBox = null;
+var VisibleERPC_Button = null;
 
 function ErpControlInit() {
     VisibleERPC_DropDown = ReactRedux.connect(ERPC_DropDown_mapstatetoprops, ERPC_DropDown_dispatchtoprops)(ERPC_DropDown);
@@ -1280,6 +1311,7 @@ function ErpControlInit() {
     VisibleERPC_LabeledControl = ReactRedux.connect(ERPC_LabeledControl_mapstatetoprops, ERPC_LabeledControl_dispatchtorprops)(ERPC_LabeledControl);
     VisibleERPC_Label = ReactRedux.connect(ERPC_Label_mapstatetoprops, ERPC_Label_dispatchtorprops)(ERPC_Label);
     VisibleERPC_CheckBox = ReactRedux.connect(ERPC_CheckBox_mapstatetoprops, ERPC_CheckBox_dispatchtorprops)(ERPC_CheckBox);
+    VisibleERPC_Button = ReactRedux.connect(ERPC_Button_mapstatetoprops, ERPC_Button_dispatchtorprops)(ERPC_Button);
 }
 
 function ERPC_PageForm(target){
