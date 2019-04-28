@@ -71,6 +71,21 @@ var M_Container = function (_React$PureComponent) {
             });
         }
     }, {
+        key: 'getDescendantControls',
+        value: function getDescendantControls(rlt_arr) {
+            this.children.forEach(function (child) {
+                switch (child.type) {
+                    case M_ContainerKernel_Type:
+                        child.getDescendantControls(rlt_arr);
+                        break;
+                    case M_FormKernel_Type:
+                        break;
+                    default:
+                        rlt_arr.push(child);
+                }
+            });
+        }
+    }, {
         key: 'render',
         value: function render() {
             var ctlKernel = this.props.ctlKernel;
