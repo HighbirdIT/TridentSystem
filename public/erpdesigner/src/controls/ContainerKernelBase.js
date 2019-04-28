@@ -81,6 +81,42 @@ class ContainerKernelBase extends ControlKernelBase {
         this.attrChanged(AttrNames.Chidlren);
     }
 
+    filterChildKernels(targetType){
+        var rlt = [];
+        if(targetType == M_AllKernel_Type){
+            targetType = null;
+        }
+        var needFilt = targetType != null;
+        if(!needFilt || this.type == targetType){
+            rlt.push(this);
+        }
+        if(rlt.editor && (!needFilt || rlt.editor.type == targetType)){
+            rlt.push(rlt.editor);
+        }
+        var nowKernel = this;
+        var parent = nowKernel.parent;
+        while(parent != null){
+            if(!needFilt|| parent.type == targetType)
+            {
+                rlt.push(parent);
+            }
+            parent.children.forEach(child=>{
+                if(child != nowKernel){
+                    if(!needFilt || child.type == targetType)
+                    {
+                        rlt.push(child);
+                    }
+                    if(child.editor && (!needFilt || child.editor.type == targetType)){
+                        rlt.push(child.editor);
+                    }
+                }
+            });
+            nowKernel = parent;
+            parent = parent.parent;
+        }
+        return rlt;
+    }
+
     removeChild(childKernel) {
         var i = this.children.indexOf(childKernel);
         if (i != -1) {

@@ -16,6 +16,7 @@ const JSNODE_INSERT_TABLE = 'insert_table';
 const JSNODE_UPDATE_TABLE = 'update_table';
 const JSNODE_CONTROL_API_PROP = 'controlapiprop';
 const JSNODE_CONTROL_API_PROPSETTER = 'controlapipropsetter';
+const JSNODE_CONTROL_API_CALLFUN = 'controlapicallfun';
 const JSNODE_DATEFUN = 'jsdatefun';
 const JSNODE_ENV_VAR = 'envvar';
 const JSNODE_BOOLEANVALUE = 'booleanvalue';
@@ -4889,6 +4890,90 @@ class JSNode_JumpPage extends JSNode_Base {
     }
 }
 
+class JSNode_Control_Api_CallFun extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_CONTROL_API_CALLFUN, 'CtlApiCallfun', false, nodeJson);
+        autoBind(this);
+        var funItem = this.funItem;
+        var apiClass = this.apiClass;
+        if (funItem == null) {
+            apiClass = g_controlApi_arr.find(e => { return e.ctltype == this.ctltype; });
+            funItem = apiClass.getApiItemByid(this.apiid);
+            if (apiClass == null || funItem == null) {
+                console.error('查询控件api失败！');
+            }
+            this.apiClass = apiClass;
+            this.funItem = funItem;
+        }
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+        this.label = 'Call:' + apiClass.ctllabel + '.' + funItem.name;
+        if (nodeJson) {
+            if (this.inputScokets_arr.length > 0) {
+                this.ctlSocket = this.inputScokets_arr[0];
+            }
+        }
+        if (this.ctlSocket == null) {
+            this.ctlSocket = new NodeSocket('ctl', this, true);
+            this.addSocket(this.ctlSocket);
+        }
+        this.ctlSocket.inputable = false;
+        this.ctlSocket.type = SocketType_CtlKernel;
+        this.ctlSocket.kernelType = apiClass.ctltype;
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.ctltype = this.apiClass.ctltype;
+        rlt.apiid = this.funItem.id;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['ctltype', 'apiid']);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var selectedCtlid = this.ctlSocket.getExtra('ctlid');
+        var selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
+        if (this.checkCompileFlag(selectedKernel == null, '需要选择控件', helper)) {
+            return false;
+        }
+        var relCtlKernel = this.bluePrint.ctlKernel;
+        var canAccessCtls_arr = relCtlKernel.getAccessableKernels(this.ctltype);
+        if (this.checkCompileFlag(canAccessCtls_arr.indexOf(selectedKernel) == -1, '指定的控件不可访问', helper)) {
+            return false;
+        }
+        var myJSBlock = new FormatFileBlock(this.id);
+        myJSBlock.pushLine('setTimeout(() => {', 1);
+        myJSBlock.pushLine(selectedKernel.id + "_" + this.funItem.name + "();", -1);
+        myJSBlock.pushLine('},50);');
+        belongBlock.pushChild(myJSBlock);
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_VAR_GET] = {
     modelClass: JSNode_Var_Get,
     comClass: C_JSNode_Var_Get,
@@ -5000,4 +5085,8 @@ JSNodeClassMap[JSNODE_DO_FLOWSTEP] = {
 JSNodeClassMap[JSNODE_JUMP_PAGE] = {
     modelClass: JSNode_JumpPage,
     comClass: C_JSNode_JumpPage,
+};
+JSNodeClassMap[JSNODE_CONTROL_API_CALLFUN] = {
+    modelClass: JSNode_Control_Api_CallFun,
+    comClass: C_Node_SimpleNode,
 };

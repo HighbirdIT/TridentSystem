@@ -18,6 +18,36 @@ class M_ContainerKernel extends ContainerKernelBase {
         autoBind(self);
     }
 
+    aidAccessableKernels(targetType, rlt_arr) {
+        var needFilt = targetType != null;
+        this.children.forEach(child => {
+            if (!needFilt || child.type == targetType) {
+                rlt_arr.push(child);
+            }
+            if (child.editor && (!needFilt || child.editor.type == targetType)) {
+                rlt_arr.push(child.editor);
+            }
+            if (child.type == M_ContainerKernel_Type) {
+                // 穿透div
+                child.aidAccessableKernels(targetType, rlt_arr);
+            }
+        });
+    }
+
+    getDescendantControls(rlt_arr) {
+        this.children.forEach(child => {
+            switch (child.type) {
+                case M_ContainerKernel_Type:
+                    child.getDescendantControls(rlt_arr);
+                    break;
+                case M_FormKernel_Type:
+                    break;
+                default:
+                    rlt_arr.push(child);
+            }
+        });
+    }
+
     renderSelf(clickHandler) {
         return (<M_Container key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
@@ -50,20 +80,6 @@ class M_Container extends React.PureComponent {
         this.setState({
             orientation: ctlKernel.getAttribute(AttrNames.Orientation),
             children: childrenVal,
-        });
-    }
-
-    getDescendantControls(rlt_arr) {
-        this.children.forEach(child => {
-            switch (child.type) {
-                case M_ContainerKernel_Type:
-                    child.getDescendantControls(rlt_arr);
-                    break;
-                case M_FormKernel_Type:
-                    break;
-                default:
-                    rlt_arr.push(child);
-            }
         });
     }
 

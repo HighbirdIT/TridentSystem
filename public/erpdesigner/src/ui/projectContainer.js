@@ -232,11 +232,13 @@ class ProjectContainer extends React.PureComponent {
             case 'create':{
                 this.createEmptyProject();
             }
+            break;
             case 'openflowmaster':{
                 if(gFlowMasterRef.current){
                     gFlowMasterRef.current.toggle();
                 }
             }
+            break;
         }
     }
 
