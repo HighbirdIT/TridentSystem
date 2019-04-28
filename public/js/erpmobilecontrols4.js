@@ -1504,9 +1504,13 @@ var ERPC_Button = function (_React$PureComponent9) {
             if (this.props.visible == false) {
                 return null;
             }
+            var className = this.props.className;
+            if (className.indexOf('flex-shrink-') == -1) {
+                className += ' flex-shrink-0';
+            }
             return React.createElement(
                 'button',
-                { className: this.props.className },
+                { className: className, onClick: this.props.onClick },
                 this.props.children
             );
         }
@@ -1524,7 +1528,9 @@ function ERPC_Button_mapstatetoprops(state, ownprops) {
 }
 
 function ERPC_Button_dispatchtorprops(dispatch, ownprops) {
-    return {};
+    return {
+        onClick: ownprops.onClick
+    };
 }
 
 var VisibleERPC_DropDown = null;
