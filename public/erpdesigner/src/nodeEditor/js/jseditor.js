@@ -1006,6 +1006,12 @@ class C_JSNode_Editor extends React.PureComponent{
                 apiItem:apiItem,
             });
             break;
+            case EApiType.Fun:
+            this.createNewNode(JSNode_Control_Api_CallFun,{
+                apiClass:apiClass,
+                funItem:apiItem,
+            });
+            break;
         }
     }
 

@@ -280,12 +280,14 @@ var ProjectContainer = function (_React$PureComponent2) {
                     {
                         this.createEmptyProject();
                     }
+                    break;
                 case 'openflowmaster':
                     {
                         if (gFlowMasterRef.current) {
                             gFlowMasterRef.current.toggle();
                         }
                     }
+                    break;
             }
         }
     }, {

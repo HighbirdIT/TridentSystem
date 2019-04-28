@@ -61,6 +61,12 @@ class ButtonKernel extends ControlKernelBase{
         return rlt;
     }
 }
+var M_Button_api = new ControlAPIClass(ButtonKernel_Type);
+M_Button_api.pushApi(new ApiItem_fun({
+    label:'点击',
+    name:AttrNames.Event.OnClick
+}));
+g_controlApi_arr.push(M_Button_api);
 
 class CButton extends React.PureComponent {
     constructor(props){

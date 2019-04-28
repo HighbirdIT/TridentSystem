@@ -116,15 +116,17 @@ class ApiItem_propsetter{
 }
 
 class ApiItem_fun{
-    constructor(funName){
+    constructor(funItem){
         this.type = EApiType.Fun;
+        this.funItem = funItem;
+        this.name = funItem.name;
     }
     toString(){
-        return 'Call:' + this.apiClass + '.' + this.attrItem.label;
+        return 'Call:' + this.apiClass + '.' + this.funItem.label;
     }
     setApiClass(apiClass){
         this.apiClass = apiClass;
-        this.id = 'P-' + this.attrItem.label;
+        this.id = 'P-' + this.funItem.label;
         this.uniqueID = apiClass.name + this.id;
     }
 }
