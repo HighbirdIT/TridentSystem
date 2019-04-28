@@ -1279,7 +1279,11 @@ class ERPC_Button extends React.PureComponent {
         if(this.props.visible == false){
             return null;
         }
-        return <button className={this.props.className}>
+        var className = this.props.className;
+        if(className.indexOf('flex-shrink-') == -1){
+            className += ' flex-shrink-0';
+        }
+        return <button className={className} onClick={this.props.onClick}>
                 {this.props.children}
             </button>
     }
@@ -1295,6 +1299,7 @@ function ERPC_Button_mapstatetoprops(state, ownprops) {
 
 function ERPC_Button_dispatchtorprops(dispatch, ownprops) {
     return {
+        onClick:ownprops.onClick,
     };
 }
 
