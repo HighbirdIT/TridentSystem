@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -18,7 +18,8 @@ var MyApp = function (_React$PureComponent) {
 
         _this.state = {
             keyword: 0,
-            arr: []
+            arr: [],
+            html: "Edit <b>me</b> !"
         };
 
         _this.keyChanged = _this.keyChanged.bind(_this);
@@ -27,7 +28,7 @@ var MyApp = function (_React$PureComponent) {
     }
 
     _createClass(MyApp, [{
-        key: 'keyChanged',
+        key: "keyChanged",
         value: function keyChanged(ev) {
             var target = ev.target;
             var keyword = target.value;
@@ -35,7 +36,12 @@ var MyApp = function (_React$PureComponent) {
             this.setState({ keyword: keyword });
         }
     }, {
-        key: 'messageboxonclick',
+        key: "handleChange",
+        value: function handleChange(evt) {
+            this.setState({ html: evt.target.value });
+        }
+    }, {
+        key: "messageboxonclick",
         value: function messageboxonclick() {
 
             var times = this.state.keyword;
@@ -46,42 +52,47 @@ var MyApp = function (_React$PureComponent) {
             this.setState({ arr: arr_list });
         }
     }, {
-        key: 'render',
+        key: "render",
         value: function render() {
             var _this2 = this;
 
             return React.createElement(
-                'div',
-                { className: 'w-100 h-100 d-flex flex-column' },
+                "div",
+                { className: "w-100 h-100 d-flex flex-column" },
                 React.createElement(
-                    'div',
+                    "div",
                     null,
                     React.createElement(
-                        'button',
+                        "button",
                         { onClick: this.messageboxonclick },
-                        '\u6D4B\u8BD5\u6309\u94AE'
+                        "\u6D4B\u8BD5\u6309\u94AE"
                     ),
+                    React.createElement(ContentEditable, {
+                        html: this.state.html // innerHTML of the editable div
+                        , disabled: false // use true to disable edition
+                        , onChange: this.handleChange // handle innerHTML change
+                    }),
                     React.createElement(
-                        'div',
+                        "div",
                         { className: 'topMsg ' + (this.state.keyword > 0 ? 'fadeIn' : 'fadeOut'), onClick: this.messageboxonclick },
-                        'Info!Some text......'
+                        "Info!Some text......"
                     )
                 ),
                 React.createElement(
-                    'div',
-                    { name: 'listDIV', className: 'list-group flex-grow-1 flex-shrink-1', style: { overflow: 'auto' } },
+                    "div",
+                    { name: "listDIV", className: "list-group flex-grow-1 flex-shrink-1", style: { overflow: 'auto' } },
                     this.state.arr.map(function (item, i) {
                         return React.createElement(
-                            'div',
+                            "div",
                             { onClick: _this2.messageboxonclick, className: 'topMsg ' + (_this2.state.keyword > 0 ? 'fadeIn' : 'fadeOut'), key: i, code: item.code },
                             React.createElement(
-                                'div',
-                                { className: 'col-6' },
+                                "div",
+                                { className: "col-6" },
                                 item.name
                             ),
                             React.createElement(
-                                'div',
-                                { className: 'col-6' },
+                                "div",
+                                { className: "col-6" },
                                 item.code
                             )
                         );
@@ -94,4 +105,4 @@ var MyApp = function (_React$PureComponent) {
     return MyApp;
 }(React.PureComponent);
 
-ReactDOM.render(React.createElement(MyApp, { name: 'Hello3React' }), document.getElementById('reactRoot'));
+ReactDOM.render(React.createElement(MyApp, { name: "Hello3React" }), document.getElementById('reactRoot'));
