@@ -24,6 +24,38 @@ var M_ContainerKernel = function (_ContainerKernelBase) {
     }
 
     _createClass(M_ContainerKernel, [{
+        key: 'aidAccessableKernels',
+        value: function aidAccessableKernels(targetType, rlt_arr) {
+            var needFilt = targetType != null;
+            this.children.forEach(function (child) {
+                if (!needFilt || child.type == targetType) {
+                    rlt_arr.push(child);
+                }
+                if (child.editor && (!needFilt || child.editor.type == targetType)) {
+                    rlt_arr.push(child.editor);
+                }
+                if (child.type == M_ContainerKernel_Type) {
+                    // 穿透div
+                    child.aidAccessableKernels(targetType, rlt_arr);
+                }
+            });
+        }
+    }, {
+        key: 'getDescendantControls',
+        value: function getDescendantControls(rlt_arr) {
+            this.children.forEach(function (child) {
+                switch (child.type) {
+                    case M_ContainerKernel_Type:
+                        child.getDescendantControls(rlt_arr);
+                        break;
+                    case M_FormKernel_Type:
+                        break;
+                    default:
+                        rlt_arr.push(child);
+                }
+            });
+        }
+    }, {
         key: 'renderSelf',
         value: function renderSelf(clickHandler) {
             return React.createElement(M_Container, { key: this.id, ctlKernel: this, onClick: clickHandler ? clickHandler : this.clickHandler });

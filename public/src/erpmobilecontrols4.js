@@ -5,6 +5,7 @@ var gCusValidChecker_map = {};
 const gPreconditionInvalidInfo = '前置条件不足';
 const gCantNullInfo = '不能为空值';
 
+
 const HashKey_FixItem = 'fixitem';
 
 class DataCache{
@@ -188,11 +189,9 @@ function ERPC_Fun_ComponentWillMount() {
     }
 }
 
-function ERPControlBase(target) {
+function ERPControlBase(target, initState) {
     target.rootDivRef = React.createRef();
-    target.initState = {
-        keyword: '',
-    };
+    target.initState = initState == null ? {} : initState;
     target.componentWillUnmount = ERPC_Fun_ComponentWillUnmount.bind(target);
     target.componentWillMount = ERPC_Fun_ComponentWillMount.bind(target);
 }
@@ -596,10 +595,10 @@ class ERPC_DropDown extends React.PureComponent {
             keyword: '',
             opened: true,
         });
-        var needFetch = false;
         if (this.props.pullDataSource) {
-            this.props.pullDataSource();
-            needFetch = true;
+            if(this.props.pullOnce != true || this.props.options_arr == null){
+                this.props.pullDataSource();
+            }
         }
     }
 
@@ -1061,7 +1060,7 @@ class ERPC_Text extends React.PureComponent {
         else {
             if (this.props.readonly) {
                 rootDivClassName += ' bg-secondary rounded border p-1'
-                var nowValue = FormatStringValue(this.props.value, this.props.type);
+                var nowValue = FormatStringValue(this.props.value, this.props.type, this.props.precision);
                 if (nowValue == null || nowValue.length == 0) {
                     rootDivClassName += ' text-secondary';
                     nowValue = '_';
@@ -1152,7 +1151,7 @@ function ERPC_LabeledControl_mapstatetoprops(state, ownprops) {
     return {
         label: useLabel,
         fetching: ctlState.fetching,
-        visible:ctlState.visible,
+        visible: ctlState.visible,
     };
 }
 
@@ -1200,7 +1199,7 @@ class ERPC_Label extends React.PureComponent {
         if(this.props.visible == false){
             return null;
         }
-        var text = FormatStringValue(this.props.text, this.props.type)
+        var text = FormatStringValue(this.props.text, this.props.type, this.props.precision)
         return (<span className={'erpc_label ' + (this.props.className == null ? '' : this.props.className)} >{text}</span>);
     }
 }
@@ -1268,11 +1267,49 @@ function ERPC_CheckBox_dispatchtorprops(dispatch, ownprops) {
     };
 }
 
+class ERPC_Button extends React.PureComponent {
+    constructor(props) {
+        super();
+        autoBind(this);
+
+        ERPControlBase(this);
+        this.state = this.initState;
+    }
+
+    render() {
+        if(this.props.visible == false){
+            return null;
+        }
+        var className = this.props.className;
+        if(className.indexOf('flex-shrink-') == -1){
+            className += ' flex-shrink-0';
+        }
+        return <button className={className} onClick={this.props.onClick}>
+                {this.props.children}
+            </button>
+    }
+}
+
+function ERPC_Button_mapstatetoprops(state, ownprops) {
+    var ctlPath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
+    var ctlState = getStateByPath(state, ctlPath, {});
+    return {
+        visible:ctlState.visible,
+    };
+}
+
+function ERPC_Button_dispatchtorprops(dispatch, ownprops) {
+    return {
+        onClick:ownprops.onClick,
+    };
+}
+
 var VisibleERPC_DropDown = null;
 var VisibleERPC_Text = null;
 var VisibleERPC_LabeledControl = null;
 var VisibleERPC_Label = null;
 var VisibleERPC_CheckBox = null;
+var VisibleERPC_Button = null;
 
 function ErpControlInit() {
     VisibleERPC_DropDown = ReactRedux.connect(ERPC_DropDown_mapstatetoprops, ERPC_DropDown_dispatchtoprops)(ERPC_DropDown);
@@ -1280,6 +1317,7 @@ function ErpControlInit() {
     VisibleERPC_LabeledControl = ReactRedux.connect(ERPC_LabeledControl_mapstatetoprops, ERPC_LabeledControl_dispatchtorprops)(ERPC_LabeledControl);
     VisibleERPC_Label = ReactRedux.connect(ERPC_Label_mapstatetoprops, ERPC_Label_dispatchtorprops)(ERPC_Label);
     VisibleERPC_CheckBox = ReactRedux.connect(ERPC_CheckBox_mapstatetoprops, ERPC_CheckBox_dispatchtorprops)(ERPC_CheckBox);
+    VisibleERPC_Button = ReactRedux.connect(ERPC_Button_mapstatetoprops, ERPC_Button_dispatchtorprops)(ERPC_Button);
 }
 
 function ERPC_PageForm(target){
@@ -1910,5 +1948,51 @@ const ERPXMLToolKit={
         });
         rltStr += '>' + itemStr_arr.join('') + '</Data>';
         return rltStr;
+    }
+}
+
+class TaskSelector extends React.PureComponent{
+    constructor(poros){
+        super(props);
+        autoBind(this);
+        ERPControlBase(this);
+
+        this.state = Object.assign(this.initState, {
+            keyword: '',
+            opened: false,
+        });
+
+        this.contentDivRef = React.createRef();
+        this.popPanelRef = React.createRef();
+        this.popPanelRef = React.createRef();
+        this.popPanelItem = (<ERPC_DropDown_PopPanel ref={this.popPanelRef} dropdownctl={this} key={gFixedItemCounter++} />)
+    }
+
+    pullUserTask(){
+        var ownprops = this.props;
+        var parentStatePath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
+        store.dispatch(fetchJsonPost('/erppage/server/task', {action:'getUserTask',bundle:{userid:g_envVar.userid}}, makeFTD_Prop(parentStatePath,ownprops.id),'options_arr',false), EFetchKey.FetchPropValue);
+    }
+    
+    render(){
+        if(this.props.visible == false){
+            return null;
+        }
+        <ERPC_DropDown value={this.props.value}
+            text={this.props.text}
+            fetching={this.props.fetching}
+            fetchingErr={this.props.fetchingErr}
+            optionsData={this.props.optionsData}
+            invalidInfo={this.props.invalidInfo}
+            selectOpt={this.props.selectOpt}
+            rowIndex={this.props.rowIndex}
+            id={this.props.id}
+            parentPath={this.props.parentPath}
+            type='string'
+            pullOnce={true}
+            pullDataSource={this.pullUserTask}
+            options_arr={this.props.options_arr}
+
+            />
     }
 }

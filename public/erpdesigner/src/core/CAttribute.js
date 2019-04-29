@@ -233,6 +233,7 @@ const AttrNames={
     NoDataTip:'noDataTip',
     MultiSelect:'multiselect',
     RelFlowStep:'relflowstep',
+    GenNavBar:'gennavbar',
 
     Event:{
         OnClick:'onclick'

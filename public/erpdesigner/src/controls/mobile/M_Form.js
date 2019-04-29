@@ -9,6 +9,7 @@ const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
         new CAttribute('', AttrNames.CustomDataSource, ValueType.CustomDataSource, null, true),
         new CAttribute('内容定制', AttrNames.ListFormContent, ValueType.ListFormContent, null, true, false, null, null, false),
         new CAttribute('自动分页',AttrNames.PageBreak,ValueType.Boolean,true),
+        new CAttribute('生成导航栏',AttrNames.GenNavBar,ValueType.Boolean,true),
         new CAttribute('每页条数',AttrNames.RowPerPage,ValueType.String, '20', true, false, ['20','50','100','200']),
         new CAttribute('宽度类型',AttrNames.WidthType,ValueType.String,EGridWidthType.Auto,true,false,EGridWidthTypes_arr,{text:'text', value:'value'}),
         new CAttribute('首列序号',AttrNames.AutoIndexColumn,ValueType.Boolean,true),
@@ -49,7 +50,8 @@ class M_FormKernel extends ContainerKernelBase{
         this[AttrNames.RowPerPage + '_visible'] = nowft == EFormType.Grid && this.getAttribute(AttrNames.PageBreak);
         this[AttrNames.WidthType + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.AutoIndexColumn + '_visible'] = nowft == EFormType.Grid;
-
+        this[AttrNames.GenNavBar + '_visible'] = nowft != EFormType.Grid;
+        
         var self = this;
         autoBind(self);
     }
@@ -159,6 +161,8 @@ class M_FormKernel extends ContainerKernelBase{
                 this.findAttributeByName(AttrNames.RowPerPage).setVisible(this, isGridForm && this.getAttribute(AttrNames.PageBreak));
                 this.findAttributeByName(AttrNames.WidthType).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.AutoIndexColumn).setVisible(this, isGridForm);
+                this.findAttributeByName(AttrNames.GenNavBar).setVisible(this, !isGridForm);
+                
                 break;
             case AttrNames.PageBreak:
                 this.findAttributeByName(AttrNames.RowPerPage).setVisible(this, newValue);

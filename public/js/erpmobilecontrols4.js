@@ -218,11 +218,9 @@ function ERPC_Fun_ComponentWillMount() {
     }
 }
 
-function ERPControlBase(target) {
+function ERPControlBase(target, initState) {
     target.rootDivRef = React.createRef();
-    target.initState = {
-        keyword: ''
-    };
+    target.initState = initState == null ? {} : initState;
     target.componentWillUnmount = ERPC_Fun_ComponentWillUnmount.bind(target);
     target.componentWillMount = ERPC_Fun_ComponentWillMount.bind(target);
 }
@@ -722,10 +720,10 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 keyword: '',
                 opened: true
             });
-            var needFetch = false;
             if (this.props.pullDataSource) {
-                this.props.pullDataSource();
-                needFetch = true;
+                if (this.props.pullOnce != true || this.props.options_arr == null) {
+                    this.props.pullDataSource();
+                }
             }
         }
     }, {
@@ -1485,11 +1483,62 @@ function ERPC_CheckBox_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
+var ERPC_Button = function (_React$PureComponent9) {
+    _inherits(ERPC_Button, _React$PureComponent9);
+
+    function ERPC_Button(props) {
+        _classCallCheck(this, ERPC_Button);
+
+        var _this11 = _possibleConstructorReturn(this, (ERPC_Button.__proto__ || Object.getPrototypeOf(ERPC_Button)).call(this));
+
+        autoBind(_this11);
+
+        ERPControlBase(_this11);
+        _this11.state = _this11.initState;
+        return _this11;
+    }
+
+    _createClass(ERPC_Button, [{
+        key: 'render',
+        value: function render() {
+            if (this.props.visible == false) {
+                return null;
+            }
+            var className = this.props.className;
+            if (className.indexOf('flex-shrink-') == -1) {
+                className += ' flex-shrink-0';
+            }
+            return React.createElement(
+                'button',
+                { className: className, onClick: this.props.onClick },
+                this.props.children
+            );
+        }
+    }]);
+
+    return ERPC_Button;
+}(React.PureComponent);
+
+function ERPC_Button_mapstatetoprops(state, ownprops) {
+    var ctlPath = MakePath(ownprops.parentPath, ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex, ownprops.id);
+    var ctlState = getStateByPath(state, ctlPath, {});
+    return {
+        visible: ctlState.visible
+    };
+}
+
+function ERPC_Button_dispatchtorprops(dispatch, ownprops) {
+    return {
+        onClick: ownprops.onClick
+    };
+}
+
 var VisibleERPC_DropDown = null;
 var VisibleERPC_Text = null;
 var VisibleERPC_LabeledControl = null;
 var VisibleERPC_Label = null;
 var VisibleERPC_CheckBox = null;
+var VisibleERPC_Button = null;
 
 function ErpControlInit() {
     VisibleERPC_DropDown = ReactRedux.connect(ERPC_DropDown_mapstatetoprops, ERPC_DropDown_dispatchtoprops)(ERPC_DropDown);
@@ -1497,6 +1546,7 @@ function ErpControlInit() {
     VisibleERPC_LabeledControl = ReactRedux.connect(ERPC_LabeledControl_mapstatetoprops, ERPC_LabeledControl_dispatchtorprops)(ERPC_LabeledControl);
     VisibleERPC_Label = ReactRedux.connect(ERPC_Label_mapstatetoprops, ERPC_Label_dispatchtorprops)(ERPC_Label);
     VisibleERPC_CheckBox = ReactRedux.connect(ERPC_CheckBox_mapstatetoprops, ERPC_CheckBox_dispatchtorprops)(ERPC_CheckBox);
+    VisibleERPC_Button = ReactRedux.connect(ERPC_Button_mapstatetoprops, ERPC_Button_dispatchtorprops)(ERPC_Button);
 }
 
 function ERPC_PageForm(target) {
@@ -1658,8 +1708,8 @@ function ERPC_GridForm_SetPageIndex(value) {
     store.dispatch(makeAction_setStateByPath(value, statePath));
 }
 
-var CBaseGridFormNavBar = function (_React$PureComponent9) {
-    _inherits(CBaseGridFormNavBar, _React$PureComponent9);
+var CBaseGridFormNavBar = function (_React$PureComponent10) {
+    _inherits(CBaseGridFormNavBar, _React$PureComponent10);
 
     function CBaseGridFormNavBar(props) {
         _classCallCheck(this, CBaseGridFormNavBar);
@@ -1801,22 +1851,22 @@ var EToastType = {
     Error: 'error'
 };
 
-var CToastManger = function (_React$PureComponent10) {
-    _inherits(CToastManger, _React$PureComponent10);
+var CToastManger = function (_React$PureComponent11) {
+    _inherits(CToastManger, _React$PureComponent11);
 
     function CToastManger(props) {
         _classCallCheck(this, CToastManger);
 
-        var _this12 = _possibleConstructorReturn(this, (CToastManger.__proto__ || Object.getPrototypeOf(CToastManger)).call(this, props));
+        var _this13 = _possibleConstructorReturn(this, (CToastManger.__proto__ || Object.getPrototypeOf(CToastManger)).call(this, props));
 
-        autoBind(_this12);
+        autoBind(_this13);
 
-        _this12.state = {
+        _this13.state = {
             msg_arr: []
         };
-        _this12.ticker = null;
-        _this12.msgID = 0;
-        return _this12;
+        _this13.ticker = null;
+        _this13.msgID = 0;
+        return _this13;
     }
 
     _createClass(CToastManger, [{
@@ -1991,20 +2041,20 @@ var MessageBoxItem = function () {
     return MessageBoxItem;
 }();
 
-var CMessageBox = function (_React$PureComponent11) {
-    _inherits(CMessageBox, _React$PureComponent11);
+var CMessageBox = function (_React$PureComponent12) {
+    _inherits(CMessageBox, _React$PureComponent12);
 
     function CMessageBox(props) {
         _classCallCheck(this, CMessageBox);
 
-        var _this13 = _possibleConstructorReturn(this, (CMessageBox.__proto__ || Object.getPrototypeOf(CMessageBox)).call(this, props));
+        var _this14 = _possibleConstructorReturn(this, (CMessageBox.__proto__ || Object.getPrototypeOf(CMessageBox)).call(this, props));
 
-        autoBind(_this13);
+        autoBind(_this14);
 
-        _this13.state = {};
-        _this13.props.msgItem.changedAct = _this13.msgItemChanedHandler;
-        _this13.props.msgItem.closeAct = _this13.msgItemCloseHandler;
-        return _this13;
+        _this14.state = {};
+        _this14.props.msgItem.changedAct = _this14.msgItemChanedHandler;
+        _this14.props.msgItem.closeAct = _this14.msgItemCloseHandler;
+        return _this14;
     }
 
     _createClass(CMessageBox, [{
@@ -2051,7 +2101,7 @@ var CMessageBox = function (_React$PureComponent11) {
     }, {
         key: 'render',
         value: function render() {
-            var _this14 = this;
+            var _this15 = this;
 
             var msgItem = this.props.msgItem;
             var type = msgItem.type;
@@ -2149,7 +2199,7 @@ var CMessageBox = function (_React$PureComponent11) {
                     btnsElem = msgItem.btns.map(function (btn) {
                         return React.createElement(
                             'button',
-                            { onClick: _this14.clickBtnHandler, key: btn.label, 'd-type': btn.key, type: 'button', className: btn.class },
+                            { onClick: _this15.clickBtnHandler, key: btn.label, 'd-type': btn.key, type: 'button', className: btn.class },
                             btn.label
                         );
                     });
@@ -2200,21 +2250,21 @@ var CMessageBox = function (_React$PureComponent11) {
     return CMessageBox;
 }(React.PureComponent);
 
-var CMessageBoxManger = function (_React$PureComponent12) {
-    _inherits(CMessageBoxManger, _React$PureComponent12);
+var CMessageBoxManger = function (_React$PureComponent13) {
+    _inherits(CMessageBoxManger, _React$PureComponent13);
 
     function CMessageBoxManger(props) {
         _classCallCheck(this, CMessageBoxManger);
 
-        var _this15 = _possibleConstructorReturn(this, (CMessageBoxManger.__proto__ || Object.getPrototypeOf(CMessageBoxManger)).call(this, props));
+        var _this16 = _possibleConstructorReturn(this, (CMessageBoxManger.__proto__ || Object.getPrototypeOf(CMessageBoxManger)).call(this, props));
 
-        autoBind(_this15);
+        autoBind(_this16);
 
-        _this15.state = {
+        _this16.state = {
             msg_arr: []
         };
-        _this15.msgID = 0;
-        return _this15;
+        _this16.msgID = 0;
+        return _this16;
     }
 
     _createClass(CMessageBoxManger, [{
@@ -2237,7 +2287,7 @@ var CMessageBoxManger = function (_React$PureComponent12) {
     }, {
         key: 'render',
         value: function render() {
-            var _this16 = this;
+            var _this17 = this;
 
             var msg_arr = this.state.msg_arr;
             if (msg_arr.length == 0) {
@@ -2247,7 +2297,7 @@ var CMessageBoxManger = function (_React$PureComponent12) {
                 'div',
                 { className: 'messageBoxMask' },
                 msg_arr.map(function (msg, index) {
-                    return React.createElement(CMessageBox, { key: 1, msgItem: msg, manager: _this16 });
+                    return React.createElement(CMessageBox, { key: 1, msgItem: msg, manager: _this17 });
                 })
             );
         }
@@ -2322,3 +2372,61 @@ var ERPXMLToolKit = {
         return rltStr;
     }
 };
+
+var TaskSelector = function (_React$PureComponent14) {
+    _inherits(TaskSelector, _React$PureComponent14);
+
+    function TaskSelector(poros) {
+        _classCallCheck(this, TaskSelector);
+
+        var _this18 = _possibleConstructorReturn(this, (TaskSelector.__proto__ || Object.getPrototypeOf(TaskSelector)).call(this, props));
+
+        autoBind(_this18);
+        ERPControlBase(_this18);
+
+        _this18.state = Object.assign(_this18.initState, {
+            keyword: '',
+            opened: false
+        });
+
+        _this18.contentDivRef = React.createRef();
+        _this18.popPanelRef = React.createRef();
+        _this18.popPanelRef = React.createRef();
+        _this18.popPanelItem = React.createElement(ERPC_DropDown_PopPanel, { ref: _this18.popPanelRef, dropdownctl: _this18, key: gFixedItemCounter++ });
+        return _this18;
+    }
+
+    _createClass(TaskSelector, [{
+        key: 'pullUserTask',
+        value: function pullUserTask() {
+            var ownprops = this.props;
+            var parentStatePath = MakePath(ownprops.parentPath, ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex, ownprops.id);
+            store.dispatch(fetchJsonPost('/erppage/server/task', { action: 'getUserTask', bundle: { userid: g_envVar.userid } }, makeFTD_Prop(parentStatePath, ownprops.id), 'options_arr', false), EFetchKey.FetchPropValue);
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            if (this.props.visible == false) {
+                return null;
+            }
+            React.createElement(ERPC_DropDown, { value: this.props.value,
+                text: this.props.text,
+                fetching: this.props.fetching,
+                fetchingErr: this.props.fetchingErr,
+                optionsData: this.props.optionsData,
+                invalidInfo: this.props.invalidInfo,
+                selectOpt: this.props.selectOpt,
+                rowIndex: this.props.rowIndex,
+                id: this.props.id,
+                parentPath: this.props.parentPath,
+                type: 'string',
+                pullOnce: true,
+                pullDataSource: this.pullUserTask,
+                options_arr: this.props.options_arr
+
+            });
+        }
+    }]);
+
+    return TaskSelector;
+}(React.PureComponent);

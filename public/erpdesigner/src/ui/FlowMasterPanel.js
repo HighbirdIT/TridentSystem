@@ -608,6 +608,30 @@ class CFlowMaster extends React.PureComponent
             magicObj: {}
         });
     }
+
+    saveFlowClickHandler(ev){
+        var flowBP = this.state.selectedFlowBP;
+        if(flowBP == null || this.state.saving){
+            return;
+        };
+        this.setState({
+            saving:true
+        });
+        var flowJson = flowBP.getJson();
+        fetchJsonPost('server', { action: 'saveFlowFile', flowJson:flowJson}, this.saveFetchCallBack);
+    }
+
+    saveFetchCallBack(ev){
+        if(ev.json.err != null){
+            alert(ev.json.err.info);
+        }
+        var self = this;
+        setTimeout(() => {
+            self.setState({
+                saving:false
+            });
+        }, 500);
+    }
     
     render(){
         this.navItems[0].content = <C_FlowNode_Editor bluePrint={this.state.selectedFlowBP} />;
@@ -615,6 +639,7 @@ class CFlowMaster extends React.PureComponent
             this.navItems[1].content = <FlowSqlBPItemPanel dataMaster={this.state.selectedFlowBP.dataMaster} />;
         }
 
+        var saving = this.state.saving;
         var selectedFlow = this.state.selectedFlow;
         return (<FloatPanelbase title={'流程大师'} initShow={false} initMax={true} ref={this.panelBaseRef}>
                 <div className='d-flex flex-grow-0 flex-shrink-0 w-100 h-100'>
@@ -677,6 +702,7 @@ class CFlowMaster extends React.PureComponent
                                 : <div className='d-flex flex-grow-1 flex-column flex-shrink-1'>
                                     <div className='d-flex flex-grow-0 flex-shrink-0'>
                                         <TabNavBar ref={this.navbarRef} navData={this.navData} navChanged={this.navChanged} />
+                                        <button onClick={this.saveFlowClickHandler} type='button' className='btn btn-info'><i className='fa fa-save' />{saving ? '保存中' : '保存流程'}{saving && <i className='fa fa-refresh fa-spin fa-fw' />}</button>
                                     </div>
                                     {
                                         this.navItems.map(item => {
@@ -744,6 +770,16 @@ class FlowSqlBPItemPanel extends React.PureComponent {
     }
 
     render() {
+        if(this.props.items_arr != this.props.dataMaster.BP_sql_arr){
+            var self = this;
+            setTimeout(() => {
+                var newSelectedItem = this.props.dataMaster.BP_sql_arr.indexOf(this.state.selectedItem) == -1 ? null : this.state.selectedItem;
+                self.setState({
+                    items_arr : this.props.dataMaster.BP_sql_arr,
+                    selectedItem : newSelectedItem,
+                });
+            }, 50);
+        }
         var selectedItem = this.state.selectedItem;
         return (
             <React.Fragment>

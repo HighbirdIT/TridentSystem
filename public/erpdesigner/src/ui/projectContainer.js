@@ -232,6 +232,13 @@ class ProjectContainer extends React.PureComponent {
             case 'create':{
                 this.createEmptyProject();
             }
+            break;
+            case 'openflowmaster':{
+                if(gFlowMasterRef.current){
+                    gFlowMasterRef.current.toggle();
+                }
+            }
+            break;
         }
     }
 
@@ -245,6 +252,7 @@ class ProjectContainer extends React.PureComponent {
                         <MenuItem id='MI_HB' text={"HB" + (LoginUser == null ? '' : LoginUser.name)} className='text-primary' >
                             <MenuCammandItem text="打开项目" cmd='open' executFun={this.executCmd} />
                             <MenuCammandItem text="创建空项目" cmd='create' executFun={this.executCmd} />
+                            <MenuCammandItem text="打开流程大师" cmd='openflowmaster' executFun={this.executCmd} />
                         </MenuItem>
                         {
                             this.state.projects.map((item, i) => {

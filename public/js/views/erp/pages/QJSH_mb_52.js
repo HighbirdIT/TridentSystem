@@ -81,8 +81,12 @@ function bind_M_Form_1(retState, newIndex, oldIndex) {
 	var bundle = {};
 	var nowRecord = null;
 	var useIndex = newIndex;
-	needSetState['M_CheckBox_0.value'] = '0';
 	needSetState['M_Text_0.value'] = '同意';
+	needSetState['M_LC_12.visible'] = false;
+	needSetState['M_Text_1.value'] = null;
+	needSetState['M_Text_2.value'] = null;
+	needSetState['M_Text_3.value'] = null;
+	needSetState['M_Text_4.value'] = null;
 	if (records_arr == null || newIndex == -1 || records_arr.length == 0) {} else {
 		nowRecord = records_arr[useIndex];
 		bundle.M_Form_1_nowRecord = nowRecord;
@@ -188,6 +192,89 @@ function M_LC_6_isdisplay_get(state, bundle) {
 	var M_LC_3_state = getStateByPath(M_Form_1_state, 'M_LC_3', {});
 	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : M_LC_3_state.visible;
 	return M_LC_3_visible;
+}
+function M_Text_3_validchecker(nowValue, comeState, comeValidErrState) {
+	var state = store.getState();
+	var M_Form_1_state = getStateByPath(state, 'M_Page_2.M_Form_1', {});
+	var M_Text_1_state = getStateByPath(M_Form_1_state, 'M_Text_1', {});
+	var M_LC_12_state = getStateByPath(M_Form_1_state, 'M_LC_12', {});
+	var M_Text_1_value = M_Text_1_state.value;
+	var validErr;
+	var hadValidErr = false;
+	var validErrState = comeValidErrState == null ? {} : comeValidErrState;
+	var callback_final = function callback_final(state, data, err) {
+		if (comeValidErrState == null) {
+			if (comeState) {
+				setManyStateByPath(comeState, '', validErrState);
+			} else {
+				setTimeout(function () {
+					store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
+				}, 50);
+			}
+		}
+		return err == null ? null : err.info;
+	};
+	if (validErrState.hasOwnProperty('M_Page_2.M_Form_1.M_Text_1.invalidInfo')) {
+		validErr = validErrState['M_Page_2.M_Form_1.M_Text_1.invalidInfo'];
+	} else {
+		validErr = BaseIsValueValid(comeState, M_LC_12_state, M_Text_1_state, M_Text_1_value, 'string', false, 'M_Text_1', validErrState);
+		validErrState['M_Page_2.M_Form_1.M_Text_1.invalidInfo'] = validErr;
+	}
+	if (validErr != null) hadValidErr = true;
+	if (hadValidErr) {
+		return callback_final(null, null, { info: gPreconditionInvalidInfo });
+	}
+	if (getDateDiff('天', nowValue, M_Text_1_value) < 0) {
+		return '必须大于等于起始日期';
+	}
+}
+function button_3_onclick() {
+	var state = store.getState();
+	var M_Form_1_nowRecord = getStateByPath(state, 'M_Page_2.M_Form_1.nowRecord');
+	var validErr;
+	var hadValidErr = false;
+	var validErrState = {};
+	var scriptBP_10_msg = null;
+	var callback_final = function callback_final(state, data, err) {
+		if (state == null) {
+			store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
+		} else {
+			setManyStateByPath(state, '', validErrState);
+		}
+		if (hadValidErr) {
+			SendToast('验证失败，无法执行', EToastType.Warning);return;
+		}
+		if (err) {
+			if (scriptBP_10_msg) {
+				scriptBP_10_msg.setData(err.info, EMessageBoxType.Error, '1');
+			} else {
+				SendToast(err.info, EToastType.Error);
+			}
+			return;
+		}
+		if (scriptBP_10_msg) {
+			scriptBP_10_msg.fireClose();
+		}
+		SendToast('执行成功');
+	};
+	if (IsEmptyString(M_Form_1_nowRecord)) {
+		return callback_final(state, null, { info: gPreconditionInvalidInfo });
+	}
+	if (hadValidErr) {
+		return callback_final(null, null, { info: gPreconditionInvalidInfo });
+	}
+	setTimeout(function () {
+		store.dispatch(makeAction_setStateByPath(M_Form_1_nowRecord['员工请假记录代码'], 'M_Page_2.M_Form_1.M_Text_2.value'));
+	}, 50);
+}
+function button_2_onclick() {
+	var state = store.getState();
+	setTimeout(function () {
+		store.dispatch(makeAction_setStateByPath(5, 'M_Page_2.M_Form_1.M_Text_3.value'));
+	}, 50);
+	setTimeout(function () {
+		button_2_undefined();
+	}, 50);
 }
 function button_4_onclick() {
 	var state = store.getState();
@@ -568,11 +655,6 @@ var CM_Form_1 = function (_React$PureComponent3) {
 									),
 									React.createElement(
 										VisibleERPC_LabeledControl,
-										{ id: "M_LC_12", parentPath: "M_Page_2.M_Form_1", label: "wer" },
-										React.createElement(VisibleERPC_CheckBox, { id: "M_CheckBox_0", parentPath: "M_Page_2.M_Form_1" })
-									),
-									React.createElement(
-										VisibleERPC_LabeledControl,
 										{ id: "M_LC_2", parentPath: "M_Page_2.M_Form_1", label: "\u8D77\u59CB\u65E5\u671F" },
 										React.createElement(VisibleERPC_Label, { className: "erp-control ", id: "M_Label_5", parentPath: "M_Page_2.M_Form_1", type: "date" })
 									),
@@ -598,20 +680,55 @@ var CM_Form_1 = function (_React$PureComponent3) {
 									),
 									React.createElement(
 										VisibleERPC_LabeledControl,
-										{ id: "M_LC_11", parentPath: "M_Page_2.M_Form_1", label: "\u5BA1\u6838\u8BF4\u660E", visible: false },
+										{ id: "M_LC_11", parentPath: "M_Page_2.M_Form_1", label: "\u5BA1\u6838\u8BF4\u660E" },
 										React.createElement(VisibleERPC_Text, { id: "M_Text_0", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "1x" })
+									),
+									React.createElement(
+										VisibleERPC_LabeledControl,
+										{ id: "M_LC_12", parentPath: "M_Page_2.M_Form_1", label: "test", visible: false },
+										React.createElement(VisibleERPC_Text, { id: "M_Text_1", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "single" })
+									),
+									React.createElement(
+										VisibleERPC_LabeledControl,
+										{ id: "M_LC_13", parentPath: "M_Page_2.M_Form_1", label: "A" },
+										React.createElement(VisibleERPC_Text, { id: "M_Text_2", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "single" })
+									),
+									React.createElement(
+										VisibleERPC_LabeledControl,
+										{ id: "M_LC_14", parentPath: "M_Page_2.M_Form_1", label: "B" },
+										React.createElement(VisibleERPC_Text, { id: "M_Text_3", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "single" })
+									),
+									React.createElement(
+										VisibleERPC_LabeledControl,
+										{ id: "M_LC_15", parentPath: "M_Page_2.M_Form_1", label: "C" },
+										React.createElement(VisibleERPC_Text, { id: "M_Text_4", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "single" })
+									),
+									React.createElement(
+										VisibleERPC_Button,
+										{ className: "btn btn-primary erp-control ", id: "button_3", parentPath: "M_Page_2.M_Form_1", onClick: button_3_onclick },
+										"1"
+									),
+									React.createElement(
+										VisibleERPC_Button,
+										{ className: "btn btn-primary erp-control ", id: "button_2", parentPath: "M_Page_2.M_Form_1", onClick: button_2_onclick },
+										"\u5C0F\u59DC"
+									),
+									React.createElement(
+										VisibleERPC_Button,
+										{ className: "btn btn-primary erp-control ", id: "button_1", parentPath: "M_Page_2.M_Form_1" },
+										"\u540C\u610F\u4E13\u7528"
 									),
 									React.createElement(
 										"div",
 										{ className: "btn-group flex-grow-0 flex-shrink-0 d-flex erp-control " },
 										React.createElement(
-											"button",
-											{ className: "btn-success flex-grow-1 btn btn-primary erp-control ", id: "button_4", onClick: button_4_onclick },
+											VisibleERPC_Button,
+											{ className: "btn-success flex-grow-1 btn btn-primary erp-control ", id: "button_4", parentPath: "M_Page_2.M_Form_1", onClick: button_4_onclick },
 											"\u901A\u8FC7\u7533\u8BF7"
 										),
 										React.createElement(
-											"button",
-											{ className: "btn-danger flex-grow-1 btn btn-primary erp-control ", id: "button_0", onClick: button_0_onclick },
+											VisibleERPC_Button,
+											{ className: "btn-danger flex-grow-1 btn btn-primary erp-control ", id: "button_0", parentPath: "M_Page_2.M_Form_1", onClick: button_0_onclick },
 											"\u62D2\u7EDD\u7533\u8BF7"
 										)
 									),
@@ -855,6 +972,7 @@ var CM_Form_0_TBody = function (_React$PureComponent6) {
 	return CM_Form_0_TBody;
 }(React.PureComponent);
 
+gCusValidChecker_map['M_Text_3'] = M_Text_3_validchecker;
 if (g_envVar.userid != null) {
 	ErpControlInit();
 	ReactDOM.render(React.createElement(

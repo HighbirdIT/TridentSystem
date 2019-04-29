@@ -2,6 +2,7 @@ const ButtonKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置',[
         new CAttribute('操作表', AttrNames.ProcessTable, ValueType.DataSource, null, true, false, null, {text:'name', value:'code'}),
         new CAttribute('外观类', AttrNames.ButtonClass, ValueType.String, 'btn-primary', true, false, ButtonClasses_arr),
+        genIsdisplayAttribute(),
     ]),
     new CAttributeGroup('事件',[
         new CAttribute('OnClick', AttrNames.Event.OnClick, ValueType.Event),
@@ -60,6 +61,12 @@ class ButtonKernel extends ControlKernelBase{
         return rlt;
     }
 }
+var M_Button_api = new ControlAPIClass(ButtonKernel_Type);
+M_Button_api.pushApi(new ApiItem_fun({
+    label:'点击',
+    name:AttrNames.Event.OnClick
+}));
+g_controlApi_arr.push(M_Button_api);
 
 class CButton extends React.PureComponent {
     constructor(props){

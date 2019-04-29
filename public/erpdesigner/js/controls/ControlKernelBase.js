@@ -447,7 +447,9 @@ var ControlKernelBase = function (_IAttributeable) {
             }
             var nowKernel = this;
             var parent = nowKernel.parent;
+            var meedParents_map = [];
             while (parent != null) {
+                meedParents_map[parent.id] = true;
                 if (!needFilt || parent.type == targetType) {
                     rlt.push(parent);
                 }
@@ -458,6 +460,17 @@ var ControlKernelBase = function (_IAttributeable) {
                         }
                         if (child.editor && (!needFilt || child.editor.type == targetType)) {
                             rlt.push(child.editor);
+                        }
+                        if (child.type == M_ContainerKernel_Type) {
+                            // 穿透div
+                            if (meedParents_map[child.id] == null) {
+                                meedParents_map[child.id] = 1;
+                                var aidRlt_arr = [];
+                                child.aidAccessableKernels(targetType, aidRlt_arr);
+                                if (aidRlt_arr.length > 0) {
+                                    rlt = rlt.concat(aidRlt_arr);
+                                }
+                            }
                         }
                     }
                 });

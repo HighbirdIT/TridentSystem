@@ -554,6 +554,9 @@ class SqlNode_DBEntity extends SqlNode_Base {
                 else{
                     this.targetEntity = g_dataBase.getEntityByCode(tem_arr[1]);
                     this.targetEntity.on('syned', this.entitySynedHandler);
+                    if(this.targetEntity && this.targetEntity.loaded){
+                        this.entitySynedHandler();
+                    }
                 }
                 //console.log(this.targetEntity);
             }
