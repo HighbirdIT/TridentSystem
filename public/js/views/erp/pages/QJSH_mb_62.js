@@ -9,12 +9,20 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var M_Form_0_style = { "minHeight": "300px" };
-var M_Form_0headstyle0 = { "width": "10%", "maxWidth": "10%", "whiteSpace": "nowrap", "overflow": "hidden" };
-var M_Form_0tdstyle0 = { "width": "10%", "maxWidth": "10%" };
-var M_Form_0headstyle1 = { "width": "40%", "maxWidth": "40%", "whiteSpace": "nowrap", "overflow": "hidden" };
-var M_Form_0tdstyle1 = { "width": "40%", "maxWidth": "40%" };
-var M_Form_0headstyle2 = { "width": "50%", "maxWidth": "50%", "whiteSpace": "nowrap", "overflow": "hidden" };
-var M_Form_0tdstyle2 = { "width": "50%", "maxWidth": "50%" };
+var M_Form_0headstyle0 = { "width": "2.2%", "maxWidth": "2.2%", "whiteSpace": "nowrap", "overflow": "hidden" };
+var M_Form_0tdstyle0 = { "width": "2.2%", "maxWidth": "2.2%" };
+var M_Form_0headstyle1 = { "width": "8.9%", "maxWidth": "8.9%", "whiteSpace": "nowrap", "overflow": "hidden" };
+var M_Form_0tdstyle1 = { "width": "8.9%", "maxWidth": "8.9%" };
+var M_Form_0headstyle2 = { "width": "11.1%", "maxWidth": "11.1%", "whiteSpace": "nowrap", "overflow": "hidden" };
+var M_Form_0tdstyle2 = { "width": "11.1%", "maxWidth": "11.1%" };
+var M_Form_0headstyle3 = { "width": "6.2%", "maxWidth": "6.2%", "whiteSpace": "nowrap", "overflow": "hidden" };
+var M_Form_0tdstyle3 = { "width": "6.2%", "maxWidth": "6.2%" };
+var M_Form_0headstyle4 = { "width": "24.9%", "maxWidth": "24.9%", "whiteSpace": "nowrap", "overflow": "hidden" };
+var M_Form_0tdstyle4 = { "width": "24.9%", "maxWidth": "24.9%" };
+var M_Form_0headstyle5 = { "width": "18.7%", "maxWidth": "18.7%", "whiteSpace": "nowrap", "overflow": "hidden" };
+var M_Form_0tdstyle5 = { "width": "18.7%", "maxWidth": "18.7%" };
+var M_Form_0headstyle6 = { "width": "28%", "maxWidth": "28%", "whiteSpace": "nowrap", "overflow": "hidden" };
+var M_Form_0tdstyle6 = { "width": "28%", "maxWidth": "28%" };
 var M_Form_0_tableStyle = { "marginTop": "-50px" };
 var M_Form_0_headtableStyle = { "marginBottom": "0px" };
 var Redux = window.Redux;
@@ -81,9 +89,9 @@ function bind_M_Form_1(retState, newIndex, oldIndex) {
 	var bundle = {};
 	var nowRecord = null;
 	var useIndex = newIndex;
+	needSetState['M_Dropdown_0.text'] = null;
+	needSetState['M_Dropdown_0.value'] = null;
 	needSetState['M_Text_0.value'] = '同意';
-	needSetState['M_Text_2.value'] = null;
-	needSetState['M_Text_3.value'] = null;
 	needSetState['M_LC_12.visible'] = false;
 	needSetState['M_Text_1.value'] = null;
 	needSetState['M_Text_4.value'] = null;
@@ -115,6 +123,11 @@ function pull_M_Form_1(retState) {
 		store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle, action: 'pulldata_M_Form_1' }, makeFTD_Prop('M_Page_2', 'M_Form_1', 'records_arr', false), EFetchKey.FetchPropValue));
 	}, 50);
 	return state;
+}
+function pull_M_Dropdown_0() {
+	var bundle = {};
+	var useState = store.getState();
+	store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle, action: 'pulldata_M_Dropdown_0' }, makeFTD_Prop('M_Page_2.M_Form_1', 'M_Dropdown_0', 'options_arr', false), EFetchKey.FetchPropValue));
 }
 function M_Label_10_textfield_get(state, bundle) {
 	var M_Form_1_nowRecord = bundle != null && bundle.M_Form_1_nowRecord != null ? bundle.M_Form_1_nowRecord : getStateByPath(state, 'M_Page_2.M_Form_1.nowRecord');
@@ -192,54 +205,6 @@ function M_LC_6_isdisplay_get(state, bundle) {
 	var M_LC_3_state = getStateByPath(M_Form_1_state, 'M_LC_3', {});
 	var M_LC_3_visible = bundle != null && bundle['M_LC_3_visible'] != null ? bundle['M_LC_3_visible'] : M_LC_3_state.visible;
 	return M_LC_3_visible;
-}
-function button_3_onclick() {
-	var state = store.getState();
-	var M_Form_1_nowRecord = getStateByPath(state, 'M_Page_2.M_Form_1.nowRecord');
-	var validErr;
-	var hadValidErr = false;
-	var validErrState = {};
-	var scriptBP_10_msg = null;
-	var callback_final = function callback_final(state, data, err) {
-		if (state == null) {
-			store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
-		} else {
-			setManyStateByPath(state, '', validErrState);
-		}
-		if (hadValidErr) {
-			SendToast('验证失败，无法执行', EToastType.Warning);return;
-		}
-		if (err) {
-			if (scriptBP_10_msg) {
-				scriptBP_10_msg.setData(err.info, EMessageBoxType.Error, '1');
-			} else {
-				SendToast(err.info, EToastType.Error);
-			}
-			return;
-		}
-		if (scriptBP_10_msg) {
-			scriptBP_10_msg.fireClose();
-		}
-		SendToast('执行成功');
-	};
-	if (IsEmptyString(M_Form_1_nowRecord)) {
-		return callback_final(state, null, { info: gPreconditionInvalidInfo });
-	}
-	if (hadValidErr) {
-		return callback_final(null, null, { info: gPreconditionInvalidInfo });
-	}
-	setTimeout(function () {
-		store.dispatch(makeAction_setStateByPath(M_Form_1_nowRecord['员工请假记录代码'], 'M_Page_2.M_Form_1.M_Text_2.value'));
-	}, 50);
-}
-function button_2_onclick() {
-	var state = store.getState();
-	setTimeout(function () {
-		store.dispatch(makeAction_setStateByPath(5, 'M_Page_2.M_Form_1.M_Text_3.value'));
-	}, 50);
-	setTimeout(function () {
-		button_3_onclick();
-	}, 50);
 }
 function button_4_onclick() {
 	var state = store.getState();
@@ -429,6 +394,10 @@ function bind_M_Form_0Page(retState) {
 		needSetState['row_' + rowIndex + '.M_Label_0.text'] = nowRecord['员工假期种类'];
 		needSetState['row_' + rowIndex + '.M_Label_1.text'] = nowRecord['请假区间'];
 		needSetState['row_' + rowIndex + '.M_Label_2.text'] = nowRecord['请假事由'];
+		needSetState['row_' + rowIndex + '.M_Label_11.text'] = nowRecord['姓名'];
+		needSetState['row_' + rowIndex + '.M_Label_12.text'] = nowRecord['员工假期种类代码'];
+		needSetState['row_' + rowIndex + '.M_Label_13.text'] = nowRecord['登记确认时间'];
+		needSetState['row_' + rowIndex + '.M_Label_14.text'] = nowRecord[' 员工登记姓名代码'];
 	}
 	needSetState.startRowIndex = startRowIndex;
 	needSetState.endRowIndex = endRowIndex;
@@ -605,6 +574,11 @@ var CM_Form_1 = function (_React$PureComponent3) {
 									{ className: "d-flex flex-grow-1  flex-column autoScroll_Touch" },
 									React.createElement(
 										VisibleERPC_LabeledControl,
+										{ id: "M_LC_13", parentPath: "M_Page_2.M_Form_1", label: "\u4EBA\u5458" },
+										React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_0", parentPath: "M_Page_2.M_Form_1", pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u4EBA\u5458" })
+									),
+									React.createElement(
+										VisibleERPC_LabeledControl,
 										{ id: "M_LC_0", parentPath: "M_Page_2.M_Form_1", label: "\u8BF7\u5047\u4EBA\u5458" },
 										React.createElement(VisibleERPC_Label, { className: "erp-control ", id: "M_Label_3", parentPath: "M_Page_2.M_Form_1", type: "string" })
 									),
@@ -649,20 +623,6 @@ var CM_Form_1 = function (_React$PureComponent3) {
 										React.createElement(VisibleERPC_Text, { id: "M_Text_0", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "1x" })
 									),
 									React.createElement(
-										"div",
-										{ className: "flex-shrink-0 d-flex flex-grow-1 erp-control " },
-										React.createElement(
-											VisibleERPC_LabeledControl,
-											{ id: "M_LC_13", parentPath: "M_Page_2.M_Form_1", label: "A" },
-											React.createElement(VisibleERPC_Text, { id: "M_Text_2", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "single" })
-										),
-										React.createElement(
-											VisibleERPC_LabeledControl,
-											{ id: "M_LC_14", parentPath: "M_Page_2.M_Form_1", label: "B" },
-											React.createElement(VisibleERPC_Text, { id: "M_Text_3", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "single" })
-										)
-									),
-									React.createElement(
 										VisibleERPC_LabeledControl,
 										{ id: "M_LC_12", parentPath: "M_Page_2.M_Form_1", label: "test", visible: false },
 										React.createElement(VisibleERPC_Text, { id: "M_Text_1", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "single" })
@@ -671,16 +631,6 @@ var CM_Form_1 = function (_React$PureComponent3) {
 										VisibleERPC_LabeledControl,
 										{ id: "M_LC_15", parentPath: "M_Page_2.M_Form_1", label: "C" },
 										React.createElement(VisibleERPC_Text, { id: "M_Text_4", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "single" })
-									),
-									React.createElement(
-										VisibleERPC_Button,
-										{ className: "btn btn-primary erp-control ", id: "button_3", parentPath: "M_Page_2.M_Form_1", onClick: button_3_onclick },
-										"1"
-									),
-									React.createElement(
-										VisibleERPC_Button,
-										{ className: "btn btn-primary erp-control ", id: "button_2", parentPath: "M_Page_2.M_Form_1", onClick: button_2_onclick },
-										"\u5C0F\u59DC"
 									),
 									React.createElement(
 										VisibleERPC_Button,
@@ -878,6 +828,26 @@ var CM_Form_0_THead = function (_React$PureComponent5) {
 						"th",
 						{ scope: "col", style: M_Form_0headstyle2 },
 						"\u8BF7\u5047\u4E8B\u7531"
+					),
+					React.createElement(
+						"th",
+						{ scope: "col", style: M_Form_0headstyle3 },
+						"\u59D3\u540D"
+					),
+					React.createElement(
+						"th",
+						{ scope: "col", style: M_Form_0headstyle4 },
+						"\u5458\u5DE5\u5047\u671F\u79CD\u7C7B\u4EE3\u7801"
+					),
+					React.createElement(
+						"th",
+						{ scope: "col", style: M_Form_0headstyle5 },
+						"\u767B\u8BB0\u786E\u8BA4\u65F6\u95F4"
+					),
+					React.createElement(
+						"th",
+						{ scope: "col", style: M_Form_0headstyle6 },
+						" \u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801"
 					)
 				)
 			);
@@ -922,6 +892,26 @@ var CM_Form_0_TBody = function (_React$PureComponent6) {
 						"td",
 						{ style: M_Form_0tdstyle2 },
 						React.createElement(VisibleERPC_Label, { className: "erp-control ", rowIndex: rowIndex, id: "M_Label_2", parentPath: "M_Page_2.M_Form_1.M_Form_0", type: "string" })
+					),
+					React.createElement(
+						"td",
+						{ style: M_Form_0tdstyle3 },
+						React.createElement(VisibleERPC_Label, { className: "erp-control ", rowIndex: rowIndex, id: "M_Label_11", parentPath: "M_Page_2.M_Form_1.M_Form_0", type: "string" })
+					),
+					React.createElement(
+						"td",
+						{ style: M_Form_0tdstyle4 },
+						React.createElement(VisibleERPC_Label, { className: "erp-control ", rowIndex: rowIndex, id: "M_Label_12", parentPath: "M_Page_2.M_Form_1.M_Form_0", type: "string" })
+					),
+					React.createElement(
+						"td",
+						{ style: M_Form_0tdstyle5 },
+						React.createElement(VisibleERPC_Label, { className: "erp-control ", rowIndex: rowIndex, id: "M_Label_13", parentPath: "M_Page_2.M_Form_1.M_Form_0", type: "string" })
+					),
+					React.createElement(
+						"td",
+						{ style: M_Form_0tdstyle6 },
+						React.createElement(VisibleERPC_Label, { className: "erp-control ", rowIndex: rowIndex, id: "M_Label_14", parentPath: "M_Page_2.M_Form_1.M_Form_0", type: "string" })
 					)
 				));
 			}

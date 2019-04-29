@@ -9,12 +9,20 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var M_Form_0_style = { "minHeight": "300px" };
-var M_Form_0headstyle0 = { "width": "10%", "maxWidth": "10%", "whiteSpace": "nowrap", "overflow": "hidden" };
-var M_Form_0tdstyle0 = { "width": "10%", "maxWidth": "10%" };
-var M_Form_0headstyle1 = { "width": "40%", "maxWidth": "40%", "whiteSpace": "nowrap", "overflow": "hidden" };
-var M_Form_0tdstyle1 = { "width": "40%", "maxWidth": "40%" };
-var M_Form_0headstyle2 = { "width": "50%", "maxWidth": "50%", "whiteSpace": "nowrap", "overflow": "hidden" };
-var M_Form_0tdstyle2 = { "width": "50%", "maxWidth": "50%" };
+var M_Form_0headstyle0 = { "width": "2.2%", "maxWidth": "2.2%", "whiteSpace": "nowrap", "overflow": "hidden" };
+var M_Form_0tdstyle0 = { "width": "2.2%", "maxWidth": "2.2%" };
+var M_Form_0headstyle1 = { "width": "8.9%", "maxWidth": "8.9%", "whiteSpace": "nowrap", "overflow": "hidden" };
+var M_Form_0tdstyle1 = { "width": "8.9%", "maxWidth": "8.9%" };
+var M_Form_0headstyle2 = { "width": "11.1%", "maxWidth": "11.1%", "whiteSpace": "nowrap", "overflow": "hidden" };
+var M_Form_0tdstyle2 = { "width": "11.1%", "maxWidth": "11.1%" };
+var M_Form_0headstyle3 = { "width": "6.2%", "maxWidth": "6.2%", "whiteSpace": "nowrap", "overflow": "hidden" };
+var M_Form_0tdstyle3 = { "width": "6.2%", "maxWidth": "6.2%" };
+var M_Form_0headstyle4 = { "width": "24.9%", "maxWidth": "24.9%", "whiteSpace": "nowrap", "overflow": "hidden" };
+var M_Form_0tdstyle4 = { "width": "24.9%", "maxWidth": "24.9%" };
+var M_Form_0headstyle5 = { "width": "18.7%", "maxWidth": "18.7%", "whiteSpace": "nowrap", "overflow": "hidden" };
+var M_Form_0tdstyle5 = { "width": "18.7%", "maxWidth": "18.7%" };
+var M_Form_0headstyle6 = { "width": "28%", "maxWidth": "28%", "whiteSpace": "nowrap", "overflow": "hidden" };
+var M_Form_0tdstyle6 = { "width": "28%", "maxWidth": "28%" };
 var M_Form_0_tableStyle = { "marginTop": "-50px" };
 var M_Form_0_headtableStyle = { "marginBottom": "0px" };
 var Redux = window.Redux;
@@ -429,6 +437,10 @@ function bind_M_Form_0Page(retState) {
 		needSetState['row_' + rowIndex + '.M_Label_0.text'] = nowRecord['员工假期种类'];
 		needSetState['row_' + rowIndex + '.M_Label_1.text'] = nowRecord['请假区间'];
 		needSetState['row_' + rowIndex + '.M_Label_2.text'] = nowRecord['请假事由'];
+		needSetState['row_' + rowIndex + '.M_Label_11.text'] = nowRecord['姓名'];
+		needSetState['row_' + rowIndex + '.M_Label_12.text'] = nowRecord['员工假期种类代码'];
+		needSetState['row_' + rowIndex + '.M_Label_13.text'] = nowRecord['登记确认时间'];
+		needSetState['row_' + rowIndex + '.M_Label_14.text'] = nowRecord[' 员工登记姓名代码'];
 	}
 	needSetState.startRowIndex = startRowIndex;
 	needSetState.endRowIndex = endRowIndex;
@@ -653,12 +665,12 @@ var CM_Form_1 = function (_React$PureComponent3) {
 										{ className: "flex-shrink-0 d-flex flex-grow-1 erp-control " },
 										React.createElement(
 											VisibleERPC_LabeledControl,
-											{ id: "M_LC_13", parentPath: "M_Page_2.M_Form_1", label: "A" },
+											{ className: "flex-grow-1 ", id: "M_LC_13", parentPath: "M_Page_2.M_Form_1", label: "A" },
 											React.createElement(VisibleERPC_Text, { id: "M_Text_2", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "single" })
 										),
 										React.createElement(
 											VisibleERPC_LabeledControl,
-											{ id: "M_LC_14", parentPath: "M_Page_2.M_Form_1", label: "B" },
+											{ className: "flex-grow-1 ", id: "M_LC_14", parentPath: "M_Page_2.M_Form_1", label: "B" },
 											React.createElement(VisibleERPC_Text, { id: "M_Text_3", parentPath: "M_Page_2.M_Form_1", type: "string", linetype: "single" })
 										)
 									),
@@ -878,6 +890,26 @@ var CM_Form_0_THead = function (_React$PureComponent5) {
 						"th",
 						{ scope: "col", style: M_Form_0headstyle2 },
 						"\u8BF7\u5047\u4E8B\u7531"
+					),
+					React.createElement(
+						"th",
+						{ scope: "col", style: M_Form_0headstyle3 },
+						"\u59D3\u540D"
+					),
+					React.createElement(
+						"th",
+						{ scope: "col", style: M_Form_0headstyle4 },
+						"\u5458\u5DE5\u5047\u671F\u79CD\u7C7B\u4EE3\u7801"
+					),
+					React.createElement(
+						"th",
+						{ scope: "col", style: M_Form_0headstyle5 },
+						"\u767B\u8BB0\u786E\u8BA4\u65F6\u95F4"
+					),
+					React.createElement(
+						"th",
+						{ scope: "col", style: M_Form_0headstyle6 },
+						" \u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801"
 					)
 				)
 			);
@@ -922,6 +954,26 @@ var CM_Form_0_TBody = function (_React$PureComponent6) {
 						"td",
 						{ style: M_Form_0tdstyle2 },
 						React.createElement(VisibleERPC_Label, { className: "erp-control ", rowIndex: rowIndex, id: "M_Label_2", parentPath: "M_Page_2.M_Form_1.M_Form_0", type: "string" })
+					),
+					React.createElement(
+						"td",
+						{ style: M_Form_0tdstyle3 },
+						React.createElement(VisibleERPC_Label, { className: "erp-control ", rowIndex: rowIndex, id: "M_Label_11", parentPath: "M_Page_2.M_Form_1.M_Form_0", type: "string" })
+					),
+					React.createElement(
+						"td",
+						{ style: M_Form_0tdstyle4 },
+						React.createElement(VisibleERPC_Label, { className: "erp-control ", rowIndex: rowIndex, id: "M_Label_12", parentPath: "M_Page_2.M_Form_1.M_Form_0", type: "string" })
+					),
+					React.createElement(
+						"td",
+						{ style: M_Form_0tdstyle5 },
+						React.createElement(VisibleERPC_Label, { className: "erp-control ", rowIndex: rowIndex, id: "M_Label_13", parentPath: "M_Page_2.M_Form_1.M_Form_0", type: "string" })
+					),
+					React.createElement(
+						"td",
+						{ style: M_Form_0tdstyle6 },
+						React.createElement(VisibleERPC_Label, { className: "erp-control ", rowIndex: rowIndex, id: "M_Label_14", parentPath: "M_Page_2.M_Form_1.M_Form_0", type: "string" })
 					)
 				));
 			}
