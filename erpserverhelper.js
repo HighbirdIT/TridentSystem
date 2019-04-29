@@ -214,7 +214,6 @@ var gTimeReg = /\d+:\d+:\d+/;
 var gShortTimeReg = /\d+:\d+/;
 
 function CastDate(val){
-    /*
     if(typeof val === 'string'){
         var dateRegRlt = gDateReg.exec(val);
         var dateStr = '';
@@ -231,7 +230,7 @@ function CastDate(val){
         }
         return null;
     }
-    */
+    
     return new Date(val);
 }
 
