@@ -720,10 +720,10 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 keyword: '',
                 opened: true
             });
-            var needFetch = false;
             if (this.props.pullDataSource) {
-                this.props.pullDataSource();
-                needFetch = true;
+                if (this.props.pullOnce != true || this.props.options_arr == null) {
+                    this.props.pullDataSource();
+                }
             }
         }
     }, {
@@ -2372,3 +2372,61 @@ var ERPXMLToolKit = {
         return rltStr;
     }
 };
+
+var TaskSelector = function (_React$PureComponent14) {
+    _inherits(TaskSelector, _React$PureComponent14);
+
+    function TaskSelector(poros) {
+        _classCallCheck(this, TaskSelector);
+
+        var _this18 = _possibleConstructorReturn(this, (TaskSelector.__proto__ || Object.getPrototypeOf(TaskSelector)).call(this, props));
+
+        autoBind(_this18);
+        ERPControlBase(_this18);
+
+        _this18.state = Object.assign(_this18.initState, {
+            keyword: '',
+            opened: false
+        });
+
+        _this18.contentDivRef = React.createRef();
+        _this18.popPanelRef = React.createRef();
+        _this18.popPanelRef = React.createRef();
+        _this18.popPanelItem = React.createElement(ERPC_DropDown_PopPanel, { ref: _this18.popPanelRef, dropdownctl: _this18, key: gFixedItemCounter++ });
+        return _this18;
+    }
+
+    _createClass(TaskSelector, [{
+        key: 'pullUserTask',
+        value: function pullUserTask() {
+            var ownprops = this.props;
+            var parentStatePath = MakePath(ownprops.parentPath, ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex, ownprops.id);
+            store.dispatch(fetchJsonPost('/erppage/server/task', { action: 'getUserTask', bundle: { userid: g_envVar.userid } }, makeFTD_Prop(parentStatePath, ownprops.id), 'options_arr', false), EFetchKey.FetchPropValue);
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            if (this.props.visible == false) {
+                return null;
+            }
+            React.createElement(ERPC_DropDown, { value: this.props.value,
+                text: this.props.text,
+                fetching: this.props.fetching,
+                fetchingErr: this.props.fetchingErr,
+                optionsData: this.props.optionsData,
+                invalidInfo: this.props.invalidInfo,
+                selectOpt: this.props.selectOpt,
+                rowIndex: this.props.rowIndex,
+                id: this.props.id,
+                parentPath: this.props.parentPath,
+                type: 'string',
+                pullOnce: true,
+                pullDataSource: this.pullUserTask,
+                options_arr: this.props.options_arr
+
+            });
+        }
+    }]);
+
+    return TaskSelector;
+}(React.PureComponent);

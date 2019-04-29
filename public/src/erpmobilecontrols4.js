@@ -5,6 +5,7 @@ var gCusValidChecker_map = {};
 const gPreconditionInvalidInfo = '前置条件不足';
 const gCantNullInfo = '不能为空值';
 
+
 const HashKey_FixItem = 'fixitem';
 
 class DataCache{
@@ -594,10 +595,10 @@ class ERPC_DropDown extends React.PureComponent {
             keyword: '',
             opened: true,
         });
-        var needFetch = false;
         if (this.props.pullDataSource) {
-            this.props.pullDataSource();
-            needFetch = true;
+            if(this.props.pullOnce != true || this.props.options_arr == null){
+                this.props.pullDataSource();
+            }
         }
     }
 
@@ -1947,5 +1948,51 @@ const ERPXMLToolKit={
         });
         rltStr += '>' + itemStr_arr.join('') + '</Data>';
         return rltStr;
+    }
+}
+
+class TaskSelector extends React.PureComponent{
+    constructor(poros){
+        super(props);
+        autoBind(this);
+        ERPControlBase(this);
+
+        this.state = Object.assign(this.initState, {
+            keyword: '',
+            opened: false,
+        });
+
+        this.contentDivRef = React.createRef();
+        this.popPanelRef = React.createRef();
+        this.popPanelRef = React.createRef();
+        this.popPanelItem = (<ERPC_DropDown_PopPanel ref={this.popPanelRef} dropdownctl={this} key={gFixedItemCounter++} />)
+    }
+
+    pullUserTask(){
+        var ownprops = this.props;
+        var parentStatePath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
+        store.dispatch(fetchJsonPost('/erppage/server/task', {action:'getUserTask',bundle:{userid:g_envVar.userid}}, makeFTD_Prop(parentStatePath,ownprops.id),'options_arr',false), EFetchKey.FetchPropValue);
+    }
+    
+    render(){
+        if(this.props.visible == false){
+            return null;
+        }
+        <ERPC_DropDown value={this.props.value}
+            text={this.props.text}
+            fetching={this.props.fetching}
+            fetchingErr={this.props.fetchingErr}
+            optionsData={this.props.optionsData}
+            invalidInfo={this.props.invalidInfo}
+            selectOpt={this.props.selectOpt}
+            rowIndex={this.props.rowIndex}
+            id={this.props.id}
+            parentPath={this.props.parentPath}
+            type='string'
+            pullOnce={true}
+            pullDataSource={this.pullUserTask}
+            options_arr={this.props.options_arr}
+
+            />
     }
 }

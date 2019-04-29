@@ -390,6 +390,7 @@ app.use('/erppage', function (req, res, next) {
         return res.render('404');
     }
     var pageName = t_arr[2].toUpperCase();
+    pageName = pageName.replace('#','');
     var isPC = t_arr[1].toLowerCase() == 'pc';
     var cache = erpPageCache[pageName];
     if (cache != null) {

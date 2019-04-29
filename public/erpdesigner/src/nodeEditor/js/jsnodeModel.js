@@ -3220,7 +3220,7 @@ class JSNode_Query_Sql extends JSNode_Base {
                     return false;
                 }
                 var socketValue = socketComRet.value;
-                params_arr.push({ name: theSocket.name.replace('@', ''), value: socketValue });
+                params_arr.push({ name: theSocket.name.trim().replace('@', ''), value: socketValue });
             }
         }
         var targetColumns_arr = [];
@@ -3381,7 +3381,7 @@ class JSNode_Query_Sql extends JSNode_Base {
                     return false;
                 }
                 var socketValue = socketComRet.value;
-                params_arr.push({ name: theSocket.name.replace('@', ''), value: socketValue });
+                params_arr.push({ name: theSocket.name.trim().replace('@', ''), value: socketValue });
             }
         }
 
