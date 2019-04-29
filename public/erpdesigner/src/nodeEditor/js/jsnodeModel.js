@@ -2829,10 +2829,10 @@ class JSNode_DateFun extends JSNode_Base {
                 break;
             case 'AddDay':
                 var varName = socketVal_arr[0];
-                callStr = varName + '.setDate(' + varName + '.getDate() + ' + socketVal_arr[1] + ')';
+                callStr = 'new Date(' + varName + '.setDate(' + varName + '.getDate() + ' + socketVal_arr[1] + '))';
                 break;
             case 'CastDate':
-                callStr = 'new Date(' + socketVal_arr[0] + ')';
+                callStr = funPreFix + 'castDate(' + socketVal_arr[0] + ')';
                 break;
             case 'Format[hh:mm:ss]':
                 callStr = funPreFix + 'getFormatTimeString(' + socketVal_arr[0] + ')';

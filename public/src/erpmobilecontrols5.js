@@ -1207,7 +1207,7 @@ class ERPC_Label extends React.PureComponent {
 function ERPC_Label_mapstatetoprops(state, ownprops) {
     var ctlPath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
     var ctlState = getStateByPath(state, ctlPath, {});
-    var useText = ctlState.text ? ctlState.text : (ownprops.text ? ownprops.text : '');
+    var useText = ctlState.text != null ? ctlState.text : (ownprops.text ? ownprops.text : '');
     return {
         text: useText,
         visible:ctlState.visible,

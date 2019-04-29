@@ -1,26 +1,17 @@
-'use strict';
-
-var PAGE_LOADED = 'PAGE_LOADED';
+const PAGE_LOADED = 'PAGE_LOADED';
 
 var fetchTracer = {};
 
-function makeActionCreator(type) {
-    for (var _len = arguments.length, argNames = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-        argNames[_key - 1] = arguments[_key];
-    }
-
-    return function () {
-        for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-            args[_key2] = arguments[_key2];
-        }
-
-        var action = { type: type };
-        argNames.forEach(function (arg, index) {
-            action[argNames[index]] = args[index];
+function makeActionCreator(type, ...argNames) {
+    return function (...args) {
+        let action = { type };
+        argNames.forEach((arg, index) => {
+            action[argNames[index]] = args[index]
         });
         return action;
-    };
+    }
 }
+
 
 function updateObject(oldObject, newValues) {
     if (oldObject == null) {
@@ -30,11 +21,11 @@ function updateObject(oldObject, newValues) {
 }
 
 function updateItemInArray(array, itemId, updateItemCallback) {
-    var updatedItems = array.map(function (item) {
+    const updatedItems = array.map(item => {
         if (item.id !== itemId) {
             return item;
         }
-        var updatedItem = updateItemCallback(item);
+        const updatedItem = updateItemCallback(item);
         return updatedItem;
     });
 
@@ -42,25 +33,23 @@ function updateItemInArray(array, itemId, updateItemCallback) {
 }
 
 function createReducer(initialState, handlers) {
-    return function reducer() {
-        var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : initialState;
-        var action = arguments[1];
-
+    return function reducer(state = initialState, action) {
         if (handlers.hasOwnProperty(action.type)) {
             return handlers[action.type](state, action);
         } else {
             return state;
         }
-    };
+    }
 }
 
+
 // post functions
-var AT_FETCHBEGIN = 'AT_FETCHBEGIN';
-var AT_FETCHEND = 'AT_FETCHEND';
-var AT_SETSTATEBYPATH = 'AT_SETSTATEBYPATH';
-var AT_SETMANYSTATEBYPATH = 'AT_SETMANYSTATEBYPATH';
-var AT_GOTOPAGE = 'AT_GOTOPAGE';
-var AT_PAGELOADED = 'AT_PAGELOADED';
+const AT_FETCHBEGIN = 'AT_FETCHBEGIN';
+const AT_FETCHEND = 'AT_FETCHEND';
+const AT_SETSTATEBYPATH = 'AT_SETSTATEBYPATH';
+const AT_SETMANYSTATEBYPATH = 'AT_SETMANYSTATEBYPATH';
+const AT_GOTOPAGE = 'AT_GOTOPAGE';
+const AT_PAGELOADED = 'AT_PAGELOADED';
 
 function makeAction_fetchbegin(key, fetchData) {
     return {
@@ -90,11 +79,13 @@ function makeAction_fetchError(key, err, fetchData) {
     };
 }
 
-function delayAction() {}
+function delayAction(){
+    
+}
 
-var makeAction_setStateByPath = makeActionCreator(AT_SETSTATEBYPATH, 'value', 'path');
-var makeAction_setManyStateByPath = makeActionCreator(AT_SETMANYSTATEBYPATH, 'value', 'path');
-var makeAction_gotoPage = makeActionCreator(AT_GOTOPAGE, 'pageName');
+const makeAction_setStateByPath = makeActionCreator(AT_SETSTATEBYPATH, 'value', 'path');
+const makeAction_setManyStateByPath = makeActionCreator(AT_SETMANYSTATEBYPATH, 'value', 'path');
+const makeAction_gotoPage = makeActionCreator(AT_GOTOPAGE, 'pageName');
 
 function setStateByPathHandler(state, action) {
     return setStateByPath(state, action.path, action.value);
@@ -108,15 +99,15 @@ function myTrim(x) {
     return x.replace(/^\s+|\s+$/gm, '');
 }
 
-function getNowDate() {
+function getNowDate(){
     return new Date(getFormatDateString(new Date()));
 }
 
 function checkDate(date) {
     var dateVal = new Date(date);
-    if (isNaN(dateVal.getDate())) {
-        if (typeof date === 'string') {
-            date = date.replace(/-/g, '/');
+    if(isNaN(dateVal.getDate())){
+        if(typeof date === 'string'){
+            date = date.replace(/-/g,'/');
         }
         dateVal = new Date(date);
     }
@@ -124,14 +115,14 @@ function checkDate(date) {
 }
 
 function checkTime(str) {
-    if (str == null || str.length == 0) {
-        return false;
-    }
+    if(str == null || str.length == 0){
+		return false;
+	}
     var dateVal = new Date('2000/1/1 ' + str);
     return !isNaN(dateVal.getDate());
 }
 
-function cutTimePart(date) {
+function cutTimePart(date){
     var rlt = new Date(date);
     rlt.setHours(0);
     rlt.setMinutes(0);
@@ -140,12 +131,12 @@ function cutTimePart(date) {
     return rlt;
 }
 
-function convertTimeToDate(str) {
+function convertTimeToDate(str){
     var now = new Date();
     return combineDateAndTime(getFormatDateString(now), str);
 }
 
-function combineDateAndTime(dateStr, timeStr) {
+function combineDateAndTime(dateStr, timeStr){
     return new Date(Date.parse(dateStr + ' ' + timeStr));
 }
 
@@ -153,17 +144,17 @@ var gDateReg = /\d+[-/]\d+[-/]\d+/;
 var gTimeReg = /\d+:\d+:\d+/;
 var gShortTimeReg = /\d+:\d+/;
 
-function castDate(val) {
-    if (typeof val === 'string') {
+function castDate(val){
+    if(typeof val === 'string'){
         var dateRegRlt = gDateReg.exec(val);
         var dateStr = '';
-        if (dateRegRlt != null) {
+        if(dateRegRlt != null){
             dateStr = dateRegRlt[0];
             var timeRegRlt = gTimeReg.exec(val);
-            if (timeRegRlt == null) {
+            if(timeRegRlt == null){
                 timeRegRlt = gShortTimeReg.exec(val);
             }
-            if (timeRegRlt != null) {
+            if(timeRegRlt != null){
                 dateStr += ' ' + timeRegRlt[0];
             }
             return new Date(dateStr);
@@ -173,75 +164,67 @@ function castDate(val) {
     return new Date(val);
 }
 
-function getDateDiff(type, dateA, dateB) {
+function getDateDiff(type, dateA, dateB){
     var divNum = 0;
-    switch (type.toLowerCase()) {
+    switch(type.toLowerCase()){
         case '秒':
-            divNum = 1000;
-            break;
+        divNum = 1000;
+        break;
         case '分':
-            divNum = 1000 * 60;
-            break;
+        divNum = 1000 * 60;
+        break;
         case '时':
-            divNum = 1000 * 60 * 60;
-            break;
+        divNum = 1000 * 60 * 60;
+        break;
         case '天':
-            divNum = 1000 * 60 * 60 * 24;
-            break;
+        divNum = 1000 * 60 * 60 * 24;
+        break;
         case '月':
-            divNum = 1000 * 60 * 60 * 24 * 30;
-            break;
+        divNum = 1000 * 60 * 60 * 24 * 30;
+        break;
         case '年':
-            divNum = 1000 * 60 * 60 * 24 * 365;
-            break;
+        divNum = 1000 * 60 * 60 * 24 * 365;
+        break;
     }
-    if (typeof dateA === 'string') {
+    if(typeof dateA === 'string'){
         dateA = new Date(dateA);
     }
-    if (typeof dateB === 'string') {
+    if(typeof dateB === 'string'){
         dateB = new Date(dateB);
     }
     return (dateB.getTime() - dateA.getTime()) / divNum;
 }
 
 // commonreducer
-var logger = function logger(store) {
-    return function (next) {
-        return function (action) {
-            if (isDebug != false) {
-                console.log('dispatching', action);
-            }
-            var result = next(action);
-            if (isDebug != false) {
-                console.log('next state', store.getState());
-            }
-            return result;
-        };
-    };
-};
+const logger = store => next => action => {
+    if (isDebug != false) {
+        console.log('dispatching', action);
+    }
+    let result = next(action);
+    if (isDebug != false) {
+        console.log('next state', store.getState());
+    }
+    return result;
+}
 
-var crashReporter = function crashReporter(store) {
-    return function (next) {
-        return function (action) {
-            //console.log('crashReporter start');
-            var rlt = null;
-            try {
-                rlt = next(action);
-            } catch (err) {
-                console.error('Caught an exception!', err);
-                Raven.captureException(err, {
-                    extra: {
-                        action: action,
-                        state: store.getState()
-                    }
-                });
-                throw err;
+const crashReporter = store => next => action => {
+    //console.log('crashReporter start');
+    let rlt = null;
+    try {
+        rlt = next(action);
+    } catch (err) {
+        console.error('Caught an exception!', err);
+        Raven.captureException(err, {
+            extra: {
+                action,
+                state: store.getState()
             }
-            //console.log('crashReporter end');
-            return rlt;
-        };
-    };
-};
+        })
+        throw err;
+    }
+    //console.log('crashReporter end');
+    return rlt;
+}
 
 //const timeoutScheduler = store => next => action => {
 function createThunkMiddleware(extraArgument) {
@@ -262,10 +245,8 @@ function createThunkMiddleware(extraArgument) {
 
 function autoBind(self, options) {
     options = Object.assign({}, options);
-    var filter = function filter(key) {
-        var match = function match(pattern) {
-            return typeof pattern === 'string' ? key === pattern : pattern.test(key);
-        };
+    const filter = key => {
+        const match = pattern => typeof pattern === 'string' ? key === pattern : pattern.test(key);
         if (options.include) {
             return options.include.some(match);
         }
@@ -275,32 +256,11 @@ function autoBind(self, options) {
         return true;
     };
 
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
+    for (const key of Object.getOwnPropertyNames(self.constructor.prototype)) {
+        const val = self[key];
 
-    try {
-        for (var _iterator = Object.getOwnPropertyNames(self.constructor.prototype)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            var key = _step.value;
-
-            var val = self[key];
-
-            if (key !== 'constructor' && typeof val === 'function' && filter(key)) {
-                self[key] = val.bind(self);
-            }
-        }
-    } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion && _iterator.return) {
-                _iterator.return();
-            }
-        } finally {
-            if (_didIteratorError) {
-                throw _iteratorError;
-            }
+        if (key !== 'constructor' && typeof val === 'function' && filter(key)) {
+            self[key] = val.bind(self);
         }
     }
 
@@ -308,13 +268,14 @@ function autoBind(self, options) {
 }
 
 function assginObjByProperties(dstObj, srcObj, pros_arr) {
-    pros_arr.forEach(function (pName) {
+    pros_arr.forEach(pName => {
         dstObj[pName] = srcObj[pName];
     });
 }
 
 function getAttributeByNode(targetNode, attrName, upserach, maxDeep) {
-    if (upserach == null) upserach = true;
+    if (upserach == null)
+        upserach = true;
     var tNode = targetNode;
     var count = 0;
     do {
@@ -359,8 +320,10 @@ function isNodeHasParent(targetNode, parentNode) {
 
 function extractPropsFromObj(obj, props_arr) {
     var rlt = {};
-    props_arr.forEach(function (prop) {
-        if (obj && obj[prop.name] != null) rlt[prop.name] = obj[prop.name];else {
+    props_arr.forEach(prop => {
+        if (obj && obj[prop.name] != null)
+            rlt[prop.name] = obj[prop.name];
+        else {
             rlt[prop.name] = typeof prop.default == 'function' ? prop.default() : prop.default;
         }
     });
@@ -385,7 +348,8 @@ function EV_AllowEvent(et) {
     var nowVal = this.suspressEvents[et];
     if (nowVal > 0) {
         this.suspressEvents[et] = nowVal - 1;
-    } else {
+    }
+    else {
         console.warn('allowEvent执行时count等于' + nowVal);
     }
 }
@@ -400,15 +364,17 @@ function EV_FireEvent(et, delay, arg) {
     }
     if (delay < 0) {
         delay = 0;
-    } else if (delay > 500) {
+    }
+    else if (delay > 500) {
         console.warn('长达' + delay + '毫秒的延迟fire' + et);
     }
     var self = this;
     if (delay > 0) {
-        setTimeout(function () {
+        setTimeout(() => {
             self.emit(et, arg == null ? self : arg);
         }, delay);
-    } else {
+    }
+    else {
         self.emit(et, arg == null ? self : arg);
     }
 }
@@ -436,66 +402,50 @@ function IsEmptyArray(val) {
     return val == null || val.length == 0;
 }
 
-var ErrType = {
+const ErrType = {
     UNKNOWN: 'UNKNOWN',
     TIMEOUT: 'TIMEOUT',
     SERVERSIDE: 'SERVERSIDE',
-    NORESPONSE: 'NORESPONSE'
+    NORESPONSE: 'NORESPONSE',
 };
 
-var EFetchKey = {
-    FetchPropValue: 'fetchPropValue'
-};
+const EFetchKey = {
+    FetchPropValue: 'fetchPropValue',
+}
 
 function createError(info, type) {
     return {
         type: type == null ? ErrType.UNKNOWN : type,
         info: info,
-        err: 1
+        err: 1,
     };
 }
 
-function makeFTD_Prop(basePath, id, propName) {
-    var isModel = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-
+function makeFTD_Prop(basePath, id, propName, isModel = true) {
     return {
         base: basePath,
         id: id,
         propName: propName,
-        isModel: isModel
+        isModel: isModel,
     };
 }
 
-function makeFTD_Callback(callBack) {
-    var isModel = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
+function makeFTD_Callback(callBack, isModel = true) {
     return {
         callBack: callBack,
-        isModel: isModel
+        isModel: isModel,
     };
 }
 
-function fetchJsonPost(url, sendData, triggerData) {
-    var key = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-    var tip = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '加载中';
-    var timeout = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 2;
-
+function fetchJsonPost(url, sendData, triggerData, key = '', tip = '加载中', timeout = 2) {
     return fetchJson(false, url, sendData, triggerData, key, tip, timeout);
 }
 
-function fetchJsonGet(url, sendData, triggerData) {
-    var key = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-    var tip = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '加载中';
-    var timeout = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 2;
-
+function fetchJsonGet(url, sendData, triggerData, key = '', tip = '加载中', timeout = 2) {
     return fetchJson(true, url, sendData, triggerData, key, tip, timeout);
 }
 
-function fetchJson(useGet, url, sendData, triggerData) {
-    var key = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
-    var tip = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : '加载中';
-    var timeout = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 2;
-
+function fetchJson(useGet, url, sendData, triggerData, key = '', tip = '加载中', timeout = 2) {
     timeout = Math.min(Math.max(30, timeout), 120) * 1000;
     var thisFetch = {
         triggerData: triggerData,
@@ -503,15 +453,15 @@ function fetchJson(useGet, url, sendData, triggerData) {
         url: url,
         sendData: sendData,
         key: key,
-        tip: tip
+        tip: tip,
     };
     var fetchParam = {
         method: useGet ? "GET" : "POST",
         headers: {
             "Content-Type": "application/json"
         },
-        credentials: "include"
-    };
+        credentials: "include",
+    }
     var dispatched = false;
     if (useGet) {
         if (sendData != null) {
@@ -523,47 +473,54 @@ function fetchJson(useGet, url, sendData, triggerData) {
                 url += '?' + str;
             }
         }
-    } else {
+    }
+    else {
         fetchParam.body = JSON.stringify(sendData);
     }
     return function (dispatch) {
         dispatch(makeAction_fetchbegin(key, thisFetch));
-        var timeoutHandler = setTimeout(function () {
+        var timeoutHandler = setTimeout(() => {
             dispatched = true;
             var errObj = createError('啊哦，服务器没响应了', ErrType.TIMEOUT);
             dispatch(makeAction_fetchError(key, errObj, thisFetch));
         }, timeout);
-        return fetch(url, fetchParam).then(function (response) {
-            if (dispatched) {
-                console.log('response at dispatched');
-                return null;
-            }
-            clearTimeout(timeoutHandler);
-            if (response.ok) {
-                return response.json();
-            } else {
-                var errObj = createError(response.statusText, ErrType.NORESPONSE, thisFetch);
+        return fetch(url, fetchParam).then(
+            response => {
+                if (dispatched) {
+                    console.log('response at dispatched');
+                    return null;
+                }
+                clearTimeout(timeoutHandler);
+                if (response.ok) {
+                    return response.json();
+                }
+                else {
+                    var errObj = createError(response.statusText, ErrType.NORESPONSE, thisFetch);
+                    dispatch(makeAction_fetchError(key, errObj, thisFetch));
+                    return null;
+                }
+            },
+            error => {
+                if (dispatched) {
+                    console.log('response at dispatched');
+                    return null;
+                }
+                console.warn('An error occurred.', error);
+                var errObj = createError(error.toString(), ErrType.NORESPONSE, thisFetch);
                 dispatch(makeAction_fetchError(key, errObj, thisFetch));
-                return null;
             }
-        }, function (error) {
-            if (dispatched) {
-                console.log('response at dispatched');
-                return null;
-            }
-            console.warn('An error occurred.', error);
-            var errObj = createError(error.toString(), ErrType.NORESPONSE, thisFetch);
-            dispatch(makeAction_fetchError(key, errObj, thisFetch));
-        }).then(function (json) {
+        ).then(json => {
             if (dispatched) {
                 console.log('response at dispatched');
                 return null;
             }
             if (json == null) {
                 dispatch(makeAction_fetchError(key, createError('"' + url + '"没有响应', ErrType.SERVERSIDE, thisFetch), thisFetch));
-            } else if (json.err != null) {
+            }
+            else if (json.err != null) {
                 dispatch(makeAction_fetchError(key, createError(json.err.info, ErrType.SERVERSIDE, thisFetch), thisFetch));
-            } else {
+            }
+            else {
                 //setTimeout(() => {
                 dispatch(makeAction_fetchend(key, json, thisFetch));
                 //}, 2000);
@@ -576,15 +533,15 @@ function nativeFetchJson(useGet, url, sendData) {
     var thisFetch = {
         useGet: useGet,
         url: url,
-        sendData: sendData
+        sendData: sendData,
     };
     var fetchParam = {
         method: useGet ? "GET" : "POST",
         headers: {
             "Content-Type": "application/json"
         },
-        credentials: "include"
-    };
+        credentials: "include",
+    }
     if (useGet) {
         if (sendData != null) {
             var str = '';
@@ -595,21 +552,26 @@ function nativeFetchJson(useGet, url, sendData) {
                 url += '?' + str;
             }
         }
-    } else {
+    }
+    else {
         fetchParam.body = JSON.stringify(sendData);
     }
 
-    return fetch(url, fetchParam).then(function (response) {
-        if (response.ok) {
-            return response.json();
-        } else {
-            var errObj = createError(response.statusText, ErrType.NORESPONSE, thisFetch);
+    return fetch(url, fetchParam).then(
+        response => {
+            if (response.ok) {
+                return response.json();
+            }
+            else {
+                var errObj = createError(response.statusText, ErrType.NORESPONSE, thisFetch);
+                return { err: errObj };
+            }
+        },
+        error => {
+            var errObj = createError(error.toString(), ErrType.NORESPONSE, thisFetch);
             return { err: errObj };
         }
-    }, function (error) {
-        var errObj = createError(error.toString(), ErrType.NORESPONSE, thisFetch);
-        return { err: errObj };
-    }).then(function (json) {
+    ).then(json => {
         return json;
     });
 }
@@ -662,7 +624,8 @@ function setStateByPath(state, path, value, visited) {
                 newStateName = preStateName;
                 newStateValue = {};
                 newStateValue[name] = value;
-            } else {
+            }
+            else {
                 nowState[name] = value;
             }
             break;
@@ -674,11 +637,13 @@ function setStateByPath(state, path, value, visited) {
                 nowState = {};
                 newStateValue = {};
                 newStateValue[name] = nowState;
-            } else {
+            }
+            else {
                 nowState[name] = {};
                 nowState = nowState[name];
             }
-        } else {
+        }
+        else {
             preState = nowState;
             preStateName = name;
             nowState = nowState[name];
@@ -687,17 +652,18 @@ function setStateByPath(state, path, value, visited) {
     var retState = null;
     if (preStateName == null) {
         retState = Object.assign({}, state, newStateValue);
-    } else {
+    }
+    else {
         newStateParent[newStateName] = updateObject(newStateParent[newStateName], newStateValue);
         retState = state;
     }
     var delayActs = {};
     retState = aStateChanged(retState, path, value, oldValue, visited == null ? {} : visited, delayActs);
-    if (!IsEmptyObject(delayActs)) {
-        setTimeout(function () {
-            for (var acti in delayActs) {
+    if(!IsEmptyObject(delayActs)){
+        setTimeout(() => {
+            for(var acti in delayActs){
                 var theAct = delayActs[acti];
-                if (typeof theAct.callfun === 'function') {
+                if(typeof(theAct.callfun) === 'function'){
                     theAct.callfun();
                 }
             }
@@ -732,8 +698,8 @@ function setManyStateByPath(state, path, valuesObj, visited) {
             nowState[name] = {};
         }
 
-        if (i == len - 1) {
-            if (newStateParent == null) {
+        if(i == len - 1){
+            if(newStateParent == null){
                 newStateParent = preState;
                 //newStateValue = Object.assign({}, nowState[name]);
                 nowState[name] = Object.assign({}, nowState[name]);
@@ -758,18 +724,21 @@ function setManyStateByPath(state, path, valuesObj, visited) {
             name = t_arr[i];
             if (i >= len - 1) {
                 if (value != nowState[name]) {
-                    changed_arr.push({
-                        path: valueParentPath + '.' + name,
-                        name: name,
-                        oldValue: nowState[name],
-                        newValue: value,
-                        state: nowState,
-                        preState: aidPidPreState,
-                        preStateName: aidPreStateName,
-                        parentPath: valueParentPath
-                    });
+                    changed_arr.push(
+                        {
+                            path:valueParentPath + '.' + name,
+                            name:name,
+                            oldValue:nowState[name],
+                            newValue:value,
+                            state:nowState,
+                            preState:aidPidPreState,
+                            preStateName:aidPreStateName,
+                            parentPath:valueParentPath,
+                        }
+                    );
                 }
-            } else {
+            }
+            else {
                 valueParentPath += (valueParentPath.length == 0 ? '' : '.') + name;
                 if (nowState[name] == null) {
                     nowState[name] = {};
@@ -788,24 +757,24 @@ function setManyStateByPath(state, path, valuesObj, visited) {
     var changeState_map = {};
     for (i in changed_arr) {
         var changedInfo = changed_arr[i];
-        if (changeState_map[changedInfo.parentPath]) {
+        if(changeState_map[changedInfo.parentPath]){
             changedInfo.state = changeState_map[changedInfo.parentPath];
         }
-        if (changedInfo.preState == null) {
+        if(changedInfo.preState == null){
             changedInfo.state[changedInfo.name] = changedInfo.newValue;
             changedInfo.changed == false;
             continue;
         }
 
         //if(assginedObjs_arr.indexOf(changedInfo.state) == -1){
-        //assginedObjs_arr.push(changedInfo.state);
-        if (newStateObj_arr.indexOf(changedInfo.state) == -1) {
-            var newState = Object.assign({}, changedInfo.state);
-            changeState_map[changedInfo.parentPath] = newState;
-            changedInfo.state = newState;
-            changedInfo.preState[changedInfo.preStateName] = newState;
-            newStateObj_arr.push(newState);
-        }
+            //assginedObjs_arr.push(changedInfo.state);
+            if(newStateObj_arr.indexOf(changedInfo.state) == -1){
+                var newState = Object.assign({}, changedInfo.state);
+                changeState_map[changedInfo.parentPath] = newState;
+                changedInfo.state = newState;
+                changedInfo.preState[changedInfo.preStateName] = newState;
+                newStateObj_arr.push(newState);
+            }
         //}
         changedInfo.state[changedInfo.name] = changedInfo.newValue;
     }
@@ -828,14 +797,15 @@ function setManyStateByPath(state, path, valuesObj, visited) {
     var delayActs = {};
     for (i in changed_arr) {
         var changedInfo = changed_arr[i];
-        if (changedInfo.changed == false) continue;
+        if(changedInfo.changed == false)
+            continue;
         retState = aStateChanged(retState, changedInfo.path, changedInfo.newValue, changedInfo.oldValue, visited, delayActs);
     }
-    if (!IsEmptyObject(delayActs)) {
-        setTimeout(function () {
-            for (var acti in delayActs) {
+    if(!IsEmptyObject(delayActs)){
+        setTimeout(() => {
+            for(var acti in delayActs){
                 var theAct = delayActs[acti];
-                if (typeof theAct.callfun === 'function') {
+                if(typeof(theAct.callfun) === 'function'){
                     theAct.callfun();
                 }
             }
@@ -844,10 +814,7 @@ function setManyStateByPath(state, path, valuesObj, visited) {
     return retState == state ? Object.assign({}, retState) : retState;
 }
 
-function aStateChanged(state, path, newValue, oldValue) {
-    var visited = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
-    var delayActs = arguments[5];
-
+function aStateChanged(state, path, newValue, oldValue, visited = {}, delayActs) {
     if (visited[path] != null) {
         console.error('aStateChanged回路访问:' + path);
     }
@@ -868,7 +835,8 @@ function aStateChanged(state, path, newValue, oldValue) {
 function MakePath() {
     var rlt = '';
     for (var i = 0; i < arguments.length; ++i) {
-        if (arguments[i] == null || arguments[i].length == 0) continue;
+        if (arguments[i] == null || arguments[i].length == 0)
+            continue;
         rlt += (rlt.length == 0 ? '' : '.') + arguments[i];
     }
     return rlt;
@@ -900,7 +868,7 @@ function fetchBeginHandler(state, action) {
             retState = setManyStateByPath(retState, propPath, {
                 fetching: true,
                 fetchingpropname: triggerData.propName,
-                fetchingErr: null
+                fetchingErr: null,
             });
         }
     }
@@ -936,21 +904,22 @@ function fetchEndHandler(state, action) {
             var newFetchState = Object.assign({}, retState.ui.fetchState);
             newFetchState.err = action.err;
             retState.ui.fetchState = newFetchState;
-        } else {
+        }
+        else {
             if (triggerData) {
                 if (triggerData.base != null && triggerData.id != null) {
                     var propPath = MakePath(triggerData.base, triggerData.id);
                     retState = setManyStateByPath(retState, propPath, {
                         fetching: false,
-                        fetchingErr: action.err
+                        fetchingErr: action.err,
                     });
                 }
             }
         }
-        if (triggerData) {
-            if (triggerData.callBack) {
+        if(triggerData){
+            if(triggerData.callBack){
                 var callbackret = triggerData.callBack(retState, null, action.err);
-                if (callbackret != null) {
+                if(callbackret != null){
                     retState = callbackret;
                 }
             }
@@ -971,7 +940,7 @@ function fetchEndHandler(state, action) {
 
     switch (action.key) {
         case 'pageloaded':
-            setTimeout(function () {
+            setTimeout(() => {
                 store.dispatch({ type: AT_PAGELOADED });
             }, 50);
             return Object.assign({}, retState, { loaded: true });
@@ -981,22 +950,23 @@ function fetchEndHandler(state, action) {
                 return setStateByPath(retState, propPath, action.json.data);
             }
         default:
-            if (triggerData.callBack) {
-                var callbackret = triggerData.callBack(retState, action.json.data);
-                if (callbackret != null) {
-                    retState = callbackret;
-                }
+        if(triggerData.callBack){
+            var callbackret = triggerData.callBack(retState, action.json.data);
+            if(callbackret != null){
+                retState = callbackret;
             }
-            break;
+        }
+        break;
     }
     return retState == state ? Object.assign({}, retState) : retState;
 }
+
 
 var baseReducerSetting = {
     AT_FETCHBEGIN: fetchBeginHandler,
     AT_FETCHEND: fetchEndHandler,
     AT_SETSTATEBYPATH: setStateByPathHandler,
-    AT_SETMANYSTATEBYPATH: setManyStateByPathHandler
+    AT_SETMANYSTATEBYPATH: setManyStateByPathHandler,
 };
 
 function baseRenderLoadingTip() {
@@ -1006,123 +976,77 @@ function baseRenderLoadingTip() {
     var fetchState = this.props.fetchState;
     var tipElem = null;
     if (fetchState.err == null) {
-        tipElem = React.createElement(
-            'div',
-            { className: 'd-flex align-items-center' },
-            React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw fa-3x' }),
-            fetchState.tip
-        );
-    } else {
-        tipElem = React.createElement(
-            React.Fragment,
-            null,
-            React.createElement(
-                'div',
-                { className: 'bg-danger text-light d-flex d-flex align-items-center' },
-                React.createElement('i', { className: 'fa fa-warning fa-2x' }),
-                React.createElement(
-                    'h3',
-                    null,
-                    '\u9519\u8BEF'
-                )
-            ),
-            React.createElement('div', { className: 'dropdown-divider' }),
-            React.createElement(
-                'div',
-                { className: 'd-flex align-items-center' },
-                fetchState.err.info
-            ),
-            React.createElement(
-                'button',
-                { onClick: this.props.clickLoadingErrorBtn, type: 'button', className: 'btn btn-danger' },
-                '\u77E5\u9053\u4E86'
-            )
-        );
+        tipElem = (<div className='d-flex align-items-center'>
+            <i className='fa fa-spinner fa-pulse fa-fw fa-3x' />
+            {fetchState.tip}
+        </div>)
     }
-    return React.createElement(
-        'div',
-        { className: 'loadingTipBG' },
-        React.createElement(
-            'div',
-            { className: 'loadingTip bg-light rounded d-flex flex-column' },
-            tipElem
-        )
+    else {
+        tipElem = (<React.Fragment>
+            <div className='bg-danger text-light d-flex d-flex align-items-center'><i className='fa fa-warning fa-2x' /><h3>错误</h3></div>
+            <div className='dropdown-divider' />
+            <div className='d-flex align-items-center'>
+                {fetchState.err.info}
+            </div>
+            <button onClick={this.props.clickLoadingErrorBtn} type='button' className='btn btn-danger'>知道了</button>
+        </React.Fragment>);
+    }
+    return (<div className='loadingTipBG'>
+        <div className='loadingTip bg-light rounded d-flex flex-column'>
+            {tipElem}
+        </div>
+    </div>);
+}
+
+function renderFetcingTipDiv(tipstr = '数据加载中') {
+    return (
+        <div className='w-100 h-100 flex-grow-1 d-flex align-items-center'>
+            <div className='m-auto d-flex align-items-center border rounded'>
+                <i className='fa fa-spinner fa-pulse fa-fw fa-2x' />
+                <div className='text-nowrap'>{tipstr}</div>
+            </div>
+        </div>
     );
 }
 
-function renderFetcingTipDiv() {
-    var tipstr = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '数据加载中';
-
-    return React.createElement(
-        'div',
-        { className: 'w-100 h-100 flex-grow-1 d-flex align-items-center' },
-        React.createElement(
-            'div',
-            { className: 'm-auto d-flex align-items-center border rounded' },
-            React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw fa-2x' }),
-            React.createElement(
-                'div',
-                { className: 'text-nowrap' },
-                tipstr
-            )
-        )
-    );
-}
 
 function renderFetcingErrDiv(errInfo) {
-    return React.createElement(
-        'div',
-        { className: 'w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch' },
-        React.createElement(
-            'div',
-            { className: 'm-auto d-flex align-items-center border rounded text-danger flex-shrink-0 mw-100' },
-            React.createElement('i', { className: 'fa fa-warning fa-fw fa-2x' }),
-            React.createElement(
-                'div',
-                { className: 'text' },
-                '\u51FA\u9519\u4E86:',
-                errInfo
-            )
-        )
+    return (
+        <div className='w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch'>
+            <div className='m-auto d-flex align-items-center border rounded text-danger flex-shrink-0 mw-100'>
+                <i className='fa fa-warning fa-fw fa-2x' />
+                <div className='text'>出错了:{errInfo}</div>
+            </div>
+        </div>
     );
 }
 
 function renderInvalidBundleDiv() {
-    return React.createElement(
-        'div',
-        { className: 'w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch' },
-        React.createElement(
-            'div',
-            { className: 'm-auto d-flex align-items-center border rounded flex-shrink-0 mw-100' },
-            React.createElement('i', { className: 'fa fa-warning fa-fw fa-2x' }),
-            React.createElement(
-                'div',
-                { className: 'text' },
-                '\u524D\u7F6E\u6761\u4EF6\u4E0D\u8DB3'
-            )
-        )
+    return (
+        <div className='w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch'>
+            <div className='m-auto d-flex align-items-center border rounded flex-shrink-0 mw-100'>
+                <i className='fa fa-warning fa-fw fa-2x' />
+                <div className='text'>前置条件不足</div>
+            </div>
+        </div>
     );
 }
 
-function getFormatDateString(date) {
+function getFormatDateString(date){
     var y = date.getFullYear();
     var m = date.getMonth() + 1;
     var d = date.getDate();
     return y + (m < 10 ? '-0' : '-') + m + (d < 10 ? '-0' : '-') + d;
 }
 
-function getFormatTimeString(date) {
-    var hadSec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
+function getFormatTimeString(date, hadSec = true) {
     var h = date.getHours();
     var m = date.getMinutes();
     var s = date.getSeconds();
-    return (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m + (hadSec ? (s < 10 ? ':0' : ':') + s : '');
+    return (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m +(hadSec ? (s < 10 ? ':0' : ':') + s : '');
 }
 
-function getFormatDateTimeString(date) {
-    var hadSec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
+function getFormatDateTimeString(date, hadSec = true){
     var y = date.getFullYear();
     var month = date.getMonth() + 1;
     var d = date.getDate();
@@ -1130,103 +1054,106 @@ function getFormatDateTimeString(date) {
     var m = date.getMinutes();
     var s = date.getSeconds();
 
-    return y + (month < 10 ? '-0' : '-') + month + (d < 10 ? '-0' : '-') + d + ' ' + (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m + (hadSec ? (s < 10 ? ':0' : ':') + s : '');
+    return y + (month < 10 ? '-0' : '-') + month + (d < 10 ? '-0' : '-') + d + ' ' + (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m +(hadSec ? (s < 10 ? ':0' : ':') + s : '');
 }
 
-function simpleFreshFormFun(retState, records_arr, formFullID, directBindFun) {
+function simpleFreshFormFun(retState, records_arr, formFullID, directBindFun){
     var formState = getStateByPath(retState, formFullID);
-    var needSetState = {};
-    if (records_arr == null || records_arr.length == 0) {
-        needSetState.recordIndex = -1;
-    } else {
-        var useIndex = formState.recordIndex == null ? 0 : parseInt(formState.recordIndex);
-        if (useIndex >= records_arr.length) {
-            useIndex = records_arr.length - 1;
-        } else if (useIndex <= -1) {
+	var needSetState = {};
+	if (records_arr == null || records_arr.length == 0) {
+		needSetState.recordIndex = -1;
+	}
+	else {
+		var useIndex = formState.recordIndex == null ? 0 : parseInt(formState.recordIndex);
+		if (useIndex >= records_arr.length) {
+			useIndex = records_arr.length - 1;
+        }
+        else if(useIndex <= -1){
             useIndex = 0;
         }
-        needSetState.recordIndex = useIndex;
+		needSetState.recordIndex = useIndex;
     }
-    if (formState.recordIndex == useIndex) {
-        if (directBindFun != null) {
+    if(formState.recordIndex == useIndex){
+        if(directBindFun != null){
             return directBindFun(retState, useIndex, useIndex);
         }
         return retState;
     }
-    return setManyStateByPath(retState, formFullID, needSetState);
+	return setManyStateByPath(retState, formFullID, needSetState);
 }
 
-function IsEmptyObject(val) {
-    for (var si in val) {
-        if (val[si] != null) {
-            return false;
-        }
-    }
-    return true;
+function IsEmptyObject(val){
+	for(var si in val){
+		if(val[si] != null){
+			return false;
+		}
+	}
+	return true;
 }
 
-function getQueryObject() {
+function getQueryObject(){
     var rlt = {};
     var query = window.location.search.substring(1);
     var vars = query.split("&");
-    for (var i = 0; i < vars.length; i++) {
+    for (var i=0;i<vars.length;i++) {
         var pair = vars[i].split("=");
         rlt[pair[0]] = pair[1];
     }
     return rlt;
 }
 
-function getQueryVariable(variable) {
+function getQueryVariable(variable)
+{
     var query = window.location.search.substring(1);
     var vars = query.split("&");
-    for (var i = 0; i < vars.length; i++) {
+    for (var i=0;i<vars.length;i++) {
         var pair = vars[i].split("=");
-        if (pair[0] == variable) {
-            return pair[1];
-        }
+        if(pair[0] == variable){return pair[1];}
     }
-    return false;
+    return(false);
 }
 
-function FormatStringValue(val, type, precision) {
-    if (IsEmptyString(val)) {
+function FormatStringValue(val, type, precision){
+    if(IsEmptyString(val)){
         return '';
     }
     var rlt = val;
-    switch (type) {
+    switch(type){
         case 'int':
-            rlt = parseInt(val);
-            if (isNaN(rlt)) {
-                rlt = '';
-            }
-            break;
+        rlt = parseInt(val);
+        if(isNaN(rlt)){
+            rlt = '';
+        }
+        break;
         case 'boolean':
-            rlt = parseBoolean(val) ? true : false;
-            break;
+        rlt = parseBoolean(val) ? true : false;
+        break;
         case 'float':
-            precision = precision == null ? 2 : parseInt(precision);
-            rlt = Math.round(val * Math.pow(10, precision));
-            if (isNaN(rlt)) {
-                rlt = '';
-            }
-            break;
+        precision = precision == null ? 2 : parseInt(precision);
+        rlt = Math.round(val * Math.pow(10, precision));
+        if(isNaN(rlt)){
+            rlt = '';
+        }
+        break;
         case 'date':
         case 'datetime':
-            if (!checkDate(val)) {
-                rlt = '';
-            } else if (val.length > 10) {
-                var theDate = new Date(val);
-                rlt = getFormatDateString(theDate) + (type == 'datetime' ? ' ' + getFormatTimeString(theDate) : '');
-            }
-            break;
+        if(!checkDate(val)){
+            rlt = '';
+        }
+        else if(val.length > 10){
+            var theDate = new Date(val)
+            rlt = getFormatDateString(theDate) + (type == 'datetime' ? ' ' + getFormatTimeString(theDate) : '');
+        }
+        break;
         case 'time':
-            if (val && val.length > 8 && checkDate(val)) {
-                var regRlt = gTimeReg.exec(val);
-                return regRlt[0];
-            } else if (!checkTime(val)) {
-                rlt = '';
-            }
-            break;
+        if(val && val.length > 8 && checkDate(val)){
+            var regRlt = gTimeReg.exec(val);
+            return regRlt[0];
+        }
+        else if(!checkTime(val)){
+            rlt = '';
+        }
+        break;
     }
     return rlt;
 }
