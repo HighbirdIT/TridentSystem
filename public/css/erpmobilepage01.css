@@ -321,3 +321,30 @@ body{
     height: 38px;
     
 }
+
+.li-instead-input:focus{
+    border:1px solid deepskyblue !important;
+    outline:none !important;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(10, 176, 252, .6);
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(10, 176, 252, .6);
+  }
+
+.li-instead-input{
+    border: 1px solid rgb(71, 67, 67);
+    float: left !important;
+    margin-bottom: 0!important;
+    border-radius: 3px;
+    padding: 0 6px;
+    line-height: 30px!important;
+    min-height: 33px;
+    margin-top: 4px;
+    max-width: 30em;
+    text-overflow:ellipsis;
+    word-wrap:break-word;
+}
+.li-instead-input:empty::before{
+    color:lightgrey;
+    height: 33px;
+    width: 50px;
+    content:attr(placeholder);
+}
