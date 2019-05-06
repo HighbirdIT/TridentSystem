@@ -1,3 +1,4 @@
+
 class MyApp extends React.PureComponent{
     constructor(props){
         super(props);
@@ -34,11 +35,7 @@ class MyApp extends React.PureComponent{
             <div className="w-100 h-100 d-flex flex-column">
                 <div> 
                     <button onClick={this.messageboxonclick}>测试按钮</button>
-                    <ContentEditable
-                    html={this.state.html} // innerHTML of the editable div
-                    disabled={false} // use true to disable edition
-                    onChange={this.handleChange} // handle innerHTML change
-                    />
+                    
                 <div className={'topMsg '+(this.state.keyword > 0 ? 'fadeIn' : 'fadeOut')} onClick={this.messageboxonclick}>
                     Info!Some text......
                 </div>
@@ -53,9 +50,9 @@ class MyApp extends React.PureComponent{
                         })
                     }
                 </div>
+                <div contentEditable className='li-instead-input'></div>
+                    </div>
                 
-                
-            </div>
         );
     }
 }

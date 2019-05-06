@@ -67,11 +67,6 @@ var MyApp = function (_React$PureComponent) {
                         { onClick: this.messageboxonclick },
                         "\u6D4B\u8BD5\u6309\u94AE"
                     ),
-                    React.createElement(ContentEditable, {
-                        html: this.state.html // innerHTML of the editable div
-                        , disabled: false // use true to disable edition
-                        , onChange: this.handleChange // handle innerHTML change
-                    }),
                     React.createElement(
                         "div",
                         { className: 'topMsg ' + (this.state.keyword > 0 ? 'fadeIn' : 'fadeOut'), onClick: this.messageboxonclick },
@@ -97,7 +92,8 @@ var MyApp = function (_React$PureComponent) {
                             )
                         );
                     })
-                )
+                ),
+                React.createElement("div", { contentEditable: true, className: "li-instead-input" })
             );
         }
     }]);
