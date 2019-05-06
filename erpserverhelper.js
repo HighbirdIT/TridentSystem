@@ -209,6 +209,31 @@ function GetDateDiff(type, dateA, dateB) {
     return (dateB.getTime() - dateA.getTime()) / divNum;
 }
 
+var gDateReg = /\d+[-/]\d+[-/]\d+/;
+var gTimeReg = /\d+:\d+:\d+/;
+var gShortTimeReg = /\d+:\d+/;
+
+function CastDate(val){
+    if(typeof val === 'string'){
+        var dateRegRlt = gDateReg.exec(val);
+        var dateStr = '';
+        if(dateRegRlt != null){
+            dateStr = dateRegRlt[0];
+            var timeRegRlt = gTimeReg.exec(val);
+            if(timeRegRlt == null){
+                timeRegRlt = gShortTimeReg.exec(val);
+            }
+            if(timeRegRlt != null){
+                dateStr += ' ' + timeRegRlt[0];
+            }
+            return new Date(dateStr);
+        }
+        return null;
+    }
+    
+    return new Date(val);
+}
+
 helper.DateFun={
     getNowDate:GetNowDate,
     checkDate:CheckDate,
@@ -219,6 +244,7 @@ helper.DateFun={
     getDateDiff:GetDateDiff,
     getFormatDateString:GetFormatDateString,
     getFormatTimeString:GetFormatTimeString,
+    castDate:CastDate,
 };
 
 module.exports = helper;

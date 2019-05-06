@@ -1199,15 +1199,23 @@ class ERPC_Label extends React.PureComponent {
         if(this.props.visible == false){
             return null;
         }
-        var text = FormatStringValue(this.props.text, this.props.type, this.props.precision)
-        return (<span className={'erpc_label ' + (this.props.className == null ? '' : this.props.className)} >{text}</span>);
+        var contentElem = null;
+        if(this.props.type == 'boolean'){
+            var value = this.props.text;
+            var checked = checked = !(value == false || value == 0 || value == 'false' || value == 'FALSE');
+            contentElem = <i className={'fa ' + (checked ? ' fa-check text-success' : ' fa-close text-danger')} />
+        }
+        else{
+            contentElem = FormatStringValue(this.props.text, this.props.type, this.props.precision);
+        }
+        return (<span className={'erpc_label ' + (this.props.className == null ? '' : this.props.className)} >{contentElem}</span>);
     }
 }
 
 function ERPC_Label_mapstatetoprops(state, ownprops) {
     var ctlPath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
     var ctlState = getStateByPath(state, ctlPath, {});
-    var useText = ctlState.text ? ctlState.text : (ownprops.text ? ownprops.text : '');
+    var useText = ctlState.text != null ? ctlState.text : (ownprops.text ? ownprops.text : '');
     return {
         text: useText,
         visible:ctlState.visible,
@@ -1244,6 +1252,11 @@ class ERPC_CheckBox extends React.PureComponent {
             checked = !(value == false || value == 0 || value == 'false' || value == 'FALSE');
         }
         this.checked = checked;
+        if(this.props.readonly){
+            return (<span className={'erpc_checkbox ' + (this.props.className == null ? '' : this.props.className)} >
+                        <i className={'fa ' + (checked ? ' fa-check text-success' : ' fa-close text-danger')} />
+                    </span>);
+        }
         return (<span className={'erpc_checkbox ' + (this.props.className == null ? '' : this.props.className)} >
                 <span onClick={this.props.readonly ? null : this.clickHandler} className="fa-stack fa-lg">
                     <i className={"fa fa-square-o fa-stack-2x" + (this.props.readonly ? ' text-secondary' : '') } />

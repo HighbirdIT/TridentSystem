@@ -1394,11 +1394,18 @@ var ERPC_Label = function (_React$PureComponent7) {
             if (this.props.visible == false) {
                 return null;
             }
-            var text = FormatStringValue(this.props.text, this.props.type, this.props.precision);
+            var contentElem = null;
+            if (this.props.type == 'boolean') {
+                var value = this.props.text;
+                var checked = checked = !(value == false || value == 0 || value == 'false' || value == 'FALSE');
+                contentElem = React.createElement('i', { className: 'fa ' + (checked ? ' fa-check text-success' : ' fa-close text-danger') });
+            } else {
+                contentElem = FormatStringValue(this.props.text, this.props.type, this.props.precision);
+            }
             return React.createElement(
                 'span',
                 { className: 'erpc_label ' + (this.props.className == null ? '' : this.props.className) },
-                text
+                contentElem
             );
         }
     }]);
@@ -1454,6 +1461,13 @@ var ERPC_CheckBox = function (_React$PureComponent8) {
                 checked = !(value == false || value == 0 || value == 'false' || value == 'FALSE');
             }
             this.checked = checked;
+            if (this.props.readonly) {
+                return React.createElement(
+                    'span',
+                    { className: 'erpc_checkbox ' + (this.props.className == null ? '' : this.props.className) },
+                    React.createElement('i', { className: 'fa ' + (checked ? ' fa-check text-success' : ' fa-close text-danger') })
+                );
+            }
             return React.createElement(
                 'span',
                 { className: 'erpc_checkbox ' + (this.props.className == null ? '' : this.props.className) },
