@@ -6,7 +6,7 @@ const FLOWNODE_QUERY_KEYRECORD = 'querykeyrecord';
 const FLOWNODE_COLUMN_VAR = 'columnvar';
 const FLOWNODE_SEND_MESSAGE = 'sendmessage';
 const FLOWNODE_CONFIRM_FLOWSTEP = 'confirmflowstep';
-
+const FLOWNODE_NOWDATE='nowdate'
 
 var FlowNodeClassMap = {
 };
@@ -2065,7 +2065,43 @@ class FlowNode_Confirm_Flowstep extends JSNode_Base {
         return selfCompileRet;
     }
 }
+class FlowNode_NowDate extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper,FLOWNODE_NOWDATE , 'Now_Date', false, nodeJson);
+        autoBind(this);
 
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+                this.outSocket.type = SqlVarType_Scalar
+            }
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+    }
+
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var value = "new date()";
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, value);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
 FlowNodeClassMap[FLOWNODE_VAR_GET] = {
     modelClass: FlowNode_Var_Get,
     comClass: C_FlowNodeDef_Var_Get,
@@ -2166,5 +2202,10 @@ FlowNodeClassMap[JSNODE_UPDATE_TABLE] = {
 // 扩展jsnode
 JSNodeClassMap[FLOWNODE_COLUMN_VAR] = {
     modelClass: FlowNode_ColumnVar,
+    comClass: C_Node_SimpleNode,
+};
+
+FlowNodeClassMap[FLOWNODE_NOWDATE] = {
+    modelClass: FLOWNODE_NOWDATE,
     comClass: C_Node_SimpleNode,
 };
