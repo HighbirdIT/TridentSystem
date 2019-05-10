@@ -234,6 +234,7 @@ const AttrNames={
     MultiSelect:'multiselect',
     RelFlowStep:'relflowstep',
     GenNavBar:'gennavbar',
+    StableData:'stableData',
 
     Event:{
         OnClick:'onclick'

@@ -3274,7 +3274,7 @@ SqlNodeClassMap[SQLNODE_RET_ORDER] = {
 };
 SqlNodeClassMap[SQLNODE_CONSTVALUE] = {
     modelClass: SqlNode_ConstValue,
-    comClass: C_Node_SimpleNode,
+    comClass: C_SqlNode_ConstValue,
 };
 SqlNodeClassMap[SQLNODE_COMPARE] = {
     modelClass: SqlNode_Compare,

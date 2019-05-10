@@ -4,7 +4,7 @@
   {{else}}
     <script src='https://g.alicdn.com/dingding/dingtalk-pc-api/2.7.0/index.js'></script>
   {{/if}}
-  <script src='/js/views/erp/mobileerp4.js'></script>
+  <script src='/js/views/erp/mobileerp5.js'></script>
 {{/section}}
 
 {{#section 'head'}}
@@ -26,7 +26,7 @@
   var pSignature = "{{Signature}}";
   var ticketErrInfo = "{{DingErrInfo}}";
 
-$(document).ready(() => {
+$(document).ready(function(){
     if (isMobile) {
         dingdingKit = dd;
         isInDingTalk = dd.env.platform != 'notInDingTalk';
@@ -117,7 +117,7 @@ function tryLogin(){
 
 function dingdingInited(userCode){
     nativeFetchJson(false,'/dingUtility', {'action':'login', 'code': userCode}).then(
-        dataJson=>{
+        function(dataJson){
           if(dataJson.errCode == 0){
             dingdingKit.userid = dataJson.user.userid;
             dingdingKit.username = dataJson.user.username;

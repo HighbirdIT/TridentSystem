@@ -133,7 +133,12 @@ class C_Node_Socket extends React.PureComponent{
                 inputElem = (<input type='checkbox' ref={this.inputRef} checked={parseBoolean(socket.defval)} onChange={this.checkInputChangedHandler}/>);
             }
             else{
-                inputElem = (<input type='text' ref={this.inputRef} className='socketInputer' onChange={this.inputChangedHandler} value={socket.defval == null ? '' : socket.defval} />);
+                
+                inputElem =(<input  type='text' ref={this.inputRef} className='socketInputer' onChange={this.inputChangedHandler} value={socket.defval == null ? '' : socket.defval} ></input>);
+                /*
+                inputElem = (<div contentEditable='true' type='text' ref={this.inputRef} className='li-instead-input' onChange={this.inputChangedHandler} value={socket.defval == null ? '' : socket.defval} >{socket.defval == null ? '' : socket.defval}</div>);
+                */
+                
             }
         }
         var dragElem = null;

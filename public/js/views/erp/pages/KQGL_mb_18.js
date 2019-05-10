@@ -33,6 +33,10 @@ var store = Redux.createStore(reducer, Redux.applyMiddleware(logger, crashReport
 var appStateChangedAct_map = { 'M_Page_0.M_Form_0.M_Form_2.records_arr': fresh_M_Form_2.bind(window), 'M_Page_0.M_Form_0.M_Form_2.pageIndex': bind_M_Form_2.bind(window), 'M_Page_0.M_Form_0.M_Form_1.records_arr': fresh_M_Form_1.bind(window), 'M_Page_0.M_Form_0.M_Form_1.pageIndex': bind_M_Form_1.bind(window), 'M_Page_0.M_Form_0.M_Text_1.value': M_Text_1_value_changed.bind(window) };
 var pageRouter = [];
 
+var t = function t() {
+	alert('haha');
+};
+
 function pageLoadedReducer(state) {
 	var flowStep = parseInt(getQueryVariable('flowStep'));
 	var targetPageID = 'M_Page_0';

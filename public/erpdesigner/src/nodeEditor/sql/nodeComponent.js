@@ -782,3 +782,57 @@ class C_SqlNode_DBEntity extends React.PureComponent {
         </C_Node_Frame>
     }
 }
+
+
+class C_SqlNode_ConstValue extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+
+        C_NodeCom_Base(this);
+        this.state = {
+        }
+    }
+
+    listenNode(theNode){
+        if(theNode){
+            theNode.on('changed', this.reDraw);
+        }
+        this.listenedNode = theNode;
+    }
+
+    unlistenNode(theNode){
+        if(theNode){
+            theNode.off('changed', this.reDraw);
+        }
+    }
+
+    cus_componentWillUnmount(){
+        this.unlistenNode(this.props.nodedata);
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        if(this.listenedNode != nodeData){
+            this.unlistenNode(this.listenedNode);
+            this.listenNode(nodeData);
+        }
+        var headType = nodeData.headType == null ? 'tiny' : nodeData.headType;
+        var rightElem = null;
+        if(nodeData.outFlowSockets_arr == null){
+            rightElem = (<C_SqlNode_ScoketsPanel contentEditable nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />);
+        }
+        else{
+            rightElem = (<div className='d-flex flex-column'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutFlowScoketDynamic() ? nodeData.processOutputFlowSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+            </div>);
+        }
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType={headType} headText={nodeData.label} >
+            <div className='d-flex '   >
+                <C_SqlNode_ScoketsPanel contentEditable nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+                {rightElem}
+            </div>
+        </C_Node_Frame>
+    }
+}

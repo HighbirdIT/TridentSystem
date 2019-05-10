@@ -2,6 +2,15 @@ var mianServerPath = '/erppage/server/main';
 var nowuserid;
 var nowusername;
 
+window.onerror=(msg, url, line)=>{
+    //alert('onError:' + msg + ',' + url + ',' + line);
+    //alert(document.getElementsByTagName('html')[0].innerHTML);
+    //document.getElementById('reactRoot');
+    //mainAppRef.current.setState({htmlerr : document.getElementsByTagName('html')[0].innerHTML});
+    //var docStr = document.getElementsByTagName('html')[0].innerHTML;
+    nativeFetchJson(false,mianServerPath, {action:'reportError',msg:msg,url:url,line:line});
+}
+
 class C_ModelTip extends React.PureComponent{
     constructor(props){
         super(props);
@@ -229,5 +238,11 @@ class MainApp extends React.PureComponent{
         </div>);
     }
 }
+
+/*
+setTimeout(() => {
+    throw Error('dsf');
+}, 50);
+*/
 
 ReactDOM.render(<MainApp ref={mainAppRef} />, document.getElementById('reactRoot'));
