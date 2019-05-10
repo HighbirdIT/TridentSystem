@@ -596,7 +596,7 @@ class ERPC_DropDown extends React.PureComponent {
             opened: true,
         });
         if (this.props.pullDataSource) {
-            if(this.props.pullOnce != true || this.props.options_arr == null){
+            if(this.props.pullOnce != true || this.props.optionsData.options_arr == null){
                 this.props.pullDataSource();
             }
         }
@@ -1964,7 +1964,7 @@ const ERPXMLToolKit={
     }
 }
 
-class TaskSelector extends React.PureComponent{
+class ERPC_TaskSelector extends React.PureComponent{
     constructor(poros){
         super(props);
         autoBind(this);
@@ -2008,4 +2008,55 @@ class TaskSelector extends React.PureComponent{
 
             />
     }
+}
+
+function ERPC_TaskSelector_mapstatetoprops(state, ownprops) {
+    var fullPath = MakePath(ownprops.parentPath, ownprops.id);
+    var ctlState = getStateByPath(state, fullPath, {});
+    var invalidInfo = null;
+    if(ctlState.invalidInfo != gPreconditionInvalidInfo && ctlState.invalidInfo != gCantNullInfo){
+        invalidInfo = ctlState.invalidInfo;
+    }
+    var selectorid = fullPath + 'optionsData';
+    var optionsDataSelector = ERPC_selector_map[selectorid];
+    if(optionsDataSelector == null){
+        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName,selectERPC_DropDown_textType, formatERPC_DropDown_options);
+        ERPC_selector_map[selectorid] = optionsDataSelector;
+    }
+
+    var useValue = ctlState.value;
+    if(useValue)
+    {
+        if(ownprops.multiselect){
+            if(useValue[0] == '<'){
+                selectorid = fullPath + 'value';
+                var valueSelector = ERPC_selector_map[selectorid];
+                if(valueSelector == null){
+                    valueSelector = Reselect.createSelector(selectERPC_DropDown_value, selectERPC_DropDown_multiValues);
+                    ERPC_selector_map[selectorid] = valueSelector;
+                }
+                //useValue = ERPXMLToolKit.extractColumn(useValue, 1);
+                useValue = valueSelector(state, ownprops);
+            }
+            else{
+                useValue = (useValue + '').split(',');
+            }
+        }
+    }
+    
+    return {
+        value: useValue,
+        text: ctlState.text,
+        fetching: ctlState.fetching,
+        fetchingErr: ctlState.fetchingErr,
+        optionsData: optionsDataSelector(state, ownprops),
+        visible:ctlState.visible,
+        invalidInfo : invalidInfo,
+        selectOpt : ctlState.selectOpt,
+    };
+}
+
+function ERPC_TaskSelector_dispatchtoprops(dispatch, ownprops) {
+    return {
+    };
 }
