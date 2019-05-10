@@ -447,6 +447,7 @@
 
 .socketInputer{
   width: 100px;
+  text-overflow:ellipsis;
 }
 
 .socketInputer[big]{
@@ -638,4 +639,38 @@
   max-width: 3em;
   white-space: nowrap;
   overflow: hidden;
+}
+
+
+.li-instead-input:focus{
+  border: 1px solid rgb(102, 101, 101);
+  outline:none !important;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(10, 176, 252, .6);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(10, 176, 252, .6);
+}
+.li-instead-input{
+  max-width: 300px;
+  min-width: 100px;
+  min-height: 30px;
+  background-color: rgb(238, 228, 228);
+  text-overflow:ellipsis;
+  float: left !important;
+  margin-bottom: 0!important;
+  line-height: 30px!important;
+  margin-top: 4px;
+  word-wrap:break-word;
+}
+.li-instead{
+  border: 1px solid rgb(71, 67, 67);
+  float: left !important;
+  margin-bottom: 0!important;
+  border-radius: 3px;
+  padding: 0 6px;
+  line-height: 30px!important;
+  min-height: 30px;
+  margin-top: 4px;
+  max-width: 30em;
+  text-overflow:ellipsis;
+  word-wrap:break-word;
+  
 }

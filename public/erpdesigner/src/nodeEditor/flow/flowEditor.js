@@ -10,6 +10,11 @@ const FlowNodeEditorControls_arr =[
         type:'基础'
     },
     {
+        label:'当前时间',
+        nodeClass:FlowNode_NowDate,
+        type:'基础'
+    },
+    {
         label:'Return',
         nodeClass:JSNode_Return,
         type:'流控制'
@@ -99,6 +104,7 @@ const FlowNodeEditorControls_arr =[
         nodeClass:FlowNode_Confirm_Flowstep,
         type:'流程交互'
     },
+
     
 ];
 
