@@ -3250,10 +3250,12 @@ class JSNode_Query_Sql extends JSNode_Base {
 
         // make server side code
         var paramVarName = this.id + 'params_arr';
+        var paramListStr = '';
         var paramInitBlock = new FormatFileBlock('initparam');
         paramInitBlock.pushLine('var ' + paramVarName + '=[', 1);
         myJSBlock.pushChild(paramInitBlock);
         params_arr.forEach(param => {
+            paramListStr += (paramListStr.length == 0 ? '@' : ',@') + param.name;
             paramInitBlock.pushLine("dbhelper.makeSqlparam('" + param.name + "', sqlTypes.NVarChar(4000), " + param.value + "),");
         });
         paramInitBlock.subNextIndent();
