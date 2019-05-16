@@ -1608,6 +1608,10 @@ class MobileContentCompiler extends ContentCompiler {
         if (theKernel.getAttribute(AttrNames.MultiSelect)) {
             ctlTag.setAttr('multiselect', '{true}');
         }
+        var stableData = theKernel.getAttribute(AttrNames.StableData);
+        if (stableData) {
+            ctlTag.setAttr('pullOnce', '{true}');
+        }
         this.compileIsdisplayAttribute(theKernel, ctlTag);
         this.compileValidCheckerAttribute(theKernel);
 
@@ -1760,6 +1764,11 @@ class MobileContentCompiler extends ContentCompiler {
                             value: 'null',
                         });
                         this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'value', useCtl.kernel, propApi.stateName, {
+                            value: 'null',
+                        });
+                    }
+                    if(stableData){
+                        this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'options_arr', useCtl.kernel, propApi.stateName, {
                             value: 'null',
                         });
                     }

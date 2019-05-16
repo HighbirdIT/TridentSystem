@@ -15,6 +15,7 @@ var processes_map = {
     getMenu: getMenu,
     userlogin: userLogin,
     readyLogin: readyLogin,
+    reportError: reportErr
 };
 
 function process(req, res, next) {
@@ -22,10 +23,18 @@ function process(req, res, next) {
     switch (req.body.action) {
         case 'userlogin':
         case 'readyLogin':
+        case 'reportError':
             ignoreENVCheck = true;
             break;
     }
     serverhelper.commonProcess(req, res, next, processes_map, ignoreENVCheck);
+}
+
+function reportErr(req, res) {
+    return co(function* () {
+        //console.log(req.body.docStr);
+        return {};
+    });
 }
 
 function userLogin(req, res) {

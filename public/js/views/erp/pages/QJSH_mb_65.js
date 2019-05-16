@@ -92,6 +92,7 @@ function bind_M_Form_1(retState, newIndex, oldIndex) {
 	needSetState['M_Dropdown_0.text'] = null;
 	needSetState['M_Dropdown_0.value'] = null;
 	needSetState['M_Label_15.text'] = M_Label_15_textfield_get(retState, bundle);
+	needSetState['M_Label_16.text'] = M_Label_16_textfield_get(retState, bundle);
 	needSetState['M_Text_0.value'] = '同意';
 	needSetState['M_LC_12.visible'] = false;
 	needSetState['M_Text_1.value'] = null;
@@ -132,6 +133,9 @@ function pull_M_Dropdown_0() {
 }
 function M_Label_15_textfield_get(state, bundle) {
 	return 0;
+}
+function M_Label_16_textfield_get(state, bundle) {
+	return true;
 }
 function M_Label_10_textfield_get(state, bundle) {
 	var M_Form_1_nowRecord = bundle != null && bundle.M_Form_1_nowRecord != null ? bundle.M_Form_1_nowRecord : getStateByPath(state, 'M_Page_2.M_Form_1.nowRecord');
@@ -579,12 +583,17 @@ var CM_Form_1 = function (_React$PureComponent3) {
 									React.createElement(
 										VisibleERPC_LabeledControl,
 										{ id: "M_LC_13", parentPath: "M_Page_2.M_Form_1", label: "\u4EBA\u5458" },
-										React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_0", parentPath: "M_Page_2.M_Form_1", pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u4EBA\u5458" })
+										React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_0", parentPath: "M_Page_2.M_Form_1", pullOnce: true, pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u4EBA\u5458" })
 									),
 									React.createElement(
 										VisibleERPC_LabeledControl,
 										{ id: "M_LC_14", parentPath: "M_Page_2.M_Form_1", label: "ert" },
-										React.createElement(VisibleERPC_Label, { className: "erp-control ", id: "M_Label_15", parentPath: "M_Page_2.M_Form_1", type: "string" })
+										React.createElement(VisibleERPC_Label, { className: "erp-control ", id: "M_Label_15", parentPath: "M_Page_2.M_Form_1", type: "boolean" })
+									),
+									React.createElement(
+										VisibleERPC_LabeledControl,
+										{ id: "M_LC_20", parentPath: "M_Page_2.M_Form_1", label: "244" },
+										React.createElement(VisibleERPC_Label, { className: "erp-control ", id: "M_Label_16", parentPath: "M_Page_2.M_Form_1", type: "boolean" })
 									),
 									React.createElement(
 										VisibleERPC_LabeledControl,

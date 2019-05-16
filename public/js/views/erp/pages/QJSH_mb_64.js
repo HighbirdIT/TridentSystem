@@ -583,7 +583,7 @@ var CM_Form_1 = function (_React$PureComponent3) {
 									React.createElement(
 										VisibleERPC_LabeledControl,
 										{ id: "M_LC_13", parentPath: "M_Page_2.M_Form_1", label: "\u4EBA\u5458" },
-										React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_0", parentPath: "M_Page_2.M_Form_1", pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u4EBA\u5458" })
+										React.createElement(VisibleERPC_DropDown, { pullOnce: true, id: "M_Dropdown_0", parentPath: "M_Page_2.M_Form_1", pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u4EBA\u5458" })
 									),
 									React.createElement(
 										VisibleERPC_LabeledControl,
