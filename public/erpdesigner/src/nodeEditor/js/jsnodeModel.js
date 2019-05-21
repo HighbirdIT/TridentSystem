@@ -14,6 +14,7 @@ const JSNODE_CURRENTDATAROW = 'currentdatarow';
 const JSNODE_CTLKERNEL = 'ctlkernel';
 const JSNODE_INSERT_TABLE = 'insert_table';
 const JSNODE_UPDATE_TABLE = 'update_table';
+const JSNODE_DELETE_TABLE = 'delete_table';
 const JSNODE_CONTROL_API_PROP = 'controlapiprop';
 const JSNODE_CONTROL_API_PROPSETTER = 'controlapipropsetter';
 const JSNODE_CONTROL_API_CALLFUN = 'controlapicallfun';
@@ -532,7 +533,7 @@ class JSNode_BluePrint extends EventEmitter {
             }
             else if (this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
                 params_arr = [VarNames.RowIndex, VarNames.CallBack];
-                fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.id + '_' + compilHelper.config.actName + '_'),'+',VarNames.RowIndex);
+                fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.parent.id + '_' + compilHelper.config.actLabel + '_'),'+',VarNames.RowIndex);
             }
             for (var formId in compilHelper.useForm_map) {
                 var useFormData = compilHelper.useForm_map[formId];
@@ -723,7 +724,7 @@ class JSNode_BluePrint extends EventEmitter {
 
             theFun.headBlock.pushLine("var fetchid = Math.round(Math.random() * 999999);");
             theFun.headBlock.pushLine("var " + VarNames.FetchKey + " = " + fetchKeyVarValue + ";");
-            theFun.headBlock.pushLine("fetchTracer[" + theFun.fetchKeyName + "] = fetchid;");
+            theFun.headBlock.pushLine("fetchTracer[" + VarNames.FetchKey + "] = fetchid;");
             startFtech_bk = new FormatFileBlock('startfetch');
             theFun.headBlock.pushChild(startFtech_bk);
             theFun.startFtech_bk = startFtech_bk;
@@ -798,7 +799,8 @@ class JSNode_BluePrint extends EventEmitter {
                 }
 
                 if (needCheckVars_arr.length > 0) {
-                    setInvalidStateBlock.pushLine("setManyStateByPath(state,'',validErrState);");
+                    setInvalidStateBlock.pushLine("if(state == null){store.dispatch(makeAction_setManyStateByPath(validErrState, ''));}");
+                    setInvalidStateBlock.pushLine("else{setManyStateByPath(state,'',validErrState);}");
                     setInvalidStateBlock.pushLine("if(hadValidErr){SendToast('验证失败，无法执行', EToastType.Warning);return;}");
                 }
                 setInvalidStateBlock.pushLine("if(err){", 1);
@@ -5028,6 +5030,610 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
             return false;
         }
+        return selfCompileRet;
+    }
+}
+
+class JSNODE_Delete_table extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_DELETE_TABLE, 'Delete', false, nodeJson);
+        autoBind(this);
+        this.onlyServerside = true;
+        var bluePrintIsServer = this.bluePrint.group == EJsBluePrintFunGroup.ServerScript;
+
+        this.addFrameButton(FrameButton_LineSocket, '拉平');
+        this.addFrameButton(FrameButton_ClearEmptyInputSocket, '清理');
+
+        this.insocketDDC_setting = {
+            options_arr: this.getUseDSColumns,
+            textAttrName: 'name',
+            valueAttrName: 'name'
+        }
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+        if (this.outputScokets_arr.length > 0) {
+            for (var si in this.outputScokets_arr) {
+                var socket = this.outputScokets_arr[si];
+                if (socket.name == 'count') {
+                    this.countOutSocket = socket;
+                    socket.label = 'count';
+                }
+                else if (socket.name == 'err') {
+                    this.errInfoOutSocket = socket;
+                    socket.label = 'errinfo';
+                }
+            }
+        }
+        if (this.countOutSocket == null) {
+            this.countOutSocket = new NodeSocket('count', this, false, { label: 'count', type: ValueType.Int });
+            this.addSocket(this.countOutSocket);
+        }
+        if (this.errInfoOutSocket == null) {
+            this.errInfoOutSocket = new NodeSocket('err', this, false, { label: '错误信息', type: ValueType.String });
+            this.addSocket(this.errInfoOutSocket);
+        }
+
+        if (this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0) {
+            this.outFlowSockets_arr = [];
+            if (!bluePrintIsServer) {
+                this.sucessFlowSocket = new NodeFlowSocket('sucess', this, false);
+                this.failFlowSocket = new NodeFlowSocket('fail', this, false);
+                this.addSocket(this.sucessFlowSocket);
+                this.addSocket(this.failFlowSocket);
+            }
+            this.serverSucessFlowSocket = new NodeFlowSocket('serverSucess', this, false);
+            this.serverFailFlowSocket = new NodeFlowSocket('serverFail', this, false);
+            this.addSocket(this.serverSucessFlowSocket);
+            this.addSocket(this.serverFailFlowSocket);
+        }
+        else {
+            for (var si in this.outFlowSockets_arr) {
+                switch (this.outFlowSockets_arr[si].name) {
+                    case 'sucess':
+                        this.sucessFlowSocket = this.outFlowSockets_arr[si];
+                        break;
+                    case 'fail':
+                        this.failFlowSocket = this.outFlowSockets_arr[si];
+                        break;
+                    case 'serverSucess':
+                        this.serverSucessFlowSocket = this.outFlowSockets_arr[si];
+                        break;
+                    case 'serverFail':
+                        this.serverFailFlowSocket = this.outFlowSockets_arr[si];
+                        break;
+                }
+            }
+        }
+        if (bluePrintIsServer) {
+            if (this.sucessFlowSocket) {
+                this.removeSocket(this.sucessFlowSocket);
+            }
+            if (this.failFlowSocket) {
+                this.removeSocket(this.failFlowSocket);
+            }
+        }
+        if (!IsEmptyString(this.dsCode)) {
+            this.setDSCode(this.dsCode);
+        }
+        this.inputScokets_arr.forEach(socket => {
+            socket.inputable = true;
+            socket.autoHideInput = false;
+            socket.inputDDC_setting = this.insocketDDC_setting;
+        });
+        if (this.sucessFlowSocket) {
+            this.sucessFlowSocket.label = '成功';
+            this.failFlowSocket.label = '失败';
+        }
+        this.serverSucessFlowSocket.label = 'server成功';
+        this.serverFailFlowSocket.label = 'server失败';
+    }
+
+    getUseDSColumns() {
+        var rlt = [];
+        var theDS = g_dataBase.getEntityByCode(this.dsCode);
+        if (theDS != null && theDS.columns != null) {
+            return theDS.columns;
+        }
+        return rlt;
+    }
+
+    requestSaveAttrs(jsonProf) {
+        var rlt = super.requestSaveAttrs();
+        rlt.dsCode = this.dsCode;
+        var theDS = g_dataBase.getEntityByCode(this.dsCode);
+        if (theDS != null) {
+            jsonProf.useEntity(theDS);
+        }
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['dsCode']);
+    }
+
+    inputSocketSortFun(sa, sb) {
+        return sa.index > sb.index;
+    }
+
+    genInSocket() {
+        var theDS = g_dataBase.getEntityByCode(this.dsCode);
+        if (theDS == null || theDS.columns == null) {
+            return null;
+        }
+        var useColumn = null;
+        for (var ci in theDS.columns) {
+            var column = theDS.columns[ci];
+            if (this.inputScokets_arr.filter(socket => { return socket.defval == column.name; }).length == 0) {
+                useColumn = column;
+                break;
+            }
+        }
+        if (useColumn) {
+            var useSocketName = null;
+            var i = 0;
+            while (i < 999) {
+                useSocketName = 'in_' + i;
+                if (this.inputScokets_arr.filter(socket => { return socket.name == useSocketName; }).length == 0) {
+                    break;
+                }
+                i += 1;
+            }
+            return new NodeSocket(useSocketName, this, true, {
+                inputable: true,
+                defval: useColumn.name,
+                inputDDC_setting: this.insocketDDC_setting,
+                autoHideInput: false,
+            });
+        }
+        return null;
+    }
+
+    dsSynedHandler() {
+    }
+
+    listenDS(theDS) {
+        if (theDS) {
+            theDS.on('syned', this.dsSynedHandler);
+        }
+        this.listenedDS = theDS;
+    }
+
+    unlistenDS(theDS) {
+        if (theDS) {
+            theDS.off('syned', this.dsSynedHandler);
+        }
+        this.listenedDS = null;
+    }
+
+    setDSCode(code) {
+        this.dsCode = code;
+        var theDS = g_dataBase.getEntityByCode(code);
+        this.unlistenDS(this.listenedDS);
+        this.listenDS(theDS);
+        if (theDS && theDS.loaded) {
+            this.dsSynedHandler();
+        }
+    }
+
+    compileOnServer(helper, preNodes_arr, belongBlock) {
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var useDS = g_dataBase.getEntityByCode(this.dsCode);
+        var columnProfile_obj = {};
+        useDS.columns.forEach(column => {
+            if (column.is_identity) {
+                return;
+            }
+            column.is_nullable;
+            column.cdefault
+            columnProfile_obj[column.name] = {
+                name: column.name,
+                nullable: column.is_nullable || column.cdefault != null,
+                value: null,
+            };
+        });
+
+        var columnProfile = null;
+        // 优先使用设置的节点
+        for (var si in this.inputScokets_arr) {
+            var socket = this.inputScokets_arr[si];
+            columnProfile = columnProfile_obj[socket.defval];
+            if (this.checkCompileFlag(columnProfile == null, '第' + (si) + '个输入接口不是有效的列名[' + socket.defval + ']', helper)) {
+                return false;
+            }
+            if (this.checkCompileFlag(columnProfile.value != null, '第' + (si) + '个输入接口重复设置了[' + socket.defval + ']', helper)) {
+                return false;
+            }
+            var socketComRet = this.getSocketCompileValue(helper, socket, usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            var socketValue = socketComRet.value;
+            columnProfile.value = socketValue;
+        }
+
+        var myServerBlock = new FormatFileBlock('serverblock');
+        belongBlock.pushChild(myServerBlock);
+
+        // make server side code
+        var paramInitBlock = null;
+        var insertSqlStr = '';
+        var valuesStr = '';
+
+        var sqlVarName = this.id + '_sql';
+        var serverCompleteBlock = new FormatFileBlock('complete');;
+        var serverFailBlock = new FormatFileBlock('fail');
+        var dataVarName = 'data_' + this.id;
+        var errorVarName = 'err_' + this.id;
+
+        var paramVarName = this.id + 'params_arr';
+        var paramInitBlock = new FormatFileBlock('initparam');
+        myServerBlock.pushChild(paramInitBlock);
+        paramInitBlock.pushLine('var ' + paramVarName + "=[", 1);
+
+        for (var columnName in columnProfile_obj) {
+            columnProfile = columnProfile_obj[columnName];
+            if (columnProfile.value == null) {
+                if (this.checkCompileFlag(!columnProfile.nullable, 'Insert[' + useDS.name + ']时搜寻不到[' + columnProfile.name + ']的匹配值', helper)) {
+                    return false;
+                }
+                continue;
+            }
+            insertSqlStr += (insertSqlStr.length == 0 ? '' : ',') + midbracketStr(columnProfile.name);
+            valuesStr += (valuesStr.length == 0 ? '@' : ',@') + columnProfile.name;
+            paramInitBlock.pushLine("dbhelper.makeSqlparam('" + columnProfile.name + "', sqlTypes.NVarChar(4000), " + columnProfile.value + "),");
+        }
+        paramInitBlock.subNextIndent();
+        paramInitBlock.pushLine('];');
+        myServerBlock.pushLine("var " + sqlVarName + " = 'insert into " + midbracketStr(useDS.name) + '(' + insertSqlStr + ') values(' + valuesStr + ")';");
+        myServerBlock.pushLine("var " + dataVarName + " = -1;");
+        myServerBlock.pushLine("try{", 1);
+        myServerBlock.pushLine(dataVarName + " = yield dbhelper.asynGetScalar(" + sqlVarName + " + ' select SCOPE_IDENTITY()', " + paramVarName + ");");
+        myServerBlock.subNextIndent();
+        myServerBlock.pushLine("}catch(" + errorVarName + "){", 1);
+        myServerBlock.pushChild(serverFailBlock);
+        myServerBlock.pushLine('return serverhelper.createErrorRet(' + errorVarName + '.message);');
+        myServerBlock.subNextIndent();
+        myServerBlock.pushLine('}');
+        myServerBlock.pushChild(serverCompleteBlock);
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myServerBlock);
+        selfCompileRet.setSocketOut(this.identityOutSocket, dataVarName);
+        selfCompileRet.setSocketOut(this.errInfoOutSocket, errorVarName + ".info");
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
+        if (serverTrueFlowLinks_arr.length > 0) {
+            this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock);
+        }
+
+        var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
+        if (serverFalseFlowLinks_arr.length > 0) {
+            this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock);
+        }
+        return selfCompileRet;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var useDS = g_dataBase.getEntityByCode(this.dsCode);
+        if (this.checkCompileFlag(useDS == null || useDS.columns == null || useDS.type != 'U', useDS + '必须选择一个数据表', helper)) {
+            return false;
+        }
+        if (this.checkCompileFlag(!useDS.loaded, useDS + '正在同步中，请稍后再试。', helper)) {
+            return false;
+        }
+        if (this.bluePrint.group == EJsBluePrintFunGroup.ServerScript) {
+            return this.compileOnServer(helper, preNodes_arr, belongBlock);
+        }
+
+        var relKernel = this.bluePrint.ctlKernel;
+        if (this.checkCompileFlag(relKernel == null || (relKernel.type != ButtonKernel_Type && relKernel.type != EmptyKernel_Type), '这个脚本蓝图必须关联到一个按钮控件中', helper)) {
+            return false;
+        }
+        var columnProfile_obj = {};
+        useDS.columns.forEach(column => {
+            if (column.is_identity) {
+                return;
+            }
+            column.is_nullable;
+            column.cdefault
+            columnProfile_obj[column.name] = {
+                name: column.name,
+                nullable: column.is_nullable || column.cdefault != null,
+                value: null,
+            };
+        });
+
+        var columnProfile = null;
+        // 优先使用设置的节点
+        var needInsertColumns_arr = [];
+        for (var si in this.inputScokets_arr) {
+            var socket = this.inputScokets_arr[si];
+            columnProfile = columnProfile_obj[socket.defval];
+            if (this.checkCompileFlag(columnProfile == null, '第' + (si) + '个输入接口不是有效的列名[' + socket.defval + ']', helper)) {
+                return false;
+            }
+            if (this.checkCompileFlag(columnProfile.value != null, '第' + (si) + '个输入接口重复设置了[' + socket.defval + ']', helper)) {
+                return false;
+            }
+            var socketComRet = this.getSocketCompileValue(helper, socket, usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            var socketValue = socketComRet.value;
+            columnProfile.value = socketValue;
+        }
+        // 在所属Form中搜集交互类型为读写的可访问控件
+        var formKernel = relKernel.searchParentKernel([M_FormKernel_Type], true);
+        if (formKernel != null) {
+            var accessableLabelKernels = formKernel.searchChildKernel(M_LabeledControlKernel_Type, false, true, [M_FormKernel_Type]);
+            if (accessableLabelKernels != null) {
+                accessableLabelKernels.forEach(labelKernel => {
+                    var interType = labelKernel.getAttribute(AttrNames.InteractiveType);
+                    if (interType != EInterActiveType.ReadWrite) {
+                        // 只要读写的
+                        return;
+                    }
+                    var interField = labelKernel.getAttribute(AttrNames.InteractiveField);
+                    columnProfile = columnProfile_obj[interField];
+                    if (columnProfile == null) {
+                        var textField = labelKernel.getAttribute(AttrNames.TextField);
+                        columnProfile = columnProfile_obj[textField];
+                    }
+                    if (columnProfile == null || columnProfile.value != null) {
+                        // not found or already had values
+                        return;
+                    }
+                    var theEditor = labelKernel.editor;
+                    var apiItem = null;
+                    if (theEditor.hasAttribute(AttrNames.ValueField)) {
+                        apiItem = gFindPropApiItem(theEditor.type, AttrNames.ValueField);
+                    }
+                    if (apiItem == null) {
+                        apiItem = gFindPropApiItem(theEditor.type, AttrNames.TextField);
+                    }
+                    if (apiItem) {
+                        helper.addUseControlPropApi(theEditor, apiItem);
+                        columnProfile.value = theEditor.id + '_' + apiItem.stateName;
+                        columnProfile.postName = theEditor.id + '_' + apiItem.stateName;
+                    }
+                });
+            }
+        }
+
+        // make server side code
+        var theServerSide = helper.serverSide;// ? helper.serverSide : new JSFileMaker();
+        var serverClickFun = null;
+        var paramInitBlock = null;
+        var postCheckBlock = null;
+        var insertPartVar = null;
+        var valuePartVar = null;
+        var insertSqlStr = '';
+        var valuesStr = '';
+
+        var sqlVarName = this.id + '_sql';
+        var paramArrVarName = this.id + '_paramArr';
+        var paramArrVarBlock = new FormatFileBlock('paramarr');
+        var postBundleVarName = this.bluePrint.id + '_bundle';
+        var serverCompleteBlock = new FormatFileBlock('complete');;
+        var serverFailBlock = new FormatFileBlock('fail');
+        var dataVarName = 'data_' + this.id;
+        var errorVarName = 'err_' + this.id;
+        var needOperator = false;
+
+        if (theServerSide != null) {
+            var serverSideActName = this.bluePrint.name + '_' + this.id;
+            serverClickFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
+            theServerSide.initProcessFun(serverClickFun);
+            var paramVarName = this.id + 'params_arr';
+            serverClickFun.scope.getVar(paramVarName, true, 'null');
+            insertPartVar = serverClickFun.scope.getVar(this.id + '_insert', true, "''");
+            valuePartVar = serverClickFun.scope.getVar(this.id + '_values', true, "''");
+            serverClickFun.scope.getVar(postBundleVarName, true, "req.body." + VarNames.Bundle);
+
+            postCheckBlock = new FormatFileBlock('postCheckBlock');
+            serverClickFun.bundleCheckBlock = postCheckBlock;
+            serverClickFun.pushChild(postCheckBlock);
+            postCheckBlock.pushLine("if(" + postBundleVarName + "==null){return serverhelper.createErrorRet('缺少参数bundle');}");
+            paramInitBlock = new FormatFileBlock('initparam');
+            serverClickFun.pushChild(paramInitBlock);
+            paramInitBlock.pushLine(paramVarName + "=[", 1);
+
+            serverClickFun.pushLine("var " + sqlVarName + " = " + insertPartVar.name + ' + ' + valuePartVar.name + ';');
+            serverClickFun.pushLine("var " + dataVarName + " = -1;");
+            serverClickFun.pushLine("try{", 1);
+            serverClickFun.pushLine(dataVarName + " = yield dbhelper.asynGetScalar(" + sqlVarName + " + ' select SCOPE_IDENTITY()', " + paramVarName + ");");
+            serverClickFun.subNextIndent();
+            serverClickFun.pushLine("}catch(" + errorVarName + "){", 1);
+            serverClickFun.pushChild(serverFailBlock);
+            serverClickFun.pushLine('return serverhelper.createErrorRet(' + errorVarName + '.message);');
+            serverClickFun.subNextIndent();
+            serverClickFun.pushLine('}');
+            serverClickFun.pushChild(serverCompleteBlock);
+            serverClickFun.pushLine("return " + dataVarName + ";");
+            theServerSide.processesMapVarInitVal[serverClickFun.name] = serverClickFun.name;
+        }
+
+        var mustHadColumns_arr = [];
+        var optioniHadColumns_arr = [];
+        var initBundleBlock = new FormatFileBlock('initbundle');
+        for (var columnName in columnProfile_obj) {
+            columnProfile = columnProfile_obj[columnName];
+            if (columnProfile.value == null) {
+                switch (columnName) {
+                    case '登记确认状态':
+                        columnProfile.value = '1';
+                        columnProfile.isStatic = true;
+                        break;
+                    case '登记确认时间':
+                        columnProfile.value = 'getdate()';
+                        columnProfile.isStatic = true;
+                        break;
+                    case '登记确认用户':
+                        columnProfile.value = '@_operator';
+                        columnProfile.isStatic = true;
+                        needOperator = true;
+                        break;
+
+                    default:
+                        if (this.checkCompileFlag(!columnProfile.nullable, 'Insert[' + useDS.name + ']时搜寻不到[' + columnProfile.name + ']的匹配值', helper)) {
+                            return false;
+                        }
+                }
+            }
+            else {
+                var keyPos = columnName.indexOf('确认状态');
+                if (keyPos != -1) {
+                    var prefix = columnName.substring(0, keyPos);
+                    var tempColumnProfile = columnProfile_obj[prefix + '确认时间'];
+                    if (tempColumnProfile != null) {
+                        if (tempColumnProfile.value == null) {
+                            tempColumnProfile.value = 'getdate()';
+                            tempColumnProfile.isStatic = true;
+                        }
+                    }
+                    tempColumnProfile = columnProfile_obj[prefix + '确认用户'];
+                    if (tempColumnProfile != null) {
+                        if (tempColumnProfile.value == null) {
+                            needOperator = true;
+                            tempColumnProfile.value = '@_operator';
+                            tempColumnProfile.isStatic = true;
+                        }
+                    }
+                }
+            }
+            if (columnProfile.value == null) {
+                continue;
+            }
+            if (columnProfile.nullable) {
+                optioniHadColumns_arr.push(columnProfile);
+            }
+            else {
+                mustHadColumns_arr.push(columnProfile);
+            }
+            if (paramInitBlock) {
+                if (columnProfile.isStatic) {
+                    insertSqlStr += (insertSqlStr.length == 0 ? '' : ',') + midbracketStr(columnProfile.name);
+                    valuesStr += valuesStr.length == 0 ? columnProfile.value : ',' + columnProfile.value;
+                }
+                else {
+                    var postName = ReplaceIfNull(columnProfile.postName, columnProfile.name);
+                    if (!columnProfile.nullable) {
+                        insertSqlStr += (insertSqlStr.length == 0 ? '' : ',') + midbracketStr(columnProfile.name);
+                        valuesStr += (valuesStr.length == 0 ? '@' : ',@') + postName;
+                        postCheckBlock.pushLine("if(serverhelper.IsEmptyString(" + postBundleVarName + '.' + postName + ')){return serverhelper.createErrorRet("缺少参数[' + postName + ']");}');
+                    }
+                    else {
+                        postCheckBlock.pushLine("if(!serverhelper.IsEmptyString(" + postBundleVarName + '.' + postName + ')){', 1);
+                        //postCheckBlock.pushLine(insertPartVar.name + "+=" + insertPartVar.name + ".length == 0 ? '[" + columnProfile.name + "]' : ',[" + columnProfile.name + "]';");
+                        //postCheckBlock.pushLine(valuePartVar.name + "+=" + valuePartVar.name + ".length == 0 ? '@" + columnProfile.name + "' : ',@" + columnProfile.name + "';");
+                        postCheckBlock.pushLine(insertPartVar.name + "+= ',[" + columnProfile.name + "]';");
+                        postCheckBlock.pushLine(valuePartVar.name + "+= ',@" + postName + "';");
+                        postCheckBlock.subNextIndent();
+                        postCheckBlock.pushLine('}');
+                    }
+                    paramInitBlock.pushLine("dbhelper.makeSqlparam('" + postName + "', sqlTypes.NVarChar(4000), " + postBundleVarName + '.' + postName + "),");
+                    initBundleBlock.pushLine(postName + ':' + columnProfile.value + ',');
+                }
+            }
+        }
+
+        if (needOperator) {
+            if (paramInitBlock) {
+                paramInitBlock.pushLine("dbhelper.makeSqlparam('_operator', sqlTypes.Int, req.session.g_envVar.userid),");
+            }
+        }
+
+        if (optioniHadColumns_arr.length == 0) {
+            insertSqlStr += ')';
+            valuesStr += ')';
+        }
+        else if (postCheckBlock) {
+            postCheckBlock.pushLine(insertPartVar.name + " += ')';");
+            postCheckBlock.pushLine(valuePartVar.name + " += ')';");
+        }
+        if (insertPartVar) {
+            insertPartVar.initVal = "'insert into " + midbracketStr(useDS.name) + "(" + insertSqlStr + "'";
+            valuePartVar.initVal = "'values(" + valuesStr + "'";
+
+            paramInitBlock.subNextIndent();
+            paramInitBlock.pushLine('];');
+        }
+
+        // make client
+        helper.compilingFun.hadServerFetch = true;
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+
+        var bundleVarName = VarNames.Bundle + '_' + this.id;
+        helper.addInitClientBundleBlock(initBundleBlock);
+        myJSBlock.pushLine("var " + bundleVarName + " = {", 1);
+        helper.addInitClientBundleBlock(initBundleBlock);
+        myJSBlock.pushChild(initBundleBlock);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('};');
+        var callBack_bk = new FormatFileBlock('callback' + this.id);
+        myJSBlock.pushChild(callBack_bk);
+        myJSBlock.pushLine('setTimeout(() => {', 1);
+        myJSBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + (serverClickFun ? serverClickFun.name : 'unknown') + "',}, makeFTD_Callback((state, " + dataVarName + ", " + errorVarName + ")=>{", 1);
+        var fetchEndBlock = new FormatFileBlock('fetchend');
+        myJSBlock.pushChild(fetchEndBlock);
+        var errCheckIf = new JSFile_IF('checkerr', errorVarName + ' == null');
+        fetchEndBlock.pushChild(errCheckIf);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('})))}, 50);');
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        selfCompileRet.setSocketOut(this.identityOutSocket, dataVarName);
+        selfCompileRet.setSocketOut(this.errInfoOutSocket, errorVarName + ".info");
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        helper.compilingFun.defaultBlock = errCheckIf.trueBlock;
+
+        var trueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.sucessFlowSocket);
+        if (trueFlowLinks_arr.length > 0) {
+            this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock);
+        }
+        else {
+            errCheckIf.trueBlock.pushLine(makeStr_callFun('return callback_final', ['state', dataVarName, errorVarName]) + ';');
+        }
+
+        var falseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.failFlowSocket);
+        if (falseFlowLinks_arr.length > 0) {
+            this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock);
+        }
+        else {
+            errCheckIf.falseBlock.pushLine(makeStr_callFun('return callback_final', ['state', dataVarName, errorVarName]) + ';');
+        }
+
+        var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
+        if (theServerSide != null && serverTrueFlowLinks_arr.length > 0) {
+            this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock);
+        }
+
+        var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
+        if (theServerSide != null && serverFalseFlowLinks_arr.length > 0) {
+            this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock);
+        }
+
+
+        //var finalStr = 'insert ' + midbracketStr(useDS.name) + '(' + insertColumnStr + ') values(' + insertValueStr + ')'
+        //console.log(finalStr);
         return selfCompileRet;
     }
 }

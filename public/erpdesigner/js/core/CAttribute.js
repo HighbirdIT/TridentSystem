@@ -220,7 +220,8 @@ var VarNames = {
     gDataCache: 'gDataCache',
     RowIndex: 'rowIndex',
     CallBack: 'callBack',
-    FetchKey: 'fetchKey'
+    FetchKey: 'fetchKey',
+    ParentPath: 'parentPath'
 };
 
 var AttrNames = {

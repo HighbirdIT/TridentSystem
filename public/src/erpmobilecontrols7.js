@@ -597,7 +597,7 @@ class ERPC_DropDown extends React.PureComponent {
         });
         if (this.props.pullDataSource) {
             if(this.props.pullOnce != true || this.props.optionsData.options_arr == null){
-                this.props.pullDataSource();
+                this.props.pullDataSource(this.props.fullPath);
             }
         }
     }
@@ -670,7 +670,7 @@ class ERPC_DropDown extends React.PureComponent {
             text: text,
             invalidInfo : invalidInfo,
             selectOpt : theOptionItem,
-        }, MakePath(this.props.parentPath, this.props.id)));
+        }, this.props.fullPath));
     }
 
     getPopPanelInitState(){
@@ -720,7 +720,7 @@ class ERPC_DropDown extends React.PureComponent {
                         {
                             if(this.autoPullTO == null){
                                 this.autoPullTO = setTimeout(() => {
-                                    self.props.pullDataSource();
+                                    self.props.pullDataSource(this.props.fullParentPath);
                                     self.autoPullTO = null;
                                 }, 50);
                             }
@@ -821,6 +821,12 @@ class ERPC_DropDown extends React.PureComponent {
         if(this.props.invalidInfo){
             errTipElem = <span className='text-danger'><i className='fa fa-warning'/>{this.props.invalidInfo}</span>
         }
+        if(this.props.plainTextMode){
+            return <div className='d-flex flex-column flex-grow-1 flex-shrink-1'>
+                {textElem}
+                {errTipElem}
+            </div>
+        }
         var dropDownElem = (
             <div className={"d-flex btn-group flex-grow-1 flex-shrink-0 erpc_dropdown"} style={this.props.style} ref={this.rootDivRef}>
                 {
@@ -852,8 +858,8 @@ const selectERPC_DropDown_options = (state, ownprops) => {
     if (ownprops.options_arr != null) {
         return ownprops.options_arr;
     }
-    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
-    return ctlState.options_arr;
+    var propProfile = getControlPropProfile(ownprops, state);
+    return propProfile.ctlState.options_arr;
 };
 
 const selectERPC_DropDown_multiValues = (xmlstr) => {
@@ -861,8 +867,8 @@ const selectERPC_DropDown_multiValues = (xmlstr) => {
 };
 
 const selectERPC_DropDown_value = (state, ownprops) => {
-    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
-    return ctlState.value;
+    var propProfile = getControlPropProfile(ownprops, state);
+    return propProfile.ctlState.value;
 };
 
 const selectERPC_DropDown_textName = (state, ownprops) => {
@@ -929,19 +935,46 @@ const formatERPC_DropDown_options = (orginData_arr, textAttrName, valueAttrName,
     return rlt;
 }
 
+function getControlPropProfile(ownprops, useState){
+    var ctlState;
+    var rowState;
+    var fullParentPath;
+    var fullPath;
+    if(ownprops.rowIndex == null){
+        fullParentPath = ownprops.parentPath;
+        fullPath = MakePath(ownprops.parentPath, ownprops.id);
+        if(useState){
+            ctlState = getStateByPath(useState, fullPath, {});
+        }
+    }
+    else{
+        fullParentPath = MakePath(ownprops.parentPath, 'row_' + ownprops.rowIndex);
+        fullPath = fullParentPath + '.' + ownprops.id;
+        if(useState){
+            rowState = getStateByPath(useState, fullParentPath, {});
+            ctlState = getStateByPath(rowState, ownprops.id, {});
+        }
+    }
+    return {
+        ctlState:ctlState,
+        rowState:rowState,
+        fullParentPath:fullParentPath,
+        fullPath:fullPath,
+    };
+}
+
 const ERPC_selector_map = {};
 
 function ERPC_DropDown_mapstatetoprops(state, ownprops) {
-    var fullPath = MakePath(ownprops.parentPath, ownprops.id);
-    var ctlState = getStateByPath(state, fullPath, {});
-    if(ctlState.fetching){
-        console.log('ctlState.fetching');
-    }
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    var rowState = propProfile.rowState;
+
     var invalidInfo = null;
     if(ctlState.invalidInfo != gPreconditionInvalidInfo && ctlState.invalidInfo != gCantNullInfo){
         invalidInfo = ctlState.invalidInfo;
     }
-    var selectorid = fullPath + 'optionsData';
+    var selectorid = propProfile.fullPath + 'optionsData';
     var optionsDataSelector = ERPC_selector_map[selectorid];
     if(optionsDataSelector == null){
         optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName,selectERPC_DropDown_textType, formatERPC_DropDown_options);
@@ -977,6 +1010,9 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         visible:ctlState.visible,
         invalidInfo : invalidInfo,
         selectOpt : ctlState.selectOpt,
+        plainTextMode : rowState != null && rowState.editing != true,
+        fullParentPath: propProfile.fullParentPath,
+        fullPath: propProfile.fullPath,
     };
 }
 
@@ -1001,7 +1037,7 @@ class ERPC_Text extends React.PureComponent {
         store.dispatch(makeAction_setManyStateByPath({
             value:text,
             invalidInfo:invalidInfo,
-        }, this.props.selfPath));
+        }, this.props.fullPath));
     }
 
     formatInputValue(val){
@@ -1035,7 +1071,7 @@ class ERPC_Text extends React.PureComponent {
 
     endInputHandler(){
         var invalidInfo = BaseIsValueValid(null,null, null, this.props.value, this.props.type, this.props.nullable, this.props.id);
-        store.dispatch(makeAction_setStateByPath(invalidInfo, MakePath(this.props.selfPath, 'invalidInfo')));
+        store.dispatch(makeAction_setStateByPath(invalidInfo, MakePath(this.props.fullPath, 'invalidInfo')));
     }
 
     render() {
@@ -1110,22 +1146,10 @@ class ERPC_Text extends React.PureComponent {
 }
 
 function ERPC_Text_mapstatetoprops(state, ownprops) {
-    var ctlPath;
-    var ctlState;
-    var rowState;
-    if(ownprops.rowIndex == null){
-        ctlPath = MakePath(ownprops.parentPath, ownprops.id);
-        ctlState = getStateByPath(state, ctlPath, {});
-    }
-    else{
-        var rowPath = MakePath(ownprops.parentPath, 'row_' + ownprops.rowIndex);
-        ctlPath = rowPath + '.' + ownprops.id;
-        rowState = getStateByPath(state, rowPath, {});
-        ctlState = getStateByPath(rowState, ownprops.id, {});
-    }
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    var rowState = propProfile.rowState;
 
-    //var ctlPath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
-    //var ctlState = getStateByPath(state, ctlPath, {});
     return {
         value: ctlState.value == null ? '' : ctlState.value,
         fetching: ctlState.fetching,
@@ -1133,7 +1157,8 @@ function ERPC_Text_mapstatetoprops(state, ownprops) {
         fetchingErr : ctlState.fetchingErr,
         invalidInfo : ctlState.invalidInfo == gPreconditionInvalidInfo ? null : ctlState.invalidInfo,
         plainTextMode : rowState != null && rowState.editing != true,
-        selfPath:ctlPath,
+        fullParentPath: propProfile.fullParentPath,
+        fullPath: propProfile.fullPath,
     };
 }
 

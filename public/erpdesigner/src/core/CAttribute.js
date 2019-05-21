@@ -196,6 +196,7 @@ const VarNames={
     RowIndex:'rowIndex',
     CallBack:'callBack',
     FetchKey:'fetchKey',
+    ParentPath:'parentPath',
 };
 
 const AttrNames={

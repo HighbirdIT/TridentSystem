@@ -1517,7 +1517,12 @@ class MobileContentCompiler extends ContentCompiler {
                                 }
                             }
                             else if (stateItem.setNull) {
-                                staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), 'null'));
+                                if(isPageForm){
+                                    staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), 'null'));
+                                }
+                                else{
+                                    bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), 'null'));
+                                }
                             }
                         }
                     });
@@ -1782,7 +1787,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
 
         // create pull fun
-        var pullFun = clientSide.scope.getFunction(makeFName_pull(theKernel), true);
+        var pullFun = clientSide.scope.getFunction(makeFName_pull(theKernel), true, [VarNames.ParentPath]);
         ctlTag.setAttr('pullDataSource', '{' + pullFun.name + '}');
         ctlTag.setAttr('textAttrName', fromTextfield);
         ctlTag.setAttr('valueAttrName', fromValuefield);
@@ -1795,7 +1800,7 @@ class MobileContentCompiler extends ContentCompiler {
         var initbundleBlock = new FormatFileBlock('initbundle');
         pullFun.pushChild(initbundleBlock);
         pullFun.initbundleBlock = initbundleBlock;
-        pullFun.pushLine(makeLine_FetchPropValue(makeActStr_pullKernel(theKernel), singleQuotesStr(parentPath), singleQuotesStr(theKernel.id), singleQuotesStr('options_arr'), { bundle: 'bundle' }, false));
+        pullFun.pushLine(makeLine_FetchPropValue(makeActStr_pullKernel(theKernel), VarNames.ParentPath, singleQuotesStr(theKernel.id), singleQuotesStr('options_arr'), { bundle: 'bundle' }, false));
 
         var serverPullFun = serverSide.scope.getFunction(makeActStr_pullKernel(theKernel), true, ['req', 'res']);
         serverSide.initProcessFun(serverPullFun);
@@ -1900,19 +1905,19 @@ class MobileContentCompiler extends ContentCompiler {
                     parentMidData.useColumns_map[valueField] = 1;
                     kernelMidData.columnName = valueField;
                     setValueStateItem = {
-                        name: 'text',
-                        useColumn: { name: textField },
+                        name: 'value',
+                        useColumn: { name: valueField },
                     };
                 }
             }
 
             if (setValueStateItem != null && setTextStateItem == null) {
-                logManager.errorEx([logManager.createBadgeItem(
+                logManager.warnEx([logManager.createBadgeItem(
                     theKernel.getReadableName(),
                     theKernel,
                     this.projectCompiler.clickKernelLogBadgeItemHandler),
                     '下拉框的码值字段能找到匹配但是显示字段找不到匹配']);
-                return false;
+                //return false;
             }
 
             if (setValueStateItem == null && setTextStateItem == null) {
