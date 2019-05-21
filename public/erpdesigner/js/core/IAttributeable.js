@@ -28,6 +28,13 @@ var IAttributeable = function (_EventEmitter) {
     }
 
     _createClass(IAttributeable, [{
+        key: 'findAttrGroupByName',
+        value: function findAttrGroupByName(groupName) {
+            return this.attrbuteGroups.find(function (group) {
+                return group.label === groupName ? group : null;
+            });
+        }
+    }, {
         key: 'findAttributeByName',
         value: function findAttributeByName(attrName) {
             var foundAttr = null;
@@ -124,7 +131,7 @@ var IAttributeable = function (_EventEmitter) {
                     console.error('访问不存在的属性:' + attrName);
                 }
                 rlt = attrItem.defaultVal;
-                if (rlt == null && attrItem.valueType != ValueType.Event) {
+                if (rlt == null && attrItem.valueType != ValueType.Event && attrItem.valueType != ValueType.Script) {
                     switch (attrItem.name) {
                         case AttrNames.LayoutNames.StyleAttr:
                         case AttrNames.Name:

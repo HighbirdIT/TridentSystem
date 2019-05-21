@@ -1001,7 +1001,7 @@ class ERPC_Text extends React.PureComponent {
         store.dispatch(makeAction_setManyStateByPath({
             value:text,
             invalidInfo:invalidInfo,
-        }, MakePath(this.props.parentPath, this.props.id)));
+        }, this.props.selfPath));
     }
 
     formatInputValue(val){
@@ -1035,7 +1035,7 @@ class ERPC_Text extends React.PureComponent {
 
     endInputHandler(){
         var invalidInfo = BaseIsValueValid(null,null, null, this.props.value, this.props.type, this.props.nullable, this.props.id);
-        store.dispatch(makeAction_setStateByPath(invalidInfo, MakePath(this.props.parentPath, this.props.id, 'invalidInfo')));
+        store.dispatch(makeAction_setStateByPath(invalidInfo, MakePath(this.props.selfPath, 'invalidInfo')));
     }
 
     render() {
@@ -1058,7 +1058,11 @@ class ERPC_Text extends React.PureComponent {
             contentElem = <div className='flex-grow-1 flex-shrink-1'><i className='fa fa-warning' />{errInfo}</div>;
         }
         else {
-            if (this.props.readonly) {
+            if(this.props.plainTextMode){
+                var nowValue = FormatStringValue(this.props.value, this.props.type, this.props.precision);
+                contentElem = <div className='flex-grow-1 flex-shrink-1'>{nowValue}</div>
+            }
+            else if (this.props.readonly) {
                 rootDivClassName += ' bg-secondary rounded border p-1'
                 var nowValue = FormatStringValue(this.props.value, this.props.type, this.props.precision);
                 if (nowValue == null || nowValue.length == 0) {
@@ -1106,13 +1110,30 @@ class ERPC_Text extends React.PureComponent {
 }
 
 function ERPC_Text_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
+    var ctlPath;
+    var ctlState;
+    var rowState;
+    if(ownprops.rowIndex == null){
+        ctlPath = MakePath(ownprops.parentPath, ownprops.id);
+        ctlState = getStateByPath(state, ctlPath, {});
+    }
+    else{
+        var rowPath = MakePath(ownprops.parentPath, 'row_' + ownprops.rowIndex);
+        ctlPath = rowPath + '.' + ownprops.id;
+        rowState = getStateByPath(state, rowPath, {});
+        ctlState = getStateByPath(rowState, ownprops.id, {});
+    }
+
+    //var ctlPath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
+    //var ctlState = getStateByPath(state, ctlPath, {});
     return {
         value: ctlState.value == null ? '' : ctlState.value,
         fetching: ctlState.fetching,
         visible: ctlState.visible,
         fetchingErr : ctlState.fetchingErr,
         invalidInfo : ctlState.invalidInfo == gPreconditionInvalidInfo ? null : ctlState.invalidInfo,
+        plainTextMode : rowState != null && rowState.editing != true,
+        selfPath:ctlPath,
     };
 }
 
@@ -1420,6 +1441,12 @@ function ERPC_GridForm(target){
     target.nxtPageClickHandler = ERPC_GridForm_NxtPageClickHandler.bind(target);
     target.setRowPerPage = ERPC_GridForm_SetRowPerPage.bind(target);
     target.setPageIndex = ERPC_GridForm_SetPageIndex.bind(target);
+    target.getRowPath = ERPC_GridForm_GetRowPath.bind(target);
+    target.getRowState = ERPC_GridForm_GetRowState.bind(target);
+    target.roweditClicked = ERPC_GridForm_RoweditClicked.bind(target);
+    target.rowcanceleditClicked = ERPC_GridForm_RowcanceleditClicked.bind(target);
+    target.rowdeleteClicked = ERPC_GridForm_RowdeleteClicked.bind(target);
+    target.rowconfirmeditClicked = ERPC_GridForm_RowconfirmeditClicked.bind(target);
 }
 
 function ERPC_GridForm_RowPerPageChangedHandler(ev){
@@ -1471,6 +1498,118 @@ function ERPC_GridForm_SetPageIndex(value){
     var statePath = MakePath(this.props.parentPath, (this.props.rowIndex == null ? null : 'row_' + this.props.rowIndex), this.props.id, 'pageIndex');
     store.dispatch(makeAction_setStateByPath(value, statePath));
 }
+
+function ERPC_GridForm_GetRowPath(rowIndex){
+    return MakePath(this.props.parentPath, this.props.id, 'row_' + rowIndex); 
+}
+
+function ERPC_GridForm_GetRowState(rowIndex, state){
+    if(state == null){
+        state = store.getState();
+    }
+    var path = this.getRowPath(rowIndex);
+    return getStateByPath(state, path);
+}
+
+function ERPC_GridForm_RoweditClicked(rowIndex){
+    var rowPath = this.getRowPath(rowIndex);
+    var rowState = this.getRowState(rowIndex);
+    var rowStateShot = JSON.stringify(rowState);
+    store.dispatch(makeAction_setManyStateByPath({
+        editing:true,
+        stateshot:rowStateShot,
+    }, rowPath));
+}
+
+function ERPC_GridForm_RowcanceleditClicked(rowIndex){
+    var rowPath = this.getRowPath(rowIndex);
+    var rowState = this.getRowState(rowIndex);
+    var needSetState = JSON.parse(rowState.stateshot);
+    needSetState.editing = false;
+    store.dispatch(makeAction_setManyStateByPath(needSetState, rowPath));
+}
+
+function ERPC_GridForm_RowdeleteClicked(rowIndex){
+    console.log('rowdeleteClicked' + rowIndex);
+}
+
+function ERPC_GridForm_RowconfirmeditClicked(rowIndex){
+    var self = this;
+    var rowPath = self.getRowPath(rowIndex);
+    var editBtn = this.btns.find(x=>{return x.key == 'edit'});
+    editBtn.handler(rowIndex, (state)=>{
+        if(state == null){
+            store.dispatch(makeAction_setStateByPath(false, rowPath + '.editing'));
+        }
+        else{
+            setStateByPath(state, rowPath + '.editing', false);
+        }
+    });
+}
+
+class ERPC_GridForm_BtnCol extends React.PureComponent{
+	constructor(props){
+		super(props);
+		autoBind(this);
+	}
+	
+	clickHandler(ev){
+		if(this.props.rowIndex == null){
+			return;
+		}
+        var key = getAttributeByNode(ev.target, 'd-key', true, 5);
+		if(key == null){
+			console.warn('no key');
+			return;
+        }
+        var btnSetting = this.props.form.btns.find(x=>{return x.key == key});
+        switch(key){
+            case 'edit':
+            this.props.form['roweditClicked'](this.props.rowIndex);
+            break;
+            case 'delete':
+            this.props.form['rowdeleteClicked'](this.props.rowIndex);
+            case 'confirmedit':
+            this.props.form['rowconfirmeditClicked'](this.props.rowIndex);
+            break;
+            case 'canceledit':
+            this.props.form['rowcanceleditClicked'](this.props.rowIndex);
+            break;
+            default:
+            btnSetting.handler(this.props.rowIndex);
+        }
+	}
+
+	render(){
+		if(this.props.editing == true){
+			return 	<div className='btn-group gridFormBtnsCol'>
+						<button onClick={this.clickHandler} d-key='confirmedit' className='btn btn-dark' type='button'><i className='fa fa-check text-success' /></button>
+						<button onClick={this.clickHandler} d-key='canceledit' className='btn btn-dark' type='button'><i className='fa fa-close text-danger' /></button>
+					</div>;
+		}
+		
+		return <div className='btn-group gridFormBtnsCol'>
+				{this.props.form.btns.map(btn=>{
+					return <button key={btn.key} onClick={this.clickHandler} d-key={btn.key} className='btn btn-dark' type='button'>{btn.content}</button>
+				})}
+			</div>;
+	}
+
+}
+
+function ERPC_GridForm_BtnCol_mapstatetoprops(state, ownprops) {
+    var rowState = ownprops.form.getRowState(ownprops.rowIndex);
+    return {
+        editing: rowState && rowState.editing,
+    };
+}
+
+function ERPC_GridForm_BtnCol_dispatchtorprops(dispatch, ownprops) {
+    return {
+    };
+}
+
+const VisibleERPC_GridForm_BtnCol = ReactRedux.connect(ERPC_GridForm_BtnCol_mapstatetoprops, ERPC_GridForm_BtnCol_dispatchtorprops)(ERPC_GridForm_BtnCol);
 
 class CBaseGridFormNavBar extends React.PureComponent {
 	constructor(props) {

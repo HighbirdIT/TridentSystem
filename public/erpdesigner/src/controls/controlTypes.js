@@ -9,6 +9,7 @@ const M_ListKernel_Type = 'M_List';
 const M_DropdownKernel_Type = 'M_Dropdown';
 const ButtonKernel_Type = 'button';
 const M_CheckBoxKernel_Type = 'M_CheckBox';
+const EmptyKernel_Type = 'empty';
 
 const M_LabelKernel_Prefix = 'M_Label';
 const M_PageKernel_Prefix = 'M_Page';
@@ -20,6 +21,7 @@ const M_ListKernel_Prefix = 'M_List';
 const M_DropdownKernel_Prefix = 'M_Dropdown';
 const ButtonKernel_Prefix = 'Btn';
 const M_CheckBoxKernel_Prefix = 'M_Check';
+const EmptyKernel_Prefix = 'empty';
 
 function GetControlTypeReadableName(type){
     switch(type){
@@ -45,6 +47,8 @@ function GetControlTypeReadableName(type){
         return '任意';
         case M_CheckBoxKernel_Type:
         return '复选框';
+        case EmptyKernel_Type_Prefix:
+        return '空组件';
     }
     return type;
 }

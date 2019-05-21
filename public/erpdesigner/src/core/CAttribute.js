@@ -44,6 +44,10 @@ function genValidCheckerAttribute(){
     });
 }
 
+function genScripAttribute(label,name,group){
+    return new CAttribute(label, name, ValueType.Script, null, null, null, null, null, null,{group:group});
+}
+
 class CAttribute{
     constructor(label, name, valueType, defaultVal, editable, isArray, options_arr, dropdownSetting, visible, scriptSetting) {
         Object.assign(this,{
@@ -189,6 +193,9 @@ const VarNames={
     HadStateParam:'hadStateParam',
     PageRouter:'pageRouter',
     gDataCache:'gDataCache',
+    RowIndex:'rowIndex',
+    CallBack:'callBack',
+    FetchKey:'fetchKey',
 };
 
 const AttrNames={
@@ -235,9 +242,13 @@ const AttrNames={
     RelFlowStep:'relflowstep',
     GenNavBar:'gennavbar',
     StableData:'stableData',
+    RecEditeable:'recEditeable',
+    RecDeletable:'recDeletable',
 
     Event:{
-        OnClick:'onclick'
+        OnClick:'onclick',
+        OnUpdate:'onUpdate',
+        OnDelete:'onDelete'
     },
 
     LayoutNames:{

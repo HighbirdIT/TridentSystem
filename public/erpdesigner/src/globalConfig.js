@@ -121,6 +121,7 @@ const EJsBluePrintFunGroup={
     CtlEvent:'ctlevent',
     CtlValid: 'ctlvalid',
     ServerScript:'serverscript',
+    GridRowBtnHandler: 'gridrowbtnhandler'
 }
 
 const ESqlBluePrintGroup={

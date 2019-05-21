@@ -466,15 +466,26 @@ class JSNode_BluePrint extends EventEmitter {
 
     compile(compilHelper) {
         var ctlKernel = this.master.project.getControlById(this.ctlID);
-        if (this.group == EJsBluePrintFunGroup.CtlAttr || this.group == EJsBluePrintFunGroup.CtlEvent || this.group == EJsBluePrintFunGroup.CtlValid) {
+        if (this.group == EJsBluePrintFunGroup.CtlAttr || this.group == EJsBluePrintFunGroup.CtlEvent || this.group == EJsBluePrintFunGroup.CtlValid || this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
             if (ctlKernel == null) {
                 compilHelper.logManager.error('蓝图关联控件' + this.ctlID + '无法找到');
                 return false;
             }
             this.ctlKernel = ctlKernel;
         }
-        var theFun = compilHelper.scope.getFunction(this.name, true);
+        var funName = this.name;
+        var useScope = compilHelper.scope;
+        if(compilHelper.config){
+            if(compilHelper.config.funName){
+                funName = compilHelper.config.funName;
+            }
+            if(compilHelper.config.scope){
+                useScope = compilHelper.config.scope;
+            }
+        }
+        var theFun = useScope.getFunction(funName, true);
         compilHelper.compilingFun = theFun;
+        var fetchKeyVarValue = funName;
         var params_arr = [];
         this.vars_arr.forEach(varData => {
             if (varData.isParam) {
@@ -485,7 +496,7 @@ class JSNode_BluePrint extends EventEmitter {
             }
         });
         if (params_arr.length > 0) {
-            if (this.group == EJsBluePrintFunGroup.CtlAttr) {
+            if (this.group == EJsBluePrintFunGroup.CtlAttr || this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
                 compilHelper.logManager.error('本蓝图种类不允许出现参数');
                 return false;
             }
@@ -511,7 +522,7 @@ class JSNode_BluePrint extends EventEmitter {
         var ctlStateVarName;
         var ctlParentStateVarName;
         var nullableChecker = null;
-        if (this.group == EJsBluePrintFunGroup.CtlAttr || this.group == EJsBluePrintFunGroup.CtlEvent || this.group == EJsBluePrintFunGroup.CtlValid) {
+        if (this.group == EJsBluePrintFunGroup.CtlAttr || this.group == EJsBluePrintFunGroup.CtlEvent || this.group == EJsBluePrintFunGroup.CtlValid || this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
             var hadCallParm = this.group == EJsBluePrintFunGroup.CtlAttr;
             if (!hadCallParm) {
                 theFun.scope.getVar(VarNames.State, true, 'store.getState()');
@@ -519,24 +530,38 @@ class JSNode_BluePrint extends EventEmitter {
             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
                 params_arr = [VarNames.State, VarNames.Bundle];
             }
+            else if (this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
+                params_arr = [VarNames.RowIndex, VarNames.CallBack];
+                fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.id + '_' + compilHelper.config.actName + '_'),'+',VarNames.RowIndex);
+            }
             for (var formId in compilHelper.useForm_map) {
                 var useFormData = compilHelper.useForm_map[formId];
-                var formStateVarName = null;
+                var isGridForm = useFormData.formKernel.getAttribute(AttrNames.FormType) == EFormType.Grid;
+                var formStateVarName = formId + '_state';
+                var formNowRowStateVarName = formId + '_rowState';
                 ctlParentStateVarName = null;
                 ctlStateVarName = null;
-                if (!IsEmptyObject(useFormData.useControls_map)) {
-                    formStateVarName = formId + '_state';
-                    initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
-                    theFun.scope.getVar(formStateVarName, true, initValue);
+                var ctlBelongStateVarName = formStateVarName;
+                initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
+                theFun.scope.getVar(formStateVarName, true, initValue);
+                if(isGridForm){
+                    switch(this.group){
+                        case EJsBluePrintFunGroup.GridRowBtnHandler:
+                        theFun.scope.getVar(formNowRowStateVarName, true, formStateVarName + "['row_' + " + VarNames.RowIndex + "]");
+                        ctlBelongStateVarName = formNowRowStateVarName;
+                        break;
+                    }
+                }
 
+                if (!IsEmptyObject(useFormData.useControls_map)) {
                     for (usectlid in useFormData.useControls_map) {
                         useCtlData = useFormData.useControls_map[usectlid];
                         ctlStateVarName = usectlid + '_state';
-                        initValue = makeStr_getStateByPath(formStateVarName, singleQuotesStr(usectlid), '{}');
+                        initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(usectlid), '{}');
                         theFun.scope.getVar(ctlStateVarName, true, initValue);
                         if (useCtlData.kernel.isAEditor()) {
                             ctlParentStateVarName = useCtlData.kernel.parent.id + '_state';
-                            initValue = makeStr_getStateByPath(formStateVarName, singleQuotesStr(useCtlData.kernel.parent.id), '{}');
+                            initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(useCtlData.kernel.parent.id), '{}');
                             theFun.scope.getVar(ctlParentStateVarName, true, initValue);
                         }
 
@@ -549,7 +574,7 @@ class JSNode_BluePrint extends EventEmitter {
                             }
                             else {
                                 initValue = ctlStateVarName + '.' + propApiitem.stateName;
-                                //makeStr_getStateByPath(formStateVarName, singleQuotesStr(useCtlData.kernel.id + '.' + propApiitem.stateName));
+                                //makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(useCtlData.kernel.id + '.' + propApiitem.stateName));
                             }
                             theFun.scope.getVar(varName, true, initValue);
                             if (propApiitem.needValid && needCheckProps_map[varName] == null) {
@@ -568,11 +593,20 @@ class JSNode_BluePrint extends EventEmitter {
                 }
                 if (!IsEmptyObject(useFormData.useColumns_map)) {
                     var nowRecordVarName = formId + '_' + VarNames.NowRecord + '';
-                    if (hadCallParm) {
-                        initValue = 'bundle != null && bundle.' + nowRecordVarName + ' != null ? bundle.' + nowRecordVarName + ' : ' + makeStr_getStateByPath(formStateVarName == null ? VarNames.State : formStateVarName, singleQuotesStr(useFormData.formKernel.getStatePath(VarNames.NowRecord)));
+                    if(isGridForm){
+                        switch(this.group){
+                            case EJsBluePrintFunGroup.GridRowBtnHandler:
+                            initValue = 'this.props.records_arr[' + VarNames.RowIndex + ']';
+                            break;
+                        }
                     }
-                    else {
-                        initValue = makeStr_getStateByPath(formStateVarName == null ? VarNames.State : formStateVarName, formStateVarName == null ? singleQuotesStr(useFormData.formKernel.getStatePath(VarNames.NowRecord)) : singleQuotesStr(VarNames.NowRecord));
+                    else{
+                        if (hadCallParm) {
+                            initValue = 'bundle != null && bundle.' + nowRecordVarName + ' != null ? bundle.' + nowRecordVarName + ' : ' + formStateVarName + '.' + VarNames.NowRecord;
+                        }
+                        else {
+                            initValue = formStateVarName + '.' + VarNames.NowRecord;
+                        }
                     }
                     theFun.scope.getVar(nowRecordVarName, true, initValue);
                     needCheckVars_arr.push(nowRecordVarName);
@@ -688,7 +722,8 @@ class JSNode_BluePrint extends EventEmitter {
             needFinalCallback = true;
 
             theFun.headBlock.pushLine("var fetchid = Math.round(Math.random() * 999999);");
-            theFun.headBlock.pushLine("fetchTracer['" + theFun.name + "'] = fetchid;");
+            theFun.headBlock.pushLine("var " + VarNames.FetchKey + " = " + fetchKeyVarValue + ";");
+            theFun.headBlock.pushLine("fetchTracer[" + theFun.fetchKeyName + "] = fetchid;");
             startFtech_bk = new FormatFileBlock('startfetch');
             theFun.headBlock.pushChild(startFtech_bk);
             theFun.startFtech_bk = startFtech_bk;
@@ -752,6 +787,27 @@ class JSNode_BluePrint extends EventEmitter {
 
                 finalCallBackReturn_bk.pushLine("if(" + msgBoxVarName + "){" + msgBoxVarName + ".fireClose();}");
                 finalCallBackReturn_bk.pushLine("SendToast('执行成功');");
+            }
+            else if(this.group == EJsBluePrintFunGroup.GridRowBtnHandler){
+                // needMsgBox
+                msgBoxVarName = this.id + '_msg';
+                theFun.scope.getVar(msgBoxVarName, true, 'null');
+                ctlName = compilHelper.config.actLabel;
+                if (startFtech_bk) {
+                    startFtech_bk.pushLine(makeLine_Assign(msgBoxVarName, "PopMessageBox('',EMessageBoxType.Loading, '" + ctlName + "');"));
+                }
+
+                if (needCheckVars_arr.length > 0) {
+                    setInvalidStateBlock.pushLine("setManyStateByPath(state,'',validErrState);");
+                    setInvalidStateBlock.pushLine("if(hadValidErr){SendToast('验证失败，无法执行', EToastType.Warning);return;}");
+                }
+                setInvalidStateBlock.pushLine("if(err){", 1);
+                setInvalidStateBlock.pushLine(msgBoxVarName + ".setData(err.info, EMessageBoxType.Error, '" + ctlName + "');");
+                setInvalidStateBlock.pushLine("return;", -1);
+                setInvalidStateBlock.pushLine("}");
+
+                finalCallBackReturn_bk.pushLine(msgBoxVarName + ".fireClose();");
+                finalCallBackReturn_bk.pushLine('if(err == null && ' + VarNames.CallBack + ' != null){' + VarNames.CallBack + '(' + VarNames.State + ');}');
             }
             else {
                 if (needCheckVars_arr.length > 0) {
@@ -2214,7 +2270,7 @@ class JSNODE_Insert_table extends JSNode_Base {
         }
 
         var relKernel = this.bluePrint.ctlKernel;
-        if (this.checkCompileFlag(relKernel == null || relKernel.type != ButtonKernel_Type, '这个脚本蓝图必须关联到一个按钮控件中', helper)) {
+        if (this.checkCompileFlag(relKernel == null || (relKernel.type != ButtonKernel_Type && relKernel.type != EmptyKernel_Type), '这个脚本蓝图必须关联到一个按钮控件中', helper)) {
             return false;
         }
         var columnProfile_obj = {};
@@ -3515,7 +3571,7 @@ class JSNode_Query_Sql extends JSNode_Base {
         var callBack_bk = new FormatFileBlock('callback' + this.id);
         myJSBlock.pushChild(callBack_bk);
         myJSBlock.pushLine('setTimeout(() => {', 1);
-        myJSBlock.pushLine("if(fetchTracer['" + helper.compilingFun.name + "'] != fetchid) return;");
+        myJSBlock.pushLine("if(fetchTracer[" + VarNames.FetchKey + "] != fetchid) return;");
         var dataVarName = 'data_' + this.id;
         var errVarName = 'error_' + this.id;
         myJSBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + serverSideActName + "',}, makeFTD_Callback((state, " + dataVarName + ", " + errVarName + ")=>{", 1);
@@ -4170,7 +4226,7 @@ class JSNode_Do_FlowStep extends JSNode_Base {
             var callBack_bk = new FormatFileBlock('callback' + this.id);
             myClientBlock.pushChild(callBack_bk);
             myClientBlock.pushLine('setTimeout(() => {', 1);
-            myClientBlock.pushLine("if(fetchTracer['" + helper.compilingFun.name + "'] != fetchid) return;");
+            myClientBlock.pushLine("if(fetchTracer[" + VarNames.FetchKey + "] != fetchid) return;");
             var dataVarName = 'data_' + this.id;
             var errVarName = 'error_' + this.id;
             myClientBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + serverSideActName + "',}, makeFTD_Callback((state, " + dataVarName + ", " + errVarName + ")=>{", 1);
@@ -4542,7 +4598,7 @@ class JSNODE_Update_table extends JSNode_Base {
         var usePreNodes_arr = preNodes_arr.concat(this);
 
         var relKernel = this.bluePrint.ctlKernel;
-        if (this.checkCompileFlag(relKernel == null || relKernel.type != ButtonKernel_Type, '这个脚本蓝图必须关联到一个按钮控件中', helper)) {
+        if (this.checkCompileFlag(relKernel == null || (relKernel.type != ButtonKernel_Type && relKernel.type != EmptyKernel_Type), '这个脚本蓝图必须关联到一个按钮控件中', helper)) {
             return false;
         }
 

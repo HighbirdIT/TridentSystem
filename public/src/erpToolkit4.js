@@ -1157,3 +1157,18 @@ function FormatStringValue(val, type, precision){
     }
     return rlt;
 }
+
+function plainClone(obj){
+    var rlt = {};
+    for(var s in obj){
+        var v = obj[s];
+        switch(typeof v){
+            case 'boolean':
+            case 'number':
+            case 'string':
+            rlt[s] = v;
+            break;
+        }
+    }
+    return rlt;
+}

@@ -348,3 +348,11 @@ body{
     width: 50px;
     content:attr(placeholder);
 }
+
+.gridFormBtnsCol{
+    min-width: 80px;
+}
+
+.gridFormFixHeaderDiv{
+    height: 50px;
+}

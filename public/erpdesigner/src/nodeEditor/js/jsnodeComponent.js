@@ -132,13 +132,57 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
         return this.canUseColumns_arr == null ? [] : this.canUseColumns_arr;
     }
 
+    getFormDS(){
+        var nodeData = this.props.nodedata;
+        var formKernel = nodeData.bluePrint.master.project.getControlById(nodeData.formID);
+        return formKernel.getAttribute(AttrNames.DataSource);
+    }
+
     customSocketRender(socket) {
         if (socket.isIn == true) {
             return null;
         }
+        var nodeData = this.props.nodedata;
+        if(socket == nodeData.outDataSocket || socket == nodeData.outErrorSocket){
+            return null;
+        }
+        
+        var entity = this.getFormDS();
         var nowVal = socket.getExtra('colName');
+        return (<span className='d-flex align-items-center'><DropDownControl itemChanged={this.socketColumnSelectChanged} btnclass='btn-dark' options_arr={entity == null ? [] : entity.columns} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} socket={socket} textAttrName='name' />
+            <button onMouseDown={this.mouseDownOutSocketHand} d-colname={nowVal} type='button' className='btn btn-secondary'><i className='fa fa-hand-paper-o' /></button>
+        </span>);
+    }
 
-        return (<span><DropDownControl itemChanged={this.socketColumnSelectChanged} btnclass='btn-dark' options_arr={this.getCanUseColumns} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} socket={socket} /></span>);
+    mouseDownOutSocketHand(ev){
+        var colName = getAttributeByNode(ev.target,'d-colname', true, 5);
+        if(colName == null){
+            return;
+        }
+        var socketid = getAttributeByNode(ev.target,'d-socketid', true, 10);
+        if(socketid == null){
+            return;
+        }
+        var nodeData = this.props.nodedata;
+        var entity = this.getFormDS();
+        if(entity == null){
+            return;
+        }
+        var theSocket = nodeData.bluePrint.getSocketById(socketid);
+        var bornPos = theSocket.currentComponent.getCenterPos();
+        if(entity.containColumn(colName)){
+            var newNode = new FlowNode_ColumnVar({
+                keySocketID:socketid,
+                newborn:true,
+                left:bornPos.x,
+                top:bornPos.y,
+            }, nodeData.parent);
+        }
+    }
+
+    dropdownCtlChangedHandler(selectedDBE) {
+        var nodeData = this.props.nodedata;
+        nodeData.setEntity(selectedDBE);
     }
 
     cusHeaderFuc() {
@@ -159,6 +203,7 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
             this.canUseColumns_arr = newColumns;
             titleElem = (<div f-canmove={1} className='d-flex flex-column'>
                 <span f-canmove={1}>{formKernel.getReadableName()}</span>
+                <span f-canmove={1} className='badge badge-primary'>{nodeData.id}</span>
                 <span f-canmove={1} className='badge badge-info'>{formDS == null ? '无数据源' : formDS.name + '-当前行'}</span>
             </div>)
         }

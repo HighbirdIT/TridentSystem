@@ -1,5 +1,7 @@
 'use strict';
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var PAGE_LOADED = 'PAGE_LOADED';
 
 var fetchTracer = {};
@@ -1227,6 +1229,21 @@ function FormatStringValue(val, type, precision) {
                 rlt = '';
             }
             break;
+    }
+    return rlt;
+}
+
+function plainClone(obj) {
+    var rlt = {};
+    for (var s in obj) {
+        var v = obj[s];
+        switch (typeof v === 'undefined' ? 'undefined' : _typeof(v)) {
+            case 'boolean':
+            case 'number':
+            case 'string':
+                rlt[s] = v;
+                break;
+        }
     }
     return rlt;
 }

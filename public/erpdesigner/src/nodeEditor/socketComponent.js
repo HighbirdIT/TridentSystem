@@ -167,8 +167,12 @@ class C_Node_Socket extends React.PureComponent{
                 if(socket.isIn){
                     if(socket.getLinks().length == 0){
                         var bluePrint = socket.node.bluePrint;
-                        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == ESqlBluePrintGroup.ControlCustom || bluePrint.group == EJsBluePrintFunGroup.CtlValid)
-                        {
+                        switch(bluePrint.group){
+                            case EJsBluePrintFunGroup.CtlAttr:
+                            case EJsBluePrintFunGroup.CtlEvent:
+                            case ESqlBluePrintGroup.ControlCustom:
+                            case EJsBluePrintFunGroup.CtlValid:
+                            case EJsBluePrintFunGroup.GridRowBtnHandler:
                             var ctlKernel = bluePrint.master.project.getControlById(bluePrint.ctlID);
                             if(ctlKernel != null){
                                 var nowCtlId = socket.getExtra('ctlid');
@@ -177,6 +181,7 @@ class C_Node_Socket extends React.PureComponent{
                                 }
                                 inputElem = (<DropDownControl socket={socket} options_arr={ctlKernel.getAccessableKernels} funparamobj={kernelType} value={nowCtlId} itemChanged={this.kernelChangedHandler} textAttrName='readableName' valueAttrName='id' />);
                             }
+                            break;
                         }
                     }
                 }

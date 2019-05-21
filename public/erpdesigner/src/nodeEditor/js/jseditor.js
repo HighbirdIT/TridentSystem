@@ -306,7 +306,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         logManager.clear();
         var canUseDS_arr = [];
         var canAccessKernel_arr = [];
-        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == EJsBluePrintFunGroup.CtlValid){
+        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == EJsBluePrintFunGroup.CtlValid || bluePrint.group == EJsBluePrintFunGroup.GridRowBtnHandler){
             // 控件类型,获取上下文
             var ctlKernel = project.getControlById(bluePrint.ctlID);
             if(bluePrint.ctlID == null || ctlKernel == null){
@@ -318,14 +318,26 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
             if(parentForms_arr != null){
                 parentForms_arr.forEach(formKernel=>{
                     var useDS = formKernel.getAttribute(AttrNames.DataSource);
+                    var isGridForm = formKernel.getAttribute(AttrNames.FormType) == EFormType.Grid;
                     if(useDS != null){
                         canUseDS_arr.push(
                             {
                                 entity:useDS,
                                 label:formKernel.getReadableName() + '当前行',
-                                formID:formKernel.id
+                                formID:formKernel.id,
+                                key:formKernel.id + '_currentrow',
                             }
                         );
+                        if(isGridForm){
+                            canUseDS_arr.push(
+                                {
+                                    entity:useDS,
+                                    label:formKernel.getReadableName() + '选中行',
+                                    formID:formKernel.id,
+                                    key:formKernel.id + '_selectedrow',
+                                }
+                            );
+                        }
                     }
                 });
             }
@@ -421,7 +433,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
                                 {showCanUseDS &&
                                 <div className='btn-group-vertical mw-100 flex-shrink-0'>
                                     {canUseDS_arr.map(item=>{
-                                        return (<button key={item.formID} onMouseDown={this.mouseDownCanUseDSHandler} data-value={item.formID} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>);
+                                        return (<button key={item.key} onMouseDown={this.mouseDownCanUseDSHandler} data-value={item.formID} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>);
                                     })}
                                 </div>}
                             </React.Fragment>

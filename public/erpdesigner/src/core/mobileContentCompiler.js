@@ -226,7 +226,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
     }
 
-    compileScriptBlueprint(targetBP) {
+    compileScriptBlueprint(targetBP, config) {
         if (this.compiledScriptBP_map[targetBP.id]) {
             return this.compiledScriptBP_map[targetBP.id];
         }
@@ -237,6 +237,7 @@ class MobileContentCompiler extends ContentCompiler {
         compileHelper.serverSide = this.serverSide;
         compileHelper.clientSide = this.clientSide;
         compileHelper.sqlBPCacheManager = this.projectCompiler;
+        compileHelper.config = config;
         logManager.log('编译脚本:' + targetBP.name);
         var compileRet = targetBP.compile(compileHelper);
         if (compileRet == false) {
@@ -914,7 +915,12 @@ class MobileContentCompiler extends ContentCompiler {
 
         var formReactClass = clientSide.getReactClass(theKernel.getReactClassName(), true);
         var gridHeadPureRectClass = null;
+        var gridHeadBodyPureRectClass = null;
         var gridBodyPureRectClass = null;
+
+        var hadRowButton = false;
+        var rowBtns_arr = [];
+
         switch (formType) {
             case EFormType.Page:
                 formReactClass.constructorFun.pushLine('ERPC_PageForm(this);');
@@ -926,6 +932,17 @@ class MobileContentCompiler extends ContentCompiler {
                 var tableBodyScrollFun = formReactClass.getFunction('tableBodyScroll', true, ['ev']);
                 formReactClass.constructorFun.pushLine('this.' + tableBodyScrollFun.name + '=' + 'this.' + tableBodyScrollFun.name + '.bind(this);');
                 tableBodyScrollFun.pushLine("document.getElementById('" + theKernel.id + "tableheader').scrollLeft = ev.target.scrollLeft;");
+
+                rowBtns_arr = theKernel.getRowBtnSetting();
+                hadRowButton = rowBtns_arr.length > 0;
+                if(hadRowButton){
+                    var btnsVarStr = '';
+                    rowBtns_arr.forEach(btnSetting=>{
+                        btnsVarStr += (btnsVarStr.length == 0 ? '' : ',') + "{key:'" + btnSetting.key + "',content:" + btnSetting.elemText + ", handler:this." + btnSetting.funName + ".bind(this)}";
+                    });
+                    formReactClass.constructorFun.pushLine('this.btns = [' + btnsVarStr + '];');
+                    gridHeadBodyPureRectClass = clientSide.getReactClass(theKernel.getReactClassName() + '_THeadBody', true, true);
+                }
                 break;
         }
         var renderContentFun = formReactClass.getFunction('renderContent', true);
@@ -985,7 +1002,7 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentFun.retBlock.pushLine(makeLine_Return(VarNames.RetElem));
         }
         else if (isGridForm) {
-            renderContentBlock.pushLine(VarNames.RetElem + " = <" + gridBodyPureRectClass.name + " startRowIndex={this.props.startRowIndex} endRowIndex={this.props.endRowIndex} />");
+            renderContentBlock.pushLine(VarNames.RetElem + " = <" + gridBodyPureRectClass.name + " startRowIndex={this.props.startRowIndex} endRowIndex={this.props.endRowIndex} form={this} />");
             renderContentBlock.pushLine("if (this.props.pagebreak) {", 1);
             renderContentBlock.pushLine(VarNames.NavElem + " = <CBaseGridFormNavBar pageIndex={this.props.pageIndex} rowPerPage={this.props.rowPerPage} rowPerPageChangedHandler={this.rowPerPageChangedHandler} pageCount={this.props.pageCount} prePageClickHandler={this.prePageClickHandler} nxtPageClickHandler={this.nxtPageClickHandler} pageIndexChangedHandler={this.pageIndexChangedHandler} />", -1);
             renderContentBlock.pushLine("}");
@@ -993,12 +1010,15 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentFun.pushLine('return (', 1);
             renderContentFun.pushLine("<div className='" + layoutConfig.getClassName() + "' " + (hasFormStyle ? "style={" + formStyleID + "}" : '') + ">", 1);
             renderContentFun.pushLine("{this.props.title && <div className='bg-dark text-light justify-content-center d-flex flex-shrink-0'><span>{this.props.title}</span></div>}");
-            renderContentFun.pushLine("<div id='" + theKernel.id + "tableheader' className='mw-100 hidenOverflow flex-shrink-0'>", 1);
+            renderContentFun.pushLine("<div id='" + theKernel.id + "tableheader' className='mw-100 hidenOverflow flex-shrink-0 gridFormFixHeaderDiv'>", 1);
             renderContentFun.pushLine("<table className='table' style={" + headTableStyleID + "}>", 1);
             renderContentFun.pushLine("<" + gridHeadPureRectClass.name + ' />', -1);
+            if(gridHeadBodyPureRectClass){
+                renderContentFun.pushLine("<" + gridHeadBodyPureRectClass.name + ' form={this} />', -1);
+            }
             renderContentFun.pushLine("</table>", -1);
             renderContentFun.pushLine("</div>");
-            renderContentFun.pushLine("<div onScroll={this.tableBodyScroll} className='mw-100 autoScroll h-100'>", 1);
+            renderContentFun.pushLine("<div onScroll={this.tableBodyScroll} className='mw-100 autoScroll'>", 1);
             renderContentFun.pushLine("{" + VarNames.RetElem + "}", -1);
             renderContentFun.pushLine("</div>", -1);
             renderContentFun.pushLine("{" + VarNames.NavElem + "}", -1);
@@ -1164,6 +1184,16 @@ class MobileContentCompiler extends ContentCompiler {
                 bindInersetBlock = insertModeIf.trueBlock;
             }
             if (isGridForm) {
+                if(hadRowButton){
+                    rowBtns_arr.forEach(btnSetting=>{
+                        btnsVarStr += (btnsVarStr.length == 0 ? '' : ',') + "{key:'" + btnSetting.key + "',content:" + btnSetting.elemText + "}";
+                        this.compileScriptBlueprint(btnSetting.blueprint, {
+                            funName:btnSetting.funName,
+                            scope:formReactClass,
+                            actLabel:btnSetting.actLabel
+                        });
+                    });
+                }
                 var needActiveBindPageVar = bindFun.scope.getVar('needActiveBindPage', true, 'false');
                 if (pageBreak) {
                     bindFun.pushLine('var ' + VarNames.PageCount + ' = formState.' + VarNames.PageCount + ';');
@@ -1221,15 +1251,29 @@ class MobileContentCompiler extends ContentCompiler {
             var gridHeadRowRenderBlock = new FormatFileBlock('tr');
             gridHeadPureRectClass.renderFun.pushChild(gridHeadRowRenderBlock, -1);
             gridHeadPureRectClass.renderFun.pushLine('</tr></thead>);');
+            var gridHeadBodyRowRenderBlock = null;
+            if(gridHeadBodyPureRectClass){
+                gridHeadBodyPureRectClass.renderFun.pushLine(VarNames.RetElem + ' = (<tbody><tr>', 1);
+                gridHeadBodyRowRenderBlock = new FormatFileBlock('tr');
+                gridHeadBodyPureRectClass.renderFun.pushChild(gridHeadBodyRowRenderBlock, -1);
+                gridHeadBodyPureRectClass.renderFun.pushLine('</tr></tbody>);');
+            }
 
             var autoIndexColumn = theKernel.getAttribute(AttrNames.AutoIndexColumn);
             if (autoIndexColumn) {
                 sumTableWidth += 3;
-                gridHeadRowRenderBlock.pushLine("<th scope='col' className='indexTableHeader'>序号 </th>");
+                gridHeadRowRenderBlock.pushLine("<th scope='col' className='indexTableHeader'>序号</th>");
+                if(gridHeadBodyRowRenderBlock){
+                    gridHeadBodyRowRenderBlock.pushLine("<td className='indexTableHeader'></td>");
+                }
             }
 
             for (ci in theKernel.children) {
                 childKernel = theKernel.children[ci];
+                switch(childKernel.type){
+                    case EmptyKernel_Type:
+                    continue;
+                }
                 if (childKernel.type != M_LabeledControlKernel_Type) {
                     logManager.errorEx([logManager.createBadgeItem(
                         theKernel.getReadableName(),
@@ -1289,6 +1333,7 @@ class MobileContentCompiler extends ContentCompiler {
                     tdStyleObj = Object.assign({}, headStyleObj);
                     headStyleObj.whiteSpace = 'nowrap';
                     headStyleObj.overflow = 'hidden';
+                    tdStyleObj.verticalAlign = 'middle';
 
                     this.clientSide.addStyleObject(headStyleID, headStyleObj);
                     this.clientSide.addStyleObject(tdStyleID, tdStyleObj);
@@ -1302,6 +1347,15 @@ class MobileContentCompiler extends ContentCompiler {
                 columnProfile.tdStyleID = tdStyleObj.id;
 
                 gridHeadRowRenderBlock.pushLine("<th scope='col' style={" + headStyleObj.id + "}>" + columnProfile.label + "</th>");
+                if(gridHeadBodyRowRenderBlock){
+                    gridHeadBodyRowRenderBlock.pushLine("<td style={" + headStyleObj.id + "}></td>");
+                }
+            }
+            if(hadRowButton){
+                gridHeadRowRenderBlock.pushLine("<th scope='col'></th>");
+                if(gridHeadBodyRowRenderBlock){
+                    gridHeadBodyRowRenderBlock.pushLine("<td><VisibleERPC_GridForm_BtnCol form={this.props.form} /></td>");
+                }
             }
 
             var gridTableStyle = {
@@ -1368,6 +1422,9 @@ class MobileContentCompiler extends ContentCompiler {
 
             for (ci in theKernel.children) {
                 childKernel = theKernel.children[ci];
+                if(childKernel.type == EmptyKernel_Type){
+                    continue;
+                }
                 columnProfile = gridColumnsProfile_obj[childKernel.id];
                 gridBodyTableRowRenderBlock.pushLine("<td style={" + columnProfile.tdStyleID + '}>', 1);
                 if (this.compileKernel(childKernel, gridBodyTableRowRenderBlock, renderFun) == false) {
@@ -1375,6 +1432,10 @@ class MobileContentCompiler extends ContentCompiler {
                 }
                 gridBodyTableRowRenderBlock.subNextIndent();
                 gridBodyTableRowRenderBlock.pushLine('</td>');
+            }
+
+            if(hadRowButton){
+                gridBodyTableRowRenderBlock.pushLine("<td><VisibleERPC_GridForm_BtnCol rowIndex={rowIndex} form={this.props.form} /></td>");
             }
         }
 

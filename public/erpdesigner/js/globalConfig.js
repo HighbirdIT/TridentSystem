@@ -120,7 +120,8 @@ var EJsBluePrintFunGroup = {
     CtlAttr: 'ctlattr',
     CtlEvent: 'ctlevent',
     CtlValid: 'ctlvalid',
-    ServerScript: 'serverscript'
+    ServerScript: 'serverscript',
+    GridRowBtnHandler: 'gridrowbtnhandler'
 };
 
 var ESqlBluePrintGroup = {

@@ -1517,7 +1517,7 @@ class FlowNode_ColumnVar extends JSNode_Base {
             label = '关联节点丢失!';
         }
         else {
-            label = keySocket.getExtra('colName');
+            label = keySocket.node.id + '.' + keySocket.getExtra('colName');
         }
         this.keySocket = keySocket;
         this.columnName = label;

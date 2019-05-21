@@ -211,6 +211,9 @@ class AttributeEditor extends React.PureComponent {
             targetBP = project.scriptMaster.createBP(funName, FunType_Client, jsGroup);
             targetBP.ctlID = this.props.targetobj.id;
             targetBP.eventName = theAttr.name;
+            if(this.props.targetobj.scriptCreated){
+                this.props.targetobj.scriptCreated(theAttr.name, targetBP);
+            }
             this.setState({
                 magicObj:{}
             });
@@ -513,6 +516,9 @@ class AttributeGroup extends React.PureComponent {
         var projectName = this.props.projectName;
         var attrGroup = this.props.attrGroup;
         var attrGroupIndex = this.props.attrGroupIndex;
+        if(this.state.target[attrGroup.label + '_visible'] == false){
+            return null;
+        }
         if(this.listeningGroup != attrGroup){
             this.listenGroup(attrGroup);
         }

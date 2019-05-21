@@ -58,6 +58,10 @@ function genValidCheckerAttribute() {
     });
 }
 
+function genScripAttribute(label, name, group) {
+    return new CAttribute(label, name, ValueType.Script, null, null, null, null, null, null, { group: group });
+}
+
 var CAttribute = function () {
     function CAttribute(label, name, valueType, defaultVal, editable, isArray, options_arr, dropdownSetting, visible, scriptSetting) {
         _classCallCheck(this, CAttribute);
@@ -213,7 +217,10 @@ var VarNames = {
     RowPerPage: 'rowPerPage',
     HadStateParam: 'hadStateParam',
     PageRouter: 'pageRouter',
-    gDataCache: 'gDataCache'
+    gDataCache: 'gDataCache',
+    RowIndex: 'rowIndex',
+    CallBack: 'callBack',
+    FetchKey: 'fetchKey'
 };
 
 var AttrNames = {
@@ -260,9 +267,13 @@ var AttrNames = {
     RelFlowStep: 'relflowstep',
     GenNavBar: 'gennavbar',
     StableData: 'stableData',
+    RecEditeable: 'recEditeable',
+    RecDeletable: 'recDeletable',
 
     Event: {
-        OnClick: 'onclick'
+        OnClick: 'onclick',
+        OnUpdate: 'onUpdate',
+        OnDelete: 'onDelete'
     },
 
     LayoutNames: {
