@@ -341,6 +341,7 @@ body{
     max-width: 30em;
     text-overflow:ellipsis;
     word-wrap:break-word;
+    overflow:hidden;
 }
 .li-instead-input:empty::before{
     color:lightgrey;
