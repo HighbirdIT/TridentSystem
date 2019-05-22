@@ -505,3 +505,82 @@ class C_JSNode_JumpPage extends React.PureComponent {
         </C_Node_Frame>
     }
 }
+
+class C_JSNODE_Delete_Table extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        C_NodeCom_Base(this);
+
+        this.state = {
+        }
+
+        this.dropdownRef = React.createRef();
+    }
+
+    nodeDataChangedHandler() {
+        var nodeData = this.props.nodedata;
+        var entity = nodeData.targetEntity;
+        if (entity) {
+            this.dropdownRef.current.setValue(entity.code);
+        }
+        this.setState({ magicObj: {} });
+    }
+
+    cus_componentWillMount() {
+        this.listenData(this.props.nodedata);
+    }
+
+    cus_componentWillUnmount() {
+        this.unlistenData(this.props.nodedata);
+    }
+
+    listenData(nodeData) {
+        if (nodeData) {
+            nodeData.on('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    unlistenData(nodeData) {
+        if (nodeData) {
+            nodeData.off('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    dropdownCtlChangedHandler(selectedDBE) {
+        var nodeData = this.props.nodedata;
+        nodeData.setEntity(selectedDBE);
+    }
+
+    socketColumnSelectChanged(newVal, ddc) {
+        var socket = ddc.props.socket;
+        socket.setExtra('colName', newVal);
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        var entity = nodeData.targetEntity;
+        var dataMaster = null;
+        if(nodeData.bluePrint.master && nodeData.bluePrint.master.project){
+            dataMaster = nodeData.bluePrint.master.project.dataMaster;
+        }
+        else if(nodeData.bluePrint.dataMaster){
+            dataMaster = nodeData.bluePrint.dataMaster;
+        }
+
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='删除数据'>
+            <div className='d-flex'>
+                <div className='flex-grow-1 flex-shrink-1'>
+                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={dataMaster.getDeleteEntities} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
+                </div>
+            </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} />
+                <div className='d-flex flex-column'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutFlowScoketDynamic() ? nodeData.processOutputFlowSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} customSocketRender={this.customSocketRender} />
+                </div>
+            </div>
+        </C_Node_Frame>
+    }
+}

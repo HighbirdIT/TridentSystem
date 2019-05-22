@@ -352,7 +352,7 @@ class Node_Base extends EventEmitter {
     }
 
     removeSocket(socketObj) {
-        if(this.preRemoveSocket && this.preRemoveSocket(socketObj) == false){
+        if(socketObj == null || (this.preRemoveSocket && this.preRemoveSocket(socketObj) == false)){
             return;
         }
         if(!socketObj.isFlowSocket)

@@ -1096,7 +1096,8 @@ function getControlPropProfile(ownprops, useState) {
         ctlState: ctlState,
         rowState: rowState,
         fullParentPath: fullParentPath,
-        fullPath: fullPath
+        fullPath: fullPath,
+        rowIndex: ownprops.rowIndex
     };
 }
 
@@ -1145,7 +1146,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         visible: ctlState.visible,
         invalidInfo: invalidInfo,
         selectOpt: ctlState.selectOpt,
-        plainTextMode: rowState != null && rowState.editing != true,
+        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath
     };
@@ -1322,7 +1323,7 @@ function ERPC_Text_mapstatetoprops(state, ownprops) {
         visible: ctlState.visible,
         fetchingErr: ctlState.fetchingErr,
         invalidInfo: ctlState.invalidInfo == gPreconditionInvalidInfo ? null : ctlState.invalidInfo,
-        plainTextMode: rowState != null && rowState.editing != true,
+        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath
     };
@@ -1811,7 +1812,10 @@ function ERPC_GridForm_RowcanceleditClicked(rowIndex) {
 }
 
 function ERPC_GridForm_RowdeleteClicked(rowIndex) {
-    console.log('rowdeleteClicked' + rowIndex);
+    var deleteBtn = this.btns.find(function (x) {
+        return x.key == 'delete';
+    });
+    deleteBtn.handler(rowIndex);
 }
 
 function ERPC_GridForm_RowconfirmeditClicked(rowIndex) {
@@ -1876,6 +1880,22 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent10) {
         value: function render() {
             var _this14 = this;
 
+            if (this.props.rowIndex == 'new') {
+                return React.createElement(
+                    'div',
+                    { className: 'btn-group gridFormBtnsCol' },
+                    React.createElement(
+                        'button',
+                        { onClick: this.clickHandler, 'd-key': 'confirminsert', className: 'btn btn-dark', type: 'button' },
+                        React.createElement('i', { className: 'fa fa-check text-success' })
+                    ),
+                    React.createElement(
+                        'button',
+                        { onClick: this.clickHandler, 'd-key': 'canceleinsert', className: 'btn btn-dark', type: 'button' },
+                        React.createElement('i', { className: 'fa fa-close text-danger' })
+                    )
+                );
+            }
             if (this.props.editing == true) {
                 return React.createElement(
                     'div',

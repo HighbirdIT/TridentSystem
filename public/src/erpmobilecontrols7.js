@@ -960,6 +960,7 @@ function getControlPropProfile(ownprops, useState){
         rowState:rowState,
         fullParentPath:fullParentPath,
         fullPath:fullPath,
+        rowIndex:ownprops.rowIndex,
     };
 }
 
@@ -1010,7 +1011,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         visible:ctlState.visible,
         invalidInfo : invalidInfo,
         selectOpt : ctlState.selectOpt,
-        plainTextMode : rowState != null && rowState.editing != true,
+        plainTextMode : rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
     };
@@ -1156,7 +1157,7 @@ function ERPC_Text_mapstatetoprops(state, ownprops) {
         visible: ctlState.visible,
         fetchingErr : ctlState.fetchingErr,
         invalidInfo : ctlState.invalidInfo == gPreconditionInvalidInfo ? null : ctlState.invalidInfo,
-        plainTextMode : rowState != null && rowState.editing != true,
+        plainTextMode : rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
     };
@@ -1555,7 +1556,8 @@ function ERPC_GridForm_RowcanceleditClicked(rowIndex){
 }
 
 function ERPC_GridForm_RowdeleteClicked(rowIndex){
-    console.log('rowdeleteClicked' + rowIndex);
+    var deleteBtn = this.btns.find(x=>{return x.key == 'delete'});
+    deleteBtn.handler(rowIndex);
 }
 
 function ERPC_GridForm_RowconfirmeditClicked(rowIndex){
@@ -1606,6 +1608,12 @@ class ERPC_GridForm_BtnCol extends React.PureComponent{
 	}
 
 	render(){
+        if(this.props.rowIndex == 'new'){
+            return 	<div className='btn-group gridFormBtnsCol'>
+						<button onClick={this.clickHandler} d-key='confirminsert' className='btn btn-dark' type='button'><i className='fa fa-check text-success' /></button>
+						<button onClick={this.clickHandler} d-key='canceleinsert' className='btn btn-dark' type='button'><i className='fa fa-close text-danger' /></button>
+					</div>;
+        }
 		if(this.props.editing == true){
 			return 	<div className='btn-group gridFormBtnsCol'>
 						<button onClick={this.clickHandler} d-key='confirmedit' className='btn btn-dark' type='button'><i className='fa fa-check text-success' /></button>

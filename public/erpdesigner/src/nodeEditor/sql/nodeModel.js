@@ -19,6 +19,7 @@ const SQLDEF_VAR = 'def_variable';
 const SQLNODE_CONTROL_API_PROP = 'controlapiprop';
 const SQLNODE_ENV_VAR = 'envvar';
 const SQLNODE_CURRENTDATAROW = 'currentdatarow';
+const SQLNODE_DELETERECORD = 'deleterecord';
 
 var SqlNodeClassMap = {};
 // CONSTSQLNODES_ARR output是常量的节点类型
@@ -80,6 +81,7 @@ class SqlNode_BluePrint extends EventEmitter {
         this.nodes_arr = [];
         this.loaded = true;
         this.isCustomDS = true;
+        var isDeleteBP = this.isDelete();
 
         if (bluePrintJson != null) {
             assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'retNodeId', 'editorLeft', 'editorTop', 'group']);
@@ -111,7 +113,7 @@ class SqlNode_BluePrint extends EventEmitter {
             }
         });
         */
-       this.returnSelectNode(createHelper);
+        this.returnSelectNode(createHelper);
         this.finalSelectNode.isConstNode = true;
         this.genColumns();
         createHelper.fireEvent('complete', createHelper);
@@ -125,6 +127,10 @@ class SqlNode_BluePrint extends EventEmitter {
 
     isScalar(){
         return this.type == "标量值";
+    }
+
+    isDelete(){
+        return this.type == "delete";
     }
 
     isFunction(){
@@ -148,28 +154,34 @@ class SqlNode_BluePrint extends EventEmitter {
     returnSelectNode(createHelper)
     {
         if (this.finalSelectNode == null) {
-            if(this.type == "标量值")
-            {
-                this.finalSelectNode = new SqlNode_Select({ title: '返回值' }, this, createHelper);
-            }
-            else
-            {
-                this.finalSelectNode = new SqlNode_Select({ title: '返回表' }, this, createHelper);
-            }       
-            this.finalSelectNode.removeSocket(this.finalSelectNode.outSocket);
+            switch(this.type){
+                case 'delete':
+                this.finalSelectNode = new SqlNode_DeleteRecord({ title:'删除记录'}, this, createHelper);
+                break;
+                default:
+                this.finalSelectNode = new SqlNode_Select({ title: this.type == '标量值' ? '返回值' :'返回值' }, this, createHelper);
+            } 
         }
         else
         {
+            switch(this.type){
+                case 'delete':
+                this.finalSelectNode.title='删除记录';
+                break;
+                default:
+                this.finalSelectNode.title='删除记录';
+                
+            } 
             if(this.type == "标量值")
             {
                 this.finalSelectNode.title='返回值';
             }
             else
             {
-                this.finalSelectNode.title='返回表';
+                this.finalSelectNode.title=this.type == '标量值' ? '返回值' :'返回值';
             }
-            this.finalSelectNode.removeSocket(this.finalSelectNode.outSocket);
         }
+        this.finalSelectNode.removeSocket(this.finalSelectNode.outSocket);
     }
     getColumnByName(colName){
         return this.columns.find(col=>{return col.name == colName;});
@@ -407,8 +419,15 @@ class SqlNode_BluePrint extends EventEmitter {
         for (var si in compilHelper.useVariables_arr) {
             varDeclareString += compilHelper.useVariables_arr[si].declareStr + ' ';
         }
+        var fullSql = '';
+        if(this.type == 'delete'){
+            fullSql = ret.getDirectOut().strContent;
+        }
+        else{
+            fullSql = ret.getSocketOut(this.finalSelectNode.outSocket).strContent;
+        }
         return {
-            sql: ret.getSocketOut(this.finalSelectNode.outSocket).strContent,
+            sql: fullSql,
             varDeclareStr: varDeclareString,
             vars_arr: compilHelper.useVariables_arr,
         };
@@ -1072,19 +1091,35 @@ class SqlNode_Column extends SqlNode_Base {
             return superRet;
         }
         var belongSelectNode = null;
+        var belongDeleteNode = null;
         var isolatedColumn = true;
         for (var i = preNodes_arr.length - 1; i >= 0; i--) {
             if (preNodes_arr[i].type == SQLNODE_SELECT) {
                 belongSelectNode = preNodes_arr[i];
                 break;
             }
+            else if (preNodes_arr[i].type == SQLNODE_DELETERECORD) {
+                belongDeleteNode = preNodes_arr[i];
+                break;                                                                                       
+            }
             else if (preNodes_arr[i].type == SQLNODE_AGGREGATE) {
                 isolatedColumn = false;                                                                                            
             }
         }
+        var selfCompileRet = new CompileResult(this);
+        var compareLabel = (this.tableAlias == null ? this.tableName : this.tableAlias);
+        var columnLabel = '[' + compareLabel + '].[' + this.columnName + ']';
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
-        if (belongSelectNode == null) {
+        if(belongDeleteNode){
+            if(this.checkCompileFlag(!belongDeleteNode.targetEntity.containColumn(this.columnName), '不是有效的列', helper)){
+                return false;
+            }
+            selfCompileRet.setSocketOut(this.outSocket, columnLabel);
+            helper.setCompileRetCache(this, selfCompileRet);
+            return selfCompileRet;
+        }
+        else if (belongSelectNode == null) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle
                 , nodeThis
@@ -1106,7 +1141,6 @@ class SqlNode_Column extends SqlNode_Base {
                 helper[belongSelectNode.id + '_complingSocket_isolated'] = true;
             }
         }
-        var compareLabel = (this.tableAlias == null ? this.tableName : this.tableAlias);
         var selectNodeContext = helper.getContext(belongSelectNode, new ContextFinder(ContextType_DBEntity));
         var columnItem = null;
         for (var i = 0; i < selectNodeContext.item_arr.length; ++i) {
@@ -1129,8 +1163,6 @@ class SqlNode_Column extends SqlNode_Base {
         if (columnItem.cvalType != null && this.outSocket.type != columnItem.cvalType) {
             this.outSocket.set({ type: columnItem.cvalType });
         }
-        var selfCompileRet = new CompileResult(this);
-        var columnLabel = '[' + compareLabel + '].[' + this.columnName + ']';
         selfCompileRet.setSocketOut(this.outSocket, columnLabel);
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
@@ -3228,6 +3260,155 @@ class SqlNode_CurrentDataRow extends SqlNode_Base {
     }
 }
 
+class SqlNode_DeleteRecord extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, SQLNODE_DELETERECORD, 'Delete', true, nodeJson);
+        autoBind(this);
+        this.isConstNode = true;
+        this.isContainer = false;
+
+        if (nodeJson) {
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+                this.inSocket.type = SqlVarType_Boolean;
+            }
+        }
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true, { type: SqlVarType_Boolean });
+            this.addSocket(this.inSocket);
+        }
+
+        if (this.targetEntity != null) {
+            var tem_arr = this.targetEntity.split('-');
+            if (tem_arr[0] == 'dbe') {
+                this.targetEntity = g_dataBase.getEntityByCode(tem_arr[1]);
+                this.targetEntity.on('syned', this.entitySynedHandler);
+                if(this.targetEntity && this.targetEntity.loaded){
+                    this.entitySynedHandler();
+                }
+                //console.log(this.targetEntity);
+            }
+            else {
+                this.targetEntity = null;
+            }
+        }
+        this.inSocket.inputable = false;
+        this.inSocket.label = '条件';
+
+        if (createHelper) {
+            createHelper.on('complete', this.createHelperCompleteHandler);
+        }
+    }
+
+    setEntity(entity) {
+        if(typeof entity === 'string'){
+            entity = g_dataBase.getEntityByCode(entity);
+        }
+        if (this.targetEntity == entity)
+            return;
+        if (this.targetEntity != null) {
+            this.targetEntity.off('syned', this.entitySynedHandler);
+        }
+        this.targetEntity = entity;
+        if (entity) {
+            entity.on('syned', this.entitySynedHandler);
+        }
+        this.entitySynedHandler();
+    }
+
+    inputSocketSortFun(sa, sb) {
+        return sa.index > sb.index;
+    }
+
+    entitySynedHandler() {
+        var entity = this.targetEntity;
+        this.fireChanged();
+        this.fireMoved(10);
+    }
+
+    createHelperCompleteHandler(createHelper) {
+        createHelper.off('complete', this.createHelperCompleteHandler);
+        this.postEditing(null);
+    }
+
+    requestSaveAttrs(jsonProf) {
+        var rlt = super.requestSaveAttrs();
+        if (this.targetEntity != null) {
+            rlt.targetEntity = 'dbe-' + this.targetEntity.code;
+            jsonProf.useEntity(this.targetEntity);
+        }
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['targetEntity']);
+    }
+
+    getColumns_arr(){
+        return [];
+    }
+
+    preEditing(editor) {
+        this.bluePrint.banEvent('changed');
+        for (var i = 0; i < this.entityNodes_arr.length; ++i) {
+            var tNode = this.entityNodes_arr[i];
+            if (!tNode.valid) {
+                this.entityNodes_arr.splice(i, 1);
+                --i;
+                tNode.isConstNode = false;
+                this.bluePrint.deleteNode(tNode);
+            }
+        }
+        this.bluePrint.allowEvent('changed');
+    }
+
+    postEditing(editor) {
+    }
+
+
+    addNewColumn(tableCode, tableAlias, tableName, columnName, cvalType, x, y, newborn) {
+        return new SqlNode_Column({
+            tableCode: tableCode,
+            tableAlias: tableAlias,
+            tableName: tableName,
+            columnName: columnName,
+            cvalType: cvalType,
+            left: x,
+            top: y,
+            newborn: newborn
+        }, this.parent, null);
+    }
+
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var selfCompileRet = new CompileResult(this);
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        //判断输入口是否是 union
+        var tLinks = this.bluePrint.linkPool.getLinksBySocket(this.inSocket);
+        var useDS = this.targetEntity;
+        if (this.checkCompileFlag(useDS == null || useDS.columns == null || useDS.type != 'U', useDS + '必须选择一个数据表', helper)) {
+            return false;
+        }
+        if (this.checkCompileFlag(tLinks.length == 0, '缺失条件输入', helper)) {
+            return false;
+        }
+        var socketComRet = this.getSocketCompileValue(helper, this.inSocket, usePreNodes_arr, null, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        
+        var finalSql = 'delete [' + useDS.name + '] where ' + socketComRet.value;
+        selfCompileRet.setDirectOut(finalSql);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
 SqlNodeClassMap[SQLNODE_DBENTITY] = {
     modelClass: SqlNode_DBEntity,
     comClass: C_SqlNode_DBEntity,
@@ -3312,4 +3493,8 @@ SqlNodeClassMap[SQLNODE_ENV_VAR] = {
 SqlNodeClassMap[SQLNODE_CURRENTDATAROW] = {
     modelClass: SqlNode_CurrentDataRow,
     comClass: C_JSNode_CurrentDataRow,
+};
+SqlNodeClassMap[SQLNODE_DELETERECORD] = {
+    modelClass: SqlNode_DeleteRecord,
+    comClass: C_SqlNode_DeleteRecord,
 };
