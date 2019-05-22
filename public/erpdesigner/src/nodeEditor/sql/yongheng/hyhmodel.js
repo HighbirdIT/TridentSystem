@@ -358,7 +358,9 @@ class SqlNode_Convert extends SqlNode_Base {
     }
 
     restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['code']);
     }
+
 
     convertTypeDropdownChangedHandler(data, dropCtl) {
         var theSocket = this.inSocket;
