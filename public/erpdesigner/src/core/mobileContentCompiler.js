@@ -919,6 +919,7 @@ class MobileContentCompiler extends ContentCompiler {
         var gridBodyPureRectClass = null;
 
         var hadRowButton = false;
+        var insertBtnSetting = null;
         var rowBtns_arr = [];
 
         switch (formType) {
@@ -926,6 +927,7 @@ class MobileContentCompiler extends ContentCompiler {
                 formReactClass.constructorFun.pushLine('ERPC_PageForm(this);');
                 break;
             case EFormType.Grid:
+                insertBtnSetting = theKernel.getInsertSetting();
                 formReactClass.constructorFun.pushLine('ERPC_GridForm(this);');
                 gridHeadPureRectClass = clientSide.getReactClass(theKernel.getReactClassName() + '_THead', true, true);
                 gridBodyPureRectClass = clientSide.getReactClass(theKernel.getReactClassName() + '_TBody', true, true);
@@ -941,6 +943,7 @@ class MobileContentCompiler extends ContentCompiler {
                         btnsVarStr += (btnsVarStr.length == 0 ? '' : ',') + "{key:'" + btnSetting.key + "',content:" + btnSetting.elemText + ", handler:this." + btnSetting.funName + ".bind(this)}";
                     });
                     formReactClass.constructorFun.pushLine('this.btns = [' + btnsVarStr + '];');
+                    formReactClass.constructorFun.pushLine('this.state={};');
                     gridHeadBodyPureRectClass = clientSide.getReactClass(theKernel.getReactClassName() + '_THeadBody', true, true);
                 }
                 break;
@@ -967,7 +970,7 @@ class MobileContentCompiler extends ContentCompiler {
         if (useDS != null) {
             var ifNowRecordBlock = new JSFile_IF('hadnowrecord', '!this.props.canInsert && this.props.nowRecord == null');
             if (isGridForm) {
-                ifNowRecordBlock.condition = "!this.props.canInsert && (this.props.records_arr == null || this.props.records_arr.length == 0)";
+                ifNowRecordBlock.condition = (insertBtnSetting ? 'this.state.hadNewRow != true && ' : '') + "!this.props.canInsert && (this.props.records_arr == null || this.props.records_arr.length == 0)";
             }
             ifInvalidBundleBlock.falseBlock.pushChild(ifNowRecordBlock);
             var noDataTip = theKernel.getAttribute(AttrNames.NoDataTip);
@@ -1002,7 +1005,7 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentFun.retBlock.pushLine(makeLine_Return(VarNames.RetElem));
         }
         else if (isGridForm) {
-            renderContentBlock.pushLine(VarNames.RetElem + " = <" + gridBodyPureRectClass.name + " startRowIndex={this.props.startRowIndex} endRowIndex={this.props.endRowIndex} form={this} />");
+            renderContentBlock.pushLine(VarNames.RetElem + " = <" + gridBodyPureRectClass.name + " startRowIndex={this.props.startRowIndex} endRowIndex={this.props.endRowIndex} form={this}" + (insertBtnSetting ? ' hadNewRow={this.state.hadNewRow}' : '') + " />");
             renderContentBlock.pushLine("if (this.props.pagebreak) {", 1);
             renderContentBlock.pushLine(VarNames.NavElem + " = <CBaseGridFormNavBar pageIndex={this.props.pageIndex} rowPerPage={this.props.rowPerPage} rowPerPageChangedHandler={this.rowPerPageChangedHandler} pageCount={this.props.pageCount} prePageClickHandler={this.prePageClickHandler} nxtPageClickHandler={this.nxtPageClickHandler} pageIndexChangedHandler={this.pageIndexChangedHandler} />", -1);
             renderContentBlock.pushLine("}");
@@ -1019,7 +1022,11 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentFun.pushLine("</table>", -1);
             renderContentFun.pushLine("</div>");
             renderContentFun.pushLine("<div onScroll={this.tableBodyScroll} className='mw-100 autoScroll'>", 1);
-            renderContentFun.pushLine("{" + VarNames.RetElem + "}", -1);
+            renderContentFun.pushLine("{" + VarNames.RetElem + "}");
+            if(insertBtnSetting){
+                renderContentFun.pushLine("{!this.state.hadNewRow && <button onClick={this.clickNewRowHandler} type='button' className='btn btn-success' ><i className='fa fa-plus'/>新增</button>}");
+            }
+            renderContentFun.subNextIndent();
             renderContentFun.pushLine("</div>", -1);
             renderContentFun.pushLine("{" + VarNames.NavElem + "}", -1);
             renderContentFun.pushLine('</div>);');
@@ -1416,8 +1423,55 @@ class MobileContentCompiler extends ContentCompiler {
             gridBodyPureRectClass.renderFun.retBlock.pushLine('<tbody>{trElems_arr}</tbody>', -1);
             gridBodyPureRectClass.renderFun.retBlock.pushLine('</table>);');
 
+            var gridBodyTableNewRowRenderBlock = new FormatFileBlock('newrowRender');
             if (autoIndexColumn) {
                 gridBodyTableRowRenderBlock.pushLine("<td className='indexTableHeader'>{rowIndex-startRowIndex+1}</td>");
+                if(insertBtnSetting){
+                    gridBodyTableNewRowRenderBlock.pushLine("<td className='indexTableHeader'>新</td>");
+                }
+            }
+
+            var insertBtnUseThisFormData = null;
+            var insertBtnUseFormChild_map = {};
+            if(insertBtnSetting){
+                // compile insertbtn
+                gridBodyPureRectClass.renderFun.pushLine('if(this.props.hadNewRow){', 1);
+                gridBodyPureRectClass.renderFun.pushLine("rowIndex = 'new';");
+                gridBodyPureRectClass.renderFun.pushLine('trElems_arr.push(', 1);
+                gridBodyPureRectClass.renderFun.pushLine('<tr key={rowIndex}>', 1);
+                gridBodyPureRectClass.renderFun.pushChild(gridBodyTableNewRowRenderBlock, -1);
+                gridBodyPureRectClass.renderFun.pushLine('</tr>);', -1);
+                gridBodyPureRectClass.renderFun.pushLine('}', -1);
+
+                var insertCompareRet = this.compileScriptBlueprint(insertBtnSetting.blueprint, {
+                    funName:insertBtnSetting.funName,
+                    scope:formReactClass,
+                    actLabel:insertBtnSetting.actLabel,
+                    key:'insert',
+                });
+                if(insertCompareRet == false){
+                    return false;
+                }
+                insertBtnUseThisFormData = insertCompareRet.useForm_map[theKernel.id];
+                if (insertBtnUseThisFormData == null || IsEmptyObject(insertBtnUseThisFormData.useControls_map)) {
+                    logManage.errorEx([logManager.createBadgeItem(
+                        theKernel.getReadableName(),
+                        theKernel,
+                        this.projectCompiler.clickKernelLogBadgeItemHandler),
+                        'insert操作中没有用到本窗体的控件']);
+                    return false;
+                }
+                //useControls_map 里是实际的control，要把顶级control找出来
+                for(var ctlId in insertBtnUseThisFormData.useControls_map){
+                    var theControl = insertBtnUseThisFormData.useControls_map[ctlId].kernel;
+                    var theParent = theControl;
+                    while(theParent.parent && theParent.parent != theKernel){
+                        theParent = theParent.parent;
+                    }
+                    if(theParent.parent){
+                        insertBtnUseFormChild_map[theParent.id] = true;
+                    }
+                }
             }
 
             for (ci in theKernel.children) {
@@ -1426,16 +1480,29 @@ class MobileContentCompiler extends ContentCompiler {
                     continue;
                 }
                 columnProfile = gridColumnsProfile_obj[childKernel.id];
-                gridBodyTableRowRenderBlock.pushLine("<td style={" + columnProfile.tdStyleID + '}>', 1);
-                if (this.compileKernel(childKernel, gridBodyTableRowRenderBlock, renderFun) == false) {
+                var childRederBlock = new FormatFileBlock('child_' + childKernel.id);
+                gridBodyTableRowRenderBlock.pushChild(childRederBlock);
+                childRederBlock.pushLine("<td style={" + columnProfile.tdStyleID + '}>', 1);
+                if (this.compileKernel(childKernel, childRederBlock, renderFun) == false) {
                     return false;
                 }
-                gridBodyTableRowRenderBlock.subNextIndent();
-                gridBodyTableRowRenderBlock.pushLine('</td>');
+                childRederBlock.subNextIndent();
+                childRederBlock.pushLine('</td>');
+                if(insertBtnSetting){
+                    if(insertBtnUseFormChild_map[childKernel.id]){
+                        gridBodyTableNewRowRenderBlock.pushChild(childRederBlock.clone());
+                    }
+                    else{
+                        gridBodyTableNewRowRenderBlock.pushLine("<td style={" + columnProfile.tdStyleID + '}/>');
+                    }
+                }
             }
 
             if(hadRowButton){
                 gridBodyTableRowRenderBlock.pushLine("<td><VisibleERPC_GridForm_BtnCol rowIndex={rowIndex} form={this.props.form} /></td>");
+                if(insertBtnSetting){
+                    gridBodyTableNewRowRenderBlock.pushLine("<td><VisibleERPC_GridForm_BtnCol rowIndex={rowIndex} form={this.props.form} /></td>");
+                }
             }
         }
 

@@ -483,6 +483,7 @@ var ControlKernelBase = function (_IAttributeable) {
         key: 'getStatePath',
         value: function getStatePath(stateName) {
             var splitChar = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '.';
+            var rowIndexVar_map = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
             var nowKernel = this.parent;
             var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
@@ -492,7 +493,15 @@ var ControlKernelBase = function (_IAttributeable) {
                         rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
                         break;
                     case M_FormKernel_Type:
-                        rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
+                        if (nowKernel.isGridForm()) {
+                            var rowIndexVar = rowIndexVar_map[nowKernel.id];
+                            if (rowIndexVar == null) {
+                                console.error('getStatePath 遇到grid表单但是没有rowindex变量信息');
+                            }
+                            rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + "row_'+" + rowIndexVar + "+'." + rlt;
+                        } else {
+                            rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
+                        }
                         break;
                 }
                 if (nowKernel) {

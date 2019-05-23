@@ -722,7 +722,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             });
             if (this.props.pullDataSource) {
                 if (this.props.pullOnce != true || this.props.optionsData.options_arr == null) {
-                    this.props.pullDataSource(this.props.fullPath);
+                    this.props.pullDataSource(this.props.fullParentPath);
                 }
             }
         }
@@ -1730,6 +1730,9 @@ function ERPC_GridForm(target) {
     target.rowcanceleditClicked = ERPC_GridForm_RowcanceleditClicked.bind(target);
     target.rowdeleteClicked = ERPC_GridForm_RowdeleteClicked.bind(target);
     target.rowconfirmeditClicked = ERPC_GridForm_RowconfirmeditClicked.bind(target);
+    target.clickNewRowHandler = ERPC_GridForm_ClickNewRowHandler.bind(target);
+    target.cancelInsert = ERPC_GridForm_CancelInsert.bind(target);
+    target.confrimInsert = ERPC_GridForm_ConfirmInsert.bind(target);
 }
 
 function ERPC_GridForm_RowPerPageChangedHandler(ev) {
@@ -1833,6 +1836,29 @@ function ERPC_GridForm_RowconfirmeditClicked(rowIndex) {
     });
 }
 
+function ERPC_GridForm_ClickNewRowHandler() {
+    this.setState({
+        hadNewRow: true
+    });
+}
+
+function ERPC_GridForm_CancelInsert() {
+    this.setState({
+        hadNewRow: false
+    });
+}
+
+function ERPC_GridForm_ConfirmInsert() {
+    var self = this;
+    this.submitInsert(function () {
+        setTimeout(function () {
+            self.setState({
+                hadNewRow: false
+            });
+        }, 50);
+    });
+}
+
 var ERPC_GridForm_BtnCol = function (_React$PureComponent10) {
     _inherits(ERPC_GridForm_BtnCol, _React$PureComponent10);
 
@@ -1865,11 +1891,18 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent10) {
                     break;
                 case 'delete':
                     this.props.form['rowdeleteClicked'](this.props.rowIndex);
+                    break;
                 case 'confirmedit':
                     this.props.form['rowconfirmeditClicked'](this.props.rowIndex);
                     break;
                 case 'canceledit':
                     this.props.form['rowcanceleditClicked'](this.props.rowIndex);
+                    break;
+                case 'cancelInsert':
+                    this.props.form.cancelInsert();
+                    break;
+                case 'confirminsert':
+                    this.props.form.confrimInsert();
                     break;
                 default:
                     btnSetting.handler(this.props.rowIndex);
@@ -1887,11 +1920,11 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent10) {
                     React.createElement(
                         'button',
                         { onClick: this.clickHandler, 'd-key': 'confirminsert', className: 'btn btn-dark', type: 'button' },
-                        React.createElement('i', { className: 'fa fa-check text-success' })
+                        React.createElement('i', { className: 'fa fa-upload text-success' })
                     ),
                     React.createElement(
                         'button',
-                        { onClick: this.clickHandler, 'd-key': 'canceleinsert', className: 'btn btn-dark', type: 'button' },
+                        { onClick: this.clickHandler, 'd-key': 'cancelInsert', className: 'btn btn-dark', type: 'button' },
                         React.createElement('i', { className: 'fa fa-close text-danger' })
                     )
                 );
@@ -1903,7 +1936,7 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent10) {
                     React.createElement(
                         'button',
                         { onClick: this.clickHandler, 'd-key': 'confirmedit', className: 'btn btn-dark', type: 'button' },
-                        React.createElement('i', { className: 'fa fa-check text-success' })
+                        React.createElement('i', { className: 'fa fa-save text-success' })
                     ),
                     React.createElement(
                         'button',
@@ -2271,6 +2304,15 @@ var MessageBoxItem = function () {
             this.btns = val;
             this.fireChanged();
         }
+    }, {
+        key: 'query',
+        value: function query(tip, btns_arr, callBack) {
+            this.text = tip;
+            this.btns = btns_arr;
+            this.callBack = callBack;
+            this.type = EMessageBoxType.Tip;
+            this.fireChanged();
+        }
     }]);
 
     return MessageBoxItem;
@@ -2323,9 +2365,14 @@ var CMessageBox = function (_React$PureComponent13) {
         key: 'clickBtnHandler',
         value: function clickBtnHandler(ev) {
             var msgItem = this.props.msgItem;
-            this.props.manager.delete(this);
+            var autoClose = true;
             if (msgItem.callBack) {
-                msgItem.callBack(ev.target.getAttrbute('d-type'));
+                if (msgItem.callBack(ev.target.getAttribute('d-type')) == false) {
+                    autoClose = false;
+                }
+            }
+            if (autoClose) {
+                this.props.manager.delete(this);
             }
         }
     }, {
@@ -2434,7 +2481,7 @@ var CMessageBox = function (_React$PureComponent13) {
                     btnsElem = msgItem.btns.map(function (btn) {
                         return React.createElement(
                             'button',
-                            { onClick: _this18.clickBtnHandler, key: btn.label, 'd-type': btn.key, type: 'button', className: btn.class },
+                            { onClick: _this18.clickBtnHandler, key: btn.label, 'd-type': btn.key, type: 'button', className: btn.class == null ? 'btn btn-light' : btn.class },
                             btn.label
                         );
                     });

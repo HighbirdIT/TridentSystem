@@ -461,7 +461,7 @@ class ControlKernelBase extends IAttributeable {
         return rlt;
     }
 
-    getStatePath(stateName, splitChar = '.'){
+    getStatePath(stateName, splitChar = '.', rowIndexVar_map = {}){
         var nowKernel = this.parent;
         var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
         do{
@@ -470,7 +470,16 @@ class ControlKernelBase extends IAttributeable {
                 rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
                 break;
                 case M_FormKernel_Type:
-                rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
+                if(nowKernel.isGridForm()){
+                    var rowIndexVar = rowIndexVar_map[nowKernel.id];
+                    if(rowIndexVar == null){
+                        console.error('getStatePath 遇到grid表单但是没有rowindex变量信息');
+                    }
+                    rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + "row_'+" + rowIndexVar + "+'." + rlt;
+                }
+                else{
+                    rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
+                }
                 break;
             }
             if(nowKernel){

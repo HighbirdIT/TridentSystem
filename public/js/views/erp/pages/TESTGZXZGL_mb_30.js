@@ -282,7 +282,7 @@ var CM_Form_0 = function (_React$PureComponent3) {
 								"\u6CA1\u6709\u67E5\u8BE2\u5230\u6570\u636E"
 							);
 						} else {
-							retElem = React.createElement(CM_Form_0_TBody, { hadNewRow: this.state.hadNewRow, startRowIndex: this.props.startRowIndex, endRowIndex: this.props.endRowIndex, form: this });
+							retElem = React.createElement(CM_Form_0_TBody, { startRowIndex: this.props.startRowIndex, endRowIndex: this.props.endRowIndex, form: this, hadNewRow: this.state.hadNewRow });
 							if (this.props.pagebreak) {
 								navElem = React.createElement(CBaseGridFormNavBar, { pageIndex: this.props.pageIndex, rowPerPage: this.props.rowPerPage, rowPerPageChangedHandler: this.rowPerPageChangedHandler, pageCount: this.props.pageCount, prePageClickHandler: this.prePageClickHandler, nxtPageClickHandler: this.nxtPageClickHandler, pageIndexChangedHandler: this.pageIndexChangedHandler });
 							}
@@ -446,6 +446,68 @@ var CM_Form_0 = function (_React$PureComponent3) {
 				})));
 			}, 50);
 		}
+	}, {
+		key: "onInsert",
+		value: function onInsert(callBack) {
+			var state = store.getState();
+			var rowIndex = 'new';
+			var M_Form_0_state = getStateByPath(state, 'M_Page_0.M_Form_0', {});
+			var M_Form_0_rowState = M_Form_0_state['row_' + rowIndex];
+			var M_Text_1_state = getStateByPath(M_Form_0_rowState, 'M_Text_1', {});
+			var M_LC_1_state = getStateByPath(M_Form_0_rowState, 'M_LC_1', {});
+			var M_Text_1_value = M_Text_1_state.value;
+			var M_Dropdown_0_state = getStateByPath(M_Form_0_rowState, 'M_Dropdown_0', {});
+			var M_LC_2_state = getStateByPath(M_Form_0_rowState, 'M_LC_2', {});
+			var M_Dropdown_0_value = M_Dropdown_0_state.value;
+			var validErr;
+			var hadValidErr = false;
+			var validErrState = {};
+			var scriptBP_3_msg = null;
+			var callback_final = function callback_final(state, data, err) {
+				if (state == null) {
+					store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
+				} else {
+					setManyStateByPath(state, '', validErrState);
+				}
+				if (hadValidErr) {
+					SendToast('验证失败，无法执行', EToastType.Warning);return;
+				}
+				if (err) {
+					scriptBP_3_msg.setData(err.info, EMessageBoxType.Error, '插入');
+					return;
+				}
+				scriptBP_3_msg.fireClose();
+				if (err == null && callBack != null) {
+					callBack(state);
+				}
+			};
+			validErr = BaseIsValueValid(state, M_LC_1_state, M_Text_1_state, M_Text_1_value, 'string', false, 'M_Text_1', validErrState);
+			validErrState['M_Page_0.M_Form_0.M_Text_1.invalidInfo'] = validErr;
+			if (validErr != null) hadValidErr = true;
+			validErr = BaseIsValueValid(state, M_LC_2_state, M_Dropdown_0_state, M_Dropdown_0_value, 'string', false, 'M_Dropdown_0', validErrState);
+			validErrState['M_Page_0.M_Form_0.M_Dropdown_0.invalidInfo'] = validErr;
+			if (validErr != null) hadValidErr = true;
+			if (hadValidErr) {
+				return callback_final(null, null, { info: gPreconditionInvalidInfo });
+			}
+			var fetchid = Math.round(Math.random() * 999999);
+			var fetchKey = 'M_Form_0_插入_' + rowIndex;
+			fetchTracer[fetchKey] = fetchid;
+			scriptBP_3_msg = PopMessageBox('', EMessageBoxType.Loading, '插入');;
+			var bundle_insert_table_0 = {
+				M_Text_1_value: M_Text_1_value,
+				M_Dropdown_0_value: M_Dropdown_0_value
+			};
+			setTimeout(function () {
+				store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_insert_table_0, action: 'M_Form_0_onInsert_insert_table_0' }, makeFTD_Callback(function (state, data_insert_table_0, err_insert_table_0) {
+					if (err_insert_table_0 == null) {
+						return callback_final(state, data_insert_table_0, err_insert_table_0);
+					} else {
+						return callback_final(state, data_insert_table_0, err_insert_table_0);
+					}
+				})));
+			}, 50);
+		}
 	}]);
 
 	return CM_Form_0;
@@ -564,8 +626,7 @@ var CM_Form_0_TBody = function (_React$PureComponent5) {
 				rowIndex = 'new';
 				trElems_arr.push(React.createElement(
 					"tr",
-					{ key: rowIndex, className: "bg-warning" },
-					React.createElement("td", { style: M_Form_0tdstyle0 }),
+					{ key: rowIndex },
 					React.createElement(
 						"td",
 						{ style: M_Form_0tdstyle1 },
@@ -575,11 +636,6 @@ var CM_Form_0_TBody = function (_React$PureComponent5) {
 						"td",
 						{ style: M_Form_0tdstyle2 },
 						React.createElement(VisibleERPC_DropDown, { rowIndex: rowIndex, id: "M_Dropdown_0", parentPath: "M_Page_0.M_Form_0", pullOnce: true, groupAttr: "\u5458\u5DE5\u5728\u804C\u72B6\u6001,\u6240\u5C5E\u7CFB\u7EDF\u540D\u79F0,\u6240\u5C5E\u90E8\u95E8\u540D\u79F0", pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u767B\u8BB0\u4EBA\u5458" })
-					),
-					React.createElement(
-						"td",
-						null,
-						React.createElement(VisibleERPC_GridForm_BtnCol, { rowIndex: rowIndex, form: this.props.form })
 					)
 				));
 			}

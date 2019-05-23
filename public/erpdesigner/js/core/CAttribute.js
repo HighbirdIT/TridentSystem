@@ -274,7 +274,8 @@ var AttrNames = {
     Event: {
         OnClick: 'onclick',
         OnUpdate: 'onUpdate',
-        OnDelete: 'onDelete'
+        OnDelete: 'onDelete',
+        OnInsert: 'onInsert'
     },
 
     LayoutNames: {

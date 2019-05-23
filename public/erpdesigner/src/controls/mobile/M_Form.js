@@ -16,6 +16,7 @@ const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
         new CAttribute('自动滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
     ]),
     new CAttributeGroup('操作设置',[
+        genScripAttribute('Insert', AttrNames.Event.OnInsert,EJsBluePrintFunGroup.GridRowBtnHandler),
         genScripAttribute('Update', AttrNames.Event.OnUpdate,EJsBluePrintFunGroup.GridRowBtnHandler),
         genScripAttribute('Delete', AttrNames.Event.OnDelete,EJsBluePrintFunGroup.GridRowBtnHandler),
     ]),
@@ -93,6 +94,14 @@ class M_FormKernel extends ContainerKernelBase{
         return this.getRowBtnHandlerBP(AttrNames.Event.OnUpdate) != null || this.getRowBtnHandlerBP(AttrNames.Event.OnDelete) != null;
     }
 
+    getInsertSetting(){
+        var btnBP = this.getRowBtnHandlerBP(AttrNames.Event.OnInsert);
+        if(btnBP != null){
+            return {key:'insert', blueprint:btnBP, funName:'submitInsert', actLabel:'新增'};
+        }
+        return null;
+    }
+
     getRowBtnSetting(){
         var rlt = [];
         var btnBP = this.getRowBtnHandlerBP(AttrNames.Event.OnUpdate);
@@ -112,6 +121,10 @@ class M_FormKernel extends ContainerKernelBase{
 
     getCanUseDataSource(){
         return this.project.dataMaster.getAllEntities();
+    }
+
+    isGridForm(){
+        return this.getAttribute(AttrNames.FormType) == EFormType.Grid;
     }
 
     autoSetCusDataSource(mustSelectColumns_arr){

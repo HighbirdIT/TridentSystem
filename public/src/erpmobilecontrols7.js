@@ -597,7 +597,7 @@ class ERPC_DropDown extends React.PureComponent {
         });
         if (this.props.pullDataSource) {
             if(this.props.pullOnce != true || this.props.optionsData.options_arr == null){
-                this.props.pullDataSource(this.props.fullPath);
+                this.props.pullDataSource(this.props.fullParentPath);
             }
         }
     }
@@ -1473,6 +1473,9 @@ function ERPC_GridForm(target){
     target.rowcanceleditClicked = ERPC_GridForm_RowcanceleditClicked.bind(target);
     target.rowdeleteClicked = ERPC_GridForm_RowdeleteClicked.bind(target);
     target.rowconfirmeditClicked = ERPC_GridForm_RowconfirmeditClicked.bind(target);
+    target.clickNewRowHandler = ERPC_GridForm_ClickNewRowHandler.bind(target);
+    target.cancelInsert = ERPC_GridForm_CancelInsert.bind(target);
+    target.confrimInsert = ERPC_GridForm_ConfirmInsert.bind(target);
 }
 
 function ERPC_GridForm_RowPerPageChangedHandler(ev){
@@ -1574,6 +1577,30 @@ function ERPC_GridForm_RowconfirmeditClicked(rowIndex){
     });
 }
 
+
+function ERPC_GridForm_ClickNewRowHandler(){
+    this.setState({
+        hadNewRow:true,
+    });
+}
+
+function ERPC_GridForm_CancelInsert(){
+    this.setState({
+        hadNewRow:false,
+    });
+}
+
+function ERPC_GridForm_ConfirmInsert(){
+    var self = this;
+    this.submitInsert(()=>{
+        setTimeout(() => {
+            self.setState({
+                hadNewRow:false,
+            });
+        }, 50);
+    });
+}
+
 class ERPC_GridForm_BtnCol extends React.PureComponent{
 	constructor(props){
 		super(props);
@@ -1596,11 +1623,18 @@ class ERPC_GridForm_BtnCol extends React.PureComponent{
             break;
             case 'delete':
             this.props.form['rowdeleteClicked'](this.props.rowIndex);
+            break;
             case 'confirmedit':
             this.props.form['rowconfirmeditClicked'](this.props.rowIndex);
             break;
             case 'canceledit':
             this.props.form['rowcanceleditClicked'](this.props.rowIndex);
+            break;
+            case 'cancelInsert':
+            this.props.form.cancelInsert();
+            break;
+            case 'confirminsert':
+            this.props.form.confrimInsert();
             break;
             default:
             btnSetting.handler(this.props.rowIndex);
@@ -1610,13 +1644,13 @@ class ERPC_GridForm_BtnCol extends React.PureComponent{
 	render(){
         if(this.props.rowIndex == 'new'){
             return 	<div className='btn-group gridFormBtnsCol'>
-						<button onClick={this.clickHandler} d-key='confirminsert' className='btn btn-dark' type='button'><i className='fa fa-check text-success' /></button>
-						<button onClick={this.clickHandler} d-key='canceleinsert' className='btn btn-dark' type='button'><i className='fa fa-close text-danger' /></button>
+						<button onClick={this.clickHandler} d-key='confirminsert' className='btn btn-dark' type='button'><i className='fa fa-upload text-success' /></button>
+						<button onClick={this.clickHandler} d-key='cancelInsert' className='btn btn-dark' type='button'><i className='fa fa-close text-danger' /></button>
 					</div>;
         }
 		if(this.props.editing == true){
 			return 	<div className='btn-group gridFormBtnsCol'>
-						<button onClick={this.clickHandler} d-key='confirmedit' className='btn btn-dark' type='button'><i className='fa fa-check text-success' /></button>
+						<button onClick={this.clickHandler} d-key='confirmedit' className='btn btn-dark' type='button'><i className='fa fa-save text-success' /></button>
 						<button onClick={this.clickHandler} d-key='canceledit' className='btn btn-dark' type='button'><i className='fa fa-close text-danger' /></button>
 					</div>;
 		}
@@ -1906,7 +1940,15 @@ class MessageBoxItem{
 	setBtns(val){
 		this.btns = val;
 		this.fireChanged();
-	}
+    }
+
+    query(tip, btns_arr, callBack){
+        this.text = tip;
+        this.btns = btns_arr;
+        this.callBack = callBack;
+        this.type = EMessageBoxType.Tip;
+        this.fireChanged();
+    }
 }
 
 
@@ -1947,11 +1989,16 @@ class CMessageBox extends React.PureComponent{
 	}
 
 	clickBtnHandler(ev){
-		var msgItem = this.props.msgItem;
-		this.props.manager.delete(this);
+        var msgItem = this.props.msgItem;
+        var autoClose = true;
 		if(msgItem.callBack){
-			msgItem.callBack(ev.target.getAttrbute('d-type'));
-		}
+            if(msgItem.callBack(ev.target.getAttribute('d-type')) == false){
+                autoClose = false;
+            }
+        }
+        if(autoClose){
+            this.props.manager.delete(this);
+        }
 	}
 
 	msgItemCloseHandler(ev){
@@ -2001,7 +2048,7 @@ class CMessageBox extends React.PureComponent{
 			}
 			else{
 				btnsElem = msgItem.btns.map(btn=>{
-					return (<button onClick={this.clickBtnHandler} key={btn.label} d-type={btn.key} type='button' className={btn.class}>{btn.label}</button>);
+					return (<button onClick={this.clickBtnHandler} key={btn.label} d-type={btn.key} type='button' className={btn.class == null ? 'btn btn-light' : btn.class}>{btn.label}</button>);
 				});
 			}
 			contentElem = (<p className='messageBoxContent'>{msgItem.text}</p>);

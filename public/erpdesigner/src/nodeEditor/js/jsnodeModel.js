@@ -28,6 +28,8 @@ const JSNODE_CREATE_CUSERROR = 'createcuserror';
 const JSNODE_FRESH_FORM = 'freshform';
 const JSNODE_DO_FLOWSTEP = 'doflowstep';
 const JSNODE_JUMP_PAGE = 'jumppage';
+const JSNODE_POPMESSAGEBOX = 'popmessagebox';
+const JSNODE_CLOSEMESSAGEBOX = 'closemessagebox';
 
 const JSDEF_VAR = 'def_variable';
 
@@ -534,6 +536,10 @@ class JSNode_BluePrint extends EventEmitter {
             else if (this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
                 params_arr = [VarNames.RowIndex, VarNames.CallBack];
                 if(compilHelper.config){
+                    if(compilHelper.config.key == 'insert'){
+                        params_arr = [VarNames.CallBack];
+                        theFun.scope.getVar(VarNames.RowIndex, true, singleQuotesStr('new'));
+                    }
                     fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.parent.id + '_' + compilHelper.config.actLabel + '_'),'+',VarNames.RowIndex);
                 }
                 else{
@@ -553,7 +559,7 @@ class JSNode_BluePrint extends EventEmitter {
                 if(isGridForm){
                     switch(this.group){
                         case EJsBluePrintFunGroup.GridRowBtnHandler:
-                        theFun.scope.getVar(formNowRowStateVarName, true, formStateVarName + "['row_' + " + VarNames.RowIndex + "]");
+                        theFun.scope.getVar(formNowRowStateVarName, true,makeStr_getStateByPath(formStateVarName, "'row_' + " + VarNames.RowIndex, '{}'));
                         ctlBelongStateVarName = formNowRowStateVarName;
                         break;
                     }
@@ -673,6 +679,17 @@ class JSNode_BluePrint extends EventEmitter {
             needFinalCallback = true;
             var checkVarValidStr = '';
             var validKernelBlock = new FormatFileBlock('validkernel');
+            var griRowIndexVars_map = {};
+            switch(ctlKernel.type){
+                case M_FormKernel_Type:
+                griRowIndexVars_map[ctlKernel.id] = VarNames.RowIndex;
+                break;
+                default:
+                var belongForm = ctlKernel.searchParentKernel(M_FormKernel_Type, true);
+                griRowIndexVars_map[belongForm.id] = VarNames.RowIndex;
+                break;
+            }
+            
             needCheckVars_arr.forEach(varObj => {
                 if (typeof varObj === 'string') {
                     checkVarValidStr += (checkVarValidStr.length == 0 ? 'IsEmptyString(' : ' || IsEmptyString(') + varObj + ')';
@@ -682,7 +699,8 @@ class JSNode_BluePrint extends EventEmitter {
                 if (varObj.kernel.hasAttribute(AttrNames.ValueType)) {
                     valueType = varObj.kernel.getAttribute(AttrNames.ValueType);
                 }
-                var infoStatePath = varObj.kernel.getStatePath('invalidInfo');
+
+                var infoStatePath = varObj.kernel.getStatePath('invalidInfo','.',griRowIndexVars_map);
                 if (this.group == EJsBluePrintFunGroup.CtlValid) {
                     validKernelBlock.pushLine("if(validErrState.hasOwnProperty('" + infoStatePath + "')){validErr=validErrState['" + infoStatePath + "'];}");
                     validKernelBlock.pushLine('else{', 1);
@@ -697,7 +715,7 @@ class JSNode_BluePrint extends EventEmitter {
                     singleQuotesStr(varObj.kernel.id),
                     validErrStateVar.name
                 ]) + ";");
-                validKernelBlock.pushLine("validErrState['" + infoStatePath + "']=validErr;");
+                validKernelBlock.pushLine(validErrStateVar.name + "['" + infoStatePath + "']=validErr;");
                 if (this.group == EJsBluePrintFunGroup.CtlValid) {
                     validKernelBlock.subNextIndent();
                     validKernelBlock.pushLine('}');
@@ -777,7 +795,7 @@ class JSNode_BluePrint extends EventEmitter {
                 theFun.scope.getVar(msgBoxVarName, true, 'null');
                 var ctlName = ctlKernel.getAttribute(AttrNames.Name);
                 if (startFtech_bk) {
-                    startFtech_bk.pushLine(makeLine_Assign(msgBoxVarName, "PopMessageBox('',EMessageBoxType.Loading, '" + ctlName + "');"));
+                    startFtech_bk.pushLine(makeLine_Assign(msgBoxVarName, "PopMessageBox('',EMessageBoxType.Loading, '" + ctlName + "')"));
                 }
 
                 if (needCheckVars_arr.length > 0) {
@@ -806,7 +824,7 @@ class JSNode_BluePrint extends EventEmitter {
                 }
                 
                 if (startFtech_bk) {
-                    startFtech_bk.pushLine(makeLine_Assign(msgBoxVarName, "PopMessageBox('',EMessageBoxType.Loading, '" + ctlName + "');"));
+                    startFtech_bk.pushLine(makeLine_Assign(msgBoxVarName, "PopMessageBox('',EMessageBoxType.Loading, '" + ctlName + "')"));
                 }
 
                 if (needCheckVars_arr.length > 0) {
