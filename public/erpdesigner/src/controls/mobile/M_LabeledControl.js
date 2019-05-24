@@ -9,6 +9,7 @@ const M_LabeledControlKernelAttrsSetting=GenControlKernelAttrsSetting([
         }),
         genNullableAttribute(),
         new CAttribute('列宽设置',AttrNames.ColumnWidth,ValueType.Int, 0),
+        new CAttribute('新行依赖',AttrNames.ColumnWidth,ValueType.Boolean, false),
     ]),
 ]);
 

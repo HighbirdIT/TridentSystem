@@ -487,6 +487,10 @@ class Node_Base extends EventEmitter {
         return null;
     }
 
+    customFlowSocketRender(socket) {
+        return null;
+    }
+
     requestSaveAttrs() {
         var rlt = {
             id: this.id,

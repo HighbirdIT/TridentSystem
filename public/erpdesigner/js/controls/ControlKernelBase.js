@@ -484,6 +484,7 @@ var ControlKernelBase = function (_IAttributeable) {
         value: function getStatePath(stateName) {
             var splitChar = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '.';
             var rowIndexVar_map = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+            var ignoreRowIndex = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
 
             var nowKernel = this.parent;
             var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
@@ -493,8 +494,11 @@ var ControlKernelBase = function (_IAttributeable) {
                         rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
                         break;
                     case M_FormKernel_Type:
-                        if (nowKernel.isGridForm()) {
+                        if (ignoreRowIndex != true && nowKernel.isGridForm()) {
                             var rowIndexVar = rowIndexVar_map[nowKernel.id];
+                            if (rowIndexVar == null && rowIndexVar_map.mapVarName) {
+                                rowIndexVar = rowIndexVar_map.mapVarName + '.' + nowKernel.id;
+                            }
                             if (rowIndexVar == null) {
                                 console.error('getStatePath 遇到grid表单但是没有rowindex变量信息');
                             }

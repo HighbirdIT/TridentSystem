@@ -5604,6 +5604,148 @@ class JSNODE_Delete_Table extends JSNode_Base {
     }
 }
 
+class JSNode_PopMessageBox extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_POPMESSAGEBOX, 'PopMsg', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0) {
+            this.outFlowSockets_arr = [];
+        }
+
+        for (var si = 0; si < this.inputScokets_arr.length; ++si) {
+            var theSocket = this.inputScokets_arr[si];
+            switch(theSocket.name){
+                case 'tip':
+                this.tipInputSocket = theSocket;
+                break;
+            }
+        }
+
+        if(this.tipInputSocket == null){
+            this.tipInputSocket = new NodeSocket('tip', this, true, { type: ValueType.Any });
+            this.addSocket(this.tipInputSocket);
+        }
+        this.tipInputSocket.label = '消息内容';
+        this.tipInputSocket.inputable = true;
+    }
+
+    flowSocketLabelChanged(ev){
+        var theSocketID = getAttributeByNode(ev.target, 'd-sid');
+        if (theSocketID == null)
+            return;
+        var theSocket = this.getSocketById(theSocketID);
+        if (theSocket == null)
+            return;
+        theSocket.setExtra('btnlabel', ev.target.value.trim());
+        theSocket.fireEvent('changed', 10);
+    }
+
+    customFlowSocketRender(socket) {
+        if (socket.isIn) {
+            return null;
+        }
+        var label = socket.getExtra('btnlabel','');
+        var key = socket.getExtra('key');
+        return <div className='d-flex flex-grow1 flex-shrink-1'>
+            <span f-canmove={1} className='badge badge-primary'>名称</span>
+            <input type='text' className='socketInputer' d-sid={socket.id} value={label} onChange={this.flowSocketLabelChanged} />
+        </div>;
+    }
+
+    genOutFlowSocket() {
+        var nameI = this.outFlowSockets_arr.length;
+        while (nameI < 999) {
+            if (this.getScoketByName('outflow' + nameI, true) == null) {
+                break;
+            }
+            ++nameI;
+        }
+        return new NodeFlowSocket('outflow' + nameI, this, false);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+        if (this.checkCompileFlag(this.outFlowSockets_arr.length == 0, '至少要有一个输出流！', helper)) {
+            return false;
+        }
+        var bpGroup = this.bluePrint.group;
+        if (this.checkCompileFlag(bpGroup != EJsBluePrintFunGroup.GridRowBtnHandler && bpGroup != EJsBluePrintFunGroup.CtlEvent, '不适用于此蓝图类型', helper)) {
+            return false;
+        }
+        var oi;
+        var msgBoxVarName = this.bluePrint.id + '_msg';
+        var keyVarName = this.id + '_key';
+        var socketComRet = this.getSocketCompileValue(helper, this.tipInputSocket, usePreNodes_arr, myJSBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var btnSetStr = '';
+        var flowSocket;
+        var hadBtnLabels_map = {};
+        for (oi in this.outFlowSockets_arr) {
+            flowSocket = this.outFlowSockets_arr[oi];
+            var btnLabel = flowSocket.getExtra('btnlabel');
+            if (this.checkCompileFlag(hadBtnLabels_map[btnLabel], '输出流名称不能重复', helper)) {
+                return false;
+            }
+            if (this.checkCompileFlag(IsEmptyString(btnLabel), '输出流没有设置名称', helper)) {
+                return false;
+            }
+            btnSetStr += (btnSetStr.length == 0 ? '' : ',') + "{label:'" + btnLabel + "',key:'" + btnLabel + "'}";
+        }
+        var tipValue = socketComRet.value;
+        var flowsBlock = new FormatFileBlock('flows');
+        myJSBlock.pushLine(makeStr_AddAll(msgBoxVarName,'.query(',tipValue,',',midbracketStr(btnSetStr),',(',keyVarName,')=>{'), 1);
+        myJSBlock.pushChild(flowsBlock);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('});');
+        var flowLinks_arr = null;
+        var flowLink = null;
+        var nextNodeCompileRet = null;
+        
+        for (oi in this.outFlowSockets_arr) {
+            flowSocket = this.outFlowSockets_arr[oi];
+            var btnLabel = flowSocket.getExtra('btnlabel');
+            var flowBlock = new FormatFileBlock(flowSocket.id);
+            flowBlock.pushLine('if(' + keyVarName + '==' + singleQuotesStr(btnLabel) + '){', 1);
+            flowsBlock.pushChild(flowBlock);
+            flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(flowSocket);
+            if (flowLinks_arr.length == 0) {
+                flowBlock.pushLine(msgBoxVarName + '.fireClose();');
+            }
+            else{
+                flowLink = flowLinks_arr[0];
+                nextNodeCompileRet = this.compileFlowNode(flowLink, helper, usePreNodes_arr, flowBlock);
+                if (nextNodeCompileRet == false) {
+                    return false;
+                }
+            }
+            flowBlock.subNextIndent();
+            flowBlock.pushLine('}');
+        }
+
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_VAR_GET] = {
     modelClass: JSNode_Var_Get,
     comClass: C_JSNode_Var_Get,
@@ -5723,4 +5865,8 @@ JSNodeClassMap[JSNODE_CONTROL_API_CALLFUN] = {
 JSNodeClassMap[JSNODE_DELETE_TABLE] = {
     modelClass: JSNODE_Delete_Table,
     comClass: C_JSNODE_Delete_Table,
+};
+JSNodeClassMap[JSNODE_POPMESSAGEBOX] = {
+    modelClass: JSNode_PopMessageBox,
+    comClass: C_Node_SimpleNode,
 };

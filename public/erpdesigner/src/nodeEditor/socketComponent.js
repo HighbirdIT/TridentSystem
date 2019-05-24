@@ -146,12 +146,24 @@ class C_Node_Socket extends React.PureComponent{
             dragElem = (<div className={'btn btn-' + (this.state.draging ? 'primary' : 'dark')} onMouseDown={this.mouseDownDragIconHandler}><i className='fa fa-arrows-v cursor-pointer' /></div>);
         }
         var cusElem = null;
-        if(this.props.customSocketRender){
-            cusElem = this.props.customSocketRender(socket);
+        
+        if(socket.isFlowSocket){
+            if(this.props.customFlowSocketRender){
+                cusElem = this.props.customFlowSocketRender(socket);
+            }
+            else{
+                cusElem = socket.node.customFlowSocketRender(socket);
+            }
         }
         else{
-            cusElem = socket.node.customSocketRender(socket);
+            if(this.props.customSocketRender){
+                cusElem = this.props.customSocketRender(socket);
+            }
+            else{
+                cusElem = socket.node.customSocketRender(socket);
+            }
         }
+        
         var valTypeElem = null;
         if(socket.type == SocketType_CtlKernel){
             var kernelType = socket.kernelType;

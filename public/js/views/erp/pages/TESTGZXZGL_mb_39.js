@@ -275,14 +275,14 @@ var CM_Form_0 = function (_React$PureComponent3) {
 					if (this.props.invalidbundle) {
 						retElem = renderInvalidBundleDiv();
 					} else {
-						if (!this.props.canInsert && (this.props.records_arr == null || this.props.records_arr.length == 0)) {
+						if (this.state.hadNewRow != true && !this.props.canInsert && (this.props.records_arr == null || this.props.records_arr.length == 0)) {
 							retElem = React.createElement(
 								"div",
 								{ className: "m-auto" },
 								"\u6CA1\u6709\u67E5\u8BE2\u5230\u6570\u636E"
 							);
 						} else {
-							retElem = React.createElement(CM_Form_0_TBody, { startRowIndex: this.props.startRowIndex, endRowIndex: this.props.endRowIndex, form: this });
+							retElem = React.createElement(CM_Form_0_TBody, { startRowIndex: this.props.startRowIndex, endRowIndex: this.props.endRowIndex, form: this, hadNewRow: this.state.hadNewRow });
 							if (this.props.pagebreak) {
 								navElem = React.createElement(CBaseGridFormNavBar, { pageIndex: this.props.pageIndex, rowPerPage: this.props.rowPerPage, rowPerPageChangedHandler: this.rowPerPageChangedHandler, pageCount: this.props.pageCount, prePageClickHandler: this.prePageClickHandler, nxtPageClickHandler: this.nxtPageClickHandler, pageIndexChangedHandler: this.pageIndexChangedHandler });
 							}
@@ -315,7 +315,13 @@ var CM_Form_0 = function (_React$PureComponent3) {
 				React.createElement(
 					"div",
 					{ onScroll: this.tableBodyScroll, className: "mw-100 autoScroll" },
-					retElem
+					retElem,
+					!this.state.hadNewRow && React.createElement(
+						"button",
+						{ onClick: this.clickNewRowHandler, type: "button", className: "btn btn-success" },
+						React.createElement("i", { className: "fa fa-plus" }),
+						"\u65B0\u589E"
+					)
 				),
 				navElem
 			);
@@ -325,7 +331,7 @@ var CM_Form_0 = function (_React$PureComponent3) {
 		value: function onUpdate(rowIndex, callBack) {
 			var state = store.getState();
 			var M_Form_0_state = getStateByPath(state, 'M_Page_0.M_Form_0', {});
-			var M_Form_0_rowState = M_Form_0_state['row_' + rowIndex];
+			var M_Form_0_rowState = getStateByPath(M_Form_0_state, 'row_' + rowIndex, {});
 			var M_Text_1_state = getStateByPath(M_Form_0_rowState, 'M_Text_1', {});
 			var M_LC_1_state = getStateByPath(M_Form_0_rowState, 'M_LC_1', {});
 			var M_Text_1_value = M_Text_1_state.value;
@@ -359,10 +365,10 @@ var CM_Form_0 = function (_React$PureComponent3) {
 				return callback_final(state, null, { info: gPreconditionInvalidInfo });
 			}
 			validErr = BaseIsValueValid(state, M_LC_1_state, M_Text_1_state, M_Text_1_value, 'string', false, 'M_Text_1', validErrState);
-			validErrState['M_Page_0.M_Form_0.M_Text_1.invalidInfo'] = validErr;
+			validErrState['M_Page_0.M_Form_0.row_' + rowIndex + '.M_Text_1.invalidInfo'] = validErr;
 			if (validErr != null) hadValidErr = true;
 			validErr = BaseIsValueValid(state, M_LC_2_state, M_Dropdown_0_state, M_Dropdown_0_value, 'string', false, 'M_Dropdown_0', validErrState);
-			validErrState['M_Page_0.M_Form_0.M_Dropdown_0.invalidInfo'] = validErr;
+			validErrState['M_Page_0.M_Form_0.row_' + rowIndex + '.M_Dropdown_0.invalidInfo'] = validErr;
 			if (validErr != null) hadValidErr = true;
 			if (hadValidErr) {
 				return callback_final(null, null, { info: gPreconditionInvalidInfo });
@@ -370,7 +376,7 @@ var CM_Form_0 = function (_React$PureComponent3) {
 			var fetchid = Math.round(Math.random() * 999999);
 			var fetchKey = 'M_Form_0_修改_' + rowIndex;
 			fetchTracer[fetchKey] = fetchid;
-			scriptBP_0_msg = PopMessageBox('', EMessageBoxType.Loading, '修改');;
+			scriptBP_0_msg = PopMessageBox('', EMessageBoxType.Loading, '修改');
 			var bundle_update_table_0 = {
 				RCDKEY: M_Form_0_nowRecord['工作小组代码'],
 				M_Text_1_value: M_Text_1_value,
@@ -391,7 +397,7 @@ var CM_Form_0 = function (_React$PureComponent3) {
 		value: function onDelete(rowIndex, callBack) {
 			var state = store.getState();
 			var M_Form_0_state = getStateByPath(state, 'M_Page_0.M_Form_0', {});
-			var M_Form_0_rowState = M_Form_0_state['row_' + rowIndex];
+			var M_Form_0_rowState = getStateByPath(M_Form_0_state, 'row_' + rowIndex, {});
 			var M_Form_0_nowRecord = this.props.records_arr[rowIndex];
 			var validErr;
 			var hadValidErr = false;
@@ -424,18 +430,91 @@ var CM_Form_0 = function (_React$PureComponent3) {
 			var fetchid = Math.round(Math.random() * 999999);
 			var fetchKey = 'M_Form_0_删除_' + rowIndex;
 			fetchTracer[fetchKey] = fetchid;
-			scriptBP_1_msg = PopMessageBox('', EMessageBoxType.Loading, '删除');;
-			var bundle_delete_table_0 = {
-				工作小组代码: M_Form_0_nowRecord['工作小组代码']
+			scriptBP_1_msg = PopMessageBox('', EMessageBoxType.Loading, '删除');
+			scriptBP_1_msg.query('确定要删除这条数据吗？', [{ label: '确定', key: '确定' }, { label: '取消', key: '取消' }], function (popmessagebox_0_key) {
+				if (popmessagebox_0_key == '确定') {
+					var bundle_delete_table_0 = {
+						工作小组代码: M_Form_0_nowRecord['工作小组代码']
+					};
+					setTimeout(function () {
+						store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_delete_table_0, action: 'M_Form_0_onDelete_delete_table_0' }, makeFTD_Callback(function (state, data_delete_table_0, err_delete_table_0) {
+							if (err_delete_table_0 == null) {
+								setTimeout(function () {
+									pull_M_Form_0();
+								}, 50);
+							} else {
+								return callback_final(state, data_delete_table_0, err_delete_table_0);
+							}
+						})));
+					}, 50);
+				}
+				if (popmessagebox_0_key == '取消') {
+					scriptBP_1_msg.fireClose();
+				}
+			});
+		}
+	}, {
+		key: "submitInsert",
+		value: function submitInsert(callBack) {
+			var state = store.getState();
+			var rowIndex = 'new';
+			var M_Form_0_state = getStateByPath(state, 'M_Page_0.M_Form_0', {});
+			var M_Form_0_rowState = getStateByPath(M_Form_0_state, 'row_' + rowIndex, {});
+			var M_Text_1_state = getStateByPath(M_Form_0_rowState, 'M_Text_1', {});
+			var M_LC_1_state = getStateByPath(M_Form_0_rowState, 'M_LC_1', {});
+			var M_Text_1_value = M_Text_1_state.value;
+			var M_Dropdown_0_state = getStateByPath(M_Form_0_rowState, 'M_Dropdown_0', {});
+			var M_LC_2_state = getStateByPath(M_Form_0_rowState, 'M_LC_2', {});
+			var M_Dropdown_0_value = M_Dropdown_0_state.value;
+			var validErr;
+			var hadValidErr = false;
+			var validErrState = {};
+			var scriptBP_3_msg = null;
+			var callback_final = function callback_final(state, data, err) {
+				if (state == null) {
+					store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
+				} else {
+					setManyStateByPath(state, '', validErrState);
+				}
+				if (hadValidErr) {
+					SendToast('验证失败，无法执行', EToastType.Warning);return;
+				}
+				if (err) {
+					scriptBP_3_msg.setData(err.info, EMessageBoxType.Error, '新增');
+					return;
+				}
+				scriptBP_3_msg.fireClose();
+				if (err == null && callBack != null) {
+					callBack(state);
+				}
+			};
+			validErr = BaseIsValueValid(state, M_LC_1_state, M_Text_1_state, M_Text_1_value, 'string', false, 'M_Text_1', validErrState);
+			validErrState['M_Page_0.M_Form_0.row_' + rowIndex + '.M_Text_1.invalidInfo'] = validErr;
+			if (validErr != null) hadValidErr = true;
+			validErr = BaseIsValueValid(state, M_LC_2_state, M_Dropdown_0_state, M_Dropdown_0_value, 'string', false, 'M_Dropdown_0', validErrState);
+			validErrState['M_Page_0.M_Form_0.row_' + rowIndex + '.M_Dropdown_0.invalidInfo'] = validErr;
+			if (validErr != null) hadValidErr = true;
+			if (hadValidErr) {
+				return callback_final(null, null, { info: gPreconditionInvalidInfo });
+			}
+			var fetchid = Math.round(Math.random() * 999999);
+			var fetchKey = 'M_Form_0_新增_' + rowIndex;
+			fetchTracer[fetchKey] = fetchid;
+			scriptBP_3_msg = PopMessageBox('', EMessageBoxType.Loading, '新增');
+			var bundle_insert_table_0 = {
+				M_Text_1_value: M_Text_1_value,
+				M_Dropdown_0_value: M_Dropdown_0_value
 			};
 			setTimeout(function () {
-				store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_delete_table_0, action: 'M_Form_0_onDelete_delete_table_0' }, makeFTD_Callback(function (state, data_delete_table_0, err_delete_table_0) {
-					if (err_delete_table_0 == null) {
+				store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_insert_table_0, action: 'M_Form_0_onInsert_insert_table_0' }, makeFTD_Callback(function (state, data_insert_table_0, err_insert_table_0) {
+					if (err_insert_table_0 == null) {
 						setTimeout(function () {
 							pull_M_Form_0();
 						}, 50);
+						var ret = callback_final(state, data_insert_table_0, null);
+						return ret == null ? state : ret;
 					} else {
-						return callback_final(state, data_delete_table_0, err_delete_table_0);
+						return callback_final(state, data_insert_table_0, err_insert_table_0);
 					}
 				})));
 			}, 50);
@@ -537,6 +616,29 @@ var CM_Form_0_TBody = function (_React$PureComponent5) {
 						{ style: M_Form_0tdstyle0 },
 						React.createElement(VisibleERPC_Label, { className: "erp-control ", rowIndex: rowIndex, id: "M_Label_0", parentPath: "M_Page_0.M_Form_0", type: "string" })
 					),
+					React.createElement(
+						"td",
+						{ style: M_Form_0tdstyle1 },
+						React.createElement(VisibleERPC_Text, { rowIndex: rowIndex, id: "M_Text_1", parentPath: "M_Page_0.M_Form_0", type: "string", linetype: "single" })
+					),
+					React.createElement(
+						"td",
+						{ style: M_Form_0tdstyle2 },
+						React.createElement(VisibleERPC_DropDown, { rowIndex: rowIndex, id: "M_Dropdown_0", parentPath: "M_Page_0.M_Form_0", pullOnce: true, groupAttr: "\u5458\u5DE5\u5728\u804C\u72B6\u6001,\u6240\u5C5E\u7CFB\u7EDF\u540D\u79F0,\u6240\u5C5E\u90E8\u95E8\u540D\u79F0", pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u767B\u8BB0\u4EBA\u5458" })
+					),
+					React.createElement(
+						"td",
+						null,
+						React.createElement(VisibleERPC_GridForm_BtnCol, { rowIndex: rowIndex, form: this.props.form })
+					)
+				));
+			}
+			if (this.props.hadNewRow) {
+				rowIndex = 'new';
+				trElems_arr.push(React.createElement(
+					"tr",
+					{ key: rowIndex },
+					React.createElement("td", { style: M_Form_0tdstyle0 }),
 					React.createElement(
 						"td",
 						{ style: M_Form_0tdstyle1 },

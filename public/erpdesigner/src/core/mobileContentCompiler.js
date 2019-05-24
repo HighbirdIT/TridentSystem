@@ -183,11 +183,11 @@ class MobileContentCompiler extends ContentCompiler {
             switch (relyPath.type) {
                 case ECtlReplyPathType.SetAP_On_BPChanged:
                 case ECtlReplyPathType.CallFun_On_BPChanged:
-                    propFulPath = relyPath.berelyCtl.getStatePath(relyPath.berelyPropName);
+                    propFulPath = relyPath.berelyCtl.getStatePath(relyPath.berelyPropName,'.',null,true);
                     propChangedHandlerName = relyPath.berelyCtl.id + '_' + relyPath.berelyPropName + '_changed';
                     changedFun = clientSide.scope.getFunction(propChangedHandlerName);
                     if (changedFun == null) {
-                        changedFun = clientSide.scope.getFunction(propChangedHandlerName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs']);
+                        changedFun = clientSide.scope.getFunction(propChangedHandlerName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs','rowIndexInfo_map']);
                         changedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
                         changedFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''", VarNames.NeedSetState], ';'));
                         clientSide.stateChangedAct[singleQuotesStr(propFulPath)] = propChangedHandlerName + '.bind(window)';
@@ -203,7 +203,10 @@ class MobileContentCompiler extends ContentCompiler {
                         else {
                             console.error('不支持的approach!');
                         }
-                        changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName)), getValueStr));
+                        var rowIndexInfo_map={
+                            mapVarName:'rowIndexInfo_map',
+                        };
+                        changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName,'.',rowIndexInfo_map)), getValueStr));
                     }
                     else {
                         var actKey = 'call_' + relyPath.funName;
@@ -371,7 +374,7 @@ class MobileContentCompiler extends ContentCompiler {
                                     default:
                                     sv = singleQuotesStr(sv);
                                 }
-                                controlInitBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), singleQuotesStr(sv)));
+                                controlInitBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), sv));
                             }
                             else if (stateItem.setNull) {
                                 controlInitBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), 'null'));
@@ -937,7 +940,7 @@ class MobileContentCompiler extends ContentCompiler {
 
                 rowBtns_arr = theKernel.getRowBtnSetting();
                 hadRowButton = rowBtns_arr.length > 0;
-                if(hadRowButton){
+                if(hadRowButton || insertBtnSetting){
                     var btnsVarStr = '';
                     rowBtns_arr.forEach(btnSetting=>{
                         btnsVarStr += (btnsVarStr.length == 0 ? '' : ',') + "{key:'" + btnSetting.key + "',content:" + btnSetting.elemText + ", handler:this." + btnSetting.funName + ".bind(this)}";
@@ -1918,6 +1921,35 @@ class MobileContentCompiler extends ContentCompiler {
                 var serverValue = ReplaceIfNull(useParam.serverValue, 'bundle.' + useParam.bundleName);
                 paramsetblock.pushLine("dbhelper.makeSqlparam('" + useParam.bundleName + "', sqlTypes.NVarChar(4000), " + serverValue + "),");
                 bodyCheckblock.pushLine("if(req.body.bundle." + useParam.bundleName + " == null){" + makeLine_RetServerError('没有提供' + useParam.bundleName) + '};');
+            }
+        }
+
+        if (!IsEmptyObject(bpCompileHelper.useForm_map)) {
+            for (var formSI in bpCompileHelper.useForm_map) {
+                var useForm = bpCompileHelper.useForm_map[formSI];
+                for (var ctlSI in useForm.useControls_map) {
+                    var useCtl = useForm.useControls_map[ctlSI];
+                    for (var useProp in useCtl.useprops_map) {
+                        var propApi = useCtl.useprops_map[useProp];
+                        var useName = useCtl.kernel.id + '_' + propApi.stateName;
+                        needSetParams_arr.push({ bundleName: useName, clientValue: useName });
+
+                        if (autoClearValue) {
+                            this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'text', useCtl.kernel, propApi.stateName, {
+                                value: 'null',
+                            });
+                            this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'value', useCtl.kernel, propApi.stateName, {
+                                value: 'null',
+                            });
+                        }
+                        if(stableData){
+                            this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'options_arr', useCtl.kernel, propApi.stateName, {
+                                value: 'null',
+                            });
+                        }
+                        initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', useName), makeStr_getStateByPath('useState', singleQuotesStr(makeStr_DotProp(useCtl.kernel.parentPath, useCtl.kernel.id + '.' + propApi.stateName)))));
+                    }
+                }
             }
         }
 
