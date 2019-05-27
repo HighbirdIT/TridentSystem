@@ -221,7 +221,12 @@ var VarNames = {
     RowIndex: 'rowIndex',
     CallBack: 'callBack',
     FetchKey: 'fetchKey',
-    ParentPath: 'parentPath'
+    ParentPath: 'parentPath',
+    RowIndexInfo_map: 'rowIndexInfo_map',
+    SelectMode: 'selectMode',
+    FullPath: 'fullPath',
+    FullParentPath: 'fullParentPath',
+    SelectedRows_arr: 'selectedRows_arr'
 };
 
 var AttrNames = {
@@ -270,6 +275,8 @@ var AttrNames = {
     StableData: 'stableData',
     RecEditeable: 'recEditeable',
     RecDeletable: 'recDeletable',
+    NewRowDepend: 'newRowDepend',
+    SelectMode: 'selectMode',
 
     Event: {
         OnClick: 'onclick',

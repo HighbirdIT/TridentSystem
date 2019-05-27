@@ -641,6 +641,13 @@
   overflow: hidden;
 }
 
+.selectorTableHeader{
+  width: 2em;
+  max-width: 2em;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
 
 .li_input:focus{
   border: 1px solid rgb(102, 101, 101);

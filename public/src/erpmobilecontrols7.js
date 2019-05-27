@@ -7,6 +7,7 @@ const gCantNullInfo = '不能为空值';
 
 
 const HashKey_FixItem = 'fixitem';
+const gEmptyArr = [];
 
 class DataCache{
     constructor(label){
@@ -1476,6 +1477,8 @@ function ERPC_GridForm(target){
     target.clickNewRowHandler = ERPC_GridForm_ClickNewRowHandler.bind(target);
     target.cancelInsert = ERPC_GridForm_CancelInsert.bind(target);
     target.confrimInsert = ERPC_GridForm_ConfirmInsert.bind(target);
+    target.getSelectedRowIndex = ERPC_GridForm_GetSelectedRowIndex.bind(target);
+    target.selectorClicked = ERPC_GridForm_SelectorClicked.bind(target);
 }
 
 function ERPC_GridForm_RowPerPageChangedHandler(ev){
@@ -1601,6 +1604,33 @@ function ERPC_GridForm_ConfirmInsert(){
     });
 }
 
+function ERPC_GridForm_GetSelectedRowIndex(){
+    return this.props.selectedRows_arr.length == 0 ? -1 : this.props.selectedRows_arr[0];
+}
+
+function ERPC_GridForm_SelectorClicked(rowIndex){
+    var needSetState={};
+    if(this.props.selectMode == 'single'){
+        if(this.getSelectedRowIndex() == rowIndex){
+            return;
+        }
+        needSetState[this.props.fullPath + '.selectedRows_arr'] = [rowIndex];
+    }
+    else{
+        var index = this.props.selectedRows_arr.indexOf(rowIndex);
+        if(index == -1){
+            needSetState[this.props.fullPath + '.selectedRows_arr'] = this.props.selectedRows_arr.concat(rowIndex);
+        }
+        else{
+            var newArr = this.props.selectedRows_arr.concat();
+            newArr.splice(index, 1);
+            needSetState[this.props.fullPath + '.selectedRows_arr'] = newArr;
+        }
+    }
+    
+    store.dispatch(makeAction_setManyStateByPath(needSetState, ''));
+}
+
 class ERPC_GridForm_BtnCol extends React.PureComponent{
 	constructor(props){
 		super(props);
@@ -1675,6 +1705,50 @@ function ERPC_GridForm_BtnCol_dispatchtorprops(dispatch, ownprops) {
     return {
     };
 }
+
+class ERPC_GridSelectableRow extends React.PureComponent{
+	constructor(props){
+		super(props);
+		this.clickHandler = this.clickHandler.bind(this);
+	}
+	clickHandler(ev){
+		this.props.form.selectorClicked(this.props.rowIndex);
+	}
+	render(){
+		var selectMode = this.props.form.props.selectMode;
+		var checked = this.props.selected;
+		var selectElem = null;
+		if(selectMode == 'multi'){
+			selectElem = <span onClick={this.clickHandler} className="fa-stack fa-lg">
+                    <i className={"fa fa-square-o fa-stack-2x" } />
+                    <i className={'fa fa-stack-1x ' + (checked ? ' fa-check text-success' : '')} />
+                </span>;
+		}
+		else if(selectMode == 'single'){
+			selectElem = <span onClick={this.clickHandler} className="fa-stack fa-lg">
+                    <i className={"fa fa-circle-o fa-stack-2x" } />
+                    <i className={'fa fa-stack-1x ' + (checked ? ' fa-check text-success' : '')} />
+                </span>
+		}
+		return <tr className={checked ? 'bg-warning' : null}>
+				<td className='selectorTableHeader'>{selectElem}</td>
+				{this.props.children}
+		</tr>;
+	}
+}
+
+function ERPC_GridSelectableRow_mapstatetoprops(state, ownprops) {
+    return {
+        selected: ownprops.form.props.selectedRows_arr.indexOf(ownprops.rowIndex) != -1,
+    };
+}
+
+function ERPC_GridSelectableRow_dispatchtorprops(dispatch, ownprops) {
+    return {
+    };
+}
+
+const VisibleERPC_GridSelectableRow = ReactRedux.connect(ERPC_GridSelectableRow_mapstatetoprops, ERPC_GridSelectableRow_dispatchtorprops)(ERPC_GridSelectableRow);
 
 const VisibleERPC_GridForm_BtnCol = ReactRedux.connect(ERPC_GridForm_BtnCol_mapstatetoprops, ERPC_GridForm_BtnCol_dispatchtorprops)(ERPC_GridForm_BtnCol);
 

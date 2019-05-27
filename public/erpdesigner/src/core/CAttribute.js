@@ -197,6 +197,11 @@ const VarNames={
     CallBack:'callBack',
     FetchKey:'fetchKey',
     ParentPath:'parentPath',
+    RowIndexInfo_map:'rowIndexInfo_map',
+    SelectMode:'selectMode',
+    FullPath:'fullPath',
+    FullParentPath:'fullParentPath',
+    SelectedRows_arr:'selectedRows_arr',
 };
 
 const AttrNames={
@@ -245,6 +250,8 @@ const AttrNames={
     StableData:'stableData',
     RecEditeable:'recEditeable',
     RecDeletable:'recDeletable',
+    NewRowDepend:'newRowDepend',
+    SelectMode:'selectMode',
 
     Event:{
         OnClick:'onclick',

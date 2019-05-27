@@ -1053,7 +1053,8 @@ class MobileContentCompiler extends ContentCompiler {
 
         renderBlock.pushChild(formTag);
 
-        formReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "getStateByPath(state, '" + thisfullpath + "', {})");
+        formReactClass.mapStateFun.scope.getVar('propProfile',true,"getControlPropProfile(ownprops, state)");
+        formReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Fetching), makeStr_DotProp(VarNames.CtlState, VarNames.Fetching)));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FetchErr), makeStr_DotProp(VarNames.CtlState, VarNames.FetchErr)));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Records_arr), makeStr_DotProp(VarNames.CtlState, VarNames.Records_arr)));
@@ -1068,7 +1069,12 @@ class MobileContentCompiler extends ContentCompiler {
             formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.PageCount), makeStr_DotProp(VarNames.CtlState, VarNames.PageCount)));
             formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.PageIndex), makeStr_DotProp(VarNames.CtlState, VarNames.PageIndex)));
             formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.RowPerPage), makeStr_DotProp(VarNames.CtlState, VarNames.RowPerPage)));
+            formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.SelectMode), singleQuotesStr(theKernel.getAttribute(AttrNames.SelectMode))));
+            formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.SelectedRows_arr), 'ctlState.selectedRows_arr == null ? gEmptyArr : ctlState.selectedRows_arr'));
         }
+        formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullPath), makeStr_DotProp('propProfile', VarNames.FullPath)));
+        formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullParentPath), makeStr_DotProp('propProfile', VarNames.FullParentPath)));
+
 
         var freshFun = clientSide.scope.getFunction(makeFName_freshForm(theKernel), true, [VarNames.ReState, VarNames.Records_arr]);
         var bindFun = clientSide.scope.getFunction(makeFName_bindForm(theKernel), true, [VarNames.ReState, 'newIndex', 'oldIndex']);
@@ -1269,6 +1275,15 @@ class MobileContentCompiler extends ContentCompiler {
                 gridHeadBodyPureRectClass.renderFun.pushLine('</tr></tbody>);');
             }
 
+            var selectMode = theKernel.getAttribute(AttrNames.SelectMode);
+            if(selectMode != ESelectMode.None){
+                sumTableWidth += 3.5;
+                gridHeadRowRenderBlock.pushLine("<th scope='col' className='selectorTableHeader'></th>");
+                if(gridHeadBodyRowRenderBlock){
+                    gridHeadBodyRowRenderBlock.pushLine("<td className='selectorTableHeader'></td>");
+                }
+                formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.SelectMode), singleQuotesStr(selectMode)));
+            }
             var autoIndexColumn = theKernel.getAttribute(AttrNames.AutoIndexColumn);
             if (autoIndexColumn) {
                 sumTableWidth += 3;
@@ -1361,7 +1376,7 @@ class MobileContentCompiler extends ContentCompiler {
                     gridHeadBodyRowRenderBlock.pushLine("<td style={" + headStyleObj.id + "}></td>");
                 }
             }
-            if(hadRowButton){
+            if(hadRowButton || insertBtnSetting){
                 gridHeadRowRenderBlock.pushLine("<th scope='col'></th>");
                 if(gridHeadBodyRowRenderBlock){
                     gridHeadBodyRowRenderBlock.pushLine("<td><VisibleERPC_GridForm_BtnCol form={this.props.form} /></td>");
@@ -1414,10 +1429,20 @@ class MobileContentCompiler extends ContentCompiler {
             gridBodyPureRectClass.renderFun.scope.getVar(VarNames.EndRowIndex, true, makeStr_DotProp('this.props', VarNames.EndRowIndex));
             gridBodyPureRectClass.renderFun.pushLine('for (var rowIndex = startRowIndex; rowIndex <= endRowIndex; ++rowIndex) {', 1);
             gridBodyPureRectClass.renderFun.pushLine('trElems_arr.push(', 1);
-            gridBodyPureRectClass.renderFun.pushLine(makeStr_AddAll('<tr key={rowIndex-', VarNames.StartRowIndex, '}>'));
+            if(selectMode != ESelectMode.None){
+                gridBodyPureRectClass.renderFun.pushLine(makeStr_AddAll('<VisibleERPC_GridSelectableRow key={rowIndex-', VarNames.StartRowIndex, '} ', 'rowIndex={rowIndex} form={this.props.form}>'));
+            }
+            else{
+                gridBodyPureRectClass.renderFun.pushLine(makeStr_AddAll('<tr key={rowIndex-', VarNames.StartRowIndex, '}>'));
+            }
             var gridBodyTableRowRenderBlock = new FormatFileBlock('rowRender');
             gridBodyPureRectClass.renderFun.pushChild(gridBodyTableRowRenderBlock, -1);
-            gridBodyPureRectClass.renderFun.pushLine('</tr>);', -1);
+            if(selectMode != ESelectMode.None){
+                gridBodyPureRectClass.renderFun.pushLine('</VisibleERPC_GridSelectableRow>);', -1);
+            }
+            else{
+                gridBodyPureRectClass.renderFun.pushLine('</tr>);', -1);
+            }
             gridBodyPureRectClass.renderFun.pushLine('}', -1);
 
             gridBodyPureRectClass.renderFun.retBlock.clear();
@@ -1427,6 +1452,12 @@ class MobileContentCompiler extends ContentCompiler {
             gridBodyPureRectClass.renderFun.retBlock.pushLine('</table>);');
 
             var gridBodyTableNewRowRenderBlock = new FormatFileBlock('newrowRender');
+            if(selectMode != ESelectMode.None){
+                //gridBodyTableRowRenderBlock.pushLine("<td className='selectorTableHeader'></td>");
+                if(insertBtnSetting){
+                    gridBodyTableNewRowRenderBlock.pushLine("<td className='selectorTableHeader'></td>");
+                }
+            }
             if (autoIndexColumn) {
                 gridBodyTableRowRenderBlock.pushLine("<td className='indexTableHeader'>{rowIndex-startRowIndex+1}</td>");
                 if(insertBtnSetting){
@@ -1492,7 +1523,7 @@ class MobileContentCompiler extends ContentCompiler {
                 childRederBlock.subNextIndent();
                 childRederBlock.pushLine('</td>');
                 if(insertBtnSetting){
-                    if(insertBtnUseFormChild_map[childKernel.id]){
+                    if(insertBtnUseFormChild_map[childKernel.id] || childKernel.getAttribute(AttrNames.NewRowDepend)){
                         gridBodyTableNewRowRenderBlock.pushChild(childRederBlock.clone());
                     }
                     else{
@@ -1501,7 +1532,7 @@ class MobileContentCompiler extends ContentCompiler {
                 }
             }
 
-            if(hadRowButton){
+            if(hadRowButton || insertBtnSetting){
                 gridBodyTableRowRenderBlock.pushLine("<td><VisibleERPC_GridForm_BtnCol rowIndex={rowIndex} form={this.props.form} /></td>");
                 if(insertBtnSetting){
                     gridBodyTableNewRowRenderBlock.pushLine("<td><VisibleERPC_GridForm_BtnCol rowIndex={rowIndex} form={this.props.form} /></td>");
@@ -1868,6 +1899,7 @@ class MobileContentCompiler extends ContentCompiler {
         pullFun.pushLine('var bundle = {};');
         pullFun.pushLine('var useState = store.getState();');
         var initbundleBlock = new FormatFileBlock('initbundle');
+        pullFun.scope.getVar(VarNames.RowIndexInfo_map, true, 'getRowIndexMapFromPath(' + VarNames.ParentPath + ')');
         pullFun.pushChild(initbundleBlock);
         pullFun.initbundleBlock = initbundleBlock;
         pullFun.pushLine(makeLine_FetchPropValue(makeActStr_pullKernel(theKernel), VarNames.ParentPath, singleQuotesStr(theKernel.id), singleQuotesStr('options_arr'), { bundle: 'bundle' }, false));
@@ -1912,17 +1944,6 @@ class MobileContentCompiler extends ContentCompiler {
                 }
             }
         }
-        if (needSetParams_arr.length > 0) {
-            bodyCheckblock.pushLine("var bundle=req.body.bundle;");
-            bodyCheckblock.pushLine("if(req.body.bundle == null){" + makeLine_RetServerError('没有提供bundle') + '};');
-            paramsetblock.pushLine("params_arr=[", 1);
-            for (var si in needSetParams_arr) {
-                var useParam = needSetParams_arr[si];
-                var serverValue = ReplaceIfNull(useParam.serverValue, 'bundle.' + useParam.bundleName);
-                paramsetblock.pushLine("dbhelper.makeSqlparam('" + useParam.bundleName + "', sqlTypes.NVarChar(4000), " + serverValue + "),");
-                bodyCheckblock.pushLine("if(req.body.bundle." + useParam.bundleName + " == null){" + makeLine_RetServerError('没有提供' + useParam.bundleName) + '};');
-            }
-        }
 
         if (!IsEmptyObject(bpCompileHelper.useForm_map)) {
             for (var formSI in bpCompileHelper.useForm_map) {
@@ -1947,9 +1968,21 @@ class MobileContentCompiler extends ContentCompiler {
                                 value: 'null',
                             });
                         }
-                        initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', useName), makeStr_getStateByPath('useState', singleQuotesStr(makeStr_DotProp(useCtl.kernel.parentPath, useCtl.kernel.id + '.' + propApi.stateName)))));
+                        initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', useName), makeStr_getStateByPath('useState', singleQuotesStr(useCtl.kernel.getStatePath(propApi.stateName, '.', {mapVarName:VarNames.RowIndexInfo_map})))));
                     }
                 }
+            }
+        }
+
+        if (needSetParams_arr.length > 0) {
+            bodyCheckblock.pushLine("var bundle=req.body.bundle;");
+            bodyCheckblock.pushLine("if(req.body.bundle == null){" + makeLine_RetServerError('没有提供bundle') + '};');
+            paramsetblock.pushLine("params_arr=[", 1);
+            for (var si in needSetParams_arr) {
+                var useParam = needSetParams_arr[si];
+                var serverValue = ReplaceIfNull(useParam.serverValue, 'bundle.' + useParam.bundleName);
+                paramsetblock.pushLine("dbhelper.makeSqlparam('" + useParam.bundleName + "', sqlTypes.NVarChar(4000), " + serverValue + "),");
+                bodyCheckblock.pushLine("if(req.body.bundle." + useParam.bundleName + " == null){" + makeLine_RetServerError('没有提供' + useParam.bundleName) + '};');
             }
         }
 

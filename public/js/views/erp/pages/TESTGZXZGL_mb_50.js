@@ -220,10 +220,11 @@ function pull_M_Dropdown_0(parentPath) {
 function pull_M_Dropdown_1(parentPath) {
 	var bundle = {};
 	var useState = store.getState();
-	bundle.M_Dropdown_0_value = getStateByPath(useState, 'M_Page_0.M_Form_1.M_Dropdown_0.value');
+	var rowIndexMap = getRowIndexMapFromPath(parentPath);
+	bundle.M_Dropdown_0_value = getStateByPath(useState, 'M_Page_0.M_Form_1.row_' + rowIndexMap.M_Form_1 + '.M_Dropdown_0.value');
 	store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle, action: 'pulldata_M_Dropdown_1' }, makeFTD_Prop(parentPath, 'M_Dropdown_1', 'options_arr', false), EFetchKey.FetchPropValue));
 }
-function M_Dropdown_0_value_changed(state, newValue, oldValue, path, visited, delayActs, rowIndexInfo_map) {
+function M_Dropdown_0_value_chan_changed(state, newValue, oldValue, path, visited, delayActs, rowIndexInfo_map) {
 	var needSetState = {};
 	needSetState['M_Page_0.M_Form_1.row_' + rowIndexInfo_map.M_Form_1 + '.M_Dropdown_1.text'] = null;
 	needSetState['M_Page_0.M_Form_1.row_' + rowIndexInfo_map.M_Form_1 + '.M_Dropdown_1.value'] = null;

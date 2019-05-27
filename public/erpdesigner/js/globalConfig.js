@@ -135,6 +135,14 @@ var EFormType = {
 };
 
 var FormTypes_arr = [EFormType.Page, EFormType.Grid];
+
+var ESelectMode = {
+    None: 'none',
+    Single: 'single',
+    Multi: 'multi'
+};
+var SelectModes_arr = [ESelectMode.None, ESelectMode.Single, ESelectMode.Multi];
+
 var ButtonClasses_arr = ['btn-primary', 'btn-secondary', 'btn-success', 'btn-danger', 'btn-warning', 'btn-info', 'btn-light', 'btn-dark', 'btn-link'];
 
 var GridHead_PerCharWidth = 1.4;

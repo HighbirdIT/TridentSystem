@@ -858,24 +858,8 @@ function aStateChanged(state, path, newValue, oldValue, visited = {}, delayActs)
     }
     var retState = state;
     visited[path] = 1;
-    var rowIndexInfo_map = {};
-    if(path.indexOf('.row_') != -1){
-        var patchs_arr = path.split('.');
-        var prePath = null;
-        var newPatchs_arr = [];
-        for(var si in patchs_arr){
-            var patch = patchs_arr[si];
-            if(prePath != null){
-                if(patch.indexOf('row_') == 0){
-                    rowIndexInfo_map[prePath] = patch.substr(4);
-                    continue;
-                }
-            }
-            prePath = patch;
-            newPatchs_arr.push(patch);
-        }
-        path = newPatchs_arr.join('.');
-    }
+    var rowIndexInfo_map = getRowIndexMapFromPath(path);
+    path = rowIndexInfo_map.newPath;
 
     if (appStateChangedAct_map != null) {
         var theAct = appStateChangedAct_map[path];
@@ -1268,4 +1252,29 @@ function ObjIsEqual(objA, objB){
         }
     }
     return true;
+}
+
+function getRowIndexMapFromPath(path){
+    var rowIndexInfo_map = {};
+    if(path.indexOf('.row_') != -1){
+        var patchs_arr = path.split('.');
+        var prePath = null;
+        var newPatchs_arr = [];
+        for(var si in patchs_arr){
+            var patch = patchs_arr[si];
+            if(prePath != null){
+                if(patch.indexOf('row_') == 0){
+                    rowIndexInfo_map[prePath] = patch.substr(4);
+                    continue;
+                }
+            }
+            prePath = patch;
+            newPatchs_arr.push(patch);
+        }
+        rowIndexInfo_map.newPath = newPatchs_arr.join('.');
+    }
+    else{
+        rowIndexInfo_map.newPath = path;
+    }
+    return rowIndexInfo_map;
 }

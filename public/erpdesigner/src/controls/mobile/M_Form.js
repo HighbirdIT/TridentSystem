@@ -14,6 +14,7 @@ const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
         new CAttribute('宽度类型',AttrNames.WidthType,ValueType.String,EGridWidthType.Auto,true,false,EGridWidthTypes_arr,{text:'text', value:'value'}),
         new CAttribute('首列序号',AttrNames.AutoIndexColumn,ValueType.Boolean,true),
         new CAttribute('自动滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
+        new CAttribute('模式', AttrNames.SelectMode, ValueType.String, ESelectMode.Multi, true, false, SelectModes_arr),
     ]),
     new CAttributeGroup('操作设置',[
         genScripAttribute('Insert', AttrNames.Event.OnInsert,EJsBluePrintFunGroup.GridRowBtnHandler),
@@ -72,6 +73,8 @@ class M_FormKernel extends ContainerKernelBase{
         this[AttrNames.WidthType + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.AutoIndexColumn + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.GenNavBar + '_visible'] = nowft != EFormType.Grid;
+        this[AttrNames.SelectMode + '_visible'] = nowft == EFormType.Grid;
+        
 
         this['操作设置_visible'] = nowft == EFormType.Grid;
         
@@ -225,6 +228,7 @@ class M_FormKernel extends ContainerKernelBase{
                 this.findAttributeByName(AttrNames.WidthType).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.AutoIndexColumn).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.GenNavBar).setVisible(this, !isGridForm);
+                this.findAttributeByName(AttrNames.SelectMode).setVisible(this, !isGridForm);
 
                 this.findAttrGroupByName('操作设置').setVisible(this, isGridForm);
                 break;
@@ -252,7 +256,7 @@ class M_Form extends React.PureComponent {
         autoBind(this);
 
         var ctlKernel = this.props.ctlKernel;
-        var inintState = M_ControlBase(this,LayoutAttrNames_arr.concat([AttrNames.Orientation,AttrNames.Chidlren,AttrNames.FormType,AttrNames.WidthType,AttrNames.AutoIndexColumn,AttrNames.Title], inintState));
+        var inintState = M_ControlBase(this,LayoutAttrNames_arr.concat([AttrNames.Orientation,AttrNames.Chidlren,AttrNames.FormType,AttrNames.WidthType,AttrNames.AutoIndexColumn,AttrNames.Title,AttrNames.SelectMode], inintState));
         M_ContainerBase(this);
 
         inintState.orientation = ctlKernel.getAttribute(AttrNames.Orientation);
@@ -261,6 +265,7 @@ class M_Form extends React.PureComponent {
         inintState.widthType = ctlKernel.getAttribute(AttrNames.WidthType);
         inintState.autoIndexColumn = ctlKernel.getAttribute(AttrNames.AutoIndexColumn);
         inintState.title = ctlKernel.getAttribute(AttrNames.Title);
+        inintState.selectMode = ctlKernel.getAttribute(AttrNames.SelectMode);
 
         this.state = inintState;
     }
@@ -281,6 +286,7 @@ class M_Form extends React.PureComponent {
             widthType:ctlKernel.getAttribute(AttrNames.WidthType),
             autoIndexColumn:ctlKernel.getAttribute(AttrNames.AutoIndexColumn),
             title:ctlKernel.getAttribute(AttrNames.Title),
+            selectMode:ctlKernel.getAttribute(AttrNames.SelectMode),
         });
     }
 
@@ -310,10 +316,14 @@ class M_Form extends React.PureComponent {
             //var labelControls_arr = this.props.ctlKernel.searchChildKernel(M_LabeledControlKernel_Type, false);
             var widthType = this.state.widthType;
             var autoIndexColumn = this.state.autoIndexColumn;
+            var selectMode = this.state.selectMode;
             var tableStyle = {};
             var sumTableWidth = 0;
             if(autoIndexColumn){
                 sumTableWidth += 3;
+            }
+            if(selectMode != ESelectMode.None){
+                sumTableWidth += 2;
             }
 
             var tableElem =(
@@ -327,6 +337,7 @@ class M_Form extends React.PureComponent {
                                 this.props.ctlKernel.children.length == 0 ? 
                                     <th scope="col">空</th> :
                                     <React.Fragment>
+                                    {selectMode == ESelectMode.None ? null : <th scope='col' className='selectorTableHeader'><input type={selectMode == ESelectMode.Multi ? 'checkbox' : 'radio'} /></th>}
                                     {!autoIndexColumn ? null : <th scope='col' className='indexTableHeader' >序号</th>}
                                     {this.props.ctlKernel.children.map(childKernel=>{
                                         if(childKernel.type == M_LabeledControlKernel_Type){
