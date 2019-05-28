@@ -160,10 +160,14 @@ var EInterActiveType = {
 
 var EInterActiveTypes_arr = [{ text: '只读', value: EInterActiveType.ReadOnly }, { text: '读写', value: EInterActiveType.ReadWrite }];
 
-/**
- * 逻辑运算符 and or not
- */
-var Logical_Operator_and = 'and';
+var EFormRowSource = {
+    Context: 'context',
+    Selected: 'selected'
+
+    /**
+     * 逻辑运算符 and or not
+     */
+};var Logical_Operator_and = 'and';
 var Logical_Operator_or = 'or';
 //var Logical_Operator_not = 'not';
 var Logical_Operators_arr = [Logical_Operator_and, Logical_Operator_or];
@@ -192,7 +196,8 @@ var VisibleStyle_Both = 'both';
 
 var ScriptBindMode = {
     OnForm: 'OnForm',
-    OnRelAttrChanged: 'OnRelAttrChanged'
+    OnRelAttrChanged: 'OnRelAttrChanged',
+    OnNewRow: 'OnNewRow'
 };
 
 var DesignerConfig = {

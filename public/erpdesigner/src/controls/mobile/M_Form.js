@@ -98,6 +98,9 @@ class M_FormKernel extends ContainerKernelBase{
     }
 
     getInsertSetting(){
+        if(!this.isGridForm()){
+            return null;
+        }
         var btnBP = this.getRowBtnHandlerBP(AttrNames.Event.OnInsert);
         if(btnBP != null){
             return {key:'insert', blueprint:btnBP, funName:'submitInsert', actLabel:'新增'};

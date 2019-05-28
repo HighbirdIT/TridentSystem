@@ -204,7 +204,7 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
             titleElem = (<div f-canmove={1} className='d-flex flex-column'>
                 <span f-canmove={1}>{formKernel.getReadableName()}</span>
                 <span f-canmove={1} className='badge badge-primary'>{nodeData.id}</span>
-                <span f-canmove={1} className='badge badge-info'>{formDS == null ? '无数据源' : formDS.name + '-当前行'}</span>
+                <span f-canmove={1} className='badge badge-info'>{formDS == null ? '无数据源' : formDS.name + '-' + (nodeData.rowSource == EFormRowSource.Context ? '当前行' : '选中行')}</span>
             </div>)
         }
 

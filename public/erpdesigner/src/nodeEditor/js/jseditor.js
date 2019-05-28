@@ -159,8 +159,12 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         this.clientInitBundleBlocks_arr.push(block);
     }
 
-    addUseColumn(formKernel, columnName, serverFun){
-        var formObj = this.addUseForm(formKernel);
+    addUseColumn(formKernel, columnName, serverFun, rowSource){
+        if(rowSource == null){
+            console.error('rowSource == null');
+            return;
+        }
+        var formObj = this.addUseForm(formKernel, rowSource);
         formObj.useNowRecord = true;
         if(formObj.useColumns_map[columnName] == null){
             formObj.useColumns_map[columnName] = {
@@ -175,19 +179,34 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         }
     }
 
-    addUseForm(formKernel){
-        if(this.useForm_map[formKernel.id] == null){
-            this.useForm_map[formKernel.id] = {
+    addUseForm(formKernel, rowSource){
+        if(rowSource == null){
+            console.error('rowSource == null');
+            return;
+        }
+        var rlt = this.useForm_map[formKernel.id];
+        if(rlt == null){
+            rlt = {
                 useColumns_map:{},
                 useControls_map:{},
                 useNowRecord:false,
+                useSelectedRow:false,
                 formKernel:formKernel,
             };
+            this.useForm_map[formKernel.id] = rlt;
         }
-        return this.useForm_map[formKernel.id];
+        switch(rowSource){
+            case EFormRowSource.Context:
+            rlt.useContextRow = true;
+            break;
+            case EFormRowSource.Selected:
+            rlt.useSelectedRow = true;
+            break;
+        }
+        return rlt;
     }
 
-    addUseControlPropApi(ctrKernel, apiitem){
+    addUseControlPropApi(ctrKernel, apiitem, rowSource){
         var rlt = null;
         var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
         if(belongFormKernel == null){
@@ -203,7 +222,7 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
             return;
         }
         else{
-            var formObj = this.addUseForm(belongFormKernel);
+            var formObj = this.addUseForm(belongFormKernel, rowSource);
             rlt = formObj.useControls_map[ctrKernel.id];
             if(rlt == null){
                 rlt = {
@@ -324,7 +343,8 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
                 return;
             }
             // 获取可用的数据源
-            var parentForms_arr = ctlKernel.searchParentKernel(M_FormKernel_Type);
+            var parentForms_arr = ctlKernel.getAccessableKernels(M_FormKernel_Type);
+            // 还可以使用兄弟form节点
             if(parentForms_arr != null){
                 parentForms_arr.forEach(formKernel=>{
                     var useDS = formKernel.getAttribute(AttrNames.DataSource);
@@ -336,6 +356,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
                                 label:formKernel.getReadableName() + '当前行',
                                 formID:formKernel.id,
                                 key:formKernel.id + '_currentrow',
+                                rowfrom:EFormRowSource.Context,
                             }
                         );
                         if(isGridForm){
@@ -345,6 +366,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
                                     label:formKernel.getReadableName() + '选中行',
                                     formID:formKernel.id,
                                     key:formKernel.id + '_selectedrow',
+                                    rowfrom:EFormRowSource.Selected,
                                 }
                             );
                         }
@@ -1005,6 +1027,7 @@ class C_JSNode_Editor extends React.PureComponent{
             formID:dsconfig.formID,
             dscode:dsconfig.entity.code,
             dsentity:dsconfig.entity,
+            rowSource:dsconfig.rowfrom,
         });
     }
 

@@ -183,11 +183,11 @@ class MobileContentCompiler extends ContentCompiler {
             switch (relyPath.type) {
                 case ECtlReplyPathType.SetAP_On_BPChanged:
                 case ECtlReplyPathType.CallFun_On_BPChanged:
-                    propFulPath = relyPath.berelyCtl.getStatePath(relyPath.berelyPropName,'.',null,true);
+                    propFulPath = relyPath.berelyCtl.getStatePath(relyPath.berelyPropName, '.', null, true);
                     propChangedHandlerName = relyPath.berelyCtl.id + '_' + relyPath.berelyPropName + '_changed';
                     changedFun = clientSide.scope.getFunction(propChangedHandlerName);
                     if (changedFun == null) {
-                        changedFun = clientSide.scope.getFunction(propChangedHandlerName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs','rowIndexInfo_map']);
+                        changedFun = clientSide.scope.getFunction(propChangedHandlerName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowIndexInfo_map']);
                         changedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
                         changedFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''", VarNames.NeedSetState], ';'));
                         clientSide.stateChangedAct[singleQuotesStr(propFulPath)] = propChangedHandlerName + '.bind(window)';
@@ -203,10 +203,10 @@ class MobileContentCompiler extends ContentCompiler {
                         else {
                             console.error('不支持的approach!');
                         }
-                        var rowIndexInfo_map={
-                            mapVarName:'rowIndexInfo_map',
+                        var rowIndexInfo_map = {
+                            mapVarName: 'rowIndexInfo_map',
                         };
-                        changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName,'.',rowIndexInfo_map)), getValueStr));
+                        changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName, '.', rowIndexInfo_map)), getValueStr));
                     }
                     else {
                         var actKey = 'call_' + relyPath.funName;
@@ -367,12 +367,12 @@ class MobileContentCompiler extends ContentCompiler {
                         } else {
                             if (stateItem.staticValue) {
                                 var sv = stateItem.staticValue;
-                                switch(sv.toLocaleLowerCase()){
+                                switch (sv.toLocaleLowerCase()) {
                                     case 'true':
                                     case 'false':
-                                    break;
+                                        break;
                                     default:
-                                    sv = singleQuotesStr(sv);
+                                        sv = singleQuotesStr(sv);
                                 }
                                 controlInitBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), sv));
                             }
@@ -505,8 +505,9 @@ class MobileContentCompiler extends ContentCompiler {
 
         var defaultVal = theKernel.getAttribute(AttrNames.DefaultValue);
         var defaultValParseRet = parseObj_CtlPropJsBind(defaultVal, project.scriptMaster);
+        var defaultCompileRet = null;
         if (defaultValParseRet.isScript) {
-            this.compileScriptAttribute(defaultValParseRet, theKernel, 'value', AttrNames.DefaultValue, { autoSetFetchState: true });
+            defaultCompileRet = this.compileScriptAttribute(defaultValParseRet, theKernel, 'value', AttrNames.DefaultValue, { autoSetFetchState: true });
         }
 
         var textField = theKernel.getAttribute(AttrNames.TextField);
@@ -550,6 +551,22 @@ class MobileContentCompiler extends ContentCompiler {
                         setNull: IsEmptyString(defaultValParseRet.string),
                     };
                 }
+            }
+            else if(belongFormKernel && belongFormKernel.getInsertSetting()){
+                // 所在gridform有新增行
+                var setDefaultStateItem = null;
+                if (defaultCompileRet) {
+                    setDefaultStateItem = defaultCompileRet.setStateItem;
+                }
+                else if (!defaultValParseRet.isScript) {
+                    setDefaultStateItem = {
+                        name: 'value',
+                        staticValue: IsEmptyString(defaultValParseRet.string) ? null : defaultValParseRet.string,
+                        setNull: IsEmptyString(defaultValParseRet.string),
+                    };
+                    kernelMidData.needSetStates_arr.push(setDefaultStateItem);
+                }
+                setDefaultStateItem.bindMode = ScriptBindMode.OnNewRow;
             }
             if (setValueStateItem != null) {
                 kernelMidData.needSetStates_arr.push(setValueStateItem);
@@ -743,7 +760,7 @@ class MobileContentCompiler extends ContentCompiler {
             useControl: useControl,
         };
         kernelMidData.needSetStates_arr.push(setStateItem);
-
+        scriptCompileRet.setStateItem = setStateItem;
         return scriptCompileRet;
     }
 
@@ -763,7 +780,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else {
             if (!isdisplay) {
-                this.addNeedSetStateToParent(theKernel, {name:'visible', staticValue:'false'});
+                this.addNeedSetStateToParent(theKernel, { name: 'visible', staticValue: 'false' });
                 ctlTag.setAttr('visible', '{false}');
             }
         }
@@ -940,9 +957,9 @@ class MobileContentCompiler extends ContentCompiler {
 
                 rowBtns_arr = theKernel.getRowBtnSetting();
                 hadRowButton = rowBtns_arr.length > 0;
-                if(hadRowButton || insertBtnSetting){
+                if (hadRowButton || insertBtnSetting) {
                     var btnsVarStr = '';
-                    rowBtns_arr.forEach(btnSetting=>{
+                    rowBtns_arr.forEach(btnSetting => {
                         btnsVarStr += (btnsVarStr.length == 0 ? '' : ',') + "{key:'" + btnSetting.key + "',content:" + btnSetting.elemText + ", handler:this." + btnSetting.funName + ".bind(this)}";
                     });
                     formReactClass.constructorFun.pushLine('this.btns = [' + btnsVarStr + '];');
@@ -1019,14 +1036,14 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentFun.pushLine("<div id='" + theKernel.id + "tableheader' className='mw-100 hidenOverflow flex-shrink-0 gridFormFixHeaderDiv'>", 1);
             renderContentFun.pushLine("<table className='table' style={" + headTableStyleID + "}>", 1);
             renderContentFun.pushLine("<" + gridHeadPureRectClass.name + ' />', -1);
-            if(gridHeadBodyPureRectClass){
+            if (gridHeadBodyPureRectClass) {
                 renderContentFun.pushLine("<" + gridHeadBodyPureRectClass.name + ' form={this} />', -1);
             }
             renderContentFun.pushLine("</table>", -1);
             renderContentFun.pushLine("</div>");
             renderContentFun.pushLine("<div onScroll={this.tableBodyScroll} className='mw-100 autoScroll'>", 1);
             renderContentFun.pushLine("{" + VarNames.RetElem + "}");
-            if(insertBtnSetting){
+            if (insertBtnSetting) {
                 renderContentFun.pushLine("{!this.state.hadNewRow && <button onClick={this.clickNewRowHandler} type='button' className='btn btn-success' ><i className='fa fa-plus'/>新增</button>}");
             }
             renderContentFun.subNextIndent();
@@ -1053,7 +1070,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         renderBlock.pushChild(formTag);
 
-        formReactClass.mapStateFun.scope.getVar('propProfile',true,"getControlPropProfile(ownprops, state)");
+        formReactClass.mapStateFun.scope.getVar('propProfile', true, "getControlPropProfile(ownprops, state)");
         formReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Fetching), makeStr_DotProp(VarNames.CtlState, VarNames.Fetching)));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FetchErr), makeStr_DotProp(VarNames.CtlState, VarNames.FetchErr)));
@@ -1200,13 +1217,13 @@ class MobileContentCompiler extends ContentCompiler {
                 bindInersetBlock = insertModeIf.trueBlock;
             }
             if (isGridForm) {
-                if(hadRowButton){
-                    rowBtns_arr.forEach(btnSetting=>{
+                if (hadRowButton) {
+                    rowBtns_arr.forEach(btnSetting => {
                         btnsVarStr += (btnsVarStr.length == 0 ? '' : ',') + "{key:'" + btnSetting.key + "',content:" + btnSetting.elemText + "}";
                         this.compileScriptBlueprint(btnSetting.blueprint, {
-                            funName:btnSetting.funName,
-                            scope:formReactClass,
-                            actLabel:btnSetting.actLabel
+                            funName: btnSetting.funName,
+                            scope: formReactClass,
+                            actLabel: btnSetting.actLabel
                         });
                     });
                 }
@@ -1268,7 +1285,7 @@ class MobileContentCompiler extends ContentCompiler {
             gridHeadPureRectClass.renderFun.pushChild(gridHeadRowRenderBlock, -1);
             gridHeadPureRectClass.renderFun.pushLine('</tr></thead>);');
             var gridHeadBodyRowRenderBlock = null;
-            if(gridHeadBodyPureRectClass){
+            if (gridHeadBodyPureRectClass) {
                 gridHeadBodyPureRectClass.renderFun.pushLine(VarNames.RetElem + ' = (<tbody><tr>', 1);
                 gridHeadBodyRowRenderBlock = new FormatFileBlock('tr');
                 gridHeadBodyPureRectClass.renderFun.pushChild(gridHeadBodyRowRenderBlock, -1);
@@ -1276,10 +1293,10 @@ class MobileContentCompiler extends ContentCompiler {
             }
 
             var selectMode = theKernel.getAttribute(AttrNames.SelectMode);
-            if(selectMode != ESelectMode.None){
+            if (selectMode != ESelectMode.None) {
                 sumTableWidth += 3.5;
                 gridHeadRowRenderBlock.pushLine("<th scope='col' className='selectorTableHeader'></th>");
-                if(gridHeadBodyRowRenderBlock){
+                if (gridHeadBodyRowRenderBlock) {
                     gridHeadBodyRowRenderBlock.pushLine("<td className='selectorTableHeader'></td>");
                 }
                 formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.SelectMode), singleQuotesStr(selectMode)));
@@ -1288,16 +1305,16 @@ class MobileContentCompiler extends ContentCompiler {
             if (autoIndexColumn) {
                 sumTableWidth += 3;
                 gridHeadRowRenderBlock.pushLine("<th scope='col' className='indexTableHeader'>序号</th>");
-                if(gridHeadBodyRowRenderBlock){
+                if (gridHeadBodyRowRenderBlock) {
                     gridHeadBodyRowRenderBlock.pushLine("<td className='indexTableHeader'></td>");
                 }
             }
 
             for (ci in theKernel.children) {
                 childKernel = theKernel.children[ci];
-                switch(childKernel.type){
+                switch (childKernel.type) {
                     case EmptyKernel_Type:
-                    continue;
+                        continue;
                 }
                 if (childKernel.type != M_LabeledControlKernel_Type) {
                     logManager.errorEx([logManager.createBadgeItem(
@@ -1372,13 +1389,13 @@ class MobileContentCompiler extends ContentCompiler {
                 columnProfile.tdStyleID = tdStyleObj.id;
 
                 gridHeadRowRenderBlock.pushLine("<th scope='col' style={" + headStyleObj.id + "}>" + columnProfile.label + "</th>");
-                if(gridHeadBodyRowRenderBlock){
+                if (gridHeadBodyRowRenderBlock) {
                     gridHeadBodyRowRenderBlock.pushLine("<td style={" + headStyleObj.id + "}></td>");
                 }
             }
-            if(hadRowButton || insertBtnSetting){
+            if (hadRowButton || insertBtnSetting) {
                 gridHeadRowRenderBlock.pushLine("<th scope='col'></th>");
-                if(gridHeadBodyRowRenderBlock){
+                if (gridHeadBodyRowRenderBlock) {
                     gridHeadBodyRowRenderBlock.pushLine("<td><VisibleERPC_GridForm_BtnCol form={this.props.form} /></td>");
                 }
             }
@@ -1429,18 +1446,18 @@ class MobileContentCompiler extends ContentCompiler {
             gridBodyPureRectClass.renderFun.scope.getVar(VarNames.EndRowIndex, true, makeStr_DotProp('this.props', VarNames.EndRowIndex));
             gridBodyPureRectClass.renderFun.pushLine('for (var rowIndex = startRowIndex; rowIndex <= endRowIndex; ++rowIndex) {', 1);
             gridBodyPureRectClass.renderFun.pushLine('trElems_arr.push(', 1);
-            if(selectMode != ESelectMode.None){
+            if (selectMode != ESelectMode.None) {
                 gridBodyPureRectClass.renderFun.pushLine(makeStr_AddAll('<VisibleERPC_GridSelectableRow key={rowIndex-', VarNames.StartRowIndex, '} ', 'rowIndex={rowIndex} form={this.props.form}>'));
             }
-            else{
+            else {
                 gridBodyPureRectClass.renderFun.pushLine(makeStr_AddAll('<tr key={rowIndex-', VarNames.StartRowIndex, '}>'));
             }
             var gridBodyTableRowRenderBlock = new FormatFileBlock('rowRender');
             gridBodyPureRectClass.renderFun.pushChild(gridBodyTableRowRenderBlock, -1);
-            if(selectMode != ESelectMode.None){
+            if (selectMode != ESelectMode.None) {
                 gridBodyPureRectClass.renderFun.pushLine('</VisibleERPC_GridSelectableRow>);', -1);
             }
-            else{
+            else {
                 gridBodyPureRectClass.renderFun.pushLine('</tr>);', -1);
             }
             gridBodyPureRectClass.renderFun.pushLine('}', -1);
@@ -1452,22 +1469,22 @@ class MobileContentCompiler extends ContentCompiler {
             gridBodyPureRectClass.renderFun.retBlock.pushLine('</table>);');
 
             var gridBodyTableNewRowRenderBlock = new FormatFileBlock('newrowRender');
-            if(selectMode != ESelectMode.None){
+            if (selectMode != ESelectMode.None) {
                 //gridBodyTableRowRenderBlock.pushLine("<td className='selectorTableHeader'></td>");
-                if(insertBtnSetting){
+                if (insertBtnSetting) {
                     gridBodyTableNewRowRenderBlock.pushLine("<td className='selectorTableHeader'></td>");
                 }
             }
             if (autoIndexColumn) {
                 gridBodyTableRowRenderBlock.pushLine("<td className='indexTableHeader'>{rowIndex-startRowIndex+1}</td>");
-                if(insertBtnSetting){
+                if (insertBtnSetting) {
                     gridBodyTableNewRowRenderBlock.pushLine("<td className='indexTableHeader'>新</td>");
                 }
             }
 
             var insertBtnUseThisFormData = null;
             var insertBtnUseFormChild_map = {};
-            if(insertBtnSetting){
+            if (insertBtnSetting) {
                 // compile insertbtn
                 gridBodyPureRectClass.renderFun.pushLine('if(this.props.hadNewRow){', 1);
                 gridBodyPureRectClass.renderFun.pushLine("rowIndex = 'new';");
@@ -1478,17 +1495,17 @@ class MobileContentCompiler extends ContentCompiler {
                 gridBodyPureRectClass.renderFun.pushLine('}', -1);
 
                 var insertCompareRet = this.compileScriptBlueprint(insertBtnSetting.blueprint, {
-                    funName:insertBtnSetting.funName,
-                    scope:formReactClass,
-                    actLabel:insertBtnSetting.actLabel,
-                    key:'insert',
+                    funName: insertBtnSetting.funName,
+                    scope: formReactClass,
+                    actLabel: insertBtnSetting.actLabel,
+                    key: 'insert',
                 });
-                if(insertCompareRet == false){
+                if (insertCompareRet == false) {
                     return false;
                 }
                 insertBtnUseThisFormData = insertCompareRet.useForm_map[theKernel.id];
                 if (insertBtnUseThisFormData == null || IsEmptyObject(insertBtnUseThisFormData.useControls_map)) {
-                    logManage.errorEx([logManager.createBadgeItem(
+                    logManager.errorEx([logManager.createBadgeItem(
                         theKernel.getReadableName(),
                         theKernel,
                         this.projectCompiler.clickKernelLogBadgeItemHandler),
@@ -1496,13 +1513,13 @@ class MobileContentCompiler extends ContentCompiler {
                     return false;
                 }
                 //useControls_map 里是实际的control，要把顶级control找出来
-                for(var ctlId in insertBtnUseThisFormData.useControls_map){
+                for (var ctlId in insertBtnUseThisFormData.useControls_map) {
                     var theControl = insertBtnUseThisFormData.useControls_map[ctlId].kernel;
                     var theParent = theControl;
-                    while(theParent.parent && theParent.parent != theKernel){
+                    while (theParent.parent && theParent.parent != theKernel) {
                         theParent = theParent.parent;
                     }
-                    if(theParent.parent){
+                    if (theParent.parent) {
                         insertBtnUseFormChild_map[theParent.id] = true;
                     }
                 }
@@ -1510,7 +1527,7 @@ class MobileContentCompiler extends ContentCompiler {
 
             for (ci in theKernel.children) {
                 childKernel = theKernel.children[ci];
-                if(childKernel.type == EmptyKernel_Type){
+                if (childKernel.type == EmptyKernel_Type) {
                     continue;
                 }
                 columnProfile = gridColumnsProfile_obj[childKernel.id];
@@ -1522,19 +1539,19 @@ class MobileContentCompiler extends ContentCompiler {
                 }
                 childRederBlock.subNextIndent();
                 childRederBlock.pushLine('</td>');
-                if(insertBtnSetting){
-                    if(insertBtnUseFormChild_map[childKernel.id] || childKernel.getAttribute(AttrNames.NewRowDepend)){
+                if (insertBtnSetting) {
+                    if (insertBtnUseFormChild_map[childKernel.id] || childKernel.getAttribute(AttrNames.NewRowDepend)) {
                         gridBodyTableNewRowRenderBlock.pushChild(childRederBlock.clone());
                     }
-                    else{
+                    else {
                         gridBodyTableNewRowRenderBlock.pushLine("<td style={" + columnProfile.tdStyleID + '}/>');
                     }
                 }
             }
 
-            if(hadRowButton || insertBtnSetting){
+            if (hadRowButton || insertBtnSetting) {
                 gridBodyTableRowRenderBlock.pushLine("<td><VisibleERPC_GridForm_BtnCol rowIndex={rowIndex} form={this.props.form} /></td>");
-                if(insertBtnSetting){
+                if (insertBtnSetting) {
                     gridBodyTableNewRowRenderBlock.pushLine("<td><VisibleERPC_GridForm_BtnCol rowIndex={rowIndex} form={this.props.form} /></td>");
                 }
             }
@@ -1575,54 +1592,93 @@ class MobileContentCompiler extends ContentCompiler {
                 if (targetKernelMidData.needSetStates_arr.length > 0) {
                     targetKernelMidData.needSetStates_arr.forEach(stateItem => {
                         var stateName = makeStr_DotProp(targetKernel.id, stateItem.name);
-                        if (isGridForm) {
-                            stateName = "row_'+rowIndex+'." + stateName;
-                        }
+                        var orginStateName = stateName;
                         var state_Name = makeStr_Join('_', targetKernel.id, stateItem.name);
-                        if (stateItem.isDynamic) {
-                            if (stateItem.bindMode == ScriptBindMode.OnForm) {
-                                var setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, bundleVar.name]));
-                                if (stateItem.useColumn) {
-                                    dynamicSetBlock_hadRecord.pushLine(setLine);
-                                }
-                                else {
-                                    staticBindBlock.pushLine(setLine);
-                                }
-                            }
-                        } else {
-                            if (stateItem.staticValue) {
-                                var sv = stateItem.staticValue;
-                                switch(sv.toLocaleLowerCase()){
-                                    case 'true':
-                                    case 'false':
+                        var setLine;
+                        var sv;
+                        if (isGridForm) {
+                            stateName = "row_'+rowIndex+'." + orginStateName;
+                            if (stateItem.isDynamic) {
+                                switch(stateItem.bindMode){
+                                    case ScriptBindMode.OnForm:
+                                    bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState])));
                                     break;
-                                    default:
-                                    sv = singleQuotesStr(sv);
+                                    case ScriptBindMode.OnNewRow:
+                                    staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), makeStr_callFun(stateItem.funName, [VarNames.ReState])));
+                                    break;
                                 }
-                                staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), sv));
-                            }
-                            else if (stateItem.useColumn) {
-                                if (formCanInsert) {
-                                    if (isPageForm) {
-                                        saveInsertIfBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, VarNames.InsertCache + '.' + state_Name), makeStr_getStateByPath('formState', singleQuotesStr(stateName))));
+                            } else {
+                                if (stateItem.staticValue) {
+                                    var sv = stateItem.staticValue;
+                                    switch (sv.toLocaleLowerCase()) {
+                                        case 'true':
+                                        case 'false':
+                                            break;
+                                        default:
+                                            sv = singleQuotesStr(sv);
+                                    }
+                                    switch(stateItem.bindMode){
+                                        case ScriptBindMode.OnForm:
+                                        bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), sv));
+                                        break;
+                                        case ScriptBindMode.OnNewRow:
+                                        staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), sv));
+                                        break;
                                     }
                                 }
-                                if (stateItem.useColumn) {
-                                    if (isPageForm) {
+                                else if (stateItem.useColumn) {
+                                    bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_DynamicAttr(VarNames.NowRecord, stateItem.useColumn.name)));
+                                }
+                                else if (stateItem.setNull) {
+                                    switch(stateItem.bindMode){
+                                        case ScriptBindMode.OnForm:
+                                        bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), 'null'));
+                                        break;
+                                        case ScriptBindMode.OnNewRow:
+                                        staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), 'null'));
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            // pageform
+                            if (stateItem.isDynamic) {
+                                if (stateItem.bindMode == ScriptBindMode.OnForm) {
+                                    setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, bundleVar.name]));
+                                    if (stateItem.useColumn) {
+                                        dynamicSetBlock_hadRecord.pushLine(setLine);
+                                    }
+                                    else {
+                                        staticBindBlock.pushLine(setLine);
+                                    }
+                                }
+                            } else {
+                                if (stateItem.staticValue) {
+                                    sv = stateItem.staticValue;
+                                    switch (sv.toLocaleLowerCase()) {
+                                        case 'true':
+                                        case 'false':
+                                            break;
+                                        default:
+                                            sv = singleQuotesStr(sv);
+                                    }
+                                    staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), sv));
+                                }
+                                else if (stateItem.useColumn) {
+                                    if (formCanInsert) {
+                                        saveInsertIfBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, VarNames.InsertCache + '.' + state_Name), makeStr_getStateByPath('formState', singleQuotesStr(stateName))));
+                                    }
+                                    if (stateItem.useColumn) {
                                         if (formCanInsert) {
                                             hadInsertCacheIf.trueBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), VarNames.InsertCache + '.' + state_Name));
                                             hadInsertCacheIf.falseBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), "''"));
                                         }
+                                        bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_DynamicAttr(VarNames.NowRecord, stateItem.useColumn.name)));
                                     }
-                                    bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_DynamicAttr(VarNames.NowRecord, stateItem.useColumn.name)));
                                 }
-                            }
-                            else if (stateItem.setNull) {
-                                if(isPageForm){
+                                else if (stateItem.setNull) {
                                     staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), 'null'));
-                                }
-                                else{
-                                    bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), 'null'));
                                 }
                             }
                         }
@@ -1935,7 +1991,7 @@ class MobileContentCompiler extends ContentCompiler {
                             value: 'null',
                         });
                     }
-                    if(stableData){
+                    if (stableData) {
                         this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'options_arr', useCtl.kernel, propApi.stateName, {
                             value: 'null',
                         });
@@ -1963,12 +2019,12 @@ class MobileContentCompiler extends ContentCompiler {
                                 value: 'null',
                             });
                         }
-                        if(stableData){
+                        if (stableData) {
                             this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'options_arr', useCtl.kernel, propApi.stateName, {
                                 value: 'null',
                             });
                         }
-                        initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', useName), makeStr_getStateByPath('useState', singleQuotesStr(useCtl.kernel.getStatePath(propApi.stateName, '.', {mapVarName:VarNames.RowIndexInfo_map})))));
+                        initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', useName), makeStr_getStateByPath('useState', singleQuotesStr(useCtl.kernel.getStatePath(propApi.stateName, '.', { mapVarName: VarNames.RowIndexInfo_map })))));
                     }
                 }
             }
@@ -2119,6 +2175,7 @@ class MobileContentCompiler extends ContentCompiler {
                     theKernel,
                     this.projectCompiler.clickKernelLogBadgeItemHandler),
                     '没有任何列被使用']);
+                return false;
             }
             else {
                 theKernel.autoSetCusDataSource(mustSelectColumns_arr);
@@ -2152,22 +2209,61 @@ class MobileContentCompiler extends ContentCompiler {
                 for (var formId in compilHelper.useForm_map) {
                     var useFormData = compilHelper.useForm_map[formId];
                     var useFormMidData = this.projectCompiler.getMidData(useFormData.formKernel.id);
-                    var formStateVarName = null;
+                    var isGridForm = useFormData.formKernel.isGridForm();
+                    var formSelectMode = useFormData.formKernel.getAttribute(AttrNames.SelectMode);
                     ctlParentStateVarName = null;
                     ctlStateVarName = null;
-                    if (!IsEmptyObject(useFormData.useControls_map)) {
-                        formStateVarName = formId + '_state';
-                        initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
-                        theFun.scope.getVar(formStateVarName, true, initValue);
 
+                    var formStateVarName = formId + '_state';
+                    var nowRecordVarName = formId + '_' + VarNames.NowRecord + '';
+                    var nowRowStateVarName = formId + '_' + VarNames.NowRow + '';
+                    var selectedRowsVarName = formId + '_selectedRows_arr';
+                    var isUseFormCtl = !IsEmptyObject(useFormData.useControls_map);
+                    var isUseFormColumn = !IsEmptyObject(useFormData.useColumns_map);
+                    var ctlBelongStateVarName = formStateVarName;
+
+                    initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
+                    theFun.scope.getVar(formStateVarName, true, initValue);
+                    
+                    if(isUseFormCtl || isUseFormColumn){
+                        if(isGridForm){
+                            ctlBelongStateVarName = nowRowStateVarName;
+                            theFun.scope.getVar(selectedRowsVarName, true, formStateVarName + '.' + VarNames.SelectedRows_arr);
+                            if(isUseFormColumn){
+                                theFun.scope.getVar(nowRecordVarName, true);
+                            }
+                            if(isUseFormCtl){
+                                theFun.scope.getVar(nowRowStateVarName, true);
+                            }
+                            validBlock.pushLine(makeStr_AddAll('if(', selectedRowsVarName, '==null || ', selectedRowsVarName, '.length == 0){hadValidErr=true;}'));
+                            validBlock.pushLine('else{', 1);
+                            if(isUseFormColumn){
+                                validBlock.pushLine(makeStr_AddAll(nowRecordVarName,'=',formStateVarName,'.',VarNames.Records_arr,'[',selectedRowsVarName,'[0]];'));
+                            }
+                            if(isUseFormCtl){
+                                validBlock.pushLine(makeStr_AddAll(nowRowStateVarName,'=',formStateVarName,"['row_' + ",selectedRowsVarName,'[0]];'));
+                            }
+                            validBlock.subNextIndent();
+                            validBlock.pushLine('}');
+                            this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theFun.name, useFormData.formKernel, VarNames.SelectedRows_arr);
+                        }
+                        else{
+                            if(isUseFormColumn){
+                                initValue = makeStr_getStateByPath(formStateVarName == null ? VarNames.State : formStateVarName, singleQuotesStr(useFormData.formKernel.getStatePath(VarNames.NowRecord)));
+                                theFun.scope.getVar(nowRecordVarName, true, initValue);
+                            }
+                        }
+                    }
+
+                    if (!IsEmptyObject(useFormData.useControls_map)) {
                         for (usectlid in useFormData.useControls_map) {
                             useCtlData = useFormData.useControls_map[usectlid];
                             ctlStateVarName = usectlid + '_state';
-                            initValue = makeStr_getStateByPath(formStateVarName, singleQuotesStr(usectlid), '{}');
+                            initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(usectlid), '{}');
                             theFun.scope.getVar(ctlStateVarName, true, initValue);
                             if (useCtlData.kernel.isAEditor()) {
                                 ctlParentStateVarName = useCtlData.kernel.parent.id + '_state';
-                                initValue = makeStr_getStateByPath(formStateVarName, singleQuotesStr(useCtlData.kernel.parent.id), '{}');
+                                initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(useCtlData.kernel.parent.id), '{}');
                                 theFun.scope.getVar(ctlParentStateVarName, true, initValue);
                             }
 
@@ -2193,9 +2289,6 @@ class MobileContentCompiler extends ContentCompiler {
                         }
                     }
                     if (!IsEmptyObject(useFormData.useColumns_map)) {
-                        var nowRecordVarName = formId + '_' + VarNames.NowRecord + '';
-                        initValue = makeStr_getStateByPath(formStateVarName == null ? VarNames.State : formStateVarName, singleQuotesStr(useFormData.formKernel.getStatePath(VarNames.NowRecord)));
-                        theFun.scope.getVar(nowRecordVarName, true, initValue);
                         needCheckVars_arr.push(nowRecordVarName);
                         for (var colName in useFormData.useColumns_map) {
                             needSetParams_arr.push({ bundleName: colName + '_' + useFormData.useDS.code, clientValue: nowRecordVarName + '.' + colName });

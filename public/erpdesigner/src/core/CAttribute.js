@@ -173,6 +173,7 @@ const VarNames={
     NeedSetState:'needSetState',
     InvalidBundle:'invalidbundle',
     NowRecord:'nowRecord',
+    RowState:'rowState',
     RetElem:'retElem',
     ContentElem:'contentElem',
     NavElem:'navElem',

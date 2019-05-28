@@ -160,6 +160,11 @@ const EInterActiveType={
 
 const EInterActiveTypes_arr = [{text:'只读', value:EInterActiveType.ReadOnly}, {text:'读写', value:EInterActiveType.ReadWrite}];
 
+const EFormRowSource={
+    Context:'context',
+    Selected:'selected',
+}
+
 /**
  * 逻辑运算符 and or not
  */
@@ -193,6 +198,7 @@ const VisibleStyle_Both = 'both';
 const ScriptBindMode={
     OnForm:'OnForm',
     OnRelAttrChanged:'OnRelAttrChanged',
+    OnNewRow:'OnNewRow',
 }
 
 const DesignerConfig = {
