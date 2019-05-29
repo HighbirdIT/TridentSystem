@@ -397,7 +397,10 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         var itemValue = getAttributeByNode(ev.target, 'data-value');
         if(itemValue == null)
             return;
-        var theDSItem = this.state.canUseDS_arr.find(e=>{return e.formID == itemValue});
+        var rowfrom = getAttributeByNode(ev.target, 'data-rowfrom');
+        if(rowfrom == null)
+            return;
+        var theDSItem = this.state.canUseDS_arr.find(e=>{return e.formID == itemValue && e.rowfrom == rowfrom});
         if(theDSItem){
             this.props.editor.createCanUseDS(theDSItem);
         }
@@ -465,7 +468,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
                                 {showCanUseDS &&
                                 <div className='btn-group-vertical mw-100 flex-shrink-0'>
                                     {canUseDS_arr.map(item=>{
-                                        return (<button key={item.key} onMouseDown={this.mouseDownCanUseDSHandler} data-value={item.formID} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>);
+                                        return (<button key={item.key} onMouseDown={this.mouseDownCanUseDSHandler} data-value={item.formID} data-rowfrom={item.rowfrom} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>);
                                     })}
                                 </div>}
                             </React.Fragment>

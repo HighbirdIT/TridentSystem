@@ -49,32 +49,36 @@ window.onhashchange = function() {
 function setLocHash(hashName,hashVal){
     var nowHash = location.hash;
     var newHash;
+    nowHash = nowHash.replace('#', '');
     if(nowHash.length >= 0){
-        nowHash = nowHash.replace('#', '');
         var hash_arr = nowHash.length == 0 ? [] : nowHash.split(',');
+        var newHash_arr = [];
         var found = false;
         for(var si in hash_arr){
             var tem_arr = hash_arr[si].split('=');
             if(tem_arr.length == 2){
                 if(tem_arr[0] == hashName){
-                    if(hashVal == null){
-                        hash_arr.splice(si,1);
-                    }
-                    else{
-                        hash_arr[si] = hashName + '=' + hashVal;
+                    if(hashVal != null){
+                        newHash_arr.push(hashName + '=' + hashVal);
                     }
                     found = true;
                     break;
                 }
+                else{
+                    newHash_arr.push(hash_arr[si]);
+                }
+            }
+            else if(hash_arr[si] != 'empty'){
+                newHash_arr.push(hash_arr[si]);
             }
         }
         if(!found){
             if(hashVal != null)
             {
-                hash_arr.push(hashName + '=' + hashVal);
+                newHash_arr.push(hashName + '=' + hashVal);
             }
         }
-        newHash = hash_arr.join(',');
+        newHash = newHash_arr.length == 0 ? 'empty' : newHash_arr.join(',');
     }
     else{
         newHash = hashName + '=' + hashVal;
@@ -86,7 +90,8 @@ class FixedContainer extends React.PureComponent{
     constructor(props) {
         super(props);
         this.state={
-            items_arr:[]
+            items_arr:[],
+            pages_arr:[],
         };
         this.item_map = {};
         this.banItemChange = false;
@@ -111,6 +116,17 @@ class FixedContainer extends React.PureComponent{
                 items_arr:items_arr
             });
         }
+    }
+
+    popPage(target){
+        this.setState(state=>{
+            var index = state.pages_arr.indexOf(target);
+            if(index != -1)
+                return state;
+            return {
+                pages_arr:state.pages_arr.concat(target),
+            };
+        });
     }
 
     addItem(target){
@@ -147,15 +163,13 @@ class FixedContainer extends React.PureComponent{
 
     render(){
         var items_arr = this.state.items_arr;
-        if(items_arr.length == 0){
+        var pages_arr = this.state.pages_arr;
+        if(items_arr.length == 0 && pages_arr.length == 0){
             return null;
         }
         return (<div className='d-fixed w-100 h-100 fixedBackGround'>
-                {items_arr.map(
-                    item=>{
-                        return item;
-                    }
-                )}
+                {pages_arr}
+                {items_arr}
             </div>);
     }
 }
@@ -169,6 +183,12 @@ function addFixedItem(target){
 function removeFixedItem(target){
     if(gFixedContainerRef.current){
         gFixedContainerRef.current.removeItem(target);
+    }
+}
+
+function popPage(target){
+    if(gFixedContainerRef.current){
+        gFixedContainerRef.current.popPage(target);
     }
 }
 
@@ -312,6 +332,9 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
         if(multiselect){
             if(selectedVal == null){
                 selectedVal = [];
+            }
+            if(selectedOption == null){
+                selectedOption = [];
             }
         }
         //console.log(selectedElem);
@@ -475,7 +498,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             if(multiselect){
                 multiSelectedElem = (<div className='d-flex flex-grow-0 flex-shrink-0 mb-1 flex-wrap'>
                     {
-                        selectedOption.map(item=>{
+                        selectedOption && selectedOption.map(item=>{
                             return <span key={item.value} onClick={this.clickSelectedItemTag} value={item.value} className='border btn' >{item.text}<i className='fa fa-close' /></span>
                         })
                     }
@@ -677,8 +700,11 @@ class ERPC_DropDown extends React.PureComponent {
     getPopPanelInitState(){
         var multiselect = this.props.multiselect;
         var selectedVal = this.props.value;
+        var selectOpt = this.props.selectOpt;
         if(multiselect){
-            
+            if(selectOpt == null){
+                selectOpt = [];
+            }
         }
         return {
             selectedVal:this.props.value,
@@ -690,7 +716,7 @@ class ERPC_DropDown extends React.PureComponent {
             recentValues_arr:this.recentValues_arr,
             recentUsed:this.recentUsed,
             multiselect:this.props.multiselect,
-            selectOpt:this.props.selectOpt,
+            selectOpt:selectOpt,
             label:ReplaceIfNull(this.props.label,this.props.textAttrName),
         }
     }
@@ -799,7 +825,7 @@ class ERPC_DropDown extends React.PureComponent {
                     fetching:this.props.fetching,
                     fetchingErr:this.props.fetchingErr,
                     optionsData:this.props.optionsData,
-                    selectOpt:this.props.selectOpt,
+                    selectOpt: !multiselect ? null : (this.props.selectOpt ? this.props.selectOpt : []),
                 };
                 setTimeout(() => {
                     popPanelRefCurrent.setState(newState);
@@ -988,7 +1014,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
     {
         if(ownprops.multiselect){
             if(useValue[0] == '<'){
-                selectorid = fullPath + 'value';
+                selectorid = propProfile.fullPath + 'value';
                 var valueSelector = ERPC_selector_map[selectorid];
                 if(valueSelector == null){
                     valueSelector = Reselect.createSelector(selectERPC_DropDown_value, selectERPC_DropDown_multiValues);

@@ -224,7 +224,13 @@ class MobileContentCompiler extends ContentCompiler {
         if (belongForm) {
             var formType = belongForm.getAttribute(AttrNames.FormType);
             if (formType == EFormType.Grid) {
-                ctlTag.setAttr('rowIndex', '{rowIndex}');
+                var needModify = false;
+                if(ctlKernel.parent.type == M_LabeledControlKernel_Type && ctlKernel.parent.parent == belongForm){
+                    needModify = true;
+                }
+                if(needModify){
+                    ctlTag.setAttr('rowIndex', '{rowIndex}');
+                }
             }
         }
     }
@@ -1003,6 +1009,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         var formStyleID = theKernel.id + '_style';
         var hasFormStyle = this.clientSide.addStyleObject(formStyleID, layoutConfig.style);
+        var gridBottomDivBlock = new FormatFileBlock('gridBottom');
 
         var autoHeight = theKernel.getAttribute(AttrNames.AutoHeight);
         var childRenderBlock = null;
@@ -1048,6 +1055,7 @@ class MobileContentCompiler extends ContentCompiler {
             }
             renderContentFun.subNextIndent();
             renderContentFun.pushLine("</div>", -1);
+            renderContentFun.pushChild(gridBottomDivBlock);
             renderContentFun.pushLine("{" + VarNames.NavElem + "}", -1);
             renderContentFun.pushLine('</div>);');
         }
@@ -1316,6 +1324,9 @@ class MobileContentCompiler extends ContentCompiler {
                     case EmptyKernel_Type:
                         continue;
                 }
+                if(childKernel == theKernel.gridFormBottomDiv){
+                    continue;
+                }
                 if (childKernel.type != M_LabeledControlKernel_Type) {
                     logManager.errorEx([logManager.createBadgeItem(
                         theKernel.getReadableName(),
@@ -1527,7 +1538,7 @@ class MobileContentCompiler extends ContentCompiler {
 
             for (ci in theKernel.children) {
                 childKernel = theKernel.children[ci];
-                if (childKernel.type == EmptyKernel_Type) {
+                if (childKernel.type == EmptyKernel_Type || childKernel == theKernel.gridFormBottomDiv) {
                     continue;
                 }
                 columnProfile = gridColumnsProfile_obj[childKernel.id];
@@ -1546,6 +1557,11 @@ class MobileContentCompiler extends ContentCompiler {
                     else {
                         gridBodyTableNewRowRenderBlock.pushLine("<td style={" + columnProfile.tdStyleID + '}/>');
                     }
+                }
+            }
+            if(theKernel.gridFormBottomDiv.children.length > 0){
+                if (this.compileKernel(theKernel.gridFormBottomDiv, gridBottomDivBlock, renderFun) == false) {
+                    return false;
                 }
             }
 

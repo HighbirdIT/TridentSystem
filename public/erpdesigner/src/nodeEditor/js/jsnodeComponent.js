@@ -180,6 +180,10 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
         }
     }
 
+    rowSourceItemChanged(newSrc) {
+        this.props.nodedata.rowSource = newSrc;
+    }
+
     dropdownCtlChangedHandler(selectedDBE) {
         var nodeData = this.props.nodedata;
         nodeData.setEntity(selectedDBE);
@@ -204,7 +208,10 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
             titleElem = (<div f-canmove={1} className='d-flex flex-column'>
                 <span f-canmove={1}>{formKernel.getReadableName()}</span>
                 <span f-canmove={1} className='badge badge-primary'>{nodeData.id}</span>
-                <span f-canmove={1} className='badge badge-info'>{formDS == null ? '无数据源' : formDS.name + '-' + (nodeData.rowSource == EFormRowSource.Context ? '当前行' : '选中行')}</span>
+                <div className='d-flex'>
+                    <span f-canmove={1} className='badge badge-info'>{formDS == null ? '无数据源' : formDS.name}</span>
+                    <DropDownControl itemChanged={this.rowSourceItemChanged} btnclass='btn-dark' options_arr={EFormRowSources_arr} rootclass='flex-grow-1 flex-shrink-1' value={nodeData.rowSource} textAttrName='text' valueAttrName='value' />
+                </div>
             </div>)
         }
 

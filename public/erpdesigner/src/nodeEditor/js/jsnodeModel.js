@@ -1859,11 +1859,20 @@ class JSNode_CurrentDataRow extends JSNode_Base {
         var isGridForm = formKernel.isGridForm();
         if (isGridForm) {
             var formSelectMode = formKernel.getAttribute(AttrNames.SelectMode);
+            if(this.rowSource == EFormRowSource.Context){
+                var belongFormKernel = this.bluePrint.ctlKernel.searchParentKernel(M_FormKernel_Type, true);
+                var isSameForm = formKernel == belongFormKernel;
+                if (this.checkCompileFlag(!isSameForm || this.bluePrint.group != EJsBluePrintFunGroup.GridRowBtnHandler, '此处无法使用目标Form的本属性', helper)) {
+                    return false;
+                }
+            }
+            /*
             if (formSelectMode != ESelectMode.Single) {
                 if (this.checkCompileFlag(this.bluePrint.group != EJsBluePrintFunGroup.GridRowBtnHandler, '关联Form的选择模式不支持本操作', helper)) {
                     return false;
                 }
             }
+            */
         }
         else{
             if (this.checkCompileFlag(this.rowSource == EFormRowSource.Selected, '页面Form不可以用选中行节点', helper)) {

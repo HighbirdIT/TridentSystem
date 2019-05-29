@@ -474,9 +474,8 @@ var CM_Form_0 = function (_React$PureComponent3) {
 		value: function onUpdate(rowIndex, callBack) {
 			var state = store.getState();
 			var M_Form_0_state = getStateByPath(state, 'M_Page_0.M_Form_0', {});
-			var M_Form_0_selectedRows_arr = M_Form_0_state.selectedRows_arr;
-			var M_Form_0_nowRecord;
-			var M_Form_0_rowState;
+			var M_Form_0_nowRecord = M_Form_0_state.records_arr[rowIndex];
+			var M_Form_0_rowState = M_Form_0_state['row_' + rowIndex];
 			var M_Text_1_state = getStateByPath(M_Form_0_rowState, 'M_Text_1', {});
 			var M_LC_1_state = getStateByPath(M_Form_0_rowState, 'M_LC_1', {});
 			var M_Text_1_value = M_Text_1_state.value;
@@ -484,11 +483,6 @@ var CM_Form_0 = function (_React$PureComponent3) {
 			var hadValidErr = false;
 			var validErrState = {};
 			var scriptBP_0_msg = null;
-			if (M_Form_0_selectedRows_arr == null || M_Form_0_selectedRows_arr.length == 0) {
-				return callback_final(state, null, { info: gPreconditionInvalidInfo });
-			}
-			M_Form_0_nowRecord = M_Form_0_state.records_arr[M_Form_0_selectedRows_arr[0]];
-			M_Form_0_rowState = M_Form_0_state['row_' + M_Form_0_selectedRows_arr[0]];
 			var callback_final = function callback_final(state, data, err) {
 				if (state == null) {
 					store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
@@ -499,10 +493,14 @@ var CM_Form_0 = function (_React$PureComponent3) {
 					SendToast('验证失败，无法执行', EToastType.Warning);return;
 				}
 				if (err) {
-					scriptBP_0_msg.setData(err.info, EMessageBoxType.Error, '修改');
+					if (scriptBP_0_msg) {
+						scriptBP_0_msg.setData(err.info, EMessageBoxType.Error, '修改');
+					}
 					return;
 				}
-				scriptBP_0_msg.fireClose();
+				if (scriptBP_0_msg) {
+					scriptBP_0_msg.fireClose();
+				}
 				if (err == null && callBack != null) {
 					callBack(state);
 				}
@@ -539,16 +537,11 @@ var CM_Form_0 = function (_React$PureComponent3) {
 		value: function onDelete(rowIndex, callBack) {
 			var state = store.getState();
 			var M_Form_0_state = getStateByPath(state, 'M_Page_0.M_Form_0', {});
-			var M_Form_0_selectedRows_arr = M_Form_0_state.selectedRows_arr;
-			var M_Form_0_nowRecord;
+			var M_Form_0_nowRecord = M_Form_0_state.records_arr[rowIndex];
 			var validErr;
 			var hadValidErr = false;
 			var validErrState = {};
 			var scriptBP_1_msg = null;
-			if (M_Form_0_selectedRows_arr == null || M_Form_0_selectedRows_arr.length == 0) {
-				return callback_final(state, null, { info: gPreconditionInvalidInfo });
-			}
-			M_Form_0_nowRecord = M_Form_0_state.records_arr[M_Form_0_selectedRows_arr[0]];
 			var callback_final = function callback_final(state, data, err) {
 				if (state == null) {
 					store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
@@ -559,10 +552,14 @@ var CM_Form_0 = function (_React$PureComponent3) {
 					SendToast('验证失败，无法执行', EToastType.Warning);return;
 				}
 				if (err) {
-					scriptBP_1_msg.setData(err.info, EMessageBoxType.Error, '删除');
+					if (scriptBP_1_msg) {
+						scriptBP_1_msg.setData(err.info, EMessageBoxType.Error, '删除');
+					}
 					return;
 				}
-				scriptBP_1_msg.fireClose();
+				if (scriptBP_1_msg) {
+					scriptBP_1_msg.fireClose();
+				}
 				if (err == null && callBack != null) {
 					callBack(state);
 				}
@@ -605,8 +602,7 @@ var CM_Form_0 = function (_React$PureComponent3) {
 			var state = store.getState();
 			var rowIndex = 'new';
 			var M_Form_0_state = getStateByPath(state, 'M_Page_0.M_Form_0', {});
-			var M_Form_0_selectedRows_arr = M_Form_0_state.selectedRows_arr;
-			var M_Form_0_rowState;
+			var M_Form_0_rowState = M_Form_0_state['row_' + rowIndex];
 			var M_Text_1_state = getStateByPath(M_Form_0_rowState, 'M_Text_1', {});
 			var M_LC_1_state = getStateByPath(M_Form_0_rowState, 'M_LC_1', {});
 			var M_Text_1_value = M_Text_1_state.value;
@@ -614,10 +610,6 @@ var CM_Form_0 = function (_React$PureComponent3) {
 			var hadValidErr = false;
 			var validErrState = {};
 			var scriptBP_3_msg = null;
-			if (M_Form_0_selectedRows_arr == null || M_Form_0_selectedRows_arr.length == 0) {
-				return callback_final(state, null, { info: gPreconditionInvalidInfo });
-			}
-			M_Form_0_rowState = M_Form_0_state['row_' + M_Form_0_selectedRows_arr[0]];
 			var callback_final = function callback_final(state, data, err) {
 				if (state == null) {
 					store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
@@ -628,10 +620,14 @@ var CM_Form_0 = function (_React$PureComponent3) {
 					SendToast('验证失败，无法执行', EToastType.Warning);return;
 				}
 				if (err) {
-					scriptBP_3_msg.setData(err.info, EMessageBoxType.Error, '新增');
+					if (scriptBP_3_msg) {
+						scriptBP_3_msg.setData(err.info, EMessageBoxType.Error, '新增');
+					}
 					return;
 				}
-				scriptBP_3_msg.fireClose();
+				if (scriptBP_3_msg) {
+					scriptBP_3_msg.fireClose();
+				}
 				if (err == null && callBack != null) {
 					callBack(state);
 				}
@@ -959,7 +955,7 @@ var CM_Form_1 = function (_React$PureComponent7) {
 			var state = store.getState();
 			var rowIndex = 'new';
 			var M_Form_1_state = getStateByPath(state, 'M_Page_0.M_Form_1', {});
-			var M_Form_1_selectedRows_arr = M_Form_1_state.selectedRows_arr;
+			var M_Form_1_rowState = M_Form_1_state['row_' + rowIndex];
 			var M_Dropdown_0_state = getStateByPath(M_Form_1_rowState, 'M_Dropdown_0', {});
 			var M_LC_6_state = getStateByPath(M_Form_1_rowState, 'M_LC_6', {});
 			var M_Dropdown_0_value = M_Dropdown_0_state.value;
@@ -973,13 +969,6 @@ var CM_Form_1 = function (_React$PureComponent7) {
 			var hadValidErr = false;
 			var validErrState = {};
 			var scriptBP_4_msg = null;
-			if (M_Form_1_selectedRows_arr == null || M_Form_1_selectedRows_arr.length == 0) {
-				return callback_final(state, null, { info: gPreconditionInvalidInfo });
-			}
-			if (M_Form_0_selectedRows_arr == null || M_Form_0_selectedRows_arr.length == 0) {
-				return callback_final(state, null, { info: gPreconditionInvalidInfo });
-			}
-			M_Form_0_nowRecord = M_Form_0_state.records_arr[M_Form_0_selectedRows_arr[0]];
 			var callback_final = function callback_final(state, data, err) {
 				if (state == null) {
 					store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
@@ -990,14 +979,22 @@ var CM_Form_1 = function (_React$PureComponent7) {
 					SendToast('验证失败，无法执行', EToastType.Warning);return;
 				}
 				if (err) {
-					scriptBP_4_msg.setData(err.info, EMessageBoxType.Error, '新增');
+					if (scriptBP_4_msg) {
+						scriptBP_4_msg.setData(err.info, EMessageBoxType.Error, '新增');
+					}
 					return;
 				}
-				scriptBP_4_msg.fireClose();
+				if (scriptBP_4_msg) {
+					scriptBP_4_msg.fireClose();
+				}
 				if (err == null && callBack != null) {
 					callBack(state);
 				}
 			};
+			if (M_Form_0_selectedRows_arr == null || M_Form_0_selectedRows_arr.length == 0) {
+				SendToast('需要在[所有小组]中选择一条数据。', EToastType.Warning);return;
+			}
+			M_Form_0_nowRecord = M_Form_0_state.records_arr[M_Form_0_selectedRows_arr[0]];
 			if (IsEmptyString(M_Form_0_nowRecord)) {
 				return callback_final(state, null, { info: gPreconditionInvalidInfo });
 			}

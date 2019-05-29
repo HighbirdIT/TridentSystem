@@ -163,11 +163,14 @@ var EInterActiveTypes_arr = [{ text: '只读', value: EInterActiveType.ReadOnly 
 var EFormRowSource = {
     Context: 'context',
     Selected: 'selected'
+};
 
-    /**
-     * 逻辑运算符 and or not
-     */
-};var Logical_Operator_and = 'and';
+var EFormRowSources_arr = [{ text: '所在行', value: EFormRowSource.Context }, { text: '选中行', value: EFormRowSource.Selected }];
+
+/**
+ * 逻辑运算符 and or not
+ */
+var Logical_Operator_and = 'and';
 var Logical_Operator_or = 'or';
 //var Logical_Operator_not = 'not';
 var Logical_Operators_arr = [Logical_Operator_and, Logical_Operator_or];

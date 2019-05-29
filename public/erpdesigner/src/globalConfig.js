@@ -165,6 +165,8 @@ const EFormRowSource={
     Selected:'selected',
 }
 
+const EFormRowSources_arr = [{text:'所在行', value:EFormRowSource.Context}, {text:'选中行', value:EFormRowSource.Selected}];
+
 /**
  * 逻辑运算符 and or not
  */

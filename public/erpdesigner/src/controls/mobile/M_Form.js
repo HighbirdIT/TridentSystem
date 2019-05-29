@@ -15,6 +15,7 @@ const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
         new CAttribute('首列序号',AttrNames.AutoIndexColumn,ValueType.Boolean,true),
         new CAttribute('自动滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
         new CAttribute('模式', AttrNames.SelectMode, ValueType.String, ESelectMode.Multi, true, false, SelectModes_arr),
+        new CAttribute('bottomDivID','bottomDivID',ValueType.String,'',true,false,null,null),
     ]),
     new CAttributeGroup('操作设置',[
         genScripAttribute('Insert', AttrNames.Event.OnInsert,EJsBluePrintFunGroup.GridRowBtnHandler),
@@ -65,6 +66,21 @@ class M_FormKernel extends ContainerKernelBase{
             listFormContentValue = new ListFormContent(this);
             this.setAttribute(AttrNames.ListFormContent, listFormContentValue);
         }
+
+        var bottomDivID = this.getAttribute('bottomDivID');
+        var gridFormBottomDiv = this.children.find(child=>{
+            return child.id == bottomDivID;
+        });
+        if(gridFormBottomDiv == null){
+            gridFormBottomDiv = new M_ContainerKernel({},this);
+            gridFormBottomDiv.name = this.id + '底部';
+            gridFormBottomDiv.growAttrArray(AttrNames.LayoutNames.StyleAttr);
+            gridFormBottomDiv.growAttrArray(AttrNames.LayoutNames.StyleAttr);
+            gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexGrow,value:false},0);
+            gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexShrink,value:false},1);
+            this.setAttribute('bottomDivID', gridFormBottomDiv.id);
+        }
+        this.gridFormBottomDiv = gridFormBottomDiv;
 
         var nowft = this.getAttribute(AttrNames.FormType);
         this[AttrNames.ListFormContent + '_visible'] = nowft == EFormType.Grid;
@@ -371,6 +387,7 @@ class M_Form extends React.PureComponent {
                         </thead>
                         </table>
                     </div>
+                    {ctlKernel.gridFormBottomDiv.renderSelf()}
                 </div>
             );
             if(widthType == EGridWidthType.Fixed){

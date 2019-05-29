@@ -69,30 +69,33 @@ window.onhashchange = function () {
 function setLocHash(hashName, hashVal) {
     var nowHash = location.hash;
     var newHash;
+    nowHash = nowHash.replace('#', '');
     if (nowHash.length >= 0) {
-        nowHash = nowHash.replace('#', '');
         var hash_arr = nowHash.length == 0 ? [] : nowHash.split(',');
+        var newHash_arr = [];
         var found = false;
         for (var si in hash_arr) {
             var tem_arr = hash_arr[si].split('=');
             if (tem_arr.length == 2) {
                 if (tem_arr[0] == hashName) {
-                    if (hashVal == null) {
-                        hash_arr.splice(si, 1);
-                    } else {
-                        hash_arr[si] = hashName + '=' + hashVal;
+                    if (hashVal != null) {
+                        newHash_arr.push(hashName + '=' + hashVal);
                     }
                     found = true;
                     break;
+                } else {
+                    newHash_arr.push(hash_arr[si]);
                 }
+            } else if (hash_arr[si] != 'empty') {
+                newHash_arr.push(hash_arr[si]);
             }
         }
         if (!found) {
             if (hashVal != null) {
-                hash_arr.push(hashName + '=' + hashVal);
+                newHash_arr.push(hashName + '=' + hashVal);
             }
         }
-        newHash = hash_arr.join(',');
+        newHash = newHash_arr.length == 0 ? 'empty' : newHash_arr.join(',');
     } else {
         newHash = hashName + '=' + hashVal;
     }
@@ -108,7 +111,8 @@ var FixedContainer = function (_React$PureComponent) {
         var _this = _possibleConstructorReturn(this, (FixedContainer.__proto__ || Object.getPrototypeOf(FixedContainer)).call(this, props));
 
         _this.state = {
-            items_arr: []
+            items_arr: [],
+            pages_arr: []
         };
         _this.item_map = {};
         _this.banItemChange = false;
@@ -136,6 +140,17 @@ var FixedContainer = function (_React$PureComponent) {
                     items_arr: items_arr
                 });
             }
+        }
+    }, {
+        key: 'popPage',
+        value: function popPage(target) {
+            this.setState(function (state) {
+                var index = state.pages_arr.indexOf(target);
+                if (index != -1) return state;
+                return {
+                    pages_arr: state.pages_arr.concat(target)
+                };
+            });
         }
     }, {
         key: 'addItem',
@@ -173,15 +188,15 @@ var FixedContainer = function (_React$PureComponent) {
         key: 'render',
         value: function render() {
             var items_arr = this.state.items_arr;
-            if (items_arr.length == 0) {
+            var pages_arr = this.state.pages_arr;
+            if (items_arr.length == 0 && pages_arr.length == 0) {
                 return null;
             }
             return React.createElement(
                 'div',
                 { className: 'd-fixed w-100 h-100 fixedBackGround' },
-                items_arr.map(function (item) {
-                    return item;
-                })
+                pages_arr,
+                items_arr
             );
         }
     }]);
@@ -198,6 +213,12 @@ function addFixedItem(target) {
 function removeFixedItem(target) {
     if (gFixedContainerRef.current) {
         gFixedContainerRef.current.removeItem(target);
+    }
+}
+
+function popPage(target) {
+    if (gFixedContainerRef.current) {
+        gFixedContainerRef.current.popPage(target);
     }
 }
 
@@ -361,6 +382,9 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             if (multiselect) {
                 if (selectedVal == null) {
                     selectedVal = [];
+                }
+                if (selectedOption == null) {
+                    selectedOption = [];
                 }
             }
             //console.log(selectedElem);
@@ -545,7 +569,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                     multiSelectedElem = React.createElement(
                         'div',
                         { className: 'd-flex flex-grow-0 flex-shrink-0 mb-1 flex-wrap' },
-                        selectedOption.map(function (item) {
+                        selectedOption && selectedOption.map(function (item) {
                             return React.createElement(
                                 'span',
                                 { key: item.value, onClick: _this4.clickSelectedItemTag, value: item.value, className: 'border btn' },
@@ -806,7 +830,12 @@ var ERPC_DropDown = function (_React$PureComponent3) {
         value: function getPopPanelInitState() {
             var multiselect = this.props.multiselect;
             var selectedVal = this.props.value;
-            if (multiselect) {}
+            var selectOpt = this.props.selectOpt;
+            if (multiselect) {
+                if (selectOpt == null) {
+                    selectOpt = [];
+                }
+            }
             return {
                 selectedVal: this.props.value,
                 fetching: this.props.fetching,
@@ -817,7 +846,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 recentValues_arr: this.recentValues_arr,
                 recentUsed: this.recentUsed,
                 multiselect: this.props.multiselect,
-                selectOpt: this.props.selectOpt,
+                selectOpt: selectOpt,
                 label: ReplaceIfNull(this.props.label, this.props.textAttrName)
             };
         }
@@ -919,7 +948,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                         fetching: this.props.fetching,
                         fetchingErr: this.props.fetchingErr,
                         optionsData: this.props.optionsData,
-                        selectOpt: this.props.selectOpt
+                        selectOpt: !multiselect ? null : this.props.selectOpt ? this.props.selectOpt : []
                     };
                     setTimeout(function () {
                         popPanelRefCurrent.setState(newState);
@@ -1124,7 +1153,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
     if (useValue) {
         if (ownprops.multiselect) {
             if (useValue[0] == '<') {
-                selectorid = fullPath + 'value';
+                selectorid = propProfile.fullPath + 'value';
                 var valueSelector = ERPC_selector_map[selectorid];
                 if (valueSelector == null) {
                     valueSelector = Reselect.createSelector(selectERPC_DropDown_value, selectERPC_DropDown_multiValues);

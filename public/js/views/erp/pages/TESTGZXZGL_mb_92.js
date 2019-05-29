@@ -152,7 +152,6 @@ function bind_M_Form_1(retState, newIndex, oldIndex) {
 	var needSetState = {};
 	var bundle = {};
 	var needActiveBindPage = false;
-	needSetState['row_new.M_Text_0.value'] = M_Text_0_defaultvalue_get(retState);
 	var pageCount = formState.pageCount;
 	var pageIndex = formState.pageIndex;
 	if (records_arr != null && records_arr.length > 0) {
@@ -228,23 +227,12 @@ function bind_M_Form_1Page(retState) {
 	}
 	for (var rowIndex = startRowIndex; rowIndex <= endRowIndex; ++rowIndex) {
 		var nowRecord = records_arr[rowIndex];
-		needSetState['row_new.M_Text_0.value'] = M_Text_0_defaultvalue_get(retState);
-		needSetState['row_' + rowIndex + '.M_Dropdown_0.text'] = nowRecord['员工登记姓名'];
-		needSetState['row_' + rowIndex + '.M_Dropdown_0.value'] = nowRecord['员工登记姓名代码'];
-		needSetState['row_' + rowIndex + '.M_Text_0.value'] = nowRecord['加入确认时间'];
+		needSetState['row_' + rowIndex + '.M_Label_0.text'] = nowRecord['员工登记姓名'];
+		needSetState['row_' + rowIndex + '.M_Label_2.text'] = nowRecord['加入确认时间'];
 	}
 	needSetState.startRowIndex = startRowIndex;
 	needSetState.endRowIndex = endRowIndex;
 	return setManyStateByPath(retState, 'M_Page_0.M_Form_1', needSetState);
-}
-function pull_M_Dropdown_0(parentPath) {
-	var rowIndexInfo_map = getRowIndexMapFromPath(parentPath);
-	var bundle = {};
-	var useState = store.getState();
-	store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle, action: 'pulldata_M_Dropdown_0' }, makeFTD_Prop(parentPath, 'M_Dropdown_0', 'options_arr', false), EFetchKey.FetchPropValue));
-}
-function M_Text_0_defaultvalue_get(state, bundle) {
-	return getFormatDateString(getNowDate());
 }
 function M_Form_0_selectedRows_arr_changed(state, newValue, oldValue, path, visited, delayActs, rowIndexInfo_map) {
 	var needSetState = {};
@@ -474,9 +462,8 @@ var CM_Form_0 = function (_React$PureComponent3) {
 		value: function onUpdate(rowIndex, callBack) {
 			var state = store.getState();
 			var M_Form_0_state = getStateByPath(state, 'M_Page_0.M_Form_0', {});
-			var M_Form_0_selectedRows_arr = M_Form_0_state.selectedRows_arr;
-			var M_Form_0_nowRecord;
-			var M_Form_0_rowState;
+			var M_Form_0_nowRecord = M_Form_0_state.records_arr[rowIndex];
+			var M_Form_0_rowState = M_Form_0_state['row_' + rowIndex];
 			var M_Text_1_state = getStateByPath(M_Form_0_rowState, 'M_Text_1', {});
 			var M_LC_1_state = getStateByPath(M_Form_0_rowState, 'M_LC_1', {});
 			var M_Text_1_value = M_Text_1_state.value;
@@ -484,11 +471,6 @@ var CM_Form_0 = function (_React$PureComponent3) {
 			var hadValidErr = false;
 			var validErrState = {};
 			var scriptBP_0_msg = null;
-			if (M_Form_0_selectedRows_arr == null || M_Form_0_selectedRows_arr.length == 0) {
-				return callback_final(state, null, { info: gPreconditionInvalidInfo });
-			}
-			M_Form_0_nowRecord = M_Form_0_state.records_arr[M_Form_0_selectedRows_arr[0]];
-			M_Form_0_rowState = M_Form_0_state['row_' + M_Form_0_selectedRows_arr[0]];
 			var callback_final = function callback_final(state, data, err) {
 				if (state == null) {
 					store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
@@ -499,10 +481,14 @@ var CM_Form_0 = function (_React$PureComponent3) {
 					SendToast('验证失败，无法执行', EToastType.Warning);return;
 				}
 				if (err) {
-					scriptBP_0_msg.setData(err.info, EMessageBoxType.Error, '修改');
+					if (scriptBP_0_msg) {
+						scriptBP_0_msg.setData(err.info, EMessageBoxType.Error, '修改');
+					}
 					return;
 				}
-				scriptBP_0_msg.fireClose();
+				if (scriptBP_0_msg) {
+					scriptBP_0_msg.fireClose();
+				}
 				if (err == null && callBack != null) {
 					callBack(state);
 				}
@@ -539,16 +525,11 @@ var CM_Form_0 = function (_React$PureComponent3) {
 		value: function onDelete(rowIndex, callBack) {
 			var state = store.getState();
 			var M_Form_0_state = getStateByPath(state, 'M_Page_0.M_Form_0', {});
-			var M_Form_0_selectedRows_arr = M_Form_0_state.selectedRows_arr;
-			var M_Form_0_nowRecord;
+			var M_Form_0_nowRecord = M_Form_0_state.records_arr[rowIndex];
 			var validErr;
 			var hadValidErr = false;
 			var validErrState = {};
 			var scriptBP_1_msg = null;
-			if (M_Form_0_selectedRows_arr == null || M_Form_0_selectedRows_arr.length == 0) {
-				return callback_final(state, null, { info: gPreconditionInvalidInfo });
-			}
-			M_Form_0_nowRecord = M_Form_0_state.records_arr[M_Form_0_selectedRows_arr[0]];
 			var callback_final = function callback_final(state, data, err) {
 				if (state == null) {
 					store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
@@ -559,10 +540,14 @@ var CM_Form_0 = function (_React$PureComponent3) {
 					SendToast('验证失败，无法执行', EToastType.Warning);return;
 				}
 				if (err) {
-					scriptBP_1_msg.setData(err.info, EMessageBoxType.Error, '删除');
+					if (scriptBP_1_msg) {
+						scriptBP_1_msg.setData(err.info, EMessageBoxType.Error, '删除');
+					}
 					return;
 				}
-				scriptBP_1_msg.fireClose();
+				if (scriptBP_1_msg) {
+					scriptBP_1_msg.fireClose();
+				}
 				if (err == null && callBack != null) {
 					callBack(state);
 				}
@@ -577,7 +562,7 @@ var CM_Form_0 = function (_React$PureComponent3) {
 			var fetchKey = 'M_Form_0_删除_' + rowIndex;
 			fetchTracer[fetchKey] = fetchid;
 			scriptBP_1_msg = PopMessageBox('', EMessageBoxType.Loading, '删除');
-			scriptBP_1_msg.query('确定要删除这条数据吗？', [{ label: '确定', key: '确定' }, { label: '取消', key: '取消' }], function (popmessagebox_0_key) {
+			scriptBP_1_msg.query('确定要删除工作组[' + M_Form_0_nowRecord['工作小组名称'] + ']吗？', [{ label: '确定', key: '确定' }, { label: '取消', key: '取消' }], function (popmessagebox_0_key) {
 				if (popmessagebox_0_key == '确定') {
 					var bundle_delete_table_0 = {
 						工作小组代码: M_Form_0_nowRecord['工作小组代码']
@@ -605,8 +590,7 @@ var CM_Form_0 = function (_React$PureComponent3) {
 			var state = store.getState();
 			var rowIndex = 'new';
 			var M_Form_0_state = getStateByPath(state, 'M_Page_0.M_Form_0', {});
-			var M_Form_0_selectedRows_arr = M_Form_0_state.selectedRows_arr;
-			var M_Form_0_rowState;
+			var M_Form_0_rowState = M_Form_0_state['row_' + rowIndex];
 			var M_Text_1_state = getStateByPath(M_Form_0_rowState, 'M_Text_1', {});
 			var M_LC_1_state = getStateByPath(M_Form_0_rowState, 'M_LC_1', {});
 			var M_Text_1_value = M_Text_1_state.value;
@@ -614,10 +598,6 @@ var CM_Form_0 = function (_React$PureComponent3) {
 			var hadValidErr = false;
 			var validErrState = {};
 			var scriptBP_3_msg = null;
-			if (M_Form_0_selectedRows_arr == null || M_Form_0_selectedRows_arr.length == 0) {
-				return callback_final(state, null, { info: gPreconditionInvalidInfo });
-			}
-			M_Form_0_rowState = M_Form_0_state['row_' + M_Form_0_selectedRows_arr[0]];
 			var callback_final = function callback_final(state, data, err) {
 				if (state == null) {
 					store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
@@ -628,10 +608,14 @@ var CM_Form_0 = function (_React$PureComponent3) {
 					SendToast('验证失败，无法执行', EToastType.Warning);return;
 				}
 				if (err) {
-					scriptBP_3_msg.setData(err.info, EMessageBoxType.Error, '新增');
+					if (scriptBP_3_msg) {
+						scriptBP_3_msg.setData(err.info, EMessageBoxType.Error, '新增');
+					}
 					return;
 				}
-				scriptBP_3_msg.fireClose();
+				if (scriptBP_3_msg) {
+					scriptBP_3_msg.fireClose();
+				}
 				if (err == null && callBack != null) {
 					callBack(state);
 				}
@@ -871,8 +855,6 @@ var CM_Form_1 = function (_React$PureComponent7) {
 
 		ERPC_GridForm(_this7);
 		_this7.tableBodyScroll = _this7.tableBodyScroll.bind(_this7);
-		_this7.btns = [];
-		_this7.state = {};
 		return _this7;
 	}
 
@@ -902,14 +884,14 @@ var CM_Form_1 = function (_React$PureComponent7) {
 					if (this.props.invalidbundle) {
 						retElem = renderInvalidBundleDiv();
 					} else {
-						if (this.state.hadNewRow != true && !this.props.canInsert && (this.props.records_arr == null || this.props.records_arr.length == 0)) {
+						if (!this.props.canInsert && (this.props.records_arr == null || this.props.records_arr.length == 0)) {
 							retElem = React.createElement(
 								"div",
 								{ className: "m-auto" },
 								"\u6CA1\u6709\u67E5\u8BE2\u5230\u6570\u636E"
 							);
 						} else {
-							retElem = React.createElement(CM_Form_1_TBody, { startRowIndex: this.props.startRowIndex, endRowIndex: this.props.endRowIndex, form: this, hadNewRow: this.state.hadNewRow });
+							retElem = React.createElement(CM_Form_1_TBody, { startRowIndex: this.props.startRowIndex, endRowIndex: this.props.endRowIndex, form: this });
 							if (this.props.pagebreak) {
 								navElem = React.createElement(CBaseGridFormNavBar, { pageIndex: this.props.pageIndex, rowPerPage: this.props.rowPerPage, rowPerPageChangedHandler: this.rowPerPageChangedHandler, pageCount: this.props.pageCount, prePageClickHandler: this.prePageClickHandler, nxtPageClickHandler: this.nxtPageClickHandler, pageIndexChangedHandler: this.pageIndexChangedHandler });
 							}
@@ -935,104 +917,30 @@ var CM_Form_1 = function (_React$PureComponent7) {
 					React.createElement(
 						"table",
 						{ className: "table", style: M_Form_1_headtableStyle },
-						React.createElement(CM_Form_1_THead, null),
-						React.createElement(CM_Form_1_THeadBody, { form: this })
+						React.createElement(CM_Form_1_THead, null)
 					)
 				),
 				React.createElement(
 					"div",
 					{ onScroll: this.tableBodyScroll, className: "mw-100 autoScroll" },
-					retElem,
-					!this.state.hadNewRow && React.createElement(
-						"button",
-						{ onClick: this.clickNewRowHandler, type: "button", className: "btn btn-success" },
-						React.createElement("i", { className: "fa fa-plus" }),
-						"\u65B0\u589E"
+					retElem
+				),
+				React.createElement(
+					"div",
+					{ className: "btn-group flex-grow-0 flex-shrink-0 d-flex erp-control " },
+					React.createElement(
+						VisibleERPC_Button,
+						{ className: "btn btn-primary erp-control ", id: "button_0", parentPath: "M_Page_0.M_Form_1" },
+						"\u8C03\u5165\u6210\u5458"
+					),
+					React.createElement(
+						VisibleERPC_Button,
+						{ className: "btn btn-warning erp-control ", id: "button_1", parentPath: "M_Page_0.M_Form_1" },
+						"\u8C03\u51FA\u6210\u5458"
 					)
 				),
 				navElem
 			);
-		}
-	}, {
-		key: "submitInsert",
-		value: function submitInsert(callBack) {
-			var state = store.getState();
-			var rowIndex = 'new';
-			var M_Form_1_state = getStateByPath(state, 'M_Page_0.M_Form_1', {});
-			var M_Form_1_selectedRows_arr = M_Form_1_state.selectedRows_arr;
-			var M_Dropdown_0_state = getStateByPath(M_Form_1_rowState, 'M_Dropdown_0', {});
-			var M_LC_6_state = getStateByPath(M_Form_1_rowState, 'M_LC_6', {});
-			var M_Dropdown_0_value = M_Dropdown_0_state.value;
-			var M_Text_0_state = getStateByPath(M_Form_1_rowState, 'M_Text_0', {});
-			var M_LC_5_state = getStateByPath(M_Form_1_rowState, 'M_LC_5', {});
-			var M_Text_0_value = M_Text_0_state.value;
-			var M_Form_0_state = getStateByPath(state, 'M_Page_0.M_Form_0', {});
-			var M_Form_0_selectedRows_arr = M_Form_0_state.selectedRows_arr;
-			var M_Form_0_nowRecord;
-			var validErr;
-			var hadValidErr = false;
-			var validErrState = {};
-			var scriptBP_4_msg = null;
-			if (M_Form_1_selectedRows_arr == null || M_Form_1_selectedRows_arr.length == 0) {
-				return callback_final(state, null, { info: gPreconditionInvalidInfo });
-			}
-			if (M_Form_0_selectedRows_arr == null || M_Form_0_selectedRows_arr.length == 0) {
-				return callback_final(state, null, { info: gPreconditionInvalidInfo });
-			}
-			M_Form_0_nowRecord = M_Form_0_state.records_arr[M_Form_0_selectedRows_arr[0]];
-			var callback_final = function callback_final(state, data, err) {
-				if (state == null) {
-					store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
-				} else {
-					setManyStateByPath(state, '', validErrState);
-				}
-				if (hadValidErr) {
-					SendToast('验证失败，无法执行', EToastType.Warning);return;
-				}
-				if (err) {
-					scriptBP_4_msg.setData(err.info, EMessageBoxType.Error, '新增');
-					return;
-				}
-				scriptBP_4_msg.fireClose();
-				if (err == null && callBack != null) {
-					callBack(state);
-				}
-			};
-			if (IsEmptyString(M_Form_0_nowRecord)) {
-				return callback_final(state, null, { info: gPreconditionInvalidInfo });
-			}
-			validErr = BaseIsValueValid(state, M_LC_6_state, M_Dropdown_0_state, M_Dropdown_0_value, 'string', false, 'M_Dropdown_0', validErrState);
-			validErrState['M_Page_0.M_Form_1.row_' + rowIndex + '.M_Dropdown_0.invalidInfo'] = validErr;
-			if (validErr != null) hadValidErr = true;
-			validErr = BaseIsValueValid(state, M_LC_5_state, M_Text_0_state, M_Text_0_value, 'date', false, 'M_Text_0', validErrState);
-			validErrState['M_Page_0.M_Form_1.row_' + rowIndex + '.M_Text_0.invalidInfo'] = validErr;
-			if (validErr != null) hadValidErr = true;
-			if (hadValidErr) {
-				return callback_final(null, null, { info: gPreconditionInvalidInfo });
-			}
-			var fetchid = Math.round(Math.random() * 999999);
-			var fetchKey = 'M_Form_1_新增_' + rowIndex;
-			fetchTracer[fetchKey] = fetchid;
-			scriptBP_4_msg = PopMessageBox('', EMessageBoxType.Loading, '新增');
-			var bundle_insert_table_0 = {
-				工作小组代码: M_Form_0_nowRecord['工作小组代码'],
-				员工登记姓名代码: M_Dropdown_0_value,
-				加入确认状态: 1,
-				加入确认时间: M_Text_0_value
-			};
-			setTimeout(function () {
-				store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_insert_table_0, action: 'M_Form_1_onInsert_insert_table_0' }, makeFTD_Callback(function (state, data_insert_table_0, err_insert_table_0) {
-					if (err_insert_table_0 == null) {
-						setTimeout(function () {
-							pull_M_Form_1();
-						}, 50);
-						var ret = callback_final(state, data_insert_table_0, null);
-						return ret == null ? state : ret;
-					} else {
-						return callback_final(state, data_insert_table_0, err_insert_table_0);
-					}
-				})));
-			}, 50);
 		}
 	}]);
 
@@ -1100,8 +1008,7 @@ var CM_Form_1_THead = function (_React$PureComponent8) {
 						"th",
 						{ scope: "col", style: M_Form_1headstyle1 },
 						"\u52A0\u5165\u65F6\u95F4"
-					),
-					React.createElement("th", { scope: "col" })
+					)
 				)
 			);
 			return retElem;
@@ -1139,44 +1046,12 @@ var CM_Form_1_TBody = function (_React$PureComponent9) {
 					React.createElement(
 						"td",
 						{ style: M_Form_1tdstyle0 },
-						React.createElement(VisibleERPC_DropDown, { rowIndex: rowIndex, id: "M_Dropdown_0", parentPath: "M_Page_0.M_Form_1", pullOnce: true, groupAttr: "\u6240\u5C5E\u7CFB\u7EDF\u540D\u79F0,\u6240\u5C5E\u90E8\u95E8\u540D\u79F0", pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u59D3\u540D" })
+						React.createElement(VisibleERPC_Label, { className: "erp-control ", rowIndex: rowIndex, id: "M_Label_0", parentPath: "M_Page_0.M_Form_1", type: "string" })
 					),
 					React.createElement(
 						"td",
 						{ style: M_Form_1tdstyle1 },
-						React.createElement(VisibleERPC_Text, { rowIndex: rowIndex, id: "M_Text_0", parentPath: "M_Page_0.M_Form_1", type: "date" })
-					),
-					React.createElement(
-						"td",
-						null,
-						React.createElement(VisibleERPC_GridForm_BtnCol, { rowIndex: rowIndex, form: this.props.form })
-					)
-				));
-			}
-			if (this.props.hadNewRow) {
-				rowIndex = 'new';
-				trElems_arr.push(React.createElement(
-					"tr",
-					{ key: rowIndex },
-					React.createElement(
-						"td",
-						{ className: "indexTableHeader" },
-						"\u65B0"
-					),
-					React.createElement(
-						"td",
-						{ style: M_Form_1tdstyle0 },
-						React.createElement(VisibleERPC_DropDown, { rowIndex: rowIndex, id: "M_Dropdown_0", parentPath: "M_Page_0.M_Form_1", pullOnce: true, groupAttr: "\u6240\u5C5E\u7CFB\u7EDF\u540D\u79F0,\u6240\u5C5E\u90E8\u95E8\u540D\u79F0", pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u59D3\u540D" })
-					),
-					React.createElement(
-						"td",
-						{ style: M_Form_1tdstyle1 },
-						React.createElement(VisibleERPC_Text, { rowIndex: rowIndex, id: "M_Text_0", parentPath: "M_Page_0.M_Form_1", type: "date" })
-					),
-					React.createElement(
-						"td",
-						null,
-						React.createElement(VisibleERPC_GridForm_BtnCol, { rowIndex: rowIndex, form: this.props.form })
+						React.createElement(VisibleERPC_Label, { className: "erp-control ", rowIndex: rowIndex, id: "M_Label_2", parentPath: "M_Page_0.M_Form_1", type: "date" })
 					)
 				));
 			}
@@ -1194,42 +1069,6 @@ var CM_Form_1_TBody = function (_React$PureComponent9) {
 	}]);
 
 	return CM_Form_1_TBody;
-}(React.PureComponent);
-
-var CM_Form_1_THeadBody = function (_React$PureComponent10) {
-	_inherits(CM_Form_1_THeadBody, _React$PureComponent10);
-
-	function CM_Form_1_THeadBody(props) {
-		_classCallCheck(this, CM_Form_1_THeadBody);
-
-		return _possibleConstructorReturn(this, (CM_Form_1_THeadBody.__proto__ || Object.getPrototypeOf(CM_Form_1_THeadBody)).call(this, props));
-	}
-
-	_createClass(CM_Form_1_THeadBody, [{
-		key: "render",
-		value: function render() {
-			var retElem = null;
-			retElem = React.createElement(
-				"tbody",
-				null,
-				React.createElement(
-					"tr",
-					null,
-					React.createElement("td", { className: "indexTableHeader" }),
-					React.createElement("td", { style: M_Form_1headstyle0 }),
-					React.createElement("td", { style: M_Form_1headstyle1 }),
-					React.createElement(
-						"td",
-						null,
-						React.createElement(VisibleERPC_GridForm_BtnCol, { form: this.props.form })
-					)
-				)
-			);
-			return retElem;
-		}
-	}]);
-
-	return CM_Form_1_THeadBody;
 }(React.PureComponent);
 
 if (g_envVar.userid != null) {
