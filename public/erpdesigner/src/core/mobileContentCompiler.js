@@ -282,6 +282,7 @@ class MobileContentCompiler extends ContentCompiler {
                 logManager.error('重复设置主页面:' + pageKernel.getAttribute(AttrNames.Title));
             }
         }
+        var isPopable = pageKernel.getAttribute(AttrNames.PopablePage);
         var pageMidData = this.projectCompiler.getMidData(pageKernel.id);
         pageMidData.needSetKernels_arr = [];
         var pageReactClass = clientSide.getReactClass(pageKernel.getReactClassName(), true);
@@ -307,7 +308,12 @@ class MobileContentCompiler extends ContentCompiler {
         */
 
         pageReactClass.renderFun.pushLine(VarNames.RetElem + " = (", 1);
-        pageReactClass.renderFun.pushLine("<div className='d-flex flex-column flex-grow-1 flex-shrink-1 h-100'>", 1);
+        if(isPopable){
+            pageReactClass.renderFun.pushLine("<div className='d-flex flex-column popPage bg-light'>", 1);
+        }
+        else{
+            pageReactClass.renderFun.pushLine("<div className='d-flex flex-column flex-grow-1 flex-shrink-1 h-100'>", 1);
+        }
         pageReactClass.renderFun.pushLine("{this." + pageReactClass.renderHeaderFun.name + "()}");
         pageReactClass.renderFun.pushLine("{this.renderContent()}");
         //pageReactClass.renderFun.pushLine("{this." + pageReactClass.renderFootFun.name + "()}", -1);
@@ -338,17 +344,33 @@ class MobileContentCompiler extends ContentCompiler {
         pageReactClass.renderContentFun.retBlock.pushLine(makeLine_Return(VarNames.RetElem));
 
         var activePageFun = clientSide.scope.getFunction(makeFName_activePage(pageKernel), true, ['state']);
+        var initPageFun = clientSide.scope.getFunction(makeFName_initPage(pageKernel), true, ['state']);
         var controlInitBlock = new FormatFileBlock('ctlinit');
-        activePageFun.pushLine(makeLine_Assign('state.nowPage', singleQuotesStr(pageKernel.id)));
-        activePageFun.pushLine("if(" + makeActStr_getGDataCache(pageKernel.id + '_opened') + "){return state;}");
-        activePageFun.pushLine(makeLine_setGDataCache(pageKernel.id + '_opened', 1));
-        activePageFun.pushChild(controlInitBlock);
-        activePageFun.pushLine('setTimeout(() => {', 1);
         var activeTimeoutBlock = new FormatFileBlock('timeout');
-        activePageFun.pushChild(activeTimeoutBlock);
-        activePageFun.subNextIndent();
-        activePageFun.pushLine('}, 50);');
-        activePageFun.retBlock.pushLine('return state;');
+        initPageFun.pushLine('var hadState = state != null;');
+        initPageFun.pushLine('if(!hadState){state = store.getState();}');
+        initPageFun.pushChild(controlInitBlock);
+        initPageFun.pushLine('setTimeout(() => {', 1);
+        initPageFun.pushChild(activeTimeoutBlock);
+        initPageFun.subNextIndent();
+        initPageFun.pushLine('}, 50);');
+        initPageFun.pushLine('if(hadState){', 1);
+        initPageFun.pushLine("state = setManyStateByPath(state,''," + VarNames.NeedSetState + ");", -1);
+        initPageFun.pushLine('}else{', 1);
+        initPageFun.pushLine("store.dispatch(makeAction_setManyStateByPath(" + VarNames.NeedSetState + ", ''));", -1);
+        initPageFun.pushLine('}');
+        initPageFun.retBlock.pushLine('return state;');
+
+        if(isPopable){
+            // 弹出式窗体
+        }
+        else{
+            // 非弹出式窗体
+            activePageFun.pushLine(makeLine_Assign('state.nowPage', singleQuotesStr(pageKernel.id)));
+            activePageFun.pushLine("if(" + makeActStr_getGDataCache(pageKernel.id + '_opened') + "){return state;}");
+            activePageFun.pushLine(makeLine_setGDataCache(pageKernel.id + '_opened', 1));
+        }
+        activePageFun.retBlock.pushLine('return ' + makeStr_callFun(initPageFun.name, ['state'], ';'));
 
         for (var ci in pageKernel.children) {
             var childKernel = pageKernel.children[ci];
@@ -358,7 +380,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
 
         if (pageMidData.needSetKernels_arr.length > 0) {
-            var needSetStateVar = activePageFun.scope.getVar(VarNames.NeedSetState, true, '{}');
+            var needSetStateVar = initPageFun.scope.getVar(VarNames.NeedSetState, true, '{}');
             for (ci in pageMidData.needSetKernels_arr) {
                 var targetKernel = pageMidData.needSetKernels_arr[ci];
                 var targetKernelMidData = this.projectCompiler.getMidData(targetKernel.id);
@@ -1160,8 +1182,8 @@ class MobileContentCompiler extends ContentCompiler {
                 belongFormMidData.pullFun.beforeRetBlock.pushLine(VarNames.ReState + '=' + makeStr_callFun(pullFun.name, [VarNames.ReState]));
             }
             else {
-                var pageActiveFun = clientSide.scope.getFunction(makeFName_activePage(belongPage));
-                pageActiveFun.pushLine(makeLine_Assign(VarNames.State, makeStr_callFun(bindFun.name, [VarNames.State])));
+                var pageInitFun = clientSide.scope.getFunction(makeFName_initPage(belongPage));
+                pageInitFun.pushLine(makeLine_Assign(VarNames.State, makeStr_callFun(bindFun.name, [VarNames.State])));
             }
         }
         else {
@@ -2437,8 +2459,8 @@ class MobileContentCompiler extends ContentCompiler {
                         belongFormMidData.pullFun.beforeRetBlock.push(makeStr_callFun(pullFun.name, [VarNames.State]));
                     }
                     else {
-                        var pageActiveFun = clientSide.scope.getFunction(makeFName_activePage(belongPage));
-                        var timeoutBlock = pageActiveFun.getChild('timeout');
+                        var pageInitFun = clientSide.scope.getFunction(makeFName_initPage(belongPage));
+                        var timeoutBlock = pageInitFun.getChild('timeout');
                         timeoutBlock.pushLine(makeStr_callFun(pullFun.name) + ';');
                     }
                     //timeoutBlock.pushLine(makeStr_callFun(pullFun.name, [VarNames.State]));

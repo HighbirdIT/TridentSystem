@@ -110,6 +110,10 @@ function makeFName_activePage(pageKernel) {
     return 'active_' + pageKernel.id;
 }
 
+function makeFName_initPage(pageKernel) {
+    return 'init_' + pageKernel.id;
+}
+
 function makeFName_freshForm(formKernel) {
     return 'fresh_' + formKernel.id;
 }
@@ -227,7 +231,8 @@ var VarNames = {
     SelectMode: 'selectMode',
     FullPath: 'fullPath',
     FullParentPath: 'fullParentPath',
-    SelectedRows_arr: 'selectedRows_arr'
+    SelectedRows_arr: 'selectedRows_arr',
+    BaseBunlde: 'baseBundle'
 };
 
 var AttrNames = {
@@ -278,6 +283,9 @@ var AttrNames = {
     RecDeletable: 'recDeletable',
     NewRowDepend: 'newRowDepend',
     SelectMode: 'selectMode',
+    EntryParam: 'entryParam',
+    ExportParam: 'exportParam',
+    PopablePage: 'popablepage',
 
     Event: {
         OnClick: 'onclick',

@@ -118,13 +118,25 @@ class FixedContainer extends React.PureComponent{
         }
     }
 
-    popPage(target){
+    popPage(id, pageElem){
         this.setState(state=>{
-            var index = state.pages_arr.indexOf(target);
-            if(index != -1)
+            var foundElem = state.pages_arr.find(x=>{return x.id == id;});
+            if(foundElem != null)
                 return state;
             return {
-                pages_arr:state.pages_arr.concat(target),
+                pages_arr:state.pages_arr.concat({id:id,elem:pageElem}),
+            };
+        });
+    }
+
+    closePage(id){
+        this.setState(state=>{
+            var foundElem = state.pages_arr.find(x=>{return x.id == id;});
+            if(foundElem == null)
+                return state;
+            var newArr = state.pages_arr.filter(x=>{return x != foundElem;});
+            return {
+                pages_arr:newArr,
             };
         });
     }
@@ -168,7 +180,9 @@ class FixedContainer extends React.PureComponent{
             return null;
         }
         return (<div className='d-fixed w-100 h-100 fixedBackGround'>
-                {pages_arr}
+                {pages_arr.map(item=>{
+                    return item.elem;
+                })}
                 {items_arr}
             </div>);
     }
@@ -186,9 +200,15 @@ function removeFixedItem(target){
     }
 }
 
-function popPage(target){
+function popPage(pid, pelem){
     if(gFixedContainerRef.current){
-        gFixedContainerRef.current.popPage(target);
+        gFixedContainerRef.current.popPage(pid, pelem);
+    }
+}
+
+function closePage(pid){
+    if(gFixedContainerRef.current){
+        gFixedContainerRef.current.closePage(pid);
     }
 }
 
@@ -1836,7 +1856,6 @@ function BaseIsValueValid(nowState,visibleBelongState, ctlState, value, valueTyp
         if(!checkTime(value)){
             return '不是有效的时间格式';
         }
-        break;
     }
     if(gCusValidChecker_map[ctlID]){
         return gCusValidChecker_map[ctlID](value, nowState, validErrState);
@@ -2378,4 +2397,12 @@ function ERPC_TaskSelector_mapstatetoprops(state, ownprops) {
 function ERPC_TaskSelector_dispatchtoprops(dispatch, ownprops) {
     return {
     };
+}
+
+function getPageEntryParam(pageid,paramName,defValue){
+    var entryObj = gDataCache.get(pageid + 'entryParam');
+    if(entryObj && entryObj[paramName] == null){
+        return defValue;
+    }
+    return entryObj[paramName];
 }

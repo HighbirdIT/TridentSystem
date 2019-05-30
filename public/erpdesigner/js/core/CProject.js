@@ -37,6 +37,7 @@ var CProject = function (_IAttributeable) {
 
         var self = _this;
         autoBind(self);
+        _this.loaded = false;
         _this.attrbuteGroups = CProjectAttrsSetting.groups_arr;
         _this.defaultNameCounter = {};
         _this.controlName_map = {};
@@ -85,6 +86,8 @@ var CProject = function (_IAttributeable) {
                 _this.content_Mobile.pages.push(newPage);
             });
         }
+        _this.loaded = true;
+        _this.emit('loaded');
         _this.logManager.log('加载完成');
         return _this;
     }
@@ -260,6 +263,30 @@ var CProject = function (_IAttributeable) {
                 isPC = this.designeConfig.editingType == 'PC';
             }
             return isPC ? this.content_PC.pages : this.content_Mobile.pages;
+        }
+    }, {
+        key: 'getPopablePages',
+        value: function getPopablePages(isPC) {
+            if (isPC == null) {
+                isPC = this.designeConfig.editingType == 'PC';
+            }
+            return isPC ? this.content_PC.pages.filter(function (page) {
+                return page.getAttribute(AttrNames.PopablePage) == true;
+            }) : this.content_Mobile.pages.filter(function (page) {
+                return page.getAttribute(AttrNames.PopablePage) == true;
+            });
+        }
+    }, {
+        key: 'getJumpablePages',
+        value: function getJumpablePages(isPC) {
+            if (isPC == null) {
+                isPC = this.designeConfig.editingType == 'PC';
+            }
+            return isPC ? this.content_PC.pages.filter(function (page) {
+                return page.getAttribute(AttrNames.PopablePage) != true;
+            }) : this.content_Mobile.pages.filter(function (page) {
+                return page.getAttribute(AttrNames.PopablePage) != true;
+            });
         }
     }, {
         key: 'getEditingPage',

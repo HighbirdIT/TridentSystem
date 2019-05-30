@@ -21,7 +21,7 @@ const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
         genScripAttribute('Insert', AttrNames.Event.OnInsert,EJsBluePrintFunGroup.GridRowBtnHandler),
         genScripAttribute('Update', AttrNames.Event.OnUpdate,EJsBluePrintFunGroup.GridRowBtnHandler),
         genScripAttribute('Delete', AttrNames.Event.OnDelete,EJsBluePrintFunGroup.GridRowBtnHandler),
-    ]),
+    ])
 ]);
 
 

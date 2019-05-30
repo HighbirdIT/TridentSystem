@@ -176,6 +176,15 @@ class M_DropdownKernel extends ControlKernelBase {
         return (<M_Dropdown key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 
+    get_valuetype(){
+        var allowMulti = this.getAttribute(AttrNames.MultiSelect);
+        if(allowMulti){
+            return ValueType.XML;
+        }
+        var val = this[AttrNames.ValueType];
+        return val == null ? ValueType.String : val;
+    }
+
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {
         super.__attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray);
         var attrItem = this.findAttributeByName(attrName);

@@ -4,7 +4,12 @@ const M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false),
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
         new CAttribute('高度适应', AttrNames.AutoHeight, ValueType.Boolean, true),
+        new CAttribute('弹出式页面', AttrNames.PopablePage, ValueType.Boolean, false),
         new CAttribute('关联步骤', AttrNames.RelFlowStep, ValueType.Int, null, true, true, gFlowMaster.getAllSteps, {text:'fullName', value:'code'}),
+    ]),
+    new CAttributeGroup('接口设置',[
+        new CAttribute('入口参数', AttrNames.EntryParam, ValueType.String, '', true, true),
+        new CAttribute('出口参数', AttrNames.ExportParam, ValueType.String, '', true, true),
     ]),
 ],false);
 
@@ -56,6 +61,17 @@ class M_PageKernel extends ContainerKernelBase {
             this.attrChanged(AttrNames.IsMain);
         }
         return flag;
+    }
+
+    getAllEntryParams(){
+        var rlt_arr = [];
+        this.getAttrArrayList(AttrNames.EntryParam).forEach(attr=>{
+            var val = this.getAttribute(attr.name);
+            if(!IsEmptyString(val)){
+                rlt_arr.push({value:val,name:attr.name});
+            }
+        });
+        return rlt_arr;
     }
 }
 

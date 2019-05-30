@@ -95,6 +95,11 @@ const JSNodeEditorControls_arr =[
         type:'数组操纵'
     },
     {
+        label:'Get页面入口参数',
+        nodeClass:JSNode_GetPageEntryParam,
+        type:'窗体控制'
+    },
+    {
         label:'创建自订错误',
         nodeClass:JSNode_Create_Cuserror,
         type:'错误控制'
@@ -105,8 +110,18 @@ const JSNodeEditorControls_arr =[
         type:'表单控制'
     },
     {
-        label:'打开页面',
+        label:'跳转页面',
         nodeClass:JSNode_JumpPage,
+        type:'窗体控制'
+    },
+    {
+        label:'弹出页面',
+        nodeClass:JSNode_PopPage,
+        type:'窗体控制'
+    },
+    {
+        label:'关闭页面',
+        nodeClass:JSNode_ClosePage,
         type:'窗体控制'
     },
     {
@@ -156,7 +171,9 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
     }
 
     addInitClientBundleBlock(block){
-        this.clientInitBundleBlocks_arr.push(block);
+        if(this.clientInitBundleBlocks_arr.indexOf(block) == -1){
+            this.clientInitBundleBlocks_arr.push(block);
+        }
     }
 
     addUseColumn(formKernel, columnName, serverFun, rowSource){

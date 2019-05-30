@@ -268,7 +268,8 @@ var ValueType = {
     Any: '任意',
     Event: 'event',
     Script: 'script',
-    Object: 'Object'
+    Object: 'Object',
+    XML: 'xml'
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

@@ -90,6 +90,10 @@ function makeFName_activePage(pageKernel){
     return 'active_' + pageKernel.id;
 }
 
+function makeFName_initPage(pageKernel){
+    return 'init_' + pageKernel.id;
+}
+
 function makeFName_freshForm(formKernel){
     return 'fresh_' + formKernel.id;
 }
@@ -203,6 +207,7 @@ const VarNames={
     FullPath:'fullPath',
     FullParentPath:'fullParentPath',
     SelectedRows_arr:'selectedRows_arr',
+    BaseBunlde:'baseBundle',
 };
 
 const AttrNames={
@@ -253,6 +258,9 @@ const AttrNames={
     RecDeletable:'recDeletable',
     NewRowDepend:'newRowDepend',
     SelectMode:'selectMode',
+    EntryParam:'entryParam',
+    ExportParam:'exportParam',
+    PopablePage:'popablepage',
 
     Event:{
         OnClick:'onclick',

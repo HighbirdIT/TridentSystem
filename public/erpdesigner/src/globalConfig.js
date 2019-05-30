@@ -270,6 +270,7 @@ const ValueType = {
     Event:'event',
     Script:'script',
     Object:'Object',
+    XML:'xml',
 };
 
 const VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

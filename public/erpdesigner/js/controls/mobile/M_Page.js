@@ -10,7 +10,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'), new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false), new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr), new CAttribute('高度适应', AttrNames.AutoHeight, ValueType.Boolean, true), new CAttribute('关联步骤', AttrNames.RelFlowStep, ValueType.Int, null, true, true, gFlowMaster.getAllSteps, { text: 'fullName', value: 'code' })])], false);
+var M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'), new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false), new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr), new CAttribute('高度适应', AttrNames.AutoHeight, ValueType.Boolean, true), new CAttribute('弹出式页面', AttrNames.PopablePage, ValueType.Boolean, false), new CAttribute('关联步骤', AttrNames.RelFlowStep, ValueType.Int, null, true, true, gFlowMaster.getAllSteps, { text: 'fullName', value: 'code' })]), new CAttributeGroup('接口设置', [new CAttribute('入口参数', AttrNames.EntryParam, ValueType.String, '', true, true), new CAttribute('出口参数', AttrNames.ExportParam, ValueType.String, '', true, true)])], false);
 
 var M_PageKernel = function (_ContainerKernelBase) {
     _inherits(M_PageKernel, _ContainerKernelBase);
@@ -63,6 +63,20 @@ var M_PageKernel = function (_ContainerKernelBase) {
             }
             return flag;
         }
+    }, {
+        key: 'getAllEntryParams',
+        value: function getAllEntryParams() {
+            var _this2 = this;
+
+            var rlt_arr = [];
+            this.getAttrArrayList(AttrNames.EntryParam).forEach(function (attr) {
+                var val = _this2.getAttribute(attr.name);
+                if (!IsEmptyString(val)) {
+                    rlt_arr.push({ value: val, name: attr.name });
+                }
+            });
+            return rlt_arr;
+        }
     }]);
 
     return M_PageKernel;
@@ -74,19 +88,19 @@ var M_Page = function (_React$PureComponent) {
     function M_Page(props) {
         _classCallCheck(this, M_Page);
 
-        var _this2 = _possibleConstructorReturn(this, (M_Page.__proto__ || Object.getPrototypeOf(M_Page)).call(this, props));
+        var _this3 = _possibleConstructorReturn(this, (M_Page.__proto__ || Object.getPrototypeOf(M_Page)).call(this, props));
 
-        _this2.state = {
-            title: _this2.props.ctlKernel.getAttribute(AttrNames.Title),
-            ctlKernel: _this2.props.ctlKernel,
-            children: _this2.props.ctlKernel.children,
-            orientation: _this2.props.ctlKernel.getAttribute(AttrNames.Orientation)
+        _this3.state = {
+            title: _this3.props.ctlKernel.getAttribute(AttrNames.Title),
+            ctlKernel: _this3.props.ctlKernel,
+            children: _this3.props.ctlKernel.children,
+            orientation: _this3.props.ctlKernel.getAttribute(AttrNames.Orientation)
         };
 
-        autoBind(_this2);
-        M_ControlBase(_this2, [AttrNames.Title, AttrNames.Chidlren, AttrNames.Orientation, AttrNames.LayoutNames.APDClass]);
-        M_ContainerBase(_this2);
-        return _this2;
+        autoBind(_this3);
+        M_ControlBase(_this3, [AttrNames.Title, AttrNames.Chidlren, AttrNames.Orientation, AttrNames.LayoutNames.APDClass]);
+        M_ContainerBase(_this3);
+        return _this3;
     }
 
     _createClass(M_Page, [{
@@ -160,7 +174,7 @@ var M_Page = function (_React$PureComponent) {
     }, {
         key: 'render',
         value: function render() {
-            var _this3 = this;
+            var _this4 = this;
 
             if (this.props.ctlKernel != this.state.ctlKernel) {
                 var self = this;
@@ -168,11 +182,11 @@ var M_Page = function (_React$PureComponent) {
                 this.listenTarget(this.props.ctlKernel);
                 setTimeout(function () {
                     self.setState(_defineProperty({
-                        title: _this3.props.ctlKernel.getAttribute('title'),
-                        ctlKernel: _this3.props.ctlKernel,
-                        children: _this3.props.ctlKernel.children,
-                        orientation: _this3.props.ctlKernel.orientation
-                    }, 'orientation', _this3.props.ctlKernel.getAttribute(AttrNames.Orientation)));
+                        title: _this4.props.ctlKernel.getAttribute('title'),
+                        ctlKernel: _this4.props.ctlKernel,
+                        children: _this4.props.ctlKernel.children,
+                        orientation: _this4.props.ctlKernel.orientation
+                    }, 'orientation', _this4.props.ctlKernel.getAttribute(AttrNames.Orientation)));
                 }, 1);
                 return null;
             }
