@@ -543,10 +543,13 @@ class Node_Base extends EventEmitter {
             switch (pValType) {
                 case 'string':
                 case 'number':
+                case 'boolean':
                     {
                         stringVal = pval;
                         break;
                     }
+                default:
+                    console.error('不支持的pValType:' + pValType);
             }
             rlt[pname] = stringVal;
         }
@@ -637,7 +640,7 @@ class Node_Base extends EventEmitter {
             if (compileRet == false) {
                 return {err:1};
             }
-            socketValue = compileRet.getSocketOut(tLinks[0].outSocket).strContent;
+            socketValue = compileRet.getSocketOut(theLink.outSocket).strContent;
         }
         if(this.checkCompileFlag(!nullable && IsEmptyString(socketValue), '接口' + theSocket.label + '需要一个值', helper)){
             return {err:1};
@@ -655,6 +658,38 @@ class Node_Base extends EventEmitter {
             return true;
         }
         return false;
+    }
+
+    getUseClientVariable(helper,srcNode, belongFun, targetSocket, result){
+        if(belongFun == null){
+            return;
+        }
+        if(srcNode != this){
+            if(this.getScoketClientVariable){
+                this.getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result);
+            }
+        }
+        if(this.inputScokets_arr){
+            this.inputScokets_arr.forEach(inSocket=>{
+                var theLinks = this.bluePrint.linkPool.getLinksBySocket(inSocket);
+                if(theLinks.length > 0){
+                    theLinks[0].outSocket.node.getUseClientVariable(helper, srcNode, belongFun, theLinks[0].outSocket, result);
+                }
+            });
+        }
+    }
+}
+
+class UseClientVariableResult{
+    constructor(){
+        this.variables_arr = [];
+    }
+
+    pushVariable(name, socket){
+        var found = this.variables_arr.find(x=>{return x.name == name;});
+        if(found == null){
+            this.variables_arr.push({name:name,socket:socket});
+        }
     }
 }
 

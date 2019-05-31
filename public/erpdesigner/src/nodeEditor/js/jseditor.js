@@ -129,6 +129,11 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_PopMessageBox,
         type:'窗体控制'
     },
+    {
+        label:'关闭消息窗',
+        nodeClass:JSNode_CloseMessageBox,
+        type:'窗体控制'
+    },
 ];
 
 
@@ -166,12 +171,23 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         this.clientInitBundleBlocks_arr = [];
     }
 
+    compileEnd(){
+        this.clientInitBundleBlocks_arr.forEach(block=>{
+            for(var si in block.params_map){
+                block.pushLine(si + ':' + block.params_map[si] + ',');
+            }
+        });
+    }
+
     appendOutputItem(item){
         this.appendedOutputItems_arr.push(item);
     }
 
     addInitClientBundleBlock(block){
         if(this.clientInitBundleBlocks_arr.indexOf(block) == -1){
+            if(block.params_map == null){
+                block.params_map = {};
+            }
             this.clientInitBundleBlocks_arr.push(block);
         }
     }

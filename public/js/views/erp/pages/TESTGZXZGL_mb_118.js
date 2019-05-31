@@ -8,6 +8,8 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 var M_Form_0headstyle0 = { "width": "45.7%", "maxWidth": "45.7%", "whiteSpace": "nowrap", "overflow": "hidden" };
 var M_Form_0tdstyle0 = { "width": "45.7%", "maxWidth": "45.7%", "verticalAlign": "middle" };
 var M_Form_0headstyle1 = { "width": "51.1%", "maxWidth": "51.1%", "whiteSpace": "nowrap", "overflow": "hidden" };
@@ -305,6 +307,8 @@ function button_0_onclick() {
 			setTimeout(function () {
 				pull_M_Form_1();
 			}, 50);
+			var ret = callback_final(state, popPage_0exportParam.新增人数, null);
+			return ret == null ? state : ret;
 		}
 	};
 	var popPage_0entryParam = {
@@ -359,14 +363,74 @@ function M_Text_0_defaultvalue_get(state, bundle) {
 	return getFormatDateString(getNowDate());
 }
 function button_2_onclick() {
+	var 目标小组代码;
 	var state = store.getState();
-	var closePage_0exportParam = {
-		新增人数: 1
+	var M_Dropdown_0_state = getStateByPath(store.getState(), 'M_Page_1.M_Dropdown_0');
+	var M_Dropdown_0_value = M_Dropdown_0_state.value;
+	var validErr;
+	var hadValidErr = false;
+	var validErrState = {};
+	var scriptBP_8_msg = null;
+	var callback_final = function callback_final(state, data, err) {
+		if (state == null) {
+			store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
+		} else {
+			setManyStateByPath(state, '', validErrState);
+		}
+		if (hadValidErr) {
+			SendToast('验证失败，无法执行', EToastType.Warning);return;
+		}
+		if (err) {
+			if (scriptBP_8_msg) {
+				scriptBP_8_msg.setData(err.info, EMessageBoxType.Error, '确认提交');
+			} else {
+				SendToast(err.info, EToastType.Error);
+			}
+			return;
+		}
+		if (scriptBP_8_msg) {
+			scriptBP_8_msg.fireClose();
+		}
+		SendToast('执行成功');
 	};
-	closePage('M_Page_1');
-	var closePage_0_callback = getPageEntryParam('M_Page_1', 'callBack');
-	if (closePage_0_callback) {
-		closePage_0_callback(closePage_0exportParam);
+	validErr = BaseIsValueValid(state, M_Dropdown_0_state, M_Dropdown_0_state, M_Dropdown_0_value, 'xml', false, 'M_Dropdown_0', validErrState);
+	validErrState['M_Page_1.M_Dropdown_0.invalidInfo'] = validErr;
+	if (validErr != null) hadValidErr = true;
+	if (hadValidErr) {
+		return callback_final(null, null, { info: gPreconditionInvalidInfo });
+	}
+	var fetchid = Math.round(Math.random() * 999999);
+	var fetchKey = button_2_onclick;
+	fetchTracer[fetchKey] = fetchid;
+	var baseBundle = {};
+	scriptBP_8_msg = PopMessageBox('', EMessageBoxType.Loading, '确认提交');
+	目标小组代码 = getPageEntryParam('M_Page_1', '目标小组代码', -1);
+	if (目标小组代码 == -1) {
+		var ret = callback_final(state, null, { info: '没有指定目标小组。' });
+		return ret == null ? state : ret;
+	} else {
+		var _Object$assign;
+
+		var bundle_querysql_0 = Object.assign({}, baseBundle, (_Object$assign = {
+			目标小组代码: 目标小组代码,
+			人员xml: M_Dropdown_0_value
+		}, _defineProperty(_Object$assign, "\u76EE\u6807\u5C0F\u7EC4\u4EE3\u7801", 目标小组代码), _defineProperty(_Object$assign, "M_Dropdown_0_value", M_Dropdown_0_value), _Object$assign));
+		setTimeout(function () {
+			if (fetchTracer[fetchKey] != fetchid) return;
+			store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_querysql_0, action: 'scriptBP_8_querysql_0' }, makeFTD_Callback(function (state, data_querysql_0, error_querysql_0) {
+				if (error_querysql_0) {
+					return callback_final(state, null, error_querysql_0);
+				}
+				var closePage_0exportParam = {
+					新增人数: data_querysql_0.length
+				};
+				closePage('M_Page_1');
+				var closePage_0_callback = getPageEntryParam('M_Page_1', 'callBack');
+				if (closePage_0_callback) {
+					closePage_0_callback(closePage_0exportParam);
+				}
+			}, false)));
+		}, 50);
 	}
 }
 function button_3_onclick() {
@@ -499,7 +563,7 @@ var CM_Page_0 = function (_React$PureComponent2) {
 				React.createElement(
 					VisibleERPC_LabeledControl,
 					{ id: "M_LC_8", parentPath: "M_Page_0", label: "asdf" },
-					React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_1", parentPath: "M_Page_0", multiselect: true, pullOnce: true, pullDataSource: pull_M_Dropdown_1, textAttrName: "\u5DE5\u4F5C\u5C0F\u7EC4\u540D\u79F0", valueAttrName: "\u5DE5\u4F5C\u5C0F\u7EC4\u4EE3\u7801", label: "asdf" })
+					React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_1", parentPath: "M_Page_0", textType: "xml", multiselect: true, pullOnce: true, pullDataSource: pull_M_Dropdown_1, textAttrName: "\u5DE5\u4F5C\u5C0F\u7EC4\u540D\u79F0", valueAttrName: "\u5DE5\u4F5C\u5C0F\u7EC4\u4EE3\u7801", label: "asdf" })
 				),
 				React.createElement(VisibleCM_Form_0, { id: "M_Form_0", parentPath: "M_Page_0", title: "\u6240\u6709\u5C0F\u7EC4", pagebreak: true, reBindAT: "ReBindM_Form_0Page" }),
 				React.createElement(VisibleCM_Form_1, { id: "M_Form_1", parentPath: "M_Page_0", title: "\u6210\u5458\u5217\u8868", pagebreak: true, reBindAT: "ReBindM_Form_1Page" })
@@ -661,11 +725,12 @@ var CM_Form_0 = function (_React$PureComponent3) {
 			var fetchid = Math.round(Math.random() * 999999);
 			var fetchKey = 'M_Form_0_修改_' + rowIndex;
 			fetchTracer[fetchKey] = fetchid;
+			var baseBundle = {};
 			scriptBP_0_msg = PopMessageBox('', EMessageBoxType.Loading, '修改');
-			var bundle_update_table_0 = {
+			var bundle_update_table_0 = Object.assign({}, baseBundle, {
 				RCDKEY: M_Form_0_nowRecord['工作小组代码'],
 				M_Text_1_value: M_Text_1_value
-			};
+			});
 			setTimeout(function () {
 				store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_update_table_0, action: 'M_Form_0_onUpdate_update_table_0' }, makeFTD_Callback(function (state, data_update_table_0, err_update_table_0) {
 					if (err_update_table_0 == null) {
@@ -717,12 +782,13 @@ var CM_Form_0 = function (_React$PureComponent3) {
 			var fetchid = Math.round(Math.random() * 999999);
 			var fetchKey = 'M_Form_0_删除_' + rowIndex;
 			fetchTracer[fetchKey] = fetchid;
+			var baseBundle = {};
 			scriptBP_1_msg = PopMessageBox('', EMessageBoxType.Loading, '删除');
 			scriptBP_1_msg.query('确定要删除工作组[' + M_Form_0_nowRecord['工作小组名称'] + ']吗？', [{ label: '确定', key: '确定' }, { label: '取消', key: '取消' }], function (popmessagebox_0_key) {
 				if (popmessagebox_0_key == '确定') {
-					var bundle_delete_table_0 = {
+					var bundle_delete_table_0 = Object.assign({}, baseBundle, {
 						工作小组代码: M_Form_0_nowRecord['工作小组代码']
-					};
+					});
 					setTimeout(function () {
 						store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_delete_table_0, action: 'M_Form_0_onDelete_delete_table_0' }, makeFTD_Callback(function (state, data_delete_table_0, err_delete_table_0) {
 							if (err_delete_table_0 == null) {
@@ -785,10 +851,11 @@ var CM_Form_0 = function (_React$PureComponent3) {
 			var fetchid = Math.round(Math.random() * 999999);
 			var fetchKey = 'M_Form_0_新增_' + rowIndex;
 			fetchTracer[fetchKey] = fetchid;
+			var baseBundle = {};
 			scriptBP_3_msg = PopMessageBox('', EMessageBoxType.Loading, '新增');
-			var bundle_querysql_0 = {
+			var bundle_querysql_0 = Object.assign({}, baseBundle, {
 				小组名称: M_Text_1_value
-			};
+			});
 			setTimeout(function () {
 				if (fetchTracer[fetchKey] != fetchid) return;
 				store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_querysql_0, action: 'scriptBP_3_querysql_0' }, makeFTD_Callback(function (state, data_querysql_0, error_querysql_0) {
@@ -799,9 +866,7 @@ var CM_Form_0 = function (_React$PureComponent3) {
 						var ret = callback_final(state, null, { info: '已经有同名的工作小组了' });
 						return ret == null ? state : ret;
 					} else {
-						var bundle_insert_table_0 = {
-							M_Text_1_value: M_Text_1_value
-						};
+						var bundle_insert_table_0 = Object.assign({}, baseBundle, {});
 						setTimeout(function () {
 							store.dispatch(fetchJsonPost(appServerUrl, { bundle: bundle_insert_table_0, action: 'M_Form_0_onInsert_insert_table_0' }, makeFTD_Callback(function (state, data_insert_table_0, err_insert_table_0) {
 								if (err_insert_table_0 == null) {
@@ -1274,7 +1339,7 @@ var CM_Page_1 = function (_React$PureComponent10) {
 				React.createElement(
 					VisibleERPC_LabeledControl,
 					{ id: "M_LC_0", parentPath: "M_Page_1", label: "\u5458\u5DE5\u59D3\u540D" },
-					React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_0", parentPath: "M_Page_1", textType: "int", multiselect: true, pullOnce: true, groupAttr: "\u6240\u5C5E\u7CFB\u7EDF\u540D\u79F0,\u6240\u5C5E\u90E8\u95E8\u540D\u79F0", pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u5458\u5DE5\u59D3\u540D" })
+					React.createElement(VisibleERPC_DropDown, { id: "M_Dropdown_0", parentPath: "M_Page_1", textType: "xml", multiselect: true, pullOnce: true, groupAttr: "\u6240\u5C5E\u7CFB\u7EDF\u540D\u79F0,\u6240\u5C5E\u90E8\u95E8\u540D\u79F0", pullDataSource: pull_M_Dropdown_0, textAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D", valueAttrName: "\u5458\u5DE5\u767B\u8BB0\u59D3\u540D\u4EE3\u7801", label: "\u5458\u5DE5\u59D3\u540D" })
 				),
 				React.createElement(
 					VisibleERPC_LabeledControl,
