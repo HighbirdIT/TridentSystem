@@ -182,11 +182,16 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
 
     rowSourceItemChanged(newSrc) {
         this.props.nodedata.rowSource = newSrc;
+        this.props.nodedata.rowSourceChanged();
     }
 
     dropdownCtlChangedHandler(selectedDBE) {
         var nodeData = this.props.nodedata;
         nodeData.setEntity(selectedDBE);
+    }
+
+    clickFreshIcon(){
+        this.props.nodedata.rowSourceChanged();
     }
 
     cusHeaderFuc() {
@@ -211,6 +216,7 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
                 <div className='d-flex'>
                     <span f-canmove={1} className='badge badge-info'>{formDS == null ? '无数据源' : formDS.name}</span>
                     <DropDownControl itemChanged={this.rowSourceItemChanged} btnclass='btn-dark' options_arr={EFormRowSources_arr} rootclass='flex-grow-1 flex-shrink-1' value={nodeData.rowSource} textAttrName='text' valueAttrName='value' />
+                    <span className='fa fa-fresh' onMouseDown={this.clickFreshIcon} />
                 </div>
             </div>)
         }
@@ -221,8 +227,9 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
     render() {
         var nodeData = this.props.nodedata;
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' cusHeaderFuc={this.cusHeaderFuc} >
-            <div className='d-flex'>
-                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.processOutputSockets} customSocketRender={this.customSocketRender} />
+            <div className='d-flex flex-column'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutFlowScoketDynamic() ? nodeData.processOutputFlowSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} customSocketRender={this.customSocketRender} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
             </div>
         </C_Node_Frame>
     }
@@ -522,9 +529,8 @@ class C_JSNode_PopPage extends React.PureComponent {
         C_NodeCom_Base(this);
     }
 
-    targetPageDDCChanged(code,ddc,pageCode) {
-        var theProject = nodeData.bluePrint.master.project;
-        this.props.nodedata.setPage(theProject.getPageById(pageCode));
+    targetPageDDCChanged(code,ddc,thePage) {
+        this.props.nodedata.setPage(thePage);
     }
 
     render() {
@@ -617,6 +623,46 @@ class C_JSNODE_Delete_Table extends React.PureComponent {
                     <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutFlowScoketDynamic() ? nodeData.processOutputFlowSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
                     <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} customSocketRender={this.customSocketRender} />
                 </div>
+            </div>
+        </C_Node_Frame>
+    }
+}
+
+class C_JSNode_FreshForm extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        this.dropdownRef = React.createRef();
+
+        C_NodeCom_Base(this);
+    }
+
+    clickHoldChecker(ev) {
+        var nodeData = this.props.nodedata;
+        var holdSelected = nodeData.holdSelected == null ? false : nodeData.holdSelected;
+        nodeData.holdSelected = !holdSelected;
+        this.setState({
+            magicObj:{}
+        });
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        var holdSelected = nodeData.holdSelected == null ? false : nodeData.holdSelected;
+        var theProject = nodeData.bluePrint.master.project;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={'刷新表单'} >
+            <div className='flex-grow-1 flex-shrink-1'>
+                <div className='bg-light'>
+                    <span className='fa-stack fa-lg' onClick={this.clickHoldChecker}>
+                    <i className={"fa fa-square-o fa-stack-2x"} />
+                    <i className={'fa fa-stack-1x ' + (holdSelected ? ' fa-check text-success' : ' fa-close text-danger')} />
+                    </span>
+                    保持选中值
+                </div>
+            </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
             </div>
         </C_Node_Frame>
     }

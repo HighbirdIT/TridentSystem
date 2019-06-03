@@ -356,6 +356,9 @@ class C_SqlNode_ScoketsPanel extends React.PureComponent{
     }
 
     render(){
+        if(this.props.data == null){
+            console.error('props.data invalid');
+        }
         if(this.props.data.length == 0)
             return <div className='flex-grow-1 flex-shrink-1'>
                 {

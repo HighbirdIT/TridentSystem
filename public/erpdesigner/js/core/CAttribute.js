@@ -232,7 +232,8 @@ var VarNames = {
     FullPath: 'fullPath',
     FullParentPath: 'fullParentPath',
     SelectedRows_arr: 'selectedRows_arr',
-    BaseBunlde: 'baseBundle'
+    BaseBunlde: 'baseBundle',
+    HoldSelected: 'holdSelected'
 };
 
 var AttrNames = {

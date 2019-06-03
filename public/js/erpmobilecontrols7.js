@@ -1176,6 +1176,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
     }
 
     var useValue = ctlState.value;
+    var selectOpt = ctlState.selectOpt;
     if (useValue) {
         if (ownprops.multiselect) {
             if (useValue[0] == '<') {
@@ -1191,6 +1192,8 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
                 useValue = (useValue + '').split(',');
             }
         }
+    } else {
+        selectOpt = null;
     }
 
     return {
@@ -1201,7 +1204,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         optionsData: optionsDataSelector(state, ownprops),
         visible: ctlState.visible,
         invalidInfo: invalidInfo,
-        selectOpt: ctlState.selectOpt,
+        selectOpt: selectOpt,
         plainTextMode: rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath
@@ -2429,6 +2432,14 @@ var MessageBoxItem = function () {
             }
         }
     }, {
+        key: 'fireHide',
+        value: function fireHide() {
+            this.hidden = true;
+            if (this.hideAct != null) {
+                this.hideAct();
+            }
+        }
+    }, {
         key: 'setType',
         value: function setType(val) {
             this.type = val;
@@ -2476,17 +2487,25 @@ var CMessageBox = function (_React$PureComponent14) {
 
         autoBind(_this18);
 
-        _this18.state = {};
+        _this18.state = {
+            hidden: _this18.props.msgItem.hidden
+        };
         _this18.props.msgItem.changedAct = _this18.msgItemChanedHandler;
         _this18.props.msgItem.closeAct = _this18.msgItemCloseHandler;
+        _this18.props.msgItem.hideAct = _this18.msgItemHideHandler;
         return _this18;
     }
 
     _createClass(CMessageBox, [{
         key: 'msgItemChanedHandler',
         value: function msgItemChanedHandler(ev) {
+            if (this.state.hidden) {
+                this.props.msgItem.hidden = false;
+                this.props.manager.redraw();
+            }
             this.setState({
-                magicObj: {}
+                magicObj: {},
+                hidden: false
             });
         }
     }, {
@@ -2527,6 +2546,13 @@ var CMessageBox = function (_React$PureComponent14) {
         key: 'msgItemCloseHandler',
         value: function msgItemCloseHandler(ev) {
             this.props.manager.delete(this);
+        }
+    }, {
+        key: 'msgItemHideHandler',
+        value: function msgItemHideHandler(ev) {
+            this.setState({
+                hidden: true
+            });
         }
     }, {
         key: 'render',
@@ -2715,18 +2741,27 @@ var CMessageBoxManger = function (_React$PureComponent15) {
             });
         }
     }, {
+        key: 'redraw',
+        value: function redraw() {
+            this.setState({
+                magicObj: {}
+            });
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this21 = this;
 
-            var msg_arr = this.state.msg_arr;
-            if (msg_arr.length == 0) {
+            var visibleMsg_arr = this.state.msg_arr.filter(function (x) {
+                return !x.hidden;
+            });
+            if (visibleMsg_arr.length == 0) {
                 return null;
             }
             return React.createElement(
                 'div',
                 { className: 'messageBoxMask' },
-                msg_arr.map(function (msg, index) {
+                visibleMsg_arr.map(function (msg, index) {
                     return React.createElement(CMessageBox, { key: 1, msgItem: msg, manager: _this21 });
                 })
             );
@@ -2876,6 +2911,7 @@ function ERPC_TaskSelector_mapstatetoprops(state, ownprops) {
     }
 
     var useValue = ctlState.value;
+    var selectOpt = ctlState.selectOpt;
     if (useValue) {
         if (ownprops.multiselect) {
             if (useValue[0] == '<') {
@@ -2891,6 +2927,8 @@ function ERPC_TaskSelector_mapstatetoprops(state, ownprops) {
                 useValue = (useValue + '').split(',');
             }
         }
+    } else {
+        selectOpt = null;
     }
 
     return {
@@ -2901,7 +2939,7 @@ function ERPC_TaskSelector_mapstatetoprops(state, ownprops) {
         optionsData: optionsDataSelector(state, ownprops),
         visible: ctlState.visible,
         invalidInfo: invalidInfo,
-        selectOpt: ctlState.selectOpt
+        selectOpt: selectOpt
     };
 }
 

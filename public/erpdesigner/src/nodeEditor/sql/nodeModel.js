@@ -20,6 +20,7 @@ const SQLNODE_CONTROL_API_PROP = 'controlapiprop';
 const SQLNODE_ENV_VAR = 'envvar';
 const SQLNODE_CURRENTDATAROW = 'currentdatarow';
 const SQLNODE_DELETERECORD = 'deleterecord';
+const SQLNODE_COLUMNVAR = 'sqlcolumnvar';
 
 var SqlNodeClassMap = {};
 // CONSTSQLNODES_ARR output是常量的节点类型
@@ -3179,6 +3180,7 @@ class SqlNode_CurrentDataRow extends SqlNode_Base {
         super(initData, parentNode, createHelper, SQLNODE_CURRENTDATAROW, '作用域数据行', false, nodeJson);
         autoBind(this);
         this.addFrameButton(FrameButton_ClearEmptyOutputSocket, '清理');
+        this.outFlowSockets_arr = [];
     }
 
     requestSaveAttrs() {
@@ -3239,6 +3241,7 @@ class SqlNode_CurrentDataRow extends SqlNode_Base {
         if(this.checkCompileFlag(theDS == null, '关联Form没有数据源！', helper)){
             return false;
         }
+        this.targetEntity = theDS;
 
         var selfCompileRet = new CompileResult(this);
         helper.setCompileRetCache(this, selfCompileRet);
@@ -3409,6 +3412,95 @@ class SqlNode_DeleteRecord extends SqlNode_Base {
     }
 }
 
+class SqlNode_ColumnVar extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, SQLNODE_COLUMNVAR, '列变量', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.type = ValueType.String;
+        this.outSocket.inputable = false;
+        this.headType = 'empty';
+
+        var self = this;
+        setTimeout(() => {
+            self.freshLabel();
+        }, 50);
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.keySocketID = this.keySocketID;
+        rlt.label = this.label;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['targetEntity', 'keySocketID']);
+    }
+
+    freshLabel() {
+        var label = '';
+        var keySocket = this.keySocketID == null ? null : this.bluePrint.getSocketById(this.keySocketID);
+        if (keySocket == null) {
+            label = '关联节点丢失!';
+        }
+        else {
+            label = keySocket.node.id + '.' + keySocket.getExtra('colName');
+        }
+        this.keySocket = keySocket;
+        this.columnName = keySocket.getExtra('colName');
+        this.outSocket.label = label;
+        this.outSocket.fireEvent('changed');
+    }
+
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        this.freshLabel();
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+
+        if (this.keySocket == null) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '关联节点无效']);
+            return false;
+        }
+        this.keySocket.node.compile(helper, preNodes_arr);
+        var theColumn = null;
+
+        if (this.keySocket.node.targetEntity != null) {
+            theColumn = this.keySocket.node.targetEntity.getColumnByName(this.columnName);
+        }
+        if (theColumn == null) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '关联的列名是无效的']);
+            return false;
+        }
+        var value = '@' + this.columnName + '_' + this.keySocket.node.targetEntity.code;
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, value);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
 SqlNodeClassMap[SQLNODE_DBENTITY] = {
     modelClass: SqlNode_DBEntity,
     comClass: C_SqlNode_DBEntity,
@@ -3492,9 +3584,13 @@ SqlNodeClassMap[SQLNODE_ENV_VAR] = {
 };
 SqlNodeClassMap[SQLNODE_CURRENTDATAROW] = {
     modelClass: SqlNode_CurrentDataRow,
-    comClass: C_JSNode_CurrentDataRow,
+    comClass: C_SqlNode_CurrentDataRow,
 };
 SqlNodeClassMap[SQLNODE_DELETERECORD] = {
     modelClass: SqlNode_DeleteRecord,
     comClass: C_SqlNode_DeleteRecord,
+};
+SqlNodeClassMap[SQLNODE_COLUMNVAR] = {
+    modelClass: SqlNode_ColumnVar,
+    comClass: C_Node_SimpleNode,
 };

@@ -127,12 +127,17 @@ const JSNodeEditorControls_arr =[
     {
         label:'弹出消息窗',
         nodeClass:JSNode_PopMessageBox,
-        type:'窗体控制'
+        type:'消息窗控制'
     },
     {
         label:'关闭消息窗',
         nodeClass:JSNode_CloseMessageBox,
-        type:'窗体控制'
+        type:'消息窗控制'
+    },
+    {
+        label:'隐藏消息窗',
+        nodeClass:JSNode_HideMessageBox,
+        type:'消息窗控制'
     },
 ];
 

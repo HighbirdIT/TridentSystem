@@ -208,6 +208,7 @@ const VarNames={
     FullParentPath:'fullParentPath',
     SelectedRows_arr:'selectedRows_arr',
     BaseBunlde:'baseBundle',
+    HoldSelected:'holdSelected',
 };
 
 const AttrNames={

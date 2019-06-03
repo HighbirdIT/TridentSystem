@@ -1357,14 +1357,14 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
         }
         var targetEntity = this.targetEntity;
         var isScalar = targetEntity.isScalar();
-        if(this.checkCompileFlag(isScalar, '目标数据不能是标量值')){
+        if(this.checkCompileFlag(isScalar, '目标数据不能是标量值', helper)){
             return false;
         }
-        if(this.checkCompileFlag(targetEntity.loaded == false, '数据实体元数据尚未加载完成')){
+        if(this.checkCompileFlag(targetEntity.loaded == false, '数据实体元数据尚未加载完成', helper)){
             return false;
         }
         var keyColumnItem = targetEntity.getColumnByName(this.keyColumn);
-        if(this.checkCompileFlag(keyColumnItem == null, '关键字段设置错误')){
+        if(this.checkCompileFlag(keyColumnItem == null, '关键字段设置错误', helper)){
             return false;
         }
         if (!keyColumnItem.is_identity) {
@@ -1417,7 +1417,7 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
         for (var si in this.outputScokets_arr) {
             var outSocket = this.outputScokets_arr[si];
             var colName = outSocket.getExtra('colName');
-            if(this.checkCompileFlag(!targetEntity.containColumn(colName), '第' + (si + 1) + '个输出接口列[' + colName + ']是非法的')){
+            if(this.checkCompileFlag(!targetEntity.containColumn(colName), '第' + (si + 1) + '个输出接口列[' + colName + ']是非法的', helper)){
                 return false;
             }
             if (selectColumns_arr.indexOf('[' + colName + ']') == -1) {
@@ -1426,7 +1426,7 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
             defOutColumnBlock.pushLine('var ' + this.id + '_' + colName + '=' + rcdResultVarName + '.' + colName + ';');
             selfCompileRet.setSocketOut(outSocket, this.id + '_' + colName);
         }
-        if(this.checkCompileFlag(selectColumns_arr.length == 0, '第没有选择任何一个输出列')){
+        if(this.checkCompileFlag(selectColumns_arr.length == 0, '第没有选择任何一个输出列', helper)){
             return false;
         }
         var sqlInitValue = '';
@@ -1520,9 +1520,17 @@ class FlowNode_ColumnVar extends JSNode_Base {
             label = keySocket.node.id + '.' + keySocket.getExtra('colName');
         }
         this.keySocket = keySocket;
-        this.columnName = label;
+        this.columnName = keySocket.getExtra('colName');
         this.outSocket.label = label;
         this.outSocket.fireEvent('changed');
+    }
+
+    getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
+        if (belongFun.scope.isServerSide) {
+            return;
+        }
+        
+        this.keySocket.node.getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result);
     }
 
     compile(helper, preNodes_arr) {
@@ -1534,35 +1542,30 @@ class FlowNode_ColumnVar extends JSNode_Base {
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
 
-        if (this.keySocket == null) {
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                '关联节点无效']);
+        if(this.checkCompileFlag(this.keySocket == null, '关联节点无效', helper)){
             return false;
+        }
+        var relNode = this.keySocket.node;
+        
+        var relNodeComRet = helper.getCompileRetCache(relNode);
+        if(relNodeComRet == null){
+            if(this.checkCompileFlag(relNode.inFlowSocket, '不能早于关联的节点被访问到', helper)){
+                return false;
+            }
+            relNode.compile(helper, preNodes_arr);
         }
         var theColumn = null;
-        if (preNodes_arr.indexOf(this.keySocket.node) == -1) {
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                '不能早于关联的节点被访问到']);
-            return false;
-        }
         if (this.keySocket.node.targetEntity != null) {
             theColumn = this.keySocket.node.targetEntity.getColumnByName(this.columnName);
         }
-        if (theColumn == null) {
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                '关联的列名是无效的']);
+        if(this.checkCompileFlag(theColumn == null, '关联的列名是无效的', helper)){
             return false;
         }
         var value = this.keySocket.node.id + '_' + this.columnName;
+        if(relNode.formKernel){
+            value = relNode.formKernel.id + '_' + VarNames.NowRecord + '.' + this.columnName;
+        }
+        
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, value);
         helper.setCompileRetCache(this, selfCompileRet);

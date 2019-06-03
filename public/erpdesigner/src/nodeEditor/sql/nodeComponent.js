@@ -935,3 +935,143 @@ class C_SqlNode_DeleteRecord extends React.PureComponent {
         </C_Node_Frame>
     }
 }
+
+class C_SqlNode_CurrentDataRow extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+
+        C_NodeCom_Base(this);
+        var nodeData = this.props.nodedata;
+        var theProject = nodeData.bluePrint.master.project;
+        var formKernel = theProject.getControlById(nodeData.formID);
+
+        this.state = {
+            formKernel: formKernel,
+        }
+    }
+
+    formAttrChangedHandler(ev) {
+        if (ev.name == AttrNames.DataSource
+            || ev.name == AttrNames.name) {
+            this.reDraw();
+        }
+    }
+
+    cus_componentWillMount() {
+        if (this.state.formKernel) {
+            this.state.formKernel.on(EATTRCHANGED, this.formAttrChangedHandler);
+        }
+    }
+
+    cus_componentWillUnmount() {
+        if (this.state.formKernel) {
+            this.state.formKernel.off(EATTRCHANGED, this.formAttrChangedHandler);
+        }
+    }
+
+    socketColumnSelectChanged(newVal, ddc) {
+        var socket = ddc.props.socket;
+        socket.setExtra('colName', newVal);
+    }
+
+    getCanUseColumns() {
+        return this.canUseColumns_arr == null ? [] : this.canUseColumns_arr;
+    }
+
+    getFormDS(){
+        var nodeData = this.props.nodedata;
+        var formKernel = nodeData.bluePrint.master.project.getControlById(nodeData.formID);
+        return formKernel.getAttribute(AttrNames.DataSource);
+    }
+
+    customSocketRender(socket) {
+        if (socket.isIn == true) {
+            return null;
+        }
+        var nodeData = this.props.nodedata;
+        if(socket == nodeData.outDataSocket || socket == nodeData.outErrorSocket){
+            return null;
+        }
+        
+        var entity = this.getFormDS();
+        var nowVal = socket.getExtra('colName');
+        return (<span className='d-flex align-items-center'><DropDownControl itemChanged={this.socketColumnSelectChanged} btnclass='btn-dark' options_arr={entity == null ? [] : entity.columns} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} socket={socket} textAttrName='name' />
+            <button onMouseDown={this.mouseDownOutSocketHand} d-colname={nowVal} type='button' className='btn btn-secondary'><i className='fa fa-hand-paper-o' /></button>
+        </span>);
+    }
+
+    mouseDownOutSocketHand(ev){
+        var colName = getAttributeByNode(ev.target,'d-colname', true, 5);
+        if(colName == null){
+            return;
+        }
+        var socketid = getAttributeByNode(ev.target,'d-socketid', true, 10);
+        if(socketid == null){
+            return;
+        }
+        var nodeData = this.props.nodedata;
+        var entity = this.getFormDS();
+        if(entity == null){
+            return;
+        }
+        var theSocket = nodeData.bluePrint.getSocketById(socketid);
+        var bornPos = theSocket.currentComponent.getCenterPos();
+        if(entity.containColumn(colName)){
+            var newNode = new SqlNode_ColumnVar({
+                keySocketID:socketid,
+                newborn:true,
+                left:bornPos.x,
+                top:bornPos.y,
+            }, nodeData.parent);
+        }
+    }
+
+    rowSourceItemChanged(newSrc) {
+        this.props.nodedata.rowSource = newSrc;
+        this.props.nodedata.rowSourceChanged();
+    }
+
+    dropdownCtlChangedHandler(selectedDBE) {
+        var nodeData = this.props.nodedata;
+        nodeData.setEntity(selectedDBE);
+    }
+
+    cusHeaderFuc() {
+        var nodeData = this.props.nodedata;
+        var formKernel = this.state.formKernel;
+        var titleElem = null;
+        if (formKernel == null) {
+            titleElem = (<span f-canmove={1} className='text-danger'>无效的FormID{nodeData.id}</span>);
+        }
+        else {
+            var formDS = formKernel.getAttribute(AttrNames.DataSource);
+            var newColumns = [];
+            if(formDS != null){
+                formDS.columns.forEach(colItem => {
+                    newColumns.push(colItem.name);
+                });
+            }
+            this.canUseColumns_arr = newColumns;
+            titleElem = (<div f-canmove={1} className='d-flex flex-column'>
+                <span f-canmove={1}>{formKernel.getReadableName()}</span>
+                <span f-canmove={1} className='badge badge-primary'>{nodeData.id}</span>
+                <div className='d-flex'>
+                    <span f-canmove={1} className='badge badge-info'>{formDS == null ? '无数据源' : formDS.name + '-当前行'}</span>
+                    <span className='fa fa-fresh' onMouseDown={this.clickFreshIcon} />
+                </div>
+            </div>)
+        }
+
+        return titleElem;
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' cusHeaderFuc={this.cusHeaderFuc} >
+            <div className='d-flex flex-column'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} customSocketRender={this.customSocketRender} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
+            </div>
+        </C_Node_Frame>
+    }
+}

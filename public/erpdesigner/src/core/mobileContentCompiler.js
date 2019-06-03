@@ -347,6 +347,7 @@ class MobileContentCompiler extends ContentCompiler {
         var initPageFun = clientSide.scope.getFunction(makeFName_initPage(pageKernel), true, ['state']);
         var controlInitBlock = new FormatFileBlock('ctlinit');
         var activeTimeoutBlock = new FormatFileBlock('timeout');
+        initPageFun.scope.getVar(VarNames.NeedSetState, true, '[]');
         initPageFun.pushLine('var hadState = state != null;');
         initPageFun.pushLine('if(!hadState){state = store.getState();}');
         initPageFun.pushChild(controlInitBlock);
@@ -1171,7 +1172,7 @@ class MobileContentCompiler extends ContentCompiler {
         var formCanInsert = false;
         var bindInersetBlock = null;
 
-        var pullFun = clientSide.scope.getFunction(makeFName_pull(theKernel), true, [VarNames.ReState]);
+        var pullFun = clientSide.scope.getFunction(makeFName_pull(theKernel), true, [VarNames.ReState,VarNames.HoldSelected]);
         pullFun.scope.getVar(VarNames.HadStateParam, true, VarNames.ReState + '!=null');
 
         if (!useDS) {
@@ -1205,6 +1206,11 @@ class MobileContentCompiler extends ContentCompiler {
             pullFun.pushChild(initbundleBlock);
             pullFun.initbundleBlock = initbundleBlock;
             pullFun.pushLine('setTimeout(() => {', 1);
+            if(isGridForm){
+                pullFun.pushLine('if(!' + VarNames.HoldSelected + '){', 1);                
+                pullFun.pushLine('store.dispatch(makeAction_setStateByPath(null,' + singleQuotesStr(theKernel.getStatePath(VarNames.SelectedRows_arr)) + '));', -1);
+                pullFun.pushLine('}');
+            }
             pullFun.pushLine(makeLine_FetchPropValue(makeActStr_pullKernel(theKernel), singleQuotesStr(parentPath), singleQuotesStr(theKernel.id), singleQuotesStr(VarNames.Records_arr), { bundle: 'bundle' }, false), -1);
             pullFun.pushLine('}, 50);');
 
