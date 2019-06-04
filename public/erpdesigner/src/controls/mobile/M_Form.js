@@ -72,13 +72,12 @@ class M_FormKernel extends ContainerKernelBase{
             return child.id == bottomDivID;
         });
         if(gridFormBottomDiv == null){
-            gridFormBottomDiv = new M_ContainerKernel({},this);
-            gridFormBottomDiv.name = this.id + '底部';
-            gridFormBottomDiv.growAttrArray(AttrNames.LayoutNames.StyleAttr);
-            gridFormBottomDiv.growAttrArray(AttrNames.LayoutNames.StyleAttr);
-            gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexGrow,value:false},0);
-            gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexShrink,value:false},1);
-            this.setAttribute('bottomDivID', gridFormBottomDiv.id);
+            if(this.project.loaded){
+                this.projectLoadedHanlder();
+            }
+            else{
+                this.project.on('loaded', this.projectLoadedHanlder);
+            }
         }
         this.gridFormBottomDiv = gridFormBottomDiv;
 
@@ -96,6 +95,17 @@ class M_FormKernel extends ContainerKernelBase{
         
         var self = this;
         autoBind(self);
+    }
+
+    projectLoadedHanlder(){
+        var gridFormBottomDiv = new M_ContainerKernel({},this);
+        gridFormBottomDiv.name = this.id + '底部';
+        gridFormBottomDiv.growAttrArray(AttrNames.LayoutNames.StyleAttr);
+        gridFormBottomDiv.growAttrArray(AttrNames.LayoutNames.StyleAttr);
+        gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexGrow,value:false},0);
+        gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexShrink,value:false},1);
+        this.setAttribute('bottomDivID', gridFormBottomDiv.id);
+        this.gridFormBottomDiv = gridFormBottomDiv;
     }
 
     scriptCreated(attrName, scriptBP){
@@ -387,7 +397,7 @@ class M_Form extends React.PureComponent {
                         </thead>
                         </table>
                     </div>
-                    {ctlKernel.gridFormBottomDiv.renderSelf()}
+                    {ctlKernel.gridFormBottomDiv && ctlKernel.gridFormBottomDiv.renderSelf()}
                 </div>
             );
             if(widthType == EGridWidthType.Fixed){
