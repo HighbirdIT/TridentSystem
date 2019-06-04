@@ -2296,7 +2296,7 @@ class MobileContentCompiler extends ContentCompiler {
                         }
                         else{
                             if(isUseFormColumn){
-                                initValue = makeStr_getStateByPath(formStateVarName == null ? VarNames.State : formStateVarName, singleQuotesStr(useFormData.formKernel.getStatePath(VarNames.NowRecord)));
+                                initValue = formStateVarName + '.' + VarNames.NowRecord;
                                 theFun.scope.getVar(nowRecordVarName, true, initValue);
                             }
                         }

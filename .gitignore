@@ -11,6 +11,7 @@ public/src/views/erp/pages
 views/erppage/server/pages
 views/erppage/server/flows
 developconfig.js
+public/js/views/erp/
 
 # put any other files you don;t want to check in here
 # such as .DS_Store(OSX), *.bak, etc.
