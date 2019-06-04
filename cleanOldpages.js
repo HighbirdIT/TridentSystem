@@ -4,6 +4,7 @@ var path = require("path");
 //配置远程路径
 var remotePath = [
     "/public/js/views/erp/pages/", 
+    "/public/src/views/erp/pages/",
     "/views/erppage/server/pages/",
     "/views/erppage/server/flows/",
 ];
