@@ -35,6 +35,7 @@ class M_FormKernel extends ContainerKernelBase{
                 createHelper,kernelJson
             );
 
+        this.projectLoadedHanlder = this.projectLoadedHanlder.bind(this);
         var cusDsName = this.id + '_' + AttrNames.CustomDataSource;
         var cusDS_bp = this.project.dataMaster.getSqlBPByName(cusDsName);
         if(cusDS_bp == null){
