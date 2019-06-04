@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -23,7 +23,7 @@ var CAttributeGroup = function (_EventEmitter) {
     }
 
     _createClass(CAttributeGroup, [{
-        key: "appandAttr",
+        key: 'appandAttr',
         value: function appandAttr(target) {
             var self = this;
             if (Array.isArray(target)) {
@@ -37,7 +37,7 @@ var CAttributeGroup = function (_EventEmitter) {
             }
         }
     }, {
-        key: "setAttrs",
+        key: 'setAttrs',
         value: function setAttrs(attrs_arr) {
             var self = this;
             this.attrs_arr = attrs_arr;
@@ -46,11 +46,21 @@ var CAttributeGroup = function (_EventEmitter) {
             });
         }
     }, {
-        key: "findAttrByName",
+        key: 'findAttrByName',
         value: function findAttrByName(attrName) {
             return this.attrs_arr.find(function (e) {
                 return e.name == attrName;
             });
+        }
+    }, {
+        key: 'setVisible',
+        value: function setVisible(target, val) {
+            var nowVisible = target[this.label + '_visible'];
+            if (nowVisible == val) {
+                return;
+            }
+            target[this.label + '_visible'] = val;
+            this.fireEvent('changed');
         }
     }]);
 

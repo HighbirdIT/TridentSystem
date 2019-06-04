@@ -1,5 +1,7 @@
 'use strict';
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var PAGE_LOADED = 'PAGE_LOADED';
 
 var fetchTracer = {};
@@ -474,6 +476,27 @@ function makeFTD_Callback(callBack) {
         isModel: isModel
     };
 }
+var gFetchingProp = {};
+
+function hookPropFetch(ftpProp, bundle) {
+    var key = ftpProp.id + '_' + ftpProp.propName;
+    if (gFetchingProp[key] == null) {
+        gFetchingProp[key] = [];
+    } else if (gFetchingProp[key].length > 0) {
+        var hited = gFetchingProp[key].find(function (x) {
+            return ObjIsEqual(x.bundle, bundle);
+        });
+        if (hited) {
+            hited.queues_arr.push(ftpProp);
+            return true;
+        }
+    }
+    gFetchingProp[key].push({
+        bundle: bundle,
+        queues_arr: []
+    });
+    return false;
+}
 
 function fetchJsonPost(url, sendData, triggerData) {
     var key = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
@@ -496,6 +519,22 @@ function fetchJson(useGet, url, sendData, triggerData) {
     var tip = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : '加载中';
     var timeout = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 2;
 
+    switch (key) {
+        case EFetchKey.FetchPropValue:
+            {
+                if (hookPropFetch(triggerData, sendData.bundle)) {
+                    //console.log('做了缓存:' + JSON.stringify(triggerData));
+                    console.log('fetch做了缓存');
+                    return function (dispatch) {
+                        dispatch(makeAction_setManyStateByPath({
+                            fetching: true,
+                            fetchingpropname: triggerData.propName,
+                            fetchingErr: null
+                        }, MakePath(triggerData.base, triggerData.id)));
+                    };
+                }
+            }
+    }
     timeout = Math.min(Math.max(30, timeout), 120) * 1000;
     var thisFetch = {
         triggerData: triggerData,
@@ -853,10 +892,13 @@ function aStateChanged(state, path, newValue, oldValue) {
     }
     var retState = state;
     visited[path] = 1;
+    var rowIndexInfo_map = getRowIndexMapFromPath(path);
+    path = rowIndexInfo_map.newPath;
+
     if (appStateChangedAct_map != null) {
         var theAct = appStateChangedAct_map[path];
         if (theAct) {
-            var actRet = theAct(retState, newValue, oldValue, path, visited, delayActs);
+            var actRet = theAct(retState, newValue, oldValue, path, visited, delayActs, rowIndexInfo_map);
             if (actRet != null) {
                 retState = actRet;
             }
@@ -877,8 +919,8 @@ function MakePath() {
 function fetchBeginHandler(state, action) {
     //console.log('fetchBeginHandler');
     var retState = state;
-    var triggerData = action.fetchData.triggerData;
     var fetchIdentify = null;
+    var triggerData = action.fetchData.triggerData;
 
     var isModel = true;
     if (triggerData) {
@@ -968,7 +1010,8 @@ function fetchEndHandler(state, action) {
     if (isModel) {
         retState.ui = Object.assign({}, retState.ui, { fetchState: null });
     }
-
+    var needSetState;
+    var tPath;
     switch (action.key) {
         case 'pageloaded':
             setTimeout(function () {
@@ -977,8 +1020,22 @@ function fetchEndHandler(state, action) {
             return Object.assign({}, retState, { loaded: true });
         case EFetchKey.FetchPropValue:
             {
-                var propPath = MakePath(triggerData.base, triggerData.id, triggerData.propName);
-                return setStateByPath(retState, propPath, action.json.data);
+                var ftpProp = triggerData;
+                var ftpKey = ftpProp.id + '_' + ftpProp.propName;
+                needSetState = {};
+                var fetching_arr = gFetchingProp[ftpKey];
+                var hited = fetching_arr.find(function (x) {
+                    return ObjIsEqual(x.bundle, action.fetchData.sendData.bundle);
+                });
+                needSetState[MakePath(triggerData.base, triggerData.id, triggerData.propName)] = action.json.data;
+                hited.queues_arr.forEach(function (x) {
+                    needSetState[MakePath(x.base, x.id, x.propName)] = action.json.data;
+                    needSetState[MakePath(x.base, x.id, 'fetching')] = false;
+                    needSetState[MakePath(x.base, x.id, 'fetchingErr')] = null;
+                });
+                var i = fetching_arr.indexOf(hited);
+                fetching_arr.splice(i, 1);
+                return setManyStateByPath(retState, '', needSetState);
             }
         default:
             if (triggerData.callBack) {
@@ -1229,4 +1286,68 @@ function FormatStringValue(val, type, precision) {
             break;
     }
     return rlt;
+}
+
+function plainClone(obj) {
+    var rlt = {};
+    for (var s in obj) {
+        var v = obj[s];
+        switch (typeof v === 'undefined' ? 'undefined' : _typeof(v)) {
+            case 'boolean':
+            case 'number':
+            case 'string':
+                rlt[s] = v;
+                break;
+        }
+    }
+    return rlt;
+}
+
+function ObjIsEqual(objA, objB) {
+    if (objA == objB) {
+        return true;
+    }
+    if (objA == null || objB == null) {
+        return false;
+    }
+    var attrs_map = {};
+    var s;
+    for (s in objA) {
+        attrs_map[s] = 1;
+    }
+    for (s in objB) {
+        if (!attrs_map.hasOwnProperty(s)) {
+            return false;
+        }
+    }
+    for (s in attrs_map) {
+        if (objA[s] != objB[s]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function getRowIndexMapFromPath(path) {
+    var rowIndexInfo_map = {};
+    if (path.indexOf('.row_') != -1) {
+        var patchs_arr = path.split('.');
+        var prePath = null;
+        var newPatchs_arr = [];
+        for (var si in patchs_arr) {
+            var patch = patchs_arr[si];
+            if (prePath != null) {
+                if (patch.indexOf('row_') == 0) {
+                    rowIndexInfo_map[prePath] = patch.substr(4);
+                    continue;
+                }
+            }
+            prePath = patch;
+            newPatchs_arr.push(patch);
+        }
+        rowIndexInfo_map.newPath = newPatchs_arr.join('.');
+    } else {
+        rowIndexInfo_map.newPath = path;
+    }
+    return rowIndexInfo_map;
 }

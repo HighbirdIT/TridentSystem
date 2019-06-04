@@ -58,6 +58,10 @@ function genValidCheckerAttribute() {
     });
 }
 
+function genScripAttribute(label, name, group) {
+    return new CAttribute(label, name, ValueType.Script, null, null, null, null, null, null, { group: group });
+}
+
 var CAttribute = function () {
     function CAttribute(label, name, valueType, defaultVal, editable, isArray, options_arr, dropdownSetting, visible, scriptSetting) {
         _classCallCheck(this, CAttribute);
@@ -104,6 +108,10 @@ var CAttribute = function () {
 
 function makeFName_activePage(pageKernel) {
     return 'active_' + pageKernel.id;
+}
+
+function makeFName_initPage(pageKernel) {
+    return 'init_' + pageKernel.id;
 }
 
 function makeFName_freshForm(formKernel) {
@@ -194,6 +202,7 @@ var VarNames = {
     NeedSetState: 'needSetState',
     InvalidBundle: 'invalidbundle',
     NowRecord: 'nowRecord',
+    RowState: 'rowState',
     RetElem: 'retElem',
     ContentElem: 'contentElem',
     NavElem: 'navElem',
@@ -213,7 +222,18 @@ var VarNames = {
     RowPerPage: 'rowPerPage',
     HadStateParam: 'hadStateParam',
     PageRouter: 'pageRouter',
-    gDataCache: 'gDataCache'
+    gDataCache: 'gDataCache',
+    RowIndex: 'rowIndex',
+    CallBack: 'callBack',
+    FetchKey: 'fetchKey',
+    ParentPath: 'parentPath',
+    RowIndexInfo_map: 'rowIndexInfo_map',
+    SelectMode: 'selectMode',
+    FullPath: 'fullPath',
+    FullParentPath: 'fullParentPath',
+    SelectedRows_arr: 'selectedRows_arr',
+    BaseBunlde: 'baseBundle',
+    HoldSelected: 'holdSelected'
 };
 
 var AttrNames = {
@@ -260,9 +280,19 @@ var AttrNames = {
     RelFlowStep: 'relflowstep',
     GenNavBar: 'gennavbar',
     StableData: 'stableData',
+    RecEditeable: 'recEditeable',
+    RecDeletable: 'recDeletable',
+    NewRowDepend: 'newRowDepend',
+    SelectMode: 'selectMode',
+    EntryParam: 'entryParam',
+    ExportParam: 'exportParam',
+    PopablePage: 'popablepage',
 
     Event: {
-        OnClick: 'onclick'
+        OnClick: 'onclick',
+        OnUpdate: 'onUpdate',
+        OnDelete: 'onDelete',
+        OnInsert: 'onInsert'
     },
 
     LayoutNames: {

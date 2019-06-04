@@ -11,6 +11,12 @@ class IAttributeable extends EventEmitter{
         //autoBind(this);
     }
 
+    findAttrGroupByName(groupName){
+        return this.attrbuteGroups.find(group=>{
+            return group.label === groupName ? group : null;
+        });
+    }
+
     findAttributeByName(attrName){
         var foundAttr = null;
         var rlt = this.cacheObj[attrName + '_c'];
@@ -103,7 +109,7 @@ class IAttributeable extends EventEmitter{
                 console.error('访问不存在的属性:' + attrName);
             }
             rlt = attrItem.defaultVal;
-            if(rlt == null && attrItem.valueType != ValueType.Event){
+            if(rlt == null && attrItem.valueType != ValueType.Event && attrItem.valueType != ValueType.Script){
                 switch(attrItem.name){
                     case AttrNames.LayoutNames.StyleAttr:
                     case AttrNames.Name:

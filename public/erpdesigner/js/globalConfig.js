@@ -70,11 +70,11 @@ var Datepart_dy = 'dy'; //年中第几天
 var Datepart_day = 'day'; //天
 var Datepart_wk = 'wk'; //周
 var Datepart_week = 'week'; //星期几
-var Datepart_hours = 'hours'; //小时
-var Datepart_minutes = 'minutes'; //分钟
-var Datepart_seconds = 'seconds'; //秒
+var Datepart_hour = 'hour'; //小时
+var Datepart_minutes = 'minute'; //分钟
+var Datepart_seconds = 'second'; //秒
 var Datepart_ms = 'ms'; //毫秒
-var Datepart_arr = [Datepart_year, Datepart_quarter, Datepart_month, Datepart_dy, Datepart_day, Datepart_wk, Datepart_week, Datepart_hours, Datepart_minutes, Datepart_seconds, Datepart_ms];
+var Datepart_arr = [Datepart_year, Datepart_quarter, Datepart_month, Datepart_dy, Datepart_day, Datepart_wk, Datepart_week, Datepart_hour, Datepart_minutes, Datepart_seconds, Datepart_ms];
 
 var SocketType_CtlKernel = 'st_ctlkernel';
 
@@ -120,7 +120,8 @@ var EJsBluePrintFunGroup = {
     CtlAttr: 'ctlattr',
     CtlEvent: 'ctlevent',
     CtlValid: 'ctlvalid',
-    ServerScript: 'serverscript'
+    ServerScript: 'serverscript',
+    GridRowBtnHandler: 'gridrowbtnhandler'
 };
 
 var ESqlBluePrintGroup = {
@@ -134,6 +135,14 @@ var EFormType = {
 };
 
 var FormTypes_arr = [EFormType.Page, EFormType.Grid];
+
+var ESelectMode = {
+    None: 'none',
+    Single: 'single',
+    Multi: 'multi'
+};
+var SelectModes_arr = [ESelectMode.None, ESelectMode.Single, ESelectMode.Multi];
+
 var ButtonClasses_arr = ['btn-primary', 'btn-secondary', 'btn-success', 'btn-danger', 'btn-warning', 'btn-info', 'btn-light', 'btn-dark', 'btn-link'];
 
 var GridHead_PerCharWidth = 1.4;
@@ -150,6 +159,13 @@ var EInterActiveType = {
 };
 
 var EInterActiveTypes_arr = [{ text: '只读', value: EInterActiveType.ReadOnly }, { text: '读写', value: EInterActiveType.ReadWrite }];
+
+var EFormRowSource = {
+    Context: 'context',
+    Selected: 'selected'
+};
+
+var EFormRowSources_arr = [{ text: '所在行', value: EFormRowSource.Context }, { text: '选中行', value: EFormRowSource.Selected }];
 
 /**
  * 逻辑运算符 and or not
@@ -183,7 +199,8 @@ var VisibleStyle_Both = 'both';
 
 var ScriptBindMode = {
     OnForm: 'OnForm',
-    OnRelAttrChanged: 'OnRelAttrChanged'
+    OnRelAttrChanged: 'OnRelAttrChanged',
+    OnNewRow: 'OnNewRow'
 };
 
 var DesignerConfig = {
@@ -251,7 +268,8 @@ var ValueType = {
     Any: '任意',
     Event: 'event',
     Script: 'script',
-    Object: 'Object'
+    Object: 'Object',
+    XML: 'xml'
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

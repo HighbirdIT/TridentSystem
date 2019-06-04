@@ -31,4 +31,14 @@ class CAttributeGroup extends EventEmitter{
     findAttrByName(attrName){
         return this.attrs_arr.find(e=>{return e.name == attrName;});
     }
+
+    setVisible(target, val) {
+        var nowVisible = target[this.label + '_visible'];
+        if(nowVisible == val)
+        {
+            return;
+        }
+        target[this.label + '_visible'] = val;
+        this.fireEvent('changed');
+    }
 }

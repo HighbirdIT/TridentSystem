@@ -70,6 +70,11 @@ const JSNodeEditorControls_arr =[
         type:'数据库交互'
     },
     {
+        label:'Delete',
+        nodeClass:JSNODE_Delete_Table,
+        type:'数据库交互'
+    },
+    {
         label:'日期函数',
         nodeClass:JSNode_DateFun,
         type:'运算'
@@ -90,6 +95,11 @@ const JSNodeEditorControls_arr =[
         type:'数组操纵'
     },
     {
+        label:'Get页面入口参数',
+        nodeClass:JSNode_GetPageEntryParam,
+        type:'窗体控制'
+    },
+    {
         label:'创建自订错误',
         nodeClass:JSNode_Create_Cuserror,
         type:'错误控制'
@@ -100,9 +110,34 @@ const JSNodeEditorControls_arr =[
         type:'表单控制'
     },
     {
-        label:'打开页面',
+        label:'跳转页面',
         nodeClass:JSNode_JumpPage,
         type:'窗体控制'
+    },
+    {
+        label:'弹出页面',
+        nodeClass:JSNode_PopPage,
+        type:'窗体控制'
+    },
+    {
+        label:'关闭页面',
+        nodeClass:JSNode_ClosePage,
+        type:'窗体控制'
+    },
+    {
+        label:'弹出消息窗',
+        nodeClass:JSNode_PopMessageBox,
+        type:'消息窗控制'
+    },
+    {
+        label:'关闭消息窗',
+        nodeClass:JSNode_CloseMessageBox,
+        type:'消息窗控制'
+    },
+    {
+        label:'隐藏消息窗',
+        nodeClass:JSNode_HideMessageBox,
+        type:'消息窗控制'
     },
 ];
 
@@ -141,16 +176,33 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         this.clientInitBundleBlocks_arr = [];
     }
 
+    compileEnd(){
+        this.clientInitBundleBlocks_arr.forEach(block=>{
+            for(var si in block.params_map){
+                block.pushLine(si + ':' + block.params_map[si] + ',');
+            }
+        });
+    }
+
     appendOutputItem(item){
         this.appendedOutputItems_arr.push(item);
     }
 
     addInitClientBundleBlock(block){
-        this.clientInitBundleBlocks_arr.push(block);
+        if(this.clientInitBundleBlocks_arr.indexOf(block) == -1){
+            if(block.params_map == null){
+                block.params_map = {};
+            }
+            this.clientInitBundleBlocks_arr.push(block);
+        }
     }
 
-    addUseColumn(formKernel, columnName, serverFun){
-        var formObj = this.addUseForm(formKernel);
+    addUseColumn(formKernel, columnName, serverFun, rowSource){
+        if(rowSource == null){
+            console.error('rowSource == null');
+            return;
+        }
+        var formObj = this.addUseForm(formKernel, rowSource);
         formObj.useNowRecord = true;
         if(formObj.useColumns_map[columnName] == null){
             formObj.useColumns_map[columnName] = {
@@ -165,19 +217,34 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         }
     }
 
-    addUseForm(formKernel){
-        if(this.useForm_map[formKernel.id] == null){
-            this.useForm_map[formKernel.id] = {
+    addUseForm(formKernel, rowSource){
+        if(rowSource == null){
+            console.error('rowSource == null');
+            return;
+        }
+        var rlt = this.useForm_map[formKernel.id];
+        if(rlt == null){
+            rlt = {
                 useColumns_map:{},
                 useControls_map:{},
                 useNowRecord:false,
+                useSelectedRow:false,
                 formKernel:formKernel,
             };
+            this.useForm_map[formKernel.id] = rlt;
         }
-        return this.useForm_map[formKernel.id];
+        switch(rowSource){
+            case EFormRowSource.Context:
+            rlt.useContextRow = true;
+            break;
+            case EFormRowSource.Selected:
+            rlt.useSelectedRow = true;
+            break;
+        }
+        return rlt;
     }
 
-    addUseControlPropApi(ctrKernel, apiitem){
+    addUseControlPropApi(ctrKernel, apiitem, rowSource){
         var rlt = null;
         var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
         if(belongFormKernel == null){
@@ -193,7 +260,7 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
             return;
         }
         else{
-            var formObj = this.addUseForm(belongFormKernel);
+            var formObj = this.addUseForm(belongFormKernel, rowSource);
             rlt = formObj.useControls_map[ctrKernel.id];
             if(rlt == null){
                 rlt = {
@@ -306,7 +373,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         logManager.clear();
         var canUseDS_arr = [];
         var canAccessKernel_arr = [];
-        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == EJsBluePrintFunGroup.CtlValid){
+        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == EJsBluePrintFunGroup.CtlValid || bluePrint.group == EJsBluePrintFunGroup.GridRowBtnHandler){
             // 控件类型,获取上下文
             var ctlKernel = project.getControlById(bluePrint.ctlID);
             if(bluePrint.ctlID == null || ctlKernel == null){
@@ -314,18 +381,33 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
                 return;
             }
             // 获取可用的数据源
-            var parentForms_arr = ctlKernel.searchParentKernel(M_FormKernel_Type);
+            var parentForms_arr = ctlKernel.getAccessableKernels(M_FormKernel_Type);
+            // 还可以使用兄弟form节点
             if(parentForms_arr != null){
                 parentForms_arr.forEach(formKernel=>{
                     var useDS = formKernel.getAttribute(AttrNames.DataSource);
+                    var isGridForm = formKernel.getAttribute(AttrNames.FormType) == EFormType.Grid;
                     if(useDS != null){
                         canUseDS_arr.push(
                             {
                                 entity:useDS,
                                 label:formKernel.getReadableName() + '当前行',
-                                formID:formKernel.id
+                                formID:formKernel.id,
+                                key:formKernel.id + '_currentrow',
+                                rowfrom:EFormRowSource.Context,
                             }
                         );
+                        if(isGridForm){
+                            canUseDS_arr.push(
+                                {
+                                    entity:useDS,
+                                    label:formKernel.getReadableName() + '选中行',
+                                    formID:formKernel.id,
+                                    key:formKernel.id + '_selectedrow',
+                                    rowfrom:EFormRowSource.Selected,
+                                }
+                            );
+                        }
                     }
                 });
             }
@@ -353,7 +435,10 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         var itemValue = getAttributeByNode(ev.target, 'data-value');
         if(itemValue == null)
             return;
-        var theDSItem = this.state.canUseDS_arr.find(e=>{return e.formID == itemValue});
+        var rowfrom = getAttributeByNode(ev.target, 'data-rowfrom');
+        if(rowfrom == null)
+            return;
+        var theDSItem = this.state.canUseDS_arr.find(e=>{return e.formID == itemValue && e.rowfrom == rowfrom});
         if(theDSItem){
             this.props.editor.createCanUseDS(theDSItem);
         }
@@ -421,7 +506,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
                                 {showCanUseDS &&
                                 <div className='btn-group-vertical mw-100 flex-shrink-0'>
                                     {canUseDS_arr.map(item=>{
-                                        return (<button key={item.formID} onMouseDown={this.mouseDownCanUseDSHandler} data-value={item.formID} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>);
+                                        return (<button key={item.key} onMouseDown={this.mouseDownCanUseDSHandler} data-value={item.formID} data-rowfrom={item.rowfrom} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>);
                                     })}
                                 </div>}
                             </React.Fragment>
@@ -983,6 +1068,7 @@ class C_JSNode_Editor extends React.PureComponent{
             formID:dsconfig.formID,
             dscode:dsconfig.entity.code,
             dsentity:dsconfig.entity,
+            rowSource:dsconfig.rowfrom,
         });
     }
 

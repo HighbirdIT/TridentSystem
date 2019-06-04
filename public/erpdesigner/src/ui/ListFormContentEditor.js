@@ -153,6 +153,18 @@ class CListFormContentEditor extends React.PureComponent {
         }
     }
 
+    addNewCtlHandler(){
+        var initState = {};
+        initState[AttrNames.EditorType] = this.defaultControlType;
+        initState[AttrNames.InteractiveType] = this.defaultInterActType;
+        var newCtl = new M_LabeledControlKernel(initState, this.props.formKernel);
+
+        var newControls_arr = this.state.controls_arr.concat(newCtl);
+        this.setState({
+            controls_arr: newControls_arr,
+        });
+    }
+
     render() {
         var cusDS_bp = this.props.formKernel.getAttribute(AttrNames.CustomDataSource);
         var canUseColumns_arr = cusDS_bp && cusDS_bp.columns ? cusDS_bp.columns : [];
@@ -169,6 +181,9 @@ class CListFormContentEditor extends React.PureComponent {
                     <div className='d-flex align-items-center'>交互类型:
                         <DropDownControl rootclass='flex-grow-1' options_arr={EInterActiveTypes_arr} value={this.defaultInterActType} itemChanged={this.defaultInteractTypeChanged} textAttrName='text' valueAttrName='value' />
                     </div>
+                </div>
+                <div className='btn btn-group flex-grow-0 flex-shrink-0'>
+                    <button onClick={this.addNewCtlHandler} type='button' className='btn btn-success' ><i className='fa fa-plus'/></button>
                 </div>
                 <div className='flex-grow-1 flex-shrink-1 autoScroll' style={{maxHeight:'calc(100% - 80px)'}}>
                     <div className='list-group' style={{ width: '13em' }}>

@@ -957,7 +957,7 @@ class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
                 return;
             }
             // 获取可用的数据源
-            var parentForms_arr = ctlKernel.searchParentKernel(M_FormKernel_Type);
+            var parentForms_arr = ctlKernel.getAccessableKernels(M_FormKernel_Type);
             if(parentForms_arr != null){
                 parentForms_arr.forEach(formKernel=>{
                     var useDS = formKernel.getAttribute(AttrNames.DataSource);

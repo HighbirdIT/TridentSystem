@@ -439,8 +439,15 @@ var DataMaster = function (_EventEmitter4) {
         key: 'getAllEntities',
         value: function getAllEntities() {
             return this.BP_sql_arr.filter(function (x) {
-                return x.group == 'custom';
+                return x.group == 'custom' && x.type != 'delete';
             }).concat(g_dataBase.entities_arr).concat(EmptyDBEntity);
+        }
+    }, {
+        key: 'getDeleteEntities',
+        value: function getDeleteEntities() {
+            return this.BP_sql_arr.filter(function (x) {
+                return x.group == 'custom' && x.type == 'delete';
+            }).concat(EmptyDBEntity);
         }
     }, {
         key: 'restoreFromJson',

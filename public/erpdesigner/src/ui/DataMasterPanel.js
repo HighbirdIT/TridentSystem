@@ -493,7 +493,7 @@ class SqlBPEditPanel extends React.PureComponent {
                 <div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
                     <div className='d-flex flex-column autoScroll flex-grow-1 flex-shrink-1'>
                         <NameInputRow label='名称' type='text' rootClass='m-1' nameWidth={nameWidth} ref={this.nameRef} default={value} />
-                        <NameInputRow label='类型' type='select' rootClass='m-1' nameWidth={nameWidth} options_arr={['表值','标量值']} default={type} ref={this.typeRef} />   
+                        <NameInputRow label='类型' type='select' rootClass='m-1' nameWidth={nameWidth} options_arr={['表值','标量值','delete']} default={type} ref={this.typeRef} />   
                         <div className='flex-grow-1 flex-shrink-1 text-info'>
                             {
                                 this.state.errinfo

@@ -134,10 +134,10 @@ class C_Node_Socket extends React.PureComponent{
             }
             else{
                 
-                inputElem =(<input  type='text' ref={this.inputRef} className='socketInputer' onChange={this.inputChangedHandler} value={socket.defval == null ? '' : socket.defval} ></input>);
-                /*
-                inputElem = (<div contentEditable='true' type='text' ref={this.inputRef} className='li-instead-input' onChange={this.inputChangedHandler} value={socket.defval == null ? '' : socket.defval} >{socket.defval == null ? '' : socket.defval}</div>);
+                /*inputElem =(<input  type='text' ref={this.inputRef} className='socketInputer' onChange={this.inputChangedHandler} value={socket.defval == null ? '' : socket.defval} ></input>);
                 */
+                inputElem = (<textarea wrap="physical" type='text'  ref={this.inputRef} className='li_input' onChange={this.inputChangedHandler} value={socket.defval == null ? '' : socket.defval} >{socket.defval == null ? '' : socket.defval}</textarea>);
+                
                 
             }
         }
@@ -146,12 +146,24 @@ class C_Node_Socket extends React.PureComponent{
             dragElem = (<div className={'btn btn-' + (this.state.draging ? 'primary' : 'dark')} onMouseDown={this.mouseDownDragIconHandler}><i className='fa fa-arrows-v cursor-pointer' /></div>);
         }
         var cusElem = null;
-        if(this.props.customSocketRender){
-            cusElem = this.props.customSocketRender(socket);
+        
+        if(socket.isFlowSocket){
+            if(this.props.customFlowSocketRender){
+                cusElem = this.props.customFlowSocketRender(socket);
+            }
+            else{
+                cusElem = socket.node.customFlowSocketRender(socket);
+            }
         }
         else{
-            cusElem = socket.node.customSocketRender(socket);
+            if(this.props.customSocketRender){
+                cusElem = this.props.customSocketRender(socket);
+            }
+            else{
+                cusElem = socket.node.customSocketRender(socket);
+            }
         }
+        
         var valTypeElem = null;
         if(socket.type == SocketType_CtlKernel){
             var kernelType = socket.kernelType;
@@ -167,8 +179,12 @@ class C_Node_Socket extends React.PureComponent{
                 if(socket.isIn){
                     if(socket.getLinks().length == 0){
                         var bluePrint = socket.node.bluePrint;
-                        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == ESqlBluePrintGroup.ControlCustom || bluePrint.group == EJsBluePrintFunGroup.CtlValid)
-                        {
+                        switch(bluePrint.group){
+                            case EJsBluePrintFunGroup.CtlAttr:
+                            case EJsBluePrintFunGroup.CtlEvent:
+                            case ESqlBluePrintGroup.ControlCustom:
+                            case EJsBluePrintFunGroup.CtlValid:
+                            case EJsBluePrintFunGroup.GridRowBtnHandler:
                             var ctlKernel = bluePrint.master.project.getControlById(bluePrint.ctlID);
                             if(ctlKernel != null){
                                 var nowCtlId = socket.getExtra('ctlid');
@@ -177,6 +193,7 @@ class C_Node_Socket extends React.PureComponent{
                                 }
                                 inputElem = (<DropDownControl socket={socket} options_arr={ctlKernel.getAccessableKernels} funparamobj={kernelType} value={nowCtlId} itemChanged={this.kernelChangedHandler} textAttrName='readableName' valueAttrName='id' />);
                             }
+                            break;
                         }
                     }
                 }
@@ -339,6 +356,9 @@ class C_SqlNode_ScoketsPanel extends React.PureComponent{
     }
 
     render(){
+        if(this.props.data == null){
+            console.error('props.data invalid');
+        }
         if(this.props.data.length == 0)
             return <div className='flex-grow-1 flex-shrink-1'>
                 {

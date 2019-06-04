@@ -28,6 +28,7 @@ class CProject extends IAttributeable{
 
         var self = this;
         autoBind(self);
+        this.loaded = false;
         this.attrbuteGroups = CProjectAttrsSetting.groups_arr;
         this.defaultNameCounter = {};
         this.controlName_map = {};
@@ -77,6 +78,8 @@ class CProject extends IAttributeable{
                 this.content_Mobile.pages.push(newPage);
             });
         }
+        this.loaded = true;
+        this.emit('loaded');
         this.logManager.log('加载完成');
     }
 
@@ -237,6 +240,20 @@ class CProject extends IAttributeable{
             isPC = this.designeConfig.editingType == 'PC';
         }
         return isPC ? this.content_PC.pages : this.content_Mobile.pages;
+    }
+
+    getPopablePages(isPC){
+        if(isPC == null){
+            isPC = this.designeConfig.editingType == 'PC';
+        }
+        return isPC ? this.content_PC.pages.filter(page=>{return page.getAttribute(AttrNames.PopablePage) == true;}) : this.content_Mobile.pages.filter(page=>{return page.getAttribute(AttrNames.PopablePage) == true;});
+    }
+
+    getJumpablePages(isPC){
+        if(isPC == null){
+            isPC = this.designeConfig.editingType == 'PC';
+        }
+        return isPC ? this.content_PC.pages.filter(page=>{return page.getAttribute(AttrNames.PopablePage) != true;}) : this.content_Mobile.pages.filter(page=>{return page.getAttribute(AttrNames.PopablePage) != true;});
     }
 
     getEditingPage(){

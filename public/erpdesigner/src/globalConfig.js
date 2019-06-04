@@ -68,11 +68,11 @@ const Datepart_dy = 'dy';//年中第几天
 const Datepart_day = 'day';//天
 const Datepart_wk = 'wk';//周
 const Datepart_week = 'week';//星期几
-const Datepart_hours = 'hours';//小时
-const Datepart_minutes = 'minutes';//分钟
-const Datepart_seconds = 'seconds';//秒
+const Datepart_hour = 'hour';//小时
+const Datepart_minutes = 'minute';//分钟
+const Datepart_seconds = 'second';//秒
 const Datepart_ms = 'ms';//毫秒
-const Datepart_arr = [Datepart_year, Datepart_quarter, Datepart_month, Datepart_dy, Datepart_day, Datepart_wk, Datepart_week, Datepart_hours, Datepart_minutes, Datepart_seconds, Datepart_ms];
+const Datepart_arr = [Datepart_year, Datepart_quarter, Datepart_month, Datepart_dy, Datepart_day, Datepart_wk, Datepart_week, Datepart_hour, Datepart_minutes, Datepart_seconds, Datepart_ms];
 
 const SocketType_CtlKernel = 'st_ctlkernel';
 
@@ -121,6 +121,7 @@ const EJsBluePrintFunGroup={
     CtlEvent:'ctlevent',
     CtlValid: 'ctlvalid',
     ServerScript:'serverscript',
+    GridRowBtnHandler: 'gridrowbtnhandler'
 }
 
 const ESqlBluePrintGroup={
@@ -134,6 +135,14 @@ const EFormType={
 }
 
 const FormTypes_arr = [EFormType.Page, EFormType.Grid];
+
+const ESelectMode={
+    None:'none',
+    Single:'single',
+    Multi:'multi',
+}
+const SelectModes_arr = [ESelectMode.None, ESelectMode.Single, ESelectMode.Multi];
+
 const ButtonClasses_arr = ['btn-primary', 'btn-secondary', 'btn-success', 'btn-danger', 'btn-warning', 'btn-info', 'btn-light', 'btn-dark', 'btn-link'];
 
 const GridHead_PerCharWidth = 1.4;
@@ -150,6 +159,13 @@ const EInterActiveType={
 }
 
 const EInterActiveTypes_arr = [{text:'只读', value:EInterActiveType.ReadOnly}, {text:'读写', value:EInterActiveType.ReadWrite}];
+
+const EFormRowSource={
+    Context:'context',
+    Selected:'selected',
+}
+
+const EFormRowSources_arr = [{text:'所在行', value:EFormRowSource.Context}, {text:'选中行', value:EFormRowSource.Selected}];
 
 /**
  * 逻辑运算符 and or not
@@ -184,6 +200,7 @@ const VisibleStyle_Both = 'both';
 const ScriptBindMode={
     OnForm:'OnForm',
     OnRelAttrChanged:'OnRelAttrChanged',
+    OnNewRow:'OnNewRow',
 }
 
 const DesignerConfig = {
@@ -253,6 +270,7 @@ const ValueType = {
     Event:'event',
     Script:'script',
     Object:'Object',
+    XML:'xml',
 };
 
 const VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

@@ -635,7 +635,7 @@ var SqlBPEditPanel = function (_React$PureComponent6) {
                         'div',
                         { className: 'd-flex flex-column autoScroll flex-grow-1 flex-shrink-1' },
                         React.createElement(NameInputRow, { label: '\u540D\u79F0', type: 'text', rootClass: 'm-1', nameWidth: nameWidth, ref: this.nameRef, 'default': value }),
-                        React.createElement(NameInputRow, { label: '\u7C7B\u578B', type: 'select', rootClass: 'm-1', nameWidth: nameWidth, options_arr: ['表值', '标量值'], 'default': type, ref: this.typeRef }),
+                        React.createElement(NameInputRow, { label: '\u7C7B\u578B', type: 'select', rootClass: 'm-1', nameWidth: nameWidth, options_arr: ['表值', '标量值', 'delete'], 'default': type, ref: this.typeRef }),
                         React.createElement(
                             'div',
                             { className: 'flex-grow-1 flex-shrink-1 text-info' },

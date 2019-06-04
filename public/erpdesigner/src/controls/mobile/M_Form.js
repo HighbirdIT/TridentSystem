@@ -14,7 +14,14 @@ const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
         new CAttribute('宽度类型',AttrNames.WidthType,ValueType.String,EGridWidthType.Auto,true,false,EGridWidthTypes_arr,{text:'text', value:'value'}),
         new CAttribute('首列序号',AttrNames.AutoIndexColumn,ValueType.Boolean,true),
         new CAttribute('自动滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
+        new CAttribute('模式', AttrNames.SelectMode, ValueType.String, ESelectMode.Multi, true, false, SelectModes_arr),
+        new CAttribute('bottomDivID','bottomDivID',ValueType.String,'',true,false,null,null),
     ]),
+    new CAttributeGroup('操作设置',[
+        genScripAttribute('Insert', AttrNames.Event.OnInsert,EJsBluePrintFunGroup.GridRowBtnHandler),
+        genScripAttribute('Update', AttrNames.Event.OnUpdate,EJsBluePrintFunGroup.GridRowBtnHandler),
+        genScripAttribute('Delete', AttrNames.Event.OnDelete,EJsBluePrintFunGroup.GridRowBtnHandler),
+    ])
 ]);
 
 
@@ -37,12 +44,43 @@ class M_FormKernel extends ContainerKernelBase{
         cusDS_bp.ctlKernel = this;
         cusDS_bp.group = 'ctlcus';
         this.setAttribute(AttrNames.CustomDataSource, cusDS_bp);
+
+        var placeHolderKernel = this.searchChildKernel(EmptyKernel_Type,true);
+        if(placeHolderKernel == null){
+            placeHolderKernel = new EmptyKernel({}, this);
+        }
+        this.placeHolderKernel = placeHolderKernel;
+        placeHolderKernel.isfixed = true;
+        var theBP = this.getRowBtnHandlerBP(AttrNames.Event.OnUpdate);
+        if(theBP){
+            theBP.ctlID = placeHolderKernel.id;
+        }
+        theBP = this.getRowBtnHandlerBP(AttrNames.Event.OnDelete);
+        if(theBP){
+            theBP.ctlID = placeHolderKernel.id;
+        }
+
         //this.autoSetCusDataSource();
         var listFormContentValue = this.getAttribute(AttrNames.ListFormContent);
         if(listFormContentValue == null){
             listFormContentValue = new ListFormContent(this);
             this.setAttribute(AttrNames.ListFormContent, listFormContentValue);
         }
+
+        var bottomDivID = this.getAttribute('bottomDivID');
+        var gridFormBottomDiv = this.children.find(child=>{
+            return child.id == bottomDivID;
+        });
+        if(gridFormBottomDiv == null){
+            gridFormBottomDiv = new M_ContainerKernel({},this);
+            gridFormBottomDiv.name = this.id + '底部';
+            gridFormBottomDiv.growAttrArray(AttrNames.LayoutNames.StyleAttr);
+            gridFormBottomDiv.growAttrArray(AttrNames.LayoutNames.StyleAttr);
+            gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexGrow,value:false},0);
+            gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexShrink,value:false},1);
+            this.setAttribute('bottomDivID', gridFormBottomDiv.id);
+        }
+        this.gridFormBottomDiv = gridFormBottomDiv;
 
         var nowft = this.getAttribute(AttrNames.FormType);
         this[AttrNames.ListFormContent + '_visible'] = nowft == EFormType.Grid;
@@ -51,9 +89,52 @@ class M_FormKernel extends ContainerKernelBase{
         this[AttrNames.WidthType + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.AutoIndexColumn + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.GenNavBar + '_visible'] = nowft != EFormType.Grid;
+        this[AttrNames.SelectMode + '_visible'] = nowft == EFormType.Grid;
+        
+
+        this['操作设置_visible'] = nowft == EFormType.Grid;
         
         var self = this;
         autoBind(self);
+    }
+
+    scriptCreated(attrName, scriptBP){
+        if(scriptBP.group == EJsBluePrintFunGroup.GridRowBtnHandler){
+            scriptBP.ctlID = this.placeHolderKernel.id;
+        }
+    }
+
+    getRowBtnHandlerBP(name){
+        var funName = this.id + '_' + name;
+        return this.project.scriptMaster.getBPByName(funName);
+    }
+
+    hadRowBtnHandler(){
+        return this.getRowBtnHandlerBP(AttrNames.Event.OnUpdate) != null || this.getRowBtnHandlerBP(AttrNames.Event.OnDelete) != null;
+    }
+
+    getInsertSetting(){
+        if(!this.isGridForm()){
+            return null;
+        }
+        var btnBP = this.getRowBtnHandlerBP(AttrNames.Event.OnInsert);
+        if(btnBP != null){
+            return {key:'insert', blueprint:btnBP, funName:'submitInsert', actLabel:'新增'};
+        }
+        return null;
+    }
+
+    getRowBtnSetting(){
+        var rlt = [];
+        var btnBP = this.getRowBtnHandlerBP(AttrNames.Event.OnUpdate);
+        if(btnBP != null){
+            rlt.push({key:'edit', blueprint:btnBP, elemText:"<i className='fa fa-edit' />", funName:AttrNames.Event.OnUpdate, actLabel:'修改'});
+        }
+        btnBP = this.getRowBtnHandlerBP(AttrNames.Event.OnDelete);
+        if(btnBP != null){
+            rlt.push({key:'delete', blueprint:btnBP, elemText:"<i className='fa fa-trash text-danger' />", funName:AttrNames.Event.OnDelete, actLabel:'删除'});
+        }
+        return rlt;
     }
 
     canAppand(){
@@ -62,6 +143,10 @@ class M_FormKernel extends ContainerKernelBase{
 
     getCanUseDataSource(){
         return this.project.dataMaster.getAllEntities();
+    }
+
+    isGridForm(){
+        return this.getAttribute(AttrNames.FormType) == EFormType.Grid;
     }
 
     autoSetCusDataSource(mustSelectColumns_arr){
@@ -162,10 +247,15 @@ class M_FormKernel extends ContainerKernelBase{
                 this.findAttributeByName(AttrNames.WidthType).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.AutoIndexColumn).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.GenNavBar).setVisible(this, !isGridForm);
-                
+                this.findAttributeByName(AttrNames.SelectMode).setVisible(this, !isGridForm);
+
+                this.findAttrGroupByName('操作设置').setVisible(this, isGridForm);
                 break;
             case AttrNames.PageBreak:
                 this.findAttributeByName(AttrNames.RowPerPage).setVisible(this, newValue);
+                break;
+            case AttrNames.Event.OnUpdate:
+                console.log('Names.Event.OnUpd');
                 break;
         }
     }
@@ -185,7 +275,7 @@ class M_Form extends React.PureComponent {
         autoBind(this);
 
         var ctlKernel = this.props.ctlKernel;
-        var inintState = M_ControlBase(this,LayoutAttrNames_arr.concat([AttrNames.Orientation,AttrNames.Chidlren,AttrNames.FormType,AttrNames.WidthType,AttrNames.AutoIndexColumn], inintState));
+        var inintState = M_ControlBase(this,LayoutAttrNames_arr.concat([AttrNames.Orientation,AttrNames.Chidlren,AttrNames.FormType,AttrNames.WidthType,AttrNames.AutoIndexColumn,AttrNames.Title,AttrNames.SelectMode], inintState));
         M_ContainerBase(this);
 
         inintState.orientation = ctlKernel.getAttribute(AttrNames.Orientation);
@@ -193,6 +283,8 @@ class M_Form extends React.PureComponent {
         inintState.formType = ctlKernel.getAttribute(AttrNames.FormType);
         inintState.widthType = ctlKernel.getAttribute(AttrNames.WidthType);
         inintState.autoIndexColumn = ctlKernel.getAttribute(AttrNames.AutoIndexColumn);
+        inintState.title = ctlKernel.getAttribute(AttrNames.Title);
+        inintState.selectMode = ctlKernel.getAttribute(AttrNames.SelectMode);
 
         this.state = inintState;
     }
@@ -212,6 +304,8 @@ class M_Form extends React.PureComponent {
             formType:ctlKernel.getAttribute(AttrNames.FormType),
             widthType:ctlKernel.getAttribute(AttrNames.WidthType),
             autoIndexColumn:ctlKernel.getAttribute(AttrNames.AutoIndexColumn),
+            title:ctlKernel.getAttribute(AttrNames.Title),
+            selectMode:ctlKernel.getAttribute(AttrNames.SelectMode),
         });
     }
 
@@ -241,14 +335,19 @@ class M_Form extends React.PureComponent {
             //var labelControls_arr = this.props.ctlKernel.searchChildKernel(M_LabeledControlKernel_Type, false);
             var widthType = this.state.widthType;
             var autoIndexColumn = this.state.autoIndexColumn;
+            var selectMode = this.state.selectMode;
             var tableStyle = {};
             var sumTableWidth = 0;
             if(autoIndexColumn){
                 sumTableWidth += 3;
             }
+            if(selectMode != ESelectMode.None){
+                sumTableWidth += 2;
+            }
 
             var tableElem =(
                 <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id}  ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    <span className='text-light bg-dark'>{this.state.title}</span>
                     <div className='mw-100 autoScroll'>
                         <table className='table' style={tableStyle}>
                         <thead className="thead-dark">
@@ -257,6 +356,7 @@ class M_Form extends React.PureComponent {
                                 this.props.ctlKernel.children.length == 0 ? 
                                     <th scope="col">空</th> :
                                     <React.Fragment>
+                                    {selectMode == ESelectMode.None ? null : <th scope='col' className='selectorTableHeader'><input type={selectMode == ESelectMode.Multi ? 'checkbox' : 'radio'} /></th>}
                                     {!autoIndexColumn ? null : <th scope='col' className='indexTableHeader' >序号</th>}
                                     {this.props.ctlKernel.children.map(childKernel=>{
                                         if(childKernel.type == M_LabeledControlKernel_Type){
@@ -287,6 +387,7 @@ class M_Form extends React.PureComponent {
                         </thead>
                         </table>
                     </div>
+                    {ctlKernel.gridFormBottomDiv.renderSelf()}
                 </div>
             );
             if(widthType == EGridWidthType.Fixed){
@@ -297,6 +398,7 @@ class M_Form extends React.PureComponent {
 
         return(
             <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id}  ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                <span className='text-light bg-dark'>{this.state.title}</span>
                 {
                     this.props.ctlKernel.children.length == 0 ? 
                         this.props.ctlKernel.id :

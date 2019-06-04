@@ -16,7 +16,7 @@ const M_DropdownKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('', AttrNames.CustomDataSource, ValueType.CustomDataSource, null, true),
         new CAttribute('自动感应消值', AttrNames.AutoClearValue, ValueType.Boolean, true),
         new CAttribute('允许多选', AttrNames.MultiSelect, ValueType.Boolean, false),
-        new CAttribute('稳定的数据', AttrNames.StableData, ValueType.Boolean, false),
+        new CAttribute('稳定的数据', AttrNames.StableData, ValueType.Boolean, true),
         new CAttribute('数据分层', 'datagroup', ValueType.String, '', true, true, 'getCanuseColumns'),
         new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes),
     ]),
@@ -174,6 +174,15 @@ class M_DropdownKernel extends ControlKernelBase {
 
     renderSelf(clickHandler) {
         return (<M_Dropdown key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+    }
+
+    get_valuetype(){
+        var allowMulti = this.getAttribute(AttrNames.MultiSelect);
+        if(allowMulti){
+            return ValueType.XML;
+        }
+        var val = this[AttrNames.ValueType];
+        return val == null ? ValueType.String : val;
     }
 
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {

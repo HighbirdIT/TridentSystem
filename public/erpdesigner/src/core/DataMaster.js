@@ -354,7 +354,11 @@ class DataMaster extends EventEmitter{
     }
 
     getAllEntities(){
-        return this.BP_sql_arr.filter(x=>{return x.group == 'custom';}).concat(g_dataBase.entities_arr).concat(EmptyDBEntity);
+        return this.BP_sql_arr.filter(x=>{return x.group == 'custom' && x.type != 'delete';}).concat(g_dataBase.entities_arr).concat(EmptyDBEntity);
+    }
+
+    getDeleteEntities(){
+        return this.BP_sql_arr.filter(x=>{return x.group == 'custom' && x.type == 'delete';}).concat(EmptyDBEntity);
     }
 
     restoreFromJson(json){

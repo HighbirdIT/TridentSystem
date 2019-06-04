@@ -44,6 +44,10 @@ function genValidCheckerAttribute(){
     });
 }
 
+function genScripAttribute(label,name,group){
+    return new CAttribute(label, name, ValueType.Script, null, null, null, null, null, null,{group:group});
+}
+
 class CAttribute{
     constructor(label, name, valueType, defaultVal, editable, isArray, options_arr, dropdownSetting, visible, scriptSetting) {
         Object.assign(this,{
@@ -84,6 +88,10 @@ class CAttribute{
 
 function makeFName_activePage(pageKernel){
     return 'active_' + pageKernel.id;
+}
+
+function makeFName_initPage(pageKernel){
+    return 'init_' + pageKernel.id;
 }
 
 function makeFName_freshForm(formKernel){
@@ -169,6 +177,7 @@ const VarNames={
     NeedSetState:'needSetState',
     InvalidBundle:'invalidbundle',
     NowRecord:'nowRecord',
+    RowState:'rowState',
     RetElem:'retElem',
     ContentElem:'contentElem',
     NavElem:'navElem',
@@ -189,6 +198,17 @@ const VarNames={
     HadStateParam:'hadStateParam',
     PageRouter:'pageRouter',
     gDataCache:'gDataCache',
+    RowIndex:'rowIndex',
+    CallBack:'callBack',
+    FetchKey:'fetchKey',
+    ParentPath:'parentPath',
+    RowIndexInfo_map:'rowIndexInfo_map',
+    SelectMode:'selectMode',
+    FullPath:'fullPath',
+    FullParentPath:'fullParentPath',
+    SelectedRows_arr:'selectedRows_arr',
+    BaseBunlde:'baseBundle',
+    HoldSelected:'holdSelected',
 };
 
 const AttrNames={
@@ -235,9 +255,19 @@ const AttrNames={
     RelFlowStep:'relflowstep',
     GenNavBar:'gennavbar',
     StableData:'stableData',
+    RecEditeable:'recEditeable',
+    RecDeletable:'recDeletable',
+    NewRowDepend:'newRowDepend',
+    SelectMode:'selectMode',
+    EntryParam:'entryParam',
+    ExportParam:'exportParam',
+    PopablePage:'popablepage',
 
     Event:{
-        OnClick:'onclick'
+        OnClick:'onclick',
+        OnUpdate:'onUpdate',
+        OnDelete:'onDelete',
+        OnInsert:'onInsert',
     },
 
     LayoutNames:{
