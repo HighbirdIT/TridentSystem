@@ -68,9 +68,9 @@ const Datepart_dy = 'dy';//年中第几天
 const Datepart_day = 'day';//天
 const Datepart_wk = 'wk';//周
 const Datepart_week = 'week';//星期几
-const Datepart_hours = 'hours';//小时
-const Datepart_minutes = 'minutes';//分钟
-const Datepart_seconds = 'seconds';//秒
+const Datepart_hours = 'hour';//小时
+const Datepart_minutes = 'minute';//分钟
+const Datepart_seconds = 'second';//秒
 const Datepart_ms = 'ms';//毫秒
 const Datepart_arr = [Datepart_year, Datepart_quarter, Datepart_month, Datepart_dy, Datepart_day, Datepart_wk, Datepart_week, Datepart_hours, Datepart_minutes, Datepart_seconds, Datepart_ms];
 
