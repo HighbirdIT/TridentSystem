@@ -198,10 +198,12 @@ app.use('/dingUtility', function (req, res, next) {
     }
     next();
 });
-
+/*
+mac 系统更改
+*/
 app.use('/ERPDesigner/server', function (req, res, next) {
     var jspath = __dirname + '/views/ERPDesigner/server.js';
-    jspath = jspath.replace(/^\//, '');
+    //jspath = jspath.replace(/^\//, '');
     var serverMode = require(jspath);
     serverMode(req, res, next, app, erpPageCache);
     return;
