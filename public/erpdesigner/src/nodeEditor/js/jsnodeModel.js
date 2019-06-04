@@ -86,6 +86,11 @@ class JSNode_Base extends Node_Base {
     }
 
     isInReducer(usePreNodes_arr) {
+        var group = this.bluePrint.group;
+        switch(group){
+            case EJsBluePrintFunGroup.CtlAttr:
+            return true;
+        }
         for (var upi = usePreNodes_arr.length - 2; upi >= 0; --upi) {
             var preNode = usePreNodes_arr[upi];
             if (preNode.type == JSNODE_POP_PAGE || preNode.type == JSNODE_POPMESSAGEBOX) {
