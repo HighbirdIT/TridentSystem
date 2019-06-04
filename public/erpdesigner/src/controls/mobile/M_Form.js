@@ -14,7 +14,7 @@ const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
         new CAttribute('宽度类型',AttrNames.WidthType,ValueType.String,EGridWidthType.Auto,true,false,EGridWidthTypes_arr,{text:'text', value:'value'}),
         new CAttribute('首列序号',AttrNames.AutoIndexColumn,ValueType.Boolean,true),
         new CAttribute('自动滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
-        new CAttribute('模式', AttrNames.SelectMode, ValueType.String, ESelectMode.Multi, true, false, SelectModes_arr),
+        new CAttribute('模式', AttrNames.SelectMode, ValueType.String, ESelectMode.None, true, false, SelectModes_arr),
         new CAttribute('bottomDivID','bottomDivID',ValueType.String,'',true,false,null,null),
     ]),
     new CAttributeGroup('操作设置',[
