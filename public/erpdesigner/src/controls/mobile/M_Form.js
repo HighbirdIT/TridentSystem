@@ -403,6 +403,9 @@ class M_Form extends React.PureComponent {
                     this.props.ctlKernel.children.length == 0 ? 
                         this.props.ctlKernel.id :
                         this.props.ctlKernel.children.map(childKernel=>{
+                            if(childKernel == ctlKernel.gridFormBottomDiv){
+                                return null;
+                            }
                             return childKernel.renderSelf();
                         })
                 }
