@@ -3,17 +3,17 @@ const serverhelper = require('./erpserverhelper.js');
 const co = require('co');
 const sqlTypes = dbhelper.Types;
 const fs = require("fs");
+var cluster = require('cluster');
 
 var flowJs_map = {};
 
 var started = false;
 var workInt = 0;
+var workTimeInt = 5 * 1000;
 
 function startWork(){
     if(workInt == 0){
-        workInt = setInterval(()=>{
-            startFlowProcess();
-        },5 * 1000);
+        workInt = setInterval(startFlowProcess, workTimeInt);
     }
 }
 
@@ -21,11 +21,17 @@ function startFlowProcess(){
     if(started){
         return;
     }
+    var index = Math.round(Math.random() * 1000);
+    //if (cluster.isWorker) {
+        //serverhelper.InformSysManager('woker:' + cluster.worker.id + ' call startFlowProcess', 'startFlowProcess');
+    //}
+    //serverhelper.InformSysManager('call startFlowProcess' + index, 'startFlowProcess');
     started = true;
     return co(function* (){
         var sql = 'select * from FT007E等待执行步骤()';
         var ret = null;
         try{
+            //serverhelper.InformSysManager('do query' + index, 'startFlowProcess');
             ret = yield dbhelper.asynQueryWithParams(sql,null);
         }
         catch(eo){
@@ -33,34 +39,40 @@ function startFlowProcess(){
         }
         if(ret && ret.recordset){
             for(var si in ret.recordset){
+                //serverhelper.InformSysManager('do rcd:' + si + ' -' + index, 'startFlowProcess');
                 var record = ret.recordset[si];
                 doStepRecord(record);
             }
         }
         started = false;
+        workInt = 0;
+        //serverhelper.InformSysManager('end call startFlowProcess' + index, 'startFlowProcess');
     });
 }
 
 var doingStep_map = {};
 
 function reportResult(stepCode,rcdid, result, output, useSec){
-    dbhelper.asynExcute('P007E执行步骤汇报', [
-        dbhelper.makeSqlparam('步骤执行记录代码', sqlTypes.Int, rcdid),
-        dbhelper.makeSqlparam('完成状态', sqlTypes.TinyInt, result),
-        dbhelper.makeSqlparam('输出结果', sqlTypes.NVarChar(1000), output),
-        dbhelper.makeSqlparam('耗用秒数', sqlTypes.Float, useSec),
-    ]);
-    delete doingStep_map[stepCode];
-    stepCode = 0;
+    return co(function* (){
+        var ret = yield dbhelper.asynExcute('P007E执行步骤汇报', [
+            dbhelper.makeSqlparam('步骤执行记录代码', sqlTypes.Int, rcdid),
+            dbhelper.makeSqlparam('完成状态', sqlTypes.TinyInt, result),
+            dbhelper.makeSqlparam('输出结果', sqlTypes.NVarChar(1000), output),
+            dbhelper.makeSqlparam('耗用秒数', sqlTypes.Float, useSec),
+        ]);
+        delete doingStep_map[rcdid];
+    });
 }
 
 function doStepRecord(record){
     var flowCode = record.系统流程名称代码;
     var stepCode = record.流程操作步骤代码;
     var rcdID = record.步骤执行记录代码;
-    if(doingStep_map[stepCode]){
+    if(doingStep_map[rcdID]){
+        //serverhelper.InformSysManager(stepCode + ' is doing,' + Math.random(), 'startFlowProcess');
         return;
     }
+    doingStep_map[rcdID] = record;
 
     return co(function* (){
         var startTime = (new Date()).getTime();
