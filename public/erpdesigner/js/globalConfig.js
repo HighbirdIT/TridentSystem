@@ -70,11 +70,11 @@ var Datepart_dy = 'dy'; //年中第几天
 var Datepart_day = 'day'; //天
 var Datepart_wk = 'wk'; //周
 var Datepart_week = 'week'; //星期几
-var Datepart_hours = 'hours'; //小时
-var Datepart_minutes = 'minutes'; //分钟
-var Datepart_seconds = 'seconds'; //秒
+var Datepart_hour = 'hour'; //小时
+var Datepart_minutes = 'minute'; //分钟
+var Datepart_seconds = 'second'; //秒
 var Datepart_ms = 'ms'; //毫秒
-var Datepart_arr = [Datepart_year, Datepart_quarter, Datepart_month, Datepart_dy, Datepart_day, Datepart_wk, Datepart_week, Datepart_hours, Datepart_minutes, Datepart_seconds, Datepart_ms];
+var Datepart_arr = [Datepart_year, Datepart_quarter, Datepart_month, Datepart_dy, Datepart_day, Datepart_wk, Datepart_week, Datepart_hour, Datepart_minutes, Datepart_seconds, Datepart_ms];
 
 var SocketType_CtlKernel = 'st_ctlkernel';
 
