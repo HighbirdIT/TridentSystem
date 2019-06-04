@@ -20,7 +20,6 @@ debug.enabled = () => {
     return false;
 };
 
-
 const sqlTypes = dbhelper.Types;
 
 var app = express();
