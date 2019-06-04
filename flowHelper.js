@@ -4,6 +4,9 @@ const co = require('co');
 const sqlTypes = dbhelper.Types;
 const fs = require("fs");
 
+//path模块，可以生产相对和绝对路径
+const path =require('path');
+
 var flowJs_map = {};
 
 var started = false;
@@ -16,7 +19,10 @@ function startWork(){
         },5 * 1000);
     }
 }
+function lastest_filepages() {
 
+    
+}
 function startFlowProcess(){
     if(started){
         return;
@@ -202,4 +208,5 @@ module.exports = {
     startFlowProcess:startFlowProcess,
     execFromNotify:execFromNotify,
     startWork:startWork,
+    lastest_filepages:lastest_filepages
 };
