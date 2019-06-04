@@ -625,8 +625,7 @@ class JSNode_BluePrint extends EventEmitter {
                     }
                     else {
                         if (isUseFormColumn) {
-                            initValue = makeStr_getStateByPath(formStateVarName == null ? VarNames.State : formStateVarName, singleQuotesStr(useFormData.formKernel.getStatePath(VarNames.NowRecord)));
-                            theFun.scope.getVar(formNowRecordVarName, true, initValue);
+                            theFun.scope.getVar(formNowRecordVarName, true, formStateVarName + '.' + VarNames.NowRecord);
                         }
                     }
                 }
