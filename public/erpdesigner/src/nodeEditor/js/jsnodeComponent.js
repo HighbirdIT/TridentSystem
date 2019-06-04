@@ -132,7 +132,7 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
         return this.canUseColumns_arr == null ? [] : this.canUseColumns_arr;
     }
 
-    getFormDS(){
+    getFormDS() {
         var nodeData = this.props.nodedata;
         var formKernel = nodeData.bluePrint.master.project.getControlById(nodeData.formID);
         return formKernel.getAttribute(AttrNames.DataSource);
@@ -143,10 +143,10 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
             return null;
         }
         var nodeData = this.props.nodedata;
-        if(socket == nodeData.outDataSocket || socket == nodeData.outErrorSocket){
+        if (socket == nodeData.outDataSocket || socket == nodeData.outErrorSocket) {
             return null;
         }
-        
+
         var entity = this.getFormDS();
         var nowVal = socket.getExtra('colName');
         return (<span className='d-flex align-items-center'><DropDownControl itemChanged={this.socketColumnSelectChanged} btnclass='btn-dark' options_arr={entity == null ? [] : entity.columns} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} socket={socket} textAttrName='name' />
@@ -154,28 +154,28 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
         </span>);
     }
 
-    mouseDownOutSocketHand(ev){
-        var colName = getAttributeByNode(ev.target,'d-colname', true, 5);
-        if(colName == null){
+    mouseDownOutSocketHand(ev) {
+        var colName = getAttributeByNode(ev.target, 'd-colname', true, 5);
+        if (colName == null) {
             return;
         }
-        var socketid = getAttributeByNode(ev.target,'d-socketid', true, 10);
-        if(socketid == null){
+        var socketid = getAttributeByNode(ev.target, 'd-socketid', true, 10);
+        if (socketid == null) {
             return;
         }
         var nodeData = this.props.nodedata;
         var entity = this.getFormDS();
-        if(entity == null){
+        if (entity == null) {
             return;
         }
         var theSocket = nodeData.bluePrint.getSocketById(socketid);
         var bornPos = theSocket.currentComponent.getCenterPos();
-        if(entity.containColumn(colName)){
+        if (entity.containColumn(colName)) {
             var newNode = new FlowNode_ColumnVar({
-                keySocketID:socketid,
-                newborn:true,
-                left:bornPos.x,
-                top:bornPos.y,
+                keySocketID: socketid,
+                newborn: true,
+                left: bornPos.x,
+                top: bornPos.y,
             }, nodeData.parent);
         }
     }
@@ -190,7 +190,7 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
         nodeData.setEntity(selectedDBE);
     }
 
-    clickFreshIcon(){
+    clickFreshIcon() {
         this.props.nodedata.rowSourceChanged();
     }
 
@@ -204,7 +204,7 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
         else {
             var formDS = formKernel.getAttribute(AttrNames.DataSource);
             var newColumns = [];
-            if(formDS != null){
+            if (formDS != null) {
                 formDS.columns.forEach(colItem => {
                     newColumns.push(colItem.name);
                 });
@@ -249,12 +249,28 @@ class C_JSNODE_Insert_table extends React.PureComponent {
         this.props.nodedata.setDSCode(newCode);
     }
 
+    clickAutoCallFetchEnd(ev){
+        var nodeData = this.props.nodedata;
+        nodeData.autoCallFetchEnd = !(nodeData.autoCallFetchEnd != false);
+        this.setState({
+            magicObj:{},
+        });
+    }
+
     render() {
         var nowVal = this.props.nodedata.dsCode;
         var nodeData = this.props.nodedata;
+        var autoCallFetchEnd = nodeData.autoCallFetchEnd != false;
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={nodeData.label} >
             <div className='flex-grow-1 flex-shrink-1'>
                 <DropDownControl ref={this.dropdownRef} itemChanged={this.dbItemChanged} btnclass='btn-dark' options_arr={g_dataBase.getAllTable} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={nowVal ? nowVal : -1} />
+            </div>
+            <div className='bg-light'>
+                <span className='fa-stack fa-lg' onClick={this.clickAutoCallFetchEnd}>
+                    <i className={"fa fa-square-o fa-stack-2x"} />
+                    <i className={'fa fa-stack-1x ' + (autoCallFetchEnd ? ' fa-check text-success' : ' fa-close text-danger')} />
+                </span>
+                AutoCallFetchEnd
             </div>
             <div className='d-flex'>
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
@@ -294,8 +310,8 @@ class C_JSNode_DateFun extends React.PureComponent {
     render() {
         var nodeData = this.props.nodedata;
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' cusHeaderFuc={this.cusHeaderFuc} >
-                <div className='d-flex'>
-                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor}  />
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} />
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} />
             </div>
         </C_Node_Frame>
@@ -358,7 +374,7 @@ class C_JSNode_Query_Sql extends React.PureComponent {
             return null;
         }
         var nodeData = this.props.nodedata;
-        if(socket == nodeData.outDataSocket || socket == nodeData.outErrorSocket){
+        if (socket == nodeData.outDataSocket || socket == nodeData.outErrorSocket) {
             return null;
         }
         var entity = nodeData.targetEntity;
@@ -368,28 +384,28 @@ class C_JSNode_Query_Sql extends React.PureComponent {
         </span>);
     }
 
-    mouseDownOutSocketHand(ev){
-        var colName = getAttributeByNode(ev.target,'d-colname', true, 5);
-        if(colName == null){
+    mouseDownOutSocketHand(ev) {
+        var colName = getAttributeByNode(ev.target, 'd-colname', true, 5);
+        if (colName == null) {
             return;
         }
-        var socketid = getAttributeByNode(ev.target,'d-socketid', true, 10);
-        if(socketid == null){
+        var socketid = getAttributeByNode(ev.target, 'd-socketid', true, 10);
+        if (socketid == null) {
             return;
         }
         var nodeData = this.props.nodedata;
         var entity = nodeData.targetEntity;
-        if(entity == null){
+        if (entity == null) {
             return;
         }
         var theSocket = nodeData.bluePrint.getSocketById(socketid);
         var bornPos = theSocket.currentComponent.getCenterPos();
-        if(entity.containColumn(colName)){
+        if (entity.containColumn(colName)) {
             var newNode = new FlowNode_ColumnVar({
-                keySocketID:socketid,
-                newborn:true,
-                left:bornPos.x,
-                top:bornPos.y,
+                keySocketID: socketid,
+                newborn: true,
+                left: bornPos.x,
+                top: bornPos.y,
             }, nodeData.parent);
         }
     }
@@ -399,10 +415,10 @@ class C_JSNode_Query_Sql extends React.PureComponent {
         var entity = nodeData.targetEntity;
         var dataloaded = entity ? entity.loaded : false;
         var dataMaster = null;
-        if(nodeData.bluePrint.master && nodeData.bluePrint.master.project){
+        if (nodeData.bluePrint.master && nodeData.bluePrint.master.project) {
             dataMaster = nodeData.bluePrint.master.project.dataMaster;
         }
-        else if(nodeData.bluePrint.dataMaster){
+        else if (nodeData.bluePrint.dataMaster) {
             dataMaster = nodeData.bluePrint.dataMaster;
         }
 
@@ -473,16 +489,32 @@ class C_JSNODE_Do_FlowStep extends React.PureComponent {
         C_NodeCom_Base(this);
     }
 
-    flowStepDDCChanged(code,ddc,flowStep) {
+    flowStepDDCChanged(code, ddc, flowStep) {
         this.props.nodedata.setFlowStep(flowStep);
+    }
+
+    clickAutoCallFetchEnd(ev){
+        var nodeData = this.props.nodedata;
+        nodeData.autoCallFetchEnd = !(nodeData.autoCallFetchEnd != false);
+        this.setState({
+            magicObj:{},
+        });
     }
 
     render() {
         var nowVal = this.props.nodedata.flowStepCode;
         var nodeData = this.props.nodedata;
+        var autoCallFetchEnd = nodeData.autoCallFetchEnd != false;
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={'申请执行流程步骤'} >
             <div className='flex-grow-1 flex-shrink-1'>
                 <DropDownControl ref={this.dropdownRef} itemChanged={this.flowStepDDCChanged} btnclass='btn-dark' options_arr={gFlowMaster.getAllSteps} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='fullName' valueAttrName='code' value={nowVal ? nowVal : -1} />
+            </div>
+            <div className='bg-light'>
+                <span className='fa-stack fa-lg' onClick={this.clickAutoCallFetchEnd}>
+                    <i className={"fa fa-square-o fa-stack-2x"} />
+                    <i className={'fa fa-stack-1x ' + (autoCallFetchEnd ? ' fa-check text-success' : ' fa-close text-danger')} />
+                </span>
+                AutoCallFetchEnd
             </div>
             <div className='d-flex'>
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
@@ -501,7 +533,7 @@ class C_JSNode_JumpPage extends React.PureComponent {
         C_NodeCom_Base(this);
     }
 
-    targetPageDDCChanged(code,ddc,pageCode) {
+    targetPageDDCChanged(code, ddc, pageCode) {
         this.props.nodedata.pageCode = code;
     }
 
@@ -529,7 +561,7 @@ class C_JSNode_PopPage extends React.PureComponent {
         C_NodeCom_Base(this);
     }
 
-    targetPageDDCChanged(code,ddc,thePage) {
+    targetPageDDCChanged(code, ddc, thePage) {
         this.props.nodedata.setPage(thePage);
     }
 
@@ -600,22 +632,38 @@ class C_JSNODE_Delete_Table extends React.PureComponent {
         socket.setExtra('colName', newVal);
     }
 
+    clickAutoCallFetchEnd(ev){
+        var nodeData = this.props.nodedata;
+        nodeData.autoCallFetchEnd = !(nodeData.autoCallFetchEnd != false);
+        this.setState({
+            magicObj:{},
+        });
+    }
+
     render() {
         var nodeData = this.props.nodedata;
         var entity = nodeData.targetEntity;
         var dataMaster = null;
-        if(nodeData.bluePrint.master && nodeData.bluePrint.master.project){
+        if (nodeData.bluePrint.master && nodeData.bluePrint.master.project) {
             dataMaster = nodeData.bluePrint.master.project.dataMaster;
         }
-        else if(nodeData.bluePrint.dataMaster){
+        else if (nodeData.bluePrint.dataMaster) {
             dataMaster = nodeData.bluePrint.dataMaster;
         }
+        var autoCallFetchEnd = nodeData.autoCallFetchEnd != false;
 
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='删除数据'>
             <div className='d-flex'>
                 <div className='flex-grow-1 flex-shrink-1'>
                     <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={dataMaster.getDeleteEntities} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={entity ? entity.code : -1} />
                 </div>
+            </div>
+            <div className='bg-light'>
+                <span className='fa-stack fa-lg' onClick={this.clickAutoCallFetchEnd}>
+                    <i className={"fa fa-square-o fa-stack-2x"} />
+                    <i className={'fa fa-stack-1x ' + (autoCallFetchEnd ? ' fa-check text-success' : ' fa-close text-danger')} />
+                </span>
+                AutoCallFetchEnd
             </div>
             <div className='d-flex'>
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} />
@@ -642,7 +690,7 @@ class C_JSNode_FreshForm extends React.PureComponent {
         var holdSelected = nodeData.holdSelected == null ? false : nodeData.holdSelected;
         nodeData.holdSelected = !holdSelected;
         this.setState({
-            magicObj:{}
+            magicObj: {}
         });
     }
 
@@ -654,8 +702,8 @@ class C_JSNode_FreshForm extends React.PureComponent {
             <div className='flex-grow-1 flex-shrink-1'>
                 <div className='bg-light'>
                     <span className='fa-stack fa-lg' onClick={this.clickHoldChecker}>
-                    <i className={"fa fa-square-o fa-stack-2x"} />
-                    <i className={'fa fa-stack-1x ' + (holdSelected ? ' fa-check text-success' : ' fa-close text-danger')} />
+                        <i className={"fa fa-square-o fa-stack-2x"} />
+                        <i className={'fa fa-stack-1x ' + (holdSelected ? ' fa-check text-success' : ' fa-close text-danger')} />
                     </span>
                     保持选中值
                 </div>

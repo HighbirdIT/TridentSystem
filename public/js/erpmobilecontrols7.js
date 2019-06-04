@@ -398,6 +398,11 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             this.setState({ keyword: keyword });
         }
     }, {
+        key: 'clickFreshHandler',
+        value: function clickFreshHandler() {
+            this.props.dropdownctl.foreFresh();
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this4 = this;
@@ -437,6 +442,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             var searchItem = null;
             var contentElem = null;
             var recentElem = null;
+            var freshIconElem = null;
             var recentItems_arr = [];
             if (this.state.fetchingErr) {
                 contentElem = renderFetcingErrDiv(this.state.fetchingErr.info);
@@ -448,6 +454,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                     React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw fa-2x' })
                 );
             } else {
+                freshIconElem = React.createElement('i', { onClick: this.clickFreshHandler, className: 'fa fa-refresh text-success ml-1' });
                 if (options_arr == null) {
                     options_arr = [];
                 }
@@ -699,10 +706,11 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                             ),
                             React.createElement(
                                 'span',
-                                { className: 'text-primary' },
+                                { onClick: this.clickCloseHandler, className: 'text-primary' },
                                 this.state.label,
                                 multiselect ? '(可多选)' : ''
-                            )
+                            ),
+                            freshIconElem
                         )
                     ),
                     multiSelectedElem,
@@ -775,6 +783,13 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 if (this.props.pullOnce != true || this.props.optionsData.options_arr == null) {
                     this.props.pullDataSource(this.props.fullParentPath);
                 }
+            }
+        }
+    }, {
+        key: 'foreFresh',
+        value: function foreFresh() {
+            if (this.props.pullDataSource) {
+                this.props.pullDataSource(this.props.fullParentPath);
             }
         }
     }, {

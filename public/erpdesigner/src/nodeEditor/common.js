@@ -668,6 +668,10 @@ class Node_Base extends EventEmitter {
             if(this.getScoketClientVariable){
                 this.getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result);
             }
+            if(this.serverFun != null){
+                // 遇到有serverFun的节点要中断探测
+                return;
+            }
         }
         if(this.inputScokets_arr){
             this.inputScokets_arr.forEach(inSocket=>{
@@ -677,6 +681,10 @@ class Node_Base extends EventEmitter {
                 }
             });
         }
+    }
+
+    isInReducer(){
+        return false;
     }
 }
 

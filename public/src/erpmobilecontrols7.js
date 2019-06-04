@@ -345,6 +345,10 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
         this.setState({ keyword: keyword });
     }
 
+    clickFreshHandler(){
+        this.props.dropdownctl.foreFresh();
+    }
+
     render() {
         var multiselect = this.state.multiselect;
         var selectedVal = this.state.selectedVal;
@@ -377,6 +381,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
         var searchItem = null;
         var contentElem = null;
         var recentElem = null;
+        var freshIconElem = null;
         var recentItems_arr = [];
         if (this.state.fetchingErr) {
             contentElem = renderFetcingErrDiv(this.state.fetchingErr.info);
@@ -385,6 +390,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             contentElem = (<div className='d-flex align-items-center m-auto'>正在获取数据<i className='fa fa-spinner fa-pulse fa-fw fa-2x' /></div>);
         }
         else {
+            freshIconElem = <i onClick={this.clickFreshHandler} className='fa fa-refresh text-success ml-1' />
             if (options_arr == null) {
                 options_arr = [];
             }
@@ -583,7 +589,12 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             <div className='fixedBackGround'>
                 <div className='dropDownItemContainer d-flex flex-column bg-light flex-shrink-0 rounded'>
                     <div className='d-flex flex-shrink-0'>
-                        <h3><span onClick={this.clickCloseHandler}><i className='fa fa-arrow-left text-primary' /></span><span className='text-primary'>{this.state.label}{multiselect ? '(可多选)' : ''}</span></h3>
+                        <h3><span onClick={this.clickCloseHandler}>
+                            <i className='fa fa-arrow-left text-primary' /></span>
+                            <span onClick={this.clickCloseHandler} className='text-primary'>{this.state.label}{multiselect ? '(可多选)' : ''}
+                            </span>
+                            {freshIconElem}
+                        </h3>
                     </div>
                     {multiSelectedElem}
                     {searchItem}
@@ -643,6 +654,12 @@ class ERPC_DropDown extends React.PureComponent {
             if(this.props.pullOnce != true || this.props.optionsData.options_arr == null){
                 this.props.pullDataSource(this.props.fullParentPath);
             }
+        }
+    }
+
+    foreFresh(){
+        if (this.props.pullDataSource) {
+            this.props.pullDataSource(this.props.fullParentPath);
         }
     }
 
