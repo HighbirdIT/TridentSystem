@@ -1304,6 +1304,9 @@ class MobileContentCompiler extends ContentCompiler {
         if (isPageForm) {
             for (ci in theKernel.children) {
                 childKernel = theKernel.children[ci];
+                if(childKernel == theKernel.gridFormBottomDiv || childKernel.type == EmptyKernel_Type){
+                    continue;
+                }
                 if (this.compileKernel(childKernel, childRenderBlock, renderBlock) == false) {
                     return false;
                 }
