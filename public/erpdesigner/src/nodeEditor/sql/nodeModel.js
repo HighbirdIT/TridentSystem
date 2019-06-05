@@ -21,6 +21,7 @@ const SQLNODE_ENV_VAR = 'envvar';
 const SQLNODE_CURRENTDATAROW = 'currentdatarow';
 const SQLNODE_DELETERECORD = 'deleterecord';
 const SQLNODE_COLUMNVAR = 'sqlcolumnvar';
+const SQLNODE_GETPAGE_ENTRYPARAM = 'getpageenterparam';
 
 var SqlNodeClassMap = {};
 // CONSTSQLNODES_ARR output是常量的节点类型
@@ -3501,6 +3502,87 @@ class SqlNode_ColumnVar extends SqlNode_Base {
     }
 }
 
+class SqlNode_GetPageEntryParam extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, SQLNODE_GETPAGE_ENTRYPARAM, '获取入口参数', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+            }
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inSocket);
+        }
+        this.inSocket.label = '默认值';
+        this.inSocket.inputable = true;
+
+        this.outSocket.type = ValueType.String;
+        this.outSocket.inputable = false;
+        this.headType = 'tiny';
+    }
+
+    paramDDCChanged(value) {
+        this.outSocket.defval = value;
+    }
+
+    customSocketRender(socket) {
+        if (socket.isIn) {
+            return null;
+        }
+        var kernel = this.bluePrint.master.project.getControlById(this.bluePrint.ctlID);
+        if (kernel == null) {
+            return (<span f-canmove={1} className='badge badge-danger'>找不到页面</span>);
+        }
+        var belongPage = kernel.searchParentKernel(M_PageKernel_Type, true);
+        var nowVal = socket.defval;
+        return <DropDownControl itemChanged={this.paramDDCChanged} btnclass='btn-dark' options_arr={belongPage.getAllEntryParams} rootclass='flex-grow-1 flex-shrink-1' textAttrName='value' valueAttrName='name' value={nowVal} />;
+    }
+
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        if (this.checkCompileFlag(IsEmptyString(this.outSocket.defval), '请选择参数', helper)) {
+            return false;
+        }
+
+        var belongPage = this.bluePrint.ctlKernel.searchParentKernel(M_PageKernel_Type, true);
+        var paramName = belongPage.getAttribute(this.outSocket.defval);
+        if (this.checkCompileFlag(IsEmptyString(paramName), '选择的参数非法', helper)) {
+            return false;
+        }
+        var socketComRet = this.getSocketCompileValue(helper, this.inSocket, usePreNodes_arr, null, true);
+        if (socketComRet.err) {
+            return false;
+        }
+
+        helper.addUsePageParam(paramName, socketComRet.value);
+
+        var value = '@pagein_' + paramName;
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, value);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+
+
 SqlNodeClassMap[SQLNODE_DBENTITY] = {
     modelClass: SqlNode_DBEntity,
     comClass: C_SqlNode_DBEntity,
@@ -3592,5 +3674,9 @@ SqlNodeClassMap[SQLNODE_DELETERECORD] = {
 };
 SqlNodeClassMap[SQLNODE_COLUMNVAR] = {
     modelClass: SqlNode_ColumnVar,
+    comClass: C_Node_SimpleNode,
+};
+SqlNodeClassMap[SQLNODE_GETPAGE_ENTRYPARAM] = {
+    modelClass: SqlNode_GetPageEntryParam,
     comClass: C_Node_SimpleNode,
 };

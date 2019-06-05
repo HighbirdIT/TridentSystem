@@ -616,6 +616,7 @@ class ERPC_DropDown extends React.PureComponent {
             opened: false,
         });
 
+        this.hadValueAttr = this.props.valueAttrName != null;
         this.editableInputRef = React.createRef();
         this.initState = null;
         this.contentDivRef = React.createRef();
