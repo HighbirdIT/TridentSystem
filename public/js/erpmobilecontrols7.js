@@ -740,6 +740,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             opened: false
         });
 
+        _this5.hadValueAttr = _this5.props.valueAttrName != null;
         _this5.editableInputRef = React.createRef();
         _this5.initState = null;
         _this5.contentDivRef = React.createRef();

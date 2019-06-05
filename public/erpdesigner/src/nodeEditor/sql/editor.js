@@ -51,6 +51,11 @@ const SqlNodeEditorControls_arr =[
          label:'环境变量',
          nodeClass:SqlNode_Env_Var,
     }
+    ,
+    {
+         label:'Get页面参数',
+         nodeClass:SqlNode_GetPageEntryParam,
+    }
 ]; 
 
 
@@ -1415,6 +1420,7 @@ class SqlNode_CompileHelper{
         this.useEnvVars = {};
         this.compileSeq = [];
         this.varValue_map = {};
+        this.usePageParam = {};
 
         autoBind(this);
     }
@@ -1435,6 +1441,10 @@ class SqlNode_CompileHelper{
 
     addUseEnvVars(varKey){
         this.useEnvVars[varKey] = 1;
+    }
+
+    addUsePageParam(paramName, defVal){
+        this.usePageParam[paramName] = defVal;
     }
 
     clickLogBadgeItemHandler(badgeItem){

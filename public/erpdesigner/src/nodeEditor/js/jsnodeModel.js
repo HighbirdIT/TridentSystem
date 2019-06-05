@@ -6636,11 +6636,7 @@ class JSNode_GetPageEntryParam extends JSNode_Base {
         var nowVal = socket.defval;
         return <DropDownControl itemChanged={this.paramDDCChanged} btnclass='btn-dark' options_arr={belongPage.getAllEntryParams} rootclass='flex-grow-1 flex-shrink-1' textAttrName='value' valueAttrName='name' value={nowVal} />;
     }
-
-    getUseDSColumns() {
-        return [{ name: 'sdfer' }];
-    }
-
+    
     compile(helper, preNodes_arr, belongBlock) {
         var superRet = super.compile(helper, preNodes_arr);
         if (superRet == false || superRet != null) {
