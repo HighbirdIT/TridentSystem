@@ -913,7 +913,7 @@ class FlowScriptFile extends JSFileMaker{
         this.importBlock.pushLine("const fs = require('fs');");
         this.importBlock.pushLine("const forge = require('node-forge');");
 
-        this.processFun = this.scope.getFunction('process', true, ['stepCode', 'pram1', 'param2', 'param3']);
+        this.processFun = this.scope.getFunction('process', true, ['stepCode', 'param1', 'param2', 'param3']);
         
     }
 
