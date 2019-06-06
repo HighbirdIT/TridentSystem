@@ -347,11 +347,13 @@ class MobileContentCompiler extends ContentCompiler {
 
         var activePageFun = clientSide.scope.getFunction(makeFName_activePage(pageKernel), true, ['state']);
         var initPageFun = clientSide.scope.getFunction(makeFName_initPage(pageKernel), true, ['state']);
+        var pageLoadBlock = new FormatFileBlock('onLoad');
         var controlInitBlock = new FormatFileBlock('ctlinit');
         var activeTimeoutBlock = new FormatFileBlock('timeout');
         initPageFun.scope.getVar(VarNames.NeedSetState, true, '[]');
         initPageFun.pushLine('var hadState = state != null;');
         initPageFun.pushLine('if(!hadState){state = store.getState();}');
+        initPageFun.pushChild(pageLoadBlock);
         initPageFun.pushChild(controlInitBlock);
         initPageFun.pushLine('setTimeout(() => {', 1);
         initPageFun.pushChild(activeTimeoutBlock);
@@ -363,6 +365,13 @@ class MobileContentCompiler extends ContentCompiler {
         initPageFun.pushLine("store.dispatch(makeAction_setManyStateByPath(" + VarNames.NeedSetState + ", ''));", -1);
         initPageFun.pushLine('}');
         initPageFun.retBlock.pushLine('return state;');
+
+        var onloadFunName = pageKernel.id + '_' + AttrNames.Event.OnLoad;
+        var onLoadBp = project.scriptMaster.getBPByName(onloadFunName);
+        if (onLoadBp != null) {
+            this.compileScriptBlueprint(onLoadBp,{nomsgbox:true});
+            pageLoadBlock.pushLine('setTimeout(() => {' + makeStr_callFun(onloadFunName) + ';},50);');
+        }
 
         if(isPopable){
             // 弹出式窗体
@@ -732,6 +741,7 @@ class MobileContentCompiler extends ContentCompiler {
         var useColumn = false;
         var useControl = false;
         var useCtlData = null;
+        var delaySet = false;
         var pName;
         var propApiitem;
         if (useFormData) {
@@ -739,6 +749,7 @@ class MobileContentCompiler extends ContentCompiler {
             useControl = !IsEmptyObject(useFormData.useControls_map);
             if (useColumn) {
                 visibleStyle = VisibleStyle_Update;
+                delaySet = true;
             }
             else {
                 if (useControl) {
@@ -760,7 +771,13 @@ class MobileContentCompiler extends ContentCompiler {
         }
         if (!IsEmptyObject(scriptCompileRet.useGlobalControls_map)) {
             //bindMode = ScriptBindMode.OnRelAttrChanged;
-            // 关联的是全局控件的话，不影响其在所在容器中进行初始绑定
+            if(belongFormKernel == null){
+                // 这个控件也是全局控件
+                bindMode = ScriptBindMode.OnRelAttrChanged;
+            }
+            else{
+                // 关联的是全局控件的话，不影响其在所在容器中进行初始绑定
+            }
             for (var useGCSI in scriptCompileRet.useGlobalControls_map) {
                 useCtlData = scriptCompileRet.useGlobalControls_map[useGCSI];
                 for (pName in useCtlData.useprops_map) {
@@ -789,6 +806,7 @@ class MobileContentCompiler extends ContentCompiler {
             bindMode: bindMode,
             useColumn: useColumn,
             useControl: useControl,
+            delaySet : delaySet,
         };
         kernelMidData.needSetStates_arr.push(setStateItem);
         scriptCompileRet.setStateItem = setStateItem;
@@ -2382,17 +2400,22 @@ class MobileContentCompiler extends ContentCompiler {
                         propApiitem = useCtlData.useprops_map[propName];
                         varName = usectlid + '_' + propApiitem.stateName;
                         theFun.scope.getVar(varName, true, ctlStateVarName + '.' + propApiitem.stateName);
-                        if (propApiitem.needValid && needCheckProps_map[varName] == null) {
-                            needCheckProps_map[varName] = 1;
-                            nullableChecker = ctlParentStateVarName ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
-                            needCheckVars_arr.push({
-                                kernel: useCtlData.kernel,
-                                nullable: nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : null,
-                                visibleStateVar: ctlStateVarName,
-                                ctlStateVar: ctlStateVarName,
-                                valueVar: varName,
-                                propApi: propApiitem
-                            });
+                        if (propApiitem.needValid) {
+                            if(needCheckProps_map[varName] == null){
+                                needCheckProps_map[varName] = 1;
+                                nullableChecker = ctlParentStateVarName ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
+                                needCheckVars_arr.push({
+                                    kernel: useCtlData.kernel,
+                                    nullable: nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : null,
+                                    visibleStateVar: ctlStateVarName,
+                                    ctlStateVar: ctlStateVarName,
+                                    valueVar: varName,
+                                    propApi: propApiitem
+                                });
+                            }
+                        }
+                        else{
+                            this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theFun.name, useCtlData.kernel, propApiitem.stateName);
                         }
                         needSetParams_arr.push({ bundleName: varName, clientValue: varName });
                     }

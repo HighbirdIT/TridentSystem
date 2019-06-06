@@ -342,6 +342,17 @@ class C_Node_SimpleNode extends React.PureComponent {
             this.listenNode(nodeData);
         }
         var headType = nodeData.headType == null ? 'tiny' : nodeData.headType;
+        var leftElem = null;
+        if(nodeData.inFlowSockets_arr == null){
+            leftElem = (<C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />);
+        }
+        else{
+            leftElem = (<div className='d-flex flex-column'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inFlowSockets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInputFlowScoketDynamic() ? nodeData.processInputFlowSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+            </div>);
+        }
+
         var rightElem = null;
         if(nodeData.outFlowSockets_arr == null){
             rightElem = (<C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />);
@@ -354,7 +365,7 @@ class C_Node_SimpleNode extends React.PureComponent {
         }
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType={headType} headText={nodeData.label} >
             <div className='d-flex'>
-                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+                {leftElem}
                 {rightElem}
             </div>
         </C_Node_Frame>
