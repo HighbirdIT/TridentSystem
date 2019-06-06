@@ -94,6 +94,30 @@ function handleArr(fileArr) {
     }
 }
 
+//处理flow
+function handleArr(fileArr) {
+    var maxnum_map = {};
+    var file;
+    var i;
+    for (i = 0; i < fileArr.length; i++) {
+        file = fileArr[i];
+        if(maxnum_map[file.module_name] == null || maxnum_map[file.module_name] < file.module_num){
+            maxnum_map[file.module_name] = file.module_num;
+        }
+    }
+    for (i = 0; i < fileArr.length; i++) {
+        file = fileArr[i];
+        if (maxnum_map[file.module_name] > file.module_num) {
+            console.log('delete:' + file.url);
+            fs.unlink(file.url, function (err) {
+                if (err) {
+                    return console.error(err);
+                }
+            });
+        }
+    }
+}
+
 module.exports = {
     doCleanWork:doCleanWork,
 };
