@@ -1,4 +1,4 @@
-const dbhelper = require('../../dbhelper.js');
+const dbhelper = require('../../designerdbhelper.js');
 //const sleep = require('sleep');
 const co = require('co');
 const sqlTypes = dbhelper.Types;
@@ -61,9 +61,9 @@ function process(req, res, next, app, erpPageCache) {
 function doProcess(req, res) {
     switch (req.body.action) {
         case 'syndata_bykeyword':
-            return syndata_bykeyword(req.body.keyword);
+            return syndata_bykeyword(req.body.keyword,req);
         case 'syndata_bycodes':
-            return GetEntityInfo(req.body.codes_arr);
+            return GetEntityInfo(req.body.codes_arr,req);
         case 'getProjectsJson':
             return getProjectsJson();
         case 'createProject':
@@ -201,7 +201,7 @@ function userLogin(req, res, account, password) {
         var realPassword = privateKey.decrypt(password);
 
         var sql1 = 'SELECT [账号记录代码],[账号名称],[权属姓名],[账号密码],[是否有效],[账号盐] FROM [designer].[dbo].[T账号记录] where [账号名称]=@account';
-        var rcdRlt = yield dbhelper.asynQueryWithParams(sql1, [dbhelper.makeSqlparam('account', sqlTypes.NVarChar, realAccount)]);
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql1, [dbhelper.makeSqlparam('account', sqlTypes.NVarChar, realAccount)], null, req);
         if (rcdRlt.recordset.length == 0) {
             return { err: { info: '账号不存在' } };
         }
@@ -220,6 +220,7 @@ function userLogin(req, res, account, password) {
         var logProRet = yield dbhelper.asynExcute('[designer].[dbo].[P用户登录]'
             , [dbhelper.makeSqlparam('账号记录代码', sqlTypes.Int, accountRow.账号记录代码)]
             , [dbhelper.makeSqlparam('登录标识', sqlTypes.NVarChar(36))]
+            ,req
         );
         if (logProRet.output.登录标识 == null) {
             return { err: { info: '登录过程失败' } };
@@ -242,7 +243,7 @@ function getProjectProfile(req) {
         }
         var projTitle = req.body.projTitle;
         var sql = 'SELECT [系统方案名称代码],[方案英文名称],系统流程简称,当前版本 FROM [base1].[dbo].[V002C系统方案名称] where [系统方案名称] = @name and 终止确认状态=0';
-        var rcdRlt = yield dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('name', sqlTypes.NVarChar, projTitle)]);
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('name', sqlTypes.NVarChar, projTitle)],null,req);
         if (rcdRlt.recordset.length == 0) {
             return { err: { info: '本项目未在系统中注册' } };
         }
@@ -274,7 +275,7 @@ function loginUseCoockie(req) {
             return { err: { info: '无cookie' } };
         }
         var sql = 'select * from [designer].[dbo].FT查询登录记录(@记录标识)';
-        var rcdRlt = yield dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('记录标识', sqlTypes.NVarChar, _designerlogRcdId)]);
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('记录标识', sqlTypes.NVarChar, _designerlogRcdId)],null,req);
         if (rcdRlt.recordset.length == 0) {
             return { err: { info: 'cookie失效' } };
         }
@@ -355,7 +356,7 @@ function getPreLogData(req, res) {
 
 function getDataTable(tableName) {
     return co(function* () {
-        var rcdRlt = yield dbhelper.asynQueryWithParams("select * from " + tableName, null);
+        var rcdRlt = yield dbhelper.asynQueryWithParams("select * from " + tableName, null,null,req);
         return rcdRlt.recordset;
     });
 }
@@ -432,7 +433,7 @@ function getProjectsJson() {
     });
 }
 
-function syndata_bykeyword(keyword) {
+function syndata_bykeyword(keyword,req) {
     return co(function* () {
         if (keyword[0] != '%') {
             keyword = "%" + keyword;
@@ -442,17 +443,17 @@ function syndata_bykeyword(keyword) {
         }
         var sql = "select 库内对象名称代码 from T000E库内对象名称 where 终止确认状态=0 and 库内对象名称 like @param";
 
-        var rcdRlt = yield dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('param', sqlTypes.NVarChar, keyword)]);
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('param', sqlTypes.NVarChar, keyword)],null, req);
         if (rcdRlt.recordset.length == 0) {
             return [];
         }
         var entitiesCode_arr = rcdRlt.recordset.map(r => { return r.库内对象名称代码 });
-        var GetEntityInfoRlt = yield GetEntityInfo(entitiesCode_arr);
+        var GetEntityInfoRlt = yield GetEntityInfo(entitiesCode_arr, req);
         return GetEntityInfoRlt;
     });
 }
 
-function GetEntityInfo(codes_arr) {
+function GetEntityInfo(codes_arr,req) {
     return co(function* () {
         var rlt = [];
         var inParams_arr = codes_arr.map((item, i) => { return '@p' + i });
@@ -465,20 +466,20 @@ function GetEntityInfo(codes_arr) {
         //var t = yield WriteEntity(rcdRlt.recordset[0], 目标库内对象_dic);
 
         rlt = yield rcdRlt.recordset.map(entity_dr => {
-            return WriteEntity(entity_dr, 目标库内对象_dic);
+            return WriteEntity(entity_dr, 目标库内对象_dic,req);
         });
 
         return rlt;
     });
 }
 
-function WriteEntity(库内对象_dr, 目标库内对象_dic) {
+function WriteEntity(库内对象_dr, 目标库内对象_dic,req) {
     return co(function* () {
         var 库内对象名称 = 库内对象_dr.库内对象名称;
         目标库内对象_dic[库内对象名称] = 库内对象_dr;
 
         var sql = "select id, name, xtype from sysobjects where name = '" + 库内对象名称 + "'";
-        var 库内对象Sysinfo_dt = yield dbhelper.asynQueryWithParams(sql, null);
+        var 库内对象Sysinfo_dt = yield dbhelper.asynQueryWithParams(sql, null,null,req);
         if (库内对象Sysinfo_dt.recordset.length == 0) {
             return;
         }
@@ -511,10 +512,10 @@ function WriteEntity(库内对象_dr, 目标库内对象_dic) {
         }
 
         sql = "select object_id as id,name, is_identity, is_nullable from sys.all_columns where object_id = " + 库内对象sysid;
-        var 列信息_dt = yield dbhelper.asynQueryWithParams(sql, null);
+        var 列信息_dt = yield dbhelper.asynQueryWithParams(sql, null,null,req);
 
         sql = "select PARAMETER_NAME 参数名,DATA_TYPE 值类型,IS_RESULT 作为结果,ORDINAL_POSITION 位置,PARAMETER_MODE 通讯模式 from INFORMATION_SCHEMA.PARAMETERS where SPECIFIC_NAME='" + 库内对象名称 + "'";
-        var 参数信息_dt = yield dbhelper.asynQueryWithParams(sql, null);
+        var 参数信息_dt = yield dbhelper.asynQueryWithParams(sql, null,null,req);
 
         //DataTable columnDT = Column(theName);
         if (列信息_dt.recordset.length == 0 && 参数信息_dt.recordset.length == 0) {
@@ -523,7 +524,7 @@ function WriteEntity(库内对象_dr, 目标库内对象_dic) {
         var isP = 库内对象名称[0] == 'P';
         if (列信息_dt.recordset.length > 0) {
             sql = "select COLUMN_NAME as 列名称,COLUMN_DEFAULT as 默认值,DATA_TYPE as 值类型 from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='" + 库内对象名称 + "'";
-            var 列模式信息_dt = yield dbhelper.asynQueryWithParams(sql, null);
+            var 列模式信息_dt = yield dbhelper.asynQueryWithParams(sql, null,null,req);
             var 列模式信息_dic = {};
             列模式信息_dt.recordset.forEach(temDr => {
                 列模式信息_dic[temDr.列名称] = temDr;
@@ -574,7 +575,7 @@ function WriteEntity(库内对象_dr, 目标库内对象_dic) {
 function getAllFlow(req){
     return co(function* () {
         var sql = 'SELECT [T007C系统流程名称].[系统流程名称代码],[系统流程名称],[系统流程简称],[流程操作步骤代码],[操作步骤名称],[参数数量],[参数1],[参数2],[参数3],[是否周期步骤],[周期起始时间],[周期类型],[周期值],[下次执行时间] FROM [base1].[dbo].[T007C系统流程名称] left join [T007D流程操作步骤] on [T007D流程操作步骤].[系统流程名称代码] = [T007C系统流程名称].[系统流程名称代码] where [终止确认状态] = 0';
-        var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql,null,null,req);
         return rcdRlt.recordset;
     });
 }
@@ -679,7 +680,7 @@ function publishProject(req, res){
             dbhelper.makeSqlparam('修改用户代码', sqlTypes.Int, userData.id),
             dbhelper.makeSqlparam('版本号', sqlTypes.Int, newVersion),
             dbhelper.makeSqlparam('后台名称', sqlTypes.NVarChar, jsServerName),
-            ]);
+            ],null,req);
         modifyRecordID = rcdRlt.returnValue;
         if(modifyRecordID == -1){
             return {err:{info:'数据库里有更新的文件版本，拒绝了你的修改请求'}};
@@ -756,7 +757,7 @@ function createFlow(req){
             dbhelper.makeSqlparam('userID', sqlTypes.Int, userData.id),
         ];
         var sql = 'INSERT INTO [dbo].[T007C系统流程名称]([系统流程名称],[登记确认状态],[登记确认用户],[登记确认时间])values(@name,1,@userID,getdate()) select SCOPE_IDENTITY()';
-        var newRcdid = yield dbhelper.asynGetScalar(sql, params_arr);
+        var newRcdid = yield dbhelper.asynGetScalar(sql, params_arr,req);
         return newRcdid;
     });
 }
@@ -781,13 +782,13 @@ function modifyFlow(req){
         ];
 
         var sql = 'select * from [dbo].[T007C系统流程名称] where [系统流程名称]=@name and [系统流程名称代码]<>@code';
-        var rcds = yield dbhelper.asynQueryWithParams(sql, params_arr);
+        var rcds = yield dbhelper.asynQueryWithParams(sql, params_arr,null,req);
         if(rcds.recordset.length > 0){
             return { err: { info: '已有同名流程' } };
         }
 
         var updateSql = 'update [dbo].[T007C系统流程名称] set [系统流程名称]=@name where [系统流程名称代码]=@code';
-        yield dbhelper.asynQueryWithParams(updateSql, params_arr);
+        yield dbhelper.asynQueryWithParams(updateSql, params_arr,null,req);
         return true;
     });
 }
@@ -848,7 +849,7 @@ function createFlowStep(req){
             dbhelper.makeSqlparam('周期类型', sqlTypes.NVarChar(20), req.body.周期类型),
         ];
         var sql = insertPart + ')' + valuePart + ") select SCOPE_IDENTITY()";
-        var newRcdid = yield dbhelper.asynGetScalar(sql, params_arr);
+        var newRcdid = yield dbhelper.asynGetScalar(sql, params_arr,req);
         return newRcdid;
     });
 }
@@ -909,7 +910,7 @@ function modifyFlowStep(req){
         ];
 
         var updateSql = updatePart + ' where [流程操作步骤代码]=@code';
-        yield dbhelper.asynQueryWithParams(updateSql, params_arr);
+        yield dbhelper.asynQueryWithParams(updateSql, params_arr,null,req);
         return true;
     });
 }
@@ -1009,7 +1010,7 @@ function publishFlow(req){
         }
 
         var sql = 'select [当前版本] from [dbo].[T007C系统流程名称] where [系统流程名称代码]=' + flowCode;
-        var fileVersion = yield dbhelper.asynGetScalar(sql, null);
+        var fileVersion = yield dbhelper.asynGetScalar(sql, null,req);
 
         var jsServerName = '';
         var jsServerPath = '';
@@ -1023,7 +1024,7 @@ function publishFlow(req){
         fs.writeFileSync(jsServerPath, flowFile);
         
         var updateSql = 'update [T007C系统流程名称] set [当前版本]+=1 where [系统流程名称代码]=' + flowCode;
-        yield dbhelper.asynQueryWithParams(updateSql, null);
+        yield dbhelper.asynQueryWithParams(updateSql, null,null,req);
         return jsServerPath;
     });
 }
