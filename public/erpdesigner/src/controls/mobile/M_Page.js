@@ -11,6 +11,9 @@ const M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('入口参数', AttrNames.EntryParam, ValueType.String, '', true, true),
         new CAttribute('出口参数', AttrNames.ExportParam, ValueType.String, '', true, true),
     ]),
+    new CAttributeGroup('事件',[
+        new CAttribute('OnLoad', AttrNames.Event.OnLoad, ValueType.Event),
+    ]),
 ],false);
 
 class M_PageKernel extends ContainerKernelBase {
@@ -26,6 +29,11 @@ class M_PageKernel extends ContainerKernelBase {
         var self = this;
         autoBind(self);
 
+        var funName = this.id + '_' + AttrNames.Event.OnLoad;
+        var eventBP = this.project.scriptMaster.getBPByName(funName);
+        if(eventBP){
+            eventBP.ctlID = this.id;
+        }
         /*
         var nowParent = this;
         for(var i=0;i<1;++i){
@@ -37,6 +45,10 @@ class M_PageKernel extends ContainerKernelBase {
             }
         }
         */
+    }
+
+    get_name(){
+        return this.id;
     }
 
     set_title(newTitle) {
