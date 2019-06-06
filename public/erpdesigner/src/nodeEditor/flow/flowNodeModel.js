@@ -473,7 +473,7 @@ class FlowNode_BluePrint extends EventEmitter {
             flowJSFile.initProcessFun(stepFun);
             var callFunUseParams_arr = [];
             theStep.params_arr.forEach(param => {
-                callFunUseParams_arr.push('pram' + (callFunUseParams_arr.length + 1));
+                callFunUseParams_arr.push('param' + (callFunUseParams_arr.length + 1));
                 stepFun.headBlock.pushLine('if(' + param + ' == null){return serverhelper.createErrorRet("确失参数[' + param + ']");}');
             });
             var caseBlock = stepSwitchBlock.getCaseBlock(theStep.code);
