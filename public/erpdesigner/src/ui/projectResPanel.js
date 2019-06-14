@@ -3,7 +3,7 @@ class ProjectResPanel extends React.PureComponent {
         super(props);
 
         var initState = {
-            
+            nweUserControlName:''
         };
         this.state = initState;
 
@@ -47,9 +47,33 @@ class ProjectResPanel extends React.PureComponent {
         });
     }
 
+    nweUserControlNameChanged(ev){
+        this.setState({
+            nweUserControlName:ev.target.value.trim(),
+        });
+    }
+
+    clickCreateNewUserControlHandler(ev){
+        if(this.props.project.addUserControl(this.state.nweUserControlName)){
+            this.setState({
+                magicObj:{}
+            });
+        }
+    }
+
+    clickControlItem(ev){
+        var ctlID = getAttributeByNode(ev.target,'d-id', true);
+        var project = this.props.project;
+        project.setEditingControlById(ctlID);
+        this.setState({
+            magicObj:{}
+        });
+    }
+
     render() {
         var project = this.props.project;
         var editingPage = project.getEditingPage();
+        var editingControl = project.getEditingControl();
 
         return (
             <div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
@@ -70,6 +94,18 @@ class ProjectResPanel extends React.PureComponent {
                             return (<span onClick={this.clickPageitem} d-id={page.id} key={page.id} className={'list-group-item list-group-item-action ' + (editingPage == page ? 'active' : '')}>{page.title}</span>);
                         })
                     }
+                </div>
+                <div className='bg-secondary text-light'>自订控件</div>
+                <div className='list-group'>
+                    {
+                        project.userControls_arr.map((userctl)=>{
+                            return (<span onClick={this.clickControlItem} d-id={userctl.id} key={userctl.id} className={'list-group-item list-group-item-action ' + (editingControl == userctl ? 'active' : '')}>{userctl.name}</span>);
+                        })
+                    }
+                </div>
+                <div className='d-flex flex-grow-0 flex-shrink-0'>
+                    <input type='text' className='flexinput flex-grow-1 flex-shrink-1' onChange={this.nweUserControlNameChanged} value={this.state.nweUserControlName} />
+                    <button type="button" onClick={this.clickCreateNewUserControlHandler} className='btn flex-grow-0 flex-shrink-0 btn-success' >创建控件</button>
                 </div>
             </div>
         )

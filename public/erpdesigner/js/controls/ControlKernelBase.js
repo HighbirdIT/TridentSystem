@@ -37,8 +37,14 @@ function findAttrInGroupArrayByName(attName, groupArr) {
     return null;
 }
 
-function GenControlKernelAttrsSetting(cusGroups_arr, includeDefault) {
-    var rlt = [M_ControlKernelBaseAttrsSetting.layoutGrop];
+function GenControlKernelAttrsSetting(cusGroups_arr, includeDefault, includeLayout) {
+    if (includeDefault == null) {
+        includeDefault = true;
+    }
+    if (includeLayout == null) {
+        includeLayout = true;
+    }
+    var rlt = includeLayout ? [M_ControlKernelBaseAttrsSetting.layoutGrop] : [];
 
     for (var si in cusGroups_arr) {
         var cusGroup = cusGroups_arr[si];
@@ -84,7 +90,12 @@ var ControlKernelBase = function (_IAttributeable) {
         var _this = _possibleConstructorReturn(this, (ControlKernelBase.__proto__ || Object.getPrototypeOf(ControlKernelBase)).call(this, initData, null, description));
 
         _this.lisenedDSSyned = _this.lisenedDSSyned.bind(_this);
-        _this.project = parentKernel.project;
+        if (parentKernel == null && type != UserContrlKernel_Type) {
+            Console.error('ControlKernelBase 的 parentKernel不能为空');
+        }
+        if (_this.project == null) {
+            _this.project = parentKernel ? parentKernel.project : null;
+        }
         _this.type = type;
         if (attrbuteGroups == null) {
             attrbuteGroups = [];
@@ -135,11 +146,13 @@ var ControlKernelBase = function (_IAttributeable) {
             }
         }
 
-        _this.project.registerControl(_this);
+        if (_this.project) {
+            _this.project.registerControl(_this);
+        }
         if (createHelper) {
             createHelper.saveJsonMap(kernelJson, _this);
         }
-        if (parentKernel.project != parentKernel) {
+        if (parentKernel && parentKernel.project != parentKernel) {
             parentKernel.appandChild(_this);
         }
         _this.readableName = _this.getReadableName();
@@ -304,7 +317,9 @@ var ControlKernelBase = function (_IAttributeable) {
                 //this.project.designer.attributePanel.setTarget(this);
                 this.project.designer.selectKernel(this);
             }
-            ev.preventDefault();
+            if (ev.preventDefault) {
+                ev.preventDefault();
+            }
         }
     }, {
         key: 'getLayoutConfig',

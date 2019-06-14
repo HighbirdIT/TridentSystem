@@ -3,7 +3,7 @@ class ControlPanel extends React.PureComponent {
         super(props);
 
         var initState = {
-            isPC:this.props.project.designeConfig.editingType == 'PC',
+            isPC:this.props.project.designeConfig.editingType == 'PC'
         };
         this.state = initState;
         this.watchedAttrs = ['editingType'];
@@ -52,6 +52,18 @@ class ControlPanel extends React.PureComponent {
         //console.log('controlIconMouseDown:' + ctltype);
     }
 
+    userControlIconMouseDown(ev){
+        var uid = getAttributeByNode(ev.target, 'u-id');
+        if(uid == null){
+            console.warn('未找到uid');
+            return;
+        }
+        if(this.props.mouseDownUserControlIcon){
+            var targetOffset = $(ev.target).offset();
+            this.props.mouseDownUserControlIcon(uid, targetOffset.left, targetOffset.top);
+        } 
+    }
+
     render() {
         var isPC = this.state.isPC;
         var projectName = this.props.project.designeConfig.name;
@@ -76,6 +88,14 @@ class ControlPanel extends React.PureComponent {
                         )
                     })
                 }
+                <button type="button" className='btn flex-grow-0 flex-shrink-0 bg-secondary text-light' style={{borderRadius:'0em',height:'2.5em'}}>自订控件</button>
+                <div id={projectName + "usercontrols"} className="list-group flex-grow-0 flex-shrink-0" style={{ overflow: 'auto' }}>
+                    {
+                        this.props.project.userControls_arr.map(userctl=>{
+                            return <button key={userctl.id} u-id={userctl.id} type="button" onMouseDown={this.userControlIconMouseDown} className="list-group-item list-group-item-action flex-grow-0 flex-shrink-0">{userctl.name}</button>;
+                        })
+                    }
+                </div>
             </div>
         )
     }

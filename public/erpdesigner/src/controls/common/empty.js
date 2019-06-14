@@ -1,14 +1,14 @@
 const EmptyKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置',[
     ]),
-]);
+], true, false);
 
 
 class EmptyKernel extends ControlKernelBase{
     constructor(initData, parentKernel, createHelper, kernelJson) {
         super(  initData,
                 EmptyKernel_Type,
-                '按钮',
+                'Empty',
                 EmptyKernelAttrsSetting,
                 parentKernel,
                 createHelper,kernelJson

@@ -275,8 +275,8 @@ class M_FormKernel extends ContainerKernelBase{
         return getDSAttrCanuseColumns.call(this,AttrNames.DataSource,AttrNames.CustomDataSource);
     }
     
-    renderSelf(clickHandler){
-        return (<M_Form key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+    renderSelf(clickHandler, replaceChildClick){
+        return (<M_Form key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
     }
 }
 
@@ -327,6 +327,8 @@ class M_Form extends React.PureComponent {
         layoutConfig.addClass('flex-grow-1');
         layoutConfig.addClass('flex-shrink-1');
         var rootStyle = layoutConfig.style;
+
+        var childClickHandlerParam = this.props.replaceChildClick ? this.props.onClick : null;
 
         if(this.props.ctlKernel.__placing){
             layoutConfig.addClass('M_placingCtl');
@@ -398,7 +400,7 @@ class M_Form extends React.PureComponent {
                         </thead>
                         </table>
                     </div>
-                    {ctlKernel.gridFormBottomDiv && ctlKernel.gridFormBottomDiv.renderSelf()}
+                    {ctlKernel.gridFormBottomDiv && ctlKernel.gridFormBottomDiv.renderSelf(childClickHandlerParam)}
                 </div>
             );
             if(widthType == EGridWidthType.Fixed){
@@ -417,7 +419,7 @@ class M_Form extends React.PureComponent {
                             if(childKernel == ctlKernel.gridFormBottomDiv){
                                 return null;
                             }
-                            return childKernel.renderSelf();
+                            return childKernel.renderSelf(childClickHandlerParam);
                         })
                 }
             </div>

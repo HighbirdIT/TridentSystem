@@ -2209,6 +2209,6 @@ JSNodeClassMap[FLOWNODE_COLUMN_VAR] = {
 };
 
 FlowNodeClassMap[FLOWNODE_NOWDATE] = {
-    modelClass: FLOWNODE_NOWDATE,
+    modelClass: FlowNode_NowDate,
     comClass: C_Node_SimpleNode,
 };
