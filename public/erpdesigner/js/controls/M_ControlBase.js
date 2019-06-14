@@ -110,7 +110,9 @@ function M_ControlBase(target, watchedAttrs) {
 
     var layoutState = {};
     LayoutAttrNames_arr.forEach(function (name) {
-        layoutState[name] = ctlKernel.getAttribute(name);
+        if (ctlKernel.hasAttribute(name)) {
+            layoutState[name] = ctlKernel.getAttribute(name);
+        }
     });
     return layoutState;
 }

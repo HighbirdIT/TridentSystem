@@ -31,8 +31,14 @@ function findAttrInGroupArrayByName(attName, groupArr){
 }
 
 
-function GenControlKernelAttrsSetting(cusGroups_arr, includeDefault){
-    var rlt = [M_ControlKernelBaseAttrsSetting.layoutGrop];
+function GenControlKernelAttrsSetting(cusGroups_arr, includeDefault, includeLayout){
+    if(includeDefault == null){
+        includeDefault = true;
+    }
+    if(includeLayout == null){
+        includeLayout = true;
+    }
+    var rlt = includeLayout ? [M_ControlKernelBaseAttrsSetting.layoutGrop] : [];
     
     for(var si in cusGroups_arr){
         var cusGroup = cusGroups_arr[si];
@@ -72,7 +78,12 @@ class ControlKernelBase extends IAttributeable {
     constructor(initData, type, description, attrbuteGroups, parentKernel, createHelper, kernelJson) {
         super(initData, null, description);
         this.lisenedDSSyned = this.lisenedDSSyned.bind(this);
-        this.project = parentKernel.project;
+        if(parentKernel == null && type != UserContrlKernel_Type){
+            Console.error('ControlKernelBase 的 parentKernel不能为空');
+        }
+        if(this.project == null){
+            this.project = parentKernel ? parentKernel.project : null;
+        }
         this.type = type;
         if (attrbuteGroups == null) {
             attrbuteGroups = [];
@@ -124,11 +135,13 @@ class ControlKernelBase extends IAttributeable {
             }
         }
 
-        this.project.registerControl(this);
+        if(this.project){
+            this.project.registerControl(this);
+        }
         if (createHelper) {
             createHelper.saveJsonMap(kernelJson, this);
         }
-        if (parentKernel.project != parentKernel) {
+        if (parentKernel && parentKernel.project != parentKernel) {
             parentKernel.appandChild(this);
         }
         this.readableName = this.getReadableName();
@@ -285,7 +298,9 @@ class ControlKernelBase extends IAttributeable {
             //this.project.designer.attributePanel.setTarget(this);
             this.project.designer.selectKernel(this);
         }
-        ev.preventDefault();
+        if(ev.preventDefault){
+            ev.preventDefault();
+        }
     }
 
     getLayoutConfig() {

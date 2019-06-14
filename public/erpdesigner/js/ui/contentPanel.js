@@ -18,15 +18,18 @@ var ContentPanel = function (_React$PureComponent) {
 
         var project = _this.props.project;
         var editingPage = project.getEditingPage();
+        var editingControl = project.getEditingControl();
         var initState = {
             isPC: _this.props.project.designeConfig.editingType == 'PC',
             title: _this.props.project.getAttribute('title'),
-            editingPage: editingPage
+            editingPage: editingPage,
+            editingControl: editingControl
         };
         _this.state = initState;
 
         _this.watchedAttrs = ['title', 'editingType', 'editingPage'];
         _this.pageCtlRef = React.createRef();
+        _this.userCtlRef = React.createRef();
 
         autoBind(_this);
         return _this;
@@ -55,15 +58,21 @@ var ContentPanel = function (_React$PureComponent) {
             }
             if (needFresh) {
                 var newEditingPage = this.props.project.getEditingPage();
+                var editingControl = this.props.project.getEditingControl();
                 var changedAttrName = this.watchedAttrs[changedAttrIndex];
                 this.setState({
                     isPC: this.props.project.designeConfig.editingType == 'PC',
                     title: this.props.project.getAttribute('title'),
-                    editingPage: newEditingPage
+                    editingPage: newEditingPage,
+                    editingControl: editingControl
                 });
                 //console.log('changedAttrName:' + changedAttrName);
                 if (changedAttrName == 'editingPage' && this.props.project.designer.attributePanel) {
-                    this.props.project.designer.attributePanel.setTarget(newEditingPage);
+                    if (newEditingPage) {
+                        this.props.project.designer.attributePanel.setTarget(newEditingPage);
+                    } else if (editingControl) {
+                        this.props.project.designer.attributePanel.setTarget(editingControl);
+                    }
                 }
             }
         }
@@ -92,11 +101,29 @@ var ContentPanel = function (_React$PureComponent) {
             }
         }
     }, {
+        key: 'renderEditingControl',
+        value: function renderEditingControl(project, editingControl) {
+            if (editingControl == null) return null;
+
+            return React.createElement(
+                'div',
+                { id: 'pageContainer', className: 'bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-1 mobilePage rounded' },
+                React.createElement(CUserControl, { project: project, ctlKernel: editingControl, ref: this.userCtlRef })
+            );
+        }
+    }, {
         key: 'changeEditingPageBtnClickHandler',
         value: function changeEditingPageBtnClickHandler(ev) {
             var target = ev.target;
             var targetPageid = target.getAttribute('pageid');
             this.props.project.setEditingPageById(targetPageid);
+        }
+    }, {
+        key: 'changeEditingControlBtnClickHandler',
+        value: function changeEditingControlBtnClickHandler(ev) {
+            var target = ev.target;
+            var targetCtlid = target.getAttribute('ctlid');
+            this.props.project.setEditingControlById(targetCtlid);
         }
     }, {
         key: 'clickProjSettingBtnHandler',
@@ -120,8 +147,12 @@ var ContentPanel = function (_React$PureComponent) {
             if (found) {
                 return;
             }
-            if (this.props.project.designer.attributePanel && this.state.editingPage) {
-                this.props.project.designer.attributePanel.setTarget(this.state.editingPage);
+            if (this.props.project.designer.attributePanel) {
+                if (this.state.editingPage) {
+                    this.props.project.designer.attributePanel.setTarget(this.state.editingPage);
+                } else if (this.state.editingControl) {
+                    this.props.project.designer.attributePanel.setTarget(this.state.editingControl);
+                }
             }
         }
     }, {
@@ -146,7 +177,11 @@ var ContentPanel = function (_React$PureComponent) {
     }, {
         key: 'placePosChanged',
         value: function placePosChanged(newPos) {
-            this.pageCtlRef.current.tryPlaceKernel(this.placingKernel, newPos);
+            if (this.state.editingControl) {
+                this.userCtlRef.current.tryPlaceKernel(this.placingKernel, newPos);
+            } else if (this.state.editingPage) {
+                this.pageCtlRef.current.tryPlaceKernel(this.placingKernel, newPos);
+            }
             //var $rootDiv = $(this.pageCtlRef.current);
             //console.log($thisDiv);
             //console.log(newPos);
@@ -252,6 +287,7 @@ var ContentPanel = function (_React$PureComponent) {
             var project = this.props.project;
             var isPC = this.state.isPC;
             var editingPage = this.state.editingPage;
+            var editingControl = this.state.editingControl;
             return React.createElement(
                 'div',
                 { className: 'flex-grow-1 flex-shrink-1 d-flex flex-column' },
@@ -292,7 +328,7 @@ var ContentPanel = function (_React$PureComponent) {
                         React.createElement(
                             'button',
                             { type: 'button', className: "p-0 btn btn-secondary dropdown-toggle", 'data-toggle': 'dropdown' },
-                            editingPage ? editingPage.title : '暂无页面'
+                            editingPage ? editingPage.title : editingControl ? '控件:' + editingControl.name : '暂无页面'
                         ),
                         React.createElement(
                             'div',
@@ -304,7 +340,14 @@ var ContentPanel = function (_React$PureComponent) {
                                     page.title
                                 );
                             }),
-                            React.createElement('div', { className: 'dropdown-divider' })
+                            React.createElement('div', { className: 'dropdown-divider' }),
+                            project.userControls_arr.map(function (userCtl) {
+                                return userCtl == editingControl ? null : React.createElement(
+                                    'button',
+                                    { key: userCtl.id, onClick: _this3.changeEditingControlBtnClickHandler, className: 'dropdown-item bg-warning', type: 'button', ctlid: userCtl.id },
+                                    userCtl.name
+                                );
+                            })
                         )
                     )
                 ),
@@ -396,7 +439,8 @@ var ContentPanel = function (_React$PureComponent) {
                     React.createElement(
                         'div',
                         { onClick: this.clickContentDivHander, className: 'flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center' },
-                        this.renderEditingPage(project, editingPage, isPC)
+                        editingPage && this.renderEditingPage(project, editingPage, isPC),
+                        editingControl && this.renderEditingControl(project, editingControl)
                     )
                 )
             );
