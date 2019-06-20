@@ -1994,7 +1994,8 @@ const EMessageBoxType={
 	Tip:'tip',
 	Warning:'warning',
 	Error:'error',
-	Loading:'loading',
+    Loading:'loading',
+    Blank:'blank',
 };
 
 const EMessageBoxBtnType={
@@ -2268,7 +2269,7 @@ class CMessageBoxManger extends React.PureComponent{
     }
 
 	render(){
-		var visibleMsg_arr = this.state.msg_arr.filter(x=>{return !x.hidden;});
+		var visibleMsg_arr = this.state.msg_arr.filter(x=>{return !x.hidden && x.type != EMessageBoxType.Blank;});
 		if(visibleMsg_arr.length == 0){
 			return null;
 		}

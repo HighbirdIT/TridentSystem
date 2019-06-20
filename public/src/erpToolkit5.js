@@ -860,7 +860,11 @@ function aStateChanged(state, path, newValue, oldValue, visited = {}, delayActs)
     visited[path] = 1;
     var rowIndexInfo_map = getRowIndexMapFromPath(path);
     path = rowIndexInfo_map.newPath;
-
+    /*var belongUserCtlProfile = getBelongUserCtlProfile(path);
+    if(belongUserCtlProfile != null){
+        console.log(belongUserCtlProfile);
+    }*/
+    
     if (appStateChangedAct_map != null) {
         var theAct = appStateChangedAct_map[path];
         if (theAct) {
@@ -1131,7 +1135,7 @@ function simpleFreshFormFun(retState, records_arr, formFullID, directBindFun){
     }
     if(formState.recordIndex == useIndex){
         if(directBindFun != null){
-            return directBindFun(retState, useIndex, useIndex);
+            return directBindFun(retState, useIndex, useIndex, formFullID);
         }
         return retState;
     }
@@ -1277,4 +1281,47 @@ function getRowIndexMapFromPath(path){
         rowIndexInfo_map.newPath = path;
     }
     return rowIndexInfo_map;
+}
+
+function getParentPathByKey(orginPath,key){
+    var index = orginPath.lastIndexOf(key);
+    if(index == -1){
+        return '';
+    }
+    var endPos = orginPath.indexOf('.', index + 1);
+    if(endPos == -1){
+        endPos = orginPath.length;
+    }
+    return orginPath.substring(0,endPos);
+}
+
+function getBelongUserCtlPath(orginPath){
+    var index = orginPath.lastIndexOf('UserControl');
+    if(index == -1){
+        return '';
+    }
+    var endPos = orginPath.indexOf('.', index + 1);
+    if(endPos == -1){
+        endPos = orginPath.length;
+    }
+    return orginPath.substring(0,endPos);
+}
+
+function getBelongUserCtlProfile(orginPath){
+    var index = orginPath.lastIndexOf('UserControl');
+    if(index == -1){
+        return null;
+    }
+    var endPos = orginPath.indexOf('.', index + 1);
+    if(endPos == -1){
+        endPos = orginPath.length;
+    }
+    var ctlID = orginPath.substring(index, endPos);
+    var classID = gUserControlInstIdMap[ctlID];
+    return {
+        parentPath:orginPath.substring(0,endPos),
+        ctlID:ctlID,
+        classID:classID,
+        statePath:classID + orginPath.substr(endPos),
+    };
 }

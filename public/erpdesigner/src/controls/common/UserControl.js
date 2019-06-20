@@ -2,6 +2,7 @@ const UserControlKernelTempleAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置',[
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr),
         new CAttribute('refID', 'refID', ValueType.String, 'none', true, false, null, null, false),
+        new CAttribute('属性列表', AttrNames.ParamApi, ValueType.String, '', true, true),
     ]),
 ],  true);
 
@@ -11,20 +12,106 @@ const UserControlKernelAttrsSetting = GenControlKernelAttrsSetting([
         genIsdisplayAttribute(),
         new CAttribute('refID', 'refID', ValueType.String, 'none', true, false, null, null, false),
     ]),
+    new CAttributeGroup('属性接口',[
+    ]),
 ], true, false);
+
+const gUserControlAttsByType_map={};
+const gUserControlParamApiAttr = new CAttribute('属性接口', AttrNames.ParamApi);
 
 
 class UserontrolKernel extends ContainerKernelBase{
     constructor(initData, parentKernel, createHelper, kernelJson) {
         super(  initData,
-                UserContrlKernel_Type,
+                UserControlKernel_Type,
                 '自订控件',
-                (initData == null || initData.refID == null) && (kernelJson == null || kernelJson.refID == null) ? UserControlKernelTempleAttrsSetting : UserControlKernelAttrsSetting,
+                parentKernel == null ? UserControlKernelTempleAttrsSetting : gUserControlAttsByType_map[parentKernel.project.designeConfig.name + '_' + (kernelJson != null ? kernelJson.attr.refID : initData.refID)],
                 parentKernel,
                 createHelper,kernelJson
             );
+        if(parentKernel == null){
+            this.attrsSettingID = this.project.designeConfig.name + '_' + this.id;
+            gUserControlAttsByType_map[this.attrsSettingID] = UserControlKernelAttrsSetting.map(group=>{
+                return group.clone();
+            });
+            this.synControlAttrs();
+        }
+        else{
+            if(kernelJson){
+                this.attrsSettingID = parentKernel.project.designeConfig.name + '_' + kernelJson.attr.refID;
+            }
+            else{
+                this.attrsSettingID = parentKernel.project.designeConfig.name + '_' + this.refID;
+            }
+        }
         var self = this;
         autoBind(self);
+    }
+
+    getParamApiAttrArray(){
+        var attrsSetting = gUserControlAttsByType_map[this.attrsSettingID];
+        var theGroup = attrsSetting.find(group=>{return group.label == '属性接口';});
+        return theGroup.attrs_arr.map(attr=>{
+            return {
+                label:attr.label,
+                name:attr.name,
+            };
+        });
+    }
+
+    getParamAttrByName(targetName){
+        var attrsSetting = gUserControlAttsByType_map[this.attrsSettingID];
+        var theGroup = attrsSetting.find(group=>{return group.label == '属性接口';});
+        return theGroup.attrs_arr.find(attr=>{
+            return attr.name == targetName;
+        });
+    }
+
+    __attributeChanged(attrName, oldValue, value, realAtrrName, indexInArray){
+        if(attrName == AttrNames.ParamApi){
+            this.synControlAttrs();
+        }
+    }
+
+    synControlAttrs(){
+        if(this.attrsSettingID == null){
+            return;
+        }
+        var attrsSetting = gUserControlAttsByType_map[this.attrsSettingID];
+        var paramGroup = attrsSetting.find(group=>{return group.label == '属性接口';});
+        var paramsApis_arr = this.getAttrArrayList(AttrNames.ParamApi);
+        var i;
+        paramGroup.attrs_arr.forEach(attr=>{
+            attr.invalid = true;
+        });
+        paramsApis_arr.forEach(attr=>{
+            var attrAlias = attr.name.replace('_','#');
+            var paramAttr = paramGroup.findAttrByName(attrAlias);
+            if(paramAttr == null){
+                paramAttr = new CAttribute(this.getAttribute(attr.name), attrAlias, ValueType.String,'',true,false,[],{
+                    pullDataFun:GetKernelCanUseColumns,
+                    text:'name',
+                    editable:true,
+                },true,
+                {
+                    scriptable:true,
+                    type:FunType_Client,
+                    group:EJsBluePrintFunGroup.CtlAttr,
+                });
+                paramGroup.appandAttr(paramAttr);
+            }
+            else{
+                paramAttr.label = this.getAttribute(attr.name);
+            }
+            paramAttr.invalid = false;
+        });
+
+        for(i=0;i<paramGroup.attrs_arr.length;++i){
+            if(paramGroup.attrs_arr[i].invalid){
+                paramGroup.attrs_arr.splice(i,1);
+                --i;
+            }
+        }
     }
 
     renderSelf(){
@@ -53,8 +140,10 @@ class UserontrolKernel extends ContainerKernelBase{
     }
 }
 
-var CustomControl_api = new ControlAPIClass(UserContrlKernel_Type);
+var CustomControl_api = new ControlAPIClass(UserControlKernel_Type);
 g_controlApi_arr.push(CustomControl_api);
+CustomControl_api.pushApi(new ApiItem_prop(gUserControlParamApiAttr, AttrNames.ParamApi, false));
+CustomControl_api.pushApi(new ApiItem_propsetter('属性接口'));
 
 class CUserControl extends React.PureComponent {
     constructor(props){
@@ -184,8 +273,8 @@ DesignerConfig.registerControl(
         forPC : false,
         invisible : true,
         label : '自订控件',
-        type : UserContrlKernel_Type,
-        namePrefix : UserContrlKernel_Prefix,
+        type : UserControlKernel_Type,
+        namePrefix : UserControlKernel_Prefix,
         kernelClass:UserontrolKernel,
         reactClass:CUserControl,
         canbeLabeled:true,

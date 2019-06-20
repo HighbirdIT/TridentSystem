@@ -72,6 +72,9 @@ class CProject extends IAttributeable{
             if(jsonData.attr != null){
                 Object.assign(this, jsonData.attr );
             }
+            this.dataMaster.restoreFromJson(jsonData.dataMaster);
+            this.scriptMaster.restoreFromJson(jsonData.scriptMaster);
+            
             if(jsonData.userControls_arr){
                 jsonData.userControls_arr.forEach(ctlJson=>{
                     var newUCtl = new UserontrolKernel({project:this},null,null,ctlJson);
@@ -79,8 +82,6 @@ class CProject extends IAttributeable{
                 });
             }
             var self = this;
-            this.dataMaster.restoreFromJson(jsonData.dataMaster);
-            this.scriptMaster.restoreFromJson(jsonData.scriptMaster);
 
             var ctlCreatioinHelper = new CtlKernelCreationHelper();
             jsonData.content_Mobile.pages.forEach(pageJson=>{

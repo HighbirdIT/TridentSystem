@@ -3080,9 +3080,26 @@ class SqlNode_Control_Api_Prop extends SqlNode_Base {
                 '指定的控件不可访问']);
             return false;
         }
-        helper.addUseControlPropApi(selectedKernel, this.apiItem);
+        var useApiItem = this.apiItem;
+        if (this.apiClass.ctltype == UserControlKernel_Type) {
+            var propAttrName = this.inSocket.getExtra('propAttrName');
+            var propAttr;
+            if (this.checkCompileFlag(IsEmptyString(propAttrName), '需要选择目标属性', helper)) {
+                return false;
+            }
+            var propAttr = selectedKernel.getParamAttrByName(propAttrName);
 
-        var finalStr = '@' + selectedCtlid + '_' + this.apiItem.stateName;
+            if (this.checkCompileFlag(propAttr == null, '目标属性无效', helper)) {
+                return false;
+            }
+
+            useApiItem = Object.assign({}, useApiItem, {
+                stateName: propAttr.label
+            });
+        }
+        helper.addUseControlPropApi(selectedKernel, useApiItem);
+
+        var finalStr = '@' + selectedCtlid + '_' + useApiItem.stateName;
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, finalStr);
         helper.setCompileRetCache(this, selfCompileRet);

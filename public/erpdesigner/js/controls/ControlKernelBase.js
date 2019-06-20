@@ -90,7 +90,7 @@ var ControlKernelBase = function (_IAttributeable) {
         var _this = _possibleConstructorReturn(this, (ControlKernelBase.__proto__ || Object.getPrototypeOf(ControlKernelBase)).call(this, initData, null, description));
 
         _this.lisenedDSSyned = _this.lisenedDSSyned.bind(_this);
-        if (parentKernel == null && type != UserContrlKernel_Type) {
+        if (parentKernel == null && type != UserControlKernel_Type) {
             Console.error('ControlKernelBase 的 parentKernel不能为空');
         }
         if (_this.project == null) {
@@ -507,6 +507,9 @@ var ControlKernelBase = function (_IAttributeable) {
             var rowIndexVar_map = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
             var ignoreRowIndex = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
 
+            if (this.parent == null) {
+                return '';
+            }
             var nowKernel = this.parent;
             var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
             do {

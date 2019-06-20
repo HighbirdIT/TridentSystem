@@ -499,7 +499,7 @@ class JSNode_BluePrint extends EventEmitter {
             }
             this.ctlKernel = ctlKernel;
         }
-        var funName = this.name;
+        var funName = this.name.replace('#', '_');
         var useScope = compilHelper.scope;
         var nomsgbox = false;
         if (compilHelper.config) {
@@ -540,6 +540,12 @@ class JSNode_BluePrint extends EventEmitter {
                 compilHelper.clientSide.setCusValidCheckerBlock.pushLine("gCusValidChecker_map['" + ctlKernel.id + "'] = " + theFun.name + ";");
             }
         }
+        else {
+            if (compilHelper.config && compilHelper.config.params) {
+                params_arr = compilHelper.config.params;
+            }
+        }
+        var belongUserControl = ctlKernel.searchParentKernel(UserControlKernel_Type, true);
         var baseBundleInitBlock = new FormatFileBlock('baseBundle');
         var initValue;
         var varName;
@@ -556,6 +562,13 @@ class JSNode_BluePrint extends EventEmitter {
             var hadCallParm = this.group == EJsBluePrintFunGroup.CtlAttr;
             if (!hadCallParm) {
                 theFun.scope.getVar(VarNames.State, true, 'store.getState()');
+            }
+            if (this.group == EJsBluePrintFunGroup.CtlEvent) {
+                if(belongUserControl){
+                    // 自订控件中的按钮
+                    theFun.scope.getVar(belongUserControl.id + '_path', true, "getAttributeByNode(ev.target,'userctlpath');");
+                    theFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath',[VarNames.State,belongUserControl.id + '_path']));
+                }
             }
             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
                 params_arr = [VarNames.State, VarNames.Bundle];
@@ -592,7 +605,12 @@ class JSNode_BluePrint extends EventEmitter {
                 var isUseFormColumn = !IsEmptyObject(useFormData.useColumns_map);
                 var ctlBelongStateVarName = formStateVarName;
 
-                initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
+                if(belongUserControl){
+                    initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useFormData.formKernel.getStatePath()));
+                }
+                else{
+                    initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
+                }
                 theFun.scope.getVar(formStateVarName, true, initValue);
                 var controlStateDelayGet = false;
 
@@ -628,10 +646,10 @@ class JSNode_BluePrint extends EventEmitter {
                     }
                     else {
                         if (isUseFormColumn) {
-                            if(this.group == EJsBluePrintFunGroup.CtlAttr){
-                                theFun.scope.getVar(formNowRecordVarName, true, makeStr_AddAll(VarNames.Bundle,'==null || ', VarNames.Bundle, "['" + formNowRecordVarName,"'] == null ? ",formStateVarName + '.' + VarNames.NowRecord,' : ', VarNames.Bundle, "['" + formNowRecordVarName,"']"));
+                            if (this.group == EJsBluePrintFunGroup.CtlAttr) {
+                                theFun.scope.getVar(formNowRecordVarName, true, makeStr_AddAll(VarNames.Bundle, '==null || ', VarNames.Bundle, "['" + formNowRecordVarName, "'] == null ? ", formStateVarName + '.' + VarNames.NowRecord, ' : ', VarNames.Bundle, "['" + formNowRecordVarName, "']"));
                             }
-                            else{
+                            else {
                                 theFun.scope.getVar(formNowRecordVarName, true, formStateVarName + '.' + VarNames.NowRecord);
                             }
                         }
@@ -642,7 +660,14 @@ class JSNode_BluePrint extends EventEmitter {
                     for (usectlid in useFormData.useControls_map) {
                         useCtlData = useFormData.useControls_map[usectlid];
                         ctlStateVarName = usectlid + '_state';
-                        initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(usectlid), '{}');
+                        if(useCtlData.kernel.parent == null){
+                            // usercontrol template
+                            //initValue = VarNames.State;
+                            console.error('尚未实现');
+                        }
+                        else{
+                            initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(usectlid), '{}');
+                        }
                         if (controlStateDelayGet) {
                             theFun.scope.getVar(ctlStateVarName, true);
                             validFormSelectBlock.pushLine(makeLine_Assign(ctlStateVarName, initValue));
@@ -714,12 +739,29 @@ class JSNode_BluePrint extends EventEmitter {
             for (usectlid in compilHelper.useGlobalControls_map) {
                 useCtlData = compilHelper.useGlobalControls_map[usectlid];
                 ctlStateVarName = usectlid + '_state';
-                if (this.group == EJsBluePrintFunGroup.CtlAttr) {
-                    initValue = "bundle != null && bundle['" + varName + "'] != null ? bundle['" + varName + "'] : " + makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.getStatePath()));
+                if(useCtlData.kernel.parent == null){
+                    // usercontrol template
+                    if (this.group == EJsBluePrintFunGroup.CtlAttr) {
+                        initValue = VarNames.State;
+                    }
+                    else {
+                        console.error('尚未实现');
+                    }
                 }
-                else {
-                    initValue = makeStr_getStateByPath('store.getState()', singleQuotesStr(useCtlData.kernel.getStatePath()));
+                else{
+                    if (this.group == EJsBluePrintFunGroup.CtlAttr) {
+                        initValue = "bundle != null && bundle['" + varName + "'] != null ? bundle['" + varName + "'] : " + makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.getStatePath()));
+                    }
+                    else {
+                        if(belongUserControl){
+                            initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useCtlData.kernel.getStatePath()));
+                        }
+                        else{
+                            initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.getStatePath()));
+                        }
+                    }
                 }
+                
                 theFun.scope.getVar(ctlStateVarName, true, initValue);
 
                 for (propName in useCtlData.useprops_map) {
@@ -783,8 +825,17 @@ class JSNode_BluePrint extends EventEmitter {
                     validKernelBlock.pushLine("if(validErrState.hasOwnProperty('" + infoStatePath + "')){validErr=validErrState['" + infoStatePath + "'];}");
                     validKernelBlock.pushLine('else{', 1);
                 }
+                var validUseStateName = VarNames.State;
+                if(this.group == EJsBluePrintFunGroup.CtlValid){
+                    validUseStateName = 'comeState';
+                }
+                else{
+                    if(belongUserControl){
+                        validUseStateName = belongUserControl.id + '_state';
+                    }
+                }
                 validKernelBlock.pushLine('validErr = ' + makeStr_callFun('BaseIsValueValid', [
-                    this.group == EJsBluePrintFunGroup.CtlValid ? 'comeState' : VarNames.State,
+                    validUseStateName,
                     varObj.visibleStateVar,
                     varObj.ctlStateVar,
                     varObj.valueVar,
@@ -883,8 +934,12 @@ class JSNode_BluePrint extends EventEmitter {
                 }
 
                 if (needCheckVars_arr.length > 0) {
-                    setInvalidStateBlock.pushLine("if(state == null){store.dispatch(makeAction_setManyStateByPath(validErrState, ''));}");
-                    setInvalidStateBlock.pushLine("else{setManyStateByPath(state,'',validErrState);}");
+                    var pathStr = "''";
+                    if(belongUserControl){
+                        pathStr = belongUserControl.id + '_path';
+                    }
+                    setInvalidStateBlock.pushLine("if(state == null){store.dispatch(makeAction_setManyStateByPath(validErrState, "+pathStr+"));}");
+                    setInvalidStateBlock.pushLine("else{setManyStateByPath(state,"+pathStr+",validErrState);}");
                     setInvalidStateBlock.pushLine("if(hadValidErr){SendToast('验证失败，无法执行', EToastType.Warning);return;}");
                 }
                 setInvalidStateBlock.pushLine("if(err){", 1);
@@ -931,6 +986,8 @@ class JSNode_BluePrint extends EventEmitter {
                     setInvalidStateBlock.pushLine("setManyStateByPath(" + VarNames.State + ", '', validErrState);");
                 }
             }
+        }
+        else {
         }
         theFun.params_arr = params_arr;
         theFun.useForm_map = compilHelper.useForm_map;
@@ -3021,10 +3078,27 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
         if (this.checkCompileFlag(canAccessCtls_arr.indexOf(selectedKernel) == -1, '指定的控件不可访问', helper)) {
             return false;
         }
-        helper.addUseControlPropApi(selectedKernel, this.apiItem, EFormRowSource.Context);
+        var useApiItem = this.apiItem;
+        if (this.apiClass.ctltype == UserControlKernel_Type) {
+            var propAttrName = this.inSocket.getExtra('propAttrName');
+            var propAttr;
+            if (this.checkCompileFlag(IsEmptyString(propAttrName), '需要选择目标属性', helper)) {
+                return false;
+            }
+            var propAttr = selectedKernel.getParamAttrByName(propAttrName);
+
+            if (this.checkCompileFlag(propAttr == null, '目标属性无效', helper)) {
+                return false;
+            }
+
+            useApiItem = Object.assign({}, useApiItem, {
+                stateName: propAttr.label
+            });
+        }
+        helper.addUseControlPropApi(selectedKernel, useApiItem, EFormRowSource.Context);
 
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, selectedKernel.id + '_' + this.apiItem.stateName);
+        selfCompileRet.setSocketOut(this.outSocket, selectedKernel.id + '_' + useApiItem.stateName);
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -3118,13 +3192,36 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
         }
         var valueStr = socketComRet.value;
         var myJSBlock = new FormatFileBlock(this.id);
-        if (batchNode) {
-            myJSBlock.pushLine(needSetVarName + '[' + doubleQuotesStr(selectedKernel.getStatePath(this.apiItem.stateName)) + '] = ' + valueStr + ';');
+
+        var useApiItem = this.apiItem;
+        if (this.apiClass.ctltype == UserControlKernel_Type) {
+            var propAttrName = this.ctlSocket.getExtra('propAttrName');
+            var propAttr;
+            if (this.checkCompileFlag(IsEmptyString(propAttrName), '需要选择目标属性', helper)) {
+                return false;
+            }
+            var propAttr = selectedKernel.getParamAttrByName(propAttrName);
+            if (this.checkCompileFlag(propAttr == null, '目标属性无效', helper)) {
+                return false;
+            }
+            if (batchNode) {
+                myJSBlock.pushLine(needSetVarName + '[' + selectedCtlid + "_path + '." + propAttr.label + "'] = " + valueStr + ';');
+            }
+            else {
+                myJSBlock.pushLine('setTimeout(() => {', 1);
+                myJSBlock.pushLine("store.dispatch(makeAction_setStateByPath(" + valueStr + "," + selectedCtlid + "_path + '." + propAttr.label + "'));", -1);
+                myJSBlock.pushLine('},50);');
+            }
         }
-        else {
-            myJSBlock.pushLine('setTimeout(() => {', 1);
-            myJSBlock.pushLine("store.dispatch(makeAction_setStateByPath(" + valueStr + ",'" + selectedKernel.getStatePath(this.apiItem.stateName) + "'));", -1);
-            myJSBlock.pushLine('},50);');
+        else{
+            if (batchNode) {
+                myJSBlock.pushLine(needSetVarName + '[' + doubleQuotesStr(selectedKernel.getStatePath(this.apiItem.stateName)) + '] = ' + valueStr + ';');
+            }
+            else {
+                myJSBlock.pushLine('setTimeout(() => {', 1);
+                myJSBlock.pushLine("store.dispatch(makeAction_setStateByPath(" + valueStr + ",'" + selectedKernel.getStatePath(this.apiItem.stateName) + "'));", -1);
+                myJSBlock.pushLine('},50);');
+            }
         }
 
         belongBlock.pushChild(myJSBlock);
@@ -4508,6 +4605,14 @@ class JSNode_FreshForm extends JSNode_Base {
             socketValue = formKernel.id;
             selectedKernel = formKernel;
         }
+        var belongUserControl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
+        var parentPath = selectedKernel.parent.getStatePath();
+        if(belongUserControl){
+            parentPath = belongUserControl.id + '_path' + (parentPath.length == 0 ? '' : "+'." + parentPath+"'");
+        }
+        else{
+            parentPath = singleQuotesStr(parentPath);
+        }
         var freshFunName = 'fresh_' + socketValue;
         var formDS = selectedKernel.getAttribute(AttrNames.DataSource);
 
@@ -4515,10 +4620,10 @@ class JSNode_FreshForm extends JSNode_Base {
         var myJSBlock = new FormatFileBlock('ret');
         if (formDS != null) {
             freshFunName = makeFName_pull(selectedKernel);
-            myJSBlock.pushLine('setTimeout(() => {' + freshFunName + '(null,' + holdSelected + ');},50);');
+            myJSBlock.pushLine('setTimeout(() => {' + makeStr_callFun(freshFunName, ['null', holdSelected,parentPath]) + ';},50);');
         }
         else {
-            myJSBlock.pushLine(makeStr_callFun(freshFunName, ['state', holdSelected]));
+            myJSBlock.pushLine(makeStr_callFun(freshFunName, ['state', holdSelected,parentPath]));
         }
         belongBlock.pushChild(myJSBlock);
 

@@ -233,7 +233,10 @@ var VarNames = {
     FullParentPath: 'fullParentPath',
     SelectedRows_arr: 'selectedRows_arr',
     BaseBunlde: 'baseBundle',
-    HoldSelected: 'holdSelected'
+    HoldSelected: 'holdSelected',
+    Userctlpath: 'userctlpath',
+    OldValue: 'oldValue',
+    SatePath: 'statePath'
 };
 
 var AttrNames = {
@@ -287,6 +290,7 @@ var AttrNames = {
     EntryParam: 'entryParam',
     ExportParam: 'exportParam',
     PopablePage: 'popablepage',
+    ParamApi: 'paramapi',
 
     Event: {
         OnClick: 'onclick',

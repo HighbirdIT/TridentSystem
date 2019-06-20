@@ -173,7 +173,7 @@ class M_DropdownKernel extends ControlKernelBase {
     }
 
     renderSelf(clickHandler) {
-        return (<M_Dropdown key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+        return (<M_Dropdown key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler}/>)
     }
 
     get_valuetype(){

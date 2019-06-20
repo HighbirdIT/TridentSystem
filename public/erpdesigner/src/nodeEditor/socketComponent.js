@@ -92,6 +92,13 @@ class C_Node_Socket extends React.PureComponent{
 
     kernelChangedHandler(newid, ddc){
         ddc.props.socket.setExtra('ctlid', newid);
+        this.setState({
+            magicObj:{},
+        });
+    }
+
+    userCtlPropChangedHandler(newname, ddc){
+        ddc.props.socket.setExtra('propAttrName', newname);
     }
 
     render(){
@@ -167,6 +174,7 @@ class C_Node_Socket extends React.PureComponent{
         var valTypeElem = null;
         if(socket.type == SocketType_CtlKernel){
             var kernelType = socket.kernelType;
+            socket.hideIcon = true;
             if(kernelType == null){
                 if(socket.isIn){
                     valTypeElem = <span f-canmove={1} className='badge badge-primary'>任意控件</span>
@@ -191,7 +199,16 @@ class C_Node_Socket extends React.PureComponent{
                                 if(nowCtlId == null){
                                     nowCtlId = 0;
                                 }
-                                inputElem = (<DropDownControl socket={socket} options_arr={ctlKernel.getAccessableKernels} funparamobj={kernelType} value={nowCtlId} itemChanged={this.kernelChangedHandler} textAttrName='readableName' valueAttrName='id' />);
+                            inputElem = [<DropDownControl key='ctlddc' socket={socket} options_arr={ctlKernel.getAccessableKernels} funparamobj={kernelType} value={nowCtlId} itemChanged={this.kernelChangedHandler} textAttrName='readableName' valueAttrName='id' />];
+                                if(kernelType == UserControlKernel_Type){
+                                    if(socket.node.type == JSNODE_CONTROL_API_PROP || socket.node.type == JSNODE_CONTROL_API_PROPSETTER){
+                                        var nowCtlkernel = bluePrint.master.project.getControlById(nowCtlId);
+                                        var nowPropValue = socket.getExtra('propAttrName');
+                                        if(nowCtlkernel){
+                                            inputElem.push(<DropDownControl key='propddc' socket={socket} options_arr={nowCtlkernel.getParamApiAttrArray} value={nowPropValue} itemChanged={this.userCtlPropChangedHandler} textAttrName='label' valueAttrName='name' />);
+                                        }
+                                    }
+                                }
                             }
                             break;
                         }

@@ -771,7 +771,7 @@ class JSFile_Class extends JSFile_Scope{
 
     getFunction(funName, autoCreate, params_arr){
         var rlt = super.getFunction(funName, autoCreate, params_arr);
-        if(rlt.declareType != 'classfun'){
+        if(rlt && rlt.declareType != 'classfun'){
             rlt.declareType = 'classfun';
         }
         return rlt;
