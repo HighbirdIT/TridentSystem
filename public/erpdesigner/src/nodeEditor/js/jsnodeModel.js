@@ -546,6 +546,7 @@ class JSNode_BluePrint extends EventEmitter {
             }
         }
         var belongUserControl = ctlKernel.searchParentKernel(UserControlKernel_Type, true);
+        var belongFormControl = ctlKernel.searchParentKernel(M_FormKernel_Type, true);
         var baseBundleInitBlock = new FormatFileBlock('baseBundle');
         var initValue;
         var varName;
@@ -566,7 +567,7 @@ class JSNode_BluePrint extends EventEmitter {
             if (this.group == EJsBluePrintFunGroup.CtlEvent) {
                 if(belongUserControl){
                     // 自订控件中的按钮
-                    theFun.scope.getVar(belongUserControl.id + '_path', true, "getAttributeByNode(ev.target,'userctlpath');");
+                    theFun.scope.getVar(belongUserControl.id + '_path', true, "getAttributeByNode(ev.target,'userctlpath')");
                     theFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath',[VarNames.State,belongUserControl.id + '_path']));
                 }
             }
@@ -584,6 +585,13 @@ class JSNode_BluePrint extends EventEmitter {
                 }
                 else {
                     fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.id + funName + '_'), '+', VarNames.RowIndex);
+                }
+                theFun.scope.getVar(belongFormControl.id + "_path", true, 'this.props.fullPath');
+                theFun.scope.getVar(belongFormControl.id + "_state", true,  makeStr_callFun('getStateByPath',[VarNames.State,'this.props.fullPath']));
+                if(belongUserControl){
+                    // 自订控件中的按钮
+                    theFun.scope.getVar(belongUserControl.id + '_path', true, "getBelongUserCtlPath(this.props.fullPath)");
+                    theFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath',[VarNames.State,belongUserControl.id + '_path']));
                 }
             }
             var validFormSelectBlock = new FormatFileBlock('validFormSelectBlock');

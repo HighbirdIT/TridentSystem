@@ -266,6 +266,7 @@ const AttrNames={
     ExportParam:'exportParam',
     PopablePage:'popablepage',
     ParamApi:'paramapi',
+    StarSelectable:'starSelectable',
 
     Event:{
         OnClick:'onclick',

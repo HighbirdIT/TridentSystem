@@ -702,7 +702,7 @@ function setStateByPath(state, path, value, visited) {
             for(var acti in delayActs){
                 var theAct = delayActs[acti];
                 if(typeof(theAct.callfun) === 'function'){
-                    theAct.callfun();
+                    theAct.callfun.apply(theAct.thisParam ? theAct.thisParam : window, theAct.params_arr);
                 }
             }
         }, 50);
@@ -844,7 +844,7 @@ function setManyStateByPath(state, path, valuesObj, visited) {
             for(var acti in delayActs){
                 var theAct = delayActs[acti];
                 if(typeof(theAct.callfun) === 'function'){
-                    theAct.callfun();
+                    theAct.callfun.apply(theAct.thisParam ? theAct.thisParam : window, theAct.params_arr);
                 }
             }
         }, 50);
@@ -1324,4 +1324,14 @@ function getBelongUserCtlProfile(orginPath){
         classID:classID,
         statePath:classID + orginPath.substr(endPos),
     };
+}
+
+function CombineDotStr(){
+	var rlt = '';
+    for (var i = 0; i < arguments.length; ++i) {
+        if (arguments[i] == null || arguments[i].length == 0)
+            continue;
+        rlt += (rlt.length == 0 ? '' : '.') + arguments[i];
+    }
+    return rlt;
 }
