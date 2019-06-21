@@ -4,15 +4,18 @@ class ContentPanel extends React.PureComponent {
 
         var project = this.props.project;
         var editingPage = project.getEditingPage();
+        var editingControl = project.getEditingControl();
         var initState = {
             isPC: this.props.project.designeConfig.editingType == 'PC',
             title: this.props.project.getAttribute('title'),
             editingPage: editingPage,
+            editingControl: editingControl,
         };
         this.state = initState;
 
         this.watchedAttrs = ['title', 'editingType', 'editingPage'];
         this.pageCtlRef = React.createRef();
+        this.userCtlRef = React.createRef();
 
         autoBind(this);
     }
@@ -38,15 +41,22 @@ class ContentPanel extends React.PureComponent {
         }
         if (needFresh) {
             var newEditingPage = this.props.project.getEditingPage();
+            var editingControl = this.props.project.getEditingControl();
             var changedAttrName = this.watchedAttrs[changedAttrIndex];
             this.setState({
                 isPC: this.props.project.designeConfig.editingType == 'PC',
                 title: this.props.project.getAttribute('title'),
                 editingPage: newEditingPage,
+                editingControl: editingControl,
             });
             //console.log('changedAttrName:' + changedAttrName);
             if (changedAttrName == 'editingPage' && this.props.project.designer.attributePanel) {
-                this.props.project.designer.attributePanel.setTarget(newEditingPage);
+                if(newEditingPage){
+                    this.props.project.designer.attributePanel.setTarget(newEditingPage);   
+                }
+                else if(editingControl){
+                    this.props.project.designer.attributePanel.setTarget(editingControl);   
+                }
             }
         }
     }
@@ -74,10 +84,27 @@ class ContentPanel extends React.PureComponent {
         }
     }
 
+    renderEditingControl(project, editingControl){
+        if (editingControl == null)
+            return null;
+
+        return (
+            <div id='pageContainer' className='bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-1 mobilePage rounded' >
+                <CUserControl project={project} ctlKernel={editingControl} ref={this.userCtlRef} />
+            </div>
+        );
+    }
+
     changeEditingPageBtnClickHandler(ev) {
         var target = ev.target;
         var targetPageid = target.getAttribute('pageid');
         this.props.project.setEditingPageById(targetPageid);
+    }
+
+    changeEditingControlBtnClickHandler(ev) {
+        var target = ev.target;
+        var targetCtlid = target.getAttribute('ctlid');
+        this.props.project.setEditingControlById(targetCtlid);
     }
 
     clickProjSettingBtnHandler(ev) {
@@ -99,8 +126,13 @@ class ContentPanel extends React.PureComponent {
         if (found) {
             return;
         }
-        if (this.props.project.designer.attributePanel && this.state.editingPage) {
-            this.props.project.designer.attributePanel.setTarget(this.state.editingPage);
+        if (this.props.project.designer.attributePanel) {
+            if(this.state.editingPage){
+                this.props.project.designer.attributePanel.setTarget(this.state.editingPage);
+            }
+            else if(this.state.editingControl){
+                this.props.project.designer.attributePanel.setTarget(this.state.editingControl);
+            }
         }
     }
 
@@ -123,7 +155,12 @@ class ContentPanel extends React.PureComponent {
     }
 
     placePosChanged(newPos){
-        this.pageCtlRef.current.tryPlaceKernel(this.placingKernel,newPos);
+        if(this.state.editingControl){
+            this.userCtlRef.current.tryPlaceKernel(this.placingKernel,newPos);
+        }
+        else if(this.state.editingPage){
+            this.pageCtlRef.current.tryPlaceKernel(this.placingKernel,newPos);
+        }
         //var $rootDiv = $(this.pageCtlRef.current);
         //console.log($thisDiv);
         //console.log(newPos);
@@ -221,6 +258,7 @@ class ContentPanel extends React.PureComponent {
         var project = this.props.project;
         var isPC = this.state.isPC;
         var editingPage = this.state.editingPage;
+        var editingControl = this.state.editingControl;
         return (
             <div className='flex-grow-1 flex-shrink-1 d-flex flex-column'>
                 <div className='flex-grow-0 flex-shrink-1 d-flex bg-secondary projectContentHeader align-items-center'>
@@ -240,7 +278,7 @@ class ContentPanel extends React.PureComponent {
                     </div>
                     <div className='flex-grow-0 flex-shrink-1'>
                         <button type="button" className={"p-0 btn btn-secondary dropdown-toggle"} data-toggle="dropdown">
-                            {editingPage ? editingPage.title : '暂无页面'}
+                            {editingPage ? editingPage.title : (editingControl ? '控件:' + editingControl.name : '暂无页面')}
                         </button>
                         <div className="dropdown-menu">
                             {(isPC ? project.content_PC.pages : project.content_Mobile.pages).map(page => {
@@ -248,6 +286,11 @@ class ContentPanel extends React.PureComponent {
                             })
                             }
                             <div className="dropdown-divider"></div>
+                            {
+                                project.userControls_arr.map(userCtl=>{
+                                    return userCtl == editingControl ? null : (<button key={userCtl.id} onClick={this.changeEditingControlBtnClickHandler} className="dropdown-item bg-warning" type="button" ctlid={userCtl.id}>{userCtl.name}</button>)
+                                })
+                            }
                         </div>
                     </div>
                 </div>
@@ -262,9 +305,8 @@ class ContentPanel extends React.PureComponent {
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickExprotBtnHandler} ><div>导出</div></button>
                     </div>
                     <div onClick={this.clickContentDivHander} className='flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center'>
-                        {
-                            this.renderEditingPage(project, editingPage, isPC)
-                        }
+                        {editingPage && this.renderEditingPage(project, editingPage, isPC)}
+                        {editingControl && this.renderEditingControl(project, editingControl)}
                     </div>
                 </div>
             </div>

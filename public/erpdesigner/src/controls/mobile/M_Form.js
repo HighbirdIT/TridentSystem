@@ -35,6 +35,7 @@ class M_FormKernel extends ContainerKernelBase{
                 createHelper,kernelJson
             );
 
+        this.projectLoadedHanlder = this.projectLoadedHanlder.bind(this);
         var cusDsName = this.id + '_' + AttrNames.CustomDataSource;
         var cusDS_bp = this.project.dataMaster.getSqlBPByName(cusDsName);
         if(cusDS_bp == null){
@@ -72,13 +73,12 @@ class M_FormKernel extends ContainerKernelBase{
             return child.id == bottomDivID;
         });
         if(gridFormBottomDiv == null){
-            gridFormBottomDiv = new M_ContainerKernel({},this);
-            gridFormBottomDiv.name = this.id + '底部';
-            gridFormBottomDiv.growAttrArray(AttrNames.LayoutNames.StyleAttr);
-            gridFormBottomDiv.growAttrArray(AttrNames.LayoutNames.StyleAttr);
-            gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexGrow,value:false},0);
-            gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexShrink,value:false},1);
-            this.setAttribute('bottomDivID', gridFormBottomDiv.id);
+            if(this.project.loaded){
+                this.projectLoadedHanlder();
+            }
+            else{
+                this.project.on('loaded', this.projectLoadedHanlder);
+            }
         }
         this.gridFormBottomDiv = gridFormBottomDiv;
 
@@ -96,6 +96,17 @@ class M_FormKernel extends ContainerKernelBase{
         
         var self = this;
         autoBind(self);
+    }
+
+    projectLoadedHanlder(){
+        var gridFormBottomDiv = new M_ContainerKernel({},this);
+        gridFormBottomDiv.name = this.id + '底部';
+        gridFormBottomDiv.growAttrArray(AttrNames.LayoutNames.StyleAttr);
+        gridFormBottomDiv.growAttrArray(AttrNames.LayoutNames.StyleAttr);
+        gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexGrow,value:false},0);
+        gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexShrink,value:false},1);
+        this.setAttribute('bottomDivID', gridFormBottomDiv.id);
+        this.gridFormBottomDiv = gridFormBottomDiv;
     }
 
     scriptCreated(attrName, scriptBP){
@@ -264,8 +275,8 @@ class M_FormKernel extends ContainerKernelBase{
         return getDSAttrCanuseColumns.call(this,AttrNames.DataSource,AttrNames.CustomDataSource);
     }
     
-    renderSelf(clickHandler){
-        return (<M_Form key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+    renderSelf(clickHandler, replaceChildClick){
+        return (<M_Form key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
     }
 }
 
@@ -316,6 +327,8 @@ class M_Form extends React.PureComponent {
         layoutConfig.addClass('flex-grow-1');
         layoutConfig.addClass('flex-shrink-1');
         var rootStyle = layoutConfig.style;
+
+        var childClickHandlerParam = this.props.replaceChildClick ? this.props.onClick : null;
 
         if(this.props.ctlKernel.__placing){
             layoutConfig.addClass('M_placingCtl');
@@ -387,7 +400,7 @@ class M_Form extends React.PureComponent {
                         </thead>
                         </table>
                     </div>
-                    {ctlKernel.gridFormBottomDiv.renderSelf()}
+                    {ctlKernel.gridFormBottomDiv && ctlKernel.gridFormBottomDiv.renderSelf(childClickHandlerParam)}
                 </div>
             );
             if(widthType == EGridWidthType.Fixed){
@@ -406,7 +419,7 @@ class M_Form extends React.PureComponent {
                             if(childKernel == ctlKernel.gridFormBottomDiv){
                                 return null;
                             }
-                            return childKernel.renderSelf();
+                            return childKernel.renderSelf(childClickHandlerParam);
                         })
                 }
             </div>

@@ -37,6 +37,7 @@ class CProject extends IAttributeable{
         this.dataMaster = new DataMaster(this);
         this.scriptMaster = new ScriptMaster(this);
         this.project = this;
+        this.userControls_arr = [];
 
         this.designeConfig={
             name:genProjectName(),
@@ -44,7 +45,10 @@ class CProject extends IAttributeable{
             editingPage:{
                 id:jsonData == null ? -1 : jsonData.lastEditingPageID
             },
-            description:'页面'
+            description:'页面',
+            editingControl:{
+                id:jsonData == null ? -1 : jsonData.lastEditingControlID
+            }
         }
 
         this.content_PC={
@@ -67,6 +71,12 @@ class CProject extends IAttributeable{
         else{
             if(jsonData.attr != null){
                 Object.assign(this, jsonData.attr );
+            }
+            if(jsonData.userControls_arr){
+                jsonData.userControls_arr.forEach(ctlJson=>{
+                    var newUCtl = new UserontrolKernel({project:this},null,null,ctlJson);
+                    this.userControls_arr.push(newUCtl);
+                });
             }
             var self = this;
             this.dataMaster.restoreFromJson(jsonData.dataMaster);
@@ -102,6 +112,44 @@ class CProject extends IAttributeable{
                 });
             }
         }
+    }
+
+    addUserControl(name){
+        name = name.trim();
+        if(name.length < 2 || name.length > 20){
+            return null;
+        }
+        var foundItem = this.userControls_arr.find(x=>{return x.name == name;});
+        if(foundItem != null){
+            return null;
+        }
+        var newID = 'userControl';
+        var ki = 0;
+        do{
+            newID = 'userControl_T' + ki;
+            foundItem = this.userControls_arr.find(x=>{return x.id == newID;});
+            if(foundItem == null){
+                break;
+            }
+            ki++;
+        }while(ki < 1000)
+        var newControl = new UserontrolKernel({id:newID,name:name,project:this},null);
+        this.userControls_arr.push(newControl);
+        return newControl;
+    }
+
+    getEditingControl(){
+        return this.getUserControlById(this.designeConfig.editingControl.id);
+    }
+
+    getUserControlById(id){
+        return this.userControls_arr.find(x=>{return x.id == id;});
+    }
+
+    setEditingControlById(ctlID){
+        this.designeConfig.editingPage.id = -1;
+        this.designeConfig.editingControl.id = ctlID;
+        this.attrChanged('editingPage');
     }
 
     registerControl(ctlKernel){
@@ -174,6 +222,7 @@ class CProject extends IAttributeable{
         var thePage = this.getPageById(pageID);
         //if(thePage == null)
             //return false;
+        this.designeConfig.editingControl.id = -1;
         this.designeConfig.editingPage.id = pageID;
         this.attrChanged('editingPage');
     }
@@ -292,11 +341,12 @@ class CProject extends IAttributeable{
         var attrJson=super.getJson(jsonProf);
         var rlt = {
             attr:attrJson,
-            lastEditingPageID:this.designeConfig.editingPage.id
+            lastEditingPageID:this.designeConfig.editingPage.id,
+            lastEditingControlID:this.designeConfig.editingControl.id
         };
         rlt.content_PC={
             pages:[],
-        }
+        };
         this.content_PC.pages.forEach(
             page=>{
                 rlt.content_PC.pages.push(page.getJson(jsonProf));
@@ -305,12 +355,15 @@ class CProject extends IAttributeable{
 
         rlt.content_Mobile={
             pages:[],
-        }
+        };
         this.content_Mobile.pages.forEach(
             page=>{
                 rlt.content_Mobile.pages.push(page.getJson(jsonProf));
             }
         );
+        rlt.userControls_arr=this.userControls_arr.map(ctl=>{
+            return ctl.getJson(jsonProf);
+        });
         rlt.dataMaster = this.dataMaster.getJson(jsonProf);
         rlt.scriptMaster = this.scriptMaster.getJson(jsonProf);
         rlt.useEntities_arr = jsonProf.entities_arr.map(entity=>{

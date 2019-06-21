@@ -268,6 +268,7 @@ const AttrNames={
         OnUpdate:'onUpdate',
         OnDelete:'onDelete',
         OnInsert:'onInsert',
+        OnLoad:'onLoad',
     },
 
     LayoutNames:{
