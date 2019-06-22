@@ -3094,7 +3094,8 @@ class SqlNode_Control_Api_Prop extends SqlNode_Base {
             }
 
             useApiItem = Object.assign({}, useApiItem, {
-                stateName: propAttr.label
+                stateName: propAttr.label,
+                useAttrName: propAttrName,
             });
         }
         helper.addUseControlPropApi(selectedKernel, useApiItem);

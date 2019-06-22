@@ -465,7 +465,7 @@ class MobileContentCompiler extends ContentCompiler {
                 switch (relyPath.type) {
                     case ECtlReplyPathType.SetAP_On_BPChanged:
                     case ECtlReplyPathType.CallFun_On_BPChanged:
-                    var rootPathVarName = userCtlKernel.id + '_path';
+                        var rootPathVarName = userCtlKernel.id + '_path';
                         propFulPath = relyPath.berelyCtl.getStatePath(relyPath.berelyPropName, '.', null, true);
                         propChangedHandlerName = relyPath.berelyCtl.id + '_' + relyPath.berelyPropName + '_changed';
                         changedFun = clientSide.scope.getFunction(propChangedHandlerName);
@@ -480,7 +480,7 @@ class MobileContentCompiler extends ContentCompiler {
                                 }
                             );
                         }
-                        var rootPathVar = changedFun.scope.getVar(rootPathVarName,true,makeStr_callFun('getBelongUserCtlPath',['path']));
+                        var rootPathVar = changedFun.scope.getVar(rootPathVarName, true, makeStr_callFun('getBelongUserCtlPath', ['path']));
                         if (relyPath.type == ECtlReplyPathType.SetAP_On_BPChanged) {
                             getValueStr = '';
                             if (relyPath.approach.funName) {
@@ -1547,7 +1547,7 @@ class MobileContentCompiler extends ContentCompiler {
                 else {
                     clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath, VarNames.PageIndex))] = makeFName_bindForm(theKernel) + '.bind(window)';
                 }
-                freshFun.pushLine(makeStr_callFun(bindFun.name, [VarNames.ReState,'null','null',VarNames.SatePath]) + ';');
+                freshFun.pushLine(makeStr_callFun(bindFun.name, [VarNames.ReState, 'null', 'null', VarNames.SatePath]) + ';');
             }
         }
         else {
@@ -1594,11 +1594,11 @@ class MobileContentCompiler extends ContentCompiler {
             pullFun.pushLine(makeLine_Assign(VarNames.ReState, makeStr_callFun(bindFun.name, [VarNames.ReState])));
 
             if (belongFormMidData != null) {
-                belongFormMidData.pullFun.beforeRetBlock.pushLine(VarNames.ReState + '=' + makeStr_callFun(pullFun.name, [VarNames.ReState]));
+                belongFormMidData.pullFun.beforeRetBlock.pushLine(VarNames.ReState + '=' + makeStr_callFun(pullFun.name, [VarNames.ReState, 'true', "fullParentPath + '." + belongForm.id + "'"]));
             }
             else {
                 var pageInitFun = clientSide.scope.getFunction(makeFName_initPage(belongPage));
-                pageInitFun.pushLine(makeLine_Assign(VarNames.State, makeStr_callFun(bindFun.name, [VarNames.State])));
+                pageInitFun.pushLine(makeLine_Assign(VarNames.State, makeStr_callFun(bindFun.name, [VarNames.State, 'null', 'null', "fullParentPath + '." + theKernel.id + "'"])));
             }
         }
         else {
@@ -2307,20 +2307,20 @@ class MobileContentCompiler extends ContentCompiler {
         if (defaultValParseRet.isScript) {
             this.compileScriptAttribute(defaultValParseRet, theKernel, 'value', AttrNames.DefaultValue, { autoSetFetchState: true });
         }
-        else{
-            if(IsEmptyString(defaultValParseRet.string)){
+        else {
+            if (IsEmptyString(defaultValParseRet.string)) {
                 defaultValParseRet.string = '*';
             }
-            else{
-                if(defaultValParseRet.string == '*' && !starSelectable){
-                    if(!ismultiselect){
+            else {
+                if (defaultValParseRet.string == '*' && !starSelectable) {
+                    if (!ismultiselect) {
                         starSelectable = true;  // 给了个*默认值，自动开启可选*
                     }
                 }
             }
         }
 
-        if(starSelectable){
+        if (starSelectable) {
             ctlTag.setAttr('starSelectable', '{true}');
         }
 
@@ -2486,16 +2486,16 @@ class MobileContentCompiler extends ContentCompiler {
                         });
                     }
                     var propValue = makeStr_getStateByPath('useState', singleQuotesStr(makeStr_DotProp(useCtl.kernel.parentPath, useCtl.kernel.id + '.' + propApi.stateName)));
-                    if(belongUserControl){
+                    if (belongUserControl) {
                         if (useCtl.kernel == belongUserControl) {
                             // 所属的自订控件
                             propValue = makeStr_DotProp(belongUserControl.id + '_state', propApi.stateName);
                         }
-                        else{
-                            propValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(makeStr_DotProp(this.getKernelFullParentPath(useCtl.kernel),useCtl.kernel.id,propApi.stateName)));
+                        else {
+                            propValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(makeStr_DotProp(this.getKernelFullParentPath(useCtl.kernel), useCtl.kernel.id, propApi.stateName)));
                         }
                     }
-                    
+
                     initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', useName), propValue));
                 }
             }
@@ -2623,7 +2623,7 @@ class MobileContentCompiler extends ContentCompiler {
             }
 
             if (setValueStateItem == null && setTextStateItem == null) {
-                if(hadValueField){
+                if (hadValueField) {
                     setTextStateItem = {
                         name: 'text',
                         setNull: true,
@@ -2636,8 +2636,8 @@ class MobileContentCompiler extends ContentCompiler {
                         staticValue: hadDefaultStr ? defaultValParseRet.string : null,
                         setNull: !hadDefaultStr,
                     };
-                    if(defaultValParseRet.string == '*'){
-                        if(setTextStateItem){
+                    if (defaultValParseRet.string == '*') {
+                        if (setTextStateItem) {
                             setTextStateItem.setNull = false;
                             setTextStateItem.staticValue = '*';
                         }
@@ -2685,9 +2685,9 @@ class MobileContentCompiler extends ContentCompiler {
 
         var pullFun = midData.pullFun;
 
-        if(belongUserControl){
-            pullFun.scope.getVar(belongUserControl.id + '_path', true, makeStr_callFun("getBelongUserCtlPath",[VarNames.FullParentPath]));
-            pullFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath',[VarNames.State,belongUserControl.id + '_path']));
+        if (belongUserControl) {
+            pullFun.scope.getVar(belongUserControl.id + '_path', true, makeStr_callFun("getBelongUserCtlPath", [VarNames.FullParentPath]));
+            pullFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath', [VarNames.State, belongUserControl.id + '_path']));
         }
 
         if (midData.useDS) {
@@ -2749,10 +2749,10 @@ class MobileContentCompiler extends ContentCompiler {
                     var isUseFormColumn = !IsEmptyObject(useFormData.useColumns_map);
                     var ctlBelongStateVarName = formStateVarName;
 
-                    if(belongUserControl){
+                    if (belongUserControl) {
                         initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
                     }
-                    else{
+                    else {
                         initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
                     }
                     theFun.scope.getVar(formStateVarName, true, initValue);
@@ -2843,11 +2843,11 @@ class MobileContentCompiler extends ContentCompiler {
                     hadNeedWatchParam = true;
                     useCtlData = compilHelper.useGlobalControls_map[usectlid];
                     ctlStateVarName = usectlid + '_state';
-                    if(belongUserControl){
-                        initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useCtlData.kernel.getStatePath()));
+                    if (belongUserControl) {
+                        initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useCtlData.kernel.getStatePath()),'{}');
                     }
-                    else{
-                        initValue = makeStr_getStateByPath(VarNames.State, VarNames.FullParentPath + '+' + singleQuotesStr(useCtlData.kernel.getStatePath()));
+                    else {
+                        initValue = makeStr_getStateByPath(VarNames.State, VarNames.FullParentPath + '+' + singleQuotesStr(useCtlData.kernel.getStatePath()),'{}');
                     }
                     theFun.scope.getVar(ctlStateVarName, true, initValue);
 
@@ -2873,13 +2873,16 @@ class MobileContentCompiler extends ContentCompiler {
                             if (useCtlData.kernel.parent == null) {
                                 // 自订控件
                                 callParams_arr = ['nowState', true, 'this.props.fullPath'];
-                                this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theFun.name, useCtlData.kernel, propApiitem.stateName);
+                                if(theKernel.parent != useCtlData.kernel){
+                                    callParams_arr[2] += " + '." + theKernel.parentFullPath + "'";
+                                }
+                                this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theFun.name, useCtlData.kernel, propApiitem.stateName, callParams_arr);
                             }
                             else {
-                                if(belongUserControl){
-                                    callParams_arr = ['null', true, makeStr_callFun('CombineDotStr',[belongUserControl.id + '_path',singleQuotesStr(theKernel.fullParentPath)])];
+                                if (belongUserControl) {
+                                    callParams_arr = ['null', true, makeStr_callFun('CombineDotStr', [belongUserControl.id + '_path', singleQuotesStr(theKernel.fullParentPath)])];
                                 }
-                                else{
+                                else {
                                     callParams_arr = ['null', true, singleQuotesStr(theKernel.fullParentPath)];
                                 }
                             }
@@ -2903,18 +2906,11 @@ class MobileContentCompiler extends ContentCompiler {
                         }
                         var valueType = 'string';
                         if (varObj.propApi) {
-                            if (varObj.kernel.parent == null) {
-                                // 自订控件
-                                callParams_arr = ['nowState', true, 'this.props.fullPath'];
-                                this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theFun.name, varObj.kernel, propApiitem.stateName);
+                            if (belongUserControl) {
+                                callParams_arr = ['null', true, makeStr_callFun('CombineDotStr', [belongUserControl.id + '_path', singleQuotesStr(theKernel.fullParentPath)])];
                             }
                             else {
-                                if(belongUserControl){
-                                    callParams_arr = ['null', true, makeStr_callFun('CombineDotStr',[belongUserControl.id + '_path',singleQuotesStr(theKernel.fullParentPath)])];
-                                }
-                                else{
-                                    callParams_arr = ['null', true, singleQuotesStr(theKernel.fullParentPath)];
-                                }
+                                callParams_arr = ['null', true, singleQuotesStr(theKernel.fullParentPath)];
                             }
                             this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theFun.name, varObj.kernel, varObj.propApi.stateName, callParams_arr);
                         }
@@ -3008,7 +3004,7 @@ class MobileContentCompiler extends ContentCompiler {
                     else {
                         var pageInitFun = clientSide.scope.getFunction(makeFName_initPage(belongPage));
                         var timeoutBlock = pageInitFun.getChild('timeout');
-                        timeoutBlock.pushLine(makeStr_callFun(pullFun.name) + ';');
+                        timeoutBlock.pushLine(makeStr_callFun(pullFun.name, ['null', true, singleQuotesStr(belongPage.id)]) + ';');
                     }
                     //timeoutBlock.pushLine(makeStr_callFun(pullFun.name, [VarNames.State]));
                 }

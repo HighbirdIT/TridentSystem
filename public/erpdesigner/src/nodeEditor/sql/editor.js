@@ -1543,6 +1543,7 @@ class SqlNode_CompileHelper{
     addUseControlPropApi(ctrKernel, apiitem){
         var rlt = null;
         var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
+        var attrName = IsEmptyString(apiitem.useAttrName) ? apiitem.attrItem.name : apiitem.useAttrName;
         if(belongFormKernel == null){
             rlt = this.useGlobalControls_map[ctrKernel.id]
             if(rlt == null){
@@ -1552,7 +1553,7 @@ class SqlNode_CompileHelper{
                 };
                 this.useGlobalControls_map[ctrKernel.id] = rlt;
             }
-            rlt.useprops_map[apiitem.attrItem.name] = apiitem;
+            rlt.useprops_map[attrName] = apiitem;
             return;
         }
         else{
@@ -1566,6 +1567,6 @@ class SqlNode_CompileHelper{
                 formObj.useControls_map[ctrKernel.id] = rlt;
             }
         }
-        rlt.useprops_map[apiitem.attrItem.name] = apiitem;
+        rlt.useprops_map[attrName] = apiitem;
     }
 }

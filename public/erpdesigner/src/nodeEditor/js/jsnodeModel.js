@@ -513,7 +513,7 @@ class JSNode_BluePrint extends EventEmitter {
         }
         var theFun = useScope.getFunction(funName, true);
         compilHelper.compilingFun = theFun;
-        var fetchKeyVarValue = funName;
+        var fetchKeyVarValue = singleQuotesStr(funName);
         var params_arr = [];
         this.vars_arr.forEach(varData => {
             if (varData.isParam) {
@@ -614,7 +614,7 @@ class JSNode_BluePrint extends EventEmitter {
                 var ctlBelongStateVarName = formStateVarName;
 
                 if(belongUserControl){
-                    initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useFormData.formKernel.getStatePath()));
+                    initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useFormData.formKernel.getStatePath()),'{}');
                 }
                 else{
                     initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
@@ -762,10 +762,10 @@ class JSNode_BluePrint extends EventEmitter {
                     }
                     else {
                         if(belongUserControl){
-                            initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useCtlData.kernel.getStatePath()));
+                            initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useCtlData.kernel.getStatePath()),'{}');
                         }
                         else{
-                            initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.getStatePath()));
+                            initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.getStatePath()),'{}');
                         }
                     }
                 }
@@ -3100,7 +3100,8 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
             }
 
             useApiItem = Object.assign({}, useApiItem, {
-                stateName: propAttr.label
+                stateName: propAttr.label,
+                useAttrName: propAttr.label,
             });
         }
         helper.addUseControlPropApi(selectedKernel, useApiItem, EFormRowSource.Context);
