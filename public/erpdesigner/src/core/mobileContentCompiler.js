@@ -223,7 +223,7 @@ class MobileContentCompiler extends ContentCompiler {
                         }
                         else {
                             var actKey = 'call_' + relyPath.funName;
-                            changedFun.pushLine("if(delayActs['" + actKey + "'] == null){delayActs['" + actKey + "'] = {callfun:" + relyPath.funName + "};};");
+                            changedFun.pushLine("if(delayActs['" + actKey + "'] == null){delayActs['" + actKey + "'] = {callfun:" + relyPath.funName + (relyPath.params_arr ? ",params_arr:[" + relyPath.params_arr.join(',') + ']' : '') + "};};");
                         }
                         break;
                 }
@@ -681,6 +681,7 @@ class MobileContentCompiler extends ContentCompiler {
                 case M_PageKernel_Type:
                     rlt = nowKernel.id;
                     break;
+                case M_LabeledControlKernel_Type:
                 case M_ContainerKernel_Type:
                     nowKernel = nowKernel.parent;
                     break;
@@ -1932,7 +1933,7 @@ class MobileContentCompiler extends ContentCompiler {
                 }
             }
             if (autoIndexColumn) {
-                gridBodyTableRowRenderBlock.pushLine("<td className='indexTableHeader'>{rowIndex-startRowIndex+1}</td>");
+                gridBodyTableRowRenderBlock.pushLine("<td className='indexTableHeader'>{rowIndex+1}</td>");
                 if (insertBtnSetting) {
                     gridBodyTableNewRowRenderBlock.pushLine("<td className='indexTableHeader'>新</td>");
                 }
@@ -2309,7 +2310,9 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else {
             if (IsEmptyString(defaultValParseRet.string)) {
-                defaultValParseRet.string = '*';
+                if(starSelectable){
+                    defaultValParseRet.string = '*';    // 可选*，但默认值未设置，自动给个*
+                }
             }
             else {
                 if (defaultValParseRet.string == '*' && !starSelectable) {
@@ -2777,7 +2780,13 @@ class MobileContentCompiler extends ContentCompiler {
                             }
                             validBlock.subNextIndent();
                             validBlock.pushLine('}');
-                            this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theFun.name, useFormData.formKernel, VarNames.SelectedRows_arr);
+                            if (belongUserControl) {
+                                callParams_arr = ['null', true, makeStr_callFun('CombineDotStr', [belongUserControl.id + '_path', singleQuotesStr(theKernel.fullParentPath)])];
+                            }
+                            else {
+                                callParams_arr = ['null', true, singleQuotesStr(theKernel.fullParentPath)];
+                            }
+                            this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theFun.name, useFormData.formKernel, VarNames.SelectedRows_arr,callParams_arr);
                             hadNeedWatchParam = true;
                         }
                         else {

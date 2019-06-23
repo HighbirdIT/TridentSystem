@@ -2077,15 +2077,15 @@ class JSNode_CurrentDataRow extends JSNode_Base {
                     clientForEachFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.forEachFlow);
                     var formStateVarName = formKernel.id + '_state';
                     var selectedRowsVarName = formKernel.id + '_' + VarNames.SelectedRows_arr;
+                    clientForEachBlock = new FormatFileBlock('clientforeach');
                     if (clientForEachFlowLinks_arr.length > 0) {
                         if (this.checkCompileFlag(blockInServer, 'forach流无法被执行到', helper)) {
                             return false;
                         }
                         var indexVarName = this.id + "_index";
-                        clientForEachBlock = new FormatFileBlock('clientforeach');
+                        
                         clientForEachDeclarBlock = new FormatFileBlock('clientforeachdeclar');
                         clientForEachBodyBlock = new FormatFileBlock('clientforeachbody');
-
                         clientForEachBlock.pushLine(makeStr_AddAll('for(var ', indexVarName, '=0;', indexVarName, '<', selectedRowsVarName, '.length;++', indexVarName, '){'), 1);
                         clientForEachBlock.pushLine('var ' + nowRowVarName + '=' + makeStr_AddAll(formStateVarName, '.', VarNames.Records_arr, '[', selectedRowsVarName, '[', indexVarName, ']];'));
                         clientForEachBlock.pushChild(clientForEachDeclarBlock);
@@ -4615,7 +4615,7 @@ class JSNode_FreshForm extends JSNode_Base {
             selectedKernel = formKernel;
         }
         var belongUserControl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
-        var parentPath = selectedKernel.parent.getStatePath();
+        var parentPath = selectedKernel.parent.parent == null ? selectedKernel.parent.id : selectedKernel.parent.getStatePath();
         if(belongUserControl){
             parentPath = belongUserControl.id + '_path' + (parentPath.length == 0 ? '' : "+'." + parentPath+"'");
         }
@@ -6680,6 +6680,14 @@ class JSNode_PopPage extends JSNode_Base {
 
     restorFromAttrs(attrsJson) {
         assginObjByProperties(this, attrsJson, ['pageCode']);
+    }
+
+    getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
+        if (belongFun.scope.isServerSide) {
+            return;
+        }
+
+        result.pushVariable(this.id + 'exportParam', targetSocket);
     }
 
     compile(helper, preNodes_arr, belongBlock) {
