@@ -4614,8 +4614,18 @@ class JSNode_FreshForm extends JSNode_Base {
             socketValue = formKernel.id;
             selectedKernel = formKernel;
         }
+        var formDS = selectedKernel.getAttribute(AttrNames.DataSource);
         var belongUserControl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
-        var parentPath = selectedKernel.parent.parent == null ? selectedKernel.parent.id : selectedKernel.parent.getStatePath();
+
+        var parentPath = null;
+        if(formDS != null){
+            // use pull fun
+            parentPath = selectedKernel.parent.parent == null ? selectedKernel.parent.id : selectedKernel.parent.getStatePath();
+        }
+        else{
+            // use feresh fun
+            parentPath = selectedKernel.getStatePath();
+        }
         if(belongUserControl){
             parentPath = belongUserControl.id + '_path' + (parentPath.length == 0 ? '' : "+'." + parentPath+"'");
         }
@@ -4623,7 +4633,6 @@ class JSNode_FreshForm extends JSNode_Base {
             parentPath = singleQuotesStr(parentPath);
         }
         var freshFunName = 'fresh_' + socketValue;
-        var formDS = selectedKernel.getAttribute(AttrNames.DataSource);
 
         var holdSelected = this.holdSelected == true ? 'true' : 'false';
         var myJSBlock = new FormatFileBlock('ret');
@@ -4632,7 +4641,7 @@ class JSNode_FreshForm extends JSNode_Base {
             myJSBlock.pushLine('setTimeout(() => {' + makeStr_callFun(freshFunName, ['null', holdSelected,parentPath]) + ';},50);');
         }
         else {
-            myJSBlock.pushLine(makeStr_callFun(freshFunName, ['state', holdSelected,parentPath]));
+            myJSBlock.pushLine(makeStr_callFun(freshFunName, ['state','null','null',parentPath]));
         }
         belongBlock.pushChild(myJSBlock);
 
