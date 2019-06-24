@@ -77,7 +77,7 @@ class CProject extends IAttributeable{
             
             if(jsonData.userControls_arr){
                 jsonData.userControls_arr.forEach(ctlJson=>{
-                    var newUCtl = new UserontrolKernel({project:this},null,null,ctlJson);
+                    var newUCtl = new UserControlKernel({project:this},null,null,ctlJson);
                     this.userControls_arr.push(newUCtl);
                 });
             }
@@ -134,8 +134,9 @@ class CProject extends IAttributeable{
             }
             ki++;
         }while(ki < 1000)
-        var newControl = new UserontrolKernel({id:newID,name:name,project:this},null);
+        var newControl = new UserControlKernel({id:newID,name:name,project:this},null);
         this.userControls_arr.push(newControl);
+        this.emit('userControlChanged');
         return newControl;
     }
 

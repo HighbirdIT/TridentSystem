@@ -572,7 +572,9 @@ class JSNode_BluePrint extends EventEmitter {
                 }
             }
             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
-                params_arr = [VarNames.State, VarNames.Bundle];
+                fetchKeyVarValue = VarNames.FullParentPath + '+' + singleQuotesStr('.' + funName);
+                params_arr = [VarNames.State, VarNames.Bundle, VarNames.FullParentPath];
+                //theFun.scope.getVar(belongFormControl.id + "_path", true, 'this.props.fullPath');
             }
             else if (this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
                 params_arr = [VarNames.RowIndex, VarNames.CallBack];
@@ -627,6 +629,10 @@ class JSNode_BluePrint extends EventEmitter {
                     if (isGridForm) {
                         ctlBelongStateVarName = formNowRowStateVarName;
                         if (useFormData.useContextRow) {
+                            if(this.group == EJsBluePrintFunGroup.CtlAttr){
+                                theFun.scope.getVar(VarNames.RowIndexInfo_map, true, 'getRowIndexMapFromPath(' + VarNames.FullParentPath + ')');
+                                theFun.scope.getVar(VarNames.RowIndex, true, VarNames.RowIndexInfo_map + '.' + formId);
+                            }
                             if (isUseFormColumn) {
                                 theFun.scope.getVar(formNowRecordVarName, true, formStateVarName + '.' + VarNames.Records_arr + midbracketStr(VarNames.RowIndex));
                             }
@@ -991,7 +997,7 @@ class JSNode_BluePrint extends EventEmitter {
             }
             else {
                 if (needCheckVars_arr.length > 0) {
-                    setInvalidStateBlock.pushLine("setManyStateByPath(" + VarNames.State + ", '', validErrState);");
+                    setInvalidStateBlock.pushLine("setManyStateByPath(" + VarNames.State + "," + VarNames.FullParentPath + "+'." + ctlKernel.id+"'" +", validErrState);");
                 }
             }
         }
@@ -2066,8 +2072,12 @@ class JSNode_CurrentDataRow extends JSNode_Base {
             var formSelectMode = formKernel.getAttribute(AttrNames.SelectMode);
             if (this.rowSource == EFormRowSource.Context) {
                 var belongFormKernel = this.bluePrint.ctlKernel.searchParentKernel(M_FormKernel_Type, true);
+                var realParent = this.bluePrint.ctlKernel.parent;
+                if(realParent.type == M_LabeledControlKernel_Type){
+                    realParent = realParent.parent;
+                }
                 var isSameForm = formKernel == belongFormKernel;
-                if (this.checkCompileFlag(!isSameForm || this.bluePrint.group != EJsBluePrintFunGroup.GridRowBtnHandler, '此处无法使用目标Form的本属性', helper)) {
+                if (this.checkCompileFlag(!isSameForm || realParent != belongFormKernel, '此处无法使用目标Form的本属性', helper)) {
                     return false;
                 }
             }

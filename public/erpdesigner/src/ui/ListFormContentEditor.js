@@ -77,7 +77,9 @@ class CListFormContentEditor extends React.PureComponent {
         if (ctlid != null) {
             var ctlKernel = project.getControlById(ctlid);
             this.attrPanelRef.current.setTarget(ctlKernel);
-            ev.preventDefault();
+            if(ev.preventDefault){
+                ev.preventDefault();
+            }
         }
     }
 

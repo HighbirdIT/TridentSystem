@@ -130,7 +130,7 @@ var ProjectDesigner = function (_React$PureComponent) {
             if (this.placingCtonrols[refID] && this.placingCtonrols[refID].parent == null) {
                 newKernel = this.placingCtonrols[refID];
             } else {
-                newKernel = new UserontrolKernel({ refID: refID }, thisProject);
+                newKernel = new UserControlKernel({ refID: refID }, thisProject);
                 this.placingCtonrols[refID] = newKernel;
             }
             if (newKernel == null) {

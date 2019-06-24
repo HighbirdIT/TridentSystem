@@ -31,12 +31,20 @@ class ControlPanel extends React.PureComponent {
         }
     }
 
+    forceUpdate(){
+        this.setState({
+            magicObj:{}
+        });
+    }
+
     componentWillMount(){
         this.props.project.on(EATTRCHANGED, this.attrChangedHandler);
+        this.props.project.on('userControlChanged',this.forceUpdate);
     }
 
     componentWillUnmount(){
         this.props.project.off(EATTRCHANGED, this.attrChangedHandler);
+        this.props.project.off('userControlChanged',this.forceUpdate);
     }
 
     controlIconMouseDown(ev){

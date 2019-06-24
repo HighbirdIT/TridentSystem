@@ -48,14 +48,23 @@ var ControlPanel = function (_React$PureComponent) {
             }
         }
     }, {
+        key: 'forceUpdate',
+        value: function forceUpdate() {
+            this.setState({
+                magicObj: {}
+            });
+        }
+    }, {
         key: 'componentWillMount',
         value: function componentWillMount() {
             this.props.project.on(EATTRCHANGED, this.attrChangedHandler);
+            this.props.project.on('userControlChanged', this.forceUpdate);
         }
     }, {
         key: 'componentWillUnmount',
         value: function componentWillUnmount() {
             this.props.project.off(EATTRCHANGED, this.attrChangedHandler);
+            this.props.project.off('userControlChanged', this.forceUpdate);
         }
     }, {
         key: 'controlIconMouseDown',
