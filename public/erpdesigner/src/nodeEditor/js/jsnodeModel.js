@@ -6830,6 +6830,9 @@ class JSNode_GetPageEntryParam extends JSNode_Base {
             return (<span f-canmove={1} className='badge badge-danger'>找不到页面</span>);
         }
         var belongPage = kernel.searchParentKernel(M_PageKernel_Type, true);
+        if(belongPage == null){
+            return null;
+        }
         var nowVal = socket.defval;
         return <DropDownControl itemChanged={this.paramDDCChanged} btnclass='btn-dark' options_arr={belongPage.getAllEntryParams} rootclass='flex-grow-1 flex-shrink-1' textAttrName='value' valueAttrName='name' value={nowVal} />;
     }
