@@ -20,7 +20,7 @@ const gUserControlAttsByType_map={};
 const gUserControlParamApiAttr = new CAttribute('属性接口', AttrNames.ParamApi);
 
 
-class UserontrolKernel extends ContainerKernelBase{
+class UserControlKernel extends ContainerKernelBase{
     constructor(initData, parentKernel, createHelper, kernelJson) {
         super(  initData,
                 UserControlKernel_Type,
@@ -114,8 +114,8 @@ class UserontrolKernel extends ContainerKernelBase{
         }
     }
 
-    renderSelf(){
-        return (<CUserControl key={this.id} ctlKernel={this} onClick={this.clickHandler} />)
+    renderSelf(clickHandler){
+        return (<CUserControl key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} hadClickProxy={clickHandler != null} />)
     }
 
     getLayoutConfig(){
@@ -203,6 +203,9 @@ class CUserControl extends React.PureComponent {
 
     clickInsHandler(ev){
         this.props.onClick({target:this.rootElemRef.current});
+        if(ev.preventDefault){
+            ev.preventDefault();
+        }
     }
 
     renderTempalte(){
@@ -248,7 +251,7 @@ class CUserControl extends React.PureComponent {
         layoutConfig.addClass('d-flex');
         
         return(
-            <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+            <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.clickInsHandler}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {
                     templateKernel.children.length == 0 ?
                     ctlKernel.id :
@@ -275,7 +278,7 @@ DesignerConfig.registerControl(
         label : '自订控件',
         type : UserControlKernel_Type,
         namePrefix : UserControlKernel_Prefix,
-        kernelClass:UserontrolKernel,
+        kernelClass:UserControlKernel,
         reactClass:CUserControl,
-        canbeLabeled:true,
+        canbeLabeled:false,
     }, '特殊');

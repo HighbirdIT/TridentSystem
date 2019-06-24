@@ -114,7 +114,7 @@ class ProjectDesigner extends React.PureComponent {
             newKernel = this.placingCtonrols[refID];
         }
         else{
-            newKernel = new UserontrolKernel({refID:refID}, thisProject);
+            newKernel = new UserControlKernel({refID:refID}, thisProject);
             this.placingCtonrols[refID] = newKernel;
         }
         if (newKernel == null) {

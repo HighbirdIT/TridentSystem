@@ -1,7 +1,21 @@
+function getCanLabeledControls(theKernel){
+    var rlt_arr = DesignerConfig.getMobileCanLabeledControls();
+    return rlt_arr.concat(theKernel.project.userControls_arr.map(ctlkernel=>{
+        return {
+            label: ctlkernel.name,
+            type: UserControlKernel_Type + '-' + ctlkernel.id,
+            namePrefix: UserControlKernel_Prefix,
+            kernelClass: UserControlKernel,
+            reactClass: CUserControl,
+            canbeLabeled: true,
+        };
+    }));
+}
+
 const M_LabeledControlKernelAttrsSetting=GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置',[
         genTextFiledAttribute(),
-        new CAttribute('控件类型',AttrNames.EditorType,ValueType.String, M_TextKernel_Type, true, false,DesignerConfig.getMobileCanLabeledControls, {text:'label', value:'type'}),
+        new CAttribute('控件类型',AttrNames.EditorType,ValueType.String, M_TextKernel_Type, true, false,[], {text:'label', value:'type',pullDataFun:getCanLabeledControls}),
         genIsdisplayAttribute(),
         new CAttribute('交互类型',AttrNames.InteractiveType,ValueType.String, EInterActiveType.ReadWrite, true, false, EInterActiveTypes_arr, {text:'text', value:'value'}),
         new CAttribute('交互字段',AttrNames.InteractiveField,ValueType.String, '', true, false, [], {
@@ -56,17 +70,18 @@ class M_LabeledControlKernel extends ControlKernelBase{
             if(labelParseRet.isScript){
                 return;
             }
-            var editorTextField = this.editor.getAttribute(AttrNames.TextField);
-            if(editorTextField == ''){
-                this.editor.setAttribute(AttrNames.TextField, newValue);
-            }
-            else{
-                var canUseCols_arr = GetKernelCanUseColumns(this);
-                if(canUseCols_arr.indexOf(newValue) != -1){
+            if(this.editor.hasAttribute(AttrNames.TextField)){
+                var editorTextField = this.editor.getAttribute(AttrNames.TextField);
+                if(editorTextField == ''){
                     this.editor.setAttribute(AttrNames.TextField, newValue);
                 }
+                else{
+                    var canUseCols_arr = GetKernelCanUseColumns(this);
+                    if(canUseCols_arr.indexOf(newValue) != -1){
+                        this.editor.setAttribute(AttrNames.TextField, newValue);
+                    }
+                }
             }
-            GetKernelCanUseColumns
             break;
             case AttrNames.Nullable:
             if(this.editor.hasAttribute(AttrNames.Nullable)){
@@ -83,10 +98,20 @@ class M_LabeledControlKernel extends ControlKernelBase{
             this.editor = null;
             this.children.length = 0;
         }
-        var editorKernelConfig = DesignerConfig.findConfigByType(this.getAttribute(AttrNames.EditorType));
+        var editorType = this.getAttribute(AttrNames.EditorType);
+        var creatParam = {};
+        var editorKernelConfig;
+        var isUserControl = false;
+        if(editorType.indexOf(UserControlKernel_Type) == 0){
+            isUserControl = true;
+            var tem_arr = editorType.split('-');
+            editorType = UserControlKernel_Type;
+            creatParam.refID = tem_arr[1];
+        }
+        editorKernelConfig = DesignerConfig.findConfigByType(editorType);
         if(editorKernelConfig != null){
-            this.editor = new editorKernelConfig.kernelClass({}, this, createHelper, editorKernelJson);
-            if(createHelper == null){
+            this.editor = new editorKernelConfig.kernelClass(creatParam, this, createHelper, editorKernelJson);
+            if(createHelper == null && !isUserControl){
                 var editorTextField = this.editor.getAttribute(AttrNames.TextField);
                 if(IsEmptyString(editorTextField)){
                     this.editor.setAttribute(AttrNames.TextField, this.getAttribute(AttrNames.TextField));
@@ -170,6 +195,7 @@ class M_LabeledControl extends React.PureComponent {
             return (<div className={layoutConfig.getClassName()} style={layoutConfig.style} ref={this.rootElemRef}>{showLabel}</div>);
         }
         var editor = ctlKernel.editor;
+        var isUserControl = editor && editor.type == UserControlKernel_Type;
         layoutConfig.addClass('rowlFameOne');
         layoutConfig.addClass('hb-control');
         var interType = ctlKernel.getAttribute(AttrNames.InteractiveType);
@@ -180,14 +206,14 @@ class M_LabeledControl extends React.PureComponent {
         var interFieldElem = IsEmptyString(interField) ? null : <span className='badge badge-info'>{interField}</span>;
         var leftElem = null;
         if(interFieldElem == null){
-            leftElem = <div className='rowlFameOne_Left'>
+            leftElem = <div className='rowlFameOne_Left' onClick={this.props.onClick}>
                 {showLabel}
                 {interFlag}
                 {nullableFlag}
             </div>;
         }
         else{
-            leftElem = <div className='rowlFameOne_Left'>
+            leftElem = <div className='rowlFameOne_Left' onClick={this.props.onClick}>
                 <div className='d-flex flex-column'>
                     <div className='d-flex align-items-center'>
                         {showLabel}
@@ -199,7 +225,7 @@ class M_LabeledControl extends React.PureComponent {
             </div>;
         }
         return(
-            <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+            <div className={layoutConfig.getClassName()} style={layoutConfig.style} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {leftElem}
                 <div className='rowlFameOne_right'>
                     {editor != null && editor.renderSelf(this.props.onClick == ctlKernel.clickHandler ? null : this.props.onClick)}

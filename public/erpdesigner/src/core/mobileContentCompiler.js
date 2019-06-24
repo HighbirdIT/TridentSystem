@@ -377,7 +377,7 @@ class MobileContentCompiler extends ContentCompiler {
                         }
                         else if (stateItem.isDynamic) {
                             if (stateItem.bindMode == ScriptBindMode.OnForm) {
-                                var setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.State]));
+                                var setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.State,'null',ctlPathParamName]));
                                 ctlInitFun.pushLine(setLine);
                             }
                         } else {
@@ -645,7 +645,7 @@ class MobileContentCompiler extends ContentCompiler {
                         }
                         else if (stateItem.isDynamic) {
                             if (stateItem.bindMode == ScriptBindMode.OnForm) {
-                                var setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.State]));
+                                var setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.State,'null',singleQuotesStr(pageKernel.id)]));
                                 controlInitBlock.pushLine(setLine);
                             }
                         } else {
@@ -1083,10 +1083,10 @@ class MobileContentCompiler extends ContentCompiler {
                         scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState.fetching = false;");
                         scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState.fetchingErr = err;");
 
-                        scriptCompileRet.startFtech_bk.pushLine("state = " + makeStr_callFun('setManyStateByPath', [VarNames.State, singleQuotesStr(theKernel.getStatePath()), '{fetching:true,fetchingErr:null}']));
+                        scriptCompileRet.startFtech_bk.pushLine("state = " + makeStr_callFun('setManyStateByPath', [VarNames.State, VarNames.FullParentPath + "+'." + theKernel.id+"'", '{fetching:true,fetchingErr:null}']));
                     }
                 }
-                scriptCompileRet.finalCallBackReturn_bk.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, singleQuotesStr(theKernel.getStatePath()), 'needSetState']) + ';');
+                scriptCompileRet.finalCallBackReturn_bk.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, VarNames.FullParentPath + "+'." + theKernel.id+"'", 'needSetState']) + ';');
             }
             else {
                 scriptCompileRet.finalCallBackReturn_bk.pushLine("return err == null ? data : null;");
@@ -1183,7 +1183,7 @@ class MobileContentCompiler extends ContentCompiler {
         var isdisplay = theKernel.getAttribute(AttrNames.Isdisplay);
         var isdisplayParseRet = parseObj_CtlPropJsBind(isdisplay, project.scriptMaster);
         if (isdisplayParseRet.isScript) {
-            var scriptCompileRet = this.compileScriptAttribute(isdisplayParseRet, theKernel, 'visible', AttrNames.Isdisplay);
+            var scriptCompileRet = this.compileScriptAttribute(isdisplayParseRet, theKernel, 'visible', AttrNames.Isdisplay, {autoSetFetchState:true});
         }
         else {
             if (!isdisplay) {
@@ -2064,10 +2064,10 @@ class MobileContentCompiler extends ContentCompiler {
                             if (stateItem.isDynamic) {
                                 switch (stateItem.bindMode) {
                                     case ScriptBindMode.OnForm:
-                                        bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState])));
+                                        bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState,'null',"formPath + '.row_' + rowIndex"])));
                                         break;
                                     case ScriptBindMode.OnNewRow:
-                                        staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), makeStr_callFun(stateItem.funName, [VarNames.ReState])));
+                                        staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), makeStr_callFun(stateItem.funName, [VarNames.ReState,'null',"formPath + '.row_new'"])));
                                         break;
                                 }
                             } else {
@@ -2108,7 +2108,7 @@ class MobileContentCompiler extends ContentCompiler {
                             // pageform
                             if (stateItem.isDynamic) {
                                 if (stateItem.bindMode == ScriptBindMode.OnForm) {
-                                    setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, bundleVar.name]));
+                                    setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, bundleVar.name,'formPath']));
                                     if (stateItem.useColumn) {
                                         dynamicSetBlock_hadRecord.pushLine(setLine);
                                     }

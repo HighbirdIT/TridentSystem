@@ -4,6 +4,8 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
@@ -1549,8 +1551,29 @@ var ERPC_Label = function (_React$PureComponent7) {
             if (this.props.visible == false) {
                 return null;
             }
+            var rootDivClassName = 'erpc_label' + (this.props.class == null ? '' : this.props.class);
             var contentElem = null;
-            if (this.props.type == 'boolean') {
+            if (this.props.fetching) {
+                rootDivClassName += ' rounded border p-1';
+                contentElem = React.createElement(
+                    'div',
+                    { className: 'flex-grow-1 flex-shrink-1' },
+                    React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw' }),
+                    '\u901A\u8BAF\u4E2D'
+                );
+            } else if (this.props.fetchingErr) {
+                var errInfo = this.props.fetchingErr.info;
+                if (errInfo == gPreconditionInvalidInfo) {
+                    errInfo = '';
+                }
+                rootDivClassName += ' rounded border p-1 text-danger';
+                contentElem = React.createElement(
+                    'span',
+                    { className: 'flex-grow-1 flex-shrink-1' },
+                    React.createElement('i', { className: 'fa fa-warning' }),
+                    errInfo
+                );
+            } else if (this.props.type == 'boolean') {
                 var value = this.props.text;
                 var checked = checked = !(value == false || value == 0 || value == 'false' || value == 'FALSE');
                 contentElem = React.createElement('i', { className: 'fa ' + (checked ? ' fa-check text-success' : ' fa-close text-danger') });
@@ -1559,7 +1582,7 @@ var ERPC_Label = function (_React$PureComponent7) {
             }
             return React.createElement(
                 'span',
-                { className: 'erpc_label ' + (this.props.className == null ? '' : this.props.className) },
+                { className: rootDivClassName },
                 contentElem
             );
         }
@@ -1569,13 +1592,16 @@ var ERPC_Label = function (_React$PureComponent7) {
 }(React.PureComponent);
 
 function ERPC_Label_mapstatetoprops(state, ownprops) {
+    var _ref;
+
     var ctlPath = MakePath(ownprops.parentPath, ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex, ownprops.id);
     var ctlState = getStateByPath(state, ctlPath, {});
     var useText = ctlState.text != null ? ctlState.text : ownprops.text ? ownprops.text : '';
-    return {
+    return _ref = {
         text: useText,
-        visible: ctlState.visible
-    };
+        visible: ctlState.visible,
+        fetching: ctlState.fetching
+    }, _defineProperty(_ref, 'visible', ctlState.visible), _defineProperty(_ref, 'fetchingErr', ctlState.fetchingErr), _ref;
 }
 
 function ERPC_Label_dispatchtorprops(dispatch, ownprops) {

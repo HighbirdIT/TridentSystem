@@ -1328,8 +1328,21 @@ class ERPC_Label extends React.PureComponent {
         if (this.props.visible == false) {
             return null;
         }
+        var rootDivClassName = 'erpc_label' + (this.props.class == null ? '' : this.props.class);
         var contentElem = null;
-        if (this.props.type == 'boolean') {
+        if (this.props.fetching) {
+            rootDivClassName += ' rounded border p-1';
+            contentElem = <div className='flex-grow-1 flex-shrink-1'><i className='fa fa-spinner fa-pulse fa-fw' />通讯中</div>;
+        }
+        else if (this.props.fetchingErr) {
+            var errInfo = this.props.fetchingErr.info;
+            if (errInfo == gPreconditionInvalidInfo) {
+                errInfo = '';
+            }
+            rootDivClassName += ' rounded border p-1 text-danger';
+            contentElem = <span className='flex-grow-1 flex-shrink-1'><i className='fa fa-warning' />{errInfo}</span>;
+        }
+        else if (this.props.type == 'boolean') {
             var value = this.props.text;
             var checked = checked = !(value == false || value == 0 || value == 'false' || value == 'FALSE');
             contentElem = <i className={'fa ' + (checked ? ' fa-check text-success' : ' fa-close text-danger')} />
@@ -1337,7 +1350,7 @@ class ERPC_Label extends React.PureComponent {
         else {
             contentElem = FormatStringValue(this.props.text, this.props.type, this.props.precision);
         }
-        return (<span className={'erpc_label ' + (this.props.className == null ? '' : this.props.className)} >{contentElem}</span>);
+        return (<span className={rootDivClassName} >{contentElem}</span>);
     }
 }
 
@@ -1348,6 +1361,9 @@ function ERPC_Label_mapstatetoprops(state, ownprops) {
     return {
         text: useText,
         visible: ctlState.visible,
+        fetching: ctlState.fetching,
+        visible: ctlState.visible,
+        fetchingErr: ctlState.fetchingErr,
     };
 }
 

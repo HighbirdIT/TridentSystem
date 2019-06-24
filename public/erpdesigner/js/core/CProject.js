@@ -85,7 +85,7 @@ var CProject = function (_IAttributeable) {
 
             if (jsonData.userControls_arr) {
                 jsonData.userControls_arr.forEach(function (ctlJson) {
-                    var newUCtl = new UserontrolKernel({ project: _this }, null, null, ctlJson);
+                    var newUCtl = new UserControlKernel({ project: _this }, null, null, ctlJson);
                     _this.userControls_arr.push(newUCtl);
                 });
             }
@@ -149,8 +149,9 @@ var CProject = function (_IAttributeable) {
                 }
                 ki++;
             } while (ki < 1000);
-            var newControl = new UserontrolKernel({ id: newID, name: name, project: this }, null);
+            var newControl = new UserControlKernel({ id: newID, name: name, project: this }, null);
             this.userControls_arr.push(newControl);
+            this.emit('userControlChanged');
             return newControl;
         }
     }, {
