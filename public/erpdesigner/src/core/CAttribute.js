@@ -209,6 +209,9 @@ const VarNames={
     SelectedRows_arr:'selectedRows_arr',
     BaseBunlde:'baseBundle',
     HoldSelected:'holdSelected',
+    Userctlpath:'userctlpath',
+    OldValue:'oldValue',
+    SatePath:'statePath',
 };
 
 const AttrNames={
@@ -262,6 +265,8 @@ const AttrNames={
     EntryParam:'entryParam',
     ExportParam:'exportParam',
     PopablePage:'popablepage',
+    ParamApi:'paramapi',
+    StarSelectable:'starSelectable',
 
     Event:{
         OnClick:'onclick',

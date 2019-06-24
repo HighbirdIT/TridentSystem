@@ -317,7 +317,7 @@ var DataBasePanel = function (_React$PureComponent3) {
         value: function startSynAction(synflag, param) {
             if (synflag == 'keyword') {
                 var keyword = param;
-                if (keyword.length < 2) return;
+                if (keyword == null || keyword.length < 2) return;
                 var hadAction = this.state.synQueue_arr.find(function (synAction) {
                     return !synAction.complete && synAction.synflag == synflag && synAction.keyword == keyword;
                 });

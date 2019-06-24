@@ -9,205 +9,204 @@ const gCantNullInfo = '不能为空值';
 const HashKey_FixItem = 'fixitem';
 const gEmptyArr = [];
 
-class DataCache{
-    constructor(label){
+class DataCache {
+    constructor(label) {
         this.label = label;
         this.data_map = {};
     }
 
-    set(key, value){
+    set(key, value) {
         this.data_map[key] = value;
     }
 
-    get(key){
+    get(key) {
         return this.data_map[key];
     }
 }
 const gDataCache = new DataCache('global');
 
-window.onhashchange = function() {
-    var fixedItemNum = 0;    
+window.onhashchange = function () {
+    var fixedItemNum = 0;
     if (location.hash.length > 0) {
         var nowHash = location.hash.replace('#', '');
         var hash_arr = nowHash.split(',');
-        for(var si in hash_arr){
+        for (var si in hash_arr) {
             var tem_arr = hash_arr[si].split('=');
-            if(tem_arr.length == 2){
-                switch(tem_arr[0]){
+            if (tem_arr.length == 2) {
+                switch (tem_arr[0]) {
                     case HashKey_FixItem:
-                    fixedItemNum = parseInt(tem_arr[1]);
-                    break;
+                        fixedItemNum = parseInt(tem_arr[1]);
+                        break;
                 }
             }
         }
-    } 
-    if(gFixedContainerRef.current){
+    }
+    if (gFixedContainerRef.current) {
         gFixedContainerRef.current.setItemCount(fixedItemNum);
     }
 };
 
-function setLocHash(hashName,hashVal){
+function setLocHash(hashName, hashVal) {
     var nowHash = location.hash;
     var newHash;
     nowHash = nowHash.replace('#', '');
-    if(nowHash.length >= 0){
+    if (nowHash.length >= 0) {
         var hash_arr = nowHash.length == 0 ? [] : nowHash.split(',');
         var newHash_arr = [];
         var found = false;
-        for(var si in hash_arr){
+        for (var si in hash_arr) {
             var tem_arr = hash_arr[si].split('=');
-            if(tem_arr.length == 2){
-                if(tem_arr[0] == hashName){
-                    if(hashVal != null){
+            if (tem_arr.length == 2) {
+                if (tem_arr[0] == hashName) {
+                    if (hashVal != null) {
                         newHash_arr.push(hashName + '=' + hashVal);
                     }
                     found = true;
                     break;
                 }
-                else{
+                else {
                     newHash_arr.push(hash_arr[si]);
                 }
             }
-            else if(hash_arr[si] != 'empty'){
+            else if (hash_arr[si] != 'empty') {
                 newHash_arr.push(hash_arr[si]);
             }
         }
-        if(!found){
-            if(hashVal != null)
-            {
+        if (!found) {
+            if (hashVal != null) {
                 newHash_arr.push(hashName + '=' + hashVal);
             }
         }
         newHash = newHash_arr.length == 0 ? 'empty' : newHash_arr.join(',');
     }
-    else{
+    else {
         newHash = hashName + '=' + hashVal;
     }
     location.hash = newHash;
 }
 
-class FixedContainer extends React.PureComponent{
+class FixedContainer extends React.PureComponent {
     constructor(props) {
         super(props);
-        this.state={
-            items_arr:[],
-            pages_arr:[],
+        this.state = {
+            items_arr: [],
+            pages_arr: [],
         };
         this.item_map = {};
         this.banItemChange = false;
     }
 
-    componentWillMount(){
+    componentWillMount() {
     }
 
-    setItemCount(val){
+    setItemCount(val) {
         var items_arr = this.state.items_arr;
-        if(items_arr.length > 0){
+        if (items_arr.length > 0) {
             items_arr = items_arr.concat();
             this.banItemChange = true;
-            while(items_arr.length > val){
+            while (items_arr.length > val) {
                 var topItem = items_arr.pop();
-                if(topItem.ref.current){
+                if (topItem.ref.current) {
                     topItem.ref.current.foceClose();
                 }
             }
             this.banItemChange = false;
             this.setState({
-                items_arr:items_arr
+                items_arr: items_arr
             });
         }
     }
 
-    popPage(id, pageElem){
-        this.setState(state=>{
-            var foundElem = state.pages_arr.find(x=>{return x.id == id;});
-            if(foundElem != null)
+    popPage(id, pageElem) {
+        this.setState(state => {
+            var foundElem = state.pages_arr.find(x => { return x.id == id; });
+            if (foundElem != null)
                 return state;
             return {
-                pages_arr:state.pages_arr.concat({id:id,elem:pageElem}),
+                pages_arr: state.pages_arr.concat({ id: id, elem: pageElem }),
             };
         });
     }
 
-    closePage(id){
-        this.setState(state=>{
-            var foundElem = state.pages_arr.find(x=>{return x.id == id;});
-            if(foundElem == null)
+    closePage(id) {
+        this.setState(state => {
+            var foundElem = state.pages_arr.find(x => { return x.id == id; });
+            if (foundElem == null)
                 return state;
-            var newArr = state.pages_arr.filter(x=>{return x != foundElem;});
+            var newArr = state.pages_arr.filter(x => { return x != foundElem; });
             return {
-                pages_arr:newArr,
+                pages_arr: newArr,
             };
         });
     }
 
-    addItem(target){
-        if(this.banItemChange){
+    addItem(target) {
+        if (this.banItemChange) {
             return;
         }
-        this.setState(state=>{
+        this.setState(state => {
             var index = state.items_arr.indexOf(target);
-            if(index != -1)
+            if (index != -1)
                 return state;
             setLocHash(HashKey_FixItem, state.items_arr.length + 1);
             return {
-                items_arr:state.items_arr.concat(target),
+                items_arr: state.items_arr.concat(target),
             };
         });
     }
 
-    removeItem(target){
-        if(this.banItemChange){
+    removeItem(target) {
+        if (this.banItemChange) {
             return;
         }
-        this.setState(state=>{
+        this.setState(state => {
             var index = state.items_arr.indexOf(target);
-            if(index == -1)
+            if (index == -1)
                 return state;
             var newArr = state.items_arr.concat();
             newArr.splice(index, 1);
             setLocHash(HashKey_FixItem, newArr.length == 0 ? null : newArr.length);
             return {
-                items_arr:newArr,
+                items_arr: newArr,
             };
         });
     }
 
-    render(){
+    render() {
         var items_arr = this.state.items_arr;
         var pages_arr = this.state.pages_arr;
-        if(items_arr.length == 0 && pages_arr.length == 0){
+        if (items_arr.length == 0 && pages_arr.length == 0) {
             return null;
         }
         return (<div className='d-fixed w-100 h-100 fixedBackGround'>
-                {pages_arr.map(item=>{
-                    return item.elem;
-                })}
-                {items_arr}
-            </div>);
+            {pages_arr.map(item => {
+                return item.elem;
+            })}
+            {items_arr}
+        </div>);
     }
 }
 
-function addFixedItem(target){
-    if(gFixedContainerRef.current){
+function addFixedItem(target) {
+    if (gFixedContainerRef.current) {
         gFixedContainerRef.current.addItem(target);
     }
 }
 
-function removeFixedItem(target){
-    if(gFixedContainerRef.current){
+function removeFixedItem(target) {
+    if (gFixedContainerRef.current) {
         gFixedContainerRef.current.removeItem(target);
     }
 }
 
-function popPage(pid, pelem){
-    if(gFixedContainerRef.current){
+function popPage(pid, pelem) {
+    if (gFixedContainerRef.current) {
         gFixedContainerRef.current.popPage(pid, pelem);
     }
 }
 
-function closePage(pid){
-    if(gFixedContainerRef.current){
+function closePage(pid) {
+    if (gFixedContainerRef.current) {
         gFixedContainerRef.current.closePage(pid);
     }
 }
@@ -242,13 +241,13 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
         super(props);
         autoBind(this);
         this.contentDivRef = React.createRef();
-        this.state={
-            maxCount:50,
+        this.state = {
+            maxCount: 50,
         };
         this.inited = false;
     }
 
-    componentWillMount(){
+    componentWillMount() {
         var self = this;
         setTimeout(() => {
             self.inited = true;
@@ -256,11 +255,11 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
         }, 50);
     }
 
-    componentWillUnmount(){
+    componentWillUnmount() {
         this.inited = false;
     }
 
-    foceClose(){
+    foceClose() {
         this.props.dropdownctl.dropDownClosed();
     }
 
@@ -314,26 +313,30 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
         if (theOptionItem == null) {
             console.error('没有找到对应的item' + value);
         }
-        if(multiselect){
-            if(this.state.selectOpt.find(item=>{
+        if (multiselect) {
+            if (this.state.selectOpt.find(item => {
                 return item.value == theOptionItem.value;
-            }) == null){
+            }) == null) {
                 this.props.dropdownctl.selectItem(this.state.selectOpt.concat(theOptionItem));
             }
         }
-        else{
+        else {
             this.props.dropdownctl.selectItem(theOptionItem);
         }
     }
 
-    clickSelectedItemTag(ev){
+    clickStarItem(ev) {
+        this.props.dropdownctl.selectItem('*');
+    }
+
+    clickSelectedItemTag(ev) {
         var target = ev.target;
         var value = getAttributeByNode(target, 'value', true, 3);
         if (value == null) {
             console.error('can not find value attr');
         }
         var selectedOption = this.state.selectOpt;
-        var newArr = selectedOption.filter(item=>{
+        var newArr = selectedOption.filter(item => {
             return item.value != value;
         });
         this.props.dropdownctl.selectItem(newArr);
@@ -345,7 +348,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
         this.setState({ keyword: keyword });
     }
 
-    clickFreshHandler(){
+    clickFreshHandler() {
         this.props.dropdownctl.foreFresh();
     }
 
@@ -353,16 +356,16 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
         var multiselect = this.state.multiselect;
         var selectedVal = this.state.selectedVal;
         var selectedOption = this.state.selectOpt;
-        if(multiselect){
-            if(selectedVal == null){
+        if (multiselect) {
+            if (selectedVal == null) {
                 selectedVal = [];
             }
-            if(selectedOption == null){
+            if (selectedOption == null) {
                 selectedOption = [];
             }
         }
         //console.log(selectedElem);
-        if(!this.inited){
+        if (!this.inited) {
             return (<div className='fixedBackGround'>
                 <div className='dropDownItemContainer d-flex flex-column bg-light flex-shrink-0 rounded'>
                     .
@@ -437,7 +440,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
                             temName = 'g' + gi + item['g' + gi];
                             groupItemCounter[temName] = groupItemCounter[temName] == null ? 1 : groupItemCounter[temName] + 1;
                             var gSelectedVal = groupValues_arr[gi];
-                            if(gi == 0 && gSelectedVal == '_recent'){
+                            if (gi == 0 && gSelectedVal == '_recent') {
                                 return isRecentUsed;
                             }
                             if (groupValues_arr[gi] != null && groupValues_arr[gi] != item['g' + gi]) {
@@ -464,7 +467,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             }
             var tItemSelected = false;
             if (recentItems_arr.length > 0) {
-                if(groupCount > 0){
+                if (groupCount > 0) {
                     groupItemCounter['g0_recent'] = recentItems_arr.length;
                 }
                 else if (keyword.length == 0) {
@@ -473,10 +476,10 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
                         <div>最近使用</div>
                     </div>);
                     recentItems_arr.forEach(item => {
-                        if(multiselect){
+                        if (multiselect) {
                             tItemSelected = selectedVal.indexOf(item.value + '') != -1;
                         }
-                        else{
+                        else {
                             tItemSelected = item.value == selectedVal;
                         }
                         recentElem.push(
@@ -521,10 +524,10 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             }
 
             var multiSelectedElem = null;
-            if(multiselect){
+            if (multiselect) {
                 multiSelectedElem = (<div className='d-flex flex-grow-0 flex-shrink-0 mb-1 flex-wrap'>
                     {
-                        selectedOption && selectedOption.map(item=>{
+                        selectedOption && selectedOption.map(item => {
                             return <span key={item.value} onClick={this.clickSelectedItemTag} value={item.value} className='border btn' >{item.text}<i className='fa fa-close' /></span>
                         })
                     }
@@ -532,7 +535,10 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
                 </div>);
             }
             if (filted_arr.length == 0) {
-                contentElem = (<span className='text-nowrap'>没有找到</span>);
+                contentElem = <div ref={this.contentDivRef} className='list-group flex-grow-1 flex-shrink-0'>
+                    {this.state.starSelectable && <div onClick={this.clickStarItem} className={'d-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == '*' ? ' active' : '')}>*</div>}
+                    <span className='text-nowrap'>没有数据</span>
+                </div>
             }
             if (!multiselect && options_arr.length > 20) {
                 searchItem = (<div className='d-flex flex-shrink-0 align-items-center'>
@@ -545,16 +551,17 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
 
             if (filted_arr.length > 0) {
                 contentElem = (<div ref={this.contentDivRef} className='list-group flex-grow-1 flex-shrink-0 autoScroll_Touch' onScroll={filted_arr.length > maxRowCount ? this.contentDivScrollHandler : null}>
+                    {this.state.starSelectable && <div onClick={this.clickStarItem} className={'d-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == '*' ? ' active' : '')}>*</div>}
                     {recentElem}
                     {
                         filted_arr.map((item, i) => {
                             if (i >= maxRowCount) {
                                 return null;
                             }
-                            if(multiselect){
+                            if (multiselect) {
                                 tItemSelected = selectedVal.indexOf(item.value + '') != -1;
                             }
-                            else{
+                            else {
                                 tItemSelected = item.value == selectedVal;
                             }
                             return (<div onClick={this.listItemClick} className={'d-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (tItemSelected ? ' active' : '')} key={item.value} value={item.value}>
@@ -632,10 +639,10 @@ class ERPC_DropDown extends React.PureComponent {
             var cookieValue = Cookies.get(this.props.recentCookieKey);
             if (cookieValue != null && cookieValue.split != null) {
                 recentValues_arr = cookieValue.split(',').filter(e => { return e != null && e.length > 0; }).filter(e => {
-                    if(e.length == 0){
+                    if (e.length == 0) {
                         return false;
                     }
-                    if(recentUsed.hasOwnProperty(e)){
+                    if (recentUsed.hasOwnProperty(e)) {
                         return false;
                     }
                     recentUsed[e] = null;
@@ -652,13 +659,13 @@ class ERPC_DropDown extends React.PureComponent {
             opened: true,
         });
         if (this.props.pullDataSource) {
-            if(this.props.pullOnce != true || this.props.optionsData.options_arr == null){
+            if (this.props.pullOnce != true || this.props.optionsData.options_arr == null) {
                 this.props.pullDataSource(this.props.fullParentPath);
             }
         }
     }
 
-    foreFresh(){
+    foreFresh() {
         if (this.props.pullDataSource) {
             this.props.pullDataSource(this.props.fullParentPath);
         }
@@ -670,7 +677,7 @@ class ERPC_DropDown extends React.PureComponent {
     }
 
     clickOpenHandler() {
-        if(this.props.fetching){
+        if (this.props.fetching) {
             return;
         }
         if (!this.state.opened) {
@@ -680,8 +687,8 @@ class ERPC_DropDown extends React.PureComponent {
         }
     }
 
-    addSelectItem(theOptionItem){
-        if(theOptionItem == null || !this.props.multiselect){
+    addSelectItem(theOptionItem) {
+        if (theOptionItem == null || !this.props.multiselect) {
             return;
         }
     }
@@ -690,77 +697,85 @@ class ERPC_DropDown extends React.PureComponent {
         var value = null;
         var text = null;
         var multiselect = this.props.multiselect;
-        if(multiselect){
-            if(!Array.isArray(theOptionItem)){
-                console.error("multiselect's selectItem theOptionItem must array!");
-            }
-            var values_arr = [];
-            theOptionItem.forEach(item=>{
-                values_arr.push(item.value);
-                //value = (value == null ? '' : value + ',') + item.value;
-                text = (text == null ? '' : text + ',') + item.text;
-            });
-            value = ERPXMLToolKit.convertToXmlString(values_arr,[this.props.valueAttrName]);
+        if(theOptionItem == '*')
+        {
+            value = '*';
+            text = '*';
         }
         else{
-            if(theOptionItem){
-                value = theOptionItem.value.toString();
-                text = theOptionItem.text;
+            if (multiselect) {
+                if (!Array.isArray(theOptionItem)) {
+                    console.error("multiselect's selectItem theOptionItem must array!");
+                }
+                var values_arr = [];
+                theOptionItem.forEach(item => {
+                    values_arr.push(item.value);
+                    //value = (value == null ? '' : value + ',') + item.value;
+                    text = (text == null ? '' : text + ',') + item.text;
+                });
+                value = ERPXMLToolKit.convertToXmlString(values_arr, [this.props.valueAttrName]);
             }
-            if (this.props.recentCookieKey) {
-                var index = this.recentValues_arr.indexOf(value);
-                if (index != 0) {
-                    if (index != -1) {
-                        this.recentValues_arr.splice(index, 1);
+            else {
+                if (theOptionItem) {
+                    value = theOptionItem.value.toString();
+                    text = theOptionItem.text;
+                }
+                if (this.props.recentCookieKey) {
+                    var index = this.recentValues_arr.indexOf(value);
+                    if (index != 0) {
+                        if (index != -1) {
+                            this.recentValues_arr.splice(index, 1);
+                        }
+                        this.recentValues_arr.unshift(value);
+                        if (this.recentValues_arr.length >= 6) {
+                            this.recentValues_arr.pop();
+                        }
+                        Cookies.set(this.props.recentCookieKey, this.recentValues_arr.join(','), { expires: 7 });
                     }
-                    this.recentValues_arr.unshift(value);
-                    if (this.recentValues_arr.length >= 6) {
-                        this.recentValues_arr.pop();
-                    }
-                    Cookies.set(this.props.recentCookieKey, this.recentValues_arr.join(','), { expires: 7 });
                 }
             }
         }
-        
-        if(!this.props.multiselect){
+
+        if (!this.props.multiselect) {
             this.dropDownClosed();
         }
 
-        var invalidInfo = BaseIsValueValid(null,null, null, value == null || text == null ? null : value, this.props.type, this.props.nullable, this.props.id);
+        var invalidInfo = BaseIsValueValid(null, null, null, value == null || text == null ? null : value, this.props.type, this.props.nullable, this.props.id);
         store.dispatch(makeAction_setManyStateByPath({
             value: value,
             text: text,
-            invalidInfo : invalidInfo,
-            selectOpt : theOptionItem,
+            invalidInfo: invalidInfo,
+            selectOpt: theOptionItem,
         }, this.props.fullPath));
     }
 
-    getPopPanelInitState(){
+    getPopPanelInitState() {
         var multiselect = this.props.multiselect;
         var selectedVal = this.props.value;
         var selectOpt = this.props.selectOpt;
-        if(multiselect){
-            if(selectOpt == null){
+        if (multiselect) {
+            if (selectOpt == null) {
                 selectOpt = [];
             }
         }
         return {
-            selectedVal:this.props.value,
-            fetching:this.props.fetching,
+            selectedVal: this.props.value,
+            fetching: this.props.fetching,
             fetchingErr: this.props.fetchingErr,
-            optionsData:this.props.optionsData,
-            maxCount:50,
+            optionsData: this.props.optionsData,
+            starSelectable: this.props.starSelectable,
+            maxCount: 50,
             keyword: '',
-            recentValues_arr:this.recentValues_arr,
-            recentUsed:this.recentUsed,
-            multiselect:this.props.multiselect,
-            selectOpt:selectOpt,
-            label:ReplaceIfNull(this.props.label,this.props.textAttrName),
+            recentValues_arr: this.recentValues_arr,
+            recentUsed: this.recentUsed,
+            multiselect: this.props.multiselect,
+            selectOpt: selectOpt,
+            label: ReplaceIfNull(this.props.label, this.props.textAttrName),
         }
     }
 
     render() {
-        if(this.props.visible == false){
+        if (this.props.visible == false) {
             return null;
         }
         var hadMini = this.props.miniBtn != false;
@@ -770,20 +785,18 @@ class ERPC_DropDown extends React.PureComponent {
         var multiselect = this.props.multiselect;
         var selectedItems_arr;
 
-        if(!IsEmptyString(selectedVal)){
-            if(IsEmptyString(selectedText))
-            {
-                if(this.props.fetchingErr != null){
+        if (!IsEmptyString(selectedVal)) {
+            if (IsEmptyString(selectedText)) {
+                if (this.props.fetchingErr != null) {
                     setTimeout(() => {
                         self.selectItem(null);
                     }, 50);
                 }
-                else{
-                    if(this.props.optionsData.options_arr == null){
+                else {
+                    if (this.props.optionsData.options_arr == null) {
                         selectedVal = null;
-                        if(!this.props.fetching)
-                        {
-                            if(this.autoPullTO == null){
+                        if (!this.props.fetching) {
+                            if (this.autoPullTO == null) {
                                 this.autoPullTO = setTimeout(() => {
                                     self.props.pullDataSource(this.props.fullParentPath);
                                     self.autoPullTO = null;
@@ -791,20 +804,20 @@ class ERPC_DropDown extends React.PureComponent {
                             }
                         }
                     }
-                    else{
-                        if(multiselect){
-                            selectedItems_arr = this.props.optionsData.options_arr.filter(item=>{
+                    else {
+                        if (multiselect) {
+                            selectedItems_arr = this.props.optionsData.options_arr.filter(item => {
                                 return selectedVal.indexOf(item.value + '') != -1;
                             });
                             selectedText = '';
-                            selectedItems_arr.forEach(item=>{
+                            selectedItems_arr.forEach(item => {
                                 selectedText += item.text;
                             });
                             setTimeout(() => {
                                 self.selectItem(selectedItems_arr);
                             }, 50);
                         }
-                        else{
+                        else {
                             var theOptionItem = this.props.optionsData.options_arr.find(item => {
                                 return item.value == selectedVal;
                             });
@@ -816,53 +829,54 @@ class ERPC_DropDown extends React.PureComponent {
                     }
                 }
             }
-            else if(this.props.optionsData.options_arr){
-                if(multiselect){
-                    selectedItems_arr = this.props.optionsData.options_arr.filter(item=>{
+            else if (this.props.optionsData.options_arr) {
+                if (multiselect) {
+                    selectedItems_arr = this.props.optionsData.options_arr.filter(item => {
                         return selectedVal.indexOf(item.value + '') != -1;
                     });
-                    if(selectedItems_arr){
-                        if(selectedItems_arr.length != this.props.selectOpt.length){
+                    if (selectedItems_arr) {
+                        if (selectedItems_arr.length != this.props.selectOpt.length) {
                             setTimeout(() => {
                                 self.selectItem(selectedItems_arr);
                             }, 50);
                         }
                     }
-                    else{
+                    else {
                         setTimeout(() => {
                             self.selectItem(null);
                         }, 50);
                     }
                 }
-                else{
-                    var selectedOptionItem = this.props.optionsData.options_arr.find(item => {
-                        return item.value == selectedVal;
-                    });
-                    if(selectedOptionItem){
-                        if(selectedOptionItem.text != selectedText){
+                else {
+                    if (selectedText != '*') {
+                        var selectedOptionItem = this.props.optionsData.options_arr.find(item => {
+                            return item.value == selectedVal;
+                        });
+                        if (selectedOptionItem) {
+                            if (selectedOptionItem.text != selectedText) {
+                                setTimeout(() => {
+                                    self.selectItem(selectedOptionItem);
+                                }, 50);
+                            }
+                        }
+                        else {
                             setTimeout(() => {
-                                self.selectItem(selectedOptionItem);
+                                self.selectItem(null);
                             }, 50);
                         }
-                    }
-                    else{
-                        setTimeout(() => {
-                            self.selectItem(null);
-                        }, 50);
                     }
                 }
             }
         }
 
-        if(this.state.opened){
+        if (this.state.opened) {
             var popPanelRefCurrent = this.popPanelRef.current;
-            if(popPanelRefCurrent)
-            {
+            if (popPanelRefCurrent) {
                 var newState = {
-                    selectedVal:selectedVal,
-                    fetching:this.props.fetching,
-                    fetchingErr:this.props.fetchingErr,
-                    optionsData:this.props.optionsData,
+                    selectedVal: selectedVal,
+                    fetching: this.props.fetching,
+                    fetchingErr: this.props.fetchingErr,
+                    optionsData: this.props.optionsData,
                     selectOpt: !multiselect ? null : (this.props.selectOpt ? this.props.selectOpt : []),
                 };
                 setTimeout(() => {
@@ -872,21 +886,21 @@ class ERPC_DropDown extends React.PureComponent {
         }
         var textElem = null;
         var textColor = '';
-        if(!this.state.opened && this.props.fetching){
+        if (!this.state.opened && this.props.fetching) {
             textElem = (<div className='m-auto d-flex align-items-center'>
-                            <i className='fa fa-spinner fa-pulse fa-fw fa-2x' />
-                            <div className='text-nowrap'>加载中</div>
-                        </div>);
+                <i className='fa fa-spinner fa-pulse fa-fw fa-2x' />
+                <div className='text-nowrap'>加载中</div>
+            </div>);
         }
-        else{
+        else {
             textColor = selectedVal == null ? ' text-danger' : '';
             textElem = (<div>{selectedText == null ? '请选择' : selectedText}</div>);
         }
         var errTipElem = null;
-        if(this.props.invalidInfo){
-            errTipElem = <span className='text-danger'><i className='fa fa-warning'/>{this.props.invalidInfo}</span>
+        if (this.props.invalidInfo) {
+            errTipElem = <span className='text-danger'><i className='fa fa-warning' />{this.props.invalidInfo}</span>
         }
-        if(this.props.plainTextMode){
+        if (this.props.plainTextMode) {
             return <div className='d-flex flex-column flex-grow-1 flex-shrink-1'>
                 {textElem}
                 {errTipElem}
@@ -909,13 +923,13 @@ class ERPC_DropDown extends React.PureComponent {
                 }
             </div>
         );
-        if(errTipElem == null){
+        if (errTipElem == null) {
             return dropDownElem;
         }
         return <div className='d-flex flex-column flex-grow-1 flex-shrink-1'>
-                    {dropDownElem}
-                    {errTipElem}
-                </div>
+            {dropDownElem}
+            {errTipElem}
+        </div>
     }
 }
 
@@ -977,10 +991,10 @@ const formatERPC_DropDown_options = (orginData_arr, textAttrName, valueAttrName,
             return { text: item, value: item };
         }
         var newItem = { text: item[textAttrName], value: item[valueAttrName], data: item };
-        switch(textType){
+        switch (textType) {
             case 'date':
-            newItem.text = FormatStringValue(newItem.text, 'date');
-            break;
+                newItem.text = FormatStringValue(newItem.text, 'date');
+                break;
         }
         groupData_arr.forEach((groupData, index) => {
             var data = item[groupData.name];
@@ -1000,32 +1014,32 @@ const formatERPC_DropDown_options = (orginData_arr, textAttrName, valueAttrName,
     return rlt;
 }
 
-function getControlPropProfile(ownprops, useState){
+function getControlPropProfile(ownprops, useState) {
     var ctlState;
     var rowState;
     var fullParentPath;
     var fullPath;
-    if(ownprops.rowIndex == null){
+    if (ownprops.rowIndex == null) {
         fullParentPath = ownprops.parentPath;
         fullPath = MakePath(ownprops.parentPath, ownprops.id);
-        if(useState){
+        if (useState) {
             ctlState = getStateByPath(useState, fullPath, {});
         }
     }
-    else{
+    else {
         fullParentPath = MakePath(ownprops.parentPath, 'row_' + ownprops.rowIndex);
         fullPath = fullParentPath + '.' + ownprops.id;
-        if(useState){
+        if (useState) {
             rowState = getStateByPath(useState, fullParentPath, {});
             ctlState = getStateByPath(rowState, ownprops.id, {});
         }
     }
     return {
-        ctlState:ctlState,
-        rowState:rowState,
-        fullParentPath:fullParentPath,
-        fullPath:fullPath,
-        rowIndex:ownprops.rowIndex,
+        ctlState: ctlState,
+        rowState: rowState,
+        fullParentPath: fullParentPath,
+        fullPath: fullPath,
+        rowIndex: ownprops.rowIndex,
     };
 }
 
@@ -1037,50 +1051,49 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
     var rowState = propProfile.rowState;
 
     var invalidInfo = null;
-    if(ctlState.invalidInfo != gPreconditionInvalidInfo && ctlState.invalidInfo != gCantNullInfo){
+    if (ctlState.invalidInfo != gPreconditionInvalidInfo && ctlState.invalidInfo != gCantNullInfo) {
         invalidInfo = ctlState.invalidInfo;
     }
     var selectorid = propProfile.fullPath + 'optionsData';
     var optionsDataSelector = ERPC_selector_map[selectorid];
-    if(optionsDataSelector == null){
-        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName,selectERPC_DropDown_textType, formatERPC_DropDown_options);
+    if (optionsDataSelector == null) {
+        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName, selectERPC_DropDown_textType, formatERPC_DropDown_options);
         ERPC_selector_map[selectorid] = optionsDataSelector;
     }
 
     var useValue = ctlState.value;
     var selectOpt = ctlState.selectOpt;
-    if(useValue)
-    {
-        if(ownprops.multiselect){
-            if(useValue[0] == '<'){
+    if (useValue) {
+        if (ownprops.multiselect) {
+            if (useValue[0] == '<') {
                 selectorid = propProfile.fullPath + 'value';
                 var valueSelector = ERPC_selector_map[selectorid];
-                if(valueSelector == null){
+                if (valueSelector == null) {
                     valueSelector = Reselect.createSelector(selectERPC_DropDown_value, selectERPC_DropDown_multiValues);
                     ERPC_selector_map[selectorid] = valueSelector;
                 }
                 //useValue = ERPXMLToolKit.extractColumn(useValue, 1);
                 useValue = valueSelector(state, ownprops);
             }
-            else{
+            else {
                 useValue = (useValue + '').split(',');
             }
         }
     }
-    else{
+    else {
         selectOpt = null;
     }
-    
+
     return {
         value: useValue,
         text: ctlState.text,
         fetching: ctlState.fetching,
         fetchingErr: ctlState.fetchingErr,
         optionsData: optionsDataSelector(state, ownprops),
-        visible:ctlState.visible,
-        invalidInfo : invalidInfo,
-        selectOpt : selectOpt,
-        plainTextMode : rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
+        visible: ctlState.visible,
+        invalidInfo: invalidInfo,
+        selectOpt: selectOpt,
+        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
     };
@@ -1105,47 +1118,47 @@ class ERPC_Text extends React.PureComponent {
         var text = ev.target.value;
         var invalidInfo = BaseIsValueValid(null, null, null, text, this.props.type, this.props.nullable, this.props.id);
         store.dispatch(makeAction_setManyStateByPath({
-            value:text,
-            invalidInfo:invalidInfo,
+            value: text,
+            invalidInfo: invalidInfo,
         }, this.props.fullPath));
     }
 
-    formatInputValue(val){
-        if(IsEmptyString(val)){
+    formatInputValue(val) {
+        if (IsEmptyString(val)) {
             return '';
         }
         var type = this.props.type;
         var rlt = val;
-        switch(type){
+        switch (type) {
             case 'int':
-            rlt = parseInt(val);
-            if(isNaN(rlt)){
-                rlt = '';
-            }
-            break;
+                rlt = parseInt(val);
+                if (isNaN(rlt)) {
+                    rlt = '';
+                }
+                break;
             case 'float':
-            var precision = this.props.precision == null ? 2 : parseInt(this.props.precision);
-            rlt = Math.round(val * Math.pow(10, precision)) / Math.pow(10, precision);
-            if(isNaN(rlt)){
-                rlt = '';
-            }
-            break;
+                var precision = this.props.precision == null ? 2 : parseInt(this.props.precision);
+                rlt = Math.round(val * Math.pow(10, precision)) / Math.pow(10, precision);
+                if (isNaN(rlt)) {
+                    rlt = '';
+                }
+                break;
             case 'date':
-                if(val.length > 10){
+                if (val.length > 10) {
                     rlt = getFormatDateString(new Date(Date.parse(val)))
                 }
-            break;
+                break;
         }
         return rlt;
     }
 
-    endInputHandler(){
-        var invalidInfo = BaseIsValueValid(null,null, null, this.props.value, this.props.type, this.props.nullable, this.props.id);
+    endInputHandler() {
+        var invalidInfo = BaseIsValueValid(null, null, null, this.props.value, this.props.type, this.props.nullable, this.props.id);
         store.dispatch(makeAction_setStateByPath(invalidInfo, MakePath(this.props.fullPath, 'invalidInfo')));
     }
 
     render() {
-        if(this.props.visible == false){
+        if (this.props.visible == false) {
             return null;
         }
         var contentElem = null;
@@ -1155,16 +1168,16 @@ class ERPC_Text extends React.PureComponent {
             rootDivClassName += 'rounded border p-1';
             contentElem = <div className='flex-grow-1 flex-shrink-1'><i className='fa fa-spinner fa-pulse fa-fw' />通讯中</div>;
         }
-        else if(this.props.fetchingErr){
+        else if (this.props.fetchingErr) {
             rootDivClassName += 'rounded border p-1 text-danger';
             var errInfo = this.props.fetchingErr.info;
-            if(errInfo == gPreconditionInvalidInfo){
+            if (errInfo == gPreconditionInvalidInfo) {
                 errInfo = '';
             }
             contentElem = <div className='flex-grow-1 flex-shrink-1'><i className='fa fa-warning' />{errInfo}</div>;
         }
         else {
-            if(this.props.plainTextMode){
+            if (this.props.plainTextMode) {
                 var nowValue = FormatStringValue(this.props.value, this.props.type, this.props.precision);
                 contentElem = <div className='flex-grow-1 flex-shrink-1'>{nowValue}</div>
             }
@@ -1186,26 +1199,26 @@ class ERPC_Text extends React.PureComponent {
             else {
                 var useType = this.props.type;
                 var useChecked = null;
-                switch(this.props.type){
+                switch (this.props.type) {
                     case 'string':
-                        useType='text';
+                        useType = 'text';
                         break;
                     case 'int':
                     case 'float':
-                        useType='number';
-                    break;
+                        useType = 'number';
+                        break;
                     case 'boolean':
                         useType = 'checkbox';
                         useChecked = parseBoolean(useType);
-                    break;
+                        break;
                 }
                 var useValue = this.formatInputValue(this.props.value);
                 contentElem = (<input className='flex-grow-1 flex-shrink-1 form-control invalid ' type={useType} value={useValue} checked={useChecked} onChange={this.inputChanged} onBlur={this.endInputHandler} />);
             }
 
-            if(this.props.invalidInfo){
+            if (this.props.invalidInfo) {
                 rootDivClassName += ' flex-column';
-                errTipElem = <span className='text-danger'><i className='fa fa-warning'/>{this.props.invalidInfo}</span>
+                errTipElem = <span className='text-danger'><i className='fa fa-warning' />{this.props.invalidInfo}</span>
             }
         }
         return (<div className={rootDivClassName} ref={this.rootDivRef} style={this.props.style}>
@@ -1224,9 +1237,9 @@ function ERPC_Text_mapstatetoprops(state, ownprops) {
         value: ctlState.value == null ? '' : ctlState.value,
         fetching: ctlState.fetching,
         visible: ctlState.visible,
-        fetchingErr : ctlState.fetchingErr,
-        invalidInfo : ctlState.invalidInfo == gPreconditionInvalidInfo ? null : ctlState.invalidInfo,
-        plainTextMode : rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
+        fetchingErr: ctlState.fetchingErr,
+        invalidInfo: ctlState.invalidInfo == gPreconditionInvalidInfo ? null : ctlState.invalidInfo,
+        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
     };
@@ -1247,7 +1260,7 @@ class ERPC_LabeledControl extends React.PureComponent {
     }
 
     render() {
-        if(this.props.visible == false){
+        if (this.props.visible == false) {
             return null;
         }
         return (<div className='rowlFameOne'>
@@ -1287,9 +1300,9 @@ class ERPC_Form extends React.PureComponent {
 
     render() {
         return (
-        <div className={this.props.className} style={this.props.style}>\
+            <div className={this.props.className} style={this.props.style}>\
             {this.props.children}
-        </div>);
+            </div>);
     }
 }
 
@@ -1312,16 +1325,16 @@ class ERPC_Label extends React.PureComponent {
     }
 
     render() {
-        if(this.props.visible == false){
+        if (this.props.visible == false) {
             return null;
         }
         var contentElem = null;
-        if(this.props.type == 'boolean'){
+        if (this.props.type == 'boolean') {
             var value = this.props.text;
             var checked = checked = !(value == false || value == 0 || value == 'false' || value == 'FALSE');
             contentElem = <i className={'fa ' + (checked ? ' fa-check text-success' : ' fa-close text-danger')} />
         }
-        else{
+        else {
             contentElem = FormatStringValue(this.props.text, this.props.type, this.props.precision);
         }
         return (<span className={'erpc_label ' + (this.props.className == null ? '' : this.props.className)} >{contentElem}</span>);
@@ -1334,7 +1347,7 @@ function ERPC_Label_mapstatetoprops(state, ownprops) {
     var useText = ctlState.text != null ? ctlState.text : (ownprops.text ? ownprops.text : '');
     return {
         text: useText,
-        visible:ctlState.visible,
+        visible: ctlState.visible,
     };
 }
 
@@ -1352,33 +1365,33 @@ class ERPC_CheckBox extends React.PureComponent {
         this.state = this.initState;
     }
 
-    clickHandler(ev){
+    clickHandler(ev) {
         store.dispatch(makeAction_setManyStateByPath({
             value: this.checked ? 0 : 1,
         }, MakePath(this.props.parentPath, this.props.id)));
     }
 
     render() {
-        if(this.props.visible == false){
+        if (this.props.visible == false) {
             return null;
         }
         var checked = false;
         var value = this.props.value;
-        if(value != null){
+        if (value != null) {
             checked = !(value == false || value == 0 || value == 'false' || value == 'FALSE');
         }
         this.checked = checked;
-        if(this.props.readonly){
+        if (this.props.readonly) {
             return (<span className={'erpc_checkbox ' + (this.props.className == null ? '' : this.props.className)} >
-                        <i className={'fa ' + (checked ? ' fa-check text-success' : ' fa-close text-danger')} />
-                    </span>);
+                <i className={'fa ' + (checked ? ' fa-check text-success' : ' fa-close text-danger')} />
+            </span>);
         }
         return (<span className={'erpc_checkbox ' + (this.props.className == null ? '' : this.props.className)} >
-                <span onClick={this.props.readonly ? null : this.clickHandler} className="fa-stack fa-lg">
-                    <i className={"fa fa-square-o fa-stack-2x" + (this.props.readonly ? ' text-secondary' : '') } />
-                    <i className={'fa fa-stack-1x ' + (checked ? ' fa-check text-success' : ' fa-close text-danger')} />
-                </span>
-            </span>);
+            <span onClick={this.props.readonly ? null : this.clickHandler} className="fa-stack fa-lg">
+                <i className={"fa fa-square-o fa-stack-2x" + (this.props.readonly ? ' text-secondary' : '')} />
+                <i className={'fa fa-stack-1x ' + (checked ? ' fa-check text-success' : ' fa-close text-danger')} />
+            </span>
+        </span>);
     }
 }
 
@@ -1386,8 +1399,8 @@ function ERPC_CheckBox_mapstatetoprops(state, ownprops) {
     var ctlPath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
     var ctlState = getStateByPath(state, ctlPath, {});
     return {
-        value:ctlState.value,
-        visible:ctlState.visible,
+        value: ctlState.value,
+        visible: ctlState.visible,
     };
 }
 
@@ -1406,16 +1419,16 @@ class ERPC_Button extends React.PureComponent {
     }
 
     render() {
-        if(this.props.visible == false){
+        if (this.props.visible == false) {
             return null;
         }
         var className = this.props.className;
-        if(className.indexOf('flex-shrink-') == -1){
+        if (className.indexOf('flex-shrink-') == -1) {
             className += ' flex-shrink-0';
         }
         return <button className={className} onClick={this.props.onClick}>
-                {this.props.children}
-            </button>
+            {this.props.children}
+        </button>
     }
 }
 
@@ -1423,13 +1436,13 @@ function ERPC_Button_mapstatetoprops(state, ownprops) {
     var ctlPath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
     var ctlState = getStateByPath(state, ctlPath, {});
     return {
-        visible:ctlState.visible,
+        visible: ctlState.visible,
     };
 }
 
 function ERPC_Button_dispatchtorprops(dispatch, ownprops) {
     return {
-        onClick:ownprops.onClick,
+        onClick: ownprops.onClick,
     };
 }
 
@@ -1449,7 +1462,7 @@ function ErpControlInit() {
     VisibleERPC_Button = ReactRedux.connect(ERPC_Button_mapstatetoprops, ERPC_Button_dispatchtorprops)(ERPC_Button);
 }
 
-function ERPC_PageForm(target){
+function ERPC_PageForm(target) {
     target.clickPreNavBtnHandler = ERPC_PageForm_clickPreNavBtnHandler.bind(target);
     target.clickNextNavBtnHandler = ERPC_PageForm_clickNextNavBtnHandler.bind(target);
     target.clickPlusNavBtnHandler = ERPC_PageForm_clickPlusNavBtnHandler.bind(target);
@@ -1457,39 +1470,39 @@ function ERPC_PageForm(target){
     target.renderNavigater = ERPC_PageForm_renderNavigater.bind(target);
 }
 
-function ERPC_PageForm_clickPreNavBtnHandler(){
+function ERPC_PageForm_clickPreNavBtnHandler() {
     var nowIndex = this.props.recordIndex;
     var count = this.props.records_arr == null ? 0 : this.props.records_arr.length;
-    if(count <= 1){
+    if (count <= 1) {
         return;
     }
     var newIndex = nowIndex - 1;
-    if(newIndex < 0){
+    if (newIndex < 0) {
         newIndex += count;
     }
-    store.dispatch(makeAction_setStateByPath(newIndex, MakePath(this.props.parentPath, this.props.id,'recordIndex')));
+    store.dispatch(makeAction_setStateByPath(newIndex, MakePath(this.props.parentPath, this.props.id, 'recordIndex')));
 }
 
-function ERPC_PageForm_clickNextNavBtnHandler(){
+function ERPC_PageForm_clickNextNavBtnHandler() {
     var nowIndex = this.props.recordIndex;
     var count = this.props.records_arr == null ? 0 : this.props.records_arr.length;
-    if(count <= 1){
+    if (count <= 1) {
         return;
     }
     var newIndex = (nowIndex + 1) % count;
-    store.dispatch(makeAction_setStateByPath(newIndex, MakePath(this.props.parentPath, this.props.id,'recordIndex')));
+    store.dispatch(makeAction_setStateByPath(newIndex, MakePath(this.props.parentPath, this.props.id, 'recordIndex')));
 }
 
-function ERPC_PageForm_clickPlusNavBtnHandler(){
+function ERPC_PageForm_clickPlusNavBtnHandler() {
     this.prePlusIndex = this.props.recordIndex;
-    store.dispatch(makeAction_setStateByPath(-1, MakePath(this.props.parentPath, this.props.id,'recordIndex')));
+    store.dispatch(makeAction_setStateByPath(-1, MakePath(this.props.parentPath, this.props.id, 'recordIndex')));
 }
 
-function ERPC_PageForm_clickUnPlusNavBtnHandler(){
-    store.dispatch(makeAction_setStateByPath(this.prePlusIndex, MakePath(this.props.parentPath, this.props.id,'recordIndex')));
+function ERPC_PageForm_clickUnPlusNavBtnHandler() {
+    store.dispatch(makeAction_setStateByPath(this.prePlusIndex, MakePath(this.props.parentPath, this.props.id, 'recordIndex')));
 }
 
-function ERPC_PageForm_renderNavigater(){
+function ERPC_PageForm_renderNavigater() {
     if (this.props.records_arr == null) {
         return null;
     }
@@ -1503,7 +1516,7 @@ function ERPC_PageForm_renderNavigater(){
     var countInfo = (count > 9999 ? '9999..' : count);
     var indexInfo = count == 0 ? '0' : (nowIndex > 9999 ? '9999..' : nowIndex + 1);
 
-    if(nowIndex != -1) {
+    if (nowIndex != -1) {
         preBtnItem = (<button type='button' onClick={this.clickPreNavBtnHandler} className='btn flex-grow-1 navigationBtn btn-info' ><span className='fa fa-chevron-left' /></button>);
         nextBtnItem = (<button type='button' onClick={this.clickNextNavBtnHandler} className='btn flex-grow-1 navigationBtn btn-info' ><span className='fa fa-chevron-right' /></button>);
         infoItem = (<span className='bg-info text-light d-flex align-items-center flex-shrink-1 p-1'>{indexInfo}/{countInfo}</span>);
@@ -1517,7 +1530,7 @@ function ERPC_PageForm_renderNavigater(){
             plushBtnItem = (<button type='button' onClick={this.clickPlusNavBtnHandler} className='btn btn-info flex-grow-1 navigationBtn' ><span className='fa fa-plus' /></button>);
         }
     }
-    
+
     return (
         <div className='btn-group flex-grow-0 flex-shrink-0'>
             {preBtnItem}
@@ -1529,7 +1542,7 @@ function ERPC_PageForm_renderNavigater(){
     );
 }
 
-function ERPC_GridForm(target){
+function ERPC_GridForm(target) {
     target.rowPerPageChangedHandler = ERPC_GridForm_RowPerPageChangedHandler.bind(target);
     target.pageIndexChangedHandler = ERPC_GridForm_PageIndexChangedHandler.bind(target);
     target.prePageClickHandler = ERPC_GridForm_PrePageClickHandler.bind(target);
@@ -1549,24 +1562,24 @@ function ERPC_GridForm(target){
     target.selectorClicked = ERPC_GridForm_SelectorClicked.bind(target);
 }
 
-function ERPC_GridForm_RowPerPageChangedHandler(ev){
+function ERPC_GridForm_RowPerPageChangedHandler(ev) {
     this.setRowPerPage(ev.target.value);
 }
 
-function ERPC_GridForm_PageIndexChangedHandler(ev){
+function ERPC_GridForm_PageIndexChangedHandler(ev) {
     this.setPageIndex(ev.target.value);
 }
 
-function ERPC_GridForm_PrePageClickHandler(ev){
-    this.setPageIndex(this.props.pageIndex-1);
+function ERPC_GridForm_PrePageClickHandler(ev) {
+    this.setPageIndex(this.props.pageIndex - 1);
 }
 
-function ERPC_GridForm_NxtPageClickHandler(ev){
-    this.setPageIndex(this.props.pageIndex+1);
+function ERPC_GridForm_NxtPageClickHandler(ev) {
+    this.setPageIndex(this.props.pageIndex + 1);
 }
 
-function ERPC_GridForm_SetRowPerPage(value){
-    if(value == this.props.rowPerPage){
+function ERPC_GridForm_SetRowPerPage(value) {
+    if (value == this.props.rowPerPage) {
         return;
     }
     value = parseInt(value);
@@ -1575,53 +1588,53 @@ function ERPC_GridForm_SetRowPerPage(value){
     var pageIndexChanaged = pageIndex != this.props.pageIndex;
     var formPath = MakePath(this.props.parentPath, (this.props.rowIndex == null ? null : 'row_' + this.props.rowIndex), this.props.id);
     store.dispatch(makeAction_setManyStateByPath({
-        rowPerPage:value,
-        pageIndex:pageIndex,
-        pageCount:pageCount,
+        rowPerPage: value,
+        pageIndex: pageIndex,
+        pageCount: pageCount,
     }, formPath));
-    if(!pageIndexChanaged){
-        store.dispatch({type:this.props.reBindAT});
+    if (!pageIndexChanaged) {
+        store.dispatch({ type: this.props.reBindAT });
     }
 }
 
-function ERPC_GridForm_SetPageIndex(value){
+function ERPC_GridForm_SetPageIndex(value) {
     value = parseInt(value);
-    if(value == this.props.pageIndex){
+    if (value == this.props.pageIndex) {
         return;
     }
-    if(value < 0){
+    if (value < 0) {
         value = this.props.pageCount - 1;
     }
-    else if(value >= this.props.pageCount){
+    else if (value >= this.props.pageCount) {
         value = 0;
     }
     var statePath = MakePath(this.props.parentPath, (this.props.rowIndex == null ? null : 'row_' + this.props.rowIndex), this.props.id, 'pageIndex');
     store.dispatch(makeAction_setStateByPath(value, statePath));
 }
 
-function ERPC_GridForm_GetRowPath(rowIndex){
-    return MakePath(this.props.parentPath, this.props.id, 'row_' + rowIndex); 
+function ERPC_GridForm_GetRowPath(rowIndex) {
+    return MakePath(this.props.parentPath, this.props.id, 'row_' + rowIndex);
 }
 
-function ERPC_GridForm_GetRowState(rowIndex, state){
-    if(state == null){
+function ERPC_GridForm_GetRowState(rowIndex, state) {
+    if (state == null) {
         state = store.getState();
     }
     var path = this.getRowPath(rowIndex);
     return getStateByPath(state, path);
 }
 
-function ERPC_GridForm_RoweditClicked(rowIndex){
+function ERPC_GridForm_RoweditClicked(rowIndex) {
     var rowPath = this.getRowPath(rowIndex);
     var rowState = this.getRowState(rowIndex);
     var rowStateShot = JSON.stringify(rowState);
     store.dispatch(makeAction_setManyStateByPath({
-        editing:true,
-        stateshot:rowStateShot,
+        editing: true,
+        stateshot: rowStateShot,
     }, rowPath));
 }
 
-function ERPC_GridForm_RowcanceleditClicked(rowIndex){
+function ERPC_GridForm_RowcanceleditClicked(rowIndex) {
     var rowPath = this.getRowPath(rowIndex);
     var rowState = this.getRowState(rowIndex);
     var needSetState = JSON.parse(rowState.stateshot);
@@ -1629,136 +1642,136 @@ function ERPC_GridForm_RowcanceleditClicked(rowIndex){
     store.dispatch(makeAction_setManyStateByPath(needSetState, rowPath));
 }
 
-function ERPC_GridForm_RowdeleteClicked(rowIndex){
-    var deleteBtn = this.btns.find(x=>{return x.key == 'delete'});
+function ERPC_GridForm_RowdeleteClicked(rowIndex) {
+    var deleteBtn = this.btns.find(x => { return x.key == 'delete' });
     deleteBtn.handler(rowIndex);
 }
 
-function ERPC_GridForm_RowconfirmeditClicked(rowIndex){
+function ERPC_GridForm_RowconfirmeditClicked(rowIndex) {
     var self = this;
     var rowPath = self.getRowPath(rowIndex);
-    var editBtn = this.btns.find(x=>{return x.key == 'edit'});
-    editBtn.handler(rowIndex, (state)=>{
-        if(state == null){
+    var editBtn = this.btns.find(x => { return x.key == 'edit' });
+    editBtn.handler(rowIndex, (state) => {
+        if (state == null) {
             store.dispatch(makeAction_setStateByPath(false, rowPath + '.editing'));
         }
-        else{
+        else {
             setStateByPath(state, rowPath + '.editing', false);
         }
     });
 }
 
 
-function ERPC_GridForm_ClickNewRowHandler(){
+function ERPC_GridForm_ClickNewRowHandler() {
     this.setState({
-        hadNewRow:true,
+        hadNewRow: true,
     });
 }
 
-function ERPC_GridForm_CancelInsert(){
+function ERPC_GridForm_CancelInsert() {
     this.setState({
-        hadNewRow:false,
+        hadNewRow: false,
     });
 }
 
-function ERPC_GridForm_ConfirmInsert(){
+function ERPC_GridForm_ConfirmInsert() {
     var self = this;
-    this.submitInsert(()=>{
+    this.submitInsert(() => {
         setTimeout(() => {
             self.setState({
-                hadNewRow:false,
+                hadNewRow: false,
             });
         }, 50);
     });
 }
 
-function ERPC_GridForm_GetSelectedRowIndex(){
+function ERPC_GridForm_GetSelectedRowIndex() {
     return this.props.selectedRows_arr.length == 0 ? -1 : this.props.selectedRows_arr[0];
 }
 
-function ERPC_GridForm_SelectorClicked(rowIndex){
-    var needSetState={};
-    if(this.props.selectMode == 'single'){
-        if(this.getSelectedRowIndex() == rowIndex){
+function ERPC_GridForm_SelectorClicked(rowIndex) {
+    var needSetState = {};
+    if (this.props.selectMode == 'single') {
+        if (this.getSelectedRowIndex() == rowIndex) {
             return;
         }
         needSetState[this.props.fullPath + '.selectedRows_arr'] = [rowIndex];
     }
-    else{
+    else {
         var index = this.props.selectedRows_arr.indexOf(rowIndex);
-        if(index == -1){
+        if (index == -1) {
             needSetState[this.props.fullPath + '.selectedRows_arr'] = this.props.selectedRows_arr.concat(rowIndex);
         }
-        else{
+        else {
             var newArr = this.props.selectedRows_arr.concat();
             newArr.splice(index, 1);
             needSetState[this.props.fullPath + '.selectedRows_arr'] = newArr;
         }
     }
-    
+
     store.dispatch(makeAction_setManyStateByPath(needSetState, ''));
 }
 
-class ERPC_GridForm_BtnCol extends React.PureComponent{
-	constructor(props){
-		super(props);
-		autoBind(this);
-	}
-	
-	clickHandler(ev){
-		if(this.props.rowIndex == null){
-			return;
-		}
-        var key = getAttributeByNode(ev.target, 'd-key', true, 5);
-		if(key == null){
-			console.warn('no key');
-			return;
-        }
-        var btnSetting = this.props.form.btns.find(x=>{return x.key == key});
-        switch(key){
-            case 'edit':
-            this.props.form['roweditClicked'](this.props.rowIndex);
-            break;
-            case 'delete':
-            this.props.form['rowdeleteClicked'](this.props.rowIndex);
-            break;
-            case 'confirmedit':
-            this.props.form['rowconfirmeditClicked'](this.props.rowIndex);
-            break;
-            case 'canceledit':
-            this.props.form['rowcanceleditClicked'](this.props.rowIndex);
-            break;
-            case 'cancelInsert':
-            this.props.form.cancelInsert();
-            break;
-            case 'confirminsert':
-            this.props.form.confrimInsert();
-            break;
-            default:
-            btnSetting.handler(this.props.rowIndex);
-        }
-	}
+class ERPC_GridForm_BtnCol extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+    }
 
-	render(){
-        if(this.props.rowIndex == 'new'){
-            return 	<div className='btn-group gridFormBtnsCol'>
-						<button onClick={this.clickHandler} d-key='confirminsert' className='btn btn-dark' type='button'><i className='fa fa-upload text-success' /></button>
-						<button onClick={this.clickHandler} d-key='cancelInsert' className='btn btn-dark' type='button'><i className='fa fa-close text-danger' /></button>
-					</div>;
+    clickHandler(ev) {
+        if (this.props.rowIndex == null) {
+            return;
         }
-		if(this.props.editing == true){
-			return 	<div className='btn-group gridFormBtnsCol'>
-						<button onClick={this.clickHandler} d-key='confirmedit' className='btn btn-dark' type='button'><i className='fa fa-save text-success' /></button>
-						<button onClick={this.clickHandler} d-key='canceledit' className='btn btn-dark' type='button'><i className='fa fa-close text-danger' /></button>
-					</div>;
-		}
-		
-		return <div className='btn-group gridFormBtnsCol'>
-				{this.props.form.btns.map(btn=>{
-					return <button key={btn.key} onClick={this.clickHandler} d-key={btn.key} className='btn btn-dark' type='button'>{btn.content}</button>
-				})}
-			</div>;
-	}
+        var key = getAttributeByNode(ev.target, 'd-key', true, 5);
+        if (key == null) {
+            console.warn('no key');
+            return;
+        }
+        var btnSetting = this.props.form.btns.find(x => { return x.key == key });
+        switch (key) {
+            case 'edit':
+                this.props.form['roweditClicked'](this.props.rowIndex);
+                break;
+            case 'delete':
+                this.props.form['rowdeleteClicked'](this.props.rowIndex);
+                break;
+            case 'confirmedit':
+                this.props.form['rowconfirmeditClicked'](this.props.rowIndex);
+                break;
+            case 'canceledit':
+                this.props.form['rowcanceleditClicked'](this.props.rowIndex);
+                break;
+            case 'cancelInsert':
+                this.props.form.cancelInsert();
+                break;
+            case 'confirminsert':
+                this.props.form.confrimInsert();
+                break;
+            default:
+                btnSetting.handler(this.props.rowIndex);
+        }
+    }
+
+    render() {
+        if (this.props.rowIndex == 'new') {
+            return <div className='btn-group gridFormBtnsCol'>
+                <button onClick={this.clickHandler} d-key='confirminsert' className='btn btn-dark' type='button'><i className='fa fa-upload text-success' /></button>
+                <button onClick={this.clickHandler} d-key='cancelInsert' className='btn btn-dark' type='button'><i className='fa fa-close text-danger' /></button>
+            </div>;
+        }
+        if (this.props.editing == true) {
+            return <div className='btn-group gridFormBtnsCol'>
+                <button onClick={this.clickHandler} d-key='confirmedit' className='btn btn-dark' type='button'><i className='fa fa-save text-success' /></button>
+                <button onClick={this.clickHandler} d-key='canceledit' className='btn btn-dark' type='button'><i className='fa fa-close text-danger' /></button>
+            </div>;
+        }
+
+        return <div className='btn-group gridFormBtnsCol'>
+            {this.props.form.btns.map(btn => {
+                return <button key={btn.key} onClick={this.clickHandler} d-key={btn.key} className='btn btn-dark' type='button'>{btn.content}</button>
+            })}
+        </div>;
+    }
 
 }
 
@@ -1774,35 +1787,35 @@ function ERPC_GridForm_BtnCol_dispatchtorprops(dispatch, ownprops) {
     };
 }
 
-class ERPC_GridSelectableRow extends React.PureComponent{
-	constructor(props){
-		super(props);
-		this.clickHandler = this.clickHandler.bind(this);
-	}
-	clickHandler(ev){
-		this.props.form.selectorClicked(this.props.rowIndex);
-	}
-	render(){
-		var selectMode = this.props.form.props.selectMode;
-		var checked = this.props.selected;
-		var selectElem = null;
-		if(selectMode == 'multi'){
-			selectElem = <span onClick={this.clickHandler} className="fa-stack fa-lg">
-                    <i className={"fa fa-square-o fa-stack-2x" } />
-                    <i className={'fa fa-stack-1x ' + (checked ? ' fa-check text-success' : '')} />
-                </span>;
-		}
-		else if(selectMode == 'single'){
-			selectElem = <span onClick={this.clickHandler} className="fa-stack fa-lg">
-                    <i className={"fa fa-circle-o fa-stack-2x" } />
-                    <i className={'fa fa-stack-1x ' + (checked ? ' fa-check text-success' : '')} />
-                </span>
-		}
-		return <tr className={checked ? 'bg-warning' : null}>
-				<td className='selectorTableHeader'>{selectElem}</td>
-				{this.props.children}
-		</tr>;
-	}
+class ERPC_GridSelectableRow extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        this.clickHandler = this.clickHandler.bind(this);
+    }
+    clickHandler(ev) {
+        this.props.form.selectorClicked(this.props.rowIndex);
+    }
+    render() {
+        var selectMode = this.props.form.props.selectMode;
+        var checked = this.props.selected;
+        var selectElem = null;
+        if (selectMode == 'multi') {
+            selectElem = <span onClick={this.clickHandler} className="fa-stack fa-lg">
+                <i className={"fa fa-square-o fa-stack-2x"} />
+                <i className={'fa fa-stack-1x ' + (checked ? ' fa-check text-success' : '')} />
+            </span>;
+        }
+        else if (selectMode == 'single') {
+            selectElem = <span onClick={this.clickHandler} className="fa-stack fa-lg">
+                <i className={"fa fa-circle-o fa-stack-2x"} />
+                <i className={'fa fa-stack-1x ' + (checked ? ' fa-check text-success' : '')} />
+            </span>
+        }
+        return <tr className={checked ? 'bg-warning' : null}>
+            <td className='selectorTableHeader'>{selectElem}</td>
+            {this.props.children}
+        </tr>;
+    }
 }
 
 function ERPC_GridSelectableRow_mapstatetoprops(state, ownprops) {
@@ -1821,65 +1834,65 @@ const VisibleERPC_GridSelectableRow = ReactRedux.connect(ERPC_GridSelectableRow_
 const VisibleERPC_GridForm_BtnCol = ReactRedux.connect(ERPC_GridForm_BtnCol_mapstatetoprops, ERPC_GridForm_BtnCol_dispatchtorprops)(ERPC_GridForm_BtnCol);
 
 class CBaseGridFormNavBar extends React.PureComponent {
-	constructor(props) {
-		super(props);
-	}
-	render() {
-		var pageOptions_arr = [];
-		for (var pi = 0; pi < this.props.pageCount; ++pi) {
-			pageOptions_arr.push(<option key={pi} value={pi}>第{pi + 1}页</option>);
-		}
-		return(<div className='btn-group flex-shrink-0'>
-			<button onClick={this.props.prePageClickHandler} type='button' className='btn btn-dark flex-grow-1'><i className='fa fa-long-arrow-left' /></button>
-			<button onClick={this.props.nxtPageClickHandler} type='button' className='btn btn-dark flex-grow-1'><i className='fa fa-long-arrow-right' /></button>
-			<select className='btn btn-dark' value={this.props.rowPerPage} onChange={this.props.rowPerPageChangedHandler}>
-				<option value={20}>20条/页</option>
-				<option value={50}>50条/页</option>
-				<option value={100}>100条/页</option>
-				<option value={200}>200条/页</option>
-			</select>
-			<select className='btn btn-dark' value={this.props.pageIndex} onChange={this.props.pageIndexChangedHandler}>
-				{pageOptions_arr}
-			</select>
-		</div>);
-	}
+    constructor(props) {
+        super(props);
+    }
+    render() {
+        var pageOptions_arr = [];
+        for (var pi = 0; pi < this.props.pageCount; ++pi) {
+            pageOptions_arr.push(<option key={pi} value={pi}>第{pi + 1}页</option>);
+        }
+        return (<div className='btn-group flex-shrink-0'>
+            <button onClick={this.props.prePageClickHandler} type='button' className='btn btn-dark flex-grow-1'><i className='fa fa-long-arrow-left' /></button>
+            <button onClick={this.props.nxtPageClickHandler} type='button' className='btn btn-dark flex-grow-1'><i className='fa fa-long-arrow-right' /></button>
+            <select className='btn btn-dark' value={this.props.rowPerPage} onChange={this.props.rowPerPageChangedHandler}>
+                <option value={20}>20条/页</option>
+                <option value={50}>50条/页</option>
+                <option value={100}>100条/页</option>
+                <option value={200}>200条/页</option>
+            </select>
+            <select className='btn btn-dark' value={this.props.pageIndex} onChange={this.props.pageIndexChangedHandler}>
+                {pageOptions_arr}
+            </select>
+        </div>);
+    }
 }
 
-function BaseIsValueValid(nowState,visibleBelongState, ctlState, value, valueType, nullable, ctlID, validErrState){
-    if(visibleBelongState && visibleBelongState.visible == false){
+function BaseIsValueValid(nowState, visibleBelongState, ctlState, value, valueType, nullable, ctlID, validErrState) {
+    if (visibleBelongState && visibleBelongState.visible == false) {
         // not visible is always valid
         return null;
     }
-    if(ctlState != null){
-        if(ctlState.fetching){
+    if (ctlState != null) {
+        if (ctlState.fetching) {
             return '等待通讯完成';
         }
-        else if(ctlState.fetchingErr){
+        else if (ctlState.fetchingErr) {
             return ctlState.fetchingErr.info;
         }
     }
-    if(nullable != true && IsEmptyString(value)){
+    if (nullable != true && IsEmptyString(value)) {
         return gCantNullInfo;
     }
-    switch(valueType){
+    switch (valueType) {
         case 'int':
         case 'float':
-        if(isNaN(value)){
-            return '必须是数字';
-        }
-        break;
+            if (isNaN(value)) {
+                return '必须是数字';
+            }
+            break;
         case 'date':
         case 'datetime':
-        if(!checkDate(value)){
-            return '不是有效的日期格式';
-        }
-        break;
+            if (!checkDate(value)) {
+                return '不是有效的日期格式';
+            }
+            break;
         case 'time':
-        if(!checkTime(value)){
-            return '不是有效的时间格式';
-        }
+            if (!checkTime(value)) {
+                return '不是有效的时间格式';
+            }
     }
-    if(gCusValidChecker_map[ctlID]){
+    if (gCusValidChecker_map[ctlID]) {
         return gCusValidChecker_map[ctlID](value, nowState, validErrState);
     }
     return null;
@@ -1887,210 +1900,208 @@ function BaseIsValueValid(nowState,visibleBelongState, ctlState, value, valueTyp
 
 var gCToastMangerRef = React.createRef();
 var gCMessageBoxMangerRef = React.createRef();
-function SendToast(info, type, timeTime){
-    if(gCToastMangerRef.current){
+function SendToast(info, type, timeTime) {
+    if (gCToastMangerRef.current) {
         gCToastMangerRef.current.toast(info, type, timeTime)
     }
-    else{
+    else {
         console.warn('gCToastMangerRef为空');
     }
 }
 
-function PopMessageBox(text,type,title,btns,callBack){
-    if(gCMessageBoxMangerRef.current){
-		var msg = new MessageBoxItem(text,type,title,btns,callBack);
-		gCMessageBoxMangerRef.current.addMessage(msg);
+function PopMessageBox(text, type, title, btns, callBack) {
+    if (gCMessageBoxMangerRef.current) {
+        var msg = new MessageBoxItem(text, type, title, btns, callBack);
+        gCMessageBoxMangerRef.current.addMessage(msg);
         return msg;
     }
-    else{
+    else {
         console.warn('gCMessageBoxMangerRef为空');
     }
 }
 
 const EToastTime = {
-	Normal:5,
-	Long:10,
-	Small:3,
+    Normal: 5,
+    Long: 10,
+    Small: 3,
 };
 
 const EToastType = {
-	Info:'info',
-	Warning:'warning',
-	Error:'error',
+    Info: 'info',
+    Warning: 'warning',
+    Error: 'error',
 };
 
-class CToastManger extends React.PureComponent{
-	constructor(props){
-		super(props);
-		autoBind(this);
-		
-		this.state={
-			msg_arr:[],
-		};
-		this.ticker = null;
-		this.msgID = 0;
-	}
+class CToastManger extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
 
-	toast(info, type, timeTime){
-		if(info.length > 50){
-			info = info.substr(0,50) + '……';
-		}
-		var newMsg = {text:info, 
-			timeType:timeTime == null ? EToastTime.Normal : timeTime,
-			type:type == null ? EToastType.Info : type,
+        this.state = {
+            msg_arr: [],
+        };
+        this.ticker = null;
+        this.msgID = 0;
+    }
+
+    toast(info, type, timeTime) {
+        if (info.length > 50) {
+            info = info.substr(0, 50) + '……';
+        }
+        var newMsg = {
+            text: info,
+            timeType: timeTime == null ? EToastTime.Normal : timeTime,
+            type: type == null ? EToastType.Info : type,
         };
         newMsg.id = this.msgID++;
-		this.setState({
-			msg_arr:this.state.msg_arr.concat(newMsg),
-		});
-	}
+        this.setState({
+            msg_arr: this.state.msg_arr.concat(newMsg),
+        });
+    }
 
-	tickHandler(){
-		var msg_arr = this.state.msg_arr;
-		var new_arr = [];
-		msg_arr.forEach(msg=>{
-			if(msg.time == null){
-				msg.time = msg.timeType;
+    tickHandler() {
+        var msg_arr = this.state.msg_arr;
+        var new_arr = [];
+        msg_arr.forEach(msg => {
+            if (msg.time == null) {
+                msg.time = msg.timeType;
                 msg.opacity = 1;
-			}
-			else{
-				msg.time -= 0.2;
-				if(msg.time <= 1){
+            }
+            else {
+                msg.time -= 0.2;
+                if (msg.time <= 1) {
                     msg.opacity = 0;
-				}
-			}
-			if(msg.time > 0){
-				new_arr.push(msg);
-			}
-		});
-		this.setState({
-			msg_arr:new_arr,
-		});
-	}
+                }
+            }
+            if (msg.time > 0) {
+                new_arr.push(msg);
+            }
+        });
+        this.setState({
+            msg_arr: new_arr,
+        });
+    }
 
-	render(){
-		var msg_arr = this.state.msg_arr;
-		if(msg_arr.length == 0){
-			if(this.ticker){
-				clearInterval(this.ticker);
-				this.ticker = null;
-			}
-			return null;
-		}
-		if(this.ticker == null){
-			this.ticker = setInterval(this.tickHandler, 200);
-		}
-		return (<div className='toastMsgContainer'>
-				{
-					msg_arr.map((msg,index)=>{
-						return <div key={msg.id} type={msg.type} className='toastMsg bg-light rounded shadow' style={{opacity:(msg.opacity == null ? 0 : msg.opacity)}}>{msg.text}</div>
-					})
-				}
-		</div>);
-	}
+    render() {
+        var msg_arr = this.state.msg_arr;
+        if (msg_arr.length == 0) {
+            if (this.ticker) {
+                clearInterval(this.ticker);
+                this.ticker = null;
+            }
+            return null;
+        }
+        if (this.ticker == null) {
+            this.ticker = setInterval(this.tickHandler, 200);
+        }
+        return (<div className='toastMsgContainer'>
+            {
+                msg_arr.map((msg, index) => {
+                    return <div key={msg.id} type={msg.type} className='toastMsg bg-light rounded shadow' style={{ opacity: (msg.opacity == null ? 0 : msg.opacity) }}>{msg.text}</div>
+                })
+            }
+        </div>);
+    }
 }
 
-const EMessageBoxType={
-	Tip:'tip',
-	Warning:'warning',
-	Error:'error',
-	Loading:'loading',
+const EMessageBoxType = {
+    Tip: 'tip',
+    Warning: 'warning',
+    Error: 'error',
+    Loading: 'loading',
+    Blank: 'blank',
 };
 
-const EMessageBoxBtnType={
-	Ok:{
-		label:'确认',
-		key:'OK',
-		class:'btn btn-success',
-	},
-	Aware:{
-		label:'知道了',
-		key:'OK',
-		class:'btn btn-info',
-	},
-	Cancel:{
-		label:'取消',
-		key:'CANCEL',
-		class:'btn btn-danger',
-	},
+const EMessageBoxBtnType = {
+    Ok: {
+        label: '确认',
+        key: 'OK',
+        class: 'btn btn-success',
+    },
+    Aware: {
+        label: '知道了',
+        key: 'OK',
+        class: 'btn btn-info',
+    },
+    Cancel: {
+        label: '取消',
+        key: 'CANCEL',
+        class: 'btn btn-danger',
+    },
 };
 
-class MessageBoxItem{
-	constructor(text,type,title,btns,callBack){
-		this.type = type;
-		this.text = text;
-		this.btns = btns;
-		this.title = title;
-		this.callBack = callBack;
-	}
-
-	setData(text,type,title,btns){
-		var changed = false;
-		if(type != this.type)
-		{
-			this.type = type;
-			changed = true;
-		}
-		if(text != this.text)
-		{
-			this.text = text;
-			changed = true;
-		}
-		if(title != this.title)
-		{
-			this.title = title;
-			changed = true;
-		}
-		if(btns != this.btns)
-		{
-			this.btns = btns;
-			changed = true;
-		}
-		if(changed){
-			this.fireChanged();
-		}
-	}
-
-	fireChanged(){
-		if(this.changedAct != null){
-			this.changedAct();
-		}
-	}
-
-	fireClose(){
-		if(this.closeAct != null){
-			this.closeAct();
-		}
+class MessageBoxItem {
+    constructor(text, type, title, btns, callBack) {
+        this.type = type;
+        this.text = text;
+        this.btns = btns;
+        this.title = title;
+        this.callBack = callBack;
     }
-    
-    fireHide(){
-        this.hidden = true;
-        if(this.hideAct != null){
-			this.hideAct();
+
+    setData(text, type, title, btns) {
+        var changed = false;
+        if (type != this.type) {
+            this.type = type;
+            changed = true;
+        }
+        if (text != this.text) {
+            this.text = text;
+            changed = true;
+        }
+        if (title != this.title) {
+            this.title = title;
+            changed = true;
+        }
+        if (btns != this.btns) {
+            this.btns = btns;
+            changed = true;
+        }
+        if (changed) {
+            this.fireChanged();
         }
     }
 
-	setType(val){
-		this.type = val;
-		this.fireChanged();
-	}
-
-	setText(val){
-		this.text = val;
-		this.fireChanged();
-	}
-
-	setTitle(val){
-		this.title = val;
-		this.fireChanged();
-	}
-
-	setBtns(val){
-		this.btns = val;
-		this.fireChanged();
+    fireChanged() {
+        if (this.changedAct != null) {
+            this.changedAct();
+        }
     }
 
-    query(tip, btns_arr, callBack){
+    fireClose() {
+        if (this.closeAct != null) {
+            this.closeAct();
+        }
+    }
+
+    fireHide() {
+        this.hidden = true;
+        if (this.hideAct != null) {
+            this.hideAct();
+        }
+    }
+
+    setType(val) {
+        this.type = val;
+        this.fireChanged();
+    }
+
+    setText(val) {
+        this.text = val;
+        this.fireChanged();
+    }
+
+    setTitle(val) {
+        this.title = val;
+        this.fireChanged();
+    }
+
+    setBtns(val) {
+        this.btns = val;
+        this.fireChanged();
+    }
+
+    query(tip, btns_arr, callBack) {
         this.text = tip;
         this.btns = btns_arr;
         this.callBack = callBack;
@@ -2101,189 +2112,189 @@ class MessageBoxItem{
 
 
 
-class CMessageBox extends React.PureComponent{
-	constructor(props){
-		super(props);
-		autoBind(this);
-		
-		this.state={
-            hidden:this.props.msgItem.hidden,
-		};
-		this.props.msgItem.changedAct = this.msgItemChanedHandler;
+class CMessageBox extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+
+        this.state = {
+            hidden: this.props.msgItem.hidden,
+        };
+        this.props.msgItem.changedAct = this.msgItemChanedHandler;
         this.props.msgItem.closeAct = this.msgItemCloseHandler;
         this.props.msgItem.hideAct = this.msgItemHideHandler;
-	}
+    }
 
-	msgItemChanedHandler(ev){
-        if(this.state.hidden){
+    msgItemChanedHandler(ev) {
+        if (this.state.hidden) {
             this.props.msgItem.hidden = false;
             this.props.manager.redraw();
         }
-		this.setState({
-            magicObj:{},
-            hidden:false,
-		});
-	}
-
-	componentWillUnmount(){
-		this.props.msgItem.changedAct = null;
-		this.props.msgItem.closeAct = null;
-		
-		if(this.timeInt){
-			clearInterval(this.timeInt);
-			this.timeInt = null;
-		}
-	}
-
-	timerHander(ev){
-		var now = (new Date()).getTime();
-		var pssSec =  Math.round((now - this.startTime) / 100) / 10;
-		this.setState({
-			passSec:pssSec,
-		});
-	}
-
-	clickBtnHandler(ev){
-        var msgItem = this.props.msgItem;
-        var autoClose = true;
-		if(msgItem.callBack){
-            if(msgItem.callBack(ev.target.getAttribute('d-type')) == false){
-                autoClose = false;
-            }
-        }
-        if(autoClose){
-            this.props.manager.delete(this);
-        }
-	}
-
-	msgItemCloseHandler(ev){
-		this.props.manager.delete(this);
-    }
-    
-    msgItemHideHandler(ev){
         this.setState({
-            hidden:true,
+            magicObj: {},
+            hidden: false,
         });
     }
 
-	render(){
-		var msgItem = this.props.msgItem;
-		var type = msgItem.type;
-		
-		var contentElem = null;
-		var headerElem = null;
-		var btnsElem = null;
-		
-		if(type == EMessageBoxType.Loading){
-			var passSec = 0;
-			if(this.timeInt == null){
-				this.startTime = (new Date()).getTime();
-				this.timeInt = setInterval(this.timerHander, 200);
-			}
-			else{
-				passSec = this.state.passSec;
-			}
-			headerElem = (<span>{msgItem.title}<span className='badge badge-primary'>处理中</span><i className='fa fa-spinner fa-spin' />{passSec}s</span>);
-			contentElem = (<p className='messageBoxContent'>{msgItem.text}</p>);
-		}
-		else{
-			if(this.timeInt != null){
-				clearInterval(this.timeInt);
-				this.timeInt = null;
-			}
-			switch(type){
-				case EMessageBoxType.Tip:
-				headerElem = (<span><span className='badge badge-info'>信息</span>{msgItem.title}</span>);
-				break;
-				case EMessageBoxType.Error:
-				headerElem = (<span><span className='badge badge-danger'>错误</span>{msgItem.title}</span>);
-				btnsElem = (<button type='button' className='btn btn-danger'>了解</button>);
-				break;
-				case EMessageBoxType.Warning:
-				headerElem = (<span><span className='badge badge-warning'>警告</span>{msgItem.title}</span>);
-				btnsElem = (<button type='button' className='btn btn-warning'>了解</button>);
-				break;
-			}
-			if(msgItem.btns == null){
-				btnsElem = (<button onClick={this.clickBtnHandler} d-type={EMessageBoxBtnType.Aware.key} type='button' className={EMessageBoxBtnType.Aware.class}>{EMessageBoxBtnType.Aware.label}</button>);
-			}
-			else{
-				btnsElem = msgItem.btns.map(btn=>{
-					return (<button onClick={this.clickBtnHandler} key={btn.label} d-type={btn.key} type='button' className={btn.class == null ? 'btn btn-light' : btn.class}>{btn.label}</button>);
-				});
-			}
-			contentElem = (<p className='messageBoxContent'>{msgItem.text}</p>);
+    componentWillUnmount() {
+        this.props.msgItem.changedAct = null;
+        this.props.msgItem.closeAct = null;
+
+        if (this.timeInt) {
+            clearInterval(this.timeInt);
+            this.timeInt = null;
+        }
+    }
+
+    timerHander(ev) {
+        var now = (new Date()).getTime();
+        var pssSec = Math.round((now - this.startTime) / 100) / 10;
+        this.setState({
+            passSec: pssSec,
+        });
+    }
+
+    clickBtnHandler(ev) {
+        var msgItem = this.props.msgItem;
+        var autoClose = true;
+        if (msgItem.callBack) {
+            if (msgItem.callBack(ev.target.getAttribute('d-type')) == false) {
+                autoClose = false;
+            }
+        }
+        if (autoClose) {
+            this.props.manager.delete(this);
+        }
+    }
+
+    msgItemCloseHandler(ev) {
+        this.props.manager.delete(this);
+    }
+
+    msgItemHideHandler(ev) {
+        this.setState({
+            hidden: true,
+        });
+    }
+
+    render() {
+        var msgItem = this.props.msgItem;
+        var type = msgItem.type;
+
+        var contentElem = null;
+        var headerElem = null;
+        var btnsElem = null;
+
+        if (type == EMessageBoxType.Loading) {
+            var passSec = 0;
+            if (this.timeInt == null) {
+                this.startTime = (new Date()).getTime();
+                this.timeInt = setInterval(this.timerHander, 200);
+            }
+            else {
+                passSec = this.state.passSec;
+            }
+            headerElem = (<span>{msgItem.title}<span className='badge badge-primary'>处理中</span><i className='fa fa-spinner fa-spin' />{passSec}s</span>);
+            contentElem = (<p className='messageBoxContent'>{msgItem.text}</p>);
+        }
+        else {
+            if (this.timeInt != null) {
+                clearInterval(this.timeInt);
+                this.timeInt = null;
+            }
+            switch (type) {
+                case EMessageBoxType.Tip:
+                    headerElem = (<span><span className='badge badge-info'>信息</span>{msgItem.title}</span>);
+                    break;
+                case EMessageBoxType.Error:
+                    headerElem = (<span><span className='badge badge-danger'>错误</span>{msgItem.title}</span>);
+                    btnsElem = (<button type='button' className='btn btn-danger'>了解</button>);
+                    break;
+                case EMessageBoxType.Warning:
+                    headerElem = (<span><span className='badge badge-warning'>警告</span>{msgItem.title}</span>);
+                    btnsElem = (<button type='button' className='btn btn-warning'>了解</button>);
+                    break;
+            }
+            if (msgItem.btns == null) {
+                btnsElem = (<button onClick={this.clickBtnHandler} d-type={EMessageBoxBtnType.Aware.key} type='button' className={EMessageBoxBtnType.Aware.class}>{EMessageBoxBtnType.Aware.label}</button>);
+            }
+            else {
+                btnsElem = msgItem.btns.map(btn => {
+                    return (<button onClick={this.clickBtnHandler} key={btn.label} d-type={btn.key} type='button' className={btn.class == null ? 'btn btn-light' : btn.class}>{btn.label}</button>);
+                });
+            }
+            contentElem = (<p className='messageBoxContent'>{msgItem.text}</p>);
 			/*
 			iconElem = <i className='fa fa-window-close text-danger' />
 			times-circle
 			exclamation-circle
 			commenting
 			*/
-		}
-		
-		return (<div className="messageBox autoScroll_Touch" tabIndex="-1" role="dialog">
-			<div className="modal-content">
-				<div className="modal-header">
-				<h5 className="modal-title">{headerElem}</h5>
-				</div>
-				<div className="modal-body">
-					{contentElem}
-				</div>
-				<div className="modal-footer">
-					{btnsElem}
-				</div>
-			</div>
-		</div>);
-	}
+        }
+
+        return (<div className="messageBox autoScroll_Touch" tabIndex="-1" role="dialog">
+            <div className="modal-content">
+                <div className="modal-header">
+                    <h5 className="modal-title">{headerElem}</h5>
+                </div>
+                <div className="modal-body">
+                    {contentElem}
+                </div>
+                <div className="modal-footer">
+                    {btnsElem}
+                </div>
+            </div>
+        </div>);
+    }
 }
 
-class CMessageBoxManger extends React.PureComponent{
-	constructor(props){
-		super(props);
-		autoBind(this);
-		
-		this.state={
-			msg_arr:[],
-		};
-		this.msgID = 0;
-	}
+class CMessageBoxManger extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
 
-	addMessage(msgItem){
-		this.setState({
-			msg_arr:this.state.msg_arr.concat(msgItem),
-		});
-	}
-
-	delete(item){
-		var newarr = this.state.msg_arr.filter(msg=>{return item == msg;});
-		this.setState({
-			msg_arr:newarr,
-		});
+        this.state = {
+            msg_arr: [],
+        };
+        this.msgID = 0;
     }
-    
-    redraw(){
+
+    addMessage(msgItem) {
         this.setState({
-            magicObj:{},
+            msg_arr: this.state.msg_arr.concat(msgItem),
         });
     }
 
-	render(){
-		var visibleMsg_arr = this.state.msg_arr.filter(x=>{return !x.hidden;});
-		if(visibleMsg_arr.length == 0){
-			return null;
-		}
-		return (<div className='messageBoxMask'>
-					{
-						visibleMsg_arr.map((msg,index)=>{
-							return <CMessageBox key={1} msgItem={msg} manager={this} />
-						})
-					}
-				</div>);
-	}
+    delete(item) {
+        var newarr = this.state.msg_arr.filter(msg => { return item == msg; });
+        this.setState({
+            msg_arr: newarr,
+        });
+    }
+
+    redraw() {
+        this.setState({
+            magicObj: {},
+        });
+    }
+
+    render() {
+        var visibleMsg_arr = this.state.msg_arr.filter(x => { return !x.hidden && x.type != EMessageBoxType.Blank; });
+        if (visibleMsg_arr.length == 0) {
+            return null;
+        }
+        return (<div className='messageBoxMask'>
+            {
+                visibleMsg_arr.map((msg, index) => {
+                    return <CMessageBox key={1} msgItem={msg} manager={this} />
+                })
+            }
+        </div>);
+    }
 }
 
-const ERPXMLToolKit={
-    createDocFromString:(xmlString)=>{
+const ERPXMLToolKit = {
+    createDocFromString: (xmlString) => {
         var xmlDoc = null;
         if (window.DOMParser) {
             var parser = new DOMParser();
@@ -2296,21 +2307,21 @@ const ERPXMLToolKit={
         return xmlDoc;
     },
 
-    extractColumn:(xmldoc, colIndex)=>{
-        var rlt=[];
-        if(typeof xmldoc === 'string' && xmldoc[0] == '<'){
+    extractColumn: (xmldoc, colIndex) => {
+        var rlt = [];
+        if (typeof xmldoc === 'string' && xmldoc[0] == '<') {
             xmldoc = ERPXMLToolKit.createDocFromString(xmldoc);
         }
-        if(xmldoc == null || xmldoc.childNodes.length == 0){
+        if (xmldoc == null || xmldoc.childNodes.length == 0) {
             return rlt;
         }
         var rootNode = xmldoc.childNodes[0];
-        rootNode.childNodes.forEach(node=>{
-            if(node.nodeType != 1){
+        rootNode.childNodes.forEach(node => {
+            if (node.nodeType != 1) {
                 return;
             }
             var val = node.attributes['f' + colIndex];
-            if(val != null){
+            if (val != null) {
                 rlt.push(val.value);
             }
             //console.log(val.value);
@@ -2318,22 +2329,22 @@ const ERPXMLToolKit={
         return rlt;
     },
 
-    convertToXmlString:(item_arr, attrs_arr)=>{
-        if(item_arr == null || item_arr.length == 0){
+    convertToXmlString: (item_arr, attrs_arr) => {
+        if (item_arr == null || item_arr.length == 0) {
             return '';
         }
-        if(attrs_arr.length == 0){
+        if (attrs_arr.length == 0) {
             console.error('convertToXmlString attrs_arr length==0');
         }
-        var itemStr_arr = item_arr.map(item=>{
+        var itemStr_arr = item_arr.map(item => {
             var itemType = typeof item;
             var valueStr = '';
-            if(itemType === 'string' || itemType === 'number'){
+            if (itemType === 'string' || itemType === 'number') {
                 valueStr = '<Item f1="' + item + '" />';
             }
-            else{
+            else {
                 valueStr = '<Item ';
-                attrs_arr.forEach((attrName,i)=>{
+                attrs_arr.forEach((attrName, i) => {
                     var fName = 'f' + (i + 1);
                     valueStr += (i == 0 ? '' : ' ') + fName + '="' + item[attrName] + '"';
                 });
@@ -2342,7 +2353,7 @@ const ERPXMLToolKit={
             return valueStr;
         });
         var rltStr = '<Data fNum="' + attrs_arr.length + '"';
-        attrs_arr.forEach((name,i)=>{
+        attrs_arr.forEach((name, i) => {
             rltStr += ' f' + (i + 1) + '="' + name + '"';
         });
         rltStr += '>' + itemStr_arr.join('') + '</Data>';
@@ -2350,8 +2361,8 @@ const ERPXMLToolKit={
     }
 }
 
-class ERPC_TaskSelector extends React.PureComponent{
-    constructor(poros){
+class ERPC_TaskSelector extends React.PureComponent {
+    constructor(poros) {
         super(props);
         autoBind(this);
         ERPControlBase(this);
@@ -2367,14 +2378,14 @@ class ERPC_TaskSelector extends React.PureComponent{
         this.popPanelItem = (<ERPC_DropDown_PopPanel ref={this.popPanelRef} dropdownctl={this} key={gFixedItemCounter++} />)
     }
 
-    pullUserTask(){
+    pullUserTask() {
         var ownprops = this.props;
         var parentStatePath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
-        store.dispatch(fetchJsonPost('/erppage/server/task', {action:'getUserTask',bundle:{userid:g_envVar.userid}}, makeFTD_Prop(parentStatePath,ownprops.id),'options_arr',false), EFetchKey.FetchPropValue);
+        store.dispatch(fetchJsonPost('/erppage/server/task', { action: 'getUserTask', bundle: { userid: g_envVar.userid } }, makeFTD_Prop(parentStatePath, ownprops.id), 'options_arr', false), EFetchKey.FetchPropValue);
     }
-    
-    render(){
-        if(this.props.visible == false){
+
+    render() {
+        if (this.props.visible == false) {
             return null;
         }
         <ERPC_DropDown value={this.props.value}
@@ -2392,7 +2403,7 @@ class ERPC_TaskSelector extends React.PureComponent{
             pullDataSource={this.pullUserTask}
             options_arr={this.props.options_arr}
 
-            />
+        />
     }
 }
 
@@ -2400,49 +2411,48 @@ function ERPC_TaskSelector_mapstatetoprops(state, ownprops) {
     var fullPath = MakePath(ownprops.parentPath, ownprops.id);
     var ctlState = getStateByPath(state, fullPath, {});
     var invalidInfo = null;
-    if(ctlState.invalidInfo != gPreconditionInvalidInfo && ctlState.invalidInfo != gCantNullInfo){
+    if (ctlState.invalidInfo != gPreconditionInvalidInfo && ctlState.invalidInfo != gCantNullInfo) {
         invalidInfo = ctlState.invalidInfo;
     }
     var selectorid = fullPath + 'optionsData';
     var optionsDataSelector = ERPC_selector_map[selectorid];
-    if(optionsDataSelector == null){
-        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName,selectERPC_DropDown_textType, formatERPC_DropDown_options);
+    if (optionsDataSelector == null) {
+        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName, selectERPC_DropDown_textType, formatERPC_DropDown_options);
         ERPC_selector_map[selectorid] = optionsDataSelector;
     }
 
     var useValue = ctlState.value;
     var selectOpt = ctlState.selectOpt;
-    if(useValue)
-    {
-        if(ownprops.multiselect){
-            if(useValue[0] == '<'){
+    if (useValue) {
+        if (ownprops.multiselect) {
+            if (useValue[0] == '<') {
                 selectorid = fullPath + 'value';
                 var valueSelector = ERPC_selector_map[selectorid];
-                if(valueSelector == null){
+                if (valueSelector == null) {
                     valueSelector = Reselect.createSelector(selectERPC_DropDown_value, selectERPC_DropDown_multiValues);
                     ERPC_selector_map[selectorid] = valueSelector;
                 }
                 //useValue = ERPXMLToolKit.extractColumn(useValue, 1);
                 useValue = valueSelector(state, ownprops);
             }
-            else{
+            else {
                 useValue = (useValue + '').split(',');
             }
         }
     }
-    else{
+    else {
         selectOpt = null;
     }
-    
+
     return {
         value: useValue,
         text: ctlState.text,
         fetching: ctlState.fetching,
         fetchingErr: ctlState.fetchingErr,
         optionsData: optionsDataSelector(state, ownprops),
-        visible:ctlState.visible,
-        invalidInfo : invalidInfo,
-        selectOpt : selectOpt,
+        visible: ctlState.visible,
+        invalidInfo: invalidInfo,
+        selectOpt: selectOpt,
     };
 }
 
@@ -2451,9 +2461,9 @@ function ERPC_TaskSelector_dispatchtoprops(dispatch, ownprops) {
     };
 }
 
-function getPageEntryParam(pageid,paramName,defValue){
+function getPageEntryParam(pageid, paramName, defValue) {
     var entryObj = gDataCache.get(pageid + 'entryParam');
-    if(entryObj && entryObj[paramName] == null){
+    if (entryObj && entryObj[paramName] == null) {
         return defValue;
     }
     return entryObj[paramName];

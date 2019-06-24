@@ -377,6 +377,11 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             }
         }
     }, {
+        key: 'clickStarItem',
+        value: function clickStarItem(ev) {
+            this.props.dropdownctl.selectItem('*');
+        }
+    }, {
         key: 'clickSelectedItemTag',
         value: function clickSelectedItemTag(ev) {
             var target = ev.target;
@@ -615,9 +620,18 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                 }
                 if (filted_arr.length == 0) {
                     contentElem = React.createElement(
-                        'span',
-                        { className: 'text-nowrap' },
-                        '\u6CA1\u6709\u627E\u5230'
+                        'div',
+                        { ref: this.contentDivRef, className: 'list-group flex-grow-1 flex-shrink-0' },
+                        this.state.starSelectable && React.createElement(
+                            'div',
+                            { onClick: this.clickStarItem, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == '*' ? ' active' : '') },
+                            '*'
+                        ),
+                        React.createElement(
+                            'span',
+                            { className: 'text-nowrap' },
+                            '\u6CA1\u6709\u6570\u636E'
+                        )
                     );
                 }
                 if (!multiselect && options_arr.length > 20) {
@@ -635,6 +649,11 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                     contentElem = React.createElement(
                         'div',
                         { ref: this.contentDivRef, className: 'list-group flex-grow-1 flex-shrink-0 autoScroll_Touch', onScroll: filted_arr.length > maxRowCount ? this.contentDivScrollHandler : null },
+                        this.state.starSelectable && React.createElement(
+                            'div',
+                            { onClick: this.clickStarItem, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == '*' ? ' active' : '') },
+                            '*'
+                        ),
                         recentElem,
                         filted_arr.map(function (item, i) {
                             if (i >= maxRowCount) {
@@ -824,33 +843,38 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             var value = null;
             var text = null;
             var multiselect = this.props.multiselect;
-            if (multiselect) {
-                if (!Array.isArray(theOptionItem)) {
-                    console.error("multiselect's selectItem theOptionItem must array!");
-                }
-                var values_arr = [];
-                theOptionItem.forEach(function (item) {
-                    values_arr.push(item.value);
-                    //value = (value == null ? '' : value + ',') + item.value;
-                    text = (text == null ? '' : text + ',') + item.text;
-                });
-                value = ERPXMLToolKit.convertToXmlString(values_arr, [this.props.valueAttrName]);
+            if (theOptionItem == '*') {
+                value = '*';
+                text = '*';
             } else {
-                if (theOptionItem) {
-                    value = theOptionItem.value.toString();
-                    text = theOptionItem.text;
-                }
-                if (this.props.recentCookieKey) {
-                    var index = this.recentValues_arr.indexOf(value);
-                    if (index != 0) {
-                        if (index != -1) {
-                            this.recentValues_arr.splice(index, 1);
+                if (multiselect) {
+                    if (!Array.isArray(theOptionItem)) {
+                        console.error("multiselect's selectItem theOptionItem must array!");
+                    }
+                    var values_arr = [];
+                    theOptionItem.forEach(function (item) {
+                        values_arr.push(item.value);
+                        //value = (value == null ? '' : value + ',') + item.value;
+                        text = (text == null ? '' : text + ',') + item.text;
+                    });
+                    value = ERPXMLToolKit.convertToXmlString(values_arr, [this.props.valueAttrName]);
+                } else {
+                    if (theOptionItem) {
+                        value = theOptionItem.value.toString();
+                        text = theOptionItem.text;
+                    }
+                    if (this.props.recentCookieKey) {
+                        var index = this.recentValues_arr.indexOf(value);
+                        if (index != 0) {
+                            if (index != -1) {
+                                this.recentValues_arr.splice(index, 1);
+                            }
+                            this.recentValues_arr.unshift(value);
+                            if (this.recentValues_arr.length >= 6) {
+                                this.recentValues_arr.pop();
+                            }
+                            Cookies.set(this.props.recentCookieKey, this.recentValues_arr.join(','), { expires: 7 });
                         }
-                        this.recentValues_arr.unshift(value);
-                        if (this.recentValues_arr.length >= 6) {
-                            this.recentValues_arr.pop();
-                        }
-                        Cookies.set(this.props.recentCookieKey, this.recentValues_arr.join(','), { expires: 7 });
                     }
                 }
             }
@@ -883,6 +907,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 fetching: this.props.fetching,
                 fetchingErr: this.props.fetchingErr,
                 optionsData: this.props.optionsData,
+                starSelectable: this.props.starSelectable,
                 maxCount: 50,
                 keyword: '',
                 recentValues_arr: this.recentValues_arr,
@@ -964,19 +989,21 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                             }, 50);
                         }
                     } else {
-                        var selectedOptionItem = this.props.optionsData.options_arr.find(function (item) {
-                            return item.value == selectedVal;
-                        });
-                        if (selectedOptionItem) {
-                            if (selectedOptionItem.text != selectedText) {
+                        if (selectedText != '*') {
+                            var selectedOptionItem = this.props.optionsData.options_arr.find(function (item) {
+                                return item.value == selectedVal;
+                            });
+                            if (selectedOptionItem) {
+                                if (selectedOptionItem.text != selectedText) {
+                                    setTimeout(function () {
+                                        self.selectItem(selectedOptionItem);
+                                    }, 50);
+                                }
+                            } else {
                                 setTimeout(function () {
-                                    self.selectItem(selectedOptionItem);
+                                    self.selectItem(null);
                                 }, 50);
                             }
-                        } else {
-                            setTimeout(function () {
-                                self.selectItem(null);
-                            }, 50);
                         }
                     }
                 }
@@ -2310,7 +2337,8 @@ var CToastManger = function (_React$PureComponent13) {
             if (info.length > 50) {
                 info = info.substr(0, 50) + '……';
             }
-            var newMsg = { text: info,
+            var newMsg = {
+                text: info,
                 timeType: timeTime == null ? EToastTime.Normal : timeTime,
                 type: type == null ? EToastType.Info : type
             };

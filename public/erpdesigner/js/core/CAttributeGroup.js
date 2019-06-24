@@ -62,6 +62,12 @@ var CAttributeGroup = function (_EventEmitter) {
             target[this.label + '_visible'] = val;
             this.fireEvent('changed');
         }
+    }, {
+        key: 'clone',
+        value: function clone() {
+            var rlt = new CAttributeGroup(this.label, this.attrs_arr.concat());
+            return rlt;
+        }
     }]);
 
     return CAttributeGroup;

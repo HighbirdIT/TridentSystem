@@ -224,6 +224,9 @@ var IAttributeable = function (_EventEmitter) {
             }
             delete this[realName];
             //console.log('delete:' + realName);
+            if (this.__attributeChanged != null) {
+                this.__attributeChanged(attrName, null, null, realName, index);
+            }
             this.attrChanged(attrName);
             return nowAttrArrayList.length;
         }

@@ -41,4 +41,9 @@ class CAttributeGroup extends EventEmitter{
         target[this.label + '_visible'] = val;
         this.fireEvent('changed');
     }
+
+    clone(){
+        var rlt = new CAttributeGroup(this.label, this.attrs_arr.concat());
+        return rlt;
+    }
 }

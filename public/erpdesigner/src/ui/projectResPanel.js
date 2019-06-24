@@ -99,7 +99,7 @@ class ProjectResPanel extends React.PureComponent {
                 <div className='list-group'>
                     {
                         project.userControls_arr.map((userctl)=>{
-                            return (<span onClick={this.clickControlItem} d-id={userctl.id} key={userctl.id} className={'list-group-item list-group-item-action ' + (editingControl == userctl ? 'active' : '')}>{userctl.name}</span>);
+                            return (<span onClick={this.clickControlItem} d-id={userctl.id} key={userctl.id} className={'list-group-item list-group-item-action ' + (editingControl == userctl ? 'active' : '')}>{userctl.name}[{userctl.id}]</span>);
                         })
                     }
                 </div>

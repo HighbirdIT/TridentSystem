@@ -80,6 +80,9 @@ var CProject = function (_IAttributeable) {
             if (jsonData.attr != null) {
                 Object.assign(_this, jsonData.attr);
             }
+            _this.dataMaster.restoreFromJson(jsonData.dataMaster);
+            _this.scriptMaster.restoreFromJson(jsonData.scriptMaster);
+
             if (jsonData.userControls_arr) {
                 jsonData.userControls_arr.forEach(function (ctlJson) {
                     var newUCtl = new UserontrolKernel({ project: _this }, null, null, ctlJson);
@@ -87,8 +90,6 @@ var CProject = function (_IAttributeable) {
                 });
             }
             var self = _this;
-            _this.dataMaster.restoreFromJson(jsonData.dataMaster);
-            _this.scriptMaster.restoreFromJson(jsonData.scriptMaster);
 
             var ctlCreatioinHelper = new CtlKernelCreationHelper();
             jsonData.content_Mobile.pages.forEach(function (pageJson) {

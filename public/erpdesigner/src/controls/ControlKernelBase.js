@@ -78,7 +78,7 @@ class ControlKernelBase extends IAttributeable {
     constructor(initData, type, description, attrbuteGroups, parentKernel, createHelper, kernelJson) {
         super(initData, null, description);
         this.lisenedDSSyned = this.lisenedDSSyned.bind(this);
-        if(parentKernel == null && type != UserContrlKernel_Type){
+        if(parentKernel == null && type != UserControlKernel_Type){
             Console.error('ControlKernelBase 的 parentKernel不能为空');
         }
         if(this.project == null){
@@ -483,6 +483,9 @@ class ControlKernelBase extends IAttributeable {
     }
 
     getStatePath(stateName, splitChar = '.', rowIndexVar_map = {}, ignoreRowIndex = false){
+        if(this.parent == null){
+            return '';
+        }
         var nowKernel = this.parent;
         var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
         do{

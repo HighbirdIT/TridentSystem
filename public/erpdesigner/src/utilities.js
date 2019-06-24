@@ -530,3 +530,18 @@ function getFormatDateTimeString(date, hadSec = true){
 
     return y + (month < 10 ? '-0' : '-') + month + (d < 10 ? '-0' : '-') + d + ' ' + (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m +(hadSec ? (s < 10 ? ':0' : ':') + s : '');
 }
+
+function modifyStatePath(path, belongUserControl, useCombineFun){
+	if(belongUserControl == null){
+		switch(path[0]){
+			case "'":
+			case '"':
+			return path;
+		}
+		return singleQuotesStr(path);
+	}
+	if(useCombineFun){
+		return makeStr_callFun('CombineDotStr',[belongUserControl.id + '_path',singleQuotesStr(path)]);
+	}
+	return belongUserControl.id + '_path' + "+'." + path + "'";
+}
