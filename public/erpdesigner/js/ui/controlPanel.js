@@ -48,14 +48,23 @@ var ControlPanel = function (_React$PureComponent) {
             }
         }
     }, {
+        key: 'forceUpdate',
+        value: function forceUpdate() {
+            this.setState({
+                magicObj: {}
+            });
+        }
+    }, {
         key: 'componentWillMount',
         value: function componentWillMount() {
             this.props.project.on(EATTRCHANGED, this.attrChangedHandler);
+            this.props.project.on('userControlChanged', this.forceUpdate);
         }
     }, {
         key: 'componentWillUnmount',
         value: function componentWillUnmount() {
             this.props.project.off(EATTRCHANGED, this.attrChangedHandler);
+            this.props.project.off('userControlChanged', this.forceUpdate);
         }
     }, {
         key: 'controlIconMouseDown',
@@ -70,6 +79,19 @@ var ControlPanel = function (_React$PureComponent) {
                 this.props.mouseDownControlIcon(ctltype, targetOffset.left, targetOffset.top);
             }
             //console.log('controlIconMouseDown:' + ctltype);
+        }
+    }, {
+        key: 'userControlIconMouseDown',
+        value: function userControlIconMouseDown(ev) {
+            var uid = getAttributeByNode(ev.target, 'u-id');
+            if (uid == null) {
+                console.warn('未找到uid');
+                return;
+            }
+            if (this.props.mouseDownUserControlIcon) {
+                var targetOffset = $(ev.target).offset();
+                this.props.mouseDownUserControlIcon(uid, targetOffset.left, targetOffset.top);
+            }
         }
     }, {
         key: 'render',
@@ -102,7 +124,23 @@ var ControlPanel = function (_React$PureComponent) {
                             })
                         )
                     );
-                })
+                }),
+                React.createElement(
+                    'button',
+                    { type: 'button', className: 'btn flex-grow-0 flex-shrink-0 bg-secondary text-light', style: { borderRadius: '0em', height: '2.5em' } },
+                    '\u81EA\u8BA2\u63A7\u4EF6'
+                ),
+                React.createElement(
+                    'div',
+                    { id: projectName + "usercontrols", className: 'list-group flex-grow-0 flex-shrink-0', style: { overflow: 'auto' } },
+                    this.props.project.userControls_arr.map(function (userctl) {
+                        return React.createElement(
+                            'button',
+                            { key: userctl.id, 'u-id': userctl.id, type: 'button', onMouseDown: _this2.userControlIconMouseDown, className: 'list-group-item list-group-item-action flex-grow-0 flex-shrink-0' },
+                            userctl.name
+                        );
+                    })
+                )
             );
         }
     }]);

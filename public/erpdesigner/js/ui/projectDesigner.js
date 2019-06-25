@@ -97,7 +97,9 @@ var ProjectDesigner = function (_React$PureComponent) {
         value: function mouseDownControlIcon(ctltype) {
             this.contenPanelRef.current.endPlace();
             var thisProject = this.props.project;
-            if (thisProject.getEditingPage() == null) {
+            var editingPage = thisProject.getEditingPage();
+            var editingControl = thisProject.getEditingControl();
+            if (editingPage == null && editingControl == null) {
                 return;
             }
             var newKernel = null;
@@ -109,6 +111,30 @@ var ProjectDesigner = function (_React$PureComponent) {
             }
             if (newKernel == null) {
                 console.warn('从' + ctltype + '创建控件失败！');
+                return;
+            }
+
+            this.startPlaceKernel(newKernel);
+        }
+    }, {
+        key: 'mouseDownUserControlIcon',
+        value: function mouseDownUserControlIcon(refID) {
+            this.contenPanelRef.current.endPlace();
+            var thisProject = this.props.project;
+            var editingPage = thisProject.getEditingPage();
+            var editingControl = thisProject.getEditingControl();
+            if (editingPage == null && editingControl == null) {
+                return;
+            }
+            var newKernel = null;
+            if (this.placingCtonrols[refID] && this.placingCtonrols[refID].parent == null) {
+                newKernel = this.placingCtonrols[refID];
+            } else {
+                newKernel = new UserControlKernel({ refID: refID }, thisProject);
+                this.placingCtonrols[refID] = newKernel;
+            }
+            if (newKernel == null) {
+                console.warn('从' + refID + '创建控件失败！');
                 return;
             }
 
@@ -147,7 +173,11 @@ var ProjectDesigner = function (_React$PureComponent) {
                 this.placeEndCallBack(this.placingKernel);
                 this.placeEndCallBack = null;
             }
-            this.placingCtonrols[this.placingKernel.type] = null;
+            if (this.placingKernel.type) {
+                this.placingCtonrols[this.placingKernel.type] = null;
+            } else if (this.placingKernel.refID) {
+                this.placingCtonrols[this.placingKernel.refID] = null;
+            }
             this.placingKernel = null;
             //console.log('mouseUpInPlacingHandler');
             return;
@@ -283,7 +313,7 @@ var ProjectDesigner = function (_React$PureComponent) {
                         defPercent: 0.7,
                         fixedOne: false,
                         flexColumn: true,
-                        panel1: React.createElement(ControlPanel, { project: thisProject, mouseDownControlIcon: this.mouseDownControlIcon }),
+                        panel1: React.createElement(ControlPanel, { project: thisProject, mouseDownControlIcon: this.mouseDownControlIcon, mouseDownUserControlIcon: this.mouseDownUserControlIcon }),
                         panel2: React.createElement(OutlinePanel, { project: thisProject, ref: this.outlineRef })
                     }),
                     panel2: React.createElement(SplitPanel, { defPercent: 0.8,

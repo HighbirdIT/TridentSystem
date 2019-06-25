@@ -57,8 +57,8 @@ var M_ContainerKernel = function (_ContainerKernelBase) {
         }
     }, {
         key: 'renderSelf',
-        value: function renderSelf(clickHandler) {
-            return React.createElement(M_Container, { key: this.id, ctlKernel: this, onClick: clickHandler ? clickHandler : this.clickHandler });
+        value: function renderSelf(clickHandler, replaceChildClick) {
+            return React.createElement(M_Container, { key: this.id, ctlKernel: this, onClick: clickHandler ? clickHandler : this.clickHandler, replaceChildClick: replaceChildClick });
         }
     }]);
 
@@ -105,6 +105,8 @@ var M_Container = function (_React$PureComponent) {
     }, {
         key: 'render',
         value: function render() {
+            var _this3 = this;
+
             var ctlKernel = this.props.ctlKernel;
             var layoutConfig = ctlKernel.getLayoutConfig();
             layoutConfig.addClass('d-flex');
@@ -131,7 +133,7 @@ var M_Container = function (_React$PureComponent) {
                 'div',
                 { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
                 this.props.ctlKernel.children.length == 0 ? this.props.ctlKernel.id : this.props.ctlKernel.children.map(function (childKernel) {
-                    return childKernel.renderSelf();
+                    return childKernel.renderSelf(_this3.props.replaceChildClick ? _this3.props.onClick : null, _this3.props.replaceChildClick);
                 })
             );
         }

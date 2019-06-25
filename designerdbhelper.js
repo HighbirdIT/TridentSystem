@@ -18,9 +18,20 @@ sql.makeSqlparam = (name,type,value)=>{
     return value != null ? {name:name, 'value':value, type:type} : {name:name, type:type};
 };
 
-sql.queryWithParams = function (sqltext, params, func) {
+function getSqlConfigFromReq(req){
+    if(req == null || req.session == null || req.session.userData == null){
+        return sqlconfig.normalUser;
+    }
+    switch(req.session.userData.id){
+        case 1:
+        return sqlconfig.advancerUser;
+    }
+    return sqlconfig.normalUser;
+}
+
+sql.queryWithParams = function (sqltext, params, func, req) {
     try {
-        var connection = new mssql.Connection(sqlconfig.advancerUser, function (err) {
+        var connection = new mssql.Connection(getSqlConfigFromReq(req), function (err) {
             if (err)
                 func(err);
             else {
@@ -46,25 +57,25 @@ sql.queryWithParams = function (sqltext, params, func) {
     }
 };
 
-sql.query = function (sqltext, func) {
-    sql.queryWithParams(sqltext, null, func);
+sql.query = function (sqltext, func,req) {
+    sql.queryWithParams(sqltext, null, func,req);
 };
 
-sql.asynQuery = function (sqltext) {
-    return sql.asynQueryWithParams(sqltext, null);
+sql.asynQuery = function (sqltext,req) {
+    return sql.asynQueryWithParams(sqltext, null,null,req);
 };
 
-sql.asynGetScalar = function (sqltext,params) {
-    return sql.asynQueryWithParams(sqltext, params, {scalar:true});
+sql.asynGetScalar = function (sqltext,params,req) {
+    return sql.asynQueryWithParams(sqltext, params, {scalar:true},req);
 };
 
-sql.asynQueryWithParams = function (sqltext, params, config) {
+sql.asynQueryWithParams = function (sqltext, params, config, req) {
     if(config == null){
         config = {};
     }
     var rlt =  co(function* () {
             var thePool = yield new Promise((rs,re)=>{
-                var usePool = new mssql.ConnectionPool(sqlconfig.advancerUser,err=>{
+                var usePool = new mssql.ConnectionPool(getSqlConfigFromReq(req),err=>{
                     if(err != null){
                         rs({err:err});
                     }
@@ -103,10 +114,10 @@ sql.asynQueryWithParams = function (sqltext, params, config) {
     return rlt;
 };
 
-sql.asynExcute = function (excutableName, inputParams, outputParams) {
+sql.asynExcute = function (excutableName, inputParams, outputParams, req) {
     var rlt =  co(function* () {
             var thePool = yield new Promise((rs,re)=>{
-                var usePool = new mssql.ConnectionPool(sqlconfig.advancerUser,err=>{
+                var usePool = new mssql.ConnectionPool(getSqlConfigFromReq(req),err=>{
                     if(err != null){
                         rs({err:err});
                     }

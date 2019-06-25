@@ -164,11 +164,16 @@ class OutlinePanel extends React.PureComponent {
     constructor(props) {
         super(props);
         var editingPage = this.props.project.getEditingPage();
-        this.state = { editingPage: editingPage, };
+        var editingControl = this.props.project.getEditingControl();
+        this.state = { 
+            editingPage: editingPage, 
+            editingControl: editingControl,
+        };
         React_Make_AttributeListener(this, ['editingPage', 'children']);
         autoBind(this);
 
         this.listenTarget(editingPage);
+        this.listenTarget(editingControl);
         this.scrollDivRef = React.createRef();
         this.bottomDivRef = React.createRef();
     }
@@ -191,15 +196,25 @@ class OutlinePanel extends React.PureComponent {
         }
         else if (changedAttrName == 'editingPage') {
             var newEditingPage = this.props.project.getEditingPage();
+            var newEditingControl = this.props.project.getEditingControl();
             if (newEditingPage != this.state.editingPage) {
-                if (this.state.editingPage) {
-                    this.unlistenTarget(this.state.editingPage);
-                }
+                this.unlistenTarget(this.state.editingPage);
+                this.unlistenTarget(this.state.editingControl);
                 if (newEditingPage) {
                     this.listenTarget(newEditingPage);
                 }
                 this.setState({
                     editingPage: newEditingPage,
+                });
+            }
+            if (newEditingControl != this.state.editingControl) {
+                this.unlistenTarget(this.state.editingPage);
+                this.unlistenTarget(this.state.editingControl);
+                if (newEditingControl) {
+                    this.listenTarget(newEditingControl);
+                }
+                this.setState({
+                    editingControl: newEditingControl,
                 });
             }
         }
@@ -315,11 +330,21 @@ class OutlinePanel extends React.PureComponent {
             }
             
             var hitResult = null;
-            for(var ci in this.state.editingPage.children){
-                hitResult = this.searchHitResult(newPos, this.state.editingPage.children[ci]);
-                if(hitResult)
-                    break;
+            if(this.state.editingPage){
+                for(var ci in this.state.editingPage.children){
+                    hitResult = this.searchHitResult(newPos, this.state.editingPage.children[ci]);
+                    if(hitResult)
+                        break;
+                }
             }
+            if(this.state.editingControl){
+                for(var ci in this.state.editingControl.children){
+                    hitResult = this.searchHitResult(newPos, this.state.editingControl.children[ci]);
+                    if(hitResult)
+                        break;
+                }
+            }
+            
             if(hitResult && hitResult.kernel){
                 var hitKernel = hitResult.kernel;
                 if(hitKernel.isfixed){
@@ -352,7 +377,12 @@ class OutlinePanel extends React.PureComponent {
                 // can not found
                 var bottomDivRect = this.bottomDivRef.current.getBoundingClientRect();
                 if(bottomDivRect.top < newPos.y){
-                    this.state.editingPage.appandChild(targetKernel);
+                    if(this.state.editingPage){
+                        this.state.editingPage.appandChild(targetKernel);
+                    }
+                    if(this.state.editingControl){
+                        this.state.editingControl.appandChild(targetKernel);
+                    }
                 }
             }
         }
@@ -392,6 +422,13 @@ class OutlinePanel extends React.PureComponent {
                     <div className='flex-grow-0 flex-shrink-0 d-flex flex-column'>
                         {
                             this.state.editingPage && this.state.editingPage.children.map(
+                                kernal => {
+                                    return <OutlineItem key={kernal.id} kernel={kernal} deep={0} itemSelected={this.itemSelected} wantDragAct={this.wantDragAct} />
+                                }
+                            )
+                        }
+                        {
+                            this.state.editingControl && this.state.editingControl.children.map(
                                 kernal => {
                                     return <OutlineItem key={kernal.id} kernel={kernal} deep={0} itemSelected={this.itemSelected} wantDragAct={this.wantDragAct} />
                                 }

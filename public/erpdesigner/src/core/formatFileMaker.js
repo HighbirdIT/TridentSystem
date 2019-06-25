@@ -771,7 +771,7 @@ class JSFile_Class extends JSFile_Scope{
 
     getFunction(funName, autoCreate, params_arr){
         var rlt = super.getFunction(funName, autoCreate, params_arr);
-        if(rlt.declareType != 'classfun'){
+        if(rlt && rlt.declareType != 'classfun'){
             rlt.declareType = 'classfun';
         }
         return rlt;
@@ -913,7 +913,7 @@ class FlowScriptFile extends JSFileMaker{
         this.importBlock.pushLine("const fs = require('fs');");
         this.importBlock.pushLine("const forge = require('node-forge');");
 
-        this.processFun = this.scope.getFunction('process', true, ['stepCode', 'pram1', 'param2', 'param3']);
+        this.processFun = this.scope.getFunction('process', true, ['stepCode', 'param1', 'param2', 'param3']);
         
     }
 
@@ -935,6 +935,7 @@ class FlowScriptFile extends JSFileMaker{
         theFun.inited = true;
         theFun.scope.isServerSide = true;
     }
+
 }
 
 class CP_ServerSide extends JSFileMaker{
@@ -978,6 +979,7 @@ class CP_ServerSide extends JSFileMaker{
         if(theFun.inited){
             return;
         }
+        theFun.headBlock.pushLine('var g_envVar = req.session.g_envVar;');
         theFun.headBlock.pushLine("return co(function* () {");
         theFun.bodyBlock.addNextIndent();
         theFun.retBlock.pushLine("});");

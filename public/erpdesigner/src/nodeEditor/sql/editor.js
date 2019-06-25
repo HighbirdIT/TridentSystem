@@ -51,6 +51,11 @@ const SqlNodeEditorControls_arr =[
          label:'环境变量',
          nodeClass:SqlNode_Env_Var,
     }
+    ,
+    {
+         label:'Get页面参数',
+         nodeClass:SqlNode_GetPageEntryParam,
+    }
 ]; 
 
 
@@ -1415,6 +1420,7 @@ class SqlNode_CompileHelper{
         this.useEnvVars = {};
         this.compileSeq = [];
         this.varValue_map = {};
+        this.usePageParam = {};
 
         autoBind(this);
     }
@@ -1435,6 +1441,10 @@ class SqlNode_CompileHelper{
 
     addUseEnvVars(varKey){
         this.useEnvVars[varKey] = 1;
+    }
+
+    addUsePageParam(paramName, defVal){
+        this.usePageParam[paramName] = defVal;
     }
 
     clickLogBadgeItemHandler(badgeItem){
@@ -1533,6 +1543,7 @@ class SqlNode_CompileHelper{
     addUseControlPropApi(ctrKernel, apiitem){
         var rlt = null;
         var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
+        var attrName = IsEmptyString(apiitem.useAttrName) ? apiitem.attrItem.name : apiitem.useAttrName;
         if(belongFormKernel == null){
             rlt = this.useGlobalControls_map[ctrKernel.id]
             if(rlt == null){
@@ -1542,7 +1553,7 @@ class SqlNode_CompileHelper{
                 };
                 this.useGlobalControls_map[ctrKernel.id] = rlt;
             }
-            rlt.useprops_map[apiitem.attrItem.name] = apiitem;
+            rlt.useprops_map[attrName] = apiitem;
             return;
         }
         else{
@@ -1556,6 +1567,6 @@ class SqlNode_CompileHelper{
                 formObj.useControls_map[ctrKernel.id] = rlt;
             }
         }
-        rlt.useprops_map[apiitem.attrItem.name] = apiitem;
+        rlt.useprops_map[attrName] = apiitem;
     }
 }

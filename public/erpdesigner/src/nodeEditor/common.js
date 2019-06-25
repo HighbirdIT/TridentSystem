@@ -153,6 +153,12 @@ class Node_Base extends EventEmitter {
                     self.addSocket(CreateNodeSocketByJson(this, socketJson, createHelper));
                 });
             }
+            if (!IsEmptyArray(nodeJson.inFlowSockets_arr)) {
+                this.inFlowSockets_arr = [];
+                nodeJson.inFlowSockets_arr.forEach(socketJson => {
+                    self.addSocket(CreateNodeSocketByJson(this, socketJson, createHelper));
+                });
+            }
         }
 
         this.label = label;
@@ -165,6 +171,8 @@ class Node_Base extends EventEmitter {
         this.hadFlow = false;
         this.processInputSockets = this.processInputSockets.bind(this);
         this.processOutputSockets = this.processOutputSockets.bind(this);
+        this.processInputFlowSockets = this.processInputFlowSockets.bind(this);
+        this.processOutputFlowSockets = this.processOutputFlowSockets.bind(this);
         this.frameButtons_arr = [];
 
         this.bluePrint.registerNode(this, parentNode);
@@ -347,6 +355,9 @@ class Node_Base extends EventEmitter {
             if(!socketObj.isIn && socketObj.name != 'flow_o' && this.outFlowSockets_arr != null){
                 this.outFlowSockets_arr.push(socketObj);
             }
+            if(socketObj.isIn && socketObj.name != 'flow_i' && this.inFlowSockets_arr != null){
+                this.inFlowSockets_arr.push(socketObj);
+            }
         }
         return socketObj;
     }
@@ -365,7 +376,12 @@ class Node_Base extends EventEmitter {
             }
         }
         else{
-            if(this.outFlowSockets_arr != null){
+            if (socketObj.isIn) {
+                if(this.inFlowSockets_arr != null){
+                    removeElemFrommArray(this.inFlowSockets_arr, socketObj);
+                }
+            }
+            else if(this.outFlowSockets_arr != null){
                 removeElemFrommArray(this.outFlowSockets_arr, socketObj);
             }
         }
@@ -416,6 +432,10 @@ class Node_Base extends EventEmitter {
 
     isOutFlowScoketDynamic() {
         return this.genOutFlowSocket != null;
+    }
+
+    isInputFlowScoketDynamic() {
+        return this.genInputFlowSocket != null;
     }
 
     processInputSockets(isPlus) {
@@ -475,6 +495,25 @@ class Node_Base extends EventEmitter {
         }
         else {
             var needRemoveSocket = this.outFlowSockets_arr[this.outFlowSockets_arr.length - 1];
+            this.removeSocket(needRemoveSocket);
+            this.fireEvent(Event_SocketNumChanged);
+            retSocket = needRemoveSocket;
+        }
+        return retSocket;
+    }
+
+    processInputFlowSockets(isPlus) {
+        var retSocket = null;
+        if (isPlus) {
+            retSocket = this.genInputFlowSocket();
+            if(retSocket == null){
+                return;
+            }
+            this.addSocket(retSocket);
+            this.fireEvent(Event_SocketNumChanged);
+        }
+        else {
+            var needRemoveSocket = this.inFlowSockets_arr[this.inFlowSockets_arr.length - 1];
             this.removeSocket(needRemoveSocket);
             this.fireEvent(Event_SocketNumChanged);
             retSocket = needRemoveSocket;
@@ -574,6 +613,13 @@ class Node_Base extends EventEmitter {
                 t_outflowsocketJson_arr.push(data.getJson(jsonProf));
             });
             rlt.outFlowSockets_arr = t_outflowsocketJson_arr;
+        }
+        if(this.inFlowSockets_arr && this.inFlowSockets_arr.length > 0){
+            var t_inflowsocketJson_arr = [];
+            this.inFlowSockets_arr.forEach(data => {
+                t_inflowsocketJson_arr.push(data.getJson(jsonProf));
+            });
+            rlt.inFlowSockets_arr = t_inflowsocketJson_arr;
         }
         if(this.inFlowSocket){
             rlt.inFlowSocket = this.inFlowSocket.getJson(jsonProf);

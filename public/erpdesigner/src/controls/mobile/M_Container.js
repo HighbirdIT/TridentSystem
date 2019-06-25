@@ -48,8 +48,8 @@ class M_ContainerKernel extends ContainerKernelBase {
         });
     }
 
-    renderSelf(clickHandler) {
-        return (<M_Container key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+    renderSelf(clickHandler,replaceChildClick) {
+        return (<M_Container key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick}/>)
     }
 }
 
@@ -112,7 +112,7 @@ class M_Container extends React.PureComponent {
                     this.props.ctlKernel.children.length == 0 ?
                         this.props.ctlKernel.id :
                         this.props.ctlKernel.children.map(childKernel => {
-                            return childKernel.renderSelf();
+                            return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null,this.props.replaceChildClick);
                         })
                 }
             </div>

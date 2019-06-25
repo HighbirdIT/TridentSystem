@@ -80,7 +80,9 @@ class ProjectDesigner extends React.PureComponent {
     mouseDownControlIcon(ctltype) {
         this.contenPanelRef.current.endPlace();
         var thisProject = this.props.project;
-        if(thisProject.getEditingPage() == null){
+        var editingPage = thisProject.getEditingPage();
+        var editingControl = thisProject.getEditingControl();
+        if(editingPage == null && editingControl == null){
             return;
         }
         var newKernel = null;
@@ -93,6 +95,30 @@ class ProjectDesigner extends React.PureComponent {
         }
         if (newKernel == null) {
             console.warn('从' + ctltype + '创建控件失败！');
+            return;
+        }
+
+        this.startPlaceKernel(newKernel);
+    }
+
+    mouseDownUserControlIcon(refID) {
+        this.contenPanelRef.current.endPlace();
+        var thisProject = this.props.project;
+        var editingPage = thisProject.getEditingPage();
+        var editingControl = thisProject.getEditingControl();
+        if(editingPage == null && editingControl == null){
+            return;
+        }
+        var newKernel = null;
+        if(this.placingCtonrols[refID] && this.placingCtonrols[refID].parent == null){
+            newKernel = this.placingCtonrols[refID];
+        }
+        else{
+            newKernel = new UserControlKernel({refID:refID}, thisProject);
+            this.placingCtonrols[refID] = newKernel;
+        }
+        if (newKernel == null) {
+            console.warn('从' + refID + '创建控件失败！');
             return;
         }
 
@@ -126,7 +152,12 @@ class ProjectDesigner extends React.PureComponent {
             this.placeEndCallBack(this.placingKernel);
             this.placeEndCallBack = null;
         }
-        this.placingCtonrols[this.placingKernel.type] = null;
+        if(this.placingKernel.type){
+            this.placingCtonrols[this.placingKernel.type] = null;
+        }
+        else if(this.placingKernel.refID){
+            this.placingCtonrols[this.placingKernel.refID] = null;
+        }
         this.placingKernel = null;
         //console.log('mouseUpInPlacingHandler');
         return;
@@ -247,7 +278,7 @@ class ProjectDesigner extends React.PureComponent {
                                         defPercent={0.7}
                                         fixedOne={false}
                                         flexColumn={true}
-                                        panel1={<ControlPanel project={thisProject} mouseDownControlIcon={this.mouseDownControlIcon} />}
+                                        panel1={<ControlPanel project={thisProject} mouseDownControlIcon={this.mouseDownControlIcon} mouseDownUserControlIcon={this.mouseDownUserControlIcon} />}
                                         panel2={<OutlinePanel project={thisProject} ref={this.outlineRef}/>}
                                     />}
                     panel2={

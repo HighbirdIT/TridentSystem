@@ -60,6 +60,11 @@ const JSNodeEditorControls_arr =[
         type:'流控制'
     },
     {
+        label:'批量设置控件属性',
+        nodeClass:JSNode_Batch_Control_Api_Propsetter,
+        type:'控件交互'
+    },
+    {
         label:'Insert',
         nodeClass:JSNODE_Insert_table,
         type:'数据库交互'
@@ -174,6 +179,7 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         this.useGlobalControls_map = {};
         this.appendedOutputItems_arr = [];
         this.clientInitBundleBlocks_arr = [];
+        this.useEnvVars = {};
     }
 
     compileEnd(){
@@ -182,6 +188,10 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
                 block.pushLine(si + ':' + block.params_map[si] + ',');
             }
         });
+    }
+
+    addUseEnvVars(varKey){
+        this.useEnvVars[varKey] = 1;
     }
 
     appendOutputItem(item){
@@ -247,6 +257,7 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
     addUseControlPropApi(ctrKernel, apiitem, rowSource){
         var rlt = null;
         var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
+        var attrName = IsEmptyString(apiitem.useAttrName) ? apiitem.attrItem.name : apiitem.useAttrName;
         if(belongFormKernel == null){
             rlt = this.useGlobalControls_map[ctrKernel.id];
             if(rlt == null){
@@ -256,7 +267,7 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
                 };
                 this.useGlobalControls_map[ctrKernel.id] = rlt;
             }
-            rlt.useprops_map[apiitem.attrItem.name] = apiitem;
+            rlt.useprops_map[attrName] = apiitem;
             return;
         }
         else{
@@ -270,7 +281,7 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
                 formObj.useControls_map[ctrKernel.id] = rlt;
             }
         }
-        rlt.useprops_map[apiitem.attrItem.name] = apiitem;
+        rlt.useprops_map[attrName] = apiitem;
     }
 }
 

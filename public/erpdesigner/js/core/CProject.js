@@ -46,6 +46,7 @@ var CProject = function (_IAttributeable) {
         _this.dataMaster = new DataMaster(_this);
         _this.scriptMaster = new ScriptMaster(_this);
         _this.project = _this;
+        _this.userControls_arr = [];
 
         _this.designeConfig = {
             name: genProjectName(),
@@ -53,7 +54,10 @@ var CProject = function (_IAttributeable) {
             editingPage: {
                 id: jsonData == null ? -1 : jsonData.lastEditingPageID
             },
-            description: '页面'
+            description: '页面',
+            editingControl: {
+                id: jsonData == null ? -1 : jsonData.lastEditingControlID
+            }
         };
 
         _this.content_PC = {
@@ -76,9 +80,16 @@ var CProject = function (_IAttributeable) {
             if (jsonData.attr != null) {
                 Object.assign(_this, jsonData.attr);
             }
-            var self = _this;
             _this.dataMaster.restoreFromJson(jsonData.dataMaster);
             _this.scriptMaster.restoreFromJson(jsonData.scriptMaster);
+
+            if (jsonData.userControls_arr) {
+                jsonData.userControls_arr.forEach(function (ctlJson) {
+                    var newUCtl = new UserControlKernel({ project: _this }, null, null, ctlJson);
+                    _this.userControls_arr.push(newUCtl);
+                });
+            }
+            var self = _this;
 
             var ctlCreatioinHelper = new CtlKernelCreationHelper();
             jsonData.content_Mobile.pages.forEach(function (pageJson) {
@@ -112,6 +123,55 @@ var CProject = function (_IAttributeable) {
                     });
                 }
             }
+        }
+    }, {
+        key: 'addUserControl',
+        value: function addUserControl(name) {
+            name = name.trim();
+            if (name.length < 2 || name.length > 20) {
+                return null;
+            }
+            var foundItem = this.userControls_arr.find(function (x) {
+                return x.name == name;
+            });
+            if (foundItem != null) {
+                return null;
+            }
+            var newID = 'userControl';
+            var ki = 0;
+            do {
+                newID = 'userControl_T' + ki;
+                foundItem = this.userControls_arr.find(function (x) {
+                    return x.id == newID;
+                });
+                if (foundItem == null) {
+                    break;
+                }
+                ki++;
+            } while (ki < 1000);
+            var newControl = new UserControlKernel({ id: newID, name: name, project: this }, null);
+            this.userControls_arr.push(newControl);
+            this.emit('userControlChanged');
+            return newControl;
+        }
+    }, {
+        key: 'getEditingControl',
+        value: function getEditingControl() {
+            return this.getUserControlById(this.designeConfig.editingControl.id);
+        }
+    }, {
+        key: 'getUserControlById',
+        value: function getUserControlById(id) {
+            return this.userControls_arr.find(function (x) {
+                return x.id == id;
+            });
+        }
+    }, {
+        key: 'setEditingControlById',
+        value: function setEditingControlById(ctlID) {
+            this.designeConfig.editingPage.id = -1;
+            this.designeConfig.editingControl.id = ctlID;
+            this.attrChanged('editingPage');
         }
     }, {
         key: 'registerControl',
@@ -189,6 +249,7 @@ var CProject = function (_IAttributeable) {
             var thePage = this.getPageById(pageID);
             //if(thePage == null)
             //return false;
+            this.designeConfig.editingControl.id = -1;
             this.designeConfig.editingPage.id = pageID;
             this.attrChanged('editingPage');
         }
@@ -329,7 +390,8 @@ var CProject = function (_IAttributeable) {
             var attrJson = _get(CProject.prototype.__proto__ || Object.getPrototypeOf(CProject.prototype), 'getJson', this).call(this, jsonProf);
             var rlt = {
                 attr: attrJson,
-                lastEditingPageID: this.designeConfig.editingPage.id
+                lastEditingPageID: this.designeConfig.editingPage.id,
+                lastEditingControlID: this.designeConfig.editingControl.id
             };
             rlt.content_PC = {
                 pages: []
@@ -343,6 +405,9 @@ var CProject = function (_IAttributeable) {
             };
             this.content_Mobile.pages.forEach(function (page) {
                 rlt.content_Mobile.pages.push(page.getJson(jsonProf));
+            });
+            rlt.userControls_arr = this.userControls_arr.map(function (ctl) {
+                return ctl.getJson(jsonProf);
             });
             rlt.dataMaster = this.dataMaster.getJson(jsonProf);
             rlt.scriptMaster = this.scriptMaster.getJson(jsonProf);

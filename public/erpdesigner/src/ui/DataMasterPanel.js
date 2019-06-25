@@ -231,7 +231,7 @@ class DataBasePanel extends React.PureComponent {
     startSynAction(synflag,param) {
         if (synflag == 'keyword') {
             var keyword = param;
-            if (keyword.length < 2)
+            if (keyword == null || keyword.length < 2)
                 return;
             var hadAction = this.state.synQueue_arr.find(synAction => {
                 return !synAction.complete && synAction.synflag == synflag && synAction.keyword == keyword;

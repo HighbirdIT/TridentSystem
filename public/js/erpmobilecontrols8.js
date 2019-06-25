@@ -4,6 +4,8 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
@@ -377,6 +379,11 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             }
         }
     }, {
+        key: 'clickStarItem',
+        value: function clickStarItem(ev) {
+            this.props.dropdownctl.selectItem('*');
+        }
+    }, {
         key: 'clickSelectedItemTag',
         value: function clickSelectedItemTag(ev) {
             var target = ev.target;
@@ -615,9 +622,18 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                 }
                 if (filted_arr.length == 0) {
                     contentElem = React.createElement(
-                        'span',
-                        { className: 'text-nowrap' },
-                        '\u6CA1\u6709\u627E\u5230'
+                        'div',
+                        { ref: this.contentDivRef, className: 'list-group flex-grow-1 flex-shrink-0' },
+                        this.state.starSelectable && React.createElement(
+                            'div',
+                            { onClick: this.clickStarItem, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == '*' ? ' active' : '') },
+                            '*'
+                        ),
+                        React.createElement(
+                            'span',
+                            { className: 'text-nowrap' },
+                            '\u6CA1\u6709\u6570\u636E'
+                        )
                     );
                 }
                 if (!multiselect && options_arr.length > 20) {
@@ -635,6 +651,11 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                     contentElem = React.createElement(
                         'div',
                         { ref: this.contentDivRef, className: 'list-group flex-grow-1 flex-shrink-0 autoScroll_Touch', onScroll: filted_arr.length > maxRowCount ? this.contentDivScrollHandler : null },
+                        this.state.starSelectable && React.createElement(
+                            'div',
+                            { onClick: this.clickStarItem, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == '*' ? ' active' : '') },
+                            '*'
+                        ),
                         recentElem,
                         filted_arr.map(function (item, i) {
                             if (i >= maxRowCount) {
@@ -824,33 +845,38 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             var value = null;
             var text = null;
             var multiselect = this.props.multiselect;
-            if (multiselect) {
-                if (!Array.isArray(theOptionItem)) {
-                    console.error("multiselect's selectItem theOptionItem must array!");
-                }
-                var values_arr = [];
-                theOptionItem.forEach(function (item) {
-                    values_arr.push(item.value);
-                    //value = (value == null ? '' : value + ',') + item.value;
-                    text = (text == null ? '' : text + ',') + item.text;
-                });
-                value = ERPXMLToolKit.convertToXmlString(values_arr, [this.props.valueAttrName]);
+            if (theOptionItem == '*') {
+                value = '*';
+                text = '*';
             } else {
-                if (theOptionItem) {
-                    value = theOptionItem.value.toString();
-                    text = theOptionItem.text;
-                }
-                if (this.props.recentCookieKey) {
-                    var index = this.recentValues_arr.indexOf(value);
-                    if (index != 0) {
-                        if (index != -1) {
-                            this.recentValues_arr.splice(index, 1);
+                if (multiselect) {
+                    if (!Array.isArray(theOptionItem)) {
+                        console.error("multiselect's selectItem theOptionItem must array!");
+                    }
+                    var values_arr = [];
+                    theOptionItem.forEach(function (item) {
+                        values_arr.push(item.value);
+                        //value = (value == null ? '' : value + ',') + item.value;
+                        text = (text == null ? '' : text + ',') + item.text;
+                    });
+                    value = ERPXMLToolKit.convertToXmlString(values_arr, [this.props.valueAttrName]);
+                } else {
+                    if (theOptionItem) {
+                        value = theOptionItem.value.toString();
+                        text = theOptionItem.text;
+                    }
+                    if (this.props.recentCookieKey) {
+                        var index = this.recentValues_arr.indexOf(value);
+                        if (index != 0) {
+                            if (index != -1) {
+                                this.recentValues_arr.splice(index, 1);
+                            }
+                            this.recentValues_arr.unshift(value);
+                            if (this.recentValues_arr.length >= 6) {
+                                this.recentValues_arr.pop();
+                            }
+                            Cookies.set(this.props.recentCookieKey, this.recentValues_arr.join(','), { expires: 7 });
                         }
-                        this.recentValues_arr.unshift(value);
-                        if (this.recentValues_arr.length >= 6) {
-                            this.recentValues_arr.pop();
-                        }
-                        Cookies.set(this.props.recentCookieKey, this.recentValues_arr.join(','), { expires: 7 });
                     }
                 }
             }
@@ -883,6 +909,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 fetching: this.props.fetching,
                 fetchingErr: this.props.fetchingErr,
                 optionsData: this.props.optionsData,
+                starSelectable: this.props.starSelectable,
                 maxCount: 50,
                 keyword: '',
                 recentValues_arr: this.recentValues_arr,
@@ -964,19 +991,21 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                             }, 50);
                         }
                     } else {
-                        var selectedOptionItem = this.props.optionsData.options_arr.find(function (item) {
-                            return item.value == selectedVal;
-                        });
-                        if (selectedOptionItem) {
-                            if (selectedOptionItem.text != selectedText) {
+                        if (selectedText != '*') {
+                            var selectedOptionItem = this.props.optionsData.options_arr.find(function (item) {
+                                return item.value == selectedVal;
+                            });
+                            if (selectedOptionItem) {
+                                if (selectedOptionItem.text != selectedText) {
+                                    setTimeout(function () {
+                                        self.selectItem(selectedOptionItem);
+                                    }, 50);
+                                }
+                            } else {
                                 setTimeout(function () {
-                                    self.selectItem(selectedOptionItem);
+                                    self.selectItem(null);
                                 }, 50);
                             }
-                        } else {
-                            setTimeout(function () {
-                                self.selectItem(null);
-                            }, 50);
                         }
                     }
                 }
@@ -1522,8 +1551,29 @@ var ERPC_Label = function (_React$PureComponent7) {
             if (this.props.visible == false) {
                 return null;
             }
+            var rootDivClassName = 'erpc_label' + (this.props.class == null ? '' : this.props.class);
             var contentElem = null;
-            if (this.props.type == 'boolean') {
+            if (this.props.fetching) {
+                rootDivClassName += ' rounded border p-1';
+                contentElem = React.createElement(
+                    'div',
+                    { className: 'flex-grow-1 flex-shrink-1' },
+                    React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw' }),
+                    '\u901A\u8BAF\u4E2D'
+                );
+            } else if (this.props.fetchingErr) {
+                var errInfo = this.props.fetchingErr.info;
+                if (errInfo == gPreconditionInvalidInfo) {
+                    errInfo = '';
+                }
+                rootDivClassName += ' rounded border p-1 text-danger';
+                contentElem = React.createElement(
+                    'span',
+                    { className: 'flex-grow-1 flex-shrink-1' },
+                    React.createElement('i', { className: 'fa fa-warning' }),
+                    errInfo
+                );
+            } else if (this.props.type == 'boolean') {
                 var value = this.props.text;
                 var checked = checked = !(value == false || value == 0 || value == 'false' || value == 'FALSE');
                 contentElem = React.createElement('i', { className: 'fa ' + (checked ? ' fa-check text-success' : ' fa-close text-danger') });
@@ -1532,7 +1582,7 @@ var ERPC_Label = function (_React$PureComponent7) {
             }
             return React.createElement(
                 'span',
-                { className: 'erpc_label ' + (this.props.className == null ? '' : this.props.className) },
+                { className: rootDivClassName },
                 contentElem
             );
         }
@@ -1542,13 +1592,16 @@ var ERPC_Label = function (_React$PureComponent7) {
 }(React.PureComponent);
 
 function ERPC_Label_mapstatetoprops(state, ownprops) {
+    var _ref;
+
     var ctlPath = MakePath(ownprops.parentPath, ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex, ownprops.id);
     var ctlState = getStateByPath(state, ctlPath, {});
     var useText = ctlState.text != null ? ctlState.text : ownprops.text ? ownprops.text : '';
-    return {
+    return _ref = {
         text: useText,
-        visible: ctlState.visible
-    };
+        visible: ctlState.visible,
+        fetching: ctlState.fetching
+    }, _defineProperty(_ref, 'visible', ctlState.visible), _defineProperty(_ref, 'fetchingErr', ctlState.fetchingErr), _ref;
 }
 
 function ERPC_Label_dispatchtorprops(dispatch, ownprops) {
@@ -2310,7 +2363,8 @@ var CToastManger = function (_React$PureComponent13) {
             if (info.length > 50) {
                 info = info.substr(0, 50) + '……';
             }
-            var newMsg = { text: info,
+            var newMsg = {
+                text: info,
                 timeType: timeTime == null ? EToastTime.Normal : timeTime,
                 type: type == null ? EToastType.Info : type
             };
