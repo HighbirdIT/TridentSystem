@@ -437,7 +437,11 @@ class MobileContentCompiler extends ContentCompiler {
                     case ECtlReplyPathType.SetAP_On_BPChanged:
                         getValueStr = '';
                         if (relyPath.approach.funName) {
-                            getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State]);
+                            var useParentPath = this.getKernelFullParentPath(relyPath.relyCtl);
+                            if(useParentPath.length > 0){
+                                useParentPath = ' + ' + singleQuotesStr('.' + useParentPath);
+                            }
+                            getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State,'null','this.props.fullPath' + useParentPath]);
                         }
                         else if (relyPath.approach.value) {
                             getValueStr = relyPath.approach.value;
@@ -1611,7 +1615,8 @@ class MobileContentCompiler extends ContentCompiler {
         var dynamicSetBlock_hadRecord = new FormatFileBlock('dynamicbindhadrow');
         var staticBindBlock = new FormatFileBlock('static');
         bindFun.pushChild(staticBindBlock);
-
+        thisFormMidData.pullFun = pullFun;
+        
         if (useDS) {
             // gen pull fun
             var pullValidBlockBlock = new FormatFileBlock('validBlock');
@@ -1637,7 +1642,6 @@ class MobileContentCompiler extends ContentCompiler {
             var bodyCheckblock = new FormatFileBlock('bodyCheckblock');
             serverPullFun.pushChild(bodyCheckblock);
             thisFormMidData.bodyCheckblock = bodyCheckblock;
-            thisFormMidData.pullFun = pullFun;
             serverPullFun.pushLine("var params_arr = null;");
             var paramsetblock = new FormatFileBlock('paramset');
             serverPullFun.pushChild(paramsetblock);
@@ -2736,7 +2740,7 @@ class MobileContentCompiler extends ContentCompiler {
                 var callParams_arr = null;
                 var thisFormFullParentPath = singleQuotesStr(theKernel.fullParentPath);
                 if (belongUserControl) {
-                    thisFormFullParentPath = makeStr_callFun('CombineDotStr', [belongUserControl.id + '_path', singleQuotesStr(theKernel.fullParentPath)]);
+                    thisFormFullParentPath = makeStr_callFun('CombiCombineDotStr', [belongUserControl.id + '_path', singleQuotesStr(theKernel.fullParentPath)]);
                 }
                 callParams_arr = ['null', true, thisFormFullParentPath];
 
@@ -2989,7 +2993,12 @@ class MobileContentCompiler extends ContentCompiler {
                             beforeRetBlock.pushLine('}');
                         }
                         */
-                        belongFormMidData.pullFun.beforeRetBlock.push(makeStr_callFun(pullFun.name, [VarNames.State, true, thisFormFullParentPath]));
+                       if(belongFormMidData.useDS){
+                            belongFormMidData.pullFun.beforeRetBlock.pushLine(makeStr_callFun(pullFun.name, [VarNames.State, true, thisFormFullParentPath]));
+                       }
+                       else{
+                            belongFormMidData.bindFun.beforeRetBlock.pushLine(makeStr_callFun(pullFun.name, [VarNames.ReState, true, thisFormFullParentPath]));
+                       }
                     }
                     else if (belongUserControl != null) {
                         // 在自订控件里
