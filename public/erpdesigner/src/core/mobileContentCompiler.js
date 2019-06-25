@@ -2112,7 +2112,7 @@ class MobileContentCompiler extends ContentCompiler {
                             // pageform
                             if (stateItem.isDynamic) {
                                 if (stateItem.bindMode == ScriptBindMode.OnForm) {
-                                    setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, bundleVar.name,'formPath']));
+                                    setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, bundleVar.name,pathVarName]));
                                     if (stateItem.useColumn) {
                                         dynamicSetBlock_hadRecord.pushLine(setLine);
                                     }
@@ -2540,7 +2540,9 @@ class MobileContentCompiler extends ContentCompiler {
 
         if (!IsEmptyObject(bpCompileHelper.usePageParam)) {
             for (var usPageParamName in bpCompileHelper.usePageParam) {
-                needSetParams_arr.push({ bundleName: 'pagein_' + usPageParamName, clientValue: makeStr_callFun('getPageEntryParam', [singleQuotesStr(belongPageKernel), singleQuotesStr(usPageParamName), bpCompileHelper.usePageParam[usPageParamName]]) });
+                var usePageParamObj = {bundleName: 'pagein_' + usPageParamName, clientValue: makeStr_callFun('getPageEntryParam', [singleQuotesStr(belongPageKernel.id), singleQuotesStr(usPageParamName), bpCompileHelper.usePageParam[usPageParamName]])};
+                needSetParams_arr.push(usePageParamObj);
+                initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', usePageParamObj.bundleName), usePageParamObj.clientValue));
             }
         }
 

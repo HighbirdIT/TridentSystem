@@ -180,6 +180,7 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         this.appendedOutputItems_arr = [];
         this.clientInitBundleBlocks_arr = [];
         this.useEnvVars = {};
+        this.usePage_map = {};
     }
 
     compileEnd(){
@@ -282,6 +283,23 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
             }
         }
         rlt.useprops_map[attrName] = apiitem;
+    }
+
+    addUsePageEnryParam(pageid, paramName, defVal){
+        if(this.usePage_map[pageid] == null){
+            this.usePage_map[pageid] = {};
+        }
+        var params_arr = this.usePage_map[pageid].params_arr;
+        if(params_arr == null){
+            params_arr = [];
+            this.usePage_map[pageid].params_arr = params_arr;
+        }
+        if(params_arr.find(x=>{return x.name == paramName;}) == null){
+            params_arr.push({
+                name:paramName,
+                defVal:defVal,
+            });
+        }
     }
 }
 

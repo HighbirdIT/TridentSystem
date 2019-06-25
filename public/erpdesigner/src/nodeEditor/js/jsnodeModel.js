@@ -545,6 +545,14 @@ class JSNode_BluePrint extends EventEmitter {
                 params_arr = compilHelper.config.params;
             }
         }
+        if(!IsEmptyObject(compilHelper.usePage_map)){
+            for(var pageID in compilHelper.usePage_map){
+                var pageParams_arr = compilHelper.usePage_map[pageID].params_arr;
+                pageParams_arr.forEach(pageParam=>{
+                    theFun.scope.getVar(pageID + '_' + pageParam.name,true,makeStr_callFun('getPageEntryParam', [singleQuotesStr(pageID),singleQuotesStr(pageParam.name),pageParam.defVal]));
+                });
+            }
+        }
         var belongUserControl = ctlKernel.searchParentKernel(UserControlKernel_Type, true);
         var belongFormControl = ctlKernel.searchParentKernel(M_FormKernel_Type, true);
         var baseBundleInitBlock = new FormatFileBlock('baseBundle');
@@ -2987,6 +2995,9 @@ class JSNODE_Insert_table extends JSNode_Base {
 
         var trueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.sucessFlowSocket);
         if (trueFlowLinks_arr.length > 0) {
+            if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端成功出口无效', helper)) {
+                return false;
+            }
             this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock);
         }
         else if (autoCallFetchEnd) {
@@ -2995,6 +3006,9 @@ class JSNODE_Insert_table extends JSNode_Base {
 
         var falseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.failFlowSocket);
         if (falseFlowLinks_arr.length > 0) {
+            if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端成功出口无效', helper)) {
+                return false;
+            }
             this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock);
         }
         else if (autoCallFetchEnd) {
@@ -6316,6 +6330,9 @@ class JSNODE_Delete_Table extends JSNode_Base {
 
         var trueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.sucessFlowSocket);
         if (trueFlowLinks_arr.length > 0) {
+            if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端成功出口无效', helper)) {
+                return false;
+            }
             this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock);
         }
         else if (autoCallFetchEnd) {
@@ -6325,6 +6342,9 @@ class JSNODE_Delete_Table extends JSNode_Base {
 
         var falseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.failFlowSocket);
         if (falseFlowLinks_arr.length > 0) {
+            if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端成功出口无效', helper)) {
+                return false;
+            }
             this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock);
         }
         else if (autoCallFetchEnd) {
@@ -6837,6 +6857,15 @@ class JSNode_GetPageEntryParam extends JSNode_Base {
         return <DropDownControl itemChanged={this.paramDDCChanged} btnclass='btn-dark' options_arr={belongPage.getAllEntryParams} rootclass='flex-grow-1 flex-shrink-1' textAttrName='value' valueAttrName='name' value={nowVal} />;
     }
 
+    getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
+        if (belongFun.scope.isServerSide) {
+            return;
+        }
+        var thePage = this.bluePrint.ctlKernel.searchParentKernel(M_PageKernel_Type, true);
+        var paramName = thePage.getAttribute(this.outSocket.defval);
+        result.pushVariable(thePage.id + '_' + paramName, targetSocket);
+    }
+
     compile(helper, preNodes_arr, belongBlock) {
         var superRet = super.compile(helper, preNodes_arr);
         if (superRet == false || superRet != null) {
@@ -6867,7 +6896,9 @@ class JSNode_GetPageEntryParam extends JSNode_Base {
         if (!IsEmptyString(inSocketComRet.value)) {
             callParams_arr.push(inSocketComRet.value);
         }
-        var finalStr = makeStr_callFun('getPageEntryParam', callParams_arr);
+        //var finalStr = makeStr_callFun('getPageEntryParam', callParams_arr);
+        var finalStr = thePage.id + '_' + paramName;
+        helper.addUsePageEnryParam(thePage.id, paramName, inSocketComRet.value);
 
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, finalStr);
