@@ -3,12 +3,13 @@ var fs = require("fs");
 var path = require("path");
 //配置远程路径
 var remotePath = [
-    "/public/js/views/erp/pages/", 
-    "/views/erppage/server/pages/",
-    "/views/erppage/server/flows/",
+   // "/public/js/views/erp/pages/", 
+   // "/views/erppage/server/pages/",
+    //"/views/erppage/server/flows/",
+    "/public/erpdesigner/files/flow"
 ];
 
-//doCleanWork();
+doCleanWork();
 
 function doCleanWork(){
     //获取当前目录绝对路径，这里resolve()不传入参数
@@ -94,8 +95,9 @@ function handleArr(fileArr) {
     }
 }
 
-//处理flow
-function handleArr(fileArr) {
+//处理flow 直接对数组进行排序好了
+/*
+function handle_flowArr(fileArr) {
     var maxnum_map = {};
     var file;
     var i;
@@ -117,7 +119,7 @@ function handleArr(fileArr) {
         }
     }
 }
-
+*/
 module.exports = {
     doCleanWork:doCleanWork,
 };
