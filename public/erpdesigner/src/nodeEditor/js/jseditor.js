@@ -80,6 +80,11 @@ const JSNodeEditorControls_arr =[
         type:'数据库交互'
     },
     {
+        label:'执行存储过程',
+        nodeClass:JSNode_Excute_Pro,
+        type:'数据库交互'
+    },
+    {
         label:'日期函数',
         nodeClass:JSNode_DateFun,
         type:'运算'

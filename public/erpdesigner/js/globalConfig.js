@@ -145,6 +145,21 @@ var SelectModes_arr = [ESelectMode.None, ESelectMode.Single, ESelectMode.Multi];
 
 var ButtonClasses_arr = ['btn-primary', 'btn-secondary', 'btn-success', 'btn-danger', 'btn-warning', 'btn-info', 'btn-light', 'btn-dark', 'btn-link'];
 
+var EButtonVisibleType = {
+    Insert: 'insert',
+    Update: 'update',
+    Both: 'both',
+    Default: 'default'
+};
+var ButtonVisibleTypes_arr = [EButtonVisibleType.Insert, EButtonVisibleType.Update, EButtonVisibleType.Both, EButtonVisibleType.Default];
+
+var EUseEntityStage = {
+    Select: 'select',
+    Insert: 'isnert',
+    Update: 'update',
+    Delete: 'delete'
+};
+
 var GridHead_PerCharWidth = 1.4;
 var EGridWidthType = {
     Auto: 'auto',

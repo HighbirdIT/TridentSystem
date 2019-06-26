@@ -35,6 +35,7 @@ class M_FormKernel extends ContainerKernelBase{
                 createHelper,kernelJson
             );
 
+        this.hadReactClass = true;
         this.projectLoadedHanlder = this.projectLoadedHanlder.bind(this);
         var cusDsName = this.id + '_' + AttrNames.CustomDataSource;
         var cusDS_bp = this.project.dataMaster.getSqlBPByName(cusDsName);
@@ -158,6 +159,10 @@ class M_FormKernel extends ContainerKernelBase{
 
     isGridForm(){
         return this.getAttribute(AttrNames.FormType) == EFormType.Grid;
+    }
+
+    isPageForm(){
+        return this.getAttribute(AttrNames.FormType) == EFormType.Page;
     }
 
     autoSetCusDataSource(mustSelectColumns_arr){
