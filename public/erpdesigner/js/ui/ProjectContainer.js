@@ -241,7 +241,7 @@ var ProjectContainer = function (_React$PureComponent2) {
                 var newConfig = updateObject(item.config, { isPC: isPC });
                 return updateObject(item, { config: newConfig });
             });
-             var selectedIndex = this.state.selectedIndex == index ? this.state.selectedIndex : index;
+              var selectedIndex = this.state.selectedIndex == index ? this.state.selectedIndex : index;
             this.setState({ projects: new_arr, selectedIndex: selectedIndex });
         }
         */

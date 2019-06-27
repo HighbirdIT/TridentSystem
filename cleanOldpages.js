@@ -8,10 +8,9 @@ var remotePath = [
     "/public/src/views/erp/pages/",
     "/views/erppage/server/pages/",
     "/views/erppage/server/flows/",
->>>>>>> master
 ];
 
-doCleanWork();
+//doCleanWork();
 
 function doCleanWork(){
     //获取当前目录绝对路径，这里resolve()不传入参数
