@@ -152,11 +152,6 @@ var DataBase = function (_EventEmitter) {
         value: function getAllTable() {
             return this.getEntitiesByType('U');
         }
-    }, {
-        key: 'getAllProduce',
-        value: function getAllProduce() {
-            return this.getEntitiesByType('P');
-        }
     }]);
 
     return DataBase;
@@ -252,16 +247,6 @@ var DBEntity = function (_EventEmitter3) {
         value: function getColumnByName(colName) {
             return this.columns.find(function (x) {
                 return x.name == colName;
-            });
-        }
-    }, {
-        key: 'getParamByName',
-        value: function getParamByName(pName) {
-            if (this.params == null) {
-                return null;
-            }
-            return this.params.find(function (x) {
-                return x.name == pName;
             });
         }
     }, {

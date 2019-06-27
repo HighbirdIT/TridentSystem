@@ -1040,21 +1040,12 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                     )
                 );
             } else {
-                if (!this.props.nullable) {
-                    textColor = selectedVal == null ? ' text-danger' : '';
-                    textElem = React.createElement(
-                        'div',
-                        null,
-                        selectedText == null ? '请选择' : selectedText
-                    );
-                } else {
-                    textColor = selectedVal == null ? ' text-warning' : '';
-                    textElem = React.createElement(
-                        'div',
-                        null,
-                        selectedText == null ? '请选择(可以不选)' : selectedText
-                    );
-                }
+                textColor = selectedVal == null ? ' text-danger' : '';
+                textElem = React.createElement(
+                    'div',
+                    null,
+                    selectedText == null ? '请选择' : selectedText
+                );
             }
             var errTipElem = null;
             if (this.props.invalidInfo) {
@@ -1803,7 +1794,7 @@ function ERPC_PageForm_renderNavigater() {
     var preBtnItem = null;
     var nextBtnItem = null;
     var infoItem = null;
-    var nowIndex = this.props.recordIndex == null ? -1 : this.props.recordIndex;
+    var nowIndex = this.props.recordIndex;
     var countInfo = count > 9999 ? '9999..' : count;
     var indexInfo = count == 0 ? '0' : nowIndex > 9999 ? '9999..' : nowIndex + 1;
 
@@ -1829,14 +1820,11 @@ function ERPC_PageForm_renderNavigater() {
 
     if (this.canInsert) {
         if (nowIndex == -1) {
-            if (count > 0) {
-                exitPlushBtnItem = React.createElement(
-                    'button',
-                    { type: 'button', onClick: this.clickUnPlusNavBtnHandler, className: 'btn btn-danger flex-grow-1 navigationBtn' },
-                    React.createElement('span', { className: 'fa fa-undo' }),
-                    '\u653E\u5F03\u767B\u8BB0'
-                );
-            }
+            exitPlushBtnItem = React.createElement(
+                'button',
+                { type: 'button', onClick: this.clickUnPlusNavBtnHandler, className: 'btn btn-danger flex-grow-1 navigationBtn' },
+                React.createElement('span', { className: 'fa fa-undo' })
+            );
         } else {
             plushBtnItem = React.createElement(
                 'button',

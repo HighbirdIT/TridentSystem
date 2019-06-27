@@ -29,7 +29,6 @@ class UserControlKernel extends ContainerKernelBase{
                 parentKernel,
                 createHelper,kernelJson
             );
-        this.hadReactClass = true;
         if(parentKernel == null){
             this.attrsSettingID = this.project.designeConfig.name + '_' + this.id;
             gUserControlAttsByType_map[this.attrsSettingID] = UserControlKernelAttrsSetting.map(group=>{

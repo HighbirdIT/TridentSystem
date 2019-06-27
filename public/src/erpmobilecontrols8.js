@@ -893,14 +893,8 @@ class ERPC_DropDown extends React.PureComponent {
             </div>);
         }
         else {
-            if(!this.props.nullable){
-                textColor = selectedVal == null ? ' text-danger' : '';
-                textElem = (<div>{selectedText == null ? '请选择' : selectedText}</div>);
-            }
-            else{
-                textColor = selectedVal == null ? ' text-warning' : '';
-                textElem = (<div>{selectedText == null ? '请选择(可以不选)' : selectedText}</div>);
-            }
+            textColor = selectedVal == null ? ' text-danger' : '';
+            textElem = (<div>{selectedText == null ? '请选择' : selectedText}</div>);
         }
         var errTipElem = null;
         if (this.props.invalidInfo) {
@@ -1534,7 +1528,7 @@ function ERPC_PageForm_renderNavigater() {
     var preBtnItem = null;
     var nextBtnItem = null;
     var infoItem = null;
-    var nowIndex = this.props.recordIndex == null ? -1 : this.props.recordIndex;
+    var nowIndex = this.props.recordIndex;
     var countInfo = (count > 9999 ? '9999..' : count);
     var indexInfo = count == 0 ? '0' : (nowIndex > 9999 ? '9999..' : nowIndex + 1);
 
@@ -1546,9 +1540,7 @@ function ERPC_PageForm_renderNavigater() {
 
     if (this.canInsert) {
         if (nowIndex == -1) {
-            if(count > 0){
-                exitPlushBtnItem = (<button type='button' onClick={this.clickUnPlusNavBtnHandler} className='btn btn-danger flex-grow-1 navigationBtn' ><span className='fa fa-undo' />放弃登记</button>);
-            }
+            exitPlushBtnItem = (<button type='button' onClick={this.clickUnPlusNavBtnHandler} className='btn btn-danger flex-grow-1 navigationBtn' ><span className='fa fa-undo' /></button>);
         }
         else {
             plushBtnItem = (<button type='button' onClick={this.clickPlusNavBtnHandler} className='btn btn-info flex-grow-1 navigationBtn' ><span className='fa fa-plus' /></button>);

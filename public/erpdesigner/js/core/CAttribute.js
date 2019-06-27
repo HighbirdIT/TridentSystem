@@ -292,7 +292,6 @@ var AttrNames = {
     PopablePage: 'popablepage',
     ParamApi: 'paramapi',
     StarSelectable: 'starSelectable',
-    ButtonVisibleType: 'buttonVisibleType',
 
     Event: {
         OnClick: 'onclick',

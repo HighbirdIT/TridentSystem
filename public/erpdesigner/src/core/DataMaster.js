@@ -129,10 +129,6 @@ class DataBase extends EventEmitter{
     getAllTable(){
         return this.getEntitiesByType('U');
     }
-
-    getAllProduce(){
-        return this.getEntitiesByType('P');
-    }
 }
 
 class DBEntityAgency extends EventEmitter{
@@ -201,13 +197,6 @@ class DBEntity extends EventEmitter{
 
     getColumnByName(colName){
         return this.columns.find(x=>{return x.name == colName;});
-    }
-
-    getParamByName(pName){
-        if(this.params == null){
-            return null;
-        }
-        return this.params.find(x=>{return x.name == pName;});
     }
 
     toString(){

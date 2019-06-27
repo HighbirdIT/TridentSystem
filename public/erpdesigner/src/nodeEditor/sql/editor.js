@@ -1421,7 +1421,6 @@ class SqlNode_CompileHelper{
         this.compileSeq = [];
         this.varValue_map = {};
         this.usePageParam = {};
-        this.useEntities_map = {};
 
         autoBind(this);
     }
@@ -1485,6 +1484,13 @@ class SqlNode_CompileHelper{
             this.setCache(cacheID, rlt);
         }
         return rlt;
+    }
+
+    addUseEntity(target){
+        var index = this.useEntities_arr.indexOf(target);
+        if(index == -1){
+            this.useEntities_arr.push(target);
+        }
     }
 
     addUseVariable(name, type, declareStr){
@@ -1562,24 +1568,5 @@ class SqlNode_CompileHelper{
             }
         }
         rlt.useprops_map[attrName] = apiitem;
-    }
-    
-    addUseEntity(theEntity, useStage){
-        if(useStage == null){
-            var index = this.useEntities_arr.indexOf(theEntity);
-            if(index == -1){
-                this.useEntities_arr.push(theEntity);
-            }
-        }
-        else{
-            var obj = this.useEntities_map[theEntity.code];
-            if(obj == null){
-                obj = {
-                    useStage:{}
-                };
-                this.useEntities_map[theEntity.code] = obj;
-            }
-            obj.useStage[useStage] = 1;
-        }
     }
 }

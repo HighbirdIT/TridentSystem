@@ -592,9 +592,7 @@ class SqlNode_In_Operator extends SqlNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, SQLNODE_IN_OPERATOR, 'In', false, nodeJson);
         autoBind(this);
-        if(this.inType == null){
-            this.inType = 'in';
-        }
+
         if (nodeJson) {
             if (this.outputScokets_arr.length > 0) {
                 this.outSocket = this.outputScokets_arr[0];
@@ -632,14 +630,12 @@ class SqlNode_In_Operator extends SqlNode_Base {
     }
     requestSaveAttrs() {
         var rlt = super.requestSaveAttrs();
-        rlt.inType = this.inType;
+        //rlt.joinType = this.joinType;
         return rlt;
     }
-    getNodeTitle(){
-        return 'in';
-    }
+
     restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['inType']);
+        //assginObjByProperties(this, attrsJson, ['joinType']);
     }
     compile(helper, preNodes_arr) {
         var superRet = super.compile(helper, preNodes_arr);
@@ -694,7 +690,7 @@ class SqlNode_In_Operator extends SqlNode_Base {
                 return false;
             }
             var socketOut = compileRet.getSocketOut(theLink.outSocket).strContent;
-            finalSql = firstvalue + ' '+nodeThis.inType +' ( ' + socketOut + ' ) ';
+            finalSql = firstvalue + ' in ( ' + socketOut + ' ) ';
         } else {
             var socketOutstrs_arr = [];
 
@@ -744,7 +740,7 @@ class SqlNode_In_Operator extends SqlNode_Base {
                     '至少输入一个 in 条件']);
                 return false;
             }
-            finalSql = firstvalue + ' '+nodeThis.inType +' (' + socketOutstrs_arr.join(',') + ' ) ';
+            finalSql = firstvalue + ' in ( ' + socketOutstrs_arr.join(',') + ' ) ';
         }
 
         var selfCompileRet = new CompileResult(this);
@@ -925,11 +921,6 @@ class SqlNode_Union extends SqlNode_Base {
         var temLink = tLinks[0];
         var outNode = temLink.outSocket.node;
         if(outNode.type != SQLNODE_SELECT){
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle
-                , nodeThis
-                , helper.clickLogBadgeItemHandler)
-                , '需要连接select节点。']);
             return;
         }
         return outNode.getContext(finder, depth + 1);
@@ -1564,7 +1555,7 @@ SqlNodeClassMap[SQLNODE_LOGICAL_NOT] = {
 };
 SqlNodeClassMap[SQLNODE_IN_OPERATOR] = {
     modelClass: SqlNode_In_Operator,
-    comClass: C_SqlNode_In_Operator,
+    comClass: C_Node_SimpleNode,
 };
 SqlNodeClassMap[SQLNODE_TOSTRING] = {
     modelClass: SqlNode_ToString,

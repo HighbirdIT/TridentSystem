@@ -26,7 +26,6 @@ class M_PageKernel extends ContainerKernelBase {
             createHelper, kernelJson
         );
 
-        this.hadReactClass = true;
         var self = this;
         autoBind(self);
 

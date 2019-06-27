@@ -34,9 +34,6 @@ class LogManager extends EventEmitter{
             data:data,
             time:(new Date()).getTime() - this.baseTime,
         });
-        if(this.logs_arr.length > 10){
-            this.logs_arr.shift();
-        }
         this.fireEvent('changed');
     }
 
@@ -52,9 +49,6 @@ class LogManager extends EventEmitter{
             data:data,
             time:(new Date()).getTime() - this.baseTime,
         });
-        if(this.logs_arr.length > 10){
-            this.logs_arr.shift();
-        }
         this.fireEvent('changed');
     }
 

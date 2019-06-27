@@ -474,7 +474,7 @@ class FlowNode_BluePrint extends EventEmitter {
             var callFunUseParams_arr = [];
             theStep.params_arr.forEach(param => {
                 callFunUseParams_arr.push('param' + (callFunUseParams_arr.length + 1));
-                stepFun.headBlock.pushLine('if(' + param + ' == null){return serverhelper.createErrorRet("缺失参数[' + param + ']");}');
+                stepFun.headBlock.pushLine('if(' + param + ' == null){return serverhelper.createErrorRet("确失参数[' + param + ']");}');
             });
             var caseBlock = stepSwitchBlock.getCaseBlock(theStep.code);
             caseBlock.pushLine('return ' + stepFun.name + '(' + callFunUseParams_arr.join(',') + ');');
@@ -2211,8 +2211,4 @@ JSNodeClassMap[FLOWNODE_COLUMN_VAR] = {
 FlowNodeClassMap[FLOWNODE_NOWDATE] = {
     modelClass: FlowNode_NowDate,
     comClass: C_Node_SimpleNode,
-};
-FlowNodeClassMap[JSNODE_EXCUTE_PRO] = {
-    modelClass: JSNode_Excute_Pro,
-    comClass: C_JSNode_Excute_Pro,
 };

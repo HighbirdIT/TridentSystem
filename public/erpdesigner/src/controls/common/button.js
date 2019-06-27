@@ -3,7 +3,6 @@ const ButtonKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('操作表', AttrNames.ProcessTable, ValueType.DataSource, null, true, false, null, {text:'name', value:'code'}),
         new CAttribute('外观类', AttrNames.ButtonClass, ValueType.String, 'btn-primary', true, false, ButtonClasses_arr),
         genIsdisplayAttribute(),
-        new CAttribute('适用种类', AttrNames.ButtonVisibleType, ValueType.String, EButtonVisibleType.Default, true, false, ButtonVisibleTypes_arr),
     ]),
     new CAttributeGroup('事件',[
         new CAttribute('OnClick', AttrNames.Event.OnClick, ValueType.Event),

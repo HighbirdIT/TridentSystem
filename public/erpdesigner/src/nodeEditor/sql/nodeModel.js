@@ -2948,7 +2948,7 @@ class SqlNode_Logical_Operator extends SqlNode_Base {
             }
             ++nameI;
         }
-        return new NodeSocket('in' + nameI, this, true, { type: SqlVarType_Table, inputable: false });
+        return new NodeSocket('in' + nameI, this, true, { type: SqlVarType_Scalar, inputable: false });
     }
     getValue() {
         return this.outSocket.defval;
