@@ -697,12 +697,11 @@ class ERPC_DropDown extends React.PureComponent {
         var value = null;
         var text = null;
         var multiselect = this.props.multiselect;
-        if(theOptionItem == '*')
-        {
+        if (theOptionItem == '*') {
             value = '*';
             text = '*';
         }
-        else{
+        else {
             if (multiselect) {
                 if (!Array.isArray(theOptionItem)) {
                     console.error("multiselect's selectItem theOptionItem must array!");
@@ -893,8 +892,14 @@ class ERPC_DropDown extends React.PureComponent {
             </div>);
         }
         else {
-            textColor = selectedVal == null ? ' text-danger' : '';
-            textElem = (<div>{selectedText == null ? '请选择' : selectedText}</div>);
+            if (!this.props.nullable) {
+                textColor = selectedVal == null ? ' text-danger' : '';
+                textElem = (<div>{selectedText == null ? '请选择' : selectedText}</div>);
+            }
+            else {
+                textColor = selectedVal == null ? ' text-warning' : '';
+                textElem = (<div>{selectedText == null ? '请选择(可以不选)' : selectedText}</div>);
+            }
         }
         var errTipElem = null;
         if (this.props.invalidInfo) {
@@ -1540,7 +1545,9 @@ function ERPC_PageForm_renderNavigater() {
 
     if (this.canInsert) {
         if (nowIndex == -1) {
-            exitPlushBtnItem = (<button type='button' onClick={this.clickUnPlusNavBtnHandler} className='btn btn-danger flex-grow-1 navigationBtn' ><span className='fa fa-undo' /></button>);
+            if (count > 0) {
+                exitPlushBtnItem = (<button type='button' onClick={this.clickUnPlusNavBtnHandler} className='btn btn-danger flex-grow-1 navigationBtn' ><span className='fa fa-undo' />放弃登记</button>);
+            }
         }
         else {
             plushBtnItem = (<button type='button' onClick={this.clickPlusNavBtnHandler} className='btn btn-info flex-grow-1 navigationBtn' ><span className='fa fa-plus' /></button>);
@@ -1846,8 +1853,55 @@ function ERPC_GridSelectableRow_dispatchtorprops(dispatch, ownprops) {
 }
 
 const VisibleERPC_GridSelectableRow = ReactRedux.connect(ERPC_GridSelectableRow_mapstatetoprops, ERPC_GridSelectableRow_dispatchtorprops)(ERPC_GridSelectableRow);
-
 const VisibleERPC_GridForm_BtnCol = ReactRedux.connect(ERPC_GridForm_BtnCol_mapstatetoprops, ERPC_GridForm_BtnCol_dispatchtorprops)(ERPC_GridForm_BtnCol);
+
+function ERPC_Accordion_ClickHeaderHander(ev) {
+    store.dispatch(makeAction_setStateByPath(!this.props.collapsed, this.props.fullPath + '.collapsed'));
+}
+
+function ERPC_Accordion_Render() {
+    var bodyElem = null;
+    if (this.props.visible == false) { return null; }
+    if (!this.props.collapsed) {
+        if (!this.props.inited) {
+            this.rebind();
+        }
+        else {
+            this.rebindging = false;
+            bodyElem = <div className={'card-body d-flex' + (this.props.bodyIsColumn == true ? ' flex-column' : '')} >
+                    {this.rednerBody()}
+                </div>;
+        }
+
+    }
+    return (<div className='erp-control card ' userctlpath={this.props.fullPath}>
+        <div className='card-header btn btn-link text-left' onClick={this.clickHanderHandler} >
+            <span className="fa-stack">
+                <i className="fa fa-square-o fa-stack-2x"></i>
+                <i className={"fa fa-stack-1x " + (this.props.collapsed ? 'fa-plus' : 'fa-minus')}></i>
+            </span>
+            {this.props.title}
+        </div>
+        {bodyElem}
+    </div>);
+}
+
+function ERPC_Accordion_Rebind() {
+    var self = this;
+    if(this.rebindging){
+        this.rebindging = true;
+    }
+    this.rebindging = true;
+    this.rebindBody();
+}
+
+function ERPC_Accordion(target) {
+    target.clickHanderHandler = ERPC_Accordion_ClickHeaderHander.bind(target);
+    target.commonRender = ERPC_Accordion_Render.bind(target);
+    target.rebind = ERPC_Accordion_Rebind.bind(target);
+
+    return {};
+}
 
 class CBaseGridFormNavBar extends React.PureComponent {
     constructor(props) {
@@ -2125,8 +2179,6 @@ class MessageBoxItem {
         this.fireChanged();
     }
 }
-
-
 
 class CMessageBox extends React.PureComponent {
     constructor(props) {

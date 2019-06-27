@@ -196,6 +196,8 @@ class MobileContentCompiler extends ContentCompiler {
                 switch (relyPath.type) {
                     case ECtlReplyPathType.SetAP_On_BPChanged:
                     case ECtlReplyPathType.CallFun_On_BPChanged:
+                        var accordionParents_arr = relyPath.relyCtl.searchParentKernel(Accordion_Type);
+                        if(relyPath.relyCtl.searchParentKernel)
                         propFulPath = relyPath.berelyCtl.getStatePath(relyPath.berelyPropName, '.', null, true);
                         propChangedHandlerName = relyPath.berelyCtl.id + '_' + relyPath.berelyPropName + '_changed';
                         changedFun = clientSide.scope.getFunction(propChangedHandlerName);
@@ -204,6 +206,14 @@ class MobileContentCompiler extends ContentCompiler {
                             changedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
                             changedFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''", VarNames.NeedSetState], ';'));
                             clientSide.stateChangedAct[singleQuotesStr(propFulPath)] = propChangedHandlerName + '.bind(window)';
+                        }
+                        if(accordionParents_arr){
+                            var accordionCheckStr = '';
+                            accordionParents_arr.forEach(accordionKernel=>{
+                                changedFun.scope.getVar(accordionKernel.id + '_inited', true, "getStateByPath("+VarNames.State+",'"+accordionKernel.getStatePath('inited')+"',false);");
+                                accordionCheckStr += (accordionCheckStr.length > 0 ? ' && ' : '') + accordionKernel.id + '_inited';
+                            });
+                            changedFun.pushLine('if(' + accordionCheckStr + '){',1);
                         }
                         if (relyPath.type == ECtlReplyPathType.SetAP_On_BPChanged) {
                             getValueStr = '';
@@ -224,6 +234,10 @@ class MobileContentCompiler extends ContentCompiler {
                         else {
                             var actKey = 'call_' + relyPath.funName;
                             changedFun.pushLine("if(delayActs['" + actKey + "'] == null){delayActs['" + actKey + "'] = {callfun:" + relyPath.funName + (relyPath.params_arr ? ",params_arr:[" + relyPath.params_arr.join(',') + ']' : '') + "};};");
+                        }
+                        if(accordionParents_arr){
+                            changedFun.subNextIndent();
+                            changedFun.pushLine('}');
                         }
                         break;
                 }
@@ -313,6 +327,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         var childRenderBlock = new FormatFileBlock(userCtlKernel.id);
         var renderBlock = controlReactClass.renderFun;
+        renderBlock.pushLine('if(this.props.visible == false){return null;}');
         renderBlock.pushLine(makeStr_AddAll(VarNames.RetElem, " = <div className='", layoutConfig.getClassName(), "' ", styleStr, " userctlpath={this.props.fullPath}", ">"), 1);
         renderBlock.pushChild(childRenderBlock);
         renderBlock.subNextIndent();
@@ -758,6 +773,9 @@ class MobileContentCompiler extends ContentCompiler {
             case UserControlKernel_Type:
                 rlt = this.compileUserControlKernel(theKernel, renderBlock, renderFun);
                 break;
+            case Accordion_Type:
+                rlt = this.compileAccordionKernel(theKernel, renderBlock, renderFun);
+                break;
             default:
                 logManager.error('不支持的编译kernel type:' + theKernel.type);
         }
@@ -791,11 +809,10 @@ class MobileContentCompiler extends ContentCompiler {
         renderBlock.pushChild(ctlTag);
         this.compileIsdisplayAttribute(theKernel, ctlTag);
 
-        var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
-        var belongPageKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
-        var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
-        var parentMidData = this.projectCompiler.getMidData(belongFormKernel ? belongFormKernel.id : (belongPageKernel ? belongPageKernel.id : belongUserControl.id));
+        var reactParentKernel = theKernel.getReactParentKernel(true);
+        var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
+        var parentMidData = this.projectCompiler.getMidData(reactParentKernel.id);
         if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
             parentMidData.needSetKernels_arr.push(theKernel);
         }
@@ -923,12 +940,11 @@ class MobileContentCompiler extends ContentCompiler {
             this.compileScriptAttribute(textFieldParseRet, theKernel, 'value', AttrNames.TextField, { autoSetFetchState: true });
         }
         else {
-            var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
-            var belongPageKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
-            var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
+            var reactParentKernel = theKernel.getReactParentKernel(true);
+            var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
             var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
             var setValueStateItem = null;
-            var parentMidData = this.projectCompiler.getMidData(belongFormKernel ? belongFormKernel.id : (belongPageKernel ? belongPageKernel.id : belongUserControl.id));
+            var parentMidData = this.projectCompiler.getMidData(reactParentKernel.id);
             if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
                 parentMidData.needSetKernels_arr.push(theKernel);
             }
@@ -1015,12 +1031,11 @@ class MobileContentCompiler extends ContentCompiler {
             this.compileScriptAttribute(textFieldParseRet, theKernel, 'value', AttrNames.TextField, { autoSetFetchState: true });
         }
         else {
-            var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
-            var belongPageKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
-            var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
             var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
+            var reactParentKernel = theKernel.getReactParentKernel(true);
+            var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
             var setValueStateItem = null;
-            var parentMidData = this.projectCompiler.getMidData(belongFormKernel ? belongFormKernel.id : (belongPageKernel ? belongPageKernel.id : belongUserControl.id));
+            var parentMidData = this.projectCompiler.getMidData(reactParentKernel.id);
             if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
                 parentMidData.needSetKernels_arr.push(theKernel);
             }
@@ -1060,9 +1075,9 @@ class MobileContentCompiler extends ContentCompiler {
             attrLabel + '用到了脚本，但没有创建此脚本']);
             return false;
         }
-        var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
-        var belongPageKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
-        var belongUserKernel = theKernel.searchParentKernel(UserControlKernel_Type, true);
+
+        var reactParentKernel = theKernel.getReactParentKernel(true);
+        var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
         /*
         if(belongFormKernel == null){
             logManager.errorEx([logManager.createBadgeItem(
@@ -1073,7 +1088,6 @@ class MobileContentCompiler extends ContentCompiler {
             return false;
         }
         */
-        var bindParentKernel = belongFormKernel ? belongFormKernel : (belongUserKernel ? belongUserKernel : belongPageKernel);
         var scriptCompileRet = this.compileScriptBlueprint(attrParseRet.jsBp);
         if (scriptCompileRet == false) {
             return false;
@@ -1097,8 +1111,8 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
 
-        var visibleStyle = VisibleStyle_Update;
-        var useFormData = bindParentKernel ? scriptCompileRet.useForm_map[bindParentKernel.id] : null;
+        var visibleStyle = VisibleStyle_Both;
+        var useFormData = belongFormKernel ? scriptCompileRet.useForm_map[belongFormKernel.id] : null;
         var bindMode = ScriptBindMode.OnForm;
         var useColumn = false;
         var useControl = false;
@@ -1151,7 +1165,7 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
-        var bindParentMidData = bindParentKernel ? this.projectCompiler.getMidData(bindParentKernel.id) : null;
+        var bindParentMidData = this.projectCompiler.getMidData(reactParentKernel.id);
         if (bindParentMidData && bindParentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
             bindParentMidData.needSetKernels_arr.push(theKernel);
         }
@@ -1198,11 +1212,9 @@ class MobileContentCompiler extends ContentCompiler {
     }
 
     addNeedSetStateToParent(theKernel, valueItem) {
-        var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
-        var belongPageKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
-        var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
+        var reactParentKernel = theKernel.getReactParentKernel(true);
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
-        var parentMidData = this.projectCompiler.getMidData(belongFormKernel ? belongFormKernel.id : (belongPageKernel ? belongPageKernel.id : belongUserControl.id));
+        var parentMidData = this.projectCompiler.getMidData(reactParentKernel.id);
         if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
             parentMidData.needSetKernels_arr.push(theKernel);
         }
@@ -2272,6 +2284,115 @@ class MobileContentCompiler extends ContentCompiler {
             this.compileScriptBlueprint(onClickBp, { params: ['ev'] });
             ctlTag.setAttr('onClick', bigbracketStr(onclickFunName));
         }
+    }
+
+    compileAccordionKernel(theKernel, renderBlock, renderFun) {
+        var clientSide = this.clientSide;
+        var project = this.project;
+        var logManager = project.logManager;
+
+        var controlReactClass = clientSide.getReactClass(theKernel.getReactClassName(), true);
+        controlReactClass.constructorFun.pushLine('this.state=ERPC_Accordion(this);');
+        controlReactClass.constructorFun.pushLine('this.rednerBody = this.rednerBody.bind(this);');
+        controlReactClass.constructorFun.pushLine('this.rebindBody = this.rebindBody.bind(this);');
+        var layoutConfig = theKernel.getLayoutConfig();
+        layoutConfig.addClass('erp-control');
+        layoutConfig.addClass('card');
+        var styleID = theKernel.id + '_style';
+        var styleStr = clientSide.addStyleObject(styleID, layoutConfig.style) ? 'style={' + styleID + '}' : '';
+
+        var title = theKernel.getAttribute(AttrNames.Title);
+
+        var ctlTag = new FormatHtmlTag(theKernel.id, theKernel.getReactClassName(true), this.clientSide);
+        this.modifyControlTag(theKernel, ctlTag);
+        var parentPath = this.getKernelParentPath(theKernel);
+        var parentFullPath = this.getKernelFullParentPath(theKernel);
+        var thisFullPath = makeStr_DotProp(parentFullPath, theKernel.id);
+        ctlTag.setAttr('id', theKernel.id);
+        ctlTag.setAttr('parentPath', parentPath);
+        if(!IsEmptyString(title)){
+            ctlTag.setAttr('defaultTitle', title);
+        }
+        var orientation = theKernel.getAttribute(AttrNames.Orientation);
+        if (orientation == Orientation_V) {
+            ctlTag.setAttr('bodyIsColumn', '{true}');
+        }
+        var initCollapsed = theKernel.getAttribute(AttrNames.InitCollapsed);
+        ctlTag.setAttr('initcollapsed', '{' + initCollapsed + '}');
+        var loadOnUnCollapsed = theKernel.getAttribute(AttrNames.LoadOnUnCollapsed);
+
+        this.compileIsdisplayAttribute(theKernel, ctlTag);
+        renderBlock.pushChild(ctlTag);
+
+        var ctlMidData = this.projectCompiler.getMidData(theKernel.id);
+        ctlMidData.needSetKernels_arr = [];
+
+        var childRenderBlock = new FormatFileBlock(theKernel.id);
+        var selftRenderBlock = controlReactClass.renderFun;
+        selftRenderBlock.pushLine(VarNames.RetElem + " = this.commonRender();");
+        var renderBodyFun = controlReactClass.getFunction('rednerBody', true);
+        renderBodyFun.pushLine("return <React.Fragment>",1);
+        renderBodyFun.pushChild(childRenderBlock);
+        renderBodyFun.subNextIndent();
+        renderBodyFun.pushLine('</React.Fragment>');
+        var rebindBodyFun = controlReactClass.getFunction('rebindBody', true);
+        rebindBodyFun.scope.getVar(VarNames.NeedSetState, true, '{}');
+        rebindBodyFun.scope.getVar(VarNames.State, true, 'store.getState()');
+
+        controlReactClass.mapStateFun.scope.getVar('propProfile', true, "getControlPropProfile(ownprops, state)");
+        controlReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullParentPath), makeStr_DotProp('propProfile', VarNames.FullParentPath)));
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullPath), makeStr_DotProp('propProfile', VarNames.FullPath)));
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'visible'), makeStr_DotProp(VarNames.CtlState, 'visible != false')));
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'title'), "ctlState.title ? ctlState.title : (ownprops.defaultTitle ? ownprops.defaultTitle : '未命名')"));
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'collapsed'), 'ctlState.collapsed == null ? ownprops.initcollapsed : ctlState.collapsed;'));
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'inited'), 'ctlState.inited == true;'));
+
+        for (var ci in theKernel.children) {
+            var childKernel = theKernel.children[ci];
+            if (this.compileKernel(childKernel, childRenderBlock, controlReactClass.renderFun) == false) {
+                return false;
+            }
+        }
+
+        if (ctlMidData.needSetKernels_arr.length > 0) {
+            var thisFullPathVarName = 'this.props.fullPath';
+            for (ci in ctlMidData.needSetKernels_arr) {
+                var targetKernel = ctlMidData.needSetKernels_arr[ci];
+                var targetKernelMidData = this.projectCompiler.getMidData(targetKernel.id);
+                if (targetKernelMidData.needSetStates_arr.length > 0) {
+                    targetKernelMidData.needSetStates_arr.forEach(stateItem => {
+                        var stateName = targetKernel.getStatePath(stateItem.name,'.',{},false,theKernel);
+                        var setNeedStateLeftStr = VarNames.NeedSetState + '[' + thisFullPathVarName + "+'." + stateName + "']";
+                        if (stateItem.isDynamic) {
+                            var setLine = makeLine_Assign(setNeedStateLeftStr, makeStr_callFun(stateItem.funName, [VarNames.State, 'null', thisFullPathVarName]));
+                            rebindBodyFun.pushLine(setLine);
+                        } else {
+                            if (stateItem.staticValue) {
+                                var sv = stateItem.staticValue;
+                                switch (sv.toLocaleLowerCase()) {
+                                    case 'true':
+                                    case 'false':
+                                        break;
+                                    default:
+                                        sv = singleQuotesStr(sv);
+                                }
+                                rebindBodyFun.pushLine(makeLine_Assign(setNeedStateLeftStr, sv));
+                            }
+                            else if (stateItem.setNull) {
+                                rebindBodyFun.pushLine(makeLine_Assign(setNeedStateLeftStr, 'null'));
+                            }
+                            else {
+                                console.error('无法处理的kernel');
+                            }
+                        }
+                    });
+                }
+            }
+            rebindBodyFun.pushLine(VarNames.NeedSetState + '[' + thisFullPathVarName + "+'.inited'] = true;"), 
+            rebindBodyFun.pushLine("setTimeout(() => {store.dispatch(makeAction_setManyStateByPath(needSetState, ''));},50);", -1);
+        }
+        return true;
     }
 
     compileDropdownKernel(theKernel, renderBlock, renderFun) {
