@@ -2459,6 +2459,7 @@ class MobileContentCompiler extends ContentCompiler {
                 return false;
             }
         }
+        
 
         if (ctlMidData.needSetKernels_arr.length > 0) {
             var thisFullPathVarName = 'this.props.fullPath';
