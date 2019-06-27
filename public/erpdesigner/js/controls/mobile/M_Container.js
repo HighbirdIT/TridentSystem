@@ -76,7 +76,7 @@ var M_Container = function (_React$PureComponent) {
         autoBind(_this2);
 
         var ctlKernel = _this2.props.ctlKernel;
-        var inintState = M_ControlBase(_this2, LayoutAttrNames_arr.concat([AttrNames.Orientation, AttrNames.Chidlren], inintState));
+        var inintState = M_ControlBase(_this2, LayoutAttrNames_arr.concat([AttrNames.Orientation, AttrNames.Chidlren]));
         M_ContainerBase(_this2);
 
         inintState.orientation = ctlKernel.getAttribute(AttrNames.Orientation);

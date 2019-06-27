@@ -484,7 +484,7 @@ class ControlKernelBase extends IAttributeable {
                     if(child.editor && (!needFilt || child.editor.type == targetType)){
                         rlt.push(child.editor);
                     }
-                    if(child.type == M_ContainerKernel_Type){
+                    if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type){
                         // 穿透div
                         if(meetParents_map[child.id] == null){
                             meetParents_map[child.id] = 1;
@@ -503,8 +503,8 @@ class ControlKernelBase extends IAttributeable {
         return rlt;
     }
 
-    getStatePath(stateName, splitChar = '.', rowIndexVar_map = {}, ignoreRowIndex = false){
-        if(this.parent == null){
+    getStatePath(stateName, splitChar = '.', rowIndexVar_map = {}, ignoreRowIndex = false, topestParant){
+        if(this.parent == null || this == topestParant){
             return '';
         }
         var nowKernel = this.parent;
@@ -512,6 +512,7 @@ class ControlKernelBase extends IAttributeable {
         do{
             switch(nowKernel.type){
                 case M_PageKernel_Type:
+                case Accordion_Type:
                 rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
                 break;
                 case M_FormKernel_Type:
@@ -533,7 +534,7 @@ class ControlKernelBase extends IAttributeable {
             if(nowKernel){
                 nowKernel = nowKernel.parent;
             }
-        }while(nowKernel != null);
+        }while(nowKernel != null && nowKernel != topestParant);
         return rlt;
     }
 

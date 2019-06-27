@@ -11,6 +11,7 @@ const ButtonKernel_Type = 'button';
 const M_CheckBoxKernel_Type = 'M_CheckBox';
 const EmptyKernel_Type = 'empty';
 const UserControlKernel_Type = 'UserControl';
+const Accordion_Type = 'accordion';
 
 const M_LabelKernel_Prefix = 'M_Label';
 const M_PageKernel_Prefix = 'M_Page';
@@ -24,6 +25,7 @@ const ButtonKernel_Prefix = 'Btn';
 const M_CheckBoxKernel_Prefix = 'M_Check';
 const EmptyKernel_Prefix = 'empty';
 const UserControlKernel_Prefix = 'UserControl';
+const Accordion_Prefix = 'Accordion';
 
 function GetControlTypeReadableName(type){
     switch(type){
@@ -53,6 +55,8 @@ function GetControlTypeReadableName(type){
         return '空组件';
         case UserControlKernel_Prefix:
         return '自订控件';
+        case Accordion_Prefix:
+        return '可折叠控件';
     }
     return type;
 }

@@ -503,7 +503,7 @@ var ControlKernelBase = function (_IAttributeable) {
                         if (child.editor && (!needFilt || child.editor.type == targetType)) {
                             rlt.push(child.editor);
                         }
-                        if (child.type == M_ContainerKernel_Type) {
+                        if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type) {
                             // 穿透div
                             if (meetParents_map[child.id] == null) {
                                 meetParents_map[child.id] = 1;
@@ -527,8 +527,9 @@ var ControlKernelBase = function (_IAttributeable) {
             var splitChar = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '.';
             var rowIndexVar_map = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
             var ignoreRowIndex = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+            var topestParant = arguments[4];
 
-            if (this.parent == null) {
+            if (this.parent == null || this == topestParant) {
                 return '';
             }
             var nowKernel = this.parent;
@@ -536,6 +537,7 @@ var ControlKernelBase = function (_IAttributeable) {
             do {
                 switch (nowKernel.type) {
                     case M_PageKernel_Type:
+                    case Accordion_Type:
                         rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
                         break;
                     case M_FormKernel_Type:
@@ -556,7 +558,7 @@ var ControlKernelBase = function (_IAttributeable) {
                 if (nowKernel) {
                     nowKernel = nowKernel.parent;
                 }
-            } while (nowKernel != null);
+            } while (nowKernel != null && nowKernel != topestParant);
             return rlt;
         }
     }, {

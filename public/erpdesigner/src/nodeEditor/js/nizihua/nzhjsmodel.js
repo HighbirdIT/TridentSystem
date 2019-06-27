@@ -609,10 +609,6 @@ JSNodeClassMap[JSNODE_ARRAY_SLICE] = {
     comClass: C_Node_SimpleNode,
 };
 
-JSNodeClassMap[JSNODE_STORED_PROCEDURE] = {
-    modelClass: JSNode_Stored_Procedure,
-    comClass: C_JSNode_Stored_Procedure,
-};
 JSNodeEditorControls_arr.push(
     {
         label: 'while',
@@ -649,9 +645,3 @@ JSNodeEditorControls_arr.push(
         nodeClass: JSNode_Array_Slice,
         type: '数组操控'
     });                                                 
-JSNodeEditorControls_arr.push(
-    {
-        label: '查询存储过程',
-        nodeClass: JSNode_Stored_Procedure,
-        type: '数据源'
-    });    
