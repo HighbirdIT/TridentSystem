@@ -35,6 +35,7 @@ class M_FormKernel extends ContainerKernelBase{
                 createHelper,kernelJson
             );
 
+        this.hadReactClass = true;
         this.projectLoadedHanlder = this.projectLoadedHanlder.bind(this);
         var cusDsName = this.id + '_' + AttrNames.CustomDataSource;
         var cusDS_bp = this.project.dataMaster.getSqlBPByName(cusDsName);
@@ -72,6 +73,7 @@ class M_FormKernel extends ContainerKernelBase{
         var gridFormBottomDiv = this.children.find(child=>{
             return child.id == bottomDivID;
         });
+        this.gridFormBottomDiv = gridFormBottomDiv;
         if(gridFormBottomDiv == null){
             if(this.project.loaded){
                 this.projectLoadedHanlder();
@@ -80,7 +82,6 @@ class M_FormKernel extends ContainerKernelBase{
                 this.project.on('loaded', this.projectLoadedHanlder);
             }
         }
-        this.gridFormBottomDiv = gridFormBottomDiv;
 
         var nowft = this.getAttribute(AttrNames.FormType);
         this[AttrNames.ListFormContent + '_visible'] = nowft == EFormType.Grid;
@@ -100,13 +101,13 @@ class M_FormKernel extends ContainerKernelBase{
 
     projectLoadedHanlder(){
         var gridFormBottomDiv = new M_ContainerKernel({},this);
+        this.gridFormBottomDiv = gridFormBottomDiv;
         gridFormBottomDiv.name = this.id + '底部';
         gridFormBottomDiv.growAttrArray(AttrNames.LayoutNames.StyleAttr);
         gridFormBottomDiv.growAttrArray(AttrNames.LayoutNames.StyleAttr);
         gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexGrow,value:false},0);
         gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexShrink,value:false},1);
         this.setAttribute('bottomDivID', gridFormBottomDiv.id);
-        this.gridFormBottomDiv = gridFormBottomDiv;
     }
 
     scriptCreated(attrName, scriptBP){
@@ -158,6 +159,10 @@ class M_FormKernel extends ContainerKernelBase{
 
     isGridForm(){
         return this.getAttribute(AttrNames.FormType) == EFormType.Grid;
+    }
+
+    isPageForm(){
+        return this.getAttribute(AttrNames.FormType) == EFormType.Page;
     }
 
     autoSetCusDataSource(mustSelectColumns_arr){

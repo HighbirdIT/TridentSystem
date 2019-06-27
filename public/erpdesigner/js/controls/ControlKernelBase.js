@@ -379,6 +379,27 @@ var ControlKernelBase = function (_IAttributeable) {
             return rlt;
         }
     }, {
+        key: 'getReactParentKernel',
+        value: function getReactParentKernel(justFirst) {
+            var rlt = null;
+            var tKernel = this.parent;
+            var isArray = false;
+            while (tKernel != null) {
+                if (tKernel.hadReactClass) {
+                    if (justFirst) {
+                        return tKernel;
+                    }
+                    if (rlt == null) {
+                        rlt = [tKernel];
+                    } else {
+                        rlt.push(tKernel);
+                    }
+                }
+                tKernel = tKernel.parent;
+            }
+            return rlt;
+        }
+    }, {
         key: 'searchParentKernel',
         value: function searchParentKernel(targetType, justFirst) {
             var rlt = null;

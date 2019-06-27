@@ -1210,7 +1210,7 @@ function simpleFreshFormFun(retState, records_arr, formFullID, directBindFun) {
     }
     if (formState.recordIndex == useIndex) {
         if (directBindFun != null) {
-            return directBindFun(retState, useIndex, useIndex, formFullID);
+            return directBindFun(retState, useIndex, formState.recordIndex, formFullID);
         }
         return retState;
     }
