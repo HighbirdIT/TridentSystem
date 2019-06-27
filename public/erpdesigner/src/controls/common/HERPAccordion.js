@@ -4,7 +4,6 @@ const HERPAccordionKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr),
         genIsdisplayAttribute(),
         new CAttribute('初始折叠', AttrNames.InitCollapsed, ValueType.Boolean, false),
-        new CAttribute('展开时再加载', AttrNames.LoadOnUnCollapsed, ValueType.Boolean, true),
     ]),
 ]);
 
