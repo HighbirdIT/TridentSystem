@@ -356,6 +356,7 @@ class ControlKernelBase extends IAttributeable {
         return rlt;
     }
 
+    
     getReactParentKernel(justFirst){
         var rlt = null;
         var tKernel = this.parent;
