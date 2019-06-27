@@ -80,6 +80,11 @@ const JSNodeEditorControls_arr =[
         type:'数据库交互'
     },
     {
+        label:'执行存储过程',
+        nodeClass:JSNode_Excute_Pro,
+        type:'数据库交互'
+    },
+    {
         label:'日期函数',
         nodeClass:JSNode_DateFun,
         type:'运算'
@@ -180,6 +185,7 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         this.appendedOutputItems_arr = [];
         this.clientInitBundleBlocks_arr = [];
         this.useEnvVars = {};
+        this.usePage_map = {};
     }
 
     compileEnd(){
@@ -282,6 +288,23 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
             }
         }
         rlt.useprops_map[attrName] = apiitem;
+    }
+
+    addUsePageEnryParam(pageid, paramName, defVal){
+        if(this.usePage_map[pageid] == null){
+            this.usePage_map[pageid] = {};
+        }
+        var params_arr = this.usePage_map[pageid].params_arr;
+        if(params_arr == null){
+            params_arr = [];
+            this.usePage_map[pageid].params_arr = params_arr;
+        }
+        if(params_arr.find(x=>{return x.name == paramName;}) == null){
+            params_arr.push({
+                name:paramName,
+                defVal:defVal,
+            });
+        }
     }
 }
 

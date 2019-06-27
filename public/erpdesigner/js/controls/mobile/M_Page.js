@@ -20,6 +20,7 @@ var M_PageKernel = function (_ContainerKernelBase) {
 
         var _this = _possibleConstructorReturn(this, (M_PageKernel.__proto__ || Object.getPrototypeOf(M_PageKernel)).call(this, initData, M_PageKernel_Type, '页面', M_PageKernelAttrsSetting, parentKernel, createHelper, kernelJson));
 
+        _this.hadReactClass = true;
         var self = _this;
         autoBind(self);
 

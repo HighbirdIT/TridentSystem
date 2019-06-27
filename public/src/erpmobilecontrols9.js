@@ -1533,7 +1533,7 @@ function ERPC_PageForm_renderNavigater() {
     var preBtnItem = null;
     var nextBtnItem = null;
     var infoItem = null;
-    var nowIndex = this.props.recordIndex;
+    var nowIndex = this.props.recordIndex == null ? -1 : this.props.recordIndex;
     var countInfo = (count > 9999 ? '9999..' : count);
     var indexInfo = count == 0 ? '0' : (nowIndex > 9999 ? '9999..' : nowIndex + 1);
 

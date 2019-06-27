@@ -80,6 +80,11 @@ const FlowNodeEditorControls_arr =[
         type:'数据库交互'
     },
     {
+        label:'执行存储过程',
+        nodeClass:JSNode_Excute_Pro,
+        type:'数据库交互'
+    },
+    {
         label:'创建错误',
         nodeClass:FlowNode_Create_ServerError,
         type:'数据库交互'

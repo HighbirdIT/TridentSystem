@@ -300,6 +300,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
         compileRet.useForm_map = compileHelper.useForm_map;
         compileRet.useGlobalControls_map = compileHelper.useGlobalControls_map;
+        compileRet.useEntities_map = compileHelper.useEntities_map;
         this.compiledScriptBP_map[targetBP.id] = compileRet;
         return compileRet;
     }
@@ -392,7 +393,7 @@ class MobileContentCompiler extends ContentCompiler {
                         }
                         else if (stateItem.isDynamic) {
                             if (stateItem.bindMode == ScriptBindMode.OnForm) {
-                                var setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.State,'null',ctlPathParamName]));
+                                var setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.State, 'null', ctlPathParamName]));
                                 ctlInitFun.pushLine(setLine);
                             }
                         } else {
@@ -453,10 +454,10 @@ class MobileContentCompiler extends ContentCompiler {
                         getValueStr = '';
                         if (relyPath.approach.funName) {
                             var useParentPath = this.getKernelFullParentPath(relyPath.relyCtl);
-                            if(useParentPath.length > 0){
+                            if (useParentPath.length > 0) {
                                 useParentPath = ' + ' + singleQuotesStr('.' + useParentPath);
                             }
-                            getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State,'null','this.props.fullPath' + useParentPath]);
+                            getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State, 'null', 'this.props.fullPath' + useParentPath]);
                         }
                         else if (relyPath.approach.value) {
                             getValueStr = relyPath.approach.value;
@@ -609,7 +610,7 @@ class MobileContentCompiler extends ContentCompiler {
         var userControlInitBlock = new FormatFileBlock('userctlinit');
         var activeTimeoutBlock = new FormatFileBlock('timeout');
         initPageFun.scope.getVar(VarNames.NeedSetState, true, '[]');
-        initPageFun.scope.getVar(VarNames.FullParentPath,true,singleQuotesStr(pageKernel.id));
+        initPageFun.scope.getVar(VarNames.FullParentPath, true, singleQuotesStr(pageKernel.id));
         initPageFun.pushLine('var hadState = state != null;');
         initPageFun.pushLine('if(!hadState){state = store.getState();}');
         initPageFun.pushChild(pageLoadBlock);
@@ -664,7 +665,7 @@ class MobileContentCompiler extends ContentCompiler {
                         }
                         else if (stateItem.isDynamic) {
                             if (stateItem.bindMode == ScriptBindMode.OnForm) {
-                                var setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.State,'null',singleQuotesStr(pageKernel.id)]));
+                                var setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.State, 'null', singleQuotesStr(pageKernel.id)]));
                                 controlInitBlock.pushLine(setLine);
                             }
                         } else {
@@ -948,6 +949,14 @@ class MobileContentCompiler extends ContentCompiler {
             if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
                 parentMidData.needSetKernels_arr.push(theKernel);
             }
+            var alterValue = null;
+            var hadDefaultStr = false;;
+            if (!defaultValParseRet.isScript) {
+                hadDefaultStr = !IsEmptyString(defaultValParseRet.string);
+                if(hadDefaultStr){
+                    alterValue = defaultValParseRet.string;
+                }
+            }
             if (belongFormKernel != null) {
                 var formColumns_arr = belongFormKernel.getCanuseColumns();
                 if (formColumns_arr.indexOf(textField) != -1) {
@@ -956,6 +965,7 @@ class MobileContentCompiler extends ContentCompiler {
                     setValueStateItem = {
                         name: 'value',
                         useColumn: { name: textField },
+                        alterValue : alterValue,
                     };
                 }
             }
@@ -1047,6 +1057,7 @@ class MobileContentCompiler extends ContentCompiler {
                     setValueStateItem = {
                         name: 'value',
                         useColumn: { name: textField },
+                        alterValue: !defaultValParseRet.isScript && IsEmptyString(defaultValParseRet.string) ? '0' : defaultValParseRet.string,
                     };
                 }
             }
@@ -1058,9 +1069,7 @@ class MobileContentCompiler extends ContentCompiler {
                     };
                 }
             }
-            if (setValueStateItem != null) {
-                kernelMidData.needSetStates_arr.push(setValueStateItem);
-            }
+            kernelMidData.needSetStates_arr.push(setValueStateItem);
         }
     }
 
@@ -1101,10 +1110,10 @@ class MobileContentCompiler extends ContentCompiler {
                         scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState.fetching = false;");
                         scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState.fetchingErr = err;");
 
-                        scriptCompileRet.startFtech_bk.pushLine("state = " + makeStr_callFun('setManyStateByPath', [VarNames.State, VarNames.FullParentPath + "+'." + theKernel.id+"'", '{fetching:true,fetchingErr:null}']));
+                        scriptCompileRet.startFtech_bk.pushLine("state = " + makeStr_callFun('setManyStateByPath', [VarNames.State, VarNames.FullParentPath + "+'." + theKernel.id + "'", '{fetching:true,fetchingErr:null}']));
                     }
                 }
-                scriptCompileRet.finalCallBackReturn_bk.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, VarNames.FullParentPath + "+'." + theKernel.id+"'", 'needSetState']) + ';');
+                scriptCompileRet.finalCallBackReturn_bk.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, VarNames.FullParentPath + "+'." + theKernel.id + "'", 'needSetState']) + ';');
             }
             else {
                 scriptCompileRet.finalCallBackReturn_bk.pushLine("return err == null ? data : null;");
@@ -1201,7 +1210,7 @@ class MobileContentCompiler extends ContentCompiler {
         var isdisplay = theKernel.getAttribute(AttrNames.Isdisplay);
         var isdisplayParseRet = parseObj_CtlPropJsBind(isdisplay, project.scriptMaster);
         if (isdisplayParseRet.isScript) {
-            var scriptCompileRet = this.compileScriptAttribute(isdisplayParseRet, theKernel, 'visible', AttrNames.Isdisplay, {autoSetFetchState:true});
+            var scriptCompileRet = this.compileScriptAttribute(isdisplayParseRet, theKernel, 'visible', AttrNames.Isdisplay, { autoSetFetchState: true });
         }
         else {
             if (!isdisplay) {
@@ -1417,9 +1426,9 @@ class MobileContentCompiler extends ContentCompiler {
         var renderContentBlock = ifInvalidBundleBlock.falseBlock;
 
         if (useDS != null) {
-            var ifNowRecordBlock = new JSFile_IF('hadnowrecord', '!this.props.canInsert && this.props.nowRecord == null');
+            var ifNowRecordBlock = new JSFile_IF('hadnowrecord', '!this.canInsert && this.props.nowRecord == null');
             if (isGridForm) {
-                ifNowRecordBlock.condition = (insertBtnSetting ? 'this.state.hadNewRow != true && ' : '') + "!this.props.canInsert && (this.props.records_arr == null || this.props.records_arr.length == 0)";
+                ifNowRecordBlock.condition = (insertBtnSetting ? 'this.state.hadNewRow != true && ' : '') + "!this.canInsert && (this.props.records_arr == null || this.props.records_arr.length == 0)";
             }
             ifInvalidBundleBlock.falseBlock.pushChild(ifNowRecordBlock);
             var noDataTip = theKernel.getAttribute(AttrNames.NoDataTip);
@@ -1578,9 +1587,12 @@ class MobileContentCompiler extends ContentCompiler {
         }
         bindFun.scope.getVar(VarNames.NeedSetState, true, '{}');
         var bundleVar = bindFun.scope.getVar('bundle', true, '{}');
+        var saveInsertBlock = null;
         var saveInsertIfBlock = null;
         var insertModeIf = null;
         var hadInsertCacheIf = null;
+        var hadInsertCacheTrueDynamicBlock = null;
+        var hadInsertCacheFlaseDynamicBlock = null;
 
         var belongPage = theKernel.searchParentKernel(M_PageKernel_Type, true);
         var belongForm = theKernel.searchParentKernel(M_FormKernel_Type, true);
@@ -1628,7 +1640,7 @@ class MobileContentCompiler extends ContentCompiler {
         var staticBindBlock = new FormatFileBlock('static');
         bindFun.pushChild(staticBindBlock);
         thisFormMidData.pullFun = pullFun;
-        
+
         if (useDS) {
             // gen pull fun
             var pullValidBlockBlock = new FormatFileBlock('validBlock');
@@ -1672,14 +1684,8 @@ class MobileContentCompiler extends ContentCompiler {
                 bindFun.pushChild(insertModeIf);
                 insertModeIf.falseBlock.pushLine(VarNames.NowRecord + '=' + VarNames.Records_arr + '[useIndex];');
                 insertModeIf.falseBlock.pushLine(VarNames.Bundle + "." + theKernel.id + '_' + VarNames.NowRecord + "=" + VarNames.NowRecord + ';');
-                if (formCanInsert) {
-                    saveInsertIfBlock = new JSFile_IF('saveinsert', 'oldIndex == -1');
-                    bindFun.saveInsertBlock = saveInsertIfBlock.trueBlock;
-                    bindFun.pushChild(saveInsertIfBlock);
-                    insertModeIf.trueBlock.pushLine(makeLine_Assign(VarNames.InsertCache, makeStr_getStateByPath("formState", singleQuotesStr(VarNames.InsertCache))));
-                    hadInsertCacheIf = new JSFile_IF(VarNames.InsertCache, VarNames.InsertCache);
-                    insertModeIf.trueBlock.pushChild(hadInsertCacheIf);
-                }
+                saveInsertBlock = new FormatFileBlock('saveInsertBlock');
+                bindFun.pushChild(saveInsertBlock);
                 insertModeIf.falseBlock.pushChild(bindNowRecordBlock);
                 insertModeIf.falseBlock.pushChild(dynamicSetBlock_hadRecord);
                 bindInersetBlock = insertModeIf.trueBlock;
@@ -1742,6 +1748,20 @@ class MobileContentCompiler extends ContentCompiler {
                 if (this.compileKernel(childKernel, childRenderBlock, renderBlock) == false) {
                     return false;
                 }
+            }
+
+            formCanInsert = thisFormMidData.hadInsertMode == true;
+            if (formCanInsert) {
+                saveInsertIfBlock = new JSFile_IF('saveinsert', 'oldIndex == -1');
+                saveInsertBlock.pushChild(saveInsertIfBlock);
+                bindFun.saveInsertBlock = saveInsertIfBlock.trueBlock;
+                insertModeIf.trueBlock.pushLine(makeLine_Assign('var ' + VarNames.InsertCache, makeStr_getStateByPath("formState", singleQuotesStr(VarNames.InsertCache))));
+                hadInsertCacheIf = new JSFile_IF(VarNames.InsertCache, VarNames.InsertCache);
+                hadInsertCacheTrueDynamicBlock = new FormatFileBlock('hadInsertCacheTrueDynamicBlock');
+                hadInsertCacheFlaseDynamicBlock = new FormatFileBlock('hadInsertCacheFlaseDynamicBlock');
+                insertModeIf.trueBlock.pushChild(hadInsertCacheIf);
+
+                formReactClass.constructorFun.pushLine('this.canInsert = true;');
             }
         }
 
@@ -2068,6 +2088,9 @@ class MobileContentCompiler extends ContentCompiler {
                     }
                 }
 
+                var targetBlocks = null;
+                var saveInsertCacheLine = null;
+                var readInsertCacheLine = null;
                 if (targetKernelMidData.needSetStates_arr.length > 0) {
                     targetKernelMidData.needSetStates_arr.forEach(stateItem => {
                         var stateName = makeStr_DotProp(targetKernel.id, stateItem.name);
@@ -2080,10 +2103,10 @@ class MobileContentCompiler extends ContentCompiler {
                             if (stateItem.isDynamic) {
                                 switch (stateItem.bindMode) {
                                     case ScriptBindMode.OnForm:
-                                        bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState,'null',"formPath + '.row_' + rowIndex"])));
+                                        bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', "formPath + '.row_' + rowIndex"])));
                                         break;
                                     case ScriptBindMode.OnNewRow:
-                                        staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), makeStr_callFun(stateItem.funName, [VarNames.ReState,'null',"formPath + '.row_new'"])));
+                                        staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', "formPath + '.row_new'"])));
                                         break;
                                 }
                             } else {
@@ -2122,18 +2145,51 @@ class MobileContentCompiler extends ContentCompiler {
                         }
                         else {
                             // pageform
+                            var needSaveThisState = false;
+                            var needResetThisState = true;
+                            targetBlocks = [];
                             if (stateItem.isDynamic) {
                                 if (stateItem.bindMode == ScriptBindMode.OnForm) {
-                                    setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, bundleVar.name,'formPath']));
-                                    if (stateItem.useColumn) {
-                                        dynamicSetBlock_hadRecord.pushLine(setLine);
+                                    setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, bundleVar.name, pathVarName]));
+                                    var otherUseColumnSetState = targetKernelMidData.needSetStates_arr.find(item=>{
+                                        return item != stateItem && item.name == stateItem.name && !item.isDynamic && item.useColumn;
+                                    });
+                                    if(formCanInsert){
+                                        if(otherUseColumnSetState){
+                                            // 有另一个设值用的是数据列
+                                            if (!stateItem.useColumn) {
+                                                // 方法没有用到数据列，在insert模式中触发
+                                                targetBlocks.push(hadInsertCacheFlaseDynamicBlock);
+                                            }
+                                        }
+                                        else{
+                                            // 此控件只有这一个设值项
+                                            needSaveThisState = true;
+                                            needResetThisState = false;
+                                            if (stateItem.useColumn) {
+                                                targetBlocks.push(insertModeIf.falseBlock);
+                                            }
+                                            else{
+                                                targetBlocks.push(hadInsertCacheFlaseDynamicBlock);
+                                                targetBlocks.push(insertModeIf.falseBlock);
+                                            }
+                                        }
                                     }
-                                    else {
-                                        staticBindBlock.pushLine(setLine);
+                                    else{
+                                        if (stateItem.useColumn) {
+                                            targetBlocks.push(dynamicSetBlock_hadRecord);
+                                        }
+                                        else {
+                                            targetBlocks.push(staticBindBlock);
+                                        }
                                     }
                                 }
                             } else {
+                                if (formCanInsert) {
+                                    needSaveThisState = true;
+                                }
                                 if (stateItem.staticValue) {
+                                    needResetThisState = false;
                                     sv = stateItem.staticValue;
                                     switch (sv.toLocaleLowerCase()) {
                                         case 'true':
@@ -2142,28 +2198,40 @@ class MobileContentCompiler extends ContentCompiler {
                                         default:
                                             sv = singleQuotesStr(sv);
                                     }
-                                    staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), sv));
+                                    setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), sv);
+                                    targetBlocks.push(staticBindBlock);
                                 }
                                 else if (stateItem.useColumn) {
-                                    if (formCanInsert) {
-                                        saveInsertIfBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, VarNames.InsertCache + '.' + state_Name), makeStr_getStateByPath('formState', singleQuotesStr(stateName))));
-                                    }
                                     if (stateItem.useColumn) {
-                                        if (formCanInsert) {
-                                            hadInsertCacheIf.trueBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), VarNames.InsertCache + '.' + state_Name));
-                                            hadInsertCacheIf.falseBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), "''"));
-                                        }
-                                        bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_DynamicAttr(VarNames.NowRecord, stateItem.useColumn.name)));
+                                        setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_DynamicAttr(VarNames.NowRecord, stateItem.useColumn.name));
+                                        targetBlocks.push(bindNowRecordBlock);
                                     }
                                 }
                                 else if (stateItem.setNull) {
-                                    staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), 'null'));
+                                    needResetThisState = false;
+                                    setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), 'null');
+                                    targetBlocks.push(staticBindBlock);
                                 }
                             }
+                            if(needSaveThisState){
+                                saveInsertIfBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, VarNames.InsertCache + '.' + state_Name), makeStr_getStateByPath('formState', singleQuotesStr(stateName))));
+                                hadInsertCacheIf.trueBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), VarNames.InsertCache + '.' + state_Name));
+                                if(needResetThisState){
+                                    hadInsertCacheIf.falseBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), stateItem.alterValue ? stateItem.alterValue : 'null'));
+                                }
+                            }
+                            targetBlocks.forEach(blk=>{
+                                blk.pushLine(setLine);
+                            });
                         }
                     });
                 }
             }
+        }
+
+        if(hadInsertCacheIf){
+            hadInsertCacheIf.trueBlock.pushChild(hadInsertCacheTrueDynamicBlock);
+            hadInsertCacheIf.falseBlock.pushChild(hadInsertCacheFlaseDynamicBlock);
         }
 
         if (isPageForm) {
@@ -2276,13 +2344,50 @@ class MobileContentCompiler extends ContentCompiler {
         ctlTag.pushChild(new FormatFile_Line(theKernel.getAttribute(AttrNames.Name)));
         renderBlock.pushChild(ctlTag);
 
+
+        var reactParentKernel = theKernel.getReactParentKernel(true);
         this.compileIsdisplayAttribute(theKernel, ctlTag);
 
         var onclickFunName = theKernel.id + '_' + AttrNames.Event.OnClick;
         var onClickBp = project.scriptMaster.getBPByName(onclickFunName);
         if (onClickBp != null) {
-            this.compileScriptBlueprint(onClickBp, { params: ['ev'] });
+            var compileRet = this.compileScriptBlueprint(onClickBp, { params: ['ev'] });
             ctlTag.setAttr('onClick', bigbracketStr(onclickFunName));
+
+            if (reactParentKernel.type == M_FormKernel_Type && reactParentKernel.isPageForm()) {
+                var formDS = reactParentKernel.getAttribute(AttrNames.DataSource);
+                var formTable = reactParentKernel.getAttribute(AttrNames.ProcessTable);
+                if (formDS && formTable) {
+                    // 按钮在一个有数据源有操作表的页面式Form当中
+                    var visibleType = theKernel.getAttribute(AttrNames.ButtonVisibleType);
+                    var reactParentMid = this.projectCompiler.getMidData(reactParentKernel.id);
+                    if (visibleType == EButtonVisibleType.Default) {
+                        visibleType = EButtonVisibleType.Both;
+
+                        var useFormTable = compileRet.useEntities_map[formTable.code];
+                        if (useFormTable && useFormTable.useStage[EUseEntityStage.Insert]) {
+                            // insert了form的操作表，认定为insert按钮
+                            visibleType = EButtonVisibleType.Insert;
+                        }
+
+                        var useFormDS = compileRet.useEntities_map[formDS.code];
+                        if (useFormDS) {
+                            if (useFormDS.useStage[EUseEntityStage.Select] != null) {
+                                // 按钮用到了form数据源中的数据
+                                visibleType = EButtonVisibleType.Update;
+                            }
+                        }
+                    }
+                    if (visibleType != EButtonVisibleType.Both) {
+                        if (visibleType == EButtonVisibleType.Insert) {
+                            reactParentMid.hadInsertMode = true;
+                        }
+                        var thisMidData = this.projectCompiler.getMidData(theKernel.id);
+                        thisMidData.visibleStyle = visibleType == EButtonVisibleType.Insert ? VisibleStyle_Insert : VisibleStyle_Update;
+                        reactParentMid.needSetKernels_arr.push(theKernel);
+                    }
+                }
+            }
         }
     }
 
@@ -2426,6 +2531,10 @@ class MobileContentCompiler extends ContentCompiler {
         if (stableData) {
             ctlTag.setAttr('pullOnce', '{true}');
         }
+        var nullable = theKernel.getAttribute(AttrNames.Nullable);
+        if (nullable) {
+            ctlTag.setAttr('nullable', '{true}');
+        }
         this.compileIsdisplayAttribute(theKernel, ctlTag);
         this.compileValidCheckerAttribute(theKernel);
 
@@ -2436,7 +2545,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else {
             if (IsEmptyString(defaultValParseRet.string)) {
-                if(starSelectable){
+                if (starSelectable) {
                     defaultValParseRet.string = '*';    // 可选*，但默认值未设置，自动给个*
                 }
             }
@@ -2661,7 +2770,9 @@ class MobileContentCompiler extends ContentCompiler {
 
         if (!IsEmptyObject(bpCompileHelper.usePageParam)) {
             for (var usPageParamName in bpCompileHelper.usePageParam) {
-                needSetParams_arr.push({ bundleName: 'pagein_' + usPageParamName, clientValue: makeStr_callFun('getPageEntryParam', [singleQuotesStr(belongPageKernel), singleQuotesStr(usPageParamName), bpCompileHelper.usePageParam[usPageParamName]]) });
+                var usePageParamObj = { bundleName: 'pagein_' + usPageParamName, clientValue: makeStr_callFun('getPageEntryParam', [singleQuotesStr(belongPageKernel.id), singleQuotesStr(usPageParamName), bpCompileHelper.usePageParam[usPageParamName]]) };
+                needSetParams_arr.push(usePageParamObj);
+                initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', usePageParamObj.bundleName), usePageParamObj.clientValue));
             }
         }
 
@@ -2702,18 +2813,28 @@ class MobileContentCompiler extends ContentCompiler {
             return false;
         }
         else {
-            var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
+            var reactParentKernel = theKernel.getReactParentKernel(true);
             var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
             kernelMidData.hadValueField = hadValueField;
             var setTextStateItem = null;
             var setValueStateItem = null;
 
-            var parentMidData = this.projectCompiler.getMidData(belongFormKernel ? belongFormKernel.id : (belongPageKernel ? belongPageKernel.id : belongUserControl.id));
+            var parentMidData = this.projectCompiler.getMidData(reactParentKernel.id);
             if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
                 parentMidData.needSetKernels_arr.push(theKernel);
             }
 
-            if (belongFormKernel != null) {
+            var alterValue = null;
+            var hadDefaultStr = false;;
+            if (!defaultValParseRet.isScript) {
+                hadDefaultStr = !IsEmptyString(defaultValParseRet.string);
+                if(hadDefaultStr){
+                    alterValue = defaultValParseRet.string;
+                }
+            }
+
+            if (reactParentKernel.type == M_FormKernel_Type) {
+                var belongFormKernel = reactParentKernel;
                 var formColumns_arr = belongFormKernel.getCanuseColumns();
                 if (formColumns_arr.indexOf(textField) != -1) {
                     parentMidData.useColumns_map[textField] = 1;
@@ -2731,14 +2852,23 @@ class MobileContentCompiler extends ContentCompiler {
                         setValueStateItem = {
                             name: 'value',
                             useColumn: { name: valueField },
+                            alterValue:alterValue,
                         };
+                        if(setTextStateItem == null){
+                            setTextStateItem = {
+                                name: 'text',
+                                setNull: true,
+                            };
+                        }
                     }
                 }
-                else {
+                else if(setTextStateItem){
                     setValueStateItem = {
                         name: 'value',
                         useColumn: { name: textField },
+                        alterValue:alterValue,
                     };
+                    setTextStateItem.alterValue = alterValue;
                 }
             }
 
@@ -2758,8 +2888,7 @@ class MobileContentCompiler extends ContentCompiler {
                         setNull: true,
                     };
                 }
-                if (!defaultValParseRet.isScript) {
-                    var hadDefaultStr = !IsEmptyString(defaultValParseRet.string);
+                if (hadDefaultStr) {
                     setValueStateItem = {
                         name: 'value',
                         staticValue: hadDefaultStr ? defaultValParseRet.string : null,
@@ -2912,7 +3041,7 @@ class MobileContentCompiler extends ContentCompiler {
                             }
                             validBlock.subNextIndent();
                             validBlock.pushLine('}');
-                            this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theFun.name, useFormData.formKernel, VarNames.SelectedRows_arr,callParams_arr);
+                            this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theFun.name, useFormData.formKernel, VarNames.SelectedRows_arr, callParams_arr);
                             hadNeedWatchParam = true;
                         }
                         else {
@@ -2978,10 +3107,10 @@ class MobileContentCompiler extends ContentCompiler {
                     useCtlData = compilHelper.useGlobalControls_map[usectlid];
                     ctlStateVarName = usectlid + '_state';
                     if (belongUserControl) {
-                        initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useCtlData.kernel.getStatePath()),'{}');
+                        initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useCtlData.kernel.getStatePath()), '{}');
                     }
                     else {
-                        initValue = makeStr_getStateByPath(VarNames.State, VarNames.FullParentPath + '+' + singleQuotesStr(useCtlData.kernel.getStatePath()),'{}');
+                        initValue = makeStr_getStateByPath(VarNames.State, VarNames.FullParentPath + '+' + singleQuotesStr(useCtlData.kernel.getStatePath()), '{}');
                     }
                     theFun.scope.getVar(ctlStateVarName, true, initValue);
 
@@ -3008,7 +3137,7 @@ class MobileContentCompiler extends ContentCompiler {
                             if (useCtlData.kernel.parent == null) {
                                 // 自订控件
                                 tempCallParams_arr = ['nowState', true, 'this.props.fullPath'];
-                                if(theKernel.parent != useCtlData.kernel){
+                                if (theKernel.parent != useCtlData.kernel) {
                                     tempCallParams_arr[2] += " + '." + theKernel.parentFullPath + "'";
                                 }
                             }
@@ -3114,12 +3243,12 @@ class MobileContentCompiler extends ContentCompiler {
                             beforeRetBlock.pushLine('}');
                         }
                         */
-                       if(belongFormMidData.useDS){
+                        if (belongFormMidData.useDS) {
                             belongFormMidData.pullFun.beforeRetBlock.pushLine(makeStr_callFun(pullFun.name, [VarNames.State, true, thisFormFullParentPath]));
-                       }
-                       else{
+                        }
+                        else {
                             belongFormMidData.bindFun.beforeRetBlock.pushLine(makeStr_callFun(pullFun.name, [VarNames.ReState, true, thisFormFullParentPath]));
-                       }
+                        }
                     }
                     else if (belongUserControl != null) {
                         // 在自订控件里
