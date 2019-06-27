@@ -3,6 +3,7 @@ var fs = require("fs");
 var path = require("path");
 //配置远程路径
 var remotePath = [
+
     "/public/js/views/erp/pages/", 
     "/public/src/views/erp/pages/",
     "/views/erppage/server/pages/",
@@ -95,6 +96,31 @@ function handleArr(fileArr) {
     }
 }
 
+//处理flow 直接对数组进行排序好了
+/*
+function handle_flowArr(fileArr) {
+    var maxnum_map = {};
+    var file;
+    var i;
+    for (i = 0; i < fileArr.length; i++) {
+        file = fileArr[i];
+        if(maxnum_map[file.module_name] == null || maxnum_map[file.module_name] < file.module_num){
+            maxnum_map[file.module_name] = file.module_num;
+        }
+    }
+    for (i = 0; i < fileArr.length; i++) {
+        file = fileArr[i];
+        if (maxnum_map[file.module_name] > file.module_num) {
+            console.log('delete:' + file.url);
+            fs.unlink(file.url, function (err) {
+                if (err) {
+                    return console.error(err);
+                }
+            });
+        }
+    }
+}
+*/
 module.exports = {
     doCleanWork:doCleanWork,
 };

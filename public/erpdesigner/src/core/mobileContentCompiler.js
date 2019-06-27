@@ -196,8 +196,9 @@ class MobileContentCompiler extends ContentCompiler {
                 switch (relyPath.type) {
                     case ECtlReplyPathType.SetAP_On_BPChanged:
                     case ECtlReplyPathType.CallFun_On_BPChanged:
-                        var accordionParents_arr = relyPath.relyCtl.searchParentKernel(Accordion_Type);
-                        if(relyPath.relyCtl.searchParentKernel)
+                        if(relyPath.relyCtl == null){
+                            console.log('sdf');
+                        }
                         propFulPath = relyPath.berelyCtl.getStatePath(relyPath.berelyPropName, '.', null, true);
                         propChangedHandlerName = relyPath.berelyCtl.id + '_' + relyPath.berelyPropName + '_changed';
                         changedFun = clientSide.scope.getFunction(propChangedHandlerName);
@@ -207,6 +208,11 @@ class MobileContentCompiler extends ContentCompiler {
                             changedFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''", VarNames.NeedSetState], ';'));
                             clientSide.stateChangedAct[singleQuotesStr(propFulPath)] = propChangedHandlerName + '.bind(window)';
                         }
+                        var accordionParents_arr = null;
+                        if(relyPath.relyCtl){
+                            accordionParents_arr = relyPath.relyCtl.searchParentKernel(Accordion_Type);
+                        }
+                         
                         if(accordionParents_arr){
                             var accordionCheckStr = '';
                             accordionParents_arr.forEach(accordionKernel=>{
@@ -2459,6 +2465,7 @@ class MobileContentCompiler extends ContentCompiler {
                 return false;
             }
         }
+        
 
         if (ctlMidData.needSetKernels_arr.length > 0) {
             var thisFullPathVarName = 'this.props.fullPath';
