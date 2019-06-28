@@ -155,6 +155,7 @@ class ContentPanel extends React.PureComponent {
     }
 
     placePosChanged(newPos){
+
         if(this.state.editingControl){
             this.userCtlRef.current.tryPlaceKernel(this.placingKernel,newPos);
         }

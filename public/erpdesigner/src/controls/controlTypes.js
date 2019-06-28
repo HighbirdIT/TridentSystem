@@ -12,6 +12,8 @@ const M_CheckBoxKernel_Type = 'M_CheckBox';
 const EmptyKernel_Type = 'empty';
 const UserControlKernel_Type = 'UserControl';
 const Accordion_Type = 'accordion';
+const TabControl_Type = 'tabcontrol';
+const TabItem_Type = 'tabitem';
 
 const M_LabelKernel_Prefix = 'M_Label';
 const M_PageKernel_Prefix = 'M_Page';
@@ -26,6 +28,8 @@ const M_CheckBoxKernel_Prefix = 'M_Check';
 const EmptyKernel_Prefix = 'empty';
 const UserControlKernel_Prefix = 'UserControl';
 const Accordion_Prefix = 'Accordion';
+const TabControl_Prefix = 'tabcontrol';
+const TabItem_Prefix = 'tabitem';
 
 function GetControlTypeReadableName(type){
     switch(type){
@@ -57,6 +61,10 @@ function GetControlTypeReadableName(type){
         return '自订控件';
         case Accordion_Prefix:
         return '可折叠控件';
+        case TabControl_Prefix:
+        return '选项卡';
+        case TabItem_Prefix:
+        return '选项卡-子';
     }
     return type;
 }

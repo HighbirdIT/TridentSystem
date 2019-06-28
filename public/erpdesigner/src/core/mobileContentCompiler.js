@@ -209,10 +209,8 @@ class MobileContentCompiler extends ContentCompiler {
                             changedFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''", VarNames.NeedSetState], ';'));
                             clientSide.stateChangedAct[singleQuotesStr(propFulPath)] = propChangedHandlerName + '.bind(window)';
                         }
-                        var accordionParents_arr = relyPath.relyCtl.searchParentKernel(Accordion_Type);
-                        var lastAccordion = null;
+                        var accordionParents_arr = relyPath.relyCtl.searchParentKernel([Accordion_Type,TabItem_Type]);
                         if(accordionParents_arr){
-                            lastAccordion = accordionParents_arr[accordionParents_arr.length - 1];
                             var accordionCheckStr = '';
                             accordionParents_arr.forEach(accordionKernel=>{
                                 changedFun.scope.getVar(accordionKernel.id + '_state', true, "getStateByPath("+VarNames.State+",'"+accordionKernel.getStatePath()+"',{});");
@@ -574,7 +572,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         pageReactClass.renderFun.pushLine(VarNames.RetElem + " = (", 1);
         if (isPopable) {
-            pageReactClass.renderFun.pushLine("<div className='d-flex flex-column popPage bg-light'>", 1);
+            pageReactClass.renderFun.pushLine("<div className='d-flex flex-column popPage bg-light autoScroll'>", 1);
         }
         else {
             pageReactClass.renderFun.pushLine("<div className='d-flex flex-column flex-grow-1 flex-shrink-1 h-100'>", 1);
@@ -730,6 +728,8 @@ class MobileContentCompiler extends ContentCompiler {
                 case M_FormKernel_Type:
                 case M_PageKernel_Type:
                 case Accordion_Type:
+                case TabItem_Type:
+                case TabControl_Type:
                     rlt = nowKernel.id + (rlt.length == 0 ? '' : '.') + rlt;
                     break;
                 case UserControlKernel_Type:
@@ -780,6 +780,12 @@ class MobileContentCompiler extends ContentCompiler {
                 break;
             case Accordion_Type:
                 rlt = this.compileAccordionKernel(theKernel, renderBlock, renderFun);
+                break;
+            case TabControl_Type:
+                rlt = this.compileTabControlKernel(theKernel, renderBlock, renderFun);
+                break;
+            case TabItem_Type:
+                rlt = this.compileTabItemKernel(theKernel, renderBlock, renderFun);
                 break;
             default:
                 logManager.error('不支持的编译kernel type:' + theKernel.type);
@@ -2480,6 +2486,189 @@ class MobileContentCompiler extends ContentCompiler {
         }
         
 
+        var thisFullPathVarName = 'this.props.fullPath';
+        if (ctlMidData.needSetKernels_arr.length > 0) {
+            for (ci in ctlMidData.needSetKernels_arr) {
+                var targetKernel = ctlMidData.needSetKernels_arr[ci];
+                var targetKernelMidData = this.projectCompiler.getMidData(targetKernel.id);
+                if (targetKernelMidData.needSetStates_arr.length > 0) {
+                    targetKernelMidData.needSetStates_arr.forEach(stateItem => {
+                        var stateName = targetKernel.getStatePath(stateItem.name,'.',{},false,theKernel);
+                        var setNeedStateLeftStr = VarNames.NeedSetState + '[' + thisFullPathVarName + "+'." + stateName + "']";
+                        if (stateItem.isDynamic) {
+                            var setLine = makeLine_Assign(setNeedStateLeftStr, makeStr_callFun(stateItem.funName, [VarNames.State, 'null', thisFullPathVarName]));
+                            rebindBodyFun.pushLine(setLine);
+                        } else {
+                            if (stateItem.staticValue) {
+                                var sv = stateItem.staticValue;
+                                switch (sv.toLocaleLowerCase()) {
+                                    case 'true':
+                                    case 'false':
+                                        break;
+                                    default:
+                                        sv = singleQuotesStr(sv);
+                                }
+                                rebindBodyFun.pushLine(makeLine_Assign(setNeedStateLeftStr, sv));
+                            }
+                            else if (stateItem.setNull) {
+                                rebindBodyFun.pushLine(makeLine_Assign(setNeedStateLeftStr, 'null'));
+                            }
+                            else {
+                                console.error('无法处理的kernel');
+                            }
+                        }
+                    });
+                }
+            }
+        }
+        rebindBodyFun.pushLine(VarNames.NeedSetState + '[' + thisFullPathVarName + "+'.inited'] = true;"), 
+        rebindBodyFun.pushLine("setTimeout(() => {store.dispatch(makeAction_setManyStateByPath(needSetState, ''));},50);", -1);
+        ctlMidData.needCallOnInit_arr.forEach(callSetting=>{
+            rebindBodyFun.pushLine(makeStr_callFun(callSetting.name,callSetting.params_arr,';'));
+        });
+        return true;
+    }
+
+    compileTabControlKernel(theKernel, renderBlock, renderFun) {
+        var clientSide = this.clientSide;
+        var project = this.project;
+        var logManager = project.logManager;
+
+        var controlReactClass = clientSide.getReactClass(theKernel.getReactClassName(), true);
+        controlReactClass.constructorFun.pushLine('this.clickNavBtn = this.clickNavBtn.bind(this);');
+        var layoutConfig = theKernel.getLayoutConfig();
+        layoutConfig.addClass('erp-control');
+        layoutConfig.addClass('d-flex');
+        layoutConfig.addClass('flex-column');
+        layoutConfig.addClass('border');
+        var styleID = theKernel.id + '_style';
+        var styleStr = clientSide.addStyleObject(styleID, layoutConfig.style) ? 'style={' + styleID + '}' : '';
+
+        var ctlTag = new FormatHtmlTag(theKernel.id, theKernel.getReactClassName(true), this.clientSide);
+        this.modifyControlTag(theKernel, ctlTag);
+        var parentPath = this.getKernelParentPath(theKernel);
+        var parentFullPath = this.getKernelFullParentPath(theKernel);
+        var thisFullPath = makeStr_DotProp(parentFullPath, theKernel.id);
+        ctlTag.setAttr('id', theKernel.id);
+        ctlTag.setAttr('parentPath', parentPath);
+        var defaultTabitemID = theKernel.getAttribute('defaultTabitemID');
+
+        this.compileIsdisplayAttribute(theKernel, ctlTag);
+        renderBlock.pushChild(ctlTag);
+
+        var ctlMidData = this.projectCompiler.getMidData(theKernel.id);
+        ctlMidData.needSetKernels_arr = [];
+
+        var clickNavBtnFun = controlReactClass.getFunction('clickNavBtn', true, ['ev']);
+        clickNavBtnFun.pushLine('var itemid = ' + makeStr_callFun('getAttributeByNode', ['ev.target', "'d-id'"],';'));
+        clickNavBtnFun.pushLine("store.dispatch(makeAction_setStateByPath(itemid,this.props.fullPath + '.selectedIndex'));");
+
+        var renderItemFun = controlReactClass.getFunction('renderChild', true);
+        controlReactClass.constructorFun.pushLine('this.' + renderItemFun.name + ' = this.' + renderItemFun.name + '.bind(this);');
+        var itemSwitchBlock = new JSFile_Switch('renderItem', 'this.props.selectedIndex');
+        
+        var navBtnBlk = new FormatFileBlock('navbtn');
+        var selftRenderBlock = controlReactClass.renderFun;
+        selftRenderBlock.scope.getVar('childElem',true);
+        selftRenderBlock.pushChild(itemSwitchBlock);
+        selftRenderBlock.pushLine(VarNames.RetElem + " = <div className='" + layoutConfig.getClassName() + "' " + styleStr + ">", 1);
+        selftRenderBlock.pushLine("<div className='btn-group flex-grow-0 flex-shrink-0 border-bottom'>");
+        selftRenderBlock.pushChild(navBtnBlk);
+        selftRenderBlock.subNextIndent();
+        selftRenderBlock.pushLine('</div>');
+        selftRenderBlock.pushLine('{childElem}');
+        selftRenderBlock.subNextIndent();
+        selftRenderBlock.pushLine('</div>');
+
+        controlReactClass.mapStateFun.scope.getVar('propProfile', true, "getControlPropProfile(ownprops, state)");
+        controlReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullParentPath), makeStr_DotProp('propProfile', VarNames.FullParentPath)));
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullPath), makeStr_DotProp('propProfile', VarNames.FullPath)));
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'visible'), makeStr_DotProp(VarNames.CtlState, 'visible != false')));
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'selectedIndex'), makeStr_DotProp(VarNames.CtlState, 'selectedIndex') + (defaultTabitemID == '0' ? '' : ' ? ' + makeStr_DotProp(VarNames.CtlState, 'selectedIndex') + ' : ' + singleQuotesStr(defaultTabitemID))));
+
+        var isGreedMode = theKernel.getAttribute(AttrNames.GreedMode);
+        var navBtnClassStr = "'btn " + (isGreedMode ? 'flex-grow-1 flex-shrink-1 ' : '') + "'";
+        for (var ci in theKernel.children) {
+            var childKernel = theKernel.children[ci];
+            var childRenderBlock = new FormatFileBlock(childKernel.id);
+            var childCaseBlock = itemSwitchBlock.getCaseBlock(singleQuotesStr(childKernel.id));
+            childCaseBlock.pushLine('childElem =(', 1);
+            childCaseBlock.pushChild(childRenderBlock);
+            childCaseBlock.subNextIndent();
+            childCaseBlock.pushLine(')');
+            navBtnBlk.pushLine("<button type='button' onClick={this.clickNavBtn} d-id="+singleQuotesStr(childKernel.id)+" className={" + navBtnClassStr + '+(this.props.selectedIndex == '+singleQuotesStr(childKernel.id)+" ? 'btn-primary' : 'btn-dark')}" + ">" + childKernel.getAttribute(AttrNames.Title) + "</button>");
+
+            if (this.compileKernel(childKernel, childRenderBlock, selftRenderBlock) == false) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    compileTabItemKernel(theKernel, renderBlock, renderFun) {
+        var clientSide = this.clientSide;
+        var project = this.project;
+        var logManager = project.logManager;
+
+        var controlReactClass = clientSide.getReactClass(theKernel.getReactClassName(), true);
+        controlReactClass.constructorFun.pushLine('this.rebindBody = this.rebindBody.bind(this);');
+        var layoutConfig = theKernel.getLayoutConfig();
+        layoutConfig.addClass('erp-control');
+        var styleID = theKernel.id + '_style';
+        var styleStr = clientSide.addStyleObject(styleID, layoutConfig.style) ? 'style={' + styleID + '}' : '';
+
+        var ctlTag = new FormatHtmlTag(theKernel.id, theKernel.getReactClassName(true), this.clientSide);
+        this.modifyControlTag(theKernel, ctlTag);
+        var parentPath = this.getKernelParentPath(theKernel);
+        var parentFullPath = this.getKernelFullParentPath(theKernel);
+        var thisFullPath = makeStr_DotProp(parentFullPath, theKernel.id);
+        ctlTag.setAttr('id', theKernel.id);
+        ctlTag.setAttr('parentPath', parentPath);
+        var orientation = theKernel.getAttribute(AttrNames.Orientation);
+        layoutConfig.addClass('d-flex');
+        layoutConfig.addClass('w-100');
+        layoutConfig.addClass('h-100');
+        if (orientation == Orientation_V) {
+            layoutConfig.addClass('flex-column');
+        }
+        renderBlock.pushChild(ctlTag);
+
+        var ctlMidData = this.projectCompiler.getMidData(theKernel.id);
+        ctlMidData.needSetKernels_arr = [];
+        ctlMidData.needCallOnInit_arr = [];
+
+        var renderBodyFun = selftRenderBlock;
+        var rebindBodyFun = controlReactClass.getFunction('rebindBody', true);
+
+        var childRenderBlock = new FormatFileBlock(theKernel.id);
+        var selftRenderBlock = controlReactClass.renderFun;
+        selftRenderBlock.pushLine('if(this.props.inited == false){this.rebindBody(); return null;}');
+        selftRenderBlock.pushLine('this.initing = false;');
+        selftRenderBlock.pushLine(VarNames.RetElem + " = <div className='"+ layoutConfig.class +"'>");
+        selftRenderBlock.pushChild(childRenderBlock);
+        selftRenderBlock.subNextIndent();
+        selftRenderBlock.pushLine('</div>');
+
+        rebindBodyFun.scope.getVar(VarNames.NeedSetState, true, '{}');
+        rebindBodyFun.scope.getVar(VarNames.State, true, 'store.getState()');
+        rebindBodyFun.pushLine('if(this.initing){return}');
+        rebindBodyFun.pushLine('this.initing=true;');
+
+        controlReactClass.mapStateFun.scope.getVar('propProfile', true, "getControlPropProfile(ownprops, state)");
+        controlReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullParentPath), makeStr_DotProp('propProfile', VarNames.FullParentPath)));
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullPath), makeStr_DotProp('propProfile', VarNames.FullPath)));
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'inited'), 'ctlState.inited == true;'));
+
+        for (var ci in theKernel.children) {
+            var childKernel = theKernel.children[ci];
+            if (this.compileKernel(childKernel, childRenderBlock, renderBodyFun) == false) {
+                return false;
+            }
+        }
+        
         var thisFullPathVarName = 'this.props.fullPath';
         if (ctlMidData.needSetKernels_arr.length > 0) {
             for (ci in ctlMidData.needSetKernels_arr) {

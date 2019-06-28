@@ -295,6 +295,7 @@ var AttrNames = {
     ButtonVisibleType: 'buttonVisibleType',
     InitCollapsed: 'initCollapsed',
     LoadOnUnCollapsed: 'loadOnCollapsed',
+    GreedMode: 'greedMode',
 
     Event: {
         OnClick: 'onclick',

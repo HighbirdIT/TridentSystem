@@ -25,22 +25,22 @@ class ProjectDesigner extends React.PureComponent {
             CreateNavItemData('属性', <AttributePanel project={this.props.project} ref={this.attrbutePanelRef} />),
             CreateNavItemData('项目管理', <ProjectResPanel project={this.props.project} />),
         ];
-        
+
         this.rightPanelNavData = {
             selectedItem: rightPanelNavItems[0],
             items: rightPanelNavItems,
         };
     }
 
-    saveProject(){
+    saveProject() {
         this.props.savePanelRef.current.saveProject(this.props.project);
     }
 
-    propUpMenu(items_arr, pos, callBack){
+    propUpMenu(items_arr, pos, callBack) {
         this.quickMenuRef.current.popMenu(items_arr, pos, callBack);
     }
 
-    selectKernel(kernel){
+    selectKernel(kernel) {
         /*
         if(this.selectedKernel == kernel){
             return;
@@ -53,28 +53,37 @@ class ProjectDesigner extends React.PureComponent {
         }
         this.selectedKernel = kernel;
         */
-        if(this.attrbutePanelRef.current)
+        if (this.attrbutePanelRef.current)
             this.attrbutePanelRef.current.setTarget(kernel);
     }
 
-    deleteSelectedKernel(){
-        if(this.attrbutePanelRef.current == null){
+    deleteSelectedKernel() {
+        if (this.attrbutePanelRef.current == null) {
             return;
         }
         var nowTarget = this.attrbutePanelRef.current.getTarget();
-        if(nowTarget == null){
+        if (nowTarget == null) {
             return;
         }
-        if(nowTarget.parent == null){
+        if (nowTarget.parent == null) {
             return;
         }
-        if(ControlKernelBase.prototype.isPrototypeOf(nowTarget)){
+
+        if (ControlKernelBase.prototype.isPrototypeOf(nowTarget)) {
             // is kernel
-            if(nowTarget.parent == M_LabeledControlKernel_Type){
+            if (nowTarget.parent == M_LabeledControlKernel_Type) {
                 return;
             }
+            var kernelLabel = nowTarget.id + (IsEmptyString(nowTarget[AttrNames.Name]) ? '' : '(' + nowTarget[AttrNames.Name] + ')');
+            gTipWindow.popAlert(makeAlertData('警告', '确定删除"' + kernelLabel + '"吗?', this.deleteTipCallback, [TipBtnOK, TipBtnNo], nowTarget));
+        }
+    }
+
+    deleteTipCallback(key, nowTarget) {
+        if (key == 'ok') {
             nowTarget.delete();
         }
+        this.attrbutePanelRef.current.setTarget(null);
     }
 
     mouseDownControlIcon(ctltype) {
@@ -82,14 +91,14 @@ class ProjectDesigner extends React.PureComponent {
         var thisProject = this.props.project;
         var editingPage = thisProject.getEditingPage();
         var editingControl = thisProject.getEditingControl();
-        if(editingPage == null && editingControl == null){
+        if (editingPage == null && editingControl == null) {
             return;
         }
         var newKernel = null;
-        if(this.placingCtonrols[ctltype] && this.placingCtonrols[ctltype].parent == null){
+        if (this.placingCtonrols[ctltype] && this.placingCtonrols[ctltype].parent == null) {
             newKernel = this.placingCtonrols[ctltype];
         }
-        else{
+        else {
             newKernel = thisProject.createKernalByType(ctltype);
             this.placingCtonrols[ctltype] = newKernel;
         }
@@ -106,15 +115,15 @@ class ProjectDesigner extends React.PureComponent {
         var thisProject = this.props.project;
         var editingPage = thisProject.getEditingPage();
         var editingControl = thisProject.getEditingControl();
-        if(editingPage == null && editingControl == null){
+        if (editingPage == null && editingControl == null) {
             return;
         }
         var newKernel = null;
-        if(this.placingCtonrols[refID] && this.placingCtonrols[refID].parent == null){
+        if (this.placingCtonrols[refID] && this.placingCtonrols[refID].parent == null) {
             newKernel = this.placingCtonrols[refID];
         }
-        else{
-            newKernel = new UserControlKernel({refID:refID}, thisProject);
+        else {
+            newKernel = new UserControlKernel({ refID: refID }, thisProject);
             this.placingCtonrols[refID] = newKernel;
         }
         if (newKernel == null) {
@@ -125,19 +134,20 @@ class ProjectDesigner extends React.PureComponent {
         this.startPlaceKernel(newKernel);
     }
 
-    startPlaceKernel(theKernel,callBack){
+    startPlaceKernel(theKernel, callBack) {
         this.flowMCRef.current.setGetContentFun(() => {
             return (<span>放置:{theKernel.description + theKernel.id}</span>)
         });
 
         window.addEventListener('mouseup', this.mouseUpInPlacingHandler);
         theKernel.__placing = true;
+
         this.contenPanelRef.current.startPlace(theKernel);
         this.placeEndCallBack = callBack;
         this.placingKernel = theKernel;
         this.props.project.placingKernel = theKernel;
         theKernel.fireForceRender();
-        if(this.outlineRef.current)
+        if (this.outlineRef.current)
             this.outlineRef.current.startPlace();
     }
 
@@ -146,16 +156,16 @@ class ProjectDesigner extends React.PureComponent {
         window.removeEventListener('mouseup', this.mouseUpInPlacingHandler);
         this.props.project.placingKernel = null;
         this.contenPanelRef.current.endPlace();
-        if(this.outlineRef.current)
+        if (this.outlineRef.current)
             this.outlineRef.current.endPlace();
-        if(this.placeEndCallBack){
+        if (this.placeEndCallBack) {
             this.placeEndCallBack(this.placingKernel);
             this.placeEndCallBack = null;
         }
-        if(this.placingKernel.type){
+        if (this.placingKernel.type) {
             this.placingCtonrols[this.placingKernel.type] = null;
         }
-        else if(this.placingKernel.refID){
+        else if (this.placingKernel.refID) {
             this.placingCtonrols[this.placingKernel.refID] = null;
         }
         this.placingKernel = null;
@@ -163,16 +173,16 @@ class ProjectDesigner extends React.PureComponent {
         return;
     }
 
-    startDrag(dragData, callBack, contentFun){
-        if(dragData.info == null){
+    startDrag(dragData, callBack, contentFun) {
+        if (dragData.info == null) {
             dragData.info = '位置drag';
         }
-        if(contentFun == null){
+        if (contentFun == null) {
             this.flowMCRef.current.setGetContentFun(() => {
                 return (<span className='text-nowrap border bg-dark text-light'>{dragData.info}</span>)
             });
         }
-        else{
+        else {
             this.flowMCRef.current.setGetContentFun(() => {
                 return contentFun();
             });
@@ -186,49 +196,49 @@ class ProjectDesigner extends React.PureComponent {
     mouseUpInDragingHandler(ev) {
         this.flowMCRef.current.setGetContentFun(null);
         window.removeEventListener('mouseup', this.mouseUpInDragingHandler);
-        if(this.dragEndCallBack){
-            this.dragEndCallBack({x:ev.x, y:ev.y},this.dragingData);
+        if (this.dragEndCallBack) {
+            this.dragEndCallBack({ x: ev.x, y: ev.y }, this.dragingData);
             this.dragingData = null;
         }
         //console.log(ev);
     }
 
     FMpositionChanged(newPos) {
-        if(this.placingKernel != null){
-            if(this.outlineRef.current)
+        if (this.placingKernel != null) {
+            if (this.outlineRef.current)
                 this.outlineRef.current.placePosChanged(newPos, this.placingKernel);
-            if (this.contenPanelRef.current && !this.outlineRef.current.bMouseInPanel){
+            if (this.contenPanelRef.current && !this.outlineRef.current.bMouseInPanel) {
                 this.contenPanelRef.current.placePosChanged(newPos);
             }
         }
     }
 
-    wantOpenPanel(panelName){
+    wantOpenPanel(panelName) {
         console.log('wantOpenPanel:' + panelName);
-        switch(panelName){
+        switch (panelName) {
             case 'datamaster':
-                if(this.dataMasterPanelRef.current){
+                if (this.dataMasterPanelRef.current) {
                     //this.dataMasterPanelRef.current.show();
                     this.dataMasterPanelRef.current.toggle();
                 }
-            break;
+                break;
             case 'scriptmaster':
-                if(this.scriptMasterPanelRef.current){
+                if (this.scriptMasterPanelRef.current) {
                     //this.dataMasterPanelRef.current.show();
                     this.scriptMasterPanelRef.current.toggle();
                 }
-            break;
+                break;
             case 'flowmaster':
-                if(gFlowMasterRef.current){
+                if (gFlowMasterRef.current) {
                     //this.dataMasterPanelRef.current.show();
                     gFlowMasterRef.current.toggle();
                 }
-            break;
+                break;
         }
     }
 
-    forcusSqlNode(nodeData){
-        if(this.dataMasterPanelRef.current == null){
+    forcusSqlNode(nodeData) {
+        if (this.dataMasterPanelRef.current == null) {
             return;
         }
         this.dataMasterPanelRef.current.show();
@@ -238,20 +248,20 @@ class ProjectDesigner extends React.PureComponent {
         }, 200);
     }
 
-    editScriptBlueprint(jsbp){
-        if(this.quickScriptEditPanelRef.current != null){
+    editScriptBlueprint(jsbp) {
+        if (this.quickScriptEditPanelRef.current != null) {
             this.quickScriptEditPanelRef.current.showBlueprint(jsbp);
         }
     }
 
-    editSqlBlueprint(sqlbp){
-        if(this.quickSqlBPEditPanelRef.current != null){
+    editSqlBlueprint(sqlbp) {
+        if (this.quickSqlBPEditPanelRef.current != null) {
             this.quickSqlBPEditPanelRef.current.showBlueprint(sqlbp);
         }
     }
 
-    editListFormContent(formKernel){
-        if(this.quickListFormContentEditPanelRef.current != null){
+    editListFormContent(formKernel) {
+        if (this.quickListFormContentEditPanelRef.current != null) {
             this.quickListFormContentEditPanelRef.current.showKernel(formKernel);
         }
     }
@@ -275,28 +285,28 @@ class ProjectDesigner extends React.PureComponent {
                     defPercent={0.15}
                     barClass='bg-secondary'
                     panel1={<SplitPanel
-                                        defPercent={0.7}
-                                        fixedOne={false}
-                                        flexColumn={true}
-                                        panel1={<ControlPanel project={thisProject} mouseDownControlIcon={this.mouseDownControlIcon} mouseDownUserControlIcon={this.mouseDownUserControlIcon} />}
-                                        panel2={<OutlinePanel project={thisProject} ref={this.outlineRef}/>}
-                                    />}
+                        defPercent={0.7}
+                        fixedOne={false}
+                        flexColumn={true}
+                        panel1={<ControlPanel project={thisProject} mouseDownControlIcon={this.mouseDownControlIcon} mouseDownUserControlIcon={this.mouseDownUserControlIcon} />}
+                        panel2={<OutlinePanel project={thisProject} ref={this.outlineRef} />}
+                    />}
                     panel2={
                         <SplitPanel defPercent={0.8}
-                             fixedOne={false}
-                             barClass='bg-secondary'
-                             panel1={
+                            fixedOne={false}
+                            barClass='bg-secondary'
+                            panel1={
                                 <SplitPanel
-                                        defPercent={0.8}
-                                        barClass='bg-secondary'
-                                        fixedOne={false}
-                                        flexColumn={true}
-                                        panel1={<ContentPanel project={thisProject} ref={this.contenPanelRef} wantOpenPanel={this.wantOpenPanel} />}
-                                        panel2={<LogOutputPanel source={thisProject.logManager} />}
+                                    defPercent={0.8}
+                                    barClass='bg-secondary'
+                                    fixedOne={false}
+                                    flexColumn={true}
+                                    panel1={<ContentPanel project={thisProject} ref={this.contenPanelRef} wantOpenPanel={this.wantOpenPanel} />}
+                                    panel2={<LogOutputPanel source={thisProject.logManager} />}
                                 />
-                             }
-                             panel2={
-                                 <div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
+                            }
+                            panel2={
+                                <div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
                                     <div className='d-flex flex-grow-0 flex-shrink-0 bg-secondary'>
                                         <TabNavBar ref={this.navbarRef} navData={this.rightPanelNavData} navChanged={this.rightNavChanged} />
                                     </div>
@@ -308,9 +318,9 @@ class ProjectDesigner extends React.PureComponent {
                                         })
                                     }
                                 </div>
-                             }
-                            />
                             }
+                        />
+                    }
                 />
                 <FlowMouseContainer project={thisProject} ref={this.flowMCRef} positionChanged={this.FMpositionChanged} />
                 <QuickMenuContainer project={thisProject} ref={this.quickMenuRef} />
