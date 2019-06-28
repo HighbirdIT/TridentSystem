@@ -131,7 +131,7 @@ class FlowObject extends EventEmitter{
         }
         if(record){
             theStep.是否周期步骤 = record.是否周期步骤;
-            theStep.周期起始时间 = new Date(record.周期起始时间);
+            theStep.周期起始时间 = createDateWithoutTimeZone(record.周期起始时间);
             theStep.周期类型 = record.周期类型;
             theStep.周期值 = record.周期值;
         }
