@@ -1338,7 +1338,7 @@ var ERPC_Text = function (_React$PureComponent4) {
             }
             var contentElem = null;
             var errTipElem = null;
-            var rootDivClassName = 'd-flex ' + (this.props.class == null ? '' : this.props.class);
+            var rootDivClassName = 'd-flex ' + (this.props.className == null ? '' : this.props.className);
             if (this.props.fetching) {
                 rootDivClassName += 'rounded border p-1';
                 contentElem = React.createElement(
@@ -1560,7 +1560,7 @@ var ERPC_Label = function (_React$PureComponent7) {
             if (this.props.visible == false) {
                 return null;
             }
-            var rootDivClassName = 'erpc_label' + (this.props.class == null ? '' : this.props.class);
+            var rootDivClassName = 'erpc_label ' + (this.props.className == null ? '' : this.props.className);
             var contentElem = null;
             if (this.props.fetching) {
                 rootDivClassName += ' rounded border p-1';

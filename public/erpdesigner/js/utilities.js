@@ -604,3 +604,12 @@ function MapColumnValType2ParamType(colVT, needLen) {
 			return 'sqlTypes.NVarChar' + (needLen ? '(4000)' : '');
 	}
 }
+
+function removeDateTimeZone(dateStr) {
+	var rlt = dateStr.replace(/.\d+Z$/, '');
+	return rlt.replace('t', ' ');
+}
+
+function createDateWithoutTimeZone(dateStr) {
+	return new Date(removeDateTimeZone(dateStr));
+}

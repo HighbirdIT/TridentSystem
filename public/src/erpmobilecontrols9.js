@@ -1168,7 +1168,7 @@ class ERPC_Text extends React.PureComponent {
         }
         var contentElem = null;
         var errTipElem = null;
-        var rootDivClassName = 'd-flex ' + (this.props.class == null ? '' : this.props.class);
+        var rootDivClassName = 'd-flex ' + (this.props.className == null ? '' : this.props.className);
         if (this.props.fetching) {
             rootDivClassName += 'rounded border p-1';
             contentElem = <div className='flex-grow-1 flex-shrink-1'><i className='fa fa-spinner fa-pulse fa-fw' />通讯中</div>;
@@ -1333,7 +1333,7 @@ class ERPC_Label extends React.PureComponent {
         if (this.props.visible == false) {
             return null;
         }
-        var rootDivClassName = 'erpc_label' + (this.props.class == null ? '' : this.props.class);
+        var rootDivClassName = 'erpc_label ' + (this.props.className == null ? '' : this.props.className);
         var contentElem = null;
         if (this.props.fetching) {
             rootDivClassName += ' rounded border p-1';
