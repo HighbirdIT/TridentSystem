@@ -916,7 +916,7 @@ class SqlNode_Union extends SqlNode_Base {
         return 'union';
     }
 
-    getContext(finder, depth){
+    getContext(finder, depth,helper){
         var firstSocket = this.inputScokets_arr[0];
         var tLinks = this.bluePrint.linkPool.getLinksBySocket(firstSocket);
         if(tLinks.length == 0){
