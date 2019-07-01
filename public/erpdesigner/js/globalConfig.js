@@ -177,7 +177,8 @@ var EInterActiveTypes_arr = [{ text: '只读', value: EInterActiveType.ReadOnly 
 
 var EFormRowSource = {
     Context: 'context',
-    Selected: 'selected'
+    Selected: 'selected',
+    None: 'None'
 };
 
 var EFormRowSources_arr = [{ text: '所在行', value: EFormRowSource.Context }, { text: '选中行', value: EFormRowSource.Selected }];

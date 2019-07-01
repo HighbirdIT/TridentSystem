@@ -400,6 +400,18 @@ var ControlKernelBase = function (_IAttributeable) {
             return rlt;
         }
     }, {
+        key: 'hadAncestor',
+        value: function hadAncestor(ancestorKernel) {
+            var tparent = this.parent;
+            while (tparent) {
+                if (tparent == ancestorKernel) {
+                    return true;
+                }
+                tparent = tparent.parent;
+            }
+            return false;
+        }
+    }, {
         key: 'searchParentKernel',
         value: function searchParentKernel(targetType, justFirst) {
             var rlt = null;
@@ -543,7 +555,9 @@ var ControlKernelBase = function (_IAttributeable) {
                         rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
                         break;
                     case M_FormKernel_Type:
-                        if (ignoreRowIndex != true && nowKernel.isGridForm()) {
+                        if (ignoreRowIndex == true || !nowKernel.isKernelInRow(this)) {
+                            rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
+                        } else {
                             var rowIndexVar = rowIndexVar_map[nowKernel.id];
                             if (rowIndexVar == null && rowIndexVar_map.mapVarName) {
                                 rowIndexVar = rowIndexVar_map.mapVarName + '.' + nowKernel.id;
@@ -552,8 +566,6 @@ var ControlKernelBase = function (_IAttributeable) {
                                 console.error('getStatePath 遇到grid表单但是没有rowindex变量信息');
                             }
                             rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + "row_'+" + rowIndexVar + "+'." + rlt;
-                        } else {
-                            rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
                         }
                         break;
                 }

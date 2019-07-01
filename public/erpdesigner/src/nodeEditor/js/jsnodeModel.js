@@ -622,7 +622,6 @@ class JSNode_BluePrint extends EventEmitter {
                 var selectedRowsVarName = formId + '_' + VarNames.SelectedRows_arr;
                 var isUseFormCtl = !IsEmptyObject(useFormData.useControls_map);
                 var isUseFormColumn = !IsEmptyObject(useFormData.useColumns_map);
-                var ctlBelongStateVarName = formStateVarName;
 
                 if (belongUserControl) {
                     initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
@@ -636,7 +635,6 @@ class JSNode_BluePrint extends EventEmitter {
 
                 if (isUseFormCtl || isUseFormColumn) {
                     if (isGridForm) {
-                        ctlBelongStateVarName = formNowRowStateVarName;
                         if (useFormData.useContextRow) {
                             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
                                 theFun.scope.getVar(VarNames.RowIndexInfo_map, true, 'getRowIndexMapFromPath(' + VarNames.FullParentPath + ')');
@@ -688,9 +686,8 @@ class JSNode_BluePrint extends EventEmitter {
                             //initValue = VarNames.State;
                             console.error('尚未实现');
                         }
-                        else {
-                            initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(usectlid), '{}');
-                        }
+                        var useCtlBelongStateVarName = useFormData.formKernel.isKernelInRow(useCtlData.kernel) ? formNowRowStateVarName : formStateVarName;
+                        initValue = makeStr_getStateByPath(useCtlBelongStateVarName, singleQuotesStr(usectlid), '{}');
                         if (controlStateDelayGet) {
                             theFun.scope.getVar(ctlStateVarName, true);
                             validFormSelectBlock.pushLine(makeLine_Assign(ctlStateVarName, initValue));
@@ -698,11 +695,10 @@ class JSNode_BluePrint extends EventEmitter {
                         else {
                             theFun.scope.getVar(ctlStateVarName, true, initValue);
                         }
-                        initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(usectlid), '{}');
                         theFun.scope.getVar(ctlStateVarName, true, initValue);
                         if (useCtlData.kernel.isAEditor()) {
                             ctlParentStateVarName = useCtlData.kernel.parent.id + '_state';
-                            initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(useCtlData.kernel.parent.id), '{}');
+                            initValue = makeStr_getStateByPath(useCtlBelongStateVarName, singleQuotesStr(useCtlData.kernel.parent.id), '{}');
                             if (controlStateDelayGet) {
                                 theFun.scope.getVar(ctlParentStateVarName, true);
                                 validFormSelectBlock.pushLine(makeLine_Assign(ctlParentStateVarName, initValue));
@@ -721,7 +717,6 @@ class JSNode_BluePrint extends EventEmitter {
                             }
                             else {
                                 initValue = ctlStateVarName + '.' + propApiitem.stateName;
-                                //makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(useCtlData.kernel.id + '.' + propApiitem.stateName));
                             }
                             if (controlStateDelayGet) {
                                 theFun.scope.getVar(varName, true);

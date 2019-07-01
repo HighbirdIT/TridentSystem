@@ -99,6 +99,10 @@ class M_FormKernel extends ContainerKernelBase{
         autoBind(self);
     }
 
+    isKernelInRow(theKernel){
+        return this.isGridForm() && !theKernel.hadAncestor(this. gridFormBottomDiv);
+    }
+
     projectLoadedHanlder(){
         var gridFormBottomDiv = new M_ContainerKernel({},this);
         this.gridFormBottomDiv = gridFormBottomDiv;
@@ -263,7 +267,7 @@ class M_FormKernel extends ContainerKernelBase{
                 this.findAttributeByName(AttrNames.WidthType).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.AutoIndexColumn).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.GenNavBar).setVisible(this, !isGridForm);
-                this.findAttributeByName(AttrNames.SelectMode).setVisible(this, !isGridForm);
+                this.findAttributeByName(AttrNames.SelectMode).setVisible(this, isGridForm);
 
                 this.findAttrGroupByName('操作设置').setVisible(this, isGridForm);
                 break;
