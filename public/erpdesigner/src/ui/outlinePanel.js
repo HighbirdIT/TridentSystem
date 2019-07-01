@@ -41,7 +41,7 @@ class OutlineItem extends React.PureComponent {
         else if (changedAttrName == 'placeChanged') {
             this.props.itemSelected(this, this.rootElemRef.current);
         }
-        else if(changedAttrName == AttrNames.Name){
+        else if (changedAttrName == AttrNames.Name) {
             this.setState({
                 magicObj: {},
             });
@@ -165,8 +165,8 @@ class OutlinePanel extends React.PureComponent {
         super(props);
         var editingPage = this.props.project.getEditingPage();
         var editingControl = this.props.project.getEditingControl();
-        this.state = { 
-            editingPage: editingPage, 
+        this.state = {
+            editingPage: editingPage,
             editingControl: editingControl,
         };
         React_Make_AttributeListener(this, ['editingPage', 'children']);
@@ -221,7 +221,7 @@ class OutlinePanel extends React.PureComponent {
     }
 
     wantDragAct(targetItem) {
-        if(targetItem.props.kernel.isfixed){
+        if (targetItem.props.kernel.isfixed) {
             return;
         }
         //console.log(targetItem);
@@ -241,7 +241,7 @@ class OutlinePanel extends React.PureComponent {
                 this.beforeDragData.parent.appandChild(theKernel, this.beforeDragData.index);
             }
         }
-        if(this.autoScrollInt){
+        if (this.autoScrollInt) {
             clearInterval(this.autoScrollInt);
             this.autoScrollInt = null;
         }
@@ -249,7 +249,7 @@ class OutlinePanel extends React.PureComponent {
     }
 
     itemSelected(itemCtl, itemElem) {
-        if(this.props.project.placingKernel != null && this.bMouseInPanel){
+        if (this.props.project.placingKernel != null && this.bMouseInPanel) {
             return;
         }
         var itemRect = itemElem.getBoundingClientRect();
@@ -270,28 +270,48 @@ class OutlinePanel extends React.PureComponent {
         }
     }
 
-    searchHitResult(pos, kernel){
+    searchHitResult(pos, kernel) {
         var outlineItem = kernel.outlineProfile && kernel.outlineProfile.outlineItem ? kernel.outlineProfile.outlineItem : null;
-        if(outlineItem == null)
+        if (outlineItem == null)
             return null;
         var kernelRect = outlineItem.rootElemRef.current ? outlineItem.rootElemRef.current.getBoundingClientRect() : null
-        if(!kernelRect){
+        if (!kernelRect) {
             return null;
         }
-        if(MyMath.isPointInRect(kernelRect, pos)){
-            return {kernel:kernel, outlineItem:outlineItem, rect:kernelRect};
+        if (MyMath.isPointInRect(kernelRect, pos)) {
+            return { kernel: kernel, outlineItem: outlineItem, rect: kernelRect };
         }
-        if(pos.y < kernelRect.bottom){
-            return {lastKernel:kernel, lastRect:kernelRect}
+        if (pos.y < kernelRect.bottom) {
+            return { lastKernel: kernel, lastRect: kernelRect }
         }
-        if(kernel.children && kernel.children.length > 0){
-            for(var ci in kernel.children){
+        if (kernel.children && kernel.children.length > 0) {
+            for (var ci in kernel.children) {
                 var rlt = this.searchHitResult(pos, kernel.children[ci]);
-                if(rlt)
+                if (rlt)
                     return rlt;
             }
         }
         return null;
+    }
+
+    checkAppandable(childKernel, parentKernel) {
+        if (parentKernel.isfixed || childKernel == parentKernel) {
+            return false;
+        }
+        if (childKernel.parent == parentKernel) {
+
+        }
+        else if (childKernel.banReParent) {
+            return false;
+        }
+        else if (parentKernel.staticChild) {
+            return false;
+        }
+        else if (!parentKernel.canAppand(childKernel)) {
+            return false;
+        }
+
+        return true;
     }
 
     placePosChanged(newPos, targetKernel) {
@@ -302,23 +322,23 @@ class OutlinePanel extends React.PureComponent {
             //console.log('isPointInRect');
             var checkBound = 40;
             var step = 5;
-            if(newPos.x - scrollDivRect.left < checkBound){
+            if (newPos.x - scrollDivRect.left < checkBound) {
                 this.scrollHStep = -step;
             }
-            else if(scrollDivRect.right - newPos.x < checkBound){
+            else if (scrollDivRect.right - newPos.x < checkBound) {
                 this.scrollHStep = step;
             }
-            else{
+            else {
                 this.scrollHStep = 0;
             }
 
-            if(newPos.y - scrollDivRect.top < checkBound){
+            if (newPos.y - scrollDivRect.top < checkBound) {
                 this.scrollVStep = -step;
             }
-            else if(scrollDivRect.bottom - newPos.y < checkBound){
+            else if (scrollDivRect.bottom - newPos.y < checkBound) {
                 this.scrollVStep = step;
             }
-            else{
+            else {
                 this.scrollVStep = 0;
             }
 
@@ -328,59 +348,55 @@ class OutlinePanel extends React.PureComponent {
                 //console.log('move in self outlineItem');
                 return;
             }
-            
-            var hitResult = null;
-            if(this.state.editingPage){
-                for(var ci in this.state.editingPage.children){
-                    hitResult = this.searchHitResult(newPos, this.state.editingPage.children[ci]);
-                    if(hitResult)
-                        break;
-                }
-            }
-            if(this.state.editingControl){
-                for(var ci in this.state.editingControl.children){
-                    hitResult = this.searchHitResult(newPos, this.state.editingControl.children[ci]);
-                    if(hitResult)
-                        break;
-                }
-            }
-            
-            if(hitResult && hitResult.kernel){
-                var hitKernel = hitResult.kernel;
-                if(hitKernel.isfixed){
-                    return;
-                }
-                if(!hitKernel.canAppand(targetKernelRect)){
-                    return;
-                }
-                /*
-                var specialParent = hitKernel.searchParentKernel([M_LabeledControlKernel_Type], true);
-                if(specialParent){
-                    hitKernel = specialParent;
-                }
-                */
 
-                if(hitKernel == targetKernel)
+            var hitResult = null;
+            if (this.state.editingPage) {
+                for (var ci in this.state.editingPage.children) {
+                    hitResult = this.searchHitResult(newPos, this.state.editingPage.children[ci]);
+                    if (hitResult)
+                        break;
+                }
+            }
+            if (this.state.editingControl) {
+                for (var ci in this.state.editingControl.children) {
+                    hitResult = this.searchHitResult(newPos, this.state.editingControl.children[ci]);
+                    if (hitResult)
+                        break;
+                }
+            }
+
+            if (hitResult && hitResult.kernel) {
+                var hitKernel = hitResult.kernel;
+                if(hitKernel.parent && hitKernel.parent == targetKernel.parent){
+                    hitKernel.parent.swapChild(hitKernel.parent.getChildIndex(hitKernel), hitKernel.parent.getChildIndex(targetKernel));
+                }
+                if (!this.checkAppandable(targetKernel, hitKernel)) {
                     return;
-                if(hitKernel.children != null && hitKernel.staticChild != true){
-                    if(newPos.y - hitResult.rect.top <= 5){
-                        hitKernel.parent.appandChild(targetKernel,hitKernel.parent.getChildIndex(hitResult.kernel));
+                }
+
+                if (hitKernel.children != null) {
+                    if (newPos.y - hitResult.rect.top <= 5) {
+                        if (this.checkAppandable(targetKernel, hitKernel.parent)) {
+                            hitKernel.parent.appandChild(targetKernel, hitKernel.parent.getChildIndex(hitResult.kernel));
+                        }
                     }
-                    else{
+                    else {
                         hitKernel.appandChild(targetKernel);
                     }
-                }else if(hitKernel.parent){
-                    hitKernel.parent.appandChild(targetKernel, hitKernel.parent.getChildIndex(hitResult.kernel));
+                } else if (hitKernel.parent) {
+                    if (this.checkAppandable(targetKernel, hitKernel.parent)) {
+                        hitKernel.parent.appandChild(targetKernel, hitKernel.parent.getChildIndex(hitResult.kernel));
+                    }
                 }
             }
-            else{
+            else {
                 // can not found
                 var bottomDivRect = this.bottomDivRef.current.getBoundingClientRect();
-                if(bottomDivRect.top < newPos.y){
-                    if(this.state.editingPage){
+                if (bottomDivRect.top < newPos.y) {
+                    if (this.state.editingPage && this.checkAppandable(targetKernel, this.state.editingPage)) {
                         this.state.editingPage.appandChild(targetKernel);
                     }
-                    if(this.state.editingControl){
+                    if (this.state.editingControl && this.checkAppandable(targetKernel, this.state.editingControl)) {
                         this.state.editingControl.appandChild(targetKernel);
                     }
                 }
@@ -388,24 +404,24 @@ class OutlinePanel extends React.PureComponent {
         }
     }
 
-    startPlace(){
+    startPlace() {
         this.autoScrollInt = setInterval(this.autoScrollHandler, 50);
         this.scrollHStep = 0;
         this.scrollVStep = 0;
     }
 
-    endPlace(){
+    endPlace() {
         clearInterval(this.autoScrollInt);
         this.autoScrollInt = null;
     }
 
-    autoScrollHandler(){
+    autoScrollHandler() {
         this.scrollDivRef.current.scrollLeft += this.scrollHStep;
         this.scrollDivRef.current.scrollTop += this.scrollVStep;
         //console.log(this.scrollHStep);
     }
 
-    clickTrashBtnHandler(ev){
+    clickTrashBtnHandler(ev) {
         this.props.project.designer.deleteSelectedKernel();
     }
 
@@ -434,7 +450,7 @@ class OutlinePanel extends React.PureComponent {
                                 }
                             )
                         }
-                        <div ref={this.bottomDivRef} style={{height:'20px'}}></div>
+                        <div ref={this.bottomDivRef} style={{ height: '20px' }}></div>
                     </div>
                 </div>
             </div>

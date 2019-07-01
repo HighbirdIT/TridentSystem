@@ -707,6 +707,23 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
             }
         }
     }, {
+        key: 'clickTrashBtnHandler',
+        value: function clickTrashBtnHandler(ev) {
+            if (this.state.selectedItem) {
+                gTipWindow.popAlert(makeAlertData('警告', '确定删除"' + this.state.selectedItem.name + '"吗?', this.deleteTipCallback, [TipBtnOK, TipBtnNo], this.state.selectedItem));
+            }
+        }
+    }, {
+        key: 'deleteTipCallback',
+        value: function deleteTipCallback(key, target) {
+            if (key == 'ok') {
+                this.props.project.dataMaster.deleteSqlBP(target);
+                this.setState({
+                    magicObj: {}
+                });
+            }
+        }
+    }, {
         key: 'newItemCompleteHandler',
         value: function newItemCompleteHandler(newDBE) {
             this.setState({
@@ -777,6 +794,11 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
                         React.createElement(
                             'div',
                             { className: 'flex-shrink-0 btn-group' },
+                            React.createElement(
+                                'button',
+                                { type: 'button', onClick: this.clickTrashBtnHandler, className: 'btn' },
+                                React.createElement('i', { className: 'fa fa-trash text-danger' })
+                            ),
                             React.createElement(
                                 'button',
                                 { type: 'button', onClick: this.clickAddBtnhandler, className: 'btn btn-success flex-grow-1' },

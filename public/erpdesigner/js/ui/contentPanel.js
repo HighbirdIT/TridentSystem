@@ -177,6 +177,7 @@ var ContentPanel = function (_React$PureComponent) {
     }, {
         key: 'placePosChanged',
         value: function placePosChanged(newPos) {
+
             if (this.state.editingControl) {
                 this.userCtlRef.current.tryPlaceKernel(this.placingKernel, newPos);
             } else if (this.state.editingPage) {

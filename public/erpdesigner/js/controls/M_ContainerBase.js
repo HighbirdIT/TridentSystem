@@ -15,7 +15,7 @@ function M_ContainerBase_tryPlaceKernel(theKernel, mousePos) {
         }) != null;
 
         if (!placedInChildren) {
-            if (!selfKernel.canAppand(theKernel)) {
+            if (theKernel.parent == selfKernel) {} else if (theKernel.banReParent || selfKernel.staticChild || !selfKernel.canAppand(theKernel)) {
                 return false;
             }
             var selfIsHor = selfKernel.getAttribute(AttrNames.Orientation) == Orientation_H;
@@ -76,7 +76,7 @@ function M_ContainerBase_tryPlaceKernel(theKernel, mousePos) {
         }
         return true;
     } else {
-        if (selfKernel.parent == null && theKernel.parent) {
+        if (!theKernel.banReParent && selfKernel.parent == null && theKernel.parent) {
             theKernel.parent.removeChild(theKernel);
         }
     }

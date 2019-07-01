@@ -324,6 +324,22 @@ var OutlinePanel = function (_React$PureComponent2) {
             return null;
         }
     }, {
+        key: 'checkAppandable',
+        value: function checkAppandable(childKernel, parentKernel) {
+            if (parentKernel.isfixed || childKernel == parentKernel) {
+                return false;
+            }
+            if (childKernel.parent == parentKernel) {} else if (childKernel.banReParent) {
+                return false;
+            } else if (parentKernel.staticChild) {
+                return false;
+            } else if (!parentKernel.canAppand(childKernel)) {
+                return false;
+            }
+
+            return true;
+        }
+    }, {
         key: 'placePosChanged',
         value: function placePosChanged(newPos, targetKernel) {
             var nowScrollDiv = this.scrollDivRef.current;
@@ -371,37 +387,34 @@ var OutlinePanel = function (_React$PureComponent2) {
 
                 if (hitResult && hitResult.kernel) {
                     var hitKernel = hitResult.kernel;
-                    if (hitKernel.isfixed) {
+                    if (hitKernel.parent && hitKernel.parent == targetKernel.parent) {
+                        hitKernel.parent.swapChild(hitKernel.parent.getChildIndex(hitKernel), hitKernel.parent.getChildIndex(targetKernel));
+                    }
+                    if (!this.checkAppandable(targetKernel, hitKernel)) {
                         return;
                     }
-                    if (!hitKernel.canAppand(targetKernelRect)) {
-                        return;
-                    }
-                    /*
-                    var specialParent = hitKernel.searchParentKernel([M_LabeledControlKernel_Type], true);
-                    if(specialParent){
-                        hitKernel = specialParent;
-                    }
-                    */
 
-                    if (hitKernel == targetKernel) return;
-                    if (hitKernel.children != null && hitKernel.staticChild != true) {
+                    if (hitKernel.children != null) {
                         if (newPos.y - hitResult.rect.top <= 5) {
-                            hitKernel.parent.appandChild(targetKernel, hitKernel.parent.getChildIndex(hitResult.kernel));
+                            if (this.checkAppandable(targetKernel, hitKernel.parent)) {
+                                hitKernel.parent.appandChild(targetKernel, hitKernel.parent.getChildIndex(hitResult.kernel));
+                            }
                         } else {
                             hitKernel.appandChild(targetKernel);
                         }
                     } else if (hitKernel.parent) {
-                        hitKernel.parent.appandChild(targetKernel, hitKernel.parent.getChildIndex(hitResult.kernel));
+                        if (this.checkAppandable(targetKernel, hitKernel.parent)) {
+                            hitKernel.parent.appandChild(targetKernel, hitKernel.parent.getChildIndex(hitResult.kernel));
+                        }
                     }
                 } else {
                     // can not found
                     var bottomDivRect = this.bottomDivRef.current.getBoundingClientRect();
                     if (bottomDivRect.top < newPos.y) {
-                        if (this.state.editingPage) {
+                        if (this.state.editingPage && this.checkAppandable(targetKernel, this.state.editingPage)) {
                             this.state.editingPage.appandChild(targetKernel);
                         }
-                        if (this.state.editingControl) {
+                        if (this.state.editingControl && this.checkAppandable(targetKernel, this.state.editingControl)) {
                             this.state.editingControl.appandChild(targetKernel);
                         }
                     }

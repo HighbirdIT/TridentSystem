@@ -15,7 +15,7 @@ const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
         new CAttribute('首列序号',AttrNames.AutoIndexColumn,ValueType.Boolean,true),
         new CAttribute('自动滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
         new CAttribute('模式', AttrNames.SelectMode, ValueType.String, ESelectMode.None, true, false, SelectModes_arr),
-        new CAttribute('bottomDivID','bottomDivID',ValueType.String,'',true,false,null,null),
+        new CAttribute('bottomDivID','bottomDivID',ValueType.String,'',true,false,null,null,false),
     ]),
     new CAttributeGroup('操作设置',[
         genScripAttribute('Insert', AttrNames.Event.OnInsert,EJsBluePrintFunGroup.GridRowBtnHandler),

@@ -534,10 +534,12 @@ var ControlKernelBase = function (_IAttributeable) {
             }
             var nowKernel = this.parent;
             var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
-            do {
+            while (nowKernel != null && nowKernel != topestParant) {
                 switch (nowKernel.type) {
                     case M_PageKernel_Type:
                     case Accordion_Type:
+                    case TabItem_Type:
+                    case TabControl_Type:
                         rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
                         break;
                     case M_FormKernel_Type:
@@ -555,10 +557,10 @@ var ControlKernelBase = function (_IAttributeable) {
                         }
                         break;
                 }
-                if (nowKernel) {
+                if (nowKernel && nowKernel != topestParant) {
                     nowKernel = nowKernel.parent;
                 }
-            } while (nowKernel != null && nowKernel != topestParant);
+            }
             return rlt;
         }
     }, {

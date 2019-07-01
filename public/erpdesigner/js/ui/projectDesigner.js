@@ -84,13 +84,23 @@ var ProjectDesigner = function (_React$PureComponent) {
             if (nowTarget.parent == null) {
                 return;
             }
+
             if (ControlKernelBase.prototype.isPrototypeOf(nowTarget)) {
                 // is kernel
                 if (nowTarget.parent == M_LabeledControlKernel_Type) {
                     return;
                 }
+                var kernelLabel = nowTarget.id + (IsEmptyString(nowTarget[AttrNames.Name]) ? '' : '(' + nowTarget[AttrNames.Name] + ')');
+                gTipWindow.popAlert(makeAlertData('警告', '确定删除"' + kernelLabel + '"吗?', this.deleteTipCallback, [TipBtnOK, TipBtnNo], nowTarget));
+            }
+        }
+    }, {
+        key: 'deleteTipCallback',
+        value: function deleteTipCallback(key, nowTarget) {
+            if (key == 'ok') {
                 nowTarget.delete();
             }
+            this.attrbutePanelRef.current.setTarget(null);
         }
     }, {
         key: 'mouseDownControlIcon',
@@ -154,6 +164,7 @@ var ProjectDesigner = function (_React$PureComponent) {
 
             window.addEventListener('mouseup', this.mouseUpInPlacingHandler);
             theKernel.__placing = true;
+
             this.contenPanelRef.current.startPlace(theKernel);
             this.placeEndCallBack = callBack;
             this.placingKernel = theKernel;
