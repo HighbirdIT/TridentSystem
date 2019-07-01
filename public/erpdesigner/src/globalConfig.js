@@ -178,6 +178,7 @@ const EInterActiveTypes_arr = [{text:'只读', value:EInterActiveType.ReadOnly},
 const EFormRowSource={
     Context:'context',
     Selected:'selected',
+    None:'None',
 }
 
 const EFormRowSources_arr = [{text:'所在行', value:EFormRowSource.Context}, {text:'选中行', value:EFormRowSource.Selected}];
