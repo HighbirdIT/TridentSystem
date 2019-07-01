@@ -543,6 +543,7 @@ class MobileContentCompiler extends ContentCompiler {
                 logManager.error('重复设置主页面:' + pageKernel.getAttribute(AttrNames.Title));
             }
         }
+        var pageLayoutConfig = pageKernel.getLayoutConfig();
         var isPopable = pageKernel.getAttribute(AttrNames.PopablePage);
         var pageMidData = this.projectCompiler.getMidData(pageKernel.id);
         pageMidData.needSetKernels_arr = [];
@@ -572,7 +573,9 @@ class MobileContentCompiler extends ContentCompiler {
 
         pageReactClass.renderFun.pushLine(VarNames.RetElem + " = (", 1);
         if (isPopable) {
-            pageReactClass.renderFun.pushLine("<div className='d-flex flex-column popPage bg-light autoScroll'>", 1);
+            var styleID = pageKernel.id + '_style';
+            var styleStr = clientSide.addStyleObject(styleID, pageLayoutConfig.style) ? 'style={' + styleID + '}' : '';
+            pageReactClass.renderFun.pushLine("<div className='d-flex flex-column popPage bg-light autoScroll' " + styleStr + ">", 1);
         }
         else {
             pageReactClass.renderFun.pushLine("<div className='d-flex flex-column flex-grow-1 flex-shrink-1 h-100'>", 1);

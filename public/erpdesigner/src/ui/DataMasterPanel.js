@@ -541,6 +541,21 @@ class SqlBPItemPanel extends React.PureComponent {
         }
     }
 
+    clickTrashBtnHandler(ev){
+        if(this.state.selectedItem){
+            gTipWindow.popAlert(makeAlertData('警告', '确定删除"' + this.state.selectedItem.name + '"吗?', this.deleteTipCallback, [TipBtnOK, TipBtnNo], this.state.selectedItem));
+        }
+    }
+
+    deleteTipCallback(key, target) {
+        if (key == 'ok') {
+            this.props.project.dataMaster.deleteSqlBP(target);
+            this.setState({
+                magicObj:{},
+            });
+        }
+    }
+
     newItemCompleteHandler(newDBE){
         this.setState({
             creating:false,
@@ -594,6 +609,7 @@ class SqlBPItemPanel extends React.PureComponent {
                             }
                         </div>
                         <div className='flex-shrink-0 btn-group'>
+                            <button type='button' onClick={this.clickTrashBtnHandler} className='btn'><i className='fa fa-trash text-danger' /></button>
                             <button type='button' onClick={this.clickAddBtnhandler} className='btn btn-success flex-grow-1'><i className='fa fa-plus' /></button>
                             <button type='button' onClick={this.clickEditBtnHandler} className='btn'><i className='fa fa-edit' /></button>
                         </div>

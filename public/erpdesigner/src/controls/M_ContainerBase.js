@@ -83,7 +83,7 @@ function M_ContainerBase_tryPlaceKernel(theKernel, mousePos) {
         return true;
     }
     else {
-        if (selfKernel.parent == null && theKernel.parent) {
+        if (!theKernel.banReParent && selfKernel.parent == null && theKernel.parent) {
             theKernel.parent.removeChild(theKernel);
         }
     }

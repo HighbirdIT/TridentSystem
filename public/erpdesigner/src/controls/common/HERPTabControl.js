@@ -16,6 +16,7 @@ const HERPTabControlKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('selectedItemID','selectedItemID',ValueType.String,'',true,false,null,null,false),
         new CAttribute('贪心模式', AttrNames.GreedMode, ValueType.Boolean, false),
         new CAttribute('默认打开', 'defaultTabitemID', ValueType.String, 0, true, false, [], {text:'name', value:'code',pullDataFun:GetTabItems}),
+        new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr,null,false),
     ]),
 ]);
 
@@ -33,6 +34,14 @@ class HERPTabControlKernel extends ContainerKernelBase{
         this.staticChild = true;
         var self = this;
         autoBind(self);
+    }
+    
+    appandChild(childKernel, index) {
+        return super.appandChild(childKernel, index);
+    }
+
+    canAppand(target){
+        return target.type == TabItem_Type;
     }
 
     __attributeChanged(attrName, oldValue, value, realAtrrName, indexInArray){
