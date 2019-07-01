@@ -924,14 +924,6 @@ class SqlNode_Union extends SqlNode_Base {
         }
         var temLink = tLinks[0];
         var outNode = temLink.outSocket.node;
-        if(outNode.type != SQLNODE_SELECT){
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle
-                , nodeThis
-                , helper.clickLogBadgeItemHandler)
-                , '需要连接select节点。']);
-            return;
-        }
         return outNode.getContext(finder, depth + 1);
     }
 
@@ -968,9 +960,18 @@ class SqlNode_Union extends SqlNode_Base {
                     return false;
                 }
                 tValue = compileRet.getSocketOut(link.outSocket).strContent;
+                var column_name_arr=[];
                 var column_name_arr = compileRet.getSocketOut(link.outSocket).data.columsName_arr;
                 if( i == 0) {
                     firstColumname_arr = column_name_arr;
+                }
+                if(column_name_arr ==null && outNode.type !=SQLNODE_SELECT){
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle
+                        , nodeThis
+                        , helper.clickLogBadgeItemHandler)
+                        , '连接得可能不是select节点']);
+                    return false;
                 }
                 if(column_name_arr.length != colName_number && colName_number != null){
                     helper.logManager.errorEx([helper.logManager.createBadgeItem(
