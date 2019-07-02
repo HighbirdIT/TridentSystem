@@ -1178,7 +1178,7 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
                 this.targetEntity = dataMaster.getDataSourceByCode(tem_arr[1]);
                 if (this.targetEntity) {
                     this.targetEntity.on('syned', this.entitySynedHandler);
-                    if (this.targetEntity.isCustomDS) {
+                    if (this.targetEntity.isCustomDS || this.targetEntity.loaded) {
                         this.entitySynedHandler();
                     }
                 }
