@@ -2098,7 +2098,7 @@ class FlowNode_NowDate extends SqlNode_Base {
         if (superRet == false || superRet != null) {
             return superRet;
         }
-        var value = "new date()";
+        var value = "new Date()";
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, value);
         helper.setCompileRetCache(this, selfCompileRet);
