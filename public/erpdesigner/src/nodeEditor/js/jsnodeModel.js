@@ -3288,6 +3288,11 @@ const gJSDateFuns_arr = [
         outputs: [{ label: '', type: ValueType.String }]
     },
     {
+        name: 'Format[mm-dd]',
+        inputs: [{ label: '日期', type: ValueType.Date }],
+        outputs: [{ label: '', type: ValueType.String }]
+    },
+    {
         name: 'Format[hh:mm:ss]',
         inputs: [{ label: '日期', type: ValueType.Date }],
         outputs: [{ label: '', type: ValueType.String }]
@@ -3424,6 +3429,9 @@ class JSNode_DateFun extends JSNode_Base {
         switch (this.funName) {
             case 'Format[yyyy-mm-dd]':
                 callStr = funPreFix + 'getFormatDateString(' + socketVal_arr[0] + ')';
+                break;
+            case 'Format[mm-dd]':
+                callStr = funPreFix + 'getFormatDateString_MD(' + socketVal_arr[0] + ')';
                 break;
             case 'year':
                 callStr = socketVal_arr[0] + '.getFullYear()';
