@@ -1473,6 +1473,7 @@ var VisibleERPC_LabeledControl = null;
 var VisibleERPC_Label = null;
 var VisibleERPC_CheckBox = null;
 var VisibleERPC_Button = null;
+const gNeedCallOnErpControlInit_arr = [];
 
 function ErpControlInit() {
     VisibleERPC_DropDown = ReactRedux.connect(ERPC_DropDown_mapstatetoprops, ERPC_DropDown_dispatchtoprops)(ERPC_DropDown);
@@ -1481,6 +1482,12 @@ function ErpControlInit() {
     VisibleERPC_Label = ReactRedux.connect(ERPC_Label_mapstatetoprops, ERPC_Label_dispatchtorprops)(ERPC_Label);
     VisibleERPC_CheckBox = ReactRedux.connect(ERPC_CheckBox_mapstatetoprops, ERPC_CheckBox_dispatchtorprops)(ERPC_CheckBox);
     VisibleERPC_Button = ReactRedux.connect(ERPC_Button_mapstatetoprops, ERPC_Button_dispatchtorprops)(ERPC_Button);
+
+    gNeedCallOnErpControlInit_arr.forEach(elem=>{
+        if(typeof elem == 'function'){
+            elem.call();
+        }
+    });
 }
 
 function ERPC_PageForm(target) {
@@ -2427,106 +2434,6 @@ const ERPXMLToolKit = {
         rltStr += '>' + itemStr_arr.join('') + '</Data>';
         return rltStr;
     }
-}
-
-class ERPC_TaskSelector extends React.PureComponent {
-    constructor(poros) {
-        super(props);
-        autoBind(this);
-        ERPControlBase(this);
-
-        this.state = Object.assign(this.initState, {
-            keyword: '',
-            opened: false,
-        });
-
-        this.contentDivRef = React.createRef();
-        this.popPanelRef = React.createRef();
-        this.popPanelRef = React.createRef();
-        this.popPanelItem = (<ERPC_DropDown_PopPanel ref={this.popPanelRef} dropdownctl={this} key={gFixedItemCounter++} />)
-    }
-
-    pullUserTask() {
-        var ownprops = this.props;
-        var parentStatePath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
-        store.dispatch(fetchJsonPost('/erppage/server/task', { action: 'getUserTask', bundle: { userid: g_envVar.userid } }, makeFTD_Prop(parentStatePath, ownprops.id), 'options_arr', false), EFetchKey.FetchPropValue);
-    }
-
-    render() {
-        if (this.props.visible == false) {
-            return null;
-        }
-        <ERPC_DropDown value={this.props.value}
-            text={this.props.text}
-            fetching={this.props.fetching}
-            fetchingErr={this.props.fetchingErr}
-            optionsData={this.props.optionsData}
-            invalidInfo={this.props.invalidInfo}
-            selectOpt={this.props.selectOpt}
-            rowIndex={this.props.rowIndex}
-            id={this.props.id}
-            parentPath={this.props.parentPath}
-            type='string'
-            pullOnce={true}
-            pullDataSource={this.pullUserTask}
-            options_arr={this.props.options_arr}
-
-        />
-    }
-}
-
-function ERPC_TaskSelector_mapstatetoprops(state, ownprops) {
-    var fullPath = MakePath(ownprops.parentPath, ownprops.id);
-    var ctlState = getStateByPath(state, fullPath, {});
-    var invalidInfo = null;
-    if (ctlState.invalidInfo != gPreconditionInvalidInfo && ctlState.invalidInfo != gCantNullInfo) {
-        invalidInfo = ctlState.invalidInfo;
-    }
-    var selectorid = fullPath + 'optionsData';
-    var optionsDataSelector = ERPC_selector_map[selectorid];
-    if (optionsDataSelector == null) {
-        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName, selectERPC_DropDown_textType, formatERPC_DropDown_options);
-        ERPC_selector_map[selectorid] = optionsDataSelector;
-    }
-
-    var useValue = ctlState.value;
-    var selectOpt = ctlState.selectOpt;
-    if (useValue) {
-        if (ownprops.multiselect) {
-            if (useValue[0] == '<') {
-                selectorid = fullPath + 'value';
-                var valueSelector = ERPC_selector_map[selectorid];
-                if (valueSelector == null) {
-                    valueSelector = Reselect.createSelector(selectERPC_DropDown_value, selectERPC_DropDown_multiValues);
-                    ERPC_selector_map[selectorid] = valueSelector;
-                }
-                //useValue = ERPXMLToolKit.extractColumn(useValue, 1);
-                useValue = valueSelector(state, ownprops);
-            }
-            else {
-                useValue = (useValue + '').split(',');
-            }
-        }
-    }
-    else {
-        selectOpt = null;
-    }
-
-    return {
-        value: useValue,
-        text: ctlState.text,
-        fetching: ctlState.fetching,
-        fetchingErr: ctlState.fetchingErr,
-        optionsData: optionsDataSelector(state, ownprops),
-        visible: ctlState.visible,
-        invalidInfo: invalidInfo,
-        selectOpt: selectOpt,
-    };
-}
-
-function ERPC_TaskSelector_dispatchtoprops(dispatch, ownprops) {
-    return {
-    };
 }
 
 function getPageEntryParam(pageid, paramName, defValue) {

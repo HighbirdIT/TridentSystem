@@ -221,7 +221,15 @@ class MobileContentCompiler extends ContentCompiler {
                         if (relyPath.type == ECtlReplyPathType.SetAP_On_BPChanged) {
                             getValueStr = '';
                             if (relyPath.approach.funName) {
-                                getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State]);
+                                var relyCtlReactParent = relyPath.relyCtl.getReactParentKernel(true);
+                                var sameReactKernel = relyPath.berelyCtl.searchSameReactParentKernel(relyPath.relyCtl);
+                                var thirdParam = sameReactKernel.id + '_path';
+                                var sameReactKernelPathInitStr = sameReactKernel.isComplicatedPath() ? "getParentPathByKey(path,'" + sameReactKernel.id + "')" : singleQuotesStr(sameReactKernel.getStatePath(''));
+                                changedFun.scope.getVar(sameReactKernel.id + '_path',true, sameReactKernelPathInitStr);
+                                if(sameReactKernel != relyCtlReactParent){
+                                    thirdParam += "+" + singleQuotesStr(relyCtlReactParent.getStatePath('','.',null,true,sameReactKernel));
+                                }
+                                getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State,'null',thirdParam]);
                             }
                             else if (relyPath.approach.value) {
                                 getValueStr = relyPath.approach.value;
@@ -507,7 +515,11 @@ class MobileContentCompiler extends ContentCompiler {
                         if (relyPath.type == ECtlReplyPathType.SetAP_On_BPChanged) {
                             getValueStr = '';
                             if (relyPath.approach.funName) {
-                                getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State]);
+                                var useParentPath = this.getKernelFullParentPath(relyPath.relyCtl);
+                                if (useParentPath.length > 0) {
+                                    useParentPath = ' + ' + singleQuotesStr('.' + useParentPath);
+                                }
+                                getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State, 'null', rootPathVar + useParentPath]);
                             }
                             else if (relyPath.approach.value) {
                                 getValueStr = relyPath.approach.value;
@@ -1157,7 +1169,7 @@ class MobileContentCompiler extends ContentCompiler {
                         for (pName in useCtlData.useprops_map) {
                             propApiitem = useCtlData.useprops_map[pName];
                             this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, stateName, useCtlData.kernel, propApiitem.stateName, {
-                                funName: scriptCompileRet.name,
+                                funName: scriptCompileRet.name
                             });
                         }
                     }
@@ -1181,7 +1193,7 @@ class MobileContentCompiler extends ContentCompiler {
                 for (pName in useCtlData.useprops_map) {
                     propApiitem = useCtlData.useprops_map[pName];
                     this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, stateName, useCtlData.kernel, propApiitem.stateName, {
-                        funName: scriptCompileRet.name,
+                        funName: scriptCompileRet.name
                     });
                 }
             }

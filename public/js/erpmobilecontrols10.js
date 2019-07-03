@@ -1743,6 +1743,7 @@ var VisibleERPC_LabeledControl = null;
 var VisibleERPC_Label = null;
 var VisibleERPC_CheckBox = null;
 var VisibleERPC_Button = null;
+var gNeedCallOnErpControlInit_arr = [];
 
 function ErpControlInit() {
     VisibleERPC_DropDown = ReactRedux.connect(ERPC_DropDown_mapstatetoprops, ERPC_DropDown_dispatchtoprops)(ERPC_DropDown);
@@ -1751,6 +1752,12 @@ function ErpControlInit() {
     VisibleERPC_Label = ReactRedux.connect(ERPC_Label_mapstatetoprops, ERPC_Label_dispatchtorprops)(ERPC_Label);
     VisibleERPC_CheckBox = ReactRedux.connect(ERPC_CheckBox_mapstatetoprops, ERPC_CheckBox_dispatchtorprops)(ERPC_CheckBox);
     VisibleERPC_Button = ReactRedux.connect(ERPC_Button_mapstatetoprops, ERPC_Button_dispatchtorprops)(ERPC_Button);
+
+    gNeedCallOnErpControlInit_arr.forEach(function (elem) {
+        if (typeof elem == 'function') {
+            elem.call();
+        }
+    });
 }
 
 function ERPC_PageForm(target) {
@@ -2975,10 +2982,6 @@ var ERPXMLToolKit = {
         return rltStr;
     }
 };
-
-function ERPC_TaskSelector_dispatchtoprops(dispatch, ownprops) {
-    return {};
-}
 
 function getPageEntryParam(pageid, paramName, defValue) {
     var entryObj = gDataCache.get(pageid + 'entryParam');
