@@ -44,6 +44,21 @@ var M_PageKernel = function (_ContainerKernelBase) {
     }
 
     _createClass(M_PageKernel, [{
+        key: 'getUseFlowSteps',
+        value: function getUseFlowSteps() {
+            var _this2 = this;
+
+            var rlt = [];
+            this.getAttrArrayList(AttrNames.RelFlowStep).forEach(function (attr) {
+                var flowStepCode = _this2[attr.name];
+                var theStep = gFlowMaster.findStepByCode(flowStepCode);
+                if (theStep && rlt.indexOf(theStep) == -1) {
+                    rlt.push(theStep);
+                }
+            });
+            return rlt;
+        }
+    }, {
         key: 'get_name',
         value: function get_name() {
             return this.id;
@@ -77,11 +92,11 @@ var M_PageKernel = function (_ContainerKernelBase) {
     }, {
         key: 'getAllEntryParams',
         value: function getAllEntryParams() {
-            var _this2 = this;
+            var _this3 = this;
 
             var rlt_arr = [];
             this.getAttrArrayList(AttrNames.EntryParam).forEach(function (attr) {
-                var val = _this2.getAttribute(attr.name);
+                var val = _this3.getAttribute(attr.name);
                 if (!IsEmptyString(val)) {
                     rlt_arr.push({ value: val, name: attr.name });
                 }
@@ -99,19 +114,19 @@ var M_Page = function (_React$PureComponent) {
     function M_Page(props) {
         _classCallCheck(this, M_Page);
 
-        var _this3 = _possibleConstructorReturn(this, (M_Page.__proto__ || Object.getPrototypeOf(M_Page)).call(this, props));
+        var _this4 = _possibleConstructorReturn(this, (M_Page.__proto__ || Object.getPrototypeOf(M_Page)).call(this, props));
 
-        _this3.state = {
-            title: _this3.props.ctlKernel.getAttribute(AttrNames.Title),
-            ctlKernel: _this3.props.ctlKernel,
-            children: _this3.props.ctlKernel.children,
-            orientation: _this3.props.ctlKernel.getAttribute(AttrNames.Orientation)
+        _this4.state = {
+            title: _this4.props.ctlKernel.getAttribute(AttrNames.Title),
+            ctlKernel: _this4.props.ctlKernel,
+            children: _this4.props.ctlKernel.children,
+            orientation: _this4.props.ctlKernel.getAttribute(AttrNames.Orientation)
         };
 
-        autoBind(_this3);
-        M_ControlBase(_this3, [AttrNames.Title, AttrNames.Chidlren, AttrNames.Orientation, AttrNames.LayoutNames.APDClass]);
-        M_ContainerBase(_this3);
-        return _this3;
+        autoBind(_this4);
+        M_ControlBase(_this4, [AttrNames.Title, AttrNames.Chidlren, AttrNames.Orientation, AttrNames.LayoutNames.APDClass]);
+        M_ContainerBase(_this4);
+        return _this4;
     }
 
     _createClass(M_Page, [{
@@ -185,7 +200,7 @@ var M_Page = function (_React$PureComponent) {
     }, {
         key: 'render',
         value: function render() {
-            var _this4 = this;
+            var _this5 = this;
 
             if (this.props.ctlKernel != this.state.ctlKernel) {
                 var self = this;
@@ -193,11 +208,11 @@ var M_Page = function (_React$PureComponent) {
                 this.listenTarget(this.props.ctlKernel);
                 setTimeout(function () {
                     self.setState(_defineProperty({
-                        title: _this4.props.ctlKernel.getAttribute('title'),
-                        ctlKernel: _this4.props.ctlKernel,
-                        children: _this4.props.ctlKernel.children,
-                        orientation: _this4.props.ctlKernel.orientation
-                    }, 'orientation', _this4.props.ctlKernel.getAttribute(AttrNames.Orientation)));
+                        title: _this5.props.ctlKernel.getAttribute('title'),
+                        ctlKernel: _this5.props.ctlKernel,
+                        children: _this5.props.ctlKernel.children,
+                        orientation: _this5.props.ctlKernel.orientation
+                    }, 'orientation', _this5.props.ctlKernel.getAttribute(AttrNames.Orientation)));
                 }, 1);
                 return null;
             }

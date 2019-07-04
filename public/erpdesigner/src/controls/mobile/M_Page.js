@@ -48,6 +48,18 @@ class M_PageKernel extends ContainerKernelBase {
         */
     }
 
+    getUseFlowSteps(){
+        var rlt = [];
+        this.getAttrArrayList(AttrNames.RelFlowStep).forEach(attr => {
+            var flowStepCode = this[attr.name];
+            var theStep = gFlowMaster.findStepByCode(flowStepCode);
+            if (theStep && rlt.indexOf(theStep) == -1) {
+                rlt.push(theStep);
+            }
+        });
+        return rlt;
+    }
+
     get_name(){
         return this.id;
     }

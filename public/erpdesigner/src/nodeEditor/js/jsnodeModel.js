@@ -7066,7 +7066,7 @@ class JSNode_GetStepData extends JSNode_Base {
             return null;
         }
         var nowVal = socket.defval;
-        return <DropDownControl itemChanged={this.flowStepDDCChanged} btnclass='btn-dark' options_arr={gFlowMaster.getAllSteps} rootclass='flex-grow-1 flex-shrink-1' textAttrName='fullName' valueAttrName='code' value={nowVal} />;
+        return <DropDownControl itemChanged={this.flowStepDDCChanged} btnclass='btn-dark' options_arr={this.bluePrint.master.project.getUseFlowSteps} rootclass='flex-grow-1 flex-shrink-1' textAttrName='fullName' valueAttrName='code' value={nowVal} />;
     }
 
     getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {

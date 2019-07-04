@@ -3638,7 +3638,7 @@ class SqlNode_GetStepData extends SqlNode_Base {
             return null;
         }
         var nowVal = socket.defval;
-        return <DropDownControl itemChanged={this.flowStepDDCChanged} btnclass='btn-dark' options_arr={gFlowMaster.getAllSteps} rootclass='flex-grow-1 flex-shrink-1' textAttrName='fullName' valueAttrName='code' value={nowVal} />;
+        return <DropDownControl itemChanged={this.flowStepDDCChanged} btnclass='btn-dark' options_arr={this.bluePrint.master.project.getUseFlowSteps} rootclass='flex-grow-1 flex-shrink-1' textAttrName='fullName' valueAttrName='code' value={nowVal} />;
     }
 
     compile(helper, preNodes_arr) {
