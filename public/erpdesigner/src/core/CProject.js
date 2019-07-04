@@ -293,6 +293,25 @@ class CProject extends IAttributeable{
         return isPC ? this.content_PC.pages : this.content_Mobile.pages;
     }
 
+    getUseFlowSteps(){
+        var rlt = [];
+        this.content_PC.pages.forEach(page=>{
+            page.getUseFlowSteps().forEach(flowStep=>{
+                if(rlt.indexOf(flowStep) == -1){
+                    rlt.push(flowStep);
+                }
+            });
+        });
+        this.content_Mobile.pages.forEach(page=>{
+            page.getUseFlowSteps().forEach(flowStep=>{
+                if(rlt.indexOf(flowStep) == -1){
+                    rlt.push(flowStep);
+                }
+            });
+        });
+        return rlt;
+    }
+
     getPopablePages(isPC){
         if(isPC == null){
             isPC = this.designeConfig.editingType == 'PC';

@@ -326,6 +326,26 @@ var CProject = function (_IAttributeable) {
             return isPC ? this.content_PC.pages : this.content_Mobile.pages;
         }
     }, {
+        key: 'getUseFlowSteps',
+        value: function getUseFlowSteps() {
+            var rlt = [];
+            this.content_PC.pages.forEach(function (page) {
+                page.getUseFlowSteps().forEach(function (flowStep) {
+                    if (rlt.indexOf(flowStep) == -1) {
+                        rlt.push(flowStep);
+                    }
+                });
+            });
+            this.content_Mobile.pages.forEach(function (page) {
+                page.getUseFlowSteps().forEach(function (flowStep) {
+                    if (rlt.indexOf(flowStep) == -1) {
+                        rlt.push(flowStep);
+                    }
+                });
+            });
+            return rlt;
+        }
+    }, {
         key: 'getPopablePages',
         value: function getPopablePages(isPC) {
             if (isPC == null) {
