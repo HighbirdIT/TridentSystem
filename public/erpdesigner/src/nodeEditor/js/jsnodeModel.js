@@ -4875,6 +4875,7 @@ class JSNode_Do_FlowStep extends JSNode_Base {
         if (this.compileOutFlow(helper, usePreNodes_arr, tryBlock.bodyBlock) == false) {
             return false;
         }
+        return selfCompileRet;
     }
 
     compile(helper, preNodes_arr, belongBlock) {
