@@ -55,7 +55,12 @@ const SqlNodeEditorControls_arr =[
     {
          label:'Get页面参数',
          nodeClass:SqlNode_GetPageEntryParam,
-    }
+    },
+    {
+        label:'GetURL步骤数据',
+        nodeClass:SqlNode_GetStepData,
+        type:'窗体控制'
+    },
 ]; 
 
 
