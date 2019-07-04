@@ -89,6 +89,7 @@ class ProjectCompiler extends EventEmitter{
                 return false;
             }
             this.setCache(sql_blueprint.code + '_sql', compileRet.sql);
+            this.setCache(sql_blueprint.code + '_helper', bpCompileHelper);
         }
 
 

@@ -3629,7 +3629,7 @@ class SqlNode_GetStepData extends SqlNode_Base {
         this.headType = 'tiny';
     }
 
-    paramDDCChanged(value) {
+    flowStepDDCChanged(value) {
         this.outSocket.defval = value;
     }
 
@@ -3660,7 +3660,7 @@ class SqlNode_GetStepData extends SqlNode_Base {
         }
 
         var finalStr = 'stepData' + this.outSocket.defval;
-        helper.addUseURLVairable(finalStr, inSocketComRet.value);
+        helper.addUseURLVairable(finalStr, socketComRet.value);
 
         var value = '@' + finalStr;
         var selfCompileRet = new CompileResult(this);
@@ -3767,5 +3767,9 @@ SqlNodeClassMap[SQLNODE_COLUMNVAR] = {
 };
 SqlNodeClassMap[SQLNODE_GETPAGE_ENTRYPARAM] = {
     modelClass: SqlNode_GetPageEntryParam,
+    comClass: C_Node_SimpleNode,
+};
+SqlNodeClassMap[SQLNODE_GETSTEPDATA] = {
+    modelClass: SqlNode_GetStepData,
     comClass: C_Node_SimpleNode,
 };
