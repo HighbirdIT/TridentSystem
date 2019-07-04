@@ -3003,6 +3003,14 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
 
+        if (!IsEmptyObject(bpCompileHelper.useUrlVar_map)) {
+            for (var varName in bpCompileHelper.useUrlVar_map) {
+                var useUrlVarObj = { bundleName: varName, clientValue: makeStr_callFun('getQueryVariable',[singleQuotesStr(varName), bpCompileHelper.useUrlVar_map[varName]]) };
+                needSetParams_arr.push(useUrlVarObj);
+                initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', useUrlVarObj.bundleName), useUrlVarObj.clientValue));
+            }
+        }
+
         if (needSetParams_arr.length > 0) {
             bodyCheckblock.pushLine("var bundle=req.body.bundle;");
             bodyCheckblock.pushLine("if(req.body.bundle == null){" + makeLine_RetServerError('没有提供bundle') + '};');
@@ -3434,6 +3442,13 @@ class MobileContentCompiler extends ContentCompiler {
                 if (!IsEmptyObject(compilHelper.usePageParam)) {
                     for (var usPageParamName in compilHelper.usePageParam) {
                         needSetParams_arr.push({ bundleName: 'pagein_' + usPageParamName, clientValue: makeStr_callFun('getPageEntryParam', [singleQuotesStr(belongPage.id), singleQuotesStr(usPageParamName), compilHelper.usePageParam[usPageParamName]]) });
+                    }
+                }
+
+                if (!IsEmptyObject(compilHelper.useUrlVar_map)) {
+                    for (varName in compilHelper.useUrlVar_map) {
+                        var useUrlVarObj = { bundleName: varName, clientValue: makeStr_callFun('getQueryVariable',[singleQuotesStr(varName), compilHelper.useUrlVar_map[varName]]) };
+                        needSetParams_arr.push(useUrlVarObj);
                     }
                 }
 

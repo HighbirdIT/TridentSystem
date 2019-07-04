@@ -1422,6 +1422,7 @@ class SqlNode_CompileHelper{
         this.varValue_map = {};
         this.usePageParam = {};
         this.useEntities_map = {};
+        this.useUrlVar_map = {};
 
         autoBind(this);
     }
@@ -1446,6 +1447,10 @@ class SqlNode_CompileHelper{
 
     addUsePageParam(paramName, defVal){
         this.usePageParam[paramName] = defVal;
+    }
+
+    addUseURLVairable(paramName, defVal){
+        this.useUrlVar_map[paramName] = defVal;
     }
 
     clickLogBadgeItemHandler(badgeItem){

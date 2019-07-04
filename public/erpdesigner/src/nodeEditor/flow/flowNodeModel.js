@@ -2216,3 +2216,7 @@ FlowNodeClassMap[JSNODE_EXCUTE_PRO] = {
     modelClass: JSNode_Excute_Pro,
     comClass: C_JSNode_Excute_Pro,
 };
+FlowNodeClassMap[JSNODE_DO_FLOWSTEP] = {
+    modelClass: JSNode_Do_FlowStep,
+    comClass: C_JSNODE_Do_FlowStep,
+};

@@ -109,8 +109,11 @@ const FlowNodeEditorControls_arr =[
         nodeClass:FlowNode_Confirm_Flowstep,
         type:'流程交互'
     },
-
-    
+    {
+        label:'执行流程步骤',
+        nodeClass:JSNode_Do_FlowStep,
+        type:'数据库交互'
+    },
 ];
 
 

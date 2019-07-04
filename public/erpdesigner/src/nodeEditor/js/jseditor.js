@@ -110,6 +110,11 @@ const JSNodeEditorControls_arr =[
         type:'窗体控制'
     },
     {
+        label:'GetURL步骤数据',
+        nodeClass:JSNode_GetStepData,
+        type:'窗体控制'
+    },
+    {
         label:'创建自订错误',
         nodeClass:JSNode_Create_Cuserror,
         type:'错误控制'
@@ -186,6 +191,7 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         this.clientInitBundleBlocks_arr = [];
         this.useEnvVars = {};
         this.usePage_map = {};
+        this.useUrlVar_map = {};
     }
 
     compileEnd(){
@@ -308,6 +314,10 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
                 defVal:defVal,
             });
         }
+    }
+
+    addUseURLVairable(varName, defVal){
+        this.useUrlVar_map[varName] = defVal;
     }
 }
 
