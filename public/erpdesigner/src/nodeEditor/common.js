@@ -340,15 +340,25 @@ class Node_Base extends EventEmitter {
         return rlt;
     }
 
-    addSocket(socketObj) {
+    addSocket(socketObj, targetIndex) {
         this.sockets_map[socketObj.id] = socketObj;
         if(!socketObj.isFlowSocket)
         {
             if (socketObj.isIn) {
-                this.inputScokets_arr.push(socketObj);
+                if(targetIndex >= 0 && targetIndex < this.inputScokets_arr.length){
+                    this.inputScokets_arr.splice(targetIndex, 0, socketObj);
+                }
+                else{
+                    this.inputScokets_arr.push(socketObj);
+                }
             }
             else {
-                this.outputScokets_arr.push(socketObj);
+                if(targetIndex >= 0 && targetIndex < this.outputScokets_arr.length){
+                    this.outputScokets_arr.splice(targetIndex, 0, socketObj);
+                }
+                else{
+                    this.outputScokets_arr.push(socketObj);
+                }
             }
         }
         else{

@@ -22,6 +22,7 @@ const SQLNODE_CURRENTDATAROW = 'currentdatarow';
 const SQLNODE_DELETERECORD = 'deleterecord';
 const SQLNODE_COLUMNVAR = 'sqlcolumnvar';
 const SQLNODE_GETPAGE_ENTRYPARAM = 'getpageenterparam';
+const SQLNODE_GETSTEPDATA = 'getstepdata';
 
 var SqlNodeClassMap = {};
 // CONSTSQLNODES_ARR output是常量的节点类型
@@ -3592,6 +3593,76 @@ class SqlNode_GetPageEntryParam extends SqlNode_Base {
         helper.addUsePageParam(paramName, socketComRet.value);
 
         var value = '@pagein_' + paramName;
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, value);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+class SqlNode_GetStepData extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, SQLNODE_GETSTEPDATA, '获取URL步骤数据', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+            }
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inSocket);
+        }
+        this.inSocket.label = '默认值';
+        this.inSocket.inputable = true;
+
+        this.outSocket.type = ValueType.String;
+        this.outSocket.inputable = false;
+        this.headType = 'tiny';
+    }
+
+    paramDDCChanged(value) {
+        this.outSocket.defval = value;
+    }
+
+    customSocketRender(socket) {
+        if (socket.isIn) {
+            return null;
+        }
+        var nowVal = socket.defval;
+        return <DropDownControl itemChanged={this.flowStepDDCChanged} btnclass='btn-dark' options_arr={gFlowMaster.getAllSteps} rootclass='flex-grow-1 flex-shrink-1' textAttrName='fullName' valueAttrName='code' value={nowVal} />;
+    }
+
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        if (this.checkCompileFlag(IsEmptyString(this.outSocket.defval), '需要选择一个步骤', helper)) {
+            return false;
+        }
+
+        var socketComRet = this.getSocketCompileValue(helper, this.inSocket, usePreNodes_arr, null, true);
+        if (socketComRet.err) {
+            return false;
+        }
+
+        var finalStr = 'stepData' + this.outSocket.defval;
+        helper.addUseURLVairable(finalStr, inSocketComRet.value);
+
+        var value = '@' + finalStr;
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, value);
         helper.setCompileRetCache(this, selfCompileRet);
