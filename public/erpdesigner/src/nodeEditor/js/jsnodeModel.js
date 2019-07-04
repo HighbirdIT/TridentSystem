@@ -4844,6 +4844,10 @@ class JSNode_Do_FlowStep extends JSNode_Base {
         tryBlock.errorBlock.pushLine("return serverhelper.createErrorRet(eo.message);");
         tryBlock.bodyBlock.pushLine(rcdVarName + " = yield dbhelper.asynExcute('P007E申请执行步骤'," + paramVarName + ',[dbhelper.makeSqlparam("执行记录代码", sqlTypes.Int)]);');
 
+        var selfCompileRet = new CompileResult(this);
+        helper.setCompileRetCache(this, selfCompileRet);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJsBlock);
+
         if (this.compileOutFlow(helper, usePreNodes_arr, tryBlock.bodyBlock) == false) {
             return false;
         }
