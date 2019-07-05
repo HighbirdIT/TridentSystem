@@ -1520,7 +1520,7 @@ class FlowNode_ColumnVar extends JSNode_Base {
             label = keySocket.node.id + '.' + keySocket.getExtra('colName');
         }
         this.keySocket = keySocket;
-        this.columnName = keySocket.getExtra('colName');
+        this.columnName = !keySocket ? '丢失' : keySocket.getExtra('colName');
         this.outSocket.label = label;
         this.outSocket.fireEvent('changed');
     }

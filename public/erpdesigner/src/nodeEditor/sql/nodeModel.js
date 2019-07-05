@@ -2899,22 +2899,22 @@ class SqlNode_Logical_Operator extends SqlNode_Base {
         if (nodeJson) {
             if (this.outputScokets_arr.length > 0) {
                 this.outSocket = this.outputScokets_arr[0];
-                this.outSocket.type = SqlVarType_Scalar;
+                this.outSocket.type = SqlVarType_Boolean;
             }
 
         }//给出标量
         if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Table });
+            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Boolean });
             this.addSocket(this.outSocket);
         }
 
         if (this.inputScokets_arr.length == 0) {
-            this.addSocket(new NodeSocket('input1', this, true, { type: SqlVarType_Table, inputable: false }));
-            this.addSocket(new NodeSocket('input2', this, true, { type: SqlVarType_Table, inputable: false }));
+            this.addSocket(new NodeSocket('input1', this, true, { type: SqlVarType_Boolean, inputable: false }));
+            this.addSocket(new NodeSocket('input2', this, true, { type: SqlVarType_Boolean, inputable: false }));
         }
         else {
             this.inputScokets_arr.forEach(socket => {
-                socket.type = SqlVarType_Scalar;
+                socket.type = SqlVarType_Boolean;
             });
             this.minInSocketCount = 2;
 
@@ -3477,7 +3477,7 @@ class SqlNode_ColumnVar extends SqlNode_Base {
             label = keySocket.node.id + '.' + keySocket.getExtra('colName');
         }
         this.keySocket = keySocket;
-        this.columnName = keySocket.getExtra('colName');
+        this.columnName = !keySocket ? '丢失' : keySocket.getExtra('colName');
         this.outSocket.label = label;
         this.outSocket.fireEvent('changed');
     }

@@ -592,6 +592,11 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             </div>);
         }
 
+        var titleBarRightElem = null;
+        if(this.props.dropdownctl.props.createTitleBarRightElem){
+            titleBarRightElem = this.props.dropdownctl.props.createTitleBarRightElem();
+        }
+
         return (
             <div className='fixedBackGround'>
                 <div className='dropDownItemContainer d-flex flex-column bg-light flex-shrink-0 rounded'>
@@ -601,6 +606,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
                             <span onClick={this.clickCloseHandler} className='text-primary'>{this.state.label}{multiselect ? '(可多选)' : ''}
                             </span>
                             {freshIconElem}
+                            {titleBarRightElem}
                         </h3>
                     </div>
                     {multiSelectedElem}

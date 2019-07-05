@@ -2697,7 +2697,7 @@ class JSNODE_Insert_table extends JSNode_Base {
             }
         }
         if (formKernel != null) {
-            var accessableLabelKernels = formKernel.searchChildKernel(M_LabeledControlKernel_Type, false, true, [M_FormKernel_Type]);
+            var accessableLabelKernels = formKernel.getRowLabeledControls();
             if (accessableLabelKernels != null) {
                 accessableLabelKernels.forEach(labelKernel => {
                     var interType = labelKernel.getAttribute(AttrNames.InteractiveType);
@@ -5478,7 +5478,7 @@ class JSNODE_Update_table extends JSNode_Base {
             }
         }
         if (formKernel != null) {
-            var accessableLabelKernels = formKernel.searchChildKernel(M_LabeledControlKernel_Type, false, true, [M_FormKernel_Type]);
+            var accessableLabelKernels = formKernel.getRowLabeledControls();
             if (accessableLabelKernels != null) {
                 accessableLabelKernels.forEach(labelKernel => {
                     var interType = labelKernel.getAttribute(AttrNames.InteractiveType);

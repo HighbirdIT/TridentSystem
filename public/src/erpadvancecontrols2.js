@@ -1,14 +1,32 @@
+const TaskServerURL = '/erppage/server/task';
 class ERPC_TaskSelector extends React.PureComponent {
-    constructor(poros) {
+    constructor(props) {
         super(props);
         ERPControlBase(this);
         this.pullUserTask = this.pullUserTask.bind(this);
+        this.createTitleBarRightElem = this.createTitleBarRightElem.bind(this);
+        this.popupCreator = this.popupCreator.bind(this);
+
+        this.popPanelRef = React.createRef();
+        this.popPanelItem = (<ERPC_TaskCreator ref={this.popPanelRef} selector={this} key={gFixedItemCounter++} />)
     }
 
     pullUserTask() {
         var ownprops = this.props;
         var parentStatePath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
-        store.dispatch(fetchJsonPost('/erppage/server/task', { action: 'getUserTask', bundle: { userid: g_envVar.userid } }, makeFTD_Prop(parentStatePath, ownprops.id), 'options_arr', false), EFetchKey.FetchPropValue);
+        store.dispatch(fetchJsonPost(TaskServerURL, { action: 'getUserTask', bundle: { userid: g_envVar.userid } }, makeFTD_Prop(parentStatePath, ownprops.id), 'options_arr', false), EFetchKey.FetchPropValue);
+    }
+
+    popupCreator(){
+        addFixedItem(this.popPanelItem);
+    }
+
+    closeCreator(){
+        removeFixedItem(this.popPanelItem);
+    }
+
+    createTitleBarRightElem(){
+        return (<button type='button' onClick={this.popupCreator} className='btn btn-success'><i className='fa fa-plus'/>创建任务</button>);
     }
 
     render() {
@@ -33,6 +51,8 @@ class ERPC_TaskSelector extends React.PureComponent {
                 plainTextMode={this.props.plainTextMode}
                 fullParentPath={this.props.fullParentPath}
                 fullPath={this.props.fullPath}
+                label={this.props.label}
+                createTitleBarRightElem={this.createTitleBarRightElem}
         />);
     }
 }
