@@ -221,7 +221,15 @@ class MobileContentCompiler extends ContentCompiler {
                         if (relyPath.type == ECtlReplyPathType.SetAP_On_BPChanged) {
                             getValueStr = '';
                             if (relyPath.approach.funName) {
-                                getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State]);
+                                var relyCtlReactParent = relyPath.relyCtl.getReactParentKernel(true);
+                                var sameReactKernel = relyPath.berelyCtl.searchSameReactParentKernel(relyPath.relyCtl);
+                                var thirdParam = sameReactKernel.id + '_path';
+                                var sameReactKernelPathInitStr = sameReactKernel.isComplicatedPath() ? "getParentPathByKey(path,'" + sameReactKernel.id + "')" : singleQuotesStr(sameReactKernel.getStatePath(''));
+                                changedFun.scope.getVar(sameReactKernel.id + '_path',true, sameReactKernelPathInitStr);
+                                if(sameReactKernel != relyCtlReactParent){
+                                    thirdParam += "+" + singleQuotesStr(relyCtlReactParent.getStatePath('','.',null,true,sameReactKernel));
+                                }
+                                getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State,'null',thirdParam]);
                             }
                             else if (relyPath.approach.value) {
                                 getValueStr = relyPath.approach.value;
@@ -507,7 +515,11 @@ class MobileContentCompiler extends ContentCompiler {
                         if (relyPath.type == ECtlReplyPathType.SetAP_On_BPChanged) {
                             getValueStr = '';
                             if (relyPath.approach.funName) {
-                                getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State]);
+                                var useParentPath = this.getKernelFullParentPath(relyPath.relyCtl);
+                                if (useParentPath.length > 0) {
+                                    useParentPath = ' + ' + singleQuotesStr('.' + useParentPath);
+                                }
+                                getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State, 'null', rootPathVar + useParentPath]);
                             }
                             else if (relyPath.approach.value) {
                                 getValueStr = relyPath.approach.value;
@@ -1157,7 +1169,7 @@ class MobileContentCompiler extends ContentCompiler {
                         for (pName in useCtlData.useprops_map) {
                             propApiitem = useCtlData.useprops_map[pName];
                             this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, stateName, useCtlData.kernel, propApiitem.stateName, {
-                                funName: scriptCompileRet.name,
+                                funName: scriptCompileRet.name
                             });
                         }
                     }
@@ -1181,7 +1193,7 @@ class MobileContentCompiler extends ContentCompiler {
                 for (pName in useCtlData.useprops_map) {
                     propApiitem = useCtlData.useprops_map[pName];
                     this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, stateName, useCtlData.kernel, propApiitem.stateName, {
-                        funName: scriptCompileRet.name,
+                        funName: scriptCompileRet.name
                     });
                 }
             }
@@ -2991,6 +3003,14 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
 
+        if (!IsEmptyObject(bpCompileHelper.useUrlVar_map)) {
+            for (var varName in bpCompileHelper.useUrlVar_map) {
+                var useUrlVarObj = { bundleName: varName, clientValue: makeStr_callFun('getQueryVariable',[singleQuotesStr(varName), bpCompileHelper.useUrlVar_map[varName]]) };
+                needSetParams_arr.push(useUrlVarObj);
+                initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', useUrlVarObj.bundleName), useUrlVarObj.clientValue));
+            }
+        }
+
         if (needSetParams_arr.length > 0) {
             bodyCheckblock.pushLine("var bundle=req.body.bundle;");
             bodyCheckblock.pushLine("if(req.body.bundle == null){" + makeLine_RetServerError('没有提供bundle') + '};');
@@ -3422,6 +3442,13 @@ class MobileContentCompiler extends ContentCompiler {
                 if (!IsEmptyObject(compilHelper.usePageParam)) {
                     for (var usPageParamName in compilHelper.usePageParam) {
                         needSetParams_arr.push({ bundleName: 'pagein_' + usPageParamName, clientValue: makeStr_callFun('getPageEntryParam', [singleQuotesStr(belongPage.id), singleQuotesStr(usPageParamName), compilHelper.usePageParam[usPageParamName]]) });
+                    }
+                }
+
+                if (!IsEmptyObject(compilHelper.useUrlVar_map)) {
+                    for (varName in compilHelper.useUrlVar_map) {
+                        var useUrlVarObj = { bundleName: varName, clientValue: makeStr_callFun('getQueryVariable',[singleQuotesStr(varName), compilHelper.useUrlVar_map[varName]]) };
+                        needSetParams_arr.push(useUrlVarObj);
                     }
                 }
 

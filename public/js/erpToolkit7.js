@@ -1165,6 +1165,12 @@ function renderInvalidBundleDiv() {
     );
 }
 
+function getFormatDateString_MD(date) {
+    var m = date.getMonth() + 1;
+    var d = date.getDate();
+    return (m < 10 ? '0' : '') + m + (d < 10 ? '-0' : '-') + d;
+}
+
 function getFormatDateString(date) {
     var y = date.getFullYear();
     var m = date.getMonth() + 1;
@@ -1279,6 +1285,16 @@ function FormatStringValue(val, type, precision) {
             } else if (val.length > 10) {
                 var theDate = new Date(val);
                 rlt = getFormatDateString(theDate) + (type == 'datetime' ? ' ' + getFormatTimeString(theDate) : '');
+            }
+            break;
+        case 'dateMD':
+            if (typeof val == 'string' && val.length == 5) {
+                rlt = val;
+            } else if (!checkDate(val)) {
+                rlt = '';
+            } else if (val.length > 10) {
+                var theDate = new Date(val);
+                rlt = getFormatDateString_MD(theDate);
             }
             break;
         case 'time':

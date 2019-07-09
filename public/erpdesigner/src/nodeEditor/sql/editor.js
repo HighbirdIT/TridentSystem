@@ -55,7 +55,12 @@ const SqlNodeEditorControls_arr =[
     {
          label:'Get页面参数',
          nodeClass:SqlNode_GetPageEntryParam,
-    }
+    },
+    {
+        label:'GetURL步骤数据',
+        nodeClass:SqlNode_GetStepData,
+        type:'窗体控制'
+    },
 ]; 
 
 
@@ -1422,6 +1427,7 @@ class SqlNode_CompileHelper{
         this.varValue_map = {};
         this.usePageParam = {};
         this.useEntities_map = {};
+        this.useUrlVar_map = {};
 
         autoBind(this);
     }
@@ -1446,6 +1452,10 @@ class SqlNode_CompileHelper{
 
     addUsePageParam(paramName, defVal){
         this.usePageParam[paramName] = defVal;
+    }
+
+    addUseURLVairable(paramName, defVal){
+        this.useUrlVar_map[paramName] = defVal;
     }
 
     clickLogBadgeItemHandler(badgeItem){

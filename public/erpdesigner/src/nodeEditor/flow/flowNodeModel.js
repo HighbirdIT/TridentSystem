@@ -1178,7 +1178,7 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
                 this.targetEntity = dataMaster.getDataSourceByCode(tem_arr[1]);
                 if (this.targetEntity) {
                     this.targetEntity.on('syned', this.entitySynedHandler);
-                    if (this.targetEntity.isCustomDS) {
+                    if (this.targetEntity.isCustomDS || this.targetEntity.loaded) {
                         this.entitySynedHandler();
                     }
                 }
@@ -1520,7 +1520,7 @@ class FlowNode_ColumnVar extends JSNode_Base {
             label = keySocket.node.id + '.' + keySocket.getExtra('colName');
         }
         this.keySocket = keySocket;
-        this.columnName = keySocket.getExtra('colName');
+        this.columnName = !keySocket ? '丢失' : keySocket.getExtra('colName');
         this.outSocket.label = label;
         this.outSocket.fireEvent('changed');
     }
@@ -2098,7 +2098,7 @@ class FlowNode_NowDate extends SqlNode_Base {
         if (superRet == false || superRet != null) {
             return superRet;
         }
-        var value = "new date()";
+        var value = "new Date()";
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, value);
         helper.setCompileRetCache(this, selfCompileRet);
@@ -2215,4 +2215,8 @@ FlowNodeClassMap[FLOWNODE_NOWDATE] = {
 FlowNodeClassMap[JSNODE_EXCUTE_PRO] = {
     modelClass: JSNode_Excute_Pro,
     comClass: C_JSNode_Excute_Pro,
+};
+FlowNodeClassMap[JSNODE_DO_FLOWSTEP] = {
+    modelClass: JSNode_Do_FlowStep,
+    comClass: C_JSNODE_Do_FlowStep,
 };

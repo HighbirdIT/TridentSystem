@@ -13,10 +13,11 @@ var rsa = forge.pki.rsa;
 
 var processes_map = {
     getUserTask: getUserTask,
+    geteUserSysUserList: geteUserSysUserList,
 };
 
 function process(req, res, next) {
-    serverhelper.commonProcess(req, res, next, processes_map, ignoreENVCheck);
+    serverhelper.commonProcess(req, res, next, processes_map, false);
 }
 
 function readyLogin(req, res) {
@@ -49,6 +50,14 @@ function getUserTask() {
         var ret = yield dbhelper.asynQueryWithParams(sql);
         return ret.recordset;
     });
+}
+
+function geteUserSysUserList(req,res){
+	return co(function* () {
+		var sql = "select  distinct [使用系统人员].[员工登记姓名],[使用系统人员].[员工登记姓名代码],[使用系统人员].[所属系统名称],[使用系统人员].[所属部门名称] from (select [T113E员工信息快照].[员工登记姓名],[T113E员工信息快照].[员工登记姓名代码],[T113E员工信息快照].[所属系统名称],[T113E员工信息快照].[所属系统名称代码],[T113E员工信息快照].[所属部门名称],[T113E员工信息快照].[所属部门名称代码] from T113E员工信息快照 where ([T113E员工信息快照].[员工在职种类代码]=1)and([T113E员工信息快照].[是否使用系统]=1)) as [使用系统人员] order by [使用系统人员].[员工登记姓名]";
+		var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
+		return rcdRlt.recordset;
+	});
 }
 
 

@@ -100,7 +100,22 @@ class M_FormKernel extends ContainerKernelBase{
     }
 
     isKernelInRow(theKernel){
-        return this.isGridForm() && !theKernel.hadAncestor(this. gridFormBottomDiv);
+        return this.isGridForm() && !theKernel.hadAncestor(this.gridFormBottomDiv);
+    }
+
+    getRowLabeledControls(){
+        var rlt = [];
+        this.children.forEach(child=>{
+            if(child == this.gridFormBottomDiv)
+            return;
+            if(child.type == M_LabeledControlKernel_Type){
+                rlt.push(child);
+            }
+            else if(child.type == M_ContainerKernel_Type){
+                child.aidAccessableKernels(M_LabeledControlKernel_Type, rlt);
+            }
+        });
+        return rlt;
     }
 
     projectLoadedHanlder(){

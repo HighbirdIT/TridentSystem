@@ -1165,6 +1165,12 @@ function renderInvalidBundleDiv() {
     );
 }
 
+function getFormatDateString_MD(date) {
+    var m = date.getMonth() + 1;
+    var d = date.getDate();
+    return (m < 10 ? '0' : '') + m + (d < 10 ? '-0' : '-') + d;
+}
+
 function getFormatDateString(date) {
     var y = date.getFullYear();
     var m = date.getMonth() + 1;
@@ -1237,7 +1243,7 @@ function getQueryObject() {
     return rlt;
 }
 
-function getQueryVariable(variable) {
+function getQueryVariable(variable, defVal) {
     var query = window.location.search.substring(1);
     var vars = query.split("&");
     for (var i = 0; i < vars.length; i++) {
@@ -1246,7 +1252,7 @@ function getQueryVariable(variable) {
             return pair[1];
         }
     }
-    return false;
+    return defVal;
 }
 
 function FormatStringValue(val, type, precision) {
@@ -1279,6 +1285,16 @@ function FormatStringValue(val, type, precision) {
             } else if (val.length > 10) {
                 var theDate = new Date(val);
                 rlt = getFormatDateString(theDate) + (type == 'datetime' ? ' ' + getFormatTimeString(theDate) : '');
+            }
+            break;
+        case 'dateMD':
+            if (typeof val == 'string' && val.length == 5) {
+                rlt = val;
+            } else if (!checkDate(val)) {
+                rlt = '';
+            } else if (val.length > 10) {
+                var theDate = new Date(val);
+                rlt = getFormatDateString_MD(theDate);
             }
             break;
         case 'time':

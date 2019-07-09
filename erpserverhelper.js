@@ -126,6 +126,13 @@ function checkArrayData(val) {
     return val;
 }
 
+function GetFormatDateString_MD(date) {
+    date = checkArrayData(date);
+    var m = date.getMonth() + 1;
+    var d = date.getDate();
+    return m + (d < 10 ? '-0' : '-') + d;
+}
+
 function GetFormatDateString(date) {
     date = checkArrayData(date);
     var y = date.getFullYear();
@@ -245,6 +252,7 @@ helper.DateFun={
     getFormatDateString:GetFormatDateString,
     getFormatTimeString:GetFormatTimeString,
     castDate:CastDate,
+    getFormatDateString_MD:GetFormatDateString_MD,
 };
 
 module.exports = helper;

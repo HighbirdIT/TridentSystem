@@ -400,6 +400,18 @@ var ControlKernelBase = function (_IAttributeable) {
             return rlt;
         }
     }, {
+        key: 'searchSameReactParentKernel',
+        value: function searchSameReactParentKernel(otherKernel) {
+            var selfParents_arr = this.getReactParentKernel();
+            var otherParents_arr = otherKernel.getReactParentKernel();
+            for (var i = 0; i < selfParents_arr.length; ++i) {
+                if (otherParents_arr.indexOf(selfParents_arr[i]) != -1) {
+                    return selfParents_arr[i];
+                }
+            }
+            return null;
+        }
+    }, {
         key: 'hadAncestor',
         value: function hadAncestor(ancestorKernel) {
             var tparent = this.parent;
@@ -436,6 +448,18 @@ var ControlKernelBase = function (_IAttributeable) {
                 tKernel = tKernel.parent;
             }
             return rlt;
+        }
+    }, {
+        key: 'isComplicatedPath',
+        value: function isComplicatedPath() {
+            var tKernel = this.parent;
+            while (tKernel != null) {
+                if (tKernel == UserControlKernel_Type || tKernel == M_FormKernel_Type && tKernel.isGridForm()) {
+                    return true;
+                }
+                tKernel = tKernel.parent;
+            }
+            return false;
         }
     }, {
         key: 'searchChildKernel',

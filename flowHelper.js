@@ -206,7 +206,11 @@ function execFromNotify(req, res){
                 else if(projectRecord.移动端名称.length == 0){
                     isPC = true;
                 }
-                res.redirect('/erppage/' + (isPC ? 'pc/' : 'ma/') + projectRecord.方案英文名称 + '?flowStep=' + shenpiRecord.关联步骤代码 + '&flowStepData=' + shenpiRecord.关联步骤数据);
+                var stepDataStr = '';
+                if(shenpiRecord.关联步骤数据 != 0){
+                    stepDataStr = '&stepData' + shenpiRecord.关联步骤代码 + '=' + shenpiRecord.关联步骤数据;
+                }
+                res.redirect('/erppage/' + (isPC ? 'pc/' : 'ma/') + projectRecord.方案英文名称 + '?flowStep=' + shenpiRecord.关联步骤代码 + stepDataStr);
 
                 return true;
                 //[关联方案代码]
