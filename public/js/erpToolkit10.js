@@ -170,7 +170,7 @@ function castDate(val) {
             }
             var rlt = new Date(dateStr);
             if (isNaN(rlt.getDate())) {
-                rlt = new Date(dateStr.replace('-', '/'));
+                rlt = new Date(dateStr.replace(/-/g, '/'));
             }
             return rlt;
         }
