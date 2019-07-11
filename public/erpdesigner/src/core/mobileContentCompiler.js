@@ -224,7 +224,7 @@ class MobileContentCompiler extends ContentCompiler {
                                 var relyCtlReactParent = relyPath.relyCtl.getReactParentKernel(true);
                                 var sameReactKernel = relyPath.berelyCtl.searchSameReactParentKernel(relyPath.relyCtl);
                                 var thirdParam = sameReactKernel.id + '_path';
-                                var sameReactKernelPathInitStr = sameReactKernel.isComplicatedPath() ? "getParentPathByKey(path,'" + sameReactKernel.id + "')" : singleQuotesStr(sameReactKernel.getStatePath(''));
+                                var sameReactKernelPathInitStr = sameReactKernel.isComplicatedPath() ? "getParentPathByKey(path,'" + sameReactKernel.id + "')" : singleQuotesStr(sameReactKernel.getStatePath(sameReactKernel.id));
                                 changedFun.scope.getVar(sameReactKernel.id + '_path',true, sameReactKernelPathInitStr);
                                 if(sameReactKernel != relyCtlReactParent){
                                     thirdParam += "+" + singleQuotesStr(relyCtlReactParent.getStatePath('','.',null,true,sameReactKernel));
@@ -648,7 +648,9 @@ class MobileContentCompiler extends ContentCompiler {
         var onloadFunName = pageKernel.id + '_' + AttrNames.Event.OnLoad;
         var onLoadBp = project.scriptMaster.getBPByName(onloadFunName);
         if (onLoadBp != null) {
-            this.compileScriptBlueprint(onLoadBp, { nomsgbox: true });
+            if(this.compileScriptBlueprint(onLoadBp, { nomsgbox: true }) == false){
+                return false;
+            }
             pageLoadBlock.pushLine('setTimeout(() => {' + makeStr_callFun(onloadFunName) + ';},50);');
         }
 
@@ -1264,6 +1266,9 @@ class MobileContentCompiler extends ContentCompiler {
         var jsBP = project.scriptMaster.getBPByName(funName);
         if (jsBP) {
             var scriptCompileRet = this.compileScriptBlueprint(jsBP);
+            if(scriptCompileRet == false){
+                return false;
+            }
             var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
             var useControl = false;
             var useCtlData = null;
@@ -1352,7 +1357,9 @@ class MobileContentCompiler extends ContentCompiler {
         this.compileIsdisplayAttribute(theKernel, labeledCtrlTag);
 
         if (theKernel.editor) {
-            this.compileKernel(theKernel.editor, childBlock, renderFun);
+            if(this.compileKernel(theKernel.editor, childBlock, renderFun) == false){
+                return false;
+            }
         }
 
         return labeledCtrlTag;
@@ -1734,11 +1741,13 @@ class MobileContentCompiler extends ContentCompiler {
                 if (hadRowButton) {
                     rowBtns_arr.forEach(btnSetting => {
                         btnsVarStr += (btnsVarStr.length == 0 ? '' : ',') + "{key:'" + btnSetting.key + "',content:" + btnSetting.elemText + "}";
-                        this.compileScriptBlueprint(btnSetting.blueprint, {
+                        if(this.compileScriptBlueprint(btnSetting.blueprint, {
                             funName: btnSetting.funName,
                             scope: formReactClass,
                             actLabel: btnSetting.actLabel
-                        });
+                        }) == false){
+                            return false;
+                        }
                     });
                 }
                 var needActiveBindPageVar = bindFun.scope.getVar('needActiveBindPage', true, 'false');
@@ -2339,7 +2348,9 @@ class MobileContentCompiler extends ContentCompiler {
 
         var textFieldParseRet = parseObj_CtlPropJsBind(textField, project.scriptMaster);
         if (textFieldParseRet.isScript) {
-            this.compileScriptAttribute(textFieldParseRet, theKernel, 'text', AttrNames.TextField, { autoSetFetchState: true });
+            if(this.compileScriptAttribute(textFieldParseRet, theKernel, 'text', AttrNames.TextField, { autoSetFetchState: true }) == false){
+                return false;
+            }
         }
         else {
             var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
@@ -2392,6 +2403,9 @@ class MobileContentCompiler extends ContentCompiler {
         var onClickBp = project.scriptMaster.getBPByName(onclickFunName);
         if (onClickBp != null) {
             var compileRet = this.compileScriptBlueprint(onClickBp, { params: ['ev'] });
+            if(compileRet == false){
+                return false;
+            }
             ctlTag.setAttr('onClick', bigbracketStr(onclickFunName));
 
             if (reactParentKernel.type == M_FormKernel_Type && reactParentKernel.isPageForm()) {
@@ -2510,7 +2524,10 @@ class MobileContentCompiler extends ContentCompiler {
                     targetKernelMidData.needSetStates_arr.forEach(stateItem => {
                         var stateName = targetKernel.getStatePath(stateItem.name,'.',{},false,theKernel);
                         var setNeedStateLeftStr = VarNames.NeedSetState + '[' + thisFullPathVarName + "+'." + stateName + "']";
-                        if (stateItem.isDynamic) {
+                        if (stateItem.isInitUserControlCall) {
+                            rebindBodyFun.pushLine(makeStr_callFun(stateItem.funName, [VarNames.State, thisFullPathVarName + "+ '." + stateItem.kernel.id + "'"], ';'));
+                        }
+                        else if (stateItem.isDynamic) {
                             var setLine = makeLine_Assign(setNeedStateLeftStr, makeStr_callFun(stateItem.funName, [VarNames.State, 'null', thisFullPathVarName]));
                             rebindBodyFun.pushLine(setLine);
                         } else {
@@ -3226,7 +3243,7 @@ class MobileContentCompiler extends ContentCompiler {
                 var callParams_arr = null;
                 var thisFormFullParentPath = singleQuotesStr(theKernel.fullParentPath);
                 if (belongUserControl) {
-                    thisFormFullParentPath = makeStr_callFun('CombiCombineDotStr', [belongUserControl.id + '_path', singleQuotesStr(theKernel.fullParentPath)]);
+                    thisFormFullParentPath = makeStr_callFun('CombineDotStr', [belongUserControl.id + '_path', singleQuotesStr(theKernel.fullParentPath)]);
                 }
                 callParams_arr = ['null', true, thisFormFullParentPath];
 

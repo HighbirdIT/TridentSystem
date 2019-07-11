@@ -566,7 +566,7 @@ var ControlKernelBase = function (_IAttributeable) {
             var topestParant = arguments[4];
 
             if (this.parent == null || this == topestParant) {
-                return '';
+                return stateName;
             }
             var nowKernel = this.parent;
             var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);

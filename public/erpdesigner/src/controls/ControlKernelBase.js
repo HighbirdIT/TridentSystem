@@ -539,7 +539,7 @@ class ControlKernelBase extends IAttributeable {
 
     getStatePath(stateName, splitChar = '.', rowIndexVar_map = {}, ignoreRowIndex = false, topestParant){
         if(this.parent == null || this == topestParant){
-            return '';
+            return stateName;
         }
         var nowKernel = this.parent;
         var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);

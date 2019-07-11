@@ -152,7 +152,7 @@ function GetFormatTimeString(date) {
 }
 
 function GetNowDate() {
-    return new Date(getFormatDateString(new Date()));
+    return new Date(GetFormatDateString(new Date()));
 }
 
 function CheckDate(date) {

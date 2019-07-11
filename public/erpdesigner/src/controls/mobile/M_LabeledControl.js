@@ -112,9 +112,11 @@ class M_LabeledControlKernel extends ControlKernelBase{
         if(editorKernelConfig != null){
             this.editor = new editorKernelConfig.kernelClass(creatParam, this, createHelper, editorKernelJson);
             if(createHelper == null && !isUserControl){
-                var editorTextField = this.editor.getAttribute(AttrNames.TextField);
-                if(IsEmptyString(editorTextField)){
-                    this.editor.setAttribute(AttrNames.TextField, this.getAttribute(AttrNames.TextField));
+                if(this.editor.hasAttribute(AttrNames.TextField)){
+                    var editorTextField = this.editor.getAttribute(AttrNames.TextField);
+                    if(IsEmptyString(editorTextField)){
+                        this.editor.setAttribute(AttrNames.TextField, this.getAttribute(AttrNames.TextField));
+                    }
                 }
             }
             var editorNullableAttr = this.editor.findAttributeByName(AttrNames.Nullable);
