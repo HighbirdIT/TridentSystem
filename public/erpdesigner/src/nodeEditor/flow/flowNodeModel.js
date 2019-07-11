@@ -6,7 +6,7 @@ const FLOWNODE_QUERY_KEYRECORD = 'querykeyrecord';
 const FLOWNODE_COLUMN_VAR = 'columnvar';
 const FLOWNODE_SEND_MESSAGE = 'sendmessage';
 const FLOWNODE_CONFIRM_FLOWSTEP = 'confirmflowstep';
-const FLOWNODE_NOWDATE='nowdate'
+const FLOWNODE_NOWDATE='nowdate';
 
 var FlowNodeClassMap = {
 };

@@ -4898,7 +4898,7 @@ class JSNode_Do_FlowStep extends JSNode_Base {
                     return false;
                 }
                 var paramValue = socketComRet.value;
-                var paramName = theSocket.label;
+                var paramName = '参数' + (i+1);
                 if (theSocket == this.userSocket) {
                     paramName = '提交用户';
                 }
