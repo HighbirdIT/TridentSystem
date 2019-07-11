@@ -102,7 +102,42 @@ const JSNodeEditorControls_arr =[
     {
         label:'数组-长度',
         nodeClass:JSNode_Array_Length,
-        type:'数组操纵'
+        type:'操纵数组'
+    },
+    {
+        label:'字符串-长度',
+        nodeClass:JSNode_String_Length,
+        type:'操纵字符串'
+    },
+    {
+        label:'字符串-substring',
+        nodeClass:JSNode_String_Substring,
+        type:'操纵字符串'
+    },
+    {
+        label:'字符串-Substr',
+        nodeClass:JSNode_String_Substr,
+        type:'操纵字符串'
+    },
+    {
+        label:'字符串-IndexOf',
+        nodeClass:JSNode_String_IndexOf,
+        type:'操纵字符串'
+    },
+    {
+        label:'ParseInt',
+        nodeClass:JSNode_ParseInt,
+        type:'转换'
+    },
+    {
+        label:'ParseFloat',
+        nodeClass:JSNode_ParseFloat,
+        type:'转换'
+    },
+    {
+        label:'IsNaN',
+        nodeClass:JSNode_IsNaN,
+        type:'转换'
     },
     {
         label:'Get页面入口参数',

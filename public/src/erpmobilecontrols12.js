@@ -1453,17 +1453,21 @@ class ERPC_Button extends React.PureComponent {
         if (className.indexOf('flex-shrink-') == -1) {
             className += ' flex-shrink-0';
         }
-        return <button className={className} onClick={this.props.onClick}>
+        return <button className={className} onClick={this.props.onClick} ctl-fullpath={this.props.fullPath}>
             {this.props.children}
         </button>
     }
 }
 
 function ERPC_Button_mapstatetoprops(state, ownprops) {
-    var ctlPath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
-    var ctlState = getStateByPath(state, ctlPath, {});
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    var rowState = propProfile.rowState;
+    
     return {
         visible: ctlState.visible,
+        fullParentPath: propProfile.fullParentPath,
+        fullPath: propProfile.fullPath,
     };
 }
 
