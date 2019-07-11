@@ -1123,6 +1123,18 @@ function getFormatDateTimeString(date, hadSec = true){
     return y + (month < 10 ? '-0' : '-') + month + (d < 10 ? '-0' : '-') + d + ' ' + (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m +(hadSec ? (s < 10 ? ':0' : ':') + s : '');
 }
 
+function getFullFormatDateString(date,hadSec = true) {
+    var y = date.getFullYear();
+    var m = date.getMonth() + 1;
+    var d = date.getDate();
+
+    var hour = date.getHours();
+    var mi = date.getMinutes();
+    var sec = date.getSeconds();
+
+    return y + (m < 10 ? '-0' : '-') + m + (d < 10 ? '-0' : '-') + d + ' ' + (hour < 10 ? '0' : '') + hour + (mi < 10 ? ':0' : ':') + mi + (hadSec ? (sec < 10 ? ':0' : ':') + sec : '');
+}
+
 function simpleFreshFormFun(retState, records_arr, formFullID, directBindFun){
     var formState = getStateByPath(retState, formFullID);
 	var needSetState = {};

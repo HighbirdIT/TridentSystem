@@ -133,6 +133,19 @@ function GetFormatDateString_MD(date) {
     return m + (d < 10 ? '-0' : '-') + d;
 }
 
+function GetFullFormatDateString(date,hadSec) {
+    date = checkArrayData(date);
+    var y = date.getFullYear();
+    var m = date.getMonth() + 1;
+    var d = date.getDate();
+
+    var hour = date.getHours();
+    var mi = date.getMinutes();
+    var sec = date.getSeconds();
+
+    return y + (m < 10 ? '-0' : '-') + m + (d < 10 ? '-0' : '-') + d + ' ' + (hour < 10 ? '0' : '') + hour + (mi < 10 ? ':0' : ':') + mi + (hadSec != false ? (sec < 10 ? ':0' : ':') + sec : '');
+}
+
 function GetFormatDateString(date) {
     date = checkArrayData(date);
     var y = date.getFullYear();
@@ -141,14 +154,12 @@ function GetFormatDateString(date) {
     return y + (m < 10 ? '-0' : '-') + m + (d < 10 ? '-0' : '-') + d;
 }
 
-function GetFormatTimeString(date) {
+function GetFormatTimeString(date,hadSec) {
     date = checkArrayData(date);
-    var hadSec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
     var h = date.getHours();
     var m = date.getMinutes();
     var s = date.getSeconds();
-    return (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m + (hadSec ? (s < 10 ? ':0' : ':') + s : '');
+    return (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m + (hadSec != false ? (s < 10 ? ':0' : ':') + s : '');
 }
 
 function GetNowDate() {
@@ -253,6 +264,7 @@ helper.DateFun={
     getFormatTimeString:GetFormatTimeString,
     castDate:CastDate,
     getFormatDateString_MD:GetFormatDateString_MD,
+    getFullFormatDateString:GetFullFormatDateString,
 };
 
 module.exports = helper;
