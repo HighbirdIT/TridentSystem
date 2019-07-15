@@ -453,7 +453,7 @@ class SqlDef_Variable extends SqlNode_Base {
         this.valType = ReplaceIfNull(this.valType, SqlVarType_Int);
         this.size_1 = ReplaceIfNaN(this.size_1, 0);
         this.size_2 = ReplaceIfNaN(this.size_2, 0);
-        this.isParam = ReplaceIfNaN(this.isParam, 0);
+        this.isParam = ReplaceIfNaN(this.isParam, 1);
         autoBind(this);
     }
 

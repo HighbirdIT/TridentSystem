@@ -21,14 +21,14 @@ var ContainerKernelBase = function (_ControlKernelBase) {
         _this.children = [];
 
         if (kernelJson != null) {
-            if (kernelJson.children != null) {
+            if (kernelJson.children != null && _this.__restoreChildren == null) {
                 kernelJson.children.forEach(function (childJson) {
                     var ctlConfig = DesignerConfig.findConfigByType(childJson.type);
                     if (ctlConfig == null) {
                         console.warn('type:' + childJson.type + '未找到配置数据');
                         return;
                     }
-                    var newCtl = new ctlConfig.kernelClass(initData, _this, createHelper, childJson);
+                    var newCtl = new ctlConfig.kernelClass(null, _this, createHelper, childJson);
                 });
             }
         }

@@ -4,14 +4,14 @@ class ContainerKernelBase extends ControlKernelBase {
         this.children = [];
 
         if (kernelJson != null) {
-            if (kernelJson.children != null) {
+            if (kernelJson.children != null && this.__restoreChildren == null) {
                 kernelJson.children.forEach(childJson => {
                     var ctlConfig = DesignerConfig.findConfigByType(childJson.type);
                     if (ctlConfig == null) {
                         console.warn('type:' + childJson.type + '未找到配置数据');
                         return;
                     }
-                    var newCtl = new ctlConfig.kernelClass(initData, this, createHelper, childJson);
+                    var newCtl = new ctlConfig.kernelClass(null, this, createHelper, childJson);
                 });
             }
         }

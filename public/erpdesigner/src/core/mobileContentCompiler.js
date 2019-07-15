@@ -136,8 +136,46 @@ class MobileContentCompiler extends ContentCompiler {
         clientSide.addReducer('AT_PAGELOADED', 'pageLoadedReducer.bind(window)');
         clientSide.addReducer('AT_GOTOPAGE', 'gotoPageReducer.bind(window)');
 
-        for (var userCtli in project.userControls_arr) {
-            if (!this.compileUserControlTemplate(project.userControls_arr[userCtli])) {
+        var si;
+        var userCtlTemplate;
+        var userCtlTemplateProfiles_map = {};
+        var userCtli;
+        for (userCtli in project.userControls_arr) {
+            userCtlTemplateProfiles_map[project.userControls_arr[userCtli].id] = {
+                count:0,
+                berely_arr:[]
+            };
+        }
+        var setRelyFun = (kernelid, berelyid)=>{
+            var kernelProfile = userCtlTemplateProfiles_map[kernelid];
+            if(kernelProfile.berely_arr.indexOf((berelyid))==-1){
+                kernelProfile.berely_arr.push(berelyid);
+                for(si in kernelProfile.berely_arr){
+                    if(kernelProfile.berely_arr[si] != berelyid){
+                        setRelyFun(kernelProfile.berely_arr[si], berelyid);
+                    }
+                }
+            }
+        };
+
+        for (userCtli in project.userControls_arr) {
+            userCtlTemplate = project.userControls_arr[userCtli];
+            var useOtherTemplates_arr = userCtlTemplate.searchChildKernel(UserControlKernel_Type,false,true);
+            if(useOtherTemplates_arr){
+                useOtherTemplates_arr.forEach(tKernel=>{
+                    setRelyFun(tKernel.refID,userCtlTemplate.id);
+                });
+            }
+        }
+
+        var goodSeqCtlTemp_arr = project.userControls_arr.concat();
+        goodSeqCtlTemp_arr.sort((a,b)=>{
+            return userCtlTemplateProfiles_map[a.id].berely_arr.length < userCtlTemplateProfiles_map[b.id].berely_arr.length;
+        });
+
+        console.log(userCtlTemplateProfiles_map);
+        for(userCtli in goodSeqCtlTemp_arr){
+            if (!this.compileUserControlTemplate(goodSeqCtlTemp_arr[userCtli])) {
                 return false;
             }
         }
@@ -364,6 +402,8 @@ class MobileContentCompiler extends ContentCompiler {
         savePropCheckBlock.pushLine('var nowState = store.getState();');
         savePropCheckBlock.pushLine('var calledAct_map = {};');
         savePropCheckBlock.pushLine('var ctlState = getStateByPath(nowState,this.props.fullPath,{});');
+        savePropCheckBlock.pushLine('var rowChanged = this.props.rowIndex != this.savedProps.rowIndex;');
+        controlReactClass.renderFun.pushLine('this.savedProps.rowIndex = this.props.rowIndex;', 1);
         controlReactClass.renderFun.pushLine('if(!IsEmptyObject(needSetState)){', 1);
         controlReactClass.renderFun.pushLine('setTimeout(() => {store.dispatch(makeAction_setManyStateByPath(needSetState, this.props.fullPath));},50);', -1);
         controlReactClass.renderFun.pushLine('}');
@@ -391,7 +431,6 @@ class MobileContentCompiler extends ContentCompiler {
         this.compileChain = [];
 
         if (ctlMidData.needSetKernels_arr.length > 0) {
-
             var userControlInitBlock = new FormatFileBlock('userControlInitBlock');
             for (ci in ctlMidData.needSetKernels_arr) {
                 var targetKernel = ctlMidData.needSetKernels_arr[ci];
@@ -455,7 +494,7 @@ class MobileContentCompiler extends ContentCompiler {
                     changedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
                     changedFun.retBlock.pushLine('return ' + VarNames.NeedSetState + ';');
 
-                    controlReactClass.savePropCheckBlock.pushLine("if(this.savedProps." + relyPath.berelyPropName + " != this.props." + relyPath.berelyPropName + "){", 1);
+                    controlReactClass.savePropCheckBlock.pushLine("if(rowChanged || this.savedProps." + relyPath.berelyPropName + " != this.props." + relyPath.berelyPropName + "){", 1);
                     controlReactClass.savePropCheckBlock.pushLine("needSetState = Object.assign(needSetState,this." + changedFunName + "(nowState,ctlState,calledAct_map));");
                     controlReactClass.savePropCheckBlock.pushLine("this.savedProps." + relyPath.berelyPropName + " = this.props." + relyPath.berelyPropName + ';', -1);
                     controlReactClass.savePropCheckBlock.pushLine('}');
@@ -497,6 +536,7 @@ class MobileContentCompiler extends ContentCompiler {
                     case ECtlReplyPathType.SetAP_On_BPChanged:
                     case ECtlReplyPathType.CallFun_On_BPChanged:
                         var rootPathVarName = userCtlKernel.id + '_path';
+                        var rootStateVarName = userCtlKernel.id + '_state';
                         propFulPath = relyPath.berelyCtl.getStatePath(relyPath.berelyPropName, '.', null, true);
                         propChangedHandlerName = relyPath.berelyCtl.id + '_' + relyPath.berelyPropName + '_changed';
                         changedFun = clientSide.scope.getFunction(propChangedHandlerName);
@@ -512,6 +552,7 @@ class MobileContentCompiler extends ContentCompiler {
                             );
                         }
                         var rootPathVar = changedFun.scope.getVar(rootPathVarName, true, makeStr_callFun('getBelongUserCtlPath', ['path']));
+                        var rootStateVar = changedFun.scope.getVar(rootStateVarName, true, makeStr_callFun('getStateByPath', [VarNames.State,rootPathVarName]));
                         if (relyPath.type == ECtlReplyPathType.SetAP_On_BPChanged) {
                             getValueStr = '';
                             if (relyPath.approach.funName) {
@@ -519,7 +560,7 @@ class MobileContentCompiler extends ContentCompiler {
                                 if (useParentPath.length > 0) {
                                     useParentPath = ' + ' + singleQuotesStr('.' + useParentPath);
                                 }
-                                getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State, 'null', rootPathVar + useParentPath]);
+                                getValueStr = makeStr_callFun(relyPath.approach.funName, [rootStateVarName, 'null', rootPathVarName + useParentPath]);
                             }
                             else if (relyPath.approach.value) {
                                 getValueStr = relyPath.approach.value;
@@ -846,6 +887,7 @@ class MobileContentCompiler extends ContentCompiler {
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
         var reactParentKernel = theKernel.getReactParentKernel(true);
         var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
+        var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
         var parentMidData = this.projectCompiler.getMidData(reactParentKernel.id);
         if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
             parentMidData.needSetKernels_arr.push(theKernel);
@@ -899,9 +941,23 @@ class MobileContentCompiler extends ContentCompiler {
                 kernel: theKernel,
             });
         }
-        templateKernelMidData.needSetStateChangedActs_arr.forEach(actSetting => {
-            this.clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisFullPath, actSetting.propName))] = actSetting.funName;
-        });
+        if(belongUserControl ==  null){
+            templateKernelMidData.needSetStateChangedActs_arr.forEach(actSetting => {
+                this.clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisFullPath, actSetting.propName))] = actSetting.funName;
+            });
+        }
+        else{
+            // 嵌套在别的自定义控件中
+            var belongUserControlMidData = this.projectCompiler.getMidData(belongUserControl.id);
+            templateKernelMidData.needSetStateChangedActs_arr.forEach(actSetting => {
+                belongUserControlMidData.needSetStateChangedActs_arr.push(
+                    {
+                        propName: makeStr_DotProp(thisFullPath, actSetting.propName),
+                        funName: actSetting.funName,
+                    }
+                );
+            });
+        }
     }
 
     compileTextKernel(theKernel, renderBlock, renderFun) {
@@ -1481,6 +1537,7 @@ class MobileContentCompiler extends ContentCompiler {
         var formStyleID = theKernel.id + '_style';
         var hasFormStyle = this.clientSide.addStyleObject(formStyleID, layoutConfig.style);
         var gridBottomDivBlock = new FormatFileBlock('gridBottom');
+        var hideHeader = theKernel.getAttribute(AttrNames.HideTabHead);
 
         var autoHeight = theKernel.getAttribute(AttrNames.AutoHeight);
         var childRenderBlock = null;
@@ -1512,15 +1569,20 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentFun.pushLine('return (', 1);
             renderContentFun.pushLine("<div className='" + layoutConfig.getClassName() + "' " + (hasFormStyle ? "style={" + formStyleID + "}" : '') + ">", 1);
             renderContentFun.pushLine("{this.props.title && <div className='bg-dark text-light justify-content-center d-flex flex-shrink-0'><span>{this.props.title}</span></div>}");
-            renderContentFun.pushLine("<div id='" + theKernel.id + "tableheader' className='mw-100 hidenOverflow flex-shrink-0 gridFormFixHeaderDiv'>", 1);
-            renderContentFun.pushLine("<table className='table' style={" + headTableStyleID + "}>", 1);
-            renderContentFun.pushLine("<" + gridHeadPureRectClass.name + ' />', -1);
-            if (gridHeadBodyPureRectClass) {
-                renderContentFun.pushLine("<" + gridHeadBodyPureRectClass.name + ' form={this} />', -1);
+            if(!hideHeader){
+                renderContentFun.pushLine("<div id='" + theKernel.id + "tableheader' className='mw-100 hidenOverflow flex-shrink-0 gridFormFixHeaderDiv'>", 1);
+                renderContentFun.pushLine("<table className='table' style={" + headTableStyleID + "}>", 1);
+                renderContentFun.pushLine("<" + gridHeadPureRectClass.name + ' />', -1);
+                if (gridHeadBodyPureRectClass && !hideHeader) {
+                    renderContentFun.pushLine("<" + gridHeadBodyPureRectClass.name + ' form={this} />', -1);
+                }
+                renderContentFun.pushLine("</table>", -1);
+                renderContentFun.pushLine("</div>");
+                renderContentFun.pushLine("<div onScroll={this.tableBodyScroll} className='mw-100 autoScroll'>", 1);
             }
-            renderContentFun.pushLine("</table>", -1);
-            renderContentFun.pushLine("</div>");
-            renderContentFun.pushLine("<div onScroll={this.tableBodyScroll} className='mw-100 autoScroll'>", 1);
+            else{
+                renderContentFun.pushLine("<div className='mw-100 autoScroll'>", 1);
+            }
             renderContentFun.pushLine("{" + VarNames.RetElem + "}");
             if (insertBtnSetting) {
                 renderContentFun.pushLine("{!this.state.hadNewRow && <button onClick={this.clickNewRowHandler} type='button' className='btn btn-success' ><i className='fa fa-plus'/>新增</button>}");
@@ -1950,7 +2012,7 @@ class MobileContentCompiler extends ContentCompiler {
             }
 
             var gridTableStyle = {
-                marginTop: '-50px',
+                marginTop: hideHeader ? '0px' : '-50px',
             };
             var gridHeadTableStyle = {
                 marginBottom: '0px',
@@ -2013,7 +2075,9 @@ class MobileContentCompiler extends ContentCompiler {
 
             gridBodyPureRectClass.renderFun.retBlock.clear();
             gridBodyPureRectClass.renderFun.retBlock.pushLine("return (<table className='table table-striped table-hover ' style={" + tableStyleID + "}>", 1);
-            gridBodyPureRectClass.renderFun.retBlock.pushLine(makeStr_AddAll('<', gridHeadPureRectClass.name, ' />'));
+            if(!hideHeader){
+                gridBodyPureRectClass.renderFun.retBlock.pushLine(makeStr_AddAll('<', gridHeadPureRectClass.name, ' />'));
+            }
             gridBodyPureRectClass.renderFun.retBlock.pushLine('<tbody>{trElems_arr}</tbody>', -1);
             gridBodyPureRectClass.renderFun.retBlock.pushLine('</table>);');
 
@@ -2466,8 +2530,6 @@ class MobileContentCompiler extends ContentCompiler {
         var styleID = theKernel.id + '_style';
         var styleStr = clientSide.addStyleObject(styleID, layoutConfig.style) ? 'style={' + styleID + '}' : '';
 
-        var title = theKernel.getAttribute(AttrNames.Title);
-
         var ctlTag = new FormatHtmlTag(theKernel.id, theKernel.getReactClassName(true), this.clientSide);
         this.modifyControlTag(theKernel, ctlTag);
         var parentPath = this.getKernelParentPath(theKernel);
@@ -2475,15 +2537,16 @@ class MobileContentCompiler extends ContentCompiler {
         var thisFullPath = makeStr_DotProp(parentFullPath, theKernel.id);
         ctlTag.setAttr('id', theKernel.id);
         ctlTag.setAttr('parentPath', parentPath);
-        if(!IsEmptyString(title)){
-            ctlTag.setAttr('defaultTitle', title);
-        }
         var orientation = theKernel.getAttribute(AttrNames.Orientation);
         if (orientation == Orientation_V) {
             ctlTag.setAttr('bodyIsColumn', '{true}');
         }
         var initCollapsed = theKernel.getAttribute(AttrNames.InitCollapsed);
         ctlTag.setAttr('initcollapsed', '{' + initCollapsed + '}');
+        var ctlMode = theKernel.getAttribute(AttrNames.Mode);
+        if(ctlMode != AccordionMode.Default){
+            ctlTag.setAttr('mode', ctlMode);
+        }
 
         this.compileIsdisplayAttribute(theKernel, ctlTag);
         renderBlock.pushChild(ctlTag);
@@ -2513,6 +2576,21 @@ class MobileContentCompiler extends ContentCompiler {
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'collapsed'), 'ctlState.collapsed == null ? ownprops.initcollapsed : ctlState.collapsed;'));
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'inited'), 'ctlState.inited == true;'));
 
+        
+
+        var title = theKernel.getAttribute(AttrNames.Title);
+        var titleParseRet = parseObj_CtlPropJsBind(title, project.scriptMaster);
+        if (titleParseRet.isScript) {
+            if(this.compileScriptAttribute(titleParseRet, theKernel, 'title', AttrNames.Title, { autoSetFetchState: true }) == false){
+                return false;
+            }
+        }
+        else {
+            if(!IsEmptyString(title)){
+                ctlTag.setAttr('defaultTitle', title);
+            }
+        }
+
         for (var ci in theKernel.children) {
             var childKernel = theKernel.children[ci];
             if (this.compileKernel(childKernel, childRenderBlock, controlReactClass.renderFun) == false) {
@@ -2520,7 +2598,6 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
         
-
         var thisFullPathVarName = 'this.props.fullPath';
         if (ctlMidData.needSetKernels_arr.length > 0) {
             for (ci in ctlMidData.needSetKernels_arr) {
@@ -2775,7 +2852,6 @@ class MobileContentCompiler extends ContentCompiler {
         var ismultiselect = theKernel.getAttribute(AttrNames.MultiSelect);
         if (ismultiselect) {
             ctlTag.setAttr('multiselect', '{true}');
-            starSelectable = false; // 多选控件不可选星
         }
         var stableData = theKernel.getAttribute(AttrNames.StableData);
         if (stableData) {
@@ -2796,7 +2872,7 @@ class MobileContentCompiler extends ContentCompiler {
         else {
             if (IsEmptyString(defaultValParseRet.string)) {
                 if (starSelectable) {
-                    defaultValParseRet.string = '*';    // 可选*，但默认值未设置，自动给个*
+                    //defaultValParseRet.string = '*';    // 可选*，但默认值未设置，自动给个*
                 }
             }
             else {
@@ -3255,6 +3331,7 @@ class MobileContentCompiler extends ContentCompiler {
 
                 var theFun = pullFun;
                 var hadNeedWatchParam = false;
+                var needPostValid = false;
 
                 for (var formId in compilHelper.useForm_map) {
                     var useFormData = compilHelper.useForm_map[formId];
@@ -3329,9 +3406,11 @@ class MobileContentCompiler extends ContentCompiler {
                                 varName = usectlid + '_' + propApiitem.stateName;
                                 initValue = ctlStateVarName + '.' + propApiitem.stateName;
                                 theFun.scope.getVar(varName, true, initValue);
+                                needPostValid = true;
                                 if (propApiitem.needValid && needCheckProps_map[varName] == null) {
                                     needCheckProps_map[varName] = 1;
                                     nullableChecker = ctlParentStateVarName ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
+                                    needPostValid = (nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : true) != true;
                                     needCheckVars_arr.push({
                                         kernel: useCtlData.kernel,
                                         nullable: nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : null,
@@ -3341,7 +3420,7 @@ class MobileContentCompiler extends ContentCompiler {
                                         propApi: propApiitem
                                     });
                                 }
-                                needSetParams_arr.push({ bundleName: varName, clientValue: varName });
+                                needSetParams_arr.push({ bundleName: varName, clientValue: varName, needPostValid: needPostValid });
                             }
                         }
                     }
@@ -3373,14 +3452,23 @@ class MobileContentCompiler extends ContentCompiler {
                     }
                     theFun.scope.getVar(ctlStateVarName, true, initValue);
 
+                    ctlParentStateVarName = null;
+                    if (useCtlData.kernel.isAEditor()) {
+                        ctlParentStateVarName = useCtlData.kernel.parent.id + '_state';
+                        initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.parent.id), '{}');
+                        theFun.scope.getVar(ctlParentStateVarName, true, initValue);
+                    }
+
                     for (propName in useCtlData.useprops_map) {
                         propApiitem = useCtlData.useprops_map[propName];
                         varName = usectlid + '_' + propApiitem.stateName;
                         theFun.scope.getVar(varName, true, ctlStateVarName + '.' + propApiitem.stateName);
+                        needPostValid = true;
                         if (propApiitem.needValid) {
                             if (needCheckProps_map[varName] == null) {
                                 needCheckProps_map[varName] = 1;
                                 nullableChecker = ctlParentStateVarName ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
+                                needPostValid = (nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : true) != true;
                                 needCheckVars_arr.push({
                                     kernel: useCtlData.kernel,
                                     nullable: nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : null,
@@ -3402,7 +3490,7 @@ class MobileContentCompiler extends ContentCompiler {
                             }
                             this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theKernel,theFun.name, useCtlData.kernel, propApiitem.stateName, tempCallParams_arr);
                         }
-                        needSetParams_arr.push({ bundleName: varName, clientValue: varName });
+                        needSetParams_arr.push({ bundleName: varName, clientValue: varName, needPostValid:needPostValid });
                     }
                 }
 
@@ -3486,7 +3574,9 @@ class MobileContentCompiler extends ContentCompiler {
                         initbundleBlock.pushLine(makeLine_Assign(VarNames.Bundle + '.' + useParam.bundleName, useParam.clientValue));
                         var serverValue = ReplaceIfNull(useParam.serverValue, 'bundle.' + useParam.bundleName);
                         paramsetblock.pushLine("dbhelper.makeSqlparam('" + useParam.bundleName + "', sqlTypes.NVarChar(4000), " + serverValue + "),");
-                        serverBodyCheckblock.pushLine("if(bundle." + useParam.bundleName + " == null){" + makeLine_RetServerError('没有提供' + useParam.bundleName) + '};');
+                        if(useParam.needPostValid != false){
+                            serverBodyCheckblock.pushLine("if(bundle." + useParam.bundleName + " == null){" + makeLine_RetServerError('没有提供' + useParam.bundleName) + '};');
+                        }
                     }
                 }
 

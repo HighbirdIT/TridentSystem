@@ -1,9 +1,19 @@
 const HERPAccordionKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置',[
-        new CAttribute('标题',AttrNames.Title,ValueType.String,''),
+        new CAttribute('标题',AttrNames.Title,ValueType.String,'', true, false, [], 
+        {
+            pullDataFun:GetKernelCanUseColumns,
+            text:'name',
+            editable:true,
+        }, true, {
+            scriptable:true,
+            type:FunType_Client,
+            group:EJsBluePrintFunGroup.CtlAttr,
+        }),
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr),
         genIsdisplayAttribute(),
         new CAttribute('初始折叠', AttrNames.InitCollapsed, ValueType.Boolean, false),
+        new CAttribute('模式', AttrNames.Mode, ValueType.String, AccordionMode.Default, true, false, AccordionModes_arr),
     ]),
 ]);
 
@@ -101,7 +111,8 @@ class HERPAccordion extends React.PureComponent {
         }
         bodyLayoutConfig.addClass('card-body');
         
-        var title = IsEmptyString(this.state.title) ? '[未命名]' : this.state.title;
+        var titleParserRet = parseObj_CtlPropJsBind(this.state.title);
+        var title = titleParserRet.isScript ? '{脚本}' : (IsEmptyString(titleParserRet.string) ? '[未命名]' : titleParserRet.string);
         return(
             <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 <div className='card-header text-primary btn btn-link'>
