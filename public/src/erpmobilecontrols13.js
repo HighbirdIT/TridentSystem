@@ -314,7 +314,10 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             console.error('没有找到对应的item' + value);
         }
         if (multiselect) {
-            if (this.state.selectOpt.find(item => {
+            if(!Array.isArray(this.state.selectOpt)){
+                this.props.dropdownctl.selectItem([theOptionItem]);
+            }
+            else if (this.state.selectOpt.find(item => {
                 return item.value == theOptionItem.value;
             }) == null) {
                 this.props.dropdownctl.selectItem(this.state.selectOpt.concat(theOptionItem));
@@ -524,7 +527,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             }
 
             var multiSelectedElem = null;
-            if (multiselect) {
+            if (multiselect && Array.isArray(selectedOption)) {
                 multiSelectedElem = (<div className='d-flex flex-grow-0 flex-shrink-0 mb-1 flex-wrap'>
                     {
                         selectedOption && selectedOption.map(item => {
@@ -593,7 +596,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
         }
 
         var titleBarRightElem = null;
-        if(this.props.dropdownctl.props.createTitleBarRightElem){
+        if (this.props.dropdownctl.props.createTitleBarRightElem) {
             titleBarRightElem = this.props.dropdownctl.props.createTitleBarRightElem();
         }
 
@@ -741,7 +744,7 @@ class ERPC_DropDown extends React.PureComponent {
             }
         }
 
-        if (!this.props.multiselect) {
+        if (value == '*' || !this.props.multiselect) {
             this.dropDownClosed();
         }
 
@@ -835,25 +838,25 @@ class ERPC_DropDown extends React.PureComponent {
                 }
             }
             else if (this.props.optionsData.options_arr) {
-                if (multiselect) {
-                    selectedItems_arr = this.props.optionsData.options_arr.filter(item => {
-                        return selectedVal.indexOf(item.value + '') != -1;
-                    });
-                    if (selectedItems_arr) {
-                        if (selectedItems_arr.length != this.props.selectOpt.length) {
+                if (selectedVal != '*') {
+                    if (multiselect) {
+                        selectedItems_arr = this.props.optionsData.options_arr.filter(item => {
+                            return selectedVal.indexOf(item.value + '') != -1;
+                        });
+                        if (selectedItems_arr) {
+                            if (selectedItems_arr.length != this.props.selectOpt.length) {
+                                setTimeout(() => {
+                                    self.selectItem(selectedItems_arr);
+                                }, 50);
+                            }
+                        }
+                        else {
                             setTimeout(() => {
-                                self.selectItem(selectedItems_arr);
+                                self.selectItem(null);
                             }, 50);
                         }
                     }
                     else {
-                        setTimeout(() => {
-                            self.selectItem(null);
-                        }, 50);
-                    }
-                }
-                else {
-                    if (selectedText != '*') {
                         var selectedOptionItem = this.props.optionsData.options_arr.find(item => {
                             return item.value == selectedVal;
                         });
@@ -1075,7 +1078,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
     var useValue = ctlState.value;
     var selectOpt = ctlState.selectOpt;
     if (useValue) {
-        if (ownprops.multiselect) {
+        if (ownprops.multiselect && useValue != '*') {
             if (useValue[0] == '<') {
                 selectorid = propProfile.fullPath + 'value';
                 var valueSelector = ERPC_selector_map[selectorid];
@@ -1463,7 +1466,7 @@ function ERPC_Button_mapstatetoprops(state, ownprops) {
     var propProfile = getControlPropProfile(ownprops, state);
     var ctlState = propProfile.ctlState;
     var rowState = propProfile.rowState;
-    
+
     return {
         visible: ctlState.visible,
         fullParentPath: propProfile.fullParentPath,
@@ -1493,8 +1496,8 @@ function ErpControlInit() {
     VisibleERPC_CheckBox = ReactRedux.connect(ERPC_CheckBox_mapstatetoprops, ERPC_CheckBox_dispatchtorprops)(ERPC_CheckBox);
     VisibleERPC_Button = ReactRedux.connect(ERPC_Button_mapstatetoprops, ERPC_Button_dispatchtorprops)(ERPC_Button);
 
-    gNeedCallOnErpControlInit_arr.forEach(elem=>{
-        if(typeof elem == 'function'){
+    gNeedCallOnErpControlInit_arr.forEach(elem => {
+        if (typeof elem == 'function') {
             elem.call();
         }
     });
@@ -1582,7 +1585,27 @@ function ERPC_PageForm_renderNavigater() {
     );
 }
 
+function SmartSetScrollTop(theElem){
+    if(theElem == null){
+        return;
+    }
+    var offsetTop = 0;
+    while(theElem.parentElement){
+        var parent = theElem.parentElement;
+        if(parent.scrollTop > 0){
+            if(theElem.offsetTop < parent.scrollTop){
+                parent.scrollTop = offsetTop - 40;
+                offsetTop = 0;
+            }
+        }
+        offsetTop += theElem.offsetTop;
+        theElem = parent;
+        parent = parent.parentElement;
+    }
+}
+
 function ERPC_GridForm(target) {
+    target.rootRef = React.createRef();
     target.rowPerPageChangedHandler = ERPC_GridForm_RowPerPageChangedHandler.bind(target);
     target.pageIndexChangedHandler = ERPC_GridForm_PageIndexChangedHandler.bind(target);
     target.prePageClickHandler = ERPC_GridForm_PrePageClickHandler.bind(target);
@@ -1648,6 +1671,7 @@ function ERPC_GridForm_SetPageIndex(value) {
     else if (value >= this.props.pageCount) {
         value = 0;
     }
+    SmartSetScrollTop(this.rootRef.current);
     var statePath = MakePath(this.props.parentPath, (this.props.rowIndex == null ? null : 'row_' + this.props.rowIndex), this.props.id, 'pageIndex');
     store.dispatch(makeAction_setStateByPath(value, statePath));
 }
@@ -1885,27 +1909,37 @@ function ERPC_Accordion_Render() {
         }
         else {
             this.rebindging = false;
-            bodyElem = <div className={'card-body d-flex' + (this.props.bodyIsColumn == true ? ' flex-column' : '')} >
-                    {this.rednerBody()}
-                </div>;
+            bodyElem = <div className={'accordionBody ' + (this.props.bodyIsColumn == true ? ' flex-column' : '')} >
+                {this.rednerBody()}
+            </div>;
         }
-
     }
-    return (<div className='erp-control card ' userctlpath={this.props.fullPath}>
-        <div className='card-header btn btn-link text-left' onClick={this.clickHanderHandler} >
-            <span className="fa-stack">
-                <i className="fa fa-square-o fa-stack-2x"></i>
-                <i className={"fa fa-stack-1x " + (this.props.collapsed ? 'fa-plus' : 'fa-minus')}></i>
-            </span>
-            {this.props.title}
-        </div>
-        {bodyElem}
-    </div>);
+    switch (this.props.mode) {
+        case 'listitem':
+            return (<div className='erp-control' userctlpath={this.props.fullPath}>
+                <div className='d-flex' onClick={this.clickHanderHandler} >
+                    <span className='flex-grow-1'>{this.props.title}</span>
+                    <span className={"fa flex-grow-0 " + (this.props.collapsed ? 'fa-angle-right' : 'fa-angle-down')} />
+                </div>
+                {bodyElem}
+            </div>);
+        default:
+            return (<div className='erp-control card ' userctlpath={this.props.fullPath}>
+                <div className='card-header btn btn-link text-left' onClick={this.clickHanderHandler} >
+                    <span className="fa-stack">
+                        <i className="fa fa-square-o fa-stack-2x"></i>
+                        <i className={"fa fa-stack-1x " + (this.props.collapsed ? 'fa-plus' : 'fa-minus')}></i>
+                    </span>
+                    {this.props.title}
+                </div>
+                {bodyElem}
+            </div>);
+    }
 }
 
 function ERPC_Accordion_Rebind() {
     var self = this;
-    if(this.rebindging){
+    if (this.rebindging) {
         this.rebindging = true;
     }
     this.rebindging = true;

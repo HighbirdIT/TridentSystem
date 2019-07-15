@@ -596,6 +596,7 @@ class JSNode_BluePrint extends EventEmitter {
             if (!hadCallParm) {
                 theFun.scope.getVar(VarNames.State, true, 'store.getState()');
             }
+            
             if (this.group == EJsBluePrintFunGroup.CtlEvent) {
                 if(ctlKernel.type == ButtonKernel_Type){
                     theFun.scope.getVar(ctlKernel.id + '_path', true, "getAttributeByNode(ev.target,'ctl-fullpath')");
@@ -610,6 +611,9 @@ class JSNode_BluePrint extends EventEmitter {
                 fetchKeyVarValue = VarNames.FullParentPath + '+' + singleQuotesStr('.' + funName);
                 params_arr = [VarNames.State, VarNames.Bundle, VarNames.FullParentPath];
                 //theFun.scope.getVar(belongFormControl.id + "_path", true, 'this.props.fullPath');
+                if(belongUserControl){
+                    theFun.scope.getVar(belongUserControl.id + '_state', true, VarNames.State);
+                }
             }
             else if (this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
                 params_arr = [VarNames.RowIndex, VarNames.CallBack];

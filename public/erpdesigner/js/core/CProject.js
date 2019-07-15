@@ -89,8 +89,11 @@ var CProject = function (_IAttributeable) {
                     _this.userControls_arr.push(newUCtl);
                 });
             }
-            var self = _this;
+            jsonData.userControls_arr.forEach(function (ctlJson, index) {
+                _this.userControls_arr[index].__restoreChildren(null, ctlJson);
+            });
 
+            var self = _this;
             var ctlCreatioinHelper = new CtlKernelCreationHelper();
             jsonData.content_Mobile.pages.forEach(function (pageJson) {
                 var newPage = new M_PageKernel({}, _this, ctlCreatioinHelper, pageJson);

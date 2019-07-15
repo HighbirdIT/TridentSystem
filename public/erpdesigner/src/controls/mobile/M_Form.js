@@ -13,6 +13,7 @@ const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
         new CAttribute('每页条数',AttrNames.RowPerPage,ValueType.String, '20', true, false, ['20','50','100','200']),
         new CAttribute('宽度类型',AttrNames.WidthType,ValueType.String,EGridWidthType.Auto,true,false,EGridWidthTypes_arr,{text:'text', value:'value'}),
         new CAttribute('首列序号',AttrNames.AutoIndexColumn,ValueType.Boolean,true),
+        new CAttribute('隐藏表头',AttrNames.HideTabHead,ValueType.Boolean,false),
         new CAttribute('自动滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
         new CAttribute('模式', AttrNames.SelectMode, ValueType.String, ESelectMode.None, true, false, SelectModes_arr),
         new CAttribute('bottomDivID','bottomDivID',ValueType.String,'',true,false,null,null,false),
@@ -91,6 +92,8 @@ class M_FormKernel extends ContainerKernelBase{
         this[AttrNames.AutoIndexColumn + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.GenNavBar + '_visible'] = nowft != EFormType.Grid;
         this[AttrNames.SelectMode + '_visible'] = nowft == EFormType.Grid;
+        this[AttrNames.HideTabHead + '_visible'] = nowft == EFormType.Grid;
+        
         
 
         this['操作设置_visible'] = nowft == EFormType.Grid;
@@ -283,7 +286,8 @@ class M_FormKernel extends ContainerKernelBase{
                 this.findAttributeByName(AttrNames.AutoIndexColumn).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.GenNavBar).setVisible(this, !isGridForm);
                 this.findAttributeByName(AttrNames.SelectMode).setVisible(this, isGridForm);
-
+                this.findAttributeByName(AttrNames.HideTabHead).setVisible(this, isGridForm);
+                
                 this.findAttrGroupByName('操作设置').setVisible(this, isGridForm);
                 break;
             case AttrNames.PageBreak:

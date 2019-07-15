@@ -336,3 +336,10 @@ function TransSVTToJSVT(sqlType) {
     }
     return sqlType;
 }
+
+const AccordionMode={
+    ListItem:'listitem',
+    Default:'default',
+}
+
+const AccordionModes_arr = [AccordionMode.ListItem,AccordionMode.Default];

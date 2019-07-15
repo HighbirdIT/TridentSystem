@@ -296,6 +296,8 @@ var AttrNames = {
     InitCollapsed: 'initCollapsed',
     LoadOnUnCollapsed: 'loadOnCollapsed',
     GreedMode: 'greedMode',
+    HideTabHead: 'hideTabHead',
+    Mode: 'mode',
 
     Event: {
         OnClick: 'onclick',

@@ -81,8 +81,11 @@ class CProject extends IAttributeable{
                     this.userControls_arr.push(newUCtl);
                 });
             }
-            var self = this;
+            jsonData.userControls_arr.forEach((ctlJson,index)=>{
+                this.userControls_arr[index].__restoreChildren(null,ctlJson);
+            });
 
+            var self = this;
             var ctlCreatioinHelper = new CtlKernelCreationHelper();
             jsonData.content_Mobile.pages.forEach(pageJson=>{
                 var newPage = new M_PageKernel({}, this, ctlCreatioinHelper, pageJson);

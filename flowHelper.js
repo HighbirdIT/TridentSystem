@@ -5,6 +5,7 @@ const sqlTypes = dbhelper.Types;
 const fs = require("fs");
 var cluster = require('cluster');
 var cleanOldpages = require('./cleanOldpages');
+var backupWorker = require('./backupWorker.js');
 
 //path模块，可以生产相对和绝对路径
 const path =require('path');
@@ -13,7 +14,8 @@ var flowJs_map = {};
 
 var started = false;
 var workInt = 0;
-var dayWorkInt = 0;
+var cleanWorkInt = 0;
+var backupWorkInt = 0;
 var workTimeInt = 5 * 1000;
 var dayTimeInt = 1000 * 60  * 60 * 24;
 
@@ -21,9 +23,13 @@ function startWork(){
     if(workInt == 0){
         workInt = setInterval(startFlowProcess, workTimeInt);
     }
-    if(dayWorkInt == 0){
+    if(cleanWorkInt == 0){
         cleanOldpages.doCleanWork();
-        dayWorkInt = setInterval(cleanOldpages.doCleanWork, dayTimeInt);
+        cleanWorkInt = setInterval(cleanOldpages.doCleanWork, dayTimeInt);
+    }
+    if(backupWorkInt == 0){
+        backupWorker.doWork();
+        backupWorkInt = setInterval(backupWorker.doWork, dayTimeInt);
     }
 }
 
