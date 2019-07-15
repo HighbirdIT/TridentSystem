@@ -1454,6 +1454,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         var thisfullpath = makeStr_DotProp(fullParentPath, theKernel.id);
         var pathVarName = theKernel.id + '_path';
+        var stateVarName = theKernel.id + '_state';
         var useDS = theKernel.getAttribute(AttrNames.DataSource);
         if (useDS == null && isGridForm) {
             logManager.errorEx([logManager.createBadgeItem(
@@ -1677,6 +1678,17 @@ class MobileContentCompiler extends ContentCompiler {
                 else {
                     clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath, VarNames.PageIndex))] = makeFName_bindForm(theKernel) + '.bind(window)';
                 }
+                freshFun.scope.getVar(stateVarName, true, makeStr_callFun('getStateByPath', [VarNames.ReState, pathVarName]));
+                freshFun.pushLine('if(oldValue != null){', 1);
+                freshFun.pushLine('var needSetState={};');
+                freshFun.pushLine('oldValue.forEach((x,i)=>{', 1);
+                freshFun.pushLine("if("+stateVarName+".hasOwnProperty('row_' + i)){", 1);
+                freshFun.pushLine("needSetState['row_' + i] = null;", -1);
+                freshFun.pushLine("}", -1);
+                freshFun.pushLine("});");
+                freshFun.pushLine(VarNames.ReState + '=' + makeStr_callFun('setManyStateByPath', [VarNames.ReState,pathVarName,'needSetState'], ';'),-1);
+                freshFun.pushLine("}");
+
                 freshFun.pushLine(makeStr_callFun(bindFun.name, [VarNames.ReState, 'null', 'null', VarNames.SatePath]) + ';');
             }
         }
