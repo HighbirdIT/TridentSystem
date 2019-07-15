@@ -1567,7 +1567,7 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentBlock.pushLine("}");
 
             renderContentFun.pushLine('return (', 1);
-            renderContentFun.pushLine("<div className='" + layoutConfig.getClassName() + "' " + (hasFormStyle ? "style={" + formStyleID + "}" : '') + ">", 1);
+            renderContentFun.pushLine("<div ref={this.rootRef} className='" + layoutConfig.getClassName() + "' " + (hasFormStyle ? "style={" + formStyleID + "}" : '') + ">", 1);
             renderContentFun.pushLine("{this.props.title && <div className='bg-dark text-light justify-content-center d-flex flex-shrink-0'><span>{this.props.title}</span></div>}");
             if(!hideHeader){
                 renderContentFun.pushLine("<div id='" + theKernel.id + "tableheader' className='mw-100 hidenOverflow flex-shrink-0 gridFormFixHeaderDiv'>", 1);
