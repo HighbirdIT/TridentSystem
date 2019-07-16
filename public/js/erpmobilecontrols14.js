@@ -2273,13 +2273,13 @@ function ERPC_Accordion_Render() {
         case 'listitem':
             return React.createElement(
                 'div',
-                { className: 'erp-control', userctlpath: this.props.fullPath },
+                { className: 'erp-control erp-accrodion', userctlpath: this.props.fullPath },
                 React.createElement(
                     'div',
                     { className: 'd-flex accordion_listitemheader align-items-center', onClick: this.clickHanderHandler },
                     React.createElement(
                         'span',
-                        { className: 'flex-grow-1 btn-link' },
+                        { className: 'flex-grow-1' },
                         this.props.title
                     ),
                     React.createElement('span', { className: "fa flex-grow-0 " + (this.props.collapsed ? 'fa-angle-right' : 'fa-angle-down') })
@@ -2292,7 +2292,7 @@ function ERPC_Accordion_Render() {
                 { className: 'erp-control card ', userctlpath: this.props.fullPath },
                 React.createElement(
                     'div',
-                    { className: 'card-header btn btn-link text-left', onClick: this.clickHanderHandler },
+                    { className: 'card-header pl-0 btn btn-link text-left', onClick: this.clickHanderHandler },
                     React.createElement(
                         'span',
                         { className: 'fa-stack' },

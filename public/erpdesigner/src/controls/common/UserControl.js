@@ -232,6 +232,8 @@ class CUserControl extends React.PureComponent {
             layoutConfig.addClass('flex-column');
         }
         layoutConfig.addClass('d-flex');
+        layoutConfig.addClass('flex-shrink-0');
+        layoutConfig.addClass('bg-light');
         var contentElem = null;
 
         var showText = IsEmptyString(this.state.label) ? '[未命名]' : this.state.label;
