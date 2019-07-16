@@ -918,7 +918,12 @@ class JSNode_BluePrint extends EventEmitter {
                     stateParam = VarNames.State;
                     break;
             }
-            theFun.headBlock.pushLine("if(hadValidErr){return callback_final(" + stateParam + ", null, {info:gPreconditionInvalidInfo});}");
+            if (this.group == EJsBluePrintFunGroup.CtlAttr) {
+                theFun.headBlock.pushLine("if(hadValidErr){callback_final(" + stateParam + ", null, {info:gPreconditionInvalidInfo});return;}");    
+            }
+            else{
+                theFun.headBlock.pushLine("if(hadValidErr){return callback_final(" + stateParam + ", null, {info:gPreconditionInvalidInfo});}");
+            }
         }
         if (theFun.needFetchEndCallBack) {
             // 需要callbackmain
@@ -1037,7 +1042,8 @@ class JSNode_BluePrint extends EventEmitter {
             }
             else {
                 if (needCheckVars_arr.length > 0) {
-                    setInvalidStateBlock.pushLine("setManyStateByPath(" + VarNames.State + "," + VarNames.FullParentPath + "+'." + ctlKernel.id + "'" + ", validErrState);");
+                    //setInvalidStateBlock.pushLine("setManyStateByPath(" + VarNames.State + "," + VarNames.FullParentPath + "+'." + ctlKernel.id + "'" + ", validErrState);");
+                    setInvalidStateBlock.pushLine("setManyStateByPath(" + VarNames.State + ",''" + ", validErrState);");
                 }
             }
         }
