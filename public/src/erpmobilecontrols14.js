@@ -1916,8 +1916,8 @@ function ERPC_Accordion_Render() {
     }
     switch (this.props.mode) {
         case 'listitem':
-            return (<div className='erp-control' userctlpath={this.props.fullPath}>
-                <div className='d-flex' onClick={this.clickHanderHandler} >
+            return (<div className='erp-control erp-accrodion' userctlpath={this.props.fullPath}>
+                <div className='d-flex accordion_listitemheader align-items-center' onClick={this.clickHanderHandler} >
                     <span className='flex-grow-1'>{this.props.title}</span>
                     <span className={"fa flex-grow-0 " + (this.props.collapsed ? 'fa-angle-right' : 'fa-angle-down')} />
                 </div>
@@ -1925,7 +1925,7 @@ function ERPC_Accordion_Render() {
             </div>);
         default:
             return (<div className='erp-control card ' userctlpath={this.props.fullPath}>
-                <div className='card-header btn btn-link text-left' onClick={this.clickHanderHandler} >
+                <div className='card-header pl-0 btn btn-link text-left' onClick={this.clickHanderHandler} >
                     <span className="fa-stack">
                         <i className="fa fa-square-o fa-stack-2x"></i>
                         <i className={"fa fa-stack-1x " + (this.props.collapsed ? 'fa-plus' : 'fa-minus')}></i>

@@ -65,12 +65,13 @@ class HERPAccordion extends React.PureComponent {
         super(props);
 
         var ctlKernel = this.props.ctlKernel;
-        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Title,AttrNames.Orientation,AttrNames.Chidlren]));
+        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Name,AttrNames.Title,AttrNames.Orientation,AttrNames.Chidlren]));
         M_ContainerBase(this);
         
         inintState.children = ctlKernel.children;
         inintState.orientation = ctlKernel.getAttribute(AttrNames.Orientation);
         inintState.title = ctlKernel.getAttribute(AttrNames.Title);
+        inintState.name = ctlKernel.getAttribute(AttrNames.Name);
 
         this.state = inintState;
 
@@ -90,6 +91,7 @@ class HERPAccordion extends React.PureComponent {
             orientation: ctlKernel.getAttribute(AttrNames.Orientation),
             children: childrenVal,
             title: ctlKernel.getAttribute(AttrNames.Title),
+            name: ctlKernel.getAttribute(AttrNames.Name),
         });
     }
 
@@ -112,7 +114,7 @@ class HERPAccordion extends React.PureComponent {
         bodyLayoutConfig.addClass('card-body');
         
         var titleParserRet = parseObj_CtlPropJsBind(this.state.title);
-        var title = titleParserRet.isScript ? '{脚本}' : (IsEmptyString(titleParserRet.string) ? '[未命名]' : titleParserRet.string);
+        var title = titleParserRet.isScript ? (ReplaceIfNull(this.state.name,'') + '{脚本}') : (IsEmptyString(titleParserRet.string) ? '[未命名]' : titleParserRet.string);
         return(
             <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 <div className='card-header text-primary btn btn-link'>
