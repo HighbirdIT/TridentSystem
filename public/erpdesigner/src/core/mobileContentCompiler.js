@@ -262,7 +262,7 @@ class MobileContentCompiler extends ContentCompiler {
                                 var relyCtlReactParent = relyPath.relyCtl.getReactParentKernel(true);
                                 var sameReactKernel = relyPath.berelyCtl.searchSameReactParentKernel(relyPath.relyCtl);
                                 var thirdParam = sameReactKernel.id + '_path';
-                                var sameReactKernelPathInitStr = sameReactKernel.isComplicatedPath() ? "getParentPathByKey(path,'" + sameReactKernel.id + "')" : singleQuotesStr(sameReactKernel.getStatePath(sameReactKernel.id));
+                                var sameReactKernelPathInitStr = sameReactKernel.isComplicatedPath() ? "getParentPathByKey(path,'" + sameReactKernel.id + "')" : singleQuotesStr(sameReactKernel.getStatePath(''));
                                 changedFun.scope.getVar(sameReactKernel.id + '_path',true, sameReactKernelPathInitStr);
                                 if(sameReactKernel != relyCtlReactParent){
                                     thirdParam += "+" + singleQuotesStr(relyCtlReactParent.getStatePath('','.',null,true,sameReactKernel));
