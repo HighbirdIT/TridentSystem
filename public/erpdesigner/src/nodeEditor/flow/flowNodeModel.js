@@ -1526,10 +1526,6 @@ class FlowNode_ColumnVar extends JSNode_Base {
     }
 
     getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
-        if (belongFun.scope.isServerSide) {
-            return;
-        }
-        
         this.keySocket.node.getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result);
     }
 

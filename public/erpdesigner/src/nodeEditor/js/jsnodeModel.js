@@ -2075,10 +2075,6 @@ class JSNode_CurrentDataRow extends JSNode_Base {
     }
 
     getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
-        if (belongFun.scope.isServerSide) {
-            return;
-        }
-
         var clientForEachBlock = helper.getCache(this.id + '_clientForEachBlock');
         if (clientForEachBlock) {
             result.pushVariable(this.id + '_row', targetSocket);
@@ -4335,7 +4331,7 @@ class JSNode_Query_Sql extends JSNode_Base {
             serverForachBlock.pushLine('var ' + indexVarName + ' = 0;');
             if (isScalar) {
                 serverForachBlock.pushChild(serverForachBodyBlock);
-                serverForachBodyBlock.pushLine('var ' + this.id + '_' + targetColumns_arr[0] + '=' + rcdRltVarName + ';');
+                serverForachBodyBlock.pushLine('var ' + dataVarName + '=' + rcdRltVarName + ';');
             }
             else {
                 serverForachBlock.pushLine(makeStr_AddAll('for(', indexVarName, '=0;', indexVarName, '<', rcdRltVarName, '.recordset.length;++', indexVarName, '){'), 1);
