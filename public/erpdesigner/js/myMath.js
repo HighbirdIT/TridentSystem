@@ -13,5 +13,21 @@ var MyMath = {
     intersectRect: function intersectRect(r1, r2) {
         if (r1 == null || r2 == null) return false;
         return !(r2.left > r1.right || r2.right < r1.left || r2.top > r1.bottom || r2.bottom < r1.top);
+    },
+
+    calcBoundBox: function calcBoundBox(items_arr) {
+        var rlt = {
+            left: Number.MAX_VALUE,
+            top: Number.MAX_VALUE,
+            right: -Number.MAX_VALUE,
+            bottom: -Number.MAX_VALUE
+        };
+        items_arr.forEach(function (elem) {
+            rlt.left = Math.min(elem.x, rlt.left);
+            rlt.top = Math.min(elem.y, rlt.top);
+            rlt.right = Math.max(elem.x + elem.width, rlt.right);
+            rlt.bottom = Math.max(elem.y + elem.height, rlt.bottom);
+        });
+        return rlt;
     }
 };

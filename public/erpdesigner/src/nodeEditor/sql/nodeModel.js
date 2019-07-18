@@ -194,7 +194,7 @@ class SqlNode_BluePrint extends EventEmitter {
         return useID;
     }
 
-    quickCloneNodes(targets_arr, posOffset){
+    quickCloneNodes(targets_arr, anchorPos){
         if(targets_arr == null || targets_arr.length == 0){
             return;
         }
@@ -204,7 +204,7 @@ class SqlNode_BluePrint extends EventEmitter {
         var srcNodes_arr = [];
         var jsonProf = new AttrJsonProfile();
         targets_arr.forEach(srcNode=>{
-            if(srcNode.cloneable != false && srcNode != this.finalSelectNode){
+            if(srcNode.cloneable != false && srcNode != this.finalSelectNode && this.getNodeByID(srcNode.id) != null){
                 srcNodeJsons_arr.push(srcNode.getJson(jsonProf));
                 srcNodes_arr.push(srcNode);
             }
@@ -213,7 +213,12 @@ class SqlNode_BluePrint extends EventEmitter {
             return;
         }
         var newNodes_arr = this.genNodesByJsonArr(this, srcNodeJsons_arr, createHelper);
-        if(posOffset){
+        if(anchorPos){
+            var boundBox = MyMath.calcBoundBox(newNodes_arr.map(node=>{return {x:node.left,y:node.top,width:200,height:200};}));
+            var posOffset = {
+                x:anchorPos.x - boundBox.right,
+                y:anchorPos.y - boundBox.top,
+            };
             newNodes_arr.forEach(newNode=>{
                 newNode.setPos(newNode.left + posOffset.x, newNode.top + posOffset.y);
             });
@@ -237,6 +242,7 @@ class SqlNode_BluePrint extends EventEmitter {
         srcNodes_arr.forEach(srcNode=>{
             restoreLinkFun(srcNode);
         });
+        return newNodes_arr;
     }
 
     registerNode(node, parentNode) {
