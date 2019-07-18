@@ -304,7 +304,8 @@ var AttrNames = {
         OnUpdate: 'onUpdate',
         OnDelete: 'onDelete',
         OnInsert: 'onInsert',
-        OnLoad: 'onLoad'
+        OnLoad: 'onLoad',
+        OnChanged: 'onChanged'
     },
 
     LayoutNames: {

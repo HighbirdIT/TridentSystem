@@ -133,14 +133,23 @@ class JSDef_Variable extends JSNode_Base {
         rlt.valType = this.valType;
         rlt.isParam = this.isParam;
         rlt.default = this.default;
+        if (this.isfixed != null) {
+            rlt.isfixed = this.isfixed;
+        }
+        if (this.index != null) {
+            rlt.index = this.index;
+        }
         return rlt;
     }
 
     restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['name', 'valType', 'isParam', 'default']);
+        assginObjByProperties(this, attrsJson, ['name', 'valType', 'isParam', 'default', 'isfixed', 'index']);
     }
 
     setProp(data) {
+        if (this.isfixed) {
+            return;
+        }
         if (data.name != null) {
             var newName = data.name;
             if (newName.length == 0) {
@@ -158,7 +167,7 @@ class JSDef_Variable extends JSNode_Base {
             this.valType = data.valType;
         }
         if (data.isParam != null) {
-            this.isParam = data.isParam == '参数';
+            this.isParam = data.isParam == '1';
         }
         if (data.default != null) {
             this.default = data.default;
@@ -199,6 +208,7 @@ class JSNode_BluePrint extends EventEmitter {
     constructor(initData, bluePrintJson, createHelper) {
         super();
         EnhanceEventEmiter(this);
+        NodeEditor(this);
 
         this.nodes_arr = [];
         this.vars_arr = [];
@@ -258,7 +268,7 @@ class JSNode_BluePrint extends EventEmitter {
     postEditing(editor) {
         // call leve eidting
     }
-    
+
 
     getNodeParentList(theNode) {
         var rlt = [];
@@ -289,57 +299,6 @@ class JSNode_BluePrint extends EventEmitter {
             ++testI;
         }
         return useID;
-    }
-
-    quickCloneNodes(targets_arr, anchorPos){
-        if(targets_arr == null || targets_arr.length == 0){
-            return;
-        }
-        var createHelper = new NodeCreationHelper();
-        createHelper.dataMaster = this.dataMaster;
-        var srcNodeJsons_arr = [];
-        var srcNodes_arr = [];
-        var jsonProf = new AttrJsonProfile();
-        targets_arr.forEach(srcNode=>{
-            if(srcNode.cloneable != false && this.getNodeByID(srcNode.id) != null){
-                srcNodeJsons_arr.push(srcNode.getJson(jsonProf));
-                srcNodes_arr.push(srcNode);
-            }
-        });
-        if(srcNodes_arr.length == 0){
-            return;
-        }
-        var newNodes_arr = this.genNodesByJsonArr(this, srcNodeJsons_arr, createHelper);
-        if(anchorPos){
-            var boundBox = MyMath.calcBoundBox(newNodes_arr.map(node=>{return {x:node.left,y:node.top,width:200,height:200};}));
-            var posOffset = {
-                x:anchorPos.x - boundBox.right,
-                y:anchorPos.y - boundBox.top,
-            };
-            newNodes_arr.forEach(newNode=>{
-                newNode.setPos(newNode.left + posOffset.x, newNode.top + posOffset.y);
-            });
-        }
-        // restore links
-        var restoreLinkFun = (srcNode)=>{
-            var srcLinks_arr = this.linkPool.getLinksByNode(srcNode);
-            srcLinks_arr.forEach(theLink=>{
-                if(createHelper.orginID_map[theLink.inSocket.id] && createHelper.orginID_map[theLink.outSocket.id]){
-                    this.linkPool.addLink(createHelper.orginID_map[theLink.outSocket.id],createHelper.orginID_map[theLink.inSocket.id]);
-                }
-            });
-            
-            if(srcNode.nodes_arr && srcNode.nodes_arr.length > 0){
-                srcNode.nodes_arr.forEach(childNode=>{
-                    restoreLinkFun(childNode);
-                });
-            }
-        }
-        // restore links
-        srcNodes_arr.forEach(srcNode=>{
-            restoreLinkFun(srcNode);
-        });
-        return newNodes_arr;
     }
 
     registerNode(node, parentNode) {
@@ -400,9 +359,30 @@ class JSNode_BluePrint extends EventEmitter {
         return rlt;
     }
 
+    setFixParam(names_arr) {
+        this.vars_arr.filter(v => { return v.isParam; }).forEach(v => {
+            var index = names_arr.indexOf(v.name);
+            if (index == -1) {
+                v.isfixed = false;
+                this.removeVariable(v);
+            }
+            else {
+                v.index = index;
+                v.isfixed = true;
+                v.isParam = true;
+            }
+        });
+        names_arr.forEach((n, i) => {
+            new JSDef_Variable({ name: n, valType: ValueType.String, isfixed: true, isParam: true, index: i }, this);
+        });
+    }
+
     removeVariable(varData) {
         var index = this.vars_arr.indexOf(varData);
         if (index != -1) {
+            if (varData.isfixed) {
+                return;
+            }
             this.vars_arr.splice(index, 1);
             varData.removed = true;
             this.fireEvent('varChanged');
@@ -441,7 +421,7 @@ class JSNode_BluePrint extends EventEmitter {
         }
         return this.allNode_map[id];
     }
-    
+
 
     getNodesByTypes(targetTypes_arr, mustGoodNode) {
         if (targetTypes_arr == null) {
@@ -579,15 +559,20 @@ class JSNode_BluePrint extends EventEmitter {
         compilHelper.compilingFun = theFun;
         var fetchKeyVarValue = singleQuotesStr(funName);
         var params_arr = [];
+        var paramVars_arr = [];
         this.vars_arr.forEach(varData => {
             if (varData.isParam) {
-                params_arr.push(varData.name);
+                paramVars_arr.push(varData);
             }
             else {
                 theFun.scope.getVar(varData.name, true, varData.default);
             }
         });
-        if (params_arr.length > 0) {
+        if (paramVars_arr.length > 0) {
+            paramVars_arr.sort((a, b) => {
+                return a.index > b.index;
+            });
+            params_arr = paramVars_arr.map(x => { return x.name; });
             if (this.group == EJsBluePrintFunGroup.CtlAttr || this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
                 compilHelper.logManager.error('本蓝图种类不允许出现参数');
                 return false;
@@ -649,10 +634,16 @@ class JSNode_BluePrint extends EventEmitter {
             if (!hadCallParm) {
                 theFun.scope.getVar(VarNames.State, true, 'store.getState()');
             }
-            
+
             if (this.group == EJsBluePrintFunGroup.CtlEvent) {
-                if(ctlKernel.type == ButtonKernel_Type){
+                if (ctlKernel.type == ButtonKernel_Type) {
                     theFun.scope.getVar(ctlKernel.id + '_path', true, "getAttributeByNode(ev.target,'ctl-fullpath')");
+                }
+                else {
+                    if (this.name == (ctlKernel.id + '_' + AttrNames.Event.OnChanged)) {
+                        // ctl onchanged fun
+                        theFun.scope.getVar(ctlKernel.id + '_path', true, VarNames.ParentPath + "+'." + ctlKernel.id + "'");
+                    }
                 }
                 if (belongUserControl) {
                     // 自订控件中的按钮
@@ -664,7 +655,7 @@ class JSNode_BluePrint extends EventEmitter {
                 fetchKeyVarValue = VarNames.FullParentPath + '+' + singleQuotesStr('.' + funName);
                 params_arr = [VarNames.State, VarNames.Bundle, VarNames.FullParentPath];
                 //theFun.scope.getVar(belongFormControl.id + "_path", true, 'this.props.fullPath');
-                if(belongUserControl){
+                if (belongUserControl) {
                     theFun.scope.getVar(belongUserControl.id + '_state', true, VarNames.State);
                 }
             }
@@ -849,7 +840,7 @@ class JSNode_BluePrint extends EventEmitter {
                     if (this.group == EJsBluePrintFunGroup.CtlAttr) {
                         initValue = VarNames.State;
                     }
-                    else if(this.group != EJsBluePrintFunGroup.CtlEvent){
+                    else if (this.group != EJsBluePrintFunGroup.CtlEvent) {
                         console.error('尚未实现');
                     }
                 }
@@ -867,7 +858,7 @@ class JSNode_BluePrint extends EventEmitter {
                     }
                 }
 
-                if(initValue){
+                if (initValue) {
                     theFun.scope.getVar(ctlStateVarName, true, initValue);
                 }
 
@@ -972,9 +963,9 @@ class JSNode_BluePrint extends EventEmitter {
                     break;
             }
             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
-                theFun.headBlock.pushLine("if(hadValidErr){callback_final(" + stateParam + ", null, {info:gPreconditionInvalidInfo});return;}");    
+                theFun.headBlock.pushLine("if(hadValidErr){callback_final(" + stateParam + ", null, {info:gPreconditionInvalidInfo});return;}");
             }
-            else{
+            else {
                 theFun.headBlock.pushLine("if(hadValidErr){return callback_final(" + stateParam + ", null, {info:gPreconditionInvalidInfo});}");
             }
         }
@@ -1363,7 +1354,7 @@ class JSNode_Start extends JSNode_Base {
                 '是个空蓝图']);
         }
         else {
-            if(flowLinks_arr[0].inSocket.node.compile(helper, usePreNodes_arr, belongBlock) == false){
+            if (flowLinks_arr[0].inSocket.node.compile(helper, usePreNodes_arr, belongBlock) == false) {
                 return false;
             }
         }
@@ -3524,14 +3515,14 @@ class JSNode_DateFun extends JSNode_Base {
         var selfCompileRet = new CompileResult(this);
         var callStr = '';
         var blockInServer = belongBlock.getScope().isServerSide;
-        
-        if(!blockInServer){
+
+        if (!blockInServer) {
             var nodeI = 0;
-            for(nodeI = preNodes_arr.length - 1; nodeI > 0;--nodeI){
+            for (nodeI = preNodes_arr.length - 1; nodeI > 0; --nodeI) {
                 var temNode = preNodes_arr[nodeI];
-                if(temNode.inFlowSocket){
+                if (temNode.inFlowSocket) {
                     blockInServer = temNode.hadFetchFun;
-                    break; 
+                    break;
                 }
             }
         }
@@ -3625,13 +3616,13 @@ class JSNode_Env_Var extends JSNode_Base {
         }
 
         var blockInServer = belongBlock.getScope().isServerSide;
-        if(!blockInServer){
+        if (!blockInServer) {
             var nodeI = 0;
-            for(nodeI = preNodes_arr.length - 1; nodeI > 0;--nodeI){
+            for (nodeI = preNodes_arr.length - 1; nodeI > 0; --nodeI) {
                 var temNode = preNodes_arr[nodeI];
-                if(temNode.inFlowSocket){
+                if (temNode.inFlowSocket) {
                     blockInServer = temNode.hadFetchFun;
-                    break; 
+                    break;
                 }
             }
         }
@@ -4225,7 +4216,7 @@ class JSNode_Query_Sql extends JSNode_Base {
             bundleCheckBlock.pushLine("if(" + paramPostName + ' == null' + '){return serverhelper.createErrorRet("参数[' + param.name + ']传入值错误");}');
             paramInitBlock.pushLine("dbhelper.makeSqlparam('" + param.name + "', sqlTypes.NVarChar(4000), " + paramPostName + "),");
         });
-        
+
         serverFunBodyBlock.pushChild(paramInitBlock);
 
         var bundleVarName = VarNames.Bundle + '_' + this.id;
@@ -4320,7 +4311,7 @@ class JSNode_Query_Sql extends JSNode_Base {
             }
         });
 
-        if(bpCompileHelper){
+        if (bpCompileHelper) {
             if (!IsEmptyObject(bpCompileHelper.useUrlVar_map)) {
                 for (var varName in bpCompileHelper.useUrlVar_map) {
                     var paramPostName = this.id + '_p' + varName;
@@ -4966,7 +4957,7 @@ class JSNode_Do_FlowStep extends JSNode_Base {
                     return false;
                 }
                 var paramValue = socketComRet.value;
-                var paramName = '参数' + (i+1);
+                var paramName = '参数' + (i + 1);
                 if (theSocket == this.userSocket) {
                     paramName = '提交用户';
                 }
@@ -8136,15 +8127,15 @@ class JSNode_String_Substring extends JSNode_Base {
         }
         var usePreNodes_arr = preNodes_arr.concat(this);
         var socketsValues_arr = [];
-        for(var si in this.inputScokets_arr){
+        for (var si in this.inputScokets_arr) {
             var theSocket = this.inputScokets_arr[si];
             var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
             if (socketComRet.err) {
                 return false;
             }
             var socketValue = socketComRet.value;
-            if(theSocket == this.varSocket){
-                if(!socketComRet.link.outSocket.isSimpleVal){
+            if (theSocket == this.varSocket) {
+                if (!socketComRet.link.outSocket.isSimpleVal) {
                     socketValue = '(' + socketValue + ')';
                 }
             }
@@ -8205,15 +8196,15 @@ class JSNode_String_Substr extends JSNode_Base {
         }
         var usePreNodes_arr = preNodes_arr.concat(this);
         var socketsValues_arr = [];
-        for(var si in this.inputScokets_arr){
+        for (var si in this.inputScokets_arr) {
             var theSocket = this.inputScokets_arr[si];
             var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
             if (socketComRet.err) {
                 return false;
             }
             var socketValue = socketComRet.value;
-            if(theSocket == this.varSocket){
-                if(!socketComRet.link.outSocket.isSimpleVal){
+            if (theSocket == this.varSocket) {
+                if (!socketComRet.link.outSocket.isSimpleVal) {
                     socketValue = '(' + socketValue + ')';
                 }
             }
@@ -8276,15 +8267,15 @@ class JSNode_String_IndexOf extends JSNode_Base {
         }
         var usePreNodes_arr = preNodes_arr.concat(this);
         var socketsValues_arr = [];
-        for(var si in this.inputScokets_arr){
+        for (var si in this.inputScokets_arr) {
             var theSocket = this.inputScokets_arr[si];
             var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
             if (socketComRet.err) {
                 return false;
             }
             var socketValue = socketComRet.value;
-            if(theSocket == this.varSocket){
-                if(!socketComRet.link.outSocket.isSimpleVal){
+            if (theSocket == this.varSocket) {
+                if (!socketComRet.link.outSocket.isSimpleVal) {
                     socketValue = '(' + socketValue + ')';
                 }
             }

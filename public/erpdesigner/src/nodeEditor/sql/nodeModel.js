@@ -33,6 +33,7 @@ class SqlNode_BluePrint extends EventEmitter {
     constructor(initData, bluePrintJson, createHelper) {
         super();
         EnhanceEventEmiter(this);
+        NodeEditor(this);
 
         this.nodes_arr = [];
         this.vars_arr = [];
@@ -194,55 +195,8 @@ class SqlNode_BluePrint extends EventEmitter {
         return useID;
     }
 
-    quickCloneNodes(targets_arr, anchorPos){
-        if(targets_arr == null || targets_arr.length == 0){
-            return;
-        }
-        var createHelper = new NodeCreationHelper();
-        createHelper.dataMaster = this.dataMaster;
-        var srcNodeJsons_arr = [];
-        var srcNodes_arr = [];
-        var jsonProf = new AttrJsonProfile();
-        targets_arr.forEach(srcNode=>{
-            if(srcNode.cloneable != false && srcNode != this.finalSelectNode && this.getNodeByID(srcNode.id) != null){
-                srcNodeJsons_arr.push(srcNode.getJson(jsonProf));
-                srcNodes_arr.push(srcNode);
-            }
-        });
-        if(srcNodes_arr.length == 0){
-            return;
-        }
-        var newNodes_arr = this.genNodesByJsonArr(this, srcNodeJsons_arr, createHelper);
-        if(anchorPos){
-            var boundBox = MyMath.calcBoundBox(newNodes_arr.map(node=>{return {x:node.left,y:node.top,width:200,height:200};}));
-            var posOffset = {
-                x:anchorPos.x - boundBox.right,
-                y:anchorPos.y - boundBox.top,
-            };
-            newNodes_arr.forEach(newNode=>{
-                newNode.setPos(newNode.left + posOffset.x, newNode.top + posOffset.y);
-            });
-        }
-
-        var restoreLinkFun = (srcNode)=>{
-            var srcLinks_arr = this.linkPool.getLinksByNode(srcNode);
-            srcLinks_arr.forEach(theLink=>{
-                if(createHelper.orginID_map[theLink.inSocket.id] && createHelper.orginID_map[theLink.outSocket.id]){
-                    this.linkPool.addLink(createHelper.orginID_map[theLink.outSocket.id],createHelper.orginID_map[theLink.inSocket.id]);
-                }
-            });
-            
-            if(srcNode.nodes_arr && srcNode.nodes_arr.length > 0){
-                srcNode.nodes_arr.forEach(childNode=>{
-                    restoreLinkFun(childNode);
-                });
-            }
-        }
-        // restore links
-        srcNodes_arr.forEach(srcNode=>{
-            restoreLinkFun(srcNode);
-        });
-        return newNodes_arr;
+    isNodeCanCopy(node){
+        return node != this.finalSelectNode;
     }
 
     registerNode(node, parentNode) {

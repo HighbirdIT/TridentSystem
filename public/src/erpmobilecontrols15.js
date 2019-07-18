@@ -755,6 +755,9 @@ class ERPC_DropDown extends React.PureComponent {
             invalidInfo: invalidInfo,
             selectOpt: theOptionItem,
         }, this.props.fullPath));
+        if(typeof this.props.onchanged === 'function'){
+            this.props.onchanged(this.props.fullParentPath, text, value);
+        }
     }
 
     getPopPanelInitState() {
@@ -1135,6 +1138,9 @@ class ERPC_Text extends React.PureComponent {
             value: text,
             invalidInfo: invalidInfo,
         }, this.props.fullPath));
+        if(typeof this.props.onchanged === 'function'){
+            this.props.onchanged(this.props.fullParentPath, text);
+        }
     }
 
     formatInputValue(val) {
@@ -1399,6 +1405,9 @@ class ERPC_CheckBox extends React.PureComponent {
         store.dispatch(makeAction_setManyStateByPath({
             value: this.checked ? 0 : 1,
         }, MakePath(this.props.parentPath, this.props.id)));
+        if(typeof this.props.onchanged === 'function'){
+            this.props.onchanged(this.props.fullParentPath, this.checked ? 0 : 1);
+        }
     }
 
     render() {
@@ -1426,11 +1435,17 @@ class ERPC_CheckBox extends React.PureComponent {
 }
 
 function ERPC_CheckBox_mapstatetoprops(state, ownprops) {
-    var ctlPath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
-    var ctlState = getStateByPath(state, ctlPath, {});
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    var rowState = propProfile.rowState;
+
     return {
         value: ctlState.value,
         visible: ctlState.visible,
+        fetching: ctlState.fetching,
+        fetchingErr: ctlState.fetchingErr,
+        fullParentPath: propProfile.fullParentPath,
+        fullPath: propProfile.fullPath,
     };
 }
 
