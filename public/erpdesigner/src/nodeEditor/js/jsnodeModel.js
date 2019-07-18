@@ -258,6 +258,7 @@ class JSNode_BluePrint extends EventEmitter {
     postEditing(editor) {
         // call leve eidting
     }
+    
 
     getNodeParentList(theNode) {
         var rlt = [];
@@ -288,6 +289,41 @@ class JSNode_BluePrint extends EventEmitter {
             ++testI;
         }
         return useID;
+    }
+
+    quickCloneNodes(targets_arr, posOffset){
+        if(targets_arr == null || targets_arr.length == 0){
+            return;
+        }
+        var createHelper = new NodeCreationHelper();
+        createHelper.dataMaster = this.dataMaster;
+        var srcNodeJsons_arr = [];
+        var srcNodes_arr = [];
+        var jsonProf = new AttrJsonProfile();
+        targets_arr.forEach(srcNode=>{
+            if(srcNode.cloneable != false){
+                srcNodeJsons_arr.push(srcNode.getJson(jsonProf));
+                srcNodes_arr.push(srcNode);
+            }
+        });
+        if(srcNodes_arr.length == 0){
+            return;
+        }
+        var newNodes_arr = this.genNodesByJsonArr(this, srcNodeJsons_arr, createHelper);
+        if(posOffset){
+            newNodes_arr.forEach(newNode=>{
+                newNode.setPos(newNode.left + posOffset.x, newNode.top + posOffset.y);
+            });
+        }
+        // restore links
+        srcNodes_arr.forEach(srcNode=>{
+            var srcLinks_arr = this.linkPool.getLinksByNode(srcNode);
+            srcLinks_arr.forEach(theLink=>{
+                if(createHelper.orginID_map[theLink.inSocket.id] && createHelper.orginID_map[theLink.outSocket.id]){
+                    this.linkPool.addLink(createHelper.orginID_map[theLink.outSocket.id],createHelper.orginID_map[theLink.inSocket.id]);
+                }
+            });
+        });
     }
 
     registerNode(node, parentNode) {
@@ -389,6 +425,7 @@ class JSNode_BluePrint extends EventEmitter {
         }
         return this.allNode_map[id];
     }
+    
 
     getNodesByTypes(targetTypes_arr, mustGoodNode) {
         if (targetTypes_arr == null) {
@@ -1269,6 +1306,7 @@ class JSNode_Start extends JSNode_Base {
         super(initData, parentNode, createHelper, JSNODE_START, 'START', false, nodeJson);
         autoBind(this);
         this.isConstNode = true;
+        this.cloneable = false;
 
         if (this.outFlowSocket == null) {
             this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);

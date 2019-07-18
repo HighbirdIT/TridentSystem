@@ -25,6 +25,10 @@ var ERPC_TaskCreator = function (_React$PureComponent) {
         autoBind(_this);
         _this.contentDivRef = React.createRef();
         _this.inited = false;
+        _this.formStyle = {
+            maxWidth: '1024px',
+            margin: 'auto'
+        };
         return _this;
     }
 
@@ -36,7 +40,8 @@ var ERPC_TaskCreator = function (_React$PureComponent) {
                 self.inited = true;
             }, 50);
             if (appStateChangedAct_map) {
-                appStateChangedAct_map['TaskCreatePage.Form0.records_arr'] = freshTCKForm;
+                appStateChangedAct_map['TaskCreatePage.Form0.records_arr'] = gFreshTCKForm;
+                appStateChangedAct_map['TaskCreatePage.Form0.recordIndex'] = gBindTCKForm;
             }
         }
     }, {
@@ -73,7 +78,7 @@ var ERPC_TaskCreator = function (_React$PureComponent) {
         value: function renderContent() {
             return React.createElement(
                 "div",
-                { className: "d-flex flex-grow-1 flex-shrink-0 autoScroll_Touch flex-column bg-light" },
+                { className: "d-flex flex-grow-1 flex-shrink-0 autoScroll_Touch flex-column bg-light", style: { maxHeight: 'calc(100% - 40px)' } },
                 React.createElement(VisibleTKCForm, { id: "Form0", parentPath: "TaskCreatePage" })
             );
         }
@@ -86,7 +91,7 @@ var ERPC_TaskCreator = function (_React$PureComponent) {
                 { className: "fixedBackGround" },
                 React.createElement(
                     "div",
-                    { className: "d-flex flex-column flex-grow-1 flex-shrink-1 h-100 " },
+                    { className: "d-flex flex-column flex-grow-1 flex-shrink-1 h-100", style: this.formStyle },
                     this.renderHead(),
                     this.renderContent()
                 )
@@ -113,22 +118,18 @@ gNeedCallOnErpControlInit_arr.push(function () {
     VisibleTKCForm = ReactRedux.connect(TKCForm_mapstatetoprops, TKCForm_disptchtoprops)(TKCForm);
 });
 
-function gDoPullDropdown(parentPath, dropdownid, action) {
-    store.dispatch(fetchJsonPost(TaskServerURL, { action: action }, makeFTD_Prop(parentPath, dropdownid, 'options_arr', false), EFetchKey.FetchPropValue));
-}
-
-function pullTCKForm(retState) {
+function gPullTCKForm(retState) {
     setTimeout(function () {
         store.dispatch(fetchJsonPost(TaskServerURL, { action: 'getTCKFormData' }, makeFTD_Prop('TaskCreatePage', 'Form0', 'records_arr', false), EFetchKey.FetchPropValue));
     }, 50);
     return retState;
 }
 
-function freshTCKForm(retState, records_arr) {
-    simpleFreshFormFun(retState, records_arr, 'TaskCreatePage.Form0', bindTCKForm);
+function gFreshTCKForm(retState, records_arr) {
+    simpleFreshFormFun(retState, records_arr, 'TaskCreatePage.Form0', gBindTCKForm);
 }
 
-function bindTCKForm(retState, newIndex, oldIndex, statePath) {
+function gBindTCKForm(retState, newIndex, oldIndex, statePath) {
     var Form0_path = 'TaskCreatePage.Form0';
     var formState = getStateByPath(retState, Form0_path, {});
     var records_arr = formState.records_arr;
@@ -262,49 +263,305 @@ var TKCForm = function (_React$PureComponent2) {
     }
 
     _createClass(TKCForm, [{
+        key: "componentWillMount",
+        value: function componentWillMount() {
+            gPullTCKForm();
+            if (appStateChangedAct_map) {
+                appStateChangedAct_map[this.props.fullPath + '.M_CheckBox_0.value'] = this.M_CheckBox_0_value_changed;
+                appStateChangedAct_map[this.props.fullPath + '.M_CheckBox_1.value'] = this.M_CheckBox_1_value_changed;
+            }
+        }
+    }, {
+        key: "M_CheckBox_0_value_changed",
+        value: function M_CheckBox_0_value_changed(state, newValue) {
+            var needSetState = {};
+            needSetState['M_LC_8.visible'] = newValue ? 1 : 0;
+            return setManyStateByPath(state, this.props.fullPath, needSetState);
+        }
+    }, {
+        key: "M_CheckBox_1_value_changed",
+        value: function M_CheckBox_1_value_changed(state, newValue) {
+            var needSetState = {};
+            needSetState['M_LC_11.visible'] = newValue ? 1 : 0;
+            needSetState['M_LC_12.visible'] = newValue ? 1 : 0;
+            return setManyStateByPath(state, this.props.fullPath, needSetState);
+        }
+    }, {
+        key: "doPullDropdown",
+        value: function doPullDropdown(parentPath, dropdownid, action) {
+            store.dispatch(fetchJsonPost(TaskServerURL, { action: action }, makeFTD_Prop(parentPath, dropdownid, 'options_arr', false), EFetchKey.FetchPropValue));
+        }
+    }, {
         key: "pull_M_Dropdown_0",
         value: function pull_M_Dropdown_0(parentPath) {
-            gDoPullDropdown(parentPath, 'M_Dropdown_0', 'get用系统的用户');
+            this.doPullDropdown(parentPath, 'M_Dropdown_0', 'get用系统的用户');
         }
     }, {
         key: "pull_M_Dropdown_1",
         value: function pull_M_Dropdown_1(parentPath) {
-            gDoPullDropdown(parentPath, 'M_Dropdown_1', 'get用系统的用户');
+            this.doPullDropdown(parentPath, 'M_Dropdown_1', 'get用系统的用户');
         }
     }, {
         key: "pull_M_Dropdown_2",
         value: function pull_M_Dropdown_2(parentPath) {
-            gDoPullDropdown(parentPath, 'M_Dropdown_2', 'get所属工作组List');
+            this.doPullDropdown(parentPath, 'M_Dropdown_2', 'get所属工作组List');
         }
     }, {
         key: "pull_M_Dropdown_3",
         value: function pull_M_Dropdown_3(parentPath) {
-            gDoPullDropdown(parentPath, 'M_Dropdown_3', 'get可用项目List');
+            this.doPullDropdown(parentPath, 'M_Dropdown_3', 'get可用项目List');
         }
     }, {
         key: "pull_M_Dropdown_4",
         value: function pull_M_Dropdown_4(parentPath) {
-            gDoPullDropdown(parentPath, 'M_Dropdown_4', 'get用系统的用户');
+            this.doPullDropdown(parentPath, 'M_Dropdown_4', 'get用系统的用户');
         }
     }, {
         key: "pull_M_Dropdown_5",
         value: function pull_M_Dropdown_5(parentPath) {
-            gDoPullDropdown(parentPath, 'M_Dropdown_5', 'get汇报频率List');
+            this.doPullDropdown(parentPath, 'M_Dropdown_5', 'get汇报频率List');
         }
     }, {
         key: "pull_M_Dropdown_6",
         value: function pull_M_Dropdown_6(parentPath) {
-            gDoPullDropdown(parentPath, 'M_Dropdown_6', 'get周期单位List');
+            this.doPullDropdown(parentPath, 'M_Dropdown_6', 'get周期单位List');
         }
     }, {
         key: "pull_M_Dropdown_7",
         value: function pull_M_Dropdown_7(parentPath) {
-            gDoPullDropdown(parentPath, 'M_Dropdown_7', 'get重要程度List');
+            this.doPullDropdown(parentPath, 'M_Dropdown_7', 'get重要程度List');
         }
     }, {
-        key: "componentWillMount",
-        value: function componentWillMount() {
-            pullTCKForm();
+        key: "modifybtn_onclick",
+        value: function modifybtn_onclick(ev) {
+            var state = store.getState();
+            var M_Form_0_Path = this.props.fullPath;
+            var M_Form_0_state = getStateByPath(state, M_Form_0_Path, {});
+            var M_Form_0_nowRecord = M_Form_0_state.nowRecord;
+            var M_Text_0_state = getStateByPath(M_Form_0_state, 'M_Text_0', {});
+            var M_LC_0_state = getStateByPath(M_Form_0_state, 'M_LC_0', {});
+            var M_Text_0_value = M_Text_0_state.value;
+            var M_Text_1_state = getStateByPath(M_Form_0_state, 'M_Text_1', {});
+            var M_LC_1_state = getStateByPath(M_Form_0_state, 'M_LC_1', {});
+            var M_Text_1_value = M_Text_1_state.value;
+            var M_Dropdown_0_state = getStateByPath(M_Form_0_state, 'M_Dropdown_0', {});
+            var M_LC_2_state = getStateByPath(M_Form_0_state, 'M_LC_2', {});
+            var M_Dropdown_0_value = M_Dropdown_0_state.value;
+            var M_Dropdown_1_state = getStateByPath(M_Form_0_state, 'M_Dropdown_1', {});
+            var M_LC_3_state = getStateByPath(M_Form_0_state, 'M_LC_3', {});
+            var M_Dropdown_1_value = M_Dropdown_1_state.value;
+            var M_Dropdown_2_state = getStateByPath(M_Form_0_state, 'M_Dropdown_2', {});
+            var M_LC_4_state = getStateByPath(M_Form_0_state, 'M_LC_4', {});
+            var M_Dropdown_2_value = M_Dropdown_2_state.value;
+            var M_Dropdown_3_state = getStateByPath(M_Form_0_state, 'M_Dropdown_3', {});
+            var M_LC_5_state = getStateByPath(M_Form_0_state, 'M_LC_5', {});
+            var M_Dropdown_3_value = M_Dropdown_3_state.value;
+            var M_Dropdown_4_state = getStateByPath(M_Form_0_state, 'M_Dropdown_4', {});
+            var M_LC_6_state = getStateByPath(M_Form_0_state, 'M_LC_6', {});
+            var M_Dropdown_4_value = M_Dropdown_4_state.value;
+            var M_Text_4_state = getStateByPath(M_Form_0_state, 'M_Text_4', {});
+            var M_LC_14_state = getStateByPath(M_Form_0_state, 'M_LC_14', {});
+            var M_Text_4_value = M_Text_4_state.value;
+            var M_CheckBox_0_state = getStateByPath(M_Form_0_state, 'M_CheckBox_0', {});
+            var M_LC_7_state = getStateByPath(M_Form_0_state, 'M_LC_7', {});
+            var M_CheckBox_0_value = M_CheckBox_0_state.value;
+            var M_Text_2_state = getStateByPath(M_Form_0_state, 'M_Text_2', {});
+            var M_LC_8_state = getStateByPath(M_Form_0_state, 'M_LC_8', {});
+            var M_Text_2_value = M_Text_2_state.value;
+            var M_Dropdown_5_state = getStateByPath(M_Form_0_state, 'M_Dropdown_5', {});
+            var M_LC_9_state = getStateByPath(M_Form_0_state, 'M_LC_9', {});
+            var M_Dropdown_5_value = M_Dropdown_5_state.value;
+            var M_CheckBox_1_state = getStateByPath(M_Form_0_state, 'M_CheckBox_1', {});
+            var M_LC_10_state = getStateByPath(M_Form_0_state, 'M_LC_10', {});
+            var M_CheckBox_1_value = M_CheckBox_1_state.value;
+            var M_Dropdown_6_state = getStateByPath(M_Form_0_state, 'M_Dropdown_6', {});
+            var M_LC_11_state = getStateByPath(M_Form_0_state, 'M_LC_11', {});
+            var M_Dropdown_6_value = M_Dropdown_6_state.value;
+            var M_Text_3_state = getStateByPath(M_Form_0_state, 'M_Text_3', {});
+            var M_LC_12_state = getStateByPath(M_Form_0_state, 'M_LC_12', {});
+            var M_Text_3_value = M_Text_3_state.value;
+            var M_Dropdown_7_state = getStateByPath(M_Form_0_state, 'M_Dropdown_7', {});
+            var M_LC_13_state = getStateByPath(M_Form_0_state, 'M_LC_13', {});
+            var M_Dropdown_7_value = M_Dropdown_7_state.value;
+            var validErr;
+            var hadValidErr = false;
+            var validErrState = {};
+            var scriptBP_12_msg = null;
+            var callback_final = function callback_final(state, data, err) {
+                if (state == null) {
+                    store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
+                } else {
+                    setManyStateByPath(state, '', validErrState);
+                }
+                if (hadValidErr) {
+                    SendToast('验证失败，无法执行', EToastType.Warning);return;
+                }
+                if (err) {
+                    if (scriptBP_12_msg) {
+                        scriptBP_12_msg.setData(err.info, EMessageBoxType.Error, '提交修改');
+                    } else {
+                        SendToast(err.info, EToastType.Error);
+                    }
+                    return;
+                }
+                if (scriptBP_12_msg) {
+                    scriptBP_12_msg.fireClose();
+                }
+                SendToast('执行成功');
+            };
+            if (IsEmptyString(M_Form_0_nowRecord)) {
+                return callback_final(state, null, { info: gPreconditionInvalidInfo });
+            }
+            validErr = BaseIsValueValid(state, M_LC_0_state, M_Text_0_state, M_Text_0_value, 'string', false, 'M_Text_0', validErrState);
+            validErrState[M_Form_0_Path + '.M_Text_0.invalidInfo'] = validErr;
+            if (validErr != null) hadValidErr = true;
+            validErr = BaseIsValueValid(state, M_LC_1_state, M_Text_1_state, M_Text_1_value, 'string', false, 'M_Text_1', validErrState);
+            validErrState[M_Form_0_Path + '.M_Text_1.invalidInfo'] = validErr;
+            if (validErr != null) hadValidErr = true;
+            validErr = BaseIsValueValid(state, M_LC_2_state, M_Dropdown_0_state, M_Dropdown_0_value, 'string', false, 'M_Dropdown_0', validErrState);
+            validErrState[M_Form_0_Path + '.M_Dropdown_0.invalidInfo'] = validErr;
+            if (validErr != null) hadValidErr = true;
+            validErr = BaseIsValueValid(state, M_LC_3_state, M_Dropdown_1_state, M_Dropdown_1_value, 'string', false, 'M_Dropdown_1', validErrState);
+            validErrState[M_Form_0_Path + '.M_Dropdown_1.invalidInfo'] = validErr;
+            if (validErr != null) hadValidErr = true;
+            validErr = BaseIsValueValid(state, M_LC_4_state, M_Dropdown_2_state, M_Dropdown_2_value, 'string', false, 'M_Dropdown_2', validErrState);
+            validErrState[M_Form_0_Path + '.M_Dropdown_2.invalidInfo'] = validErr;
+            if (validErr != null) hadValidErr = true;
+            validErr = BaseIsValueValid(state, M_LC_5_state, M_Dropdown_3_state, M_Dropdown_3_value, 'string', false, 'M_Dropdown_3', validErrState);
+            validErrState[M_Form_0_Path + '.M_Dropdown_3.invalidInfo'] = validErr;
+            if (validErr != null) hadValidErr = true;
+            validErr = BaseIsValueValid(state, M_LC_6_state, M_Dropdown_4_state, M_Dropdown_4_value, 'xml', true, 'M_Dropdown_4', validErrState);
+            validErrState[M_Form_0_Path + '.M_Dropdown_4.invalidInfo'] = validErr;
+            if (validErr != null) hadValidErr = true;
+            validErr = BaseIsValueValid(state, M_LC_14_state, M_Text_4_state, M_Text_4_value, 'date', false, 'M_Text_4', validErrState);
+            validErrState[M_Form_0_Path + '.M_Text_4.invalidInfo'] = validErr;
+            if (validErr != null) hadValidErr = true;
+            validErr = BaseIsValueValid(state, M_LC_7_state, M_CheckBox_0_state, M_CheckBox_0_value, 'string', false, 'M_CheckBox_0', validErrState);
+            validErrState[M_Form_0_Path + '.M_CheckBox_0.invalidInfo'] = validErr;
+            if (validErr != null) hadValidErr = true;
+            validErr = BaseIsValueValid(state, M_LC_8_state, M_Text_2_state, M_Text_2_value, 'date', false, 'M_Text_2', validErrState);
+            if (validErr == null && M_CheckBox_0_value == 1 && getDateDiff('天', castDate(M_Text_4_value), castDate(M_Text_2_value)) < 0) {
+                validErr = '必须大于开始日期。';
+            }
+            validErrState[M_Form_0_Path + '.M_Text_2.invalidInfo'] = validErr;
+            if (validErr != null) hadValidErr = true;
+            validErr = BaseIsValueValid(state, M_LC_9_state, M_Dropdown_5_state, M_Dropdown_5_value, 'string', false, 'M_Dropdown_5', validErrState);
+            validErrState[M_Form_0_Path + '.M_Dropdown_5.invalidInfo'] = validErr;
+            if (validErr != null) hadValidErr = true;
+            validErr = BaseIsValueValid(state, M_LC_10_state, M_CheckBox_1_state, M_CheckBox_1_value, 'string', false, 'M_CheckBox_1', validErrState);
+            validErrState[M_Form_0_Path + '.M_CheckBox_1.invalidInfo'] = validErr;
+            if (validErr != null) hadValidErr = true;
+            validErr = BaseIsValueValid(state, M_LC_11_state, M_Dropdown_6_state, M_Dropdown_6_value, 'string', false, 'M_Dropdown_6', validErrState);
+            validErrState[M_Form_0_Path + '.M_Dropdown_6.invalidInfo'] = validErr;
+            if (validErr != null) hadValidErr = true;
+            validErr = BaseIsValueValid(state, M_LC_12_state, M_Text_3_state, M_Text_3_value, 'float', false, 'M_Text_3', validErrState);
+            validErrState[M_Form_0_Path + '.M_Text_3.invalidInfo'] = validErr;
+            if (validErr != null) hadValidErr = true;
+            validErr = BaseIsValueValid(state, M_LC_13_state, M_Dropdown_7_state, M_Dropdown_7_value, 'string', false, 'M_Dropdown_7', validErrState);
+            validErrState[M_Form_0_Path + '.M_Dropdown_7.invalidInfo'] = validErr;
+            if (validErr != null) hadValidErr = true;
+
+            if (hadValidErr) {
+                return callback_final(null, null, { info: gPreconditionInvalidInfo });
+            }
+            var fetchid = Math.round(Math.random() * 999999);
+            var fetchKey = 'button_2_onclick';
+            fetchTracer[fetchKey] = fetchid;
+            var baseBundle = {};
+            scriptBP_12_msg = PopMessageBox('', EMessageBoxType.Loading, '提交修改');
+            var bundle_update_table_0 = Object.assign({}, baseBundle, {
+                M_Form_0_nowRecord: M_Form_0_nowRecord,
+                M_Text_0_value: M_Text_0_value,
+                M_Text_1_value: M_Text_1_value,
+                M_Dropdown_0_value: M_Dropdown_0_value,
+                M_Dropdown_1_value: M_Dropdown_1_value,
+                M_Dropdown_2_value: M_Dropdown_2_value,
+                M_Dropdown_3_value: M_Dropdown_3_value,
+                M_Dropdown_4_value: M_Dropdown_4_value,
+                M_CheckBox_0_value: M_CheckBox_0_value,
+                M_Text_4_value: M_Text_4_value,
+                M_Text_2_value: M_Text_2_value,
+                M_Dropdown_5_value: M_Dropdown_5_value,
+                M_CheckBox_1_value: M_CheckBox_1_value,
+                M_Text_3_value: M_Text_3_value,
+                M_Dropdown_6_value: M_Dropdown_6_value,
+                M_Dropdown_7_value: M_Dropdown_7_value
+            });
+            store.dispatch(fetchJsonPost(TaskServerURL, { bundle: bundle_update_table_0, action: 'modifyTask' }, makeFTD_Callback(function (state, data_update_table_0, err_update_table_0) {
+                if (err_update_table_0 == null) {
+                    if (scriptBP_12_msg != null) {
+                        scriptBP_12_msg.fireClose();
+                    }
+                    var popPage_0entryParam = {
+                        任务名称: M_Text_0_value,
+                        任务代码: M_Form_0_nowRecord['工作任务记录代码'],
+                        callBack: null
+                    };
+                    gDataCache.set('M_Page_1entryParam', popPage_0entryParam);
+                    /*
+                    init_M_Page_1(state);
+                    setTimeout(() => {
+                        popPage('M_Page_1', <VisibleCM_Page_1 key='M_Page_1' />);
+                    }, 50);
+                    */
+                } else {
+                    return callback_final(state, data_update_table_0, err_update_table_0);
+                }
+            })));
+        }
+    }, {
+        key: "deletebtn_onclick",
+        value: function deletebtn_onclick(ev) {
+            var state = store.getState();
+            var M_Form_0_Path = this.props.fullPath;
+            var M_Form_0_state = getStateByPath(state, M_Form_0_Path, {});
+            var M_Form_0_nowRecord = M_Form_0_state.nowRecord;
+            var hadValidErr = false;
+            var validErrState = {};
+            var scriptBP_11_msg = null;
+            var callback_final = function callback_final(state, data, err) {
+                if (state == null) {
+                    store.dispatch(makeAction_setManyStateByPath(validErrState, ''));
+                } else {
+                    setManyStateByPath(state, '', validErrState);
+                }
+                if (hadValidErr) {
+                    SendToast('验证失败，无法执行', EToastType.Warning);return;
+                }
+                if (err) {
+                    if (scriptBP_11_msg) {
+                        scriptBP_11_msg.setData(err.info, EMessageBoxType.Error, '撤销此任务');
+                    } else {
+                        SendToast(err.info, EToastType.Error);
+                    }
+                    return;
+                }
+                if (scriptBP_11_msg) {
+                    scriptBP_11_msg.fireClose();
+                }
+                SendToast('执行成功');
+            };
+            if (IsEmptyString(M_Form_0_nowRecord)) {
+                return callback_final(state, null, { info: gPreconditionInvalidInfo });
+            }
+            var fetchid = Math.round(Math.random() * 999999);
+            var fetchKey = 'button_1_onclick';
+            fetchTracer[fetchKey] = fetchid;
+
+            scriptBP_11_msg = PopMessageBox('', EMessageBoxType.Loading, '撤销此任务');
+            var bundle_excute_pro_0 = {
+                M_Form_0_nowRecord: M_Form_0_nowRecord
+            };
+            store.dispatch(fetchJsonPost(TaskServerURL, { bundle: bundle_excute_pro_0, action: 'repealTask' }, makeFTD_Callback(function (state, excute_pro_0_ret, error_excute_pro_0) {
+                if (error_excute_pro_0) {
+                    return callback_final(state, null, error_excute_pro_0);
+                }
+                setTimeout(function () {
+                    gPullTCKForm();
+                }, 50);
+                var ret = callback_final(state, excute_pro_0_ret.output.执行成功, null);
+                return ret == null ? state : ret;
+            }, false)));
         }
     }, {
         key: "render",
@@ -328,7 +585,7 @@ var TKCForm = function (_React$PureComponent2) {
                         } else {
                             retElem = React.createElement(
                                 "div",
-                                { className: "d-flex flex-column d-flex flex-grow-1 flex-shrink-1 erp-form flex-column " },
+                                { className: "d-flex flex-column d-flex flex-grow-0 flex-shrink-0 erp-form flex-column " },
                                 this.props.title && React.createElement(
                                     "div",
                                     { className: "bg-dark text-light justify-content-center d-flex flex-shrink-0" },
@@ -418,12 +675,12 @@ var TKCForm = function (_React$PureComponent2) {
                                     ),
                                     React.createElement(
                                         VisibleERPC_Button,
-                                        { className: "btn btn-primary erp-control ", id: "button_2", parentPath: this.props.fullPath, onClick: this.button_2_onclick },
+                                        { className: "btn btn-primary erp-control ", id: "button_2", parentPath: this.props.fullPath, onClick: this.modifybtn_onclick },
                                         "\u63D0\u4EA4\u4FEE\u6539"
                                     ),
                                     React.createElement(
                                         VisibleERPC_Button,
-                                        { className: "btn btn-warning erp-control ", id: "button_1", parentPath: this.props.fullPath, onClick: this.button_1_onclick },
+                                        { className: "btn btn-warning erp-control ", id: "button_1", parentPath: this.props.fullPath, onClick: this.deletebtn_onclick },
                                         "\u64A4\u9500\u6B64\u4EFB\u52A1"
                                     ),
                                     React.createElement(

@@ -80,10 +80,12 @@ class CProject extends IAttributeable{
                     var newUCtl = new UserControlKernel({project:this},null,null,ctlJson);
                     this.userControls_arr.push(newUCtl);
                 });
+
+                jsonData.userControls_arr.forEach((ctlJson,index)=>{
+                    this.userControls_arr[index].__restoreChildren(null,ctlJson);
+                });
             }
-            jsonData.userControls_arr.forEach((ctlJson,index)=>{
-                this.userControls_arr[index].__restoreChildren(null,ctlJson);
-            });
+            
 
             var self = this;
             var ctlCreatioinHelper = new CtlKernelCreationHelper();

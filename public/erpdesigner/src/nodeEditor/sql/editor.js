@@ -655,6 +655,26 @@ class C_SqlNode_Editor extends React.PureComponent{
                     return;
                 }
             }
+            else if(ev.altKey){
+                if(!this.selectedNFManager.isEmpty()){
+                    var rightMostPos = {x:null,y:null};
+                    var selectedNodes_arr = [];
+                    this.selectedNFManager.forEach(nf=>{
+                        selectedNodes_arr.push(nf.props.nodedata);
+                        var nfRect = nf.rootDivRef.current.getBoundingClientRect();
+                        var nfRightTop = {x:nf.props.nodedata.left + nfRect.width,y:nf.props.nodedata.top};
+                        if(rightMostPos.x == null || nfRightTop.x > rightMostPos.x){
+                            rightMostPos.x = nfRightTop.x;
+                        }
+                        if(rightMostPos.y == null || nfRightTop.y > rightMostPos.y){
+                            rightMostPos.y = nfRightTop.y;
+                        }
+                    });
+                    this.props.bluePrint.quickCloneNodes(selectedNodes_arr, {x:editorPos.x - rightMostPos.x,y:editorPos.y - rightMostPos.y});
+
+                    return;
+                }
+            }
             if(ev.button == 0){
                 // 拉取选择范围
                 this.selectRectRef.current.setSize({
@@ -1419,7 +1439,7 @@ class SqlNode_CompileHelper{
         this.editor = editor;
         this.cacheObj = {};
         this.useEntities_arr = [];
-        this.useVariables_arr = [];
+        this.useVariables_arr = {};
         this.useGlobalControls_map = {};
         this.useForm_map = {};
         this.useEnvVars = {};

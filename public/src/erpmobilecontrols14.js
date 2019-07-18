@@ -728,7 +728,7 @@ class ERPC_DropDown extends React.PureComponent {
                     value = theOptionItem.value.toString();
                     text = theOptionItem.text;
                 }
-                if (this.props.recentCookieKey) {
+                if (this.props.recentCookieKey && this.recentValues_arr) {
                     var index = this.recentValues_arr.indexOf(value);
                     if (index != 0) {
                         if (index != -1) {

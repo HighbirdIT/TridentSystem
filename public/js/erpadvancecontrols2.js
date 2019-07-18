@@ -50,7 +50,7 @@ var ERPC_TaskSelector = function (_React$PureComponent) {
         value: function createTitleBarRightElem() {
             return React.createElement(
                 'button',
-                { type: 'button', onClick: this.popupCreator, className: 'btn btn-success' },
+                { type: 'button', onClick: this.popupCreator, className: 'ml-1 btn btn-success' },
                 React.createElement('i', { className: 'fa fa-plus' }),
                 '\u521B\u5EFA\u4EFB\u52A1'
             );

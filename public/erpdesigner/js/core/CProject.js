@@ -88,10 +88,11 @@ var CProject = function (_IAttributeable) {
                     var newUCtl = new UserControlKernel({ project: _this }, null, null, ctlJson);
                     _this.userControls_arr.push(newUCtl);
                 });
+
+                jsonData.userControls_arr.forEach(function (ctlJson, index) {
+                    _this.userControls_arr[index].__restoreChildren(null, ctlJson);
+                });
             }
-            jsonData.userControls_arr.forEach(function (ctlJson, index) {
-                _this.userControls_arr[index].__restoreChildren(null, ctlJson);
-            });
 
             var self = _this;
             var ctlCreatioinHelper = new CtlKernelCreationHelper();

@@ -81,6 +81,7 @@ class NodeCreationHelper extends EventEmitter {
         this.orginID_map = {};
         this.newID_map = {};
         this.idTracer = {};
+        this.revIdTracer = {};
     }
 
     saveJsonMap(jsonData, newNode) {
@@ -92,13 +93,24 @@ class NodeCreationHelper extends EventEmitter {
                 if (this.getObjFromID(newNode.id) != null) {
                     console.warn(jsonData.id + '被重复saveJsonMap');
                 }
-                this.idTracer[jsonData.id] = this.idTracer[newNode.id]
+                this.idTracer[jsonData.id] = newNode.id;
+                this.revIdTracer[newNode.id] = jsonData.id;
             }
             this.orginID_map[jsonData.id] = newNode;
         }
 
         this.newID_map[newNode.id] = newNode;
     }
+
+    saveIDMap(oldID, newItem){
+        delete this.newID_map[oldID];
+        delete this.revIdTracer[oldID];
+        this.idTracer[oldID] = newItem.id;
+        this.revIdTracer[newItem.id] = oldID;
+        this.orginID_map[oldID] = newItem;
+        this.newID_map[newItem.id] = newItem;
+    }
+
 
     getObjFromID(id) {
         var rlt = this.orginID_map[id];
@@ -175,7 +187,43 @@ class Node_Base extends EventEmitter {
         this.processOutputFlowSockets = this.processOutputFlowSockets.bind(this);
         this.frameButtons_arr = [];
 
+        var oldNodeID = this.id;
         this.bluePrint.registerNode(this, parentNode);
+        var newNodeID = this.id;
+        var nodeSelf = this;
+        if(!IsEmptyString(oldNodeID) && oldNodeID != newNodeID){
+            // id发生了变化
+            var synSocketIDFun = (socket)=>{
+                var socketOldID = socket.id;
+                var socketNewID = socketOldID.replace(oldNodeID, newNodeID);
+                socket.id = socketNewID;
+                delete nodeSelf.sockets_map[socketOldID];
+                nodeSelf.sockets_map[socketNewID] = socket;
+                createHelper.saveIDMap(socketOldID, socket);
+            };
+            this.inputScokets_arr.forEach(socket=>{
+                synSocketIDFun(socket);
+            });
+            this.outputScokets_arr.forEach(socket=>{
+                synSocketIDFun(socket);
+            });
+            if(this.inFlowSockets_arr){
+                this.inFlowSockets_arr.forEach(socket=>{
+                    synSocketIDFun(socket);
+                });
+            }
+            if(this.outFlowSockets_arr){
+                this.outFlowSockets_arr.forEach(socket=>{
+                    synSocketIDFun(socket);
+                });
+            }
+            if(this.inFlowSocket){
+                synSocketIDFun(this.inFlowSocket);
+            }
+            if(this.outFlowSocket){
+                synSocketIDFun(this.outFlowSocket);
+            }
+        }
 
         if (createHelper) {
             createHelper.saveJsonMap(nodeJson, this);

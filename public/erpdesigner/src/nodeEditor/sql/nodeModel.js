@@ -29,41 +29,6 @@ var SqlNodeClassMap = {};
 const SQL_OutSimpleValueNode_arr = [SQLNODE_COLUMN, SQLNODE_VAR_GET, SQLNODE_CONSTVALUE, SQLNODE_CONTROL_API_PROP, SQLNODE_ENV_VAR, SQLNODE_CURRENTDATAROW];
 
 
-class NodeCreationHelper extends EventEmitter {
-    constructor() {
-        super();
-        EnhanceEventEmiter(this);
-        this.orginID_map = {};
-        this.newID_map = {};
-        this.idTracer = {};
-    }
-
-    saveJsonMap(jsonData, newNode) {
-        if (jsonData && jsonData.id) {
-            if (this.getObjFromID(jsonData.id) != null) {
-                console.warn(jsonData.id + '被重复saveJsonMap');
-            }
-            if (jsonData.id != newNode.id) {
-                if (this.getObjFromID(newNode.id) != null) {
-                    console.warn(jsonData.id + '被重复saveJsonMap');
-                }
-                this.idTracer[jsonData.id] = this.idTracer[newNode.id]
-            }
-            this.orginID_map[jsonData.id] = newNode;
-        }
-
-        this.newID_map[newNode.id] = newNode;
-    }
-
-    getObjFromID(id) {
-        var rlt = this.orginID_map[id];
-        if (rlt == null) {
-            rlt = this.newID_map[id];
-        }
-        return rlt;
-    }
-}
-
 class SqlNode_BluePrint extends EventEmitter {
     constructor(initData, bluePrintJson, createHelper) {
         super();
@@ -227,6 +192,51 @@ class SqlNode_BluePrint extends EventEmitter {
             ++testI;
         }
         return useID;
+    }
+
+    quickCloneNodes(targets_arr, posOffset){
+        if(targets_arr == null || targets_arr.length == 0){
+            return;
+        }
+        var createHelper = new NodeCreationHelper();
+        createHelper.dataMaster = this.dataMaster;
+        var srcNodeJsons_arr = [];
+        var srcNodes_arr = [];
+        var jsonProf = new AttrJsonProfile();
+        targets_arr.forEach(srcNode=>{
+            if(srcNode.cloneable != false && srcNode != this.finalSelectNode){
+                srcNodeJsons_arr.push(srcNode.getJson(jsonProf));
+                srcNodes_arr.push(srcNode);
+            }
+        });
+        if(srcNodes_arr.length == 0){
+            return;
+        }
+        var newNodes_arr = this.genNodesByJsonArr(this, srcNodeJsons_arr, createHelper);
+        if(posOffset){
+            newNodes_arr.forEach(newNode=>{
+                newNode.setPos(newNode.left + posOffset.x, newNode.top + posOffset.y);
+            });
+        }
+
+        var restoreLinkFun = (srcNode)=>{
+            var srcLinks_arr = this.linkPool.getLinksByNode(srcNode);
+            srcLinks_arr.forEach(theLink=>{
+                if(createHelper.orginID_map[theLink.inSocket.id] && createHelper.orginID_map[theLink.outSocket.id]){
+                    this.linkPool.addLink(createHelper.orginID_map[theLink.outSocket.id],createHelper.orginID_map[theLink.inSocket.id]);
+                }
+            });
+            
+            if(srcNode.nodes_arr && srcNode.nodes_arr.length > 0){
+                srcNode.nodes_arr.forEach(childNode=>{
+                    restoreLinkFun(childNode);
+                });
+            }
+        }
+        // restore links
+        srcNodes_arr.forEach(srcNode=>{
+            restoreLinkFun(srcNode);
+        });
     }
 
     registerNode(node, parentNode) {

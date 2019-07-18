@@ -129,6 +129,10 @@ class FlowDef_Variable extends FlowNode_Base {
         var defaultvar = IsEmptyString(this.default) ? 'null' : (isNaN(this.default) ? singleQuotesStr(this.default) : this.default);
         return 'var ' + this.name + ' ' + defaultvar + ';';
     }
+
+    getDefault(){
+        return IsEmptyString(this.default) ? 'null' : (isNaN(this.default) ? singleQuotesStr(this.default) : this.default);
+    }
 }
 
 
@@ -229,6 +233,41 @@ class FlowNode_BluePrint extends EventEmitter {
             ++testI;
         }
         return useID;
+    }
+
+    quickCloneNodes(targets_arr, posOffset){
+        if(targets_arr == null || targets_arr.length == 0){
+            return;
+        }
+        var createHelper = new NodeCreationHelper();
+        createHelper.dataMaster = this.dataMaster;
+        var srcNodeJsons_arr = [];
+        var srcNodes_arr = [];
+        var jsonProf = new AttrJsonProfile();
+        targets_arr.forEach(srcNode=>{
+            if(srcNode.cloneable != false){
+                srcNodeJsons_arr.push(srcNode.getJson(jsonProf));
+                srcNodes_arr.push(srcNode);
+            }
+        });
+        if(srcNodes_arr.length == 0){
+            return;
+        }
+        var newNodes_arr = this.genNodesByJsonArr(this, srcNodeJsons_arr, createHelper);
+        if(posOffset){
+            newNodes_arr.forEach(newNode=>{
+                newNode.setPos(newNode.left + posOffset.x, newNode.top + posOffset.y);
+            });
+        }
+        // restore links
+        srcNodes_arr.forEach(srcNode=>{
+            var srcLinks_arr = this.linkPool.getLinksByNode(srcNode);
+            srcLinks_arr.forEach(theLink=>{
+                if(createHelper.orginID_map[theLink.inSocket.id] && createHelper.orginID_map[theLink.outSocket.id]){
+                    this.linkPool.addLink(createHelper.orginID_map[theLink.outSocket.id],createHelper.orginID_map[theLink.inSocket.id]);
+                }
+            });
+        });
     }
 
     registerNode(node, parentNode) {
@@ -479,6 +518,11 @@ class FlowNode_BluePrint extends EventEmitter {
             var caseBlock = stepSwitchBlock.getCaseBlock(theStep.code);
             caseBlock.pushLine('return ' + stepFun.name + '(' + callFunUseParams_arr.join(',') + ');');
             stepNode.compile(compilHelper, [], stepFun.bodyBlock);
+
+            for (var vi in compilHelper.useVariables_arr) {
+                var varInfo =  compilHelper.useVariables_arr[vi];
+                stepFun.scope.getVar(varInfo.name,true,varInfo.declareStr);
+            }
         }
         flowJSFile.processFun.retBlock.pushLine('return co(function* (){return serverhelper.createErrorRet("无法处理的的步骤" + stepCode);});');
         flowJSFile.compileEnd();
@@ -567,7 +611,7 @@ class FlowNode_Var_Get extends FlowNode_Base {
             return false;
         }
         var selfCompileRet = new CompileResult(this);
-        helper.addUseVariable(this.varData.name, this.varData.valType, this.varData.getDefineString());
+        helper.addUseVariable(this.varData.name, this.varData.valType, this.varData.getDefault());
         selfCompileRet.setSocketOut(this.outSocket, this.varData.getRealName());
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
@@ -696,6 +740,7 @@ class FlowNode_StepStart extends FlowNode_Base {
         super(initData, parentNode, createHelper, FLOWNODE_STEP_START, '步骤开始', false, nodeJson);
         autoBind(this);
         //this.isConstNode = true;
+        this.cloneable = false;
 
         if (this.outFlowSocket == null) {
             this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
