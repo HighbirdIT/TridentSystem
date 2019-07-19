@@ -317,6 +317,17 @@ class MobileContentCompiler extends ContentCompiler {
         */
     }
 
+    compileOnChangedEventBlueprint(theKernel, ctlTag){
+        var onchangedFunName = theKernel.id + '_' + AttrNames.Event.OnChanged;
+        var onchangedBp = this.project.scriptMaster.getBPByName(onchangedFunName);
+        if (onchangedBp != null) {
+            if (this.compileScriptBlueprint(onchangedBp, { nomsgbox: true }) == false) {
+                return false;
+            }
+            ctlTag.setAttr('onchanged', '{'+onchangedFunName+'}');
+        }
+    }
+
     compileScriptBlueprint(targetBP, config) {
         if (this.compiledScriptBP_map[targetBP.id]) {
             return this.compiledScriptBP_map[targetBP.id];
@@ -700,7 +711,7 @@ class MobileContentCompiler extends ContentCompiler {
         var controlInitBlock = new FormatFileBlock('ctlinit');
         var userControlInitBlock = new FormatFileBlock('userctlinit');
         var activeTimeoutBlock = new FormatFileBlock('timeout');
-        initPageFun.scope.getVar(VarNames.NeedSetState, true, '[]');
+        initPageFun.scope.getVar(VarNames.NeedSetState, true, '{}');
         initPageFun.scope.getVar(VarNames.FullParentPath, true, singleQuotesStr(pageKernel.id));
         initPageFun.pushLine('var hadState = state != null;');
         initPageFun.pushLine('if(!hadState){state = store.getState();}');
@@ -1030,6 +1041,8 @@ class MobileContentCompiler extends ContentCompiler {
         renderBlock.pushChild(ctlTag);
         this.compileIsdisplayAttribute(theKernel, ctlTag);
         this.compileValidCheckerAttribute(theKernel);
+        this.compileOnChangedEventBlueprint(theKernel, ctlTag);
+
         var editeable = theKernel.getAttribute(AttrNames.Editeable);
         if (!editeable) {
             ctlTag.setAttr('readonly', '{true}');
@@ -1131,6 +1144,7 @@ class MobileContentCompiler extends ContentCompiler {
         renderBlock.pushChild(ctlTag);
         this.compileIsdisplayAttribute(theKernel, ctlTag);
         this.compileValidCheckerAttribute(theKernel);
+        this.compileOnChangedEventBlueprint(theKernel, ctlTag);
         var editeable = theKernel.getAttribute(AttrNames.Editeable);
         if (!editeable) {
             ctlTag.setAttr('readonly', '{true}');
@@ -2901,6 +2915,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
         this.compileIsdisplayAttribute(theKernel, ctlTag);
         this.compileValidCheckerAttribute(theKernel);
+        this.compileOnChangedEventBlueprint(theKernel, ctlTag);
 
         var defaultVal = theKernel.getAttribute(AttrNames.DefaultValue);
         var defaultValParseRet = parseObj_CtlPropJsBind(defaultVal, project.scriptMaster);

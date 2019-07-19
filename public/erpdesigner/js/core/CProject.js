@@ -202,12 +202,19 @@ var CProject = function (_IAttributeable) {
     }, {
         key: 'unRegisterControl',
         value: function unRegisterControl(ctlKernel) {
+            var _this2 = this;
+
             var useID = ctlKernel.id;
             var registedCtl = this.getControlById(useID);
             if (registedCtl == null) {
                 return true;
             }
             delete this.controlId_map[useID];
+
+            var useBPs_arr = this.scriptMaster.getBPsByControlKernel(useID);
+            useBPs_arr.forEach(function (bp) {
+                _this2.scriptMaster.deleteBP(bp);
+            });
         }
     }, {
         key: 'getControlById',

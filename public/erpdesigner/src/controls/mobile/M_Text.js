@@ -14,6 +14,9 @@ const M_TextKernelAttrsSetting = GenControlKernelAttrsSetting([
         genNullableAttribute(),
         genValidCheckerAttribute(),
     ]),
+    new CAttributeGroup('事件',[
+        new CAttribute('OnChanged', AttrNames.Event.OnChanged, ValueType.Event),
+    ]),
 ]);
 
 
@@ -34,6 +37,19 @@ class M_TextKernel extends ControlKernelBase {
         var nowvt = this.getAttribute(AttrNames.ValueType);
         this[AttrNames.FloatNum + '_visible'] = nowvt == ValueType.Float;
         this[AttrNames.LineType + '_visible'] = nowvt == ValueType.String;
+
+        var funName = this.id + '_' + AttrNames.Event.OnChanged;
+        var eventBP = this.project.scriptMaster.getBPByName(funName);
+        if(eventBP){
+            eventBP.ctlID = this.id;
+            this.scriptCreated(AttrNames.Event.OnChanged,eventBP);
+        }
+    }
+
+    scriptCreated(attrName, scriptBP){
+        if(attrName == AttrNames.Event.OnChanged){
+            scriptBP.setFixParam([VarNames.ParentPath, 'newValue']);
+        }
     }
 
     renderSelf(clickHandler) {

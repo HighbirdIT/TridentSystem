@@ -21,6 +21,9 @@ const M_DropdownKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('数据分层', 'datagroup', ValueType.String, '', true, true, 'getCanuseColumns'),
         new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes),
     ]),
+    new CAttributeGroup('事件',[
+        new CAttribute('OnChanged', AttrNames.Event.OnChanged, ValueType.Event),
+    ]),
 ]);
 
 
@@ -50,6 +53,13 @@ class M_DropdownKernel extends ControlKernelBase {
         autoBind(self);
 
         this.autoSetCusDataSource();
+
+        var funName = this.id + '_' + AttrNames.Event.OnChanged;
+        var eventBP = this.project.scriptMaster.getBPByName(funName);
+        if(eventBP){
+            eventBP.ctlID = this.id;
+            this.scriptCreated(AttrNames.Event.OnChanged,eventBP);
+        }
     }
 
     autoSetCusDataSource(groupCols_arr){
@@ -184,6 +194,12 @@ class M_DropdownKernel extends ControlKernelBase {
         }
         var val = this[AttrNames.ValueType];
         return val == null ? ValueType.String : val;
+    }
+
+    scriptCreated(attrName, scriptBP){
+        if(attrName == AttrNames.Event.OnChanged){
+            scriptBP.setFixParam([VarNames.ParentPath 'newText', 'newValue']);
+        }
     }
 
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {

@@ -188,6 +188,11 @@ class CProject extends IAttributeable{
             return true;
         }
         delete this.controlId_map[useID];
+
+        var useBPs_arr = this.scriptMaster.getBPsByControlKernel(useID);
+        useBPs_arr.forEach(bp=>{
+            this.scriptMaster.deleteBP(bp);
+        });
     }
 
     getControlById(id){

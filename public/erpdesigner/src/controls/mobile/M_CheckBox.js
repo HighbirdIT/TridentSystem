@@ -9,6 +9,9 @@ const M_CheckBoxKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('可否编辑', AttrNames.Editeable, ValueType.Boolean, true),
         genIsdisplayAttribute(),
     ]),
+    new CAttributeGroup('事件',[
+        new CAttribute('OnChanged', AttrNames.Event.OnChanged, ValueType.Event),
+    ]),
 ]);
 
 
@@ -24,6 +27,19 @@ class M_CheckBoxKernel extends ControlKernelBase {
 
         var self = this;
         autoBind(self);
+
+        var funName = this.id + '_' + AttrNames.Event.OnChanged;
+        var eventBP = this.project.scriptMaster.getBPByName(funName);
+        if(eventBP){
+            eventBP.ctlID = this.id;
+            this.scriptCreated(AttrNames.Event.OnChanged,eventBP);
+        }
+    }
+
+    scriptCreated(attrName, scriptBP){
+        if(attrName == AttrNames.Event.OnChanged){
+            scriptBP.setFixParam([VarNames.ParentPath, 'newValue']);
+        }
     }
 
     renderSelf(clickHandler) {
