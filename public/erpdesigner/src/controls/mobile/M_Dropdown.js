@@ -198,7 +198,7 @@ class M_DropdownKernel extends ControlKernelBase {
 
     scriptCreated(attrName, scriptBP){
         if(attrName == AttrNames.Event.OnChanged){
-            scriptBP.setFixParam([VarNames.ParentPath 'newText', 'newValue']);
+            scriptBP.setFixParam([VarNames.ParentPath, 'newText', 'newValue']);
         }
     }
 
