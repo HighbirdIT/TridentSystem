@@ -782,6 +782,13 @@ var ERPC_DropDown = function (_React$PureComponent3) {
     _createClass(ERPC_DropDown, [{
         key: 'dropDownOpened',
         value: function dropDownOpened() {
+            if (this.props.pullDataSource) {
+                if (this.props.pullOnce != true || this.props.optionsData.options_arr == null) {
+                    if (this.props.pullDataSource(this.props.fullParentPath) == false) {
+                        return;
+                    }
+                }
+            }
             var recentUsed = {};
             var recentValues_arr = [];
             if (this.props.recentCookieKey != null) {
@@ -809,11 +816,6 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 keyword: '',
                 opened: true
             });
-            if (this.props.pullDataSource) {
-                if (this.props.pullOnce != true || this.props.optionsData.options_arr == null) {
-                    this.props.pullDataSource(this.props.fullParentPath);
-                }
-            }
         }
     }, {
         key: 'foreFresh',
@@ -825,8 +827,10 @@ var ERPC_DropDown = function (_React$PureComponent3) {
     }, {
         key: 'dropDownClosed',
         value: function dropDownClosed() {
-            this.setState({ opened: false });
-            removeFixedItem(this.popPanelItem);
+            if (this.state.opened) {
+                this.setState({ opened: false });
+                removeFixedItem(this.popPanelItem);
+            }
         }
     }, {
         key: 'clickOpenHandler',
@@ -849,7 +853,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
         }
     }, {
         key: 'selectItem',
-        value: function selectItem(theOptionItem) {
+        value: function selectItem(theOptionItem, autoClose) {
             var value = null;
             var text = null;
             var multiselect = this.props.multiselect;
@@ -889,10 +893,15 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 }
             }
 
-            if (value == '*' || !this.props.multiselect) {
+            if (autoClose != false && (value == '*' || !this.props.multiselect)) {
                 this.dropDownClosed();
             }
 
+            this.confirmChanged(text, value, theOptionItem);
+        }
+    }, {
+        key: 'confirmChanged',
+        value: function confirmChanged(text, value, theOptionItem) {
             var invalidInfo = BaseIsValueValid(null, null, null, value == null || text == null ? null : value, this.props.type, this.props.nullable, this.props.id);
             store.dispatch(makeAction_setManyStateByPath({
                 value: value,
@@ -931,6 +940,29 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             };
         }
     }, {
+        key: 'editableInputChanged',
+        value: function editableInputChanged(ev) {
+            this.setState({
+                inputingValue: ev.target.value
+            });
+        }
+    }, {
+        key: 'editableInputFocushandler',
+        value: function editableInputFocushandler(ev) {
+            this.setState({
+                focused: true,
+                inputingValue: this.props.value
+            });
+        }
+    }, {
+        key: 'editableInputBlurhandler',
+        value: function editableInputBlurhandler(ev) {
+            this.confirmChanged(this.state.inputingValue, this.state.inputingValue);
+            this.setState({
+                focused: false
+            });
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this6 = this;
@@ -945,77 +977,89 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             var multiselect = this.props.multiselect;
             var selectedItems_arr;
 
-            if (!IsEmptyString(selectedVal)) {
-                if (IsEmptyString(selectedText)) {
-                    if (this.props.fetchingErr != null) {
-                        setTimeout(function () {
-                            self.selectItem(null);
-                        }, 50);
-                    } else {
-                        if (this.props.optionsData.options_arr == null) {
-                            selectedVal = null;
-                            if (!this.props.fetching) {
-                                if (this.autoPullTO == null) {
-                                    this.autoPullTO = setTimeout(function () {
-                                        self.props.pullDataSource(_this6.props.fullParentPath);
-                                        self.autoPullTO = null;
+            var inputingValue = null;
+            if (this.props.editable) {
+                if (this.state.focused) {
+                    inputingValue = this.state.inputingValue;
+                } else {
+                    inputingValue = this.props.value;
+                }
+                if (inputingValue == null) {
+                    inputingValue = '';
+                }
+            } else {
+                if (!IsEmptyString(selectedVal)) {
+                    if (IsEmptyString(selectedText)) {
+                        if (this.props.fetchingErr != null) {
+                            setTimeout(function () {
+                                self.selectItem(null);
+                            }, 50);
+                        } else {
+                            if (this.props.optionsData.options_arr == null) {
+                                selectedVal = null;
+                                if (!this.props.fetching) {
+                                    if (this.autoPullTO == null) {
+                                        this.autoPullTO = setTimeout(function () {
+                                            self.props.pullDataSource(_this6.props.fullParentPath);
+                                            self.autoPullTO = null;
+                                        }, 50);
+                                    }
+                                }
+                            } else {
+                                if (multiselect) {
+                                    selectedItems_arr = this.props.optionsData.options_arr.filter(function (item) {
+                                        return selectedVal.indexOf(item.value + '') != -1;
+                                    });
+                                    selectedText = '';
+                                    selectedItems_arr.forEach(function (item) {
+                                        selectedText += item.text;
+                                    });
+                                    setTimeout(function () {
+                                        self.selectItem(selectedItems_arr);
+                                    }, 50);
+                                } else {
+                                    var theOptionItem = this.props.optionsData.options_arr.find(function (item) {
+                                        return item.value == selectedVal;
+                                    });
+                                    selectedText = theOptionItem ? theOptionItem.text : null;
+                                    setTimeout(function () {
+                                        self.selectItem(theOptionItem);
                                     }, 50);
                                 }
                             }
-                        } else {
+                        }
+                    } else if (this.props.optionsData.options_arr) {
+                        if (selectedVal != '*') {
                             if (multiselect) {
                                 selectedItems_arr = this.props.optionsData.options_arr.filter(function (item) {
                                     return selectedVal.indexOf(item.value + '') != -1;
                                 });
-                                selectedText = '';
-                                selectedItems_arr.forEach(function (item) {
-                                    selectedText += item.text;
-                                });
-                                setTimeout(function () {
-                                    self.selectItem(selectedItems_arr);
-                                }, 50);
+                                if (selectedItems_arr) {
+                                    if (selectedItems_arr.length != this.props.selectOpt.length) {
+                                        setTimeout(function () {
+                                            self.selectItem(selectedItems_arr);
+                                        }, 50);
+                                    }
+                                } else {
+                                    setTimeout(function () {
+                                        self.selectItem(null, false);
+                                    }, 50);
+                                }
                             } else {
-                                var theOptionItem = this.props.optionsData.options_arr.find(function (item) {
+                                var selectedOptionItem = this.props.optionsData.options_arr.find(function (item) {
                                     return item.value == selectedVal;
                                 });
-                                selectedText = theOptionItem ? theOptionItem.text : null;
-                                setTimeout(function () {
-                                    self.selectItem(theOptionItem);
-                                }, 50);
-                            }
-                        }
-                    }
-                } else if (this.props.optionsData.options_arr) {
-                    if (selectedVal != '*') {
-                        if (multiselect) {
-                            selectedItems_arr = this.props.optionsData.options_arr.filter(function (item) {
-                                return selectedVal.indexOf(item.value + '') != -1;
-                            });
-                            if (selectedItems_arr) {
-                                if (selectedItems_arr.length != this.props.selectOpt.length) {
+                                if (selectedOptionItem) {
+                                    if (selectedOptionItem.text != selectedText) {
+                                        setTimeout(function () {
+                                            self.selectItem(selectedOptionItem, false);
+                                        }, 50);
+                                    }
+                                } else {
                                     setTimeout(function () {
-                                        self.selectItem(selectedItems_arr);
+                                        self.selectItem(null, false);
                                     }, 50);
                                 }
-                            } else {
-                                setTimeout(function () {
-                                    self.selectItem(null);
-                                }, 50);
-                            }
-                        } else {
-                            var selectedOptionItem = this.props.optionsData.options_arr.find(function (item) {
-                                return item.value == selectedVal;
-                            });
-                            if (selectedOptionItem) {
-                                if (selectedOptionItem.text != selectedText) {
-                                    setTimeout(function () {
-                                        self.selectItem(selectedOptionItem);
-                                    }, 50);
-                                }
-                            } else {
-                                setTimeout(function () {
-                                    self.selectItem(null);
-                                }, 50);
                             }
                         }
                     }
@@ -1084,20 +1128,35 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                     errTipElem
                 );
             }
-            var dropDownElem = React.createElement(
-                'div',
-                { className: "d-flex btn-group flex-grow-1 flex-shrink-0 erpc_dropdown", style: this.props.style, ref: this.rootDivRef },
-                this.props.editable ? React.createElement('input', { onFocus: this.editableInputFocushandler, ref: this.editableInputRef, type: 'text', className: 'flex-grow-1 flex-shrink-1 flexinput', onChange: this.keyChanged, value: selectedOption ? selectedOption.text : this.state.keyword }) : React.createElement(
-                    'button',
-                    { onClick: this.clickOpenHandler, type: 'button', className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1 erpc_dropdownMainBtn' + textColor, hadmini: hadMini ? 1 : null },
+            var dropDownElem = null;
+            if (this.props.editable) {
+                dropDownElem = React.createElement(
+                    'div',
+                    { className: "d-flex btn-group flex-grow-1 flex-shrink-0 erpc_dropdown input-group", style: this.props.style, ref: this.rootDivRef },
+                    React.createElement('input', { onFocus: this.editableInputFocushandler, onBlur: this.editableInputBlurhandler, ref: this.editableInputRef, type: 'text', className: 'flex-grow-1 flex-shrink-1 flexinput form-control', onChange: this.editableInputChanged, value: inputingValue, placeholder: '\u8F93\u5165\u6216\u9009\u62E9' }),
                     React.createElement(
                         'div',
-                        { style: { overflow: 'hidden' }, className: 'flex-grow-1 flex-shrink-1' },
-                        textElem
+                        { className: 'input-group-append' },
+                        React.createElement('button', { type: 'button', onClick: this.clickOpenHandler, className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdownbtn dropdown-toggle-split' })
                     )
-                ),
-                hadMini && React.createElement('button', { type: 'button', onClick: this.clickOpenHandler, className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdownbtn dropdown-toggle-split' })
-            );
+                );
+            } else {
+                dropDownElem = React.createElement(
+                    'div',
+                    { className: "d-flex btn-group flex-grow-1 flex-shrink-0 erpc_dropdown", style: this.props.style, ref: this.rootDivRef },
+                    React.createElement(
+                        'button',
+                        { onClick: this.clickOpenHandler, type: 'button', className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1 erpc_dropdownMainBtn' + textColor, hadmini: hadMini ? 1 : null },
+                        React.createElement(
+                            'div',
+                            { style: { overflow: 'hidden' }, className: 'flex-grow-1 flex-shrink-1' },
+                            textElem
+                        )
+                    ),
+                    hadMini && React.createElement('button', { type: 'button', onClick: this.clickOpenHandler, className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdownbtn dropdown-toggle-split' })
+                );
+            }
+
             if (errTipElem == null) {
                 return dropDownElem;
             }
@@ -1396,7 +1455,7 @@ var ERPC_Text = function (_React$PureComponent4) {
                         nowValue
                     );
                 } else if (this.props.type == 'string' && this.props.linetype != null && this.props.linetype != 'single') {
-                    contentElem = React.createElement('textarea', { onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 w-100 form-control textarea-' + this.props.linetype, value: this.props.value, onBlur: this.endInputHandler });
+                    contentElem = React.createElement('textarea', { onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 w-100 form-control textarea-' + this.props.linetype + (this.props.align ? ' text-' + this.props.align : ''), value: this.props.value, onBlur: this.endInputHandler });
                 } else {
                     var useType = this.props.type;
                     var useChecked = null;
@@ -1414,7 +1473,7 @@ var ERPC_Text = function (_React$PureComponent4) {
                             break;
                     }
                     var useValue = this.formatInputValue(this.props.value);
-                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control invalid ', type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged, onBlur: this.endInputHandler });
+                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control invalid ' + (this.props.align ? ' text-' + this.props.align : ''), type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged, onBlur: this.endInputHandler });
                 }
 
                 if (this.props.invalidInfo) {
@@ -1483,7 +1542,7 @@ var ERPC_LabeledControl = function (_React$PureComponent5) {
             }
             return React.createElement(
                 'div',
-                { className: 'rowlFameOne' },
+                { className: 'rowlFameOne' + (this.props.className ? ' ' + this.props.className : '') },
                 React.createElement(
                     'div',
                     { className: 'rowlFameOne_Left' },

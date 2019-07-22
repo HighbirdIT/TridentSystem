@@ -220,6 +220,17 @@ class CProject extends IAttributeable{
         return useID;
     }
 
+    getControlsByType(theType){
+        var rlt_arr = [];
+        for(var id in this.controlId_map){
+            var ctl = this.controlId_map[id];
+            if(ctl && ctl.type == theType){
+                rlt_arr.push(ctl);
+            }
+        }
+        return rlt_arr;
+    }
+
 
     createKernalByType(ctlType){
         var ctlConfig = DesignerConfig.findConfigByType(ctlType);

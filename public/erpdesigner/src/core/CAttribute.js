@@ -266,6 +266,7 @@ const AttrNames={
     ExportParam:'exportParam',
     PopablePage:'popablepage',
     ParamApi:'paramapi',
+    EventApi:'eventapi',
     StarSelectable:'starSelectable',
     ButtonVisibleType:'buttonVisibleType',
     InitCollapsed:'initCollapsed',
@@ -273,6 +274,11 @@ const AttrNames={
     GreedMode:'greedMode',
     HideTabHead:'hideTabHead',
     Mode:'mode',
+    TagType:'tagtype',
+    HideLabel:'hidelabel',
+    NoRender:'norender',
+    ClickSelectable:'clickSelectable',
+    TextAlign:'textalign',
 
     Event:{
         OnClick:'onclick',

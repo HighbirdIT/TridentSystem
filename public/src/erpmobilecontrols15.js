@@ -314,7 +314,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             console.error('没有找到对应的item' + value);
         }
         if (multiselect) {
-            if(!Array.isArray(this.state.selectOpt)){
+            if (!Array.isArray(this.state.selectOpt)) {
                 this.props.dropdownctl.selectItem([theOptionItem]);
             }
             else if (this.state.selectOpt.find(item => {
@@ -642,6 +642,13 @@ class ERPC_DropDown extends React.PureComponent {
     }
 
     dropDownOpened() {
+        if (this.props.pullDataSource) {
+            if (this.props.pullOnce != true || this.props.optionsData.options_arr == null) {
+                if (this.props.pullDataSource(this.props.fullParentPath) == false) {
+                    return;
+                }
+            }
+        }
         var recentUsed = {};
         var recentValues_arr = [];
         if (this.props.recentCookieKey != null) {
@@ -667,11 +674,6 @@ class ERPC_DropDown extends React.PureComponent {
             keyword: '',
             opened: true,
         });
-        if (this.props.pullDataSource) {
-            if (this.props.pullOnce != true || this.props.optionsData.options_arr == null) {
-                this.props.pullDataSource(this.props.fullParentPath);
-            }
-        }
     }
 
     foreFresh() {
@@ -681,8 +683,10 @@ class ERPC_DropDown extends React.PureComponent {
     }
 
     dropDownClosed() {
-        this.setState({ opened: false });
-        removeFixedItem(this.popPanelItem);
+        if(this.state.opened){
+            this.setState({ opened: false });
+            removeFixedItem(this.popPanelItem);
+        }
     }
 
     clickOpenHandler() {
@@ -702,7 +706,7 @@ class ERPC_DropDown extends React.PureComponent {
         }
     }
 
-    selectItem(theOptionItem) {
+    selectItem(theOptionItem, autoClose) {
         var value = null;
         var text = null;
         var multiselect = this.props.multiselect;
@@ -744,10 +748,14 @@ class ERPC_DropDown extends React.PureComponent {
             }
         }
 
-        if (value == '*' || !this.props.multiselect) {
+        if (autoClose != false && (value == '*' || !this.props.multiselect)) {
             this.dropDownClosed();
         }
 
+        this.confirmChanged(text, value, theOptionItem);
+    }
+
+    confirmChanged(text, value, theOptionItem) {
         var invalidInfo = BaseIsValueValid(null, null, null, value == null || text == null ? null : value, this.props.type, this.props.nullable, this.props.id);
         store.dispatch(makeAction_setManyStateByPath({
             value: value,
@@ -755,7 +763,7 @@ class ERPC_DropDown extends React.PureComponent {
             invalidInfo: invalidInfo,
             selectOpt: theOptionItem,
         }, this.props.fullPath));
-        if(typeof this.props.onchanged === 'function'){
+        if (typeof this.props.onchanged === 'function') {
             this.props.onchanged(this.props.fullParentPath, text, value);
         }
     }
@@ -785,6 +793,26 @@ class ERPC_DropDown extends React.PureComponent {
         }
     }
 
+    editableInputChanged(ev) {
+        this.setState({
+            inputingValue: ev.target.value,
+        });
+    }
+
+    editableInputFocushandler(ev) {
+        this.setState({
+            focused: true,
+            inputingValue: this.props.value,
+        });
+    }
+
+    editableInputBlurhandler(ev) {
+        this.confirmChanged(this.state.inputingValue, this.state.inputingValue);
+        this.setState({
+            focused: false
+        });
+    }
+
     render() {
         if (this.props.visible == false) {
             return null;
@@ -796,84 +824,98 @@ class ERPC_DropDown extends React.PureComponent {
         var multiselect = this.props.multiselect;
         var selectedItems_arr;
 
-        if (!IsEmptyString(selectedVal)) {
-            if (IsEmptyString(selectedText)) {
-                if (this.props.fetchingErr != null) {
-                    setTimeout(() => {
-                        self.selectItem(null);
-                    }, 50);
-                }
-                else {
-                    if (this.props.optionsData.options_arr == null) {
-                        selectedVal = null;
-                        if (!this.props.fetching) {
-                            if (this.autoPullTO == null) {
-                                this.autoPullTO = setTimeout(() => {
-                                    self.props.pullDataSource(this.props.fullParentPath);
-                                    self.autoPullTO = null;
-                                }, 50);
-                            }
-                        }
+        var inputingValue = null;
+        if (this.props.editable) {
+            if (this.state.focused) {
+                inputingValue = this.state.inputingValue;
+            }
+            else {
+                inputingValue = this.props.value;
+            }
+            if (inputingValue == null) {
+                inputingValue = '';
+            }
+        }
+        else {
+            if (!IsEmptyString(selectedVal)) {
+                if (IsEmptyString(selectedText)) {
+                    if (this.props.fetchingErr != null) {
+                        setTimeout(() => {
+                            self.selectItem(null);
+                        }, 50);
                     }
                     else {
-                        if (multiselect) {
-                            selectedItems_arr = this.props.optionsData.options_arr.filter(item => {
-                                return selectedVal.indexOf(item.value + '') != -1;
-                            });
-                            selectedText = '';
-                            selectedItems_arr.forEach(item => {
-                                selectedText += item.text;
-                            });
-                            setTimeout(() => {
-                                self.selectItem(selectedItems_arr);
-                            }, 50);
+                        if (this.props.optionsData.options_arr == null) {
+                            selectedVal = null;
+                            if (!this.props.fetching) {
+                                if (this.autoPullTO == null) {
+                                    this.autoPullTO = setTimeout(() => {
+                                        self.props.pullDataSource(this.props.fullParentPath);
+                                        self.autoPullTO = null;
+                                    }, 50);
+                                }
+                            }
                         }
                         else {
-                            var theOptionItem = this.props.optionsData.options_arr.find(item => {
-                                return item.value == selectedVal;
-                            });
-                            selectedText = theOptionItem ? theOptionItem.text : null;
-                            setTimeout(() => {
-                                self.selectItem(theOptionItem);
-                            }, 50);
-                        }
-                    }
-                }
-            }
-            else if (this.props.optionsData.options_arr) {
-                if (selectedVal != '*') {
-                    if (multiselect) {
-                        selectedItems_arr = this.props.optionsData.options_arr.filter(item => {
-                            return selectedVal.indexOf(item.value + '') != -1;
-                        });
-                        if (selectedItems_arr) {
-                            if (selectedItems_arr.length != this.props.selectOpt.length) {
+                            if (multiselect) {
+                                selectedItems_arr = this.props.optionsData.options_arr.filter(item => {
+                                    return selectedVal.indexOf(item.value + '') != -1;
+                                });
+                                selectedText = '';
+                                selectedItems_arr.forEach(item => {
+                                    selectedText += item.text;
+                                });
                                 setTimeout(() => {
                                     self.selectItem(selectedItems_arr);
                                 }, 50);
                             }
-                        }
-                        else {
-                            setTimeout(() => {
-                                self.selectItem(null);
-                            }, 50);
+                            else {
+                                var theOptionItem = this.props.optionsData.options_arr.find(item => {
+                                    return item.value == selectedVal;
+                                });
+                                selectedText = theOptionItem ? theOptionItem.text : null;
+                                setTimeout(() => {
+                                    self.selectItem(theOptionItem);
+                                }, 50);
+                            }
                         }
                     }
-                    else {
-                        var selectedOptionItem = this.props.optionsData.options_arr.find(item => {
-                            return item.value == selectedVal;
-                        });
-                        if (selectedOptionItem) {
-                            if (selectedOptionItem.text != selectedText) {
+                }
+                else if (this.props.optionsData.options_arr) {
+                    if (selectedVal != '*') {
+                        if (multiselect) {
+                            selectedItems_arr = this.props.optionsData.options_arr.filter(item => {
+                                return selectedVal.indexOf(item.value + '') != -1;
+                            });
+                            if (selectedItems_arr) {
+                                if (selectedItems_arr.length != this.props.selectOpt.length) {
+                                    setTimeout(() => {
+                                        self.selectItem(selectedItems_arr);
+                                    }, 50);
+                                }
+                            }
+                            else {
                                 setTimeout(() => {
-                                    self.selectItem(selectedOptionItem);
+                                    self.selectItem(null, false);
                                 }, 50);
                             }
                         }
                         else {
-                            setTimeout(() => {
-                                self.selectItem(null);
-                            }, 50);
+                            var selectedOptionItem = this.props.optionsData.options_arr.find(item => {
+                                return item.value == selectedVal;
+                            });
+                            if (selectedOptionItem) {
+                                if (selectedOptionItem.text != selectedText) {
+                                    setTimeout(() => {
+                                        self.selectItem(selectedOptionItem, false);
+                                    }, 50);
+                                }
+                            }
+                            else {
+                                setTimeout(() => {
+                                    self.selectItem(null, false);
+                                }, 50);
+                            }
                         }
                     }
                 }
@@ -923,23 +965,32 @@ class ERPC_DropDown extends React.PureComponent {
                 {errTipElem}
             </div>
         }
-        var dropDownElem = (
-            <div className={"d-flex btn-group flex-grow-1 flex-shrink-0 erpc_dropdown"} style={this.props.style} ref={this.rootDivRef}>
-                {
-                    this.props.editable ?
-                        <input onFocus={this.editableInputFocushandler} ref={this.editableInputRef} type='text' className='flex-grow-1 flex-shrink-1 flexinput' onChange={this.keyChanged} value={selectedOption ? selectedOption.text : this.state.keyword} />
-                        :
-                        <button onClick={this.clickOpenHandler} type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1 erpc_dropdownMainBtn' + textColor} hadmini={hadMini ? 1 : null} >
-                            <div style={{ overflow: 'hidden' }} className='flex-grow-1 flex-shrink-1'>
-                                {textElem}
-                            </div>
-                        </button>
-                }
-                {
-                    hadMini && <button type='button' onClick={this.clickOpenHandler} className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdownbtn dropdown-toggle-split'} ></button>
-                }
-            </div>
-        );
+        var dropDownElem = null;
+        if (this.props.editable) {
+            dropDownElem = (
+                <div className={"d-flex btn-group flex-grow-1 flex-shrink-0 erpc_dropdown input-group"} style={this.props.style} ref={this.rootDivRef}>
+                    <input onFocus={this.editableInputFocushandler} onBlur={this.editableInputBlurhandler} ref={this.editableInputRef} type='text' className='flex-grow-1 flex-shrink-1 flexinput form-control' onChange={this.editableInputChanged} value={inputingValue} placeholder='输入或选择' />
+                    <div className="input-group-append">
+                        <button type='button' onClick={this.clickOpenHandler} className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdownbtn dropdown-toggle-split'} ></button>
+                    </div>
+                </div>
+            );
+        }
+        else {
+            dropDownElem = (
+                <div className={"d-flex btn-group flex-grow-1 flex-shrink-0 erpc_dropdown"} style={this.props.style} ref={this.rootDivRef}>
+                    <button onClick={this.clickOpenHandler} type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1 erpc_dropdownMainBtn' + textColor} hadmini={hadMini ? 1 : null} >
+                        <div style={{ overflow: 'hidden' }} className='flex-grow-1 flex-shrink-1'>
+                            {textElem}
+                        </div>
+                    </button>
+                    {
+                        hadMini && <button type='button' onClick={this.clickOpenHandler} className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdownbtn dropdown-toggle-split'} ></button>
+                    }
+                </div>
+            );
+        }
+
         if (errTipElem == null) {
             return dropDownElem;
         }
@@ -1138,7 +1189,7 @@ class ERPC_Text extends React.PureComponent {
             value: text,
             invalidInfo: invalidInfo,
         }, this.props.fullPath));
-        if(typeof this.props.onchanged === 'function'){
+        if (typeof this.props.onchanged === 'function') {
             this.props.onchanged(this.props.fullParentPath, text);
         }
     }
@@ -1214,7 +1265,7 @@ class ERPC_Text extends React.PureComponent {
                 contentElem = <div className='flex-grow-1 flex-shrink-1'>{nowValue}</div>
             }
             else if (this.props.type == 'string' && this.props.linetype != null && this.props.linetype != 'single') {
-                contentElem = <textarea onChange={this.inputChanged} className={'flex-grow-1 flex-shrink-1 w-100 form-control textarea-' + this.props.linetype} value={this.props.value} onBlur={this.endInputHandler} />
+                contentElem = <textarea onChange={this.inputChanged} className={'flex-grow-1 flex-shrink-1 w-100 form-control textarea-' + this.props.linetype + (this.props.align ? ' text-' + this.props.align : '')} value={this.props.value} onBlur={this.endInputHandler} />
             }
             else {
                 var useType = this.props.type;
@@ -1233,7 +1284,7 @@ class ERPC_Text extends React.PureComponent {
                         break;
                 }
                 var useValue = this.formatInputValue(this.props.value);
-                contentElem = (<input className='flex-grow-1 flex-shrink-1 form-control invalid ' type={useType} value={useValue} checked={useChecked} onChange={this.inputChanged} onBlur={this.endInputHandler} />);
+                contentElem = (<input className={'flex-grow-1 flex-shrink-1 form-control invalid ' + (this.props.align ? ' text-' + this.props.align : '')} type={useType} value={useValue} checked={useChecked} onChange={this.inputChanged} onBlur={this.endInputHandler} />);
             }
 
             if (this.props.invalidInfo) {
@@ -1283,7 +1334,7 @@ class ERPC_LabeledControl extends React.PureComponent {
         if (this.props.visible == false) {
             return null;
         }
-        return (<div className='rowlFameOne'>
+        return (<div className={'rowlFameOne' + (this.props.className ? ' ' + this.props.className : '')}>
             <div className='rowlFameOne_Left'>
                 {this.props.label}
             </div>
@@ -1405,7 +1456,7 @@ class ERPC_CheckBox extends React.PureComponent {
         store.dispatch(makeAction_setManyStateByPath({
             value: this.checked ? 0 : 1,
         }, MakePath(this.props.parentPath, this.props.id)));
-        if(typeof this.props.onchanged === 'function'){
+        if (typeof this.props.onchanged === 'function') {
             this.props.onchanged(this.props.fullParentPath, this.checked ? 0 : 1);
         }
     }
@@ -1600,15 +1651,15 @@ function ERPC_PageForm_renderNavigater() {
     );
 }
 
-function SmartSetScrollTop(theElem){
-    if(theElem == null){
+function SmartSetScrollTop(theElem) {
+    if (theElem == null) {
         return;
     }
     var offsetTop = 0;
-    while(theElem.parentElement){
+    while (theElem.parentElement) {
         var parent = theElem.parentElement;
-        if(parent.scrollTop > 0){
-            if(theElem.offsetTop < parent.scrollTop){
+        if (parent.scrollTop > 0) {
+            if (theElem.offsetTop < parent.scrollTop) {
                 parent.scrollTop = offsetTop - 40;
                 offsetTop = 0;
             }

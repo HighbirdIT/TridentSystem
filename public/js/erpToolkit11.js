@@ -1011,8 +1011,23 @@ function fetchEndHandler(state, action) {
                 if (callbackret != null) {
                     retState = callbackret;
                 }
+            } else if (action.key == EFetchKey.FetchPropValue) {
+                var ftpProp = triggerData;
+                var ftpKey = ftpProp.id + '_' + ftpProp.propName;
+                needSetState = {};
+                var fetching_arr = gFetchingProp[ftpKey];
+                var hited = fetching_arr.find(function (x) {
+                    return ObjIsEqual(x.bundle, action.fetchData.sendData.bundle);
+                });
+                hited.queues_arr.forEach(function (x) {
+                    needSetState[MakePath(x.base, x.id, 'fetching')] = false;
+                    needSetState[MakePath(x.base, x.id, 'fetchingErr')] = action.err;
+                });
+                fetching_arr.splice(fetching_arr.indexOf(hited), 1);
+                retState = setManyStateByPath(retState, '', needSetState);
             }
         }
+
         return retState == state ? Object.assign({}, retState) : retState;
     }
 
@@ -1049,8 +1064,7 @@ function fetchEndHandler(state, action) {
                     needSetState[MakePath(x.base, x.id, 'fetching')] = false;
                     needSetState[MakePath(x.base, x.id, 'fetchingErr')] = null;
                 });
-                var i = fetching_arr.indexOf(hited);
-                fetching_arr.splice(i, 1);
+                fetching_arr.splice(fetching_arr.indexOf(hited), 1);
                 return setManyStateByPath(retState, '', needSetState);
             }
         default:

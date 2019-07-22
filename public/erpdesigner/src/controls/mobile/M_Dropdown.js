@@ -20,6 +20,7 @@ const M_DropdownKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('稳定的数据', AttrNames.StableData, ValueType.Boolean, true),
         new CAttribute('数据分层', 'datagroup', ValueType.String, '', true, true, 'getCanuseColumns'),
         new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes),
+        new CAttribute('接受输入值', AttrNames.Editeable, ValueType.Boolean, false),
     ]),
     new CAttributeGroup('事件',[
         new CAttribute('OnChanged', AttrNames.Event.OnChanged, ValueType.Event),
