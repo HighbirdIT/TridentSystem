@@ -13,9 +13,12 @@ const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
         new CAttribute('每页条数',AttrNames.RowPerPage,ValueType.String, '20', true, false, ['20','50','100','200']),
         new CAttribute('宽度类型',AttrNames.WidthType,ValueType.String,EGridWidthType.Auto,true,false,EGridWidthTypes_arr,{text:'text', value:'value'}),
         new CAttribute('首列序号',AttrNames.AutoIndexColumn,ValueType.Boolean,true),
+        new CAttribute('隐藏表头',AttrNames.HideTabHead,ValueType.Boolean,false),
         new CAttribute('自动滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
         new CAttribute('模式', AttrNames.SelectMode, ValueType.String, ESelectMode.None, true, false, SelectModes_arr),
         new CAttribute('bottomDivID','bottomDivID',ValueType.String,'',true,false,null,null,false),
+        new CAttribute('NoRender',AttrNames.NoRender,ValueType.Boolean,false),
+        new CAttribute('可点击选择',AttrNames.ClickSelectable,ValueType.Boolean,false),
     ]),
     new CAttributeGroup('操作设置',[
         genScripAttribute('Insert', AttrNames.Event.OnInsert,EJsBluePrintFunGroup.GridRowBtnHandler),
@@ -91,12 +94,30 @@ class M_FormKernel extends ContainerKernelBase{
         this[AttrNames.AutoIndexColumn + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.GenNavBar + '_visible'] = nowft != EFormType.Grid;
         this[AttrNames.SelectMode + '_visible'] = nowft == EFormType.Grid;
+        this[AttrNames.HideTabHead + '_visible'] = nowft == EFormType.Grid;
+        
         
 
         this['操作设置_visible'] = nowft == EFormType.Grid;
         
         var self = this;
         autoBind(self);
+    }
+
+    aidAccessableKernels(targetType, rlt_arr) {
+        var needFilt = targetType != null;
+        this.children.forEach(child => {
+            if (!needFilt || child.type == targetType) {
+                rlt_arr.push(child);
+            }
+            if (child.editor && (!needFilt || child.editor.type == targetType)) {
+                rlt_arr.push(child.editor);
+            }
+            if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && !child.isGridForm())){
+                // 穿透div
+                child.aidAccessableKernels(targetType, rlt_arr);
+            }
+        });
     }
 
     isKernelInRow(theKernel){
@@ -283,7 +304,8 @@ class M_FormKernel extends ContainerKernelBase{
                 this.findAttributeByName(AttrNames.AutoIndexColumn).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.GenNavBar).setVisible(this, !isGridForm);
                 this.findAttributeByName(AttrNames.SelectMode).setVisible(this, isGridForm);
-
+                this.findAttributeByName(AttrNames.HideTabHead).setVisible(this, isGridForm);
+                
                 this.findAttrGroupByName('操作设置').setVisible(this, isGridForm);
                 break;
             case AttrNames.PageBreak:
@@ -398,8 +420,15 @@ class M_Form extends React.PureComponent {
                                     {this.props.ctlKernel.children.map(childKernel=>{
                                         if(childKernel.type == M_LabeledControlKernel_Type){
                                             var columnWidth = parseFloat(childKernel.getAttribute(AttrNames.ColumnWidth));
+                                            var textFieldParseRet = parseObj_CtlPropJsBind(childKernel.getAttribute(AttrNames.TextField));
+                                            var textValue = '';
+                                            if(textFieldParseRet.isScript){
+                                                textValue = '{脚本}';
+                                            }
+                                            else{
+                                                textValue = textFieldParseRet.string;
+                                            }
                                             if(columnWidth == 0){
-                                                var textValue = childKernel.getAttribute(AttrNames.TextField);
                                                 columnWidth = textValue.length * GridHead_PerCharWidth;
                                                 if(columnWidth == 0){
                                                     columnWidth = 4 * GridHead_PerCharWidth;
@@ -410,7 +439,7 @@ class M_Form extends React.PureComponent {
                                             }
                                             return (<th  key={childKernel.id} scope="col" style={{width:columnWidth + 'em'}}>
                                                     <div className='d-flex flex-column'>
-                                                    {childKernel.getAttribute(AttrNames.TextField)}
+                                                    {textValue}
                                                     <div className='d-flex'>
                                                     <span className='badge badge-primary'>{GetControlTypeReadableName(childKernel.editor.type)}</span>
                                                     </div>

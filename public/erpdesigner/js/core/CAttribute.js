@@ -291,18 +291,27 @@ var AttrNames = {
     ExportParam: 'exportParam',
     PopablePage: 'popablepage',
     ParamApi: 'paramapi',
+    EventApi: 'eventapi',
     StarSelectable: 'starSelectable',
     ButtonVisibleType: 'buttonVisibleType',
     InitCollapsed: 'initCollapsed',
     LoadOnUnCollapsed: 'loadOnCollapsed',
     GreedMode: 'greedMode',
+    HideTabHead: 'hideTabHead',
+    Mode: 'mode',
+    TagType: 'tagtype',
+    HideLabel: 'hidelabel',
+    NoRender: 'norender',
+    ClickSelectable: 'clickSelectable',
+    TextAlign: 'textalign',
 
     Event: {
         OnClick: 'onclick',
         OnUpdate: 'onUpdate',
         OnDelete: 'onDelete',
         OnInsert: 'onInsert',
-        OnLoad: 'onLoad'
+        OnLoad: 'onLoad',
+        OnChanged: 'onChanged'
     },
 
     LayoutNames: {

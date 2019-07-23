@@ -26,7 +26,7 @@ class ERPC_TaskSelector extends React.PureComponent {
     }
 
     createTitleBarRightElem(){
-        return (<button type='button' onClick={this.popupCreator} className='btn btn-success'><i className='fa fa-plus'/>创建任务</button>);
+        return (<button type='button' onClick={this.popupCreator} className='ml-1 btn btn-success'><i className='fa fa-plus'/>创建任务</button>);
     }
 
     render() {

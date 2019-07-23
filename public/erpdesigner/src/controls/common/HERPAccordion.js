@@ -1,9 +1,19 @@
 const HERPAccordionKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置',[
-        new CAttribute('标题',AttrNames.Title,ValueType.String,''),
+        new CAttribute('标题',AttrNames.Title,ValueType.String,'', true, false, [], 
+        {
+            pullDataFun:GetKernelCanUseColumns,
+            text:'name',
+            editable:true,
+        }, true, {
+            scriptable:true,
+            type:FunType_Client,
+            group:EJsBluePrintFunGroup.CtlAttr,
+        }),
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr),
         genIsdisplayAttribute(),
         new CAttribute('初始折叠', AttrNames.InitCollapsed, ValueType.Boolean, false),
+        new CAttribute('模式', AttrNames.Mode, ValueType.String, AccordionMode.Default, true, false, AccordionModes_arr),
     ]),
 ]);
 
@@ -31,7 +41,7 @@ class HERPAccordionKernel extends ContainerKernelBase{
             if (child.editor && (!needFilt || child.editor.type == targetType)) {
                 rlt_arr.push(child.editor);
             }
-            if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type) {
+            if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && !child.isGridForm())){
                 // 穿透div
                 child.aidAccessableKernels(targetType, rlt_arr);
             }
@@ -55,12 +65,13 @@ class HERPAccordion extends React.PureComponent {
         super(props);
 
         var ctlKernel = this.props.ctlKernel;
-        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Title,AttrNames.Orientation,AttrNames.Chidlren]));
+        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Name,AttrNames.Title,AttrNames.Orientation,AttrNames.Chidlren]));
         M_ContainerBase(this);
         
         inintState.children = ctlKernel.children;
         inintState.orientation = ctlKernel.getAttribute(AttrNames.Orientation);
         inintState.title = ctlKernel.getAttribute(AttrNames.Title);
+        inintState.name = ctlKernel.getAttribute(AttrNames.Name);
 
         this.state = inintState;
 
@@ -80,6 +91,7 @@ class HERPAccordion extends React.PureComponent {
             orientation: ctlKernel.getAttribute(AttrNames.Orientation),
             children: childrenVal,
             title: ctlKernel.getAttribute(AttrNames.Title),
+            name: ctlKernel.getAttribute(AttrNames.Name),
         });
     }
 
@@ -101,7 +113,8 @@ class HERPAccordion extends React.PureComponent {
         }
         bodyLayoutConfig.addClass('card-body');
         
-        var title = IsEmptyString(this.state.title) ? '[未命名]' : this.state.title;
+        var titleParserRet = parseObj_CtlPropJsBind(this.state.title);
+        var title = titleParserRet.isScript ? (ReplaceIfNull(this.state.name,'') + '{脚本}') : (IsEmptyString(titleParserRet.string) ? '[未命名]' : titleParserRet.string);
         return(
             <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 <div className='card-header text-primary btn btn-link'>

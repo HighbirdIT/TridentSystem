@@ -63,6 +63,7 @@ const SqlNodeEditorControls_arr =[
     },
 ]; 
 
+var gCopyed_SqlNodes_data = null;
 
 class C_SqlNode_Editor extends React.PureComponent{
     constructor(props){
@@ -188,6 +189,7 @@ class C_SqlNode_Editor extends React.PureComponent{
         if(!MyMath.isPointInRect(editorRect, WindowMouse)){
             return;
         }
+        var editorPos = this.transToEditorPos({x:WindowMouse.x,y:WindowMouse.y});
         //console.log(ev);
         switch(ev.keyCode){
             case 27:
@@ -201,6 +203,7 @@ class C_SqlNode_Editor extends React.PureComponent{
                     start:null,
                     end:null,
                 });
+                break;
             case 46:
                 if(!this.selectedNFManager.isEmpty()){
                     var titles = '';
@@ -211,7 +214,27 @@ class C_SqlNode_Editor extends React.PureComponent{
                     });
                     this.wantDeleteNode(nodes_arr, titles);
                 }
-            break;
+                break;
+            case 67:
+                if(ev.ctrlKey){
+                    var wantCopyNodes_arr = [];
+                    if(!this.selectedNFManager.isEmpty()){
+                        this.selectedNFManager.forEach(nf=>{
+                            wantCopyNodes_arr.push(nf.props.nodedata);
+                        });
+                        gCopyed_SqlNodes_data = this.props.bluePrint.copyNodes(wantCopyNodes_arr);
+                        this.logManager.clear();
+                        this.logManager.log('复制了' + gCopyed_SqlNodes_data.nodeJson_arr.length + '个节点');
+                    }
+                }
+                break;
+            case 86:
+                if(ev.ctrlKey){
+                    var newNodes_arr = this.props.bluePrint.pasteNodes(gCopyed_SqlNodes_data, {x:editorPos.x,y:editorPos.y}, this.state.editingNode);
+                    this.logManager.clear();
+                    this.logManager.log('克隆了' + (newNodes_arr == null ? 0 : newNodes_arr.length) + '个节点');
+                }
+                break;
         }
     }
 
@@ -1419,7 +1442,7 @@ class SqlNode_CompileHelper{
         this.editor = editor;
         this.cacheObj = {};
         this.useEntities_arr = [];
-        this.useVariables_arr = [];
+        this.useVariables_arr = {};
         this.useGlobalControls_map = {};
         this.useForm_map = {};
         this.useEnvVars = {};

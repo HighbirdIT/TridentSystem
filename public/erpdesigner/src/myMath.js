@@ -17,4 +17,20 @@ const MyMath={
                  r2.top > r1.bottom ||
                  r2.bottom < r1.top);
      },
+
+     calcBoundBox:(items_arr)=>{
+         var rlt = {
+             left:Number.MAX_VALUE,
+             top:Number.MAX_VALUE,
+             right:-Number.MAX_VALUE,
+             bottom:-Number.MAX_VALUE,
+         };
+         items_arr.forEach(elem => {
+             rlt.left = Math.min(elem.x, rlt.left);
+             rlt.top = Math.min(elem.y, rlt.top);
+             rlt.right = Math.max(elem.x + elem.width, rlt.right);
+             rlt.bottom = Math.max(elem.y + elem.height, rlt.bottom);
+         });
+         return rlt;
+     },
 }

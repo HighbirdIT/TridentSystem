@@ -80,9 +80,14 @@ class CProject extends IAttributeable{
                     var newUCtl = new UserControlKernel({project:this},null,null,ctlJson);
                     this.userControls_arr.push(newUCtl);
                 });
-            }
-            var self = this;
 
+                jsonData.userControls_arr.forEach((ctlJson,index)=>{
+                    this.userControls_arr[index].__restoreChildren(null,ctlJson);
+                });
+            }
+            
+
+            var self = this;
             var ctlCreatioinHelper = new CtlKernelCreationHelper();
             jsonData.content_Mobile.pages.forEach(pageJson=>{
                 var newPage = new M_PageKernel({}, this, ctlCreatioinHelper, pageJson);
@@ -183,6 +188,11 @@ class CProject extends IAttributeable{
             return true;
         }
         delete this.controlId_map[useID];
+
+        var useBPs_arr = this.scriptMaster.getBPsByControlKernel(useID);
+        useBPs_arr.forEach(bp=>{
+            this.scriptMaster.deleteBP(bp);
+        });
     }
 
     getControlById(id){
@@ -208,6 +218,17 @@ class CProject extends IAttributeable{
             ++testI;
         }
         return useID;
+    }
+
+    getControlsByType(theType){
+        var rlt_arr = [];
+        for(var id in this.controlId_map){
+            var ctl = this.controlId_map[id];
+            if(ctl && ctl.type == theType){
+                rlt_arr.push(ctl);
+            }
+        }
+        return rlt_arr;
     }
 
 

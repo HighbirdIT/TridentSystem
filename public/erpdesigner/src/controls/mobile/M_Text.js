@@ -4,6 +4,7 @@ const M_TextKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes),
         new CAttribute('小数精度', AttrNames.FloatNum, ValueType.Int, 2, true, false, null, null, false),
         new CAttribute('行类型', AttrNames.LineType, ValueType.String, LineType_Single, true, false, LinteTypes_arr, null, false),
+        new CAttribute('文字对齐', AttrNames.TextAlign, ValueType.String, ETextAlign.Left, true, false, TextAligns_arr),
         new CAttribute('默认值', AttrNames.DefaultValue, ValueType.String, '', true, false, null, null,true,{
             scriptable:true,
             type:FunType_Client,
@@ -13,6 +14,9 @@ const M_TextKernelAttrsSetting = GenControlKernelAttrsSetting([
         genIsdisplayAttribute(),
         genNullableAttribute(),
         genValidCheckerAttribute(),
+    ]),
+    new CAttributeGroup('事件',[
+        new CAttribute('OnChanged', AttrNames.Event.OnChanged, ValueType.Event),
     ]),
 ]);
 
@@ -34,6 +38,19 @@ class M_TextKernel extends ControlKernelBase {
         var nowvt = this.getAttribute(AttrNames.ValueType);
         this[AttrNames.FloatNum + '_visible'] = nowvt == ValueType.Float;
         this[AttrNames.LineType + '_visible'] = nowvt == ValueType.String;
+
+        var funName = this.id + '_' + AttrNames.Event.OnChanged;
+        var eventBP = this.project.scriptMaster.getBPByName(funName);
+        if(eventBP){
+            eventBP.ctlID = this.id;
+            this.scriptCreated(AttrNames.Event.OnChanged,eventBP);
+        }
+    }
+
+    scriptCreated(attrName, scriptBP){
+        if(attrName == AttrNames.Event.OnChanged){
+            scriptBP.setFixParam([VarNames.ParentPath, 'newValue']);
+        }
     }
 
     renderSelf(clickHandler) {
@@ -66,6 +83,7 @@ class M_Text extends React.PureComponent {
             defaultVal: this.props.ctlKernel.getAttribute(AttrNames.DefaultValue),
             ValueType: this.props.ctlKernel.getAttribute(AttrNames.ValueType),
             text: this.props.ctlKernel.getAttribute(AttrNames.TextField),
+            align: this.props.ctlKernel.getAttribute(AttrNames.TextAlign),
         };
 
         autoBind(this);
@@ -75,6 +93,7 @@ class M_Text extends React.PureComponent {
             AttrNames.TextField,
             AttrNames.LayoutNames.APDClass,
             AttrNames.LayoutNames.StyleAttr,
+            AttrNames.TextAlign,
         ]);
     }
 
@@ -86,6 +105,7 @@ class M_Text extends React.PureComponent {
             defaultVal: this.props.ctlKernel.getAttribute(AttrNames.DefaultValue),
             ValueType: this.props.ctlKernel.getAttribute(AttrNames.ValueType),
             text: this.props.ctlKernel.getAttribute(AttrNames.TextField),
+            align: this.props.ctlKernel.getAttribute(AttrNames.TextAlign),
         });
     }
 
@@ -100,6 +120,7 @@ class M_Text extends React.PureComponent {
         layoutConfig.addClass('border');
         layoutConfig.addClass('hb-control');
         layoutConfig.addClass('w-100');
+        layoutConfig.addClass('text-' + this.state.align);
         var defaultParseRet = parseObj_CtlPropJsBind(this.state.defaultVal);
         var textParseRet = parseObj_CtlPropJsBind(this.state.text);
         var showText = textParseRet.isScript ? '文本框{脚本}' : '编辑' + (IsEmptyString(textParseRet.string) ? '' : '[' + textParseRet.string + ']') + (defaultParseRet.isScript ? '{脚默}' : '[' + defaultParseRet.string + ']') + "[" + this.state.ValueType + ']';

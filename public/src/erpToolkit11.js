@@ -79,8 +79,8 @@ function makeAction_fetchError(key, err, fetchData) {
     };
 }
 
-function delayAction(){
-    
+function delayAction() {
+
 }
 
 const makeAction_setStateByPath = makeActionCreator(AT_SETSTATEBYPATH, 'value', 'path');
@@ -99,15 +99,15 @@ function myTrim(x) {
     return x.replace(/^\s+|\s+$/gm, '');
 }
 
-function getNowDate(){
+function getNowDate() {
     return new Date(getFormatDateString(new Date()));
 }
 
 function checkDate(date) {
     var dateVal = new Date(date);
-    if(isNaN(dateVal.getDate())){
-        if(typeof date === 'string'){
-            date = date.replace(/-/g,'/');
+    if (isNaN(dateVal.getDate())) {
+        if (typeof date === 'string') {
+            date = date.replace(/-/g, '/');
         }
         dateVal = new Date(date);
     }
@@ -115,14 +115,14 @@ function checkDate(date) {
 }
 
 function checkTime(str) {
-    if(str == null || str.length == 0){
-		return false;
-	}
+    if (str == null || str.length == 0) {
+        return false;
+    }
     var dateVal = new Date('2000/1/1 ' + str);
     return !isNaN(dateVal.getDate());
 }
 
-function cutTimePart(date){
+function cutTimePart(date) {
     var rlt = new Date(date);
     rlt.setHours(0);
     rlt.setMinutes(0);
@@ -131,12 +131,12 @@ function cutTimePart(date){
     return rlt;
 }
 
-function convertTimeToDate(str){
+function convertTimeToDate(str) {
     var now = new Date();
     return combineDateAndTime(getFormatDateString(now), str);
 }
 
-function combineDateAndTime(dateStr, timeStr){
+function combineDateAndTime(dateStr, timeStr) {
     return new Date(Date.parse(dateStr + ' ' + timeStr));
 }
 
@@ -144,52 +144,64 @@ var gDateReg = /\d+[-/]\d+[-/]\d+/;
 var gTimeReg = /\d+:\d+:\d+/;
 var gShortTimeReg = /\d+:\d+/;
 
-function castDate(val){
-    if(typeof val === 'string'){
+const gNumCommaReg_float = /(\d)(?=(\d{3})+\.)/g;
+const gNumCommaReg_int = /(\d)(?=(\d{3})+$)/g;
+
+function formatMoneyByComma(num) {
+    var reg = num.toString().indexOf('.') > -1 ? gNumCommaReg_float : gNumCommaReg_int;
+    return num.toString().replace(reg, '$1,');
+}
+
+function castDate(val) {
+    if (typeof val === 'string') {
         var dateRegRlt = gDateReg.exec(val);
         var dateStr = '';
-        if(dateRegRlt != null){
+        if (dateRegRlt != null) {
             dateStr = dateRegRlt[0];
             var timeRegRlt = gTimeReg.exec(val);
-            if(timeRegRlt == null){
+            if (timeRegRlt == null) {
                 timeRegRlt = gShortTimeReg.exec(val);
             }
-            if(timeRegRlt != null){
+            if (timeRegRlt != null) {
                 dateStr += ' ' + timeRegRlt[0];
             }
-            return new Date(dateStr);
+            var rlt = new Date(dateStr);
+            if (isNaN(rlt.getDate())) {
+                rlt = new Date(dateStr.replace(/-/g, '/'));
+            }
+            return rlt;
         }
         return null;
     }
     return new Date(val);
 }
 
-function getDateDiff(type, dateA, dateB){
+function getDateDiff(type, dateA, dateB) {
     var divNum = 0;
-    switch(type.toLowerCase()){
+    switch (type.toLowerCase()) {
         case '秒':
-        divNum = 1000;
-        break;
+            divNum = 1000;
+            break;
         case '分':
-        divNum = 1000 * 60;
-        break;
+            divNum = 1000 * 60;
+            break;
         case '时':
-        divNum = 1000 * 60 * 60;
-        break;
+            divNum = 1000 * 60 * 60;
+            break;
         case '天':
-        divNum = 1000 * 60 * 60 * 24;
-        break;
+            divNum = 1000 * 60 * 60 * 24;
+            break;
         case '月':
-        divNum = 1000 * 60 * 60 * 24 * 30;
-        break;
+            divNum = 1000 * 60 * 60 * 24 * 30;
+            break;
         case '年':
-        divNum = 1000 * 60 * 60 * 24 * 365;
-        break;
+            divNum = 1000 * 60 * 60 * 24 * 365;
+            break;
     }
-    if(typeof dateA === 'string'){
+    if (typeof dateA === 'string') {
         dateA = new Date(dateA);
     }
-    if(typeof dateB === 'string'){
+    if (typeof dateB === 'string') {
         dateB = new Date(dateB);
     }
     return (dateB.getTime() - dateA.getTime()) / divNum;
@@ -438,23 +450,23 @@ function makeFTD_Callback(callBack, isModel = true) {
 }
 const gFetchingProp = {};
 
-function hookPropFetch(ftpProp, bundle){
+function hookPropFetch(ftpProp, bundle) {
     var key = ftpProp.id + '_' + ftpProp.propName;
-    if(gFetchingProp[key] == null){
+    if (gFetchingProp[key] == null) {
         gFetchingProp[key] = [];
     }
-    else if(gFetchingProp[key].length > 0){
-        var hited = gFetchingProp[key].find(x=>{
+    else if (gFetchingProp[key].length > 0) {
+        var hited = gFetchingProp[key].find(x => {
             return ObjIsEqual(x.bundle, bundle);
         });
-        if(hited){
+        if (hited) {
             hited.queues_arr.push(ftpProp);
             return true;
         }
     }
     gFetchingProp[key].push({
-        bundle:bundle,
-        queues_arr:[]
+        bundle: bundle,
+        queues_arr: []
     });
     return false;
 }
@@ -468,21 +480,21 @@ function fetchJsonGet(url, sendData, triggerData, key = '', tip = '加载中', t
 }
 
 function fetchJson(useGet, url, sendData, triggerData, key = '', tip = '加载中', timeout = 2) {
-    switch(key){
+    switch (key) {
         case EFetchKey.FetchPropValue:
-        {
-            if(hookPropFetch(triggerData, sendData.bundle)){
-                //console.log('做了缓存:' + JSON.stringify(triggerData));
-                console.log('fetch做了缓存');
-                return function (dispatch) {
-                    dispatch(makeAction_setManyStateByPath({
-                        fetching: true,
-                        fetchingpropname: triggerData.propName,
-                        fetchingErr: null,
-                    }, MakePath(triggerData.base, triggerData.id)));
+            {
+                if (hookPropFetch(triggerData, sendData.bundle)) {
+                    //console.log('做了缓存:' + JSON.stringify(triggerData));
+                    console.log('fetch做了缓存');
+                    return function (dispatch) {
+                        dispatch(makeAction_setManyStateByPath({
+                            fetching: true,
+                            fetchingpropname: triggerData.propName,
+                            fetchingErr: null,
+                        }, MakePath(triggerData.base, triggerData.id)));
+                    }
                 }
             }
-        }
     }
     timeout = Math.min(Math.max(30, timeout), 120) * 1000;
     var thisFetch = {
@@ -697,11 +709,11 @@ function setStateByPath(state, path, value, visited) {
     }
     var delayActs = {};
     retState = aStateChanged(retState, path, value, oldValue, visited == null ? {} : visited, delayActs);
-    if(!IsEmptyObject(delayActs)){
+    if (!IsEmptyObject(delayActs)) {
         setTimeout(() => {
-            for(var acti in delayActs){
+            for (var acti in delayActs) {
                 var theAct = delayActs[acti];
-                if(typeof(theAct.callfun) === 'function'){
+                if (typeof (theAct.callfun) === 'function') {
                     theAct.callfun.apply(theAct.thisParam ? theAct.thisParam : window, theAct.params_arr);
                 }
             }
@@ -736,8 +748,8 @@ function setManyStateByPath(state, path, valuesObj, visited) {
             nowState[name] = {};
         }
 
-        if(i == len - 1){
-            if(newStateParent == null){
+        if (i == len - 1) {
+            if (newStateParent == null) {
                 newStateParent = preState;
                 //newStateValue = Object.assign({}, nowState[name]);
                 nowState[name] = Object.assign({}, nowState[name]);
@@ -764,14 +776,14 @@ function setManyStateByPath(state, path, valuesObj, visited) {
                 if (value != nowState[name]) {
                     changed_arr.push(
                         {
-                            path:valueParentPath + '.' + name,
-                            name:name,
-                            oldValue:nowState[name],
-                            newValue:value,
-                            state:nowState,
-                            preState:aidPidPreState,
-                            preStateName:aidPreStateName,
-                            parentPath:valueParentPath,
+                            path: valueParentPath + '.' + name,
+                            name: name,
+                            oldValue: nowState[name],
+                            newValue: value,
+                            state: nowState,
+                            preState: aidPidPreState,
+                            preStateName: aidPreStateName,
+                            parentPath: valueParentPath,
                         }
                     );
                 }
@@ -795,24 +807,24 @@ function setManyStateByPath(state, path, valuesObj, visited) {
     var changeState_map = {};
     for (i in changed_arr) {
         var changedInfo = changed_arr[i];
-        if(changeState_map[changedInfo.parentPath]){
+        if (changeState_map[changedInfo.parentPath]) {
             changedInfo.state = changeState_map[changedInfo.parentPath];
         }
-        if(changedInfo.preState == null){
+        if (changedInfo.preState == null) {
             changedInfo.state[changedInfo.name] = changedInfo.newValue;
             changedInfo.changed == false;
             continue;
         }
 
         //if(assginedObjs_arr.indexOf(changedInfo.state) == -1){
-            //assginedObjs_arr.push(changedInfo.state);
-            if(newStateObj_arr.indexOf(changedInfo.state) == -1){
-                var newState = Object.assign({}, changedInfo.state);
-                changeState_map[changedInfo.parentPath] = newState;
-                changedInfo.state = newState;
-                changedInfo.preState[changedInfo.preStateName] = newState;
-                newStateObj_arr.push(newState);
-            }
+        //assginedObjs_arr.push(changedInfo.state);
+        if (newStateObj_arr.indexOf(changedInfo.state) == -1) {
+            var newState = Object.assign({}, changedInfo.state);
+            changeState_map[changedInfo.parentPath] = newState;
+            changedInfo.state = newState;
+            changedInfo.preState[changedInfo.preStateName] = newState;
+            newStateObj_arr.push(newState);
+        }
         //}
         changedInfo.state[changedInfo.name] = changedInfo.newValue;
     }
@@ -835,15 +847,15 @@ function setManyStateByPath(state, path, valuesObj, visited) {
     var delayActs = {};
     for (i in changed_arr) {
         var changedInfo = changed_arr[i];
-        if(changedInfo.changed == false)
+        if (changedInfo.changed == false)
             continue;
         retState = aStateChanged(retState, changedInfo.path, changedInfo.newValue, changedInfo.oldValue, visited, delayActs);
     }
-    if(!IsEmptyObject(delayActs)){
+    if (!IsEmptyObject(delayActs)) {
         setTimeout(() => {
-            for(var acti in delayActs){
+            for (var acti in delayActs) {
                 var theAct = delayActs[acti];
-                if(typeof(theAct.callfun) === 'function'){
+                if (typeof (theAct.callfun) === 'function') {
                     theAct.callfun.apply(theAct.thisParam ? theAct.thisParam : window, theAct.params_arr);
                 }
             }
@@ -859,14 +871,14 @@ function aStateChanged(state, path, newValue, oldValue, visited = {}, delayActs)
     var retState = state;
     visited[path] = 1;
     var rowIndexInfo_map = getRowIndexMapFromPath(path);
-    path = rowIndexInfo_map.newPath;
+    //path = rowIndexInfo_map.newPath;
     /*var belongUserCtlProfile = getBelongUserCtlProfile(path);
     if(belongUserCtlProfile != null){
         console.log(belongUserCtlProfile);
     }*/
-    
+
     if (appStateChangedAct_map != null) {
-        var theAct = appStateChangedAct_map[path];
+        var theAct = appStateChangedAct_map[rowIndexInfo_map.newPath];
         if (theAct) {
             var actRet = theAct(retState, newValue, oldValue, path, visited, delayActs, rowIndexInfo_map);
             if (actRet != null) {
@@ -961,14 +973,30 @@ function fetchEndHandler(state, action) {
                 }
             }
         }
-        if(triggerData){
-            if(triggerData.callBack){
+        if (triggerData) {
+            if (triggerData.callBack) {
                 var callbackret = triggerData.callBack(retState, null, action.err);
-                if(callbackret != null){
+                if (callbackret != null) {
                     retState = callbackret;
                 }
             }
+            else if (action.key == EFetchKey.FetchPropValue) {
+                var ftpProp = triggerData;
+                var ftpKey = ftpProp.id + '_' + ftpProp.propName;
+                needSetState = {};
+                var fetching_arr = gFetchingProp[ftpKey];
+                var hited = fetching_arr.find(x => {
+                    return ObjIsEqual(x.bundle, action.fetchData.sendData.bundle);
+                });
+                hited.queues_arr.forEach(x => {
+                    needSetState[MakePath(x.base, x.id, 'fetching')] = false;
+                    needSetState[MakePath(x.base, x.id, 'fetchingErr')] = action.err;
+                });
+                fetching_arr.splice(fetching_arr.indexOf(hited), 1);
+                retState = setManyStateByPath(retState, '', needSetState);
+            }
         }
+
         return retState == state ? Object.assign({}, retState) : retState;
     }
 
@@ -994,29 +1022,28 @@ function fetchEndHandler(state, action) {
             {
                 var ftpProp = triggerData;
                 var ftpKey = ftpProp.id + '_' + ftpProp.propName;
-                needSetState={};
+                needSetState = {};
                 var fetching_arr = gFetchingProp[ftpKey];
-                var hited = fetching_arr.find(x=>{
+                var hited = fetching_arr.find(x => {
                     return ObjIsEqual(x.bundle, action.fetchData.sendData.bundle);
                 });
                 needSetState[MakePath(triggerData.base, triggerData.id, triggerData.propName)] = action.json.data;
-                hited.queues_arr.forEach(x=>{
+                hited.queues_arr.forEach(x => {
                     needSetState[MakePath(x.base, x.id, x.propName)] = action.json.data;
                     needSetState[MakePath(x.base, x.id, 'fetching')] = false;
                     needSetState[MakePath(x.base, x.id, 'fetchingErr')] = null;
                 });
-                var i = fetching_arr.indexOf(hited);
-                fetching_arr.splice(i, 1);
+                fetching_arr.splice(fetching_arr.indexOf(hited), 1);
                 return setManyStateByPath(retState, '', needSetState);
             }
         default:
-        if(triggerData.callBack){
-            var callbackret = triggerData.callBack(retState, action.json.data);
-            if(callbackret != null){
-                retState = callbackret;
+            if (triggerData.callBack) {
+                var callbackret = triggerData.callBack(retState, action.json.data);
+                if (callbackret != null) {
+                    retState = callbackret;
+                }
             }
-        }
-        break;
+            break;
     }
     return retState == state ? Object.assign({}, retState) : retState;
 }
@@ -1092,13 +1119,13 @@ function renderInvalidBundleDiv() {
     );
 }
 
-function getFormatDateString_MD(date){
+function getFormatDateString_MD(date) {
     var m = date.getMonth() + 1;
     var d = date.getDate();
     return (m < 10 ? '0' : '') + m + (d < 10 ? '-0' : '-') + d;
 }
 
-function getFormatDateString(date){
+function getFormatDateString(date) {
     var y = date.getFullYear();
     var m = date.getMonth() + 1;
     var d = date.getDate();
@@ -1109,10 +1136,10 @@ function getFormatTimeString(date, hadSec = true) {
     var h = date.getHours();
     var m = date.getMinutes();
     var s = date.getSeconds();
-    return (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m +(hadSec ? (s < 10 ? ':0' : ':') + s : '');
+    return (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m + (hadSec ? (s < 10 ? ':0' : ':') + s : '');
 }
 
-function getFormatDateTimeString(date, hadSec = true){
+function getFormatDateTimeString(date, hadSec = true) {
     var y = date.getFullYear();
     var month = date.getMonth() + 1;
     var d = date.getDate();
@@ -1120,173 +1147,184 @@ function getFormatDateTimeString(date, hadSec = true){
     var m = date.getMinutes();
     var s = date.getSeconds();
 
-    return y + (month < 10 ? '-0' : '-') + month + (d < 10 ? '-0' : '-') + d + ' ' + (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m +(hadSec ? (s < 10 ? ':0' : ':') + s : '');
+    return y + (month < 10 ? '-0' : '-') + month + (d < 10 ? '-0' : '-') + d + ' ' + (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m + (hadSec ? (s < 10 ? ':0' : ':') + s : '');
 }
 
-function simpleFreshFormFun(retState, records_arr, formFullID, directBindFun){
+function getFullFormatDateString(date, hadSec = true) {
+    var y = date.getFullYear();
+    var m = date.getMonth() + 1;
+    var d = date.getDate();
+
+    var hour = date.getHours();
+    var mi = date.getMinutes();
+    var sec = date.getSeconds();
+
+    return y + (m < 10 ? '-0' : '-') + m + (d < 10 ? '-0' : '-') + d + ' ' + (hour < 10 ? '0' : '') + hour + (mi < 10 ? ':0' : ':') + mi + (hadSec ? (sec < 10 ? ':0' : ':') + sec : '');
+}
+
+function simpleFreshFormFun(retState, records_arr, formFullID, directBindFun) {
     var formState = getStateByPath(retState, formFullID);
-	var needSetState = {};
-	if (records_arr == null || records_arr.length == 0) {
-		needSetState.recordIndex = -1;
-	}
-	else {
-		var useIndex = formState.recordIndex == null ? 0 : parseInt(formState.recordIndex);
-		if (useIndex >= records_arr.length) {
-			useIndex = records_arr.length - 1;
+    var needSetState = {};
+    if (records_arr == null || records_arr.length == 0) {
+        needSetState.recordIndex = -1;
+    }
+    else {
+        var useIndex = formState.recordIndex == null ? 0 : parseInt(formState.recordIndex);
+        if (useIndex >= records_arr.length) {
+            useIndex = records_arr.length - 1;
         }
-        else if(useIndex <= -1){
+        else if (useIndex <= -1) {
             useIndex = 0;
         }
-		needSetState.recordIndex = useIndex;
+        needSetState.recordIndex = useIndex;
     }
-    if(formState.recordIndex == useIndex){
-        if(directBindFun != null){
+    if (formState.recordIndex == useIndex) {
+        if (directBindFun != null) {
             return directBindFun(retState, useIndex, formState.recordIndex, formFullID);
         }
         return retState;
     }
-	return setManyStateByPath(retState, formFullID, needSetState);
+    return setManyStateByPath(retState, formFullID, needSetState);
 }
 
-function IsEmptyObject(val){
-	for(var si in val){
-		if(val[si] != null){
-			return false;
-		}
-	}
-	return true;
-}
-
-function getQueryObject(){
-    var rlt = {};
-    var query = window.location.search.substring(1);
-    var vars = query.split("&");
-    for (var i=0;i<vars.length;i++) {
-        var pair = vars[i].split("=");
-        rlt[pair[0]] = pair[1];
-    }
-    return rlt;
-}
-
-function getQueryVariable(variable, defVal)
-{
-    var query = window.location.search.substring(1);
-    var vars = query.split("&");
-    for (var i=0;i<vars.length;i++) {
-        var pair = vars[i].split("=");
-        if(pair[0] == variable){return pair[1];}
-    }
-    return defVal;
-}
-
-function FormatStringValue(val, type, precision){
-    if(IsEmptyString(val)){
-        return '';
-    }
-    var rlt = val;
-    switch(type){
-        case 'int':
-        rlt = parseInt(val);
-        if(isNaN(rlt)){
-            rlt = '';
-        }
-        break;
-        case 'boolean':
-        rlt = parseBoolean(val) ? true : false;
-        break;
-        case 'float':
-        precision = precision == null ? 2 : parseInt(precision);
-        var divisor = Math.pow(10, precision);
-        rlt = Math.round(val * divisor) / divisor;
-        if(isNaN(rlt)){
-            rlt = '';
-        }
-        break;
-        case 'date':
-        case 'datetime':
-        if(!checkDate(val)){
-            rlt = '';
-        }
-        else if(val.length > 10){
-            var theDate = new Date(val)
-            rlt = getFormatDateString(theDate) + (type == 'datetime' ? ' ' + getFormatTimeString(theDate) : '');
-        }
-        break;
-        case 'dateMD':
-        if(typeof val == 'string' && val.length == 5){
-            rlt = val;
-        }
-        else if(!checkDate(val)){
-            rlt = '';
-        }
-        else if(val.length > 10){
-            var theDate = new Date(val)
-            rlt = getFormatDateString_MD(theDate);
-        }
-        break;
-        case 'time':
-        if(val && val.length > 8 && checkDate(val)){
-            var regRlt = gTimeReg.exec(val);
-            return regRlt[0];
-        }
-        else if(!checkTime(val)){
-            rlt = '';
-        }
-        break;
-    }
-    return rlt;
-}
-
-function plainClone(obj){
-    var rlt = {};
-    for(var s in obj){
-        var v = obj[s];
-        switch(typeof v){
-            case 'boolean':
-            case 'number':
-            case 'string':
-            rlt[s] = v;
-            break;
-        }
-    }
-    return rlt;
-}
-
-function ObjIsEqual(objA, objB){
-    if(objA == objB){
-        return true;
-    }
-    if(objA == null || objB == null){
-        return false;
-    }
-    var attrs_map = {};
-    var s;
-    for(s in objA){
-        attrs_map[s] = 1;
-    }
-    for(s in objB){
-        if(!attrs_map.hasOwnProperty(s)){
-            return false;
-        }
-    }
-    for(s in attrs_map){
-        if(objA[s] != objB[s]){
+function IsEmptyObject(val) {
+    for (var si in val) {
+        if (val[si] != null) {
             return false;
         }
     }
     return true;
 }
 
-function getRowIndexMapFromPath(path){
+function getQueryObject() {
+    var rlt = {};
+    var query = window.location.search.substring(1);
+    var vars = query.split("&");
+    for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split("=");
+        rlt[pair[0]] = pair[1];
+    }
+    return rlt;
+}
+
+function getQueryVariable(variable, defVal) {
+    var query = window.location.search.substring(1);
+    var vars = query.split("&");
+    for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split("=");
+        if (pair[0] == variable) { return pair[1]; }
+    }
+    return defVal;
+}
+
+function FormatStringValue(val, type, precision) {
+    if (IsEmptyString(val)) {
+        return '';
+    }
+    var rlt = val;
+    switch (type) {
+        case 'int':
+            rlt = parseInt(val);
+            if (isNaN(rlt)) {
+                rlt = '';
+            }
+            break;
+        case 'boolean':
+            rlt = parseBoolean(val) ? true : false;
+            break;
+        case 'float':
+            precision = precision == null ? 2 : parseInt(precision);
+            var divisor = Math.pow(10, precision);
+            rlt = Math.round(val * divisor) / divisor;
+            if (isNaN(rlt)) {
+                rlt = '';
+            }
+            break;
+        case 'date':
+        case 'datetime':
+            if (!checkDate(val)) {
+                rlt = '';
+            }
+            else if (val.length > 10) {
+                var theDate = new Date(val)
+                rlt = getFormatDateString(theDate) + (type == 'datetime' ? ' ' + getFormatTimeString(theDate) : '');
+            }
+            break;
+        case 'dateMD':
+            if (typeof val == 'string' && val.length == 5) {
+                rlt = val;
+            }
+            else if (!checkDate(val)) {
+                rlt = '';
+            }
+            else if (val.length > 10) {
+                var theDate = new Date(val)
+                rlt = getFormatDateString_MD(theDate);
+            }
+            break;
+        case 'time':
+            if (val && val.length > 8 && checkDate(val)) {
+                var regRlt = gTimeReg.exec(val);
+                return regRlt[0];
+            }
+            else if (!checkTime(val)) {
+                rlt = '';
+            }
+            break;
+    }
+    return rlt;
+}
+
+function plainClone(obj) {
+    var rlt = {};
+    for (var s in obj) {
+        var v = obj[s];
+        switch (typeof v) {
+            case 'boolean':
+            case 'number':
+            case 'string':
+                rlt[s] = v;
+                break;
+        }
+    }
+    return rlt;
+}
+
+function ObjIsEqual(objA, objB) {
+    if (objA == objB) {
+        return true;
+    }
+    if (objA == null || objB == null) {
+        return false;
+    }
+    var attrs_map = {};
+    var s;
+    for (s in objA) {
+        attrs_map[s] = 1;
+    }
+    for (s in objB) {
+        if (!attrs_map.hasOwnProperty(s)) {
+            return false;
+        }
+    }
+    for (s in attrs_map) {
+        if (objA[s] != objB[s]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function getRowIndexMapFromPath(path) {
     var rowIndexInfo_map = {};
-    if(path.indexOf('.row_') != -1){
+    if (path.indexOf('.row_') != -1) {
         var patchs_arr = path.split('.');
         var prePath = null;
         var newPatchs_arr = [];
-        for(var si in patchs_arr){
+        for (var si in patchs_arr) {
             var patch = patchs_arr[si];
-            if(prePath != null){
-                if(patch.indexOf('row_') == 0){
+            if (prePath != null) {
+                if (patch.indexOf('row_') == 0) {
                     rowIndexInfo_map[prePath] = patch.substr(4);
                     continue;
                 }
@@ -1296,57 +1334,57 @@ function getRowIndexMapFromPath(path){
         }
         rowIndexInfo_map.newPath = newPatchs_arr.join('.');
     }
-    else{
+    else {
         rowIndexInfo_map.newPath = path;
     }
     return rowIndexInfo_map;
 }
 
-function getParentPathByKey(orginPath,key){
+function getParentPathByKey(orginPath, key) {
     var index = orginPath.lastIndexOf(key);
-    if(index == -1){
+    if (index == -1) {
         return '';
     }
     var endPos = orginPath.indexOf('.', index + 1);
-    if(endPos == -1){
+    if (endPos == -1) {
         endPos = orginPath.length;
     }
-    return orginPath.substring(0,endPos);
+    return orginPath.substring(0, endPos);
 }
 
-function getBelongUserCtlPath(orginPath){
+function getBelongUserCtlPath(orginPath) {
     var index = orginPath.lastIndexOf('UserControl');
-    if(index == -1){
+    if (index == -1) {
         return '';
     }
     var endPos = orginPath.indexOf('.', index + 1);
-    if(endPos == -1){
+    if (endPos == -1) {
         endPos = orginPath.length;
     }
-    return orginPath.substring(0,endPos);
+    return orginPath.substring(0, endPos);
 }
 
-function getBelongUserCtlProfile(orginPath){
+function getBelongUserCtlProfile(orginPath) {
     var index = orginPath.lastIndexOf('UserControl');
-    if(index == -1){
+    if (index == -1) {
         return null;
     }
     var endPos = orginPath.indexOf('.', index + 1);
-    if(endPos == -1){
+    if (endPos == -1) {
         endPos = orginPath.length;
     }
     var ctlID = orginPath.substring(index, endPos);
     var classID = gUserControlInstIdMap[ctlID];
     return {
-        parentPath:orginPath.substring(0,endPos),
-        ctlID:ctlID,
-        classID:classID,
-        statePath:classID + orginPath.substr(endPos),
+        parentPath: orginPath.substring(0, endPos),
+        ctlID: ctlID,
+        classID: classID,
+        statePath: classID + orginPath.substr(endPos),
     };
 }
 
-function CombineDotStr(){
-	var rlt = '';
+function CombineDotStr() {
+    var rlt = '';
     for (var i = 0; i < arguments.length; ++i) {
         if (arguments[i] == null || arguments[i].length == 0)
             continue;

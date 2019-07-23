@@ -89,9 +89,9 @@ class ContentPanel extends React.PureComponent {
             return null;
 
         return (
-            <div id='pageContainer' className='bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-1 mobilePage rounded' >
-                <CUserControl project={project} ctlKernel={editingControl} ref={this.userCtlRef} />
-            </div>
+                <div id='pageContainer' className='bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-1 mobilePage rounded' >
+                    <CUserControl project={project} ctlKernel={editingControl} ref={this.userCtlRef} />
+                </div>
         );
     }
 

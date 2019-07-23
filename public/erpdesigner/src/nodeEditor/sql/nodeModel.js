@@ -29,45 +29,11 @@ var SqlNodeClassMap = {};
 const SQL_OutSimpleValueNode_arr = [SQLNODE_COLUMN, SQLNODE_VAR_GET, SQLNODE_CONSTVALUE, SQLNODE_CONTROL_API_PROP, SQLNODE_ENV_VAR, SQLNODE_CURRENTDATAROW];
 
 
-class NodeCreationHelper extends EventEmitter {
-    constructor() {
-        super();
-        EnhanceEventEmiter(this);
-        this.orginID_map = {};
-        this.newID_map = {};
-        this.idTracer = {};
-    }
-
-    saveJsonMap(jsonData, newNode) {
-        if (jsonData && jsonData.id) {
-            if (this.getObjFromID(jsonData.id) != null) {
-                console.warn(jsonData.id + '被重复saveJsonMap');
-            }
-            if (jsonData.id != newNode.id) {
-                if (this.getObjFromID(newNode.id) != null) {
-                    console.warn(jsonData.id + '被重复saveJsonMap');
-                }
-                this.idTracer[jsonData.id] = this.idTracer[newNode.id]
-            }
-            this.orginID_map[jsonData.id] = newNode;
-        }
-
-        this.newID_map[newNode.id] = newNode;
-    }
-
-    getObjFromID(id) {
-        var rlt = this.orginID_map[id];
-        if (rlt == null) {
-            rlt = this.newID_map[id];
-        }
-        return rlt;
-    }
-}
-
 class SqlNode_BluePrint extends EventEmitter {
     constructor(initData, bluePrintJson, createHelper) {
         super();
         EnhanceEventEmiter(this);
+        NodeEditor(this);
 
         this.nodes_arr = [];
         this.vars_arr = [];
@@ -227,6 +193,10 @@ class SqlNode_BluePrint extends EventEmitter {
             ++testI;
         }
         return useID;
+    }
+
+    isNodeCanCopy(node){
+        return node != this.finalSelectNode;
     }
 
     registerNode(node, parentNode) {
@@ -453,7 +423,7 @@ class SqlDef_Variable extends SqlNode_Base {
         this.valType = ReplaceIfNull(this.valType, SqlVarType_Int);
         this.size_1 = ReplaceIfNaN(this.size_1, 0);
         this.size_2 = ReplaceIfNaN(this.size_2, 0);
-        this.isParam = ReplaceIfNaN(this.isParam, 0);
+        this.isParam = ReplaceIfNaN(this.isParam, 1);
         autoBind(this);
     }
 

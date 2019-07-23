@@ -6,7 +6,7 @@ const FLOWNODE_QUERY_KEYRECORD = 'querykeyrecord';
 const FLOWNODE_COLUMN_VAR = 'columnvar';
 const FLOWNODE_SEND_MESSAGE = 'sendmessage';
 const FLOWNODE_CONFIRM_FLOWSTEP = 'confirmflowstep';
-const FLOWNODE_NOWDATE='nowdate'
+const FLOWNODE_NOWDATE='nowdate';
 
 var FlowNodeClassMap = {
 };
@@ -129,6 +129,10 @@ class FlowDef_Variable extends FlowNode_Base {
         var defaultvar = IsEmptyString(this.default) ? 'null' : (isNaN(this.default) ? singleQuotesStr(this.default) : this.default);
         return 'var ' + this.name + ' ' + defaultvar + ';';
     }
+
+    getDefault(){
+        return IsEmptyString(this.default) ? 'null' : (isNaN(this.default) ? singleQuotesStr(this.default) : this.default);
+    }
 }
 
 
@@ -137,6 +141,7 @@ class FlowNode_BluePrint extends EventEmitter {
         super();
         EnhanceEventEmiter(this);
         this.flowChangedHandler = this.flowChangedHandler.bind(this);
+        NodeEditor(this);
 
         this.nodes_arr = [];
         this.vars_arr = [];
@@ -479,6 +484,11 @@ class FlowNode_BluePrint extends EventEmitter {
             var caseBlock = stepSwitchBlock.getCaseBlock(theStep.code);
             caseBlock.pushLine('return ' + stepFun.name + '(' + callFunUseParams_arr.join(',') + ');');
             stepNode.compile(compilHelper, [], stepFun.bodyBlock);
+
+            for (var vi in compilHelper.useVariables_arr) {
+                var varInfo =  compilHelper.useVariables_arr[vi];
+                stepFun.scope.getVar(varInfo.name,true,varInfo.declareStr);
+            }
         }
         flowJSFile.processFun.retBlock.pushLine('return co(function* (){return serverhelper.createErrorRet("无法处理的的步骤" + stepCode);});');
         flowJSFile.compileEnd();
@@ -567,7 +577,7 @@ class FlowNode_Var_Get extends FlowNode_Base {
             return false;
         }
         var selfCompileRet = new CompileResult(this);
-        helper.addUseVariable(this.varData.name, this.varData.valType, this.varData.getDefineString());
+        helper.addUseVariable(this.varData.name, this.varData.valType, this.varData.getDefault());
         selfCompileRet.setSocketOut(this.outSocket, this.varData.getRealName());
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
@@ -696,6 +706,7 @@ class FlowNode_StepStart extends FlowNode_Base {
         super(initData, parentNode, createHelper, FLOWNODE_STEP_START, '步骤开始', false, nodeJson);
         autoBind(this);
         //this.isConstNode = true;
+        this.cloneable = false;
 
         if (this.outFlowSocket == null) {
             this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
@@ -1526,10 +1537,6 @@ class FlowNode_ColumnVar extends JSNode_Base {
     }
 
     getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
-        if (belongFun.scope.isServerSide) {
-            return;
-        }
-        
         this.keySocket.node.getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result);
     }
 

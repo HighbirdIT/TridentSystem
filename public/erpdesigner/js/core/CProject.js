@@ -88,9 +88,13 @@ var CProject = function (_IAttributeable) {
                     var newUCtl = new UserControlKernel({ project: _this }, null, null, ctlJson);
                     _this.userControls_arr.push(newUCtl);
                 });
-            }
-            var self = _this;
 
+                jsonData.userControls_arr.forEach(function (ctlJson, index) {
+                    _this.userControls_arr[index].__restoreChildren(null, ctlJson);
+                });
+            }
+
+            var self = _this;
             var ctlCreatioinHelper = new CtlKernelCreationHelper();
             jsonData.content_Mobile.pages.forEach(function (pageJson) {
                 var newPage = new M_PageKernel({}, _this, ctlCreatioinHelper, pageJson);
@@ -198,12 +202,19 @@ var CProject = function (_IAttributeable) {
     }, {
         key: 'unRegisterControl',
         value: function unRegisterControl(ctlKernel) {
+            var _this2 = this;
+
             var useID = ctlKernel.id;
             var registedCtl = this.getControlById(useID);
             if (registedCtl == null) {
                 return true;
             }
             delete this.controlId_map[useID];
+
+            var useBPs_arr = this.scriptMaster.getBPsByControlKernel(useID);
+            useBPs_arr.forEach(function (bp) {
+                _this2.scriptMaster.deleteBP(bp);
+            });
         }
     }, {
         key: 'getControlById',
@@ -232,6 +243,18 @@ var CProject = function (_IAttributeable) {
                 ++testI;
             }
             return useID;
+        }
+    }, {
+        key: 'getControlsByType',
+        value: function getControlsByType(theType) {
+            var rlt_arr = [];
+            for (var id in this.controlId_map) {
+                var ctl = this.controlId_map[id];
+                if (ctl && ctl.type == theType) {
+                    rlt_arr.push(ctl);
+                }
+            }
+            return rlt_arr;
         }
     }, {
         key: 'createKernalByType',

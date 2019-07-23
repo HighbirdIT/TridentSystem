@@ -51,7 +51,10 @@ class NodeSocket extends EventEmitter{
         if(this.extra == null){
             this.extra = {};
         }
-        this.extra[key] = val;
+        if(this.extra[key] != val){
+            this.extra[key] = val;
+            this.fireEvent('changed', this.extra);
+        }
     }
 
     getJson(jsonProf){

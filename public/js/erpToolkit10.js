@@ -155,6 +155,14 @@ var gDateReg = /\d+[-/]\d+[-/]\d+/;
 var gTimeReg = /\d+:\d+:\d+/;
 var gShortTimeReg = /\d+:\d+/;
 
+var gNumCommaReg_float = /(\d)(?=(\d{3})+\.)/g;
+var gNumCommaReg_int = /(\d)(?=(\d{3})+$)/g;
+
+function formatMoneyByComma(num) {
+    var reg = num.toString().indexOf('.') > -1 ? gNumCommaReg_float : gNumCommaReg_int;
+    return num.toString().replace(reg, '$1,');
+}
+
 function castDate(val) {
     if (typeof val === 'string') {
         var dateRegRlt = gDateReg.exec(val);
@@ -168,7 +176,11 @@ function castDate(val) {
             if (timeRegRlt != null) {
                 dateStr += ' ' + timeRegRlt[0];
             }
-            return new Date(dateStr);
+            var rlt = new Date(dateStr);
+            if (isNaN(rlt.getDate())) {
+                rlt = new Date(dateStr.replace(/-/g, '/'));
+            }
+            return rlt;
         }
         return null;
     }
@@ -893,14 +905,14 @@ function aStateChanged(state, path, newValue, oldValue) {
     var retState = state;
     visited[path] = 1;
     var rowIndexInfo_map = getRowIndexMapFromPath(path);
-    path = rowIndexInfo_map.newPath;
+    //path = rowIndexInfo_map.newPath;
     /*var belongUserCtlProfile = getBelongUserCtlProfile(path);
     if(belongUserCtlProfile != null){
         console.log(belongUserCtlProfile);
     }*/
 
     if (appStateChangedAct_map != null) {
-        var theAct = appStateChangedAct_map[path];
+        var theAct = appStateChangedAct_map[rowIndexInfo_map.newPath];
         if (theAct) {
             var actRet = theAct(retState, newValue, oldValue, path, visited, delayActs, rowIndexInfo_map);
             if (actRet != null) {

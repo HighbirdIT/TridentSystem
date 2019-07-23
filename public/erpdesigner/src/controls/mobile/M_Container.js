@@ -1,6 +1,7 @@
 const M_ContainerKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置', [
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr),
+        new CAttribute('元素类型', AttrNames.TagType, ValueType.String, EContainerTag.Div, true, false, ContainerTag_arr),
     ]),
 ]);
 
@@ -27,7 +28,7 @@ class M_ContainerKernel extends ContainerKernelBase {
             if (child.editor && (!needFilt || child.editor.type == targetType)) {
                 rlt_arr.push(child.editor);
             }
-            if (child.type == M_ContainerKernel_Type) {
+            if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && !child.isGridForm())){
                 // 穿透div
                 child.aidAccessableKernels(targetType, rlt_arr);
             }
@@ -48,8 +49,8 @@ class M_ContainerKernel extends ContainerKernelBase {
         });
     }
 
-    renderSelf(clickHandler,replaceChildClick) {
-        return (<M_Container key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick}/>)
+    renderSelf(clickHandler, replaceChildClick) {
+        return (<M_Container key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
     }
 }
 
@@ -59,10 +60,11 @@ class M_Container extends React.PureComponent {
         autoBind(this);
 
         var ctlKernel = this.props.ctlKernel;
-        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Orientation, AttrNames.Chidlren]));
+        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Orientation, AttrNames.Chidlren, AttrNames.TagType]));
         M_ContainerBase(this);
 
         inintState.orientation = ctlKernel.getAttribute(AttrNames.Orientation);
+        inintState.tagtype = ctlKernel.getAttribute(AttrNames.TagType);
         inintState.children = ctlKernel.children;
 
         this.state = inintState;
@@ -80,6 +82,7 @@ class M_Container extends React.PureComponent {
         this.setState({
             orientation: ctlKernel.getAttribute(AttrNames.Orientation),
             children: childrenVal,
+            tagtype: ctlKernel.getAttribute(AttrNames.TagType),
         });
     }
 
@@ -99,24 +102,62 @@ class M_Container extends React.PureComponent {
         layoutConfig.addClass('M_Container');
         layoutConfig.addClass('border');
         layoutConfig.addClass('hb-control');
-        if (this.state.orientation == Orientation_V) {
-            layoutConfig.addClass('flex-column');
-        }
         if (this.props.ctlKernel.children.length == 0) {
             layoutConfig.addClass('M_Container_Empty');
         }
 
-        return (
-            <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
-                {
-                    this.props.ctlKernel.children.length == 0 ?
-                        this.props.ctlKernel.id :
-                        this.props.ctlKernel.children.map(childKernel => {
-                            return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null,this.props.replaceChildClick);
-                        })
-                }
-            </div>
-        );
+        var contentElem = this.props.ctlKernel.id;
+        if (this.props.ctlKernel.children.length > 0) {
+            contentElem = this.props.ctlKernel.children.map(childKernel => {
+                return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null, this.props.replaceChildClick);
+            });
+        }
+        var finalElem = null;
+        switch (this.state.tagtype) {
+            case EContainerTag.Div:
+                finalElem = <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    {contentElem}
+                </div>
+                break;
+            case EContainerTag.Span:
+                finalElem = <span className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    {contentElem}
+                </span>
+                break;
+            case EContainerTag.H1:
+                finalElem = <h1 className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    {contentElem}
+                </h1>
+                break;
+            case EContainerTag.H2:
+                finalElem = <h2 className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    {contentElem}
+                </h2>
+                break;
+            case EContainerTag.H3:
+                finalElem = <h3 className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    {contentElem}
+                </h3>
+                break;
+            case EContainerTag.H4:
+                finalElem = <h4 className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    {contentElem}
+                </h4>
+                break;
+            case EContainerTag.H5:
+                finalElem = <h5 className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    {contentElem}
+                </h5>
+                break;
+            case EContainerTag.H6:
+                finalElem = <h6 className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    {contentElem}
+                </h6>
+                break;
+
+        }
+
+        return finalElem;
     }
 }
 

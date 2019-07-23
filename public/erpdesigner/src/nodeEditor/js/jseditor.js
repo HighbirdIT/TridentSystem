@@ -102,7 +102,42 @@ const JSNodeEditorControls_arr =[
     {
         label:'数组-长度',
         nodeClass:JSNode_Array_Length,
-        type:'数组操纵'
+        type:'操纵数组'
+    },
+    {
+        label:'字符串-长度',
+        nodeClass:JSNode_String_Length,
+        type:'操纵字符串'
+    },
+    {
+        label:'字符串-substring',
+        nodeClass:JSNode_String_Substring,
+        type:'操纵字符串'
+    },
+    {
+        label:'字符串-Substr',
+        nodeClass:JSNode_String_Substr,
+        type:'操纵字符串'
+    },
+    {
+        label:'字符串-IndexOf',
+        nodeClass:JSNode_String_IndexOf,
+        type:'操纵字符串'
+    },
+    {
+        label:'ParseInt',
+        nodeClass:JSNode_ParseInt,
+        type:'转换'
+    },
+    {
+        label:'ParseFloat',
+        nodeClass:JSNode_ParseFloat,
+        type:'转换'
+    },
+    {
+        label:'IsNaN',
+        nodeClass:JSNode_IsNaN,
+        type:'转换'
     },
     {
         label:'Get页面入口参数',
@@ -155,6 +190,8 @@ const JSNodeEditorControls_arr =[
         type:'消息窗控制'
     },
 ];
+
+var gCopyed_JsNodes_data=null;
 
 
 const EApiType={
@@ -266,6 +303,14 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         return rlt;
     }
 
+    createUserKernelData(ctrKernel){
+        return {
+            kernel:ctrKernel,
+            useprops_map:{},
+            useevents_map:{},
+        };
+    }
+
     addUseControlPropApi(ctrKernel, apiitem, rowSource){
         var rlt = null;
         var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
@@ -273,10 +318,7 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         if(belongFormKernel == null){
             rlt = this.useGlobalControls_map[ctrKernel.id];
             if(rlt == null){
-                rlt = {
-                    kernel:ctrKernel,
-                    useprops_map:{},
-                };
+                rlt = this.createUserKernelData(ctrKernel);
                 this.useGlobalControls_map[ctrKernel.id] = rlt;
             }
             rlt.useprops_map[attrName] = apiitem;
@@ -289,14 +331,38 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
             var formObj = this.addUseForm(belongFormKernel, rowSource);
             rlt = formObj.useControls_map[ctrKernel.id];
             if(rlt == null){
-                rlt = {
-                    kernel:ctrKernel,
-                    useprops_map:{},
-                };
+                rlt = this.createUserKernelData(ctrKernel);
                 formObj.useControls_map[ctrKernel.id] = rlt;
             }
         }
         rlt.useprops_map[attrName] = apiitem;
+    }
+
+    addUseControlEventApi(ctrKernel, apiitem, rowSource){
+        var rlt = null;
+        var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
+        var funName = apiitem.name;
+        if(belongFormKernel == null){
+            rlt = this.useGlobalControls_map[ctrKernel.id];
+            if(rlt == null){
+                rlt = this.createUserKernelData(ctrKernel);
+                this.useGlobalControls_map[ctrKernel.id] = rlt;
+            }
+            rlt.useevents_map[funName] = apiitem;
+            return;
+        }
+        else{
+            if(!belongFormKernel.isKernelInRow(ctrKernel)){
+                rowSource = EFormRowSource.None;
+            }
+            var formObj = this.addUseForm(belongFormKernel, rowSource);
+            rlt = formObj.useControls_map[ctrKernel.id];
+            if(rlt == null){
+                rlt = this.createUserKernelData(ctrKernel);
+                formObj.useControls_map[ctrKernel.id] = rlt;
+            }
+        }
+        rlt.useevents_map[funName] = apiitem;
     }
 
     addUsePageEnryParam(pageid, paramName, defVal){
@@ -775,6 +841,14 @@ class C_JSNode_Editor extends React.PureComponent{
     }
 
     keyUpHandler(ev){
+        if(this.zoomDivRef.current == null){
+            return;
+        }
+        var editorRect = this.zoomDivRef.current.getBoundingClientRect();
+        if(!MyMath.isPointInRect(editorRect, WindowMouse)){
+            return;
+        }
+        var editorPos = this.transToEditorPos({x:WindowMouse.x,y:WindowMouse.y});
         //console.log(ev);
         switch(ev.keyCode){
             case 27:
@@ -788,6 +862,7 @@ class C_JSNode_Editor extends React.PureComponent{
                     start:null,
                     end:null,
                 });
+            break;
             case 46:
                 if(!this.selectedNFManager.isEmpty()){
                     var titles = '';
@@ -799,6 +874,26 @@ class C_JSNode_Editor extends React.PureComponent{
                     this.wantDeleteNode(nodes_arr, titles);
                 }
             break;
+            case 67:
+                if(ev.ctrlKey){
+                    var wantCopyNodes_arr = [];
+                    if(!this.selectedNFManager.isEmpty()){
+                        this.selectedNFManager.forEach(nf=>{
+                            wantCopyNodes_arr.push(nf.props.nodedata);
+                        });
+                        gCopyed_JsNodes_data = this.props.bluePrint.copyNodes(wantCopyNodes_arr);
+                        this.logManager.clear();
+                        this.logManager.log('复制了' + gCopyed_JsNodes_data.nodeJson_arr.length + '个节点');
+                    }
+                }
+                break;
+            case 86:
+                if(ev.ctrlKey){
+                    var newNodes_arr = this.props.bluePrint.pasteNodes(gCopyed_JsNodes_data, {x:editorPos.x,y:editorPos.y}, this.state.editingNode);
+                    this.logManager.clear();
+                    this.logManager.log('克隆了' + (newNodes_arr == null ? 0 : newNodes_arr.length) + '个节点');
+                }
+                break;
         }
     }
 
@@ -1603,14 +1698,14 @@ class JSDef_Variable_Component extends React.PureComponent{
         if(!editing){
             return(
                 <div className='d-flex flex-grow-0 flex-shrink-0 w-100 text-light align-items-center hidenOverflo'>
-                    <i className={'fa fa-edit fa-lg'} onClick={this.clickEditBtnHandler} />
+                    {varData.isfixed != true && <i className={'fa fa-edit fa-lg'} onClick={this.clickEditBtnHandler} />}
                     <div className='flex-grow-1 flex-shrink-1 text-nowrap cursor-arrow dragableItem'
                          onMouseDown={this.labelMouseDownHandler}>
                         {varData.name}
-                        {varData.isParam ? (<span className='m-1 badge badge-info' >参数</span>) : null}
+                        {varData.isParam ? (<span className='m-1 badge badge-info' >{varData.isfixed ? '固定参数' : '参数'}</span>) : null}
                         <span className='m-1 badge badge-secondary' >{varData.valType}</span>
                     </div>
-                    <i className={'fa fa-trash fa-lg'} onClick={this.clickTrashHandler} />
+                    {varData.isfixed != true && <i className={'fa fa-trash fa-lg'} onClick={this.clickTrashHandler} />}
                 </div>
             );
         }
