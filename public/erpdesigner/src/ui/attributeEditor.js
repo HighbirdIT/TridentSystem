@@ -15,6 +15,7 @@ class AttributeEditor extends React.PureComponent {
         if(rlt == null){
             switch(this.props.targetattr.valueType){
                 case ValueType.StyleValues:
+                case ValueType.UserControlEvent:
                 rlt = {};
                 break;
                 default:
@@ -28,6 +29,7 @@ class AttributeEditor extends React.PureComponent {
         }
         switch(this.props.targetattr.valueType){
             case ValueType.StyleValues:
+            case ValueType.UserControlEvent:
             if(typeof rlt === 'string'){
                 rlt = {};
             }
@@ -155,6 +157,38 @@ class AttributeEditor extends React.PureComponent {
         this.doSetAttribute(nowVal);
     }
 
+    UCENameChanged(ev){
+        var nowVal = this.state.value;
+        nowVal.name = ev.target.value.trim();
+        this.doSetAttribute(nowVal);
+    }
+
+    UCEParamsChanged(ev){
+        var nowVal = this.state.value;
+        nowVal.params = ev.target.value.trim();
+        this.doSetAttribute(nowVal);
+    }
+
+    renderUserControlEventAttrEditor(nowVal,theAttr,attrName,inputID){
+        var name = ReplaceIfNull(nowVal.name, '');
+        var params = ReplaceIfNull(nowVal.params, '');
+        return (<div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
+                    <div className="input-group mb-3">
+                        <div className="input-group-prepend">
+                            <span className="input-group-text" id="basic-addon1">名称</span>
+                        </div>
+                        <input onChange={this.UCENameChanged} type="text" className="form-control" value={name} placeholder="方法名" />
+                    </div>
+                    <div className="input-group mb-3">
+                        <div className="input-group-prepend">
+                            <span className="input-group-text" id="basic-addon1">参数</span>
+                        </div>
+                        <input onChange={this.UCEParamsChanged} type="text" className="form-control" value={params} placeholder=";分割参数名" />
+                    </div>
+                </div>);
+        
+    }
+
     clickjsIconHandler(ev){
         var nowValParseRet = parseObj_CtlPropJsBind(this.state.value);
         var newVal = '';
@@ -198,8 +232,10 @@ class AttributeEditor extends React.PureComponent {
         var targetBP = project.scriptMaster.getBPByName(funName);
         if(targetBP == null){
             var jsGroup = null;
+            var fixParams_arr = null;
             if(theAttr.scriptSetting != null){
                 jsGroup = theAttr.scriptSetting.group;
+                fixParams_arr = theAttr.scriptSetting.fixParams_arr;
             }
             else if(theAttr.valueType == ValueType.Event){
                 jsGroup = EJsBluePrintFunGroup.CtlEvent;
@@ -213,6 +249,9 @@ class AttributeEditor extends React.PureComponent {
             targetBP.eventName = theAttr.name;
             if(this.props.targetobj.scriptCreated){
                 this.props.targetobj.scriptCreated(theAttr.name, targetBP);
+            }
+            if(fixParams_arr){
+                targetBP.setFixParam(fixParams_arr);
             }
             this.setState({
                 magicObj:{}
@@ -284,6 +323,9 @@ class AttributeEditor extends React.PureComponent {
         }
         if(theAttr.valueType == ValueType.StyleValues){
             return this.renderStyleAttrEditor(nowVal,theAttr,attrName,inputID);
+        }
+        if(theAttr.valueType == ValueType.UserControlEvent){
+            return this.renderUserControlEventAttrEditor(nowVal,theAttr,attrName,inputID);
         }
         if(theAttr.valueType == ValueType.CustomDataSource){
             return this.renderCustomDataSource(nowVal,theAttr,attrName,inputID);

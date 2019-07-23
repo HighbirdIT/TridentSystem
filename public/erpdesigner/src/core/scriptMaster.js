@@ -67,6 +67,12 @@ class ScriptMaster extends EventEmitter{
         sqpBP.master = null;
     }
 
+    getBPsByControlKernel(ctlID){
+        return this.blueprints_arr.filter(bp=>{
+            return bp.ctlID == ctlID;
+        });
+    }
+
     getJson(jsonProf){
         var rlt = {
             blueprints_arr:[]

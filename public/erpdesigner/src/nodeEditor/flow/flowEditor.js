@@ -116,6 +116,7 @@ const FlowNodeEditorControls_arr =[
     },
 ];
 
+var gCopyed_FlowNodes_data = null;
 
 class FlowNode_CompileHelper extends SqlNode_CompileHelper{
     constructor(logManager,editor,scope){
@@ -482,23 +483,22 @@ class C_FlowNode_Editor extends React.PureComponent{
             break;
             case 67:
                 if(ev.ctrlKey){
-                    this.copyNodes_arr = [];
+                    var wantCopyNodes_arr = [];
                     if(!this.selectedNFManager.isEmpty()){
                         this.selectedNFManager.forEach(nf=>{
-                            this.copyNodes_arr.push(nf.props.nodedata);
+                            wantCopyNodes_arr.push(nf.props.nodedata);
                         });
+                        gCopyed_FlowNodes_data = this.props.bluePrint.copyNodes(wantCopyNodes_arr);
                         this.logManager.clear();
-                        this.logManager.log('记忆了' + this.copyNodes_arr.length + '个节点');
+                        this.logManager.log('复制了' + gCopyed_FlowNodes_data.nodeJson_arr.length + '个节点');
                     }
                 }
                 break;
             case 86:
                 if(ev.ctrlKey){
-                    if(this.copyNodes_arr.length > 0){
-                        var newNodes_arr = this.props.bluePrint.quickCloneNodes(this.copyNodes_arr, {x:editorPos.x,y:editorPos.y});
-                        this.logManager.clear();
-                        this.logManager.log('克隆了' + (newNodes_arr == null ? 0 : newNodes_arr.length) + '个节点');
-                    }
+                    var newNodes_arr = this.props.bluePrint.pasteNodes(gCopyed_FlowNodes_data, {x:editorPos.x,y:editorPos.y}, this.state.editingNode);
+                    this.logManager.clear();
+                    this.logManager.log('克隆了' + (newNodes_arr == null ? 0 : newNodes_arr.length) + '个节点');
                 }
                 break;
         }

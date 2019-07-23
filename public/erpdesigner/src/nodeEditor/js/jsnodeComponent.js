@@ -135,7 +135,7 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
     getFormDS() {
         var nodeData = this.props.nodedata;
         var formKernel = nodeData.bluePrint.master.project.getControlById(nodeData.formID);
-        return formKernel.getAttribute(AttrNames.DataSource);
+        return formKernel == null ? null : formKernel.getAttribute(AttrNames.DataSource);
     }
 
     customSocketRender(socket) {
@@ -803,3 +803,49 @@ class C_JSNode_Excute_Pro extends React.PureComponent {
         </C_Node_Frame>
     }
 }
+/*
+class C_JSNode_Control_Api_CallFun extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        this.dropdownRef = React.createRef();
+
+        C_NodeCom_Base(this);
+    }
+
+    dropdownCtlChangedHandler(funName){
+        var nodeData = this.props.nodedata;
+        nodeData.paramName = funName;
+        this.setState({
+            magicObj: {}
+        });
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        var theProject = nodeData.bluePrint.master.project;
+        var headText = 'Call:' + apiClass.ctllabel + '.' + funItem.name;
+        var ddcElem = null;
+        if(nodeData.isUserControlEvent){
+            var selectedCtlid = nodeData.ctlSocket.getExtra('ctlid');
+            var selectedKernel = theProject.getControlById(selectedCtlid);
+            var funParamname = null;
+            if(selectedKernel.hasAttribute(nodeData.paramName)){
+                funParamname = selectedKernel.getAttribute(nodeData.paramName).name;
+                ddcElem = <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={g_dataBase.getAllProduce} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={nodeData.paramName} />;
+            }
+            if(funParamname == null){
+                funParamname = 'unknown';
+            }
+            headText = 'Call:' + selectedKernel.getReadableName() + '.' + funParamname;
+        }
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={headText} >
+            {ddcElem}
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
+            </div>
+        </C_Node_Frame>
+    }
+}
+*/

@@ -1146,3 +1146,95 @@ class C_Node_Frame extends React.PureComponent {
     }
 }
 
+function NodeEditor(target){
+    target.copyNodes = NodeEditor_CopyNodes.bind(target);
+    target.pasteNodes = NodeEditor_PasteNodes.bind(target);
+}
+
+function NodeEditor_CopyNodes(targets_arr) {
+    var srcNodeJson_arr = [];
+    var needSaveLink_arr = [];
+    var rlt = {
+        nodeJson_arr: srcNodeJson_arr,
+        linkJson_arr: [],
+    };
+
+    if (targets_arr == null || targets_arr.length == 0) {
+        return rlt;
+    }
+    var srcNodes_arr = [];
+    var jsonProf = new AttrJsonProfile();
+    targets_arr.forEach(srcNode => {
+        if (srcNode.cloneable != false && this.getNodeByID(srcNode.id) != null && (!this.isNodeCanCopy || this.isNodeCanCopy(srcNode) == true)) {
+            srcNodeJson_arr.push(srcNode.getJson(jsonProf));
+            srcNodes_arr.push(srcNode);
+        }
+    });
+    var searchLinkFun = (srcNode) => {
+        var srcLinks_arr = this.linkPool.getLinksByNode(srcNode);
+        srcLinks_arr.forEach(theLink => {
+            if (needSaveLink_arr.indexOf(theLink) == -1) {
+                needSaveLink_arr.push(theLink);
+            }
+        });
+
+        if (srcNode.nodes_arr && srcNode.nodes_arr.length > 0) {
+            srcNode.nodes_arr.forEach(childNode => {
+                searchLinkFun(childNode);
+            });
+        }
+    }
+    srcNodes_arr.forEach(srcNode => {
+        var srcLinks_arr = this.linkPool.getLinksByNode(srcNode);
+        srcLinks_arr.forEach(theLink => {
+            if (srcNodes_arr.indexOf(theLink.inSocket.node) != -1 && srcNodes_arr.indexOf(theLink.outSocket.node) != -1) {
+                if (needSaveLink_arr.indexOf(theLink) == -1) {
+                    needSaveLink_arr.push(theLink);
+                }
+            }
+        });
+        if (srcNode.nodes_arr && srcNode.nodes_arr.length > 0) {
+            srcNode.nodes_arr.forEach(childNode => {
+                searchLinkFun(childNode);
+            });
+        }
+    });
+    rlt.linkJson_arr = needSaveLink_arr.map(theLink => {
+        return theLink.getJson();
+    });
+
+    return rlt;
+}
+
+function NodeEditor_PasteNodes(data_json, anchorPos,  parentNode) {
+    if (data_json == null || data_json.nodeJson_arr == null || data_json.nodeJson_arr.length == 0) {
+        return;
+    }
+    if(parentNode == null){
+        parentNode = this;
+    }
+    var newNodeJson_arr = JSON.parse(JSON.stringify(data_json.nodeJson_arr));
+    var createHelper = new NodeCreationHelper();
+    createHelper.dataMaster = this.dataMaster;
+    if (anchorPos) {
+        var boundBox = MyMath.calcBoundBox(newNodeJson_arr.map(node => { return { x: parseInt(node.left), y: parseInt(node.top), width: 200, height: 200 }; }));
+        var posOffset = {
+            x: anchorPos.x - boundBox.right,
+            y: anchorPos.y - boundBox.top,
+        };
+        newNodeJson_arr.forEach(node => {
+            node.left = parseInt(node.left) + posOffset.x;
+            node.top = parseInt(node.top) + posOffset.y;
+        });
+
+    }
+    var newNodes_arr = this.genNodesByJsonArr(parentNode, newNodeJson_arr, createHelper);
+    if (data_json.linkJson_arr) {
+        data_json.linkJson_arr.forEach(linkJson => {
+            if (createHelper.orginID_map[linkJson.inSocketID] && createHelper.orginID_map[linkJson.outSocketID]) {
+                this.linkPool.addLink(createHelper.orginID_map[linkJson.inSocketID], createHelper.orginID_map[linkJson.outSocketID]);
+            }
+        });
+    }
+    return newNodes_arr;
+}

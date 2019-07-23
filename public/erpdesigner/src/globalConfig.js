@@ -197,6 +197,13 @@ const LineType_BigMulti = '多行-大';
 const LinteTypes_arr = [LineType_Single, LineType_SmallMulti, LineType_BigMulti];
 // union union all
 
+const ETextAlign={
+    Left:'left',
+    Center:'center',
+    Right:'right',
+}
+const TextAligns_arr = [ETextAlign.Left,ETextAlign.Center,ETextAlign.Right];
+
 const Event_CurrentComponentchanged = 'currentComponentchanged';
 const Event_LinkChanged = 'linkChanged';
 const Event_SocketNumChanged = 'socketnumChanged';
@@ -287,6 +294,7 @@ const ValueType = {
     Script:'script',
     Object:'Object',
     XML:'xml',
+    UserControlEvent:'usercontrolevent',
 };
 
 const VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
@@ -343,3 +351,16 @@ const AccordionMode={
 }
 
 const AccordionModes_arr = [AccordionMode.ListItem,AccordionMode.Default];
+
+const EContainerTag={
+    Div:'div',
+    Span:'span',
+    H1:'h1',
+    H2:'h2',
+    H3:'h3',
+    H4:'h4',
+    H5:'h5',
+    H6:'h6',
+}
+
+const ContainerTag_arr = [EContainerTag.Div, EContainerTag.Span, EContainerTag.H1, EContainerTag.H2, EContainerTag.H3, EContainerTag.H4, EContainerTag.H5, EContainerTag.H6];

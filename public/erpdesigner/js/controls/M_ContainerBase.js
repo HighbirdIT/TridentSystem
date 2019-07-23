@@ -5,6 +5,18 @@ function M_ContainerBase_tryPlaceKernel(theKernel, mousePos) {
         return false;
     }
     var selfKernel = this.props.ctlKernel;
+    if (theKernel == selfKernel) {
+        return false;
+    }
+    if (theKernel.type == UserControlKernel_Type && selfKernel.type == UserControlKernel_Type) {
+        // 都是自订控件 要小心嵌套使用
+        if (!selfKernel.isTemplate() || theKernel.isTemplate()) {
+            return false;
+        }
+        if (theKernel.refID == selfKernel.id) {
+            return false;
+        }
+    }
     var childContainer_cr = this.rootElemRef.current.getBoundingClientRect();
     if (MyMath.isPointInRect(childContainer_cr, mousePos)) {
         //console.log('命中');

@@ -527,6 +527,9 @@ var ControlKernelBase = function (_IAttributeable) {
             }
             var meetParents_map = [];
             while (parent != null) {
+                if (meetParents_map[parent.id]) {
+                    return;
+                }
                 meetParents_map[parent.id] = true;
                 if (!needFilt || parent.type == targetType) {
                     rlt.push(parent);
@@ -539,7 +542,7 @@ var ControlKernelBase = function (_IAttributeable) {
                         if (child.editor && (!needFilt || child.editor.type == targetType)) {
                             rlt.push(child.editor);
                         }
-                        if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type) {
+                        if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type && !child.isGridForm()) {
                             // 穿透div
                             if (meetParents_map[child.id] == null) {
                                 meetParents_map[child.id] = 1;
