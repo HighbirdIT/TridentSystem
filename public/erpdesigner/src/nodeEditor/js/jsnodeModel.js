@@ -560,7 +560,7 @@ class JSNode_BluePrint extends EventEmitter {
                 theFun.scope.getVar(varName, true, makeStr_callFun('getQueryVariable', [singleQuotesStr(varName), compilHelper.useUrlVar_map[varName]]));
             }
         }
-        var belongUserControl = ctlKernel.searchParentKernel(UserControlKernel_Type, true);
+        //var belongUserControl = ctlKernel.searchParentKernel(UserControlKernel_Type, true);
         var belongFormControl = ctlKernel.searchParentKernel(M_FormKernel_Type, true);
         var baseBundleInitBlock = new FormatFileBlock('baseBundle');
         var initValue;
