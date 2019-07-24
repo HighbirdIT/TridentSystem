@@ -212,6 +212,7 @@ const VarNames={
     Userctlpath:'userctlpath',
     OldValue:'oldValue',
     SatePath:'statePath',
+    Visible:'visible',
 };
 
 const AttrNames={
@@ -279,6 +280,9 @@ const AttrNames={
     NoRender:'norender',
     ClickSelectable:'clickSelectable',
     TextAlign:'textalign',
+    TipInfo:'tipinfo',
+    HisKey:'hisKey',
+    AcessAssert:'accessAssert',
 
     Event:{
         OnClick:'onclick',

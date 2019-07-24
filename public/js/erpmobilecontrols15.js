@@ -256,15 +256,15 @@ function SetCurrentComponent(ctrlProps, component) {
 
 function ERPC_Fun_ComponentWillUnmount() {
     SetCurrentComponent(this.props, null);
-    if (this.cusComponentWillMount) {
-        this.cusComponentWillMount();
+    if (this.cusComponentWillUnmount) {
+        this.cusComponentWillUnmount();
     }
 }
 
 function ERPC_Fun_ComponentWillMount() {
     SetCurrentComponent(this.props, this);
-    if (this.cusComponentWillUnmount) {
-        this.cusComponentWillUnmount();
+    if (this.cusComponentWillmount) {
+        this.cusComponentWillmount();
     }
 }
 
@@ -1796,7 +1796,7 @@ var ERPC_Button = function (_React$PureComponent9) {
             }
             return React.createElement(
                 'button',
-                { className: className, onClick: this.props.onClick, 'ctl-fullpath': this.props.fullPath },
+                { className: className, style: this.props.style, onClick: this.props.onClick, 'ctl-fullpath': this.props.fullPath },
                 this.props.children
             );
         }

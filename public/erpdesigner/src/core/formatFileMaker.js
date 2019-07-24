@@ -1013,6 +1013,7 @@ class CP_ClientSide extends JSFileMaker{
             loaded:false,
             ui:{
             },
+            _isroot:true,
         };
         this.appClass = this.getReactClass('App', true);
         this.reducers_map = {};

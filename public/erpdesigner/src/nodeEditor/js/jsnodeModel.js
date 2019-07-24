@@ -670,13 +670,10 @@ class JSNode_BluePrint extends EventEmitter {
                 params_arr = [VarNames.State, VarNames.Bundle, VarNames.FullParentPath];
                 //theFun.scope.getVar(belongFormControl.id + "_path", true, 'this.props.fullPath');
                 if (belongUserControl) {
-                    if(reactParentControl == belongUserControl){
-                        theFun.scope.getVar(belongUserControl.id + '_state', true, VarNames.State);
-                    }
-                    else{
+                    if(reactParentControl != belongUserControl){
                         theFun.scope.getVar(belongUserControl.id + '_path', true, "getBelongUserCtlPath(" + VarNames.FullParentPath + ")");
-                        theFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath', [VarNames.State, belongUserControl.id + '_path']));
                     }
+                    theFun.scope.getVar(belongUserControl.id + '_state', true, VarNames.State + '._isroot != null ? ' + makeStr_callFun('getStateByPath', [VarNames.State, belongUserControl.id + '_path']) + ' : ' + VarNames.State);
                 }
             }
             else if (this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
@@ -4821,19 +4818,12 @@ class JSNode_FreshForm extends JSNode_Base {
         var belongUserControl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
 
         var parentPath = null;
-        if (formDS != null) {
-            // use pull fun
-            parentPath = selectedKernel.parent.parent == null ? selectedKernel.parent.id : selectedKernel.parent.getStatePath();
-        }
-        else {
-            // use feresh fun
-            parentPath = selectedKernel.getStatePath();
-        }
         if (belongUserControl) {
+            parentPath = selectedKernel.parent.getStatePath('');
             parentPath = belongUserControl.id + '_path' + (parentPath.length == 0 ? '' : "+'." + parentPath + "'");
         }
         else {
-            parentPath = singleQuotesStr(parentPath);
+            parentPath = singleQuotesStr(selectedKernel.parent.getStatePath(selectedKernel.parent.id));
         }
         var freshFunName = 'fresh_' + socketValue;
 
@@ -6611,6 +6601,7 @@ class JSNODE_Delete_Table extends JSNode_Base {
         if (this.checkCompileFlag(!IsEmptyObject(bpCompileHelper.useUrlVar_map), '不可使用URL参数', helper)) {
             return false;
         }
+        
 
         var serverFun = null;
         var serverFunBodyBlock = null;
@@ -6653,6 +6644,11 @@ class JSNODE_Delete_Table extends JSNode_Base {
             postCheckBlock.pushLine("if(" + paramName + ' == null' + '){return serverhelper.createErrorRet("缺少参数[' + param.name + ']");}');
             paramInitBlock.pushLine("dbhelper.makeSqlparam('" + param.name + "', sqlTypes.NVarChar(4000), " + paramName + "),");
         });
+        if (!IsEmptyObject(bpCompileHelper.useEnvVars)) {
+            for (var useEnvName in bpCompileHelper.useEnvVars) {
+                paramInitBlock.pushLine("dbhelper.makeSqlparam('" + useEnvName + "', sqlTypes.NVarChar(4000), g_envVar." + useEnvName + "),");
+            }
+        }
 
         serverFunBodyBlock.pushLine("try{", 1);
         serverFunBodyBlock.pushLine(dataVarName + " = yield dbhelper.asynGetScalar(" + doubleQuotesStr(sqlInitValue) + " + ' select @@ROWCOUNT', " + paramVarName + ");");

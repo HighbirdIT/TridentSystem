@@ -17,8 +17,10 @@ const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
         new CAttribute('自动滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
         new CAttribute('模式', AttrNames.SelectMode, ValueType.String, ESelectMode.None, true, false, SelectModes_arr),
         new CAttribute('bottomDivID','bottomDivID',ValueType.String,'',true,false,null,null,false),
+        genIsdisplayAttribute(),
         new CAttribute('NoRender',AttrNames.NoRender,ValueType.Boolean,false),
         new CAttribute('可点击选择',AttrNames.ClickSelectable,ValueType.Boolean,false),
+        new CAttribute('访问控制', AttrNames.AcessAssert, ValueType.Event),
     ]),
     new CAttributeGroup('操作设置',[
         genScripAttribute('Insert', AttrNames.Event.OnInsert,EJsBluePrintFunGroup.GridRowBtnHandler),
@@ -95,8 +97,6 @@ class M_FormKernel extends ContainerKernelBase{
         this[AttrNames.GenNavBar + '_visible'] = nowft != EFormType.Grid;
         this[AttrNames.SelectMode + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.HideTabHead + '_visible'] = nowft == EFormType.Grid;
-        
-        
 
         this['操作设置_visible'] = nowft == EFormType.Grid;
         

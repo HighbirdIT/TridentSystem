@@ -21,6 +21,7 @@ const M_DropdownKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('数据分层', 'datagroup', ValueType.String, '', true, true, 'getCanuseColumns'),
         new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes),
         new CAttribute('接受输入值', AttrNames.Editeable, ValueType.Boolean, false),
+        new CAttribute('历史Key', AttrNames.HisKey, ValueType.String, '', true, false),
     ]),
     new CAttributeGroup('事件',[
         new CAttribute('OnChanged', AttrNames.Event.OnChanged, ValueType.Event),
@@ -232,6 +233,7 @@ class M_DropdownKernel extends ControlKernelBase {
 var M_DropdownKernel_api = new ControlAPIClass(M_DropdownKernel_Type);
 M_DropdownKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.TextField,M_DropdownKernelAttrsSetting), 'text', true));
 M_DropdownKernel_api.pushApi(new ApiItem_propsetter('value'));
+M_DropdownKernel_api.pushApi(new ApiItem_propsetter('text'));
 M_DropdownKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.ValueField,M_DropdownKernelAttrsSetting), 'value', true));
 g_controlApi_arr.push(M_DropdownKernel_api);
 

@@ -9,6 +9,8 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var TaskServerURL = '/erppage/server/task';
+var gTaskCreator = null;
+var gWorkingTaskSelector = null;
 
 var ERPC_TaskSelector = function (_React$PureComponent) {
     _inherits(ERPC_TaskSelector, _React$PureComponent);
@@ -19,9 +21,11 @@ var ERPC_TaskSelector = function (_React$PureComponent) {
         var _this = _possibleConstructorReturn(this, (ERPC_TaskSelector.__proto__ || Object.getPrototypeOf(ERPC_TaskSelector)).call(this, props));
 
         ERPControlBase(_this);
+        _this.dropdownRef = React.createRef();
         _this.pullUserTask = _this.pullUserTask.bind(_this);
         _this.createTitleBarRightElem = _this.createTitleBarRightElem.bind(_this);
         _this.popupCreator = _this.popupCreator.bind(_this);
+        _this.taskConfirmed = _this.taskConfirmed.bind(_this);
 
         _this.popPanelRef = React.createRef();
         _this.popPanelItem = React.createElement(ERPC_TaskCreator, { ref: _this.popPanelRef, selector: _this, key: gFixedItemCounter++ });
@@ -30,20 +34,22 @@ var ERPC_TaskSelector = function (_React$PureComponent) {
 
     _createClass(ERPC_TaskSelector, [{
         key: 'pullUserTask',
-        value: function pullUserTask() {
-            var ownprops = this.props;
-            var parentStatePath = MakePath(ownprops.parentPath, ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex, ownprops.id);
-            store.dispatch(fetchJsonPost(TaskServerURL, { action: 'getUserTask', bundle: { userid: g_envVar.userid } }, makeFTD_Prop(parentStatePath, ownprops.id), 'options_arr', false), EFetchKey.FetchPropValue);
+        value: function pullUserTask(parentPath) {
+            store.dispatch(fetchJsonPost(TaskServerURL, { action: 'getUserTask', bundle: { userid: g_envVar.userid } }, makeFTD_Prop(parentPath, this.props.id, 'options_arr', false), EFetchKey.FetchPropValue));
         }
     }, {
         key: 'popupCreator',
         value: function popupCreator() {
-            addFixedItem(this.popPanelItem);
+            if (gTaskCreator == null) {
+                gTaskCreator = React.createElement(ERPC_TaskCreator, { ref: this.popPanelRef, selector: this, key: 'gtaskcreator' });
+            }
+            gWorkingTaskSelector = this;
+            addFixedItem(gTaskCreator);
         }
     }, {
         key: 'closeCreator',
         value: function closeCreator() {
-            removeFixedItem(this.popPanelItem);
+            removeFixedItem(gTaskCreator);
         }
     }, {
         key: 'createTitleBarRightElem',
@@ -56,12 +62,34 @@ var ERPC_TaskSelector = function (_React$PureComponent) {
             );
         }
     }, {
+        key: 'taskConfirmed',
+        value: function taskConfirmed(state, taskid, taskname, groupname) {
+            var newOptions_arr = this.props.optionsData.options_arr;
+            newOptions_arr = newOptions_arr.map(function (x) {
+                return x.data;
+            }).concat({
+                工作任务记录代码: taskid,
+                任务标题: taskname,
+                工作小组名称: groupname
+            });
+            var needSetState = {
+                options_arr: newOptions_arr,
+                text: taskname,
+                value: taskid
+            };
+            setManyStateByPath(state, this.props.fullPath, needSetState);
+            if (this.dropdownRef.current) {
+                this.dropdownRef.current.dropDownClosed();
+            }
+        }
+    }, {
         key: 'render',
         value: function render() {
             if (this.props.visible == false) {
                 return null;
             }
             return React.createElement(ERPC_DropDown, {
+                ref: this.dropdownRef,
                 value: this.props.value,
                 text: this.props.text,
                 fetching: this.props.fetching,
@@ -80,6 +108,10 @@ var ERPC_TaskSelector = function (_React$PureComponent) {
                 fullParentPath: this.props.fullParentPath,
                 fullPath: this.props.fullPath,
                 label: this.props.label,
+                textAttrName: '\u4EFB\u52A1\u6807\u9898',
+                valueAttrName: '\u5DE5\u4F5C\u4EFB\u52A1\u8BB0\u5F55\u4EE3\u7801',
+                recentCookieKey: 'task',
+                onchanged: this.props.onchanged,
                 createTitleBarRightElem: this.createTitleBarRightElem
             });
         }
@@ -87,6 +119,18 @@ var ERPC_TaskSelector = function (_React$PureComponent) {
 
     return ERPC_TaskSelector;
 }(React.PureComponent);
+
+var selectERPC_TaskSelector_textName = function selectERPC_TaskSelector_textName(state, ownprops) {
+    return '任务标题';
+};
+
+var selectERPC_TaskSelector_valueName = function selectERPC_TaskSelector_valueName(state, ownprops) {
+    return '工作任务记录代码';
+};
+
+var selectERPC_TaskSelector_groupAttrName = function selectERPC_TaskSelector_groupAttrName(state, ownprops) {
+    return '工作小组名称';
+};
 
 function ERPC_TaskSelector_mapstatetoprops(state, ownprops) {
     var propProfile = getControlPropProfile(ownprops, state);
@@ -100,7 +144,7 @@ function ERPC_TaskSelector_mapstatetoprops(state, ownprops) {
     var selectorid = propProfile.fullPath + 'optionsData';
     var optionsDataSelector = ERPC_selector_map[selectorid];
     if (optionsDataSelector == null) {
-        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_DropDown_textName, selectERPC_DropDown_valueName, selectERPC_DropDown_groupAttrName, selectERPC_DropDown_textType, formatERPC_DropDown_options);
+        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_TaskSelector_textName, selectERPC_TaskSelector_valueName, selectERPC_TaskSelector_groupAttrName, selectERPC_DropDown_textType, formatERPC_DropDown_options);
         ERPC_selector_map[selectorid] = optionsDataSelector;
     }
 

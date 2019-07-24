@@ -236,7 +236,8 @@ var VarNames = {
     HoldSelected: 'holdSelected',
     Userctlpath: 'userctlpath',
     OldValue: 'oldValue',
-    SatePath: 'statePath'
+    SatePath: 'statePath',
+    Visible: 'visible'
 };
 
 var AttrNames = {
@@ -304,6 +305,9 @@ var AttrNames = {
     NoRender: 'norender',
     ClickSelectable: 'clickSelectable',
     TextAlign: 'textalign',
+    TipInfo: 'tipinfo',
+    HisKey: 'hisKey',
+    AcessAssert: 'accessAssert',
 
     Event: {
         OnClick: 'onclick',
