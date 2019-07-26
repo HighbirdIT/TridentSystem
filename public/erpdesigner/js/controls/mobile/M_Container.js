@@ -137,6 +137,9 @@ var M_Container = function (_React$PureComponent) {
             var finalElem = null;
             switch (this.state.tagtype) {
                 case EContainerTag.Div:
+                    if (this.state.orientation == Orientation_V) {
+                        layoutConfig.addClass('flex-column');
+                    }
                     finalElem = React.createElement(
                         'div',
                         { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },

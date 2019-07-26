@@ -486,7 +486,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         logManager.clear();
         var canUseDS_arr = [];
         var canAccessKernel_arr = [];
-        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == EJsBluePrintFunGroup.CtlValid || bluePrint.group == EJsBluePrintFunGroup.GridRowBtnHandler){
+        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == EJsBluePrintFunGroup.CtlFun || bluePrint.group == EJsBluePrintFunGroup.CtlValid || bluePrint.group == EJsBluePrintFunGroup.GridRowBtnHandler){
             // 控件类型,获取上下文
             var ctlKernel = project.getControlById(bluePrint.ctlID);
             if(bluePrint.ctlID == null || ctlKernel == null){

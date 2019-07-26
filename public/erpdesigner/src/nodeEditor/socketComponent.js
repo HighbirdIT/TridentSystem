@@ -193,6 +193,7 @@ class C_Node_Socket extends React.PureComponent{
                         var bluePrint = socket.node.bluePrint;
                         switch(bluePrint.group){
                             case EJsBluePrintFunGroup.CtlAttr:
+                            case EJsBluePrintFunGroup.CtlFun:
                             case EJsBluePrintFunGroup.CtlEvent:
                             case ESqlBluePrintGroup.ControlCustom:
                             case EJsBluePrintFunGroup.CtlValid:
@@ -217,7 +218,7 @@ class C_Node_Socket extends React.PureComponent{
                                         nowCtlkernel = bluePrint.master.project.getControlById(nowCtlId);
                                         var nowFunValue = socket.getExtra('funAttrName');
                                         if(nowCtlkernel){
-                                            inputElem.push(<DropDownControl key='funddc' socket={socket} options_arr={nowCtlkernel.getEventApiAttrArray} value={nowFunValue} itemChanged={this.userCtlFunChangedHandler} textAttrName='label' valueAttrName='name' />);
+                                            inputElem.push(<DropDownControl key='funddc' socket={socket} options_arr={socket.node.isUserControlEvent ? nowCtlkernel.getEventApiAttrArray : nowCtlkernel.getFunctionApiAttrArray} value={nowFunValue} itemChanged={this.userCtlFunChangedHandler} textAttrName='label' valueAttrName='name' />);
                                         }
                                     }
                                 }

@@ -520,7 +520,7 @@ var ControlKernelBase = function (_IAttributeable) {
             var nowKernel = this;
             var parent = nowKernel.parent;
             if (parent == null) {
-                if (this.type == M_PageKernel_Type) {
+                if (this.type == M_PageKernel_Type || this.type == UserControlKernel_Type) {
                     parent = this;
                     rlt.pop();
                 }

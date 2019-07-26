@@ -12,41 +12,41 @@ class AttributeEditor extends React.PureComponent {
 
     getAttrNowValue(notclone) {
         var rlt = this.props.targetobj.getAttribute(this.props.targetattr.name, this.props.index);
-        if(rlt == null){
-            switch(this.props.targetattr.valueType){
+        if (rlt == null) {
+            switch (this.props.targetattr.valueType) {
                 case ValueType.StyleValues:
                 case ValueType.UserControlEvent:
-                rlt = {};
-                break;
+                    rlt = {};
+                    break;
                 default:
-                rlt = '';
+                    rlt = '';
             }
         }
-        else{
-            if(typeof rlt === 'object'){
-                rlt = notclone ? rlt : Object.assign({},rlt);
+        else {
+            if (typeof rlt === 'object') {
+                rlt = notclone ? rlt : Object.assign({}, rlt);
             }
         }
-        switch(this.props.targetattr.valueType){
+        switch (this.props.targetattr.valueType) {
             case ValueType.StyleValues:
             case ValueType.UserControlEvent:
-            if(typeof rlt === 'string'){
-                rlt = {};
-            }
-            break;
+                if (typeof rlt === 'string') {
+                    rlt = {};
+                }
+                break;
         }
         return rlt;
     }
 
-    getRealAttrName(){
+    getRealAttrName() {
         return this.props.targetattr.name + (this.props.index == null ? '' : '_' + this.props.index);
     }
 
-    getRealAttrLabel(){
+    getRealAttrLabel() {
         return this.props.targetattr.label + (this.props.index == null ? '' : this.props.index);
     }
 
-    getRealAttrInputID(){
+    getRealAttrInputID() {
         return this.props.targetattr.inputID + (this.props.index == null ? '' : this.props.index);
     }
 
@@ -72,7 +72,7 @@ class AttributeEditor extends React.PureComponent {
         var isMyAttrChaned = false;
         if (typeof ev.name === 'string') {
             isMyAttrChaned = ev.name == myAttrName;
-            if(isMyAttrChaned && this.props.index >= 0){
+            if (isMyAttrChaned && this.props.index >= 0) {
                 isMyAttrChaned = this.props.index == ev.index;
             }
         }
@@ -86,200 +86,221 @@ class AttributeEditor extends React.PureComponent {
         }
     }
 
-    doSetAttribute(newValue){
+    doSetAttribute(newValue) {
         this.props.targetobj.setAttribute(this.props.targetattr.name, newValue, this.props.index);
     }
 
-    itemChangedHandler(newItem){
+    itemChangedHandler(newItem) {
         this.doSetAttribute(newItem);
     }
 
-    renderStyleAttrEditor(nowVal,theAttr,attrName,inputID){
+    renderStyleAttrEditor(nowVal, theAttr, attrName, inputID) {
         var nameDDCValue = ReplaceIfNull(nowVal.name, '');
         var valueElem = null;
         var setting = StyleAttrSetting[nameDDCValue];
-        if(setting != null){
+        if (setting != null) {
             var value = ReplaceIfNull(nowVal.value, setting.def);
-            if(setting.options_arr){
-                valueElem = (<DropDownControl options_arr={setting.options_arr} value={value} itemChanged={this.styleValueDDCChanged}/>)
+            if (setting.options_arr) {
+                valueElem = (<DropDownControl options_arr={setting.options_arr} value={value} itemChanged={this.styleValueDDCChanged} />)
             }
-            else{
+            else {
                 var inputType = 'text';
-                switch(setting.type){
+                switch (setting.type) {
                     case ValueType.Boolean:
-                    inputType = 'checkbox';
-                    break;
+                        inputType = 'checkbox';
+                        break;
                 }
 
                 valueElem = (<input type={inputType} className="form-control" checked={value} value={value} onChange={this.styleValueInputChanged} />);
             }
-            
+
         }
         this.styleSetting = setting;
         return (<div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
-                    <DropDownControl options_arr={AttrNames.StyleAttrNames.values_arr} value={nameDDCValue} itemChanged={this.styleNameDDCChanged}/>
-                    {valueElem}
-                </div>);
-        
+            <DropDownControl options_arr={AttrNames.StyleAttrNames.values_arr} value={nameDDCValue} itemChanged={this.styleNameDDCChanged} />
+            {valueElem}
+        </div>);
+
     }
 
     styleValueInputChanged(ev) {
-        if(this.styleSetting == null){
+        if (this.styleSetting == null) {
             return;
         }
         var inputElem = ev.target;
         var inputVal = null;
-        switch(this.styleSetting.type){
+        switch (this.styleSetting.type) {
             case ValueType.Boolean:
-            inputVal = inputElem.checked;
-            break;
+                inputVal = inputElem.checked;
+                break;
             default:
-            inputVal = inputElem.value;
+                inputVal = inputElem.value;
         }
         var nowVal = this.state.value;
-        
+
         nowVal.value = inputVal;
         this.doSetAttribute(nowVal);
     }
 
-    styleNameDDCChanged(newName){
+    styleNameDDCChanged(newName) {
         var nowVal = this.state.value;
         nowVal.name = newName;
         var setting = StyleAttrSetting[newName];
-        if(setting != null){
+        if (setting != null) {
             nowVal.value = setting.def;
         }
         this.doSetAttribute(nowVal);
     }
 
-    styleValueDDCChanged(newVal){
+    styleValueDDCChanged(newVal) {
         var nowVal = this.state.value;
         this.doSetAttribute(nowVal);
     }
 
-    UCENameChanged(ev){
+    UCENameChanged(ev) {
         var nowVal = this.state.value;
         nowVal.name = ev.target.value.trim();
         this.doSetAttribute(nowVal);
     }
 
-    UCEParamsChanged(ev){
+    UCEParamsChanged(ev) {
         var nowVal = this.state.value;
         nowVal.params = ev.target.value.trim();
         this.doSetAttribute(nowVal);
     }
 
-    renderUserControlEventAttrEditor(nowVal,theAttr,attrName,inputID){
+    renderUserControlEventAttrEditor(nowVal, theAttr, attrName, inputID) {
         var name = ReplaceIfNull(nowVal.name, '');
         var params = ReplaceIfNull(nowVal.params, '');
         return (<div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
-                    <div className="input-group mb-3">
-                        <div className="input-group-prepend">
-                            <span className="input-group-text" id="basic-addon1">名称</span>
-                        </div>
-                        <input onChange={this.UCENameChanged} type="text" className="form-control" value={name} placeholder="方法名" />
-                    </div>
-                    <div className="input-group mb-3">
-                        <div className="input-group-prepend">
-                            <span className="input-group-text" id="basic-addon1">参数</span>
-                        </div>
-                        <input onChange={this.UCEParamsChanged} type="text" className="form-control" value={params} placeholder=";分割参数名" />
-                    </div>
-                </div>);
-        
+            <div className="input-group mb-3">
+                <div className="input-group-prepend">
+                    <span className="input-group-text" id="basic-addon1">名称</span>
+                </div>
+                <input onChange={this.UCENameChanged} type="text" className="form-control" value={name} placeholder="方法名" />
+            </div>
+            <div className="input-group mb-3">
+                <div className="input-group-prepend">
+                    <span className="input-group-text" id="basic-addon1">参数</span>
+                </div>
+                <input onChange={this.UCEParamsChanged} type="text" className="form-control" value={params} placeholder=";分割参数名" />
+            </div>
+        </div>);
+
     }
 
-    clickjsIconHandler(ev){
+    CusFunNameChanged(ev) {
+        this.doSetAttribute(ev.target.value.trim());
+    }
+
+    renderCustomFunctonAttrEditor(nowVal, theAttr, attrName) {
+        var project = this.props.targetobj.project;
+        var funName = this.props.targetobj.id + '_' + attrName;
+        var jsBP = project.scriptMaster.getBPByName(funName);
+        return (<div className='d-flex w-100 h-100 align-items-center'>
+            <div className="input-group mb-3">
+                <input onChange={this.CusFunNameChanged} type="text" className="form-control" value={nowVal} placeholder="方法名" />
+                <div className="input-group-append">
+                    <span onClick={this.clickModifyScriptBtnHandler} className='btn btn-dark flex-grow-1'>{jsBP ? '编辑' : '创建'}</span>
+                </div>
+            </div>
+        </div>);
+    }
+
+    clickjsIconHandler(ev) {
         var nowValParseRet = parseObj_CtlPropJsBind(this.state.value);
         var newVal = '';
-        if(nowValParseRet.isScript){
+        if (nowValParseRet.isScript) {
             newVal = nowValParseRet.oldtext == null ? '' : nowValParseRet.oldtext;
         }
-        else{
+        else {
             newVal = makeObj_CtlPropJsBind(this.props.targetobj.id, this.props.targetattr.name, 'get', nowValParseRet.string);
         }
         this.doSetAttribute(newVal);
     }
 
-    clickModifyJSBtnHandler(ev){
+    clickModifyJSBtnHandler(ev) {
         var project = this.props.targetobj.project;
-        if(project == null){
+        if (project == null) {
             return;
         }
         var nowValParseRet = parseObj_CtlPropJsBind(this.state.value, project.scriptMaster);
-        if(!nowValParseRet.isScript){
+        if (!nowValParseRet.isScript) {
             return;
         }
         var targetBP = nowValParseRet.jsBp;
-        if(targetBP == null){
+        if (targetBP == null) {
             var theAttr = this.props.targetattr;
             targetBP = project.scriptMaster.createBP(nowValParseRet.funName, this.props.targetattr.scriptSetting.type, theAttr.scriptSetting.group);
             targetBP.ctlID = this.props.targetobj.id;
             this.setState({
-                magicObj:{}
+                magicObj: {}
             });
         }
         project.designer.editScriptBlueprint(targetBP);
     }
 
-    clickModifyScriptBtnHandler(ev){
+    clickModifyScriptBtnHandler(ev) {
         var project = this.props.targetobj.project;
-        if(project == null){
+        if (project == null) {
             return;
         }
         var theAttr = this.props.targetattr;
-        var funName = this.props.targetobj.id + '_' + theAttr.name;
+        var funName = this.props.targetobj.id + '_' + this.getRealAttrName();
         var targetBP = project.scriptMaster.getBPByName(funName);
-        if(targetBP == null){
+        if (targetBP == null) {
             var jsGroup = null;
             var fixParams_arr = null;
-            if(theAttr.scriptSetting != null){
+            if (theAttr.scriptSetting != null) {
                 jsGroup = theAttr.scriptSetting.group;
                 fixParams_arr = theAttr.scriptSetting.fixParams_arr;
             }
-            else if(theAttr.valueType == ValueType.Event){
+            else if (theAttr.valueType == ValueType.Event) {
                 jsGroup = EJsBluePrintFunGroup.CtlEvent;
             }
-            
-            if(jsGroup == null){
+            else if (theAttr.valueType == ValueType.CustomFunction) {
+                jsGroup = EJsBluePrintFunGroup.CtlFun;
+            }
+
+            if (jsGroup == null) {
                 console.error("bad jsgroup!");
             }
             targetBP = project.scriptMaster.createBP(funName, FunType_Client, jsGroup);
             targetBP.ctlID = this.props.targetobj.id;
             targetBP.eventName = theAttr.name;
-            if(this.props.targetobj.scriptCreated){
+            if (this.props.targetobj.scriptCreated) {
                 this.props.targetobj.scriptCreated(theAttr.name, targetBP);
             }
-            if(fixParams_arr){
+            if (fixParams_arr) {
                 targetBP.setFixParam(fixParams_arr);
             }
             this.setState({
-                magicObj:{}
+                magicObj: {}
             });
         }
         project.designer.editScriptBlueprint(targetBP);
     }
 
-    clickTrshScriptBtnHandler(ev){
+    clickTrshScriptBtnHandler(ev) {
         var theAttr = this.props.targetattr;
         var funName = this.props.targetobj.id + '_' + theAttr.name;
         var project = this.props.targetobj.project;
         var jsBP = project.scriptMaster.getBPByName(funName);
-        if(jsBP != null){
-            gTipWindow.popAlert(makeAlertData('警告', '确定要删除这个脚本:' + jsBP.name,this.clickDeleteJSTipCallback,[makeAlertBtnData('确定', 'ok'),makeAlertBtnData('取消', 'cancel')], jsBP));
+        if (jsBP != null) {
+            gTipWindow.popAlert(makeAlertData('警告', '确定要删除这个脚本:' + jsBP.name, this.clickDeleteJSTipCallback, [makeAlertBtnData('确定', 'ok'), makeAlertBtnData('取消', 'cancel')], jsBP));
         }
     }
 
-    clickDeleteJSTipCallback(key, jsBP){
-        if(key == 'ok'){
+    clickDeleteJSTipCallback(key, jsBP) {
+        if (key == 'ok') {
             jsBP.master.deleteBP(jsBP);
             this.setState({
-                magicObj:{}
+                magicObj: {}
             });
         }
     }
 
-    renderPureScriptAttrEditor(nowVal,theAttr,attrName,inputID){
+    renderPureScriptAttrEditor(nowVal, theAttr, attrName, inputID) {
         var project = this.props.targetobj.project;
         var funName = this.props.targetobj.id + '_' + attrName;
         var jsBP = project.scriptMaster.getBPByName(funName);
@@ -290,62 +311,65 @@ class AttributeEditor extends React.PureComponent {
             </span>
         );
         return (<div className='d-flex w-100 h-100 align-items-center'>
-                    <span onClick={this.clickModifyScriptBtnHandler} className='btn btn-dark flex-grow-1'>{jsBP ? '编辑' : '创建'}</span>
-                    {trushIconElem}
-                </div>);
+            <span onClick={this.clickModifyScriptBtnHandler} className='btn btn-dark flex-grow-1'>{jsBP ? '编辑' : '创建'}</span>
+            {trushIconElem}
+        </div>);
     }
 
-    clickCusdatasourcebtn(){
+    clickCusdatasourcebtn() {
         var theBP = this.getAttrNowValue(true);
-        if(theBP){
+        if (theBP) {
             var project = this.props.targetobj.project;
             project.designer.editSqlBlueprint(theBP);
         }
     }
 
-    renderCustomDataSource(nowVal,theAttr,attrName,inputID){
+    renderCustomDataSource(nowVal, theAttr, attrName, inputID) {
         return (<button type='button' className='btn btn-dark w-100' onClick={this.clickCusdatasourcebtn}>定制数据源</button>);
     }
 
-    clickListFormContent(){
+    clickListFormContent() {
         var project = this.props.targetobj.project;
         project.designer.editListFormContent(this.props.targetobj);
     }
 
-    renderListFormContent(nowVal,theAttr,attrName,inputID){
+    renderListFormContent(nowVal, theAttr, attrName, inputID) {
         return (<button type='button' className='btn btn-dark w-100' onClick={this.clickListFormContent}>定制列表数据</button>);
     }
 
-    rednerEditor(theAttr,attrName,inputID) {
+    rednerEditor(theAttr, attrName, inputID) {
         var nowVal = this.state.value;
-        if(theAttr.valueType == ValueType.Event || theAttr.valueType == ValueType.Script){
-            return this.renderPureScriptAttrEditor(nowVal,theAttr,attrName,inputID);
+        if (theAttr.valueType == ValueType.Event || theAttr.valueType == ValueType.Script) {
+            return this.renderPureScriptAttrEditor(nowVal, theAttr, attrName, inputID);
         }
-        if(theAttr.valueType == ValueType.StyleValues){
-            return this.renderStyleAttrEditor(nowVal,theAttr,attrName,inputID);
+        if (theAttr.valueType == ValueType.StyleValues) {
+            return this.renderStyleAttrEditor(nowVal, theAttr, attrName, inputID);
         }
-        if(theAttr.valueType == ValueType.UserControlEvent){
-            return this.renderUserControlEventAttrEditor(nowVal,theAttr,attrName,inputID);
+        if (theAttr.valueType == ValueType.UserControlEvent) {
+            return this.renderUserControlEventAttrEditor(nowVal, theAttr, attrName, inputID);
         }
-        if(theAttr.valueType == ValueType.CustomDataSource){
-            return this.renderCustomDataSource(nowVal,theAttr,attrName,inputID);
+        if (theAttr.valueType == ValueType.CustomFunction) {
+            return this.renderCustomFunctonAttrEditor(nowVal, theAttr, attrName, inputID);
         }
-        if(theAttr.valueType == ValueType.ListFormContent){
-            return this.renderListFormContent(nowVal,theAttr,attrName,inputID);
+        if (theAttr.valueType == ValueType.CustomDataSource) {
+            return this.renderCustomDataSource(nowVal, theAttr, attrName, inputID);
+        }
+        if (theAttr.valueType == ValueType.ListFormContent) {
+            return this.renderListFormContent(nowVal, theAttr, attrName, inputID);
         }
         var attrEditable = ReplaceIfNull(this.props.targetobj[attrName + '_editable'], theAttr.editable);
         if (!attrEditable) {
-            switch(theAttr.valueType){
+            switch (theAttr.valueType) {
                 case ValueType.Boolean:
-                return <input autoComplete='off' type='checkbox' readOnly='readonly' className="form-control" id={inputID} checked={nowVal} value={nowVal} />
+                    return <input autoComplete='off' type='checkbox' readOnly='readonly' className="form-control" id={inputID} checked={nowVal} value={nowVal} />
                 default:
-                return (<div className="form-control-plaintext text-light" id={inputID}>{nowVal.toString()}</div>);
+                    return (<div className="form-control-plaintext text-light" id={inputID}>{nowVal.toString()}</div>);
             }
         }
         var jsIconElem = null;
         var project = this.props.targetobj.project;
         var scriptable = theAttr.scriptSetting && theAttr.scriptSetting.scriptable;
-        if(scriptable && project){
+        if (scriptable && project) {
             // 可脚本化
             var parseRet = parseObj_CtlPropJsBind(nowVal, project.scriptMaster);
             jsIconElem = (
@@ -354,37 +378,37 @@ class AttributeEditor extends React.PureComponent {
                     <i className='fa fa-square-o fa-stack-2x' />
                 </span>
             );
-            if(parseRet.isScript){
+            if (parseRet.isScript) {
                 return (<div className='d-flex w-100 h-100 align-items-center'>
-                            <span onClick={this.clickModifyJSBtnHandler} className='btn btn-dark flex-grow-1'>{parseRet.jsBp ? '编辑' : '创建'}</span>
-                            {jsIconElem}
-                        </div>);
+                    <span onClick={this.clickModifyJSBtnHandler} className='btn btn-dark flex-grow-1'>{parseRet.jsBp ? '编辑' : '创建'}</span>
+                    {jsIconElem}
+                </div>);
             }
         }
-        if(theAttr.options_arr != null){
+        if (theAttr.options_arr != null) {
             var dropdownSetting = theAttr.dropdownSetting == null ? {} : theAttr.dropdownSetting;
             var useOptioins_arr = theAttr.options_arr;
-            if(dropdownSetting.pullDataFun != null){
+            if (dropdownSetting.pullDataFun != null) {
                 var pullDataFun = dropdownSetting.pullDataFun;
                 var nowTarget = this.props.targetobj;
-                useOptioins_arr = ()=>{
+                useOptioins_arr = () => {
                     return pullDataFun(nowTarget);
                 }
             }
-            if(typeof(theAttr.options_arr) === 'string'){
+            if (typeof (theAttr.options_arr) === 'string') {
                 useOptioins_arr = this.props.targetobj[theAttr.options_arr];
-                if(useOptioins_arr == null){
+                if (useOptioins_arr == null) {
                     console.error('没有找到:' + theAttr.options_arr);
                 }
             }
-            
-            if(theAttr.valueType == ValueType.DataSource){
-                if(nowVal && nowVal.loaded == false){
+
+            if (theAttr.valueType == ValueType.DataSource) {
+                if (nowVal && nowVal.loaded == false) {
                     return (<div className='text-light'>加载中</div>);
                 }
             }
-            var ddc = (<DropDownControl options_arr={useOptioins_arr} value={nowVal} itemChanged={this.itemChangedHandler} textAttrName={dropdownSetting.text} valueAttrName={dropdownSetting.value} editable={dropdownSetting.editable}/>);
-            if(jsIconElem == null){
+            var ddc = (<DropDownControl options_arr={useOptioins_arr} value={nowVal} itemChanged={this.itemChangedHandler} textAttrName={dropdownSetting.text} valueAttrName={dropdownSetting.value} editable={dropdownSetting.editable} />);
+            if (jsIconElem == null) {
                 return ddc;
             }
             return (<div className='d-flex flex-grow-1 flex-shrink-1'>
@@ -394,24 +418,24 @@ class AttributeEditor extends React.PureComponent {
                 {jsIconElem}
             </div>)
         }
-        
+
         var inputType = 'text';
-        switch(theAttr.valueType){
+        switch (theAttr.valueType) {
             case ValueType.Boolean:
-            inputType = 'checkbox';
-            break;
+                inputType = 'checkbox';
+                break;
         }
         return (
             <div className='d-flex flex-grow-1 flex-shrink-1 align-items-center'>
-            <input autoComplete='off' type={inputType} className="form-control" id={inputID} checked={this.state.value} value={this.state.value} onChange={this.editorChanged} attrname={attrName} />
-            {jsIconElem}
+                <input autoComplete='off' type={inputType} className="form-control" id={inputID} checked={this.state.value} value={this.state.value} onChange={this.editorChanged} attrname={attrName} />
+                {jsIconElem}
             </div>
         );
     }
 
-    clickTrashHandler(ev){
+    clickTrashHandler(ev) {
         var newCount = this.props.targetobj.deleteAttrArrayItem(this.props.targetattr.name, this.getRealAttrName());
-        if(this.props.onAttrArrayChanged){
+        if (this.props.onAttrArrayChanged) {
             this.props.onAttrArrayChanged(this.props.targetattr.name, newCount);
         }
     }
@@ -441,7 +465,7 @@ class AttributeEditor extends React.PureComponent {
                 </label>
                 <div className="p-1 border-left border-secondary attrEditorContent flex-grow-1 flex-shrink-1" hadtrash={deleteElem ? 1 : null}>
                     {
-                        this.rednerEditor(theAttr,attrName,inputID)
+                        this.rednerEditor(theAttr, attrName, inputID)
                     }
                 </div>
                 {deleteElem}
@@ -455,12 +479,12 @@ class AttributeEditor extends React.PureComponent {
         var theAttr = this.props.targetattr;
         if (editorElem.tagName.toUpperCase() === 'INPUT') {
             newVal = editorElem.value;
-            switch(theAttr.valueType){
+            switch (theAttr.valueType) {
                 case ValueType.Boolean:
-                newVal = editorElem.checked;
-                break;
+                    newVal = editorElem.checked;
+                    break;
                 default:
-                newVal = editorElem.value;
+                    newVal = editorElem.value;
             }
         }
         this.doSetAttribute(newVal);
@@ -473,69 +497,69 @@ class AttributeGroup extends React.PureComponent {
         autoBind(this);
 
         var initState = {
-            target:this.props.target,
+            target: this.props.target,
         };
         this.state = initState;
     }
 
-    clickAddBtnHandler(ev){
+    clickAddBtnHandler(ev) {
         var attrName = ev.target.getAttribute('attrname');
-        if(attrName == null){
+        if (attrName == null) {
             attrName = ev.target.parentNode.getAttribute('attrname');
-            if(attrName == null)
+            if (attrName == null)
                 return;
         }
-        
+
         var newCount = this.state.target.growAttrArray(attrName);
-        this.attrArrayChanged(attrName,newCount);
+        this.attrArrayChanged(attrName, newCount);
     }
 
-    groupChangedhandler(ev){
+    groupChangedhandler(ev) {
         this.setState({
-            magicObj:{}
+            magicObj: {}
         });
     }
 
-    componentWillUnmount(){
+    componentWillUnmount() {
         this.listenGroup(this.props.attrGroup);
     }
 
-    listenGroup(group){
+    listenGroup(group) {
         this.listeningGroup = group;
-        if(group == null){
+        if (group == null) {
             return;
         }
         group.on('changed', this.groupChangedhandler);
     }
 
-    unlistenGroup(group){
+    unlistenGroup(group) {
         this.listeningGroup = null;
-        if(targroupget == null){
+        if (targroupget == null) {
             return;
         }
         group.off('changed', this.groupChangedhandler);
     }
 
-    attrArrayChanged(attrName, newCount){
+    attrArrayChanged(attrName, newCount) {
         var newState = {};
         newState[attrName + 'count'] = newCount;
         this.setState(newState);
     }
 
-    renderAttribute(attr){
+    renderAttribute(attr) {
         var target = this.state.target;
-        if(attr.visible){
-            if(target[attr.name + '_visible'] == false){
+        if (attr.visible) {
+            if (target[attr.name + '_visible'] == false) {
                 return null;
             }
         }
-        else if(target[attr.name + '_visible'] != true){
+        else if (target[attr.name + '_visible'] != true) {
             return null;
         }
-        if(attr.isArray){
+        if (attr.isArray) {
             var rlt_arr = [];
             var attrArrayItem_arr = target.getAttrArrayList(attr.name);
-            for(var i = 0; i < attrArrayItem_arr.length; ++i){
+            for (var i = 0; i < attrArrayItem_arr.length; ++i) {
                 var attrArrayItem = attrArrayItem_arr[i];
                 rlt_arr.push(<AttributeEditor key={attrArrayItem.name} targetattr={attr} targetobj={target} index={attrArrayItem.index} onAttrArrayChanged={this.attrArrayChanged} />);
             }
@@ -547,10 +571,10 @@ class AttributeGroup extends React.PureComponent {
 
     render() {
         var self = this;
-        if(this.state.target != this.props.target){
+        if (this.state.target != this.props.target) {
             setTimeout(() => {
                 self.setState({
-                    target:this.props.target,
+                    target: this.props.target,
                 });
             }, 1);
             return null;
@@ -558,13 +582,13 @@ class AttributeGroup extends React.PureComponent {
         var projectName = this.props.projectName;
         var attrGroup = this.props.attrGroup;
         var attrGroupIndex = this.props.attrGroupIndex;
-        if(this.state.target[attrGroup.label + '_visible'] == false){
+        if (this.state.target[attrGroup.label + '_visible'] == false) {
             return null;
         }
-        if(this.listeningGroup != attrGroup){
+        if (this.listeningGroup != attrGroup) {
             this.listenGroup(attrGroup);
         }
-        return(
+        return (
             <React.Fragment>
                 <button type="button" data-toggle="collapse" data-target={"#attrGroup" + projectName + attrGroup.label} className={'btn flex-grow-0 flex-shrink-0 bg-secondary text-light collapsbtn' + (attrGroupIndex >= 0 ? '' : ' collapsed')} style={{ borderRadius: '0em', height: '2.5em' }}>{attrGroup.label}</button>
                 <div id={"attrGroup" + projectName + attrGroup.label} className={"list-group flex-grow-0 flex-shrink-0 collapse" + (attrGroupIndex >= 0 ? ' show' : '')} >

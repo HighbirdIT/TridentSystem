@@ -163,7 +163,7 @@ function GetFormatTimeString(date,hadSec) {
 }
 
 function GetNowDate() {
-    return new Date(GetFormatDateString(new Date()));
+    return new Date(GetFormatDateString(new Date() + ' 00:00'));
 }
 
 function CheckDate(date) {
@@ -244,12 +244,19 @@ function CastDate(val){
             if(timeRegRlt != null){
                 dateStr += ' ' + timeRegRlt[0];
             }
+            else{
+                dateStr += ' 00:00';
+            }
             return new Date(dateStr);
         }
         return null;
     }
     
     return new Date(val);
+}
+
+function CastDateFromTimePart(val) {
+    return new Date('2000-1-1 ' + val);
 }
 
 helper.DateFun={
@@ -265,6 +272,7 @@ helper.DateFun={
     castDate:CastDate,
     getFormatDateString_MD:GetFormatDateString_MD,
     getFullFormatDateString:GetFullFormatDateString,
+    castDateFromTimePart:CastDateFromTimePart,
 };
 
 module.exports = helper;

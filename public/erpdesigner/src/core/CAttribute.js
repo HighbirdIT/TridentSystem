@@ -268,6 +268,7 @@ const AttrNames={
     PopablePage:'popablepage',
     ParamApi:'paramapi',
     EventApi:'eventapi',
+    FunctionApi:'functionapi',
     StarSelectable:'starSelectable',
     ButtonVisibleType:'buttonVisibleType',
     InitCollapsed:'initCollapsed',
@@ -283,6 +284,7 @@ const AttrNames={
     TipInfo:'tipinfo',
     HisKey:'hisKey',
     AcessAssert:'accessAssert',
+    IconType:'icontype',
 
     Event:{
         OnClick:'onclick',

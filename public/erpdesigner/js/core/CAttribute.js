@@ -293,6 +293,7 @@ var AttrNames = {
     PopablePage: 'popablepage',
     ParamApi: 'paramapi',
     EventApi: 'eventapi',
+    FunctionApi: 'functionapi',
     StarSelectable: 'starSelectable',
     ButtonVisibleType: 'buttonVisibleType',
     InitCollapsed: 'initCollapsed',
@@ -308,6 +309,7 @@ var AttrNames = {
     TipInfo: 'tipinfo',
     HisKey: 'hisKey',
     AcessAssert: 'accessAssert',
+    IconType: 'icontype',
 
     Event: {
         OnClick: 'onclick',

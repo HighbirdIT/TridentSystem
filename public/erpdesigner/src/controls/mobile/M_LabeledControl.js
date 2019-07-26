@@ -147,9 +147,6 @@ class M_LabeledControlKernel extends ControlKernelBase{
 
     getJson(jsonProf){
         var rlt = super.getJson(jsonProf);
-        if(this.editor && this.editor.type == UserControlKernel_Type){
-            console.log('wert');
-        }
         rlt.editor = this.editor == null ? null : this.editor.getJson(jsonProf);
         return rlt;
     }

@@ -119,6 +119,7 @@ var FunType_Server = 'server';
 var EJsBluePrintFunGroup = {
     CtlAttr: 'ctlattr',
     CtlEvent: 'ctlevent',
+    CtlFun: 'ctlfun',
     CtlValid: 'ctlvalid',
     ServerScript: 'serverscript',
     GridRowBtnHandler: 'gridrowbtnhandler'
@@ -293,7 +294,8 @@ var ValueType = {
     Script: 'script',
     Object: 'Object',
     XML: 'xml',
-    UserControlEvent: 'usercontrolevent'
+    UserControlEvent: 'usercontrolevent',
+    CustomFunction: 'CustomFunction'
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

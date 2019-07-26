@@ -377,6 +377,12 @@ class JSNode_BluePrint extends EventEmitter {
         });
     }
 
+    getParamNames(){
+        return this.vars_arr.filter(varData => {
+            return varData.isParam;
+        }).map(p=>{return p.name;});
+    }
+
     removeVariable(varData) {
         var index = this.vars_arr.indexOf(varData);
         if (index != -1) {
@@ -634,9 +640,9 @@ class JSNode_BluePrint extends EventEmitter {
         var ctlStateVarName;
         var ctlParentStateVarName;
         var nullableChecker = null;
-        if (this.group == EJsBluePrintFunGroup.CtlAttr || this.group == EJsBluePrintFunGroup.CtlEvent || this.group == EJsBluePrintFunGroup.CtlValid || this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
+        if (this.group == EJsBluePrintFunGroup.CtlAttr || this.group == EJsBluePrintFunGroup.CtlEvent || this.group == EJsBluePrintFunGroup.CtlValid || this.group == EJsBluePrintFunGroup.GridRowBtnHandler || this.group == EJsBluePrintFunGroup.CtlFun) {
             var hadCallParm = this.group == EJsBluePrintFunGroup.CtlAttr;
-            if (this.group == EJsBluePrintFunGroup.CtlEvent && ctlKernel.type == UserControlKernel_Type) {
+            if ((this.group == EJsBluePrintFunGroup.CtlEvent || this.group == EJsBluePrintFunGroup.CtlFun) && ctlKernel.type == UserControlKernel_Type) {
                 hadCallParm = true;
             }
             if (!hadCallParm) {
@@ -663,6 +669,15 @@ class JSNode_BluePrint extends EventEmitter {
                     // 自订控件中的按钮
                     theFun.scope.getVar(belongUserControl.id + '_path', true, "getBelongUserCtlPath(" + ctlKernel.id + "_path)");
                     theFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath', [VarNames.State, belongUserControl.id + '_path']));
+                }
+            }
+            if (this.group == EJsBluePrintFunGroup.CtlFun) {
+                if (ctlKernel.type == UserControlKernel_Type) {
+                    params_arr = ['state,_params,_oldParams,_path'];
+                    theFun.scope.getVar(ctlKernel.id + '_path', true, "getBelongUserCtlPath(_path)");
+                    orginParams_arr.forEach(p=>{
+                        theFun.scope.getVar(p, true, "_params." + p);
+                    });
                 }
             }
             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
@@ -3382,6 +3397,11 @@ const gJSDateFuns_arr = [
         outputs: [{ label: '', type: ValueType.Date }]
     },
     {
+        name: 'CastDateByTime',
+        inputs: [{ label: '', type: ValueType.String }],
+        outputs: [{ label: '', type: ValueType.Date }]
+    },
+    {
         name: 'AddDay',
         inputs: [{ label: '日期', type: ValueType.Date },
         { label: '偏移', type: ValueType.Int, inputable: true },
@@ -3447,7 +3467,7 @@ class JSNode_DateFun extends JSNode_Base {
         super(initData, parentNode, createHelper, JSNODE_DATEFUN, 'datefun', false, nodeJson);
         autoBind(this);
         if (this.funName == null) {
-            this.setFunName(gJSDateFuns_arr[1].name);
+            this.setFunName(gJSDateFuns_arr[0].name);
         }
         else {
             this.setFunName(this.funName, true);
@@ -3585,6 +3605,9 @@ class JSNode_DateFun extends JSNode_Base {
             case 'DateDiff':
                 callStr = funPreFix + 'getDateDiff(' + socketVal_arr[0] + ',' + socketVal_arr[1] + ',' + socketVal_arr[2] + ')';
                 break;
+            case 'CastDateByTime':
+                callStr = funPreFix + 'castDateFromTimePart(' + socketVal_arr[0] + ')';
+                break;    
             default:
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle,
@@ -5963,7 +5986,8 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             this.funItem = funItem;
         }
         if (apiClass.ctltype == UserControlKernel_Type) {
-            this.isUserControlEvent = true;
+            this.isUserControlEvent = funItem.funItem.label == '自订事件';
+            this.isUserControlFunction = funItem.funItem.label == '自订方法';
         }
         if (this.inFlowSocket == null) {
             this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
@@ -5973,7 +5997,15 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
             this.addSocket(this.outFlowSocket);
         }
-        this.label = this.isUserControlEvent ? 'Call:自订控件事件' : 'Call:' + apiClass.ctllabel + '.' + funItem.name;
+        if(this.isUserControlEvent){
+            this.label = 'Fire:自订控件事件';
+        }
+        else if(this.isUserControlFunction){
+            this.label = 'Call:自订控件方法';
+        }
+        else{
+            this.label = 'Call:' + apiClass.ctllabel + '.' + funItem.name;
+        }
         if (nodeJson) {
             if (this.inputScokets_arr.length > 0) {
                 this.ctlSocket = this.inputScokets_arr[0];
@@ -5988,7 +6020,7 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         this.ctlSocket.kernelType = apiClass.ctltype;
         this.ctlSocket.index = -999;
 
-        if (this.isUserControlEvent) {
+        if (this.isUserControlEvent || this.isUserControlFunction) {
             if (createHelper && createHelper.project) {
                 createHelper.project.on('loaded', this.projLoadedHandler);
             }
@@ -5996,7 +6028,7 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
     }
 
     projLoadedHandler() {
-        if (this.isUserControlEvent) {
+        if (this.isUserControlEvent || this.isUserControlFunction) {
             this.ctlSocket.on('changed', this.synUCEParams);
             this.synUCEParams();
         }
@@ -6014,7 +6046,7 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
     }
 
     synUCEParams() {
-        if (!this.isUserControlEvent) {
+        if (!this.isUserControlEvent && !this.isUserControlFunction) {
             return;
         }
         var params_arr = [];
@@ -6022,10 +6054,19 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         var funAttrName = this.ctlSocket.getExtra('funAttrName');
         var selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
         if (selectedKernel && selectedKernel.isTemplate()) {
-            funAttrName = funAttrName.replace('#', '_');
-            var funAttrValue = selectedKernel[funAttrName];
-            if (funAttrValue && !IsEmptyString(funAttrValue.params)) {
-                params_arr = funAttrValue.params.split(';');
+            if(this.isUserControlEvent){
+                funAttrName = funAttrName.replace('#', '_');
+                var funAttrValue = selectedKernel[funAttrName];
+                if (funAttrValue && !IsEmptyString(funAttrValue.params)) {
+                    params_arr = funAttrValue.params.split(';');
+                }
+            }
+            else{
+                var funBPname = selectedKernel.id + '_' + funAttrName;
+                var funBp = project.scriptMaster.getBPByName(funBPname);
+                if (funBp != null) {
+                    params_arr = funBp.getParamNames();
+                }
             }
         }
         this.inputScokets_arr.forEach(item => {
@@ -6083,6 +6124,7 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
+        var project = this.bluePrint.master.project;
 
         var selectedCtlid = this.ctlSocket.getExtra('ctlid');
         var selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
@@ -6106,17 +6148,30 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             }
             this.synUCEParams();
         }
+        if (this.isUserControlFunction) {
+            funAttrName = this.ctlSocket.getExtra('funAttrName');
+            if (this.checkCompileFlag(IsEmptyString(funAttrName), '需要选择方法', helper)) {
+                return false;
+            }
+            
+            funAttrValue = {
+                name:selectedKernel.getTemplateKernel().id + '_' + funAttrName,
+            }
+            if (this.checkCompileFlag(project.scriptMaster.getBPByName(funAttrValue.name) == null, '方法未创建', helper)) {
+                return false;
+            }
+            this.synUCEParams();
+        }
         var relCtlKernel = this.bluePrint.ctlKernel;
         var canAccessCtls_arr = relCtlKernel.getAccessableKernels(this.ctltype);
         if (this.checkCompileFlag(canAccessCtls_arr.indexOf(selectedKernel) == -1, '指定的控件不可访问', helper)) {
             return false;
         }
         var myJSBlock = new FormatFileBlock(this.id);
-        var myJSBlock = new FormatFileBlock(this.id);
         
         var useApiItem = this.apiItem;
         myJSBlock.pushLine('setTimeout(() => {', 1); 
-        if (this.isUserControlEvent) {
+        if (this.isUserControlEvent || this.isUserControlFunction) {
             var bundleStr = '';
             for (var i = 1; i < this.inputScokets_arr.length; ++i) {
                 var theSocket = this.inputScokets_arr[i];
@@ -6127,7 +6182,15 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
                 var tValue = socketComRet.value;
                 bundleStr += (bundleStr.length > 0 ? ',' : '') + theSocket.label + ':' + tValue 
             }
-            myJSBlock.pushLine("store.dispatch(makeAction_setStateByPath({" + bundleStr + "}," + selectedCtlid + "_path + '.fun_" + funAttrValue.name + "'));", -1);
+            var pathVar = selectedKernel.id + "_path + '.fun_" + funAttrValue.name + "'";
+            if(this.isUserControlFunction){
+                if(!selectedKernel.isTemplate()){
+                    var belongUserCtl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
+                    pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath('fun_' + funAttrValue.name));
+                }
+                //bundleStr += (bundleStr.length > 0 ? ',' : '') + selectedKernel.getTemplateKernel().id + '_path:' + selectedKernel.id + '_path';
+            }
+            myJSBlock.pushLine("store.dispatch(makeAction_setStateByPath({" + bundleStr + "}," + pathVar + "));", -1);
             useApiItem = {
                 name:funAttrValue.name,
             };

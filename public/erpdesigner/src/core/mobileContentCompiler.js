@@ -410,6 +410,7 @@ class MobileContentCompiler extends ContentCompiler {
         userCtlKernel.getParamApiAttrArray().forEach(paramApiItem => {
             controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, paramApiItem.label), makeStr_DotProp(VarNames.CtlState, paramApiItem.label)));
         });
+        var attrValue;
         userCtlKernel.getEventApiAttrArray().forEach(eventApiItem => {
             var attrValue = userCtlKernel.getAttribute(eventApiItem.name.replace('#', '_'));
             if (attrValue != null) {
@@ -422,6 +423,32 @@ class MobileContentCompiler extends ContentCompiler {
                     return false;
                 }
             }
+        });
+        userCtlKernel.getFunctionApiAttrArray().forEach(funApiItem => {
+            attrValue = userCtlKernel.getAttribute(funApiItem.name);
+            if (IsEmptyString(attrValue)) {
+                logManager.errorEx([logManager.createBadgeItem(
+                    userCtlKernel.getReadableName(),
+                    userCtlKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '自订方法没有名称']);
+                return false;
+            }
+            var funBPname = userCtlKernel.id + '_' + funApiItem.name;
+            var funBp = project.scriptMaster.getBPByName(funBPname);
+            if(funBp == null){
+                logManager.errorEx([logManager.createBadgeItem(
+                    userCtlKernel.getReadableName(),
+                    userCtlKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '自订方法没有实现']);
+                return false;
+            }
+            var funBoComRet =this.compileScriptBlueprint(funBp,null);
+            if(funBoComRet == false){
+                return false;
+            }
+
         });
 
 
@@ -944,7 +971,7 @@ class MobileContentCompiler extends ContentCompiler {
 
 
         renderBlock.pushChild(ctlTag);
-        if(this.compileIsdisplayAttribute(theKernel, ctlTag) == false){return false;}
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
 
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
         var reactParentKernel = theKernel.getReactParentKernel(true);
@@ -1029,6 +1056,25 @@ class MobileContentCompiler extends ContentCompiler {
             }
         });
 
+        templateKernel.getFunctionApiAttrArray().forEach(funAttribute=>{
+            var funBPname = templateKernel.id + '_' + funAttribute.name;
+            var funBp = project.scriptMaster.getBPByName(funBPname);
+            if (funBp != null) {
+                if (belongUserControl == null) {
+                    this.clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisFullPath, 'fun_' + funBPname))] = funBPname + '.bind(window)';
+                }
+                else {
+                    // 嵌套在别的自定义控件中
+                    belongUserControlMidData.needSetStateChangedActs_arr.push(
+                        {
+                            propName: makeStr_DotProp(thisFullPath, 'fun_' + funBPname),
+                            funName: funBPname + '.bind(window)',
+                        }
+                    );
+                }
+            }
+        });
+
         if (templateReactClass.initFun) {
             kernelMidData.needSetStates_arr.push({
                 isInitUserControlCall: true,
@@ -1100,9 +1146,9 @@ class MobileContentCompiler extends ContentCompiler {
             ctlTag.setAttr('nullable', '{true}');
         }
         renderBlock.pushChild(ctlTag);
-        if(this.compileIsdisplayAttribute(theKernel, ctlTag) == false){return false;}
-        if(this.compileValidCheckerAttribute(theKernel) == false){return false;}
-        if(this.compileOnChangedEventBlueprint(theKernel, ctlTag) == false){return false;}
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
+        if (this.compileValidCheckerAttribute(theKernel) == false) { return false; }
+        if (this.compileOnChangedEventBlueprint(theKernel, ctlTag) == false) { return false; }
 
         var editeable = theKernel.getAttribute(AttrNames.Editeable);
         if (!editeable) {
@@ -1148,7 +1194,7 @@ class MobileContentCompiler extends ContentCompiler {
             if (!defaultValParseRet.isScript) {
                 hadDefaultStr = !IsEmptyString(defaultValParseRet.string);
                 if (hadDefaultStr) {
-                    alterValue = defaultValParseRet.string;
+                    alterValue = singleQuotesStr(defaultValParseRet.string);
                 }
             }
             if (belongFormKernel != null) {
@@ -1208,9 +1254,9 @@ class MobileContentCompiler extends ContentCompiler {
         ctlTag.setAttr('id', theKernel.id);
         ctlTag.setAttr('parentPath', parentPath);
         renderBlock.pushChild(ctlTag);
-        if(this.compileIsdisplayAttribute(theKernel, ctlTag) == false){return false;}
-        if(this.compileValidCheckerAttribute(theKernel) == false){return false;}
-        if(this.compileOnChangedEventBlueprint(theKernel, ctlTag) == false){return false;}
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
+        if (this.compileValidCheckerAttribute(theKernel) == false) { return false; }
+        if (this.compileOnChangedEventBlueprint(theKernel, ctlTag) == false) { return false; }
         var editeable = theKernel.getAttribute(AttrNames.Editeable);
         if (!editeable) {
             ctlTag.setAttr('readonly', '{true}');
@@ -1419,7 +1465,7 @@ class MobileContentCompiler extends ContentCompiler {
         else {
             if (!isdisplay) {
                 this.addNeedSetStateToParent(theKernel, { name: 'visible', staticValue: 'false' });
-                if(ctlTag){
+                if (ctlTag) {
                     ctlTag.setAttr('visible', '{false}');
                 }
             }
@@ -1566,12 +1612,12 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else {
             if (!isdisplay) {
-                if (dynamicColumn_obj == null) {
+                if (dynamicColumn_obj != null) {
                     dynamicColumn_obj.visible = 'false';
                 }
                 else {
                     this.addNeedSetStateToParent(theKernel, { name: 'visible', staticValue: 'false' });
-                    ctlTag.setAttr('visible', '{false}');
+                    labeledCtrlTag.setAttr('visible', '{false}');
                 }
             }
         }
@@ -1635,7 +1681,7 @@ class MobileContentCompiler extends ContentCompiler {
         var tableStyleID = theKernel.id + "_tableStyle";
         var headTableStyleID = theKernel.id + "_headtableStyle";
 
-        if(this.compileIsdisplayAttribute(theKernel, null) == false){
+        if (this.compileIsdisplayAttribute(theKernel, null) == false) {
             return false;
         }
 
@@ -1718,12 +1764,11 @@ class MobileContentCompiler extends ContentCompiler {
         var gridBodyTag = null;
         var childRenderBlock = null;
         if (isPageForm) {
-            renderContentBlock.pushLine(VarNames.RetElem + " = (", 1);
-            renderContentBlock.pushLine("<div className='d-flex flex-column " + layoutConfig.getClassName() + "'>", 1);
-            renderContentBlock.pushLine("{this.props.title && <div className='bg-dark text-light justify-content-center d-flex flex-shrink-0'><span>{this.props.title}</span></div>}");
+            renderContentBlock.pushLine(VarNames.RetElem + " = (<React.Fragment>", 1);
             renderContentBlock.pushLine("<div className='d-flex flex-grow-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + "'>", 1);
             childRenderBlock = new FormatFileBlock(theKernel.id + 'child');
             renderContentBlock.pushChild(childRenderBlock);
+            renderContentBlock.subNextIndent();
             renderContentBlock.pushLine('</div>');
             var navigaterBlock = new FormatFileBlock('navigater');
             if (theKernel.getAttribute(AttrNames.GenNavBar)) {
@@ -1732,9 +1777,13 @@ class MobileContentCompiler extends ContentCompiler {
             formReactClass.navigaterBlock = navigaterBlock;
             renderContentBlock.pushChild(navigaterBlock);
             renderContentBlock.subNextIndent();
-            renderContentBlock.pushLine("</div>);");
+            renderContentBlock.pushLine("</React.Fragment>);");
 
-            renderContentFun.retBlock.pushLine(makeLine_Return(VarNames.RetElem));
+            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'>", 1);
+            renderContentFun.retBlock.pushLine("{this.props.title && <div className='bg-dark text-light justify-content-center d-flex flex-shrink-0'><span>{this.props.title}</span></div>}");
+            renderContentFun.retBlock.pushLine('{' + VarNames.RetElem + '}');
+            renderContentFun.retBlock.subNextIndent();
+            renderContentFun.retBlock.pushLine("</div>);");
         }
         else if (isGridForm) {
             gridBodyTag = new FormatHtmlTag('bodytag', gridBodyPureRectClass.name, this.clientSide);
@@ -1932,7 +1981,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         var acessAsserFunName = theKernel.id + '_' + AttrNames.AcessAssert;
         var acessAsserBP = this.project.scriptMaster.getBPByName(acessAsserFunName);
-        if(acessAsserBP){
+        if (acessAsserBP) {
             var acessAsserCompileRet = this.compileScriptBlueprint(acessAsserBP, { params: ['state', theKernel.id + '_path'] });
             if (acessAsserCompileRet == false) {
                 return false;
@@ -1941,17 +1990,17 @@ class MobileContentCompiler extends ContentCompiler {
 
         var pullFun = clientSide.scope.getFunction(makeFName_pull(theKernel), true, [VarNames.ReState, VarNames.HoldSelected, VarNames.FullParentPath]);
         pullFun.scope.getVar(VarNames.HadStateParam, true, VarNames.ReState + '!=null');
-        if(acessAsserBP){
+        if (acessAsserBP) {
             var assertVarName = theKernel.id + '_assert';
-            var errTipStatePath = makeStr_AddAll(VarNames.FullParentPath,"+'.",theKernel.id,".",VarNames.FetchErr, "'");
-            pullFun.pushLine('var ' + assertVarName + '=' + makeStr_callFun(acessAsserFunName, [VarNames.State, VarNames.FullParentPath + "+'."+theKernel.id+"'"],';'));
+            var errTipStatePath = makeStr_AddAll(VarNames.FullParentPath, "+'.", theKernel.id, ".", VarNames.FetchErr, "'");
+            pullFun.pushLine('var ' + assertVarName + '=' + makeStr_callFun(acessAsserFunName, [VarNames.State, VarNames.FullParentPath + "+'." + theKernel.id + "'"], ';'));
             pullFun.pushLine('if(' + assertVarName + ' && ' + assertVarName + '.length > 0){', 1);
             pullFun.pushLine('if(' + VarNames.HadStateParam + '){', 1);
-            pullFun.pushLine('return ' + makeStr_callFun('setStateByPath', [VarNames.State, '{info:' + errTipStatePath,assertVarName + '}'],';'));
+            pullFun.pushLine('return ' + makeStr_callFun('setStateByPath', [VarNames.State, errTipStatePath, '{info:' + assertVarName + '}'], ';'));
             pullFun.subNextIndent();
             pullFun.pushLine('}');
             pullFun.pushLine('setTimeout(() => {', 1);
-            pullFun.pushLine("store.dispatch(makeAction_setStateByPath({info:"+assertVarName+"}, " + errTipStatePath + '));');
+            pullFun.pushLine("store.dispatch(makeAction_setStateByPath({info:" + assertVarName + "}, " + errTipStatePath + '));');
             pullFun.subNextIndent();
             pullFun.pushLine('},50);');
             pullFun.pushLine("return " + VarNames.ReState + ';');
@@ -2737,7 +2786,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
         renderBlock.pushChild(ctlTag);
 
-        if(this.compileIsdisplayAttribute(theKernel, ctlTag) == false){return false;}
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
 
         var textField = theKernel.getAttribute(AttrNames.TextField);
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
@@ -2788,6 +2837,10 @@ class MobileContentCompiler extends ContentCompiler {
         ctlTag.setAttr('id', theKernel.id);
         var parentPath = this.getKernelParentPath(theKernel);
         ctlTag.setAttr('parentPath', parentPath);
+        var iconType = theKernel.getAttribute(AttrNames.IconType);
+        if(!IsEmptyString(iconType)){
+            ctlTag.pushLine("<i className='fa fa-" + iconType + "' />");
+        }
         if (!theKernel.getAttribute(AttrNames.HideLabel)) {
             ctlTag.pushChild(new FormatFile_Line(theKernel.getAttribute(AttrNames.Name)));
         }
@@ -2795,7 +2848,7 @@ class MobileContentCompiler extends ContentCompiler {
 
 
         var reactParentKernel = theKernel.getReactParentKernel(true);
-        if(this.compileIsdisplayAttribute(theKernel, ctlTag) == false){return false;}
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
 
         var onclickFunName = theKernel.id + '_' + AttrNames.Event.OnClick;
         var onClickBp = project.scriptMaster.getBPByName(onclickFunName);
@@ -2818,11 +2871,11 @@ class MobileContentCompiler extends ContentCompiler {
 
                         var useFormTable = compileRet.useEntities_map[formTable.code];
                         if (useFormTable) {
-                            if(useFormTable.useStage[EUseEntityStage.Insert]){
+                            if (useFormTable.useStage[EUseEntityStage.Insert]) {
                                 // insert了form的操作表，认定为insert按钮
                                 visibleType = EButtonVisibleType.Insert;
                             }
-                            else{
+                            else {
                                 visibleType = EButtonVisibleType.Update;
                             }
                         }
@@ -2880,7 +2933,7 @@ class MobileContentCompiler extends ContentCompiler {
             ctlTag.setAttr('mode', ctlMode);
         }
 
-        if(this.compileIsdisplayAttribute(theKernel, ctlTag) == false){return false;}
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
         renderBlock.pushChild(ctlTag);
 
         var ctlMidData = this.projectCompiler.getMidData(theKernel.id);
@@ -3000,7 +3053,7 @@ class MobileContentCompiler extends ContentCompiler {
         ctlTag.setAttr('parentPath', parentPath);
         var defaultTabitemID = theKernel.getAttribute('defaultTabitemID');
 
-        if(this.compileIsdisplayAttribute(theKernel, ctlTag) == false){return false;}
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
         renderBlock.pushChild(ctlTag);
 
         var ctlMidData = this.projectCompiler.getMidData(theKernel.id);
@@ -3173,7 +3226,7 @@ class MobileContentCompiler extends ContentCompiler {
         ctlTag.setAttr('id', theKernel.id);
         ctlTag.setAttr('parentPath', parentPath);
         var tipStr = theKernel.getAttribute(AttrNames.TipInfo);
-        if(!IsEmptyString(tipStr)){
+        if (!IsEmptyString(tipStr)) {
             ctlTag.setAttr('label', tipStr);
         }
 
@@ -3188,8 +3241,8 @@ class MobileContentCompiler extends ContentCompiler {
             ctlTag.setAttr('nullable', '{true}');
         }
         renderBlock.pushChild(ctlTag);
-        if(this.compileIsdisplayAttribute(theKernel, ctlTag) == false){return false;}
-        if(this.compileOnChangedEventBlueprint(theKernel, ctlTag) == false){return false;}
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
+        if (this.compileOnChangedEventBlueprint(theKernel, ctlTag) == false) { return false; }
 
         var reactParentKernel = theKernel.getReactParentKernel(true);
         var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
@@ -3288,7 +3341,7 @@ class MobileContentCompiler extends ContentCompiler {
             ctlTag.setAttr('textType', textValueType);
         }
         var hisKey = theKernel.getAttribute(AttrNames.HisKey);
-        if(!IsEmptyString(hisKey)){
+        if (!IsEmptyString(hisKey)) {
             ctlTag.setAttr('recentCookieKey', hisKey);
         }
         var starSelectable = theKernel.getAttribute(AttrNames.StarSelectable);
@@ -3305,9 +3358,9 @@ class MobileContentCompiler extends ContentCompiler {
         if (nullable) {
             ctlTag.setAttr('nullable', '{true}');
         }
-        if(this.compileIsdisplayAttribute(theKernel, ctlTag) == false){return false;}
-        if(this.compileValidCheckerAttribute(theKernel) == false){return false;}
-        if(this.compileOnChangedEventBlueprint(theKernel, ctlTag) == false){return false;}
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
+        if (this.compileValidCheckerAttribute(theKernel) == false) { return false; }
+        if (this.compileOnChangedEventBlueprint(theKernel, ctlTag) == false) { return false; }
 
         var defaultVal = theKernel.getAttribute(AttrNames.DefaultValue);
         var defaultValParseRet = parseObj_CtlPropJsBind(defaultVal, project.scriptMaster);

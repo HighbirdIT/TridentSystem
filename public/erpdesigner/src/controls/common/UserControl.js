@@ -4,9 +4,9 @@ const UserControlKernelTempleAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('refID', 'refID', ValueType.String, 'none', true, false, null, null, false),
         new CAttribute('属性列表', AttrNames.ParamApi, ValueType.String, '', true, true),
         new CAttribute('自订事件', AttrNames.EventApi, ValueType.UserControlEvent, '', true, true),
+        new CAttribute('自订方法', AttrNames.FunctionApi, ValueType.CustomFunction, '', true, true),
     ]),
 ], true);
-
 
 const UserControlKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置', [
@@ -85,6 +85,25 @@ class UserControlKernel extends ContainerKernelBase {
         });
     }
 
+    getFunctionApiAttrArray() {
+        var templateKernel = this.getTemplateKernel();
+        var attrValue;
+        var rlt_arr = [];
+        var funApis_arr = templateKernel.getAttrArrayList(AttrNames.FunctionApi);
+        funApis_arr.forEach(attr=>{
+            attrValue = templateKernel.getAttribute(attr.name);
+            if(IsEmptyString(attrValue)){
+                return;
+            }
+            rlt_arr.push({
+                label: attrValue,
+                name: attr.name,
+            });
+        });
+
+        return rlt_arr;
+    }
+
     getParamAttrByName(targetName) {
         var attrsSetting = gUserControlAttsByType_map[this.attrsSettingID];
         var theGroup = attrsSetting.find(group => { return group.label == '属性接口'; });
@@ -103,7 +122,7 @@ class UserControlKernel extends ContainerKernelBase {
 
     genFixParams_arr(str) {
         var fixParams_arr = [];
-        if(!IsEmptyString(str)){
+        if (!IsEmptyString(str)) {
             str.split(';').forEach(x => {
                 if (x.length > 0 && fixParams_arr.indexOf(x) == -1) {
                     fixParams_arr.push(x);
@@ -118,13 +137,13 @@ class UserControlKernel extends ContainerKernelBase {
             this.synControlAttrs();
         }
 
+        var project = this.project;
         if (attrName == AttrNames.EventApi) {
             var instances_arr = this.project.getControlsByType(UserControlKernel_Type).filter(p => {
                 return p.refID == this.id;
             });
 
-            var project = this.project;
-            if(value != null){
+            if (value != null) {
                 var fixParams_arr = this.genFixParams_arr(value.params);
                 instances_arr.forEach(instance => {
                     var eventBPname = instance.id + '_' + realAtrrName.replace('_', '#');
@@ -134,7 +153,7 @@ class UserControlKernel extends ContainerKernelBase {
                     }
                 });
             }
-            else{
+            else {
                 instances_arr.forEach(instance => {
                     var eventBPname = instance.id + '_' + realAtrrName.replace('_', '#');
                     var eventBp = project.scriptMaster.getBPByName(eventBPname);
@@ -142,6 +161,15 @@ class UserControlKernel extends ContainerKernelBase {
                         project.scriptMaster.deleteBP(eventBp);
                     }
                 });
+            }
+        }
+        if (attrName == AttrNames.FunctionApi) {
+            if (value == null) {
+                var funBPname = this.id + '_' + realAtrrName;
+                var funBp = project.scriptMaster.getBPByName(funBPname);
+                if (funBp != null) {
+                    project.scriptMaster.deleteBP(funBp);
+                }
             }
         }
     }
@@ -256,6 +284,10 @@ CustomControl_api.pushApi(new ApiItem_prop(gUserControlParamApiAttr, AttrNames.P
 CustomControl_api.pushApi(new ApiItem_propsetter('属性接口'));
 CustomControl_api.pushApi(new ApiItem_fun({
     label: '自订事件',
+    name: 'unknown'
+}));
+CustomControl_api.pushApi(new ApiItem_fun({
+    label: '自订方法',
     name: 'unknown'
 }));
 
