@@ -1018,6 +1018,7 @@ class MobileContentCompiler extends ContentCompiler {
                         setValueStateItem = {
                             name: paramAttribute.label,
                             staticValue: paramValue,
+                            bindMode: ScriptBindMode.OnForm
                         };
                     }
                 }
@@ -2613,6 +2614,9 @@ class MobileContentCompiler extends ContentCompiler {
                                         case ScriptBindMode.OnNewRow:
                                             staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), sv));
                                             break;
+                                        default:
+                                        console.error('没有bindMode');
+                                        break;
                                     }
                                 }
                                 else if (stateItem.useColumn) {
