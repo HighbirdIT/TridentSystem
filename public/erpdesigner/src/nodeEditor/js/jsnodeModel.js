@@ -604,6 +604,7 @@ class JSNode_BluePrint extends EventEmitter {
                 params_arr = compilHelper.config.params;
             }
         }
+
         if (!IsEmptyObject(compilHelper.usePage_map)) {
             for (var pageID in compilHelper.usePage_map) {
                 var pageParams_arr = compilHelper.usePage_map[pageID].params_arr;
@@ -3354,14 +3355,23 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
             if (this.checkCompileFlag(propAttr == null, '目标属性无效', helper)) {
                 return false;
             }
+            var pathVar = singleQuotesStr(selectedKernel.getStatePath(propAttr.label));
+            var belongUserCtl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
+            if(belongUserCtl){
+                pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath(propAttr.label));
+            }
             if (batchNode) {
-                myJSBlock.pushLine(needSetVarName + '[' + selectedCtlid + "_path + '." + propAttr.label + "'] = " + valueStr + ';');
+                myJSBlock.pushLine(needSetVarName + '[' + pathVar + '] = "' + valueStr + ';');
             }
             else {
                 myJSBlock.pushLine('setTimeout(() => {', 1);
-                myJSBlock.pushLine("store.dispatch(makeAction_setStateByPath(" + valueStr + "," + selectedCtlid + "_path + '." + propAttr.label + "'));", -1);
+                myJSBlock.pushLine("store.dispatch(makeAction_setStateByPath(" + valueStr + "," + pathVar + "));", -1);
                 myJSBlock.pushLine('},50);');
             }
+            useApiItem = Object.assign({}, useApiItem, {
+                stateName: propAttr.label,
+                useAttrName: propAttr.label,
+            });
         }
         else {
             var belongUserControl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
@@ -3374,7 +3384,12 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
                 myJSBlock.pushLine("store.dispatch(makeAction_setStateByPath(" + valueStr + "," + statePath + "));", -1);
                 myJSBlock.pushLine('},50);');
             }
+            useApiItem = Object.assign({}, useApiItem, {
+                stateName: this.apiItem.stateName,
+                useAttrName: this.apiItem.stateName,
+            });
         }
+        helper.addUseControlPropApi(selectedKernel, useApiItem, EFormRowSource.Context);
 
         belongBlock.pushChild(myJSBlock);
         var selfCompileRet = new CompileResult(this);
@@ -7450,10 +7465,11 @@ class JSNode_GetStepData extends JSNode_Base {
             return false;
         }
 
-        var inSocketComRet = this.getSocketCompileValue(helper, this.inSocket, usePreNodes_arr, belongBlock, true, true);
+        var inSocketComRet = this.getSocketCompileValue(helper, this.inSocket, usePreNodes_arr, belongBlock, true, false);
         if (inSocketComRet.err) {
             return false;
         }
+        
 
         var finalStr = 'stepData' + this.outSocket.defval;
         helper.addUseURLVairable(finalStr, inSocketComRet.value);
