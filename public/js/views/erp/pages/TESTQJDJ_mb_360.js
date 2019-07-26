@@ -801,9 +801,9 @@ function bind_M_Form_3Page(retState) {
 	var endRowIndex = records_arr.length - 1;
 	for (var rowIndex = startRowIndex; rowIndex <= endRowIndex; ++rowIndex) {
 		var nowRecord = records_arr[rowIndex];
-		needSetState['row_' + rowIndex + '.M_Label_10.text'] = nowRecord['员工假期种类'];
-		needSetState['row_' + rowIndex + '.M_Label_11.text'] = nowRecord['请假区间'];
-		needSetState['row_' + rowIndex + '.M_Label_12.text'] = nowRecord['请假事由说明'];
+		needSetState['row_' + rowIndex + '.M_Text_0.value'] = nowRecord['员工假期种类'];
+		needSetState['row_' + rowIndex + '.M_Text_7.value'] = nowRecord['请假区间'];
+		needSetState['row_' + rowIndex + '.M_Text_8.value'] = nowRecord['请假事由说明'];
 	}
 	needSetState.startRowIndex = startRowIndex;
 	needSetState.endRowIndex = endRowIndex;
@@ -1660,17 +1660,17 @@ var CM_Form_3_TBody = function (_React$PureComponent11) {
 					React.createElement(
 						"td",
 						{ style: M_Form_3tdstyle0 },
-						React.createElement(VisibleERPC_Label, { className: "erp-control ", rowIndex: rowIndex, id: "M_Label_10", parentPath: "M_Page_0.M_Form_2.M_Form_3", type: "string" })
+						React.createElement(VisibleERPC_Text, { rowIndex: rowIndex, id: "M_Text_0", parentPath: "M_Page_0.M_Form_2.M_Form_3", type: "string", linetype: "single" })
 					),
 					React.createElement(
 						"td",
 						{ style: M_Form_3tdstyle1 },
-						React.createElement(VisibleERPC_Label, { className: "erp-control ", rowIndex: rowIndex, id: "M_Label_11", parentPath: "M_Page_0.M_Form_2.M_Form_3", type: "string" })
+						React.createElement(VisibleERPC_Text, { rowIndex: rowIndex, id: "M_Text_7", parentPath: "M_Page_0.M_Form_2.M_Form_3", type: "string", linetype: "single" })
 					),
 					React.createElement(
 						"td",
 						{ style: M_Form_3tdstyle2 },
-						React.createElement(VisibleERPC_Label, { className: "erp-control ", rowIndex: rowIndex, id: "M_Label_12", parentPath: "M_Page_0.M_Form_2.M_Form_3", type: "string" })
+						React.createElement(VisibleERPC_Text, { rowIndex: rowIndex, id: "M_Text_8", parentPath: "M_Page_0.M_Form_2.M_Form_3", type: "string", linetype: "single" })
 					)
 				));
 			}

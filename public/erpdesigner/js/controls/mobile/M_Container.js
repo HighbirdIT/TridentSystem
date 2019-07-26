@@ -8,7 +8,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var M_ContainerKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr)])]);
+var M_ContainerKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr), new CAttribute('元素类型', AttrNames.TagType, ValueType.String, EContainerTag.Div, true, false, ContainerTag_arr)])]);
 
 var M_ContainerKernel = function (_ContainerKernelBase) {
     _inherits(M_ContainerKernel, _ContainerKernelBase);
@@ -34,7 +34,7 @@ var M_ContainerKernel = function (_ContainerKernelBase) {
                 if (child.editor && (!needFilt || child.editor.type == targetType)) {
                     rlt_arr.push(child.editor);
                 }
-                if (child.type == M_ContainerKernel_Type) {
+                if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type && !child.isGridForm()) {
                     // 穿透div
                     child.aidAccessableKernels(targetType, rlt_arr);
                 }
@@ -76,10 +76,11 @@ var M_Container = function (_React$PureComponent) {
         autoBind(_this2);
 
         var ctlKernel = _this2.props.ctlKernel;
-        var inintState = M_ControlBase(_this2, LayoutAttrNames_arr.concat([AttrNames.Orientation, AttrNames.Chidlren]));
+        var inintState = M_ControlBase(_this2, LayoutAttrNames_arr.concat([AttrNames.Orientation, AttrNames.Chidlren, AttrNames.TagType]));
         M_ContainerBase(_this2);
 
         inintState.orientation = ctlKernel.getAttribute(AttrNames.Orientation);
+        inintState.tagtype = ctlKernel.getAttribute(AttrNames.TagType);
         inintState.children = ctlKernel.children;
 
         _this2.state = inintState;
@@ -99,7 +100,8 @@ var M_Container = function (_React$PureComponent) {
             }
             this.setState({
                 orientation: ctlKernel.getAttribute(AttrNames.Orientation),
-                children: childrenVal
+                children: childrenVal,
+                tagtype: ctlKernel.getAttribute(AttrNames.TagType)
             });
         }
     }, {
@@ -122,20 +124,81 @@ var M_Container = function (_React$PureComponent) {
             layoutConfig.addClass('M_Container');
             layoutConfig.addClass('border');
             layoutConfig.addClass('hb-control');
-            if (this.state.orientation == Orientation_V) {
-                layoutConfig.addClass('flex-column');
-            }
             if (this.props.ctlKernel.children.length == 0) {
                 layoutConfig.addClass('M_Container_Empty');
             }
 
-            return React.createElement(
-                'div',
-                { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
-                this.props.ctlKernel.children.length == 0 ? this.props.ctlKernel.id : this.props.ctlKernel.children.map(function (childKernel) {
+            var contentElem = this.props.ctlKernel.id;
+            if (this.props.ctlKernel.children.length > 0) {
+                contentElem = this.props.ctlKernel.children.map(function (childKernel) {
                     return childKernel.renderSelf(_this3.props.replaceChildClick ? _this3.props.onClick : null, _this3.props.replaceChildClick);
-                })
-            );
+                });
+            }
+            var finalElem = null;
+            switch (this.state.tagtype) {
+                case EContainerTag.Div:
+                    if (this.state.orientation == Orientation_V) {
+                        layoutConfig.addClass('flex-column');
+                    }
+                    finalElem = React.createElement(
+                        'div',
+                        { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                        contentElem
+                    );
+                    break;
+                case EContainerTag.Span:
+                    finalElem = React.createElement(
+                        'span',
+                        { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                        contentElem
+                    );
+                    break;
+                case EContainerTag.H1:
+                    finalElem = React.createElement(
+                        'h1',
+                        { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                        contentElem
+                    );
+                    break;
+                case EContainerTag.H2:
+                    finalElem = React.createElement(
+                        'h2',
+                        { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                        contentElem
+                    );
+                    break;
+                case EContainerTag.H3:
+                    finalElem = React.createElement(
+                        'h3',
+                        { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                        contentElem
+                    );
+                    break;
+                case EContainerTag.H4:
+                    finalElem = React.createElement(
+                        'h4',
+                        { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                        contentElem
+                    );
+                    break;
+                case EContainerTag.H5:
+                    finalElem = React.createElement(
+                        'h5',
+                        { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                        contentElem
+                    );
+                    break;
+                case EContainerTag.H6:
+                    finalElem = React.createElement(
+                        'h6',
+                        { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                        contentElem
+                    );
+                    break;
+
+            }
+
+            return finalElem;
         }
     }]);
 

@@ -35,6 +35,7 @@ var AttributeEditor = function (_React$PureComponent) {
             if (rlt == null) {
                 switch (this.props.targetattr.valueType) {
                     case ValueType.StyleValues:
+                    case ValueType.UserControlEvent:
                         rlt = {};
                         break;
                     default:
@@ -47,6 +48,7 @@ var AttributeEditor = function (_React$PureComponent) {
             }
             switch (this.props.targetattr.valueType) {
                 case ValueType.StyleValues:
+                case ValueType.UserControlEvent:
                     if (typeof rlt === 'string') {
                         rlt = {};
                     }
@@ -190,6 +192,88 @@ var AttributeEditor = function (_React$PureComponent) {
             this.doSetAttribute(nowVal);
         }
     }, {
+        key: 'UCENameChanged',
+        value: function UCENameChanged(ev) {
+            var nowVal = this.state.value;
+            nowVal.name = ev.target.value.trim();
+            this.doSetAttribute(nowVal);
+        }
+    }, {
+        key: 'UCEParamsChanged',
+        value: function UCEParamsChanged(ev) {
+            var nowVal = this.state.value;
+            nowVal.params = ev.target.value.trim();
+            this.doSetAttribute(nowVal);
+        }
+    }, {
+        key: 'renderUserControlEventAttrEditor',
+        value: function renderUserControlEventAttrEditor(nowVal, theAttr, attrName, inputID) {
+            var name = ReplaceIfNull(nowVal.name, '');
+            var params = ReplaceIfNull(nowVal.params, '');
+            return React.createElement(
+                'div',
+                { className: 'd-flex flex-grow-1 flex-shrink-1 flex-column' },
+                React.createElement(
+                    'div',
+                    { className: 'input-group mb-3' },
+                    React.createElement(
+                        'div',
+                        { className: 'input-group-prepend' },
+                        React.createElement(
+                            'span',
+                            { className: 'input-group-text', id: 'basic-addon1' },
+                            '\u540D\u79F0'
+                        )
+                    ),
+                    React.createElement('input', { onChange: this.UCENameChanged, type: 'text', className: 'form-control', value: name, placeholder: '\u65B9\u6CD5\u540D' })
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'input-group mb-3' },
+                    React.createElement(
+                        'div',
+                        { className: 'input-group-prepend' },
+                        React.createElement(
+                            'span',
+                            { className: 'input-group-text', id: 'basic-addon1' },
+                            '\u53C2\u6570'
+                        )
+                    ),
+                    React.createElement('input', { onChange: this.UCEParamsChanged, type: 'text', className: 'form-control', value: params, placeholder: ';\u5206\u5272\u53C2\u6570\u540D' })
+                )
+            );
+        }
+    }, {
+        key: 'CusFunNameChanged',
+        value: function CusFunNameChanged(ev) {
+            this.doSetAttribute(ev.target.value.trim());
+        }
+    }, {
+        key: 'renderCustomFunctonAttrEditor',
+        value: function renderCustomFunctonAttrEditor(nowVal, theAttr, attrName) {
+            var project = this.props.targetobj.project;
+            var funName = this.props.targetobj.id + '_' + attrName;
+            var jsBP = project.scriptMaster.getBPByName(funName);
+            return React.createElement(
+                'div',
+                { className: 'd-flex w-100 h-100 align-items-center' },
+                React.createElement(
+                    'div',
+                    { className: 'input-group mb-3' },
+                    React.createElement('input', { onChange: this.CusFunNameChanged, type: 'text', className: 'form-control', value: nowVal, placeholder: '\u65B9\u6CD5\u540D' }),
+                    React.createElement(
+                        'div',
+                        { className: 'input-group-append' },
+                        React.createElement(
+                            'span',
+                            { onClick: this.clickModifyScriptBtnHandler, className: 'btn btn-dark flex-grow-1' },
+                            jsBP ? '编辑' : '创建'
+                        )
+                    )
+                )
+            );
+        }
+    }, {
         key: 'clickjsIconHandler',
         value: function clickjsIconHandler(ev) {
             var nowValParseRet = parseObj_CtlPropJsBind(this.state.value);
@@ -231,14 +315,18 @@ var AttributeEditor = function (_React$PureComponent) {
                 return;
             }
             var theAttr = this.props.targetattr;
-            var funName = this.props.targetobj.id + '_' + theAttr.name;
+            var funName = this.props.targetobj.id + '_' + this.getRealAttrName();
             var targetBP = project.scriptMaster.getBPByName(funName);
             if (targetBP == null) {
                 var jsGroup = null;
+                var fixParams_arr = null;
                 if (theAttr.scriptSetting != null) {
                     jsGroup = theAttr.scriptSetting.group;
+                    fixParams_arr = theAttr.scriptSetting.fixParams_arr;
                 } else if (theAttr.valueType == ValueType.Event) {
                     jsGroup = EJsBluePrintFunGroup.CtlEvent;
+                } else if (theAttr.valueType == ValueType.CustomFunction) {
+                    jsGroup = EJsBluePrintFunGroup.CtlFun;
                 }
 
                 if (jsGroup == null) {
@@ -249,6 +337,9 @@ var AttributeEditor = function (_React$PureComponent) {
                 targetBP.eventName = theAttr.name;
                 if (this.props.targetobj.scriptCreated) {
                     this.props.targetobj.scriptCreated(theAttr.name, targetBP);
+                }
+                if (fixParams_arr) {
+                    targetBP.setFixParam(fixParams_arr);
                 }
                 this.setState({
                     magicObj: {}
@@ -342,6 +433,12 @@ var AttributeEditor = function (_React$PureComponent) {
             }
             if (theAttr.valueType == ValueType.StyleValues) {
                 return this.renderStyleAttrEditor(nowVal, theAttr, attrName, inputID);
+            }
+            if (theAttr.valueType == ValueType.UserControlEvent) {
+                return this.renderUserControlEventAttrEditor(nowVal, theAttr, attrName, inputID);
+            }
+            if (theAttr.valueType == ValueType.CustomFunction) {
+                return this.renderCustomFunctonAttrEditor(nowVal, theAttr, attrName, inputID);
             }
             if (theAttr.valueType == ValueType.CustomDataSource) {
                 return this.renderCustomDataSource(nowVal, theAttr, attrName, inputID);

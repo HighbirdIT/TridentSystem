@@ -14,6 +14,7 @@ const UserControlKernel_Type = 'UserControl';
 const Accordion_Type = 'accordion';
 const TabControl_Type = 'tabcontrol';
 const TabItem_Type = 'tabitem';
+const TaskSelector_Type = 'taskselector';
 
 const M_LabelKernel_Prefix = 'M_Label';
 const M_PageKernel_Prefix = 'M_Page';
@@ -30,6 +31,7 @@ const UserControlKernel_Prefix = 'UserControl';
 const Accordion_Prefix = 'Accordion';
 const TabControl_Prefix = 'tabcontrol';
 const TabItem_Prefix = 'tabitem';
+const TaskSelector_Prefix = 'taskSel';
 
 function GetControlTypeReadableName(type){
     switch(type){
@@ -65,6 +67,8 @@ function GetControlTypeReadableName(type){
         return '选项卡';
         case TabItem_Prefix:
         return '选项卡-子';
+        case TaskSelector_Type:
+        return '任务选择器';
     }
     return type;
 }

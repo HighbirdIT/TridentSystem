@@ -4,6 +4,8 @@ const ButtonKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('外观类', AttrNames.ButtonClass, ValueType.String, 'btn-primary', true, false, ButtonClasses_arr),
         genIsdisplayAttribute(),
         new CAttribute('适用种类', AttrNames.ButtonVisibleType, ValueType.String, EButtonVisibleType.Default, true, false, ButtonVisibleTypes_arr),
+        new CAttribute('隐藏名称', AttrNames.HideLabel, ValueType.Boolean, false),
+        new CAttribute('图标类型', AttrNames.IconType, ValueType.String, ''),
     ]),
     new CAttributeGroup('事件',[
         new CAttribute('OnClick', AttrNames.Event.OnClick, ValueType.Event),
@@ -76,6 +78,8 @@ class CButton extends React.PureComponent {
         this.state={
             label:this.props.ctlKernel.getAttribute(AttrNames.Name),
             btnClass:this.props.ctlKernel.getAttribute(AttrNames.ButtonClass),
+            hidelabel:this.props.ctlKernel.getAttribute(AttrNames.HideLabel),
+            icontype:this.props.ctlKernel.getAttribute(AttrNames.IconType),
         };
 
         autoBind(this);
@@ -84,6 +88,8 @@ class CButton extends React.PureComponent {
             AttrNames.ButtonClass,
             AttrNames.LayoutNames.APDClass,
             AttrNames.LayoutNames.StyleAttr,
+            AttrNames.HideLabel,
+            AttrNames.IconType,
         ]);
     }
 
@@ -94,6 +100,8 @@ class CButton extends React.PureComponent {
         this.setState({
             label:this.props.ctlKernel.getAttribute(AttrNames.Name),
             btnClass:this.props.ctlKernel.getAttribute(AttrNames.ButtonClass),
+            hidelabel:this.props.ctlKernel.getAttribute(AttrNames.HideLabel),
+            icontype:this.props.ctlKernel.getAttribute(AttrNames.IconType),
         });
     }
 
@@ -104,13 +112,17 @@ class CButton extends React.PureComponent {
             layoutConfig.addClass('M_placingCtl');
             return (<div className={layoutConfig.getClassName()} style={layoutConfig.style} ref={this.rootElemRef}>按钮</div>);
         }
+        
         layoutConfig.addClass('hb-control');
-        var showText = IsEmptyString(this.state.label) ? '[未命名]' : this.state.label;
+        var showText = this.state.hidelabel ? '' : (IsEmptyString(this.state.label) ? '[未命名]' : this.state.label);
+        var iconElem = null;
+        if(!IsEmptyString(this.state.icontype)){
+            iconElem = <i className={'fa fa-' + this.state.icontype} />
+        }
         return(
             <button type='button' className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
-                {
-                    showText
-                }
+                {iconElem}
+                {showText}
             </button>
         );
     }

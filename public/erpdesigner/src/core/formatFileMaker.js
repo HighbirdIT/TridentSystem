@@ -200,6 +200,11 @@ class FormatHtmlTag extends FormatFile_ItemBase{
         this.childs_arr = [];
     }
 
+    clear(){
+        this.childs_arr = [];
+        this.childs_map = {};
+    }
+
     clone(){
         var rlt = new FormatHtmlTag(this.name, this.tagName, this.clientSide);
         this.childs_arr.forEach(child=>{
@@ -664,7 +669,11 @@ class JSFile_Funtion extends FormatFileBlock{
         this.params_arr.forEach(e=>{
             paramsStr += (paramsStr.length == 0 ? '' : ',') + e;
         });
-        //this.pushLine('function ' + name + '(' + paramsStr + ')', true);
+        this.declareType = declareType;
+        this.clear();
+    }
+
+    clear(){
         this.headBlock = new FormatFileBlock('head');
         this.bodyBlock = new FormatFileBlock('body');
         this.retBlock = new FormatFileBlock('ret');
@@ -676,7 +685,6 @@ class JSFile_Funtion extends FormatFileBlock{
         this.bodyBlock.parent = this;
         this.retBlock.parent = this;
         this.beforeRetBlock.parent = this;
-        this.declareType = declareType;
     }
 
     addNextIndent(){
@@ -1005,6 +1013,7 @@ class CP_ClientSide extends JSFileMaker{
             loaded:false,
             ui:{
             },
+            _isroot:true,
         };
         this.appClass = this.getReactClass('App', true);
         this.reducers_map = {};

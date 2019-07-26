@@ -41,7 +41,7 @@ class HERPAccordionKernel extends ContainerKernelBase{
             if (child.editor && (!needFilt || child.editor.type == targetType)) {
                 rlt_arr.push(child.editor);
             }
-            if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type) {
+            if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && !child.isGridForm())){
                 // 穿透div
                 child.aidAccessableKernels(targetType, rlt_arr);
             }

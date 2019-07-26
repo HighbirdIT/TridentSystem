@@ -2,8 +2,8 @@ const JSNODE_WHILE = 'jswhile';
 const JSNODE_ARRAY_CONCAT = 'concat';
 const JSNODE_TERNARY_OPERATOR = 'ternary_operator';
 const JSNODE_ARRAYS_PUSHANDPOP = 'push_pop';
-const JSNODE_ARRAY_JOIN='array_join'
-const JSNODE_ARRAY_SLICE='array_slice'
+const JSNODE_ARRAY_JOIN='array_join';
+const JSNODE_ARRAY_SLICE='array_slice';
 
 class JSNode_While extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {

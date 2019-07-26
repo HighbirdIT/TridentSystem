@@ -119,6 +119,7 @@ var FunType_Server = 'server';
 var EJsBluePrintFunGroup = {
     CtlAttr: 'ctlattr',
     CtlEvent: 'ctlevent',
+    CtlFun: 'ctlfun',
     CtlValid: 'ctlvalid',
     ServerScript: 'serverscript',
     GridRowBtnHandler: 'gridrowbtnhandler'
@@ -196,6 +197,13 @@ var LineType_SmallMulti = '多行-小';
 var LineType_BigMulti = '多行-大';
 var LinteTypes_arr = [LineType_Single, LineType_SmallMulti, LineType_BigMulti];
 // union union all
+
+var ETextAlign = {
+    Left: 'left',
+    Center: 'center',
+    Right: 'right'
+};
+var TextAligns_arr = [ETextAlign.Left, ETextAlign.Center, ETextAlign.Right];
 
 var Event_CurrentComponentchanged = 'currentComponentchanged';
 var Event_LinkChanged = 'linkChanged';
@@ -285,7 +293,9 @@ var ValueType = {
     Event: 'event',
     Script: 'script',
     Object: 'Object',
-    XML: 'xml'
+    XML: 'xml',
+    UserControlEvent: 'usercontrolevent',
+    CustomFunction: 'CustomFunction'
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
@@ -342,3 +352,16 @@ var AccordionMode = {
 };
 
 var AccordionModes_arr = [AccordionMode.ListItem, AccordionMode.Default];
+
+var EContainerTag = {
+    Div: 'div',
+    Span: 'span',
+    H1: 'h1',
+    H2: 'h2',
+    H3: 'h3',
+    H4: 'h4',
+    H5: 'h5',
+    H6: 'h6'
+};
+
+var ContainerTag_arr = [EContainerTag.Div, EContainerTag.Span, EContainerTag.H1, EContainerTag.H2, EContainerTag.H3, EContainerTag.H4, EContainerTag.H5, EContainerTag.H6];

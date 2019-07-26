@@ -111,14 +111,17 @@ var CharfunType_STUFF = 'STUFF'; //删除指定长度的字符,并在指定的�
 //start开始位置
 //length要删除的长度
 //character_expression替换字符串
-var CharfunType_SPACE = 'SPACE'; //--返回指定个数空格的字符串 --select 'A'+ space(2)+'B'--A  B
-var CharfunType_arr = [CharfunType_ASCII, CharfunType_CHAR, CharfunType_LEFT, CharfunType_RIGHT, CharfunType_SUBSTRING, CharfunType_LOWER, CharfunType_UPPER, CharfunType_LTRIM, CharfunType_RTRIM, CharfunType_CHARINDEX, CharfunType_PATINDEX, CharfunType_REPLACE, CharfunType_REPLICATE, CharfunType_REVERSE, CharfunType_LEN, CharfunType_STUFF, CharfunType_SPACE];
+const CharfunType_SPACE = 'SPACE';//--返回指定个数空格的字符串 --select 'A'+ space(2)+'B'--A  B
+const CharfunType_arr = [CharfunType_ASCII, CharfunType_CHAR, CharfunType_LEFT, CharfunType_RIGHT, CharfunType_SUBSTRING, CharfunType_LOWER,
+    CharfunType_UPPER, CharfunType_LTRIM, CharfunType_RTRIM, CharfunType_CHARINDEX, CharfunType_PATINDEX, CharfunType_REPLACE,
+    CharfunType_REPLICATE, CharfunType_REVERSE, CharfunType_LEN, CharfunType_STUFF, CharfunType_SPACE];
 
-var FunType_Client = 'client';
-var FunType_Server = 'server';
-var EJsBluePrintFunGroup = {
-    CtlAttr: 'ctlattr',
-    CtlEvent: 'ctlevent',
+const FunType_Client = 'client';
+const FunType_Server = 'server';
+const EJsBluePrintFunGroup={
+    CtlAttr:'ctlattr',
+    CtlEvent:'ctlevent',
+    CtlFun:'ctlfun',
     CtlValid: 'ctlvalid',
     ServerScript: 'serverscript',
     GridRowBtnHandler: 'gridrowbtnhandler'
@@ -197,11 +200,18 @@ var LineType_BigMulti = '多行-大';
 var LinteTypes_arr = [LineType_Single, LineType_SmallMulti, LineType_BigMulti];
 // union union all
 
-var Event_CurrentComponentchanged = 'currentComponentchanged';
-var Event_LinkChanged = 'linkChanged';
-var Event_SocketNumChanged = 'socketnumChanged';
-var Event_FrameComMount = 'framecommount';
-var Event_FrameComUnMount = 'framecomunmount';
+const ETextAlign={
+    Left:'left',
+    Center:'center',
+    Right:'right',
+}
+const TextAligns_arr = [ETextAlign.Left,ETextAlign.Center,ETextAlign.Right];
+
+const Event_CurrentComponentchanged = 'currentComponentchanged';
+const Event_LinkChanged = 'linkChanged';
+const Event_SocketNumChanged = 'socketnumChanged';
+const Event_FrameComMount = 'framecommount';
+const Event_FrameComUnMount = 'framecomunmount';
 
 var ContextType_DBEntity = 'ct-dbentity';
 
@@ -283,10 +293,12 @@ var ValueType = {
     ListFormContent: 'listFormContent',
     Unknown: 'Unknown',
     Any: '任意',
-    Event: 'event',
-    Script: 'script',
-    Object: 'Object',
-    XML: 'xml'
+    Event:'event',
+    Script:'script',
+    Object:'Object',
+    XML:'xml',
+    UserControlEvent:'usercontrolevent',
+    CustomFunction:'CustomFunction',
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
@@ -342,3 +354,16 @@ const AccordionMode={
 }
 
 const AccordionModes_arr = [AccordionMode.ListItem,AccordionMode.Default];
+
+const EContainerTag={
+    Div:'div',
+    Span:'span',
+    H1:'h1',
+    H2:'h2',
+    H3:'h3',
+    H4:'h4',
+    H5:'h5',
+    H6:'h6',
+}
+
+const ContainerTag_arr = [EContainerTag.Div, EContainerTag.Span, EContainerTag.H1, EContainerTag.H2, EContainerTag.H3, EContainerTag.H4, EContainerTag.H5, EContainerTag.H6];

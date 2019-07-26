@@ -303,6 +303,14 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         return rlt;
     }
 
+    createUserKernelData(ctrKernel){
+        return {
+            kernel:ctrKernel,
+            useprops_map:{},
+            useevents_map:{},
+        };
+    }
+
     addUseControlPropApi(ctrKernel, apiitem, rowSource){
         var rlt = null;
         var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
@@ -310,10 +318,7 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         if(belongFormKernel == null){
             rlt = this.useGlobalControls_map[ctrKernel.id];
             if(rlt == null){
-                rlt = {
-                    kernel:ctrKernel,
-                    useprops_map:{},
-                };
+                rlt = this.createUserKernelData(ctrKernel);
                 this.useGlobalControls_map[ctrKernel.id] = rlt;
             }
             rlt.useprops_map[attrName] = apiitem;
@@ -326,14 +331,38 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
             var formObj = this.addUseForm(belongFormKernel, rowSource);
             rlt = formObj.useControls_map[ctrKernel.id];
             if(rlt == null){
-                rlt = {
-                    kernel:ctrKernel,
-                    useprops_map:{},
-                };
+                rlt = this.createUserKernelData(ctrKernel);
                 formObj.useControls_map[ctrKernel.id] = rlt;
             }
         }
         rlt.useprops_map[attrName] = apiitem;
+    }
+
+    addUseControlEventApi(ctrKernel, apiitem, rowSource){
+        var rlt = null;
+        var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
+        var funName = apiitem.name;
+        if(belongFormKernel == null){
+            rlt = this.useGlobalControls_map[ctrKernel.id];
+            if(rlt == null){
+                rlt = this.createUserKernelData(ctrKernel);
+                this.useGlobalControls_map[ctrKernel.id] = rlt;
+            }
+            rlt.useevents_map[funName] = apiitem;
+            return;
+        }
+        else{
+            if(!belongFormKernel.isKernelInRow(ctrKernel)){
+                rowSource = EFormRowSource.None;
+            }
+            var formObj = this.addUseForm(belongFormKernel, rowSource);
+            rlt = formObj.useControls_map[ctrKernel.id];
+            if(rlt == null){
+                rlt = this.createUserKernelData(ctrKernel);
+                formObj.useControls_map[ctrKernel.id] = rlt;
+            }
+        }
+        rlt.useevents_map[funName] = apiitem;
     }
 
     addUsePageEnryParam(pageid, paramName, defVal){
@@ -457,7 +486,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         logManager.clear();
         var canUseDS_arr = [];
         var canAccessKernel_arr = [];
-        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == EJsBluePrintFunGroup.CtlValid || bluePrint.group == EJsBluePrintFunGroup.GridRowBtnHandler){
+        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == EJsBluePrintFunGroup.CtlFun || bluePrint.group == EJsBluePrintFunGroup.CtlValid || bluePrint.group == EJsBluePrintFunGroup.GridRowBtnHandler){
             // 控件类型,获取上下文
             var ctlKernel = project.getControlById(bluePrint.ctlID);
             if(bluePrint.ctlID == null || ctlKernel == null){

@@ -101,6 +101,10 @@ class C_Node_Socket extends React.PureComponent{
         ddc.props.socket.setExtra('propAttrName', newname);
     }
 
+    userCtlFunChangedHandler(newname, ddc){
+        ddc.props.socket.setExtra('funAttrName', newname);
+    }
+
     render(){
         var socket = this.props.socket;
         if(this.props.socket != this.state.socket){
@@ -189,6 +193,7 @@ class C_Node_Socket extends React.PureComponent{
                         var bluePrint = socket.node.bluePrint;
                         switch(bluePrint.group){
                             case EJsBluePrintFunGroup.CtlAttr:
+                            case EJsBluePrintFunGroup.CtlFun:
                             case EJsBluePrintFunGroup.CtlEvent:
                             case ESqlBluePrintGroup.ControlCustom:
                             case EJsBluePrintFunGroup.CtlValid:
@@ -201,11 +206,19 @@ class C_Node_Socket extends React.PureComponent{
                                 }
                             inputElem = [<DropDownControl key='ctlddc' socket={socket} options_arr={ctlKernel.getAccessableKernels} funparamobj={kernelType} value={nowCtlId} itemChanged={this.kernelChangedHandler} textAttrName='readableName' valueAttrName='id' />];
                                 if(kernelType == UserControlKernel_Type){
+                                    var nowCtlkernel;
                                     if(socket.node.type == JSNODE_CONTROL_API_PROP || socket.node.type == JSNODE_CONTROL_API_PROPSETTER){
-                                        var nowCtlkernel = bluePrint.master.project.getControlById(nowCtlId);
+                                        nowCtlkernel = bluePrint.master.project.getControlById(nowCtlId);
                                         var nowPropValue = socket.getExtra('propAttrName');
                                         if(nowCtlkernel){
                                             inputElem.push(<DropDownControl key='propddc' socket={socket} options_arr={nowCtlkernel.getParamApiAttrArray} value={nowPropValue} itemChanged={this.userCtlPropChangedHandler} textAttrName='label' valueAttrName='name' />);
+                                        }
+                                    }
+                                    if(socket.node.type == JSNODE_CONTROL_API_CALLFUN){
+                                        nowCtlkernel = bluePrint.master.project.getControlById(nowCtlId);
+                                        var nowFunValue = socket.getExtra('funAttrName');
+                                        if(nowCtlkernel){
+                                            inputElem.push(<DropDownControl key='funddc' socket={socket} options_arr={socket.node.isUserControlEvent ? nowCtlkernel.getEventApiAttrArray : nowCtlkernel.getFunctionApiAttrArray} value={nowFunValue} itemChanged={this.userCtlFunChangedHandler} textAttrName='label' valueAttrName='name' />);
                                         }
                                     }
                                 }

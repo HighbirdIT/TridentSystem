@@ -107,7 +107,61 @@ class ProjectResPanel extends React.PureComponent {
                     <input type='text' className='flexinput flex-grow-1 flex-shrink-1' onChange={this.nweUserControlNameChanged} value={this.state.nweUserControlName} />
                     <button type="button" onClick={this.clickCreateNewUserControlHandler} className='btn flex-grow-0 flex-shrink-0 btn-success' >创建控件</button>
                 </div>
+                <div className='bg-secondary text-light'>快捷功能</div>
+                <QuickControlSelector project={project} />
             </div>
         )
+    }
+}
+
+class QuickControlSelector extends React.PureComponent {
+    constructor(props) {
+        super(props);
+
+        var initState = {
+        };
+        this.state = initState;
+
+        autoBind(this);
+    }
+
+    getAllControls(){
+        var controlId_map = this.props.project.controlId_map;
+        var rlt_arr = [];
+        for(var cid in controlId_map){
+            for(var i = 0; i < rlt_arr.length; ++i){
+                if(rlt_arr[i] > cid){
+                    break;
+                }
+            }
+            rlt_arr.splice(i, 0, cid);
+        }
+        return rlt_arr;
+    }
+
+    ctlIDChanged(newID){
+        var project = this.props.project;
+        var theKernel = project.getControlById(newID);
+        this.setState({
+            ctlpath:theKernel ? theKernel.getStatePath('','.',{},true) : null,
+        });
+        if(theKernel){
+            var belongPage = theKernel.searchParentKernel(M_PageKernel_Type, true);
+            project.setEditingPageById(belongPage.id);
+            setTimeout(() => {
+                project.designer.selectKernel(theKernel);
+            }, 50);
+        }
+    }
+
+
+    render(){
+        return <div className='flex-shrink-0 flex-grow-0 d-flex flex-column'>
+                <div>
+                    <span className='text-light'>选取控件</span>
+                    <DropDownControl itemChanged={this.ctlIDChanged} btnclass='btn-primary' options_arr={this.getAllControls} rootclass='flex-grow-1 flex-shrink-1' editable={true} value='' />
+                </div>
+                {this.state.ctlpath ? <div className='text-light'>{this.state.ctlpath}</div> : null}
+            </div>
     }
 }
