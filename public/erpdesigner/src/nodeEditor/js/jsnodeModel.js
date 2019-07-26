@@ -3361,7 +3361,7 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
                 pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath(propAttr.label));
             }
             if (batchNode) {
-                myJSBlock.pushLine(needSetVarName + '[' + pathVar + '] = "' + valueStr + ';');
+                myJSBlock.pushLine(needSetVarName + '[' + pathVar + '] = ' + valueStr + ';');
             }
             else {
                 myJSBlock.pushLine('setTimeout(() => {', 1);
