@@ -1292,7 +1292,7 @@ class ERPC_Text extends React.PureComponent {
                         setTimeout(() => {
                             store.dispatch(makeAction_setStateByPath(
                                 useValue,
-                                this.props.fullPath + '.text'));
+                                this.props.fullPath + '.value'));
                         }, 10);
                     }
                 }
