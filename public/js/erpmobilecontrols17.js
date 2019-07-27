@@ -1481,7 +1481,7 @@ var ERPC_Text = function (_React$PureComponent4) {
                     if (useValue != this.props.value) {
                         if (!IsEmptyString(useValue) && !IsEmptyString(this.props.value) && useValue != this.props.value && (this.props.type == 'time' || this.props.type == 'date')) {
                             setTimeout(function () {
-                                store.dispatch(makeAction_setStateByPath(useValue, _this8.props.fullPath + '.text'));
+                                store.dispatch(makeAction_setStateByPath(useValue, _this8.props.fullPath + '.value'));
                             }, 10);
                         }
                     }
