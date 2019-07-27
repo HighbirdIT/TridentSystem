@@ -163,7 +163,7 @@ function GetFormatTimeString(date,hadSec) {
 }
 
 function GetNowDate() {
-    return new Date(GetFormatDateString(new Date() + ' 00:00'));
+    return new Date(GetFormatDateString(new Date()) + ' 00:00');
 }
 
 function CheckDate(date) {
