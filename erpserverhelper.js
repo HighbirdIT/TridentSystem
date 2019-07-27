@@ -256,7 +256,15 @@ function CastDate(val){
 }
 
 function CastDateFromTimePart(val) {
-    return new Date('2000-1-1 ' + val);
+    var timeRegRlt = gTimeReg.exec(val);
+    if (timeRegRlt == null) {
+        timeRegRlt = gShortTimeReg.exec(val);
+    }
+    if (timeRegRlt == null) {
+        return null;
+    }
+
+    return new Date('2000-1-1 ' + timeRegRlt[0]);
 }
 
 helper.DateFun={
