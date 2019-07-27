@@ -161,18 +161,18 @@ function get任务目标(req, res) {
 function modifyTaskGoal(req, res) {
 	var update_table_0params_arr = null;
 	var scriptBP_18_bundle = req.body.bundle;
-	var M_Form_1_nowRecord;
+	var Form1_nowRecord;
 	var update_table_0_sql = '';
-	var M_Text_7_value;
+	var TK_Text_7_value;
 	var g_envVar = req.session.g_envVar;
 	return co(function* () {
 		if (scriptBP_18_bundle == null) { return serverhelper.createErrorRet('缺少参数bundle'); }
 		var update_table_0_update = '[目标描述]=@update_table_0_目标描述';
-		M_Form_1_nowRecord = scriptBP_18_bundle.M_Form_1_nowRecord;
-		M_Text_7_value = scriptBP_18_bundle.M_Text_7_value;
-		var update_table_0_RCDKEY = M_Form_1_nowRecord['任务目标记录代码'];
+		Form1_nowRecord = scriptBP_18_bundle.Form1_nowRecord;
+		TK_Text_7_value = scriptBP_18_bundle.TK_Text_7_value;
+		var update_table_0_RCDKEY = Form1_nowRecord['任务目标记录代码'];
 		if (serverhelper.IsEmptyString(update_table_0_RCDKEY)) { return serverhelper.createErrorRet("参数[RCDKEY]传入错误"); }
-		var update_table_0_目标描述 = M_Text_7_value;
+		var update_table_0_目标描述 = TK_Text_7_value;
 		if (serverhelper.IsEmptyString(update_table_0_目标描述)) { return serverhelper.createErrorRet("列[目标描述]的传入值错误"); }
 		update_table_0_sql = "update TA03D任务目标记录 set " + update_table_0_update + " where [任务目标记录代码]=@RCDKEY";
 		update_table_0params_arr = [
@@ -192,12 +192,12 @@ function modifyTaskGoal(req, res) {
 function deleteTaskGoal(req, res) {
 	var scriptBP_19_bundle = req.body.bundle;
 	var delete_table_0params_arr = null;
-	var M_Form_1_nowRecord;
+	var Form1_nowRecord;
 	var g_envVar = req.session.g_envVar;
 	return co(function* () {
-		M_Form_1_nowRecord = scriptBP_19_bundle.M_Form_1_nowRecord;
+		Form1_nowRecord = scriptBP_19_bundle.Form1_nowRecord;
 		if (scriptBP_19_bundle == null) { return serverhelper.createErrorRet('缺少参数bundle'); }
-		var delete_table_0_目标记录代码 = M_Form_1_nowRecord['任务目标记录代码'];
+		var delete_table_0_目标记录代码 = Form1_nowRecord['任务目标记录代码'];
 		if (delete_table_0_目标记录代码 == null) { return serverhelper.createErrorRet("缺少参数[目标记录代码]"); }
 		delete_table_0params_arr = [
 			dbhelper.makeSqlparam('目标记录代码', sqlTypes.NVarChar(4000), delete_table_0_目标记录代码),
@@ -215,8 +215,8 @@ function deleteTaskGoal(req, res) {
 function createTaskGoal(req, res) {
 	var insert_table_0params_arr = null;
 	var scriptBP_17_bundle = req.body.bundle;
-	var M_Page_1_任务代码;
-	var M_Text_7_value;
+	var TaskGoalSetter_任务代码;
+	var TK_Text_7_value;
 	var excute_pro_0params_arr = null;
 	var excute_pro_0outparams_arr = null;
 	var g_envVar = req.session.g_envVar;
@@ -224,11 +224,11 @@ function createTaskGoal(req, res) {
 		if (scriptBP_17_bundle == null) { return serverhelper.createErrorRet('缺少参数bundle'); }
 		var insert_table_0_insert = 'insert into [TA03D任务目标记录]([工作任务记录代码],[目标描述],[登记确认状态],[登记确认用户],[登记确认时间])';
 		var insert_table_0_values = ' values(@insert_table_0_工作任务记录代码,@insert_table_0_目标描述,1,@_operator,getdate())';
-		M_Page_1_任务代码 = scriptBP_17_bundle.M_Page_1_任务代码;
-		M_Text_7_value = scriptBP_17_bundle.M_Text_7_value;
-		var insert_table_0_工作任务记录代码 = M_Page_1_任务代码;
+		TaskGoalSetter_任务代码 = scriptBP_17_bundle.TaskGoalSetter_任务代码;
+		TK_Text_7_value = scriptBP_17_bundle.TK_Text_7_value;
+		var insert_table_0_工作任务记录代码 = TaskGoalSetter_任务代码;
 		if (serverhelper.IsEmptyString(insert_table_0_工作任务记录代码)) { return serverhelper.createErrorRet("列[工作任务记录代码]的传入值错误"); }
-		var insert_table_0_目标描述 = M_Text_7_value;
+		var insert_table_0_目标描述 = TK_Text_7_value;
 		if (serverhelper.IsEmptyString(insert_table_0_目标描述)) { return serverhelper.createErrorRet("列[目标描述]的传入值错误"); }
 		insert_table_0params_arr = [
 			dbhelper.makeSqlparam('insert_table_0_工作任务记录代码', sqlTypes.NVarChar(4000), insert_table_0_工作任务记录代码),
@@ -314,93 +314,93 @@ function comfirmTask(req, res) {
 function modifyTask(req, res) {
 	var update_table_0params_arr = null;
 	var scriptBP_12_bundle = req.body.bundle;
-	var M_Form_0_nowRecord;
+	var Form0_nowRecord;
 	var update_table_0_sql = '';
-	var M_Text_0_value;
-	var M_Text_1_value;
-	var M_Dropdown_8_value;
-	var M_Dropdown_0_value;
-	var M_Dropdown_1_value;
-	var M_Dropdown_2_value;
-	var M_Dropdown_3_value;
-	var M_Dropdown_4_value;
-	var M_CheckBox_0_value;
-	var M_Text_4_value;
-	var M_Text_2_value;
-	var M_Dropdown_5_value;
-	var M_CheckBox_1_value;
-	var M_Text_3_value;
-	var M_Dropdown_6_value;
-	var M_Dropdown_7_value;
+	var TK_Text_0_value;
+	var TK_Text_1_value;
+	var TK_Dropdown_8_value;
+	var TK_Dropdown_0_value;
+	var TK_Dropdown_1_value;
+	var TK_Dropdown_2_value;
+	var TK_Dropdown_3_value;
+	var TK_Dropdown_4_value;
+	var TK_CheckBox_0_value;
+	var TK_Text_4_value;
+	var TK_Text_2_value;
+	var TK_Dropdown_5_value;
+	var TK_CheckBox_1_value;
+	var TK_Text_3_value;
+	var TK_Dropdown_6_value;
+	var TK_Dropdown_7_value;
 	var g_envVar = req.session.g_envVar;
 	return co(function* () {
 		if (scriptBP_12_bundle == null) { return serverhelper.createErrorRet('缺少参数bundle'); }
 		var update_table_0_update = '[任务标题]=@update_table_0_任务标题,[任务描述]=@update_table_0_任务描述,[发起人员代码]=@update_table_0_发起人员代码,[执行人员代码]=@update_table_0_执行人员代码,[关联工作小组代码]=@update_table_0_关联工作小组代码,[关联项目代码]=@update_table_0_关联项目代码,[有无期限]=@update_table_0_有无期限,[开始日期]=@update_table_0_开始日期,[汇报频率代码]=@update_table_0_汇报频率代码,[是否周期任务]=@update_table_0_是否周期任务,[重要程度代码]=@update_table_0_重要程度代码';
-		M_Form_0_nowRecord = scriptBP_12_bundle.M_Form_0_nowRecord;
-		M_Text_0_value = scriptBP_12_bundle.M_Text_0_value;
-		M_Text_1_value = scriptBP_12_bundle.M_Text_1_value;
-		M_Dropdown_8_value = scriptBP_12_bundle.M_Dropdown_8_value;
-		M_Dropdown_0_value = scriptBP_12_bundle.M_Dropdown_0_value;
-		M_Dropdown_1_value = scriptBP_12_bundle.M_Dropdown_1_value;
-		M_Dropdown_2_value = scriptBP_12_bundle.M_Dropdown_2_value;
-		M_Dropdown_3_value = scriptBP_12_bundle.M_Dropdown_3_value;
-		M_Dropdown_4_value = scriptBP_12_bundle.M_Dropdown_4_value;
-		M_CheckBox_0_value = scriptBP_12_bundle.M_CheckBox_0_value;
-		M_Text_4_value = scriptBP_12_bundle.M_Text_4_value;
-		M_Text_2_value = scriptBP_12_bundle.M_Text_2_value;
-		M_Dropdown_5_value = scriptBP_12_bundle.M_Dropdown_5_value;
-		M_CheckBox_1_value = scriptBP_12_bundle.M_CheckBox_1_value;
-		M_Text_3_value = scriptBP_12_bundle.M_Text_3_value;
-		M_Dropdown_6_value = scriptBP_12_bundle.M_Dropdown_6_value;
-		M_Dropdown_7_value = scriptBP_12_bundle.M_Dropdown_7_value;
-		var update_table_0_RCDKEY = M_Form_0_nowRecord['工作任务记录代码'];
+		Form0_nowRecord = scriptBP_12_bundle.Form0_nowRecord;
+		TK_Text_0_value = scriptBP_12_bundle.TK_Text_0_value;
+		TK_Text_1_value = scriptBP_12_bundle.TK_Text_1_value;
+		TK_Dropdown_8_value = scriptBP_12_bundle.TK_Dropdown_8_value;
+		TK_Dropdown_0_value = scriptBP_12_bundle.TK_Dropdown_0_value;
+		TK_Dropdown_1_value = scriptBP_12_bundle.TK_Dropdown_1_value;
+		TK_Dropdown_2_value = scriptBP_12_bundle.TK_Dropdown_2_value;
+		TK_Dropdown_3_value = scriptBP_12_bundle.TK_Dropdown_3_value;
+		TK_Dropdown_4_value = scriptBP_12_bundle.TK_Dropdown_4_value;
+		TK_CheckBox_0_value = scriptBP_12_bundle.TK_CheckBox_0_value;
+		TK_Text_4_value = scriptBP_12_bundle.TK_Text_4_value;
+		TK_Text_2_value = scriptBP_12_bundle.TK_Text_2_value;
+		TK_Dropdown_5_value = scriptBP_12_bundle.TK_Dropdown_5_value;
+		TK_CheckBox_1_value = scriptBP_12_bundle.TK_CheckBox_1_value;
+		TK_Text_3_value = scriptBP_12_bundle.TK_Text_3_value;
+		TK_Dropdown_6_value = scriptBP_12_bundle.TK_Dropdown_6_value;
+		TK_Dropdown_7_value = scriptBP_12_bundle.TK_Dropdown_7_value;
+		var update_table_0_RCDKEY = Form0_nowRecord['工作任务记录代码'];
 		if (serverhelper.IsEmptyString(update_table_0_RCDKEY)) { return serverhelper.createErrorRet("参数[RCDKEY]传入错误"); }
-		var update_table_0_任务标题 = M_Text_0_value;
+		var update_table_0_任务标题 = TK_Text_0_value;
 		if (serverhelper.IsEmptyString(update_table_0_任务标题)) { return serverhelper.createErrorRet("列[任务标题]的传入值错误"); }
-		var update_table_0_任务描述 = M_Text_1_value;
+		var update_table_0_任务描述 = TK_Text_1_value;
 		if (serverhelper.IsEmptyString(update_table_0_任务描述)) { return serverhelper.createErrorRet("列[任务描述]的传入值错误"); }
-		var update_table_0_任务所属类别代码 = M_Dropdown_8_value;
+		var update_table_0_任务所属类别代码 = TK_Dropdown_8_value;
 		if (!serverhelper.IsEmptyString(update_table_0_任务所属类别代码)) {
 			update_table_0_update += (update_table_0_update.length == 0 ? '' : ',') + '[任务所属类别代码]=@update_table_0_任务所属类别代码';
 		}
 		else { update_table_0_update += (update_table_0_update.length == 0 ? '' : ',') + '[任务所属类别代码]=default'; }
-		var update_table_0_发起人员代码 = M_Dropdown_0_value;
+		var update_table_0_发起人员代码 = TK_Dropdown_0_value;
 		if (serverhelper.IsEmptyString(update_table_0_发起人员代码)) { return serverhelper.createErrorRet("列[发起人员代码]的传入值错误"); }
-		var update_table_0_执行人员代码 = M_Dropdown_1_value;
+		var update_table_0_执行人员代码 = TK_Dropdown_1_value;
 		if (serverhelper.IsEmptyString(update_table_0_执行人员代码)) { return serverhelper.createErrorRet("列[执行人员代码]的传入值错误"); }
-		var update_table_0_关联工作小组代码 = M_Dropdown_2_value;
+		var update_table_0_关联工作小组代码 = TK_Dropdown_2_value;
 		if (serverhelper.IsEmptyString(update_table_0_关联工作小组代码)) { return serverhelper.createErrorRet("列[关联工作小组代码]的传入值错误"); }
-		var update_table_0_关联项目代码 = M_Dropdown_3_value;
+		var update_table_0_关联项目代码 = TK_Dropdown_3_value;
 		if (serverhelper.IsEmptyString(update_table_0_关联项目代码)) { return serverhelper.createErrorRet("列[关联项目代码]的传入值错误"); }
-		var update_table_0_抄送人员明细 = M_Dropdown_4_value;
+		var update_table_0_抄送人员明细 = TK_Dropdown_4_value;
 		if (!serverhelper.IsEmptyString(update_table_0_抄送人员明细)) {
 			update_table_0_update += (update_table_0_update.length == 0 ? '' : ',') + '[抄送人员明细]=@update_table_0_抄送人员明细';
 		}
 		else { update_table_0_update += (update_table_0_update.length == 0 ? '' : ',') + '[抄送人员明细]=default'; }
-		var update_table_0_有无期限 = M_CheckBox_0_value;
+		var update_table_0_有无期限 = TK_CheckBox_0_value;
 		if (serverhelper.IsEmptyString(update_table_0_有无期限)) { return serverhelper.createErrorRet("列[有无期限]的传入值错误"); }
-		var update_table_0_开始日期 = M_Text_4_value;
+		var update_table_0_开始日期 = TK_Text_4_value;
 		if (serverhelper.IsEmptyString(update_table_0_开始日期)) { return serverhelper.createErrorRet("列[开始日期]的传入值错误"); }
-		var update_table_0_截止日期 = M_Text_2_value;
+		var update_table_0_截止日期 = TK_Text_2_value;
 		if (!serverhelper.IsEmptyString(update_table_0_截止日期)) {
 			update_table_0_update += (update_table_0_update.length == 0 ? '' : ',') + '[截止日期]=@update_table_0_截止日期';
 		}
 		else { update_table_0_update += (update_table_0_update.length == 0 ? '' : ',') + '[截止日期]=default'; }
-		var update_table_0_汇报频率代码 = M_Dropdown_5_value;
+		var update_table_0_汇报频率代码 = TK_Dropdown_5_value;
 		if (serverhelper.IsEmptyString(update_table_0_汇报频率代码)) { return serverhelper.createErrorRet("列[汇报频率代码]的传入值错误"); }
-		var update_table_0_是否周期任务 = M_CheckBox_1_value;
+		var update_table_0_是否周期任务 = TK_CheckBox_1_value;
 		if (serverhelper.IsEmptyString(update_table_0_是否周期任务)) { return serverhelper.createErrorRet("列[是否周期任务]的传入值错误"); }
-		var update_table_0_周期数值 = M_Text_3_value;
+		var update_table_0_周期数值 = TK_Text_3_value;
 		if (!serverhelper.IsEmptyString(update_table_0_周期数值)) {
 			update_table_0_update += (update_table_0_update.length == 0 ? '' : ',') + '[周期数值]=@update_table_0_周期数值';
 		}
 		else { update_table_0_update += (update_table_0_update.length == 0 ? '' : ',') + '[周期数值]=default'; }
-		var update_table_0_周期单位 = M_Dropdown_6_value;
+		var update_table_0_周期单位 = TK_Dropdown_6_value;
 		if (!serverhelper.IsEmptyString(update_table_0_周期单位)) {
 			update_table_0_update += (update_table_0_update.length == 0 ? '' : ',') + '[周期单位]=@update_table_0_周期单位';
 		}
 		else { update_table_0_update += (update_table_0_update.length == 0 ? '' : ',') + '[周期单位]=default'; }
-		var update_table_0_重要程度代码 = M_Dropdown_7_value;
+		var update_table_0_重要程度代码 = TK_Dropdown_7_value;
 		if (serverhelper.IsEmptyString(update_table_0_重要程度代码)) { return serverhelper.createErrorRet("列[重要程度代码]的传入值错误"); }
 		update_table_0_sql = "update TA02C工作任务记录 set " + update_table_0_update + " where [工作任务记录代码]=@RCDKEY";
 		update_table_0params_arr = [
@@ -436,11 +436,11 @@ function repealTask(req, res) {
 	var scriptBP_11_bundle = req.body.bundle;
 	var excute_pro_0params_arr = null;
 	var excute_pro_0outparams_arr = null;
-	var M_Form_0_nowRecord;
+	var Form0_nowRecord;
 	return co(function* () {
 		if (scriptBP_11_bundle == null) { return serverhelper.createErrorRet('缺少参数bundle'); }
-		M_Form_0_nowRecord = scriptBP_11_bundle.M_Form_0_nowRecord;
-		var excute_pro_0_p任务记录代码 = M_Form_0_nowRecord['工作任务记录代码'];
+		Form0_nowRecord = scriptBP_11_bundle.Form0_nowRecord;
+		var excute_pro_0_p任务记录代码 = Form0_nowRecord['工作任务记录代码'];
 		if (excute_pro_0_p任务记录代码 == null) { return serverhelper.createErrorRet("参数[任务记录代码]传入值错误"); }
 		excute_pro_0params_arr = [
 			dbhelper.makeSqlparam('任务记录代码', sqlTypes.NVarChar(4000), excute_pro_0_p任务记录代码),
@@ -466,22 +466,22 @@ function repealTask(req, res) {
 function createTask(req, res) {
 	var insert_table_0params_arr = null;
 	var scriptBP_9_bundle = req.body.bundle;
-	var M_Text_0_value;
-	var M_Text_1_value;
-	var M_Dropdown_8_value;
-	var M_Dropdown_0_value;
-	var M_Dropdown_1_value;
-	var M_Dropdown_2_value;
-	var M_Dropdown_3_value;
-	var M_Dropdown_4_value;
-	var M_CheckBox_0_value;
-	var M_Text_4_value;
-	var M_Text_2_value;
-	var M_Dropdown_5_value;
-	var M_CheckBox_1_value;
-	var M_Text_3_value;
-	var M_Dropdown_6_value;
-	var M_Dropdown_7_value;
+	var TK_Text_0_value;
+	var TK_Text_1_value;
+	var TK_Dropdown_8_value;
+	var TK_Dropdown_0_value;
+	var TK_Dropdown_1_value;
+	var TK_Dropdown_2_value;
+	var TK_Dropdown_3_value;
+	var TK_Dropdown_4_value;
+	var TK_CheckBox_0_value;
+	var TK_Text_4_value;
+	var TK_Text_2_value;
+	var TK_Dropdown_5_value;
+	var TK_CheckBox_1_value;
+	var TK_Text_3_value;
+	var TK_Dropdown_6_value;
+	var TK_Dropdown_7_value;
 	var excute_pro_0params_arr = null;
 	var excute_pro_0outparams_arr = null;
 	var g_envVar = req.session.g_envVar;
@@ -489,68 +489,68 @@ function createTask(req, res) {
 		if (scriptBP_9_bundle == null) { return serverhelper.createErrorRet('缺少参数bundle'); }
 		var insert_table_0_insert = 'insert into [TA02C工作任务记录]([任务标题],[任务描述],[发起人员代码],[执行人员代码],[关联工作小组代码],[关联项目代码],[有无期限],[开始日期],[汇报频率代码],[是否周期任务],[重要程度代码],[登记确认状态],[登记确认用户],[登记确认时间]';
 		var insert_table_0_values = ' values(@insert_table_0_任务标题,@insert_table_0_任务描述,@insert_table_0_发起人员代码,@insert_table_0_执行人员代码,@insert_table_0_关联工作小组代码,@insert_table_0_关联项目代码,@insert_table_0_有无期限,@insert_table_0_开始日期,@insert_table_0_汇报频率代码,@insert_table_0_是否周期任务,@insert_table_0_重要程度代码,1,@_operator,getdate()';
-		M_Text_0_value = scriptBP_9_bundle.M_Text_0_value;
-		M_Text_1_value = scriptBP_9_bundle.M_Text_1_value;
-		M_Dropdown_8_value = scriptBP_9_bundle.M_Dropdown_8_value;
-		M_Dropdown_0_value = scriptBP_9_bundle.M_Dropdown_0_value;
-		M_Dropdown_1_value = scriptBP_9_bundle.M_Dropdown_1_value;
-		M_Dropdown_2_value = scriptBP_9_bundle.M_Dropdown_2_value;
-		M_Dropdown_3_value = scriptBP_9_bundle.M_Dropdown_3_value;
-		M_Dropdown_4_value = scriptBP_9_bundle.M_Dropdown_4_value;
-		M_CheckBox_0_value = scriptBP_9_bundle.M_CheckBox_0_value;
-		M_Text_4_value = scriptBP_9_bundle.M_Text_4_value;
-		M_Text_2_value = scriptBP_9_bundle.M_Text_2_value;
-		M_Dropdown_5_value = scriptBP_9_bundle.M_Dropdown_5_value;
-		M_CheckBox_1_value = scriptBP_9_bundle.M_CheckBox_1_value;
-		M_Text_3_value = scriptBP_9_bundle.M_Text_3_value;
-		M_Dropdown_6_value = scriptBP_9_bundle.M_Dropdown_6_value;
-		M_Dropdown_7_value = scriptBP_9_bundle.M_Dropdown_7_value;
-		var insert_table_0_任务标题 = M_Text_0_value;
+		TK_Text_0_value = scriptBP_9_bundle.TK_Text_0_value;
+		TK_Text_1_value = scriptBP_9_bundle.TK_Text_1_value;
+		TK_Dropdown_8_value = scriptBP_9_bundle.TK_Dropdown_8_value;
+		TK_Dropdown_0_value = scriptBP_9_bundle.TK_Dropdown_0_value;
+		TK_Dropdown_1_value = scriptBP_9_bundle.TK_Dropdown_1_value;
+		TK_Dropdown_2_value = scriptBP_9_bundle.TK_Dropdown_2_value;
+		TK_Dropdown_3_value = scriptBP_9_bundle.TK_Dropdown_3_value;
+		TK_Dropdown_4_value = scriptBP_9_bundle.TK_Dropdown_4_value;
+		TK_CheckBox_0_value = scriptBP_9_bundle.TK_CheckBox_0_value;
+		TK_Text_4_value = scriptBP_9_bundle.TK_Text_4_value;
+		TK_Text_2_value = scriptBP_9_bundle.TK_Text_2_value;
+		TK_Dropdown_5_value = scriptBP_9_bundle.TK_Dropdown_5_value;
+		TK_CheckBox_1_value = scriptBP_9_bundle.TK_CheckBox_1_value;
+		TK_Text_3_value = scriptBP_9_bundle.TK_Text_3_value;
+		TK_Dropdown_6_value = scriptBP_9_bundle.TK_Dropdown_6_value;
+		TK_Dropdown_7_value = scriptBP_9_bundle.TK_Dropdown_7_value;
+		var insert_table_0_任务标题 = TK_Text_0_value;
 		if (serverhelper.IsEmptyString(insert_table_0_任务标题)) { return serverhelper.createErrorRet("列[任务标题]的传入值错误"); }
-		var insert_table_0_任务描述 = M_Text_1_value;
+		var insert_table_0_任务描述 = TK_Text_1_value;
 		if (serverhelper.IsEmptyString(insert_table_0_任务描述)) { return serverhelper.createErrorRet("列[任务描述]的传入值错误"); }
-		var insert_table_0_任务所属类别代码 = M_Dropdown_8_value;
+		var insert_table_0_任务所属类别代码 = TK_Dropdown_8_value;
 		if (!serverhelper.IsEmptyString(insert_table_0_任务所属类别代码)) {
 			insert_table_0_insert += ',[任务所属类别代码]';
 			insert_table_0_values += ',@insert_table_0_任务所属类别代码';
 		}
-		var insert_table_0_发起人员代码 = M_Dropdown_0_value;
+		var insert_table_0_发起人员代码 = TK_Dropdown_0_value;
 		if (serverhelper.IsEmptyString(insert_table_0_发起人员代码)) { return serverhelper.createErrorRet("列[发起人员代码]的传入值错误"); }
-		var insert_table_0_执行人员代码 = M_Dropdown_1_value;
+		var insert_table_0_执行人员代码 = TK_Dropdown_1_value;
 		if (serverhelper.IsEmptyString(insert_table_0_执行人员代码)) { return serverhelper.createErrorRet("列[执行人员代码]的传入值错误"); }
-		var insert_table_0_关联工作小组代码 = M_Dropdown_2_value;
+		var insert_table_0_关联工作小组代码 = TK_Dropdown_2_value;
 		if (serverhelper.IsEmptyString(insert_table_0_关联工作小组代码)) { return serverhelper.createErrorRet("列[关联工作小组代码]的传入值错误"); }
-		var insert_table_0_关联项目代码 = M_Dropdown_3_value;
+		var insert_table_0_关联项目代码 = TK_Dropdown_3_value;
 		if (serverhelper.IsEmptyString(insert_table_0_关联项目代码)) { return serverhelper.createErrorRet("列[关联项目代码]的传入值错误"); }
-		var insert_table_0_抄送人员明细 = M_Dropdown_4_value;
+		var insert_table_0_抄送人员明细 = TK_Dropdown_4_value;
 		if (!serverhelper.IsEmptyString(insert_table_0_抄送人员明细)) {
 			insert_table_0_insert += ',[抄送人员明细]';
 			insert_table_0_values += ',@insert_table_0_抄送人员明细';
 		}
-		var insert_table_0_有无期限 = M_CheckBox_0_value;
+		var insert_table_0_有无期限 = TK_CheckBox_0_value;
 		if (serverhelper.IsEmptyString(insert_table_0_有无期限)) { return serverhelper.createErrorRet("列[有无期限]的传入值错误"); }
-		var insert_table_0_开始日期 = M_Text_4_value;
+		var insert_table_0_开始日期 = TK_Text_4_value;
 		if (serverhelper.IsEmptyString(insert_table_0_开始日期)) { return serverhelper.createErrorRet("列[开始日期]的传入值错误"); }
-		var insert_table_0_截止日期 = M_Text_2_value;
+		var insert_table_0_截止日期 = TK_Text_2_value;
 		if (!serverhelper.IsEmptyString(insert_table_0_截止日期)) {
 			insert_table_0_insert += ',[截止日期]';
 			insert_table_0_values += ',@insert_table_0_截止日期';
 		}
-		var insert_table_0_汇报频率代码 = M_Dropdown_5_value;
+		var insert_table_0_汇报频率代码 = TK_Dropdown_5_value;
 		if (serverhelper.IsEmptyString(insert_table_0_汇报频率代码)) { return serverhelper.createErrorRet("列[汇报频率代码]的传入值错误"); }
-		var insert_table_0_是否周期任务 = M_CheckBox_1_value;
+		var insert_table_0_是否周期任务 = TK_CheckBox_1_value;
 		if (serverhelper.IsEmptyString(insert_table_0_是否周期任务)) { return serverhelper.createErrorRet("列[是否周期任务]的传入值错误"); }
-		var insert_table_0_周期数值 = M_Text_3_value;
+		var insert_table_0_周期数值 = TK_Text_3_value;
 		if (!serverhelper.IsEmptyString(insert_table_0_周期数值)) {
 			insert_table_0_insert += ',[周期数值]';
 			insert_table_0_values += ',@insert_table_0_周期数值';
 		}
-		var insert_table_0_周期单位 = M_Dropdown_6_value;
+		var insert_table_0_周期单位 = TK_Dropdown_6_value;
 		if (!serverhelper.IsEmptyString(insert_table_0_周期单位)) {
 			insert_table_0_insert += ',[周期单位]';
 			insert_table_0_values += ',@insert_table_0_周期单位';
 		}
-		var insert_table_0_重要程度代码 = M_Dropdown_7_value;
+		var insert_table_0_重要程度代码 = TK_Dropdown_7_value;
 		if (serverhelper.IsEmptyString(insert_table_0_重要程度代码)) { return serverhelper.createErrorRet("列[重要程度代码]的传入值错误"); }
 		insert_table_0_insert += ')';
 		insert_table_0_values += ')';
