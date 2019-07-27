@@ -1287,6 +1287,15 @@ class ERPC_Text extends React.PureComponent {
                         break;
                 }
                 var useValue = this.formatInputValue(this.props.value);
+                if(useValue != this.props.value){
+                    if(!IsEmptyString(useValue) && !IsEmptyString(this.props.value) && useValue != this.props.value && (this.props.type=='time' || this.props.type=='date')){
+                        setTimeout(() => {
+                            store.dispatch(makeAction_setStateByPath(
+                                useValue,
+                                this.props.fullPath + '.text'));
+                        }, 10);
+                    }
+                }
                 contentElem = (<input className={'flex-grow-1 flex-shrink-1 form-control invalid ' + (this.props.align ? ' text-' + this.props.align : '')} type={useType} value={useValue} checked={useChecked} onChange={this.inputChanged} onBlur={this.endInputHandler} />);
             }
 

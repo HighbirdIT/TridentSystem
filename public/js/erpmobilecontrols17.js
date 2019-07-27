@@ -1409,6 +1409,8 @@ var ERPC_Text = function (_React$PureComponent4) {
     }, {
         key: 'render',
         value: function render() {
+            var _this8 = this;
+
             if (this.props.visible == false) {
                 return null;
             }
@@ -1476,6 +1478,13 @@ var ERPC_Text = function (_React$PureComponent4) {
                             break;
                     }
                     var useValue = this.formatInputValue(this.props.value);
+                    if (useValue != this.props.value) {
+                        if (!IsEmptyString(useValue) && !IsEmptyString(this.props.value) && useValue != this.props.value && (this.props.type == 'time' || this.props.type == 'date')) {
+                            setTimeout(function () {
+                                store.dispatch(makeAction_setStateByPath(useValue, _this8.props.fullPath + '.text'));
+                            }, 10);
+                        }
+                    }
                     contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control invalid ' + (this.props.align ? ' text-' + this.props.align : ''), type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged, onBlur: this.endInputHandler });
                 }
 
@@ -1528,13 +1537,13 @@ var ERPC_LabeledControl = function (_React$PureComponent5) {
     function ERPC_LabeledControl(props) {
         _classCallCheck(this, ERPC_LabeledControl);
 
-        var _this8 = _possibleConstructorReturn(this, (ERPC_LabeledControl.__proto__ || Object.getPrototypeOf(ERPC_LabeledControl)).call(this));
+        var _this9 = _possibleConstructorReturn(this, (ERPC_LabeledControl.__proto__ || Object.getPrototypeOf(ERPC_LabeledControl)).call(this));
 
-        autoBind(_this8);
+        autoBind(_this9);
 
-        ERPControlBase(_this8);
-        _this8.state = _this8.initState;
-        return _this8;
+        ERPControlBase(_this9);
+        _this9.state = _this9.initState;
+        return _this9;
     }
 
     _createClass(ERPC_LabeledControl, [{
@@ -1583,13 +1592,13 @@ var ERPC_Form = function (_React$PureComponent6) {
     function ERPC_Form(props) {
         _classCallCheck(this, ERPC_Form);
 
-        var _this9 = _possibleConstructorReturn(this, (ERPC_Form.__proto__ || Object.getPrototypeOf(ERPC_Form)).call(this));
+        var _this10 = _possibleConstructorReturn(this, (ERPC_Form.__proto__ || Object.getPrototypeOf(ERPC_Form)).call(this));
 
-        autoBind(_this9);
+        autoBind(_this10);
 
-        ERPControlBase(_this9);
-        _this9.state = _this9.initState;
-        return _this9;
+        ERPControlBase(_this10);
+        _this10.state = _this10.initState;
+        return _this10;
     }
 
     _createClass(ERPC_Form, [{
@@ -1621,13 +1630,13 @@ var ERPC_Label = function (_React$PureComponent7) {
     function ERPC_Label(props) {
         _classCallCheck(this, ERPC_Label);
 
-        var _this10 = _possibleConstructorReturn(this, (ERPC_Label.__proto__ || Object.getPrototypeOf(ERPC_Label)).call(this));
+        var _this11 = _possibleConstructorReturn(this, (ERPC_Label.__proto__ || Object.getPrototypeOf(ERPC_Label)).call(this));
 
-        autoBind(_this10);
+        autoBind(_this11);
 
-        ERPControlBase(_this10);
-        _this10.state = _this10.initState;
-        return _this10;
+        ERPControlBase(_this11);
+        _this11.state = _this11.initState;
+        return _this11;
     }
 
     _createClass(ERPC_Label, [{
@@ -1699,13 +1708,13 @@ var ERPC_CheckBox = function (_React$PureComponent8) {
     function ERPC_CheckBox(props) {
         _classCallCheck(this, ERPC_CheckBox);
 
-        var _this11 = _possibleConstructorReturn(this, (ERPC_CheckBox.__proto__ || Object.getPrototypeOf(ERPC_CheckBox)).call(this));
+        var _this12 = _possibleConstructorReturn(this, (ERPC_CheckBox.__proto__ || Object.getPrototypeOf(ERPC_CheckBox)).call(this));
 
-        autoBind(_this11);
+        autoBind(_this12);
 
-        ERPControlBase(_this11);
-        _this11.state = _this11.initState;
-        return _this11;
+        ERPControlBase(_this12);
+        _this12.state = _this12.initState;
+        return _this12;
     }
 
     _createClass(ERPC_CheckBox, [{
@@ -1778,13 +1787,13 @@ var ERPC_Button = function (_React$PureComponent9) {
     function ERPC_Button(props) {
         _classCallCheck(this, ERPC_Button);
 
-        var _this12 = _possibleConstructorReturn(this, (ERPC_Button.__proto__ || Object.getPrototypeOf(ERPC_Button)).call(this));
+        var _this13 = _possibleConstructorReturn(this, (ERPC_Button.__proto__ || Object.getPrototypeOf(ERPC_Button)).call(this));
 
-        autoBind(_this12);
+        autoBind(_this13);
 
-        ERPControlBase(_this12);
-        _this12.state = _this12.initState;
-        return _this12;
+        ERPControlBase(_this13);
+        _this13.state = _this13.initState;
+        return _this13;
     }
 
     _createClass(ERPC_Button, [{
@@ -2149,10 +2158,10 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent10) {
     function ERPC_GridForm_BtnCol(props) {
         _classCallCheck(this, ERPC_GridForm_BtnCol);
 
-        var _this13 = _possibleConstructorReturn(this, (ERPC_GridForm_BtnCol.__proto__ || Object.getPrototypeOf(ERPC_GridForm_BtnCol)).call(this, props));
+        var _this14 = _possibleConstructorReturn(this, (ERPC_GridForm_BtnCol.__proto__ || Object.getPrototypeOf(ERPC_GridForm_BtnCol)).call(this, props));
 
-        autoBind(_this13);
-        return _this13;
+        autoBind(_this14);
+        return _this14;
     }
 
     _createClass(ERPC_GridForm_BtnCol, [{
@@ -2195,7 +2204,7 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent10) {
     }, {
         key: 'render',
         value: function render() {
-            var _this14 = this;
+            var _this15 = this;
 
             if (this.props.rowIndex == 'new') {
                 return React.createElement(
@@ -2236,7 +2245,7 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent10) {
                 this.props.form.btns.map(function (btn) {
                     return React.createElement(
                         'button',
-                        { key: btn.key, onClick: _this14.clickHandler, 'd-key': btn.key, className: 'btn btn-dark', type: 'button' },
+                        { key: btn.key, onClick: _this15.clickHandler, 'd-key': btn.key, className: 'btn btn-dark', type: 'button' },
                         btn.content
                     );
                 })
@@ -2264,10 +2273,10 @@ var ERPC_GridSelectableRow = function (_React$PureComponent11) {
     function ERPC_GridSelectableRow(props) {
         _classCallCheck(this, ERPC_GridSelectableRow);
 
-        var _this15 = _possibleConstructorReturn(this, (ERPC_GridSelectableRow.__proto__ || Object.getPrototypeOf(ERPC_GridSelectableRow)).call(this, props));
+        var _this16 = _possibleConstructorReturn(this, (ERPC_GridSelectableRow.__proto__ || Object.getPrototypeOf(ERPC_GridSelectableRow)).call(this, props));
 
-        _this15.clickHandler = _this15.clickHandler.bind(_this15);
-        return _this15;
+        _this16.clickHandler = _this16.clickHandler.bind(_this16);
+        return _this16;
     }
 
     _createClass(ERPC_GridSelectableRow, [{
@@ -2548,16 +2557,16 @@ var CToastManger = function (_React$PureComponent13) {
     function CToastManger(props) {
         _classCallCheck(this, CToastManger);
 
-        var _this17 = _possibleConstructorReturn(this, (CToastManger.__proto__ || Object.getPrototypeOf(CToastManger)).call(this, props));
+        var _this18 = _possibleConstructorReturn(this, (CToastManger.__proto__ || Object.getPrototypeOf(CToastManger)).call(this, props));
 
-        autoBind(_this17);
+        autoBind(_this18);
 
-        _this17.state = {
+        _this18.state = {
             msg_arr: []
         };
-        _this17.ticker = null;
-        _this17.msgID = 0;
-        return _this17;
+        _this18.ticker = null;
+        _this18.msgID = 0;
+        return _this18;
     }
 
     _createClass(CToastManger, [{
@@ -2757,17 +2766,17 @@ var CMessageBox = function (_React$PureComponent14) {
     function CMessageBox(props) {
         _classCallCheck(this, CMessageBox);
 
-        var _this18 = _possibleConstructorReturn(this, (CMessageBox.__proto__ || Object.getPrototypeOf(CMessageBox)).call(this, props));
+        var _this19 = _possibleConstructorReturn(this, (CMessageBox.__proto__ || Object.getPrototypeOf(CMessageBox)).call(this, props));
 
-        autoBind(_this18);
+        autoBind(_this19);
 
-        _this18.state = {
-            hidden: _this18.props.msgItem.hidden
+        _this19.state = {
+            hidden: _this19.props.msgItem.hidden
         };
-        _this18.props.msgItem.changedAct = _this18.msgItemChanedHandler;
-        _this18.props.msgItem.closeAct = _this18.msgItemCloseHandler;
-        _this18.props.msgItem.hideAct = _this18.msgItemHideHandler;
-        return _this18;
+        _this19.props.msgItem.changedAct = _this19.msgItemChanedHandler;
+        _this19.props.msgItem.closeAct = _this19.msgItemCloseHandler;
+        _this19.props.msgItem.hideAct = _this19.msgItemHideHandler;
+        return _this19;
     }
 
     _createClass(CMessageBox, [{
@@ -2831,7 +2840,7 @@ var CMessageBox = function (_React$PureComponent14) {
     }, {
         key: 'render',
         value: function render() {
-            var _this19 = this;
+            var _this20 = this;
 
             var msgItem = this.props.msgItem;
             var type = msgItem.type;
@@ -2929,7 +2938,7 @@ var CMessageBox = function (_React$PureComponent14) {
                     btnsElem = msgItem.btns.map(function (btn) {
                         return React.createElement(
                             'button',
-                            { onClick: _this19.clickBtnHandler, key: btn.label, 'd-type': btn.key, type: 'button', className: btn.class == null ? 'btn btn-light' : btn.class },
+                            { onClick: _this20.clickBtnHandler, key: btn.label, 'd-type': btn.key, type: 'button', className: btn.class == null ? 'btn btn-light' : btn.class },
                             btn.label
                         );
                     });
@@ -2986,15 +2995,15 @@ var CMessageBoxManger = function (_React$PureComponent15) {
     function CMessageBoxManger(props) {
         _classCallCheck(this, CMessageBoxManger);
 
-        var _this20 = _possibleConstructorReturn(this, (CMessageBoxManger.__proto__ || Object.getPrototypeOf(CMessageBoxManger)).call(this, props));
+        var _this21 = _possibleConstructorReturn(this, (CMessageBoxManger.__proto__ || Object.getPrototypeOf(CMessageBoxManger)).call(this, props));
 
-        autoBind(_this20);
+        autoBind(_this21);
 
-        _this20.state = {
+        _this21.state = {
             msg_arr: []
         };
-        _this20.msgID = 0;
-        return _this20;
+        _this21.msgID = 0;
+        return _this21;
     }
 
     _createClass(CMessageBoxManger, [{
@@ -3024,7 +3033,7 @@ var CMessageBoxManger = function (_React$PureComponent15) {
     }, {
         key: 'render',
         value: function render() {
-            var _this21 = this;
+            var _this22 = this;
 
             var visibleMsg_arr = this.state.msg_arr.filter(function (x) {
                 return !x.hidden && x.type != EMessageBoxType.Blank;
@@ -3036,7 +3045,7 @@ var CMessageBoxManger = function (_React$PureComponent15) {
                 'div',
                 { className: 'messageBoxMask' },
                 visibleMsg_arr.map(function (msg, index) {
-                    return React.createElement(CMessageBox, { key: 1, msgItem: msg, manager: _this21 });
+                    return React.createElement(CMessageBox, { key: 1, msgItem: msg, manager: _this22 });
                 })
             );
         }
