@@ -317,6 +317,11 @@ class SqlNode_DateFun extends SqlNode_Base {
         return selfCompileRet;
     }
 }
+
+const gConvertFormatOptions_arr = [
+    { text: 'yyyy-mm-dd hh:mm:ss', value: 21 },
+    { text: 'hh:mm:ss', value: 108 },
+];
 //日期类型转换
 class SqlNode_Convert extends SqlNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
@@ -343,7 +348,7 @@ class SqlNode_Convert extends SqlNode_Base {
             this.addSocket(this.inSocket);
         }
         var format_code = this.inSocket.getExtra('format_code');
-        if (format_code == null) {
+        if (format_code == null || (format_code != 21 && format_code != 108)) {
             this.inSocket.setExtra('format_code', '21');
         }
         var varchar_len = this.inSocket.getExtra('varchar_len');
@@ -358,13 +363,13 @@ class SqlNode_Convert extends SqlNode_Base {
     }
 
     restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['code']);
+        assginObjByProperties(this, attrsJson, ['format_code']);
     }
 
 
-    convertTypeDropdownChangedHandler(data, dropCtl) {
+    convertTypeDropdownChangedHandler(value, dropCtl) {
         var theSocket = this.inSocket;
-        theSocket.setExtra('format_code', data.value);
+        theSocket.setExtra('format_code', value);
         theSocket.fireEvent('changed');
     }
 
@@ -381,8 +386,6 @@ class SqlNode_Convert extends SqlNode_Base {
         if (socket.isIn == false) {
             return null;
         }
-        var varlenInptELem = null;
-
         var varlenValue = socket.getExtra('varchar_len');
         if (varlenValue == null) {
             varlenValue = 10;
@@ -394,19 +397,10 @@ class SqlNode_Convert extends SqlNode_Base {
             };
         }
         var varlenInptELem = (<input type='int' style={this.inputStyle} value={varlenValue} onChange={this.varlenInputChangedHandler} />);
-        var formatOptions_arr = [
-            { text: 'yyyy-mm-dd Thh:mm:ss', value: 126 },
-            { text: 'yyyy-mm-dd hh:mm:ss', value: 21 },
-            { text: 'hh:mi:ss', value: 114 },
-            { text: 'hh:mm:ss', value: 108 },
-        ];
-
         return (
             <React.Fragment>
                 <div>varchar:{varlenInptELem}</div>
-                <div>
-                    格式:<DropDownControl itemChanged={this.convertTypeDropdownChangedHandler} btnclass='btn-dark' options_arr={formatOptions_arr} textAttrName='text' valueAttrName='value' rootclass='flex-grow-1 flex-shrink-1' value={format_code} />
-                </div>
+                <DropDownControl itemChanged={this.convertTypeDropdownChangedHandler} btnclass='btn-dark' options_arr={gConvertFormatOptions_arr} textAttrName='text' valueAttrName='value' rootclass='flex-grow-1 flex-shrink-1' value={format_code} />
             </React.Fragment>
         );
     }
