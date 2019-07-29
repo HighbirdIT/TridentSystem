@@ -704,12 +704,19 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else {
             pageReactClass.renderHeaderFun.pushLine("return (<div className='d-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader'>", 1);
-            pageReactClass.renderHeaderFun.pushLine("<h3>" + pageKernel.getAttribute(AttrNames.Title) + "</h3>", -1);
+            pageReactClass.renderHeaderFun.pushLine("<h3 className='flex-grow-1 flex-shrink-1'>" + pageKernel.getAttribute(AttrNames.Title) + "</h3>", -1);
+            if(pageKernel.getAttribute(AttrNames.AutoCloseBtn)){
+                pageReactClass.renderHeaderFun.pushLine("<button onClick={this.close} className='flex-grow-0 flex-shrink-0 btn btn-sm btn-danger mr-1'><i className='fa fa-close' /></button>");
+            }
             pageReactClass.renderHeaderFun.pushLine("</div>);");
+
+            pageReactClass.constructorFun.pushLine('this.close = this.close.bind(this);');
+            var closeFun = pageReactClass.getFunction('close', true, ['exportParam']);
+
+            closeFun.pushLine('closePage(' + singleQuotesStr(pageKernel.id) + ');');
+            closeFun.pushLine('var callBack = ' + makeStr_callFun('getPageEntryParam', [singleQuotesStr(pageKernel.id), singleQuotesStr('callBack')], ';'));
+            closeFun.pushLine('if(callBack){callBack(exportParam);}');
         }
-
-
-
         /*
         pageReactClass.renderFootFun.pushLine("return (<div className='flex-grow-0 flex-shrink-0 bg-primary text-light pageFooter'>", 1);
         pageReactClass.renderFootFun.pushLine("<h3>页脚</h3>", -1);

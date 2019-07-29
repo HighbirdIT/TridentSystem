@@ -285,6 +285,7 @@ const AttrNames={
     HisKey:'hisKey',
     AcessAssert:'accessAssert',
     IconType:'icontype',
+    AutoCloseBtn:'autoclosebtn',
 
     Event:{
         OnClick:'onclick',
