@@ -198,7 +198,7 @@ function castDateFromTimePart(val) {
         return null;
     }
 
-    return new Date('2000-1-1 ' + timeRegRlt[0]);
+    return new Date('2000/1/1 ' + timeRegRlt[0]);
 }
 
 function getDateDiff(type, dateA, dateB) {
