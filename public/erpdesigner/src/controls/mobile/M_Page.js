@@ -5,6 +5,7 @@ const M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
         new CAttribute('高度适应', AttrNames.AutoHeight, ValueType.Boolean, true),
         new CAttribute('弹出式页面', AttrNames.PopablePage, ValueType.Boolean, false),
+        new CAttribute('有关闭按钮', AttrNames.AutoCloseBtn, ValueType.Boolean, true),
         new CAttribute('关联步骤', AttrNames.RelFlowStep, ValueType.Int, null, true, true, gFlowMaster.getAllSteps, {text:'fullName', value:'code'}),
     ]),
     new CAttributeGroup('接口设置',[
@@ -108,12 +109,16 @@ class M_Page extends React.PureComponent {
             ctlKernel: this.props.ctlKernel,
             children: this.props.ctlKernel.children,
             orientation: this.props.ctlKernel.getAttribute(AttrNames.Orientation),
+            popablePage: this.props.ctlKernel.getAttribute(AttrNames.PopablePage),
+            autoCloseBtn: this.props.ctlKernel.getAttribute(AttrNames.AutoCloseBtn),
         };
 
         autoBind(this);
         M_ControlBase(this, [AttrNames.Title,
         AttrNames.Chidlren,
         AttrNames.Orientation,
+        AttrNames.PopablePage,
+        AttrNames.AutoCloseBtn,
         AttrNames.LayoutNames.APDClass,
         ]);
         M_ContainerBase(this);
@@ -132,6 +137,8 @@ class M_Page extends React.PureComponent {
             title: this.props.ctlKernel.getAttribute(AttrNames.Title),
             children: childrenVal,
             orientation: this.props.ctlKernel.getAttribute(AttrNames.Orientation),
+            popablePage: this.props.ctlKernel.getAttribute(AttrNames.PopablePage),
+            autoCloseBtn: this.props.ctlKernel.getAttribute(AttrNames.AutoCloseBtn),
         });
     }
 
@@ -148,15 +155,16 @@ class M_Page extends React.PureComponent {
             layoutConfig.addClass('flex-column');
         }
         layoutConfig.addClass('bg-light');
+        //icon-more-vertical
         return (
             <React.Fragment>
                 <div className="d-flex flex-grow-0 flex-shrink-0 text-light bg-primary align-items-baseline">
                     <div className="ml-1" href="#"><h5 className='icon icon-left-nav'></h5></div>
-
-
                     <div className="flex-grow-1 flex-shrink-1 justify-content-center d-flex" ><h3>{this.state.title}</h3></div>
                     <div className="ml-1" href="#">
-                        <span className='icon icon-more-vertical mr-1' />
+                        {this.state.popablePage && this.state.autoCloseBtn && 
+                            <button className='btn btn-sm btn-danger'><i className='icon icon-close' /></button>
+                        }
                     </div>
                 </div>
                 <div className={layoutConfig.getClassName()} ref={this.rootElemRef}>
@@ -180,8 +188,9 @@ class M_Page extends React.PureComponent {
                     title: this.props.ctlKernel.getAttribute('title'),
                     ctlKernel: this.props.ctlKernel,
                     children: this.props.ctlKernel.children,
-                    orientation: this.props.ctlKernel.orientation,
                     orientation: this.props.ctlKernel.getAttribute(AttrNames.Orientation),
+                    popablePage: this.props.ctlKernel.getAttribute(AttrNames.PopablePage),
+                    autoCloseBtn: this.props.ctlKernel.getAttribute(AttrNames.AutoCloseBtn),
                 });
             }, 1);
             return null;
