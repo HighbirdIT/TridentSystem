@@ -4165,7 +4165,7 @@ class MobileContentCompiler extends ContentCompiler {
                             if (useCtlData.kernel.parent == null) {
                                 // 自订控件
                                 tempCallParams_arr = ['nowState', true, 'this.props.fullPath'];
-                                if (theKernel.parent != useCtlData.kernel) {
+                                if (this.getKernelFullParentPath(theKernel).length > 0) {
                                     tempCallParams_arr[2] += " + '." + this.getKernelFullParentPath(theKernel) + "'";
                                 }
                             }
