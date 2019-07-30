@@ -546,6 +546,9 @@ class ControlKernelBase extends IAttributeable {
         }
         var nowKernel = this.parent;
         var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
+        if(this.type == M_ContainerKernel_Type){
+            rlt = '';
+        }
         while(nowKernel != null && nowKernel != topestParant){
             switch(nowKernel.type){
                 case M_PageKernel_Type:
