@@ -4861,7 +4861,12 @@ class JSNode_FreshForm extends JSNode_Base {
             parentPath = belongUserControl.id + '_path' + (parentPath.length == 0 ? '' : "+'." + parentPath + "'");
         }
         else {
-            parentPath = singleQuotesStr(selectedKernel.parent.getStatePath());
+            if(selectedKernel.parent.type == M_PageKernel_Type){
+                parentPath = singleQuotesStr(selectedKernel.parent.id);
+            }
+            else{
+                parentPath = singleQuotesStr(selectedKernel.parent.getStatePath(''));
+            }
         }
         var freshFunName = 'fresh_' + socketValue;
 
