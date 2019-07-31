@@ -1,4 +1,4 @@
-﻿'use strict';
+﻿﻿'use strict';
 var express = require('express');
 var http = require('http');
 var url = require('url');
@@ -44,7 +44,7 @@ var handlebars = require('express3-handlebars').create({
 });
 
 app.set('port', process.env.PORT || 1330);
-//app.set('env', process.env.PORT || 'production');
+app.set('env', process.env.PORT || 'production');
 
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
@@ -336,6 +336,7 @@ dbhelper.query("select * from dbo.T135D在线面试问题",(data)=>{
     console.log(data);
 });
 */
+//flowhelper.startWork();
 
 var autoViews = {};
 var erpPageCache = {};
