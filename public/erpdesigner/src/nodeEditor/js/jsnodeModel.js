@@ -6209,14 +6209,13 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             useApiItem = {
                 name:funAttrValue.name,
             };
+            helper.addUseControlEventApi(selectedKernel, useApiItem, EFormRowSource.Context);
         }
         else {
             myJSBlock.pushLine(selectedKernel.id + "_" + this.funItem.name + "();", -1);
         }
         myJSBlock.pushLine('},50);');
         belongBlock.pushChild(myJSBlock);
-
-        helper.addUseControlEventApi(selectedKernel, useApiItem, EFormRowSource.Context);
         
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
