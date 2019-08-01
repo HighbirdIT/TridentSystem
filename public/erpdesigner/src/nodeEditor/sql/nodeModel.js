@@ -3551,7 +3551,7 @@ class SqlNode_GetPageEntryParam extends SqlNode_Base {
         }
         var belongPage = kernel.searchParentKernel(M_PageKernel_Type, true);
         var nowVal = socket.defval;
-        return <DropDownControl itemChanged={this.paramDDCChanged} btnclass='btn-dark' options_arr={belongPage.getAllEntryParams} rootclass='flex-grow-1 flex-shrink-1' textAttrName='value' valueAttrName='name' value={nowVal} />;
+        return <DropDownControl itemChanged={this.paramDDCChanged} btnclass='btn-dark' options_arr={belongPage ? belongPage.getAllEntryParams : []} rootclass='flex-grow-1 flex-shrink-1' textAttrName='value' valueAttrName='name' value={nowVal} />;
     }
 
     compile(helper, preNodes_arr) {

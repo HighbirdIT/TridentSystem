@@ -686,9 +686,7 @@ class JSNode_BluePrint extends EventEmitter {
                 params_arr = [VarNames.State, VarNames.Bundle, VarNames.FullParentPath];
                 //theFun.scope.getVar(belongFormControl.id + "_path", true, 'this.props.fullPath');
                 if (belongUserControl) {
-                    if(reactParentControl != belongUserControl){
-                        theFun.scope.getVar(belongUserControl.id + '_path', true, "getBelongUserCtlPath(" + VarNames.FullParentPath + ")");
-                    }
+                    theFun.scope.getVar(belongUserControl.id + '_path', true, "getBelongUserCtlPath(" + VarNames.FullParentPath + ")");
                     theFun.scope.getVar(belongUserControl.id + '_state', true, VarNames.State + '._isroot != null ? ' + makeStr_callFun('getStateByPath', [VarNames.State, belongUserControl.id + '_path']) + ' : ' + VarNames.State);
                 }
             }
@@ -4861,7 +4859,12 @@ class JSNode_FreshForm extends JSNode_Base {
             parentPath = belongUserControl.id + '_path' + (parentPath.length == 0 ? '' : "+'." + parentPath + "'");
         }
         else {
-            parentPath = singleQuotesStr(selectedKernel.parent.getStatePath(selectedKernel.parent.id));
+            if(selectedKernel.parent.type == M_PageKernel_Type){
+                parentPath = singleQuotesStr(selectedKernel.parent.id);
+            }
+            else{
+                parentPath = singleQuotesStr(selectedKernel.parent.getStatePath(''));
+            }
         }
         var freshFunName = 'fresh_' + socketValue;
 
@@ -6209,14 +6212,13 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             useApiItem = {
                 name:funAttrValue.name,
             };
+            helper.addUseControlEventApi(selectedKernel, useApiItem, EFormRowSource.Context);
         }
         else {
             myJSBlock.pushLine(selectedKernel.id + "_" + this.funItem.name + "();", -1);
         }
         myJSBlock.pushLine('},50);');
         belongBlock.pushChild(myJSBlock);
-
-        helper.addUseControlEventApi(selectedKernel, useApiItem, EFormRowSource.Context);
         
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);

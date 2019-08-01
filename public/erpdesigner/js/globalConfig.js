@@ -282,6 +282,7 @@ var ValueType = {
     Boolean: 'boolean',
     Float: 'float',
     Date: 'date',
+    DateMD: 'dateMD',
     Time: 'time',
     DateTime: 'datetime',
     StyleValues: 'StyleValues',
@@ -299,8 +300,7 @@ var ValueType = {
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
-
-var JsValueTypes = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
+var JsValueTypes = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time, ValueType.DateMD];
 
 function TransSVTToJSVT(sqlType) {
     switch (sqlType) {
