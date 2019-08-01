@@ -4,7 +4,9 @@ const JSNODE_TERNARY_OPERATOR = 'ternary_operator';
 const JSNODE_ARRAYS_PUSHANDPOP = 'push_pop';
 const JSNODE_ARRAY_JOIN='array_join';
 const JSNODE_ARRAY_SLICE='array_slice';
-
+const JSNODE_GETDAY='getDay';
+const JSNODE_FORMATNUM='formatnum';
+const JSNODE_CAPITALNUM='capitalnum';
 class JSNode_While extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_WHILE, 'While', false, nodeJson);
@@ -581,6 +583,238 @@ class JSNode_Array_Slice extends JSNode_Base {
 }
 
 
+
+/*
+    或许当前星期状态
+
+*/
+class JSNode_GetDay extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_GETDAY, 'getDay', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+        }
+        if (this.inputScokets_arr.length == 0) {
+            this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Object, inputable: true }));
+        } 
+        this.inputScokets_arr[0].label = '日期';
+        this.inputScokets_arr[0].inputable = true;
+       
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.type = ValueType.Object;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+    
+        var socketComRet = this.getSocketCompileValue(helper, this.inputScokets_arr[0], usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var dateStr=socketComRet.value;
+        
+        dateStr = new Date(dateStr.replace(/-/g, "\/"));
+        
+        var weekarr= ["日", "一", "二", "三", "四", "五", "六"];  
+        var week = dateStr.getDay();  
+        var endstr = "今天是星期"+ weekarr[week];  
+        
+        if(1<0){
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '应该输入整数']);
+            return false;
+        }
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, '('+ endstr+')');
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+/*
+    格式化数字
+
+*/
+class JSNode_FormatNum extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_FORMATNUM, '格式化数字', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+        }
+        if (this.inputScokets_arr.length == 0) {
+            this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Object, inputable: true }));
+        } 
+        this.inputScokets_arr[0].label = '数字';
+        this.inputScokets_arr[0].inputable = true;
+       
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.type = ValueType.Object;
+    }
+    addComma(num){
+        var reg = num.toString().indexOf('.') > -1 ? /(\d)(?=(\d{3})+\.)/g : /(\d)(?=(\d{3})+$)/g;
+    
+        return num.toString().replace(reg,'$1,');
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+    
+        var socketComRet = this.getSocketCompileValue(helper, this.inputScokets_arr[0], usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var dateStr=this.addComma(socketComRet.value);
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, ' '+ dateStr+' ');
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+/*
+    数字转中文
+
+*/
+class JSNode_CapitalNum extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_CAPITALNUM, '货币中文大写', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+        }
+        if (this.inputScokets_arr.length == 0) {
+            this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Object, inputable: true }));
+        } 
+        this.inputScokets_arr[0].label = '数字';
+        this.inputScokets_arr[0].inputable = true;
+       
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.type = ValueType.Object;
+    }
+    NumToChinese(n) {
+        for (i = n.length - 1; i >= 0; i--) {
+            n = n.replace(",", "")//替换Num中的“,” 替换Num中的空格
+            n = n.replace(" ", "")
+        }
+        
+        if (isNaN(n)) { 
+            return "请检查输入金额是否正确";
+        }
+        if (!/^(0|[1-9]\d*)(\.\d+)?$/.test(n)){
+            return "数据非法";  //判断数据是否大于0
+        }
+    
+        var unit = "千百拾亿千百拾万千百拾元角分", str = "";
+        n += "00";  
+    
+        var indexpoint = n.indexOf('.');  // 如果是小数，截取小数点前面的位数
+        if(indexpoint >12){
+            return '数据过大';
+        }
+        if(indexpoint<0 && n.length>14){
+            return '数据过大';
+        }
+        if (indexpoint >= 0){
+    
+            n = n.substring(0, indexpoint) + n.substr(indexpoint+1, 2);   // 若为小数，截取需要使用的unit单位
+        }
+    
+        unit = unit.substr(unit.length - n.length);  // 若为整数，截取需要使用的unit单位
+        for (var i=0; i < n.length; i++){
+            str += "零壹贰叁肆伍陆柒捌玖".charAt(n.charAt(i)) + unit.charAt(i);  //遍历转化为大写的数字
+        }
+        var result = str.replace(/零(千|百|拾|角)/g, "零").
+            replace(/(零)+/g, "零").replace(/零(万|亿|元)/g, "$1").
+            replace(/(亿)万|壹(拾)/g, "$1$2").replace(/^元零?|零分/g, "").
+            replace(/元$/g, "元整"); // 替换掉数字里面的零字符，得到结果
+        return result;
+    }
+    
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+    
+        var socketComRet = this.getSocketCompileValue(helper, this.inputScokets_arr[0], usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var dateStr=socketComRet.value
+        if (isNaN(dateStr)) { 
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                "请检查输入金额是否正确"]);
+            return false;
+        }
+        if (!/^(0|[1-9]\d*)(\.\d+)?$/.test(dateStr)){
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '数据非法']);
+            return false;
+        }
+        var endStr=this.NumToChinese(dateStr);
+        if(endStr =='数据过大'){
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '数据过大无法显示']);
+            return false;
+        }
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, ' '+ endStr+' ');
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_WHILE] = {
     modelClass: JSNode_While,
     comClass: C_Node_SimpleNode,
@@ -608,7 +842,18 @@ JSNodeClassMap[JSNODE_ARRAY_SLICE] = {
     modelClass: JSNode_Array_Slice,
     comClass: C_Node_SimpleNode,
 };
-
+JSNodeClassMap[JSNODE_GETDAY] = {
+    modelClass: JSNode_GetDay,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_FORMATNUM] = {
+    modelClass: JSNode_FormatNum,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_CAPITALNUM] = {
+    modelClass: JSNode_CapitalNum,
+    comClass: C_Node_SimpleNode,
+};
 JSNodeEditorControls_arr.push(
     {
         label: 'while',
@@ -644,4 +889,23 @@ JSNodeEditorControls_arr.push(
         label: '获取数组片段',
         nodeClass: JSNode_Array_Slice,
         type: '数组操控'
-    });                                                 
+    });
+    
+JSNodeEditorControls_arr.push(
+    {
+        label: '获取星期(?)',
+        nodeClass: JSNode_GetDay,
+        type: '基础'
+    });
+JSNodeEditorControls_arr.push(
+    {
+        label: '格式化数字',
+        nodeClass: JSNode_FormatNum,
+        type: '基础'
+    });
+JSNodeEditorControls_arr.push(
+    {
+        label: '货币中文大写',
+        nodeClass: JSNode_CapitalNum,
+        type: '基础'
+    });

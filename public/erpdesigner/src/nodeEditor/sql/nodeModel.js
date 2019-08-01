@@ -939,6 +939,7 @@ class SqlNode_XJoin extends SqlNode_Base {
             socketOuts_arr.push(socketOut);
         }
         var joinString = socketOuts_arr[0].strContent + clampStr(this.joinType, ' ', ' ') + socketOuts_arr[1].strContent;
+        var LastColumname_node = socketOuts_arr[1].strContent;
 
         if (this.conditionNode.inputScokets_arr.length == 0) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
@@ -955,6 +956,22 @@ class SqlNode_XJoin extends SqlNode_Base {
                 return false;
             }
             var onString = conditionNodeCompileRet.getDirectOut().strContent;
+            var arr =onString.replace(/\[|]/g,'').split(/=|[.]/);
+            var LastColumname_nodeName=socketOuts_arr[0].data.LastColumname_node;
+            if(IsEmptyString(LastColumname_nodeName)==false){
+                if(arr.indexOf(LastColumname_nodeName) == -1 || arr.indexOf(socketOuts_arr[1].strContent) == -1){
+                    //则bu包含该元素
+                    helper.logManager.warnEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle
+                        , nodeThis
+                        , helper.clickLogBadgeItemHandler)
+                        , 'on 条件未选择相邻两表字段 ' +LastColumname_nodeName+' '
+                    +socketOuts_arr[1].strContent]);
+                }
+            }
+           
+            console.log(arr);
+
             if (IsEmptyString(onString)) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle,
@@ -966,7 +983,7 @@ class SqlNode_XJoin extends SqlNode_Base {
         }
 
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, joinString + ' on ' + onString);
+        selfCompileRet.setSocketOut(this.outSocket, joinString + ' on ' + onString,{LastColumname_node:LastColumname_node});
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }

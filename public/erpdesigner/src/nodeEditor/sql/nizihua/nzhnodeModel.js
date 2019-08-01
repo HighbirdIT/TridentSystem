@@ -746,6 +746,7 @@ class SqlNode_In_Operator extends SqlNode_Base {
             }
             finalSql = firstvalue + ' '+nodeThis.inType +' (' + socketOutstrs_arr.join(',') + ' ) ';
         }
+        //
 
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, ' ' + finalSql);
