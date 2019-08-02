@@ -298,7 +298,7 @@ class JSNode_Ternary_Operator extends JSNode_Base {
 // 数组函数
 class JSNode_Array_PushPop extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, JSNODE_ARRAY_PUSHPOP, '数组增减', false, nodeJson);
+        super(initData, parentNode, createHelper, JSNODE_ARRAY_PUSHPOP, '数组尾部增加', false, nodeJson);
         autoBind(this);
 
         if (nodeJson) {
@@ -388,7 +388,7 @@ class JSNode_Array_PushPop extends JSNode_Base {
             }
         }
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, socketValue + '.join(' + tValue + ')');
+        selfCompileRet.setSocketOut(this.outSocket, socketValue + '.push(' + tValue + ')');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
