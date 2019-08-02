@@ -300,7 +300,6 @@ class JSNode_Arrays_PushAndPop extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNode_ARRAYS_PUSHANDPOP, 'push_pop', false, nodeJson);
         autoBind(this);
-
         if (nodeJson) {
             if (this.outputScokets_arr.length > 0) {
                 this.outSocket = this.outputScokets_arr[0];
