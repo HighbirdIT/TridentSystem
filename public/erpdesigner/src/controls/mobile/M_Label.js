@@ -84,6 +84,7 @@ class M_Label extends React.PureComponent {
         var showText = textParseRet.isScript ? '{脚本}' : (IsEmptyString(textParseRet.string) ? '[空标签]' : textParseRet.string);
         return(
             <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                {this.renderHandleBar()}
                 {
                     showText
                 }

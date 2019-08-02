@@ -328,20 +328,3 @@ class ProjectDesigner extends React.PureComponent {
         )
     }
 }
-
-/*
-<ControlPanel project={thisProject} mouseDownControlIcon={this.mouseDownControlIcon} />
-                <ContentPanel project={thisProject} ref={this.contenPanelRef}/>
-                <div className='flex-grow-0 flex-shrink-0 bg-light d-flex flex-column' style={{width:'350px'}}>
-                    <AttributePanel project={thisProject}/>
-                    <OutlinePanel project={thisProject}/>
-                </div>
-
-                <SplitPanel defPercent={0.1}
-                             panel1={<ContentPanel project={thisProject} ref={this.contenPanelRef} />}
-                             panel2={<div className='flex-grow-0 flex-shrink-0 bg-light d-flex flex-column' style={{ width: '350px' }}>
-                                        <AttributePanel project={thisProject} />
-                                        <OutlinePanel project={thisProject} />
-                                    </div>}
-                            />
-*/

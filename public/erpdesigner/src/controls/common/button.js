@@ -121,6 +121,7 @@ class CButton extends React.PureComponent {
         }
         return(
             <button type='button' className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                {this.renderHandleBar()}
                 {iconElem}
                 {showText}
             </button>

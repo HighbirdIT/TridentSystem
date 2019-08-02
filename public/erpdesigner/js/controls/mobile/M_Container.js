@@ -143,6 +143,7 @@ var M_Container = function (_React$PureComponent) {
                     finalElem = React.createElement(
                         'div',
                         { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                        this.renderHandleBar(),
                         contentElem
                     );
                     break;
@@ -150,6 +151,7 @@ var M_Container = function (_React$PureComponent) {
                     finalElem = React.createElement(
                         'span',
                         { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                        this.renderHandleBar(),
                         contentElem
                     );
                     break;
@@ -157,6 +159,7 @@ var M_Container = function (_React$PureComponent) {
                     finalElem = React.createElement(
                         'h1',
                         { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                        this.renderHandleBar(),
                         contentElem
                     );
                     break;
@@ -164,6 +167,7 @@ var M_Container = function (_React$PureComponent) {
                     finalElem = React.createElement(
                         'h2',
                         { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                        this.renderHandleBar(),
                         contentElem
                     );
                     break;
@@ -171,6 +175,7 @@ var M_Container = function (_React$PureComponent) {
                     finalElem = React.createElement(
                         'h3',
                         { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                        this.renderHandleBar(),
                         contentElem
                     );
                     break;
@@ -178,6 +183,7 @@ var M_Container = function (_React$PureComponent) {
                     finalElem = React.createElement(
                         'h4',
                         { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                        this.renderHandleBar(),
                         contentElem
                     );
                     break;
@@ -185,6 +191,7 @@ var M_Container = function (_React$PureComponent) {
                     finalElem = React.createElement(
                         'h5',
                         { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                        this.renderHandleBar(),
                         contentElem
                     );
                     break;
@@ -192,6 +199,7 @@ var M_Container = function (_React$PureComponent) {
                     finalElem = React.createElement(
                         'h6',
                         { className: layoutConfig.getClassName(), style: rootStyle, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                        this.renderHandleBar(),
                         contentElem
                     );
                     break;

@@ -117,6 +117,7 @@ class HERPAccordion extends React.PureComponent {
         var title = titleParserRet.isScript ? (ReplaceIfNull(this.state.name,'') + '{脚本}') : (IsEmptyString(titleParserRet.string) ? '[未命名]' : titleParserRet.string);
         return(
             <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                {this.renderHandleBar()}
                 <div className='card-header text-primary btn btn-link'>
                     {title}(折叠控件)
                 </div>

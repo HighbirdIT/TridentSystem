@@ -102,6 +102,7 @@ var M_Label = function (_React$PureComponent) {
             return React.createElement(
                 'div',
                 { className: layoutConfig.getClassName(), style: layoutConfig.style, onClick: this.props.onClick, ctlid: this.props.ctlKernel.id, ref: this.rootElemRef, ctlselected: this.state.selected ? '1' : null },
+                this.renderHandleBar(),
                 showText
             );
         }

@@ -664,3 +664,8 @@
   margin-bottom: 0!important;
   word-wrap:break-word;
 }
+
+.controlHandleBar{
+  position: absolute;
+  transform: translate(0%, -100%);
+}

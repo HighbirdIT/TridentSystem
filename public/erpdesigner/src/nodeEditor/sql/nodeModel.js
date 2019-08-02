@@ -53,7 +53,7 @@ class SqlNode_BluePrint extends EventEmitter {
         var isDeleteBP = this.isDelete();
 
         if (bluePrintJson != null) {
-            assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'retNodeId', 'editorLeft', 'editorTop', 'group']);
+            assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'retNodeId', 'editorLeft', 'editorTop', 'group','uuid']);
             if (!IsEmptyArray(bluePrintJson.variables_arr)) {
                 bluePrintJson.variables_arr.forEach(varJson => {
                     var newVar = new SqlDef_Variable({}, this, createHelper, varJson);
@@ -64,6 +64,9 @@ class SqlNode_BluePrint extends EventEmitter {
                 return node.id == bluePrintJson.retNodeId;
             });
             this.linkPool.restorFromJson(bluePrintJson.links_arr, createHelper);
+        }
+        if(IsEmptyString(this.uuid)){
+            this.uuid = guid2();
         }
         this.id = this.code;
 
@@ -196,7 +199,7 @@ class SqlNode_BluePrint extends EventEmitter {
     }
 
     isNodeCanCopy(node){
-        return node != this.finalSelectNode;
+        return node != this.finalSelectNode && !node.isConstNode;
     }
 
     registerNode(node, parentNode) {
@@ -354,6 +357,7 @@ class SqlNode_BluePrint extends EventEmitter {
             name: this.name,
             type: this.type,
             group: this.group,
+            uuid: this.uuid,
         }
         if (this.editorLeft) {
             theJson.editorLeft = this.editorLeft;

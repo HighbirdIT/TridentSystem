@@ -413,6 +413,8 @@ class CProject extends IAttributeable{
         });
         return rlt;
     }
+
+    copy
 }
 
 class AttrJsonProfile{

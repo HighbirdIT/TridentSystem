@@ -124,12 +124,13 @@ class M_Text extends React.PureComponent {
         var defaultParseRet = parseObj_CtlPropJsBind(this.state.defaultVal);
         var textParseRet = parseObj_CtlPropJsBind(this.state.text);
         var showText = textParseRet.isScript ? '文本框{脚本}' : '编辑' + (IsEmptyString(textParseRet.string) ? '' : '[' + textParseRet.string + ']') + (defaultParseRet.isScript ? '{脚默}' : '[' + defaultParseRet.string + ']') + "[" + this.state.ValueType + ']';
-        return (
+        return <React.Fragment>
+            {this.renderHandleBar()}
             <input className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}
                 value={showText}
                 readOnly={true}
             />
-        );
+        </React.Fragment>
     }
 }
 
