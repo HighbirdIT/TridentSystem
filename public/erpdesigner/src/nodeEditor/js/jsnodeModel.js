@@ -225,7 +225,7 @@ class JSNode_BluePrint extends EventEmitter {
         this.nodes_arr = [];
 
         if (bluePrintJson != null) {
-            assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'startNodeId', 'editorLeft', 'editorTop', 'group', 'ctlID']);
+            assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'startNodeId', 'editorLeft', 'editorTop', 'group', 'ctlID', 'uuid']);
             if (!IsEmptyArray(bluePrintJson.variables_arr)) {
                 bluePrintJson.variables_arr.forEach(varJson => {
                     var newVar = new JSDef_Variable({}, this, createHelper, varJson);
@@ -239,6 +239,9 @@ class JSNode_BluePrint extends EventEmitter {
                 this.startNode = new JSNode_Start({}, this, createHelper);
             }
             this.linkPool.restorFromJson(bluePrintJson.links_arr, createHelper);
+        }
+        if(IsEmptyString(this.uuid)){
+            this.uuid = guid2();
         }
         if (this.type == null) {
             console.error('new JSNode_BluePrint type is null');
@@ -508,6 +511,7 @@ class JSNode_BluePrint extends EventEmitter {
             name: this.name,
             type: this.type,
             group: this.group,
+            uuid: this.uuid,
         }
         if (this.ctlID) {
             theJson.ctlID = this.ctlID;
@@ -2050,6 +2054,9 @@ class JSNode_CurrentDataRow extends JSNode_Base {
 
     rowSourceChanged() {
         var formKernel = this.bluePrint.master.project.getControlById(this.formID);
+        if(formKernel == null){
+            return;
+        }
         var isGridForm = formKernel.isGridForm();
         var selectMode = formKernel.getAttribute(AttrNames.SelectMode);
         var inFlowSocket = this.getSocketById(this.id + '$flow_i');

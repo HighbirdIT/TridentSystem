@@ -119,41 +119,49 @@ class M_Container extends React.PureComponent {
                     layoutConfig.addClass('flex-column');
                 }
                 finalElem = <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    {this.renderHandleBar()}
                     {contentElem}
                 </div>
                 break;
             case EContainerTag.Span:
                 finalElem = <span className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    {this.renderHandleBar()}
                     {contentElem}
                 </span>
                 break;
             case EContainerTag.H1:
                 finalElem = <h1 className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    {this.renderHandleBar()}
                     {contentElem}
                 </h1>
                 break;
             case EContainerTag.H2:
                 finalElem = <h2 className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    {this.renderHandleBar()}
                     {contentElem}
                 </h2>
                 break;
             case EContainerTag.H3:
                 finalElem = <h3 className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    {this.renderHandleBar()}
                     {contentElem}
                 </h3>
                 break;
             case EContainerTag.H4:
                 finalElem = <h4 className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    {this.renderHandleBar()}
                     {contentElem}
                 </h4>
                 break;
             case EContainerTag.H5:
                 finalElem = <h5 className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    {this.renderHandleBar()}
                     {contentElem}
                 </h5>
                 break;
             case EContainerTag.H6:
                 finalElem = <h6 className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                    {this.renderHandleBar()}
                     {contentElem}
                 </h6>
                 break;

@@ -34,6 +34,12 @@ class UserControlKernel extends ContainerKernelBase {
         );
         this.hadReactClass = true;
         if (parentKernel == null) {
+            if(kernelJson != null){
+                this.uuid = kernelJson.uuid;
+            }
+            if(this.uuid == null){
+                this.uuid = guid2();
+            }
             this.attrsSettingID = this.project.designeConfig.name + '_' + this.id;
             gUserControlAttsByType_map[this.attrsSettingID] = UserControlKernelAttrsSetting.map(group => {
                 return group.clone();
@@ -276,6 +282,12 @@ class UserControlKernel extends ContainerKernelBase {
         }
         return this.templateKernel;
     }
+
+    getJson(jsonProf) {
+        var rlt = super.getJson(jsonProf);
+        rlt.uuid = this.uuid;
+        return rlt;
+    }
 }
 
 var CustomControl_api = new ControlAPIClass(UserControlKernel_Type);
@@ -401,6 +413,7 @@ class CUserControl extends React.PureComponent {
 
         return (
             <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.clickInsHandler} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                {this.renderHandleBar()}
                 {
                     templateKernel.children.length == 0 ?
                         ctlKernel.id :
