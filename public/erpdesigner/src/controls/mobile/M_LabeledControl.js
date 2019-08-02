@@ -228,6 +228,7 @@ class M_LabeledControl extends React.PureComponent {
         }
         return(
             <div className={layoutConfig.getClassName()} style={layoutConfig.style} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                {this.renderHandleBar()}
                 {leftElem}
                 <div className='rowlFameOne_right'>
                     {editor != null && editor.renderSelf(this.props.onClick == ctlKernel.clickHandler ? null : this.props.onClick)}

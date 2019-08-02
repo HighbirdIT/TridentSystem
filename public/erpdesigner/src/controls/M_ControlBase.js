@@ -107,6 +107,9 @@ function M_ControlBase(target,watchedAttrs){
     React_Make_AttributeListener(target, watchedAttrs, true);
     target.componentWillMount = M_ControlBase_componentWillMount.bind(target);
     target.componentWillUnmount = M_ControlBase_componentWillUnmount.bind(target);
+    target.renderHandleBar = M_ControlBase_RenderHandleBar.bind(target);
+    target.clickHandleTrash = M_ControlBase_ClickHandle_Trash.bind(target);
+    target.clickHandleMove = M_ControlBase_ClickHandle_Move.bind(target);
     target.setSelected = M_ControlBase_setSelected.bind(target);
     target.aAttrChangedBase = M_ControlBase_aAttrChangedBase.bind(target);
 
@@ -117,6 +120,35 @@ function M_ControlBase(target,watchedAttrs){
         }
     });
     return layoutState;
+}
+
+function M_ControlBase_ClickHandle_Trash(){
+    this.props.ctlKernel.project.designer.deleteSelectedKernel();
+}
+
+function M_ControlBase_ClickHandle_Move(){
+    if(this.props.ctlKernel.project.designer.outlineRef.current){
+        this.props.ctlKernel.project.designer.outlineRef.current.startDragKernel(this.props.ctlKernel);
+    }
+}
+
+function M_ControlBase_ClickHandle_Copy(){
+    this.props.ctlKernel.project.copyKernel(this.props.ctlKernel);
+}
+
+function M_ControlBase_RenderHandleBar(){
+    if(this.state.selected != true || this.props.ctlKernel.isfixed){
+        return null;
+    }
+    
+    return (<div className='controlHandleBar'>
+                <div className='btn-group'>
+                    <button className='btn btn-dark' onMouseDown={this.clickHandleMove}><i className='fa fa-arrows' /></button>
+                    <button className='btn btn-dark' onMouseDown={this.clickHandleCopy}><i className='fa fa-copy' /></button>
+                    <button className='btn btn-dark' onMouseDown={this.clickHandlePaste}><i className='fa fa-paste' /></button>
+                    <button className='btn btn-danger' onClick={this.clickHandleTrash}><i className='fa fa-trash' /></button>
+                </div>
+            </div>);
 }
 
 

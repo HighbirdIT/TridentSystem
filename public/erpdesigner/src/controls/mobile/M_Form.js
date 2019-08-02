@@ -87,6 +87,9 @@ class M_FormKernel extends ContainerKernelBase{
                 this.project.on('loaded', this.projectLoadedHanlder);
             }
         }
+        else{
+            gridFormBottomDiv.isfixed = true;
+        }
 
         var nowft = this.getAttribute(AttrNames.FormType);
         this[AttrNames.ListFormContent + '_visible'] = nowft == EFormType.Grid;
@@ -148,6 +151,7 @@ class M_FormKernel extends ContainerKernelBase{
         gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexGrow,value:false},0);
         gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexShrink,value:false},1);
         this.setAttribute('bottomDivID', gridFormBottomDiv.id);
+        gridFormBottomDiv.isfixed = true;
     }
 
     scriptCreated(attrName, scriptBP){
@@ -406,6 +410,7 @@ class M_Form extends React.PureComponent {
 
             var tableElem =(
                 <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id}  ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                {this.renderHandleBar()}
                     <span className='text-light bg-dark'>{this.state.title}</span>
                     <div className='mw-100 autoScroll'>
                         <table className='table' style={tableStyle}>
@@ -464,6 +469,7 @@ class M_Form extends React.PureComponent {
 
         return(
             <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id}  ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+            {this.renderHandleBar()}
                 <span className='text-light bg-dark'>{this.state.title}</span>
                 {
                     this.props.ctlKernel.children.length == 0 ? 

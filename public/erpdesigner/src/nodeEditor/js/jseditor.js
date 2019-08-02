@@ -892,6 +892,9 @@ class C_JSNode_Editor extends React.PureComponent{
                     var newNodes_arr = this.props.bluePrint.pasteNodes(gCopyed_JsNodes_data, {x:editorPos.x,y:editorPos.y}, this.state.editingNode);
                     this.logManager.clear();
                     this.logManager.log('克隆了' + (newNodes_arr == null ? 0 : newNodes_arr.length) + '个节点');
+                    if(newNodes_arr.length > 0){
+                        this.reDraw();
+                    }
                 }
                 break;
         }

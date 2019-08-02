@@ -304,6 +304,7 @@ class M_Dropdown extends React.PureComponent {
         */
         return (
            <div className={layoutConfig.getClassName()} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                {this.renderHandleBar()}
                 <span style={{width:'calc(100% - 30px)'}} className='bg-dark text-light flex-grow-1 flex-shrink-1' >{showText}</span>
                 <span style={{width:'30px'}} className='bg-dark text-light flex-grow-0 flex-shrink-0 dropdown-toggle dropdown-toggle-split' />
             </div>

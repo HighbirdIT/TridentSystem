@@ -614,9 +614,9 @@ function createDateWithoutTimeZone(dateStr) {
 	return new Date(removeDateTimeZone(dateStr));
 }
 
-function getweekDay(date) {
-	var weekarr = ["日", "一", "二", "三", "四", "五", "六"];
-	var dateStr = new Date(date.replace(/-/g, "\/"));
-	var week = dateStr.getDay();
-	return "星期" + weekarr[week];
+function guid2() {
+	function S4() {
+		return ((1 + Math.random()) * 0x10000 | 0).toString(16).substring(1);
+	}
+	return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
 }
