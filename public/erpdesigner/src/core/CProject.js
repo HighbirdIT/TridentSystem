@@ -195,6 +195,7 @@ class CProject extends IAttributeable{
         });
     }
 
+
     getControlById(id){
         return this.controlId_map[id];
     }
@@ -413,8 +414,6 @@ class CProject extends IAttributeable{
         });
         return rlt;
     }
-
-    copy
 }
 
 class AttrJsonProfile{
