@@ -1,12 +1,12 @@
 const JSNODE_WHILE = 'jswhile';
 const JSNODE_ARRAY_CONCAT = 'concat';
 const JSNODE_TERNARY_OPERATOR = 'ternary_operator';
-const JSNODE_ARRAYS_PUSHANDPOP = 'push_pop';
-const JSNODE_ARRAY_JOIN='array_join';
-const JSNODE_ARRAY_SLICE='array_slice';
-const JSNODE_GETDAY='getDay';
-const JSNODE_FORMATNUM='formatnum';
-const JSNODE_CAPITALNUM='capitalnum';
+const JSNODE_ARRAY_PUSHPOP = 'push_pop';
+const JSNODE_ARRAY_JOIN = 'array_join';
+const JSNODE_ARRAY_SLICE = 'array_slice';
+const JSNODE_GETDAY = 'getDay';
+const JSNODE_FORMATNUM = 'formatnum';
+const JSNODE_CAPITALNUM = 'capitalnum';
 class JSNode_While extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_WHILE, 'While', false, nodeJson);
@@ -296,9 +296,9 @@ class JSNode_Ternary_Operator extends JSNode_Base {
 
 
 // 数组函数
-class JSNode_Arrays_PushAndPop extends JSNode_Base {
+class JSNode_Array_PushPop extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, JSNode_ARRAYS_PUSHANDPOP, 'push_pop', false, nodeJson);
+        super(initData, parentNode, createHelper, JSNODE_ARRAY_PUSHPOP, '数组尾部增加', false, nodeJson);
         autoBind(this);
 
         if (nodeJson) {
@@ -308,25 +308,18 @@ class JSNode_Arrays_PushAndPop extends JSNode_Base {
         }
         if (this.inputScokets_arr.length == 0) {
             this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Array, inputable: false }));
-            this.addSocket(new NodeSocket('inputtwo', this, true, { type: ValueType.Object, inputable: false }));
-        } else {
-            this.inputScokets_arr.forEach(socket => {
-                if (socket.type == ValueType.Array) {
-                    socket.type = ValueType.Array;
-                    socket.inputable = false;
-                }
-                else if (socket.type == ValueType.Object) {
-                    socket.type = ValueType.Object;
-                    socket.inputable = false;
-                }
-            });
-        }
+            this.addSocket(new NodeSocket('inputtwo', this, true, { type: ValueType.String, inputable: true }));
+        } 
+        this.inputScokets_arr[0].label = '数组';
+        this.inputScokets_arr[0].inputable = false;
+        this.inputScokets_arr[1].inputable = true;
+        this.inputScokets_arr[1].label = '字符串';
+
         if (this.outSocket == null) {
             this.outSocket = new NodeSocket('out', this, false);
             this.addSocket(this.outSocket);
         }
-        //this.inSocket.type = ValueType.Array;
-        //this.inSocket.inputable = false;
+      
         this.outSocket.type = ValueType.Array;
     }
 
@@ -341,17 +334,25 @@ class JSNode_Arrays_PushAndPop extends JSNode_Base {
         var usePreNodes_arr = preNodes_arr.concat(this);
         var theSocket = this.inSocket;
         var socketValue = null;
-        var arrar_addValue = null;
+        var tValue = null;
         for (var i = 0; i < this.inputScokets_arr.length; ++i) {
             var theSocket = this.inputScokets_arr[i];
             var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(theSocket);
             if (datalinks_arr.length == 0) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle,
-                    nodeThis,
-                    helper.clickLogBadgeItemHandler),
-                    '需要设置参数']);
-                return false;
+                if (theSocket.type == 'array' && IsEmptyString(theSocket.defval)) {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle,
+                        nodeThis,
+                        helper.clickLogBadgeItemHandler),
+                        '需要设置参数']);
+                    return false;
+                }
+                if (theSocket.type != 'array' && IsEmptyString(theSocket.defval)) {
+                    tValue = "','";
+                } else {
+                    tValue = theSocket.defval.replace(/\'/g, '');
+                    tValue = "'" + tValue + "'";
+                }
             }
             else {
                 var dataLink = datalinks_arr[0];
@@ -378,13 +379,16 @@ class JSNode_Arrays_PushAndPop extends JSNode_Base {
                 }
                 if (socket_type == 'array') {
                     socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
+                    socketValue = socketValue.replace(/\'/g, '')
+
                 } else {
-                    arrar_addValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
+                    tValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
+                    tValue = "'" + tValue.replace(/\'/g, '') + "'"
                 }
             }
         }
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, socketValue + '.push(' + arrar_addValue + ')');
+        selfCompileRet.setSocketOut(this.outSocket, socketValue + '.push(' + tValue + ')');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -421,7 +425,7 @@ class JSNode_Array_Join extends JSNode_Base {
         this.inputScokets_arr[0].inputable = false;
         this.inputScokets_arr[1].inputable = true;
         this.inputScokets_arr[1].label = '字符串';
-       
+
         if (this.outSocket == null) {
             this.outSocket = new NodeSocket('out', this, false);
             this.addSocket(this.outSocket);
@@ -447,7 +451,7 @@ class JSNode_Array_Join extends JSNode_Base {
             var theSocket = this.inputScokets_arr[i];
             var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(theSocket);
             if (datalinks_arr.length == 0) {
-                if(theSocket.type =='array' && IsEmptyString(theSocket.defval)){
+                if (theSocket.type == 'array' && IsEmptyString(theSocket.defval)) {
                     helper.logManager.errorEx([helper.logManager.createBadgeItem(
                         thisNodeTitle,
                         nodeThis,
@@ -455,9 +459,9 @@ class JSNode_Array_Join extends JSNode_Base {
                         '需要设置参数']);
                     return false;
                 }
-                if(theSocket.type !='array' && IsEmptyString(theSocket.defval)){
+                if (theSocket.type != 'array' && IsEmptyString(theSocket.defval)) {
                     tValue = "','";
-                }else{
+                } else {
                     tValue = theSocket.defval.replace(/\'/g, '');
                     tValue = "'" + tValue + "'";
                 }
@@ -488,10 +492,10 @@ class JSNode_Array_Join extends JSNode_Base {
                 if (socket_type == 'array') {
                     socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
                     socketValue = socketValue.replace(/\'/g, '')
-                    
+
                 } else {
                     tValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
-                    tValue = "'" +tValue.replace(/\'/g, '')+"'"
+                    tValue = "'" + tValue.replace(/\'/g, '') + "'"
                 }
             }
         }
@@ -518,14 +522,14 @@ class JSNode_Array_Slice extends JSNode_Base {
             this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Array, inputable: false }));
             this.addSocket(new NodeSocket('inputtwo', this, true, { type: ValueType.Int, inputable: true }));
             this.addSocket(new NodeSocket('inputthree', this, true, { type: ValueType.Int, inputable: true }));
-        } 
+        }
         this.inputScokets_arr[0].label = '数组';
         this.inputScokets_arr[0].inputable = false;
         this.inputScokets_arr[1].inputable = true;
         this.inputScokets_arr[1].label = '起始参数';
         this.inputScokets_arr[2].inputable = true;
         this.inputScokets_arr[2].label = '结束参数';
-       
+
         if (this.outSocket == null) {
             this.outSocket = new NodeSocket('out', this, false);
             this.addSocket(this.outSocket);
@@ -546,7 +550,7 @@ class JSNode_Array_Slice extends JSNode_Base {
         var usePreNodes_arr = preNodes_arr.concat(this);
         var socketValue = null;
         var start_value = null;
-        var end_value=null;
+        var end_value = null;
 
         var execute_arr = [];
         for (var i = 0; i < this.inputScokets_arr.length; ++i) {
@@ -556,10 +560,10 @@ class JSNode_Array_Slice extends JSNode_Base {
             }
             execute_arr.push(socketComRet.value.replace(/\'/g, ''));
         }
-        socketValue=execute_arr[0];
-        start_value =execute_arr[1];
-        end_value=execute_arr[2];
-        if((start_value | 0) != start_value || (end_value | 0) != end_value ){
+        socketValue = execute_arr[0];
+        start_value = execute_arr[1];
+        end_value = execute_arr[2];
+        if ((start_value | 0) != start_value || (end_value | 0) != end_value) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle,
                 nodeThis,
@@ -567,7 +571,7 @@ class JSNode_Array_Slice extends JSNode_Base {
                 '应该输入整数']);
             return false;
         }
-        if(start_value >end_value){
+        if (start_value > end_value) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle,
                 nodeThis,
@@ -576,7 +580,7 @@ class JSNode_Array_Slice extends JSNode_Base {
             return false;
         }
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, execute_arr[0].replace(/\'/g, '') + '.slice(' + start_value+','+end_value+ ')');
+        selfCompileRet.setSocketOut(this.outSocket, execute_arr[0].replace(/\'/g, '') + '.slice(' + start_value + ',' + end_value + ')');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -590,7 +594,7 @@ class JSNode_Array_Slice extends JSNode_Base {
 */
 class JSNode_GetDay extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, JSNODE_GETDAY, 'getDay', false, nodeJson);
+        super(initData, parentNode, createHelper, JSNODE_GETDAY, '获取星期(?)', false, nodeJson);
         autoBind(this);
 
         if (nodeJson) {
@@ -600,10 +604,10 @@ class JSNode_GetDay extends JSNode_Base {
         }
         if (this.inputScokets_arr.length == 0) {
             this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Object, inputable: true }));
-        } 
+        }
         this.inputScokets_arr[0].label = '日期';
         this.inputScokets_arr[0].inputable = true;
-       
+
         if (this.outSocket == null) {
             this.outSocket = new NodeSocket('out', this, false);
             this.addSocket(this.outSocket);
@@ -620,29 +624,37 @@ class JSNode_GetDay extends JSNode_Base {
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
-    
+
+
         var socketComRet = this.getSocketCompileValue(helper, this.inputScokets_arr[0], usePreNodes_arr, belongBlock, true);
         if (socketComRet.err) {
             return false;
         }
-        var dateStr=socketComRet.value;
-        
-        dateStr = new Date(dateStr.replace(/-/g, "\/"));
-        
-        var weekarr= ["日", "一", "二", "三", "四", "五", "六"];  
-        var week = dateStr.getDay();  
-        var endstr = "今天是星期"+ weekarr[week];  
-        
-        if(1<0){
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                '应该输入整数']);
-            return false;
+        var dateStr = socketComRet.value;
+        var endstr='';
+        var socketlink = socketComRet.link;
+        if (socketlink == null) {
+            if (checkDate(dateStr) == false) {
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    '应该输入时间']);
+                return false;
+            }
+            endstr="'"+dateStr+"'"
+        } else {
+            var socketComRet = this.getSocketCompileValue(helper, this.inputScokets_arr[0], usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            endstr=dateStr ;
         }
+
+        //dateStr = new Date(dateStr.replace(/-/g, "\/"));
+
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, '('+ endstr+')');
+        selfCompileRet.setSocketOut(this.outSocket, 'getweekDay(' + endstr + ')');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -664,20 +676,15 @@ class JSNode_FormatNum extends JSNode_Base {
         }
         if (this.inputScokets_arr.length == 0) {
             this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Object, inputable: true }));
-        } 
+        }
         this.inputScokets_arr[0].label = '数字';
         this.inputScokets_arr[0].inputable = true;
-       
+
         if (this.outSocket == null) {
             this.outSocket = new NodeSocket('out', this, false);
             this.addSocket(this.outSocket);
         }
         this.outSocket.type = ValueType.Object;
-    }
-    addComma(num){
-        var reg = num.toString().indexOf('.') > -1 ? /(\d)(?=(\d{3})+\.)/g : /(\d)(?=(\d{3})+$)/g;
-    
-        return num.toString().replace(reg,'$1,');
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -689,14 +696,28 @@ class JSNode_FormatNum extends JSNode_Base {
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
-    
+
+
         var socketComRet = this.getSocketCompileValue(helper, this.inputScokets_arr[0], usePreNodes_arr, belongBlock, true);
         if (socketComRet.err) {
             return false;
         }
-        var dateStr=this.addComma(socketComRet.value);
+        var dateStr = socketComRet.value;
+       
+        var socketlink = socketComRet.link;
+        if (socketlink == null) {
+            if (isNaN(dateStr)) {
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    '应该输入数字']);
+                return false;
+            } 
+        }
+
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, ' '+ dateStr+' ');
+        selfCompileRet.setSocketOut(this.outSocket, ' addComma(' + dateStr + ') ');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -718,55 +739,16 @@ class JSNode_CapitalNum extends JSNode_Base {
         }
         if (this.inputScokets_arr.length == 0) {
             this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Object, inputable: true }));
-        } 
+        }
         this.inputScokets_arr[0].label = '数字';
         this.inputScokets_arr[0].inputable = true;
-       
+
         if (this.outSocket == null) {
             this.outSocket = new NodeSocket('out', this, false);
             this.addSocket(this.outSocket);
         }
         this.outSocket.type = ValueType.Object;
     }
-    NumToChinese(n) {
-        for (i = n.length - 1; i >= 0; i--) {
-            n = n.replace(",", "")//替换Num中的“,” 替换Num中的空格
-            n = n.replace(" ", "")
-        }
-        
-        if (isNaN(n)) { 
-            return "请检查输入金额是否正确";
-        }
-        if (!/^(0|[1-9]\d*)(\.\d+)?$/.test(n)){
-            return "数据非法";  //判断数据是否大于0
-        }
-    
-        var unit = "千百拾亿千百拾万千百拾元角分", str = "";
-        n += "00";  
-    
-        var indexpoint = n.indexOf('.');  // 如果是小数，截取小数点前面的位数
-        if(indexpoint >12){
-            return '数据过大';
-        }
-        if(indexpoint<0 && n.length>14){
-            return '数据过大';
-        }
-        if (indexpoint >= 0){
-    
-            n = n.substring(0, indexpoint) + n.substr(indexpoint+1, 2);   // 若为小数，截取需要使用的unit单位
-        }
-    
-        unit = unit.substr(unit.length - n.length);  // 若为整数，截取需要使用的unit单位
-        for (var i=0; i < n.length; i++){
-            str += "零壹贰叁肆伍陆柒捌玖".charAt(n.charAt(i)) + unit.charAt(i);  //遍历转化为大写的数字
-        }
-        var result = str.replace(/零(千|百|拾|角)/g, "零").
-            replace(/(零)+/g, "零").replace(/零(万|亿|元)/g, "$1").
-            replace(/(亿)万|壹(拾)/g, "$1$2").replace(/^元零?|零分/g, "").
-            replace(/元$/g, "元整"); // 替换掉数字里面的零字符，得到结果
-        return result;
-    }
-    
 
     compile(helper, preNodes_arr, belongBlock) {
         var superRet = super.compile(helper, preNodes_arr);
@@ -777,39 +759,37 @@ class JSNode_CapitalNum extends JSNode_Base {
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
-    
+
         var socketComRet = this.getSocketCompileValue(helper, this.inputScokets_arr[0], usePreNodes_arr, belongBlock, true);
         if (socketComRet.err) {
             return false;
         }
-        var dateStr=socketComRet.value
-        if (isNaN(dateStr)) { 
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                "请检查输入金额是否正确"]);
-            return false;
+        var dateStr = socketComRet.value;
+
+        var socketlink = socketComRet.link;
+
+        if(socketlink == null){
+            
+            if (isNaN(dateStr)) {
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    "请检查输入金额是否正确"]);
+                return false;
+            }
+            if (!/^(0|[1-9]\d*)(\.\d+)?$/.test(dateStr)) {
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    '数据非法']);
+                return false;
+            }
         }
-        if (!/^(0|[1-9]\d*)(\.\d+)?$/.test(dateStr)){
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                '数据非法']);
-            return false;
-        }
-        var endStr=this.NumToChinese(dateStr);
-        if(endStr =='数据过大'){
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                '数据过大无法显示']);
-            return false;
-        }
+        
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, ' '+ endStr+' ');
+        selfCompileRet.setSocketOut(this.outSocket, ' NumToChinese(' + dateStr + ') ');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -818,7 +798,7 @@ class JSNode_CapitalNum extends JSNode_Base {
 JSNodeClassMap[JSNODE_WHILE] = {
     modelClass: JSNode_While,
     comClass: C_Node_SimpleNode,
-}; 
+};
 
 JSNodeClassMap[JSNODE_ARRAY_CONCAT] = {
     modelClass: JSNode_Array_Concat,
@@ -829,8 +809,8 @@ JSNodeClassMap[JSNODE_TERNARY_OPERATOR] = {
     modelClass: JSNode_Ternary_Operator,
     comClass: C_Node_SimpleNode,
 };
-JSNodeClassMap[JSNODE_ARRAYS_PUSHANDPOP] = {
-    modelClass: JSNode_Arrays_PushAndPop,
+JSNodeClassMap[JSNODE_ARRAY_PUSHPOP] = {
+    modelClass: JSNode_Array_PushPop,
     comClass: C_Node_SimpleNode,
 };
 
@@ -875,7 +855,7 @@ JSNodeEditorControls_arr.push(
 JSNodeEditorControls_arr.push(
     {
         label: '数组尾部增减',
-        nodeClass: JSNode_Arrays_PushAndPop,
+        nodeClass: JSNode_Array_PushPop,
         type: '数组操控'
     });
 JSNodeEditorControls_arr.push(
@@ -890,7 +870,7 @@ JSNodeEditorControls_arr.push(
         nodeClass: JSNode_Array_Slice,
         type: '数组操控'
     });
-    
+
 JSNodeEditorControls_arr.push(
     {
         label: '获取星期(?)',

@@ -296,6 +296,10 @@ class DataMaster extends EventEmitter{
         return this.BP_sql_arr.find(item=>{return item.code == code});
     }
 
+    getSqlBPByUUID(uuid){
+        return this.BP_sql_arr.find(item=>{return item.uuid == uuid});
+    }
+
     createSqlBP(name, type, group){
         if(group == null){
             group = 'custom';

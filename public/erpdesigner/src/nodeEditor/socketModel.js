@@ -79,6 +79,15 @@ class NodeSocket extends EventEmitter{
                 }
             }
         }
+        if(this.type == SocketType_CtlKernel){
+            var ctlid = this.getExtra('ctlid');
+            if(!IsEmptyString(ctlid)){
+                var project = this.node.bluePrint.master.project;
+                if(project){
+                    jsonProf.addRefControl(project.getControlById(ctlid));
+                }
+            }
+        }
         return rlt;
     }
 }

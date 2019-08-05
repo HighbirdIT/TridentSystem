@@ -241,6 +241,10 @@ var IAttributeable = function (_EventEmitter) {
                     if (!attr.editable) return;
                     switch (attr.valueType) {
                         case ValueType.CustomDataSource:
+                            var val = _this2[attr.name];
+                            if (val != null) {
+                                jsonProf.useEntity(val);
+                            }
                             return;
                     }
                     var attrItemArray = null;
