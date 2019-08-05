@@ -1,5 +1,7 @@
 'use strict';
 
+var gCopiedKernelData = null;
+
 function M_ControlBase_componentWillMount() {
     this.listenTarget(this.props.ctlKernel);
     this.mounted = true;
@@ -108,8 +110,14 @@ function M_ControlBase(target, watchedAttrs) {
     target.renderHandleBar = M_ControlBase_RenderHandleBar.bind(target);
     target.clickHandleTrash = M_ControlBase_ClickHandle_Trash.bind(target);
     target.clickHandleMove = M_ControlBase_ClickHandle_Move.bind(target);
+    target.clickHandleCopy = M_ControlBase_ClickHandle_Copy.bind(target);
+    target.clickHandlePaste = M_ControlBase_ClickHandle_Paste.bind(target);
+    target.clickHandleEraser = M_ControlBase_ClickHandle_Eraser.bind(target);
+    target.clickHandleGoParent = M_ControlBase_ClickHandle_GoParent.bind(target);
+
     target.setSelected = M_ControlBase_setSelected.bind(target);
     target.aAttrChangedBase = M_ControlBase_aAttrChangedBase.bind(target);
+    target.reDraw = C_ReDraw.bind(target);
 
     var layoutState = {};
     LayoutAttrNames_arr.forEach(function (name) {
@@ -131,7 +139,33 @@ function M_ControlBase_ClickHandle_Move() {
 }
 
 function M_ControlBase_ClickHandle_Copy() {
-    this.props.ctlKernel.project.copyKernel(this.props.ctlKernel);
+    gCopiedKernelData = this.props.ctlKernel.project.copyKernel(this.props.ctlKernel);
+    console.log(gCopiedKernelData);
+    this.reDraw();
+}
+
+function M_ControlBase_ClickHandle_Paste() {
+    if (gCopiedKernelData) {
+        var theKernel = this.props.ctlKernel;
+        var targetParent = theKernel.parent;
+        if (targetParent == null) {
+            targetParent = theKernel;
+        }
+        var targetIndex = targetParent.getChildIndex(theKernel);
+        this.props.ctlKernel.project.pasteKernel(gCopiedKernelData, this.props.ctlKernel.parent, targetIndex);
+    }
+}
+
+function M_ControlBase_ClickHandle_Eraser() {
+    gCopiedKernelData = null;
+    this.reDraw();
+}
+
+function M_ControlBase_ClickHandle_GoParent() {
+    var theKernel = this.props.ctlKernel;
+    if (theKernel.parent) {
+        theKernel.project.designer.selectKernel(theKernel.parent);
+    }
 }
 
 function M_ControlBase_RenderHandleBar() {
@@ -150,15 +184,25 @@ function M_ControlBase_RenderHandleBar() {
                 { className: 'btn btn-dark', onMouseDown: this.clickHandleMove },
                 React.createElement('i', { className: 'fa fa-arrows' })
             ),
+            this.props.ctlKernel.parent ? React.createElement(
+                'button',
+                { className: 'btn btn-dark', onClick: this.clickHandleGoParent },
+                React.createElement('i', { className: 'fa fa-reply' })
+            ) : null,
             React.createElement(
                 'button',
-                { className: 'btn btn-dark', onMouseDown: this.clickHandleCopy },
+                { className: 'btn btn-dark', onClick: this.clickHandleCopy },
                 React.createElement('i', { className: 'fa fa-copy' })
             ),
-            React.createElement(
+            gCopiedKernelData && React.createElement(
                 'button',
-                { className: 'btn btn-dark', onMouseDown: this.clickHandlePaste },
+                { className: 'btn btn-dark', onClick: this.clickHandlePaste },
                 React.createElement('i', { className: 'fa fa-paste' })
+            ),
+            gCopiedKernelData && React.createElement(
+                'button',
+                { className: 'btn btn-dark', onClick: this.clickHandleEraser },
+                React.createElement('i', { className: 'fa fa-eraser' })
             ),
             React.createElement(
                 'button',

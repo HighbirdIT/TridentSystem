@@ -90,13 +90,13 @@ class M_DropdownKernel extends ControlKernelBase {
         var columnNode = cusDS_bp.finalSelectNode.columnNode;
         columnNode.distChecked = true;
         var needSelectColumns_arr = [];
-        if(!IsEmptyString(fromtextfield)){
+        if(useDS && !IsEmptyString(fromtextfield)){
             needSelectColumns_arr.push(fromtextfield);
         }
-        if(!IsEmptyString(fromValueField)){
+        if(useDS && !IsEmptyString(fromValueField)){
             needSelectColumns_arr.push(fromValueField);
         }
-        if(groupCols_arr != null && groupCols_arr.length > 0){
+        if(useDS && groupCols_arr != null && groupCols_arr.length > 0){
             needSelectColumns_arr = needSelectColumns_arr.concat(groupCols_arr);
         }
 
@@ -152,7 +152,7 @@ class M_DropdownKernel extends ControlKernelBase {
                 colNode = theLink.outSocket.node;
             }
         }
-        if(!IsEmptyString(fromtextfield)){
+        if(useDS && !IsEmptyString(fromtextfield)){
             if(theLinks.length == 0 || colNode == null){
                 if(colNode == null){
                     colNode = new SqlNode_Column({}, cusDS_bp.finalSelectNode);   

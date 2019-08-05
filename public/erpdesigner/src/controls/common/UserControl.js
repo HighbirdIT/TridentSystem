@@ -281,11 +281,15 @@ class UserControlKernel extends ContainerKernelBase {
             }
         }
         return this.templateKernel;
+
     }
 
     getJson(jsonProf) {
         var rlt = super.getJson(jsonProf);
         rlt.uuid = this.uuid;
+        if(!this.isTemplate()){
+            jsonProf.useUserControl(this.getTemplateKernel());
+        }
         return rlt;
     }
 }

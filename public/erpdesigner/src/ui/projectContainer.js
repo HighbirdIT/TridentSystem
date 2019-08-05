@@ -16,14 +16,14 @@ class TitleHeaderItem extends React.PureComponent {
         }
         else{
             needFresh = ev.name.indexOf('title') != -1;
-        }
+        } 
         if(needFresh){
             this.setState({
                 title: this.props.project.getAttribute('title'),
             });
         }
     }
-
+ 
     componentWillMount(){
         this.props.project.on(EATTRCHANGED, this.attrChangedHandler);
     }
@@ -95,6 +95,19 @@ class ProjectContainer extends React.PureComponent {
             selectedIndex = Math.max(new_arr.length - 1, 0);
         }
         this.setState({ projects: new_arr, selectedIndex: selectedIndex });
+
+        var self = this;
+        setTimeout(() => {
+            self.openedPageChanged();
+        }, 100);
+    }
+
+    openedPageChanged(){
+        var newOpenPage_his = '';
+        this.state.projects.forEach(project=>{
+            newOpenPage_his += (newOpenPage_his.length == 0 ? '' : '|P|') + project.title;
+        });
+        Cookies.set('openedPages', newOpenPage_his, { expires: 7 });
     }
 
     wantOpenProject(projTitle){
@@ -120,6 +133,8 @@ class ProjectContainer extends React.PureComponent {
             projects:newProjects
         });
 
+        this.openedPageChanged();
+        /*
         var openPage_his = ReplaceIfNull(Cookies.get('openPage_his'),'');
         var t_arr = openPage_his.split('|P|');
         var newProjTitle = this.openingProj.title;
@@ -133,6 +148,7 @@ class ProjectContainer extends React.PureComponent {
             });
             Cookies.set('openPage_his', newHis, { expires: 7 });
         }
+        */
     }
 
     fetchProjJsonCallback(response){
@@ -166,13 +182,16 @@ class ProjectContainer extends React.PureComponent {
             magicObj:{},
         });
 
-        var openPage_his = Cookies.get('openPage_his');
-        if(openPage_his != null){
-            console.log(openPage_his);
-            var arr = openPage_his.split('|P|');
-            if(this.wantOpenProject(arr[0])){
-                return;
-            }
+        var openedPages_cookie = Cookies.get('openedPages');
+        if(openedPages_cookie != null && openedPages_cookie.length > 0){
+            //console.log(openPage_his);
+            var arr = openedPages_cookie.split('|P|');
+            arr.forEach(projTitle=>{
+                if(projTitle.length > 0){
+                    this.wantOpenProject(projTitle);
+                }  
+            });
+            return;
         }
 
         setTimeout(() => {

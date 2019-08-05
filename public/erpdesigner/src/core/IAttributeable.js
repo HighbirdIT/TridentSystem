@@ -206,6 +206,10 @@ class IAttributeable extends EventEmitter{
                     return;
                 switch(attr.valueType){
                     case ValueType.CustomDataSource:
+                    var val = this[attr.name];
+                    if(val != null){
+                        jsonProf.useEntity(val);
+                    }
                     return;
                 }
                 var attrItemArray = null;

@@ -373,6 +373,13 @@ var DataMaster = function (_EventEmitter4) {
             });
         }
     }, {
+        key: 'getSqlBPByUUID',
+        value: function getSqlBPByUUID(uuid) {
+            return this.BP_sql_arr.find(function (item) {
+                return item.uuid == uuid;
+            });
+        }
+    }, {
         key: 'createSqlBP',
         value: function createSqlBP(name, type, group) {
             if (group == null) {

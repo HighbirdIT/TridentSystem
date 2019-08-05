@@ -120,11 +120,11 @@ class CButton extends React.PureComponent {
             iconElem = <i className={'fa fa-' + this.state.icontype} />
         }
         return(
-            <button type='button' className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+            <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {this.renderHandleBar()}
                 {iconElem}
                 {showText}
-            </button>
+            </div>
         );
     }
 }
