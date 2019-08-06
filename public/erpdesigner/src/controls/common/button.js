@@ -5,6 +5,7 @@ const ButtonKernelAttrsSetting = GenControlKernelAttrsSetting([
         genIsdisplayAttribute(),
         new CAttribute('适用种类', AttrNames.ButtonVisibleType, ValueType.String, EButtonVisibleType.Default, true, false, ButtonVisibleTypes_arr),
         new CAttribute('隐藏名称', AttrNames.HideLabel, ValueType.Boolean, false),
+        new CAttribute('有成功提示', AttrNames.HaveDoneTip, ValueType.Boolean, true),
         new CAttribute('图标类型', AttrNames.IconType, ValueType.String, ''),
     ]),
     new CAttributeGroup('事件',[

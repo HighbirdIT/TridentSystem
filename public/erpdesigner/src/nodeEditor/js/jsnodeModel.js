@@ -556,6 +556,7 @@ class JSNode_BluePrint extends EventEmitter {
                 //console.log('wer');
             }
         }
+        var haveDoneTip = true;
         var funName = this.name.replace('#', '_');
         var useScope = compilHelper.scope;
         var nomsgbox = false;
@@ -567,6 +568,7 @@ class JSNode_BluePrint extends EventEmitter {
                 useScope = compilHelper.config.scope;
             }
             nomsgbox = compilHelper.config.nomsgbox == true;
+            haveDoneTip = compilHelper.config.haveDoneTip != false;
         }
         var theFun = useScope.getFunction(funName, true);
         compilHelper.compilingFun = theFun;
@@ -1089,7 +1091,9 @@ class JSNode_BluePrint extends EventEmitter {
                 setInvalidStateBlock.pushLine("}");
 
                 finalCallBackReturn_bk.pushLine("if(" + msgBoxVarName + "){" + msgBoxVarName + ".fireClose();}");
-                finalCallBackReturn_bk.pushLine("SendToast('执行成功');");
+                if(haveDoneTip){
+                    finalCallBackReturn_bk.pushLine("SendToast('执行成功');");
+                }
             }
             else if (this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
                 // needMsgBox

@@ -286,6 +286,7 @@ const AttrNames={
     AcessAssert:'accessAssert',
     IconType:'icontype',
     AutoCloseBtn:'autoclosebtn',
+    HaveDoneTip: 'havedonetip',
 
     Event:{
         OnClick:'onclick',
