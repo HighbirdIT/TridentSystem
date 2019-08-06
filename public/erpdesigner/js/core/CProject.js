@@ -530,7 +530,7 @@ var CProject = function (_IAttributeable) {
             var meetCusDS_map = {};
             var meetScript_map = {};
             var meetUserControl_map = {};
-            var copyCusDS = function copyCusDS(cusEntity) {
+            var copyCusDS = function copyCusDS(cusEntity, cusDS_arr, refControl_map) {
                 if (meetCusDS_map[cusEntity.code]) {
                     return;
                 }
@@ -539,21 +539,23 @@ var CProject = function (_IAttributeable) {
                 var dsJson = cusEntity.getJson(cusDSJsonProf);
                 cusDSJsonProf.customDS_arr.forEach(function (entity) {
                     if (entity.isCustomDS) {
-                        copyCusDS(entity);
+                        copyCusDS(entity, refControl_map);
                     }
                 });
-                for (var rcid in cusDSJsonProf.refControl_map) {
-                    copyResult.refControlID_map[rcid] = cusDSJsonProf.refControl_map[rcid].type;
+                if (refControl_map) {
+                    for (var rcid in cusDSJsonProf.refControl_map) {
+                        refControl_map[rcid] = cusDSJsonProf.refControl_map[rcid].type;
+                    }
                 }
-                copyResult.cusDS_arr.push(dsJson);
+                cusDS_arr.push(dsJson);
             };
             controlJsonProf.customDS_arr.forEach(function (entity) {
                 if (entity.isCustomDS) {
-                    copyCusDS(entity);
+                    copyCusDS(entity, copyResult.cusDS_arr, copyResult.refControlID_map);
                 }
             });
 
-            var copyScript = function copyScript(scriptBP) {
+            var copyScript = function copyScript(scriptBP, scripts_arr, cusDS_arr, refControl_map) {
                 if (meetScript_map[scriptBP.code]) {
                     return;
                 }
@@ -562,13 +564,15 @@ var CProject = function (_IAttributeable) {
                 var scriptJson = scriptBP.getJson(scriptJsonProf);
                 scriptJsonProf.customDS_arr.forEach(function (entity) {
                     if (entity.isCustomDS) {
-                        copyCusDS(entity);
+                        copyCusDS(entity, cusDS_arr, refControl_map);
                     }
                 });
-                for (var rcid in scriptJsonProf.refControl_map) {
-                    copyResult.refControlID_map[rcid] = scriptJsonProf.refControl_map[rcid].type;
+                if (refControl_map) {
+                    for (var rcid in scriptJsonProf.refControl_map) {
+                        refControl_map[rcid] = scriptJsonProf.refControl_map[rcid].type;
+                    }
                 }
-                copyResult.scripts_arr.push(scriptJson);
+                scripts_arr.push(scriptJson);
             };
 
             for (ctlid in controlJsonProf.useControl_map) {
@@ -579,7 +583,7 @@ var CProject = function (_IAttributeable) {
                 copyResult.controlsID_map[ctlType].push(ctlid);
                 var useScripteBP_arr = this.scriptMaster.getBPsByControlKernel(ctlid);
                 useScripteBP_arr.forEach(function (scriptBP) {
-                    copyScript(scriptBP);
+                    copyScript(scriptBP, copyResult.scripts_arr, copyResult.cusDS_arr, copyResult.refControlID_map);
                 });
             }
 
@@ -587,32 +591,39 @@ var CProject = function (_IAttributeable) {
                 if (meetUserControl_map[UCKernel.id]) {
                     return;
                 }
+                var userCtlProfile = {
+                    controlsID_map: {},
+                    scripts_arr: [],
+                    cusDS_arr: [],
+                    refControlID_map: {}
+                };
                 meetUserControl_map[UCKernel.id] = 1;
                 var UCJsonProf = new AttrJsonProfile();
                 var UCJson = UCKernel.getJson(UCJsonProf);
 
                 UCJsonProf.customDS_arr.forEach(function (entity) {
                     if (entity.isCustomDS) {
-                        copyCusDS(entity);
+                        copyCusDS(entity, userCtlProfile.cusDS_arr, userCtlProfile.refControlID_map);
                     }
                 });
 
                 for (ctlid in UCJsonProf.useControl_map) {
                     var ctlType = UCJsonProf.useControl_map[ctlid].type;
-                    if (copyResult.controlsID_map[ctlType] == null) {
-                        copyResult.controlsID_map[ctlType] = [];
+                    if (userCtlProfile.controlsID_map[ctlType] == null) {
+                        userCtlProfile.controlsID_map[ctlType] = [];
                     }
-                    copyResult.controlsID_map[ctlType].push(ctlid);
+                    userCtlProfile.controlsID_map[ctlType].push(ctlid);
                     var useScripteBP_arr = _this3.scriptMaster.getBPsByControlKernel(ctlid);
                     useScripteBP_arr.forEach(function (scriptBP) {
-                        copyScript(scriptBP);
+                        copyScript(scriptBP, userCtlProfile.scripts_arr, userCtlProfile.cusDS_arr, userCtlProfile.refControlID_map);
                     });
                 }
 
                 for (ctlid in UCJsonProf.useUserControl_map) {
                     copyUserControl(UCJsonProf.useUserControl_map[ctlid]);
                 }
-                copyResult.userControls_arr.push(UCJson);
+                userCtlProfile.jsonData = UCJson;
+                copyResult.userControls_arr.push(userCtlProfile);
             };
 
             for (ctlid in controlJsonProf.useUserControl_map) {
@@ -670,8 +681,25 @@ var CProject = function (_IAttributeable) {
                 });
             }
 
+            var replaceIDChangedInJsonString = function replaceIDChangedInJsonString(pJsonStr) {
+                for (oldID in renameContrls_map) {
+                    pJsonStr = pJsonStr.replace(new RegExp(doubleQuotesStr(oldID), 'g'), doubleQuotesStr(renameContrls_map[oldID]));
+                    if (renameContrls_map[oldID].length > 0) {
+                        pJsonStr = pJsonStr.replace(new RegExp(oldID + '_', 'g'), renameContrls_map[oldID] + '_');
+                    }
+                }
+                for (oldID in renameCusDS_map) {
+                    pJsonStr = pJsonStr.replace(new RegExp(doubleQuotesStr(oldID), 'g'), doubleQuotesStr(renameCusDS_map[oldID]));
+                }
+                return pJsonStr;
+            };
+
+            var needPasteCusDS_arr = copiedData.cusDS_arr.concat();
+            var needPasteScripts_arr = copiedData.scripts_arr.concat();
+
             if (!copyFromThisProject) {
-                copiedData.userControls_arr.forEach(function (UCJson) {
+                copiedData.userControls_arr.forEach(function (userCtlProfile) {
+                    var UCJson = userCtlProfile.jsonData;
                     var hadUserControl = _this4.getUserControlByUUID(UCJson.uuid);
                     if (hadUserControl) {
                         if (hadUserControl.id != UCJson.id) {
@@ -692,21 +720,28 @@ var CProject = function (_IAttributeable) {
                         aidControlId_map[newID] = 1;
                         renameContrls_map[UCJson.id] = newID;
                     }
+                    needPasteCusDS_arr = needPasteCusDS_arr.concat(userCtlProfile.cusDS_arr);
+                    needPasteScripts_arr = needPasteScripts_arr.concat(userCtlProfile.scripts_arr);
+
+                    for (ctlType in userCtlProfile.controlsID_map) {
+                        userCtlProfile.controlsID_map[ctlType].forEach(function (ctlID) {
+                            if (aidControlId_map[ctlID] != null && ctlID != UCJson.id) {
+                                var newID = '';
+                                for (i = 0; i < 9999; ++i) {
+                                    newID = ctlType + '_' + i;
+                                    if (aidControlId_map[newID] == null) {
+                                        if (useControlsID_all[newID] == null) {
+                                            break;
+                                        }
+                                    }
+                                }
+                                aidControlId_map[newID] = 1;
+                                renameContrls_map[ctlID] = newID;
+                            }
+                        });
+                    }
                 });
             }
-
-            var replaceIDChangedInJsonString = function replaceIDChangedInJsonString(pJsonStr) {
-                for (oldID in renameContrls_map) {
-                    pJsonStr = pJsonStr.replace(new RegExp(doubleQuotesStr(oldID), 'g'), doubleQuotesStr(renameContrls_map[oldID]));
-                    if (renameContrls_map[oldID].length > 0) {
-                        pJsonStr = pJsonStr.replace(new RegExp(oldID + '_', 'g'), renameContrls_map[oldID] + '_');
-                    }
-                }
-                for (oldID in renameCusDS_map) {
-                    pJsonStr = pJsonStr.replace(new RegExp(doubleQuotesStr(oldID), 'g'), doubleQuotesStr(renameCusDS_map[oldID]));
-                }
-                return pJsonStr;
-            };
 
             var aidEntityCode_map = {};
             this.dataMaster.BP_sql_arr.forEach(function (bp) {
@@ -714,10 +749,10 @@ var CProject = function (_IAttributeable) {
             });
             if (!copyFromThisProject) {
                 var useDSID_all = {};
-                copiedData.cusDS_arr.forEach(function (cusDSBP) {
+                needPasteCusDS_arr.forEach(function (cusDSBP) {
                     useDSID_all[cusDSBP.code] = 1;
                 });
-                copiedData.cusDS_arr.forEach(function (cusDSBP) {
+                needPasteCusDS_arr.forEach(function (cusDSBP) {
                     if (cusDSBP.group == 'custom') {
                         if (copyFromThisProject) {
                             return; // 从本方案里来的，自订数据源已经存在了肯定
@@ -743,7 +778,7 @@ var CProject = function (_IAttributeable) {
                 });
             }
 
-            copiedData.cusDS_arr.forEach(function (cusDSBP) {
+            needPasteCusDS_arr.forEach(function (cusDSBP) {
                 useUUID = cusDSBP.uuid;
                 if (cusDSBP.group == 'custom') {
                     if (copyFromThisProject) {
@@ -775,7 +810,7 @@ var CProject = function (_IAttributeable) {
                 _this4.dataMaster.addSqlBP(newbp);
             });
 
-            copiedData.scripts_arr.forEach(function (scriptBP) {
+            needPasteScripts_arr.forEach(function (scriptBP) {
                 useUUID = null;
                 var expireBP = null;
                 var scriptBPCreationHelper = new NodeCreationHelper();
@@ -794,7 +829,8 @@ var CProject = function (_IAttributeable) {
 
             var createdUserCtls_arr = [];
             if (!copyFromThisProject) {
-                copiedData.userControls_arr.forEach(function (UCJson) {
+                copiedData.userControls_arr.forEach(function (userCtlProfile) {
+                    var UCJson = userCtlProfile.jsonData;
                     var hadUserControl = _this4.getUserControlByUUID(UCJson.uuid);
                     if (!hadUserControl) {
                         var userCtlCreatioinHelper = new CtlKernelCreationHelper();
