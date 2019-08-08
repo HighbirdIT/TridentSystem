@@ -973,8 +973,6 @@ class SqlNode_XJoin extends SqlNode_Base {
                     +socketOuts_arr[1].strContent]);
                 }
             }
-           
-            console.log(arr);
 
             if (IsEmptyString(onString)) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
