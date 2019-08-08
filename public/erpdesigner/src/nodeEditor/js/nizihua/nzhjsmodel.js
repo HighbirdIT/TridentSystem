@@ -634,28 +634,34 @@ class JSNode_GetDay extends JSNode_Base {
         var dateStr = socketComRet.value;
         var endstr='';
         var socketlink = socketComRet.link;
-        if (socketlink == null) {
-            if (checkDate(dateStr) == false) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle,
-                    nodeThis,
-                    helper.clickLogBadgeItemHandler),
-                    '应该输入时间']);
-                return false;
-            }
-            endstr="'"+dateStr+"'"
-        } else {
-            var socketComRet = this.getSocketCompileValue(helper, this.inputScokets_arr[0], usePreNodes_arr, belongBlock, true);
-            if (socketComRet.err) {
-                return false;
-            }
-            endstr=dateStr ;
-        }
-
-        //dateStr = new Date(dateStr.replace(/-/g, "\/"));
-
+        var outSocket = this.outputScokets_arr[0];
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, 'getweekDay(' + endstr + ')');
+        
+        if (!checkDate(dateStr)) {
+            helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                thisNodeTitle,
+                nodeThis,
+                helper.clickLogBadgeItemHandler),
+                '应该输入时间']);
+            return false;
+        }
+        
+        var blockInServer = belongBlock.getScope().isServerSide;
+
+        if (!blockInServer) {
+            var nodeI = 0;
+            for (nodeI = preNodes_arr.length - 1; nodeI > 0; --nodeI) {
+                var temNode = preNodes_arr[nodeI];
+                if (temNode.inFlowSocket) {
+                    blockInServer = temNode.hadFetchFun;
+                    break;
+                }
+            }
+        }
+        var funPreFix = blockInServer ? 'serverhelper.DateFun.' : '';
+        endstr=funPreFix+"getweekDay("+dateStr+")" ;
+        
+        selfCompileRet.setSocketOut(outSocket, endstr);
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -908,12 +914,14 @@ JSNodeClassMap[JSNODE_CAPITALNUM] = {
     modelClass: JSNode_CapitalNum,
     comClass: C_Node_SimpleNode,
 };
+/*
 JSNodeEditorControls_arr.push(
     {
         label: 'while',
         nodeClass: JSNode_While,
         type: '流控制'
     });
+*/
 JSNodeEditorControls_arr.push(
     {
         label: '数组-添加',
