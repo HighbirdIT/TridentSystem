@@ -2,8 +2,6 @@
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-var _util = require('util');
-
 function autoBind(self, options) {
 	options = Object.assign({}, options);
 	var filter = function filter(key) {
@@ -626,8 +624,8 @@ function guid2() {
 // getday
 function getweekDay(date) {
 	var weekarr = ["日", "一", "二", "三", "四", "五", "六"];
-	if ((0, _util.isDate)(date)) {
-		var week = dateStr.getDay();
+	if (checkDate(date)) {
+		var week = new Date(date).getDay();
 	} else {
 		var dateStr = new Date(date.replace(/-/g, "\/"));
 		var week = dateStr.getDay();

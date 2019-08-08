@@ -1,5 +1,3 @@
-import { isDate } from "util";
-
 function autoBind(self, options) {
 	options = Object.assign({}, options);
 	const filter = key => {
@@ -604,7 +602,7 @@ function guid2() {
 // getday
 function getweekDay(date) {
 	var weekarr = ["日", "一", "二", "三", "四", "五", "六"];
-	if (isDate(date)) {
+	if (checkDate(date)) {
 		var week = new Date(date).getDay();
 	} else {
 		var dateStr = new Date(date.replace(/-/g, "\/"));
