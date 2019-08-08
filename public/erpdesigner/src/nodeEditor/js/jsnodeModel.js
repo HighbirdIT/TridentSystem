@@ -653,7 +653,12 @@ class JSNode_BluePrint extends EventEmitter {
                 hadCallParm = true;
             }
             if (!hadCallParm) {
-                theFun.scope.getVar(VarNames.State, true, 'store.getState()');
+                if(this.group == EJsBluePrintFunGroup.CtlValid){
+                    theFun.scope.getVar(VarNames.State, true, 'comeState');
+                }
+                else{
+                    theFun.scope.getVar(VarNames.State, true, 'store.getState()');
+                }
             }
 
             if (this.group == EJsBluePrintFunGroup.CtlEvent) {
@@ -7049,7 +7054,9 @@ class JSNode_CloseMessageBox extends JSNode_Base {
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
 
-        this.compileOutFlow(helper, usePreNodes_arr, myJSBlock);
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
 
         return selfCompileRet;
     }
@@ -7095,7 +7102,9 @@ class JSNode_HideMessageBox extends JSNode_Base {
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
 
-        this.compileOutFlow(helper, usePreNodes_arr, myJSBlock);
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
 
         return selfCompileRet;
     }

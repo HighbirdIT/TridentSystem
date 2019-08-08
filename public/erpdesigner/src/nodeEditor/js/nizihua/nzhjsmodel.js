@@ -7,6 +7,7 @@ const JSNODE_ARRAY_SLICE = 'array_slice';
 const JSNODE_GETDAY = 'getDay';
 const JSNODE_FORMATNUM = 'formatnum';
 const JSNODE_CAPITALNUM = 'capitalnum';
+const JSNODE_CONVERT_TIMEZONE='convert_timezone'
 class JSNode_While extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_WHILE, 'While', false, nodeJson);
@@ -730,6 +731,79 @@ class JSNode_FormatNum extends JSNode_Base {
 class JSNode_CapitalNum extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_CAPITALNUM, '货币中文大写', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+        }
+        if (this.inputScokets_arr.length == 0) {
+            this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Object, inputable: true }));
+        }
+        this.inputScokets_arr[0].label = '数字';
+        this.inputScokets_arr[0].inputable = true;
+
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.type = ValueType.Object;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var socketComRet = this.getSocketCompileValue(helper, this.inputScokets_arr[0], usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var dateStr = socketComRet.value;
+
+        var socketlink = socketComRet.link;
+
+        if(socketlink == null){
+            
+            if (isNaN(dateStr)) {
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    "请检查输入金额是否正确"]);
+                return false;
+            }
+            if (!/^(0|[1-9]\d*)(\.\d+)?$/.test(dateStr)) {
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                    '数据非法']);
+                return false;
+            }
+        }
+        
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, ' NumToChinese(' + dateStr + ') ');
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+
+/*
+    转换时区节点
+
+*/
+class JSNode_Convert_TimeZone extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_CONVERT_TIMEZONE, '世界时间转换', false, nodeJson);
         autoBind(this);
 
         if (nodeJson) {

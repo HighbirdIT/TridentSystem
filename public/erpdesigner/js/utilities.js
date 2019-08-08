@@ -2,6 +2,8 @@
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
+var _util = require('util');
+
 function autoBind(self, options) {
 	options = Object.assign({}, options);
 	var filter = function filter(key) {
@@ -624,15 +626,18 @@ function guid2() {
 // getday
 function getweekDay(date) {
 	var weekarr = ["日", "一", "二", "三", "四", "五", "六"];
-	var dateStr = new Date(date.replace(/-/g, "\/"));
-	var week = dateStr.getDay();
+	if ((0, _util.isDate)(date)) {
+		var week = dateStr.getDay();
+	} else {
+		var dateStr = new Date(date.replace(/-/g, "\/"));
+		var week = dateStr.getDay();
+	}
 	return "星期" + weekarr[week];
 }
 
 //格式化数字加逗号
 function addComma(num) {
 	var reg = num.toString().indexOf('.') > -1 ? /(\d)(?=(\d{3})+\.)/g : /(\d)(?=(\d{3})+$)/g;
-
 	return num.toString().replace(reg, '$1,');
 }
 
