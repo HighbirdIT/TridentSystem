@@ -977,7 +977,7 @@ class JSNode_BluePrint extends EventEmitter {
                     varObj.ctlStateVar,
                     varObj.valueVar,
                     singleQuotesStr(valueType),
-                    varObj.nullable.toString(),
+                    varObj.nullable == null ? 'true' : varObj.nullable.toString(),
                     singleQuotesStr(varObj.kernel.id),
                     validErrStateVar.name
                 ]) + ";");
