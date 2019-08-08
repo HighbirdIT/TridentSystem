@@ -605,7 +605,7 @@ function guid2() {
 function getweekDay(date) {
 	var weekarr = ["日", "一", "二", "三", "四", "五", "六"];
 	if (isDate(date)) {
-		var week = dateStr.getDay();
+		var week = new Date(date).getDay();
 	} else {
 		var dateStr = new Date(date.replace(/-/g, "\/"));
 		var week = dateStr.getDay();
