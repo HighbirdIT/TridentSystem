@@ -55,6 +55,11 @@ var ProjectDesigner = function (_React$PureComponent) {
             this.quickMenuRef.current.popMenu(items_arr, pos, callBack);
         }
     }, {
+        key: 'getSelectedKernel',
+        value: function getSelectedKernel() {
+            if (this.attrbutePanelRef.current) return this.attrbutePanelRef.current.getTarget();
+        }
+    }, {
         key: 'selectKernel',
         value: function selectKernel(kernel) {
             /*

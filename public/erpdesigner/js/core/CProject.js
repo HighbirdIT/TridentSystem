@@ -159,6 +159,42 @@ var CProject = function (_IAttributeable) {
             return newControl;
         }
     }, {
+        key: 'deleteUserControl',
+        value: function deleteUserControl(userCtlKernel) {
+            var index = this.userControls_arr.indexOf(userCtlKernel);
+            if (index == -1) {
+                return;
+            }
+            var instances_arr = this.getControlsByType(UserControlKernel_Type).filter(function (p) {
+                return p.refID == userCtlKernel.id;
+            });
+            var hadIntanceSelected = false;
+            var selectedKernel = this.designer.getSelectedKernel();
+            instances_arr.forEach(function (instance) {
+                if (instance.isAEditor()) {
+                    instance.parent.setAttribute(AttrNames.EditorType, M_TextKernel_Type);
+                } else {
+                    instance.parent.removeChild(instance);
+                }
+                if (!hadIntanceSelected && selectedKernel == instance) {
+                    hadIntanceSelected = true;
+                }
+            });
+            this.userControls_arr.splice(index, 1);
+            var self = this;
+            var targetOpened = this.designeConfig.editingControl.id == userCtlKernel.id;
+            this.unRegisterControl(userCtlKernel);
+            setTimeout(function () {
+                self.emit('userControlChanged');
+                if (targetOpened) {
+                    self.setEditingPageById(-1);
+                }
+                if (hadIntanceSelected) {
+                    self.designer.selectKernel(null);
+                }
+            }, 100);
+        }
+    }, {
         key: 'getEditingControl',
         value: function getEditingControl() {
             return this.getUserControlById(this.designeConfig.editingControl.id);
@@ -189,8 +225,12 @@ var CProject = function (_IAttributeable) {
                 useID = null;
             }
             if (IsEmptyString(useID)) {
+                var ctlType = ctlKernel.type;
+                if (ctlType == UserControlKernel_Type) {
+                    ctlType = ctlKernel.refID == null ? 'userControl_T' : 'userControl';
+                }
                 for (var i = 0; i < 9999; ++i) {
-                    useID = ctlKernel.type + '_' + i;
+                    useID = ctlType + '_' + i;
                     if (this.getControlById(useID) == null) {
                         break;
                     }
@@ -255,6 +295,13 @@ var CProject = function (_IAttributeable) {
                 }
             }
             return rlt_arr;
+        }
+    }, {
+        key: 'getUserControlByUUID',
+        value: function getUserControlByUUID(uuid) {
+            return this.userControls_arr.find(function (t) {
+                return t.uuid == uuid;
+            });
         }
     }, {
         key: 'createKernalByType',
@@ -459,6 +506,371 @@ var CProject = function (_IAttributeable) {
             });
             return rlt;
         }
+    }, {
+        key: 'copyKernel',
+        value: function copyKernel(theKernel) {
+            var _this3 = this;
+
+            if (theKernel == null) {
+                return;
+            }
+            var copyResult = {
+                project: this,
+                cusDS_arr: [],
+                scripts_arr: [],
+                userControls_arr: [],
+                controlsID_map: {},
+                refControlID_map: {},
+                targetControl: null
+            };
+            var controlJsonProf = new AttrJsonProfile();
+            var controlJson = theKernel.getJson(controlJsonProf);
+            var si;
+            var ctlid;
+            var meetCusDS_map = {};
+            var meetScript_map = {};
+            var meetUserControl_map = {};
+            var copyCusDS = function copyCusDS(cusEntity, cusDS_arr, refControl_map) {
+                if (meetCusDS_map[cusEntity.code]) {
+                    return;
+                }
+                meetCusDS_map[cusEntity.code] = 1;
+                var cusDSJsonProf = new AttrJsonProfile();
+                var dsJson = cusEntity.getJson(cusDSJsonProf);
+                cusDSJsonProf.customDS_arr.forEach(function (entity) {
+                    if (entity.isCustomDS) {
+                        copyCusDS(entity, refControl_map);
+                    }
+                });
+                if (refControl_map) {
+                    for (var rcid in cusDSJsonProf.refControl_map) {
+                        refControl_map[rcid] = cusDSJsonProf.refControl_map[rcid].type;
+                    }
+                }
+                cusDS_arr.push(dsJson);
+            };
+            controlJsonProf.customDS_arr.forEach(function (entity) {
+                if (entity.isCustomDS) {
+                    copyCusDS(entity, copyResult.cusDS_arr, copyResult.refControlID_map);
+                }
+            });
+
+            var copyScript = function copyScript(scriptBP, scripts_arr, cusDS_arr, refControl_map) {
+                if (meetScript_map[scriptBP.code]) {
+                    return;
+                }
+                meetScript_map[scriptBP.code] = 1;
+                var scriptJsonProf = new AttrJsonProfile();
+                var scriptJson = scriptBP.getJson(scriptJsonProf);
+                scriptJsonProf.customDS_arr.forEach(function (entity) {
+                    if (entity.isCustomDS) {
+                        copyCusDS(entity, cusDS_arr, refControl_map);
+                    }
+                });
+                if (refControl_map) {
+                    for (var rcid in scriptJsonProf.refControl_map) {
+                        refControl_map[rcid] = scriptJsonProf.refControl_map[rcid].type;
+                    }
+                }
+                scripts_arr.push(scriptJson);
+            };
+
+            for (ctlid in controlJsonProf.useControl_map) {
+                var ctlType = controlJsonProf.useControl_map[ctlid].type;
+                if (copyResult.controlsID_map[ctlType] == null) {
+                    copyResult.controlsID_map[ctlType] = [];
+                }
+                copyResult.controlsID_map[ctlType].push(ctlid);
+                var useScripteBP_arr = this.scriptMaster.getBPsByControlKernel(ctlid);
+                useScripteBP_arr.forEach(function (scriptBP) {
+                    copyScript(scriptBP, copyResult.scripts_arr, copyResult.cusDS_arr, copyResult.refControlID_map);
+                });
+            }
+
+            var copyUserControl = function copyUserControl(UCKernel) {
+                if (meetUserControl_map[UCKernel.id]) {
+                    return;
+                }
+                var userCtlProfile = {
+                    controlsID_map: {},
+                    scripts_arr: [],
+                    cusDS_arr: [],
+                    refControlID_map: {}
+                };
+                meetUserControl_map[UCKernel.id] = 1;
+                var UCJsonProf = new AttrJsonProfile();
+                var UCJson = UCKernel.getJson(UCJsonProf);
+
+                UCJsonProf.customDS_arr.forEach(function (entity) {
+                    if (entity.isCustomDS) {
+                        copyCusDS(entity, userCtlProfile.cusDS_arr, userCtlProfile.refControlID_map);
+                    }
+                });
+
+                for (ctlid in UCJsonProf.useControl_map) {
+                    var ctlType = UCJsonProf.useControl_map[ctlid].type;
+                    if (userCtlProfile.controlsID_map[ctlType] == null) {
+                        userCtlProfile.controlsID_map[ctlType] = [];
+                    }
+                    userCtlProfile.controlsID_map[ctlType].push(ctlid);
+                    var useScripteBP_arr = _this3.scriptMaster.getBPsByControlKernel(ctlid);
+                    useScripteBP_arr.forEach(function (scriptBP) {
+                        copyScript(scriptBP, userCtlProfile.scripts_arr, userCtlProfile.cusDS_arr, userCtlProfile.refControlID_map);
+                    });
+                }
+
+                for (ctlid in UCJsonProf.useUserControl_map) {
+                    copyUserControl(UCJsonProf.useUserControl_map[ctlid]);
+                }
+                userCtlProfile.jsonData = UCJson;
+                copyResult.userControls_arr.push(userCtlProfile);
+            };
+
+            for (ctlid in controlJsonProf.useUserControl_map) {
+                copyUserControl(controlJsonProf.useUserControl_map[ctlid]);
+            }
+
+            copyResult.targetControl = controlJson;
+            return copyResult;
+        }
+    }, {
+        key: 'pasteKernel',
+        value: function pasteKernel(copiedData, parentKernel, targetIndex) {
+            var _this4 = this;
+
+            var copyFromThisProject = copiedData.project == this;
+            var ctlID;
+            var oldID;
+            var useUUID;
+            var goodJson;
+            var si;
+            var i;
+            var ctlType;
+            var aidControlId_map = Object.assign({}, this.controlId_map);
+            var renameContrls_map = {};
+            var renameCusDS_map = {};
+            var useControlsID_all = {};
+            for (ctlType in copiedData.controlsID_map) {
+                copiedData.controlsID_map[ctlType].forEach(function (ctlID) {
+                    useControlsID_all[ctlID] = 1;
+                });
+            }
+            copiedData.userControls_arr.forEach(function (UCJson) {
+                useControlsID_all[UCJson.id] = 1;
+            });
+            for (var rcid in copiedData.refControlID_map) {
+                if (useControlsID_all[rcid] == null) {
+                    renameContrls_map[rcid] = '';
+                }
+            }
+            for (ctlType in copiedData.controlsID_map) {
+                copiedData.controlsID_map[ctlType].forEach(function (ctlID) {
+                    if (aidControlId_map[ctlID] != null) {
+                        var newID = '';
+                        for (i = 0; i < 9999; ++i) {
+                            newID = ctlType + '_' + i;
+                            if (aidControlId_map[newID] == null) {
+                                if (useControlsID_all[newID] == null) {
+                                    break;
+                                }
+                            }
+                        }
+                        aidControlId_map[newID] = 1;
+                        renameContrls_map[ctlID] = newID;
+                    }
+                });
+            }
+
+            var replaceIDChangedInJsonString = function replaceIDChangedInJsonString(pJsonStr) {
+                for (oldID in renameContrls_map) {
+                    pJsonStr = pJsonStr.replace(new RegExp(doubleQuotesStr(oldID), 'g'), doubleQuotesStr(renameContrls_map[oldID]));
+                    if (renameContrls_map[oldID].length > 0) {
+                        pJsonStr = pJsonStr.replace(new RegExp(oldID + '_', 'g'), renameContrls_map[oldID] + '_');
+                    }
+                }
+                for (oldID in renameCusDS_map) {
+                    pJsonStr = pJsonStr.replace(new RegExp(doubleQuotesStr(oldID), 'g'), doubleQuotesStr(renameCusDS_map[oldID]));
+                }
+                return pJsonStr;
+            };
+
+            var needPasteCusDS_arr = copiedData.cusDS_arr.concat();
+            var needPasteScripts_arr = copiedData.scripts_arr.concat();
+
+            if (!copyFromThisProject) {
+                copiedData.userControls_arr.forEach(function (userCtlProfile) {
+                    var UCJson = userCtlProfile.jsonData;
+                    var hadUserControl = _this4.getUserControlByUUID(UCJson.uuid);
+                    if (hadUserControl) {
+                        if (hadUserControl.id != UCJson.id) {
+                            renameContrls_map[UCJson.id] = hadUserControl.id;
+                        }
+                        return;
+                    }
+                    if (aidControlId_map[UCJson.id] != null) {
+                        var newID = '';
+                        for (i = 0; i < 9999; ++i) {
+                            newID = 'userControl_T' + i;
+                            if (aidControlId_map[newID] == null) {
+                                if (useControlsID_all[newID] == null) {
+                                    break;
+                                }
+                            }
+                        }
+                        aidControlId_map[newID] = 1;
+                        renameContrls_map[UCJson.id] = newID;
+                    }
+                    needPasteCusDS_arr = needPasteCusDS_arr.concat(userCtlProfile.cusDS_arr);
+                    needPasteScripts_arr = needPasteScripts_arr.concat(userCtlProfile.scripts_arr);
+
+                    for (ctlType in userCtlProfile.controlsID_map) {
+                        userCtlProfile.controlsID_map[ctlType].forEach(function (ctlID) {
+                            if (aidControlId_map[ctlID] != null && ctlID != UCJson.id) {
+                                var newID = '';
+                                for (i = 0; i < 9999; ++i) {
+                                    newID = ctlType + '_' + i;
+                                    if (aidControlId_map[newID] == null) {
+                                        if (useControlsID_all[newID] == null) {
+                                            break;
+                                        }
+                                    }
+                                }
+                                aidControlId_map[newID] = 1;
+                                renameContrls_map[ctlID] = newID;
+                            }
+                        });
+                    }
+                });
+            }
+
+            var aidEntityCode_map = {};
+            this.dataMaster.BP_sql_arr.forEach(function (bp) {
+                aidEntityCode_map[bp.code] = 1;
+            });
+            if (!copyFromThisProject) {
+                var useDSID_all = {};
+                needPasteCusDS_arr.forEach(function (cusDSBP) {
+                    useDSID_all[cusDSBP.code] = 1;
+                });
+                needPasteCusDS_arr.forEach(function (cusDSBP) {
+                    if (cusDSBP.group == 'custom') {
+                        if (copyFromThisProject) {
+                            return; // 从本方案里来的，自订数据源已经存在了肯定
+                        }
+                        var hadSqlBp = _this4.dataMaster.getSqlBPByUUID(cusDSBP.uuid);
+                        if (hadSqlBp) {
+                            if (cusDSBP.code != hadSqlBp.code) {
+                                renameCusDS_map[cusDSBP.code] = hadSqlBp.code;
+                            }
+                            return;
+                        }
+                        if (aidEntityCode_map[cusDSBP.code] != null) {
+                            for (i = 0; i < 9999; ++i) {
+                                var useCode = 'sqlBP_' + i;
+                                if (aidEntityCode_map[useCode] == null && useDSID_all[useCode] == null) {
+                                    aidEntityCode_map[useCode] = 1;
+                                    renameCusDS_map[cusDSBP.code] = useCode;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            needPasteCusDS_arr.forEach(function (cusDSBP) {
+                useUUID = cusDSBP.uuid;
+                if (cusDSBP.group == 'custom') {
+                    if (copyFromThisProject) {
+                        return; // 从本方案里来的，自订数据源已经存在了肯定
+                    }
+                    var hadSqlBp = _this4.dataMaster.getSqlBPByUUID(cusDSBP.uuid);
+                    if (hadSqlBp) {
+                        return;
+                    }
+                } else if (cusDSBP.group == 'ctlcus') {
+                    useUUID = null;
+                } else {
+                    console.error('不支持的group:' + cusDSBP.group);
+                    return;
+                }
+                var expireBP = null;
+                var sqlBPCreationHelper = new NodeCreationHelper();
+                sqlBPCreationHelper.project = _this4.project;
+                var jsonStr = JSON.stringify(cusDSBP);
+                var goodJson = JSON.parse(replaceIDChangedInJsonString(jsonStr));
+                goodJson.uuid = useUUID;
+                if (cusDSBP.group == 'ctlcus') {
+                    expireBP = _this4.dataMaster.getSqlBPByName(goodJson.name);
+                    if (expireBP) {
+                        _this4.dataMaster.deleteSqlBP(expireBP);
+                    }
+                }
+                var newbp = new SqlNode_BluePrint({ master: _this4.dataMaster }, goodJson, sqlBPCreationHelper);
+                _this4.dataMaster.addSqlBP(newbp);
+            });
+
+            needPasteScripts_arr.forEach(function (scriptBP) {
+                useUUID = null;
+                var expireBP = null;
+                var scriptBPCreationHelper = new NodeCreationHelper();
+                scriptBPCreationHelper.project = _this4.project;
+
+                var jsonStr = JSON.stringify(scriptBP);
+                var goodJson = JSON.parse(replaceIDChangedInJsonString(jsonStr));
+                expireBP = _this4.scriptMaster.getBPByName(goodJson.name);
+                if (expireBP) {
+                    _this4.scriptMaster.deleteBP(expireBP);
+                }
+                goodJson.uuid = useUUID;
+                var newbp = new JSNode_BluePrint({ master: _this4.scriptMaster }, goodJson, scriptBPCreationHelper);
+                _this4.scriptMaster.addBP(newbp);
+            });
+
+            var createdUserCtls_arr = [];
+            if (!copyFromThisProject) {
+                copiedData.userControls_arr.forEach(function (userCtlProfile) {
+                    var UCJson = userCtlProfile.jsonData;
+                    var hadUserControl = _this4.getUserControlByUUID(UCJson.uuid);
+                    if (!hadUserControl) {
+                        var userCtlCreatioinHelper = new CtlKernelCreationHelper();
+                        userCtlCreatioinHelper.project = _this4;
+                        var goodUserCtlJson = JSON.parse(replaceIDChangedInJsonString(JSON.stringify(UCJson)));
+                        var newUCtl = new UserControlKernel({ project: _this4 }, null, userCtlCreatioinHelper, goodUserCtlJson);
+                        _this4.userControls_arr.push(newUCtl);
+                        createdUserCtls_arr.push({
+                            ctl: newUCtl,
+                            json: goodUserCtlJson
+                        });
+                    }
+                });
+
+                createdUserCtls_arr.forEach(function (p) {
+                    p.ctl.__restoreChildren(null, p.json);
+                });
+            }
+
+            var targetCtlJsonStr = JSON.stringify(copiedData.targetControl);
+            var goodTargetCtlJson = JSON.parse(replaceIDChangedInJsonString(targetCtlJsonStr));
+            var ctlCreatioinHelper = new CtlKernelCreationHelper();
+            var ctlConfig = DesignerConfig.findConfigByType(goodTargetCtlJson.type);
+            if (ctlConfig == null) {
+                console.warn('type:' + goodTargetCtlJson.type + '未找到配置数据');
+                return;
+            }
+            var initData = {};
+            if (targetIndex >= 0) {
+                initData.hintIndexInParent = targetIndex + 1;
+            }
+            var newCtl = new ctlConfig.kernelClass(initData, parentKernel, ctlCreatioinHelper, goodTargetCtlJson);
+            var self = this;
+            setTimeout(function () {
+                self.designer.selectKernel(newCtl);
+                if (createdUserCtls_arr.length > 0) {
+                    self.emit('userControlChanged');
+                }
+            }, 50);
+        }
     }]);
 
     return CProject;
@@ -469,17 +881,48 @@ var AttrJsonProfile = function () {
         _classCallCheck(this, AttrJsonProfile);
 
         this.entities_arr = [];
+        this.customDS_arr = [];
+        this.useControl_map = {};
+        this.useUserControl_map = {};
+        this.refControl_map = {};
     }
 
     _createClass(AttrJsonProfile, [{
         key: 'useEntity',
         value: function useEntity(entity) {
             if (isNaN(entity.code)) {
+                if (this.customDS_arr.indexOf(entity) == -1) {
+                    this.customDS_arr.push(entity);
+                }
                 return;
             }
             if (this.entities_arr.indexOf(entity) == -1) {
                 this.entities_arr.push(entity);
             }
+        }
+    }, {
+        key: 'useControl',
+        value: function useControl(theCtl) {
+            if (theCtl == null) {
+                return;
+            }
+            this.useControl_map[theCtl.id] = theCtl;
+        }
+    }, {
+        key: 'useUserControl',
+        value: function useUserControl(theCtl) {
+            if (theCtl == null) {
+                return;
+            }
+            this.useUserControl_map[theCtl.id] = theCtl;
+        }
+    }, {
+        key: 'addRefControl',
+        value: function addRefControl(theCtl) {
+            if (theCtl == null) {
+                return;
+            }
+            this.refControl_map[theCtl.id] = theCtl;
         }
     }]);
 

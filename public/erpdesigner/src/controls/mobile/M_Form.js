@@ -458,7 +458,7 @@ class M_Form extends React.PureComponent {
                         </thead>
                         </table>
                     </div>
-                    {ctlKernel.gridFormBottomDiv && ctlKernel.gridFormBottomDiv.renderSelf(childClickHandlerParam)}
+                    {ctlKernel.gridFormBottomDiv && ctlKernel.gridFormBottomDiv.renderSelf(childClickHandlerParam, this.props.replaceChildClick)}
                 </div>
             );
             if(widthType == EGridWidthType.Fixed){
@@ -478,7 +478,7 @@ class M_Form extends React.PureComponent {
                             if(childKernel == ctlKernel.gridFormBottomDiv){
                                 return null;
                             }
-                            return childKernel.renderSelf(childClickHandlerParam);
+                            return childKernel.renderSelf(childClickHandlerParam, this.props.replaceChildClick);
                         })
                 }
             </div>

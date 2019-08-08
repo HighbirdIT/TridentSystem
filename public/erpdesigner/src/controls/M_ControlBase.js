@@ -1,3 +1,5 @@
+var gCopiedKernelData = null;
+
 function M_ControlBase_componentWillMount(){
     this.listenTarget(this.props.ctlKernel);
     this.mounted = true;
@@ -110,8 +112,14 @@ function M_ControlBase(target,watchedAttrs){
     target.renderHandleBar = M_ControlBase_RenderHandleBar.bind(target);
     target.clickHandleTrash = M_ControlBase_ClickHandle_Trash.bind(target);
     target.clickHandleMove = M_ControlBase_ClickHandle_Move.bind(target);
+    target.clickHandleCopy = M_ControlBase_ClickHandle_Copy.bind(target);
+    target.clickHandlePaste = M_ControlBase_ClickHandle_Paste.bind(target);
+    target.clickHandleEraser = M_ControlBase_ClickHandle_Eraser.bind(target);
+    target.clickHandleGoParent = M_ControlBase_ClickHandle_GoParent.bind(target);
+    
     target.setSelected = M_ControlBase_setSelected.bind(target);
     target.aAttrChangedBase = M_ControlBase_aAttrChangedBase.bind(target);
+    target.reDraw = C_ReDraw.bind(target);
 
     var layoutState = {};
     LayoutAttrNames_arr.forEach(name=>{
@@ -133,8 +141,35 @@ function M_ControlBase_ClickHandle_Move(){
 }
 
 function M_ControlBase_ClickHandle_Copy(){
-    this.props.ctlKernel.project.copyKernel(this.props.ctlKernel);
+    gCopiedKernelData = this.props.ctlKernel.project.copyKernel(this.props.ctlKernel);
+    console.log(gCopiedKernelData);
+    this.reDraw();
 }
+
+function M_ControlBase_ClickHandle_Paste(){
+    if(gCopiedKernelData){
+        var theKernel = this.props.ctlKernel;
+        var targetParent = theKernel.parent;
+        if(targetParent == null){
+            targetParent = theKernel;
+        }
+        var targetIndex = targetParent.getChildIndex(theKernel);
+        this.props.ctlKernel.project.pasteKernel(gCopiedKernelData,this.props.ctlKernel.parent,targetIndex);
+    }
+}
+
+function M_ControlBase_ClickHandle_Eraser(){
+    gCopiedKernelData = null;
+    this.reDraw();
+}
+
+function M_ControlBase_ClickHandle_GoParent(){
+    var theKernel = this.props.ctlKernel;
+    if(theKernel.parent){
+        theKernel.project.designer.selectKernel(theKernel.parent);
+    }
+}
+
 
 function M_ControlBase_RenderHandleBar(){
     if(this.state.selected != true || this.props.ctlKernel.isfixed){
@@ -144,8 +179,10 @@ function M_ControlBase_RenderHandleBar(){
     return (<div className='controlHandleBar'>
                 <div className='btn-group'>
                     <button className='btn btn-dark' onMouseDown={this.clickHandleMove}><i className='fa fa-arrows' /></button>
-                    <button className='btn btn-dark' onMouseDown={this.clickHandleCopy}><i className='fa fa-copy' /></button>
-                    <button className='btn btn-dark' onMouseDown={this.clickHandlePaste}><i className='fa fa-paste' /></button>
+                    {this.props.ctlKernel.parent ? <button className='btn btn-dark' onClick={this.clickHandleGoParent}><i className='fa fa-reply' /></button> : null}
+                    <button className='btn btn-dark' onClick={this.clickHandleCopy}><i className='fa fa-copy' /></button>
+                    {gCopiedKernelData && <button className='btn btn-dark' onClick={this.clickHandlePaste}><i className='fa fa-paste' /></button>}
+                    {gCopiedKernelData && <button className='btn btn-dark' onClick={this.clickHandleEraser}><i className='fa fa-eraser' /></button>}
                     <button className='btn btn-danger' onClick={this.clickHandleTrash}><i className='fa fa-trash' /></button>
                 </div>
             </div>);

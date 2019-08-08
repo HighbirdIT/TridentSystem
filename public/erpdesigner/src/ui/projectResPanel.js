@@ -70,6 +70,25 @@ class ProjectResPanel extends React.PureComponent {
         });
     }
 
+    clickTrashUserControlBtn(ev){
+        var ctlID = getAttributeByNode(ev.target,'d-id', true);
+        var project = this.props.project;
+        var userCtl = project.getUserControlById(ctlID);
+        if(userCtl == null){
+            return;
+        }
+        gTipWindow.popAlert(makeAlertData('警告', '确定要删除自订控件:' + userCtl.name,this.clickDeleteUserControlTipCallback,[makeAlertBtnData('确定', 'ok'),makeAlertBtnData('取消', 'cancel')], userCtl));
+    }
+
+    clickDeleteUserControlTipCallback(key, userCtl){
+        if(key == 'ok'){
+            this.props.project.deleteUserControl(userCtl);
+            this.setState({
+                magicObj:{}
+            });
+        }
+    }
+
     render() {
         var project = this.props.project;
         var editingPage = project.getEditingPage();
@@ -99,7 +118,10 @@ class ProjectResPanel extends React.PureComponent {
                 <div className='list-group'>
                     {
                         project.userControls_arr.map((userctl)=>{
-                            return (<span onClick={this.clickControlItem} d-id={userctl.id} key={userctl.id} className={'list-group-item list-group-item-action ' + (editingControl == userctl ? 'active' : '')}>{userctl.name}[{userctl.id}]</span>);
+                            return (<div d-id={userctl.id} key={userctl.id} className={'d-flex list-group-item ' + (editingControl == userctl ? 'active' : '')}>
+                                    <span onClick={this.clickControlItem} className='flex-grow-1 flex-shrink-1'>{userctl.name}[{userctl.id}]</span>
+                                    <button onClick={this.clickTrashUserControlBtn} className='btn btn-danger'><i className='fa fa-trash' /></button>
+                                </div>);
                         })
                     }
                 </div>

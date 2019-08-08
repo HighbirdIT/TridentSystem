@@ -79,7 +79,7 @@ class ControlKernelBase extends IAttributeable {
         super(initData, null, description);
         this.lisenedDSSyned = this.lisenedDSSyned.bind(this);
         if(parentKernel == null && type != UserControlKernel_Type){
-            Console.error('ControlKernelBase 的 parentKernel不能为空');
+            console.error('ControlKernelBase 的 parentKernel不能为空');
         }
         if(this.project == null){
             this.project = parentKernel ? parentKernel.project : null;
@@ -142,7 +142,8 @@ class ControlKernelBase extends IAttributeable {
             createHelper.saveJsonMap(kernelJson, this);
         }
         if (parentKernel && parentKernel.project != parentKernel) {
-            parentKernel.appandChild(this);
+            parentKernel.appandChild(this, this.hintIndexInParent);
+            this.hintIndexInParent = null;
         }
         this.readableName = this.getReadableName();
     }
@@ -353,6 +354,9 @@ class ControlKernelBase extends IAttributeable {
             type: this.type,
             id: this.id,
         };
+        if(jsonProf){
+            jsonProf.useControl(this);
+        }
         return rlt;
     }
 

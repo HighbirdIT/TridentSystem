@@ -2864,7 +2864,7 @@ class MobileContentCompiler extends ContentCompiler {
         var onclickFunName = theKernel.id + '_' + AttrNames.Event.OnClick;
         var onClickBp = project.scriptMaster.getBPByName(onclickFunName);
         if (onClickBp != null) {
-            var compileRet = this.compileScriptBlueprint(onClickBp, { params: ['ev'] });
+            var compileRet = this.compileScriptBlueprint(onClickBp, { params: ['ev'], haveDoneTip:theKernel.getAttribute(AttrNames.HaveDoneTip) });
             if (compileRet == false) {
                 return false;
             }

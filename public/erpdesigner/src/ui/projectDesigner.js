@@ -40,6 +40,11 @@ class ProjectDesigner extends React.PureComponent {
         this.quickMenuRef.current.popMenu(items_arr, pos, callBack);
     }
 
+    getSelectedKernel(){
+        if (this.attrbutePanelRef.current)
+            return this.attrbutePanelRef.current.getTarget(); 
+    }
+
     selectKernel(kernel) {
         /*
         if(this.selectedKernel == kernel){
