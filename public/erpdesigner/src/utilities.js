@@ -1,5 +1,3 @@
-import { isDate } from "util";
-
 function autoBind(self, options) {
 	options = Object.assign({}, options);
 	const filter = key => {

@@ -2146,6 +2146,9 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
 
+        var endBindBlock = new FormatFileBlock('endbind');
+        bindFun.pushChild(endBindBlock);
+
         var ci;
         var childKernel;
         var contentBlock = new FormatFileBlock('content');
@@ -2594,11 +2597,22 @@ class MobileContentCompiler extends ContentCompiler {
                         var setLine;
                         var sv;
                         if (isGridForm) {
-                            stateName = "row_'+rowIndex+'." + orginStateName;
+                            var kernelInRow = theKernel.isKernelInRow(targetKernel);
+                            if(kernelInRow){
+                                stateName = "row_'+rowIndex+'." + orginStateName;
+                            }
+                            else{
+                                console.log(stateName);
+                            }
                             if (stateItem.isDynamic) {
                                 switch (stateItem.bindMode) {
                                     case ScriptBindMode.OnForm:
-                                        bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', "formPath + '.row_' + rowIndex"])));
+                                        if(kernelInRow){
+                                            bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', "formPath + '.row_' + rowIndex"])));    
+                                        }
+                                        else{
+                                            endBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', theKernel.id + '_path'])));
+                                        }
                                         break;
                                     case ScriptBindMode.OnNewRow:
                                         staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', "formPath + '.row_new'"])));
@@ -2616,7 +2630,12 @@ class MobileContentCompiler extends ContentCompiler {
                                     }
                                     switch (stateItem.bindMode) {
                                         case ScriptBindMode.OnForm:
-                                            bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), sv));
+                                            if(kernelInRow){
+                                                bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), sv));
+                                            }
+                                            else{
+                                                endBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), sv));
+                                            }
                                             break;
                                         case ScriptBindMode.OnNewRow:
                                             staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), sv));
@@ -2627,12 +2646,19 @@ class MobileContentCompiler extends ContentCompiler {
                                     }
                                 }
                                 else if (stateItem.useColumn) {
-                                    bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_DynamicAttr(VarNames.NowRecord, stateItem.useColumn.name)));
+                                    if(kernelInRow){
+                                        bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_DynamicAttr(VarNames.NowRecord, stateItem.useColumn.name)));
+                                    }
                                 }
                                 else if (stateItem.setNull) {
                                     switch (stateItem.bindMode) {
                                         case ScriptBindMode.OnForm:
-                                            bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), 'null'));
+                                            if(kernelInRow){
+                                                bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), 'null'));
+                                            }
+                                            else{
+                                                endBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), 'null'));
+                                            }
                                             break;
                                         case ScriptBindMode.OnNewRow:
                                             staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), 'null'));
