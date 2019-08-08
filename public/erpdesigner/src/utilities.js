@@ -1,3 +1,5 @@
+import { isDate } from "util";
+
 function autoBind(self, options) {
 	options = Object.assign({}, options);
 	const filter = key => {
@@ -600,17 +602,20 @@ function guid2() {
 }
 
 // getday
-function getweekDay(date){
-	var weekarr= ["日", "一", "二", "三", "四", "五", "六"]; 
-	var dateStr = new Date(date.replace(/-/g, "\/"));
-    var week = dateStr.getDay();  
-    return "星期"+ weekarr[week]
+function getweekDay(date) {
+	var weekarr = ["日", "一", "二", "三", "四", "五", "六"];
+	if (isDate(date)) {
+		var week = new Date(date).getDay();
+	} else {
+		var dateStr = new Date(date.replace(/-/g, "\/"));
+		var week = dateStr.getDay();
+	}
+	return "星期" + weekarr[week]
 }
 
 //格式化数字加逗号
 function addComma(num){
 	var reg = num.toString().indexOf('.') > -1 ? /(\d)(?=(\d{3})+\.)/g : /(\d)(?=(\d{3})+$)/g;
-
 	return num.toString().replace(reg,'$1,');
 }
 
