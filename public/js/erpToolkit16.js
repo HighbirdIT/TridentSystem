@@ -1594,3 +1594,27 @@ function NumToChinese(n) {
     var result = str.replace(/零(千|百|拾|角)/g, "零").replace(/(零)+/g, "零").replace(/零(万|亿|元)/g, "$1").replace(/(亿)万|壹(拾)/g, "$1$2").replace(/^元零?|零分/g, "").replace(/元$/g, "元整"); // 替换掉数字里面的零字符，得到结果
     return result;
 }
+
+//世界时区转换
+function Convert_TimeZone(time,zoneO,zoneT){
+    if (checkTime(time)) {
+        var Firsttime = new Date(time);
+    } else {
+        var Firsttime = new Date(FormatStringValue(time,'datetime'));
+    }
+    var datetime =Firsttime.getTime();
+    var n=0;
+    if (zoneO >0 &&zoneT >0){
+        n= zoneT-zoneO;
+    }
+    if(zoneO <0 && zoneT<0){
+        n= zoneO -zoneT;
+    }
+    if(zoneO> 0 &&zoneT<0){
+        n=-zoneO+zoneT;
+    }
+    if(zoneO<0 && zoneT>0){
+        n= zoneT-zoneO;
+    }
+    return new Date (Firsttime.setTime(datetime+1000 * 60 * 60*(n)));
+}
