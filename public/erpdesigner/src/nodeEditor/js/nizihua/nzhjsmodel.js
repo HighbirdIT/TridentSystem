@@ -854,7 +854,7 @@ class JSNode_Convert_TimeZone extends JSNode_Base {
             var dateStr = socketComRet.value;
             if(socketComRet.link ==null){
                 if(i==0){
-                    if(!checkDate(dateStr)){
+                    if(!checkTime(dateStr)){
                         helper.logManager.errorEx([helper.logManager.createBadgeItem(
                             thisNodeTitle,
                             nodeThis,
