@@ -275,6 +275,21 @@ function GetweekDay(date) {
 	return "星期" + gWeekDayName_arr[date.getDay()]
 }
 
+function Convert_TimeZone(time, zoneSrc, zoneDst) {
+    var firsttime;
+    if (typeof time === 'string') {
+        firsttime = castDateFromTimePart(time);
+    }else{
+        firsttime=time;
+    }
+    var datetime = firsttime.getTime();
+    var offset = 0;
+    zoneSrc = parseInt(zoneSrc);
+    zoneDst = parseInt(zoneDst);
+    offset = -zoneSrc + zoneDst;
+    return new Date(firsttime.setTime(datetime + 1000 * 60 * 60 * offset));
+}
+
 helper.DateFun={
     getNowDate:GetNowDate,
     checkDate:CheckDate,
@@ -290,6 +305,7 @@ helper.DateFun={
     getFullFormatDateString:GetFullFormatDateString,
     castDateFromTimePart:CastDateFromTimePart,
     getweekDay:GetweekDay,
+    Convert_TimeZone:Convert_TimeZone,
 };
 
 module.exports = helper;
