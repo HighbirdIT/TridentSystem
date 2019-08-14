@@ -1596,11 +1596,13 @@ function Convert_TimeZone(time, zoneSrc, zoneDst) {
     var firsttime;
     if (typeof time === 'string') {
         firsttime = castDateFromTimePart(time);
+    }else{
+        firsttime=time;
     }
-    var time = firsttime.getTime();
+    var datetime = firsttime.getTime();
     var offset = 0;
     zoneSrc = parseInt(zoneSrc);
     zoneDst = parseInt(zoneDst);
     offset = -zoneSrc + zoneDst;
-    return new Date(Firsttime.setTime(datetime + 1000 * 60 * 60 * offset));
+    return new Date(firsttime.setTime(datetime + 1000 * 60 * 60 * offset));
 }
