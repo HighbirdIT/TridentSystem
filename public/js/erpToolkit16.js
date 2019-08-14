@@ -1542,13 +1542,10 @@ function CombineDotStr() {
 // getday
 function getweekDay(date) {
     var weekarr = ["日", "一", "二", "三", "四", "五", "六"];
-    if (checkDate(date)) {
-        var week = new Date(date).getDay();
-    } else {
-        var dateStr = new Date(date.replace(/-/g, "\/"));
-        var week = dateStr.getDay();
+    if (!checkDate(date)) {
+        date = castDate(date);
     }
-    return "星期" + weekarr[week];
+    return "星期" + weekarr[date.getDay()];
 }
 
 //格式化数字加逗号
@@ -1593,28 +1590,4 @@ function NumToChinese(n) {
     }
     var result = str.replace(/零(千|百|拾|角)/g, "零").replace(/(零)+/g, "零").replace(/零(万|亿|元)/g, "$1").replace(/(亿)万|壹(拾)/g, "$1$2").replace(/^元零?|零分/g, "").replace(/元$/g, "元整"); // 替换掉数字里面的零字符，得到结果
     return result;
-}
-
-//世界时区转换
-function Convert_TimeZone(time,zoneO,zoneT){
-    if (checkTime(time)) {
-        var Firsttime = new Date(time);
-    } else {
-        var Firsttime = new Date(FormatStringValue(time,'datetime'));
-    }
-    var datetime =Firsttime.getTime();
-    var n=0;
-    if (zoneO >0 &&zoneT >0){
-        n= zoneT-zoneO;
-    }
-    if(zoneO <0 && zoneT<0){
-        n= zoneO -zoneT;
-    }
-    if(zoneO> 0 &&zoneT<0){
-        n=-zoneO+zoneT;
-    }
-    if(zoneO<0 && zoneT>0){
-        n= zoneT-zoneO;
-    }
-    return new Date (Firsttime.setTime(datetime+1000 * 60 * 60*(n)));
 }

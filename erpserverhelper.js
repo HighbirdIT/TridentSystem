@@ -267,6 +267,14 @@ function CastDateFromTimePart(val) {
     return new Date('2000-1-1 ' + timeRegRlt[0]);
 }
 
+const gWeekDayName_arr = ["日", "一", "二", "三", "四", "五", "六"];
+function GetweekDay(date) {
+	if (!checkDate(date)) {
+		date = castDate(date);
+	}
+	return "星期" + gWeekDayName_arr[date.getDay()]
+}
+
 helper.DateFun={
     getNowDate:GetNowDate,
     checkDate:CheckDate,
@@ -281,6 +289,7 @@ helper.DateFun={
     getFormatDateString_MD:GetFormatDateString_MD,
     getFullFormatDateString:GetFullFormatDateString,
     castDateFromTimePart:CastDateFromTimePart,
+    getweekDay:GetweekDay,
 };
 
 module.exports = helper;
