@@ -654,7 +654,8 @@ class JSNode_BluePrint extends EventEmitter {
             }
             if (!hadCallParm) {
                 if(this.group == EJsBluePrintFunGroup.CtlValid){
-                    theFun.scope.getVar(VarNames.State, true, 'comeState');
+                    theFun.scope.getVar(VarNames.State, true, 'comeState ? comeState : store.getState();');
+
                 }
                 else{
                     theFun.scope.getVar(VarNames.State, true, 'store.getState()');
