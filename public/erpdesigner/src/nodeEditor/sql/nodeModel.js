@@ -904,6 +904,7 @@ class SqlNode_XJoin extends SqlNode_Base {
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
         var socketOuts_arr = [];
+        var InnerTableName=[];
         for (var i = 0; i < this.inputScokets_arr.length; ++i) {
             var socket = this.inputScokets_arr[i];
             var tLinks = this.bluePrint.linkPool.getLinksBySocket(socket);
@@ -941,9 +942,10 @@ class SqlNode_XJoin extends SqlNode_Base {
                 helper.setCache(tableKey, outNode);
             }
             socketOuts_arr.push(socketOut);
+            InnerTableName.push(socketOut.data.tableName);
         }
         var joinString = socketOuts_arr[0].strContent + clampStr(this.joinType, ' ', ' ') + socketOuts_arr[1].strContent;
-        var LastColumname_node = socketOuts_arr[1].strContent;
+        
 
         if (this.conditionNode.inputScokets_arr.length == 0) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
@@ -960,17 +962,30 @@ class SqlNode_XJoin extends SqlNode_Base {
                 return false;
             }
             var onString = conditionNodeCompileRet.getDirectOut().strContent;
-            var arr =onString.replace(/\[|]/g,'').split(/=|[.]/);
-            var LastColumname_nodeName=socketOuts_arr[0].data.LastColumname_node;
-            if(IsEmptyString(LastColumname_nodeName)==false){
-                if(arr.indexOf(LastColumname_nodeName) == -1 || arr.indexOf(socketOuts_arr[1].strContent) == -1){
+            
+            var arr =onString.replace(/\[|]/g,'').split(/=/);//split(/=|[.]/);
+
+            
+            var FirstSocketTableName_arr=socketOuts_arr[0].data.InnerTableName;
+            
+            var tableNameOne = arr[0].split(/[.]/)[0];
+            var tableNameTwo = arr[1].split(/[.]/)[0];
+          
+           
+            if (!IsEmptyArray(FirstSocketTableName_arr)) {
+                var Result = FirstSocketTableName_arr.indexOf(tableNameOne);
+                var Resultt = FirstSocketTableName_arr.indexOf(tableNameTwo);
+                if (FirstSocketTableName_arr.indexOf(tableNameOne) + FirstSocketTableName_arr.indexOf(tableNameTwo) == -2
+                    || (FirstSocketTableName_arr.indexOf(tableNameOne) > -1 && FirstSocketTableName_arr.indexOf(tableNameTwo) > -1)) {
+
                     //则bu包含该元素
                     helper.logManager.warnEx([helper.logManager.createBadgeItem(
                         thisNodeTitle
                         , nodeThis
                         , helper.clickLogBadgeItemHandler)
-                        , 'on 条件未选择相邻两表字段 ' +LastColumname_nodeName+' '
-                    +socketOuts_arr[1].strContent]);
+                        , 'on 条件未选择相邻两表字段 ' + ' '
+                    + socketOuts_arr[1].strContent]);
+
                 }
             }
 
@@ -985,7 +1000,7 @@ class SqlNode_XJoin extends SqlNode_Base {
         }
 
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, joinString + ' on ' + onString,{LastColumname_node:LastColumname_node});
+        selfCompileRet.setSocketOut(this.outSocket, joinString + ' on ' + onString,{InnerTableName:InnerTableName});
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
