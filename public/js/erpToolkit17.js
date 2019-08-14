@@ -1542,7 +1542,7 @@ function CombineDotStr() {
 // getday
 var gWeekDayName_arr = ["日", "一", "二", "三", "四", "五", "六"];
 function getweekDay(date) {
-    if (!checkDate(date)) {
+    if (typeof date === 'string') {
         date = castDate(date);
     }
     return "星期" + gWeekDayName_arr[date.getDay()];
@@ -1590,4 +1590,17 @@ function NumToChinese(n) {
     }
     var result = str.replace(/零(千|百|拾|角)/g, "零").replace(/(零)+/g, "零").replace(/零(万|亿|元)/g, "$1").replace(/(亿)万|壹(拾)/g, "$1$2").replace(/^元零?|零分/g, "").replace(/元$/g, "元整"); // 替换掉数字里面的零字符，得到结果
     return result;
+}
+
+function Convert_TimeZone(time, zoneSrc, zoneDst) {
+    var firsttime;
+    if (typeof time === 'string') {
+        firsttime = castDateFromTimePart(time);
+    }
+    var time = firsttime.getTime();
+    var offset = 0;
+    zoneSrc = parseInt(zoneSrc);
+    zoneDst = parseInt(zoneDst);
+    offset = -zoneSrc + zoneDst;
+    return new Date(Firsttime.setTime(datetime + 1000 * 60 * 60 * offset));
 }
