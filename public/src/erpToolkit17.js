@@ -1469,15 +1469,13 @@ function CombineDotStr() {
     return rlt;
 }
 
-
-
 // getday
+const gWeekDayName_arr = ["日", "一", "二", "三", "四", "五", "六"];
 function getweekDay(date) {
-	var weekarr = ["日", "一", "二", "三", "四", "五", "六"];
 	if (!checkDate(date)) {
 		date = castDate(date);
 	}
-	return "星期" + weekarr[date.getDay()]
+	return "星期" + gWeekDayName_arr[date.getDay()]
 }
 
 //格式化数字加逗号

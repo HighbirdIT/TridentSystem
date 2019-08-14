@@ -634,8 +634,10 @@ class JSNode_GetDay extends JSNode_Base {
         var dateStr = socketComRet.value;
         var endstr='';
         var socketlink = socketComRet.link;
-        if (socketlink == null) {
-            if (checkDate(dateStr) == false) {
+        var outSocket = this.outputScokets_arr[0];
+        var selfCompileRet = new CompileResult(this);
+        if (socketComRet.link ==null){
+            if (!checkDate(dateStr)) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle,
                     nodeThis,
@@ -643,19 +645,23 @@ class JSNode_GetDay extends JSNode_Base {
                     '应该输入时间']);
                 return false;
             }
-            endstr="'"+dateStr+"'"
-        } else {
-            var socketComRet = this.getSocketCompileValue(helper, this.inputScokets_arr[0], usePreNodes_arr, belongBlock, true);
-            if (socketComRet.err) {
-                return false;
-            }
-            endstr=dateStr ;
         }
+        var blockInServer = belongBlock.getScope().isServerSide;
 
-        //dateStr = new Date(dateStr.replace(/-/g, "\/"));
-
-        var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, 'getweekDay(' + endstr + ')');
+        if (!blockInServer) {
+            var nodeI = 0;
+            for (nodeI = preNodes_arr.length - 1; nodeI > 0; --nodeI) {
+                var temNode = preNodes_arr[nodeI];
+                if (temNode.inFlowSocket) {
+                    blockInServer = temNode.hadFetchFun;
+                    break;
+                }
+            }
+        }
+        var funPreFix = blockInServer ? 'serverhelper.DateFun.' : '';
+        endstr=funPreFix+"getweekDay("+dateStr+")" ;
+        
+        selfCompileRet.setSocketOut(outSocket, endstr);
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -813,10 +819,15 @@ class JSNode_Convert_TimeZone extends JSNode_Base {
         }
         if (this.inputScokets_arr.length == 0) {
             this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Object, inputable: true }));
+            this.addSocket(new NodeSocket('inputtwo', this, true, { type: ValueType.Object, inputable: true }));
+            this.addSocket(new NodeSocket('inputthree', this, true, { type: ValueType.Object, inputable: true }));
         }
-        this.inputScokets_arr[0].label = '数字';
+        this.inputScokets_arr[0].label = '时间';
         this.inputScokets_arr[0].inputable = true;
-
+        this.inputScokets_arr[1].label = '原始时区';
+        this.inputScokets_arr[1].inputable = true;
+        this.inputScokets_arr[2].label = '目的时区';
+        this.inputScokets_arr[2].inputable = true;
         if (this.outSocket == null) {
             this.outSocket = new NodeSocket('out', this, false);
             this.addSocket(this.outSocket);
@@ -834,36 +845,41 @@ class JSNode_Convert_TimeZone extends JSNode_Base {
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
 
-        var socketComRet = this.getSocketCompileValue(helper, this.inputScokets_arr[0], usePreNodes_arr, belongBlock, true);
-        if (socketComRet.err) {
-            return false;
-        }
-        var dateStr = socketComRet.value;
-
-        var socketlink = socketComRet.link;
-
-        if(socketlink == null){
-            
-            if (isNaN(dateStr)) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle,
-                    nodeThis,
-                    helper.clickLogBadgeItemHandler),
-                    "请检查输入金额是否正确"]);
+        var result_arr=[];
+        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+            var socketComRet = this.getSocketCompileValue(helper, this.inputScokets_arr[i], usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
                 return false;
             }
-            if (!/^(0|[1-9]\d*)(\.\d+)?$/.test(dateStr)) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle,
-                    nodeThis,
-                    helper.clickLogBadgeItemHandler),
-                    '数据非法']);
-                return false;
+            var dateStr = socketComRet.value;
+            if(socketComRet.link ==null){
+                if(i==0){
+                    if(!checkTime(dateStr)){
+                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                            thisNodeTitle,
+                            nodeThis,
+                            helper.clickLogBadgeItemHandler),
+                            "应该输入时间"]);
+                        return false;
+                    }
+                }else{
+                    if (isNaN(dateStr)) {
+                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                            thisNodeTitle,
+                            nodeThis,
+                            helper.clickLogBadgeItemHandler),
+                            "输入正负整数"]);
+                        return false;
+                    }
+                }
             }
+            result_arr.push(dateStr);
         }
-        
+        var dateTime =result_arr[0];
+        var timeZoneO =result_arr[1];
+        var timeZoneT =result_arr[2];
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, ' NumToChinese(' + dateStr + ') ');
+        selfCompileRet.setSocketOut(this.outSocket, ' Convert_TimeZone(' + dateTime+','+ timeZoneO+','+ timeZoneT+') ');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -908,12 +924,18 @@ JSNodeClassMap[JSNODE_CAPITALNUM] = {
     modelClass: JSNode_CapitalNum,
     comClass: C_Node_SimpleNode,
 };
+JSNodeClassMap[JSNODE_CONVERT_TIMEZONE] = {
+    modelClass: JSNode_Convert_TimeZone,
+    comClass: C_Node_SimpleNode,
+};
+/*
 JSNodeEditorControls_arr.push(
     {
         label: 'while',
         nodeClass: JSNode_While,
         type: '流控制'
     });
+*/
 JSNodeEditorControls_arr.push(
     {
         label: '数组-添加',
@@ -961,5 +983,11 @@ JSNodeEditorControls_arr.push(
     {
         label: '货币中文大写',
         nodeClass: JSNode_CapitalNum,
+        type: '基础'
+    });
+JSNodeEditorControls_arr.push(
+    {
+        label: '世界时区转换',
+        nodeClass: JSNode_Convert_TimeZone,
         type: '基础'
     });
