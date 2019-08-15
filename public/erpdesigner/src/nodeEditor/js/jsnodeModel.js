@@ -38,6 +38,8 @@ const JSNODE_GETPAGE_ENTRYPARAM = 'getpageenterparam';
 const JSNODE_BATCH_CONTROL_API_PROPSETTER = 'batchcontrolapipropsetter';
 const JSNODE_GETSTEPDATA = 'getstepdata';
 
+const JSNODE_DD_MAP_SEARCH = 'ddmapsearch';
+
 const JSNODE_STRING_LENGTH = 'stringlength';
 const JSNODE_STRING_SUBSTRING = 'stringsubstring';
 const JSNODE_STRING_SUBSTR = 'stringsubstr';
@@ -105,7 +107,7 @@ class JSNode_Base extends Node_Base {
         }
         for (var upi = usePreNodes_arr.length - 2; upi >= 0; --upi) {
             var preNode = usePreNodes_arr[upi];
-            if (preNode.type == JSNODE_POP_PAGE || preNode.type == JSNODE_POPMESSAGEBOX) {
+            if (preNode.type == JSNODE_POP_PAGE || preNode.type == JSNODE_POPMESSAGEBOX || preNode.type == JSNODE_DD_MAP_SEARCH) {
                 break;
             }
             if (preNode.serverFun) {
@@ -3728,6 +3730,9 @@ class JSNode_Env_Var extends JSNode_Base {
                 break;
             case EnvVariable.nowTime:
                 selfCompileRet.setSocketOut(outSocket, 'new Date()');
+                break;
+            case EnvVariable.inDingTalk:
+                selfCompileRet.setSocketOut(outSocket, '(isMobile && isInDingTalk)');
                 break;
             default:
                 if (this.checkCompileFlag(true, '不支持的环境变量:' + enName, helper)) {
@@ -8690,6 +8695,109 @@ class JSNode_IsNaN extends JSNode_Base {
     }
 }
 
+class JSNode_DD_MapSearch extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_DD_MAP_SEARCH, '钉钉.地图定位', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+        if (nodeJson) {
+            this.outputScokets_arr.forEach(socket=>{
+                switch(socket.name){
+                    case 'title':
+                    this.titleSocket = socket;
+                    break;
+                    case 'lon':
+                    this.longitudeSocket = socket;
+                    break;
+                    case 'lat':
+                    this.latitudeSocket = socket;
+                    break;
+                }
+            });
+        }
+
+        if(this.titleSocket == null){
+            this.titleSocket = this.addSocket(new NodeSocket('title', this, false));
+        }
+
+        if(this.longitudeSocket == null){
+            this.longitudeSocket = this.addSocket(new NodeSocket('lon', this, false));
+        }
+
+        if(this.latitudeSocket == null){
+            this.latitudeSocket = this.addSocket(new NodeSocket('lat', this, false));
+        }
+
+        this.titleSocket.label = '地名';
+        this.longitudeSocket.label = '经度';
+        this.latitudeSocket.label = '纬度';
+    }
+
+    getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
+        if (belongFun.scope.isServerSide) {
+            return;
+        }
+        var compileRet = helper.getCompileRetCache(this);
+        var socketValue = compileRet.getSocketOut(targetSocket).strContent;
+        result.pushVariable(socketValue, targetSocket);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var myJSBlock = new FormatFileBlock('');
+        var onScuccessBlock = new FormatFileBlock('onScuccess');
+        belongBlock.pushChild(myJSBlock);
+
+        var onSuccessVarName = this.id + '_onScuccess';
+        myJSBlock.pushLine('var ' + onSuccessVarName + ' = result=>{', 1);
+        myJSBlock.pushLine('var ' + this.id + '_title = result.title;');
+        myJSBlock.pushLine('var ' + this.id + '_lat = result.latitude;');
+        myJSBlock.pushLine('var ' + this.id + '_lon = result.longitude;');
+        myJSBlock.pushChild(onScuccessBlock);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('};');
+
+        var onFailVarName = this.id + '_onFail';
+        myJSBlock.pushLine('var ' + onFailVarName + ' = err=>{', 1);
+        myJSBlock.pushLine("alert('错误:' + JSON.stringify(err));");
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('};');
+        
+        myJSBlock.pushLine("dingdingKit.biz.map.search({scope:500,onSuccess:" + onSuccessVarName + ",onFail:" + onFailVarName + "});");
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        selfCompileRet.setSocketOut(this.titleSocket, this.id + '_title');
+        selfCompileRet.setSocketOut(this.latitudeSocket, this.id + '_lat');
+        selfCompileRet.setSocketOut(this.longitudeSocket, this.id + '_lon');
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, onScuccessBlock) == false) {
+            return false;
+        }
+
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_VAR_GET] = {
     modelClass: JSNode_Var_Get,
     comClass: C_JSNode_Var_Get,
@@ -8873,5 +8981,9 @@ JSNodeClassMap[JSNODE_PARSEFLOAT] = {
 };
 JSNodeClassMap[JSNODE_ISNAN] = {
     modelClass: JSNode_IsNaN,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_DD_MAP_SEARCH] = {
+    modelClass: JSNode_DD_MapSearch,
     comClass: C_Node_SimpleNode,
 };
