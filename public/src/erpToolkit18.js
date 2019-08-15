@@ -1537,7 +1537,7 @@ function Convert_TimeZone(time, zoneSrc, zoneDst) {
     return new Date(Firsttime.setTime(datetime + 1000 * 60 * 60 * (offset)));
 }
 
-function InitDingDing(appendApi_arr, callBack) {
+function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
     if (isMobile) {
         dingdingKit = dd;
         isInDingTalk = dd.env.platform != 'notInDingTalk';
@@ -1547,6 +1547,7 @@ function InitDingDing(appendApi_arr, callBack) {
             'biz.chat.pickConversation',
             'device.notification.confirm',
             'device.notification.alert',
+            'device.notification.toast',
             'device.notification.prompt',
             'biz.navigation.back',
             'biz.chat.open',
@@ -1560,7 +1561,10 @@ function InitDingDing(appendApi_arr, callBack) {
             'biz.navigation.setTitle',
             'device.geolocation.get',
             'biz.map.locate',
-            'device.base.getUUID',].concat(appendApi_arr);
+            'device.base.getUUID'];
+        if(mobileAppendApi_arr){
+            jsapiArr = jsapiArr.concat(mobileAppendApi_arr);
+        }
 
         dd.config({
             agentId: "29816043",
@@ -1574,19 +1578,24 @@ function InitDingDing(appendApi_arr, callBack) {
     else {
         dingdingKit = DingTalkPC;
         isInDingTalk = dingdingKit.ua.isInDingTalk;
+        var jsapiArr = [
+            'device.notification.alert',
+            'device.notification.confirm',
+            'device.notification.toast',
+            'runtime.permission.requestAuthCode',
+            'biz.contact.choose',
+            'device.notification.prompt',
+            'biz.ding.post'];
+        if(pcAppendApi_arr){
+            jsapiArr = jsapiArr.concat(pcAppendApi_arr);
+        }
         DingTalkPC.config({
             agentId: "29816043",
             corpId: theCorpId,
             timeStamp: pTimeStamp,
             nonceStr: pNonceStr,
             signature: pSignature,
-            jsApiList: [
-                'device.notification.alert',
-                'device.notification.confirm',
-                'runtime.permission.requestAuthCode',
-                'biz.contact.choose',
-                'device.notification.prompt',
-                'biz.ding.post']
+            jsApiList: jsapiArr
         });
     }
     if (!isProduction || !isInDingTalk) {

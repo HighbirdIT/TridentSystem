@@ -1053,7 +1053,7 @@ class CP_ClientSide extends JSFileMaker{
         this.endBlock.pushChild(ifLoginBK);
         ifLoginBK.trueBlock.pushLine('ErpControlInit();');
         ifLoginBK.trueBlock.pushLine("$(document).ready(function(){", 1);
-        ifLoginBK.trueBlock.pushLine('InitDingDing(null, ()=>{', 1);
+        ifLoginBK.trueBlock.pushLine('InitDingDing(()=>{', 1);
         ifLoginBK.trueBlock.pushLine('ReactDOM.render(<Provider store={store}>', 1);
         ifLoginBK.trueBlock.pushLine('<VisibleApp />', -1);
         ifLoginBK.trueBlock.pushLine("</Provider>, document.getElementById('reactRoot'));");
