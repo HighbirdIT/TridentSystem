@@ -234,6 +234,8 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         this.useEnvVars = {};
         this.usePage_map = {};
         this.useUrlVar_map = {};
+        this.useMobileDDApi = {};
+        this.usePcDDApi = {};
     }
 
     compileEnd(){
@@ -389,6 +391,14 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
 
     addUseURLVairable(varName, defVal){
         this.useUrlVar_map[varName] = defVal;
+    }
+
+    addUseMobileDDApi(apiName){
+        this.useMobileDDApi[apiName] = 1;
+    }
+
+    addUsePCDDApi(apiName){
+        this.usePcDDApi[apiName] = 1;
     }
 }
 

@@ -368,6 +368,17 @@ class MobileContentCompiler extends ContentCompiler {
         compileRet.useGlobalControls_map = compileHelper.useGlobalControls_map;
         compileRet.useEntities_map = compileHelper.useEntities_map;
         this.compiledScriptBP_map[targetBP.id] = compileRet;
+        var apiName;
+        if (!IsEmptyObject(compileHelper.useMobileDDApi)) {
+            for (apiName in compileHelper.useMobileDDApi) {
+                this.clientSide.mobileDDApis_map[apiName] = 1;
+            }
+        }
+        if (!IsEmptyObject(compileHelper.usePcDDApi)) {
+            for (apiName in compileHelper.usePcDDApi) {
+                this.clientSide.pcDDApis_map[apiName] = 1;
+            }
+        }
         return compileRet;
     }
 
