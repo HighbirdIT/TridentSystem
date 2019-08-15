@@ -7738,7 +7738,9 @@ class JSNode_Batch_Control_Api_Propsetter extends JSNode_Base {
             if (this.checkCompileFlag(theNode.type != JSNODE_CONTROL_API_PROPSETTER, '输入只能链接API设置节点', helper)) {
                 return false;
             }
-            theNode.compile(helper, usePreNodes_arr, setBodyBlock);
+            if(theNode.compile(helper, usePreNodes_arr, setBodyBlock) == false){
+                return false;
+            }
         }
 
         var selfCompileRet = new CompileResult(this);
