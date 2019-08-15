@@ -1052,9 +1052,15 @@ class CP_ClientSide extends JSFileMaker{
         var ifLoginBK = new JSFile_IF('iflogin', 'g_envVar.userid != null');
         this.endBlock.pushChild(ifLoginBK);
         ifLoginBK.trueBlock.pushLine('ErpControlInit();');
+        ifLoginBK.trueBlock.pushLine("$(document).ready(function(){", 1);
+        ifLoginBK.trueBlock.pushLine('InitDingDing(null, ()=>{', 1);
         ifLoginBK.trueBlock.pushLine('ReactDOM.render(<Provider store={store}>', 1);
         ifLoginBK.trueBlock.pushLine('<VisibleApp />', -1);
         ifLoginBK.trueBlock.pushLine("</Provider>, document.getElementById('reactRoot'));");
+        ifLoginBK.trueBlock.subNextIndent();
+        ifLoginBK.trueBlock.pushLine('});');
+        ifLoginBK.trueBlock.subNextIndent();
+        ifLoginBK.trueBlock.pushLine('});');
 
         ifLoginBK.falseBlock.pushLine("var search = location.search.replace('?','');");
         ifLoginBK.falseBlock.pushLine("location.href = '/?goto=' + location.pathname + '&' + search;");
