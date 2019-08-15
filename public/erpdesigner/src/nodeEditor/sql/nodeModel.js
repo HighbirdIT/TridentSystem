@@ -3123,6 +3123,7 @@ const EnvVariable={
     systemCode:'ENV:所属系统名称代码',
     nowDate:'ENV:当前日期',
     nowTime:'ENV:当前日期时间',
+    inDingTalk:'ENV.在钉钉环境'
 }
 
 const EnvVariables_arr = [];
