@@ -634,6 +634,7 @@ class JSNode_BluePrint extends EventEmitter {
                 });
             }
         }
+        
         var belongUserControl = ctlKernel.searchParentKernel(UserControlKernel_Type, true);
         var belongFormControl = ctlKernel.searchParentKernel(M_FormKernel_Type, true);
         var reactParentControl = ctlKernel.getReactParentKernel(true);
@@ -8765,6 +8766,7 @@ class JSNode_DD_MapSearch extends JSNode_Base {
         var myJSBlock = new FormatFileBlock('');
         var onScuccessBlock = new FormatFileBlock('onScuccess');
         belongBlock.pushChild(myJSBlock);
+        helper.addUseMobileDDApi('biz.map.search');
 
         var onSuccessVarName = this.id + '_onScuccess';
         myJSBlock.pushLine('var ' + onSuccessVarName + ' = result=>{', 1);

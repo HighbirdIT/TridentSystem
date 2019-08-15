@@ -1609,7 +1609,7 @@ function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
     if (isMobile) {
         dingdingKit = dd;
         isInDingTalk = dd.env.platform != 'notInDingTalk';
-        var jsapiArr = ['runtime.info', 'device.notification.prompt', 'biz.chat.pickConversation', 'device.notification.confirm', 'device.notification.alert', 'device.notification.toast', 'device.notification.prompt', 'biz.navigation.back', 'biz.chat.open', 'biz.util.open', 'biz.user.get', 'biz.contact.choose', 'biz.telephone.call', 'biz.ding.post', 'biz.navigation.setLeft', 'biz.navigation.setRight', 'biz.navigation.setTitle', 'device.geolocation.get', 'biz.map.locate', 'device.base.getUUID'];
+        var jsapiArr = ['runtime.info', 'device.notification.prompt', 'device.notification.confirm', 'device.notification.alert', 'device.notification.toast', 'biz.ding.post', 'biz.navigation.setRight', 'biz.navigation.setTitle'];
         if (mobileAppendApi_arr) {
             jsapiArr = jsapiArr.concat(mobileAppendApi_arr);
         }
@@ -1625,7 +1625,7 @@ function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
     } else {
         dingdingKit = DingTalkPC;
         isInDingTalk = dingdingKit.ua.isInDingTalk;
-        var jsapiArr = ['device.notification.alert', 'device.notification.confirm', 'device.notification.toast', 'runtime.permission.requestAuthCode', 'biz.contact.choose', 'device.notification.prompt', 'biz.ding.post'];
+        var jsapiArr = ['device.notification.alert', 'device.notification.confirm', 'device.notification.toast', 'runtime.permission.requestAuthCode', 'biz.ding.post'];
         if (pcAppendApi_arr) {
             jsapiArr = jsapiArr.concat(pcAppendApi_arr);
         }
