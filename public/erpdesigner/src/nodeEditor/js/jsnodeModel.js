@@ -668,7 +668,7 @@ class JSNode_BluePrint extends EventEmitter {
 
             if (this.group == EJsBluePrintFunGroup.CtlEvent) {
                 if (ctlKernel.type == ButtonKernel_Type) {
-                    theFun.scope.getVar(ctlKernel.id + '_path', true, "getAttributeByNode(ev.target,'ctl-fullpath')");
+                    theFun.scope.getVar(ctlKernel.id + '_path', true, "ev == null ? null : getAttributeByNode(ev.target,'ctl-fullpath')");
                 }
                 else if (ctlKernel.type == UserControlKernel_Type) {
                     theFun.scope.getVar(ctlKernel.id + '_path', true, "getBelongUserCtlPath(_path)");
