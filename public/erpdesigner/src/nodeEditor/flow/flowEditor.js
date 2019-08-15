@@ -105,6 +105,11 @@ const FlowNodeEditorControls_arr =[
         type:'流程交互'
     },
     {
+        label:'通知-CardItem',
+        nodeClass:FlowNode_Message_CardItem,
+        type:'流程交互'
+    },
+    {
         label:'签阅处置通知',
         nodeClass:FlowNode_Confirm_Flowstep,
         type:'流程交互'
