@@ -1642,6 +1642,9 @@ function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
         callBack();
         return;
     }
+    dingdingKit.error(function (err) {
+        alert('出错了:' + JSON.stringify(err));
+    });
     dingdingKit.ready(callBack);
 }
 
