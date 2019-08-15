@@ -3490,6 +3490,12 @@ const gJSDateFuns_arr = [
         inputs: [{ label: '日期', type: ValueType.Date }],
         outputs: [{ label: '', type: ValueType.Date }]
     },
+    {
+        name:'Convert_TimeZone',
+        inputs:[{label:'日期',type:ValueType.Data},{ label: '本地时区', type: ValueType.Int, inputable: true },
+        { label: '目标时区', type: ValueType.Int, inputable: true }],
+        outputs:[{label:'',type:ValueType.Data}]
+    }
 ];
 
 class JSNode_DateFun extends JSNode_Base {
@@ -3637,7 +3643,10 @@ class JSNode_DateFun extends JSNode_Base {
                 break;
             case 'CastDateByTime':
                 callStr = funPreFix + 'castDateFromTimePart(' + socketVal_arr[0] + ')';
-                break;    
+                break;
+            case 'Convert_TimeZone':
+                callStr= funPreFix+'Convert_TimeZone(' +  socketVal_arr[0]+','+  socketVal_arr[1]+','+  socketVal_arr[2]+') ';
+                break;
             default:
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle,
