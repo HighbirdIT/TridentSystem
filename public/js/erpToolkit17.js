@@ -1596,10 +1596,8 @@ function Convert_TimeZone(time, zoneSrc, zoneDst) {
     var firsttime;
     if (typeof time === 'string') {
         firsttime = castDateFromTimePart(time);
-    }else{
-        firsttime=time;
     }
-    var datetime = firsttime.getTime();
+    var time = firsttime.getTime();
     var offset = 0;
     zoneSrc = parseInt(zoneSrc);
     zoneDst = parseInt(zoneDst);

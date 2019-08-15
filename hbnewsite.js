@@ -186,6 +186,12 @@ app.use('/fromNotify', function (req, res, next) {
     }
 });
 
+app.use('/fromNotifyOption', function (req, res, next) {
+    if (!flowhelper.execFromNotifyOption(req, res, next)) {
+        next();
+    }
+});
+
 app.use('/dingUtility', function (req, res, next) {
     if (req.path == '/') {
         dingHelper.doAction(req, res).then(rlt => {

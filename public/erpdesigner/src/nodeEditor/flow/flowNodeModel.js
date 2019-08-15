@@ -1951,10 +1951,10 @@ class FlowNode_Send_Message extends JSNode_Base {
             }
         }
         if (cardItemInitBlock.childs_arr.length > 0) {
-            var cardItemVarName = this.id + '_cardItem';
-            myCodeBlock.pushLine(makeLine_DeclareVar(cardItemVarName, "''", false));
+            var cardItemVarName = this.id + '_cardItems_arr';
+            myCodeBlock.pushLine(makeLine_DeclareVar(cardItemVarName, "[]", false));
             myCodeBlock.pushChild(cardItemInitBlock);
-            params_arr.push({ name: 'carditem', value: cardItemVarName });
+            params_arr.push({ name: 'carditem', value: cardItemVarName + ".join('|')" });
         }
 
         socketComRet = this.getSocketCompileValue(helper, this.titleScoket, usePreNodes_arr, belongBlock, true, true);
@@ -2103,7 +2103,7 @@ class FlowNode_Message_CardItem extends JSNode_Base {
         var socketComRet = null;
         var myCodeBlock = new FormatFileBlock(this.id);
         belongBlock.pushChild(myCodeBlock);
-        var cardItemVarName = sendMsgNode.id + '_cardItem'
+        var cardItemVarName = sendMsgNode.id + '_cardItems_arr';
 
 
         // 处置通知 
@@ -2123,11 +2123,12 @@ class FlowNode_Message_CardItem extends JSNode_Base {
         if (socketComRet.err) { return false; }
         var titleValue = socketComRet.value;
 
-        myCodeBlock.pushLine('if(' + cardItemVarName + '.length>0){' + cardItemVarName + '+="|";}');
-        myCodeBlock.pushLine(cardItemVarName + "+=" + project + " + ',';");
-        myCodeBlock.pushLine(cardItemVarName + "+=" + flowStep + " + ',';");
-        myCodeBlock.pushLine(cardItemVarName + "+=" + intDataValue + " + ',';");
-        myCodeBlock.pushLine(cardItemVarName + "+=" + titleValue + " + '';");
+        var strVarName = this.id + '_str';
+        myCodeBlock.pushLine(makeLine_DeclareVar(strVarName, project + " + ','",false));
+        myCodeBlock.pushLine(strVarName + "+=" + flowStep + " + ',';");
+        myCodeBlock.pushLine(strVarName + "+=" + intDataValue + " + ',';");
+        myCodeBlock.pushLine(strVarName + "+=" + titleValue + ";");
+        myCodeBlock.pushLine(cardItemVarName + ".push(" + strVarName + ".replace(/\\|/g,''));");
 
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outFlowSocket, '', myCodeBlock)

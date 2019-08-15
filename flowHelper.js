@@ -230,8 +230,79 @@ function execFromNotify(req, res){
     return false;
 }
 
+function execFromNotifyOption(req, res){
+    if(req.path == '/')
+    {
+        if(req.query.id == null){
+            res.locals.errTitle = '严重错误';
+            res.locals.errinfo = 'fromNotifyOption没有关键参数';
+            res.render('erppage/errorpage', { layout: null });
+        }
+        else{
+            return co(function* (){
+                var sqlRet = null;
+                try{
+                    sqlRet = yield dbhelper.asynQueryWithParams('select * FROM [T196D工作通知选项] where 工作通知选项代码 = @id', [dbhelper.makeSqlparam('id', sqlTypes.Int, req.query.id)]);
+                }
+                catch(eo){
+                    res.locals.errTitle = '严重错误';
+                    res.locals.errinfo = eo.toString();
+                    res.render('erppage/errorpage', { layout: null });
+                    return false;
+                }
+                if(sqlRet == null || sqlRet.recordset == null || sqlRet.recordset.length == 0){
+                    res.locals.errTitle = '严重错误';
+                    res.locals.errinfo = '指定的通知选项未找到-' + req.query.id;
+                    res.render('erppage/errorpage', { layout: null });
+                    return false;
+                }
+                var optionRecord = sqlRet.recordset[0];
+                try{
+                    sqlRet = yield dbhelper.asynQueryWithParams('SELECT [方案英文名称],[桌面端名称],[移动端名称] FROM [V002C系统方案名称] where [系统方案名称代码]=@id', [dbhelper.makeSqlparam('id', sqlTypes.Int, optionRecord.关联方案代码)]);
+                }
+                catch(eo){
+                    res.locals.errTitle = '严重错误';
+                    res.locals.errinfo = eo.toString();
+                    res.render('erppage/errorpage', { layout: null });
+                    return false;
+                }
+                if(sqlRet == null || sqlRet.recordset == null || sqlRet.recordset.length == 0){
+                    res.locals.errTitle = '严重错误';
+                    res.locals.errinfo = '通知指定的页面未能找到-' + req.query.id + '.' + theRecord.关联方案代码;
+                    res.render('erppage/errorpage', { layout: null });
+                    return false;
+                }
+                var projectRecord = sqlRet.recordset[0];
+                var isPC = false;
+                if(isPC){
+                    if(projectRecord.桌面端名称.length == 0){
+                        isPC = false;
+                    }
+                }
+                else if(projectRecord.移动端名称.length == 0){
+                    isPC = true;
+                }
+                var stepDataStr = '';
+                if(optionRecord.关联步骤数据 != 0){
+                    stepDataStr = '&stepData' + optionRecord.关联步骤代码 + '=' + optionRecord.关联步骤数据;
+                }
+                res.redirect('/erppage/' + (isPC ? 'pc/' : 'ma/') + projectRecord.方案英文名称 + '?flowStep=' + optionRecord.关联步骤代码 + stepDataStr);
+
+                return true;
+                //[关联方案代码]
+                //,[关联步骤代码]
+                //,[关联步骤数据]
+                //res.json({err:'没有指定id'});
+            });
+        }
+        return true;
+    }
+    return false;
+}
+
 module.exports = {
     startFlowProcess:startFlowProcess,
     execFromNotify:execFromNotify,
+    execFromNotifyOption:execFromNotifyOption,
     startWork:startWork,
 };
