@@ -1537,7 +1537,7 @@ function Convert_TimeZone(time, zoneSrc, zoneDst) {
     return new Date(Firsttime.setTime(datetime + 1000 * 60 * 60 * (offset)));
 }
 
-function InitDingDing(appendApi_arr, callBack){
+function InitDingDing(appendApi_arr, callBack) {
     if (isMobile) {
         dingdingKit = dd;
         isInDingTalk = dd.env.platform != 'notInDingTalk';
@@ -1589,7 +1589,7 @@ function InitDingDing(appendApi_arr, callBack){
                 'biz.ding.post']
         });
     }
-    if(!isProduction || !isInDingTalk){
+    if (!isProduction || !isInDingTalk) {
         callBack();
         return;
     }
@@ -1602,20 +1602,19 @@ function pickLocation(successAct, failAct) {
             myApp.alert(JSON.stringify(err), "获取位置失败");
         }
     }
-    
+
     if (!isMobile) {
         if (failAct != null) {
             failAct('需要在手机端使用');
         }
         return;
     }
-    
+
     dingdingKit.biz.map.locate({
         onSuccess: successAct,
         onFail: failAct
     });
 }
-
 
 function gGetNowLocation(successAct, failAct) {
     if (!isMobile) {
@@ -1628,5 +1627,66 @@ function gGetNowLocation(successAct, failAct) {
         withReGeocode: false,
         onSuccess: successAct,
         onFail: failAct
+    });
+}
+
+function DynamicLoadJs(url, callback) {
+    var script = document.createElement('script');
+    script.type = "text/javascript";
+    if (typeof (callback) != "undefined") {
+        if (script.readyState) {
+            script.onreadystatechange = function () {
+                if (script.readyState == "loaded" || script.readyState == "complete") {
+                    script.onreadystatechange = null;
+                    callback();
+                }
+            }
+        } else {
+            script.onload = function () {
+                callback();
+            }
+        }
+    }
+    script.src = url;
+    document.body.appendChild(script);
+}
+
+var AMapJsLoaded = false;
+var gAMapCallBacks_arr = [];
+
+function Regeocoder(lat, lon, callBack) {
+    if(!AMapJsLoaded){
+        gAMapCallBacks_arr.push({
+            lat:lat,
+            lon:lon,
+            callBack:callBack,
+        });
+        if(gAMapCallBacks_arr.length == 1){
+            DynamicLoadJs('http://webapi.amap.com/maps?v=1.4.3&key=1ca423f502c4a4d054c8d0572847a623&plugin=AMap.Geocoder', ()=>{
+                AMapJsLoaded = true;
+                gAMapCallBacks_arr.forEach(p=>{
+                    __regeocoder(p.lat, p.lon, p.callBack);
+                });
+            });
+        }
+        return;
+    }
+    __regeocoder(lat, lon, callBack);
+}
+
+function __regeocoder(lat, lon, callBack) {
+    var geocoder = new AMap.Geocoder({
+        radius: 200,
+        extensions: "all"
+    });
+    lat = Math.round(lat * 1000000) / 1000000;
+    lon = Math.round(lon * 1000000) / 1000000;
+    geocoder.getAddress([lon, lat], function (status, result) {
+        if (status === 'complete' && result.info === 'OK') {
+            callBack(result);
+        }
+        else {
+            callBack(null);
+        }
     });
 }

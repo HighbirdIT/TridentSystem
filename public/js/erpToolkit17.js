@@ -1542,7 +1542,7 @@ function CombineDotStr() {
 // getday
 var gWeekDayName_arr = ["日", "一", "二", "三", "四", "五", "六"];
 function getweekDay(date) {
-    if (!checkDate(date)) {
+    if (typeof date === 'string') {
         date = castDate(date);
     }
     return "星期" + gWeekDayName_arr[date.getDay()];
@@ -1590,4 +1590,86 @@ function NumToChinese(n) {
     }
     var result = str.replace(/零(千|百|拾|角)/g, "零").replace(/(零)+/g, "零").replace(/零(万|亿|元)/g, "$1").replace(/(亿)万|壹(拾)/g, "$1$2").replace(/^元零?|零分/g, "").replace(/元$/g, "元整"); // 替换掉数字里面的零字符，得到结果
     return result;
+}
+
+function Convert_TimeZone(time, zoneSrc, zoneDst) {
+    var firsttime;
+    if (typeof time === 'string') {
+        firsttime = castDateFromTimePart(time);
+    }else{
+        firsttime=time;
+    }
+    var datetime = firsttime.getTime();
+    var offset = 0;
+    zoneSrc = parseInt(zoneSrc);
+    zoneDst = parseInt(zoneDst);
+    offset = -zoneSrc + zoneDst;
+    return new Date(Firsttime.setTime(datetime + 1000 * 60 * 60 * offset));
+}
+
+function InitDingDing(appendApi_arr, callBack) {
+    if (isMobile) {
+        dingdingKit = dd;
+        isInDingTalk = dd.env.platform != 'notInDingTalk';
+        var jsapiArr = ['runtime.info', 'device.notification.prompt', 'biz.chat.pickConversation', 'device.notification.confirm', 'device.notification.alert', 'device.notification.prompt', 'biz.navigation.back', 'biz.chat.open', 'biz.util.open', 'biz.user.get', 'biz.contact.choose', 'biz.telephone.call', 'biz.ding.post', 'biz.navigation.setLeft', 'biz.navigation.setRight', 'biz.navigation.setTitle', 'device.geolocation.get', 'biz.map.locate', 'device.base.getUUID'].concat(appendApi_arr);
+
+        dd.config({
+            agentId: "29816043",
+            corpId: theCorpId,
+            timeStamp: pTimeStamp,
+            nonceStr: pNonceStr,
+            signature: pSignature,
+            jsApiList: jsapiArr
+        });
+    } else {
+        dingdingKit = DingTalkPC;
+        isInDingTalk = dingdingKit.ua.isInDingTalk;
+        DingTalkPC.config({
+            agentId: "29816043",
+            corpId: theCorpId,
+            timeStamp: pTimeStamp,
+            nonceStr: pNonceStr,
+            signature: pSignature,
+            jsApiList: ['device.notification.alert', 'device.notification.confirm', 'runtime.permission.requestAuthCode', 'biz.contact.choose', 'device.notification.prompt', 'biz.ding.post']
+        });
+    }
+    if (!isProduction || !isInDingTalk) {
+        callBack();
+        return;
+    }
+    dingdingKit.ready(callBack);
+}
+
+function pickLocation(successAct, failAct) {
+    if (failAct == null) {
+        failAct = function failAct(err) {
+            myApp.alert(JSON.stringify(err), "获取位置失败");
+        };
+    }
+
+    if (!isMobile) {
+        if (failAct != null) {
+            failAct('需要在手机端使用');
+        }
+        return;
+    }
+
+    dingdingKit.biz.map.locate({
+        onSuccess: successAct,
+        onFail: failAct
+    });
+}
+
+function gGetNowLocation(successAct, failAct) {
+    if (!isMobile) {
+        failAct();
+        return;
+    }
+    dd.device.geolocation.get({
+        targetAccuracy: 100,
+        coordinate: 1,
+        withReGeocode: false,
+        onSuccess: successAct,
+        onFail: failAct
+    });
 }

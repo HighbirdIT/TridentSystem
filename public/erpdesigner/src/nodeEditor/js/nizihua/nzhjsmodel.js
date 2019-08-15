@@ -985,9 +985,3 @@ JSNodeEditorControls_arr.push(
         nodeClass: JSNode_CapitalNum,
         type: '基础'
     });
-JSNodeEditorControls_arr.push(
-    {
-        label: '世界时区转换',
-        nodeClass: JSNode_Convert_TimeZone,
-        type: '基础'
-    });
