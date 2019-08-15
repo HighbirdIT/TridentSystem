@@ -39,6 +39,7 @@ const JSNODE_BATCH_CONTROL_API_PROPSETTER = 'batchcontrolapipropsetter';
 const JSNODE_GETSTEPDATA = 'getstepdata';
 
 const JSNODE_DD_MAP_SEARCH = 'ddmapsearch';
+const JSNODE_DD_NAV_CLOSE = 'ddnavclose';
 
 const JSNODE_STRING_LENGTH = 'stringlength';
 const JSNODE_STRING_SUBSTRING = 'stringsubstring';
@@ -8800,6 +8801,35 @@ class JSNode_DD_MapSearch extends JSNode_Base {
     }
 }
 
+class JSNode_DD_NavClose extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_DD_NAV_CLOSE, '钉钉.关闭浏览器', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+        myJSBlock.pushLine("dingdingKit.biz.navigation.close();");
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_VAR_GET] = {
     modelClass: JSNode_Var_Get,
     comClass: C_JSNode_Var_Get,
@@ -8987,5 +9017,9 @@ JSNodeClassMap[JSNODE_ISNAN] = {
 };
 JSNodeClassMap[JSNODE_DD_MAP_SEARCH] = {
     modelClass: JSNode_DD_MapSearch,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_DD_NAV_CLOSE] = {
+    modelClass: JSNode_DD_NavClose,
     comClass: C_Node_SimpleNode,
 };
