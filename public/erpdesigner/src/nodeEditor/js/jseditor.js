@@ -194,6 +194,11 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_DD_MapSearch,
         type:'钉钉Api'
     },
+    {
+        label:'钉钉-关闭浏览器',
+        nodeClass:JSNode_DD_NavClose,
+        type:'钉钉Api'
+    },
 ];
 
 var gCopyed_JsNodes_data=null;
