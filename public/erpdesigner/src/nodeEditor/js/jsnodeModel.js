@@ -31,7 +31,8 @@ const JSNODE_DO_FLOWSTEP = 'doflowstep';
 const JSNODE_JUMP_PAGE = 'jumppage';
 const JSNODE_POPMESSAGEBOX = 'popmessagebox';
 const JSNODE_CLOSEMESSAGEBOX = 'closemessagebox';
-const JSNODE_HIDEEMESSAGEBOX = 'hidemessagebox';
+const JSNODE_HIDEMESSAGEBOX = 'hidemessagebox';
+const JSNODE_SHOWMESSAGEBOX = 'showmessagebox';
 const JSNODE_POP_PAGE = 'popPage';
 const JSNODE_CLOSE_PAGE = 'closePage';
 const JSNODE_GETPAGE_ENTRYPARAM = 'getpageenterparam';
@@ -7081,7 +7082,7 @@ class JSNode_CloseMessageBox extends JSNode_Base {
 
 class JSNode_HideMessageBox extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, JSNODE_HIDEEMESSAGEBOX, 'HideMsg', false, nodeJson);
+        super(initData, parentNode, createHelper, JSNODE_HIDEMESSAGEBOX, 'HideMsg', false, nodeJson);
         autoBind(this);
 
         if (this.inFlowSocket == null) {
@@ -7114,6 +7115,54 @@ class JSNode_HideMessageBox extends JSNode_Base {
         var myJSBlock = new FormatFileBlock(this.id);
         var msgBoxVarName = this.bluePrint.id + '_msg';
         myJSBlock.pushLine('if(' + msgBoxVarName + '!=null){' + msgBoxVarName + '.fireHide();}');
+        belongBlock.pushChild(myJSBlock);
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
+
+        return selfCompileRet;
+    }
+}
+
+class JSNode_ShowMessageBox extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_SHOWMESSAGEBOX, 'ShowMsg', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var theScope = belongBlock.getScope();
+        var blockInServer = theScope && theScope.isServerSide;
+        var belongFun = theScope ? theScope.fun : null;
+        if (this.checkCompileFlag(blockInServer, '本节点必须要client流中执行', helper)) {
+            return false;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var myJSBlock = new FormatFileBlock(this.id);
+        var msgBoxVarName = this.bluePrint.id + '_msg';
+        myJSBlock.pushLine('if(' + msgBoxVarName + '!=null){' + msgBoxVarName + '.fireShow();}');
         belongBlock.pushChild(myJSBlock);
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
@@ -8960,8 +9009,12 @@ JSNodeClassMap[JSNODE_CLOSEMESSAGEBOX] = {
     modelClass: JSNode_CloseMessageBox,
     comClass: C_Node_SimpleNode,
 };
-JSNodeClassMap[JSNODE_HIDEEMESSAGEBOX] = {
+JSNodeClassMap[JSNODE_HIDEMESSAGEBOX] = {
     modelClass: JSNode_HideMessageBox,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_SHOWMESSAGEBOX] = {
+    modelClass: JSNode_ShowMessageBox,
     comClass: C_Node_SimpleNode,
 };
 JSNodeClassMap[JSNODE_POP_PAGE] = {

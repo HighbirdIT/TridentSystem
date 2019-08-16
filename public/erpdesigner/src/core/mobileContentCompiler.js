@@ -724,6 +724,7 @@ class MobileContentCompiler extends ContentCompiler {
             pageReactClass.constructorFun.pushLine('this.close = this.close.bind(this);');
             var closeFun = pageReactClass.getFunction('close', true, ['exportParam']);
 
+            closeFun.pushLine('exportParam = exportParam == null ? {} : exportParam;');
             closeFun.pushLine('closePage(' + singleQuotesStr(pageKernel.id) + ');');
             closeFun.pushLine('var callBack = ' + makeStr_callFun('getPageEntryParam', [singleQuotesStr(pageKernel.id), singleQuotesStr('callBack')], ';'));
             closeFun.pushLine('if(callBack){callBack(exportParam);}');
@@ -750,7 +751,6 @@ class MobileContentCompiler extends ContentCompiler {
         pageReactClass.renderFun.pushLine("</div>);");
 
         var pageOrientation = pageKernel.getAttribute(AttrNames.Orientation);
-        var pageLayoutConfig = pageKernel.getLayoutConfig();
         var autoHeight = pageKernel.getAttribute(AttrNames.AutoHeight);
         pageLayoutConfig.addClass('d-flex');
         pageLayoutConfig.addClass('flex-grow-1');
