@@ -2420,3 +2420,31 @@ FlowNodeClassMap[JSNODE_DO_FLOWSTEP] = {
     modelClass: JSNode_Do_FlowStep,
     comClass: C_JSNODE_Do_FlowStep,
 };
+FlowNodeClassMap[JSNODE_STRING_LENGTH] = {
+    modelClass: JSNode_String_Length,
+    comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_STRING_SUBSTRING] = {
+    modelClass: JSNode_String_Substring,
+    comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_STRING_SUBSTR] = {
+    modelClass: JSNode_String_Substr,
+    comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_STRING_INDEXOF] = {
+    modelClass: JSNode_String_IndexOf,
+    comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_PARSEINT] = {
+    modelClass: JSNode_ParseInt,
+    comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_PARSEFLOAT] = {
+    modelClass: JSNode_ParseFloat,
+    comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_ISNAN] = {
+    modelClass: JSNode_IsNaN,
+    comClass: C_Node_SimpleNode,
+};

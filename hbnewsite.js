@@ -488,7 +488,11 @@ function startServer() {
     freshPageCache();
     setInterval(freshPageCache, 1000 * 30);
     http.createServer(app).listen(app.get('port'), function () {
-        console.log('Express started on http://' + app.get('hostip') + ':' + app.get('port') + '; press Ctl-C to terminate.');
+        var hostIp = app.get('hostip');
+        if(hostIp == '192.168.0.202'){
+            hostIp = 'erp.highbird.cn';
+        }
+        console.log('Express started on http://' + hostIp + ':' + app.get('port') + '; press Ctl-C to terminate.');
         console.log('env:' + app.get('env'));
     });
 }
