@@ -105,6 +105,7 @@ class JSNode_Base extends Node_Base {
         var group = this.bluePrint.group;
         switch (group) {
             case EJsBluePrintFunGroup.CtlAttr:
+            case EJsBluePrintFunGroup.CtlValid:
                 return true;
         }
         for (var upi = usePreNodes_arr.length - 2; upi >= 0; --upi) {
