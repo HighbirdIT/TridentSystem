@@ -1,6 +1,6 @@
 const M_DropdownKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置', [
-        new CAttribute('数据源', AttrNames.DataSource, ValueType.DataSource, null, true, false, null, {text:'name', value:'code'}),
+        new CAttribute('数据源', AttrNames.DataSource, ValueType.DataSource, null, true, false, [], {text:'name', value:'code', pullDataFun:gGetAllEntitiesByKernel}),
         new CAttribute('来源文本字段', AttrNames.FromTextField, ValueType.String, '', true, false, 'getUseDSColumns'),
         new CAttribute('来源码值字段', AttrNames.FromValueField, ValueType.String, '', true, false, 'getUseDSColumns'),
         genTextFiledAttribute(),
@@ -48,8 +48,6 @@ class M_DropdownKernel extends ControlKernelBase {
         cusDS_bp.ctlKernel = this;
         cusDS_bp.group = 'ctlcus';
         this.setAttribute(AttrNames.CustomDataSource, cusDS_bp);
-
-        this.findAttributeByName(AttrNames.DataSource).options_arr = parentKernel.project.dataMaster.getAllEntities;
 
         var self = this;
         autoBind(self);

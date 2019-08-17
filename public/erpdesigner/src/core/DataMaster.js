@@ -389,3 +389,7 @@ class DataMaster extends EventEmitter{
         }
     }
 }
+
+function gGetAllEntitiesByKernel(theKernel){
+    return theKernel.project.dataMaster.getAllEntities();
+}
