@@ -501,6 +501,8 @@ function fetchJsonGet(url, sendData, triggerData, key = '', tip = '加载中', t
     return fetchJson(true, url, sendData, triggerData, key, tip, timeout);
 }
 
+var gFetchingCount = 0;
+
 function fetchJson(useGet, url, sendData, triggerData, key = '', tip = '加载中', timeout = 2) {
     switch (key) {
         case EFetchKey.FetchPropValue:
@@ -528,7 +530,7 @@ function fetchJson(useGet, url, sendData, triggerData, key = '', tip = '加载�
         timeout: timeout,
     };
     gFetchingQueue.push(thisFetch);
-    if (gFetchingQueue.length > gMaxFetchingCount) {
+    if (gFetchingCount > gMaxFetchingCount) {
         if (key == EFetchKey.FetchPropValue) {
             return function (dispatch) {
                 dispatch(makeAction_setManyStateByPath({
@@ -547,6 +549,7 @@ function fetchJson(useGet, url, sendData, triggerData, key = '', tip = '加载�
 }
 
 function _doNextFetching(dispatch) {
+    --gFetchingCount;
     if (gFetchingQueue.length > 0) {
         _doFetching(dispatch);
     }
@@ -555,6 +558,7 @@ function _doNextFetching(dispatch) {
 function _doFetching(dispatch) {
     var thisFetch = gFetchingQueue[0];
     gFetchingQueue.shift();
+    ++gFetchingCount;
     //console.log('_doFetching:' + JSON.stringify(thisFetch));
     var useGet = thisFetch.useGet;
     var sendData = thisFetch.sendData;
