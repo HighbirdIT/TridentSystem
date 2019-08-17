@@ -4909,7 +4909,7 @@ class JSNode_FreshForm extends JSNode_Base {
             myJSBlock.pushLine('setTimeout(() => {' + makeStr_callFun(freshFunName, ['null', holdSelected, parentPath]) + ';},50);');
         }
         else {
-            myJSBlock.pushLine(makeStr_callFun(freshFunName, ['state', 'null', 'null', parentPath + "+'." + formKernel.id + "'"]));
+            myJSBlock.pushLine(makeStr_callFun(freshFunName, ['state', 'null', 'null', parentPath + "+'." + socketValue + "'"]));
         }
         belongBlock.pushChild(myJSBlock);
 
