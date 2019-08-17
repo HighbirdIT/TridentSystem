@@ -669,8 +669,8 @@ function publishProject(req, res){
         }
         
         var hostIP = httpApp.get('hostip') ;
-        if(hostIp == '192.168.0.202'){
-            hostIp = 'erp.highbird.cn';
+        if(hostIP == '192.168.0.202'){
+            hostIP = 'erp.highbird.cn';
         }
         var hostPort = httpApp.get('port') ;
         var rcdRlt = yield dbhelper.asynExcute('P002E修改方案配置', [
