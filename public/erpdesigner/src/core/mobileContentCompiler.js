@@ -1333,7 +1333,9 @@ class MobileContentCompiler extends ContentCompiler {
                     };
                 }
             }
-            kernelMidData.needSetStates_arr.push(setValueStateItem);
+            if(setValueStateItem != null){
+                kernelMidData.needSetStates_arr.push(setValueStateItem);
+            }
         }
     }
 
