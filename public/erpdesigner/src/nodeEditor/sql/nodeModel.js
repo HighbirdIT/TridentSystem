@@ -1721,6 +1721,9 @@ class SqlNode_Select extends SqlNode_Base {
             if(alias){
                 alias.trim();
             }
+            if(IsEmptyString(alias)){
+                alias = null;
+            }
             var colName = alias;
             if (IsEmptyString(alias)) {
                 if (!isColumnNode) {
