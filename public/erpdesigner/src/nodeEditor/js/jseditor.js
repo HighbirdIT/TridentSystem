@@ -189,6 +189,21 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_HideMessageBox,
         type:'消息窗控制'
     },
+    {
+        label:'显示消息窗',
+        nodeClass:JSNode_ShowMessageBox,
+        type:'消息窗控制'
+    },
+    {
+        label:'钉钉-地图定位',
+        nodeClass:JSNode_DD_MapSearch,
+        type:'钉钉Api'
+    },
+    {
+        label:'钉钉-关闭浏览器',
+        nodeClass:JSNode_DD_NavClose,
+        type:'钉钉Api'
+    },
 ];
 
 var gCopyed_JsNodes_data=null;
@@ -229,6 +244,8 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         this.useEnvVars = {};
         this.usePage_map = {};
         this.useUrlVar_map = {};
+        this.useMobileDDApi = {};
+        this.usePcDDApi = {};
     }
 
     compileEnd(){
@@ -385,6 +402,14 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
     addUseURLVairable(varName, defVal){
         this.useUrlVar_map[varName] = defVal;
     }
+
+    addUseMobileDDApi(apiName){
+        this.useMobileDDApi[apiName] = 1;
+    }
+
+    addUsePCDDApi(apiName){
+        this.usePcDDApi[apiName] = 1;
+    }
 }
 
 class JSNodeEditorLeftPanel extends React.PureComponent{
@@ -486,7 +511,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         logManager.clear();
         var canUseDS_arr = [];
         var canAccessKernel_arr = [];
-        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == EJsBluePrintFunGroup.CtlValid || bluePrint.group == EJsBluePrintFunGroup.GridRowBtnHandler){
+        if(bluePrint.group == EJsBluePrintFunGroup.CtlAttr || bluePrint.group == EJsBluePrintFunGroup.CtlEvent || bluePrint.group == EJsBluePrintFunGroup.CtlFun || bluePrint.group == EJsBluePrintFunGroup.CtlValid || bluePrint.group == EJsBluePrintFunGroup.GridRowBtnHandler){
             // 控件类型,获取上下文
             var ctlKernel = project.getControlById(bluePrint.ctlID);
             if(bluePrint.ctlID == null || ctlKernel == null){
@@ -892,6 +917,9 @@ class C_JSNode_Editor extends React.PureComponent{
                     var newNodes_arr = this.props.bluePrint.pasteNodes(gCopyed_JsNodes_data, {x:editorPos.x,y:editorPos.y}, this.state.editingNode);
                     this.logManager.clear();
                     this.logManager.log('克隆了' + (newNodes_arr == null ? 0 : newNodes_arr.length) + '个节点');
+                    if(newNodes_arr.length > 0){
+                        this.reDraw();
+                    }
                 }
                 break;
         }

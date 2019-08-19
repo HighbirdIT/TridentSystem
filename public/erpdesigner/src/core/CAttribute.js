@@ -212,6 +212,7 @@ const VarNames={
     Userctlpath:'userctlpath',
     OldValue:'oldValue',
     SatePath:'statePath',
+    Visible:'visible',
 };
 
 const AttrNames={
@@ -267,6 +268,7 @@ const AttrNames={
     PopablePage:'popablepage',
     ParamApi:'paramapi',
     EventApi:'eventapi',
+    FunctionApi:'functionapi',
     StarSelectable:'starSelectable',
     ButtonVisibleType:'buttonVisibleType',
     InitCollapsed:'initCollapsed',
@@ -279,6 +281,12 @@ const AttrNames={
     NoRender:'norender',
     ClickSelectable:'clickSelectable',
     TextAlign:'textalign',
+    TipInfo:'tipinfo',
+    HisKey:'hisKey',
+    AcessAssert:'accessAssert',
+    IconType:'icontype',
+    AutoCloseBtn:'autoclosebtn',
+    HaveDoneTip: 'havedonetip',
 
     Event:{
         OnClick:'onclick',

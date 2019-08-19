@@ -135,6 +135,7 @@ class HERPTabControl extends React.PureComponent {
         var title = IsEmptyString(this.state.title) ? '[未命名]' : this.state.title;
         return(
             <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                {this.renderHandleBar()}
                 <div className='btn-group'>
                     {itemBtns_arr}
                     <button type='button' className='btn btn-dark flex-shrink-0'><i className='fa fa-at' /></button>

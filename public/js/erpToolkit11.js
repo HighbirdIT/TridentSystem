@@ -111,7 +111,7 @@ function myTrim(x) {
 }
 
 function getNowDate() {
-    return new Date(getFormatDateString(new Date()));
+    return new Date(getFormatDateString(new Date()) + ' 00:00');
 }
 
 function checkDate(date) {
@@ -175,6 +175,8 @@ function castDate(val) {
             }
             if (timeRegRlt != null) {
                 dateStr += ' ' + timeRegRlt[0];
+            } else {
+                dateStr += ' 00:00';
             }
             var rlt = new Date(dateStr);
             if (isNaN(rlt.getDate())) {
@@ -185,6 +187,10 @@ function castDate(val) {
         return null;
     }
     return new Date(val);
+}
+
+function castDateFromTimePart(val) {
+    return new Date('2000-1-1 ' + val);
 }
 
 function getDateDiff(type, dateA, dateB) {
@@ -489,10 +495,15 @@ function makeFTD_Callback(callBack) {
     };
 }
 var gFetchingProp = {};
+var gFetchingQueue = [];
+var gMaxFetchingCount = 5;
 
-function hookPropFetch(ftpProp, bundle) {
+function hookPropFetch(ftpProp, bundle, autoAdd) {
     var key = ftpProp.id + '_' + ftpProp.propName;
     if (gFetchingProp[key] == null) {
+        if (!autoAdd) {
+            return false;
+        }
         gFetchingProp[key] = [];
     } else if (gFetchingProp[key].length > 0) {
         var hited = gFetchingProp[key].find(function (x) {
@@ -503,10 +514,12 @@ function hookPropFetch(ftpProp, bundle) {
             return true;
         }
     }
-    gFetchingProp[key].push({
-        bundle: bundle,
-        queues_arr: []
-    });
+    if (autoAdd) {
+        gFetchingProp[key].push({
+            bundle: bundle,
+            queues_arr: []
+        });
+    }
     return false;
 }
 
@@ -534,8 +547,7 @@ function fetchJson(useGet, url, sendData, triggerData) {
     switch (key) {
         case EFetchKey.FetchPropValue:
             {
-                if (hookPropFetch(triggerData, sendData.bundle)) {
-                    //console.log('做了缓存:' + JSON.stringify(triggerData));
+                if (hookPropFetch(triggerData, sendData.bundle, false)) {
                     console.log('fetch做了缓存');
                     return function (dispatch) {
                         dispatch(makeAction_setManyStateByPath({
@@ -554,8 +566,49 @@ function fetchJson(useGet, url, sendData, triggerData) {
         url: url,
         sendData: sendData,
         key: key,
-        tip: tip
+        tip: tip,
+        timeout: timeout
     };
+    gFetchingQueue.push(thisFetch);
+    if (gFetchingQueue.length > gMaxFetchingCount) {
+        if (key == EFetchKey.FetchPropValue) {
+            return function (dispatch) {
+                dispatch(makeAction_setManyStateByPath({
+                    fetching: true,
+                    fetchingpropname: triggerData.propName,
+                    fetchingErr: null
+                }, MakePath(triggerData.base, triggerData.id)));
+            };
+        }
+        // enqueue
+        return function (dispatch) {};
+    }
+
+    return _doFetching;
+}
+
+function _doNextFetching(dispatch) {
+    gFetchingQueue.shift();
+    if (gFetchingQueue.length > 0) {
+        _doFetching(dispatch);
+    }
+}
+
+function _doFetching(dispatch) {
+    var thisFetch = gFetchingQueue[0];
+    //console.log('_doFetching:' + JSON.stringify(thisFetch));
+    var useGet = thisFetch.useGet;
+    var sendData = thisFetch.sendData;
+    var triggerData = thisFetch.triggerData;
+    var key = thisFetch.key;
+    var url = thisFetch.url;
+    var timeout = thisFetch.timeout;
+    if (key == EFetchKey.FetchPropValue) {
+        if (hookPropFetch(triggerData, sendData.bundle, true)) {
+            _doNextFetching(dispatch);
+            return;
+        }
+    }
     var fetchParam = {
         method: useGet ? "GET" : "POST",
         headers: {
@@ -577,50 +630,55 @@ function fetchJson(useGet, url, sendData, triggerData) {
     } else {
         fetchParam.body = JSON.stringify(sendData);
     }
-    return function (dispatch) {
-        dispatch(makeAction_fetchbegin(key, thisFetch));
-        var timeoutHandler = setTimeout(function () {
-            dispatched = true;
-            var errObj = createError('啊哦，服务器没响应了', ErrType.TIMEOUT);
+
+    dispatch(makeAction_fetchbegin(key, thisFetch));
+    var timeoutHandler = setTimeout(function () {
+        dispatched = true;
+        var errObj = createError('啊哦，服务器没响应了', ErrType.TIMEOUT);
+        dispatch(makeAction_fetchError(key, errObj, thisFetch));
+    }, timeout);
+    return fetch(url, fetchParam).then(function (response) {
+        if (dispatched) {
+            console.log('response at dispatched');
+            _doNextFetching(dispatch);
+            return null;
+        }
+        clearTimeout(timeoutHandler);
+        if (response.ok) {
+            return response.json();
+        } else {
+            var errObj = createError(response.statusText, ErrType.NORESPONSE, thisFetch);
             dispatch(makeAction_fetchError(key, errObj, thisFetch));
-        }, timeout);
-        return fetch(url, fetchParam).then(function (response) {
-            if (dispatched) {
-                console.log('response at dispatched');
-                return null;
-            }
-            clearTimeout(timeoutHandler);
-            if (response.ok) {
-                return response.json();
-            } else {
-                var errObj = createError(response.statusText, ErrType.NORESPONSE, thisFetch);
-                dispatch(makeAction_fetchError(key, errObj, thisFetch));
-                return null;
-            }
-        }, function (error) {
-            if (dispatched) {
-                console.log('response at dispatched');
-                return null;
-            }
-            console.warn('An error occurred.', error);
-            var errObj = createError(error.toString(), ErrType.NORESPONSE, thisFetch);
-            dispatch(makeAction_fetchError(key, errObj, thisFetch));
-        }).then(function (json) {
-            if (dispatched) {
-                console.log('response at dispatched');
-                return null;
-            }
-            if (json == null) {
-                dispatch(makeAction_fetchError(key, createError('"' + url + '"没有响应', ErrType.SERVERSIDE, thisFetch), thisFetch));
-            } else if (json.err != null) {
-                dispatch(makeAction_fetchError(key, createError(json.err.info, ErrType.SERVERSIDE, thisFetch), thisFetch));
-            } else {
-                //setTimeout(() => {
-                dispatch(makeAction_fetchend(key, json, thisFetch));
-                //}, 2000);
-            }
-        });
-    };
+            _doNextFetching(dispatch);
+            return null;
+        }
+    }, function (error) {
+        if (dispatched) {
+            console.log('response at dispatched');
+            _doNextFetching(dispatch);
+            return null;
+        }
+        console.warn('An error occurred.', error);
+        var errObj = createError(error.toString(), ErrType.NORESPONSE, thisFetch);
+        dispatch(makeAction_fetchError(key, errObj, thisFetch));
+        _doNextFetching(dispatch);
+    }).then(function (json) {
+        if (dispatched) {
+            console.log('response at dispatched');
+            _doNextFetching(dispatch);
+            return null;
+        }
+        if (json == null) {
+            dispatch(makeAction_fetchError(key, createError('"' + url + '"没有响应', ErrType.SERVERSIDE, thisFetch), thisFetch));
+        } else if (json.err != null) {
+            dispatch(makeAction_fetchError(key, createError(json.err.info, ErrType.SERVERSIDE, thisFetch), thisFetch));
+        } else {
+            //setTimeout(() => {
+            dispatch(makeAction_fetchend(key, json, thisFetch));
+            //}, 2000);
+        }
+        _doNextFetching(dispatch);
+    });
 }
 
 function nativeFetchJson(useGet, url, sendData) {

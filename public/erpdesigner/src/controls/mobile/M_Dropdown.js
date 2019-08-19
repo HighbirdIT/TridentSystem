@@ -1,6 +1,6 @@
 const M_DropdownKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置', [
-        new CAttribute('数据源', AttrNames.DataSource, ValueType.DataSource, null, true, false, null, {text:'name', value:'code'}),
+        new CAttribute('数据源', AttrNames.DataSource, ValueType.DataSource, null, true, false, [], {text:'name', value:'code', pullDataFun:gGetAllEntitiesByKernel}),
         new CAttribute('来源文本字段', AttrNames.FromTextField, ValueType.String, '', true, false, 'getUseDSColumns'),
         new CAttribute('来源码值字段', AttrNames.FromValueField, ValueType.String, '', true, false, 'getUseDSColumns'),
         genTextFiledAttribute(),
@@ -21,6 +21,7 @@ const M_DropdownKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('数据分层', 'datagroup', ValueType.String, '', true, true, 'getCanuseColumns'),
         new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes),
         new CAttribute('接受输入值', AttrNames.Editeable, ValueType.Boolean, false),
+        new CAttribute('历史Key', AttrNames.HisKey, ValueType.String, '', true, false),
     ]),
     new CAttributeGroup('事件',[
         new CAttribute('OnChanged', AttrNames.Event.OnChanged, ValueType.Event),
@@ -47,8 +48,6 @@ class M_DropdownKernel extends ControlKernelBase {
         cusDS_bp.ctlKernel = this;
         cusDS_bp.group = 'ctlcus';
         this.setAttribute(AttrNames.CustomDataSource, cusDS_bp);
-
-        this.findAttributeByName(AttrNames.DataSource).options_arr = parentKernel.project.dataMaster.getAllEntities;
 
         var self = this;
         autoBind(self);
@@ -89,13 +88,13 @@ class M_DropdownKernel extends ControlKernelBase {
         var columnNode = cusDS_bp.finalSelectNode.columnNode;
         columnNode.distChecked = true;
         var needSelectColumns_arr = [];
-        if(!IsEmptyString(fromtextfield)){
+        if(useDS && !IsEmptyString(fromtextfield)){
             needSelectColumns_arr.push(fromtextfield);
         }
-        if(!IsEmptyString(fromValueField)){
+        if(useDS && !IsEmptyString(fromValueField)){
             needSelectColumns_arr.push(fromValueField);
         }
-        if(groupCols_arr != null && groupCols_arr.length > 0){
+        if(useDS && groupCols_arr != null && groupCols_arr.length > 0){
             needSelectColumns_arr = needSelectColumns_arr.concat(groupCols_arr);
         }
 
@@ -151,7 +150,7 @@ class M_DropdownKernel extends ControlKernelBase {
                 colNode = theLink.outSocket.node;
             }
         }
-        if(!IsEmptyString(fromtextfield)){
+        if(useDS && !IsEmptyString(fromtextfield)){
             if(theLinks.length == 0 || colNode == null){
                 if(colNode == null){
                     colNode = new SqlNode_Column({}, cusDS_bp.finalSelectNode);   
@@ -232,6 +231,7 @@ class M_DropdownKernel extends ControlKernelBase {
 var M_DropdownKernel_api = new ControlAPIClass(M_DropdownKernel_Type);
 M_DropdownKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.TextField,M_DropdownKernelAttrsSetting), 'text', true));
 M_DropdownKernel_api.pushApi(new ApiItem_propsetter('value'));
+M_DropdownKernel_api.pushApi(new ApiItem_propsetter('text'));
 M_DropdownKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.ValueField,M_DropdownKernelAttrsSetting), 'value', true));
 g_controlApi_arr.push(M_DropdownKernel_api);
 
@@ -302,6 +302,7 @@ class M_Dropdown extends React.PureComponent {
         */
         return (
            <div className={layoutConfig.getClassName()} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                {this.renderHandleBar()}
                 <span style={{width:'calc(100% - 30px)'}} className='bg-dark text-light flex-grow-1 flex-shrink-1' >{showText}</span>
                 <span style={{width:'30px'}} className='bg-dark text-light flex-grow-0 flex-shrink-0 dropdown-toggle dropdown-toggle-split' />
             </div>

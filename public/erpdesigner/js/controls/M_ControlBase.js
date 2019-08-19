@@ -1,5 +1,7 @@
 'use strict';
 
+var gCopiedKernelData = null;
+
 function M_ControlBase_componentWillMount() {
     this.listenTarget(this.props.ctlKernel);
     this.mounted = true;
@@ -105,8 +107,17 @@ function M_ControlBase(target, watchedAttrs) {
     React_Make_AttributeListener(target, watchedAttrs, true);
     target.componentWillMount = M_ControlBase_componentWillMount.bind(target);
     target.componentWillUnmount = M_ControlBase_componentWillUnmount.bind(target);
+    target.renderHandleBar = M_ControlBase_RenderHandleBar.bind(target);
+    target.clickHandleTrash = M_ControlBase_ClickHandle_Trash.bind(target);
+    target.clickHandleMove = M_ControlBase_ClickHandle_Move.bind(target);
+    target.clickHandleCopy = M_ControlBase_ClickHandle_Copy.bind(target);
+    target.clickHandlePaste = M_ControlBase_ClickHandle_Paste.bind(target);
+    target.clickHandleEraser = M_ControlBase_ClickHandle_Eraser.bind(target);
+    target.clickHandleGoParent = M_ControlBase_ClickHandle_GoParent.bind(target);
+
     target.setSelected = M_ControlBase_setSelected.bind(target);
     target.aAttrChangedBase = M_ControlBase_aAttrChangedBase.bind(target);
+    target.reDraw = C_ReDraw.bind(target);
 
     var layoutState = {};
     LayoutAttrNames_arr.forEach(function (name) {
@@ -115,6 +126,91 @@ function M_ControlBase(target, watchedAttrs) {
         }
     });
     return layoutState;
+}
+
+function M_ControlBase_ClickHandle_Trash() {
+    this.props.ctlKernel.project.designer.deleteSelectedKernel();
+}
+
+function M_ControlBase_ClickHandle_Move() {
+    if (this.props.ctlKernel.project.designer.outlineRef.current) {
+        this.props.ctlKernel.project.designer.outlineRef.current.startDragKernel(this.props.ctlKernel);
+    }
+}
+
+function M_ControlBase_ClickHandle_Copy() {
+    gCopiedKernelData = this.props.ctlKernel.project.copyKernel(this.props.ctlKernel);
+    console.log(gCopiedKernelData);
+    this.reDraw();
+}
+
+function M_ControlBase_ClickHandle_Paste() {
+    if (gCopiedKernelData) {
+        var theKernel = this.props.ctlKernel;
+        var targetParent = theKernel.parent;
+        if (targetParent == null) {
+            targetParent = theKernel;
+        }
+        var targetIndex = targetParent.getChildIndex(theKernel);
+        this.props.ctlKernel.project.pasteKernel(gCopiedKernelData, this.props.ctlKernel.parent, targetIndex);
+    }
+}
+
+function M_ControlBase_ClickHandle_Eraser() {
+    gCopiedKernelData = null;
+    this.reDraw();
+}
+
+function M_ControlBase_ClickHandle_GoParent() {
+    var theKernel = this.props.ctlKernel;
+    if (theKernel.parent) {
+        theKernel.project.designer.selectKernel(theKernel.parent);
+    }
+}
+
+function M_ControlBase_RenderHandleBar() {
+    if (this.state.selected != true || this.props.ctlKernel.isfixed) {
+        return null;
+    }
+
+    return React.createElement(
+        'div',
+        { className: 'controlHandleBar' },
+        React.createElement(
+            'div',
+            { className: 'btn-group' },
+            React.createElement(
+                'button',
+                { className: 'btn btn-dark', onMouseDown: this.clickHandleMove },
+                React.createElement('i', { className: 'fa fa-arrows' })
+            ),
+            this.props.ctlKernel.parent ? React.createElement(
+                'button',
+                { className: 'btn btn-dark', onClick: this.clickHandleGoParent },
+                React.createElement('i', { className: 'fa fa-reply' })
+            ) : null,
+            React.createElement(
+                'button',
+                { className: 'btn btn-dark', onClick: this.clickHandleCopy },
+                React.createElement('i', { className: 'fa fa-copy' })
+            ),
+            gCopiedKernelData && React.createElement(
+                'button',
+                { className: 'btn btn-dark', onClick: this.clickHandlePaste },
+                React.createElement('i', { className: 'fa fa-paste' })
+            ),
+            gCopiedKernelData && React.createElement(
+                'button',
+                { className: 'btn btn-dark', onClick: this.clickHandleEraser },
+                React.createElement('i', { className: 'fa fa-eraser' })
+            ),
+            React.createElement(
+                'button',
+                { className: 'btn btn-danger', onClick: this.clickHandleTrash },
+                React.createElement('i', { className: 'fa fa-trash' })
+            )
+        )
+    );
 }
 
 function GetKernelCanUseColumns(theKernel) {

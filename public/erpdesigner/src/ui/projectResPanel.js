@@ -70,6 +70,25 @@ class ProjectResPanel extends React.PureComponent {
         });
     }
 
+    clickTrashUserControlBtn(ev){
+        var ctlID = getAttributeByNode(ev.target,'d-id', true);
+        var project = this.props.project;
+        var userCtl = project.getUserControlById(ctlID);
+        if(userCtl == null){
+            return;
+        }
+        gTipWindow.popAlert(makeAlertData('警告', '确定要删除自订控件:' + userCtl.name,this.clickDeleteUserControlTipCallback,[makeAlertBtnData('确定', 'ok'),makeAlertBtnData('取消', 'cancel')], userCtl));
+    }
+
+    clickDeleteUserControlTipCallback(key, userCtl){
+        if(key == 'ok'){
+            this.props.project.deleteUserControl(userCtl);
+            this.setState({
+                magicObj:{}
+            });
+        }
+    }
+
     render() {
         var project = this.props.project;
         var editingPage = project.getEditingPage();
@@ -99,7 +118,10 @@ class ProjectResPanel extends React.PureComponent {
                 <div className='list-group'>
                     {
                         project.userControls_arr.map((userctl)=>{
-                            return (<span onClick={this.clickControlItem} d-id={userctl.id} key={userctl.id} className={'list-group-item list-group-item-action ' + (editingControl == userctl ? 'active' : '')}>{userctl.name}[{userctl.id}]</span>);
+                            return (<div d-id={userctl.id} key={userctl.id} className={'d-flex list-group-item ' + (editingControl == userctl ? 'active' : '')}>
+                                    <span onClick={this.clickControlItem} className='flex-grow-1 flex-shrink-1'>{userctl.name}[{userctl.id}]</span>
+                                    <button onClick={this.clickTrashUserControlBtn} className='btn btn-danger'><i className='fa fa-trash' /></button>
+                                </div>);
                         })
                     }
                 </div>
@@ -107,7 +129,61 @@ class ProjectResPanel extends React.PureComponent {
                     <input type='text' className='flexinput flex-grow-1 flex-shrink-1' onChange={this.nweUserControlNameChanged} value={this.state.nweUserControlName} />
                     <button type="button" onClick={this.clickCreateNewUserControlHandler} className='btn flex-grow-0 flex-shrink-0 btn-success' >创建控件</button>
                 </div>
+                <div className='bg-secondary text-light'>快捷功能</div>
+                <QuickControlSelector project={project} />
             </div>
         )
+    }
+}
+
+class QuickControlSelector extends React.PureComponent {
+    constructor(props) {
+        super(props);
+
+        var initState = {
+        };
+        this.state = initState;
+
+        autoBind(this);
+    }
+
+    getAllControls(){
+        var controlId_map = this.props.project.controlId_map;
+        var rlt_arr = [];
+        for(var cid in controlId_map){
+            for(var i = 0; i < rlt_arr.length; ++i){
+                if(rlt_arr[i] > cid){
+                    break;
+                }
+            }
+            rlt_arr.splice(i, 0, cid);
+        }
+        return rlt_arr;
+    }
+
+    ctlIDChanged(newID){
+        var project = this.props.project;
+        var theKernel = project.getControlById(newID);
+        this.setState({
+            ctlpath:theKernel ? theKernel.getStatePath('','.',{},true) : null,
+        });
+        if(theKernel){
+            var belongPage = theKernel.searchParentKernel(M_PageKernel_Type, true);
+            project.setEditingPageById(belongPage.id);
+            setTimeout(() => {
+                project.designer.selectKernel(theKernel);
+            }, 50);
+        }
+    }
+
+
+    render(){
+        return <div className='flex-shrink-0 flex-grow-0 d-flex flex-column'>
+                <div>
+                    <span className='text-light'>选取控件</span>
+                    <DropDownControl itemChanged={this.ctlIDChanged} btnclass='btn-primary' options_arr={this.getAllControls} rootclass='flex-grow-1 flex-shrink-1' editable={true} value='' />
+                </div>
+                {this.state.ctlpath ? <div className='text-light'>{this.state.ctlpath}</div> : null}
+            </div>
     }
 }

@@ -163,7 +163,7 @@ function GetFormatTimeString(date,hadSec) {
 }
 
 function GetNowDate() {
-    return new Date(GetFormatDateString(new Date()));
+    return new Date(GetFormatDateString(new Date()) + ' 00:00');
 }
 
 function CheckDate(date) {
@@ -244,12 +244,50 @@ function CastDate(val){
             if(timeRegRlt != null){
                 dateStr += ' ' + timeRegRlt[0];
             }
+            else{
+                dateStr += ' 00:00';
+            }
             return new Date(dateStr);
         }
         return null;
     }
     
     return new Date(val);
+}
+
+function CastDateFromTimePart(val) {
+    var timeRegRlt = gTimeReg.exec(val);
+    if (timeRegRlt == null) {
+        timeRegRlt = gShortTimeReg.exec(val);
+    }
+    if (timeRegRlt == null) {
+        return null;
+    }
+
+    return new Date('2000-1-1 ' + timeRegRlt[0]);
+}
+
+const gWeekDayName_arr = ["日", "一", "二", "三", "四", "五", "六"];
+function GetweekDay(date) {
+	if (!checkDate(date)) {
+		date = castDate(date);
+	}
+	return "星期" + gWeekDayName_arr[date.getDay()]
+}
+
+function Convert_TimeZone(time, zoneSrc, zoneDst) {
+    var firsttime;
+    if (typeof time === 'string') {
+        firsttime = castDateFromTimePart(time);
+    }else{
+        firsttime=time;
+    }
+    var datetime = firsttime.getTime();
+    var offset = 0;
+    zoneSrc = parseInt(zoneSrc);
+    zoneDst = parseInt(zoneDst);
+    offset = -zoneSrc + zoneDst;
+    return new Date(firsttime.setTime(datetime + 1000 * 60 * 60 * offset));
 }
 
 helper.DateFun={
@@ -265,6 +303,9 @@ helper.DateFun={
     castDate:CastDate,
     getFormatDateString_MD:GetFormatDateString_MD,
     getFullFormatDateString:GetFullFormatDateString,
+    castDateFromTimePart:CastDateFromTimePart,
+    getweekDay:GetweekDay,
+    Convert_TimeZone:Convert_TimeZone,
 };
 
 module.exports = helper;

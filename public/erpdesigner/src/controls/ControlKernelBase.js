@@ -79,7 +79,7 @@ class ControlKernelBase extends IAttributeable {
         super(initData, null, description);
         this.lisenedDSSyned = this.lisenedDSSyned.bind(this);
         if(parentKernel == null && type != UserControlKernel_Type){
-            Console.error('ControlKernelBase 的 parentKernel不能为空');
+            console.error('ControlKernelBase 的 parentKernel不能为空');
         }
         if(this.project == null){
             this.project = parentKernel ? parentKernel.project : null;
@@ -142,7 +142,8 @@ class ControlKernelBase extends IAttributeable {
             createHelper.saveJsonMap(kernelJson, this);
         }
         if (parentKernel && parentKernel.project != parentKernel) {
-            parentKernel.appandChild(this);
+            parentKernel.appandChild(this, this.hintIndexInParent);
+            this.hintIndexInParent = null;
         }
         this.readableName = this.getReadableName();
     }
@@ -353,6 +354,9 @@ class ControlKernelBase extends IAttributeable {
             type: this.type,
             id: this.id,
         };
+        if(jsonProf){
+            jsonProf.useControl(this);
+        }
         return rlt;
     }
 
@@ -497,7 +501,7 @@ class ControlKernelBase extends IAttributeable {
         var nowKernel = this;
         var parent = nowKernel.parent;
         if(parent == null){
-            if(this.type == M_PageKernel_Type){
+            if(this.type == M_PageKernel_Type || this.type == UserControlKernel_Type){
                 parent = this;
                 rlt.pop();
             }
@@ -546,6 +550,9 @@ class ControlKernelBase extends IAttributeable {
         }
         var nowKernel = this.parent;
         var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
+        if(this.type == M_ContainerKernel_Type){
+            rlt = '';
+        }
         while(nowKernel != null && nowKernel != topestParant){
             switch(nowKernel.type){
                 case M_PageKernel_Type:

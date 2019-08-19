@@ -105,6 +105,7 @@ class M_CheckBox extends React.PureComponent {
         }
         return (
             <span className={layoutConfig.getClassName()} style={layoutConfig.style} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null} onClick={this.props.onClick} >
+                {this.renderHandleBar()}
                 <span className="fa-stack fa-lg">
                     <i className={"fa fa-square-o fa-stack-2x"}></i>
                     {checked && <i className={'fa fa-stack-1x fa-check text-success'}></i>}

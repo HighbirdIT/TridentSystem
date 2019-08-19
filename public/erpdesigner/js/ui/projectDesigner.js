@@ -55,6 +55,11 @@ var ProjectDesigner = function (_React$PureComponent) {
             this.quickMenuRef.current.popMenu(items_arr, pos, callBack);
         }
     }, {
+        key: 'getSelectedKernel',
+        value: function getSelectedKernel() {
+            if (this.attrbutePanelRef.current) return this.attrbutePanelRef.current.getTarget();
+        }
+    }, {
         key: 'selectKernel',
         value: function selectKernel(kernel) {
             /*
@@ -364,20 +369,3 @@ var ProjectDesigner = function (_React$PureComponent) {
 
     return ProjectDesigner;
 }(React.PureComponent);
-
-/*
-<ControlPanel project={thisProject} mouseDownControlIcon={this.mouseDownControlIcon} />
-                <ContentPanel project={thisProject} ref={this.contenPanelRef}/>
-                <div className='flex-grow-0 flex-shrink-0 bg-light d-flex flex-column' style={{width:'350px'}}>
-                    <AttributePanel project={thisProject}/>
-                    <OutlinePanel project={thisProject}/>
-                </div>
-
-                <SplitPanel defPercent={0.1}
-                             panel1={<ContentPanel project={thisProject} ref={this.contenPanelRef} />}
-                             panel2={<div className='flex-grow-0 flex-shrink-0 bg-light d-flex flex-column' style={{ width: '350px' }}>
-                                        <AttributePanel project={thisProject} />
-                                        <OutlinePanel project={thisProject} />
-                                    </div>}
-                            />
-*/

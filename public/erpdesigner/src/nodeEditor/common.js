@@ -1216,6 +1216,9 @@ function NodeEditor_PasteNodes(data_json, anchorPos,  parentNode) {
     var newNodeJson_arr = JSON.parse(JSON.stringify(data_json.nodeJson_arr));
     var createHelper = new NodeCreationHelper();
     createHelper.dataMaster = this.dataMaster;
+    if(this.master){
+        createHelper.project = this.master.project;
+    }
     if (anchorPos) {
         var boundBox = MyMath.calcBoundBox(newNodeJson_arr.map(node => { return { x: parseInt(node.left), y: parseInt(node.top), width: 200, height: 200 }; }));
         var posOffset = {

@@ -147,9 +147,6 @@ class M_LabeledControlKernel extends ControlKernelBase{
 
     getJson(jsonProf){
         var rlt = super.getJson(jsonProf);
-        if(this.editor && this.editor.type == UserControlKernel_Type){
-            console.log('wert');
-        }
         rlt.editor = this.editor == null ? null : this.editor.getJson(jsonProf);
         return rlt;
     }
@@ -231,6 +228,7 @@ class M_LabeledControl extends React.PureComponent {
         }
         return(
             <div className={layoutConfig.getClassName()} style={layoutConfig.style} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                {this.renderHandleBar()}
                 {leftElem}
                 <div className='rowlFameOne_right'>
                     {editor != null && editor.renderSelf(this.props.onClick == ctlKernel.clickHandler ? null : this.props.onClick)}

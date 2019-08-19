@@ -348,8 +348,8 @@ class C_Node_SimpleNode extends React.PureComponent {
         }
         else{
             leftElem = (<div className='d-flex flex-column'>
-                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inFlowSockets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInputFlowScoketDynamic() ? nodeData.processInputFlowSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inFlowSockets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInputFlowScoketDynamic() ? nodeData.processInputFlowSockets : null} nameMoveable={nodeData.scoketNameMoveable} />
             </div>);
         }
 

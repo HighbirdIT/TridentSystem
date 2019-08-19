@@ -1,7 +1,21 @@
 {{#section 'script'}}
   <script>
       var g_envVar = {{encodeMyString g_envVar}};
+      var isMobile = {{isMobileStr}};
+      var theCorpId = "dingb3f0b56e674e39fd";
+      var dingdingKit = null;
+      var isInDingTalk = false;
+      var pTimeStamp = "{{TimeStamp}}";
+      var pNonceStr = "{{NonceStr}}";
+      var pSignature = "{{Signature}}";
+      var ticketErrInfo = "{{DingErrInfo}}";
+      var isProduction = {{toString isProduction}};
   </script>
+  {{#if isMobile}}
+    <script src='http://g.alicdn.com/dingding/dingtalk-jsapi/2.3.0/dingtalk.open.js'></script>
+  {{else}}
+    <script src='https://g.alicdn.com/dingding/dingtalk-pc-api/2.7.0/index.js'></script>
+  {{/if}}
   <script src='{{clientJs}}'></script>
 {{/section}}
 

@@ -38,7 +38,7 @@ class SocketLink{
             return {
                 inSocketID:this.inSocket.id,
                 outSocketID:this.outSocket.id,
-            }
+            };
         }
     }
 }

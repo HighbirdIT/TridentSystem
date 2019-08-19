@@ -119,6 +119,7 @@ var FunType_Server = 'server';
 var EJsBluePrintFunGroup = {
     CtlAttr: 'ctlattr',
     CtlEvent: 'ctlevent',
+    CtlFun: 'ctlfun',
     CtlValid: 'ctlvalid',
     ServerScript: 'serverscript',
     GridRowBtnHandler: 'gridrowbtnhandler'
@@ -281,6 +282,7 @@ var ValueType = {
     Boolean: 'boolean',
     Float: 'float',
     Date: 'date',
+    DateMD: 'dateMD',
     Time: 'time',
     DateTime: 'datetime',
     StyleValues: 'StyleValues',
@@ -293,12 +295,12 @@ var ValueType = {
     Script: 'script',
     Object: 'Object',
     XML: 'xml',
-    UserControlEvent: 'usercontrolevent'
+    UserControlEvent: 'usercontrolevent',
+    CustomFunction: 'CustomFunction'
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
-
-var JsValueTypes = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
+var JsValueTypes = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time, ValueType.DateMD];
 
 function TransSVTToJSVT(sqlType) {
     switch (sqlType) {

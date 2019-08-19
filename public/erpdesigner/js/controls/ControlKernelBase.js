@@ -91,7 +91,7 @@ var ControlKernelBase = function (_IAttributeable) {
 
         _this.lisenedDSSyned = _this.lisenedDSSyned.bind(_this);
         if (parentKernel == null && type != UserControlKernel_Type) {
-            Console.error('ControlKernelBase 的 parentKernel不能为空');
+            console.error('ControlKernelBase 的 parentKernel不能为空');
         }
         if (_this.project == null) {
             _this.project = parentKernel ? parentKernel.project : null;
@@ -153,7 +153,8 @@ var ControlKernelBase = function (_IAttributeable) {
             createHelper.saveJsonMap(kernelJson, _this);
         }
         if (parentKernel && parentKernel.project != parentKernel) {
-            parentKernel.appandChild(_this);
+            parentKernel.appandChild(_this, _this.hintIndexInParent);
+            _this.hintIndexInParent = null;
         }
         _this.readableName = _this.getReadableName();
         return _this;
@@ -376,6 +377,9 @@ var ControlKernelBase = function (_IAttributeable) {
                 type: this.type,
                 id: this.id
             };
+            if (jsonProf) {
+                jsonProf.useControl(this);
+            }
             return rlt;
         }
     }, {
@@ -520,7 +524,7 @@ var ControlKernelBase = function (_IAttributeable) {
             var nowKernel = this;
             var parent = nowKernel.parent;
             if (parent == null) {
-                if (this.type == M_PageKernel_Type) {
+                if (this.type == M_PageKernel_Type || this.type == UserControlKernel_Type) {
                     parent = this;
                     rlt.pop();
                 }
@@ -573,6 +577,9 @@ var ControlKernelBase = function (_IAttributeable) {
             }
             var nowKernel = this.parent;
             var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
+            if (this.type == M_ContainerKernel_Type) {
+                rlt = '';
+            }
             while (nowKernel != null && nowKernel != topestParant) {
                 switch (nowKernel.type) {
                     case M_PageKernel_Type:

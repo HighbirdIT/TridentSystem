@@ -134,6 +134,20 @@ var ProjectContainer = function (_React$PureComponent2) {
                 selectedIndex = Math.max(new_arr.length - 1, 0);
             }
             this.setState({ projects: new_arr, selectedIndex: selectedIndex });
+
+            var self = this;
+            setTimeout(function () {
+                self.openedPageChanged();
+            }, 100);
+        }
+    }, {
+        key: 'openedPageChanged',
+        value: function openedPageChanged() {
+            var newOpenPage_his = '';
+            this.state.projects.forEach(function (project) {
+                newOpenPage_his += (newOpenPage_his.length == 0 ? '' : '|P|') + project.title;
+            });
+            Cookies.set('openedPages', newOpenPage_his, { expires: 7 });
         }
     }, {
         key: 'wantOpenProject',
@@ -163,19 +177,22 @@ var ProjectContainer = function (_React$PureComponent2) {
                 projects: newProjects
             });
 
-            var openPage_his = ReplaceIfNull(Cookies.get('openPage_his'), '');
+            this.openedPageChanged();
+            /*
+            var openPage_his = ReplaceIfNull(Cookies.get('openPage_his'),'');
             var t_arr = openPage_his.split('|P|');
             var newProjTitle = this.openingProj.title;
             var index = t_arr.indexOf(newProjTitle);
-            if (index != 0) {
+            if(index != 0){
                 var newHis = newProjTitle;
-                t_arr.forEach(function (item) {
-                    if (item != newProjTitle && item != null && item.length > 0) {
+                t_arr.forEach(item=>{
+                    if(item != newProjTitle && item != null && item.length > 0){
                         newHis += '|P|' + item;
                     }
                 });
                 Cookies.set('openPage_his', newHis, { expires: 7 });
             }
+            */
         }
     }, {
         key: 'fetchProjJsonCallback',
@@ -206,19 +223,24 @@ var ProjectContainer = function (_React$PureComponent2) {
     }, {
         key: 'logCompleteFun',
         value: function logCompleteFun() {
+            var _this3 = this;
+
             var self = this;
             //self.projManagerRef.current.toggle();
             this.setState({
                 magicObj: {}
             });
 
-            var openPage_his = Cookies.get('openPage_his');
-            if (openPage_his != null) {
-                console.log(openPage_his);
-                var arr = openPage_his.split('|P|');
-                if (this.wantOpenProject(arr[0])) {
-                    return;
-                }
+            var openedPages_cookie = Cookies.get('openedPages');
+            if (openedPages_cookie != null && openedPages_cookie.length > 0) {
+                //console.log(openPage_his);
+                var arr = openedPages_cookie.split('|P|');
+                arr.forEach(function (projTitle) {
+                    if (projTitle.length > 0) {
+                        _this3.wantOpenProject(projTitle);
+                    }
+                });
+                return;
             }
 
             setTimeout(function () {
@@ -293,7 +315,7 @@ var ProjectContainer = function (_React$PureComponent2) {
     }, {
         key: 'render',
         value: function render() {
-            var _this3 = this;
+            var _this4 = this;
 
             var projectManager = this;
             return React.createElement(
@@ -314,7 +336,7 @@ var ProjectContainer = function (_React$PureComponent2) {
                             React.createElement(MenuCammandItem, { text: '\u6253\u5F00\u6D41\u7A0B\u5927\u5E08', cmd: 'openflowmaster', executFun: this.executCmd })
                         ),
                         this.state.projects.map(function (item, i) {
-                            return React.createElement(TitleHeaderItem, { key: item.designeConfig.name, project: item, index: i, clickTitlehandler: _this3.clickTitlehandler, clickClosehandler: _this3.clickClosehandler, active: i == _this3.state.selectedIndex });
+                            return React.createElement(TitleHeaderItem, { key: item.designeConfig.name, project: item, index: i, clickTitlehandler: _this4.clickTitlehandler, clickClosehandler: _this4.clickClosehandler, active: i == _this4.state.selectedIndex });
                         })
                     ),
                     React.createElement(ProjectManagerPanel, { ref: this.projManagerRef, wantOpenProjectFun: this.wantOpenProject }),
@@ -325,7 +347,7 @@ var ProjectContainer = function (_React$PureComponent2) {
                         this.state.projects.map(function (item, i) {
                             item.projectIndex = i;
                             item.projectManager = projectManager;
-                            return React.createElement(ProjectDesigner, { key: item.designeConfig.name, project: item, className: 'flex-grow-1 flex-shrink-1 ' + (_this3.state.selectedIndex == i ? 'd-flex' : 'd-none'), savePanelRef: _this3.savePanelRef });
+                            return React.createElement(ProjectDesigner, { key: item.designeConfig.name, project: item, className: 'flex-grow-1 flex-shrink-1 ' + (_this4.state.selectedIndex == i ? 'd-flex' : 'd-none'), savePanelRef: _this4.savePanelRef });
                         })
                     )
                 ),
@@ -343,17 +365,17 @@ var RC_SavaPanel = function (_React$PureComponent3) {
     function RC_SavaPanel(props) {
         _classCallCheck(this, RC_SavaPanel);
 
-        var _this4 = _possibleConstructorReturn(this, (RC_SavaPanel.__proto__ || Object.getPrototypeOf(RC_SavaPanel)).call(this, props));
+        var _this5 = _possibleConstructorReturn(this, (RC_SavaPanel.__proto__ || Object.getPrototypeOf(RC_SavaPanel)).call(this, props));
 
-        _this4.state = {
+        _this5.state = {
             targetProject: null,
             saving: false,
             info: ''
         };
-        autoBind(_this4);
+        autoBind(_this5);
 
-        _this4.logManager = new LogManager('_savepanel');
-        return _this4;
+        _this5.logManager = new LogManager('_savepanel');
+        return _this5;
     }
 
     _createClass(RC_SavaPanel, [{

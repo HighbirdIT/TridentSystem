@@ -1,7 +1,7 @@
 const M_ListKernelAttrsSetting=GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置',[
         new CAttribute('方向',AttrNames.Orientation,ValueType.String,Orientation_V,true,false, Orientation_Options_arr),
-        new CAttribute('数据源', AttrNames.DataSource, ValueType.DataSource, null, true, false, null, {text:'name', value:'code'}),
+        new CAttribute('数据源', AttrNames.DataSource, ValueType.DataSource, null, true, false, [], {text:'name', value:'code', pullDataFun:gGetAllEntitiesByKernel}),
     ]),
 ]);
 
@@ -15,7 +15,6 @@ class M_ListKernel extends ContainerKernelBase{
                 createHelper,kernelJson
             );
         
-        this.findAttributeByName(AttrNames.DataSource).options_arr = parentKernel.project.dataMaster.getAllEntities;
         this.findAttributeByName(AttrNames.ProcessTable).options_arr = g_dataBase.getAllTable;
         var self = this;
         autoBind(self);

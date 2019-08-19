@@ -217,15 +217,15 @@ function SetCurrentComponent(ctrlProps, component) {
 
 function ERPC_Fun_ComponentWillUnmount() {
     SetCurrentComponent(this.props, null);
-    if (this.cusComponentWillMount) {
-        this.cusComponentWillMount();
+    if (this.cusComponentWillUnmount) {
+        this.cusComponentWillUnmount();
     }
 }
 
 function ERPC_Fun_ComponentWillMount() {
     SetCurrentComponent(this.props, this);
-    if (this.cusComponentWillUnmount) {
-        this.cusComponentWillUnmount();
+    if (this.cusComponentWillmount) {
+        this.cusComponentWillmount();
     }
 }
 
@@ -739,7 +739,7 @@ class ERPC_DropDown extends React.PureComponent {
                             this.recentValues_arr.splice(index, 1);
                         }
                         this.recentValues_arr.unshift(value);
-                        if (this.recentValues_arr.length >= 6) {
+                        if (this.recentValues_arr.length >= 11) {
                             this.recentValues_arr.pop();
                         }
                         Cookies.set(this.props.recentCookieKey, this.recentValues_arr.join(','), { expires: 7 });
@@ -1522,7 +1522,7 @@ class ERPC_Button extends React.PureComponent {
         if (className.indexOf('flex-shrink-') == -1) {
             className += ' flex-shrink-0';
         }
-        return <button className={className} onClick={this.props.onClick} ctl-fullpath={this.props.fullPath}>
+        return <button className={className} style={this.props.style} onClick={this.props.onClick} ctl-fullpath={this.props.fullPath}>
             {this.props.children}
         </button>
     }

@@ -53,7 +53,7 @@ class SqlNode_BluePrint extends EventEmitter {
         var isDeleteBP = this.isDelete();
 
         if (bluePrintJson != null) {
-            assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'retNodeId', 'editorLeft', 'editorTop', 'group']);
+            assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'retNodeId', 'editorLeft', 'editorTop', 'group','uuid']);
             if (!IsEmptyArray(bluePrintJson.variables_arr)) {
                 bluePrintJson.variables_arr.forEach(varJson => {
                     var newVar = new SqlDef_Variable({}, this, createHelper, varJson);
@@ -64,6 +64,9 @@ class SqlNode_BluePrint extends EventEmitter {
                 return node.id == bluePrintJson.retNodeId;
             });
             this.linkPool.restorFromJson(bluePrintJson.links_arr, createHelper);
+        }
+        if(IsEmptyString(this.uuid)){
+            this.uuid = guid2();
         }
         this.id = this.code;
 
@@ -196,7 +199,7 @@ class SqlNode_BluePrint extends EventEmitter {
     }
 
     isNodeCanCopy(node){
-        return node != this.finalSelectNode;
+        return node != this.finalSelectNode && !node.isConstNode;
     }
 
     registerNode(node, parentNode) {
@@ -354,6 +357,7 @@ class SqlNode_BluePrint extends EventEmitter {
             name: this.name,
             type: this.type,
             group: this.group,
+            uuid: this.uuid,
         }
         if (this.editorLeft) {
             theJson.editorLeft = this.editorLeft;
@@ -900,6 +904,7 @@ class SqlNode_XJoin extends SqlNode_Base {
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
         var socketOuts_arr = [];
+        var InnerTableName=[];
         for (var i = 0; i < this.inputScokets_arr.length; ++i) {
             var socket = this.inputScokets_arr[i];
             var tLinks = this.bluePrint.linkPool.getLinksBySocket(socket);
@@ -937,8 +942,10 @@ class SqlNode_XJoin extends SqlNode_Base {
                 helper.setCache(tableKey, outNode);
             }
             socketOuts_arr.push(socketOut);
+            InnerTableName.push(socketOut.data.tableName);
         }
         var joinString = socketOuts_arr[0].strContent + clampStr(this.joinType, ' ', ' ') + socketOuts_arr[1].strContent;
+        
 
         if (this.conditionNode.inputScokets_arr.length == 0) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
@@ -955,6 +962,33 @@ class SqlNode_XJoin extends SqlNode_Base {
                 return false;
             }
             var onString = conditionNodeCompileRet.getDirectOut().strContent;
+            
+            var arr =onString.replace(/\[|]/g,'').split(/=/);//split(/=|[.]/);
+
+            
+            var FirstSocketTableName_arr=socketOuts_arr[0].data.InnerTableName;
+            
+            var tableNameOne = arr[0].split(/[.]/)[0];
+            var tableNameTwo = arr[1].split(/[.]/)[0];
+          
+           
+            if (!IsEmptyArray(FirstSocketTableName_arr)) {
+                var Result = FirstSocketTableName_arr.indexOf(tableNameOne);
+                var Resultt = FirstSocketTableName_arr.indexOf(tableNameTwo);
+                if (FirstSocketTableName_arr.indexOf(tableNameOne) + FirstSocketTableName_arr.indexOf(tableNameTwo) == -2
+                    || (FirstSocketTableName_arr.indexOf(tableNameOne) > -1 && FirstSocketTableName_arr.indexOf(tableNameTwo) > -1)) {
+
+                    //则bu包含该元素
+                    helper.logManager.warnEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle
+                        , nodeThis
+                        , helper.clickLogBadgeItemHandler)
+                        , 'on 条件未选择相邻两表字段 ' + ' '
+                    + socketOuts_arr[1].strContent]);
+
+                }
+            }
+
             if (IsEmptyString(onString)) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle,
@@ -966,7 +1000,7 @@ class SqlNode_XJoin extends SqlNode_Base {
         }
 
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, joinString + ' on ' + onString);
+        selfCompileRet.setSocketOut(this.outSocket, joinString + ' on ' + onString,{InnerTableName:InnerTableName});
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -3089,6 +3123,7 @@ const EnvVariable={
     systemCode:'ENV:所属系统名称代码',
     nowDate:'ENV:当前日期',
     nowTime:'ENV:当前日期时间',
+    inDingTalk:'ENV.在钉钉环境'
 }
 
 const EnvVariables_arr = [];
@@ -3534,7 +3569,7 @@ class SqlNode_GetPageEntryParam extends SqlNode_Base {
         }
         var belongPage = kernel.searchParentKernel(M_PageKernel_Type, true);
         var nowVal = socket.defval;
-        return <DropDownControl itemChanged={this.paramDDCChanged} btnclass='btn-dark' options_arr={belongPage.getAllEntryParams} rootclass='flex-grow-1 flex-shrink-1' textAttrName='value' valueAttrName='name' value={nowVal} />;
+        return <DropDownControl itemChanged={this.paramDDCChanged} btnclass='btn-dark' options_arr={belongPage ? belongPage.getAllEntryParams : []} rootclass='flex-grow-1 flex-shrink-1' textAttrName='value' valueAttrName='name' value={nowVal} />;
     }
 
     compile(helper, preNodes_arr) {

@@ -17,8 +17,10 @@ const M_FormKernelAttrsSetting=GenControlKernelAttrsSetting([
         new CAttribute('自动滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
         new CAttribute('模式', AttrNames.SelectMode, ValueType.String, ESelectMode.None, true, false, SelectModes_arr),
         new CAttribute('bottomDivID','bottomDivID',ValueType.String,'',true,false,null,null,false),
+        genIsdisplayAttribute(),
         new CAttribute('NoRender',AttrNames.NoRender,ValueType.Boolean,false),
         new CAttribute('可点击选择',AttrNames.ClickSelectable,ValueType.Boolean,false),
+        new CAttribute('访问控制', AttrNames.AcessAssert, ValueType.Event),
     ]),
     new CAttributeGroup('操作设置',[
         genScripAttribute('Insert', AttrNames.Event.OnInsert,EJsBluePrintFunGroup.GridRowBtnHandler),
@@ -85,6 +87,9 @@ class M_FormKernel extends ContainerKernelBase{
                 this.project.on('loaded', this.projectLoadedHanlder);
             }
         }
+        else{
+            gridFormBottomDiv.isfixed = true;
+        }
 
         var nowft = this.getAttribute(AttrNames.FormType);
         this[AttrNames.ListFormContent + '_visible'] = nowft == EFormType.Grid;
@@ -95,8 +100,6 @@ class M_FormKernel extends ContainerKernelBase{
         this[AttrNames.GenNavBar + '_visible'] = nowft != EFormType.Grid;
         this[AttrNames.SelectMode + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.HideTabHead + '_visible'] = nowft == EFormType.Grid;
-        
-        
 
         this['操作设置_visible'] = nowft == EFormType.Grid;
         
@@ -148,6 +151,7 @@ class M_FormKernel extends ContainerKernelBase{
         gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexGrow,value:false},0);
         gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr,{name:AttrNames.StyleAttrNames.FlexShrink,value:false},1);
         this.setAttribute('bottomDivID', gridFormBottomDiv.id);
+        gridFormBottomDiv.isfixed = true;
     }
 
     scriptCreated(attrName, scriptBP){
@@ -406,6 +410,7 @@ class M_Form extends React.PureComponent {
 
             var tableElem =(
                 <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id}  ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                {this.renderHandleBar()}
                     <span className='text-light bg-dark'>{this.state.title}</span>
                     <div className='mw-100 autoScroll'>
                         <table className='table' style={tableStyle}>
@@ -453,7 +458,7 @@ class M_Form extends React.PureComponent {
                         </thead>
                         </table>
                     </div>
-                    {ctlKernel.gridFormBottomDiv && ctlKernel.gridFormBottomDiv.renderSelf(childClickHandlerParam)}
+                    {ctlKernel.gridFormBottomDiv && ctlKernel.gridFormBottomDiv.renderSelf(childClickHandlerParam, this.props.replaceChildClick)}
                 </div>
             );
             if(widthType == EGridWidthType.Fixed){
@@ -464,6 +469,7 @@ class M_Form extends React.PureComponent {
 
         return(
             <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id}  ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+            {this.renderHandleBar()}
                 <span className='text-light bg-dark'>{this.state.title}</span>
                 {
                     this.props.ctlKernel.children.length == 0 ? 
@@ -472,7 +478,7 @@ class M_Form extends React.PureComponent {
                             if(childKernel == ctlKernel.gridFormBottomDiv){
                                 return null;
                             }
-                            return childKernel.renderSelf(childClickHandlerParam);
+                            return childKernel.renderSelf(childClickHandlerParam, this.props.replaceChildClick);
                         })
                 }
             </div>

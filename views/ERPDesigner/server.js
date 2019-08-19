@@ -2,7 +2,7 @@ const dbhelper = require('../../designerdbhelper.js');
 //const sleep = require('sleep');
 const co = require('co');
 const sqlTypes = dbhelper.Types;
-const sharp = require('sharp');
+//const sharp = require('sharp');
 const fs = require("fs");
 const forge = require("node-forge");
 const child_process = require('child_process');
@@ -669,6 +669,9 @@ function publishProject(req, res){
         }
         
         var hostIP = httpApp.get('hostip') ;
+        if(hostIP == '192.168.0.202'){
+            hostIP = 'erp.highbird.cn';
+        }
         var hostPort = httpApp.get('port') ;
         var rcdRlt = yield dbhelper.asynExcute('P002E修改方案配置', [
             dbhelper.makeSqlparam('系统方案名称代码', sqlTypes.Int, projProfile.code),

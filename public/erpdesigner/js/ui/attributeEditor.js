@@ -244,6 +244,36 @@ var AttributeEditor = function (_React$PureComponent) {
             );
         }
     }, {
+        key: 'CusFunNameChanged',
+        value: function CusFunNameChanged(ev) {
+            this.doSetAttribute(ev.target.value.trim());
+        }
+    }, {
+        key: 'renderCustomFunctonAttrEditor',
+        value: function renderCustomFunctonAttrEditor(nowVal, theAttr, attrName) {
+            var project = this.props.targetobj.project;
+            var funName = this.props.targetobj.id + '_' + attrName;
+            var jsBP = project.scriptMaster.getBPByName(funName);
+            return React.createElement(
+                'div',
+                { className: 'd-flex w-100 h-100 align-items-center' },
+                React.createElement(
+                    'div',
+                    { className: 'input-group mb-3' },
+                    React.createElement('input', { onChange: this.CusFunNameChanged, type: 'text', className: 'form-control', value: nowVal, placeholder: '\u65B9\u6CD5\u540D' }),
+                    React.createElement(
+                        'div',
+                        { className: 'input-group-append' },
+                        React.createElement(
+                            'span',
+                            { onClick: this.clickModifyScriptBtnHandler, className: 'btn btn-dark flex-grow-1' },
+                            jsBP ? '编辑' : '创建'
+                        )
+                    )
+                )
+            );
+        }
+    }, {
         key: 'clickjsIconHandler',
         value: function clickjsIconHandler(ev) {
             var nowValParseRet = parseObj_CtlPropJsBind(this.state.value);
@@ -285,7 +315,7 @@ var AttributeEditor = function (_React$PureComponent) {
                 return;
             }
             var theAttr = this.props.targetattr;
-            var funName = this.props.targetobj.id + '_' + theAttr.name;
+            var funName = this.props.targetobj.id + '_' + this.getRealAttrName();
             var targetBP = project.scriptMaster.getBPByName(funName);
             if (targetBP == null) {
                 var jsGroup = null;
@@ -295,6 +325,8 @@ var AttributeEditor = function (_React$PureComponent) {
                     fixParams_arr = theAttr.scriptSetting.fixParams_arr;
                 } else if (theAttr.valueType == ValueType.Event) {
                     jsGroup = EJsBluePrintFunGroup.CtlEvent;
+                } else if (theAttr.valueType == ValueType.CustomFunction) {
+                    jsGroup = EJsBluePrintFunGroup.CtlFun;
                 }
 
                 if (jsGroup == null) {
@@ -404,6 +436,9 @@ var AttributeEditor = function (_React$PureComponent) {
             }
             if (theAttr.valueType == ValueType.UserControlEvent) {
                 return this.renderUserControlEventAttrEditor(nowVal, theAttr, attrName, inputID);
+            }
+            if (theAttr.valueType == ValueType.CustomFunction) {
+                return this.renderCustomFunctonAttrEditor(nowVal, theAttr, attrName, inputID);
             }
             if (theAttr.valueType == ValueType.CustomDataSource) {
                 return this.renderCustomDataSource(nowVal, theAttr, attrName, inputID);

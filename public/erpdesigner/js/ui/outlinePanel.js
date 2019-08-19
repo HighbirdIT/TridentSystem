@@ -252,18 +252,20 @@ var OutlinePanel = function (_React$PureComponent2) {
     }, {
         key: 'wantDragAct',
         value: function wantDragAct(targetItem) {
-            if (targetItem.props.kernel.isfixed) {
+            this.startDragKernel(targetItem.props.kernel);
+        }
+    }, {
+        key: 'startDragKernel',
+        value: function startDragKernel(kernel) {
+            if (kernel.isfixed) {
                 return;
             }
-            //console.log(targetItem);
             this.beforeDragData = {
-                kernel: targetItem.props.kernel,
-                parent: targetItem.props.kernel.parent,
-                index: targetItem.props.kernel.parent.getChildIndex(targetItem.props.kernel)
+                kernel: kernel,
+                parent: kernel.parent,
+                index: kernel.parent.getChildIndex(kernel)
             };
-
-            //targetItem.collapse();
-            this.props.project.designer.startPlaceKernel(targetItem.props.kernel, this.dragEndHandler);
+            this.props.project.designer.startPlaceKernel(kernel, this.dragEndHandler);
         }
     }, {
         key: 'dragEndHandler',

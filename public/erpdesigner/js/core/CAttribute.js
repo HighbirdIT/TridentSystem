@@ -236,7 +236,8 @@ var VarNames = {
     HoldSelected: 'holdSelected',
     Userctlpath: 'userctlpath',
     OldValue: 'oldValue',
-    SatePath: 'statePath'
+    SatePath: 'statePath',
+    Visible: 'visible'
 };
 
 var AttrNames = {
@@ -292,6 +293,7 @@ var AttrNames = {
     PopablePage: 'popablepage',
     ParamApi: 'paramapi',
     EventApi: 'eventapi',
+    FunctionApi: 'functionapi',
     StarSelectable: 'starSelectable',
     ButtonVisibleType: 'buttonVisibleType',
     InitCollapsed: 'initCollapsed',
@@ -304,6 +306,12 @@ var AttrNames = {
     NoRender: 'norender',
     ClickSelectable: 'clickSelectable',
     TextAlign: 'textalign',
+    TipInfo: 'tipinfo',
+    HisKey: 'hisKey',
+    AcessAssert: 'accessAssert',
+    IconType: 'icontype',
+    AutoCloseBtn: 'autoclosebtn',
+    HaveDoneTip: 'havedonetip',
 
     Event: {
         OnClick: 'onclick',
