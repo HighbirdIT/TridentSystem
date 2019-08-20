@@ -739,7 +739,7 @@ class MobileContentCompiler extends ContentCompiler {
         if (isPopable) {
             var styleID = pageKernel.id + '_style';
             var styleStr = clientSide.addStyleObject(styleID, pageLayoutConfig.style) ? 'style={' + styleID + '}' : '';
-            pageReactClass.renderFun.pushLine("<div className='d-flex flex-column popPage bg-light autoScroll' " + styleStr + ">", 1);
+            pageReactClass.renderFun.pushLine("<div className='d-flex flex-column popPage bg-light' " + styleStr + ">", 1);
         }
         else {
             pageReactClass.renderFun.pushLine("<div className='d-flex flex-column flex-grow-1 flex-shrink-1 h-100'>", 1);
