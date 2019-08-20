@@ -739,7 +739,7 @@ class MobileContentCompiler extends ContentCompiler {
         if (isPopable) {
             var styleID = pageKernel.id + '_style';
             var styleStr = clientSide.addStyleObject(styleID, pageLayoutConfig.style) ? 'style={' + styleID + '}' : '';
-            pageReactClass.renderFun.pushLine("<div className='d-flex flex-column popPage bg-light autoScroll' " + styleStr + ">", 1);
+            pageReactClass.renderFun.pushLine("<div className='d-flex flex-column popPage bg-light' " + styleStr + ">", 1);
         }
         else {
             pageReactClass.renderFun.pushLine("<div className='d-flex flex-column flex-grow-1 flex-shrink-1 h-100'>", 1);
@@ -754,7 +754,12 @@ class MobileContentCompiler extends ContentCompiler {
         var autoHeight = pageKernel.getAttribute(AttrNames.AutoHeight);
         pageLayoutConfig.addClass('d-flex');
         pageLayoutConfig.addClass('flex-grow-1');
-        pageLayoutConfig.addClass('flex-shrink-0');
+        if (isPopable) {
+            pageLayoutConfig.addClass('flex-shrink-1');
+        }
+        else{
+            pageLayoutConfig.addClass('flex-shrink-0');
+        }
         pageLayoutConfig.addClass('autoScroll_Touch');
         if (pageOrientation == Orientation_V) {
             pageLayoutConfig.addClass('flex-column');
