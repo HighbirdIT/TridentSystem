@@ -754,7 +754,12 @@ class MobileContentCompiler extends ContentCompiler {
         var autoHeight = pageKernel.getAttribute(AttrNames.AutoHeight);
         pageLayoutConfig.addClass('d-flex');
         pageLayoutConfig.addClass('flex-grow-1');
-        pageLayoutConfig.addClass('flex-shrink-0');
+        if (isPopable) {
+            pageLayoutConfig.addClass('flex-shrink-1');
+        }
+        else{
+            pageLayoutConfig.addClass('flex-shrink-0');
+        }
         pageLayoutConfig.addClass('autoScroll_Touch');
         if (pageOrientation == Orientation_V) {
             pageLayoutConfig.addClass('flex-column');
