@@ -1790,7 +1790,7 @@ class SqlNode_Select extends SqlNode_Base {
         var havingString = havingNodeCompileRet.getDirectOut().strContent;
         var havingNodeInputLenth = havingNodeCompileRet.node.inputScokets_arr.length;
         var groupNodeInputLenth = groupNodeCompileRet.node.inputScokets_arr.length;
-        if ((hadAggregateColumn && groupNodeInputLenth == 0) ||
+        if ((hadAggregateColumn && isolatedColumns_arr !=0 && groupNodeInputLenth == 0 ) ||
             (havingString.length > 0 && groupNodeInputLenth == 0)) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle
