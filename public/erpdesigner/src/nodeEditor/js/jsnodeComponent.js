@@ -541,7 +541,7 @@ class C_JSNode_JumpPage extends React.PureComponent {
         var nowVal = this.props.nodedata.pageCode;
         var nodeData = this.props.nodedata;
         var theProject = nodeData.bluePrint.master.project;
-        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={'打开页面'} >
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={'跳转页面'} >
             <div className='flex-grow-1 flex-shrink-1'>
                 <DropDownControl ref={this.dropdownRef} itemChanged={this.targetPageDDCChanged} btnclass='btn-dark' options_arr={theProject.getJumpablePages} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='title' valueAttrName='id' value={nowVal ? nowVal : -1} />
             </div>
