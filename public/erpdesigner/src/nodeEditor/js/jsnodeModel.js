@@ -3670,7 +3670,7 @@ class JSNode_DateFun extends JSNode_Base {
                 callStr= socketVal_arr[0] + '.getTime()';
                 break;
             case 'CastDateByTimeNumber':
-                callStr= 'new Date(' + socketVal_arr[0] + ')';
+                callStr= 'new Date(parseInt(' + socketVal_arr[0] + '))';
                 break;
             default:
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
