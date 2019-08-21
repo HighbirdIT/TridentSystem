@@ -29,6 +29,7 @@ const JSNODE_CREATE_CUSERROR = 'createcuserror';
 const JSNODE_FRESH_FORM = 'freshform';
 const JSNODE_DO_FLOWSTEP = 'doflowstep';
 const JSNODE_JUMP_PAGE = 'jumppage';
+const JSNODE_OPENEXTERNAL_PAGE = 'openexternalpage';
 const JSNODE_POPMESSAGEBOX = 'popmessagebox';
 const JSNODE_CLOSEMESSAGEBOX = 'closemessagebox';
 const JSNODE_HIDEMESSAGEBOX = 'hidemessagebox';
@@ -3502,6 +3503,12 @@ const gJSDateFuns_arr = [
         { label: '目标时区', type: ValueType.Int, inputable: true }],
         outputs:[{label:'',type:ValueType.Data}]
     }
+    ,
+    {
+        name:'GetTime',
+        inputs: [{ label: '日期', type: ValueType.Date }],
+        outputs:[{label:'number',type:ValueType.Int}]
+    }
 ];
 
 class JSNode_DateFun extends JSNode_Base {
@@ -3652,6 +3659,9 @@ class JSNode_DateFun extends JSNode_Base {
                 break;
             case 'Convert_TimeZone':
                 callStr= funPreFix+'Convert_TimeZone(' +  socketVal_arr[0]+','+  socketVal_arr[1]+','+  socketVal_arr[2]+') ';
+                break;
+            case 'GetTime':
+                callStr= socketVal_arr[0] + '.getTime()';
                 break;
             default:
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
@@ -5973,7 +5983,7 @@ class JSNODE_Update_table extends JSNode_Base {
 
 class JSNode_JumpPage extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, JSNODE_JUMP_PAGE, '打开页面', false, nodeJson);
+        super(initData, parentNode, createHelper, JSNODE_JUMP_PAGE, '跳转页面', false, nodeJson);
         autoBind(this);
 
         if (this.inFlowSocket == null) {
@@ -8877,6 +8887,104 @@ class JSNode_DD_NavClose extends JSNode_Base {
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
+
+        return selfCompileRet;
+    }
+}
+
+class JsNode_OpenExternal_Page extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_OPENEXTERNAL_PAGE, '打开外部页面', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (nodeJson) {
+            this.inputScokets_arr.forEach(socket => {
+                switch (socket.name) {
+                    case 'project':
+                        this.projectScoket = socket;
+                        break;
+                    case 'flowStep':
+                        this.flowStepScoket = socket;
+                        break;
+                    case 'intdata':
+                        this.intdataScoket = socket;
+                        break;
+                    default:
+                        console.warn('无法正确识别的接口:' + socket.name);
+                }
+            });
+        }
+        if (this.projectScoket == null) {
+            this.projectScoket = new NodeSocket('project', this, true);
+            this.addSocket(this.projectScoket);
+        }
+        this.projectScoket.set({
+            inputable: true,
+            inputDDC_setting: {
+                textAttrName: 'text',
+                valueAttrName: 'value',
+                options_arr: ProjectRecords_arr,
+            },
+            hideIcon: true,
+            label: '目标页面',
+        });
+
+        if (this.flowStepScoket == null) {
+            this.flowStepScoket = new NodeSocket('flowStep', this, true);
+            this.addSocket(this.flowStepScoket);
+        }
+        this.flowStepScoket.set({
+            inputable: true,
+            inputDDC_setting: {
+                textAttrName: 'fullName',
+                valueAttrName: 'code',
+                options_arr: gFlowMaster.getAllSteps,
+            },
+            hideIcon: true,
+            label: '流程步骤',
+        });
+
+        if (this.intdataScoket == null) {
+            this.intdataScoket = new NodeSocket('intdata', this, true);
+            this.addSocket(this.intdataScoket);
+        }
+        this.intdataScoket.set({
+            type: ValueType.Int,
+            label: '关联数据',
+        });
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var theProject = this.bluePrint.master.project;
+        var thePage = theProject.getPageById(this.pageCode);
+        if (this.checkCompileFlag(thePage == null, '选择的不是有效的页面', helper)) {
+            return false;
+        }
+
+        var myJSBlock = new FormatFileBlock('');
+        myJSBlock.pushLine("setTimeout(() => {store.dispatch(makeAction_gotoPage('" + this.pageCode + "'));},50);");
+        belongBlock.pushChild(myJSBlock);
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
 
         return selfCompileRet;
     }
