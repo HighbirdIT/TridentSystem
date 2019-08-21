@@ -1932,6 +1932,7 @@ class FlowNode_Send_Message extends JSNode_Base {
         }
 
         var cardItemInitBlock = new FormatFileBlock('init carditem');
+        cardItemInitBlock.scope = belongBlock.getScope();
 
         var socketI;
         var cardFlowSocket;

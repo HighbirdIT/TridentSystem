@@ -3439,6 +3439,11 @@ const gJSDateFuns_arr = [
         outputs: [{ label: '', type: ValueType.Date }]
     },
     {
+        name: 'CastDateByTimeNumber',
+        inputs: [{ label: '', type: ValueType.Int }],
+        outputs: [{ label: '', type: ValueType.Date }]
+    },
+    {
         name: 'AddDay',
         inputs: [{ label: '日期', type: ValueType.Date },
         { label: '偏移', type: ValueType.Int, inputable: true },
@@ -3604,6 +3609,7 @@ class JSNode_DateFun extends JSNode_Base {
         var outSocket = this.outputScokets_arr[0];
         var selfCompileRet = new CompileResult(this);
         var callStr = '';
+        var scope = belongBlock.getScope();
         var blockInServer = belongBlock.getScope().isServerSide;
 
         if (!blockInServer) {
@@ -3662,6 +3668,9 @@ class JSNode_DateFun extends JSNode_Base {
                 break;
             case 'GetTime':
                 callStr= socketVal_arr[0] + '.getTime()';
+                break;
+            case 'CastDateByTimeNumber':
+                callStr= 'new Date(' + socketVal_arr[0] + ')';
                 break;
             default:
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
