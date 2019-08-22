@@ -1537,30 +1537,22 @@ function Convert_TimeZone(time, zoneSrc, zoneDst) {
     return new Date(Firsttime.setTime(datetime + 1000 * 60 * 60 * (offset)));
 }
 
-function InitDingDing(appendApi_arr, callBack){
+function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
     if (isMobile) {
         dingdingKit = dd;
         isInDingTalk = dd.env.platform != 'notInDingTalk';
         var jsapiArr = [
             'runtime.info',
             'device.notification.prompt',
-            'biz.chat.pickConversation',
             'device.notification.confirm',
             'device.notification.alert',
-            'device.notification.prompt',
-            'biz.navigation.back',
-            'biz.chat.open',
-            'biz.util.open',
-            'biz.user.get',
-            'biz.contact.choose',
-            'biz.telephone.call',
+            'device.notification.toast',
             'biz.ding.post',
-            'biz.navigation.setLeft',
             'biz.navigation.setRight',
-            'biz.navigation.setTitle',
-            'device.geolocation.get',
-            'biz.map.locate',
-            'device.base.getUUID',].concat(appendApi_arr);
+            'biz.navigation.setTitle'];
+        if(mobileAppendApi_arr){
+            jsapiArr = jsapiArr.concat(mobileAppendApi_arr);
+        }
 
         dd.config({
             agentId: "29816043",
@@ -1574,25 +1566,31 @@ function InitDingDing(appendApi_arr, callBack){
     else {
         dingdingKit = DingTalkPC;
         isInDingTalk = dingdingKit.ua.isInDingTalk;
+        var jsapiArr = [
+            'device.notification.alert',
+            'device.notification.confirm',
+            'device.notification.toast',
+            'runtime.permission.requestAuthCode',
+            'biz.ding.post'];
+        if(pcAppendApi_arr){
+            jsapiArr = jsapiArr.concat(pcAppendApi_arr);
+        }
         DingTalkPC.config({
             agentId: "29816043",
             corpId: theCorpId,
             timeStamp: pTimeStamp,
             nonceStr: pNonceStr,
             signature: pSignature,
-            jsApiList: [
-                'device.notification.alert',
-                'device.notification.confirm',
-                'runtime.permission.requestAuthCode',
-                'biz.contact.choose',
-                'device.notification.prompt',
-                'biz.ding.post']
+            jsApiList: jsapiArr
         });
     }
-    if(!isProduction || !isInDingTalk){
+    if (!isProduction || !isInDingTalk) {
         callBack();
         return;
     }
+    dingdingKit.error(err=>{
+        alert('出错了:' + JSON.stringify(err));
+    });
     dingdingKit.ready(callBack);
 }
 
@@ -1602,20 +1600,19 @@ function pickLocation(successAct, failAct) {
             myApp.alert(JSON.stringify(err), "获取位置失败");
         }
     }
-    
+
     if (!isMobile) {
         if (failAct != null) {
             failAct('需要在手机端使用');
         }
         return;
     }
-    
+
     dingdingKit.biz.map.locate({
         onSuccess: successAct,
         onFail: failAct
     });
 }
-
 
 function gGetNowLocation(successAct, failAct) {
     if (!isMobile) {
@@ -1628,5 +1625,66 @@ function gGetNowLocation(successAct, failAct) {
         withReGeocode: false,
         onSuccess: successAct,
         onFail: failAct
+    });
+}
+
+function DynamicLoadJs(url, callback) {
+    var script = document.createElement('script');
+    script.type = "text/javascript";
+    if (typeof (callback) != "undefined") {
+        if (script.readyState) {
+            script.onreadystatechange = function () {
+                if (script.readyState == "loaded" || script.readyState == "complete") {
+                    script.onreadystatechange = null;
+                    callback();
+                }
+            }
+        } else {
+            script.onload = function () {
+                callback();
+            }
+        }
+    }
+    script.src = url;
+    document.body.appendChild(script);
+}
+
+var AMapJsLoaded = false;
+var gAMapCallBacks_arr = [];
+
+function Regeocoder(lat, lon, callBack) {
+    if(!AMapJsLoaded){
+        gAMapCallBacks_arr.push({
+            lat:lat,
+            lon:lon,
+            callBack:callBack,
+        });
+        if(gAMapCallBacks_arr.length == 1){
+            DynamicLoadJs('http://webapi.amap.com/maps?v=1.4.3&key=1ca423f502c4a4d054c8d0572847a623&plugin=AMap.Geocoder', ()=>{
+                AMapJsLoaded = true;
+                gAMapCallBacks_arr.forEach(p=>{
+                    __regeocoder(p.lat, p.lon, p.callBack);
+                });
+            });
+        }
+        return;
+    }
+    __regeocoder(lat, lon, callBack);
+}
+
+function __regeocoder(lat, lon, callBack) {
+    var geocoder = new AMap.Geocoder({
+        radius: 200,
+        extensions: "all"
+    });
+    lat = Math.round(lat * 1000000) / 1000000;
+    lon = Math.round(lon * 1000000) / 1000000;
+    geocoder.getAddress([lon, lat], function (status, result) {
+        if (status === 'complete' && result.info === 'OK') {
+            callBack(result);
+        }
+        else {
+            callBack(null);
+        }
     });
 }

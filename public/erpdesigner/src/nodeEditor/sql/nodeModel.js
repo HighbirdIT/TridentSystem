@@ -1721,6 +1721,9 @@ class SqlNode_Select extends SqlNode_Base {
             if(alias){
                 alias.trim();
             }
+            if(IsEmptyString(alias)){
+                alias = null;
+            }
             var colName = alias;
             if (IsEmptyString(alias)) {
                 if (!isColumnNode) {
@@ -1787,7 +1790,7 @@ class SqlNode_Select extends SqlNode_Base {
         var havingString = havingNodeCompileRet.getDirectOut().strContent;
         var havingNodeInputLenth = havingNodeCompileRet.node.inputScokets_arr.length;
         var groupNodeInputLenth = groupNodeCompileRet.node.inputScokets_arr.length;
-        if ((hadAggregateColumn && groupNodeInputLenth == 0) ||
+        if ((hadAggregateColumn && isolatedColumns_arr !=0 && groupNodeInputLenth == 0 ) ||
             (havingString.length > 0 && groupNodeInputLenth == 0)) {
             helper.logManager.errorEx([helper.logManager.createBadgeItem(
                 thisNodeTitle
@@ -3123,6 +3126,7 @@ const EnvVariable={
     systemCode:'ENV:所属系统名称代码',
     nowDate:'ENV:当前日期',
     nowTime:'ENV:当前日期时间',
+    inDingTalk:'ENV.在钉钉环境'
 }
 
 const EnvVariables_arr = [];

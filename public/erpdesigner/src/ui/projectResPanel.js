@@ -95,9 +95,9 @@ class ProjectResPanel extends React.PureComponent {
         var editingControl = project.getEditingControl();
 
         return (
-            <div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
+            <div className='d-flex flex-grow-1 flex-shrink-1 flex-column autoScroll'>
                 <div className='bg-secondary text-light'>手机页面</div>
-                <div className='list-group'>
+                <div className='list-group flex-shrink-0'>
                     {
                         project.content_Mobile.pages.map((page)=>{
                             return (<div key={page.id} d-id={page.id} className='d-flex align-items-center'><span onClick={this.clickPageitem} className={'list-group-item list-group-item-action ' + (editingPage == page ? 'active' : '')}>{page.title}</span><div onClick={this.clickDeleteMobilePageHandler} className='btn btn-dark'><i className='fa fa-trash text-danger fa-2x' /></div></div>);
@@ -107,18 +107,18 @@ class ProjectResPanel extends React.PureComponent {
                 </div>
 
                 <div className='bg-secondary text-light'>PC端页面</div>
-                <div className='list-group'>
+                <div className='list-group flex-shrink-0'>
                     {
                         project.content_PC.pages.map((page)=>{
-                            return (<span onClick={this.clickPageitem} d-id={page.id} key={page.id} className={'list-group-item list-group-item-action ' + (editingPage == page ? 'active' : '')}>{page.title}</span>);
+                            return (<span onClick={this.clickPageitem} d-id={page.id} key={page.id} className={'list-group-item  list-group-item-action ' + (editingPage == page ? 'active' : '')}>{page.title}</span>);
                         })
                     }
                 </div>
                 <div className='bg-secondary text-light'>自订控件</div>
-                <div className='list-group'>
+                <div className='list-group flex-shrink-0'>
                     {
                         project.userControls_arr.map((userctl)=>{
-                            return (<div d-id={userctl.id} key={userctl.id} className={'d-flex list-group-item ' + (editingControl == userctl ? 'active' : '')}>
+                            return (<div d-id={userctl.id} key={userctl.id} className={'d-flex  flex-shrink-0 list-group-item ' + (editingControl == userctl ? 'active' : '')}>
                                     <span onClick={this.clickControlItem} className='flex-grow-1 flex-shrink-1'>{userctl.name}[{userctl.id}]</span>
                                     <button onClick={this.clickTrashUserControlBtn} className='btn btn-danger'><i className='fa fa-trash' /></button>
                                 </div>);

@@ -368,6 +368,17 @@ class MobileContentCompiler extends ContentCompiler {
         compileRet.useGlobalControls_map = compileHelper.useGlobalControls_map;
         compileRet.useEntities_map = compileHelper.useEntities_map;
         this.compiledScriptBP_map[targetBP.id] = compileRet;
+        var apiName;
+        if (!IsEmptyObject(compileHelper.useMobileDDApi)) {
+            for (apiName in compileHelper.useMobileDDApi) {
+                this.clientSide.mobileDDApis_map[apiName] = 1;
+            }
+        }
+        if (!IsEmptyObject(compileHelper.usePcDDApi)) {
+            for (apiName in compileHelper.usePcDDApi) {
+                this.clientSide.pcDDApis_map[apiName] = 1;
+            }
+        }
         return compileRet;
     }
 
@@ -713,6 +724,7 @@ class MobileContentCompiler extends ContentCompiler {
             pageReactClass.constructorFun.pushLine('this.close = this.close.bind(this);');
             var closeFun = pageReactClass.getFunction('close', true, ['exportParam']);
 
+            closeFun.pushLine('exportParam = exportParam == null ? {} : exportParam;');
             closeFun.pushLine('closePage(' + singleQuotesStr(pageKernel.id) + ');');
             closeFun.pushLine('var callBack = ' + makeStr_callFun('getPageEntryParam', [singleQuotesStr(pageKernel.id), singleQuotesStr('callBack')], ';'));
             closeFun.pushLine('if(callBack){callBack(exportParam);}');
@@ -727,7 +739,7 @@ class MobileContentCompiler extends ContentCompiler {
         if (isPopable) {
             var styleID = pageKernel.id + '_style';
             var styleStr = clientSide.addStyleObject(styleID, pageLayoutConfig.style) ? 'style={' + styleID + '}' : '';
-            pageReactClass.renderFun.pushLine("<div className='d-flex flex-column popPage bg-light autoScroll' " + styleStr + ">", 1);
+            pageReactClass.renderFun.pushLine("<div className='d-flex flex-column popPage bg-light' " + styleStr + ">", 1);
         }
         else {
             pageReactClass.renderFun.pushLine("<div className='d-flex flex-column flex-grow-1 flex-shrink-1 h-100'>", 1);
@@ -739,11 +751,15 @@ class MobileContentCompiler extends ContentCompiler {
         pageReactClass.renderFun.pushLine("</div>);");
 
         var pageOrientation = pageKernel.getAttribute(AttrNames.Orientation);
-        var pageLayoutConfig = pageKernel.getLayoutConfig();
         var autoHeight = pageKernel.getAttribute(AttrNames.AutoHeight);
         pageLayoutConfig.addClass('d-flex');
         pageLayoutConfig.addClass('flex-grow-1');
-        pageLayoutConfig.addClass('flex-shrink-0');
+        if (isPopable) {
+            pageLayoutConfig.addClass('flex-shrink-1');
+        }
+        else{
+            pageLayoutConfig.addClass('flex-shrink-0');
+        }
         pageLayoutConfig.addClass('autoScroll_Touch');
         if (pageOrientation == Orientation_V) {
             pageLayoutConfig.addClass('flex-column');
@@ -1322,7 +1338,9 @@ class MobileContentCompiler extends ContentCompiler {
                     };
                 }
             }
-            kernelMidData.needSetStates_arr.push(setValueStateItem);
+            if(setValueStateItem != null){
+                kernelMidData.needSetStates_arr.push(setValueStateItem);
+            }
         }
     }
 

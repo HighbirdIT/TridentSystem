@@ -1002,6 +1002,9 @@ class CP_ClientSide extends JSFileMaker{
         this.projectCompiler = projectCompiler;
         this.project = projectCompiler.project;
 
+        this.mobileDDApis_map = {};
+        this.pcDDApis_map = {};
+
         this.importBlock.pushLine('var Redux = window.Redux;');
         this.importBlock.pushLine('var Provider = ReactRedux.Provider;');
 
@@ -1049,12 +1052,36 @@ class CP_ClientSide extends JSFileMaker{
         this.appReducerSettingVar.initVal = JsObjectToString(this.reducers_map);
         this.stateChangedAct_mapVar.initVal = JsObjectToString(this.stateChangedAct);
 
+        var mobileDDApisValue = 'null';
+        var pcDDApisValue = 'null';
+        var apiName;
+        if(!IsEmptyObject(this.mobileDDApis_map)){
+            mobileDDApisValue = '';
+            for (apiName in this.mobileDDApis_map) {
+                mobileDDApisValue += (mobileDDApisValue.length == 0 ? '' : ',') + singleQuotesStr(apiName);
+            }
+            mobileDDApisValue = '[' + mobileDDApisValue + ']';
+        }
+        if(!IsEmptyObject(this.pcDDApis_map)){
+            pcDDApisValue = '';
+            for (apiName in this.pcDDApis_map) {
+                pcDDApisValue += (pcDDApisValue.length == 0 ? '' : ',') + singleQuotesStr(apiName);
+            }
+            pcDDApisValue = '[' + pcDDApisValue + ']';
+        }
+
         var ifLoginBK = new JSFile_IF('iflogin', 'g_envVar.userid != null');
         this.endBlock.pushChild(ifLoginBK);
         ifLoginBK.trueBlock.pushLine('ErpControlInit();');
+        ifLoginBK.trueBlock.pushLine("$(document).ready(function(){", 1);
+        ifLoginBK.trueBlock.pushLine('InitDingDing(()=>{', 1);
         ifLoginBK.trueBlock.pushLine('ReactDOM.render(<Provider store={store}>', 1);
         ifLoginBK.trueBlock.pushLine('<VisibleApp />', -1);
         ifLoginBK.trueBlock.pushLine("</Provider>, document.getElementById('reactRoot'));");
+        ifLoginBK.trueBlock.subNextIndent();
+        ifLoginBK.trueBlock.pushLine('},' + mobileDDApisValue + ',' + pcDDApisValue + ');');
+        ifLoginBK.trueBlock.subNextIndent();
+        ifLoginBK.trueBlock.pushLine('});');
 
         ifLoginBK.falseBlock.pushLine("var search = location.search.replace('?','');");
         ifLoginBK.falseBlock.pushLine("location.href = '/?goto=' + location.pathname + '&' + search;");

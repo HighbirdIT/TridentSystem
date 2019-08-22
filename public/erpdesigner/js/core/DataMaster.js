@@ -491,3 +491,7 @@ var DataMaster = function (_EventEmitter4) {
 
     return DataMaster;
 }(EventEmitter);
+
+function gGetAllEntitiesByKernel(theKernel) {
+    return theKernel.project.dataMaster.getAllEntities();
+}

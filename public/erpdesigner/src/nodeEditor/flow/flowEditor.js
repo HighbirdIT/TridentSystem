@@ -95,6 +95,41 @@ const FlowNodeEditorControls_arr =[
         type:'数组操纵'
     },
     {
+        label:'字符串-长度',
+        nodeClass:JSNode_String_Length,
+        type:'操纵字符串'
+    },
+    {
+        label:'字符串-substring',
+        nodeClass:JSNode_String_Substring,
+        type:'操纵字符串'
+    },
+    {
+        label:'字符串-Substr',
+        nodeClass:JSNode_String_Substr,
+        type:'操纵字符串'
+    },
+    {
+        label:'字符串-IndexOf',
+        nodeClass:JSNode_String_IndexOf,
+        type:'操纵字符串'
+    },
+    {
+        label:'ParseInt',
+        nodeClass:JSNode_ParseInt,
+        type:'转换'
+    },
+    {
+        label:'ParseFloat',
+        nodeClass:JSNode_ParseFloat,
+        type:'转换'
+    },
+    {
+        label:'IsNaN',
+        nodeClass:JSNode_IsNaN,
+        type:'转换'
+    },
+    {
         label:'日期函数',
         nodeClass:JSNode_DateFun,
         type:'运算'
@@ -102,6 +137,11 @@ const FlowNodeEditorControls_arr =[
     {
         label:'发送通知',
         nodeClass:FlowNode_Send_Message,
+        type:'流程交互'
+    },
+    {
+        label:'通知-CardItem',
+        nodeClass:FlowNode_Message_CardItem,
         type:'流程交互'
     },
     {

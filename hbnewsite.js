@@ -1,5 +1,4 @@
-﻿﻿'use strict';
-var express = require('express');
+﻿﻿var express = require('express');
 var http = require('http');
 var url = require('url');
 var fortune = require('./lib/fortune.js');
@@ -39,6 +38,9 @@ var handlebars = require('express3-handlebars').create({
         encodeMyString: function (inputData) {
             var t = this;
             return new handlebars.handlebars.SafeString(inputData);
+        },
+        toString: function(inputData){
+            return inputData.toString();
         }
     }
 });
@@ -180,6 +182,12 @@ app.use('/', function (req, res, next) {
 
 app.use('/fromNotify', function (req, res, next) {
     if (!flowhelper.execFromNotify(req, res, next)) {
+        next();
+    }
+});
+
+app.use('/fromNotifyOption', function (req, res, next) {
+    if (!flowhelper.execFromNotifyOption(req, res, next)) {
         next();
     }
 });
@@ -355,7 +363,7 @@ app.use('/erppage/server', function (req, res, next) {
         return res.json(serverhelper.createErrorRet(req.path + '.js未找到'));
     }
 
-    resoreUserLogin(req, res).then(envar=>{
+    resoreUserLogin(req, res).then(envar => {
         jspath = __dirname + '/views/erppage/server/pages/' + cache.serverName + '.js';
         if (!fs.existsSync(jspath)) {
             return res.json(serverhelper.createErrorRet(req.path + '.js未找到'));
@@ -388,17 +396,34 @@ app.use('/erppage', function (req, res, next) {
         return res.render('404');
     }
     var pageName = t_arr[2].toUpperCase();
-    pageName = pageName.replace('#','');
+    pageName = pageName.replace('#', '');
     var isPC = t_arr[1].toLowerCase() == 'pc';
     var cache = erpPageCache[pageName];
+
     if (cache != null) {
         var layoutName = isPC ? cache.pcLayoutName : cache.mobileLayoutName;
         var jsFilePath = '/js/views/erp/pages/' + (isPC ? cache.pcJsPath : cache.mobileJsPath) + '.js';
         if (fs.existsSync(__dirname + '/public' + jsFilePath)) {
-            res.locals.clientJs = jsFilePath;
-            res.locals.title = cache.title;
-            res.locals.g_envVar = req.session.g_envVar == null ? '{}' : JSON.stringify(req.session.g_envVar);
-            return res.render('erppage/client', { layout: layoutName });
+            var ua = req.headers['user-agent'];
+            var android = ua.match(/(Android);?[\s\/]+([\d.]+)?/) != null;
+            var ipad = ua.match(/(iPad).*OS\s([\d_]+)/) != null;
+            var ipod = ua.match(/(iPod)(.*OS\s([\d_]+))?/) != null;
+            var iphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/) != null;
+            res.locals.isMobile = android || ipad || ipod || iphone;
+            res.locals.isMobileStr = res.locals.isMobile ? 'true' : 'false';
+
+            dingHelper.asynGetDingDingTicket('http://' + req.headers.host + req.originalUrl).then((data) => {
+                res.locals.Signature = data.Signature == null ? '' : data.Signature;
+                res.locals.TimeStamp = data.TimeStamp == null ? '' : data.TimeStamp;
+                res.locals.NonceStr = data.NonceStr == null ? '' : data.NonceStr;
+                res.locals.DingErrInfo = data.errInfo == null ? '' : data.errInfo;
+
+                res.locals.clientJs = jsFilePath;
+                res.locals.title = cache.title;
+                res.locals.g_envVar = req.session.g_envVar == null ? '{}' : JSON.stringify(req.session.g_envVar);
+                return res.render('erppage/client', { layout: layoutName });
+            });
+            return;
         }
     }
     res.status(404);
@@ -463,7 +488,11 @@ function startServer() {
     freshPageCache();
     setInterval(freshPageCache, 1000 * 30);
     http.createServer(app).listen(app.get('port'), function () {
-        console.log('Express started on http://' + app.get('hostip') + ':' + app.get('port') + '; press Ctl-C to terminate.');
+        var hostIp = app.get('hostip');
+        if(hostIp == '192.168.0.202'){
+            hostIp = 'erp.highbird.cn';
+        }
+        console.log('Express started on http://' + hostIp + ':' + app.get('port') + '; press Ctl-C to terminate.');
         console.log('env:' + app.get('env'));
     });
 }
@@ -519,11 +548,11 @@ function freshPageCache() {
 
 function resoreUserLogin(req, res) {
     return co(function* () {
-        if(req.session.g_envVar != null){
+        if (req.session.g_envVar != null) {
             return req.session.g_envVar;
         }
         var logrcd = req.signedCookies._erplogrcdid;
-        if(logrcd == null){
+        if (logrcd == null) {
             return null;
         }
         var envar = yield dingHelper.aysnLoginfFromRcdID(logrcd, req, res);
