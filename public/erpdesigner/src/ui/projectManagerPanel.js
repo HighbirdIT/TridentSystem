@@ -7,6 +7,7 @@ class ProjectManagerPanel extends React.PureComponent {
             info:'',
             selectTitle:'',
             keyword:'',
+            inputVal:'',
         };
 
         this.state = initState;
@@ -78,16 +79,27 @@ class ProjectManagerPanel extends React.PureComponent {
 
     renderProjList(){
         var projects_arr = this.state.projects_arr;
+        var show_arr=[];
         if(projects_arr == null){
             return null;
         }
-        return projects_arr.map(item=>{
+        if (this.state.inputVal== null || this.state.inputVal =='' ) {
+            show_arr=projects_arr;
+        }else{
+            for(var i=0,len =projects_arr.length;i<len;i++){
+                if (projects_arr[i].title.indexOf(this.state.inputVal) >= 0) {
+                    show_arr.push(projects_arr[i]);
+                  }
+            }
+        }
+        return show_arr.map(item => {
             return (<div onClick={this.clickItemHandler} className={'list-group-item list-group-item-action flex-grow-0 flex-shrink-0' + (this.state.selectTitle == item.title ? ' active' : '')} key={item.title}>{item.title}</div>);
         });
     }
 
     renderItemInfo(){
         var item = this.state.selectItem;
+
         if(item == null)
         {
             return null;
@@ -107,7 +119,12 @@ class ProjectManagerPanel extends React.PureComponent {
                 </div>
             </React.Fragment>
     }
-
+    handelInputChange(e){
+        this.setState({
+            inputVal:e.target.value
+        })
+    }
+   
     render(){
         return(
             <FloatPanelbase title='项目管理' ref={this.panelBaseRef} initShow={false} preShow={this.panelPreShow} >
@@ -116,7 +133,8 @@ class ProjectManagerPanel extends React.PureComponent {
                         <div className='d-flex flex-grow-0 flex-shrink-0'>
                             <span>搜</span>
                             <div className='flex-grow-1 flex-shrink-1'>
-                                <input className='w-100' />
+                                <input id='search' className='w-100' onChange={this.handelInputChange.bind(this)} 
+                                defaultValue={this.state.inputVal} />
                             </div>
                         </div>
                         <div className='flex-grow-1 flex-shrink-1 autoScroll'>
@@ -203,10 +221,11 @@ class CreateProjectPanel extends React.PureComponent{
             errinfo:'',
         });
 
-        fetchJsonPost('server', { action: 'createProject', title:title }, this.freshCallBack);
+        fetchJsonPost('server', { action: 'createProject', title:title}, this.freshCallBack);
         return;
     }
 
+   
     render(){
         return(
             <FloatPanelbase title='创建项目' ref={this.panelBaseRef} initShow={false} sizeable={false} width={320} height={160} >
