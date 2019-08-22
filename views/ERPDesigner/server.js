@@ -161,7 +161,7 @@ function saveProject(req, projJson) {
                 id: userData.name,
                 time: new Date(),
             });
-
+            projItem.ceshi =123;
             if (!fs.existsSync(baseFileDir))
                 fs.mkdirSync(baseFileDir);
 
