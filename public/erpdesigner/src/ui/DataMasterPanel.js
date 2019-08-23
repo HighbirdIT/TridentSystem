@@ -587,7 +587,11 @@ class SqlBPItemPanel extends React.PureComponent {
                 barClass='bg-secondary'
                 panel1={
                     <div className='d-flex flex-column flex-grow-1 flex-shrink-1 w-100' >
-                        已创建的:
+                        <span>已创建的ceshi:</span>
+                        <div className='flex-grow-1 flex-shrink-1'>
+                                <input id='search' className='w-100' 
+                                defaultValue='' />
+                            </div>
                         <div className='list-group flex-grow-1 flex-shrink-1 bg-dark autoScroll'>
                             {
                                 this.state.items_arr.map(item=>{

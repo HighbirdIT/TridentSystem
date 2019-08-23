@@ -760,7 +760,17 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
                     panel1: React.createElement(
                         'div',
                         { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 w-100' },
-                        '\u5DF2\u521B\u5EFA\u7684:',
+                        React.createElement(
+                            'span',
+                            null,
+                            '\u5DF2\u521B\u5EFA\u7684ceshi:'
+                        ),
+                        React.createElement(
+                            'div',
+                            { className: 'flex-grow-1 flex-shrink-1' },
+                            React.createElement('input', { id: 'search', className: 'w-100',
+                                defaultValue: '' })
+                        ),
                         React.createElement(
                             'div',
                             { className: 'list-group flex-grow-1 flex-shrink-1 bg-dark autoScroll' },
