@@ -7,7 +7,6 @@ class ProjectManagerPanel extends React.PureComponent {
             info:'',
             selectTitle:'',
             keyword:'',
-            inputVal:'',
         };
 
         this.state = initState;
@@ -83,11 +82,11 @@ class ProjectManagerPanel extends React.PureComponent {
         if(projects_arr == null){
             return null;
         }
-        if (this.state.inputVal== null || this.state.inputVal =='' ) {
+        if (this.state.keyword== null || this.state.keyword =='' ) {
             show_arr=projects_arr;
         }else{
             for(var i=0,len =projects_arr.length;i<len;i++){
-                if (projects_arr[i].title.indexOf(this.state.inputVal) >= 0) {
+                if (projects_arr[i].title.indexOf(this.state.keyword) >= 0) {
                     show_arr.push(projects_arr[i]);
                   }
             }
@@ -119,9 +118,9 @@ class ProjectManagerPanel extends React.PureComponent {
                 </div>
             </React.Fragment>
     }
-    handelInputChange(e){
+    searchInputChange(e){
         this.setState({
-            inputVal:e.target.value
+            keyword:e.target.value
         })
     }
    
@@ -133,8 +132,8 @@ class ProjectManagerPanel extends React.PureComponent {
                         <div className='d-flex flex-grow-0 flex-shrink-0'>
                             <span>搜</span>
                             <div className='flex-grow-1 flex-shrink-1'>
-                                <input id='search' className='w-100' onChange={this.handelInputChange.bind(this)} 
-                                defaultValue={this.state.inputVal} />
+                                <input id='search' className='w-100' onChange={this.searchInputChange.bind(this)} 
+                                defaultValue={this.state.keyword} />
                             </div>
                         </div>
                         <div className='flex-grow-1 flex-shrink-1 autoScroll'>

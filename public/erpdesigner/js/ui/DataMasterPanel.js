@@ -990,3 +990,80 @@ var QuickSqlBPEditPanel = function (_React$PureComponent9) {
 
     return QuickSqlBPEditPanel;
 }(React.PureComponent);
+
+var QuickKeyWordSynBar = function (_React$PureComponent10) {
+    _inherits(QuickKeyWordSynBar, _React$PureComponent10);
+
+    function QuickKeyWordSynBar(props) {
+        _classCallCheck(this, QuickKeyWordSynBar);
+
+        var _this15 = _possibleConstructorReturn(this, (QuickKeyWordSynBar.__proto__ || Object.getPrototypeOf(QuickKeyWordSynBar)).call(this, props));
+
+        _this15.state = {
+            keyword: '',
+            syning: false
+        };
+        autoBind(_this15);
+
+        _this15.barStyle = {
+            maxWidth: '200px'
+        };
+        return _this15;
+    }
+
+    _createClass(QuickKeyWordSynBar, [{
+        key: 'kerwordChangedHandler',
+        value: function kerwordChangedHandler(ev) {
+            this.setState({
+                keyword: ev.target.value
+            });
+        }
+    }, {
+        key: 'fetchEndCallBack',
+        value: function fetchEndCallBack(result) {
+            var fetchData = result.json;
+            if (fetchData.data && fetchData.data.length > 0) {
+                g_dataBase.synEnityFromFetch(fetchData.data);
+            }
+            this.setState({
+                syning: false
+            });
+        }
+    }, {
+        key: 'synClickHandler',
+        value: function synClickHandler(ev) {
+            var keyword = this.state.keyword;
+            if (keyword == null || keyword.length < 2) return;
+
+            fetchJsonPost('server', { action: 'syndata_bykeyword', keyword: keyword }, this.fetchEndCallBack);
+            this.setState({
+                syning: true
+            });
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var synItem = null;
+            if (this.state.syning) {
+                synItem = React.createElement('i', { className: 'fa fa-refresh fa-spin' });
+            }
+            return React.createElement(
+                'div',
+                { className: 'input-group flex-grow-0 flex-shrink-0', style: this.barStyle },
+                React.createElement('input', { type: 'text', className: 'form-control', placeholder: '\u5173\u952E\u5B57', value: this.state.keyword, onChange: this.kerwordChangedHandler }),
+                React.createElement(
+                    'div',
+                    { className: 'input-group-append' },
+                    React.createElement(
+                        'button',
+                        { className: "btn btn-" + (this.state.syning ? 'secondary' : 'dark'), type: 'button', onClick: this.syning ? null : this.synClickHandler },
+                        '\u540C\u6B65\u6570\u636E',
+                        synItem
+                    )
+                )
+            );
+        }
+    }]);
+
+    return QuickKeyWordSynBar;
+}(React.PureComponent);
