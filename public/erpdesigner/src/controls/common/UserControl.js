@@ -41,14 +41,20 @@ class UserControlKernel extends ContainerKernelBase {
                 this.uuid = guid2();
             }
             this.attrsSettingID = this.project.designeConfig.name + '_' + this.id;
+            var oldAttrsSettingID = this.project.designeConfig.name + '_' + this.id[0].toLowerCase() + this.id.substr(1);
             gUserControlAttsByType_map[this.attrsSettingID] = UserControlKernelAttrsSetting.map(group => {
                 return group.clone();
             });
+            gUserControlAttsByType_map[oldAttrsSettingID] = gUserControlAttsByType_map[this.attrsSettingID];
             this.synControlAttrs();
         }
         else {
             if (kernelJson) {
-                this.attrsSettingID = parentKernel.project.designeConfig.name + '_' + kernelJson.attr.refID;
+                var refID = kernelJson.attr.refID;
+                refID = refID[0].toUpperCase() + refID.substr(1);
+                this.attrsSettingID = parentKernel.project.designeConfig.name + '_' + refID;
+                this.refID = refID;
+                
             }
             else {
                 this.attrsSettingID = parentKernel.project.designeConfig.name + '_' + this.refID;
@@ -403,7 +409,7 @@ class CUserControl extends React.PureComponent {
 
     renderInstance() {
         var ctlKernel = this.props.ctlKernel;
-        var templateKernel = this.state.templateKernel;
+        var templateKernel = ctlKernel.getTemplateKernel();
         var layoutConfig = templateKernel.getLayoutConfig();
         if (this.props.ctlKernel.__placing) {
             layoutConfig.addClass('M_placingCtl');

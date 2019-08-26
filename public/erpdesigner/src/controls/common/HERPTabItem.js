@@ -2,6 +2,7 @@ const HERPTabItemKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置',[
         new CAttribute('标题',AttrNames.Title,ValueType.String,''),
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr),
+        new CAttribute('图标类型', AttrNames.IconType, ValueType.String, ''),
     ]),
 ]);
 
@@ -74,6 +75,8 @@ class HERPTabItem extends React.PureComponent {
         }
         layoutConfig.addClass('hb-control');
         layoutConfig.addClass('d-flex');
+        layoutConfig.addClass('flex-grow-1');
+        layoutConfig.addClass('flex-shrink-1');
 
         var rootStyle = layoutConfig.style;
         if (this.state.orientation == Orientation_V) {

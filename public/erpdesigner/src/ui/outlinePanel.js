@@ -20,20 +20,23 @@ class OutlineItem extends React.PureComponent {
     }
 
     aAttrChanged(changedAttrName) {
+        var outlineProfile = this.props.kernel.outlineProfile;
         if (changedAttrName == AttrNames.Chidlren) {
             this.setState({
                 magicObj: {},
             });
         }
         else if (changedAttrName == 'selected') {
-            this.props.kernel.outlineProfile.selected = true;
+            if(outlineProfile)
+                outlineProfile.selected = true;
             this.setState({
                 selected: true,
             });
             this.props.itemSelected(this, this.rootElemRef.current);
         }
         else if (changedAttrName == 'unselected') {
-            this.props.kernel.outlineProfile.selected = false;
+            if(outlineProfile)
+                outlineProfile.selected = false;
             this.setState({
                 selected: false,
             });
@@ -49,19 +52,26 @@ class OutlineItem extends React.PureComponent {
     }
 
     componentWillUnmount() {
+        var outlineProfile = this.props.kernel.outlineProfile;
         this.unlistenTarget(this.props.kernel);
-        if (this.props.kernel.outlineProfile.outlineItem == this) {
-            this.props.kernel.outlineProfile.outlineItem = null;
+        if (outlineProfile && outlineProfile.outlineItem == this) {
+            outlineProfile.outlineItem = null;
         }
     }
 
     componentWillMount() {
+        var outlineProfile = this.props.kernel.outlineProfile;
         this.listenTarget(this.props.kernel);
-        this.props.kernel.outlineProfile.outlineItem = this;
+        if (outlineProfile && outlineProfile.outlineItem == this) {
+            outlineProfile.outlineItem = this;
+        }
     }
 
     toggleCollapse() {
-        this.props.kernel.outlineProfile.collapsed = !this.state.collapsed;
+        var outlineProfile = this.props.kernel.outlineProfile;
+        if(outlineProfile){
+            outlineProfile.collapsed = !this.state.collapsed;
+        }
         this.setState(
             {
                 collapsed: !this.state.collapsed,
@@ -70,7 +80,9 @@ class OutlineItem extends React.PureComponent {
     }
 
     collapse() {
-        this.props.kernel.outlineProfile.collapsed = true;
+        if(this.props.kernel.outlineProfile){
+            this.props.kernel.outlineProfile.collapsed = true;
+        }
         this.setState(
             {
                 collapsed: true,
@@ -79,7 +91,9 @@ class OutlineItem extends React.PureComponent {
     }
 
     uncollapse() {
-        this.props.kernel.outlineProfile.collapsed = false;
+        if(this.props.kernel.outlineProfile){
+            this.props.kernel.outlineProfile.collapsed = false;
+        }
         this.setState(
             {
                 collapsed: false,

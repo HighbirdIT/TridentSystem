@@ -154,3 +154,20 @@ class ApiItem_fun{
         this.uniqueID = apiClass.name + this.id;
     }
 }
+
+function getCanLabeledControls(theKernel){
+    var rlt_arr = DesignerConfig.getMobileCanLabeledControls();
+    var parentUserCtls_arr = theKernel.searchParentKernel(UserControlKernel_Type);
+    return rlt_arr.concat(theKernel.project.userControls_arr.filter(ctlkernel=>{
+        return parentUserCtls_arr.indexOf(ctlkernel) == -1;
+    }).map(ctlkernel=>{
+        return {
+            label: ctlkernel.name,
+            type: UserControlKernel_Type + '-' + ctlkernel.id,
+            namePrefix: UserControlKernel_Prefix,
+            kernelClass: UserControlKernel,
+            reactClass: CUserControl,
+            canbeLabeled: true,
+        };
+    }));
+}

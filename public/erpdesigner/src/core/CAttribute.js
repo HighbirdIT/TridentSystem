@@ -213,7 +213,9 @@ const VarNames={
     OldValue:'oldValue',
     SatePath:'statePath',
     Visible:'visible',
+    NowRow:'nowrow',
 };
+
 
 const AttrNames={
     ButtonClass:'btnclass',
@@ -253,6 +255,7 @@ const AttrNames={
     WidthType:'widthType',
     ColumnWidth:'columnWidth',
     AutoHeight:'autoHeight',
+    HadScroll:'hadScroll',
     AutoIndexColumn:'autoIndexColumn',
     NoDataTip:'noDataTip',
     MultiSelect:'multiselect',
@@ -287,6 +290,12 @@ const AttrNames={
     IconType:'icontype',
     AutoCloseBtn:'autoclosebtn',
     HaveDoneTip: 'havedonetip',
+    DockType:'dockType',
+    HideTitle:'hidetitle',
+    ButtonType:'buttontype',
+    ManualChanged:'manualChanged',
+    RendererCtlType:'rendererctltype',
+    Wrap:'wrap',
 
     Event:{
         OnClick:'onclick',

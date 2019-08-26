@@ -141,10 +141,10 @@ var CProject = function (_IAttributeable) {
             if (foundItem != null) {
                 return null;
             }
-            var newID = 'userControl';
+            var newID = 'UserControl';
             var ki = 0;
             do {
-                newID = 'userControl_T' + ki;
+                newID = 'UserControl_T' + ki;
                 foundItem = this.userControls_arr.find(function (x) {
                     return x.id == newID;
                 });
@@ -224,16 +224,20 @@ var CProject = function (_IAttributeable) {
                 console.warn(useID + ' 已被占用');
                 useID = null;
             }
+            var ctlType = ctlKernel.type;
             if (IsEmptyString(useID)) {
-                var ctlType = ctlKernel.type;
                 if (ctlType == UserControlKernel_Type) {
-                    ctlType = ctlKernel.refID == null ? 'userControl_T' : 'userControl';
+                    ctlType = ctlKernel.refID == null ? 'UserControl_T' : 'UserControl';
                 }
                 for (var i = 0; i < 9999; ++i) {
                     useID = ctlType + '_' + i;
                     if (this.getControlById(useID) == null) {
                         break;
                     }
+                }
+            } else {
+                if (ctlType == UserControlKernel_Type) {
+                    useID = useID[0].toUpperCase() + useID.substring(1, useID.length);
                 }
             }
             ctlKernel.id = useID;

@@ -2,8 +2,9 @@ const M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置', [
         new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'),
         new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false),
+        new CAttribute('隐藏标题', AttrNames.HideTitle, ValueType.Boolean, false),
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
-        new CAttribute('高度适应', AttrNames.AutoHeight, ValueType.Boolean, true),
+        new CAttribute('有滚动条', AttrNames.HadScroll, ValueType.Boolean, true),
         new CAttribute('弹出式页面', AttrNames.PopablePage, ValueType.Boolean, false),
         new CAttribute('有关闭按钮', AttrNames.AutoCloseBtn, ValueType.Boolean, true),
         new CAttribute('关联步骤', AttrNames.RelFlowStep, ValueType.Int, null, true, true, gFlowMaster.getAllSteps, {text:'fullName', value:'code'}),

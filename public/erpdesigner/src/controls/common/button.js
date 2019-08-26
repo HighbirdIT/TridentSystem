@@ -1,6 +1,17 @@
 const ButtonKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置',[
+        new CAttribute('标题',AttrNames.Title,ValueType.String,'', true, false, [], 
+        {
+            pullDataFun:GetKernelCanUseColumns,
+            text:'name',
+            editable:true,
+        }, true, {
+            scriptable:true,
+            type:FunType_Client,
+            group:EJsBluePrintFunGroup.CtlAttr,
+        }),
         new CAttribute('操作表', AttrNames.ProcessTable, ValueType.DataSource, null, true, false, null, {text:'name', value:'code'}),
+        new CAttribute('类型', AttrNames.ButtonType, ValueType.String, ButtonType_Normal, true, false, ButtonType_Options_arr),
         new CAttribute('外观类', AttrNames.ButtonClass, ValueType.String, 'btn-primary', true, false, ButtonClasses_arr),
         genIsdisplayAttribute(),
         new CAttribute('适用种类', AttrNames.ButtonVisibleType, ValueType.String, EButtonVisibleType.Default, true, false, ButtonVisibleTypes_arr),
@@ -70,6 +81,8 @@ M_Button_api.pushApi(new ApiItem_fun({
     label:'点击',
     name:AttrNames.Event.OnClick
 }));
+M_Button_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.Title,ButtonKernelAttrsSetting), 'title', true));
+M_Button_api.pushApi(new ApiItem_propsetter('title'));
 g_controlApi_arr.push(M_Button_api);
 
 class CButton extends React.PureComponent {
@@ -81,6 +94,8 @@ class CButton extends React.PureComponent {
             btnClass:this.props.ctlKernel.getAttribute(AttrNames.ButtonClass),
             hidelabel:this.props.ctlKernel.getAttribute(AttrNames.HideLabel),
             icontype:this.props.ctlKernel.getAttribute(AttrNames.IconType),
+            title:this.props.ctlKernel.getAttribute(AttrNames.Title),
+            btnType:this.props.ctlKernel.getAttribute(AttrNames.ButtonType),
         };
 
         autoBind(this);
@@ -91,6 +106,8 @@ class CButton extends React.PureComponent {
             AttrNames.LayoutNames.StyleAttr,
             AttrNames.HideLabel,
             AttrNames.IconType,
+            AttrNames.Title,
+            AttrNames.ButtonType,
         ]);
     }
 
@@ -103,6 +120,8 @@ class CButton extends React.PureComponent {
             btnClass:this.props.ctlKernel.getAttribute(AttrNames.ButtonClass),
             hidelabel:this.props.ctlKernel.getAttribute(AttrNames.HideLabel),
             icontype:this.props.ctlKernel.getAttribute(AttrNames.IconType),
+            title:this.props.ctlKernel.getAttribute(AttrNames.Title),
+            btnType:this.props.ctlKernel.getAttribute(AttrNames.ButtonType),
         });
     }
 
@@ -120,11 +139,38 @@ class CButton extends React.PureComponent {
         if(!IsEmptyString(this.state.icontype)){
             iconElem = <i className={'fa fa-' + this.state.icontype} />
         }
-        return(
-            <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
-                {this.renderHandleBar()}
+        var titleParserRet = parseObj_CtlPropJsBind(this.state.title);
+        var title = titleParserRet.isScript ? (ReplaceIfNull(this.state.name,'') + '{脚本}') : (IsEmptyString(titleParserRet.string) ? '' : '[' +titleParserRet.string + ']');
+        if(!IsEmptyString(title)){
+            showText = null;
+        }
+
+        var childElem = null;
+        var btnClassName = layoutConfig.getClassName();
+        var btnType = this.state.btnType;
+        if(btnType == ButtonType_ListBtn){
+            btnClassName = 'w-100 d-flex btn btn-light align-items-center text-left';
+            childElem =  <React.Fragment>
+                <div className='flex-grow-1 flex-shrink-1 hidenOverflow'>
+                    {iconElem}
+                    {showText}
+                    {title}
+                </div>
+                <i className='fa fa-angle-right' />
+                </React.Fragment>;
+        }
+        else{
+            childElem = <React.Fragment>
                 {iconElem}
                 {showText}
+                {title}
+                </React.Fragment>;
+        }
+
+        return(
+            <div className={btnClassName} style={layoutConfig.style} onClick={this.props.onClick}  ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                {this.renderHandleBar()}
+                {childElem}
             </div>
         );
     }

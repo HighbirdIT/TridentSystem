@@ -2320,8 +2320,17 @@ class FlowNode_EXAM extends JSNode_Base {
                     case 'reason':
                         this.reasonScoket = socket;
                         break;
-                    case 'intdata':
-                        this.intdataScoket = socket;
+                    case 'processDate':
+                        this.processDateScoket = socket;
+                        break;
+                    case 'processDate':
+                        this.processDateScoket = socket;
+                        break;
+                    case 'processDate':
+                        this.processDateScoket = socket;
+                        break;
+                    case 'processDate':
+                        this.processDateScoket = socket;
                         break;
                     default:
                         console.warn('无法正确识别的接口:' + socket.name);

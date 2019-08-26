@@ -722,7 +722,7 @@ class JSNode_BluePrint extends EventEmitter {
                     fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.id + funName + '_'), '+', VarNames.RowIndex);
                 }
                 theFun.scope.getVar(belongFormControl.id + "_path", true, 'this.props.fullPath');
-                theFun.scope.getVar(belongFormControl.id + "_state", true, makeStr_callFun('getStateByPath', [VarNames.State, 'this.props.fullPath']));
+                theFun.scope.getVar(belongFormControl.id + "_state", true, makeStr_callFun('getStateByPath', [VarNames.State, 'this.props.fullPath', '{}']));
                 if (belongUserControl) {
                     // 自订控件中的按钮
                     theFun.scope.getVar(belongUserControl.id + '_path', true, "getBelongUserCtlPath(this.props.fullPath)");
@@ -2294,10 +2294,14 @@ class JSNode_CurrentDataRow extends JSNode_Base {
             }
         }
         if (clientForEachBodyBlock) {
-            this.compileFlowNode(clientForEachFlowLinks_arr[0], helper, usePreNodes_arr, clientForEachBodyBlock);
+            if(this.compileFlowNode(clientForEachFlowLinks_arr[0], helper, usePreNodes_arr, clientForEachBodyBlock) == false){
+                return false;
+            }
         }
         if (this.outFlowSocket) {
-            this.compileOutFlow(helper, usePreNodes_arr, belongBlock);
+            if(this.compileOutFlow(helper, usePreNodes_arr, belongBlock) == false){
+                return false;
+            }
         }
         return selfCompileRet;
     }
@@ -2751,12 +2755,16 @@ class JSNODE_Insert_table extends JSNode_Base {
 
         var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
         if (serverTrueFlowLinks_arr.length > 0) {
-            this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock);
+            if(this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false){
+                return false;
+            }
         }
 
         var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
         if (serverFalseFlowLinks_arr.length > 0) {
-            this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock);
+            if(this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false){
+                return false;
+            }
         }
         return selfCompileRet;
     }
@@ -3138,7 +3146,9 @@ class JSNODE_Insert_table extends JSNode_Base {
             if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端成功出口无效', helper)) {
                 return false;
             }
-            this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock);
+            if(this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock) == false){
+                return false;
+            }
         }
         else if (autoCallFetchEnd) {
             errCheckIf.trueBlock.pushLine(makeStr_callFun('return callback_final', ['state', dataVarName, errorVarName]) + ';');
@@ -3149,7 +3159,9 @@ class JSNODE_Insert_table extends JSNode_Base {
             if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端成功出口无效', helper)) {
                 return false;
             }
-            this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock);
+            if(this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock) == false){
+                return false;
+            }
         }
         else if (autoCallFetchEnd) {
             errCheckIf.falseBlock.pushLine(makeStr_callFun('return callback_final', ['state', dataVarName, errorVarName]) + ';');
@@ -3157,12 +3169,16 @@ class JSNODE_Insert_table extends JSNode_Base {
 
         var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
         if (theServerSide != null && serverTrueFlowLinks_arr.length > 0) {
-            this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock);
+            if(this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false){
+                return false;
+            }
         }
 
         var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
         if (theServerSide != null && serverFalseFlowLinks_arr.length > 0) {
-            this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock);
+            if(this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false){
+                return false;
+            }
         }
 
 
@@ -3377,7 +3393,7 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
             if (this.checkCompileFlag(propAttr == null, '目标属性无效', helper)) {
                 return false;
             }
-            var pathVar = singleQuotesStr(selectedKernel.getStatePath(propAttr.label));
+            var pathVar = singleQuotesStr(selectedKernel.getStatePath(propAttr.label, '.', {mapVarName:VarNames.RowIndexInfo_map}));
             var belongUserCtl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
             if(belongUserCtl){
                 pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath(propAttr.label));
@@ -3397,7 +3413,7 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
         }
         else {
             var belongUserControl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
-            var statePath = (belongUserControl ? belongUserControl.id + '_path + ".' : '"') + selectedKernel.getStatePath(this.apiItem.stateName) + '"';
+            var statePath = (belongUserControl ? belongUserControl.id + "_path + '." : "'") + selectedKernel.getStatePath(this.apiItem.stateName, '.', {mapVarName:VarNames.RowIndexInfo_map}) + "'";
             if (batchNode) {
                 myJSBlock.pushLine(needSetVarName + '[' + statePath + '] = ' + valueStr + ';');
             }  
@@ -4210,7 +4226,9 @@ class JSNode_Query_Sql extends JSNode_Base {
                 });
             }
 
-            this.compileFlowNode(serverForEachFlowLinks_arr[0], helper, usePreNodes_arr, serverForachBodyBlock);
+            if(this.compileFlowNode(serverForEachFlowLinks_arr[0], helper, usePreNodes_arr, serverForachBodyBlock) == false){
+                return false;
+            }
         }
 
         if (this.compileOutFlow(helper, usePreNodes_arr, belongBlock) == false) {
@@ -4500,7 +4518,9 @@ class JSNode_Query_Sql extends JSNode_Base {
                 });
             }
 
-            this.compileFlowNode(serverForEachFlowLinks_arr[0], helper, usePreNodes_arr, serverForachBodyBlock);
+            if(this.compileFlowNode(serverForEachFlowLinks_arr[0], helper, usePreNodes_arr, serverForachBodyBlock) == false){
+                return false;
+            }
         }
 
         var clientForEachFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.clientForEachSocket);
@@ -4527,7 +4547,9 @@ class JSNode_Query_Sql extends JSNode_Base {
                 });
             }
 
-            this.compileFlowNode(clientForEachFlowLinks_arr[0], helper, usePreNodes_arr, clientForEachBodyBlock);
+            if(this.compileFlowNode(clientForEachFlowLinks_arr[0], helper, usePreNodes_arr, clientForEachBodyBlock) == false){
+                return false;
+            }
         }
 
         if (this.compileOutFlow(helper, usePreNodes_arr, fetchEndBlock) == false) {
@@ -4700,7 +4722,7 @@ class JSNode_Logical_Operator extends SqlNode_Base {
         });
 
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        selfCompileRet.setSocketOut(this.outSocket, '(' + finalStr + ')');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -5267,20 +5289,26 @@ class JSNode_Do_FlowStep extends JSNode_Base {
         if (blockInServer) {
             selfCompileRet.setSocketOut(this.inFlowSocket, '', myServerBlock);
             if (serverFlow_links.length > 0) {
-                this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, tryBlock.bodyBlock);
+                if(this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, tryBlock.bodyBlock) == false){
+                    return false;
+                }
             }
         }
         else {
             selfCompileRet.setSocketOut(this.inFlowSocket, '', myClientBlock);
             fetchEndBlock.pushLine('if(' + errVarName + '){callback_final(state, null,' + errVarName + ');}');
             if (clientFlow_links.length > 0) {
-                this.compileFlowNode(clientFlow_links[0], helper, usePreNodes_arr, fetchEndBlock);
+                if(this.compileFlowNode(clientFlow_links[0], helper, usePreNodes_arr, fetchEndBlock)){
+                    return false;
+                }
             }
             else if (autoCallFetchEnd) {
                 fetchEndBlock.pushLine('return callback_final(state, null,' + errVarName + ');');
             }
             if (serverFlow_links.length > 0) {
-                this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, tryBlock.bodyBlock);
+                if(this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, tryBlock.bodyBlock)){
+                    return false;
+                }
             }
         }
         return selfCompileRet;
@@ -5607,12 +5635,16 @@ class JSNODE_Update_table extends JSNode_Base {
 
         var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
         if (serverTrueFlowLinks_arr.length > 0) {
-            this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock);
+            if(this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false){
+                return false;
+            }
         }
 
         var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
         if (serverFalseFlowLinks_arr.length > 0) {
-            this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock);
+            if(this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false){
+                return false;
+            }
         }
         return selfCompileRet;
     }
@@ -5956,7 +5988,9 @@ class JSNODE_Update_table extends JSNode_Base {
             if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端成功出口无效', helper)) {
                 return false;
             }
-            this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock);
+            if(this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock) == false){
+                return false;
+            }
         }
         else if (autoCallFetchEnd) {
             if (errCheckIf) {
@@ -5969,7 +6003,9 @@ class JSNODE_Update_table extends JSNode_Base {
             if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端失败出口无效', helper)) {
                 return false;
             }
-            this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock);
+            if(this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock) == false){
+                return false;
+            }
         }
         else if (autoCallFetchEnd) {
             if (errCheckIf) {
@@ -5979,12 +6015,16 @@ class JSNODE_Update_table extends JSNode_Base {
 
         var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
         if (serverTrueFlowLinks_arr.length > 0) {
-            this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock);
+            if(this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false){
+                return false;
+            }
         }
 
         var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
         if (serverFalseFlowLinks_arr.length > 0) {
-            this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock);
+            if(this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false){
+                return false;
+            }
         }
         return selfCompileRet;
     }
@@ -6649,12 +6689,16 @@ class JSNODE_Delete_Table extends JSNode_Base {
 
         var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
         if (serverTrueFlowLinks_arr.length > 0) {
-            this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock);
+            if(this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false){
+                return false;
+            }
         }
 
         var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
         if (serverFalseFlowLinks_arr.length > 0) {
-            this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock);
+            if(this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false){
+                return false;
+            }
         }
         return selfCompileRet;
     }
@@ -6876,7 +6920,9 @@ class JSNODE_Delete_Table extends JSNode_Base {
             if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端成功出口无效', helper)) {
                 return false;
             }
-            this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock);
+            if(this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock) == false){
+                return false;
+            }
         }
         else if (autoCallFetchEnd) {
             errCheckIf.trueBlock.pushLine(makeStr_callFun('return callback_final', ['state', dataVarName, errorVarName]) + ';');
@@ -6888,7 +6934,9 @@ class JSNODE_Delete_Table extends JSNode_Base {
             if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端成功出口无效', helper)) {
                 return false;
             }
-            this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock);
+            if(this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock) == false){
+                return false;
+            }
         }
         else if (autoCallFetchEnd) {
             errCheckIf.falseBlock.pushLine(makeStr_callFun('return callback_final', ['state', dataVarName, errorVarName]) + ';');
@@ -6896,12 +6944,16 @@ class JSNODE_Delete_Table extends JSNode_Base {
 
         var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
         if (theServerSide != null && serverTrueFlowLinks_arr.length > 0) {
-            this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock);
+            if(this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false){
+                return false;
+            }
         }
 
         var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
         if (theServerSide != null && serverFalseFlowLinks_arr.length > 0) {
-            this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock);
+            if(this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false){
+                return false;
+            }
         }
 
         //var finalStr = 'insert ' + midbracketStr(useDS.name) + '(' + insertColumnStr + ') values(' + insertValueStr + ')'
@@ -7695,6 +7747,7 @@ class JSNode_ClosePage extends JSNode_Base {
         if (this.checkCompileFlag(thePage.getAttribute(AttrNames.PopablePage) == false, '目标页面无法被关闭', helper)) {
             return false;
         }
+        this.setPage(thePage);
 
         this.pageChangedHandler();
 

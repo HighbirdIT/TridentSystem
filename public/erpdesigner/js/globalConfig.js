@@ -12,6 +12,16 @@ var OrderType_DESC = 'desc';
 var OrderType_ASCE = 'asce';
 var OrderTypes_arr = [OrderType_DESC, OrderType_ASCE];
 
+var DockType_Top = 'TOP';
+var DockType_Bottom = 'BOTTOM';
+var DockType_Left = 'LEFT';
+var DockType_Right = 'RIGHT';
+var DockType_Options_arr = [DockType_Top, DockType_Bottom, DockType_Left, DockType_Right];
+
+var ButtonType_Normal = 'Normal';
+var ButtonType_ListBtn = 'ListLike';
+var ButtonType_Options_arr = [ButtonType_Normal, ButtonType_ListBtn];
+
 var EMessageType = {
     Normal: 0,
     Process: 2
@@ -132,10 +142,11 @@ var ESqlBluePrintGroup = {
 
 var EFormType = {
     Page: 'page',
-    Grid: 'grid'
+    Grid: 'grid',
+    List: 'list'
 };
 
-var FormTypes_arr = [EFormType.Page, EFormType.Grid];
+var FormTypes_arr = [EFormType.Page, EFormType.Grid, EFormType.List];
 
 var ESelectMode = {
     None: 'none',

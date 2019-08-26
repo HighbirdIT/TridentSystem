@@ -1,17 +1,3 @@
-function getCanLabeledControls(theKernel){
-    var rlt_arr = DesignerConfig.getMobileCanLabeledControls();
-    return rlt_arr.concat(theKernel.project.userControls_arr.map(ctlkernel=>{
-        return {
-            label: ctlkernel.name,
-            type: UserControlKernel_Type + '-' + ctlkernel.id,
-            namePrefix: UserControlKernel_Prefix,
-            kernelClass: UserControlKernel,
-            reactClass: CUserControl,
-            canbeLabeled: true,
-        };
-    }));
-}
-
 const M_LabeledControlKernelAttrsSetting=GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置',[
         genTextFiledAttribute(),

@@ -458,7 +458,7 @@ var ControlKernelBase = function (_IAttributeable) {
         value: function isComplicatedPath() {
             var tKernel = this.parent;
             while (tKernel != null) {
-                if (tKernel == UserControlKernel_Type || tKernel == M_FormKernel_Type && tKernel.isGridForm()) {
+                if (tKernel == UserControlKernel_Type || tKernel == M_FormKernel_Type && !tKernel.isPageForm()) {
                     return true;
                 }
                 tKernel = tKernel.parent;
@@ -546,7 +546,7 @@ var ControlKernelBase = function (_IAttributeable) {
                         if (child.editor && (!needFilt || child.editor.type == targetType)) {
                             rlt.push(child.editor);
                         }
-                        if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type && !child.isGridForm()) {
+                        if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type && child.isPageForm()) {
                             // 穿透div
                             if (meetParents_map[child.id] == null) {
                                 meetParents_map[child.id] = 1;
