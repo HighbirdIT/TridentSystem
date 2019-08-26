@@ -515,6 +515,7 @@ class SqlBPItemPanel extends React.PureComponent {
         this.state = {
             items_arr: this.props.project.dataMaster.BP_sql_arr,
             selectedItem: null,
+            sourceKeyword:'',
         }
         this.sqlbpEditorRef = React.createRef();
         autoBind(this);
@@ -573,6 +574,35 @@ class SqlBPItemPanel extends React.PureComponent {
         }, 200);
     }
 
+    sourceInputChange(e){
+        this.setState({
+            sourceKeyword:e.target.value
+        })
+    }
+    renderSourceList(){
+        var items_sourceArr = this.state.items_arr;
+        var selectedItem = this.state.selectedItem;
+        var show_arr=[];
+        if(items_sourceArr == null){
+            return null;
+        }
+        if (this.state.sourceKeyword== null || this.state.sourceKeyword =='' ) {
+            show_arr=items_sourceArr;
+        }else{
+            for(var i=0,len =items_sourceArr.length;i<len;i++){
+                if (items_sourceArr[i].name.indexOf(this.state.sourceKeyword) >= 0) {
+                    show_arr.push(items_sourceArr[i]);
+                  }
+            }
+        }
+        return show_arr.map(item => {
+            if (item.group != 'custom') {
+                return null;
+            }
+            return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>
+            {item.name + '-' + item.type}</div>
+        });
+    }
     render() {
         var selectedItem = this.state.selectedItem;
         return (
@@ -581,20 +611,28 @@ class SqlBPItemPanel extends React.PureComponent {
                     this.state.creating || this.state.modifing ? <SqlBPEditPanel targetBP={this.state.modifing ? selectedItem : null} dataMaster={this.props.project.dataMaster} onComplete={this.newItemCompleteHandler} /> : null
                 }
                 <SplitPanel
-                    defPercent={0.45}
-                    maxSize='200px'
-                    barClass='bg-secondary'
-                    panel1={
-                        <div className='d-flex flex-column flex-grow-1 flex-shrink-1 w-100' >
-                            已创建的:
+                defPercent={0.45}
+                maxSize='200px'
+                barClass='bg-secondary'
+                panel1={
+                    <div className='d-flex flex-column flex-grow-1 flex-shrink-1 w-100' >
+                        <div className="input-group input-group-sm">
+                            <span className="input-group-addon" id="sizing-addon3">数据源:</span>
+                            <input type="text" className="form-control" placeholder="请输入" aria-describedby="sizing-addon3"
+                            onChange={this.sourceInputChange}/>
+                        </div>
+                        
                         <div className='list-group flex-grow-1 flex-shrink-1 bg-dark autoScroll'>
                                 {
-                                    this.state.items_arr.map(item => {
+                                    /*this.state.items_arr.map(item => {
                                         if (item.group != 'custom') {
                                             return null;
                                         }
-                                        return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>{item.name + '-' + item.type}</div>
-                                    })
+                                        return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>
+                                            {item.name + '-' + item.type}
+                                        </div>
+                                    })*/
+                                    this.renderSourceList()
                                 }
                                 <span className='dropdown-divider' />
                                 <span className='text-light' >以下是控件定制数据源</span>
