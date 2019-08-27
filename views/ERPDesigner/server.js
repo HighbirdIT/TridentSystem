@@ -161,7 +161,6 @@ function saveProject(req, projJson) {
                 id: userData.name,
                 time: new Date(),
             });
-
             if (!fs.existsSync(baseFileDir))
                 fs.mkdirSync(baseFileDir);
 
@@ -319,7 +318,7 @@ function getAllPost(){
 
 function getAllProjectRecord(){
     return co(function* () {
-        var sql = 'SELECT [系统方案名称] as text,[系统方案名称代码] as value FROM [base1].[dbo].[T002C系统方案名称] where 终止确认状态=0 order by 系统方案名称';
+        var sql = 'SELECT [系统方案名称] as text,[系统方案名称代码] as value,[方案英文名称] as 英文名称 FROM [base1].[dbo].[V002C系统方案名称] where 终止确认状态=0 order by 系统方案名称';
         var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
         return rcdRlt.recordset;
     });

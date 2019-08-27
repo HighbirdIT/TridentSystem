@@ -703,6 +703,7 @@ class CFlowMaster extends React.PureComponent
                                     <div className='d-flex flex-grow-0 flex-shrink-0'>
                                         <TabNavBar ref={this.navbarRef} navData={this.navData} navChanged={this.navChanged} />
                                         <button onClick={this.saveFlowClickHandler} type='button' className='btn btn-info'><i className='fa fa-save' />{saving ? '保存中' : '保存流程'}{saving && <i className='fa fa-refresh fa-spin fa-fw' />}</button>
+                                        <QuickKeyWordSynBar />
                                     </div>
                                     {
                                         this.navItems.map(item => {

@@ -203,7 +203,8 @@ class MainApp extends React.PureComponent{
                 location.href = gotourl + search;
                 return;
             }
-            
+            goHomePage();
+            return;
         }
         var newState = {
             userid : userid,

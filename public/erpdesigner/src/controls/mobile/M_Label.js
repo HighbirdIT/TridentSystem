@@ -3,7 +3,11 @@ const M_LabelKernelAttrsSetting = GenControlKernelAttrsSetting([
         genTextFiledAttribute(),
         new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes),
         new CAttribute('小数精度', AttrNames.FloatNum, ValueType.Int, 2, true, false, null, null, false),
+        new CAttribute('输出字数', AttrNames.OutputCharCount, ValueType.Boolean, false),
         genIsdisplayAttribute(),
+    ]),
+    new CAttributeGroup('事件',[
+        new CAttribute('OnMDown', AttrNames.Event.OnMouseDown, ValueType.Event),
     ]),
 ]);
 

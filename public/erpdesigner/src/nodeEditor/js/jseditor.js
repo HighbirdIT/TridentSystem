@@ -165,6 +165,11 @@ const JSNodeEditorControls_arr =[
         type:'窗体控制'
     },
     {
+        label:'打开外部页面',
+        nodeClass:JsNode_OpenExternal_Page,
+        type:'窗体控制'
+    },
+    {
         label:'弹出页面',
         nodeClass:JSNode_PopPage,
         type:'窗体控制'
@@ -1505,6 +1510,7 @@ class C_JSNode_Editor extends React.PureComponent{
                                         <button type='button' onClick={this.clickExportBtnHandler} className='btn btn-dark' >导出</button>
                                         <button type='button' onClick={this.clickBigBtnHandler} className='btn btn-dark' ><i className='fa fa-search-plus' /></button>
                                         <button type='button' onClick={this.clickSmallBtnHandler} className='btn btn-dark' ><i className='fa fa-search-minus' /></button>
+                                        <QuickKeyWordSynBar />
                                     </div>
                                 </div>
                             </div>

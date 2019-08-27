@@ -237,7 +237,8 @@ var VarNames = {
     Userctlpath: 'userctlpath',
     OldValue: 'oldValue',
     SatePath: 'statePath',
-    Visible: 'visible'
+    Visible: 'visible',
+    NowRow: 'nowrow'
 };
 
 var AttrNames = {
@@ -278,6 +279,7 @@ var AttrNames = {
     WidthType: 'widthType',
     ColumnWidth: 'columnWidth',
     AutoHeight: 'autoHeight',
+    HadScroll: 'hadScroll',
     AutoIndexColumn: 'autoIndexColumn',
     NoDataTip: 'noDataTip',
     MultiSelect: 'multiselect',
@@ -312,6 +314,14 @@ var AttrNames = {
     IconType: 'icontype',
     AutoCloseBtn: 'autoclosebtn',
     HaveDoneTip: 'havedonetip',
+    DockType: 'dockType',
+    HideTitle: 'hidetitle',
+    ButtonType: 'buttontype',
+    ManualChanged: 'manualChanged',
+    RendererCtlType: 'rendererctltype',
+    Wrap: 'wrap',
+    OutputCharCount: 'outputcharcount',
+    AutoHomeBtn: 'autoHomeBtn',
 
     Event: {
         OnClick: 'onclick',
@@ -319,7 +329,8 @@ var AttrNames = {
         OnDelete: 'onDelete',
         OnInsert: 'onInsert',
         OnLoad: 'onLoad',
-        OnChanged: 'onChanged'
+        OnChanged: 'onChanged',
+        OnMouseDown: 'onMouseDown'
     },
 
     LayoutNames: {

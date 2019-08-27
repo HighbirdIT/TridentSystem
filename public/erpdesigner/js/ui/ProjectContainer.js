@@ -327,17 +327,22 @@ var ProjectContainer = function (_React$PureComponent2) {
                     { className: 'flex-grow-1 flex-shrink-1 d-flex flex-column' },
                     React.createElement(
                         'div',
-                        { className: 'btn-group flex-grow-0 flex-shrink-0', role: 'group' },
+                        { className: 'd-flex flex-grow-0 flex-shrink-0' },
                         React.createElement(
-                            MenuItem,
-                            { id: 'MI_HB', text: "HB" + (LoginUser == null ? '' : LoginUser.name), className: 'text-primary' },
-                            React.createElement(MenuCammandItem, { text: '\u6253\u5F00\u9879\u76EE', cmd: 'open', executFun: this.executCmd }),
-                            React.createElement(MenuCammandItem, { text: '\u521B\u5EFA\u7A7A\u9879\u76EE', cmd: 'create', executFun: this.executCmd }),
-                            React.createElement(MenuCammandItem, { text: '\u6253\u5F00\u6D41\u7A0B\u5927\u5E08', cmd: 'openflowmaster', executFun: this.executCmd })
+                            'div',
+                            { className: 'btn-group flex-grow-1 flex-shrink-1', role: 'group' },
+                            React.createElement(
+                                MenuItem,
+                                { id: 'MI_HB', text: "HB" + (LoginUser == null ? '' : LoginUser.name), className: 'text-primary' },
+                                React.createElement(MenuCammandItem, { text: '\u6253\u5F00\u9879\u76EE', cmd: 'open', executFun: this.executCmd }),
+                                React.createElement(MenuCammandItem, { text: '\u521B\u5EFA\u7A7A\u9879\u76EE', cmd: 'create', executFun: this.executCmd }),
+                                React.createElement(MenuCammandItem, { text: '\u6253\u5F00\u6D41\u7A0B\u5927\u5E08', cmd: 'openflowmaster', executFun: this.executCmd })
+                            ),
+                            this.state.projects.map(function (item, i) {
+                                return React.createElement(TitleHeaderItem, { key: item.designeConfig.name, project: item, index: i, clickTitlehandler: _this4.clickTitlehandler, clickClosehandler: _this4.clickClosehandler, active: i == _this4.state.selectedIndex });
+                            })
                         ),
-                        this.state.projects.map(function (item, i) {
-                            return React.createElement(TitleHeaderItem, { key: item.designeConfig.name, project: item, index: i, clickTitlehandler: _this4.clickTitlehandler, clickClosehandler: _this4.clickClosehandler, active: i == _this4.state.selectedIndex });
-                        })
+                        React.createElement(QuickKeyWordSynBar, null)
                     ),
                     React.createElement(ProjectManagerPanel, { ref: this.projManagerRef, wantOpenProjectFun: this.wantOpenProject }),
                     React.createElement(LoginPanel, { logCompleteFun: this.logCompleteFun }),

@@ -674,7 +674,8 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
 
         _this9.state = {
             items_arr: _this9.props.project.dataMaster.BP_sql_arr,
-            selectedItem: null
+            selectedItem: null,
+            sourceKeyword: ''
         };
         _this9.sqlbpEditorRef = React.createRef();
         autoBind(_this9);
@@ -744,9 +745,47 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
             }, 200);
         }
     }, {
+        key: 'sourceInputChange',
+        value: function sourceInputChange(e) {
+            this.setState({
+                sourceKeyword: e.target.value
+            });
+        }
+    }, {
+        key: 'renderSourceList',
+        value: function renderSourceList() {
+            var _this10 = this;
+
+            var items_sourceArr = this.state.items_arr;
+            var selectedItem = this.state.selectedItem;
+            var show_arr = [];
+            if (items_sourceArr == null) {
+                return null;
+            }
+            if (this.state.sourceKeyword == null || this.state.sourceKeyword == '') {
+                show_arr = items_sourceArr;
+            } else {
+                for (var i = 0, len = items_sourceArr.length; i < len; i++) {
+                    if (items_sourceArr[i].name.indexOf(this.state.sourceKeyword) >= 0) {
+                        show_arr.push(items_sourceArr[i]);
+                    }
+                }
+            }
+            return show_arr.map(function (item) {
+                if (item.group != 'custom') {
+                    return null;
+                }
+                return React.createElement(
+                    'div',
+                    { onClick: _this10.clickListItemHandler, key: item.code, 'data-itemvalue': item.code, className: 'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '') },
+                    item.name + '-' + item.type
+                );
+            });
+        }
+    }, {
         key: 'render',
         value: function render() {
-            var _this10 = this;
+            var _this11 = this;
 
             var selectedItem = this.state.selectedItem;
             return React.createElement(
@@ -760,20 +799,30 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
                     panel1: React.createElement(
                         'div',
                         { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 w-100' },
-                        '\u5DF2\u521B\u5EFA\u7684:',
+                        React.createElement(
+                            'div',
+                            { className: 'input-group input-group-sm' },
+                            React.createElement(
+                                'span',
+                                { className: 'input-group-addon', id: 'sizing-addon3' },
+                                '\u6570\u636E\u6E90:'
+                            ),
+                            React.createElement('input', { type: 'text', className: 'form-control', placeholder: '\u8BF7\u8F93\u5165', 'aria-describedby': 'sizing-addon3',
+                                onChange: this.sourceInputChange })
+                        ),
                         React.createElement(
                             'div',
                             { className: 'list-group flex-grow-1 flex-shrink-1 bg-dark autoScroll' },
-                            this.state.items_arr.map(function (item) {
+
+                            /*this.state.items_arr.map(item => {
                                 if (item.group != 'custom') {
                                     return null;
                                 }
-                                return React.createElement(
-                                    'div',
-                                    { onClick: _this10.clickListItemHandler, key: item.code, 'data-itemvalue': item.code, className: 'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '') },
-                                    item.name + '-' + item.type
-                                );
-                            }),
+                                return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>
+                                    {item.name + '-' + item.type}
+                                </div>
+                            })*/
+                            this.renderSourceList(),
                             React.createElement('span', { className: 'dropdown-divider' }),
                             React.createElement(
                                 'span',
@@ -786,7 +835,7 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
                                 }
                                 return React.createElement(
                                     'div',
-                                    { onClick: _this10.clickListItemHandler, key: item.code, 'data-itemvalue': item.code, className: 'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '') },
+                                    { onClick: _this11.clickListItemHandler, key: item.code, 'data-itemvalue': item.code, className: 'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '') },
                                     item.name + '-' + item.type
                                 );
                             })
@@ -830,22 +879,22 @@ var DataMasterPanel = function (_React$PureComponent8) {
     function DataMasterPanel(props) {
         _classCallCheck(this, DataMasterPanel);
 
-        var _this11 = _possibleConstructorReturn(this, (DataMasterPanel.__proto__ || Object.getPrototypeOf(DataMasterPanel)).call(this, props));
+        var _this12 = _possibleConstructorReturn(this, (DataMasterPanel.__proto__ || Object.getPrototypeOf(DataMasterPanel)).call(this, props));
 
-        _this11.panelBaseRef = React.createRef();
-        _this11.navbarRef = React.createRef();
-        _this11.sqlBPPanelRef = React.createRef();
-        _this11.state = {};
+        _this12.panelBaseRef = React.createRef();
+        _this12.navbarRef = React.createRef();
+        _this12.sqlBPPanelRef = React.createRef();
+        _this12.state = {};
 
-        autoBind(_this11);
+        autoBind(_this12);
 
-        var navItems = [CreateNavItemData('数据库', React.createElement(DataBasePanel, { project: _this11.props.project })), CreateNavItemData('创造数据', React.createElement(SqlBPItemPanel, { ref: _this11.sqlBPPanelRef, project: _this11.props.project }))];
+        var navItems = [CreateNavItemData('数据库', React.createElement(DataBasePanel, { project: _this12.props.project })), CreateNavItemData('创造数据', React.createElement(SqlBPItemPanel, { ref: _this12.sqlBPPanelRef, project: _this12.props.project }))];
 
-        _this11.navData = {
+        _this12.navData = {
             selectedItem: navItems[1],
             items: navItems
         };
-        return _this11;
+        return _this12;
     }
 
     _createClass(DataMasterPanel, [{
@@ -888,7 +937,7 @@ var DataMasterPanel = function (_React$PureComponent8) {
     }, {
         key: 'render',
         value: function render() {
-            var _this12 = this;
+            var _this13 = this;
 
             return React.createElement(
                 FloatPanelbase,
@@ -901,7 +950,7 @@ var DataMasterPanel = function (_React$PureComponent8) {
                 this.navData.items.map(function (item) {
                     return React.createElement(
                         'div',
-                        { key: item.text, className: 'flex-grow-1 flex-shrink-1 ' + (item == _this12.navData.selectedItem ? ' d-flex' : ' d-none') },
+                        { key: item.text, className: 'flex-grow-1 flex-shrink-1 ' + (item == _this13.navData.selectedItem ? ' d-flex' : ' d-none') },
                         item.content
                     );
                 })
@@ -918,13 +967,13 @@ var QuickSqlBPEditPanel = function (_React$PureComponent9) {
     function QuickSqlBPEditPanel(props) {
         _classCallCheck(this, QuickSqlBPEditPanel);
 
-        var _this13 = _possibleConstructorReturn(this, (QuickSqlBPEditPanel.__proto__ || Object.getPrototypeOf(QuickSqlBPEditPanel)).call(this, props));
+        var _this14 = _possibleConstructorReturn(this, (QuickSqlBPEditPanel.__proto__ || Object.getPrototypeOf(QuickSqlBPEditPanel)).call(this, props));
 
-        _this13.state = {
+        _this14.state = {
             blueprints_arr: []
         };
-        autoBind(_this13);
-        return _this13;
+        autoBind(_this14);
+        return _this14;
     }
 
     _createClass(QuickSqlBPEditPanel, [{
@@ -958,7 +1007,7 @@ var QuickSqlBPEditPanel = function (_React$PureComponent9) {
     }, {
         key: 'render',
         value: function render() {
-            var _this14 = this;
+            var _this15 = this;
 
             var bpArr = this.state.blueprints_arr;
             if (bpArr.length == 0) {
@@ -967,7 +1016,7 @@ var QuickSqlBPEditPanel = function (_React$PureComponent9) {
             return bpArr.map(function (bp) {
                 return React.createElement(
                     FloatPanelbase,
-                    { preClose: _this14.prePanelCloseHandler, key: bp.code, title: '编辑:' + bp.name, initShow: true, initMax: false, width: 800, height: 640, targetBP: bp },
+                    { preClose: _this15.prePanelCloseHandler, key: bp.code, title: '编辑:' + bp.name, initShow: true, initMax: false, width: 800, height: 640, targetBP: bp },
                     React.createElement(
                         'div',
                         { className: 'd-flex flex-grow-1 flex-shrink-1 bg-dark mw-100' },
@@ -979,4 +1028,81 @@ var QuickSqlBPEditPanel = function (_React$PureComponent9) {
     }]);
 
     return QuickSqlBPEditPanel;
+}(React.PureComponent);
+
+var QuickKeyWordSynBar = function (_React$PureComponent10) {
+    _inherits(QuickKeyWordSynBar, _React$PureComponent10);
+
+    function QuickKeyWordSynBar(props) {
+        _classCallCheck(this, QuickKeyWordSynBar);
+
+        var _this16 = _possibleConstructorReturn(this, (QuickKeyWordSynBar.__proto__ || Object.getPrototypeOf(QuickKeyWordSynBar)).call(this, props));
+
+        _this16.state = {
+            keyword: '',
+            syning: false
+        };
+        autoBind(_this16);
+
+        _this16.barStyle = {
+            maxWidth: '200px'
+        };
+        return _this16;
+    }
+
+    _createClass(QuickKeyWordSynBar, [{
+        key: 'kerwordChangedHandler',
+        value: function kerwordChangedHandler(ev) {
+            this.setState({
+                keyword: ev.target.value
+            });
+        }
+    }, {
+        key: 'fetchEndCallBack',
+        value: function fetchEndCallBack(result) {
+            var fetchData = result.json;
+            if (fetchData.data && fetchData.data.length > 0) {
+                g_dataBase.synEnityFromFetch(fetchData.data);
+            }
+            this.setState({
+                syning: false
+            });
+        }
+    }, {
+        key: 'synClickHandler',
+        value: function synClickHandler(ev) {
+            var keyword = this.state.keyword;
+            if (keyword == null || keyword.length < 2) return;
+
+            fetchJsonPost('server', { action: 'syndata_bykeyword', keyword: keyword }, this.fetchEndCallBack);
+            this.setState({
+                syning: true
+            });
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var synItem = null;
+            if (this.state.syning) {
+                synItem = React.createElement('i', { className: 'fa fa-refresh fa-spin' });
+            }
+            return React.createElement(
+                'div',
+                { className: 'input-group flex-grow-0 flex-shrink-0', style: this.barStyle },
+                React.createElement('input', { type: 'text', className: 'form-control', placeholder: '\u5173\u952E\u5B57', value: this.state.keyword, onChange: this.kerwordChangedHandler }),
+                React.createElement(
+                    'div',
+                    { className: 'input-group-append' },
+                    React.createElement(
+                        'button',
+                        { className: "btn btn-" + (this.state.syning ? 'secondary' : 'dark'), type: 'button', onClick: this.syning ? null : this.synClickHandler },
+                        '\u540C\u6B65\u6570\u636E',
+                        synItem
+                    )
+                )
+            );
+        }
+    }]);
+
+    return QuickKeyWordSynBar;
 }(React.PureComponent);

@@ -1,4 +1,4 @@
-const ISParam_Options_arr=[{name:'参数',code:'1'},{name:'变量',code:'0'}]
+const ISParam_Options_arr = [{ name: '参数', code: '1' }, { name: '变量', code: '0' }]
 
 var __SynAction_count = 0;
 class SynAction extends EventEmitter {
@@ -26,7 +26,6 @@ class SynAction extends EventEmitter {
     reFetch() {
         if (this.fetchFun != null) {
             this.startFetch(this.fetchFun);
-
         }
     }
 
@@ -228,7 +227,7 @@ class DataBasePanel extends React.PureComponent {
         this.startSynAction(synflag, this.state.matchKeyword.trim());
     }
 
-    startSynAction(synflag,param) {
+    startSynAction(synflag, param) {
         if (synflag == 'keyword') {
             var keyword = param;
             if (keyword == null || keyword.length < 2)
@@ -316,30 +315,30 @@ class DataBasePanel extends React.PureComponent {
     }
 }
 
-class SqlBPEditor extends React.PureComponent{
+class SqlBPEditor extends React.PureComponent {
     constructor(props) {
         super(props);
-        this.state={
-            
+        this.state = {
+
         };
         autoBind(this);
         this.editorDivRef = React.createRef();
         this.bluePrintRef = React.createRef();
     }
 
-    componentWillMount(){
+    componentWillMount() {
 
     }
 
-    componentWillUnmount(){
-        if(this.draging){
+    componentWillUnmount() {
+        if (this.draging) {
             window.removeEventListener('mousemove', this.mousemoveWithDragHandler);
             window.removeEventListener('mouseup', this.mouseupWithDragHandler);
         }
     }
 
-    forcusSqlNode(nodeData){
-        if(this.bluePrintRef.current == null){
+    forcusSqlNode(nodeData) {
+        if (this.bluePrintRef.current == null) {
             return;
         }
         var self = this;
@@ -348,9 +347,9 @@ class SqlBPEditor extends React.PureComponent{
         }, 200);
     }
 
-    render(){
+    render() {
         var editingItem = this.props.item;
-        if(editingItem == null){
+        if (editingItem == null) {
             return null;
         }
         return (
@@ -359,46 +358,46 @@ class SqlBPEditor extends React.PureComponent{
     }
 }
 
-class NameInputRow extends React.PureComponent{
+class NameInputRow extends React.PureComponent {
     constructor(props) {
         super(props);
-        this.state={
-            value:this.props.default ? this.props.default : '',
-            isagent:this.props.isagent == true,
+        this.state = {
+            value: this.props.default ? this.props.default : '',
+            isagent: this.props.isagent == true,
         }
         autoBind(this);
     }
 
-    inputChangedHandler(ev){
-        if(!this.state.isagent){
+    inputChangedHandler(ev) {
+        if (!this.state.isagent) {
             this.setState({
-                value:ev.target.value,
+                value: ev.target.value,
             });
         }
-        if(this.props.onValueChanged){
+        if (this.props.onValueChanged) {
             this.props.onValueChanged(ev.target.value);
         }
     }
 
-    getValue(){
+    getValue() {
         return this.state.isagent ? this.props.value : this.state.value;
     }
 
-    selectItemChangedHandler(data){
-        if(!this.state.isagent){
+    selectItemChangedHandler(data) {
+        if (!this.state.isagent) {
             this.setState({
-                value:data,
+                value: data,
             });
         }
-        if(this.props.onValueChanged){
+        if (this.props.onValueChanged) {
             this.props.onValueChanged(data);
         }
     }
 
-    renderInput(){
-        var type=this.props.type;
+    renderInput() {
+        var type = this.props.type;
         var value = this.state.isagent ? this.props.value : this.state.value;
-        switch(type){
+        switch (type) {
             case 'text':
             case 'int':
             case 'float':
@@ -412,13 +411,13 @@ class NameInputRow extends React.PureComponent{
 
         return null;
     }
-    
+
     render() {
         var nameStyle = {
-            width:this.props.nameWidth ? this.props.nameWidth : '100px',
-            color:this.props.nameColor,
+            width: this.props.nameWidth ? this.props.nameWidth : '100px',
+            color: this.props.nameColor,
         };
-        
+
         return (
             <div className={'d-flex ' + (this.props.rootClass ? this.props.rootClass : '')} style={this.props.rootStyle}>
                 <div className='text-center' style={nameStyle} >
@@ -435,7 +434,7 @@ class NameInputRow extends React.PureComponent{
 class SqlBPEditPanel extends React.PureComponent {
     constructor(props) {
         super(props);
-        this.state={
+        this.state = {
         }
         autoBind(this);
 
@@ -443,69 +442,69 @@ class SqlBPEditPanel extends React.PureComponent {
         this.typeRef = React.createRef();
     }
 
-    clickConfirmHandler(){
+    clickConfirmHandler() {
         var targetBP = this.props.targetBP;
         var name = this.nameRef.current.getValue().trim();
-        if(name.length <= 2){
+        if (name.length <= 2) {
             this.setState({
-                errinfo:'名字的长度必须大于2'
+                errinfo: '名字的长度必须大于2'
             });
             return;
         }
         var nowBP = this.props.dataMaster.getSqlBPByName(name);
-        if(nowBP != null && nowBP != targetBP){
+        if (nowBP != null && nowBP != targetBP) {
             this.setState({
-                errinfo:'已有同名的蓝图存在'
+                errinfo: '已有同名的蓝图存在'
             });
             return;
         }
         var type = this.typeRef.current.getValue();
         var title = this.typeRef
-        if(type.length == 0){
+        if (type.length == 0) {
             this.setState({
-                errinfo:'必须选择类型'
+                errinfo: '必须选择类型'
             });
             return;
         }
-        if(targetBP == null){
+        if (targetBP == null) {
             targetBP = this.props.dataMaster.createSqlBP(name, type);
         }
-        else{
+        else {
             targetBP = this.props.dataMaster.modifySqlBP(targetBP, name, type);
         }
         this.props.onComplete(targetBP);
     }
 
-    clickCancelHandler(){
+    clickCancelHandler() {
         this.props.onComplete(null);
     }
 
-    render(){
+    render() {
         var targetBP = this.props.targetBP;
         var title = '新建Sql蓝图';
-        if(targetBP != null){
+        if (targetBP != null) {
             title = '修改' + targetBP.name;
         }
         var value = targetBP == null ? '' : targetBP.name;
         var type = targetBP == null ? '表值' : targetBP.type;
         var nameWidth = 100;
         return <FloatPanelbase title={title} width={480} height={320} initShow={true} sizeable={false} closeable={false} ismodel={true} >
-                <div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
-                    <div className='d-flex flex-column autoScroll flex-grow-1 flex-shrink-1'>
-                        <NameInputRow label='名称' type='text' rootClass='m-1' nameWidth={nameWidth} ref={this.nameRef} default={value} />
-                        <NameInputRow label='类型' type='select' rootClass='m-1' nameWidth={nameWidth} options_arr={['表值','标量值','delete']} default={type} ref={this.typeRef} />   
-                        <div className='flex-grow-1 flex-shrink-1 text-info'>
-                            {
-                                this.state.errinfo
-                            }
-                        </div>
-                    </div>
-                    <div className='flex-grow-0 flex-shrink-0 btn-group'>
-                        <button type='button' onClick={this.clickConfirmHandler} className='btn btn-success flex-grow-1 flex-shrink-1'>{targetBP ? '修改' : '创建'}</button>
-                        <button type='button' onClick={this.clickCancelHandler} className='btn btn-danger flex-grow-1 flex-shrink-1'>取消</button>
+            <div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
+                <div className='d-flex flex-column autoScroll flex-grow-1 flex-shrink-1'>
+                    <NameInputRow label='名称' type='text' rootClass='m-1' nameWidth={nameWidth} ref={this.nameRef} default={value} />
+                    <NameInputRow label='类型' type='select' rootClass='m-1' nameWidth={nameWidth} options_arr={['表值', '标量值', 'delete']} default={type} ref={this.typeRef} />
+                    <div className='flex-grow-1 flex-shrink-1 text-info'>
+                        {
+                            this.state.errinfo
+                        }
                     </div>
                 </div>
-            </FloatPanelbase>
+                <div className='flex-grow-0 flex-shrink-0 btn-group'>
+                    <button type='button' onClick={this.clickConfirmHandler} className='btn btn-success flex-grow-1 flex-shrink-1'>{targetBP ? '修改' : '创建'}</button>
+                    <button type='button' onClick={this.clickCancelHandler} className='btn btn-danger flex-grow-1 flex-shrink-1'>取消</button>
+                </div>
+            </div>
+        </FloatPanelbase>
     }
 }
 
@@ -513,36 +512,37 @@ class SqlBPEditPanel extends React.PureComponent {
 class SqlBPItemPanel extends React.PureComponent {
     constructor(props) {
         super(props);
-        this.state={
-            items_arr:this.props.project.dataMaster.BP_sql_arr,
-            selectedItem:null,
+        this.state = {
+            items_arr: this.props.project.dataMaster.BP_sql_arr,
+            selectedItem: null,
+            sourceKeyword:'',
         }
         this.sqlbpEditorRef = React.createRef();
         autoBind(this);
     }
 
-    clickListItemHandler(ev){
+    clickListItemHandler(ev) {
         var targetCode = getAttributeByNode(ev.target, 'data-itemvalue', true, 5);
-        var targetItem = this.state.items_arr.find(item=>{return item.code == targetCode});
-        this.setState({selectedItem:targetItem});
+        var targetItem = this.state.items_arr.find(item => { return item.code == targetCode });
+        this.setState({ selectedItem: targetItem });
     }
 
-    clickAddBtnhandler(ev){
+    clickAddBtnhandler(ev) {
         this.setState({
-            creating:true,
+            creating: true,
         });
     }
 
-    clickEditBtnHandler(ev){
-        if(this.state.selectedItem){
+    clickEditBtnHandler(ev) {
+        if (this.state.selectedItem) {
             this.setState({
-                modifing:true,
+                modifing: true,
             });
         }
     }
 
-    clickTrashBtnHandler(ev){
-        if(this.state.selectedItem){
+    clickTrashBtnHandler(ev) {
+        if (this.state.selectedItem) {
             gTipWindow.popAlert(makeAlertData('警告', '确定删除"' + this.state.selectedItem.name + '"吗?', this.deleteTipCallback, [TipBtnOK, TipBtnNo], this.state.selectedItem));
         }
     }
@@ -551,29 +551,58 @@ class SqlBPItemPanel extends React.PureComponent {
         if (key == 'ok') {
             this.props.project.dataMaster.deleteSqlBP(target);
             this.setState({
-                magicObj:{},
+                magicObj: {},
             });
         }
     }
 
-    newItemCompleteHandler(newDBE){
+    newItemCompleteHandler(newDBE) {
         this.setState({
-            creating:false,
-            modifing:false,
+            creating: false,
+            modifing: false,
         });
     }
 
-    forcusSqlNode(nodeData){
-        this.setState({selectedItem:nodeData.bluePrint});
+    forcusSqlNode(nodeData) {
+        this.setState({ selectedItem: nodeData.bluePrint });
         var self = this;
         setTimeout(() => {
-            if(self.sqlbpEditorRef.current == null){
+            if (self.sqlbpEditorRef.current == null) {
                 return;
             }
             self.sqlbpEditorRef.current.forcusSqlNode(nodeData);
         }, 200);
     }
 
+    sourceInputChange(e){
+        this.setState({
+            sourceKeyword:e.target.value
+        })
+    }
+    renderSourceList(){
+        var items_sourceArr = this.state.items_arr;
+        var selectedItem = this.state.selectedItem;
+        var show_arr=[];
+        if(items_sourceArr == null){
+            return null;
+        }
+        if (this.state.sourceKeyword== null || this.state.sourceKeyword =='' ) {
+            show_arr=items_sourceArr;
+        }else{
+            for(var i=0,len =items_sourceArr.length;i<len;i++){
+                if (items_sourceArr[i].name.indexOf(this.state.sourceKeyword) >= 0) {
+                    show_arr.push(items_sourceArr[i]);
+                  }
+            }
+        }
+        return show_arr.map(item => {
+            if (item.group != 'custom') {
+                return null;
+            }
+            return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>
+            {item.name + '-' + item.type}</div>
+        });
+    }
     render() {
         var selectedItem = this.state.selectedItem;
         return (
@@ -587,39 +616,47 @@ class SqlBPItemPanel extends React.PureComponent {
                 barClass='bg-secondary'
                 panel1={
                     <div className='d-flex flex-column flex-grow-1 flex-shrink-1 w-100' >
-                        已创建的:
+                        <div className="input-group input-group-sm">
+                            <span className="input-group-addon" id="sizing-addon3">数据源:</span>
+                            <input type="text" className="form-control" placeholder="请输入" aria-describedby="sizing-addon3"
+                            onChange={this.sourceInputChange}/>
+                        </div>
+                        
                         <div className='list-group flex-grow-1 flex-shrink-1 bg-dark autoScroll'>
-                            {
-                                this.state.items_arr.map(item=>{
-                                    if(item.group != 'custom'){
-                                        return null;
-                                    }
-                                    return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>{item.name + '-' + item.type}</div>
-                                })
-                            }
-                            <span className='dropdown-divider' />
-                            <span className='text-light' >以下是控件定制数据源</span>
-                            {
-                                this.state.items_arr.map(item=>{
-                                    if(item.group == 'custom'){
-                                        return null;
-                                    }
-                                    return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>{item.name + '-' + item.type}</div>
-                                })
-                            }
+                                {
+                                    /*this.state.items_arr.map(item => {
+                                        if (item.group != 'custom') {
+                                            return null;
+                                        }
+                                        return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>
+                                            {item.name + '-' + item.type}
+                                        </div>
+                                    })*/
+                                    this.renderSourceList()
+                                }
+                                <span className='dropdown-divider' />
+                                <span className='text-light' >以下是控件定制数据源</span>
+                                {
+                                    this.state.items_arr.map(item => {
+                                        if (item.group == 'custom') {
+                                            return null;
+                                        }
+                                        return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>{item.name + '-' + item.type}</div>
+                                    })
+                                }
+                            </div>
+                            <div className='flex-shrink-0 btn-group'>
+                                <button type='button' onClick={this.clickTrashBtnHandler} className='btn'><i className='fa fa-trash text-danger' /></button>
+                                <button type='button' onClick={this.clickAddBtnhandler} className='btn btn-success flex-grow-1'><i className='fa fa-plus' /></button>
+                                <button type='button' onClick={this.clickEditBtnHandler} className='btn'><i className='fa fa-edit' /></button>
+                            </div>
                         </div>
-                        <div className='flex-shrink-0 btn-group'>
-                            <button type='button' onClick={this.clickTrashBtnHandler} className='btn'><i className='fa fa-trash text-danger' /></button>
-                            <button type='button' onClick={this.clickAddBtnhandler} className='btn btn-success flex-grow-1'><i className='fa fa-plus' /></button>
-                            <button type='button' onClick={this.clickEditBtnHandler} className='btn'><i className='fa fa-edit' /></button>
+                    }
+                    panel2={
+                        <div className='d-flex flex-grow-1 flex-shrink-1 bg-dark mw-100'>
+                            <SqlBPEditor ref={this.sqlbpEditorRef} item={selectedItem} />
                         </div>
-                    </div>
-                }
-                panel2={
-                    <div className='d-flex flex-grow-1 flex-shrink-1 bg-dark mw-100'>
-                        <SqlBPEditor ref={this.sqlbpEditorRef} item={selectedItem} />
-                    </div>
-                }
+                    }
                 />
             </React.Fragment>)
     }
@@ -639,21 +676,21 @@ class DataMasterPanel extends React.PureComponent {
             CreateNavItemData('数据库', <DataBasePanel project={this.props.project} />),
             CreateNavItemData('创造数据', <SqlBPItemPanel ref={this.sqlBPPanelRef} project={this.props.project} />),
         ];
-        
+
         this.navData = {
             selectedItem: navItems[1],
             items: navItems,
         };
     }
 
-    forcusSqlNode(nodeData){
-        if(this.navbarRef.current == null){
+    forcusSqlNode(nodeData) {
+        if (this.navbarRef.current == null) {
             return;
         }
         this.navbarRef.current.selectByText('创造数据');
         var self = this;
         setTimeout(() => {
-            if(self.sqlBPPanelRef.current == null){
+            if (self.sqlBPPanelRef.current == null) {
                 return;
             }
             self.sqlBPPanelRef.current.forcusSqlNode(nodeData);
@@ -696,51 +733,106 @@ class DataMasterPanel extends React.PureComponent {
     }
 }
 
-class QuickSqlBPEditPanel extends React.PureComponent{
+class QuickSqlBPEditPanel extends React.PureComponent {
     constructor(props) {
         super(props);
-        this.state={
-            blueprints_arr:[]
+        this.state = {
+            blueprints_arr: []
         }
         autoBind(this);
     }
 
-    showBlueprint(target){
+    showBlueprint(target) {
         var index = this.state.blueprints_arr.indexOf(target);
-        if(index == -1){
+        if (index == -1) {
             this.setState({
-                blueprints_arr:this.state.blueprints_arr.concat(target),
+                blueprints_arr: this.state.blueprints_arr.concat(target),
             });
         }
     }
 
-    hideBlueprint(target){
+    hideBlueprint(target) {
         var index = this.state.blueprints_arr.indexOf(target);
-        if(index != -1){
+        if (index != -1) {
             var newArr = this.state.blueprints_arr.concat();
-            newArr.splice(index,1);
+            newArr.splice(index, 1);
             this.setState({
-                blueprints_arr:newArr,
+                blueprints_arr: newArr,
             });
         }
     }
 
-    prePanelCloseHandler(thePanel){
+    prePanelCloseHandler(thePanel) {
         this.hideBlueprint(thePanel.props.targetBP);
         return false;
     }
 
-    render(){
+    render() {
         var bpArr = this.state.blueprints_arr;
-        if(bpArr.length == 0){
+        if (bpArr.length == 0) {
             return null;
         }
-        return bpArr.map(bp=>{
-            return(<FloatPanelbase preClose={this.prePanelCloseHandler} key={bp.code} title={'编辑:' + bp.name} initShow={true} initMax={false} width={800} height={640} targetBP={bp}>
+        return bpArr.map(bp => {
+            return (<FloatPanelbase preClose={this.prePanelCloseHandler} key={bp.code} title={'编辑:' + bp.name} initShow={true} initMax={false} width={800} height={640} targetBP={bp}>
                 <div className='d-flex flex-grow-1 flex-shrink-1 bg-dark mw-100'>
                     <C_SqlNode_Editor bluePrint={bp} />
                 </div>
             </FloatPanelbase>);
         });
+    }
+}
+
+class QuickKeyWordSynBar extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        this.state = {
+            keyword: '',
+            syning:false,
+        }
+        autoBind(this);
+
+        this.barStyle = {
+            maxWidth: '200px'
+        };
+    }
+
+    kerwordChangedHandler(ev) {
+        this.setState({
+            keyword: ev.target.value,
+        });
+    }
+
+    fetchEndCallBack(result){
+        var fetchData = result.json;
+        if (fetchData.data && fetchData.data.length > 0) {
+            g_dataBase.synEnityFromFetch(fetchData.data);
+        }
+        this.setState({
+            syning: false,
+        });
+    }
+
+    synClickHandler(ev) {
+        var keyword = this.state.keyword;
+        if (keyword == null || keyword.length < 2)
+            return;
+
+        fetchJsonPost('server', { action: 'syndata_bykeyword', keyword: keyword }, this.fetchEndCallBack);
+        this.setState({
+            syning: true,
+        });
+    }
+
+    render() {
+        var synItem = null;
+        if(this.state.syning){
+            synItem = <i className='fa fa-refresh fa-spin' />
+        }
+        return <div className='input-group flex-grow-0 flex-shrink-0' style={this.barStyle}>
+            <input type="text" className="form-control" placeholder="关键字" value={this.state.keyword} onChange={this.kerwordChangedHandler} />
+            <div className="input-group-append">
+                <button className={"btn btn-" + (this.state.syning ? 'secondary' : 'dark')} type="button" onClick={this.syning ? null : this.synClickHandler}>同步数据{synItem}</button>
+            </div>
+        </div>
     }
 }

@@ -267,19 +267,22 @@ class ProjectContainer extends React.PureComponent {
             <React.Fragment>
                 <CFlowMaster ref={gFlowMasterRef} />
                 <div className='flex-grow-1 flex-shrink-1 d-flex flex-column'>
-                    <div className="btn-group flex-grow-0 flex-shrink-0" role="group">
-                        <MenuItem id='MI_HB' text={"HB" + (LoginUser == null ? '' : LoginUser.name)} className='text-primary' >
-                            <MenuCammandItem text="打开项目" cmd='open' executFun={this.executCmd} />
-                            <MenuCammandItem text="创建空项目" cmd='create' executFun={this.executCmd} />
-                            <MenuCammandItem text="打开流程大师" cmd='openflowmaster' executFun={this.executCmd} />
-                        </MenuItem>
-                        {
-                            this.state.projects.map((item, i) => {
-                                return (
-                                    <TitleHeaderItem key={item.designeConfig.name} project={item} index={i} clickTitlehandler={this.clickTitlehandler} clickClosehandler = {this.clickClosehandler} active={i == this.state.selectedIndex} />
-                                )
-                            })
-                        }
+                    <div className="d-flex flex-grow-0 flex-shrink-0" >
+                        <div className="btn-group flex-grow-1 flex-shrink-1" role="group">
+                            <MenuItem id='MI_HB' text={"HB" + (LoginUser == null ? '' : LoginUser.name)} className='text-primary' >
+                                <MenuCammandItem text="打开项目" cmd='open' executFun={this.executCmd} />
+                                <MenuCammandItem text="创建空项目" cmd='create' executFun={this.executCmd} />
+                                <MenuCammandItem text="打开流程大师" cmd='openflowmaster' executFun={this.executCmd} />
+                            </MenuItem>
+                            {
+                                this.state.projects.map((item, i) => {
+                                    return (
+                                        <TitleHeaderItem key={item.designeConfig.name} project={item} index={i} clickTitlehandler={this.clickTitlehandler} clickClosehandler = {this.clickClosehandler} active={i == this.state.selectedIndex} />
+                                    )
+                                })
+                            }
+                        </div>
+                        <QuickKeyWordSynBar />
                     </div>
                     <ProjectManagerPanel ref={this.projManagerRef} wantOpenProjectFun={this.wantOpenProject} />
                     <LoginPanel logCompleteFun={this.logCompleteFun} />

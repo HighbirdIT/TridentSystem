@@ -8,6 +8,7 @@ const FLOWNODE_SEND_MESSAGE = 'sendmessage';
 const FLOWNODE_MESSAGE_CARDITEM = 'messagecarditem';
 const FLOWNODE_CONFIRM_FLOWSTEP = 'confirmflowstep';
 const FLOWNODE_NOWDATE = 'nowdate';
+const FLOWNODE_EXAM = 'exam';
 
 var FlowNodeClassMap = {
 };
@@ -2301,6 +2302,156 @@ class FlowNode_NowDate extends SqlNode_Base {
         return selfCompileRet;
     }
 }
+
+class FlowNode_EXAM extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, FLOWNODE_EXAM, '考核', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            this.inputScokets_arr.forEach(socket => {
+                switch (socket.name) {
+                    case 'targetID':
+                        this.targetIDScoket = socket;
+                        break;
+                    case 'examType':
+                        this.examTypeScoket = socket;
+                        break;
+                    case 'reason':
+                        this.reasonScoket = socket;
+                        break;
+                    case 'processDate':
+                        this.processDateScoket = socket;
+                        break;
+                    case 'processDate':
+                        this.processDateScoket = socket;
+                        break;
+                    case 'processDate':
+                        this.processDateScoket = socket;
+                        break;
+                    case 'processDate':
+                        this.processDateScoket = socket;
+                        break;
+                    default:
+                        console.warn('无法正确识别的接口:' + socket.name);
+                }
+            });
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+        }
+
+        if (this.flowStepScoket == null) {
+            this.flowStepScoket = new NodeSocket('flowStep', this, true);
+            this.addSocket(this.flowStepScoket);
+        }
+        this.flowStepScoket.set({
+            inputable: true,
+            inputDDC_setting: {
+                textAttrName: 'fullName',
+                valueAttrName: 'code',
+                options_arr: gFlowMaster.getAllSteps,
+            },
+            hideIcon: true,
+            label: '关联流程步骤',
+        });
+
+        if (this.projectScoket == null) {
+            this.projectScoket = new NodeSocket('project', this, true);
+            this.addSocket(this.projectScoket);
+        }
+        this.projectScoket.set({
+            inputable: true,
+            inputDDC_setting: {
+                textAttrName: 'text',
+                valueAttrName: 'value',
+                options_arr: ProjectRecords_arr,
+            },
+            hideIcon: true,
+            label: '关联方案',
+        });
+
+        if (this.intdataScoket == null) {
+            this.intdataScoket = new NodeSocket('intdata', this, true);
+            this.addSocket(this.intdataScoket);
+        }
+        this.intdataScoket.set({
+            type: ValueType.Int,
+            label: '关联数据',
+        });
+
+
+        if (this.titleScoket == null) {
+            this.titleScoket = new NodeSocket('title', this, true, { type: ValueType.String, inputable: true });
+            this.addSocket(this.titleScoket);
+        }
+        this.titleScoket.label = '标题';
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, []);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var sendMsgNode = preNodes_arr[preNodes_arr.length - 1];
+        var flowStep = this.flowStepScoket.defval;
+        var project = this.projectScoket.defval;
+
+        var nodeThis = this;
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketComRet = null;
+        var myCodeBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myCodeBlock);
+        var cardItemVarName = sendMsgNode.id + '_cardItems_arr';
+
+
+        // 处置通知 
+        if (this.checkCompileFlag(IsEmptyString(flowStep), '需要关联流程步骤', helper)) {
+            return false;
+        }
+        if (this.checkCompileFlag(IsEmptyString(project), '需要关联方案', helper)) {
+            return false;
+        }
+        socketComRet = this.getSocketCompileValue(helper, this.intdataScoket, usePreNodes_arr, belongBlock, true, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var intDataValue = socketComRet.value;
+
+        socketComRet = this.getSocketCompileValue(helper, this.titleScoket, usePreNodes_arr, belongBlock, true, false);
+        if (socketComRet.err) { return false; }
+        var titleValue = socketComRet.value;
+
+        var strVarName = this.id + '_str';
+        myCodeBlock.pushLine(makeLine_DeclareVar(strVarName, project + " + ','",false));
+        myCodeBlock.pushLine(strVarName + "+=" + flowStep + " + ',';");
+        myCodeBlock.pushLine(strVarName + "+=" + intDataValue + " + ',';");
+        myCodeBlock.pushLine(strVarName + "+=" + titleValue + ";");
+        myCodeBlock.pushLine(cardItemVarName + ".push(" + strVarName + ".replace(/\\|/g,''));");
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outFlowSocket, '', myCodeBlock)
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        return selfCompileRet;
+    }
+}
+
 FlowNodeClassMap[FLOWNODE_VAR_GET] = {
     modelClass: FlowNode_Var_Get,
     comClass: C_FlowNodeDef_Var_Get,
