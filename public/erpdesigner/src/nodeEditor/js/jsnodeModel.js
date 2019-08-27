@@ -9008,7 +9008,6 @@ class JsNode_OpenExternal_Page extends JSNode_Base {
                 valueAttrName: 'code',
                 options_arr: gFlowMaster.getAllSteps,
             },
-            hideIcon: true,
             label: '流程步骤',
         });
 
@@ -9051,7 +9050,11 @@ class JsNode_OpenExternal_Page extends JSNode_Base {
             targetProjName = singleQuotesStr(theProj.英文名称);
         }
 
-        var flowStep = this.flowStepScoket.defval;
+        socketComRet = this.getSocketCompileValue(helper, this.flowStepScoket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var flowStep = socketComRet.value;
         socketComRet = this.getSocketCompileValue(helper, this.intdataScoket, usePreNodes_arr, belongBlock, true, true);
         if (socketComRet.err) {
             return false;

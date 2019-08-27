@@ -256,6 +256,12 @@ function openPage(name, stepcode, stepdata) {
         return;
     }
     var targetPath = '/erppage/' + (isMobile ? 'mb' : 'pc') + '/' + name;
+    if (stepcode != null && stepcode != '0') {
+        targetPath += '?flowStep=' + stepcode;
+        if (stepdata != null && stepdata.length > 0) {
+            targetPath += '&stepData' + stepcode + '=' + stepdata;
+        }
+    }
     location.href = targetPath;
 }
 
