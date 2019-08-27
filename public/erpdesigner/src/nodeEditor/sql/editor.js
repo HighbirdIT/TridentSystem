@@ -850,6 +850,7 @@ class C_SqlNode_Editor extends React.PureComponent{
                                         <button type='button' onClick={this.clickExportBtnHandler} className='btn btn-dark' >导出</button>
                                         <button type='button' onClick={this.clickBigBtnHandler} className='btn btn-dark' ><i className='fa fa-search-plus' /></button>
                                         <button type='button' onClick={this.clickSmallBtnHandler} className='btn btn-dark' ><i className='fa fa-search-minus' /></button>
+                                        <QuickKeyWordSynBar />
                                     </div>
                                 </div>
                             </div>
