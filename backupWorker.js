@@ -13,7 +13,7 @@ function doBackUpWork(source) {
     if (!fs.existsSync(backUpDst_abspath)) {
 		fs.mkdir(backUpDst_abspath);
     }
-    var todayPath = path.join(backUpDst_abspath,today.getFullYear() + '_' + today.getMonth() + '_' + today.getDate());
+    var todayPath = path.join(backUpDst_abspath,today.getFullYear() + '_' + (today.getMonth() + 1) + '_' + today.getDate());
     if (fs.existsSync(todayPath)) {
 		return;
     }
