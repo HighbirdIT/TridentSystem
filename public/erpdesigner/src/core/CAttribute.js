@@ -296,6 +296,8 @@ const AttrNames={
     ManualChanged:'manualChanged',
     RendererCtlType:'rendererctltype',
     Wrap:'wrap',
+    OutputCharCount:'outputcharcount',
+    AutoHomeBtn:'autoHomeBtn',
 
     Event:{
         OnClick:'onclick',
@@ -304,6 +306,7 @@ const AttrNames={
         OnInsert:'onInsert',
         OnLoad:'onLoad',
         OnChanged:'onChanged',
+        OnMouseDown:'onMouseDown',
     },
 
     LayoutNames:{

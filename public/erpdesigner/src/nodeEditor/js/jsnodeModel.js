@@ -684,6 +684,9 @@ class JSNode_BluePrint extends EventEmitter {
                         // ctl onchanged fun
                         theFun.scope.getVar(ctlKernel.id + '_path', true, VarNames.ParentPath + "+'." + ctlKernel.id + "'");
                     }
+                    else if(this.name == (ctlKernel.id + '_' + AttrNames.Event.OnMouseDown)){
+                        theFun.scope.getVar(ctlKernel.id + '_path', true, "ev == null ? null : getAttributeByNode(ev.target,'ctl-fullpath')");
+                    }
                 }
                 if (belongUserControl) {
                     // 自订控件中的按钮
@@ -8949,7 +8952,6 @@ class JSNode_DD_NavClose extends JSNode_Base {
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
-
         return selfCompileRet;
     }
 }
@@ -8992,7 +8994,6 @@ class JsNode_OpenExternal_Page extends JSNode_Base {
                 valueAttrName: 'value',
                 options_arr: ProjectRecords_arr,
             },
-            hideIcon: true,
             label: '目标页面',
         });
 
@@ -9031,22 +9032,38 @@ class JsNode_OpenExternal_Page extends JSNode_Base {
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
         var theProject = this.bluePrint.master.project;
-        var thePage = theProject.getPageById(this.pageCode);
-        if (this.checkCompileFlag(thePage == null, '选择的不是有效的页面', helper)) {
+
+        var socketComRet;
+        var targetProjName = '';
+        socketComRet = this.getSocketCompileValue(helper, this.projectScoket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
             return false;
         }
 
+        if (socketComRet.link) {
+            targetProjName = socketComRet.value;
+        }
+        else{
+            var theProj = ProjectRecords_arr.find(p=>{return p.value == socketComRet.value;});
+            if (this.checkCompileFlag(theProj == null, '没有选择目标页面', helper)) {
+                return false;
+            }
+            targetProjName = singleQuotesStr(theProj.英文名称);
+        }
+
+        var flowStep = this.flowStepScoket.defval;
+        socketComRet = this.getSocketCompileValue(helper, this.intdataScoket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var intDataValue = socketComRet.value;
         var myJSBlock = new FormatFileBlock('');
-        myJSBlock.pushLine("setTimeout(() => {store.dispatch(makeAction_gotoPage('" + this.pageCode + "'));},50);");
+        myJSBlock.pushLine("openPage(" + targetProjName + "," + (IsEmptyString(flowStep) ? 'null' : flowStep)  + "," + (IsEmptyString(intDataValue) ? 'null' : intDataValue)  + ");");
         belongBlock.pushChild(myJSBlock);
 
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
-
-        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
-            return false;
-        }
 
         return selfCompileRet;
     }
@@ -9163,6 +9180,10 @@ JSNodeClassMap[JSNODE_DO_FLOWSTEP] = {
 JSNodeClassMap[JSNODE_JUMP_PAGE] = {
     modelClass: JSNode_JumpPage,
     comClass: C_JSNode_JumpPage,
+};
+JSNodeClassMap[JSNODE_OPENEXTERNAL_PAGE] = {
+    modelClass: JsNode_OpenExternal_Page,
+    comClass: C_Node_SimpleNode,
 };
 JSNodeClassMap[JSNODE_CONTROL_API_CALLFUN] = {
     modelClass: JSNode_Control_Api_CallFun,

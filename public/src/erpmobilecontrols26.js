@@ -211,6 +211,31 @@ function closePage(pid) {
     }
 }
 
+function openPage(name, stepcode, stepdata) {
+    if (name == null || name.length == 0) {
+        console.error('openPage 的name参数为空');
+        return;
+    }
+    var targetPath = '/erppage/' + (isMobile ? 'mb' : 'pc') + '/' + name;
+    location.href = targetPath;
+}
+
+function wantGoHomePage(){
+    var msg=PopMessageBox('',EMessageBoxType.Loading, '');
+	msg.query('返回首页?',[{label:'确定',key:'确定'},{label:'取消',key:'取消'}],(theKey)=>{
+        if(theKey == '确定'){
+            goHomePage();
+        }
+        else{
+            msg.fireClose();
+        }
+    });
+}
+
+function goHomePage(){
+    openPage('HBERP');
+}
+
 function SetCurrentComponent(ctrlProps, component) {
     ctrlCurrentComponent_map[MakePath(ctrlProps.parentPath, ctrlProps.id)] = component;
 }
@@ -683,7 +708,7 @@ class ERPC_DropDown extends React.PureComponent {
     }
 
     dropDownClosed() {
-        if(this.state.opened){
+        if (this.state.opened) {
             this.setState({ opened: false });
             removeFixedItem(this.popPanelItem);
         }
@@ -1214,9 +1239,9 @@ class ERPC_Text extends React.PureComponent {
                 var precision = this.props.precision == null ? 2 : parseInt(this.props.precision);
                 var t_arr = ('' + val).split('.');
                 rlt = t_arr[0];
-                if(t_arr.length > 1){
+                if (t_arr.length > 1) {
                     rlt += '.' + t_arr[1].substr(0, precision);
-                } 
+                }
                 break;
             case 'date':
                 if (val.length > 10) {
@@ -1291,8 +1316,8 @@ class ERPC_Text extends React.PureComponent {
                         break;
                 }
                 var useValue = this.formatInputValue(this.props.value);
-                if(useValue != this.props.value){
-                    if(!IsEmptyString(useValue) && !IsEmptyString(this.props.value) && useValue != this.props.value && (this.props.type=='time' || this.props.type=='date' || this.props.type=='float')){
+                if (useValue != this.props.value) {
+                    if (!IsEmptyString(useValue) && !IsEmptyString(this.props.value) && useValue != this.props.value && (this.props.type == 'time' || this.props.type == 'date' || this.props.type == 'float')) {
                         setTimeout(() => {
                             store.dispatch(makeAction_setStateByPath(
                                 useValue,
@@ -1417,6 +1442,7 @@ class ERPC_Label extends React.PureComponent {
         }
         var rootDivClassName = 'erpc_label ' + (this.props.className == null ? '' : this.props.className);
         var contentElem = null;
+        var tileLen = 0;
         if (this.props.fetching) {
             rootDivClassName += ' rounded border p-1';
             contentElem = <div className='flex-grow-1 flex-shrink-1'><i className='fa fa-spinner fa-pulse fa-fw' />通讯中</div>;
@@ -1436,21 +1462,32 @@ class ERPC_Label extends React.PureComponent {
         }
         else {
             contentElem = FormatStringValue(this.props.text, this.props.type, this.props.precision);
+            tileLen = contentElem.toString().length;
         }
-        return (<span className={rootDivClassName} >{contentElem}</span>);
+
+        var needCtlPath = false;
+        if (this.props.onMouseDown != null) {
+            needCtlPath = true;
+        }
+
+        return (<span className={rootDivClassName} charlen={this.props.boutcharlen ? tileLen : null} onMouseDown={this.props.onMouseDown} ctl-fullpath={needCtlPath ? this.props.fullPath : null} >{contentElem}</span>);
     }
 }
 
 function ERPC_Label_mapstatetoprops(state, ownprops) {
-    var ctlPath = MakePath(ownprops.parentPath, (ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex), ownprops.id);
-    var ctlState = getStateByPath(state, ctlPath, {});
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    var rowState = propProfile.rowState;
     var useText = ctlState.text != null ? ctlState.text : (ownprops.text ? ownprops.text : '');
+
     return {
         text: useText,
         visible: ctlState.visible,
         fetching: ctlState.fetching,
         visible: ctlState.visible,
         fetchingErr: ctlState.fetchingErr,
+        fullParentPath: propProfile.fullParentPath,
+        fullPath: propProfile.fullPath,
     };
 }
 
@@ -1537,30 +1574,30 @@ class ERPC_Button extends React.PureComponent {
         var className = this.props.className;
         var childElem = null;
         var titleElem = this.props.title;
-        if(this.props.fetching){
+        if (this.props.fetching) {
             titleElem = <div><i className='fa fa-spinner fa-pulse fa-fw' />通讯中</div>;
         }
-        else if(this.props.fetchingErr){
+        else if (this.props.fetchingErr) {
             titleElem = <div className='text-danger'><i className='fa fa-warning' />this.props.fetchingErr.info</div>;
         }
-        if(this.props.btnType == 'ListLike'){
+        if (this.props.btnType == 'ListLike') {
             className = 'w-100 d-flex btn btn-light align-items-center text-left';
-            childElem =  <React.Fragment>
+            childElem = <React.Fragment>
                 <div className='flex-grow-1 flex-shrink-1 hidenOverflow'>
                     {this.props.children}
                     {titleElem}
                 </div>
                 <i className='fa fa-angle-right' />
-                </React.Fragment>;
+            </React.Fragment>;
         }
         else {
-            if (className.indexOf('flex-shrink-') == -1){
+            if (className.indexOf('flex-shrink-') == -1) {
                 className += ' flex-shrink-0';
             }
             childElem = <React.Fragment>
                 {this.props.children}
                 {titleElem}
-                </React.Fragment>;
+            </React.Fragment>;
         }
         return <button className={className} style={this.props.style} onClick={this.props.onClick} ctl-fullpath={this.props.fullPath}>
             {childElem}
@@ -2131,23 +2168,23 @@ function BaseIsValueValid(nowState, visibleBelongState, ctlState, value, valueTy
 var gCToastMangerRef = React.createRef();
 var gCMessageBoxMangerRef = React.createRef();
 function SendToast(info, type, timeTime) {
-    if(isProduction && isInDingTalk){
+    if (isProduction && isInDingTalk) {
         var toastData = {
-            icon: '', 
-            text: info, 
-            duration: timeTime = null ? EToastTime.Small : timeTime, 
-            delay: 0, 
+            icon: '',
+            text: info,
+            duration: timeTime = null ? EToastTime.Small : timeTime,
+            delay: 0,
         }
-        switch(type){
+        switch (type) {
             case EToastType.Warning:
-            toastData.icon = isMobile ? 'error' : 'warning';
-            break;
+                toastData.icon = isMobile ? 'error' : 'warning';
+                break;
             case EToastType.Error:
-            toastData.icon = isMobile ? 'error' : 'error';
-            break;
+                toastData.icon = isMobile ? 'error' : 'error';
+                break;
             default:
-            toastData.icon = 'success';
-            break;
+                toastData.icon = 'success';
+                break;
         }
         dingdingKit.device.notification.toast(toastData);
         return;
@@ -2318,7 +2355,7 @@ class MessageBoxItem {
         if (this.changedAct != null) {
             this.changedAct();
         }
-        else{
+        else {
             this.manager.redraw();
         }
     }
@@ -2604,6 +2641,6 @@ function getPageEntryParam(pageid, paramName, defValue) {
     return entryObj[paramName];
 }
 
-function ERPC_ListForm(target){
+function ERPC_ListForm(target) {
 
 }

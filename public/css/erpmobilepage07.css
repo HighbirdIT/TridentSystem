@@ -401,3 +401,64 @@ body{
 .tabitemtitle[vertical]{
     width: 1em;
 }
+
+.projectlink{
+    border: 2px solid #007bff !important;
+    font-size: 1em;
+    margin: 4px;
+    color: #fff;
+    background-color: #007bff;
+    padding: 4px;
+    border-radius: 0.25rem !important;
+    cursor: pointer;
+}
+
+.projectlink:hover {
+    color: #fff;
+    background-color: #0069d9;
+    border-color: #0062cc;
+  }
+
+.projectlink[charlen='4']{
+    max-width: 3em;
+}
+
+.projectlink[charlen='5']{
+    max-width: 4em;
+    font-size: 1em;
+}
+
+.projectlink[charlen='6']{
+    max-width: 4em;
+    font-size: 1em;
+}
+
+.projectlink[charlen='7']{
+    max-width: 5em;
+    font-size: 1em;
+}
+
+.projectlink[charlen='8']{
+    max-width: 5em;
+    font-size: 1em;
+}
+
+.projectlink[charlen='9']{
+    max-width: 6em;
+    font-size: 1em;
+}
+
+.projectlink[charlen='10']{
+    max-width: 6em;
+    font-size: 1em;
+}
+
+.projectlink[charlen='11']{
+    max-width: 7em;
+    font-size: 1em;
+}
+
+.projectlink[charlen='12']{
+    max-width: 7em;
+    font-size: 1em;
+}

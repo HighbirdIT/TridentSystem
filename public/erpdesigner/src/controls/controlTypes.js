@@ -159,7 +159,7 @@ function getCanLabeledControls(theKernel){
     var rlt_arr = DesignerConfig.getMobileCanLabeledControls();
     var parentUserCtls_arr = theKernel.searchParentKernel(UserControlKernel_Type);
     return rlt_arr.concat(theKernel.project.userControls_arr.filter(ctlkernel=>{
-        return parentUserCtls_arr.indexOf(ctlkernel) == -1;
+        return parentUserCtls_arr && parentUserCtls_arr.indexOf(ctlkernel) == -1;
     }).map(ctlkernel=>{
         return {
             label: ctlkernel.name,

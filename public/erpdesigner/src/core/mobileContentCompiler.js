@@ -420,8 +420,6 @@ class MobileContentCompiler extends ContentCompiler {
         renderBlock.subNextIndent();
         renderBlock.pushLine('</div>');
 
-        controlReactClass.constructorFun.pushLine('this.savedProps={};');
-
         controlReactClass.mapStateFun.scope.getVar('propProfile', true, "getControlPropProfile(ownprops, state)");
         controlReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullParentPath), makeStr_DotProp('propProfile', VarNames.FullParentPath)));
@@ -479,8 +477,11 @@ class MobileContentCompiler extends ContentCompiler {
         savePropCheckBlock.pushLine('var nowState = store.getState();');
         savePropCheckBlock.pushLine('var calledAct_map = {};');
         savePropCheckBlock.pushLine('var ctlState = getStateByPath(nowState,this.props.fullPath,{});');
-        savePropCheckBlock.pushLine('var rowChanged = this.props.rowIndex != this.savedProps.rowIndex;');
-        controlReactClass.renderFun.pushLine('this.savedProps.rowIndex = this.props.rowIndex;', 1);
+        savePropCheckBlock.pushLine('var savedProps = Object.assign({}, ctlState.savedProps);');
+        savePropCheckBlock.pushLine('var savedPropsChanged = false;');
+        savePropCheckBlock.pushLine('var rowChanged = this.props.rowIndex != savedProps.rowIndex;');
+        controlReactClass.renderFun.pushLine('if(rowChanged){savedProps.rowIndex = this.props.rowIndex;}');
+        controlReactClass.renderFun.pushLine('if(rowChanged || savedPropsChanged){needSetState.savedProps = savedProps;}');
         controlReactClass.renderFun.pushLine('if(!IsEmptyObject(needSetState)){', 1);
         controlReactClass.renderFun.pushLine('setTimeout(() => {store.dispatch(makeAction_setManyStateByPath(needSetState, this.props.fullPath));},50);', -1);
         controlReactClass.renderFun.pushLine('}');
@@ -576,9 +577,10 @@ class MobileContentCompiler extends ContentCompiler {
                     changedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
                     changedFun.retBlock.pushLine('return ' + VarNames.NeedSetState + ';');
 
-                    controlReactClass.savePropCheckBlock.pushLine("if(rowChanged || this.savedProps." + relyPath.berelyPropName + " != this.props." + relyPath.berelyPropName + "){", 1);
+                    controlReactClass.savePropCheckBlock.pushLine("if(rowChanged || savedProps." + relyPath.berelyPropName + " != this.props." + relyPath.berelyPropName + "){", 1);
                     controlReactClass.savePropCheckBlock.pushLine("needSetState = Object.assign(needSetState,this." + changedFunName + "(nowState,ctlState,calledAct_map));");
-                    controlReactClass.savePropCheckBlock.pushLine("this.savedProps." + relyPath.berelyPropName + " = this.props." + relyPath.berelyPropName + ';', -1);
+                    controlReactClass.savePropCheckBlock.pushLine("savedPropsChanged = true;");
+                    controlReactClass.savePropCheckBlock.pushLine("savedProps." + relyPath.berelyPropName + " = this.props." + relyPath.berelyPropName + ';', -1);
                     controlReactClass.savePropCheckBlock.pushLine('}');
                 }
                 if (accordionParents_arr) {
@@ -714,6 +716,7 @@ class MobileContentCompiler extends ContentCompiler {
         //pageReactClass.renderFun.pushLine(makeLine_Assign(VarNames.RetElem, '<div>' + pageKernel.getAttribute(AttrNames.Title) + '</div>'));
 
         if (!isPopable) {
+            var autoHomeBtn = pageKernel.getAttribute(AttrNames.AutoHomeBtn);
             var caseBlock = this.appRenderSwicth.getCaseBlock(singleQuotesStr(pageKernel.id));
             caseBlock.pushLine(makeLine_Assign('pageElem', '<' + pageKernel.getReactClassName(true) + ' />'));
 
@@ -722,7 +725,12 @@ class MobileContentCompiler extends ContentCompiler {
             if (!hideTitle) {
                 pageReactClass.renderHeaderFun.pushLine("var routeElem = " + VarNames.PageRouter + ".length > 1 ? <i className='fa fa-arrow-left' /> : null;");
                 pageReactClass.renderHeaderFun.pushLine("return (<div className='d-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader'>", 1);
-                pageReactClass.renderHeaderFun.pushLine("<h3 onClick={pageRoute_Back}>{routeElem}" + pageTitle + "</h3>", -1);
+                pageReactClass.renderHeaderFun.pushLine("<h3 onClick={pageRoute_Back}>{routeElem}" + pageTitle + "</h3>");
+                pageReactClass.renderHeaderFun.pushLine("<span className='flex-grow-1 flex-shrink-1' />");
+                if(autoHomeBtn){
+                    pageReactClass.renderHeaderFun.pushLine("<button onClick={wantGoHomePage} className='btn-sm btn-light mr-1'><i className='fa fa-home' /></button>");
+                }
+                pageReactClass.renderHeaderFun.subNextIndent();
                 pageReactClass.renderHeaderFun.pushLine("</div>);");
             }
         }
@@ -1816,6 +1824,16 @@ class MobileContentCompiler extends ContentCompiler {
         var autoHeight = theKernel.getAttribute(AttrNames.AutoHeight);
         var gridBodyTag = null;
         var childRenderBlock = null;
+        var titleAlgin = theKernel.getAttribute(AttrNames.TextAlign);
+        var titleAlginStr = 'justify-content-center';
+        switch(titleAlgin){
+            case ETextAlign.Left:
+            titleAlginStr = 'justify-content-start';
+            break;
+            case ETextAlign.Right:
+            titleAlginStr = 'justify-content-end';
+            break;
+        }
         if (isPageForm) {
             renderContentBlock.pushLine(VarNames.RetElem + " = (<React.Fragment>", 1);
             renderContentBlock.pushLine("<div className='d-flex flex-grow-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + "'>", 1);
@@ -1833,7 +1851,7 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentBlock.pushLine("</React.Fragment>);");
 
             renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'>", 1);
-            renderContentFun.retBlock.pushLine("{this.props.title && <div className='bg-dark text-light justify-content-center d-flex flex-shrink-0'><span>{this.props.title}</span></div>}");
+            renderContentFun.retBlock.pushLine("{this.props.title && <div className='bg-dark text-light "+titleAlginStr+" d-flex flex-shrink-0 p-1'><span>{this.props.title}</span></div>}");
             renderContentFun.retBlock.pushLine('{' + VarNames.RetElem + '}');
             renderContentFun.retBlock.subNextIndent();
             renderContentFun.retBlock.pushLine("</div>);");
@@ -1857,7 +1875,7 @@ class MobileContentCompiler extends ContentCompiler {
 
             renderContentFun.pushLine('return (', 1);
             renderContentFun.pushLine("<div ref={this.rootRef} className='" + layoutConfig.getClassName() + "' " + (hasFormStyle ? "style={" + formStyleID + "}" : '') + ">", 1);
-            renderContentFun.pushLine("{this.props.title && <div className='bg-dark text-light justify-content-center d-flex flex-shrink-0'><span>{this.props.title}</span></div>}");
+            renderContentFun.pushLine("{this.props.title && <div className='bg-dark text-light "+titleAlginStr+" d-flex flex-shrink-0 p-1'><span>{this.props.title}</span></div>}");
             if (!hideHeader) {
                 renderContentFun.pushLine("<div id='" + theKernel.id + "tableheader' className='mw-100 hidenOverflow flex-shrink-0 gridFormFixHeaderDiv'>", 1);
                 renderContentFun.pushLine("<table className='table' style={" + headTableStyleID + "}>", 1);
@@ -1896,7 +1914,7 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentBlock.pushLine('});');
 
             renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'>", 1);
-            renderContentFun.retBlock.pushLine("{this.props.title && <div className='bg-dark text-light justify-content-center d-flex flex-shrink-0'><span>{this.props.title}</span></div>}");
+            renderContentFun.retBlock.pushLine("{this.props.title && <div className='bg-dark text-light "+titleAlginStr+" d-flex flex-shrink-0 p-1'><span>{this.props.title}</span></div>}");
             var contentDivClassStr = 'd-flex flex-grow-1 flex-shrink-1 flex-wrap';
             if(orientation == Orientation_V){
                 contentDivClassStr += ' flex-column';
@@ -2939,6 +2957,9 @@ class MobileContentCompiler extends ContentCompiler {
         if (valType == ValueType.Float) {
             ctlTag.setAttr('precision', theKernel.getAttribute(AttrNames.FloatNum));
         }
+        if(theKernel.getAttribute(AttrNames.OutputCharCount)){
+            ctlTag.setAttr('boutcharlen', true);
+        }
         renderBlock.pushChild(ctlTag);
 
         if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
@@ -2976,6 +2997,16 @@ class MobileContentCompiler extends ContentCompiler {
             else {
                 ctlTag.setAttr('text', textField);
             }
+        }
+
+        var onMouseDownFunName = theKernel.id + '_' + AttrNames.Event.OnMouseDown;
+        var onMouseDownBp = project.scriptMaster.getBPByName(onMouseDownFunName);
+        if (onMouseDownBp != null) {
+            var compileRet = this.compileScriptBlueprint(onMouseDownBp, { params: ['ev'], haveDoneTip: false });
+            if (compileRet == false) {
+                return false;
+            }
+            ctlTag.setAttr('onMouseDown', bigbracketStr(onMouseDownFunName));
         }
     }
 

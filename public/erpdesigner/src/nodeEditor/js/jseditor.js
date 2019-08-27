@@ -165,6 +165,11 @@ const JSNodeEditorControls_arr =[
         type:'窗体控制'
     },
     {
+        label:'打开外部页面',
+        nodeClass:JsNode_OpenExternal_Page,
+        type:'窗体控制'
+    },
+    {
         label:'弹出页面',
         nodeClass:JSNode_PopPage,
         type:'窗体控制'

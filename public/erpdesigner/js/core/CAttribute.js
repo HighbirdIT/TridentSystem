@@ -320,6 +320,8 @@ var AttrNames = {
     ManualChanged: 'manualChanged',
     RendererCtlType: 'rendererctltype',
     Wrap: 'wrap',
+    OutputCharCount: 'outputcharcount',
+    AutoHomeBtn: 'autoHomeBtn',
 
     Event: {
         OnClick: 'onclick',
@@ -327,7 +329,8 @@ var AttrNames = {
         OnDelete: 'onDelete',
         OnInsert: 'onInsert',
         OnLoad: 'onLoad',
-        OnChanged: 'onChanged'
+        OnChanged: 'onChanged',
+        OnMouseDown: 'onMouseDown'
     },
 
     LayoutNames: {

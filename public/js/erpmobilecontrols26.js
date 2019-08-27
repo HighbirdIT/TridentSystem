@@ -250,6 +250,30 @@ function closePage(pid) {
     }
 }
 
+function openPage(name, stepcode, stepdata) {
+    if (name == null || name.length == 0) {
+        console.error('openPage 的name参数为空');
+        return;
+    }
+    var targetPath = '/erppage/' + (isMobile ? 'mb' : 'pc') + '/' + name;
+    location.href = targetPath;
+}
+
+function wantGoHomePage() {
+    var msg = PopMessageBox('', EMessageBoxType.Loading, '');
+    msg.query('返回首页?', [{ label: '确定', key: '确定' }, { label: '取消', key: '取消' }], function (theKey) {
+        if (theKey == '确定') {
+            goHomePage();
+        } else {
+            msg.fireClose();
+        }
+    });
+}
+
+function goHomePage() {
+    openPage('HBERP');
+}
+
 function SetCurrentComponent(ctrlProps, component) {
     ctrlCurrentComponent_map[MakePath(ctrlProps.parentPath, ctrlProps.id)] = component;
 }
@@ -1651,6 +1675,7 @@ var ERPC_Label = function (_React$PureComponent7) {
             }
             var rootDivClassName = 'erpc_label ' + (this.props.className == null ? '' : this.props.className);
             var contentElem = null;
+            var tileLen = 0;
             if (this.props.fetching) {
                 rootDivClassName += ' rounded border p-1';
                 contentElem = React.createElement(
@@ -1677,10 +1702,17 @@ var ERPC_Label = function (_React$PureComponent7) {
                 contentElem = React.createElement('i', { className: 'fa ' + (checked ? ' fa-check text-success' : ' fa-close text-danger') });
             } else {
                 contentElem = FormatStringValue(this.props.text, this.props.type, this.props.precision);
+                tileLen = contentElem.toString().length;
             }
+
+            var needCtlPath = false;
+            if (this.props.onMouseDown != null) {
+                needCtlPath = true;
+            }
+
             return React.createElement(
                 'span',
-                { className: rootDivClassName },
+                { className: rootDivClassName, charlen: this.props.boutcharlen ? tileLen : null, onMouseDown: this.props.onMouseDown, 'ctl-fullpath': needCtlPath ? this.props.fullPath : null },
                 contentElem
             );
         }
@@ -1692,14 +1724,16 @@ var ERPC_Label = function (_React$PureComponent7) {
 function ERPC_Label_mapstatetoprops(state, ownprops) {
     var _ref;
 
-    var ctlPath = MakePath(ownprops.parentPath, ownprops.rowIndex == null ? null : 'row_' + ownprops.rowIndex, ownprops.id);
-    var ctlState = getStateByPath(state, ctlPath, {});
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    var rowState = propProfile.rowState;
     var useText = ctlState.text != null ? ctlState.text : ownprops.text ? ownprops.text : '';
+
     return _ref = {
         text: useText,
         visible: ctlState.visible,
         fetching: ctlState.fetching
-    }, _defineProperty(_ref, 'visible', ctlState.visible), _defineProperty(_ref, 'fetchingErr', ctlState.fetchingErr), _ref;
+    }, _defineProperty(_ref, 'visible', ctlState.visible), _defineProperty(_ref, 'fetchingErr', ctlState.fetchingErr), _defineProperty(_ref, 'fullParentPath', propProfile.fullParentPath), _defineProperty(_ref, 'fullPath', propProfile.fullPath), _ref;
 }
 
 function ERPC_Label_dispatchtorprops(dispatch, ownprops) {

@@ -10,6 +10,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
             type:FunType_Client,
             group:EJsBluePrintFunGroup.CtlAttr,
         }),
+        new CAttribute('标题对齐', AttrNames.TextAlign, ValueType.String, ETextAlign.Center, true, false, TextAligns_arr),
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
         new CAttribute('数据源', AttrNames.DataSource, ValueType.DataSource, null, true, false, 'getCanUseDataSource', { text: 'name', value: 'code' }),
         new CAttribute('操作表', AttrNames.ProcessTable, ValueType.DataSource, null, true, false, g_dataBase.getAllTable, { text: 'name', value: 'code' }),
