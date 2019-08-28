@@ -639,9 +639,10 @@ class JSNode_BluePrint extends EventEmitter {
             }
         }
         
-        var belongUserControl = ctlKernel.searchParentKernel(UserControlKernel_Type, true);
-        var belongFormControl = ctlKernel.searchParentKernel(M_FormKernel_Type, true);
-        var reactParentControl = ctlKernel.getReactParentKernel(true);
+        var ctlIsUserControl = ctlKernel ? ctlKernel.type == UserControlKernel_Type : false;
+        var belongUserControl = !ctlKernel ? null : ctlKernel.searchParentKernel(UserControlKernel_Type, true);
+        var belongFormControl = !ctlKernel ? null :ctlKernel.searchParentKernel(M_FormKernel_Type, true);
+        var reactParentControl = !ctlKernel ? null :ctlKernel.getReactParentKernel(true);
         var baseBundleInitBlock = new FormatFileBlock('baseBundle');
         var initValue;
         var varName;
@@ -654,9 +655,22 @@ class JSNode_BluePrint extends EventEmitter {
         var ctlStateVarName;
         var ctlParentStateVarName;
         var nullableChecker = null;
+        var isOnclickFun = false;
+        var isOnchangedFun = false;
+        var isOnmouseDownFun = false;
+        var isOnloadFun = false;
+        var isNavieFun = false;
+        if (this.group == EJsBluePrintFunGroup.CtlEvent) {
+            isOnclickFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnClick;
+            isOnchangedFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnChanged;
+            isOnloadFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnLoad;
+            isOnmouseDownFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnMouseDown;
+
+            isNavieFun = isOnclickFun || isOnchangedFun || isOnloadFun || isOnmouseDownFun;
+        }
         if (this.group == EJsBluePrintFunGroup.CtlAttr || this.group == EJsBluePrintFunGroup.CtlEvent || this.group == EJsBluePrintFunGroup.CtlValid || this.group == EJsBluePrintFunGroup.GridRowBtnHandler || this.group == EJsBluePrintFunGroup.CtlFun) {
             var hadCallParm = this.group == EJsBluePrintFunGroup.CtlAttr;
-            if ((this.group == EJsBluePrintFunGroup.CtlEvent || this.group == EJsBluePrintFunGroup.CtlFun) && ctlKernel.type == UserControlKernel_Type) {
+            if (!isNavieFun && (this.group == EJsBluePrintFunGroup.CtlEvent || this.group == EJsBluePrintFunGroup.CtlFun) && ctlKernel.type == UserControlKernel_Type) {
                 hadCallParm = true;
             }
             if (!hadCallParm) {
@@ -673,24 +687,24 @@ class JSNode_BluePrint extends EventEmitter {
                 if (ctlKernel.type == ButtonKernel_Type) {
                     theFun.scope.getVar(ctlKernel.id + '_path', true, "ev == null ? null : getAttributeByNode(ev.target,'ctl-fullpath')");
                 }
-                else if (ctlKernel.type == UserControlKernel_Type) {
+                else if (ctlKernel.type == UserControlKernel_Type && !isNavieFun) {
                     theFun.scope.getVar(ctlKernel.id + '_path', true, "getBelongUserCtlPath(_path)");
                     orginParams_arr.forEach(p=>{
                         theFun.scope.getVar(p, true, "_params." + p);
                     });
                 }
                 else {
-                    if (this.name == (ctlKernel.id + '_' + AttrNames.Event.OnChanged)) {
+                    if (isOnchangedFun) {
                         // ctl onchanged fun
                         theFun.scope.getVar(ctlKernel.id + '_path', true, VarNames.ParentPath + "+'." + ctlKernel.id + "'");
                     }
-                    else if(this.name == (ctlKernel.id + '_' + AttrNames.Event.OnMouseDown)){
+                    else if(isOnmouseDownFun){
                         theFun.scope.getVar(ctlKernel.id + '_path', true, "ev == null ? null : getAttributeByNode(ev.target,'ctl-fullpath')");
                     }
                 }
                 if (belongUserControl) {
                     // 自订控件中的按钮
-                    theFun.scope.getVar(belongUserControl.id + '_path', true, "getBelongUserCtlPath(" + ctlKernel.id + "_path)");
+                    theFun.scope.getVar(belongUserControl.id + '_path', true, "getBelongUserCtlPath(" + ctlKernel.id + "_path" + (ctlIsUserControl ? ',' + singleQuotesStr(ctlKernel.id) : '') + ")");  // 本控件也是自订控件时，获取所属自订控件路径需要特殊处理
                     theFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath', [VarNames.State, belongUserControl.id + '_path']));
                 }
             }
@@ -736,6 +750,7 @@ class JSNode_BluePrint extends EventEmitter {
             for (var formId in compilHelper.useForm_map) {
                 var useFormData = compilHelper.useForm_map[formId];
                 var isGridForm = useFormData.formKernel.isGridForm();
+                var isListForm = useFormData.formKernel.isListForm();
                 var selectMode = useFormData.formKernel.getAttribute(AttrNames.SelectMode);
                 var isSingleSelectMode = selectMode == ESelectMode.Single;
                 var isMultiSelectMode = selectMode == ESelectMode.Multi;
@@ -761,7 +776,7 @@ class JSNode_BluePrint extends EventEmitter {
 
 
                 if (isUseFormCtl || isUseFormColumn) {
-                    if (isGridForm) {
+                    if (isGridForm || isListForm) {
                         if (useFormData.useContextRow) {
                             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
                                 theFun.scope.getVar(VarNames.RowIndexInfo_map, true, 'getRowIndexMapFromPath(' + VarNames.FullParentPath + ')');

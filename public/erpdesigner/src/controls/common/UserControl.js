@@ -17,6 +17,9 @@ const UserControlKernelAttrsSetting = GenControlKernelAttrsSetting([
     ]),
     new CAttributeGroup('事件接口', [
     ]),
+    new CAttributeGroup('原生事件',[
+        new CAttribute('OnMDown', AttrNames.Event.OnMouseDown, ValueType.Event),
+    ]),
 ], true, false);
 
 const gUserControlAttsByType_map = {};
@@ -441,9 +444,11 @@ class CUserControl extends React.PureComponent {
                 this.unlistenTarget(this.state.templateKernel);
                 this.listenTarget(this.props.ctlKernel);
                 var self = this;
+                var ctlKernel = this.props.ctlKernel;
                 setTimeout(() => {
                     self.setState({
-                        templateKernel: self.props.ctlKernel
+                        templateKernel: ctlKernel,
+                        orientation: ctlKernel.getAttribute(AttrNames.Orientation),
                     });
                 }, 50);
             }

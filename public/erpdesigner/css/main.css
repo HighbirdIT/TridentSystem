@@ -668,3 +668,12 @@
 .controlHandleBar{
   position: relative;
 }
+
+.projectlink{
+  border: 2px solid #007bff !important;
+  font-size: 1em;
+  margin: 4px;
+  padding: 4px;
+  border-radius: 0.25rem !important;
+  cursor: pointer;
+}

@@ -27,17 +27,6 @@ var M_PageKernel = function (_ContainerKernelBase) {
         if (eventBP) {
             eventBP.ctlID = _this.id;
         }
-        /*
-        var nowParent = this;
-        for(var i=0;i<1;++i){
-            var newC = new M_ContainerKernel(null, project);
-            nowParent.appandChild(newC);
-            nowParent = newC;
-            for(var j=0;j<5;++j){
-                newC.appandChild(new M_LabelKernel(null, project));
-            }
-        }
-        */
         return _this;
     }
 
