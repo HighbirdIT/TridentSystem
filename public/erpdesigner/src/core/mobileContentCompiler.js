@@ -415,7 +415,8 @@ class MobileContentCompiler extends ContentCompiler {
         var childRenderBlock = new FormatFileBlock(userCtlKernel.id);
         var renderBlock = controlReactClass.renderFun;
         renderBlock.pushLine('if(this.props.visible == false){return null;}');
-        renderBlock.pushLine(makeStr_AddAll(VarNames.RetElem, " = <div className='", layoutConfig.getClassName(), "' ", styleStr, " userctlpath={this.props.fullPath}", ">"), 1);
+        renderBlock.pushLine('var needFullPath = this.props.onMouseDown != null;');
+        renderBlock.pushLine(makeStr_AddAll(VarNames.RetElem, " = <div className='", layoutConfig.getClassName(), "' ", styleStr, " userctlpath={this.props.fullPath} ctl-fullpath={needFullPath ? this.props.fullPath : null} onMouseDown={this.props.onMouseDown}", ">"), 1);
         renderBlock.pushChild(childRenderBlock);
         renderBlock.subNextIndent();
         renderBlock.pushLine('</div>');
@@ -1016,6 +1017,7 @@ class MobileContentCompiler extends ContentCompiler {
         ctlTag.setAttr('id', theKernel.id);
         ctlTag.setAttr('parentPath', parentPath);
 
+        this.compileOnMouseDownEvent(theKernel, ctlTag);
 
         renderBlock.pushChild(ctlTag);
         if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
@@ -1367,6 +1369,20 @@ class MobileContentCompiler extends ContentCompiler {
                 kernelMidData.needSetStates_arr.push(setValueStateItem);
             }
         }
+    }
+
+    compileOnMouseDownEvent(theKernel,ctlTag){
+        var project = this.project;
+        var onMouseDownFunName = theKernel.id + '_' + AttrNames.Event.OnMouseDown;
+        var onMouseDownBp = project.scriptMaster.getBPByName(onMouseDownFunName);
+        if (onMouseDownBp != null) {
+            var compileRet = this.compileScriptBlueprint(onMouseDownBp, { params: ['ev'], haveDoneTip: false });
+            if (compileRet == false) {
+                return false;
+            }
+            ctlTag.setAttr('onMouseDown', bigbracketStr(onMouseDownFunName));
+        }
+        return onMouseDownBp;
     }
 
     compileScriptAttribute(attrParseRet, theKernel, stateName, attrLabel, config) {
@@ -2999,15 +3015,7 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
 
-        var onMouseDownFunName = theKernel.id + '_' + AttrNames.Event.OnMouseDown;
-        var onMouseDownBp = project.scriptMaster.getBPByName(onMouseDownFunName);
-        if (onMouseDownBp != null) {
-            var compileRet = this.compileScriptBlueprint(onMouseDownBp, { params: ['ev'], haveDoneTip: false });
-            if (compileRet == false) {
-                return false;
-            }
-            ctlTag.setAttr('onMouseDown', bigbracketStr(onMouseDownFunName));
-        }
+        this.compileOnMouseDownEvent(theKernel, ctlTag);
     }
 
     compileButtonKernel(theKernel, renderBlock, renderFun) {

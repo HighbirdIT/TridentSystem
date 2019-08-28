@@ -134,6 +134,7 @@ class FlowObject extends EventEmitter{
             theStep.周期起始时间 = createDateWithoutTimeZone(record.周期起始时间);
             theStep.周期类型 = record.周期类型;
             theStep.周期值 = record.周期值;
+            theStep.进入待办队列 = record.进入待办队列;
         }
         theStep.params_arr = params_arr;
         theStep.valid = true;
@@ -297,6 +298,7 @@ class CFlowStep extends React.PureComponent{
             param2:this.state.param2Name,
             param3:this.state.param3Name,
             是否周期步骤:this.state.是否周期步骤,
+            进入待办队列:this.state.进入待办队列,
         }
 
         if(this.state.是否周期步骤)
@@ -357,6 +359,7 @@ class CFlowStep extends React.PureComponent{
             周期起始_时间:step.周期起始时间 ? getFormatTimeString(step.周期起始时间) : '08:00',
             周期类型:step.周期类型 ? step.周期类型 : '天',
             周期值:step.周期值 == null ? 1 : step.周期值,
+            进入待办队列:step.进入待办队列
         });
     }
 
@@ -388,6 +391,7 @@ class CFlowStep extends React.PureComponent{
             step.周期值 = null;
             step.周期起始时间 = null;
         }
+        step.进入待办队列 = this.state.进入待办队列;
 
         this.setState({
             newName:null,
@@ -395,6 +399,7 @@ class CFlowStep extends React.PureComponent{
             param1Name:null,
             param2Name:null,
             param3Name:null,
+            进入待办队列:null,
         });
         step.emit('changed');
     } 
@@ -402,7 +407,12 @@ class CFlowStep extends React.PureComponent{
     nameInputChanged(ev){
         var tag = ev.target.getAttribute('d-tag');
         var newState = {};
-        newState[tag] = ev.target.value;
+        if(tag == '进入待办队列'){
+            newState[tag] = ev.target.checked;
+        }
+        else{
+            newState[tag] = ev.target.value;
+        }
         this.setState(newState);
     }
 
@@ -442,6 +452,10 @@ class CFlowStep extends React.PureComponent{
                         <div className='d-flex flex-grow-1'>
                             <span className='text-nowrap'>参数3:</span>
                             <input d-tag='param3Name' onChange={this.nameInputChanged} className='flex-grow-1 flex-shrink-1 w-100' value={param3Name} />
+                        </div>
+                        <div className='d-flex flex-grow-1'>
+                            <span className='text-nowrap'>进入待办队列:</span>
+                            <input d-tag='进入待办队列' type='checkbox' onChange={this.nameInputChanged} checked={this.state.进入待办队列 == null ? step.进入待办队列 : this.state.进入待办队列} />
                         </div>
                         <div className='d-flex flex-grow-1 align-items-center'>
                             <span className='text-nowrap'>周期步骤:</span>
@@ -488,6 +502,11 @@ class CFlowStep extends React.PureComponent{
                     {step.是否周期步骤 && 
                     <div className='list-group-item'>
                         自{getFormatDateTimeString(step.周期起始时间, false)}起每{step.周期值}{step.周期类型}执行一次
+                    </div>
+                    }
+                    {!step.进入待办队列 && 
+                    <div className='list-group-item text-danger'>
+                        不进待办队列
                     </div>
                     }
                 </div>

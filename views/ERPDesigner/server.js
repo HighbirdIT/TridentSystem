@@ -573,7 +573,7 @@ function WriteEntity(库内对象_dr, 目标库内对象_dic,req) {
 
 function getAllFlow(req){
     return co(function* () {
-        var sql = 'SELECT [T007C系统流程名称].[系统流程名称代码],[系统流程名称],[系统流程简称],[流程操作步骤代码],[操作步骤名称],[参数数量],[参数1],[参数2],[参数3],[是否周期步骤],[周期起始时间],[周期类型],[周期值],[下次执行时间] FROM [base1].[dbo].[T007C系统流程名称] left join [T007D流程操作步骤] on [T007D流程操作步骤].[系统流程名称代码] = [T007C系统流程名称].[系统流程名称代码] where [终止确认状态] = 0';
+        var sql = 'SELECT [T007C系统流程名称].[系统流程名称代码],[系统流程名称],[系统流程简称],[流程操作步骤代码],[操作步骤名称],[参数数量],[参数1],[参数2],[参数3],[是否周期步骤],[周期起始时间],[周期类型],[周期值],[进入待办队列],[下次执行时间] FROM [base1].[dbo].[T007C系统流程名称] left join [T007D流程操作步骤] on [T007D流程操作步骤].[系统流程名称代码] = [T007C系统流程名称].[系统流程名称代码] where [终止确认状态] = 0';
         var rcdRlt = yield dbhelper.asynQueryWithParams(sql,null,null,req);
         return rcdRlt.recordset;
     });
@@ -821,8 +821,8 @@ function createFlowStep(req){
             return { err: { info: '参数3不合法' } };
         }
 
-        var insertPart = 'INSERT INTO [dbo].[T007D流程操作步骤]([系统流程名称代码],[操作步骤名称],[登记确认用户],[登记确认时间],[参数数量],[参数1],[参数2],[参数3]';
-        var valuePart = 'values(@flowCode,@name,@userID,getdate(),@paramCount,@param1,@param2,@param3';
+        var insertPart = 'INSERT INTO [dbo].[T007D流程操作步骤]([系统流程名称代码],[操作步骤名称],[登记确认用户],[登记确认时间],[参数数量],[参数1],[参数2],[参数3],[进入待办队列]';
+        var valuePart = 'values(@flowCode,@name,@userID,getdate(),@paramCount,@param1,@param2,@param3,@进入待办队列';
         if(req.body.是否周期步骤){
             if(req.body.周期起始时间 == null){
                 return { err: { info: '没有周期起始时间' } };
@@ -849,6 +849,7 @@ function createFlowStep(req){
             dbhelper.makeSqlparam('起始时间', sqlTypes.NVarChar(20), req.body.周期起始时间),
             dbhelper.makeSqlparam('周期值', sqlTypes.NVarChar(20), req.body.周期值),
             dbhelper.makeSqlparam('周期类型', sqlTypes.NVarChar(20), req.body.周期类型),
+            dbhelper.makeSqlparam('进入待办队列', sqlTypes.NVarChar(20), req.body.进入待办队列),
         ];
         var sql = insertPart + ')' + valuePart + ") select SCOPE_IDENTITY()";
         var newRcdid = yield dbhelper.asynGetScalar(sql, params_arr,req);
@@ -882,7 +883,7 @@ function modifyFlowStep(req){
             return { err: { info: '参数3不合法' } };
         }
 
-        var updatePart = 'update [dbo].[T007D流程操作步骤] set [操作步骤名称]=@name,[参数数量]=@paramCount,[参数1]=@param1,[参数2]=@param2,[参数3]=@param3,[是否周期步骤]=' + (req.body.是否周期步骤 ? 1 : 0);
+        var updatePart = 'update [dbo].[T007D流程操作步骤] set [操作步骤名称]=@name,[参数数量]=@paramCount,[参数1]=@param1,[参数2]=@param2,[参数3]=@param3,[进入待办队列]=@进入待办队列,[是否周期步骤]=' + (req.body.是否周期步骤 ? 1 : 0);
         if(req.body.是否周期步骤){
             if(req.body.周期起始时间 == null){
                 return { err: { info: '没有周期起始时间' } };
@@ -909,6 +910,7 @@ function modifyFlowStep(req){
             dbhelper.makeSqlparam('起始时间', sqlTypes.NVarChar(20), req.body.周期起始时间),
             dbhelper.makeSqlparam('周期值', sqlTypes.NVarChar(20), req.body.周期值),
             dbhelper.makeSqlparam('周期类型', sqlTypes.NVarChar(20), req.body.周期类型),
+            dbhelper.makeSqlparam('进入待办队列', sqlTypes.NVarChar(20), req.body.进入待办队列),
         ];
 
         var updateSql = updatePart + ' where [流程操作步骤代码]=@code';
