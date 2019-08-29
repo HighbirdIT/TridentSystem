@@ -26,19 +26,20 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('宽度类型', AttrNames.WidthType, ValueType.String, EGridWidthType.Auto, true, false, EGridWidthTypes_arr, { text: 'text', value: 'value' }),
         new CAttribute('首列序号', AttrNames.AutoIndexColumn, ValueType.Boolean, true),
         new CAttribute('隐藏表头', AttrNames.HideTabHead, ValueType.Boolean, false),
-        new CAttribute('自动滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
+        new CAttribute('有滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
         new CAttribute('模式', AttrNames.SelectMode, ValueType.String, ESelectMode.None, true, false, SelectModes_arr),
         new CAttribute('bottomDivID', 'bottomDivID', ValueType.String, '', true, false, null, null, false),
         new CAttribute('editorID', 'editorID', ValueType.String, '', true, false, null, null, false),
         genIsdisplayAttribute(),
         new CAttribute('NoRender', AttrNames.NoRender, ValueType.Boolean, false),
-        new CAttribute('可点击选择', AttrNames.ClickSelectable, ValueType.Boolean, false),
+        new CAttribute('点选模式', AttrNames.ClickSelectable, ValueType.Boolean, false),
         new CAttribute('访问控制', AttrNames.AcessAssert, ValueType.Event),
     ]),
     new CAttributeGroup('操作设置', [
         genScripAttribute('Insert', AttrNames.Event.OnInsert, EJsBluePrintFunGroup.GridRowBtnHandler),
         genScripAttribute('Update', AttrNames.Event.OnUpdate, EJsBluePrintFunGroup.GridRowBtnHandler),
         genScripAttribute('Delete', AttrNames.Event.OnDelete, EJsBluePrintFunGroup.GridRowBtnHandler),
+        genScripAttribute('选了某行', AttrNames.Event.OnSelectRow, ValueType.Event),
     ])
 ]);
 
@@ -113,12 +114,13 @@ class M_FormKernel extends ContainerKernelBase {
         this[AttrNames.GenNavBar + '_visible'] = nowft == EFormType.Grid || nowft == EFormType.Page;
         this[AttrNames.SelectMode + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.HideTabHead + '_visible'] = nowft == EFormType.Grid;
-        this[AttrNames.AutoHeight + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.EditorType + '_visible'] = nowft == EFormType.List;
         this[AttrNames.NoRender + '_visible'] = nowft == EFormType.Page;
         this[AttrNames.Wrap + '_visible'] = nowft == EFormType.List;
-
-        this['操作设置_visible'] = nowft == EFormType.Grid;
+        this[AttrNames.Event.OnSelectRow + '_visible'] = nowft == EFormType.List || nowft == EFormType.Grid;
+        this[AttrNames.Event.OnDelete + '_visible'] = nowft == EFormType.Grid;
+        this[AttrNames.Event.OnUpdate + '_visible'] = nowft == EFormType.Grid;
+        this[AttrNames.Event.OnInsert + '_visible'] = nowft == EFormType.Grid;
 
         var self = this;
         autoBind(self);
@@ -355,7 +357,11 @@ class M_FormKernel extends ContainerKernelBase {
                 this.findAttributeByName(AttrNames.EditorType).setVisible(this, isListForm);
                 this.findAttributeByName(AttrNames.NoRender).setVisible(this, isPageForm);
 
-                this.findAttrGroupByName('操作设置').setVisible(this, isGridForm);
+                this.findAttributeByName(AttrNames.Event.OnSelectRow).setVisible(this, isGridForm || isListForm);
+                this.findAttributeByName(AttrNames.Event.OnDelete).setVisible(this, isGridForm);
+                this.findAttributeByName(AttrNames.Event.OnUpdate).setVisible(this, isGridForm);
+                this.findAttributeByName(AttrNames.Event.OnInsert).setVisible(this, isGridForm);
+                
                 if (isListForm) {
                     this.clearChildren();
                     this.__genEditor();

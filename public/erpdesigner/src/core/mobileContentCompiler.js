@@ -1798,6 +1798,7 @@ class MobileContentCompiler extends ContentCompiler {
         formReactClass.renderContentFun = renderContentFun;
         renderContentFun.scope.getVar(VarNames.RetElem, true, 'null');
         renderContentFun.scope.getVar(VarNames.NavElem, true, 'null');
+        renderContentFun.scope.getVar('bHadBottom', true, useDS != null ? 'false' : 'true');
 
         var ifFetingBlock = new JSFile_IF(VarNames.Fetching, "this.props.fetching");
         ifFetingBlock.trueBlock.pushLine(VarNames.RetElem + " = renderFetcingTipDiv();");
@@ -1821,6 +1822,7 @@ class MobileContentCompiler extends ContentCompiler {
             else if(isListForm){
                 ifNowRecordBlock.condition = " this.props.records_arr == null || this.props.records_arr.length == 0";
             }
+            ifInvalidBundleBlock.falseBlock.pushLine('bHadBottom = true;');
             ifInvalidBundleBlock.falseBlock.pushChild(ifNowRecordBlock);
             var noDataTip = theKernel.getAttribute(AttrNames.NoDataTip);
             if (IsEmptyString(noDataTip)) {
@@ -1913,8 +1915,13 @@ class MobileContentCompiler extends ContentCompiler {
                 renderContentFun.pushLine("{!this.state.hadNewRow && <button onClick={this.clickNewRowHandler} type='button' className='btn btn-success' ><i className='fa fa-plus'/>新增</button>}");
             }
             renderContentFun.subNextIndent();
-            renderContentFun.pushLine("</div>", -1);
-            renderContentFun.pushChild(gridBottomDivBlock);
+            renderContentFun.pushLine("</div>");
+            if (theKernel.gridFormBottomDiv.children.length > 0) {
+                renderContentFun.pushLine("{bHadBottom &&");
+                renderContentFun.pushChild(gridBottomDivBlock);
+                renderContentFun.subNextIndent();
+                renderContentFun.pushLine('}');
+            }
             renderContentFun.pushLine("{" + VarNames.NavElem + "}", -1);
             renderContentFun.pushLine('</div>);');
         }

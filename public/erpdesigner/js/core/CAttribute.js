@@ -330,7 +330,8 @@ var AttrNames = {
         OnInsert: 'onInsert',
         OnLoad: 'onLoad',
         OnChanged: 'onChanged',
-        OnMouseDown: 'onMouseDown'
+        OnMouseDown: 'onMouseDown',
+        OnSelectRow: 'onSelectRow'
     },
 
     LayoutNames: {

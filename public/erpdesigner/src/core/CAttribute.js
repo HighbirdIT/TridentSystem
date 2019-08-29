@@ -307,6 +307,7 @@ const AttrNames={
         OnLoad:'onLoad',
         OnChanged:'onChanged',
         OnMouseDown:'onMouseDown',
+        OnSelectRow:'onSelectRow',
     },
 
     LayoutNames:{

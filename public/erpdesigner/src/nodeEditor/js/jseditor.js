@@ -155,6 +155,11 @@ const JSNodeEditorControls_arr =[
         type:'错误控制'
     },
     {
+        label:'散列表单行数据',
+        nodeClass:JSNode_HashFormDataRow,
+        type:'表单访问'
+    },
+    {
         label:'刷新表单',
         nodeClass:JSNode_FreshForm,
         type:'表单控制'
