@@ -10,7 +10,7 @@ const HERPAccordionKernelAttrsSetting = GenControlKernelAttrsSetting([
             type:FunType_Client,
             group:EJsBluePrintFunGroup.CtlAttr,
         }),
-        new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr),
+        new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
         genIsdisplayAttribute(),
         new CAttribute('初始折叠', AttrNames.InitCollapsed, ValueType.Boolean, false),
         new CAttribute('模式', AttrNames.Mode, ValueType.String, AccordionMode.Default, true, false, AccordionModes_arr),

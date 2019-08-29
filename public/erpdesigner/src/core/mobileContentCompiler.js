@@ -1717,8 +1717,8 @@ class MobileContentCompiler extends ContentCompiler {
         var parentPath = this.getKernelParentPath(theKernel);
         var fullParentPath = this.getKernelFullParentPath(theKernel);
         layoutConfig.addClass('d-flex');
-        layoutConfig.addClass('flex-grow-1');
-        layoutConfig.addClass('flex-shrink-1');
+        layoutConfig.addClass('flex-grow-0');
+        layoutConfig.addClass('flex-shrink-0');
         layoutConfig.addClass('erp-form');
         var orientation = theKernel.getAttribute(AttrNames.Orientation);
         if (orientation == Orientation_V) {
@@ -1854,7 +1854,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
         if (isPageForm) {
             renderContentBlock.pushLine(VarNames.RetElem + " = (<React.Fragment>", 1);
-            renderContentBlock.pushLine("<div className='d-flex flex-grow-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + "'>", 1);
+            renderContentBlock.pushLine("<div className='d-flex flex-grow-1 flex-shrink-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + "'>", 1);
             childRenderBlock = new FormatFileBlock(theKernel.id + 'child');
             renderContentBlock.pushChild(childRenderBlock);
             renderContentBlock.subNextIndent();
