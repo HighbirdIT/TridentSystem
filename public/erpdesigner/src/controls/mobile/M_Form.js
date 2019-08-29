@@ -452,8 +452,8 @@ class M_Form extends React.PureComponent {
         var ctlKernel = this.props.ctlKernel;
         var layoutConfig = ctlKernel.getLayoutConfig();
         layoutConfig.addClass('d-flex');
-        layoutConfig.addClass('flex-grow-1');
-        layoutConfig.addClass('flex-shrink-1');
+        layoutConfig.addClass('flex-grow-0');
+        layoutConfig.addClass('flex-shrink-0');
         var rootStyle = layoutConfig.style;
 
         var childClickHandlerParam = this.props.replaceChildClick ? this.props.onClick : null;
