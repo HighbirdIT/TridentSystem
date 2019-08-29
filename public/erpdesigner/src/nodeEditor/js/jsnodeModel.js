@@ -39,6 +39,7 @@ const JSNODE_CLOSE_PAGE = 'closePage';
 const JSNODE_GETPAGE_ENTRYPARAM = 'getpageenterparam';
 const JSNODE_BATCH_CONTROL_API_PROPSETTER = 'batchcontrolapipropsetter';
 const JSNODE_GETSTEPDATA = 'getstepdata';
+const JSNODE_HASHFORM_DATAROW = 'hashformdatarow';
 
 const JSNODE_DD_MAP_SEARCH = 'ddmapsearch';
 const JSNODE_DD_NAV_CLOSE = 'ddnavclose';
@@ -9087,6 +9088,198 @@ class JsNode_OpenExternal_Page extends JSNode_Base {
     }
 }
 
+class JSNode_HashFormDataRow extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_HASHFORM_DATAROW, '散列Form数据', false, nodeJson);
+        autoBind(this);
+        if (this.outFlowSockets_arr == null) {
+            this.outFlowSockets_arr = [];
+        }
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+        if(this.inputScokets_arr.length > 0){
+            this.inSocket = this.inputScokets_arr[0];
+        }
+
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inSocket);
+        }
+        this.inSocket.inputable = false;
+        this.inSocket.label = '数据对象';
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.formID = this.formID;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['formID']);
+    }
+
+    genOutSocket() {
+        var formKernel = this.bluePrint.master.project.getControlById(this.formID);
+        if (formKernel == null) {
+            return null;
+        }
+        var theDS = formKernel.getAttribute(AttrNames.DataSource);
+        if (theDS == null) {
+            return null;
+        }
+        var hadColumns_arr = [];
+        for (var si in this.outputScokets_arr) {
+            var outSocket = this.outputScokets_arr[si];
+            var columnName = outSocket.getExtra('colName');
+            if (columnName != null) {
+                hadColumns_arr.push(columnName);
+            }
+        }
+        var emptyCol = theDS.columns.find(colItem => {
+            return hadColumns_arr.indexOf(colItem.name) == -1
+        });
+        if (emptyCol == null) {
+            return null;
+        }
+        var newSocket = new NodeSocket(this.getUseableOutSocketName('col'), this, false, { type: ValueType.String });
+        newSocket.setExtra('colName', emptyCol.name);
+        return newSocket;
+    }
+
+    getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
+        result.pushVariable(this.id + '_data', targetSocket);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr, blockInServer);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var theScope = belongBlock && belongBlock.getScope();
+        var blockInServer = theScope && theScope.isServerSide;
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var formKernel = this.bluePrint.master.project.getControlById(this.formID);
+        if (this.checkCompileFlag(formKernel == null, this.formID + '没找到！', helper)) {
+            return false;
+        }
+        var theDS = formKernel.getAttribute(AttrNames.DataSource);
+        if (this.checkCompileFlag(theDS == null, '关联Form没有数据源！', helper)) {
+            return false;
+        }
+        helper.addUseEntity(theDS, EUseEntityStage.Select);
+        this.targetEntity = theDS;
+        this.formKernel = formKernel;
+        var isGridForm = formKernel.isGridForm();
+        var clientForEachBodyBlock = null;
+        var clientForEachDeclarBlock = null;
+        var clientForEachBlock = null;
+        var nowRowVarName = this.id + '_row';
+        var clientForEachFlowLinks_arr;
+        if (isGridForm) {
+            var formSelectMode = formKernel.getAttribute(AttrNames.SelectMode);
+            if (this.rowSource == EFormRowSource.Context) {
+                var belongFormKernel = this.bluePrint.ctlKernel.searchParentKernel(M_FormKernel_Type, true);
+                var realParent = this.bluePrint.ctlKernel.parent;
+                if (realParent.type == M_LabeledControlKernel_Type) {
+                    realParent = realParent.parent;
+                }
+                var isSameForm = formKernel == belongFormKernel;
+                if (this.checkCompileFlag(!isSameForm || realParent != belongFormKernel, '此处无法使用目标Form的本属性', helper)) {
+                    return false;
+                }
+            }
+            if (this.rowSource == EFormRowSource.Selected) {
+                if (formSelectMode == ESelectMode.Multi) {
+                    // foreach流程的建立
+                    clientForEachFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.forEachFlow);
+                    var formStateVarName = formKernel.id + '_state';
+                    var selectedRowsVarName = formKernel.id + '_' + VarNames.SelectedRows_arr;
+                    clientForEachBlock = new FormatFileBlock('clientforeach');
+                    if (clientForEachFlowLinks_arr.length > 0) {
+                        if (this.checkCompileFlag(blockInServer, 'forach流无法被执行到', helper)) {
+                            return false;
+                        }
+                        var indexVarName = this.id + "_index";
+
+                        clientForEachDeclarBlock = new FormatFileBlock('clientforeachdeclar');
+                        clientForEachBodyBlock = new FormatFileBlock('clientforeachbody');
+                        clientForEachBlock.pushLine(makeStr_AddAll('for(var ', indexVarName, '=0;', indexVarName, '<', selectedRowsVarName, '.length;++', indexVarName, '){'), 1);
+                        clientForEachBlock.pushLine('var ' + nowRowVarName + '=' + makeStr_AddAll(formStateVarName, '.', VarNames.Records_arr, '[', selectedRowsVarName, '[', indexVarName, ']];'));
+                        clientForEachBlock.pushChild(clientForEachDeclarBlock);
+                        clientForEachBlock.pushChild(clientForEachBodyBlock);
+                        clientForEachBlock.subNextIndent();
+                        clientForEachBlock.pushLine('}');
+                    }
+                }
+            }
+        }
+        else {
+            if (this.checkCompileFlag(this.rowSource == EFormRowSource.Selected, '页面Form不可以用选中行节点', helper)) {
+                return false;
+            }
+        }
+        helper.setCache(this.id + '_clientForEachBlock', clientForEachBlock);
+
+        var selfCompileRet = new CompileResult(this);
+        helper.setCompileRetCache(this, selfCompileRet, blockInServer);
+        if (clientForEachBlock) {
+            belongBlock.pushChild(clientForEachBlock);
+            selfCompileRet.setSocketOut(this.inFlowSocket, '', clientForEachBlock);
+        }
+        for (var si in this.outputScokets_arr) {
+            var outSocket = this.outputScokets_arr[si];
+            var colName = outSocket.getExtra('colName');
+            var columnItem = theDS.columns.find(x => { return x.name == colName; });
+            if (columnItem == null) {
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                '第' + (si + 1) + '个输出接口列名无效！']);
+                return false;
+            }
+            helper.addUseColumn(formKernel, colName, blockInServer ? theScope.fun : null, this.rowSource);
+            if (blockInServer) {
+                selfCompileRet.setSocketOut(outSocket, 'req.body.' + VarNames.Bundle + '.' + this.formID + '_' + colName);
+            }
+            else {
+                if (clientForEachDeclarBlock) {
+                    var colVarName = this.id + '_' + colName;
+                    //clientForEachDeclarBlock.pushLine('var ' + colVarName + '=' + nowRowVarName + '.' + colName + ';');
+                    selfCompileRet.setSocketOut(outSocket, nowRowVarName + '.' + colName);
+                }
+                else {
+                    selfCompileRet.setSocketOut(outSocket, formKernel.id + '_' + VarNames.NowRecord + "['" + colName + "']");
+                }
+            }
+        }
+        if (clientForEachBodyBlock) {
+            if(this.compileFlowNode(clientForEachFlowLinks_arr[0], helper, usePreNodes_arr, clientForEachBodyBlock) == false){
+                return false;
+            }
+        }
+        if (this.outFlowSocket) {
+            if(this.compileOutFlow(helper, usePreNodes_arr, belongBlock) == false){
+                return false;
+            }
+        }
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_VAR_GET] = {
     modelClass: JSNode_Var_Get,
     comClass: C_JSNode_Var_Get,
@@ -9134,6 +9327,10 @@ JSNodeClassMap[JSNODE_SEQUENCE] = {
 JSNodeClassMap[JSNODE_CURRENTDATAROW] = {
     modelClass: JSNode_CurrentDataRow,
     comClass: C_JSNode_CurrentDataRow,
+};
+JSNodeClassMap[JSNODE_HASHFORM_DATAROW] = {
+    modelClass: JSNode_HashFormDataRow,
+    comClass: C_JSNode_HashFormDataRow,
 };
 JSNodeClassMap[JSNODE_CTLKERNEL] = {
     modelClass: JSNODE_CtlKernel,

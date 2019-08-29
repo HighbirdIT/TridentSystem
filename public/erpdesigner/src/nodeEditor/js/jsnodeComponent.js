@@ -249,11 +249,11 @@ class C_JSNODE_Insert_table extends React.PureComponent {
         this.props.nodedata.setDSCode(newCode);
     }
 
-    clickAutoCallFetchEnd(ev){
+    clickAutoCallFetchEnd(ev) {
         var nodeData = this.props.nodedata;
         nodeData.autoCallFetchEnd = !(nodeData.autoCallFetchEnd != false);
         this.setState({
-            magicObj:{},
+            magicObj: {},
         });
     }
 
@@ -493,11 +493,11 @@ class C_JSNODE_Do_FlowStep extends React.PureComponent {
         this.props.nodedata.setFlowStep(flowStep);
     }
 
-    clickAutoCallFetchEnd(ev){
+    clickAutoCallFetchEnd(ev) {
         var nodeData = this.props.nodedata;
         nodeData.autoCallFetchEnd = !(nodeData.autoCallFetchEnd != false);
         this.setState({
-            magicObj:{},
+            magicObj: {},
         });
     }
 
@@ -632,11 +632,11 @@ class C_JSNODE_Delete_Table extends React.PureComponent {
         socket.setExtra('colName', newVal);
     }
 
-    clickAutoCallFetchEnd(ev){
+    clickAutoCallFetchEnd(ev) {
         var nodeData = this.props.nodedata;
         nodeData.autoCallFetchEnd = !(nodeData.autoCallFetchEnd != false);
         this.setState({
-            magicObj:{},
+            magicObj: {},
         });
     }
 
@@ -762,11 +762,11 @@ class C_JSNode_Excute_Pro extends React.PureComponent {
         nodeData.setEntity(selectedDBE);
     }
 
-    clickAutoCallFetchEnd(ev){
+    clickAutoCallFetchEnd(ev) {
         var nodeData = this.props.nodedata;
         nodeData.autoCallFetchEnd = !(nodeData.autoCallFetchEnd != false);
         this.setState({
-            magicObj:{},
+            magicObj: {},
         });
     }
 
@@ -803,6 +803,160 @@ class C_JSNode_Excute_Pro extends React.PureComponent {
         </C_Node_Frame>
     }
 }
+
+class C_JSNode_HashFormDataRow extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+
+        C_NodeCom_Base(this);
+        var nodeData = this.props.nodedata;
+        var theProject = nodeData.bluePrint.master.project;
+        var formKernel = theProject.getControlById(nodeData.formID);
+
+        this.state = {
+            formKernel: formKernel,
+        }
+    }
+
+    formAttrChangedHandler(ev) {
+        if (ev.name == AttrNames.DataSource
+            || ev.name == AttrNames.name) {
+            this.this.canUseColumns_arr = null;
+            this.reDraw();
+        }
+    }
+
+    listenForm(formKernel){
+        if (formKernel) {
+            formKernel.on(EATTRCHANGED, this.formAttrChangedHandler);
+        }
+    }
+
+    unlistenForm(formKernel){
+        if (formKernel) {
+            formKernel.off(EATTRCHANGED, this.formAttrChangedHandler);
+        }
+    }
+
+    cus_componentWillMount() {
+        this.listenForm(this.state.formKernel);
+    }
+
+    cus_componentWillUnmount() {
+        this.unlistenForm(this.state.formKernel);
+    }
+
+    socketColumnSelectChanged(newVal, ddc) {
+        var socket = ddc.props.socket;
+        socket.setExtra('colName', newVal);
+    }
+
+    getCanUseColumns() {
+        return this.canUseColumns_arr == null ? [] : this.canUseColumns_arr;
+    }
+
+    getFormDS() {
+        var nodeData = this.props.nodedata;
+        var formKernel = nodeData.bluePrint.master.project.getControlById(nodeData.formID);
+        return formKernel == null ? null : formKernel.getAttribute(AttrNames.DataSource);
+    }
+
+    customSocketRender(socket) {
+        if (socket.isIn == true) {
+            return null;
+        }
+        var nodeData = this.props.nodedata;
+        if (socket == nodeData.outDataSocket || socket == nodeData.outErrorSocket) {
+            return null;
+        }
+
+        var nowVal = socket.getExtra('colName');
+        return (<span className='d-flex align-items-center'><DropDownControl itemChanged={this.socketColumnSelectChanged} btnclass='btn-dark' options_arr={this.canUseColumns_arr == null ? [] : this.canUseColumns_arr} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} socket={socket} textAttrName='name' />
+            <button onMouseDown={this.mouseDownOutSocketHand} d-colname={nowVal} type='button' className='btn btn-secondary'><i className='fa fa-hand-paper-o' /></button>
+        </span>);
+    }
+
+    mouseDownOutSocketHand(ev) {
+        var colName = getAttributeByNode(ev.target, 'd-colname', true, 5);
+        if (colName == null) {
+            return;
+        }
+        var socketid = getAttributeByNode(ev.target, 'd-socketid', true, 10);
+        if (socketid == null) {
+            return;
+        }
+        var nodeData = this.props.nodedata;
+        var entity = this.getFormDS();
+        if (entity == null) {
+            return;
+        }
+        var theSocket = nodeData.bluePrint.getSocketById(socketid);
+        var bornPos = theSocket.currentComponent.getCenterPos();
+        if (entity.containColumn(colName)) {
+            var newNode = new FlowNode_ColumnVar({
+                keySocketID: socketid,
+                newborn: true,
+                left: bornPos.x,
+                top: bornPos.y,
+            }, nodeData.parent);
+        }
+    }
+
+    formChangedHandler(newFormID) {
+        var nodeData = this.props.nodedata;
+        nodeData.formID = newFormID;
+        var theProject = nodeData.bluePrint.master.project;
+        this.setTargetForm(theProject.getControlById(newFormID));
+    }
+
+    setTargetForm(formKernel){
+        this.canUseColumns_arr = null;
+        this.unlistenForm(this.state.formKernel);
+        this.listenForm(formKernel);
+        this.setState({
+            formKernel: formKernel,
+        });
+        var nodeData = this.props.nodedata;
+        setTimeout(() => {
+            nodeData.outputScokets_arr.forEach(socket=>{
+                socket.fireEvent('changed');
+            });
+        }, 100);
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        var theProject = nodeData.bluePrint.master.project;
+        var targetFormKernel = theProject.getControlById(nodeData.formID);
+        if(targetFormKernel != this.state.formKernel){
+            var self = this;
+            setTimeout(() => {
+                self.targetFormChange(targetFormKernel);
+            }, 50);
+        }
+        if(this.canUseColumns_arr == null){
+            var formKernel = this.state.formKernel;
+            var formDS = formKernel ? formKernel.getAttribute(AttrNames.DataSource) : null;
+            if (formDS != null) {
+                this.canUseColumns_arr = formDS.columns.map(colItem => {
+                    return colItem.name;
+                });
+            }
+        }
+
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={nodeData.label} >
+            <div className='d-flex flex-column'>
+                <DropDownControl options_arr={theProject.getControlsByType} funparamobj={M_FormKernel_Type} value={formKernel ? formKernel.id : -1} itemChanged={this.formChangedHandler} textAttrName='readableName' valueAttrName='id' />
+                <div className='d-flex'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor}  nameMoveable={true} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} customSocketRender={this.customSocketRender} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
+                </div>
+            </div>
+        </C_Node_Frame>
+    }
+}
+
 /*
 class C_JSNode_Control_Api_CallFun extends React.PureComponent {
     constructor(props) {

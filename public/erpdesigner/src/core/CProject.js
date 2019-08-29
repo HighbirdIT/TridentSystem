@@ -50,7 +50,7 @@ class CProject extends IAttributeable {
             editingControl: {
                 id: jsonData == null ? -1 : jsonData.lastEditingControlID
             }
-        }
+        };
 
         this.content_PC = {
             pages: [],
