@@ -210,6 +210,11 @@ const JSNodeEditorControls_arr =[
         type:'钉钉Api'
     },
     {
+        label:'钉钉-GetGeoLoc',
+        nodeClass:JSNode_DD_GetGeoLoaction,
+        type:'钉钉Api'
+    },
+    {
         label:'钉钉-关闭浏览器',
         nodeClass:JSNode_DD_NavClose,
         type:'钉钉Api'

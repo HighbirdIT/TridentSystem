@@ -43,6 +43,7 @@ const JSNODE_HASHFORM_DATAROW = 'hashformdatarow';
 
 const JSNODE_DD_MAP_SEARCH = 'ddmapsearch';
 const JSNODE_DD_NAV_CLOSE = 'ddnavclose';
+const JSNODE_DD_GETGEO_LOCATION = 'ddgetgeolocation';
 
 const JSNODE_STRING_LENGTH = 'stringlength';
 const JSNODE_STRING_SUBSTRING = 'stringsubstring';
@@ -685,6 +686,9 @@ class JSNode_BluePrint extends EventEmitter {
             }
 
             if (this.group == EJsBluePrintFunGroup.CtlEvent) {
+                if(ctlKernel.type == M_FormKernel_Type && this.name == ctlKernel.id + '_' + AttrNames.Event.OnSelectRow){
+                    theFun.scope.getVar(ctlKernel.id + '_path', true, 'fullPath');
+                }
                 if (ctlKernel.type == ButtonKernel_Type) {
                     theFun.scope.getVar(ctlKernel.id + '_path', true, "ev == null ? null : getAttributeByNode(ev.target,'ctl-fullpath')");
                 }
@@ -1075,6 +1079,7 @@ class JSNode_BluePrint extends EventEmitter {
             }
             */
         }
+        var msgBoxCreated = false;
         if (needFinalCallback) {
             finalCallBack_bk.pushLine('var callback_final = (state, data, err)=>{', 1);
             var finalCallBackBody_bk = new FormatFileBlock('finalcallbackbody');
@@ -1100,6 +1105,7 @@ class JSNode_BluePrint extends EventEmitter {
                 // needMsgBox
                 var msgBoxVarName = this.id + '_msg';
                 theFun.scope.getVar(msgBoxVarName, true, 'null');
+                msgBoxCreated = true;
                 var ctlName = ctlKernel.getAttribute(AttrNames.Name);
                 if (startFtech_bk) {
                     if (!nomsgbox) {
@@ -1165,6 +1171,10 @@ class JSNode_BluePrint extends EventEmitter {
             }
         }
         else {
+        }
+        if(compilHelper.bNeedMsgBox && !msgBoxCreated){
+            var msgBoxVarName = this.id + '_msg';
+            theFun.scope.getVar(msgBoxVarName, true, "PopMessageBox('',EMessageBoxType.Blank)");
         }
         theFun.params_arr = params_arr;
         theFun.useForm_map = compilHelper.useForm_map;
@@ -7051,6 +7061,7 @@ class JSNode_PopMessageBox extends JSNode_Base {
         if (superRet == false || superRet != null) {
             return superRet;
         }
+        helper.bNeedMsgBox = true;
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
@@ -8972,6 +8983,130 @@ class JSNode_DD_NavClose extends JSNode_Base {
     }
 }
 
+class JSNode_DD_GetGeoLoaction extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_DD_GETGEO_LOCATION, '钉钉.geolocation.get', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+        if (nodeJson) {
+            this.outputScokets_arr.forEach(socket=>{
+                switch(socket.name){
+                    case 'address':
+                    this.addressSocket = socket;
+                    break;
+                    case 'lon':
+                    this.longitudeSocket = socket;
+                    break;
+                    case 'lat':
+                    this.latitudeSocket = socket;
+                    break;
+                    case 'errorMessage':
+                    this.errorMessageSocket = socket;
+                    break;
+                    case 'errorCode':
+                    this.errorCodeSocket = socket;
+                    break;
+                }
+            });
+        }
+
+        if(this.addressSocket == null){
+            this.addressSocket = this.addSocket(new NodeSocket('address', this, false));
+        }
+
+        if(this.longitudeSocket == null){
+            this.longitudeSocket = this.addSocket(new NodeSocket('lon', this, false));
+        }
+
+        if(this.latitudeSocket == null){
+            this.latitudeSocket = this.addSocket(new NodeSocket('lat', this, false));
+        }
+
+        if(this.errorMessageSocket == null){
+            this.errorMessageSocket = this.addSocket(new NodeSocket('errorMessage', this, false));
+        }
+
+        if(this.errorCodeSocket == null){
+            this.errorCodeSocket = this.addSocket(new NodeSocket('errorCode', this, false));
+        }
+
+        this.addressSocket.label = '地址';
+        this.longitudeSocket.label = '经度';
+        this.latitudeSocket.label = '纬度';
+        this.errorMessageSocket.label = 'errorMessage';
+        this.errorCodeSocket.label = 'errorCode';
+    }
+
+    getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
+        if (belongFun.scope.isServerSide) {
+            return;
+        }
+        var compileRet = helper.getCompileRetCache(this);
+        var socketValue = compileRet.getSocketOut(targetSocket).strContent;
+        result.pushVariable(socketValue, targetSocket);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var myJSBlock = new FormatFileBlock('');
+        var onScuccessBlock = new FormatFileBlock('onScuccess');
+        belongBlock.pushChild(myJSBlock);
+        helper.addUseMobileDDApi('device.geolocation.get');
+
+        var onSuccessVarName = this.id + '_onScuccess';
+        myJSBlock.pushLine('var ' + onSuccessVarName + ' = result=>{', 1);
+        myJSBlock.pushLine('var ' + this.id + '_address = result.address;');
+        myJSBlock.pushLine('var ' + this.id + '_lat = result.latitude;');
+        myJSBlock.pushLine('var ' + this.id + '_lon = result.longitude;');
+        myJSBlock.pushLine('var ' + this.id + '_errorMessage = result.errorMessage;');
+        myJSBlock.pushLine('var ' + this.id + '_errorCode = result.errorCode;');
+        myJSBlock.pushChild(onScuccessBlock);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('};');
+
+        var onFailVarName = this.id + '_onFail';
+        myJSBlock.pushLine('var ' + onFailVarName + ' = err=>{', 1);
+        myJSBlock.pushLine("alert('错误:' + JSON.stringify(err));");
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('};');
+        
+        myJSBlock.pushLine("dingdingKit.device.geolocation.get({targetAccuracy:200,coordinate:1,withReGeocode:true,onSuccess:" + onSuccessVarName + ",onFail:" + onFailVarName + "});");
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        selfCompileRet.setSocketOut(this.addressSocket, this.id + '_address');
+        selfCompileRet.setSocketOut(this.latitudeSocket, this.id + '_lat');
+        selfCompileRet.setSocketOut(this.longitudeSocket, this.id + '_lon');
+        selfCompileRet.setSocketOut(this.errorMessageSocket, this.id + '_errorMessage');
+        selfCompileRet.setSocketOut(this.errorCodeSocket, this.id + '_errorCode');
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, onScuccessBlock) == false) {
+            return false;
+        }
+
+        return selfCompileRet;
+    }
+}
+
 class JsNode_OpenExternal_Page extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_OPENEXTERNAL_PAGE, '打开外部页面', false, nodeJson);
@@ -9167,6 +9302,9 @@ class JSNode_HashFormDataRow extends JSNode_Base {
         }
         var theScope = belongBlock && belongBlock.getScope();
         var blockInServer = theScope && theScope.isServerSide;
+        if (this.checkCompileFlag(blockInServer, '不可以出现在server流程中', helper)) {
+            return false;
+        }
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
@@ -9179,66 +9317,23 @@ class JSNode_HashFormDataRow extends JSNode_Base {
         if (this.checkCompileFlag(theDS == null, '关联Form没有数据源！', helper)) {
             return false;
         }
-        helper.addUseEntity(theDS, EUseEntityStage.Select);
+        
         this.targetEntity = theDS;
         this.formKernel = formKernel;
-        var isGridForm = formKernel.isGridForm();
-        var clientForEachBodyBlock = null;
-        var clientForEachDeclarBlock = null;
-        var clientForEachBlock = null;
-        var nowRowVarName = this.id + '_row';
-        var clientForEachFlowLinks_arr;
-        if (isGridForm) {
-            var formSelectMode = formKernel.getAttribute(AttrNames.SelectMode);
-            if (this.rowSource == EFormRowSource.Context) {
-                var belongFormKernel = this.bluePrint.ctlKernel.searchParentKernel(M_FormKernel_Type, true);
-                var realParent = this.bluePrint.ctlKernel.parent;
-                if (realParent.type == M_LabeledControlKernel_Type) {
-                    realParent = realParent.parent;
-                }
-                var isSameForm = formKernel == belongFormKernel;
-                if (this.checkCompileFlag(!isSameForm || realParent != belongFormKernel, '此处无法使用目标Form的本属性', helper)) {
-                    return false;
-                }
-            }
-            if (this.rowSource == EFormRowSource.Selected) {
-                if (formSelectMode == ESelectMode.Multi) {
-                    // foreach流程的建立
-                    clientForEachFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.forEachFlow);
-                    var formStateVarName = formKernel.id + '_state';
-                    var selectedRowsVarName = formKernel.id + '_' + VarNames.SelectedRows_arr;
-                    clientForEachBlock = new FormatFileBlock('clientforeach');
-                    if (clientForEachFlowLinks_arr.length > 0) {
-                        if (this.checkCompileFlag(blockInServer, 'forach流无法被执行到', helper)) {
-                            return false;
-                        }
-                        var indexVarName = this.id + "_index";
-
-                        clientForEachDeclarBlock = new FormatFileBlock('clientforeachdeclar');
-                        clientForEachBodyBlock = new FormatFileBlock('clientforeachbody');
-                        clientForEachBlock.pushLine(makeStr_AddAll('for(var ', indexVarName, '=0;', indexVarName, '<', selectedRowsVarName, '.length;++', indexVarName, '){'), 1);
-                        clientForEachBlock.pushLine('var ' + nowRowVarName + '=' + makeStr_AddAll(formStateVarName, '.', VarNames.Records_arr, '[', selectedRowsVarName, '[', indexVarName, ']];'));
-                        clientForEachBlock.pushChild(clientForEachDeclarBlock);
-                        clientForEachBlock.pushChild(clientForEachBodyBlock);
-                        clientForEachBlock.subNextIndent();
-                        clientForEachBlock.pushLine('}');
-                    }
-                }
-            }
+        
+        var nowRowVarName = this.id + '_data';
+        var inSocketComRet = this.getSocketCompileValue(helper, this.inSocket, usePreNodes_arr, belongBlock, true, false);
+        if (inSocketComRet.err) {
+            return false;
         }
-        else {
-            if (this.checkCompileFlag(this.rowSource == EFormRowSource.Selected, '页面Form不可以用选中行节点', helper)) {
-                return false;
-            }
-        }
-        helper.setCache(this.id + '_clientForEachBlock', clientForEachBlock);
+        var myJSBlock = new FormatFileBlock('');
+        belongBlock.pushChild(myJSBlock);
+        myJSBlock.pushLine('var ' + nowRowVarName + '=' + inSocketComRet.value + ';');
 
         var selfCompileRet = new CompileResult(this);
-        helper.setCompileRetCache(this, selfCompileRet, blockInServer);
-        if (clientForEachBlock) {
-            belongBlock.pushChild(clientForEachBlock);
-            selfCompileRet.setSocketOut(this.inFlowSocket, '', clientForEachBlock);
-        }
+        helper.setCompileRetCache(this, selfCompileRet);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+
         for (var si in this.outputScokets_arr) {
             var outSocket = this.outputScokets_arr[si];
             var colName = outSocket.getExtra('colName');
@@ -9251,30 +9346,11 @@ class JSNode_HashFormDataRow extends JSNode_Base {
                 '第' + (si + 1) + '个输出接口列名无效！']);
                 return false;
             }
-            helper.addUseColumn(formKernel, colName, blockInServer ? theScope.fun : null, this.rowSource);
-            if (blockInServer) {
-                selfCompileRet.setSocketOut(outSocket, 'req.body.' + VarNames.Bundle + '.' + this.formID + '_' + colName);
-            }
-            else {
-                if (clientForEachDeclarBlock) {
-                    var colVarName = this.id + '_' + colName;
-                    //clientForEachDeclarBlock.pushLine('var ' + colVarName + '=' + nowRowVarName + '.' + colName + ';');
-                    selfCompileRet.setSocketOut(outSocket, nowRowVarName + '.' + colName);
-                }
-                else {
-                    selfCompileRet.setSocketOut(outSocket, formKernel.id + '_' + VarNames.NowRecord + "['" + colName + "']");
-                }
-            }
+            helper.addUseColumn(formKernel, colName, null, EFormRowSource.None);
+            selfCompileRet.setSocketOut(outSocket, nowRowVarName + '.' + colName);
         }
-        if (clientForEachBodyBlock) {
-            if(this.compileFlowNode(clientForEachFlowLinks_arr[0], helper, usePreNodes_arr, clientForEachBodyBlock) == false){
-                return false;
-            }
-        }
-        if (this.outFlowSocket) {
-            if(this.compileOutFlow(helper, usePreNodes_arr, belongBlock) == false){
-                return false;
-            }
+        if(this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false){
+            return false;
         }
         return selfCompileRet;
     }
@@ -9483,5 +9559,9 @@ JSNodeClassMap[JSNODE_DD_MAP_SEARCH] = {
 };
 JSNodeClassMap[JSNODE_DD_NAV_CLOSE] = {
     modelClass: JSNode_DD_NavClose,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_DD_GETGEO_LOCATION] = {
+    modelClass: JSNode_DD_GetGeoLoaction,
     comClass: C_Node_SimpleNode,
 };

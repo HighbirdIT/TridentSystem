@@ -322,6 +322,7 @@ var AttrNames = {
     Wrap: 'wrap',
     OutputCharCount: 'outputcharcount',
     AutoHomeBtn: 'autoHomeBtn',
+    AutoPull: 'autoPull',
 
     Event: {
         OnClick: 'onclick',
