@@ -227,7 +227,6 @@ function openPage(name, stepcode, stepdata) {
     location.href = targetPath;
 }
 
-
 function wantGoHomePage(){
     var msg=PopMessageBox('',EMessageBoxType.Loading, '');
 	msg.query('返回首页?',[{label:'确定',key:'确定'},{label:'取消',key:'取消'}],(theKey)=>{
@@ -1925,6 +1924,10 @@ function ERPC_GridForm_SelectorClicked(rowIndex) {
             newArr.splice(index, 1);
             needSetState[this.props.fullPath + '.selectedRows_arr'] = newArr;
         }
+    }
+
+    if(this.clickRowHandler){
+        this.clickRowHandler(rowIndex);
     }
 
     store.dispatch(makeAction_setManyStateByPath(needSetState, ''));

@@ -20,6 +20,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('', AttrNames.CustomDataSource, ValueType.CustomDataSource, null, true),
         new CAttribute('内容定制', AttrNames.ListFormContent, ValueType.ListFormContent, null, true, false, null, null, false),
         new CAttribute('Wrap', AttrNames.Wrap, ValueType.Boolean, true),
+        new CAttribute('智能刷新', AttrNames.AutoPull, ValueType.Boolean, true),
         new CAttribute('自动分页', AttrNames.PageBreak, ValueType.Boolean, true),
         new CAttribute('生成导航栏', AttrNames.GenNavBar, ValueType.Boolean, true),
         new CAttribute('每页条数', AttrNames.RowPerPage, ValueType.String, '20', true, false, ['20', '50', '100', '200']),
@@ -39,7 +40,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         genScripAttribute('Insert', AttrNames.Event.OnInsert, EJsBluePrintFunGroup.GridRowBtnHandler),
         genScripAttribute('Update', AttrNames.Event.OnUpdate, EJsBluePrintFunGroup.GridRowBtnHandler),
         genScripAttribute('Delete', AttrNames.Event.OnDelete, EJsBluePrintFunGroup.GridRowBtnHandler),
-        genScripAttribute('选了某行', AttrNames.Event.OnSelectRow, ValueType.Event),
+        new CAttribute('选了某行', AttrNames.Event.OnSelectRow, ValueType.Event),
     ])
 ]);
 
@@ -79,6 +80,11 @@ class M_FormKernel extends ContainerKernelBase {
         theBP = this.getRowBtnHandlerBP(AttrNames.Event.OnDelete);
         if (theBP) {
             theBP.ctlID = placeHolderKernel.id;
+        }
+
+        theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnSelectRow);
+        if(theBP){
+            theBP.setFixParam(['state','fullPath','selectRowData']);
         }
 
         //this.autoSetCusDataSource();
@@ -186,6 +192,9 @@ class M_FormKernel extends ContainerKernelBase {
     scriptCreated(attrName, scriptBP) {
         if (scriptBP.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
             scriptBP.ctlID = this.placeHolderKernel.id;
+        }
+        if(scriptBP.name.indexOf(AttrNames.Event.OnSelectRow) != -1){
+            scriptBP.setFixParam(['state','fullPath','selectRowData']);
         }
     }
 
