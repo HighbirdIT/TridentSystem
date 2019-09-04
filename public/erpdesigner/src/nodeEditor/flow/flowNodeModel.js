@@ -1551,10 +1551,14 @@ class FlowNode_ColumnVar extends JSNode_Base {
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
 
-        if (this.checkCompileFlag(this.keySocket == null, '关联节点无效', helper)) {
+        if (this.checkCompileFlag(this.keySocket == null || this.keySocket.node == null, '关联节点无效', helper)) {
             return false;
         }
         var relNode = this.keySocket.node;
+        var realSocket = relNode.getSocketById(this.keySocket.id);
+        if (this.checkCompileFlag(realSocket == null, '关联对象没有此列输出', helper)) {
+            return false;
+        }
 
         var relNodeComRet = helper.getCompileRetCache(relNode);
         if (relNodeComRet == null) {
@@ -1563,6 +1567,9 @@ class FlowNode_ColumnVar extends JSNode_Base {
             }
             relNode.compile(helper, preNodes_arr);
         }
+
+        var value = relNodeComRet.getSocketOut(realSocket).strContent;
+        /*
         var theColumn = null;
         if (this.keySocket.node.targetEntity != null) {
             theColumn = this.keySocket.node.targetEntity.getColumnByName(this.columnName);
@@ -1571,9 +1578,11 @@ class FlowNode_ColumnVar extends JSNode_Base {
             return false;
         }
         var value = this.keySocket.node.id + '_' + this.columnName;
-        if (relNode.formKernel) {
+
+        if (relNode.formKernel && helper.getCache(this.keySocket.node.id + '_clientForEachBlock') == null) {
             value = relNode.formKernel.id + '_' + VarNames.NowRecord + '.' + this.columnName;
         }
+        */
 
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, value);

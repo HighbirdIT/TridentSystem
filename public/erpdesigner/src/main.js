@@ -46,7 +46,7 @@ class ErpDesigner extends React.PureComponent{
             <div id="designerroot" {...this.props}>
                 <TipWindow />
                 <MainMenu />
-                <div className="flex-grow-1 d-flex flex-column" style={{overflow:"hidden"}}>
+                <div className="flex-grow-1 flex-shrink-1 d-flex flex-column minh-0" style={{overflow:"hidden"}}>
                     <ProjectContainer />
                 </div>
                 <StatusBar />
@@ -55,4 +55,4 @@ class ErpDesigner extends React.PureComponent{
     }
 }
 
-ReactDOM.render(<ErpDesigner className="w-100 h-100 d-flex flex-column"/>, document.getElementById('reactRoot'));
+ReactDOM.render(<ErpDesigner className="w-100 h-100 d-flex flex-column minh-0"/>, document.getElementById('reactRoot'));

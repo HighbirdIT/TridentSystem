@@ -217,29 +217,29 @@ function openPage(name, stepcode, stepdata) {
         return;
     }
     var targetPath = '/erppage/' + (isMobile ? 'mb' : 'pc') + '/' + name;
-    if(stepcode != null && stepcode != '0'){
+    if (stepcode != null && stepcode != '0') {
         targetPath += '?flowStep=' + stepcode;
-        if(stepdata != null && stepdata.length > 0){
+        if (stepdata != null && stepdata.length > 0) {
             targetPath += '&stepData' + stepcode + '=' + stepdata;
         }
-        
+
     }
     location.href = targetPath;
 }
 
-function wantGoHomePage(){
-    var msg=PopMessageBox('',EMessageBoxType.Loading, '');
-	msg.query('返回首页?',[{label:'确定',key:'确定'},{label:'取消',key:'取消'}],(theKey)=>{
-        if(theKey == '确定'){
+function wantGoHomePage() {
+    var msg = PopMessageBox('', EMessageBoxType.Loading, '');
+    msg.query('返回首页?', [{ label: '确定', key: '确定' }, { label: '取消', key: '取消' }], (theKey) => {
+        if (theKey == '确定') {
             goHomePage();
         }
-        else{
+        else {
             msg.fireClose();
         }
     });
 }
 
-function goHomePage(){
+function goHomePage() {
     openPage('HBERP');
 }
 
@@ -1926,7 +1926,7 @@ function ERPC_GridForm_SelectorClicked(rowIndex) {
         }
     }
 
-    if(this.clickRowHandler){
+    if (this.clickRowHandler) {
         this.clickRowHandler(rowIndex);
     }
 
@@ -2654,4 +2654,20 @@ function getPageEntryParam(pageid, paramName, defValue) {
 
 function ERPC_ListForm(target) {
 
+}
+
+function toRad(d) {
+    return d * Math.PI / 180.0;
+}
+
+function GetDistance(lat1, lng1, lat2, lng2) {
+    var radLat1 = toRad(lat1);
+    var radLat2 = toRad(lat2);
+    var a = radLat1 - radLat2;
+    var b = toRad(lng1) - toRad(lng2);
+    var s = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(a / 2), 2) +
+        Math.cos(radLat1) * Math.cos(radLat2) * Math.pow(Math.sin(b / 2), 2)));
+    s = s * 6378137;
+    s = Math.floor(s * 10000) / 10000;
+    return s;
 }

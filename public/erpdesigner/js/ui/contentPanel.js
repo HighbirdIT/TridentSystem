@@ -294,7 +294,7 @@ var ContentPanel = function (_React$PureComponent) {
                 { className: 'flex-grow-1 flex-shrink-1 d-flex flex-column' },
                 React.createElement(
                     'div',
-                    { className: 'flex-grow-0 flex-shrink-1 d-flex bg-secondary projectContentHeader align-items-center' },
+                    { className: 'flex-grow-0 flex-shrink-0 d-flex bg-secondary projectContentHeader align-items-center' },
                     React.createElement(
                         'div',
                         { className: 'flex-grow-1 flex-shrink-1 d-flex justify-content-center align-items-center text-light' },
@@ -354,7 +354,7 @@ var ContentPanel = function (_React$PureComponent) {
                 ),
                 React.createElement(
                     'div',
-                    { className: 'd-flex flex-grow-1 flex-shrink-1' },
+                    { className: 'd-flex flex-grow-1 flex-shrink-1 minh-0' },
                     React.createElement(
                         'div',
                         { className: 'd-flex flex-grow-0 flex-shrink-0 flex-column' },
