@@ -262,7 +262,7 @@ class ContentPanel extends React.PureComponent {
         var editingControl = this.state.editingControl;
         return (
             <div className='flex-grow-1 flex-shrink-1 d-flex flex-column'>
-                <div className='flex-grow-0 flex-shrink-1 d-flex bg-secondary projectContentHeader align-items-center'>
+                <div className='flex-grow-0 flex-shrink-0 d-flex bg-secondary projectContentHeader align-items-center'>
                     <div className='flex-grow-1 flex-shrink-1 d-flex justify-content-center align-items-center text-light'>
                         <h4 >
                             {this.state.title}
@@ -295,7 +295,7 @@ class ContentPanel extends React.PureComponent {
                         </div>
                     </div>
                 </div>
-                <div className='d-flex flex-grow-1 flex-shrink-1'>
+                <div className='d-flex flex-grow-1 flex-shrink-1 minh-0'>
                     <div className='d-flex flex-grow-0 flex-shrink-0 flex-column'>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} pname='datamaster' ><div>数据</div><div>大师</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} pname='scriptmaster' ><div>脚本</div><div>大师</div></button>

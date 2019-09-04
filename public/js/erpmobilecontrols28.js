@@ -3224,3 +3224,18 @@ function getPageEntryParam(pageid, paramName, defValue) {
 }
 
 function ERPC_ListForm(target) {}
+
+function toRad(d) {
+    return d * Math.PI / 180.0;
+}
+
+function GetDistance(lat1, lng1, lat2, lng2) {
+    var radLat1 = toRad(lat1);
+    var radLat2 = toRad(lat2);
+    var a = radLat1 - radLat2;
+    var b = toRad(lng1) - toRad(lng2);
+    var s = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(a / 2), 2) + Math.cos(radLat1) * Math.cos(radLat2) * Math.pow(Math.sin(b / 2), 2)));
+    s = s * 6378137;
+    s = Math.floor(s * 10000) / 10000;
+    return s;
+}

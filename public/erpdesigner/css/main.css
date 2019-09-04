@@ -677,3 +677,7 @@
   border-radius: 0.25rem !important;
   cursor: pointer;
 }
+
+.minh-0{
+  min-height: 0
+}
