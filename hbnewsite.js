@@ -419,6 +419,10 @@ app.use('/erppage/login', function (req, res, next) {
     }
 });
 
+app.use('/videoplayer', function (req, res, next) {
+    return res.render('empty', { layout: 'videoPlayer' });
+});
+
 app.use('/erppage', function (req, res, next) {
     res.locals.isProduction = app.get('env') == 'production';
     var childPath = req.path;
