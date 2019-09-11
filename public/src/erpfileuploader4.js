@@ -489,12 +489,12 @@ class CFileUploaderBar extends React.PureComponent {
             else if(fileType == 'video'){
                 if(isMobile){
                     dingdingKit.biz.util.openLink({
-                        url:'videoplayer?src=' + this.uploader.previewUrl,
+                        url:window.location.origin + '/videoplayer?src=' + this.uploader.previewUrl,
                     });
                 }
                 else{
                     dingdingKit.biz.util.openModal({
-                        url:'videoplayer?src=' + this.uploader.previewUrl,
+                        url:window.location.origin + '/videoplayer?src=' + this.uploader.previewUrl,
                         title: fileProfile.name,
                     });
                 }
