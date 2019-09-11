@@ -607,7 +607,6 @@ class CFileUploaderBar extends React.PureComponent {
                 <div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
                     <span className='border-bottom'>{fileProfile.name}</span>
                     {bottomBar}
-                    {fileUploader.previewUrl}
                 </div>
             </div>;
         }

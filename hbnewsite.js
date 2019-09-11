@@ -133,6 +133,9 @@ function checkLogState(req, res, next, process){
         }
     }
     else{
+        if(req.session.g_envVar.userid == 0){
+            req.session.g_envVar.userid = null;
+        }
         process(req, res, next);
     }
 }
