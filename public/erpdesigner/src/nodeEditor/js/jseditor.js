@@ -353,6 +353,32 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         };
     }
 
+    addUseControlPath(ctrKernel){
+        var rlt = null;
+        var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
+        if(belongFormKernel == null){
+            rlt = this.useGlobalControls_map[ctrKernel.id];
+            if(rlt == null){
+                rlt = this.createUserKernelData(ctrKernel);
+                this.useGlobalControls_map[ctrKernel.id] = rlt;
+            }
+            rlt.usePath = true;
+            return;
+        }
+        else{
+            if(!belongFormKernel.isKernelInRow(ctrKernel)){
+                rowSource = EFormRowSource.None;
+            }
+            var formObj = this.addUseForm(belongFormKernel, rowSource);
+            rlt = formObj.useControls_map[ctrKernel.id];
+            if(rlt == null){
+                rlt = this.createUserKernelData(ctrKernel);
+                formObj.useControls_map[ctrKernel.id] = rlt;
+            }
+        }
+        rlt.usePath = true;
+    }
+
     addUseControlPropApi(ctrKernel, apiitem, rowSource){
         var rlt = null;
         var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);

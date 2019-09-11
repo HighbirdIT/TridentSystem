@@ -131,7 +131,7 @@ fileSystem.uploadBlock = (req,res) => {
                 bytesWritten:bytesWritten,
             };
             if(nowFileSize + bytesWritten >= fileRecord.文件大小){
-                rlt.previewUrl = 'http://erp.highbird.cn:1330/filehouse/' + belongDirPath + '/' + fileFullName;
+                rlt.previewUrl = res.locals.rootUrl + '/filehouse/' + belongDirPath + '/' + fileFullName;
             }
 
             return rlt;

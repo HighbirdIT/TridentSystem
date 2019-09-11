@@ -11,6 +11,9 @@ const MFileUploaderKernelAttrsSetting = GenControlKernelAttrsSetting([
             group:EJsBluePrintFunGroup.CtlAttr,
         }),
         new CAttribute('所属流程', 'fileFlow', ValueType.String, ValueType.String, null, false, AllFileFlows_arr, { text: 'label', value: 'code' }),
+        genNullableAttribute(),
+        new CAttribute('fileListStr', 'fileListStr', ValueType.String, '', false, false,null,null,false),
+        new CAttribute('fileListArray', 'fileListArray', ValueType.Array, '', false, false,null,null,false),
     ]),
     new CAttributeGroup('事件', [
         
@@ -35,7 +38,21 @@ class MFileUploaderKernel extends ControlKernelBase {
     }
 }
 var MFileUploader_api = new ControlAPIClass(MFileUploader_Type);
+MFileUploader_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName('fileListStr',MFileUploaderKernelAttrsSetting), 'fileListStr', true, (ctlStateVarName)=>{
+    return makeStr_AddAll(ctlStateVarName,'==null || ', ctlStateVarName, '.uploaders == null ? "" : ', ctlStateVarName, '.uploaders.map(u=>{return u.fileProfile.code;}).join(",")');
+}));
+MFileUploader_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName('fileListArray',MFileUploaderKernelAttrsSetting), 'fileListArray', true, (ctlStateVarName)=>{
+    return makeStr_AddAll(ctlStateVarName,'==null || ', ctlStateVarName, '.uploaders == null ? [] : ', ctlStateVarName, '.uploaders.map(u=>{return u.fileProfile.code;})');
+}));
+MFileUploader_api.pushApi(new ApiItem_fun({
+    label:'Reset',
+    name:'Reset',
+}));
 g_controlApi_arr.push(MFileUploader_api);
+
+function ResetMFileUploader(state, fullPath){
+    return;
+}
 
 class CMFileUploader extends React.PureComponent {
     constructor(props) {

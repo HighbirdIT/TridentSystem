@@ -80,6 +80,10 @@ var FileUploader = function (_EventEmitter) {
                 self.meetError({ errorMsg: '读取文件出错' });
             };
             reader.onload = function (ev) {
+                if (self.fileProfile == null) {
+                    console.log('上传器被删除');
+                    return;
+                }
                 self.fileData = new Uint8Array(reader.result);
                 self.startPos = 0;
                 self.changeState(EFileUploaderState.PREPARE);
@@ -88,6 +92,10 @@ var FileUploader = function (_EventEmitter) {
                 if (theFile.type.indexOf('image/') != -1) {
                     reader.onerror = null;
                     reader.onload = function (ev) {
+                        if (self.fileProfile == null) {
+                            console.log('上传器被删除');
+                            return;
+                        }
                         self.base64Data = reader.result;
                         self._fireChanged();
                     };
@@ -136,6 +144,10 @@ var FileUploader = function (_EventEmitter) {
             }
             var self = this;
             store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'applyForTempFile' }, makeFTD_Callback(function (state, data, error) {
+                if (self.fileProfile == null) {
+                    console.log('上传器被删除');
+                    return;
+                }
                 if (error) {
                     self.meetError(error);
                     return;
@@ -143,6 +155,10 @@ var FileUploader = function (_EventEmitter) {
                     self.fileProfile.identity = data.identity;
                     self.fileProfile.code = data.code;
                     setTimeout(function () {
+                        if (self.fileProfile == null) {
+                            console.log('上传器被删除');
+                            return;
+                        }
                         self.changeState(EFileUploaderState.UPLOADING);
                     }, 20);
                 }
@@ -183,7 +199,10 @@ var FileUploader = function (_EventEmitter) {
             //console.log('uploading');
             store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'uploadBlock' }, makeFTD_Callback(function (state, data, error, fetchUseTime) {
                 setTimeout(function () {
-                    //console.log('uploading end');
+                    if (self.fileProfile == null) {
+                        console.log('上传器被删除');
+                        return;
+                    }
                     self.uploading = false;
                     if (error) {
                         switch (error.code) {
@@ -610,7 +629,7 @@ var CFileUploaderBar = function (_React$PureComponent2) {
                         urls: [this.uploader.previewUrl],
                         current: this.uploader.previewUrl
                     });
-                } else if (fileType == 'video') {
+                } else if (fileType == 'video' || fileType == 'movie') {
                     if (isMobile) {
                         dingdingKit.biz.util.openLink({
                             url: window.location.origin + '/videoplayer?src=' + this.uploader.previewUrl
@@ -618,6 +637,17 @@ var CFileUploaderBar = function (_React$PureComponent2) {
                     } else {
                         dingdingKit.biz.util.openModal({
                             url: window.location.origin + '/videoplayer?src=' + this.uploader.previewUrl,
+                            title: fileProfile.name
+                        });
+                    }
+                } else if (fileType == 'audio' || fileType == 'sound') {
+                    if (isMobile) {
+                        dingdingKit.biz.util.openLink({
+                            url: window.location.origin + '/audioplayer?src=' + this.uploader.previewUrl
+                        });
+                    } else {
+                        dingdingKit.biz.util.openModal({
+                            url: window.location.origin + '/audioplayer?src=' + this.uploader.previewUrl,
                             title: fileProfile.name
                         });
                     }
@@ -671,12 +701,8 @@ var CFileUploaderBar = function (_React$PureComponent2) {
                     case 'audio':
                     case 'image':
                     case 'movie':
-                    case 'pdf':
                     case 'sound':
                     case 'video':
-                    case 'text':
-                    case 'excel':
-                    case 'word':
                         canPreview = true;
                 }
             }
@@ -787,6 +813,10 @@ var CFileUploaderBar = function (_React$PureComponent2) {
                 } else {
                     iconElem = React.createElement('i', { className: 'fa fa-3x m-auto ' + fileIconType });
                 }
+                var fileName = fileProfile.name;
+                if (fileName.length > 15) {
+                    fileName = '...' + fileName.slice(-15);
+                }
                 contentElem = React.createElement(
                     'div',
                     { className: 'd-flex flex-grow-1 flex-shrink-1' },
@@ -802,7 +832,7 @@ var CFileUploaderBar = function (_React$PureComponent2) {
                         React.createElement(
                             'span',
                             { className: 'border-bottom' },
-                            fileProfile.name
+                            fileName
                         ),
                         bottomBar
                     )
@@ -827,17 +857,23 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
 
         var _this5 = _possibleConstructorReturn(this, (ERPC_MultiFileUploader.__proto__ || Object.getPrototypeOf(ERPC_MultiFileUploader)).call(this));
 
-        autoBind(_this5);
-
         ERPControlBase(_this5);
         _this5.state = _this5.initState;
         _this5.fileTagRef = React.createRef();
+
+        autoBind(_this5);
         return _this5;
     }
 
     _createClass(ERPC_MultiFileUploader, [{
-        key: 'cusComponentWillMount',
-        value: function cusComponentWillMount() {}
+        key: 'cusComponentWillmount',
+        value: function cusComponentWillmount() {
+            if (this.props.uploaders == null) {
+                store.dispatch(makeAction_setManyStateByPath({
+                    uploaders: []
+                }, this.props.fullPath));
+            }
+        }
     }, {
         key: 'cusComponentWillUnmount',
         value: function cusComponentWillUnmount() {}
@@ -846,6 +882,7 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
         value: function fileSelectedHandler(ev) {
             var uploaders = this.props.uploaders;
             var newUploaders = uploaders ? uploaders.concat() : [];
+            var addedCount = 0;
             for (var fi = 0; fi < ev.target.files.length; ++fi) {
                 var theFile = ev.target.files[fi];
                 var found = newUploaders.find(function (uploader) {
@@ -855,10 +892,16 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
                     var newUploader = new FileUploader();
                     newUploader.uploadFile(theFile);
                     newUploaders.push(newUploader);
+                    ++addedCount;
+                    if (addedCount == 9) {
+                        SendToast("一次只能添加9个文件");
+                        break;
+                    }
                 }
             }
             store.dispatch(makeAction_setManyStateByPath({
-                uploaders: newUploaders
+                uploaders: newUploaders,
+                invalidInfo: null
             }, this.props.fullPath));
         }
     }, {
@@ -869,8 +912,35 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
             }
         }
     }, {
+        key: 'clickTrashHandler',
+        value: function clickTrashHandler(ev) {
+            var fkey = getAttributeByNode(ev.target, 'd-fkey');
+            var uploaders = this.props.uploaders;
+            if (uploaders) {
+                var targetUploader = null;
+                for (var pi = 0; pi < uploaders.length; ++pi) {
+                    var uploader = uploaders[pi];
+                    if (uploader.file.name + uploader.file.size == fkey) {
+                        targetUploader = uploader;
+                        break;
+                    }
+                }
+                if (targetUploader) {
+                    targetUploader.reset();
+                    var newUploaders = uploaders.filter(function (uploader) {
+                        return uploader != targetUploader;
+                    });
+                    store.dispatch(makeAction_setManyStateByPath({
+                        uploaders: newUploaders
+                    }, this.props.fullPath));
+                }
+            }
+        }
+    }, {
         key: 'render',
         value: function render() {
+            var _this6 = this;
+
             if (this.props.visible == false) {
                 return null;
             }
@@ -880,8 +950,21 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
                 uploaderElems_arr = uploaders.map(function (uploader) {
                     return React.createElement(
                         'div',
-                        { key: uploader.file.name, className: 'list-group-item' },
-                        React.createElement(CFileUploaderBar, { uploader: uploader })
+                        { key: uploader.file.name, 'd-fkey': uploader.file.name + uploader.file.size, className: 'list-group-item flex-grow-0 flex-shrink-0' },
+                        React.createElement(
+                            'div',
+                            { className: 'd-flex w-100 align-items-center' },
+                            React.createElement(
+                                'span',
+                                { className: 'flex-grow-1 flex-shrink-1 border-right mr-1' },
+                                React.createElement(CFileUploaderBar, { uploader: uploader })
+                            ),
+                            React.createElement(
+                                'button',
+                                { onClick: _this6.clickTrashHandler, className: 'btn btn-danger flex-grow-0 flex-shrink-0' },
+                                React.createElement('i', { className: 'fa fa-trash' })
+                            )
+                        )
                     );
                 });
             }
@@ -890,6 +973,16 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
             var bContentNeedScroll = false;
             if (this.props.flexgrow == '1' || this.props.flexshrink == '1' || this.props.style && (this.props.style.height || this.props.style.maxHeight)) {
                 bContentNeedScroll = true;
+            }
+
+            var invalidInfoElem = null;
+            if (!IsEmptyString(this.props.invalidInfo)) {
+                var invalidInfoElem = React.createElement(
+                    'span',
+                    { className: 'bg-danger text-white' },
+                    React.createElement('i', { className: 'fa fa-warning' }),
+                    this.props.invalidInfo
+                );
             }
 
             return React.createElement(
@@ -912,6 +1005,7 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
                         '\u6DFB\u52A0'
                     )
                 ),
+                invalidInfoElem,
                 React.createElement(
                     'div',
                     { className: 'list-group flex-grow-1 flex-shrink-1 border' + (bContentNeedScroll ? ' autoScroll' : '') },
@@ -939,7 +1033,8 @@ function ERPC_MultiFileUploader_mapstatetoprops(state, ownprops) {
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
         title: ctlState.title == null ? ownprops.title : ctlState.title,
-        uploaders: ctlState.uploaders
+        uploaders: ctlState.uploaders,
+        invalidInfo: ctlState.invalidInfo
     };
 }
 

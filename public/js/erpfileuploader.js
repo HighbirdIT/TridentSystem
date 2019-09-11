@@ -80,6 +80,10 @@ var FileUploader = function (_EventEmitter) {
                 self.meetError({ errorMsg: '读取文件出错' });
             };
             reader.onload = function (ev) {
+                if (self.fileProfile == null) {
+                    console.log('上传器被删除');
+                    return;
+                }
                 self.fileData = new Uint8Array(reader.result);
                 self.startPos = 0;
                 self.changeState(EFileUploaderState.PREPARE);
@@ -88,6 +92,10 @@ var FileUploader = function (_EventEmitter) {
                 if (theFile.type.indexOf('image/') != -1) {
                     reader.onerror = null;
                     reader.onload = function (ev) {
+                        if (self.fileData == null) {
+                            console.log('上传器被删除');
+                            return;
+                        }
                         self.base64Data = reader.result;
                         self._fireChanged();
                     };
@@ -136,6 +144,10 @@ var FileUploader = function (_EventEmitter) {
             }
             var self = this;
             store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'applyForTempFile' }, makeFTD_Callback(function (state, data, error) {
+                if (self.fileData == null) {
+                    console.log('上传器被删除');
+                    return;
+                }
                 if (error) {
                     self.meetError(error);
                     return;
@@ -157,7 +169,8 @@ var FileUploader = function (_EventEmitter) {
         value: function _uploadData() {
             var _this2 = this;
 
-            if (this.isPause || this.uploading) {
+            if (this.isPause || this.uploading || this.fileData == null) {
+                console.log('_uploadData ret');
                 return;
             }
             var blockSize = this.fileProfile.size - this.startPos;
@@ -183,6 +196,10 @@ var FileUploader = function (_EventEmitter) {
             //console.log('uploading');
             store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'uploadBlock' }, makeFTD_Callback(function (state, data, error, fetchUseTime) {
                 setTimeout(function () {
+                    if (self.fileData == null) {
+                        console.log('上传器被删除');
+                        return;
+                    }
                     //console.log('uploading end');
                     self.uploading = false;
                     if (error) {

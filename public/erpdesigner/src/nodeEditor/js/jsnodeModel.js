@@ -871,6 +871,9 @@ class JSNode_BluePrint extends EventEmitter {
                             else {
                                 initValue = ctlStateVarName + '.' + propApiitem.stateName;
                             }
+                            if(propApiitem.getInitValueFun){
+                                initValue = propApiitem.getInitValueFun(ctlStateVarName);
+                            }
                             if (controlStateDelayGet) {
                                 theFun.scope.getVar(varName, true);
                                 validFormSelectBlock.pushLine(makeLine_Assign(varName, initValue));
@@ -940,7 +943,11 @@ class JSNode_BluePrint extends EventEmitter {
                 for (propName in useCtlData.useprops_map) {
                     propApiitem = useCtlData.useprops_map[propName];
                     varName = usectlid + '_' + propApiitem.stateName;
-                    theFun.scope.getVar(varName, true, ctlStateVarName + '.' + propApiitem.stateName);
+                    var propInitValue = ctlStateVarName + '.' + propApiitem.stateName;
+                    if(propApiitem.getInitValueFun){
+                        propInitValue = propApiitem.getInitValueFun(ctlStateVarName);
+                    }
+                    theFun.scope.getVar(varName, true, propInitValue);
                     if (propApiitem.needValid && needCheckProps_map[varName] == null) {
                         needCheckProps_map[varName] = 1;
                         nullableChecker = ctlParentStateVarName ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
@@ -6340,7 +6347,13 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             helper.addUseControlEventApi(selectedKernel, useApiItem, EFormRowSource.Context);
         }
         else {
-            myJSBlock.pushLine(selectedKernel.id + "_" + this.funItem.name + "();", -1);
+            if(selectedKernel.type == MFileUploader_Type && this.funItem.name == 'reset'){
+                myJSBlock.pushLine("ResetMFileUploader(" + selectedKernel.id  + "_path);", -1);
+                helper.addUseControlPath(selectedKernel);
+            }
+            else{
+                myJSBlock.pushLine(selectedKernel.id + "_" + this.funItem.name + "();", -1);
+            }
         }
         myJSBlock.pushLine('},50);');
         belongBlock.pushChild(myJSBlock);

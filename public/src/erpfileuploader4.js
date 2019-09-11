@@ -59,6 +59,10 @@ class FileUploader extends EventEmitter {
             self.meetError({ errorMsg: '读取文件出错' });
         };
         reader.onload = ev => {
+            if(self.fileProfile == null){
+                console.log('上传器被删除');
+                return;
+            }
             self.fileData = new Uint8Array(reader.result);
             self.startPos = 0;
             self.changeState(EFileUploaderState.PREPARE);
@@ -67,6 +71,10 @@ class FileUploader extends EventEmitter {
             if (theFile.type.indexOf('image/') != -1) {
                 reader.onerror = null;
                 reader.onload = ev => {
+                    if(self.fileProfile == null){
+                        console.log('上传器被删除');
+                        return;
+                    }
                     self.base64Data = reader.result;
                     self._fireChanged();
                 };
@@ -115,6 +123,10 @@ class FileUploader extends EventEmitter {
         var self = this;
         store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'applyForTempFile' },
             makeFTD_Callback((state, data, error) => {
+                if(self.fileProfile == null){
+                    console.log('上传器被删除');
+                    return;
+                }
                 if (error) {
                     self.meetError(error);
                     return;
@@ -123,6 +135,10 @@ class FileUploader extends EventEmitter {
                     self.fileProfile.identity = data.identity;
                     self.fileProfile.code = data.code;
                     setTimeout(() => {
+                        if(self.fileProfile == null){
+                            console.log('上传器被删除');
+                            return;
+                        }
                         self.changeState(EFileUploaderState.UPLOADING);
                     }, 20);
                 }
@@ -161,7 +177,10 @@ class FileUploader extends EventEmitter {
         store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'uploadBlock' },
             makeFTD_Callback((state, data, error, fetchUseTime) => {
                 setTimeout(() => {
-                    //console.log('uploading end');
+                    if(self.fileProfile == null){
+                        console.log('上传器被删除');
+                        return;
+                    }
                     self.uploading = false;
                     if (error) {
                         switch (error.code) {
@@ -486,7 +505,7 @@ class CFileUploaderBar extends React.PureComponent {
                     current:this.uploader.previewUrl,
                 });
             }
-            else if(fileType == 'video'){
+            else if(fileType == 'video' || fileType == 'movie'){
                 if(isMobile){
                     dingdingKit.biz.util.openLink({
                         url:window.location.origin + '/videoplayer?src=' + this.uploader.previewUrl,
@@ -495,6 +514,19 @@ class CFileUploaderBar extends React.PureComponent {
                 else{
                     dingdingKit.biz.util.openModal({
                         url:window.location.origin + '/videoplayer?src=' + this.uploader.previewUrl,
+                        title: fileProfile.name,
+                    });
+                }
+            }
+            else if(fileType == 'audio' || fileType == 'sound'){
+                if(isMobile){
+                    dingdingKit.biz.util.openLink({
+                        url:window.location.origin + '/audioplayer?src=' + this.uploader.previewUrl,
+                    });
+                }
+                else{
+                    dingdingKit.biz.util.openModal({
+                        url:window.location.origin + '/audioplayer?src=' + this.uploader.previewUrl,
                         title: fileProfile.name,
                     });
                 }
@@ -549,12 +581,8 @@ class CFileUploaderBar extends React.PureComponent {
                 case 'audio':
                 case 'image':
                 case 'movie':
-                case 'pdf':
                 case 'sound':
                 case 'video':
-                case 'text':
-                case 'excel':
-                case 'word':
                     canPreview = true;
             }
         }
@@ -615,13 +643,17 @@ class CFileUploaderBar extends React.PureComponent {
             else {
                 iconElem = <i className={'fa fa-3x m-auto ' + fileIconType} />
             }
+            var fileName = fileProfile.name;
+            if(fileName.length > 15){
+                fileName = '...' + fileName.slice(-15);
+            }
             contentElem = <div className='d-flex flex-grow-1 flex-shrink-1'>
                 <div className='flex-grow-0 flex-shrink-0 p-1 d-flex flex-column'>
                     {iconElem}
                     {fileUploader.sizeStr}
                 </div>
                 <div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
-                    <span className='border-bottom'>{fileProfile.name}</span>
+                    <span className='border-bottom'>{fileName}</span>
                     {bottomBar}
                 </div>
             </div>;
@@ -635,15 +667,20 @@ class CFileUploaderBar extends React.PureComponent {
 class ERPC_MultiFileUploader extends React.PureComponent {
     constructor(props) {
         super();
-        autoBind(this);
 
         ERPControlBase(this);
         this.state = this.initState;
         this.fileTagRef = React.createRef();
+
+        autoBind(this);
     }
 
-    cusComponentWillMount() {
-
+    cusComponentWillmount() {
+        if(this.props.uploaders == null){
+            store.dispatch(makeAction_setManyStateByPath({
+                uploaders: [],
+            }, this.props.fullPath));
+        }
     }
 
     cusComponentWillUnmount() {
@@ -653,6 +690,7 @@ class ERPC_MultiFileUploader extends React.PureComponent {
     fileSelectedHandler(ev) {
         var uploaders = this.props.uploaders;
         var newUploaders = uploaders ? uploaders.concat() : [];
+        var addedCount = 0;
         for (var fi = 0; fi < ev.target.files.length; ++fi) {
             var theFile = ev.target.files[fi];
             var found = newUploaders.find(uploader => {
@@ -662,16 +700,46 @@ class ERPC_MultiFileUploader extends React.PureComponent {
                 var newUploader = new FileUploader();
                 newUploader.uploadFile(theFile);
                 newUploaders.push(newUploader);
+                ++addedCount;
+                if(addedCount == 9){
+                    SendToast("一次只能添加9个文件");
+                    break;
+                }
             }
         }
         store.dispatch(makeAction_setManyStateByPath({
             uploaders: newUploaders,
+            invalidInfo: null,
         }, this.props.fullPath));
     }
 
     plusClickHandler(ev) {
         if (this.fileTagRef.current) {
             this.fileTagRef.current.click();
+        }
+    }
+
+    clickTrashHandler(ev){
+        var fkey = getAttributeByNode(ev.target,'d-fkey');
+        var uploaders = this.props.uploaders;
+        if(uploaders){
+            var targetUploader = null;
+            for(var pi = 0;pi < uploaders.length; ++pi){
+                var uploader = uploaders[pi];
+                if(uploader.file.name + uploader.file.size == fkey){
+                    targetUploader = uploader;
+                    break;
+                }
+            }
+            if(targetUploader){
+                targetUploader.reset();
+                var newUploaders = uploaders.filter(uploader=>{
+                    return uploader != targetUploader;
+                })
+                store.dispatch(makeAction_setManyStateByPath({
+                    uploaders: newUploaders,
+                }, this.props.fullPath));
+            }
         }
     }
 
@@ -683,8 +751,13 @@ class ERPC_MultiFileUploader extends React.PureComponent {
         var uploaderElems_arr = [];
         if (uploaders && uploaders.length > 0) {
             uploaderElems_arr = uploaders.map(uploader => {
-                return <div key={uploader.file.name} className='list-group-item'>
-                    <CFileUploaderBar uploader={uploader} />
+                return <div key={uploader.file.name} d-fkey={uploader.file.name + uploader.file.size} className='list-group-item flex-grow-0 flex-shrink-0'>
+                    <div className='d-flex w-100 align-items-center'>
+                        <span className='flex-grow-1 flex-shrink-1 border-right mr-1'>
+                            <CFileUploaderBar uploader={uploader} />
+                        </span>
+                        <button onClick={this.clickTrashHandler} className='btn btn-danger flex-grow-0 flex-shrink-0'><i className='fa fa-trash' /></button>
+                    </div>
                 </div>
             });
         }
@@ -697,12 +770,18 @@ class ERPC_MultiFileUploader extends React.PureComponent {
             bContentNeedScroll = true;
         }
 
+        var invalidInfoElem = null;
+        if(!IsEmptyString(this.props.invalidInfo)){
+            var invalidInfoElem = <span className='bg-danger text-white'><i className='fa fa-warning' />{this.props.invalidInfo}</span>
+        }
+
         return <div className={rootClassName} style={this.props.style}>
             <input onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' multiple="multiple" />
             <div className='bg-dark d-flex flex-shrink-0 flex-grow-0 p-1 align-items-center'>
                 <span className='text-light flex-grow-1 flex-shrink-1'><i className='fa fa-list mr-1' />{this.props.title}</span>
                 <button className='btn btn-success' onClick={this.plusClickHandler}><i className='fa fa-plus' />添加</button>
             </div>
+            {invalidInfoElem}
             <div className={'list-group flex-grow-1 flex-shrink-1 border' + (bContentNeedScroll ? ' autoScroll' : '')}>
                 {uploaderElems_arr}
                 <div className='list-group-item'>{uploaderElems_arr.length == 0 ? '没有附件' : '共' + uploaderElems_arr.length + '个附件'}</div>
@@ -722,6 +801,7 @@ function ERPC_MultiFileUploader_mapstatetoprops(state, ownprops) {
         fullPath: propProfile.fullPath,
         title: ctlState.title == null ? ownprops.title : ctlState.title,
         uploaders: ctlState.uploaders,
+        invalidInfo: ctlState.invalidInfo,
     };
 }
 

@@ -209,6 +209,11 @@ app.use('/', function (req, res, next) {
 });
 
 app.use('/fileSystem', function (req, res, next) {
+    var hostIp = app.get('hostip');
+    if(hostIp == '192.168.0.202'){
+        hostIp = 'erp.highbird.cn';
+    }
+    res.locals.rootUrl = 'http://' + hostIp + ':' + app.get('port');
     checkLogState(req, res, next, fileSystem.process);
 });
 
@@ -425,6 +430,10 @@ app.use('/erppage/login', function (req, res, next) {
 
 app.use('/videoplayer', function (req, res, next) {
     return res.render('empty', { layout: 'videoPlayer' });
+});
+
+app.use('/audioplayer', function (req, res, next) {
+    return res.render('empty', { layout: 'audioPlayer' });
 });
 
 function renderErpPage(req, res, next){
