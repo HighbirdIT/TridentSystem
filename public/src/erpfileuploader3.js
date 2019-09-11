@@ -482,7 +482,7 @@ class CFileUploaderBar extends React.PureComponent {
         if(isInDingTalk){
             if(fileType == 'image'){
                 dingdingKit.biz.util.previewImage({
-                    url:[this.uploader.previewUrl],
+                    urls:[this.uploader.previewUrl],
                     current:this.uploader.previewUrl,
                 });
             }

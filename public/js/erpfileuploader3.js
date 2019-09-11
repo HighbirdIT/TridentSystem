@@ -607,7 +607,7 @@ var CFileUploaderBar = function (_React$PureComponent2) {
             if (isInDingTalk) {
                 if (fileType == 'image') {
                     dingdingKit.biz.util.previewImage({
-                        url: [this.uploader.previewUrl],
+                        urls: [this.uploader.previewUrl],
                         current: this.uploader.previewUrl
                     });
                 } else {
