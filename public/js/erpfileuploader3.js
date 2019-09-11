@@ -790,8 +790,7 @@ var CFileUploaderBar = function (_React$PureComponent2) {
                             { className: 'border-bottom' },
                             fileProfile.name
                         ),
-                        bottomBar,
-                        fileUploader.previewUrl
+                        bottomBar
                     )
                 );
             }
