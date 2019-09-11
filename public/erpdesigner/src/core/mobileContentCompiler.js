@@ -3724,9 +3724,6 @@ class MobileContentCompiler extends ContentCompiler {
                 parentMidData.needSetKernels_arr.push(theKernel);
             }
         }
-        
-        this.clientSide.mobileDDApis_map['biz.util.previewImage'] = 1;
-        this.clientSide.mobileDDApis_map['biz.util.openModal'] = 1;
         renderBlock.pushChild(ctlTag);
     }
 
