@@ -493,7 +493,7 @@ class CFileUploaderBar extends React.PureComponent {
             }
         }
         else{
-
+            SendToast('在钉钉中才可预览');
         }
     }
 

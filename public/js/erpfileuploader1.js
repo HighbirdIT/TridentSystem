@@ -615,7 +615,9 @@ var CFileUploaderBar = function (_React$PureComponent2) {
                         title: fileProfile.name //顶部标题
                     });
                 }
-            } else {}
+            } else {
+                SendToast('在钉钉中才可预览');
+            }
         }
     }, {
         key: 'render',

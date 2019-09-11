@@ -86,7 +86,7 @@ fileSystem.uploadBlock = (req,res) => {
                 return serverhelper.createErrorRet('已上传完成', EFileSystemError.UPLOADCOMPLATE);
             }
             var belongDirPath = fileRecord.创建时间.getFullYear() + '_' + (fileRecord.创建时间.getMonth() + 1);
-            var targetDirPath = path.join(gFileHouseRootPath,belongDirPath);
+            var targetDirPath = path.join(__dirname,gFileHouseRootPath,belongDirPath);
             if (!fs.existsSync(targetDirPath))
             {
                 fs.mkdirSync(targetDirPath);
