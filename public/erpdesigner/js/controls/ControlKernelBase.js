@@ -701,6 +701,11 @@ var ControlLayoutConfig = function () {
             }
             return rlt;
         }
+    }, {
+        key: 'hadClass',
+        value: function hadClass(name) {
+            return this.class[name] != null;
+        }
     }]);
 
     return ControlLayoutConfig;

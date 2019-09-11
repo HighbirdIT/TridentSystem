@@ -8,6 +8,7 @@ var connect = require('connect');
 var React = require('react');
 var dbhelper = require('./dbhelper.js');
 var flowhelper = require('./flowhelper.js');
+var fileSystem = require('./fileSystem.js');
 var co = require('co');
 var dingHelper = require('./dingHelper');
 var developconfig = require('./developconfig');
@@ -116,6 +117,26 @@ app.use(function (req, res, next) {
     next();
 });
 
+function checkLogState(req, res, next, process){
+    if(req.session.g_envVar == null){
+        if (!res.locals.isProduction) {
+            req.session.g_envVar = developconfig.envVar;
+            process(req, res, next);
+        }
+        else {
+            var logrcd = req.signedCookies._erplogrcdid;
+            if (logrcd != null) {
+                dingHelper.aysnLoginfFromRcdID(logrcd, req, res).then(data=>{
+                    process(req, res, next);
+                });
+            }
+        }
+    }
+    else{
+        process(req, res, next);
+    }
+}
+
 app.use('/', function (req, res, next) {
     if (req.path == '/' || req.path == '#') {
         /*
@@ -178,6 +199,10 @@ app.use('/', function (req, res, next) {
     }
 
     next();
+});
+
+app.use('/fileSystem', function (req, res, next) {
+    checkLogState(req, res, next, fileSystem.process);
 });
 
 app.use('/fromNotify', function (req, res, next) {
@@ -350,7 +375,7 @@ var autoViews = {};
 var erpPageCache = {};
 var fs = require('fs');
 
-app.use('/erppage/server', function (req, res, next) {
+function processErppageServer(req, res, next){
     var pageName = req.path.substr(1).toUpperCase();
     var cache = erpPageCache[pageName];
     var jspath = null;
@@ -370,6 +395,10 @@ app.use('/erppage/server', function (req, res, next) {
         }
         return require(jspath)(req, res, next, app);
     });
+}
+
+app.use('/erppage/server', function (req, res, next) {
+    checkLogState(req, res, next, processErppageServer);
 });
 
 app.use('/erppage/login', function (req, res, next) {
@@ -430,6 +459,7 @@ app.use('/erppage', function (req, res, next) {
     return res.render('404');
 });
 
+var jsCache = {};
 app.use('/interview', function (req, res, next) {
     var childPath = req.path.toLowerCase();
     var path = '/interview' + childPath; // 检查 缓存； 如果 它在 那里， 渲染 这个 视图 

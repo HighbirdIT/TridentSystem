@@ -663,6 +663,10 @@ class ControlLayoutConfig {
         }
         return rlt;
     }
+
+    hadClass(name){
+        return this.class[name] != null;
+    }
 }
 
 class CtlKernelCreationHelper extends EventEmitter {

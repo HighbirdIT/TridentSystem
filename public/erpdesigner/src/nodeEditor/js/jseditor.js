@@ -105,6 +105,16 @@ const JSNodeEditorControls_arr =[
         type:'操纵数组'
     },
     {
+        label:'数组-是否为空',
+        nodeClass:JSNode_IsEmptyArray,
+        type:'操纵数组'
+    },
+    {
+        label:'字符串-是否为空',
+        nodeClass:JSNode_IsEmptyString,
+        type:'操纵字符串'
+    },
+    {
         label:'字符串-长度',
         nodeClass:JSNode_String_Length,
         type:'操纵字符串'

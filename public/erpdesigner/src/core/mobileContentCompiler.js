@@ -992,6 +992,9 @@ class MobileContentCompiler extends ContentCompiler {
             case TaskSelector_Type:
                 rlt = this.compileTaskSelectorKernel(theKernel, renderBlock, renderFun);
                 break;
+            case MFileUploader_Type:
+                rlt = this.compileMFileUploaderKernel(theKernel, renderBlock, renderFun);
+                break;
             default:
                 logManager.error('不支持的编译kernel type:' + theKernel.type);
         }
@@ -3664,6 +3667,67 @@ class MobileContentCompiler extends ContentCompiler {
         }
         kernelMidData.needSetStates_arr.push(setTextStateItem);
         kernelMidData.needSetStates_arr.push(setValueStateItem);
+    }
+
+    compileMFileUploaderKernel(theKernel, renderBlock, renderFun){
+        var project = this.project;
+        var layoutConfig = theKernel.getLayoutConfig();
+        var ctlTag = new FormatHtmlTag(theKernel.id, 'VisibleERPC_MultiFileUploader', this.clientSide);
+        this.modifyControlTag(theKernel, ctlTag);
+        if(layoutConfig.hadClass('flex-grow-1')){
+            ctlTag.setAttr('flexgrow', '1');
+        }
+        if(layoutConfig.hadClass('flex-shrink-1')){
+            ctlTag.setAttr('flexshrink', '1');
+        }
+        ctlTag.style = layoutConfig.style;
+        ctlTag.setAttr('id', theKernel.id);
+        var parentPath = this.getKernelParentPath(theKernel);
+        ctlTag.setAttr('parentPath', parentPath);
+
+        var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
+        var reactParentKernel = theKernel.getReactParentKernel(true);
+        var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
+        var parentMidData = this.projectCompiler.getMidData(reactParentKernel.id);
+
+        var title = theKernel.getAttribute(AttrNames.Title);
+        var titleParseRet = parseObj_CtlPropJsBind(title, project.scriptMaster);
+        var setTitleStateTiem = null;
+        if (titleParseRet.isScript) {
+            if (this.compileScriptAttribute(titleParseRet, theKernel, 'title', AttrNames.Title, { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (!IsEmptyString(titleParseRet.string)) {
+                if (belongFormKernel != null && (belongFormKernel.isPageForm() || belongFormKernel.isKernelInRow(theKernel))) {
+                    var formColumns_arr = belongFormKernel.getCanuseColumns();
+                    if (formColumns_arr.indexOf(title) != -1) {
+                        parentMidData.useColumns_map[title] = 1;
+                        setTitleStateTiem = {
+                            name: 'title',
+                            useColumn: { name: title },
+                        };
+                    }
+                }
+                else {
+                    ctlTag.setAttr('title', title);
+                }
+            }
+            else{
+                ctlTag.setAttr('title', '附件列表');
+            }
+        }
+        if (setTitleStateTiem) {
+            kernelMidData.needSetStates_arr.push(setTitleStateTiem);
+            if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
+                parentMidData.needSetKernels_arr.push(theKernel);
+            }
+        }
+        
+        this.clientSide.mobileDDApis_map['biz.util.previewImage'] = 1;
+        this.clientSide.mobileDDApis_map['biz.util.openModal'] = 1;
+        renderBlock.pushChild(ctlTag);
     }
 
     compileDropdownKernel(theKernel, renderBlock, renderFun) {

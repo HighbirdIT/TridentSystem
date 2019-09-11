@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="/vendor/bootstrap4/css/bootstrap.min.m.css">
   <link rel="stylesheet" href="/css/erpmobilepage09.css">
   <link rel="stylesheet" href="/vendor/font-awesome-4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/vendor/uppy/uppy.min.css">
   <script>
     {{{_sections.headScript}}}
   </script>
@@ -34,9 +35,11 @@
     {{#if isProduction}}
     <script src="https://cdn.bootcss.com/react/16.7.0/umd/react.production.min.js"></script>
     <script src="https://cdn.bootcss.com/react-dom/16.6.3/umd/react-dom.production.min.js"></script>
+    <script src="/vendor/uppy/uppy.min.js"></script>
     {{else}}
     <script src="https://cdn.bootcss.com/react/16.7.0/umd/react.development.js"></script>
     <script src="https://cdn.bootcss.com/react-dom/16.6.3/umd/react-dom.development.js"></script>
+    <script src="/vendor/uppy/uppy.js"></script>
     {{/if}}
 
     {{#if isProduction}}
@@ -56,7 +59,6 @@
     <script src="/js/erpmobilecontrols28.js"></script>
     <script src="/js/erpadvancecontrols3.js"></script>
     <script src="/js/erptaskcreator3.js"></script>
-    <script src="/js/erpfileuploader.js"></script>
     {{{_sections.script}}}
     <script>
     {{{_sections.postScript}}}

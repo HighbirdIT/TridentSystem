@@ -1565,10 +1565,14 @@ class FlowNode_ColumnVar extends JSNode_Base {
             if (this.checkCompileFlag(relNode.inFlowSocket, '不能早于关联的节点被访问到', helper)) {
                 return false;
             }
-            relNode.compile(helper, preNodes_arr);
+            relNodeComRet = relNode.compile(helper, preNodes_arr);
         }
 
-        var value = relNodeComRet.getSocketOut(realSocket).strContent;
+        var socketComRet = relNodeComRet.getSocketOut(realSocket);
+        if (this.checkCompileFlag(socketComRet == null, '不能找到关联接口的编译结果', helper)) {
+            return false;
+        }
+        var value = socketComRet.strContent;
         /*
         var theColumn = null;
         if (this.keySocket.node.targetEntity != null) {

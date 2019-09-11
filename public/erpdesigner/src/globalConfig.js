@@ -43,6 +43,7 @@ var MessageTargetTypes_arr = [{ text: '指定人员', value: EMessageTargetType.
 var PersonEductOptions_arr = [];
 var AllPosts_arr = [];
 var ProjectRecords_arr = [];
+var AllFileFlows_arr = [];
 
 var SqlVarType_Unknown = 'unknown';
 var SqlVarType_Int = 'int';

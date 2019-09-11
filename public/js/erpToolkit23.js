@@ -475,11 +475,13 @@ var EFetchKey = {
     FetchPropValue: 'fetchPropValue'
 };
 
-function createError(info, type) {
+function createError(info, type, code, data) {
     return {
         type: type == null ? ErrType.UNKNOWN : type,
         info: info,
-        err: 1
+        err: 1,
+        code: code,
+        data: data
     };
 }
 
@@ -649,6 +651,7 @@ function _doFetching(dispatch) {
         var errObj = createError('啊哦，服务器没响应了', ErrType.TIMEOUT);
         dispatch(makeAction_fetchError(key, errObj, thisFetch));
     }, timeout);
+    var startTime = new Date().getTime();
     return fetch(url, fetchParam).then(function (response) {
         if (dispatched) {
             console.log('response at dispatched');
@@ -659,31 +662,39 @@ function _doFetching(dispatch) {
         if (response.ok) {
             return response.json();
         } else {
-            var errObj = createError(response.statusText, ErrType.NORESPONSE, thisFetch);
+            var errObj = createError(response.statusText, ErrType.NORESPONSE);
             dispatch(makeAction_fetchError(key, errObj, thisFetch));
             _doNextFetching(dispatch);
             return null;
         }
     }, function (error) {
+        clearTimeout(timeoutHandler);
         if (dispatched) {
             console.log('response at dispatched');
             _doNextFetching(dispatch);
             return null;
         }
         console.warn('An error occurred.', error);
-        var errObj = createError(error.toString(), ErrType.NORESPONSE, thisFetch);
+        var errObj = createError(error.toString(), ErrType.NORESPONSE);
+        thisFetch.errObj = errObj;
         dispatch(makeAction_fetchError(key, errObj, thisFetch));
         _doNextFetching(dispatch);
     }).then(function (json) {
+        if (thisFetch.errObj) {
+            // 已经处理郭error
+            return;
+        }
+        var endTime = new Date().getTime();
+        thisFetch.useTime = endTime - startTime;
         if (dispatched) {
             console.log('response at dispatched');
             _doNextFetching(dispatch);
             return null;
         }
         if (json == null) {
-            dispatch(makeAction_fetchError(key, createError('"' + url + '"没有响应', ErrType.SERVERSIDE, thisFetch), thisFetch));
+            dispatch(makeAction_fetchError(key, createError('"' + url + '"没有响应', ErrType.SERVERSIDE), thisFetch));
         } else if (json.err != null) {
-            dispatch(makeAction_fetchError(key, createError(json.err.info, ErrType.SERVERSIDE, thisFetch), thisFetch));
+            dispatch(makeAction_fetchError(key, createError(json.err.info, ErrType.SERVERSIDE, json.err.code, json.err.data), thisFetch));
         } else {
             //setTimeout(() => {
             dispatch(makeAction_fetchend(key, json, thisFetch));
@@ -724,11 +735,11 @@ function nativeFetchJson(useGet, url, sendData) {
         if (response.ok) {
             return response.json();
         } else {
-            var errObj = createError(response.statusText, ErrType.NORESPONSE, thisFetch);
+            var errObj = createError(response.statusText, ErrType.NORESPONSE);
             return { err: errObj };
         }
     }, function (error) {
-        var errObj = createError(error.toString(), ErrType.NORESPONSE, thisFetch);
+        var errObj = createError(error.toString(), ErrType.NORESPONSE);
         return { err: errObj };
     }).then(function (json) {
         return json;
@@ -1085,7 +1096,7 @@ function fetchEndHandler(state, action) {
         if (triggerData) {
             if (triggerData.callBack) {
                 if (!discardResult) {
-                    var callbackret = triggerData.callBack(retState, null, action.err);
+                    var callbackret = triggerData.callBack(retState, null, action.err, action.fetchData.useTime);
                     if (callbackret != null) {
                         retState = callbackret;
                     }
@@ -1152,7 +1163,7 @@ function fetchEndHandler(state, action) {
             }
         default:
             if (triggerData.callBack) {
-                var callbackret = triggerData.callBack(retState, action.json.data);
+                var callbackret = triggerData.callBack(retState, action.json.data, null, action.fetchData.useTime);
                 if (callbackret != null) {
                     retState = callbackret;
                 }
