@@ -51,7 +51,8 @@ app.set('env', process.env.PORT || 'production');
 
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
-if (app.get('env') == 'production') {
+var inProduction = app.get('env') == 'production';
+if (inProduction) {
     app.set('view cache', true);
 }
 
@@ -119,7 +120,7 @@ app.use(function (req, res, next) {
 
 function checkLogState(req, res, next, process){
     if(req.session.g_envVar == null){
-        if (!res.locals.isProduction) {
+        if (!inProduction) {
             req.session.g_envVar = developconfig.envVar;
             process(req, res, next);
         }
@@ -129,6 +130,9 @@ function checkLogState(req, res, next, process){
                 dingHelper.aysnLoginfFromRcdID(logrcd, req, res).then(data=>{
                     process(req, res, next);
                 });
+            }
+            else{
+                process(req, res, next);
             }
         }
     }
@@ -423,7 +427,7 @@ app.use('/videoplayer', function (req, res, next) {
     return res.render('empty', { layout: 'videoPlayer' });
 });
 
-app.use('/erppage', function (req, res, next) {
+function renderErpPage(req, res, next){
     res.locals.isProduction = app.get('env') == 'production';
     var childPath = req.path;
     var t_arr = childPath.split('/');
@@ -464,6 +468,10 @@ app.use('/erppage', function (req, res, next) {
     }
     res.status(404);
     return res.render('404');
+}
+
+app.use('/erppage', function (req, res, next) {
+    checkLogState(req, res, next, renderErpPage);
 });
 
 var jsCache = {};
