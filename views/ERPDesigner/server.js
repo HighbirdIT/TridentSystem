@@ -296,7 +296,16 @@ function getBaseConfigData(req) {
         rlt.personEducts_arr = yield getPersonEductOptions();
         rlt.posts_arr = yield getAllPost();
         rlt.projects_arr = yield getAllProjectRecord();
+        rlt.fileFlows_arr = yield getAllFileFlowRecord();
         return rlt;
+    });
+}
+
+function getAllFileFlowRecord(){
+    return co(function* () {
+        var sql = 'SELECT [附件事务流程代码] as code,[事务流程名称] as label FROM [base1].[dbo].[TB00B附件事务流程]';
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
+        return rcdRlt.recordset;
     });
 }
 
