@@ -666,7 +666,9 @@
 }
 
 .controlHandleBar{
-  position: relative;
+  position: absolute;
+  left: 0%;
+  bottom: 10px;
 }
 
 .projectlink{
@@ -680,4 +682,14 @@
 
 .minh-0{
   min-height: 0
+}
+
+.filepreviewer{
+  text-align: center;
+  margin: 4px;
+  border-radius: 0.25rem !important;
+  border: 2px solid #dee2e6 !important;
+  width: 7em;
+  height: 7em;
+  position: relative;
 }

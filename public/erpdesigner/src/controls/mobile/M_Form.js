@@ -35,13 +35,17 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('NoRender', AttrNames.NoRender, ValueType.Boolean, false),
         new CAttribute('点选模式', AttrNames.ClickSelectable, ValueType.Boolean, false),
         new CAttribute('访问控制', AttrNames.AcessAssert, ValueType.Event),
+        new CAttribute(VarNames.RecordIndex, VarNames.RecordIndex, ValueType.Int, 1, false, false, null, null, false),
     ]),
     new CAttributeGroup('操作设置', [
         genScripAttribute('Insert', AttrNames.Event.OnInsert, EJsBluePrintFunGroup.GridRowBtnHandler),
         genScripAttribute('Update', AttrNames.Event.OnUpdate, EJsBluePrintFunGroup.GridRowBtnHandler),
         genScripAttribute('Delete', AttrNames.Event.OnDelete, EJsBluePrintFunGroup.GridRowBtnHandler),
+    ]),
+    new CAttributeGroup('事件', [
+        new CAttribute('数据行变更', AttrNames.Event.OnRowChanged, ValueType.Event),
         new CAttribute('选了某行', AttrNames.Event.OnSelectRow, ValueType.Event),
-    ])
+    ]),
 ]);
 
 
@@ -86,6 +90,10 @@ class M_FormKernel extends ContainerKernelBase {
         if(theBP){
             theBP.setFixParam(['state','fullPath','selectRowData']);
         }
+        theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnRowChanged);
+        if(theBP){
+            theBP.setFixParam(['fullPath','rowIndex','rowObj']);
+        }
 
         //this.autoSetCusDataSource();
         var listFormContentValue = this.getAttribute(AttrNames.ListFormContent);
@@ -124,6 +132,7 @@ class M_FormKernel extends ContainerKernelBase {
         this[AttrNames.NoRender + '_visible'] = nowft == EFormType.Page;
         this[AttrNames.Wrap + '_visible'] = nowft == EFormType.List;
         this[AttrNames.Event.OnSelectRow + '_visible'] = nowft == EFormType.List || nowft == EFormType.Grid;
+        this[AttrNames.Event.OnRowChanged + '_visible'] = nowft == EFormType.Page;
         this[AttrNames.Event.OnDelete + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.Event.OnUpdate + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.Event.OnInsert + '_visible'] = nowft == EFormType.Grid;
@@ -195,6 +204,9 @@ class M_FormKernel extends ContainerKernelBase {
         }
         if(scriptBP.name.indexOf(AttrNames.Event.OnSelectRow) != -1){
             scriptBP.setFixParam(['state','fullPath','selectRowData']);
+        }
+        if(scriptBP.name.indexOf(AttrNames.Event.OnRowChanged) != -1){
+            scriptBP.setFixParam(['fullPath','rowIndex','rowObj']);
         }
     }
 
@@ -367,6 +379,7 @@ class M_FormKernel extends ContainerKernelBase {
                 this.findAttributeByName(AttrNames.NoRender).setVisible(this, isPageForm);
 
                 this.findAttributeByName(AttrNames.Event.OnSelectRow).setVisible(this, isGridForm || isListForm);
+                this.findAttributeByName(AttrNames.Event.OnRowChanged).setVisible(this, isPageForm);
                 this.findAttributeByName(AttrNames.Event.OnDelete).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.Event.OnUpdate).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.Event.OnInsert).setVisible(this, isGridForm);
@@ -416,6 +429,10 @@ class M_FormKernel extends ContainerKernelBase {
         return (<M_Form key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
     }
 }
+
+var MForm_api = new ControlAPIClass(M_FormKernel_Type);
+MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.RecordIndex, M_FormKernelAttrsSetting), VarNames.RecordIndex, true));
+g_controlApi_arr.push(MForm_api);
 
 class M_Form extends React.PureComponent {
     constructor(props) {

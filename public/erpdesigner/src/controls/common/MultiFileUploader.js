@@ -11,12 +11,14 @@ const MFileUploaderKernelAttrsSetting = GenControlKernelAttrsSetting([
             group:EJsBluePrintFunGroup.CtlAttr,
         }),
         new CAttribute('所属流程', 'fileFlow', ValueType.String, ValueType.String, null, false, AllFileFlows_arr, { text: 'label', value: 'code' }),
+        genIsdisplayAttribute(),
         genNullableAttribute(),
+        genValidCheckerAttribute(),
         new CAttribute('fileListStr', 'fileListStr', ValueType.String, '', false, false,null,null,false),
         new CAttribute('fileListArray', 'fileListArray', ValueType.Array, '', false, false,null,null,false),
     ]),
     new CAttributeGroup('事件', [
-        
+        new CAttribute('上传完成', AttrNames.Event.OnUploadComplete, ValueType.Event),
     ]),
 ]);
 
@@ -31,6 +33,17 @@ class MFileUploaderKernel extends ControlKernelBase {
         );
         var self = this;
         autoBind(self);
+
+        var theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnUploadComplete);
+        if(theBP){
+            theBP.setFixParam(['fullPath','fileID']);
+        }
+    }
+
+    scriptCreated(attrName, scriptBP) {
+        if(scriptBP.name.indexOf(AttrNames.Event.OnUploadComplete) != -1){
+            scriptBP.setFixParam(['fullPath','fileID']);
+        }
     }
 
     renderSelf(clickHandler) {
@@ -48,11 +61,9 @@ MFileUploader_api.pushApi(new ApiItem_fun({
     label:'Reset',
     name:'Reset',
 }));
+MFileUploader_api.pushApi(new ApiItem_propsetter('title'));
 g_controlApi_arr.push(MFileUploader_api);
 
-function ResetMFileUploader(state, fullPath){
-    return;
-}
 
 class CMFileUploader extends React.PureComponent {
     constructor(props) {
@@ -84,7 +95,7 @@ class CMFileUploader extends React.PureComponent {
         var layoutConfig = ctlKernel.getLayoutConfig();
         if (this.props.ctlKernel.__placing) {
             layoutConfig.addClass('M_placingCtl');
-            return (<div className={layoutConfig.getClassName()} style={layoutConfig.style} ref={this.rootElemRef}>文本框</div>);
+            return (<div className={layoutConfig.getClassName()} style={layoutConfig.style} ref={this.rootElemRef}>多文件上传器</div>);
         }
         layoutConfig.addClass('M_MFileUploader');
         layoutConfig.addClass('border');

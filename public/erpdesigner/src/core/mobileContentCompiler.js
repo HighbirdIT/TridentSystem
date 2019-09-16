@@ -995,6 +995,9 @@ class MobileContentCompiler extends ContentCompiler {
             case MFileUploader_Type:
                 rlt = this.compileMFileUploaderKernel(theKernel, renderBlock, renderFun);
                 break;
+            case FilePreviewer_Type:
+                rlt = this.compileFilePreviewerKernel(theKernel, renderBlock, renderFun);
+                break;
             default:
                 logManager.error('不支持的编译kernel type:' + theKernel.type);
         }
@@ -1777,6 +1780,8 @@ class MobileContentCompiler extends ContentCompiler {
         var clickSelectable = theKernel.getAttribute(AttrNames.ClickSelectable);
         var onSelectRowFunName = theKernel.id + '_' + AttrNames.Event.OnSelectRow;
         var onSelectRowBp = project.scriptMaster.getBPByName(onSelectRowFunName);
+        var onRowChangedFunName = theKernel.id + '_' + AttrNames.Event.OnRowChanged;
+        var onRowChangedBp = project.scriptMaster.getBPByName(onRowChangedFunName);
 
         switch (formType) {
             case EFormType.Page:
@@ -2000,6 +2005,9 @@ class MobileContentCompiler extends ContentCompiler {
                             useColumn: { name: formTitle },
                         };
                     }
+                    else {
+                        formTag.setAttr('title', formTitle);
+                    }
                 }
                 else {
                     formTag.setAttr('title', formTitle);
@@ -2075,7 +2083,14 @@ class MobileContentCompiler extends ContentCompiler {
                     );
                 }
                 else {
-                    clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath, VarNames.RecordIndex))] = makeFName_bindForm(theKernel) + '.bind(window)';
+                    var recordIndexchangedFunName = theKernel.id + '_' + VarNames.RecordIndex + '_changed';
+                    var recordIndexchangedFun = clientSide.scope.getFunction(recordIndexchangedFunName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowIndexInfo_map']);
+                    recordIndexchangedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
+                    recordIndexchangedFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''", VarNames.NeedSetState], ';'));
+                    clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath, VarNames.RecordIndex))] = recordIndexchangedFunName + '.bind(window)';
+
+                    recordIndexchangedFun.pushLine(makeStr_callFun(makeFName_bindForm(theKernel), [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowIndexInfo_map']));
+                    //clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath, VarNames.RecordIndex))] = makeFName_bindForm(theKernel) + '.bind(window)';
                 }
                 freshFun.pushLine(makeStr_callFun('simpleFreshFormFun', [VarNames.ReState, VarNames.Records_arr, pathVarName, bindFun.name], ';'));
             }
@@ -2361,6 +2376,14 @@ class MobileContentCompiler extends ContentCompiler {
                 insertModeIf.trueBlock.pushChild(hadInsertCacheIf);
 
                 formReactClass.constructorFun.pushLine('this.canInsert = true;');
+            }
+
+            if (onRowChangedBp) {
+                var onRowChangedCompileRet = this.compileScriptBlueprint(onRowChangedBp);
+                if (onRowChangedCompileRet == false) {
+                    return false;
+                }
+                bindFun.pushLine('setTimeout(() => {' + makeStr_callFun(onRowChangedFunName, [theKernel.id + '_path', 'useIndex', 'nowRecord'], ';') + '},20);', 1);
             }
         }
 
@@ -3669,15 +3692,15 @@ class MobileContentCompiler extends ContentCompiler {
         kernelMidData.needSetStates_arr.push(setValueStateItem);
     }
 
-    compileMFileUploaderKernel(theKernel, renderBlock, renderFun){
+    compileMFileUploaderKernel(theKernel, renderBlock, renderFun) {
         var project = this.project;
         var layoutConfig = theKernel.getLayoutConfig();
         var ctlTag = new FormatHtmlTag(theKernel.id, 'VisibleERPC_MultiFileUploader', this.clientSide);
         this.modifyControlTag(theKernel, ctlTag);
-        if(layoutConfig.hadClass('flex-grow-1')){
+        if (layoutConfig.hadClass('flex-grow-1')) {
             ctlTag.setAttr('flexgrow', '1');
         }
-        if(layoutConfig.hadClass('flex-shrink-1')){
+        if (layoutConfig.hadClass('flex-shrink-1')) {
             ctlTag.setAttr('flexshrink', '1');
         }
         ctlTag.style = layoutConfig.style;
@@ -3714,7 +3737,7 @@ class MobileContentCompiler extends ContentCompiler {
                     ctlTag.setAttr('title', title);
                 }
             }
-            else{
+            else {
                 ctlTag.setAttr('title', '附件列表');
             }
         }
@@ -3724,6 +3747,19 @@ class MobileContentCompiler extends ContentCompiler {
                 parentMidData.needSetKernels_arr.push(theKernel);
             }
         }
+
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
+        if (this.compileValidCheckerAttribute(theKernel) == false) { return false; }
+        var onUploadCompleteFunName = theKernel.id + '_' + AttrNames.Event.OnUploadComplete;
+        var onUploadCompleteBp = project.scriptMaster.getBPByName(onUploadCompleteFunName);
+        if (onUploadCompleteBp != null) {
+            var compileRet = this.compileScriptBlueprint(onUploadCompleteBp, { muteMode: true, fetchKey: "'fileuploaded' + fileID" });
+            if (compileRet == false) {
+                return false;
+            }
+            ctlTag.setAttr('onuploadcomplete', bigbracketStr(onUploadCompleteFunName));
+        }
+
         renderBlock.pushChild(ctlTag);
     }
 
@@ -4329,6 +4365,185 @@ class MobileContentCompiler extends ContentCompiler {
             }
             if (setValueStateItem != null) {
                 kernelMidData.needSetStates_arr.push(setValueStateItem);
+            }
+        }
+    }
+
+    compileFilePreviewerKernel(theKernel, renderBlock, renderFun) {
+        var project = this.project;
+        var logManager = project.logManager;
+
+        var ctlTag = new FormatHtmlTag(theKernel.id, 'VisibleERPC_FilePreview', this.clientSide);
+        this.modifyControlTag(theKernel, ctlTag);
+        var layoutConfig = theKernel.getLayoutConfig();
+
+        ctlTag.class = layoutConfig.class;
+        ctlTag.style = layoutConfig.style;
+        var parentPath = this.getKernelParentPath(theKernel);
+        ctlTag.setAttr('id', theKernel.id);
+        ctlTag.setAttr('parentPath', parentPath);
+
+        if (theKernel.getAttribute('deletable')) {
+            ctlTag.setAttr('canDelte', '{true}');
+        }
+
+        renderBlock.pushChild(ctlTag);
+
+        var reactParentKernel = theKernel.getReactParentKernel(true);
+        var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
+        var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
+        var parentMidData = this.projectCompiler.getMidData(reactParentKernel.id);
+        if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
+            parentMidData.needSetKernels_arr.push(theKernel);
+        }
+
+        var formColumns_arr = null;
+        if (belongFormKernel) {
+            formColumns_arr = belongFormKernel.getCanuseColumns();
+        }
+
+        var setFileIDStateItem = null;
+        var fileIDField = theKernel.getAttribute('fileID');
+        var fileIDFieldParseRet = parseObj_CtlPropJsBind(fileIDField, project.scriptMaster);
+        if (fileIDFieldParseRet.isScript) {
+            if (this.compileScriptAttribute(fileIDFieldParseRet, theKernel, 'fileID', 'fileID', { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (formColumns_arr && formColumns_arr.indexOf(fileIDField) != -1) {
+                parentMidData.useColumns_map[fileIDField] = 1;
+                kernelMidData.columnName = fileIDField;
+                setFileIDStateItem = {
+                    name: 'fileID',
+                    useColumn: { name: fileIDField },
+                };
+            }
+            if (setFileIDStateItem == null) {
+                setFileIDStateItem = {
+                    name: 'fileID',
+                    staticValue: null,
+                    setNull: true,
+                };
+            }
+            if (setFileIDStateItem != null) {
+                kernelMidData.needSetStates_arr.push(setFileIDStateItem);
+            }
+        }
+
+        var setAttachmentIDStateItem = null;
+        var attachmentIDField = theKernel.getAttribute('attachmentID');
+        var attachmentIDFieldParseRet = parseObj_CtlPropJsBind(attachmentIDField, project.scriptMaster);
+        if (attachmentIDFieldParseRet.isScript) {
+            if (this.compileScriptAttribute(attachmentIDFieldParseRet, theKernel, 'attachmentID', 'attachmentID', { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (formColumns_arr && formColumns_arr.indexOf(attachmentIDField) != -1) {
+                parentMidData.useColumns_map[attachmentIDField] = 1;
+                kernelMidData.columnName = attachmentIDField;
+                setAttachmentIDStateItem = {
+                    name: 'attachmentID',
+                    useColumn: { name: attachmentIDField },
+                };
+            }
+            if (setAttachmentIDStateItem == null) {
+                setAttachmentIDStateItem = {
+                    name: 'attachmentID',
+                    staticValue: null,
+                    setNull: true,
+                };
+            }
+            if (setAttachmentIDStateItem != null) {
+                kernelMidData.needSetStates_arr.push(setAttachmentIDStateItem);
+            }
+        }
+
+        var setFileTypeStateItem = null;
+        var fileTypeField = theKernel.getAttribute('fileType');
+        var fileTypeieldParseRet = parseObj_CtlPropJsBind(attachmentIDField, project.scriptMaster);
+        if (fileTypeieldParseRet.isScript) {
+            if (this.compileScriptAttribute(fileTypeieldParseRet, theKernel, 'fileType', 'fileType', { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (formColumns_arr && formColumns_arr.indexOf(fileTypeField) != -1) {
+                parentMidData.useColumns_map[fileTypeField] = 1;
+                kernelMidData.columnName = fileTypeField;
+                setFileTypeStateItem = {
+                    name: 'fileType',
+                    useColumn: { name: fileTypeField },
+                };
+            }
+            if (setFileTypeStateItem == null) {
+                setFileTypeStateItem = {
+                    name: 'fileType',
+                    staticValue: null,
+                    setNull: true,
+                };
+            }
+            if (setFileTypeStateItem != null) {
+                kernelMidData.needSetStates_arr.push(setFileTypeStateItem);
+            }
+        }
+
+        var setFilePathStateItem = null;
+        var filePathField = theKernel.getAttribute('filePath');
+        var filePathieldParseRet = parseObj_CtlPropJsBind(attachmentIDField, project.scriptMaster);
+        if (fileTypeieldParseRet.isScript) {
+            if (this.compileScriptAttribute(filePathieldParseRet, theKernel, 'filePath', 'filePath', { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (formColumns_arr && formColumns_arr.indexOf(filePathField) != -1) {
+                parentMidData.useColumns_map[filePathField] = 1;
+                kernelMidData.columnName = filePathField;
+                setFilePathStateItem = {
+                    name: 'filePath',
+                    useColumn: { name: filePathField },
+                };
+            }
+            if (setFilePathStateItem == null) {
+                setFilePathStateItem = {
+                    name: 'filePath',
+                    staticValue: null,
+                    setNull: true,
+                };
+            }
+            if (setFilePathStateItem != null) {
+                kernelMidData.needSetStates_arr.push(setFilePathStateItem);
+            }
+        }
+
+        var setFileNameStateItem = null;
+        var fileNameField = theKernel.getAttribute('fileName');
+        var fileNameieldParseRet = parseObj_CtlPropJsBind(attachmentIDField, project.scriptMaster);
+        if (fileTypeieldParseRet.isScript) {
+            if (this.compileScriptAttribute(fileNameieldParseRet, theKernel, 'fileName', 'fileName', { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (formColumns_arr && formColumns_arr.indexOf(fileNameField) != -1) {
+                parentMidData.useColumns_map[fileNameField] = 1;
+                kernelMidData.columnName = fileNameField;
+                setFileNameStateItem = {
+                    name: 'fileName',
+                    useColumn: { name: fileNameField },
+                };
+            }
+            if (setFileNameStateItem == null) {
+                setFileNameStateItem = {
+                    name: 'fileName',
+                    staticValue: null,
+                    setNull: true,
+                };
+            }
+            if (setFileNameStateItem != null) {
+                kernelMidData.needSetStates_arr.push(setFileNameStateItem);
             }
         }
     }

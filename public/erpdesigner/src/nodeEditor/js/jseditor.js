@@ -85,6 +85,11 @@ const JSNodeEditorControls_arr =[
         type:'数据库交互'
     },
     {
+        label:'附件操作',
+        nodeClass:JSNode_Attachment_Pro,
+        type:'数据库交互'
+    },
+    {
         label:'日期函数',
         nodeClass:JSNode_DateFun,
         type:'运算'

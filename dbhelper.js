@@ -88,7 +88,7 @@ sql.asynQueryWithParams = function (sqltext, params, config) {
             //console.log('data loaded');
             
             if(config.scalar){
-                if(data.recordset.length == 0)
+                if(data.recordset == null || data.recordset.length == 0)
                     return null;
                 for(var colName in data.recordset[0]){
                     return data.recordset[0][colName];

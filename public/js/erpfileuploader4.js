@@ -15,7 +15,8 @@ var EFileUploaderState = {
     READING: 'reading',
     PREPARE: 'prepare',
     UPLOADING: 'uploading',
-    COMPLETE: 'complete'
+    COMPLETE: 'complete',
+    BEFOREEND: 'beforeend'
 };
 
 var EFileSystemError = {
@@ -26,10 +27,24 @@ var EFileSystemError = {
     FILELOCKED: 1005
 };
 
-function dataBuffer2hex(buffer) {
-    return Array.prototype.map.call(new Uint8Array(buffer), function (x) {
-        return ('00' + x.toString(16)).slice(-2);
-    }).join('');
+function ResetMFileUploader(path) {
+    var state = store.getState();
+    var ctlState = getStateByPath(state, path, {});
+    if (ctlState.uploaders && ctlState.uploaders.length > 0) {
+        ctlState.uploaders.forEach(function (uploader) {
+            uploader.reset();
+        });
+        setTimeout(function () {
+            store.dispatch(makeAction_setManyStateByPath({
+                uploaders: []
+            }, path));
+        }, 20);
+    }
+}
+
+var gByteToHex = [];
+for (var n = 0; n <= 0xff; ++n) {
+    gByteToHex.push(n.toString(16).padStart(2, "0"));
 }
 
 var MAXPERBLOCKSIZE = 1024 * 1024 * 1;
@@ -59,20 +74,29 @@ var FileUploader = function (_EventEmitter) {
             this.fileData = null;
             this.previewUrl = null;
             this.changeState(EFileUploaderState.WAITFILE);
+
+            if (this.readWorker) {
+                this.readWorker.terminate();
+                this.readWorker = null;
+                console.log('readWorker 已终止 by reset');
+            }
         }
     }, {
         key: 'uploadFile',
-        value: function uploadFile(theFile) {
+        value: function uploadFile(theFile, uploadedCallBack) {
             var self = this;
             this.fileProfile = {
                 name: theFile.name,
                 size: theFile.size,
                 type: theFile.type
             };
+
+            this.uploadedCallBack = uploadedCallBack;
             this.file = theFile;
             this.base64Data = null;
             this.isPause = false;
             this.previewUrl = null;
+            this.uploading = false;
             this.changeState(EFileUploaderState.READING);
             var reader = new FileReader();
             reader.onerror = function () {
@@ -124,6 +148,8 @@ var FileUploader = function (_EventEmitter) {
     }, {
         key: '_prepare',
         value: function _prepare() {
+            var _this2 = this;
+
             var theFile = this.file;
             var bundle = {
                 name: theFile.name,
@@ -159,6 +185,15 @@ var FileUploader = function (_EventEmitter) {
                             console.log('上传器被删除');
                             return;
                         }
+                        if (typeof Worker !== "undefined") {
+                            if (_this2.readWorker == null) {
+                                console.log('readWorker 已创建');
+                                _this2.readWorker = new Worker("/js/woker_bytetohexstr.js");
+                                _this2.readWorker.onmessage = function (ev) {
+                                    self._hexStrCreated(ev.data);
+                                };
+                            }
+                        }
                         self.changeState(EFileUploaderState.UPLOADING);
                     }, 20);
                 }
@@ -169,25 +204,13 @@ var FileUploader = function (_EventEmitter) {
             }
         }
     }, {
-        key: '_uploadData',
-        value: function _uploadData() {
-            var _this2 = this;
+        key: '_hexStrCreated',
+        value: function _hexStrCreated(hexStr) {
+            var _this3 = this;
 
-            if (this.isPause || this.uploading) {
+            if (this.fileProfile == null) {
+                console.log('上传器被删除');
                 return;
-            }
-            var blockSize = this.fileProfile.size - this.startPos;
-            if (blockSize == 0) {
-                this.changeState(EFileUploaderState.COMPLETE);
-                return;
-            }
-            if (blockSize > this.myBlockMaxSize) {
-                blockSize = this.myBlockMaxSize;
-            }
-            var endPos = this.startPos + blockSize;
-            var hexStr = '';
-            for (var pos = this.startPos; pos < endPos; ++pos) {
-                hexStr += ('00' + this.fileData[pos].toString(16)).slice(-2);
             }
             var bundle = {
                 fileIdentity: this.fileProfile.identity,
@@ -195,8 +218,6 @@ var FileUploader = function (_EventEmitter) {
                 startPos: this.startPos
             };
             var self = this;
-            this.uploading = true;
-            //console.log('uploading');
             store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'uploadBlock' }, makeFTD_Callback(function (state, data, error, fetchUseTime) {
                 setTimeout(function () {
                     if (self.fileProfile == null) {
@@ -210,7 +231,7 @@ var FileUploader = function (_EventEmitter) {
                                 if (isNaN(error.data)) {
                                     console.err("WRONGSTART's data is nan");
                                 }
-                                _this2.startPos = parseInt(error.data);
+                                _this3.startPos = parseInt(error.data);
                                 error = null;
                                 break;
                             case EFileSystemError.EMPTYDATA:
@@ -220,13 +241,13 @@ var FileUploader = function (_EventEmitter) {
                                 break;
                             case EFileSystemError.UPLOADCOMPLATE:
                                 error = null;
-                                _this2.startPos = self.fileProfile.size;
+                                _this3.startPos = self.fileProfile.size;
                                 break;
                         }
                         if (error != null) {
                             // 上传过程中遇到错误不断重试即可
                             //console.log(error);
-                            _this2.myBlockMaxSize = MINPERBLOCKSIZE;
+                            _this3.myBlockMaxSize = MINPERBLOCKSIZE;
                         }
 
                         self.percent = Math.floor(100.0 * self.startPos / self.fileProfile.size);
@@ -235,21 +256,52 @@ var FileUploader = function (_EventEmitter) {
                     } else {
                         //console.log('fetchUseTime:' + fetchUseTime + '  blksize:' + this.myBlockMaxSize);
                         if (fetchUseTime < 200) {
-                            _this2.myBlockMaxSize = Math.min(_this2.myBlockMaxSize + STEP_BLOCKSIZE, MAXPERBLOCKSIZE);
+                            _this3.myBlockMaxSize = Math.min(_this3.myBlockMaxSize + STEP_BLOCKSIZE, MAXPERBLOCKSIZE);
                         } else if (fetchUseTime > 300) {
-                            _this2.myBlockMaxSize = Math.max(_this2.myBlockMaxSize - STEP_BLOCKSIZE, MINPERBLOCKSIZE);
+                            _this3.myBlockMaxSize = Math.max(_this3.myBlockMaxSize - STEP_BLOCKSIZE, MINPERBLOCKSIZE);
                         }
                         self.startPos += data.bytesWritten;
                         self.percent = Math.floor(100.0 * self.startPos / self.fileProfile.size);
                         //console.log(self.percent  + '%');
                         if (data.previewUrl) {
-                            _this2.previewUrl = data.previewUrl;
+                            _this3.previewUrl = data.previewUrl;
                         }
                         self._fireChanged();
                         self._uploadData();
                     }
                 }, 20);
             }, false)));
+        }
+    }, {
+        key: '_uploadData',
+        value: function _uploadData() {
+            if (this.isPause || this.uploading) {
+                return;
+            }
+            var self = this;
+            var blockSize = this.fileProfile.size - this.startPos;
+            if (blockSize == 0) {
+                if (typeof this.uploadedCallBack === 'function') {
+                    this.uploadedCallBack(this);
+                }
+                this.changeState(EFileUploaderState.COMPLETE);
+                return;
+            }
+            this.uploading = true;
+            if (blockSize > this.myBlockMaxSize) {
+                blockSize = this.myBlockMaxSize;
+            }
+            var endPos = this.startPos + blockSize;
+            if (this.readWorker) {
+                this.readWorker.postMessage(this.fileData.slice(this.startPos, endPos));
+            } else {
+                var hexOctets = [];
+                for (var pos = this.startPos; pos < endPos; ++pos) {
+                    hexOctets.push(gByteToHex[this.fileData[pos]]);
+                }
+                var hexStr = hexOctets.join('');
+                this._hexStrCreated(hexStr);
+            }
 
             if (this.errorCode) {
                 this.errorCode = 0;
@@ -272,6 +324,12 @@ var FileUploader = function (_EventEmitter) {
             if (newState == EFileUploaderState.UPLOADING) {
                 this.percent = 0;
                 this._uploadData();
+            } else if (newState == EFileUploaderState.COMPLETE) {
+                if (this.readWorker) {
+                    this.readWorker.terminate();
+                    this.readWorker = null;
+                    console.log('readWorker 已终止');
+                }
             }
             this._fireChanged();
         }
@@ -326,12 +384,12 @@ var CSingleFileUploader = function (_React$PureComponent) {
     function CSingleFileUploader(props) {
         _classCallCheck(this, CSingleFileUploader);
 
-        var _this3 = _possibleConstructorReturn(this, (CSingleFileUploader.__proto__ || Object.getPrototypeOf(CSingleFileUploader)).call(this));
+        var _this4 = _possibleConstructorReturn(this, (CSingleFileUploader.__proto__ || Object.getPrototypeOf(CSingleFileUploader)).call(this));
 
-        autoBind(_this3);
-        _this3.state = {};
-        _this3.fileTagRef = React.createRef();
-        return _this3;
+        autoBind(_this4);
+        _this4.state = {};
+        _this4.fileTagRef = React.createRef();
+        return _this4;
     }
 
     _createClass(CSingleFileUploader, [{
@@ -556,10 +614,10 @@ var CFileUploaderBar = function (_React$PureComponent2) {
     function CFileUploaderBar(props) {
         _classCallCheck(this, CFileUploaderBar);
 
-        var _this4 = _possibleConstructorReturn(this, (CFileUploaderBar.__proto__ || Object.getPrototypeOf(CFileUploaderBar)).call(this));
+        var _this5 = _possibleConstructorReturn(this, (CFileUploaderBar.__proto__ || Object.getPrototypeOf(CFileUploaderBar)).call(this));
 
-        autoBind(_this4);
-        return _this4;
+        autoBind(_this5);
+        return _this5;
     }
 
     _createClass(CFileUploaderBar, [{
@@ -581,7 +639,7 @@ var CFileUploaderBar = function (_React$PureComponent2) {
         key: 'unlistenUploader',
         value: function unlistenUploader(uploader) {
             if (uploader) {
-                uploader.on('changed', this.reDraw);
+                uploader.off('changed', this.reDraw);
             }
         }
     }, {
@@ -806,6 +864,20 @@ var CFileUploaderBar = function (_React$PureComponent2) {
                             ) : '(不支持预览))'
                         );
                         break;
+                    case EFileUploaderState.BEFOREEND:
+                        bottomBar = React.createElement(
+                            'span',
+                            { className: 'd-flex align-items-center' },
+                            React.createElement('i', { className: 'fa fa-circle-o-notch fa-spin' }),
+                            '\u5373\u5C06\u5B8C\u6210',
+                            canPreview && fileUploader.previewUrl ? React.createElement(
+                                'button',
+                                { onClick: this.clickPreViewHandler, className: 'ml-1 btn btn-sm btn-primary' },
+                                React.createElement('i', { className: 'fa fa-eye' }),
+                                '\u9884\u89C8'
+                            ) : '(不支持预览))'
+                        );
+                        break;
                 }
                 var iconElem = null;
                 if (fileUploader.base64Data) {
@@ -855,17 +927,24 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
     function ERPC_MultiFileUploader(props) {
         _classCallCheck(this, ERPC_MultiFileUploader);
 
-        var _this5 = _possibleConstructorReturn(this, (ERPC_MultiFileUploader.__proto__ || Object.getPrototypeOf(ERPC_MultiFileUploader)).call(this));
+        var _this6 = _possibleConstructorReturn(this, (ERPC_MultiFileUploader.__proto__ || Object.getPrototypeOf(ERPC_MultiFileUploader)).call(this));
 
-        ERPControlBase(_this5);
-        _this5.state = _this5.initState;
-        _this5.fileTagRef = React.createRef();
+        ERPControlBase(_this6);
+        _this6.state = _this6.initState;
+        _this6.fileTagRef = React.createRef();
 
-        autoBind(_this5);
-        return _this5;
+        autoBind(_this6);
+        return _this6;
     }
 
     _createClass(ERPC_MultiFileUploader, [{
+        key: 'uploaderJobDone',
+        value: function uploaderJobDone(uploader) {
+            if (this.props.onuploadcomplete) {
+                this.props.onuploadcomplete(this.props.fullPath, uploader.fileProfile.code);
+            }
+        }
+    }, {
         key: 'cusComponentWillmount',
         value: function cusComponentWillmount() {
             if (this.props.uploaders == null) {
@@ -890,7 +969,7 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
                 });
                 if (!found) {
                     var newUploader = new FileUploader();
-                    newUploader.uploadFile(theFile);
+                    newUploader.uploadFile(theFile, this.uploaderJobDone);
                     newUploaders.push(newUploader);
                     ++addedCount;
                     if (addedCount == 9) {
@@ -939,7 +1018,7 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
     }, {
         key: 'render',
         value: function render() {
-            var _this6 = this;
+            var _this7 = this;
 
             if (this.props.visible == false) {
                 return null;
@@ -948,6 +1027,9 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
             var uploaderElems_arr = [];
             if (uploaders && uploaders.length > 0) {
                 uploaderElems_arr = uploaders.map(function (uploader) {
+                    if (uploader.fileProfile == null) {
+                        return null;
+                    }
                     return React.createElement(
                         'div',
                         { key: uploader.file.name, 'd-fkey': uploader.file.name + uploader.file.size, className: 'list-group-item flex-grow-0 flex-shrink-0' },
@@ -961,7 +1043,7 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
                             ),
                             React.createElement(
                                 'button',
-                                { onClick: _this6.clickTrashHandler, className: 'btn btn-danger flex-grow-0 flex-shrink-0' },
+                                { onClick: _this7.clickTrashHandler, className: 'btn btn-danger flex-grow-0 flex-shrink-0' },
                                 React.createElement('i', { className: 'fa fa-trash' })
                             )
                         )
@@ -1042,7 +1124,214 @@ function ERPC_MultiFileUploader_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
+var ERPC_FilePreview = function (_React$PureComponent4) {
+    _inherits(ERPC_FilePreview, _React$PureComponent4);
+
+    function ERPC_FilePreview(props) {
+        _classCallCheck(this, ERPC_FilePreview);
+
+        var _this8 = _possibleConstructorReturn(this, (ERPC_FilePreview.__proto__ || Object.getPrototypeOf(ERPC_FilePreview)).call(this));
+
+        ERPControlBase(_this8);
+        _this8.state = _this8.initState;
+        autoBind(_this8);
+        _this8.audioTagRef = React.createRef();
+        return _this8;
+    }
+
+    _createClass(ERPC_FilePreview, [{
+        key: 'clickIconHandler',
+        value: function clickIconHandler(ev) {
+            var fileUrl = window.location.origin + this.props.filePath;
+            var fileName = this.props.fileName;
+            if (this.fileType == 'image') {
+                dingdingKit.biz.util.previewImage({
+                    urls: [fileUrl],
+                    current: fileUrl
+                });
+            } else if (this.fileType == 'audio') {
+                if (this.audioTagRef.current) {
+                    this.audioTagRef.current.src = fileUrl;
+                    this.audioTagRef.current.play();
+                }
+            } else if (this.fileType == 'video' || this.fileType == 'movie') {
+                if (isMobile) {
+                    dingdingKit.biz.util.openLink({
+                        url: fileUrl
+                    });
+                } else {
+                    dingdingKit.biz.util.openModal({
+                        url: fileUrl,
+                        title: this.props.fileName
+                    });
+                }
+            } else {
+                if (!isMobile) {
+                    dingdingKit.biz.util.isLocalFileExist({
+                        params: [{ url: fileUrl }],
+                        onSuccess: function onSuccess(result) {
+                            if (result.isExist) {
+                                dingdingKit.biz.util.openLocalFile({
+                                    url: fileUrl, //本地文件的url，指的是调用DingTalkPC.biz.util.downloadFile接口下载时填入的url，配合DingTalkPC.biz.util.downloadFile使用
+                                    onSuccess: function onSuccess(result) {},
+                                    onFail: function onFail() {}
+                                });
+                            } else {
+                                dingdingKit.biz.util.downloadFile({
+                                    url: fileUrl, //要下载的文件的url
+                                    name: fileName, //定义下载文件名字
+                                    onProgress: function onProgress(msg) {},
+                                    onSuccess: function onSuccess(result) {},
+                                    onFail: function onFail() {}
+                                });
+                            }
+                        },
+                        onFail: function onFail() {}
+                    });
+                } else {
+                    dingdingKit.biz.util.openLink({
+                        url: fileUrl
+                    });
+                }
+            }
+        }
+    }, {
+        key: 'clickTrashHandler',
+        value: function clickTrashHandler(ev) {
+            var _this9 = this;
+
+            if (this.deleting) {
+                return;
+            }
+
+            var msg = PopMessageBox('删除附件:"' + this.props.fileName + '"?', EMessageBoxType.Blank, '附件删除');
+            msg.query('删除附件"' + this.props.fileName + '" ?', [{ label: '删除', key: '删除' }, { label: '算了', key: '算了' }], function (key) {
+                if (key == '删除') {
+                    _this9.deleting = true;
+                    var self = _this9;
+                    store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: { 附件id: _this9.props.attachmentID }, action: 'deleteAttachment' }, makeFTD_Callback(function (state, data, error) {
+                        self.deleting = false;
+                        if (error) {
+                            alert(JSON.stringify(error));
+                            return;
+                        } else {
+                            self.deletedAttachmentID = self.props.attachmentID;
+                            setTimeout(function () {
+                                self.setState({
+                                    magicObj: {}
+                                });
+                            }, 20);
+                        }
+                    }, false)));
+                }
+            });
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            if (this.deletedAttachmentID && this.deletedAttachmentID == this.props.attachmentID) {
+                return null;
+            }
+            var ftype_arr = this.props.fileType.split('/');
+            var fileType = ftype_arr[0];
+            if (fileType == 'application') {
+                fileType = ftype_arr[1];
+                if (fileType == 'vnd.openxmlformats-officedocument.spre' || fileType == 'vnd.ms-excel') {
+                    fileType = 'excel';
+                } else if (fileType == 'vnd.openxmlformats-officedocument.word' || fileType == 'msword') {
+                    fileType = 'word';
+                }
+            }
+
+            var canPreview = false;
+            var fileIconType = 'fa-file-o';
+            switch (fileType) {
+                case 'archive':
+                case 'audio':
+                case 'code':
+                case 'excel':
+                case 'image':
+                case 'movie':
+                case 'pdf':
+                case 'photo':
+                case 'picture':
+                case 'powerpoint':
+                case 'sound':
+                case 'text':
+                case 'video':
+                case 'word':
+                case 'zip':
+                    fileIconType = 'fa-file-' + fileType + '-o';
+            }
+
+            switch (fileType) {
+                case 'audio':
+                case 'image':
+                case 'movie':
+                case 'sound':
+                case 'video':
+                    canPreview = true;
+            }
+            this.canPreview = canPreview;
+            this.fileType = fileType;
+            var contetnElem = null;
+            if (fileType == 'image') {
+                contetnElem = React.createElement('img', { className: 'w-100 h-100', src: window.location.origin + this.props.filePath, onClick: this.clickIconHandler });
+            } else if (fileType == 'audio') {
+                contetnElem = [React.createElement('audio', { key: 'audio', ref: this.audioTagRef, src: window.location.origin + this.props.filePath }), React.createElement('i', { key: 'icon', className: 'fa ' + fileIconType, onClick: this.clickIconHandler })];
+            } else {
+                contetnElem = React.createElement('i', { onClick: this.clickIconHandler, className: 'fa ' + fileIconType });
+            }
+            var fileName = this.props.fileName;
+            if (fileName.length > 15) {
+                fileName = '...' + this.props.fileName.substr(-15);
+            }
+            return React.createElement(
+                'div',
+                { className: 'filepreview' },
+                contetnElem,
+                React.createElement(
+                    'div',
+                    { id: 'name' },
+                    fileName
+                ),
+                !this.props.canDelte ? null : React.createElement(
+                    'button',
+                    { onClick: this.clickTrashHandler, id: 'del', className: 'btn btn-sm btn-danger' },
+                    React.createElement('i', { className: 'fa ' + (this.deleting ? 'fa-circle-o-notch fa-spin' : 'fa-trash') })
+                )
+            );
+        }
+    }]);
+
+    return ERPC_FilePreview;
+}(React.PureComponent);
+
+function ERPC_FilePreview_mapstatetoprops(state, ownprops) {
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    var rowState = propProfile.rowState;
+
+    return {
+        visible: ctlState.visible,
+        fullParentPath: propProfile.fullParentPath,
+        fullPath: propProfile.fullPath,
+        fileID: ctlState.fileID,
+        attachmentID: ctlState.attachmentID,
+        fileType: ctlState.fileType,
+        filePath: ctlState.filePath,
+        fileName: ctlState.fileName
+    };
+}
+
+function ERPC_FilePreview_dispatchtorprops(dispatch, ownprops) {
+    return {};
+}
+
 var VisibleERPC_MultiFileUploader = null;
+var VisibleERPC_FilePreview = null;
+
 gNeedCallOnErpControlInit_arr.push(function () {
     VisibleERPC_MultiFileUploader = ReactRedux.connect(ERPC_MultiFileUploader_mapstatetoprops, ERPC_MultiFileUploader_dispatchtorprops)(ERPC_MultiFileUploader);
+    VisibleERPC_FilePreview = ReactRedux.connect(ERPC_FilePreview_mapstatetoprops, ERPC_FilePreview_dispatchtorprops)(ERPC_FilePreview);
 });

@@ -22,6 +22,16 @@ function genTextFiledAttribute() {
     });
 }
 
+function genColumnFieldAttribute(label, name) {
+    var def = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+
+    return new CAttribute(label, name, ValueType.String, def, true, false, [], {
+        pullDataFun: GetKernelCanUseColumns,
+        text: 'name',
+        editable: false
+    }, true);
+}
+
 function genValueFiledAttribute() {
     var label = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '码值字段';
     var def = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
@@ -332,7 +342,9 @@ var AttrNames = {
         OnLoad: 'onLoad',
         OnChanged: 'onChanged',
         OnMouseDown: 'onMouseDown',
-        OnSelectRow: 'onSelectRow'
+        OnSelectRow: 'onSelectRow',
+        OnRowChanged: 'onRowChanged',
+        OnUploadComplete: 'onUploadComplate'
     },
 
     LayoutNames: {

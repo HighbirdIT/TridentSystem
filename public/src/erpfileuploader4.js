@@ -6,6 +6,7 @@ const EFileUploaderState = {
     PREPARE: 'prepare',
     UPLOADING: 'uploading',
     COMPLETE: 'complete',
+    BEFOREEND: 'beforeend',
 };
 
 const EFileSystemError = {
@@ -16,8 +17,24 @@ const EFileSystemError = {
     FILELOCKED: 1005,
 };
 
-function dataBuffer2hex(buffer) {
-    return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
+function ResetMFileUploader(path) {
+    var state = store.getState();
+    var ctlState = getStateByPath(state, path, {});
+    if (ctlState.uploaders && ctlState.uploaders.length > 0) {
+        ctlState.uploaders.forEach(uploader => {
+            uploader.reset();
+        });
+        setTimeout(() => {
+            store.dispatch(makeAction_setManyStateByPath({
+                uploaders: [],
+            }, path));
+        }, 20);
+    }
+}
+
+const gByteToHex = [];
+for (var n = 0; n <= 0xff; ++n) {
+    gByteToHex.push(n.toString(16).padStart(2, "0"));
 }
 
 const MAXPERBLOCKSIZE = 1024 * 1024 * 1;
@@ -39,19 +56,28 @@ class FileUploader extends EventEmitter {
         this.fileData = null;
         this.previewUrl = null;
         this.changeState(EFileUploaderState.WAITFILE);
+
+        if (this.readWorker) {
+            this.readWorker.terminate();
+            this.readWorker = null;
+            console.log('readWorker 已终止 by reset');
+        }
     }
 
-    uploadFile(theFile) {
+    uploadFile(theFile, uploadedCallBack) {
         var self = this;
         this.fileProfile = {
             name: theFile.name,
             size: theFile.size,
             type: theFile.type,
         };
+
+        this.uploadedCallBack = uploadedCallBack;
         this.file = theFile;
         this.base64Data = null;
         this.isPause = false;
         this.previewUrl = null;
+        this.uploading = false;
         this.changeState(EFileUploaderState.READING);
         var reader = new FileReader();
         reader.onerror = () => {
@@ -59,7 +85,7 @@ class FileUploader extends EventEmitter {
             self.meetError({ errorMsg: '读取文件出错' });
         };
         reader.onload = ev => {
-            if(self.fileProfile == null){
+            if (self.fileProfile == null) {
                 console.log('上传器被删除');
                 return;
             }
@@ -71,7 +97,7 @@ class FileUploader extends EventEmitter {
             if (theFile.type.indexOf('image/') != -1) {
                 reader.onerror = null;
                 reader.onload = ev => {
-                    if(self.fileProfile == null){
+                    if (self.fileProfile == null) {
                         console.log('上传器被删除');
                         return;
                     }
@@ -123,7 +149,7 @@ class FileUploader extends EventEmitter {
         var self = this;
         store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'applyForTempFile' },
             makeFTD_Callback((state, data, error) => {
-                if(self.fileProfile == null){
+                if (self.fileProfile == null) {
                     console.log('上传器被删除');
                     return;
                 }
@@ -135,9 +161,18 @@ class FileUploader extends EventEmitter {
                     self.fileProfile.identity = data.identity;
                     self.fileProfile.code = data.code;
                     setTimeout(() => {
-                        if(self.fileProfile == null){
+                        if (self.fileProfile == null) {
                             console.log('上传器被删除');
                             return;
+                        }
+                        if (typeof (Worker) !== "undefined") {
+                            if (this.readWorker == null) {
+                                console.log('readWorker 已创建');
+                                this.readWorker = new Worker("/js/woker_bytetohexstr.js");
+                                this.readWorker.onmessage = ev => {
+                                    self._hexStrCreated(ev.data);
+                                };
+                            }
                         }
                         self.changeState(EFileUploaderState.UPLOADING);
                     }, 20);
@@ -149,22 +184,10 @@ class FileUploader extends EventEmitter {
         }
     }
 
-    _uploadData() {
-        if (this.isPause || this.uploading) {
+    _hexStrCreated(hexStr) {
+        if (this.fileProfile == null) {
+            console.log('上传器被删除');
             return;
-        }
-        var blockSize = this.fileProfile.size - this.startPos;
-        if (blockSize == 0) {
-            this.changeState(EFileUploaderState.COMPLETE);
-            return;
-        }
-        if (blockSize > this.myBlockMaxSize) {
-            blockSize = this.myBlockMaxSize;
-        }
-        var endPos = this.startPos + blockSize;
-        var hexStr = '';
-        for (var pos = this.startPos; pos < endPos; ++pos) {
-            hexStr += ('00' + this.fileData[pos].toString(16)).slice(-2);
         }
         var bundle = {
             fileIdentity: this.fileProfile.identity,
@@ -172,12 +195,10 @@ class FileUploader extends EventEmitter {
             startPos: this.startPos,
         };
         var self = this;
-        this.uploading = true;
-        //console.log('uploading');
         store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'uploadBlock' },
             makeFTD_Callback((state, data, error, fetchUseTime) => {
                 setTimeout(() => {
-                    if(self.fileProfile == null){
+                    if (self.fileProfile == null) {
                         console.log('上传器被删除');
                         return;
                     }
@@ -222,7 +243,7 @@ class FileUploader extends EventEmitter {
                         self.startPos += data.bytesWritten;
                         self.percent = Math.floor(100.0 * self.startPos / self.fileProfile.size);
                         //console.log(self.percent  + '%');
-                        if(data.previewUrl){
+                        if (data.previewUrl) {
                             this.previewUrl = data.previewUrl;
                         }
                         self._fireChanged();
@@ -230,6 +251,37 @@ class FileUploader extends EventEmitter {
                     }
                 }, 20);
             }, false)));
+    }
+
+    _uploadData() {
+        if (this.isPause || this.uploading) {
+            return;
+        }
+        var self = this;
+        var blockSize = this.fileProfile.size - this.startPos;
+        if (blockSize == 0) {
+            if (typeof this.uploadedCallBack === 'function') {
+                this.uploadedCallBack(this);
+            }
+            this.changeState(EFileUploaderState.COMPLETE);
+            return;
+        }
+        this.uploading = true;
+        if (blockSize > this.myBlockMaxSize) {
+            blockSize = this.myBlockMaxSize;
+        }
+        var endPos = this.startPos + blockSize;
+        if (this.readWorker) {
+            this.readWorker.postMessage(this.fileData.slice(this.startPos, endPos));
+        }
+        else {
+            var hexOctets = [];
+            for (var pos = this.startPos; pos < endPos; ++pos) {
+                hexOctets.push(gByteToHex[this.fileData[pos]]);
+            }
+            var hexStr = hexOctets.join('');
+            this._hexStrCreated(hexStr);
+        }
 
         if (this.errorCode) {
             this.errorCode = 0;
@@ -250,6 +302,13 @@ class FileUploader extends EventEmitter {
         if (newState == EFileUploaderState.UPLOADING) {
             this.percent = 0;
             this._uploadData();
+        }
+        else if (newState == EFileUploaderState.COMPLETE) {
+            if (this.readWorker) {
+                this.readWorker.terminate();
+                this.readWorker = null;
+                console.log('readWorker 已终止');
+            }
         }
         this._fireChanged();
     }
@@ -461,7 +520,7 @@ class CFileUploaderBar extends React.PureComponent {
 
     unlistenUploader(uploader) {
         if (uploader) {
-            uploader.on('changed', this.reDraw);
+            uploader.off('changed', this.reDraw);
         }
     }
 
@@ -490,54 +549,54 @@ class CFileUploaderBar extends React.PureComponent {
         }
     }
 
-    clickPreViewHandler(){
+    clickPreViewHandler() {
         var fileUploader = this.props.uploader;
-        if(this.uploader.previewUrl == null){
+        if (this.uploader.previewUrl == null) {
             return;
         }
         var fileProfile = fileUploader.fileProfile;
         var fileType = fileProfile.type.split('/')[0];
 
-        if(isInDingTalk){
-            if(fileType == 'image'){
+        if (isInDingTalk) {
+            if (fileType == 'image') {
                 dingdingKit.biz.util.previewImage({
-                    urls:[this.uploader.previewUrl],
-                    current:this.uploader.previewUrl,
+                    urls: [this.uploader.previewUrl],
+                    current: this.uploader.previewUrl,
                 });
             }
-            else if(fileType == 'video' || fileType == 'movie'){
-                if(isMobile){
+            else if (fileType == 'video' || fileType == 'movie') {
+                if (isMobile) {
                     dingdingKit.biz.util.openLink({
-                        url:window.location.origin + '/videoplayer?src=' + this.uploader.previewUrl,
+                        url: window.location.origin + '/videoplayer?src=' + this.uploader.previewUrl,
                     });
                 }
-                else{
+                else {
                     dingdingKit.biz.util.openModal({
-                        url:window.location.origin + '/videoplayer?src=' + this.uploader.previewUrl,
+                        url: window.location.origin + '/videoplayer?src=' + this.uploader.previewUrl,
                         title: fileProfile.name,
                     });
                 }
             }
-            else if(fileType == 'audio' || fileType == 'sound'){
-                if(isMobile){
+            else if (fileType == 'audio' || fileType == 'sound') {
+                if (isMobile) {
                     dingdingKit.biz.util.openLink({
-                        url:window.location.origin + '/audioplayer?src=' + this.uploader.previewUrl,
+                        url: window.location.origin + '/audioplayer?src=' + this.uploader.previewUrl,
                     });
                 }
-                else{
+                else {
                     dingdingKit.biz.util.openModal({
-                        url:window.location.origin + '/audioplayer?src=' + this.uploader.previewUrl,
+                        url: window.location.origin + '/audioplayer?src=' + this.uploader.previewUrl,
                         title: fileProfile.name,
                     });
                 }
             }
-            else{
+            else {
                 dingdingKit.biz.util.openLink({
-                    url:this.uploader.previewUrl,
+                    url: this.uploader.previewUrl,
                 });
             }
         }
-        else{
+        else {
             SendToast('在钉钉中才可预览');
         }
     }
@@ -553,9 +612,9 @@ class CFileUploaderBar extends React.PureComponent {
         var fileIconType = 'fa-file-o';
         var canPreview = false;
         if (fileProfile) {
-            var ftype_arr = fileProfile.type.split('/'); 
+            var ftype_arr = fileProfile.type.split('/');
             var fileType = ftype_arr[0];
-            if(fileType == 'application'){
+            if (fileType == 'application') {
                 fileType = ftype_arr[1];
             }
             switch (fileType) {
@@ -635,6 +694,12 @@ class CFileUploaderBar extends React.PureComponent {
                         {canPreview && fileUploader.previewUrl ? <button onClick={this.clickPreViewHandler} className='ml-1 btn btn-sm btn-primary'><i className='fa fa-eye' />预览</button> : '(不支持预览))'}
                     </span>
                     break;
+                case EFileUploaderState.BEFOREEND:
+                    bottomBar = <span className='d-flex align-items-center'>
+                        <i className='fa fa-circle-o-notch fa-spin' />即将完成
+                        {canPreview && fileUploader.previewUrl ? <button onClick={this.clickPreViewHandler} className='ml-1 btn btn-sm btn-primary'><i className='fa fa-eye' />预览</button> : '(不支持预览))'}
+                    </span>
+                    break;
             }
             var iconElem = null;
             if (fileUploader.base64Data) {
@@ -644,7 +709,7 @@ class CFileUploaderBar extends React.PureComponent {
                 iconElem = <i className={'fa fa-3x m-auto ' + fileIconType} />
             }
             var fileName = fileProfile.name;
-            if(fileName.length > 15){
+            if (fileName.length > 15) {
                 fileName = '...' + fileName.slice(-15);
             }
             contentElem = <div className='d-flex flex-grow-1 flex-shrink-1'>
@@ -675,8 +740,14 @@ class ERPC_MultiFileUploader extends React.PureComponent {
         autoBind(this);
     }
 
+    uploaderJobDone(uploader) {
+        if (this.props.onuploadcomplete) {
+            this.props.onuploadcomplete(this.props.fullPath, uploader.fileProfile.code);
+        }
+    }
+
     cusComponentWillmount() {
-        if(this.props.uploaders == null){
+        if (this.props.uploaders == null) {
             store.dispatch(makeAction_setManyStateByPath({
                 uploaders: [],
             }, this.props.fullPath));
@@ -698,10 +769,10 @@ class ERPC_MultiFileUploader extends React.PureComponent {
             });
             if (!found) {
                 var newUploader = new FileUploader();
-                newUploader.uploadFile(theFile);
+                newUploader.uploadFile(theFile, this.uploaderJobDone);
                 newUploaders.push(newUploader);
                 ++addedCount;
-                if(addedCount == 9){
+                if (addedCount == 9) {
                     SendToast("一次只能添加9个文件");
                     break;
                 }
@@ -719,21 +790,21 @@ class ERPC_MultiFileUploader extends React.PureComponent {
         }
     }
 
-    clickTrashHandler(ev){
-        var fkey = getAttributeByNode(ev.target,'d-fkey');
+    clickTrashHandler(ev) {
+        var fkey = getAttributeByNode(ev.target, 'd-fkey');
         var uploaders = this.props.uploaders;
-        if(uploaders){
+        if (uploaders) {
             var targetUploader = null;
-            for(var pi = 0;pi < uploaders.length; ++pi){
+            for (var pi = 0; pi < uploaders.length; ++pi) {
                 var uploader = uploaders[pi];
-                if(uploader.file.name + uploader.file.size == fkey){
+                if (uploader.file.name + uploader.file.size == fkey) {
                     targetUploader = uploader;
                     break;
                 }
             }
-            if(targetUploader){
+            if (targetUploader) {
                 targetUploader.reset();
-                var newUploaders = uploaders.filter(uploader=>{
+                var newUploaders = uploaders.filter(uploader => {
                     return uploader != targetUploader;
                 })
                 store.dispatch(makeAction_setManyStateByPath({
@@ -751,6 +822,9 @@ class ERPC_MultiFileUploader extends React.PureComponent {
         var uploaderElems_arr = [];
         if (uploaders && uploaders.length > 0) {
             uploaderElems_arr = uploaders.map(uploader => {
+                if (uploader.fileProfile == null) {
+                    return null;
+                }
                 return <div key={uploader.file.name} d-fkey={uploader.file.name + uploader.file.size} className='list-group-item flex-grow-0 flex-shrink-0'>
                     <div className='d-flex w-100 align-items-center'>
                         <span className='flex-grow-1 flex-shrink-1 border-right mr-1'>
@@ -761,17 +835,17 @@ class ERPC_MultiFileUploader extends React.PureComponent {
                 </div>
             });
         }
-        var rootClassName = 'd-flex flex-column' 
-        + (this.props.flexgrow == '1' ? ' flex-grow-1' : ' flex-grow-0')
-        + (this.props.flexshrink == '1' ? ' flex-shrink-1' : ' flex-shrink-0');
+        var rootClassName = 'd-flex flex-column'
+            + (this.props.flexgrow == '1' ? ' flex-grow-1' : ' flex-grow-0')
+            + (this.props.flexshrink == '1' ? ' flex-shrink-1' : ' flex-shrink-0');
 
         var bContentNeedScroll = false;
-        if(this.props.flexgrow == '1' || this.props.flexshrink == '1' || (this.props.style && (this.props.style.height || this.props.style.maxHeight))){
+        if (this.props.flexgrow == '1' || this.props.flexshrink == '1' || (this.props.style && (this.props.style.height || this.props.style.maxHeight))) {
             bContentNeedScroll = true;
         }
 
         var invalidInfoElem = null;
-        if(!IsEmptyString(this.props.invalidInfo)){
+        if (!IsEmptyString(this.props.invalidInfo)) {
             var invalidInfoElem = <span className='bg-danger text-white'><i className='fa fa-warning' />{this.props.invalidInfo}</span>
         }
 
@@ -810,7 +884,210 @@ function ERPC_MultiFileUploader_dispatchtorprops(dispatch, ownprops) {
     };
 }
 
+class ERPC_FilePreview extends React.PureComponent {
+    constructor(props) {
+        super();
+
+        ERPControlBase(this);
+        this.state = this.initState;
+        autoBind(this);
+        this.audioTagRef = React.createRef();
+    }
+
+    clickIconHandler(ev) {
+        var fileUrl = window.location.origin + this.props.filePath;
+        var fileName = this.props.fileName;
+        if (this.fileType == 'image') {
+            dingdingKit.biz.util.previewImage({
+                urls: [fileUrl],
+                current: fileUrl,
+            });
+        }
+        else if (this.fileType == 'audio') {
+            if (this.audioTagRef.current) {
+                this.audioTagRef.current.src = fileUrl;
+                this.audioTagRef.current.play();
+            }
+        }
+        else if (this.fileType == 'video' || this.fileType == 'movie') {
+            if (isMobile) {
+                dingdingKit.biz.util.openLink({
+                    url: fileUrl,
+                });
+            }
+            else {
+                dingdingKit.biz.util.openModal({
+                    url: fileUrl,
+                    title: this.props.fileName,
+                });
+            }
+        }
+        else {
+            if (!isMobile) {
+                dingdingKit.biz.util.isLocalFileExist({
+                    params: [{ url: fileUrl }],
+                    onSuccess: function (result) {
+                        if (result.isExist) {
+                            dingdingKit.biz.util.openLocalFile({
+                                url: fileUrl, //本地文件的url，指的是调用DingTalkPC.biz.util.downloadFile接口下载时填入的url，配合DingTalkPC.biz.util.downloadFile使用
+                                onSuccess: function (result) {
+                                },
+                                onFail: function () { }
+                            });
+                        }
+                        else {
+                            dingdingKit.biz.util.downloadFile({
+                                url: fileUrl, //要下载的文件的url
+                                name: fileName, //定义下载文件名字
+                                onProgress: function (msg) {
+                                },
+                                onSuccess: function (result) {
+                                },
+                                onFail: function () { }
+                            });
+                        }
+                    },
+                    onFail: function () { }
+                })
+            }
+            else {
+                dingdingKit.biz.util.openLink({
+                    url:fileUrl,
+                });
+            }
+        }
+    }
+
+    clickTrashHandler(ev) {
+        if (this.deleting) {
+            return;
+        }
+
+        var msg = PopMessageBox('删除附件:"' + this.props.fileName + '"?', EMessageBoxType.Blank, '附件删除');
+        msg.query('删除附件"' + this.props.fileName + '" ?', [{ label: '删除', key: '删除' }, { label: '算了', key: '算了' }], (key) => {
+            if (key == '删除') {
+                this.deleting = true;
+                var self = this;
+                store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: { 附件id: this.props.attachmentID }, action: 'deleteAttachment' },
+                    makeFTD_Callback((state, data, error) => {
+                        self.deleting = false;
+                        if (error) {
+                            alert(JSON.stringify(error));
+                            return;
+                        }
+                        else {
+                            self.deletedAttachmentID = self.props.attachmentID;
+                            setTimeout(() => {
+                                self.setState({
+                                    magicObj: {}
+                                });
+                            }, 20);
+                        }
+                    }, false)));
+            }
+        });
+    }
+
+    render() {
+        if (this.deletedAttachmentID && this.deletedAttachmentID == this.props.attachmentID) {
+            return null;
+        }
+        var ftype_arr = this.props.fileType.split('/');
+        var fileType = ftype_arr[0];
+        if (fileType == 'application') {
+            fileType = ftype_arr[1];
+            if (fileType == 'vnd.openxmlformats-officedocument.spre' || fileType == 'vnd.ms-excel') {
+                fileType = 'excel';
+            }
+            else if (fileType == 'vnd.openxmlformats-officedocument.word' || fileType == 'msword') {
+                fileType = 'word';
+            }
+        }
+
+        var canPreview = false;
+        var fileIconType = 'fa-file-o';
+        switch (fileType) {
+            case 'archive':
+            case 'audio':
+            case 'code':
+            case 'excel':
+            case 'image':
+            case 'movie':
+            case 'pdf':
+            case 'photo':
+            case 'picture':
+            case 'powerpoint':
+            case 'sound':
+            case 'text':
+            case 'video':
+            case 'word':
+            case 'zip':
+                fileIconType = 'fa-file-' + fileType + '-o';
+        }
+
+        switch (fileType) {
+            case 'audio':
+            case 'image':
+            case 'movie':
+            case 'sound':
+            case 'video':
+                canPreview = true;
+        }
+        this.canPreview = canPreview;
+        this.fileType = fileType;
+        var contetnElem = null;
+        if (fileType == 'image') {
+            contetnElem = <img className='w-100 h-100' src={window.location.origin + this.props.filePath} onClick={this.clickIconHandler} />
+        }
+        else if (fileType == 'audio') {
+            contetnElem = [
+                <audio key='audio' ref={this.audioTagRef} src={window.location.origin + this.props.filePath} />,
+                <i key='icon' className={'fa ' + fileIconType} onClick={this.clickIconHandler} />
+            ];
+        }
+        else {
+            contetnElem = <i onClick={this.clickIconHandler} className={'fa ' + fileIconType} />
+        }
+        var fileName = this.props.fileName;
+        if (fileName.length > 15) {
+            fileName = '...' + this.props.fileName.substr(-15);
+        }
+        return <div className='filepreview'>
+            {contetnElem}
+            <div id='name'>
+                {fileName}
+            </div>
+            {!this.props.canDelte ? null : <button onClick={this.clickTrashHandler} id='del' className='btn btn-sm btn-danger'><i className={'fa ' + (this.deleting ? 'fa-circle-o-notch fa-spin' : 'fa-trash')} /></button>}
+        </div>
+    }
+}
+
+function ERPC_FilePreview_mapstatetoprops(state, ownprops) {
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    var rowState = propProfile.rowState;
+
+    return {
+        visible: ctlState.visible,
+        fullParentPath: propProfile.fullParentPath,
+        fullPath: propProfile.fullPath,
+        fileID: ctlState.fileID,
+        attachmentID: ctlState.attachmentID,
+        fileType: ctlState.fileType,
+        filePath: ctlState.filePath,
+        fileName: ctlState.fileName,
+    };
+}
+
+function ERPC_FilePreview_dispatchtorprops(dispatch, ownprops) {
+    return {
+    };
+}
+
 var VisibleERPC_MultiFileUploader = null;
-gNeedCallOnErpControlInit_arr.push(()=>{
+var VisibleERPC_FilePreview = null;
+
+gNeedCallOnErpControlInit_arr.push(() => {
     VisibleERPC_MultiFileUploader = ReactRedux.connect(ERPC_MultiFileUploader_mapstatetoprops, ERPC_MultiFileUploader_dispatchtorprops)(ERPC_MultiFileUploader);
+    VisibleERPC_FilePreview = ReactRedux.connect(ERPC_FilePreview_mapstatetoprops, ERPC_FilePreview_dispatchtorprops)(ERPC_FilePreview);
 });

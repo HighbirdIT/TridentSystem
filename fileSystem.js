@@ -45,6 +45,27 @@ fileSystem.process = (req,res,next) => {
     serverhelper.commonProcess(req, res, next, processes_map);
 };
 
+fileSystem.deleteAttachment = (req,res) => {
+    var bundle=req.body.bundle;
+    if(isNaN(bundle.附件id)){
+        return '没有指定附件';
+    }
+    return co(function* () {
+        var inparams_arr=[
+            dbhelper.makeSqlparam('附件id', sqlTypes.Int, bundle.附件id),
+            dbhelper.makeSqlparam('userid', sqlTypes.Int, req.session.g_envVar.userid),
+		];
+		var ret;
+		try{
+            ret = yield dbhelper.asynGetScalar('update [TB00C附件记录] set [终止确认状态]=1,[终止确认时间]=getdate(),[终止确认用户]=@userid where [附件记录代码]=@附件id',inparams_arr);
+        }
+        catch(eo){
+            return serverhelper.createErrorRet(eo.message);
+        }
+        return {jobdone:1};
+    });
+};
+
 fileSystem.applyForTempFile = (req,res) => {
     var bundle=req.body.bundle;
     return co(function* () {
@@ -152,6 +173,7 @@ fileSystem.uploadBlock = (req,res) => {
 var processes_map={
     applyForTempFile:fileSystem.applyForTempFile,
     uploadBlock:fileSystem.uploadBlock,
+    deleteAttachment:fileSystem.deleteAttachment,
 };
 
 module.exports = fileSystem;

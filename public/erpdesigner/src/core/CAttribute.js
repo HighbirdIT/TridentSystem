@@ -11,6 +11,15 @@ function genTextFiledAttribute(label='显示字段', def='', editable = true){
     });
 }
 
+function genColumnFieldAttribute(label, name, def=''){
+    return new CAttribute(label,name,ValueType.String, def, true, false, [], 
+    {
+        pullDataFun:GetKernelCanUseColumns,
+        text:'name',
+        editable:false,
+    }, true);
+}
+
 function genValueFiledAttribute(label='码值字段', def='', editable = true){
     return new CAttribute(label,AttrNames.ValueField,ValueType.String, def, true, false, [], 
     {
@@ -309,6 +318,8 @@ const AttrNames={
         OnChanged:'onChanged',
         OnMouseDown:'onMouseDown',
         OnSelectRow:'onSelectRow',
+        OnRowChanged:'onRowChanged',
+        OnUploadComplete:'onUploadComplate',
     },
 
     LayoutNames:{

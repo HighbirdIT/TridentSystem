@@ -40,6 +40,7 @@ const JSNODE_GETPAGE_ENTRYPARAM = 'getpageenterparam';
 const JSNODE_BATCH_CONTROL_API_PROPSETTER = 'batchcontrolapipropsetter';
 const JSNODE_GETSTEPDATA = 'getstepdata';
 const JSNODE_HASHFORM_DATAROW = 'hashformdatarow';
+const JSNODE_ATTACHMENT_PRO = 'attachmentpro';
 
 const JSNODE_DD_MAP_SEARCH = 'ddmapsearch';
 const JSNODE_DD_NAV_CLOSE = 'ddnavclose';
@@ -250,7 +251,7 @@ class JSNode_BluePrint extends EventEmitter {
             }
             this.linkPool.restorFromJson(bluePrintJson.links_arr, createHelper);
         }
-        if(IsEmptyString(this.uuid)){
+        if (IsEmptyString(this.uuid)) {
             this.uuid = guid2();
         }
         if (this.type == null) {
@@ -390,10 +391,10 @@ class JSNode_BluePrint extends EventEmitter {
         });
     }
 
-    getParamNames(){
+    getParamNames() {
         return this.vars_arr.filter(varData => {
             return varData.isParam;
-        }).map(p=>{return p.name;});
+        }).map(p => { return p.name; });
     }
 
     removeVariable(varData) {
@@ -562,11 +563,12 @@ class JSNode_BluePrint extends EventEmitter {
                 return false;
             }
             this.ctlKernel = ctlKernel;
-            if(ctlKernel.id == 'M_LC_22'){
+            if (ctlKernel.id == 'M_LC_22') {
                 //console.log('wer');
             }
         }
         var haveDoneTip = true;
+        var muteMode = false;
         var funName = this.name.replace('#', '_');
         var useScope = compilHelper.scope;
         var nomsgbox = false;
@@ -579,6 +581,7 @@ class JSNode_BluePrint extends EventEmitter {
             }
             nomsgbox = compilHelper.config.nomsgbox == true;
             haveDoneTip = compilHelper.config.haveDoneTip != false;
+            muteMode = compilHelper.config.muteMode == true;
         }
         var theFun = useScope.getFunction(funName, true);
         compilHelper.compilingFun = theFun;
@@ -642,11 +645,11 @@ class JSNode_BluePrint extends EventEmitter {
                 });
             }
         }
-        
+
         var ctlIsUserControl = ctlKernel ? ctlKernel.type == UserControlKernel_Type : false;
         var belongUserControl = !ctlKernel ? null : ctlKernel.searchParentKernel(UserControlKernel_Type, true);
-        var belongFormControl = !ctlKernel ? null :ctlKernel.searchParentKernel(M_FormKernel_Type, true);
-        var reactParentControl = !ctlKernel ? null :ctlKernel.getReactParentKernel(true);
+        var belongFormControl = !ctlKernel ? null : ctlKernel.searchParentKernel(M_FormKernel_Type, true);
+        var reactParentControl = !ctlKernel ? null : ctlKernel.getReactParentKernel(true);
         var baseBundleInitBlock = new FormatFileBlock('baseBundle');
         var initValue;
         var varName;
@@ -678,25 +681,36 @@ class JSNode_BluePrint extends EventEmitter {
                 hadCallParm = true;
             }
             if (!hadCallParm) {
-                if(this.group == EJsBluePrintFunGroup.CtlValid){
+                if (this.group == EJsBluePrintFunGroup.CtlValid) {
                     theFun.scope.getVar(VarNames.State, true, 'comeState ? comeState : store.getState();');
-
                 }
-                else{
+                else if(params_arr.indexOf('state') == -1){
                     theFun.scope.getVar(VarNames.State, true, 'store.getState()');
                 }
             }
 
             if (this.group == EJsBluePrintFunGroup.CtlEvent) {
-                if(ctlKernel.type == M_FormKernel_Type && this.name == ctlKernel.id + '_' + AttrNames.Event.OnSelectRow){
-                    theFun.scope.getVar(ctlKernel.id + '_path', true, 'fullPath');
+                if (ctlKernel.type == M_FormKernel_Type) {
+                    if (
+                        this.name == ctlKernel.id + '_' + AttrNames.Event.OnSelectRow ||
+                        this.name == ctlKernel.id + '_' + AttrNames.Event.OnRowChanged
+                    ) {
+                        theFun.scope.getVar(ctlKernel.id + '_path', true, 'fullPath');
+                    }
                 }
-                if (ctlKernel.type == ButtonKernel_Type) {
+                else if (ctlKernel.type == MFileUploader_Type) {
+                    if (
+                        this.name == ctlKernel.id + '_' + AttrNames.Event.OnRowChanged
+                    ) {
+                        theFun.scope.getVar(ctlKernel.id + '_path', true, 'fullPath');
+                    }
+                }
+                else if (ctlKernel.type == ButtonKernel_Type) {
                     theFun.scope.getVar(ctlKernel.id + '_path', true, "ev == null ? null : getAttributeByNode(ev.target,'ctl-fullpath')");
                 }
                 else if (ctlKernel.type == UserControlKernel_Type && !isNavieFun) {
                     theFun.scope.getVar(ctlKernel.id + '_path', true, "getBelongUserCtlPath(_path)");
-                    orginParams_arr.forEach(p=>{
+                    orginParams_arr.forEach(p => {
                         theFun.scope.getVar(p, true, "_params." + p);
                     });
                 }
@@ -705,7 +719,7 @@ class JSNode_BluePrint extends EventEmitter {
                         // ctl onchanged fun
                         theFun.scope.getVar(ctlKernel.id + '_path', true, VarNames.ParentPath + "+'." + ctlKernel.id + "'");
                     }
-                    else if(isOnmouseDownFun){
+                    else if (isOnmouseDownFun) {
                         theFun.scope.getVar(ctlKernel.id + '_path', true, "ev == null ? null : getAttributeByNode(ev.target,'ctl-fullpath')");
                     }
                 }
@@ -719,7 +733,7 @@ class JSNode_BluePrint extends EventEmitter {
                 if (ctlKernel.type == UserControlKernel_Type) {
                     params_arr = ['state,_params,_oldParams,_path'];
                     theFun.scope.getVar(ctlKernel.id + '_path', true, "getBelongUserCtlPath(_path)");
-                    orginParams_arr.forEach(p=>{
+                    orginParams_arr.forEach(p => {
                         theFun.scope.getVar(p, true, "_params." + p);
                     });
                 }
@@ -802,7 +816,13 @@ class JSNode_BluePrint extends EventEmitter {
                         }
                         if (useFormData.useSelectedRow) {
                             theFun.scope.getVar(selectedRowsVarName, true, formStateVarName + '.' + VarNames.SelectedRows_arr);
-                            validFormSelectBlock.pushLine(makeStr_AddAll('if(', selectedRowsVarName, '==null || ', selectedRowsVarName, ".length == 0){SendToast('需要在[" + useFormData.formKernel.getAttribute(AttrNames.Title) + "]中选择" + (isSingleSelectMode ? '一条' : '几条') + "数据。', EToastType.Warning);return;}"));
+                            validFormSelectBlock.pushLine(makeStr_AddAll('if(', selectedRowsVarName, '==null || ', selectedRowsVarName, ".length == 0){"), 1);
+                            if(!muteMode){
+                                validFormSelectBlock.pushLine(makeStr_AddAll("SendToast('需要在[" + useFormData.formKernel.getAttribute(AttrNames.Title) + "]中选择" + (isSingleSelectMode ? '一条' : '几条') + "数据。', EToastType.Warning);"));
+                            }
+                            validFormSelectBlock.pushLine("return;", -1);
+                            validFormSelectBlock.pushLine('}');
+                            
                             if (isSingleSelectMode) {
                                 if (isUseFormColumn) {
                                     theFun.scope.getVar(formNowRecordVarName, true);
@@ -871,7 +891,7 @@ class JSNode_BluePrint extends EventEmitter {
                             else {
                                 initValue = ctlStateVarName + '.' + propApiitem.stateName;
                             }
-                            if(propApiitem.getInitValueFun){
+                            if (propApiitem.getInitValueFun) {
                                 initValue = propApiitem.getInitValueFun(ctlStateVarName);
                             }
                             if (controlStateDelayGet) {
@@ -883,7 +903,7 @@ class JSNode_BluePrint extends EventEmitter {
                             }
                             if (propApiitem.needValid && needCheckProps_map[varName] == null) {
                                 needCheckProps_map[varName] = 1;
-                                nullableChecker = ctlParentStateVarName ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
+                                nullableChecker = ctlParentStateVarName && useCtlData.kernel.parent.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
                                 needCheckVars_arr.push({
                                     kernel: useCtlData.kernel,
                                     nullable: nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : null,
@@ -944,13 +964,13 @@ class JSNode_BluePrint extends EventEmitter {
                     propApiitem = useCtlData.useprops_map[propName];
                     varName = usectlid + '_' + propApiitem.stateName;
                     var propInitValue = ctlStateVarName + '.' + propApiitem.stateName;
-                    if(propApiitem.getInitValueFun){
+                    if (propApiitem.getInitValueFun) {
                         propInitValue = propApiitem.getInitValueFun(ctlStateVarName);
                     }
                     theFun.scope.getVar(varName, true, propInitValue);
                     if (propApiitem.needValid && needCheckProps_map[varName] == null) {
                         needCheckProps_map[varName] = 1;
-                        nullableChecker = ctlParentStateVarName ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
+                        nullableChecker = ctlParentStateVarName && useCtlData.kernel.parent.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
                         needCheckVars_arr.push({
                             kernel: useCtlData.kernel,
                             nullable: nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : null,
@@ -964,7 +984,7 @@ class JSNode_BluePrint extends EventEmitter {
         }
         var finalCallBack_bk = new FormatFileBlock('finalcallback');
         theFun.headBlock.pushChild(finalCallBack_bk);
-        if(validFormSelectBlock){
+        if (validFormSelectBlock) {
             theFun.headBlock.pushChild(validFormSelectBlock);
         }
         var needFinalCallback = false;
@@ -1037,6 +1057,10 @@ class JSNode_BluePrint extends EventEmitter {
             if (checkVarValidStr.length > 0) {
                 var checkVarValidIf = new JSFile_IF('checkVar', checkVarValidStr);
                 theFun.headBlock.pushChild(checkVarValidIf);
+                if(muteMode){
+                    // 静默模式下前置条件不足的提示也不要了
+                    checkVarValidIf.trueBlock.pushLine("hadValidErr = true;");
+                }
                 checkVarValidIf.trueBlock.pushLine("return callback_final(state, null, {info:gPreconditionInvalidInfo});");
             }
             theFun.headBlock.pushChild(validKernelBlock);
@@ -1062,6 +1086,9 @@ class JSNode_BluePrint extends EventEmitter {
             needFinalCallback = true;
 
             theFun.headBlock.pushLine("var fetchid = Math.round(Math.random() * 999999);");
+            if (compilHelper.config && !IsEmptyString(compilHelper.config.fetchKey)) {
+                fetchKeyVarValue = compilHelper.config.fetchKey;
+            }
             theFun.headBlock.pushLine("var " + VarNames.FetchKey + " = " + fetchKeyVarValue + ";");
             theFun.headBlock.pushLine("fetchTracer[" + VarNames.FetchKey + "] = fetchid;");
             theFun.headBlock.pushLine('var ' + VarNames.BaseBunlde + '={', 1);
@@ -1129,8 +1156,9 @@ class JSNode_BluePrint extends EventEmitter {
                     }
                     setInvalidStateBlock.pushLine("if(state == null){store.dispatch(makeAction_setManyStateByPath(validErrState, " + pathStr + "));}");
                     setInvalidStateBlock.pushLine("else{setManyStateByPath(state," + pathStr + ",validErrState);}");
-                    setInvalidStateBlock.pushLine("if(hadValidErr){SendToast('验证失败，无法执行', EToastType.Warning);return;}");
+                    setInvalidStateBlock.pushLine("if(hadValidErr){"+(muteMode ? '' : "SendToast('验证失败，无法执行', EToastType.Warning);")+"return;}");
                 }
+
                 setInvalidStateBlock.pushLine("if(err){", 1);
                 setInvalidStateBlock.pushLine("if(" + msgBoxVarName + "){" + msgBoxVarName + ".setData(err.info, EMessageBoxType.Error, '" + ctlName + "');}");
                 setInvalidStateBlock.pushLine("else{SendToast(err.info, EToastType.Error);}");
@@ -1138,7 +1166,7 @@ class JSNode_BluePrint extends EventEmitter {
                 setInvalidStateBlock.pushLine("}");
 
                 finalCallBackReturn_bk.pushLine("if(" + msgBoxVarName + "){" + msgBoxVarName + ".fireClose();}");
-                if(haveDoneTip){
+                if (haveDoneTip && !muteMode) {
                     finalCallBackReturn_bk.pushLine("SendToast('执行成功');");
                 }
             }
@@ -1181,7 +1209,7 @@ class JSNode_BluePrint extends EventEmitter {
         }
         else {
         }
-        if(compilHelper.bNeedMsgBox && !msgBoxCreated){
+        if (compilHelper.bNeedMsgBox && !msgBoxCreated) {
             var msgBoxVarName = this.id + '_msg';
             theFun.scope.getVar(msgBoxVarName, true, "PopMessageBox('',EMessageBoxType.Blank)");
         }
@@ -2109,7 +2137,7 @@ class JSNode_CurrentDataRow extends JSNode_Base {
 
     rowSourceChanged() {
         var formKernel = this.bluePrint.master.project.getControlById(this.formID);
-        if(formKernel == null){
+        if (formKernel == null) {
             return;
         }
         var isGridForm = formKernel.isGridForm();
@@ -2332,12 +2360,12 @@ class JSNode_CurrentDataRow extends JSNode_Base {
             }
         }
         if (clientForEachBodyBlock) {
-            if(this.compileFlowNode(clientForEachFlowLinks_arr[0], helper, usePreNodes_arr, clientForEachBodyBlock) == false){
+            if (this.compileFlowNode(clientForEachFlowLinks_arr[0], helper, usePreNodes_arr, clientForEachBodyBlock) == false) {
                 return false;
             }
         }
         if (this.outFlowSocket) {
-            if(this.compileOutFlow(helper, usePreNodes_arr, belongBlock) == false){
+            if (this.compileOutFlow(helper, usePreNodes_arr, belongBlock) == false) {
                 return false;
             }
         }
@@ -2793,14 +2821,14 @@ class JSNODE_Insert_table extends JSNode_Base {
 
         var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
         if (serverTrueFlowLinks_arr.length > 0) {
-            if(this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false){
+            if (this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false) {
                 return false;
             }
         }
 
         var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
         if (serverFalseFlowLinks_arr.length > 0) {
-            if(this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false){
+            if (this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false) {
                 return false;
             }
         }
@@ -3184,7 +3212,7 @@ class JSNODE_Insert_table extends JSNode_Base {
             if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端成功出口无效', helper)) {
                 return false;
             }
-            if(this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock) == false){
+            if (this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock) == false) {
                 return false;
             }
         }
@@ -3197,7 +3225,7 @@ class JSNODE_Insert_table extends JSNode_Base {
             if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端成功出口无效', helper)) {
                 return false;
             }
-            if(this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock) == false){
+            if (this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock) == false) {
                 return false;
             }
         }
@@ -3207,14 +3235,14 @@ class JSNODE_Insert_table extends JSNode_Base {
 
         var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
         if (theServerSide != null && serverTrueFlowLinks_arr.length > 0) {
-            if(this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false){
+            if (this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false) {
                 return false;
             }
         }
 
         var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
         if (theServerSide != null && serverFalseFlowLinks_arr.length > 0) {
-            if(this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false){
+            if (this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false) {
                 return false;
             }
         }
@@ -3237,6 +3265,7 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
             apiItem = apiClass.getApiItemByid(this.apiid);
             if (apiClass == null || apiItem == null) {
                 console.error('查询控件api失败！');
+                return;
             }
             this.apiClass = apiClass;
             this.apiItem = apiItem;
@@ -3321,6 +3350,11 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
                 stateName: propAttr.label,
                 useAttrName: propAttr.label,
             });
+        }
+        if(selectedKernel.type == M_FormKernel_Type){
+            if (this.checkCompileFlag(useApiItem.stateName == VarNames.RecordIndex && !selectedKernel.isPageForm(), '指定的Form必须是Page才能访问此项属性', helper)) {
+                return false;
+            }
         }
         helper.addUseControlPropApi(selectedKernel, useApiItem, EFormRowSource.Context);
 
@@ -3431,9 +3465,9 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
             if (this.checkCompileFlag(propAttr == null, '目标属性无效', helper)) {
                 return false;
             }
-            var pathVar = singleQuotesStr(selectedKernel.getStatePath(propAttr.label, '.', {mapVarName:VarNames.RowIndexInfo_map}));
+            var pathVar = singleQuotesStr(selectedKernel.getStatePath(propAttr.label, '.', { mapVarName: VarNames.RowIndexInfo_map }));
             var belongUserCtl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
-            if(belongUserCtl){
+            if (belongUserCtl) {
                 pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath(propAttr.label));
             }
             if (batchNode) {
@@ -3451,10 +3485,10 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
         }
         else {
             var belongUserControl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
-            var statePath = (belongUserControl ? belongUserControl.id + "_path + '." : "'") + selectedKernel.getStatePath(this.apiItem.stateName, '.', {mapVarName:VarNames.RowIndexInfo_map}) + "'";
+            var statePath = (belongUserControl ? belongUserControl.id + "_path + '." : "'") + selectedKernel.getStatePath(this.apiItem.stateName, '.', { mapVarName: VarNames.RowIndexInfo_map }) + "'";
             if (batchNode) {
                 myJSBlock.pushLine(needSetVarName + '[' + statePath + '] = ' + valueStr + ';');
-            }  
+            }
             else {
                 myJSBlock.pushLine('setTimeout(() => {', 1);
                 myJSBlock.pushLine("store.dispatch(makeAction_setStateByPath(" + valueStr + "," + statePath + "));", -1);
@@ -3557,16 +3591,16 @@ const gJSDateFuns_arr = [
         outputs: [{ label: '', type: ValueType.Date }]
     },
     {
-        name:'Convert_TimeZone',
-        inputs:[{label:'日期',type:ValueType.Data},{ label: '本地时区', type: ValueType.Int, inputable: true },
+        name: 'Convert_TimeZone',
+        inputs: [{ label: '日期', type: ValueType.Data }, { label: '本地时区', type: ValueType.Int, inputable: true },
         { label: '目标时区', type: ValueType.Int, inputable: true }],
-        outputs:[{label:'',type:ValueType.Data}]
+        outputs: [{ label: '', type: ValueType.Data }]
     }
     ,
     {
-        name:'GetTime',
+        name: 'GetTime',
         inputs: [{ label: '日期', type: ValueType.Date }],
-        outputs:[{label:'number',type:ValueType.Int}]
+        outputs: [{ label: 'number', type: ValueType.Int }]
     }
 ];
 
@@ -3718,13 +3752,13 @@ class JSNode_DateFun extends JSNode_Base {
                 callStr = funPreFix + 'castDateFromTimePart(' + socketVal_arr[0] + ')';
                 break;
             case 'Convert_TimeZone':
-                callStr= funPreFix+'Convert_TimeZone(' +  socketVal_arr[0]+','+  socketVal_arr[1]+','+  socketVal_arr[2]+') ';
+                callStr = funPreFix + 'Convert_TimeZone(' + socketVal_arr[0] + ',' + socketVal_arr[1] + ',' + socketVal_arr[2] + ') ';
                 break;
             case 'GetTime':
-                callStr= socketVal_arr[0] + '.getTime()';
+                callStr = socketVal_arr[0] + '.getTime()';
                 break;
             case 'CastDateByTimeNumber':
-                callStr= 'new Date(parseInt(' + socketVal_arr[0] + '))';
+                callStr = 'new Date(parseInt(' + socketVal_arr[0] + '))';
                 break;
             default:
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
@@ -4264,7 +4298,7 @@ class JSNode_Query_Sql extends JSNode_Base {
                 });
             }
 
-            if(this.compileFlowNode(serverForEachFlowLinks_arr[0], helper, usePreNodes_arr, serverForachBodyBlock) == false){
+            if (this.compileFlowNode(serverForEachFlowLinks_arr[0], helper, usePreNodes_arr, serverForachBodyBlock) == false) {
                 return false;
             }
         }
@@ -4556,7 +4590,7 @@ class JSNode_Query_Sql extends JSNode_Base {
                 });
             }
 
-            if(this.compileFlowNode(serverForEachFlowLinks_arr[0], helper, usePreNodes_arr, serverForachBodyBlock) == false){
+            if (this.compileFlowNode(serverForEachFlowLinks_arr[0], helper, usePreNodes_arr, serverForachBodyBlock) == false) {
                 return false;
             }
         }
@@ -4585,7 +4619,7 @@ class JSNode_Query_Sql extends JSNode_Base {
                 });
             }
 
-            if(this.compileFlowNode(clientForEachFlowLinks_arr[0], helper, usePreNodes_arr, clientForEachBodyBlock) == false){
+            if (this.compileFlowNode(clientForEachFlowLinks_arr[0], helper, usePreNodes_arr, clientForEachBodyBlock) == false) {
                 return false;
             }
         }
@@ -4973,10 +5007,10 @@ class JSNode_FreshForm extends JSNode_Base {
             parentPath = belongUserControl.id + '_path' + (parentPath.length == 0 ? '' : "+'." + parentPath + "'");
         }
         else {
-            if(selectedKernel.parent.type == M_PageKernel_Type){
+            if (selectedKernel.parent.type == M_PageKernel_Type) {
                 parentPath = singleQuotesStr(selectedKernel.parent.id);
             }
-            else{
+            else {
                 parentPath = singleQuotesStr(selectedKernel.parent.getStatePath(''));
             }
         }
@@ -5327,7 +5361,7 @@ class JSNode_Do_FlowStep extends JSNode_Base {
         if (blockInServer) {
             selfCompileRet.setSocketOut(this.inFlowSocket, '', myServerBlock);
             if (serverFlow_links.length > 0) {
-                if(this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, tryBlock.bodyBlock) == false){
+                if (this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, tryBlock.bodyBlock) == false) {
                     return false;
                 }
             }
@@ -5336,7 +5370,7 @@ class JSNode_Do_FlowStep extends JSNode_Base {
             selfCompileRet.setSocketOut(this.inFlowSocket, '', myClientBlock);
             fetchEndBlock.pushLine('if(' + errVarName + '){callback_final(state, null,' + errVarName + ');}');
             if (clientFlow_links.length > 0) {
-                if(this.compileFlowNode(clientFlow_links[0], helper, usePreNodes_arr, fetchEndBlock)){
+                if (this.compileFlowNode(clientFlow_links[0], helper, usePreNodes_arr, fetchEndBlock)) {
                     return false;
                 }
             }
@@ -5344,7 +5378,7 @@ class JSNode_Do_FlowStep extends JSNode_Base {
                 fetchEndBlock.pushLine('return callback_final(state, null,' + errVarName + ');');
             }
             if (serverFlow_links.length > 0) {
-                if(this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, tryBlock.bodyBlock)){
+                if (this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, tryBlock.bodyBlock)) {
                     return false;
                 }
             }
@@ -5673,14 +5707,14 @@ class JSNODE_Update_table extends JSNode_Base {
 
         var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
         if (serverTrueFlowLinks_arr.length > 0) {
-            if(this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false){
+            if (this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false) {
                 return false;
             }
         }
 
         var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
         if (serverFalseFlowLinks_arr.length > 0) {
-            if(this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false){
+            if (this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false) {
                 return false;
             }
         }
@@ -6026,7 +6060,7 @@ class JSNODE_Update_table extends JSNode_Base {
             if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端成功出口无效', helper)) {
                 return false;
             }
-            if(this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock) == false){
+            if (this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock) == false) {
                 return false;
             }
         }
@@ -6041,7 +6075,7 @@ class JSNODE_Update_table extends JSNode_Base {
             if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端失败出口无效', helper)) {
                 return false;
             }
-            if(this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock) == false){
+            if (this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock) == false) {
                 return false;
             }
         }
@@ -6053,14 +6087,14 @@ class JSNODE_Update_table extends JSNode_Base {
 
         var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
         if (serverTrueFlowLinks_arr.length > 0) {
-            if(this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false){
+            if (this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false) {
                 return false;
             }
         }
 
         var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
         if (serverFalseFlowLinks_arr.length > 0) {
-            if(this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false){
+            if (this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false) {
                 return false;
             }
         }
@@ -6147,13 +6181,13 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
             this.addSocket(this.outFlowSocket);
         }
-        if(this.isUserControlEvent){
+        if (this.isUserControlEvent) {
             this.label = 'Fire:自订控件事件';
         }
-        else if(this.isUserControlFunction){
+        else if (this.isUserControlFunction) {
             this.label = 'Call:自订控件方法';
         }
-        else{
+        else {
             this.label = 'Call:' + apiClass.ctllabel + '.' + funItem.name;
         }
         if (nodeJson) {
@@ -6204,14 +6238,14 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         var funAttrName = this.ctlSocket.getExtra('funAttrName');
         var selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
         if (selectedKernel && selectedKernel.isTemplate()) {
-            if(this.isUserControlEvent){
+            if (this.isUserControlEvent) {
                 funAttrName = funAttrName.replace('#', '_');
                 var funAttrValue = selectedKernel[funAttrName];
                 if (funAttrValue && !IsEmptyString(funAttrValue.params)) {
                     params_arr = funAttrValue.params.split(';');
                 }
             }
-            else{
+            else {
                 var funBPname = selectedKernel.id + '_' + funAttrName;
                 var funBp = project.scriptMaster.getBPByName(funBPname);
                 if (funBp != null) {
@@ -6303,9 +6337,9 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             if (this.checkCompileFlag(IsEmptyString(funAttrName), '需要选择方法', helper)) {
                 return false;
             }
-            
+
             funAttrValue = {
-                name:selectedKernel.getTemplateKernel().id + '_' + funAttrName,
+                name: selectedKernel.getTemplateKernel().id + '_' + funAttrName,
             }
             if (this.checkCompileFlag(project.scriptMaster.getBPByName(funAttrValue.name) == null, '方法未创建', helper)) {
                 return false;
@@ -6318,9 +6352,10 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             return false;
         }
         var myJSBlock = new FormatFileBlock(this.id);
-        
+        var belongUserCtl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
+
         var useApiItem = this.apiItem;
-        myJSBlock.pushLine('setTimeout(() => {', 1); 
+        myJSBlock.pushLine('setTimeout(() => {', 1);
         if (this.isUserControlEvent || this.isUserControlFunction) {
             var bundleStr = '';
             for (var i = 1; i < this.inputScokets_arr.length; ++i) {
@@ -6330,38 +6365,40 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
                     return false;
                 }
                 var tValue = socketComRet.value;
-                bundleStr += (bundleStr.length > 0 ? ',' : '') + theSocket.label + ':' + tValue 
+                bundleStr += (bundleStr.length > 0 ? ',' : '') + theSocket.label + ':' + tValue
             }
             var pathVar = selectedKernel.id + "_path + '.fun_" + funAttrValue.name + "'";
-            if(this.isUserControlFunction){
-                if(!selectedKernel.isTemplate()){
-                    var belongUserCtl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
+            if (this.isUserControlFunction) {
+                if (!selectedKernel.isTemplate()) {
                     pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath('fun_' + funAttrValue.name));
                 }
                 //bundleStr += (bundleStr.length > 0 ? ',' : '') + selectedKernel.getTemplateKernel().id + '_path:' + selectedKernel.id + '_path';
             }
             myJSBlock.pushLine("store.dispatch(makeAction_setStateByPath({" + bundleStr + "}," + pathVar + "));", -1);
             useApiItem = {
-                name:funAttrValue.name,
+                name: funAttrValue.name,
             };
             helper.addUseControlEventApi(selectedKernel, useApiItem, EFormRowSource.Context);
         }
         else {
-            if(selectedKernel.type == MFileUploader_Type && this.funItem.name == 'reset'){
-                myJSBlock.pushLine("ResetMFileUploader(" + selectedKernel.id  + "_path);", -1);
-                helper.addUseControlPath(selectedKernel);
+            if (selectedKernel.type == MFileUploader_Type && this.funItem.name == 'Reset') {
+                var cltPathVar = singleQuotesStr(selectedKernel.getStatePath('', '.', { mapVarName: VarNames.RowIndexInfo_map }));
+                if (belongUserCtl) {
+                    cltPathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath(''));
+                }
+                myJSBlock.pushLine("ResetMFileUploader(" + cltPathVar + ");", -1);
             }
-            else{
+            else {
                 myJSBlock.pushLine(selectedKernel.id + "_" + this.funItem.name + "();", -1);
             }
         }
         myJSBlock.pushLine('},50);');
         belongBlock.pushChild(myJSBlock);
-        
+
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
-        
+
 
         if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
             return false;
@@ -6733,14 +6770,14 @@ class JSNODE_Delete_Table extends JSNode_Base {
 
         var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
         if (serverTrueFlowLinks_arr.length > 0) {
-            if(this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false){
+            if (this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false) {
                 return false;
             }
         }
 
         var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
         if (serverFalseFlowLinks_arr.length > 0) {
-            if(this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false){
+            if (this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false) {
                 return false;
             }
         }
@@ -6823,7 +6860,7 @@ class JSNODE_Delete_Table extends JSNode_Base {
         if (this.checkCompileFlag(!IsEmptyObject(bpCompileHelper.useUrlVar_map), '不可使用URL参数', helper)) {
             return false;
         }
-        
+
 
         var serverFun = null;
         var serverFunBodyBlock = null;
@@ -6964,7 +7001,7 @@ class JSNODE_Delete_Table extends JSNode_Base {
             if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端成功出口无效', helper)) {
                 return false;
             }
-            if(this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock) == false){
+            if (this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock) == false) {
                 return false;
             }
         }
@@ -6978,7 +7015,7 @@ class JSNODE_Delete_Table extends JSNode_Base {
             if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端成功出口无效', helper)) {
                 return false;
             }
-            if(this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock) == false){
+            if (this.compileFlowNode(falseFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.falseBlock) == false) {
                 return false;
             }
         }
@@ -6988,14 +7025,14 @@ class JSNODE_Delete_Table extends JSNode_Base {
 
         var serverTrueFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverSucessFlowSocket);
         if (theServerSide != null && serverTrueFlowLinks_arr.length > 0) {
-            if(this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false){
+            if (this.compileFlowNode(serverTrueFlowLinks_arr[0], helper, usePreNodes_arr, serverCompleteBlock) == false) {
                 return false;
             }
         }
 
         var serverFalseFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFailFlowSocket);
         if (theServerSide != null && serverFalseFlowLinks_arr.length > 0) {
-            if(this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false){
+            if (this.compileFlowNode(serverFalseFlowLinks_arr[0], helper, usePreNodes_arr, serverFailBlock) == false) {
                 return false;
             }
         }
@@ -7674,7 +7711,7 @@ class JSNode_GetStepData extends JSNode_Base {
         if (inSocketComRet.err) {
             return false;
         }
-        
+
 
         var finalStr = 'stepData' + this.outSocket.defval;
         helper.addUseURLVairable(finalStr, inSocketComRet.value);
@@ -7905,7 +7942,7 @@ class JSNode_Batch_Control_Api_Propsetter extends JSNode_Base {
             if (this.checkCompileFlag(theNode.type != JSNODE_CONTROL_API_PROPSETTER, '输入只能链接API设置节点', helper)) {
                 return false;
             }
-            if(theNode.compile(helper, usePreNodes_arr, setBodyBlock) == false){
+            if (theNode.compile(helper, usePreNodes_arr, setBodyBlock) == false) {
                 return false;
             }
         }
@@ -7965,6 +8002,20 @@ class JSNode_Excute_Pro extends JSNode_Base {
         }
         if (this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0) {
             this.outFlowSockets_arr = [];
+            if (!bluePrintIsServer) {
+                this.serverFlowSocket = new NodeFlowSocket('serverSucess', this, false);
+                this.addSocket(this.serverFlowSocket);
+            }
+        }
+        else {
+            this.serverFlowSocket = this.outFlowSockets_arr[0];
+            if (!bluePrintIsServer) {
+                this.removeSocket(this.serverFlowSocket);
+                this.serverFlowSocket = null;
+            }
+        }
+        if (this.serverFlowSocket) {
+            this.serverFlowSocket.label = 'server';
         }
 
         if (this.inFlowSocket == null) {
@@ -8369,6 +8420,9 @@ class JSNode_Excute_Pro extends JSNode_Base {
             tryBlock.bodyBlock.pushLine('return serverhelper.createErrorRet(' + rcdRltVarName + '.output.错误描述 ? ' + rcdRltVarName + '.output.错误描述' + " : '[" + targetEntity.name + "]执行失败但未给出失败理由。');", -1);
             tryBlock.bodyBlock.pushLine('}');
         }
+        var serverSuccessBlock = new FormatFileBlock('serverSuccessBlock');
+        serverFunBodyBlock.pushChild(serverSuccessBlock);
+
         if (!blockInServer) {
             serverFunBodyBlock.pushLine("return " + rcdRltVarName + ';');
         }
@@ -8447,6 +8501,13 @@ class JSNode_Excute_Pro extends JSNode_Base {
             selfCompileRet.setSocketOut(theSocket, dataVarName + '.output.' + param.name);
         });
 
+        var serverFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFlowSocket);
+        if (serverFlowLinks_arr.length > 0) {
+            if (this.compileFlowNode(serverFlowLinks_arr[0], helper, usePreNodes_arr, serverSuccessBlock) == false) {
+                return false;
+            }
+        }
+
         var autoCallFetchEnd = this.autoCallFetchEnd != false;
         var flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.outFlowSocket);
         if (flowLinks_arr.length > 0) {
@@ -8455,6 +8516,266 @@ class JSNode_Excute_Pro extends JSNode_Base {
             }
         }
         else if (autoCallFetchEnd) {
+            fetchEndBlock.pushLine(makeStr_callFun('return callback_final', ['state', dataVarName, errVarName]) + ';');
+        }
+        return selfCompileRet;
+    }
+}
+
+class JSNode_Attachment_Pro extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_ATTACHMENT_PRO, '附件操作', false, nodeJson);
+        this.hadFetchFun = true;
+        autoBind(this);
+        var bluePrintIsServer = this.bluePrint.group == EJsBluePrintFunGroup.ServerScript;
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+        if (this.inputScokets_arr.length > 0) {
+            this.flowSocket = this.inputScokets_arr.find(x => {
+                return x.name == 'flow';
+            });
+            this.processSocket = this.inputScokets_arr.find(x => {
+                return x.name == 'process';
+            });
+            this.dataSocket = this.inputScokets_arr.find(x => {
+                return x.name == 'data';
+            });
+            this.keySocket = this.inputScokets_arr.find(x => {
+                return x.name == 'key';
+            });
+        }
+
+        if (this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0) {
+            this.outFlowSockets_arr = [];
+            if (!bluePrintIsServer) {
+                this.serverFlowSocket = new NodeFlowSocket('serverSucess', this, false);
+                this.addSocket(this.serverFlowSocket);
+            }
+        }
+        else {
+            this.serverFlowSocket = this.outFlowSockets_arr[0];
+            if (!bluePrintIsServer) {
+                this.removeSocket(this.serverFlowSocket);
+                this.serverFlowSocket = null;
+            }
+        }
+
+        if (this.processSocket == null) {
+            this.processSocket = this.addSocket(new NodeSocket('process', this, true));
+        }
+        if (this.flowSocket == null) {
+            this.flowSocket = this.addSocket(new NodeSocket('flow', this, true));
+        }
+        if (this.keySocket == null) {
+            this.keySocket = this.addSocket(new NodeSocket('key', this, true));
+        }
+        if (this.dataSocket == null) {
+            this.dataSocket = this.addSocket(new NodeSocket('data', this, true));
+        }
+        this.processSocket.set({
+            label: '操作',
+            inputable: true,
+            inputDDC_setting: {
+                textAttrName: 'label',
+                valueAttrName: 'code',
+                options_arr: [{ label: '追加', code: 'add' }],
+            },
+            hideIcon: true,
+        });
+        this.flowSocket.set({
+            label: '事务流程',
+            inputable: true,
+            inputDDC_setting: {
+                textAttrName: 'label',
+                valueAttrName: 'code',
+                options_arr: AllFileFlows_arr,
+            },
+            hideIcon: true,
+        });
+        this.keySocket.set({
+            label: '关联记录代码',
+            inputable: false,
+        });
+        this.dataSocket.label = '文件列表';
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var theScope = belongBlock.getScope();
+        var blockInServer = theScope && theScope.isServerSide;
+        var belongFun = theScope ? theScope.fun : null;
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var i;
+        var theSocket;
+        var socketComRet = this.getSocketCompileValue(helper, this.dataSocket, usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var dataSocketValue = socketComRet.value;
+        socketComRet = this.getSocketCompileValue(helper, this.keySocket, usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var keySocketValue = socketComRet.value;
+        if (this.checkCompileFlag(IsEmptyString(keySocketValue), '必须指派关键记录代码', helper)) {
+            return false;
+        }
+        if (this.checkCompileFlag(IsEmptyString(dataSocketValue), '必须指派文件列表', helper)) {
+            return false;
+        }
+        if (this.checkCompileFlag(IsEmptyString(this.processSocket.defval), '请选择操作种类', helper)) {
+            return false;
+        }
+        var theFileFlow = AllFileFlows_arr.find(x => { return x.code == this.flowSocket.defval; });
+        if (this.checkCompileFlag(theFileFlow == null, '请选择事务流程', helper)) {
+            return false;
+        }
+
+        // make server side code
+        var theServerSide = helper.serverSide;// ? helper.serverSide : new JSFileMaker();
+        var postBundleVarName = this.bluePrint.id + '_bundle';
+        var serverSideActName = this.bluePrint.id + '_' + this.id;
+        var rcdRltVarName = this.id + '_ret';
+        var postVarinitBlock = new FormatFileBlock('postVarInit');
+        var bundleCheckBlock = new FormatFileBlock('bundleCheck');
+        bundleCheckBlock.pushChild(postVarinitBlock);
+        var serverFun = null;
+        var serverFunBodyBlock = null;
+        if (theServerSide == null) {
+            theServerSide = new CP_ServerSide({});
+        }
+        if (!blockInServer) {
+            var queryFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
+            serverFun = queryFun;
+            helper.appendOutputItem(queryFun);
+            theServerSide.initProcessFun(queryFun);
+            queryFun.pushLine("if(" + postBundleVarName + "==null){return serverhelper.createErrorRet('缺少参数bundle');}");
+            queryFun.bundleCheckBlock = bundleCheckBlock;
+            queryFun.pushChild(bundleCheckBlock);
+            queryFun.scope.getVar(postBundleVarName, true, "req.body." + VarNames.Bundle);
+            serverFunBodyBlock = serverFun.bodyBlock;
+
+            theServerSide.processesMapVarInitVal[queryFun.name] = queryFun.name;
+        }
+        else {
+            serverFun = belongFun;
+            serverFunBodyBlock = belongBlock;
+            serverFunBodyBlock.pushChild(bundleCheckBlock);
+            serverFunBodyBlock = belongBlock;
+        }
+
+        var paramVarName = this.id + 'params_arr';
+        var paramInitBlock = new FormatFileBlock('initparam');
+        paramInitBlock.pushLine(paramVarName + "=[", 1);
+        paramInitBlock.pushLine("dbhelper.makeSqlparam('操作种类', sqlTypes.NVarChar(10), '" + this.processSocket.defval + "'),");
+        paramInitBlock.pushLine("dbhelper.makeSqlparam('归属流程代码', sqlTypes.Int, " + theFileFlow.code + "),");
+        paramInitBlock.pushLine("dbhelper.makeSqlparam('关联记录代码', sqlTypes.Int, " + keySocketValue + "),");
+        paramInitBlock.pushLine("dbhelper.makeSqlparam('数据', sqlTypes.NVarChar(4000), " + dataSocketValue + "),");
+        paramInitBlock.pushLine("dbhelper.makeSqlparam('操作用户', sqlTypes.NVarChar(10), req.session.g_envVar.userid),");
+        paramInitBlock.subNextIndent();
+        paramInitBlock.pushLine('];');
+        serverFunBodyBlock.pushChild(paramInitBlock);
+
+        serverFunBodyBlock.pushLine("var " + rcdRltVarName + " = null;");
+        var tryBlock = new JSFile_Try('try');
+        serverFunBodyBlock.pushChild(tryBlock);
+        tryBlock.errorBlock.pushLine("return serverhelper.createErrorRet(eo.message);");
+        tryBlock.bodyBlock.pushLine(rcdRltVarName + " = yield dbhelper.asynExcute('PB00E操作附件', " + paramVarName + ");");
+        var serverSuccessBlock = new FormatFileBlock('serverSuccessBlock');
+        serverFunBodyBlock.pushChild(serverSuccessBlock);
+        if (!blockInServer) {
+            serverFunBodyBlock.pushLine("return " + rcdRltVarName + ';');
+        }
+        this.serverFun = serverFun;
+
+        // makeClient
+        helper.compilingFun.hadServerFetch = true;
+        var myJSBlock = new FormatFileBlock(this.id);
+        var initBundleBlock = null;
+        if (serverFun) {
+            if (serverFun.bundleCheckBlock.initBundleBlock) {
+                initBundleBlock = serverFun.bundleCheckBlock.initBundleBlock
+            }
+            else {
+                initBundleBlock = new FormatFileBlock('initbundle');
+                serverFun.bundleCheckBlock.initBundleBlock = initBundleBlock;
+            }
+        }
+        else {
+            initBundleBlock = new FormatFileBlock('initbundle');
+        }
+        helper.addInitClientBundleBlock(initBundleBlock);
+
+        var useClientVariablesRlt = new UseClientVariableResult();
+        this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
+        useClientVariablesRlt.variables_arr.forEach(varCon => {
+            initBundleBlock.params_map[varCon.name] = varCon.name;
+            if (serverFun) {
+                serverFun.scope.getVar(varCon.name, true);
+                postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
+            }
+        });
+
+        if (!blockInServer) {
+            belongBlock.pushChild(myJSBlock);
+        }
+
+        var bundleVarName = VarNames.Bundle + '_' + this.id;
+        myJSBlock.pushLine("var " + bundleVarName + " = Object.assign({}," + VarNames.BaseBunlde + ",{", 1);
+        myJSBlock.pushChild(initBundleBlock);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('});');
+        var callBack_bk = new FormatFileBlock('callback' + this.id);
+        myJSBlock.pushChild(callBack_bk);
+        var inreducer = this.isInReducer(usePreNodes_arr);
+        if (inreducer) {
+            myJSBlock.pushLine('setTimeout(() => {', 1);
+        }
+        myJSBlock.pushLine("if(fetchTracer[" + VarNames.FetchKey + "] != fetchid) return;");
+        var dataVarName = this.id + '_ret';
+        var errVarName = 'error_' + this.id;
+        myJSBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + serverSideActName + "',}, makeFTD_Callback((state, " + dataVarName + ", " + errVarName + ")=>{", 1);
+        var fetchEndBlock = new FormatFileBlock('fetchend');
+        myJSBlock.pushChild(fetchEndBlock);
+        fetchEndBlock.pushLine('if(' + errVarName + '){return callback_final(state, null,' + errVarName + ');}');
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('},false)));');
+        if (inreducer) {
+            myJSBlock.subNextIndent();
+            myJSBlock.pushLine('}, 50);');
+        }
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        var serverFlowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.serverFlowSocket);
+        if (serverFlowLinks_arr.length > 0) {
+            if (this.compileFlowNode(serverFlowLinks_arr[0], helper, usePreNodes_arr, serverSuccessBlock) == false) {
+                return false;
+            }
+        }
+
+        var flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.outFlowSocket);
+        if (flowLinks_arr.length > 0) {
+            if (this.compileFlowNode(flowLinks_arr[0], helper, usePreNodes_arr, fetchEndBlock) == false) {
+                return false;
+            }
+        }
+        else {
             fetchEndBlock.pushLine(makeStr_callFun('return callback_final', ['state', dataVarName, errVarName]) + ';');
         }
         return selfCompileRet;
@@ -8980,30 +9301,30 @@ class JSNode_DD_MapSearch extends JSNode_Base {
         }
 
         if (nodeJson) {
-            this.outputScokets_arr.forEach(socket=>{
-                switch(socket.name){
+            this.outputScokets_arr.forEach(socket => {
+                switch (socket.name) {
                     case 'title':
-                    this.titleSocket = socket;
-                    break;
+                        this.titleSocket = socket;
+                        break;
                     case 'lon':
-                    this.longitudeSocket = socket;
-                    break;
+                        this.longitudeSocket = socket;
+                        break;
                     case 'lat':
-                    this.latitudeSocket = socket;
-                    break;
+                        this.latitudeSocket = socket;
+                        break;
                 }
             });
         }
 
-        if(this.titleSocket == null){
+        if (this.titleSocket == null) {
             this.titleSocket = this.addSocket(new NodeSocket('title', this, false));
         }
 
-        if(this.longitudeSocket == null){
+        if (this.longitudeSocket == null) {
             this.longitudeSocket = this.addSocket(new NodeSocket('lon', this, false));
         }
 
-        if(this.latitudeSocket == null){
+        if (this.latitudeSocket == null) {
             this.latitudeSocket = this.addSocket(new NodeSocket('lat', this, false));
         }
 
@@ -9050,7 +9371,7 @@ class JSNode_DD_MapSearch extends JSNode_Base {
         myJSBlock.pushLine("alert('错误:' + JSON.stringify(err));");
         myJSBlock.subNextIndent();
         myJSBlock.pushLine('};');
-        
+
         myJSBlock.pushLine("dingdingKit.biz.map.search({scope:500,onSuccess:" + onSuccessVarName + ",onFail:" + onFailVarName + "});");
 
         var selfCompileRet = new CompileResult(this);
@@ -9112,44 +9433,44 @@ class JSNode_DD_GetGeoLoaction extends JSNode_Base {
         }
 
         if (nodeJson) {
-            this.outputScokets_arr.forEach(socket=>{
-                switch(socket.name){
+            this.outputScokets_arr.forEach(socket => {
+                switch (socket.name) {
                     case 'address':
-                    this.addressSocket = socket;
-                    break;
+                        this.addressSocket = socket;
+                        break;
                     case 'lon':
-                    this.longitudeSocket = socket;
-                    break;
+                        this.longitudeSocket = socket;
+                        break;
                     case 'lat':
-                    this.latitudeSocket = socket;
-                    break;
+                        this.latitudeSocket = socket;
+                        break;
                     case 'errorMessage':
-                    this.errorMessageSocket = socket;
-                    break;
+                        this.errorMessageSocket = socket;
+                        break;
                     case 'errorCode':
-                    this.errorCodeSocket = socket;
-                    break;
+                        this.errorCodeSocket = socket;
+                        break;
                 }
             });
         }
 
-        if(this.addressSocket == null){
+        if (this.addressSocket == null) {
             this.addressSocket = this.addSocket(new NodeSocket('address', this, false));
         }
 
-        if(this.longitudeSocket == null){
+        if (this.longitudeSocket == null) {
             this.longitudeSocket = this.addSocket(new NodeSocket('lon', this, false));
         }
 
-        if(this.latitudeSocket == null){
+        if (this.latitudeSocket == null) {
             this.latitudeSocket = this.addSocket(new NodeSocket('lat', this, false));
         }
 
-        if(this.errorMessageSocket == null){
+        if (this.errorMessageSocket == null) {
             this.errorMessageSocket = this.addSocket(new NodeSocket('errorMessage', this, false));
         }
 
-        if(this.errorCodeSocket == null){
+        if (this.errorCodeSocket == null) {
             this.errorCodeSocket = this.addSocket(new NodeSocket('errorCode', this, false));
         }
 
@@ -9200,7 +9521,7 @@ class JSNode_DD_GetGeoLoaction extends JSNode_Base {
         myJSBlock.pushLine("alert('错误:' + JSON.stringify(err));");
         myJSBlock.subNextIndent();
         myJSBlock.pushLine('};');
-        
+
         myJSBlock.pushLine("dingdingKit.device.geolocation.get({targetAccuracy:200,coordinate:1,withReGeocode:true,onSuccess:" + onSuccessVarName + ",onFail:" + onFailVarName + "});");
 
         var selfCompileRet = new CompileResult(this);
@@ -9306,8 +9627,8 @@ class JsNode_OpenExternal_Page extends JSNode_Base {
         if (socketComRet.link) {
             targetProjName = socketComRet.value;
         }
-        else{
-            var theProj = ProjectRecords_arr.find(p=>{return p.value == socketComRet.value;});
+        else {
+            var theProj = ProjectRecords_arr.find(p => { return p.value == socketComRet.value; });
             if (this.checkCompileFlag(theProj == null, '没有选择目标页面', helper)) {
                 return false;
             }
@@ -9325,7 +9646,7 @@ class JsNode_OpenExternal_Page extends JSNode_Base {
         }
         var intDataValue = socketComRet.value;
         var myJSBlock = new FormatFileBlock('');
-        myJSBlock.pushLine("openPage(" + targetProjName + "," + (IsEmptyString(flowStep) ? 'null' : flowStep)  + "," + (IsEmptyString(intDataValue) ? 'null' : intDataValue)  + ");");
+        myJSBlock.pushLine("openPage(" + targetProjName + "," + (IsEmptyString(flowStep) ? 'null' : flowStep) + "," + (IsEmptyString(intDataValue) ? 'null' : intDataValue) + ");");
         belongBlock.pushChild(myJSBlock);
 
         var selfCompileRet = new CompileResult(this);
@@ -9354,7 +9675,7 @@ class JSNode_HashFormDataRow extends JSNode_Base {
             this.addSocket(this.outFlowSocket);
         }
 
-        if(this.inputScokets_arr.length > 0){
+        if (this.inputScokets_arr.length > 0) {
             this.inSocket = this.inputScokets_arr[0];
         }
 
@@ -9430,10 +9751,10 @@ class JSNode_HashFormDataRow extends JSNode_Base {
         if (this.checkCompileFlag(theDS == null, '关联Form没有数据源！', helper)) {
             return false;
         }
-        
+
         this.targetEntity = theDS;
         this.formKernel = formKernel;
-        
+
         var nowRowVarName = this.id + '_data';
         var inSocketComRet = this.getSocketCompileValue(helper, this.inSocket, usePreNodes_arr, belongBlock, true, false);
         if (inSocketComRet.err) {
@@ -9462,7 +9783,7 @@ class JSNode_HashFormDataRow extends JSNode_Base {
             helper.addUseColumn(formKernel, colName, null, EFormRowSource.None);
             selfCompileRet.setSocketOut(outSocket, nowRowVarName + '.' + colName);
         }
-        if(this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false){
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
             return false;
         }
         return selfCompileRet;
@@ -9684,5 +10005,9 @@ JSNodeClassMap[JSNODE_DD_NAV_CLOSE] = {
 };
 JSNodeClassMap[JSNODE_DD_GETGEO_LOCATION] = {
     modelClass: JSNode_DD_GetGeoLoaction,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_ATTACHMENT_PRO] = {
+    modelClass: JSNode_Attachment_Pro,
     comClass: C_Node_SimpleNode,
 };
