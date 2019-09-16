@@ -1145,7 +1145,7 @@ class JSNode_BluePrint extends EventEmitter {
                 var ctlName = ctlKernel.getAttribute(AttrNames.Name);
                 if (startFtech_bk) {
                     if (!nomsgbox) {
-                        startFtech_bk.pushLine(makeLine_Assign(msgBoxVarName, "PopMessageBox('',EMessageBoxType.Loading, '" + ctlName + "')"));
+                        startFtech_bk.pushLine(makeLine_Assign(msgBoxVarName, "PopMessageBox('',EMessageBoxType." + (muteMode ? 'Blank' : 'Loading') + ", '" + ctlName + "')"));
                     }
                 }
 
