@@ -877,6 +877,7 @@ class JSNode_BluePrint extends EventEmitter {
                             theFun.scope.getVar(ctlStateVarName, true, initValue);
                         }
                         theFun.scope.getVar(ctlStateVarName, true, initValue);
+                        ctlParentStateVarName = null;
                         if (useCtlData.kernel.isAEditor()) {
                             ctlParentStateVarName = useCtlData.kernel.parent.id + '_state';
                             initValue = makeStr_getStateByPath(useCtlBelongStateVarName, singleQuotesStr(useCtlData.kernel.parent.id), '{}');
