@@ -943,6 +943,12 @@ class ERPC_FilePreview extends React.PureComponent {
                                 onProgress: function (msg) {
                                 },
                                 onSuccess: function (result) {
+                                    dingdingKit.biz.util.openLocalFile({
+                                        url: fileUrl,
+                                        onSuccess: function (result) {
+                                        },
+                                        onFail: function () { }
+                                    });
                                 },
                                 onFail: function () { }
                             });

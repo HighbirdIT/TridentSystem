@@ -1181,7 +1181,13 @@ var ERPC_FilePreview = function (_React$PureComponent4) {
                                     url: fileUrl, //要下载的文件的url
                                     name: fileName, //定义下载文件名字
                                     onProgress: function onProgress(msg) {},
-                                    onSuccess: function onSuccess(result) {},
+                                    onSuccess: function onSuccess(result) {
+                                        dingdingKit.biz.util.openLocalFile({
+                                            url: fileUrl,
+                                            onSuccess: function onSuccess(result) {},
+                                            onFail: function onFail() {}
+                                        });
+                                    },
                                     onFail: function onFail() {}
                                 });
                             }
