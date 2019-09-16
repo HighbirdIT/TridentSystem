@@ -16,6 +16,7 @@ const TabControl_Type = 'tabcontrol';
 const TabItem_Type = 'tabitem';
 const TaskSelector_Type = 'taskselector';
 const MFileUploader_Type = 'mfileuploader';
+const FilePreviewer_Type = 'filepreviewer';
 
 const M_LabelKernel_Prefix = 'M_Label';
 const M_PageKernel_Prefix = 'M_Page';
@@ -34,6 +35,7 @@ const TabControl_Prefix = 'tabcontrol';
 const TabItem_Prefix = 'tabitem';
 const TaskSelector_Prefix = 'taskSel';
 const MFileUploader_Prefix = 'mfuploader';
+const FilePreviewer_Prefix = 'filepreviewer';
 
 function GetControlTypeReadableName(type){
     switch(type){
@@ -59,20 +61,22 @@ function GetControlTypeReadableName(type){
         return '任意';
         case M_CheckBoxKernel_Type:
         return '复选框';
-        case EmptyKernel_Prefix:
+        case EmptyKernel_Type:
         return '空组件';
-        case UserControlKernel_Prefix:
+        case UserControlKernel_Type:
         return '自订控件';
-        case Accordion_Prefix:
+        case Accordion_Type:
         return '可折叠控件';
-        case TabControl_Prefix:
+        case TabControl_Type:
         return '选项卡';
-        case TabItem_Prefix:
+        case TabItem_Type:
         return '选项卡-子';
         case TaskSelector_Type:
         return '任务选择器';
-        case MFileUploader_Prefix:
+        case MFileUploader_Type:
         return '多文件上传器';
+        case FilePreviewer_Type:
+        return '文件查看器';
     }
     return type;
 }
@@ -112,11 +116,12 @@ class ControlAPIClass{
 }
 
 class ApiItem_prop{
-    constructor(attrItem, stateName, needValid){
+    constructor(attrItem, stateName, needValid, getInitValueFun){
         this.type = EApiType.Prop;
         this.attrItem = attrItem;
         this.needValid = needValid == true;
         this.stateName = stateName == null ? attrItem.name : stateName;
+        this.getInitValueFun = getInitValueFun;
     }
     toString(){
         return 'Get:' + this.apiClass + '.' + this.attrItem.label;

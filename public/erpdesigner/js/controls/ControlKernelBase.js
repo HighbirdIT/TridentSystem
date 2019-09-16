@@ -523,6 +523,9 @@ var ControlKernelBase = function (_IAttributeable) {
             }
             var nowKernel = this;
             var parent = nowKernel.parent;
+            if (nowKernel.type == M_FormKernel_Type && nowKernel.isPageForm()) {
+                parent = nowKernel; // page型的form可以访问到孩子控件
+            }
             if (parent == null) {
                 if (this.type == M_PageKernel_Type || this.type == UserControlKernel_Type) {
                     parent = this;

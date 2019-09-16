@@ -2580,6 +2580,16 @@ function BaseIsValueValid(nowState, visibleBelongState, ctlState, value, valueTy
         } else if (ctlState.fetchingErr) {
             return ctlState.fetchingErr.info;
         }
+        if (ctlState.uploaders) {
+            if (nullable != true && ctlState.uploaders.length == 0) {
+                return '请至少上传一个附件';
+            }
+            if (ctlState.uploaders.find(function (x) {
+                return x.state != EFileUploaderState.COMPLETE;
+            }) != null) {
+                return '请等待附件上传完毕';
+            }
+        }
     }
     if (nullable != true && IsEmptyString(value)) {
         return gCantNullInfo;

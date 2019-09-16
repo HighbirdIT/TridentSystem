@@ -59,6 +59,10 @@ class FileUploader extends EventEmitter {
             self.meetError({ errorMsg: '读取文件出错' });
         };
         reader.onload = ev => {
+            if(self.fileProfile == null){
+                console.log('上传器被删除');
+                return;
+            }
             self.fileData = new Uint8Array(reader.result);
             self.startPos = 0;
             self.changeState(EFileUploaderState.PREPARE);
@@ -67,6 +71,10 @@ class FileUploader extends EventEmitter {
             if (theFile.type.indexOf('image/') != -1) {
                 reader.onerror = null;
                 reader.onload = ev => {
+                    if(self.fileData == null){
+                        console.log('上传器被删除');
+                        return;
+                    }
                     self.base64Data = reader.result;
                     self._fireChanged();
                 };
@@ -115,6 +123,10 @@ class FileUploader extends EventEmitter {
         var self = this;
         store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'applyForTempFile' },
             makeFTD_Callback((state, data, error) => {
+                if(self.fileData == null){
+                    console.log('上传器被删除');
+                    return;
+                }
                 if (error) {
                     self.meetError(error);
                     return;
@@ -134,7 +146,8 @@ class FileUploader extends EventEmitter {
     }
 
     _uploadData() {
-        if (this.isPause || this.uploading) {
+        if (this.isPause || this.uploading || this.fileData == null) {
+            console.log('_uploadData ret');
             return;
         }
         var blockSize = this.fileProfile.size - this.startPos;
@@ -161,6 +174,10 @@ class FileUploader extends EventEmitter {
         store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'uploadBlock' },
             makeFTD_Callback((state, data, error, fetchUseTime) => {
                 setTimeout(() => {
+                    if(self.fileData == null){
+                        console.log('上传器被删除');
+                        return;
+                    }
                     //console.log('uploading end');
                     self.uploading = false;
                     if (error) {
