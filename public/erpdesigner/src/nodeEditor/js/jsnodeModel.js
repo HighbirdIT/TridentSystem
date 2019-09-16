@@ -75,7 +75,15 @@ class JSNode_Base extends Node_Base {
         }
         var socketOut = nextNodeCompileRet.getSocketOut(flowLink.inSocket);
         if (socketOut.data.parent != belongBlock && socketOut.data.getScope() == belongBlock.getScope()) {
-            belongBlock.pushChild(socketOut.data.clone());
+            var clonedFun = (cloned, orgin)=>{
+                if(cloned instanceof FormatFileBlock){
+                    if(helper.clientInitBundleBlocks_arr.indexOf(orgin) != -1){
+                        cloned.params_map = orgin.params_map;
+                        helper.addInitClientBundleBlock(cloned);
+                    }
+                }
+            }
+            belongBlock.pushChild(socketOut.data.clone(clonedFun));
         }
         return nextNodeCompileRet;
     }
