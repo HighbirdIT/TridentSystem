@@ -993,7 +993,7 @@ class C_SqlNode_CurrentDataRow extends React.PureComponent {
     getFormDS(){
         var nodeData = this.props.nodedata;
         var formKernel = nodeData.bluePrint.master.project.getControlById(nodeData.formID);
-        return formKernel.getAttribute(AttrNames.DataSource);
+        return formKernel == null ? null : formKernel.getAttribute(AttrNames.DataSource);
     }
 
     customSocketRender(socket) {
