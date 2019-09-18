@@ -32,6 +32,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('bottomDivID', 'bottomDivID', ValueType.String, '', true, false, null, null, false),
         new CAttribute('editorID', 'editorID', ValueType.String, '', true, false, null, null, false),
         genIsdisplayAttribute(),
+        new CAttribute('默认可见', AttrNames.DefaultVisible, ValueType.Boolean, true),
         new CAttribute('NoRender', AttrNames.NoRender, ValueType.Boolean, false),
         new CAttribute('点选模式', AttrNames.ClickSelectable, ValueType.Boolean, false),
         new CAttribute('访问控制', AttrNames.AcessAssert, ValueType.Event),

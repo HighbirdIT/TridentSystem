@@ -619,6 +619,15 @@ class JSNode_BluePrint extends EventEmitter {
         if (ret == false) {
             return false;
         }
+        var defRetValue = null;
+        if(this.startNode.defRetSocket){
+            var defRetSocketComRet = this.startNode.getSocketCompileValue(compilHelper, this.startNode.defRetSocket, [], theFun.body, true, true);
+            if(defRetSocketComRet == false){
+                return false;
+            }
+            defRetValue = defRetSocketComRet.value;
+        }
+
         compilHelper.compileEnd();
         if (this.group == EJsBluePrintFunGroup.CtlValid) {
             params_arr = ['nowValue', 'comeState', 'comeValidErrState'];
@@ -1070,7 +1079,13 @@ class JSNode_BluePrint extends EventEmitter {
                     // 静默模式下前置条件不足的提示也不要了
                     checkVarValidIf.trueBlock.pushLine("hadValidErr = true;");
                 }
-                checkVarValidIf.trueBlock.pushLine("return callback_final(state, null, {info:gPreconditionInvalidInfo});");
+                if(IsEmptyString(defRetValue)){
+                    checkVarValidIf.trueBlock.pushLine("return callback_final(state, null, {info:gPreconditionInvalidInfo});");
+                }
+                else{
+                    checkVarValidIf.trueBlock.pushLine("return callback_final(state, " + defRetValue + ");");
+                }
+                
             }
             theFun.headBlock.pushChild(validKernelBlock);
             var stateParam = 'null';
@@ -1080,7 +1095,7 @@ class JSNode_BluePrint extends EventEmitter {
                     break;
             }
             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
-                theFun.headBlock.pushLine("if(hadValidErr){callback_final(" + stateParam + ", null, {info:gPreconditionInvalidInfo});return;}");
+                theFun.headBlock.pushLine("if(hadValidErr){callback_final(" + stateParam + ", null, {info:gPreconditionInvalidInfo});return " + defRetValue +";}");
             }
             else {
                 theFun.headBlock.pushLine("if(hadValidErr){return callback_final(" + stateParam + ", null, {info:gPreconditionInvalidInfo});}");
@@ -1458,6 +1473,22 @@ class JSNode_Start extends JSNode_Base {
                 this.addSocket(this.newValSocket);
             }
             this.newValSocket.label = 'NowValue';
+        }
+
+        if(this.inputScokets_arr.length > 0){
+            this.defRetSocket = this.inputScokets_arr.find(x=>{return x.name == 'defret'});
+        }
+        if(this.bluePrint.group == EJsBluePrintFunGroup.CtlAttr){
+            if(this.defRetSocket == null){
+                this.defRetSocket = new NodeSocket('defret', this, true, { type: ValueType.String });
+                this.addSocket(this.defRetSocket);
+            }
+            this.defRetSocket.label = '默认返回值';
+        }
+        else{
+            if(this.defRetSocket){
+                this.removeSocket(this.defRetSocket);
+            }
         }
     }
 
@@ -3476,6 +3507,10 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
             }
             var pathVar = singleQuotesStr(selectedKernel.getStatePath(propAttr.label, '.', { mapVarName: VarNames.RowIndexInfo_map }));
             var belongUserCtl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
+            if(selectedKernel.parent == null){
+                // 在自订控件内部设置属性，需要加本控件path
+                belongUserCtl = selectedKernel;
+            }
             if (belongUserCtl) {
                 pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath(propAttr.label));
             }
@@ -8018,7 +8053,7 @@ class JSNode_Excute_Pro extends JSNode_Base {
         }
         else {
             this.serverFlowSocket = this.outFlowSockets_arr[0];
-            if (!bluePrintIsServer) {
+            if (bluePrintIsServer) {
                 this.removeSocket(this.serverFlowSocket);
                 this.serverFlowSocket = null;
             }
@@ -8520,6 +8555,9 @@ class JSNode_Excute_Pro extends JSNode_Base {
         var autoCallFetchEnd = this.autoCallFetchEnd != false;
         var flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.outFlowSocket);
         if (flowLinks_arr.length > 0) {
+            if (this.checkCompileFlag(blockInServer, 'client流无法被执行到', helper)) {
+                return false;
+            }
             if (this.compileFlowNode(flowLinks_arr[0], helper, usePreNodes_arr, fetchEndBlock) == false) {
                 return false;
             }
