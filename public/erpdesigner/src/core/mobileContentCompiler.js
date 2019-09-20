@@ -1627,7 +1627,7 @@ class MobileContentCompiler extends ContentCompiler {
         var project = this.project;
         var logManager = project.logManager;
         var label = theKernel.getAttribute(AttrNames.TextField);
-
+        //layoutConfig.addClass('border-bottom');
         if (IsEmptyObject(label)) {
             logManager.errorEx([logManager.createBadgeItem(
                 theKernel.getReadableName(),
@@ -1635,6 +1635,19 @@ class MobileContentCompiler extends ContentCompiler {
                 this.projectCompiler.clickKernelLogBadgeItemHandler),
                 '没有设置标签']);
             return false;
+        }
+
+        var ControlKernel_targetArr =[];
+        ControlKernel_targetArr=theKernel.parent.children
+        var current_ControlKernelId=theKernel.id
+
+        for(var i=0;i<ControlKernel_targetArr.length;i++){
+            var CKtemporary_Id=ControlKernel_targetArr[i].id
+            if(i !=ControlKernel_targetArr.length-1){
+                if (current_ControlKernelId==CKtemporary_Id && ControlKernel_targetArr[i+1].type=="M_Label"){
+                    layoutConfig.addClass('border-bottom');
+                }
+            }
         }
 
         var parentForm = theKernel.parent.type == M_FormKernel_Type ? theKernel.parent : null;
@@ -1646,7 +1659,7 @@ class MobileContentCompiler extends ContentCompiler {
         labeledCtrlTag.style = layoutConfig.style;
         labeledCtrlTag.setAttr('id', theKernel.id);
         labeledCtrlTag.setAttr('parentPath', parentPath);
-
+        
         var dynamicColumn_obj = null;
         var compileConfig = null;
         var compileRet;
