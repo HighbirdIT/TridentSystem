@@ -5,7 +5,6 @@ const sqlTypes = dbhelper.Types;
 const sharp = require('sharp');
 const fs = require('fs');
 const forge = require('node-forge');
-var MD5 = require('md5.js');
 var dingHelper = require('../../../dingHelper');
 
 var rsa = forge.pki.rsa;

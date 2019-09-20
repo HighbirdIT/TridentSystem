@@ -2039,12 +2039,16 @@ class MobileContentCompiler extends ContentCompiler {
             formTag.setAttr('reBindAT', 'ReBind' + theKernel.id + "Page");
         }
 
+        if(!theKernel.getAttribute(AttrNames.DefaultVisible)){
+            formTag.setAttr('defaultvisible', '{false}');
+        }
+
         renderBlock.pushChild(formTag);
 
         formReactClass.mapStateFun.scope.getVar('propProfile', true, "getControlPropProfile(ownprops, state)");
         formReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
 
-        formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Visible), makeStr_DotProp(VarNames.CtlState, VarNames.Visible) + '!=false'));
+        formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Visible), '(' + makeStr_DotProp(VarNames.CtlState, VarNames.Visible) + ' == null && ownprops.' + AttrNames.DefaultVisible + ' != false) || ' + makeStr_DotProp(VarNames.CtlState, VarNames.Visible) + ' == true'));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Fetching), makeStr_DotProp(VarNames.CtlState, VarNames.Fetching)));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FetchErr), makeStr_DotProp(VarNames.CtlState, VarNames.FetchErr)));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Records_arr), makeStr_DotProp(VarNames.CtlState, VarNames.Records_arr)));

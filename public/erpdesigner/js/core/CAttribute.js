@@ -333,6 +333,7 @@ var AttrNames = {
     OutputCharCount: 'outputcharcount',
     AutoHomeBtn: 'autoHomeBtn',
     AutoPull: 'autoPull',
+    DefaultVisible: 'defaultvisible',
 
     Event: {
         OnClick: 'onclick',
