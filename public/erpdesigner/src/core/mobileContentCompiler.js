@@ -425,7 +425,7 @@ class MobileContentCompiler extends ContentCompiler {
         controlReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullParentPath), makeStr_DotProp('propProfile', VarNames.FullParentPath)));
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullPath), makeStr_DotProp('propProfile', VarNames.FullPath)));
-        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'visible'), makeStr_DotProp(VarNames.CtlState, 'visible != false')));
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'visible'), '(' + makeStr_DotProp(VarNames.CtlState, VarNames.Visible) + ' == null && ownprops.' + AttrNames.DefaultVisible + ' != false) || ' + makeStr_DotProp(VarNames.CtlState, VarNames.Visible) + ' == true'));
         userCtlKernel.getParamApiAttrArray().forEach(paramApiItem => {
             controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, paramApiItem.label), makeStr_DotProp(VarNames.CtlState, paramApiItem.label)));
         });
@@ -1026,6 +1026,9 @@ class MobileContentCompiler extends ContentCompiler {
         var thisFullPath = makeStr_DotProp(parentFullPath, theKernel.id);
         ctlTag.setAttr('id', theKernel.id);
         ctlTag.setAttr('parentPath', parentPath);
+        if(!theKernel.getAttribute(AttrNames.DefaultVisible)){
+            ctlTag.setAttr('defvisible', '{false}');
+        }
 
         this.compileOnMouseDownEvent(theKernel, ctlTag);
 
@@ -1906,6 +1909,7 @@ class MobileContentCompiler extends ContentCompiler {
             gridBodyTag.setAttr('form', '{this}');
             if (insertBtnSetting) {
                 gridBodyTag.setAttr('hadNewRow', '{this.state.hadNewRow}');
+
             }
             if (clickSelectable || onSelectRowBp) {
                 gridBodyTag.setAttr('clickRowHandler', '{this.clickRowHandler}');
@@ -1939,7 +1943,8 @@ class MobileContentCompiler extends ContentCompiler {
             }
             renderContentFun.pushLine("{" + VarNames.RetElem + "}");
             if (insertBtnSetting) {
-                renderContentFun.pushLine("{!this.state.hadNewRow && <button onClick={this.clickNewRowHandler} type='button' className='btn btn-success' ><i className='fa fa-plus'/>新增</button>}");
+                var newbtnlabel = theKernel.getAttribute(AttrNames.InsertBtnLabel);
+                renderContentFun.pushLine("{!this.state.hadNewRow && <button onClick={this.clickNewRowHandler} type='button' className='btn btn-success' ><i className='fa fa-plus'/>" + (IsEmptyString(newbtnlabel) ? '新增' : newbtnlabel) + "</button>}");
             }
             renderContentFun.subNextIndent();
             renderContentFun.pushLine("</div>");
@@ -2026,16 +2031,13 @@ class MobileContentCompiler extends ContentCompiler {
             formTag.setAttr('reBindAT', 'ReBind' + theKernel.id + "Page");
         }
 
-        if(!theKernel.getAttribute(AttrNames.DefaultVisible)){
-            formTag.setAttr('defaultvisible', '{false}');
-        }
-
+        var defVisble = theKernel.getAttribute(AttrNames.DefaultVisible);
         renderBlock.pushChild(formTag);
 
         formReactClass.mapStateFun.scope.getVar('propProfile', true, "getControlPropProfile(ownprops, state)");
         formReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
 
-        formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Visible), '(' + makeStr_DotProp(VarNames.CtlState, VarNames.Visible) + ' == null && ownprops.' + AttrNames.DefaultVisible + ' != false) || ' + makeStr_DotProp(VarNames.CtlState, VarNames.Visible) + ' == true'));
+        formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Visible), makeStr_DotProp(VarNames.CtlState, VarNames.Visible) + ' == null ? ' + defVisble + ' : ' + makeStr_DotProp(VarNames.CtlState, VarNames.Visible) + ' == true'));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Fetching), makeStr_DotProp(VarNames.CtlState, VarNames.Fetching)));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FetchErr), makeStr_DotProp(VarNames.CtlState, VarNames.FetchErr)));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Records_arr), makeStr_DotProp(VarNames.CtlState, VarNames.Records_arr)));
@@ -2210,6 +2212,11 @@ class MobileContentCompiler extends ContentCompiler {
 
             if (belongFormMidData != null) {
                 belongFormMidData.pullFun.beforeRetBlock.pushLine(VarNames.ReState + '=' + makeStr_callFun(pullFun.name, [VarNames.ReState, 'true', "fullParentPath + '." + belongForm.id + "'"]));
+            }
+            else if (belongUserControl != null) {
+                // 在自订控件里
+                var templateReactClass = this.clientSide.getReactClass(belongUserControl.getReactClassName());
+                templateReactClass.initFun.pushLine(makeStr_callFun(bindFun.name, [belongUserControl.id + '_state', 'null', 'null', "ctlFullPath + '." + theKernel.id + "'"]));
             }
             else {
                 var pageInitFun = clientSide.scope.getFunction(makeFName_initPage(belongPage));
@@ -2615,7 +2622,7 @@ class MobileContentCompiler extends ContentCompiler {
             bindPageFun.pushLine('for (var rowIndex = startRowIndex; rowIndex <= endRowIndex; ++rowIndex) {', 1);
             bindPageFun.pushLine('var ' + VarNames.NowRecord + ' = records_arr[rowIndex];');
 
-            bindPageFun.pushChild(staticBindBlock);
+            //bindPageFun.pushChild(staticBindBlock);
             bindPageFun.pushChild(bindNowRecordBlock);
             bindPageFun.pushChild(dynamicSetBlock_hadRecord);
             bindPageFun.subNextIndent(2);
@@ -2839,7 +2846,7 @@ class MobileContentCompiler extends ContentCompiler {
                                         }
                                         break;
                                     case ScriptBindMode.OnNewRow:
-                                        staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', "formPath + '.row_new'"])));
+                                        staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', theKernel.id + "_path + '.row_new'"])));
                                         break;
                                 }
                             } else {

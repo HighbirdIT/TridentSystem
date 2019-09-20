@@ -309,6 +309,7 @@ const AttrNames={
     AutoHomeBtn:'autoHomeBtn',
     AutoPull:'autoPull',
     DefaultVisible:'defaultvisible',
+    InsertBtnLabel:'insertbtnlabel',
 
     Event:{
         OnClick:'onclick',

@@ -17,6 +17,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('表单类别', AttrNames.FormType, ValueType.String, EFormType.Page, true, false, FormTypes_arr),
         new CAttribute('控件类型', AttrNames.EditorType, ValueType.String, M_TextKernel_Type, true, false, [], { text: 'label', value: 'type', pullDataFun: getCanLabeledControls }),
         new CAttribute('无数据提示', AttrNames.NoDataTip, ValueType.String, ''),
+        new CAttribute('新增按钮标签', AttrNames.InsertBtnLabel, ValueType.String, '新增'),
         new CAttribute('', AttrNames.CustomDataSource, ValueType.CustomDataSource, null, true),
         new CAttribute('内容定制', AttrNames.ListFormContent, ValueType.ListFormContent, null, true, false, null, null, false),
         new CAttribute('Wrap', AttrNames.Wrap, ValueType.Boolean, true),
