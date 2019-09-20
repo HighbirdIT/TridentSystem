@@ -963,15 +963,20 @@ class SqlNode_XJoin extends SqlNode_Base {
             }
             var onString = conditionNodeCompileRet.getDirectOut().strContent;
             
+            if (IsEmptyString(onString)) {
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    this.conditionNode,
+                    helper.clickLogBadgeItemHandler),
+                    '没有设定正确的输入']);
+                return false;
+            }
             var arr =onString.replace(/\[|]/g,'').split(/=/);//split(/=|[.]/);
 
-            
             var FirstSocketTableName_arr=socketOuts_arr[0].data.InnerTableName;
-            
+
             var tableNameOne = arr[0].split(/[.]/)[0];
             var tableNameTwo = arr[1].split(/[.]/)[0];
-          
-           
             if (!IsEmptyArray(FirstSocketTableName_arr)) {
                 var Result = FirstSocketTableName_arr.indexOf(tableNameOne);
                 var Resultt = FirstSocketTableName_arr.indexOf(tableNameTwo);
@@ -989,14 +994,6 @@ class SqlNode_XJoin extends SqlNode_Base {
                 }
             }
 
-            if (IsEmptyString(onString)) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle,
-                    this.conditionNode,
-                    helper.clickLogBadgeItemHandler),
-                    '没有设定正确的输入']);
-                return false;
-            }
         }
 
         var selfCompileRet = new CompileResult(this);
