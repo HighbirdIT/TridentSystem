@@ -1,6 +1,8 @@
-const gByteToHex = [];
+'use strict';
 
-var initByteToHex = function () {
+var gByteToHex = [];
+
+var initByteToHex = function initByteToHex() {
     if (gByteToHex.length == 0) {
         console.log('initByteToHex');
         for (var n = 0; n <= 0xff; ++n) {
@@ -9,7 +11,7 @@ var initByteToHex = function () {
     }
 };
 
-var UIntToHexStr = function (data_arr) {
+var UIntToHexStr = function UIntToHexStr(data_arr) {
     initByteToHex();
     var hexOctets = [];
     for (var pos = 0; pos < data_arr.length; ++pos) {
@@ -18,36 +20,40 @@ var UIntToHexStr = function (data_arr) {
     return hexOctets.join('');
 };
 
-
-var onmessage = function (event) {
-    var rlt = UIntToHexStr(event.data);
+var onmessage = function onmessage(event) {
+    var rlt = {
+        act: event.data.act
+    };
+    if (event.data.act == 'calmd5') {
+        rlt.data = md5(event.data.data);
+    } else if (event.data.act == 'tohex') {
+        rlt.data = UIntToHexStr(event.data.data);
+    }
     postMessage(rlt);
 };
 
 initByteToHex();
 
 function safeAdd(x, y) {
-    var lsw = (x & 0xffff) + (y & 0xffff)
+    var lsw = (x & 0xffff) + (y & 0xffff);
     var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
-    return (msw << 16) | (lsw & 0xffff)
+    return msw << 16 | lsw & 0xffff;
 }
-
 
 function bitRotateLeft(num, cnt) {
-    return (num << cnt) | (num >>> (32 - cnt));
+    return num << cnt | num >>> 32 - cnt;
 }
-
 
 function md5cmn(q, a, b, x, s, t) {
     return safeAdd(bitRotateLeft(safeAdd(safeAdd(a, q), safeAdd(x, t)), s), b);
 }
 
 function md5ff(a, b, c, d, x, s, t) {
-    return md5cmn((b & c) | (~b & d), a, b, x, s, t);
+    return md5cmn(b & c | ~b & d, a, b, x, s, t);
 }
 
 function md5gg(a, b, c, d, x, s, t) {
-    return md5cmn((b & d) | (c & ~d), a, b, x, s, t);
+    return md5cmn(b & d | c & ~d, a, b, x, s, t);
 }
 
 function md5hh(a, b, c, d, x, s, t) {
@@ -61,7 +67,7 @@ function md5ii(a, b, c, d, x, s, t) {
 function binlMD5(x, len) {
     /* append padding */
     x[len >> 5] |= 0x80 << len % 32;
-    x[(((len + 64) >>> 9) << 4) + 14] = len;
+    x[(len + 64 >>> 9 << 4) + 14] = len;
 
     var i;
     var olda;
@@ -166,7 +172,7 @@ function binl2rstr(input) {
     var output = '';
     var length32 = input.length * 32;
     for (i = 0; i < length32; i += 8) {
-        output += String.fromCharCode((input[i >> 5] >>> i % 32) & 0xff);
+        output += String.fromCharCode(input[i >> 5] >>> i % 32 & 0xff);
     }
     return output;
 }
@@ -185,7 +191,7 @@ function rstr2binl(input) {
     for (i = 0; i < output.length; i += 1) {
         output[i] = 0;
     }
-    var length8 = input.length * 8
+    var length8 = input.length * 8;
     for (i = 0; i < length8; i += 8) {
         output[i >> 5] |= (input.charCodeAt(i / 8) & 0xff) << i % 32;
     }
@@ -240,7 +246,7 @@ function rstr2hex(input) {
     var i;
     for (i = 0; i < input.length; i += 1) {
         x = input.charCodeAt(i);
-        output += hexTab.charAt((x >>> 4) & 0x0f) + hexTab.charAt(x & 0x0f);
+        output += hexTab.charAt(x >>> 4 & 0x0f) + hexTab.charAt(x & 0x0f);
     }
     return output;
 }

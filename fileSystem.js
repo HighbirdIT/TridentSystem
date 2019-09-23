@@ -73,7 +73,8 @@ fileSystem.applyForTempFile = (req,res) => {
 			dbhelper.makeSqlparam('文件名称', sqlTypes.NVarChar(100), bundle.name),
             dbhelper.makeSqlparam('文件大小', sqlTypes.Int, bundle.size),
             dbhelper.makeSqlparam('操作用户', sqlTypes.Int, req.session.g_envVar.userid),
-			dbhelper.makeSqlparam('文件类型', sqlTypes.NVarChar(100), bundle.type),
+            dbhelper.makeSqlparam('文件类型', sqlTypes.NVarChar(100), bundle.type),
+            dbhelper.makeSqlparam('电子指纹', sqlTypes.NVarChar(200), bundle.md5),
 		];
 		var ret;
 		try{
@@ -103,21 +104,25 @@ fileSystem.uploadBlock = (req,res) => {
         var fd = null;
         try{
             var fileRecord = rcdRlt.recordset[0];
-            if(fileRecord.已上传大小 == fileRecord.文件大小){
-                return serverhelper.createErrorRet('已上传完成', EFileSystemError.UPLOADCOMPLATE);
+            var fileFullName = fileIdentity;
+            if(fileRecord.文件后缀.length > 0){
+                fileFullName += '.' + fileRecord.文件后缀;
             }
             var belongDirPath = fileRecord.创建时间.getFullYear() + '_' + (fileRecord.创建时间.getMonth() + 1);
+            if(fileRecord.已上传大小 == fileRecord.文件大小){
+                return {
+                    bytesWritten:fileRecord.文件大小 - bundle.startPos,
+                    previewUrl:'/filehouse/' + belongDirPath + '/' + fileFullName
+                };
+            }
             var targetDirPath = path.join(__dirname,gFileHouseRootPath,belongDirPath);
             if (!fs.existsSync(targetDirPath))
             {
                 fs.mkdirSync(targetDirPath);
             }
-            var fileFullName = fileIdentity;
-            if(fileRecord.文件后缀.length > 0){
-                fileFullName += '.' + fileRecord.文件后缀;
-            }
             var targetFilePath = path.join(targetDirPath, fileFullName);
             var nowFileSize = 0;
+            fd = fs.openSync(targetFilePath, 'a');
             if(fs.existsSync(targetFilePath)){
                 var fileStats = fs.statSync(targetFilePath);
                 nowFileSize = fileStats.size;
@@ -132,7 +137,7 @@ fileSystem.uploadBlock = (req,res) => {
                 return serverhelper.createErrorRet('块数据长度不合法', EFileSystemError.DATATOOLONG);
             }
             var blockBuf = new Buffer(blockData, 'hex');
-            fd = fs.openSync(targetFilePath, 'a');
+            
             var bytesWritten = fs.writeSync(fd, blockBuf, 0, blockBuf.length, bundle.startPos);
 
             var inparams_arr=[
@@ -152,7 +157,7 @@ fileSystem.uploadBlock = (req,res) => {
                 bytesWritten:bytesWritten,
             };
             if(nowFileSize + bytesWritten >= fileRecord.文件大小){
-                rlt.previewUrl = res.locals.rootUrl + '/filehouse/' + belongDirPath + '/' + fileFullName;
+                rlt.previewUrl = '/filehouse/' + belongDirPath + '/' + fileFullName;
             }
 
             return rlt;
@@ -170,10 +175,36 @@ fileSystem.uploadBlock = (req,res) => {
     });
 };
 
+fileSystem.getFileRecord = (req,res) => {
+    var bundle=req.body.bundle;
+    return co(function* () {
+        var fileid = bundle.fileid;
+        if(isNaN(fileid) || fileid == 0){
+            if(bundle.attachmentID > 0){
+                var attachmentRcdRlt = yield dbhelper.asynQueryWithParams("select 文件记录代码 from TB00C附件记录 where 附件记录代码=@id", [dbhelper.makeSqlparam('id', sqlTypes.Int, bundle.attachmentID)]);
+                if(attachmentRcdRlt.recordset.length == 0){
+                    return null; 
+                }
+                fileid = attachmentRcdRlt.recordset[0].文件记录代码;
+            }
+        }
+        if(fileid > 0){
+            var rcdRlt = yield dbhelper.asynQueryWithParams("select * from FTB00E文件信息(@id)", [dbhelper.makeSqlparam('id', sqlTypes.Int, fileid)]);
+            if(rcdRlt.recordset.length == 0){
+                return null; 
+            }
+            return rcdRlt.recordset[0];
+        }
+        return null;
+    });
+};
+
+
 var processes_map={
     applyForTempFile:fileSystem.applyForTempFile,
     uploadBlock:fileSystem.uploadBlock,
     deleteAttachment:fileSystem.deleteAttachment,
+    getFileRecord:fileSystem.getFileRecord,
 };
 
 module.exports = fileSystem;

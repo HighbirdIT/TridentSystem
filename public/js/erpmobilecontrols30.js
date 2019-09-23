@@ -2593,6 +2593,16 @@ function BaseIsValueValid(nowState, visibleBelongState, ctlState, value, valueTy
             }) != null) {
                 return '请等待附件上传完毕';
             }
+        } else if (ctlState.uploader) {
+            if (ctlState.uploader.state != EFileUploaderState.WAITFILE) {
+                if (isNaN(ctlState.fileID) && isNaN(ctlState.attachmentID)) {
+                    if (nullable != true) {
+                        return '请上传文件';
+                    }
+                }
+            } else if (ctlState.uploader.state != EFileUploaderState.COMPLETE) {
+                return '等待完成';
+            }
         }
     }
     if (nullable != true && IsEmptyString(value)) {

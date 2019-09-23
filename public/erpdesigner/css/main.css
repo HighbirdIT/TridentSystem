@@ -693,3 +693,10 @@
   height: 7em;
   position: relative;
 }
+
+.M_SingleFileUploader{
+  text-align: center;
+  border-radius: 0.25rem !important;
+  border: 2px solid #dee2e6 !important;
+  width: 7em;
+}

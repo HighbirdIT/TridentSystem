@@ -1,4 +1,4 @@
-const MFileUploaderKernelAttrsSetting = GenControlKernelAttrsSetting([
+const SingleFileUploaderKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置', [
         new CAttribute('标题',AttrNames.Title,ValueType.String,'', true, false, [], 
         {
@@ -10,23 +10,23 @@ const MFileUploaderKernelAttrsSetting = GenControlKernelAttrsSetting([
             type:FunType_Client,
             group:EJsBluePrintFunGroup.CtlAttr,
         }),
+        new CAttribute('所属流程', 'fileFlow', ValueType.String, ValueType.String, null, false, AllFileFlows_arr, { text: 'label', value: 'code' }),
         genIsdisplayAttribute(),
         genNullableAttribute(),
         genValidCheckerAttribute(),
-        new CAttribute('fileListStr', 'fileListStr', ValueType.String, '', false, false,null,null,false),
-        new CAttribute('fileListArray', 'fileListArray', ValueType.Array, '', false, false,null,null,false),
+        new CAttribute('fileid', 'fileid', ValueType.String, '', false, false,null,null,false),
     ]),
     new CAttributeGroup('事件', [
         new CAttribute('上传完成', AttrNames.Event.OnUploadComplete, ValueType.Event),
     ]),
 ]);
 
-class MFileUploaderKernel extends ControlKernelBase {
+class SingleFileUploaderKernel extends ControlKernelBase {
     constructor(initData, parentKernel, createHelper, kernelJson) {
         super(initData,
-            MFileUploader_Type,
-            '多文件上传器',
-            MFileUploaderKernelAttrsSetting,
+            SingleFileUploader_Type,
+            '单文件上传器',
+            SingleFileUploaderKernelAttrsSetting,
             parentKernel,
             createHelper, kernelJson
         );
@@ -46,25 +46,23 @@ class MFileUploaderKernel extends ControlKernelBase {
     }
 
     renderSelf(clickHandler) {
-        return (<CMFileUploader key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+        return (<CSingleFileUploader key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 }
-var MFileUploader_api = new ControlAPIClass(MFileUploader_Type);
-MFileUploader_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName('fileListStr',MFileUploaderKernelAttrsSetting), 'fileListStr', true, (ctlStateVarName)=>{
-    return makeStr_AddAll(ctlStateVarName,'==null || ', ctlStateVarName, '.uploaders == null ? "" : ', ctlStateVarName, '.uploaders.map(u=>{return u.fileProfile.code;}).join(",")');
+var SingleFileUploader_api = new ControlAPIClass(SingleFileUploader_Type);
+SingleFileUploader_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName('fileid',SingleFileUploaderKernelAttrsSetting), 'fileid', true, (ctlStateVarName)=>{
+    var uploaderStr = ctlStateVarName + '.uploader';
+    return makeStr_AddAll(ctlStateVarName,' == null ? null : (', uploaderStr, ' == null || ',uploaderStr + '.fileProfile == null ? ',ctlStateVarName + '.deffileID : ', uploaderStr + '.fileProfile.code)');
 }));
-MFileUploader_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName('fileListArray',MFileUploaderKernelAttrsSetting), 'fileListArray', true, (ctlStateVarName)=>{
-    return makeStr_AddAll(ctlStateVarName,'==null || ', ctlStateVarName, '.uploaders == null ? [] : ', ctlStateVarName, '.uploaders.map(u=>{return u.fileProfile.code;})');
-}));
-MFileUploader_api.pushApi(new ApiItem_fun({
+SingleFileUploader_api.pushApi(new ApiItem_fun({
     label:'Reset',
     name:'Reset',
 }));
-MFileUploader_api.pushApi(new ApiItem_propsetter('title'));
-g_controlApi_arr.push(MFileUploader_api);
+SingleFileUploader_api.pushApi(new ApiItem_propsetter('title'));
+g_controlApi_arr.push(SingleFileUploader_api);
 
 
-class CMFileUploader extends React.PureComponent {
+class CSingleFileUploader extends React.PureComponent {
     constructor(props) {
         super(props);
 
@@ -96,7 +94,7 @@ class CMFileUploader extends React.PureComponent {
             layoutConfig.addClass('M_placingCtl');
             return (<div className={layoutConfig.getClassName()} style={layoutConfig.style} ref={this.rootElemRef}>多文件上传器</div>);
         }
-        layoutConfig.addClass('M_MFileUploader');
+        layoutConfig.addClass('M_SingleFileUploader');
         layoutConfig.addClass('border');
         layoutConfig.addClass('hb-control');
         layoutConfig.addClass('d-flex');
@@ -106,19 +104,15 @@ class CMFileUploader extends React.PureComponent {
 
         var titleParserRet = parseObj_CtlPropJsBind(this.state.title);
         var title = titleParserRet.isScript ? (ReplaceIfNull(this.state.name,'') + '{脚本}') : (IsEmptyString(titleParserRet.string) ? '' : '[' +titleParserRet.string + ']');
-        if(IsEmptyString(title)){
-            title = '附件列表';
-        }
 
         return (
-           <div className={layoutConfig.getClassName()} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+           <div className={layoutConfig.getClassName()}  onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {this.renderHandleBar()}
-                <div className='bg-dark d-flex flex-shrink-0 flex-grow-0 p-1 align-items-center'>
-                    <span className='text-light flex-grow-1 flex-shrink-1'><i className='fa fa-list mr-1' />{title}</span>
-                    <i className='fa fa-plus text-success' />
-                </div>
-                <div className='list-group'>
-                    <span className='list-group-list' >上传中的附件</span>
+                {title}
+                <div className='' style={{width:'7em',height:'7em'}}>
+                    <div className='m-a'>
+                        <i className='fa fa-plus' />上传附件
+                    </div>
                 </div>
             </div>
         );
@@ -127,10 +121,10 @@ class CMFileUploader extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        label: '多文件上传器',
-        type: MFileUploader_Type,
-        namePrefix: MFileUploader_Prefix,
-        kernelClass: MFileUploaderKernel,
-        reactClass: CMFileUploader,
+        label: '单文件上传器',
+        type: SingleFileUploader_Type,
+        namePrefix: SingleFileUploader_Prefix,
+        kernelClass: SingleFileUploaderKernel,
+        reactClass: CSingleFileUploader,
         canbeLabeled: false,
     }, '基础');
