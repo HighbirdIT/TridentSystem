@@ -2159,8 +2159,8 @@ function BaseIsValueValid(nowState, visibleBelongState, ctlState, value, valueTy
             }
         }
         else if(ctlState.uploader){
-            if(ctlState.uploader.state != EFileUploaderState.WAITFILE){
-                if(isNaN(ctlState.fileID) && isNaN(ctlState.attachmentID)){
+            if(ctlState.uploader.state == EFileUploaderState.WAITFILE){
+                if(isNaN(ctlState.fileID) || isNaN(ctlState.attachmentID)){
                     if(nullable != true){
                         return '请上传文件';
                     }

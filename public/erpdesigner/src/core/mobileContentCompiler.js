@@ -995,6 +995,9 @@ class MobileContentCompiler extends ContentCompiler {
             case MFileUploader_Type:
                 rlt = this.compileMFileUploaderKernel(theKernel, renderBlock, renderFun);
                 break;
+            case SingleFileUploader_Type:
+                rlt = this.compileSingleFileUploaderKernel(theKernel, renderBlock, renderFun);
+                break;
             case FilePreviewer_Type:
                 rlt = this.compileFilePreviewerKernel(theKernel, renderBlock, renderFun);
                 break;
@@ -3770,6 +3773,173 @@ class MobileContentCompiler extends ContentCompiler {
             if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
                 parentMidData.needSetKernels_arr.push(theKernel);
             }
+        }
+
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
+        if (this.compileValidCheckerAttribute(theKernel) == false) { return false; }
+        var onUploadCompleteFunName = theKernel.id + '_' + AttrNames.Event.OnUploadComplete;
+        var onUploadCompleteBp = project.scriptMaster.getBPByName(onUploadCompleteFunName);
+        if (onUploadCompleteBp != null) {
+            var compileRet = this.compileScriptBlueprint(onUploadCompleteBp, { muteMode: true, fetchKey: "'fileuploaded' + fileID" });
+            if (compileRet == false) {
+                return false;
+            }
+            ctlTag.setAttr('onuploadcomplete', bigbracketStr(onUploadCompleteFunName));
+        }
+
+        renderBlock.pushChild(ctlTag);
+    }
+
+    compileSingleFileUploaderKernel(theKernel, renderBlock, renderFun) {
+        var project = this.project;
+        var logManager = project.logManager;
+
+        var layoutConfig = theKernel.getLayoutConfig();
+        var ctlTag = new FormatHtmlTag(theKernel.id, 'VisibleERPC_SingleFileUploader', this.clientSide);
+        this.modifyControlTag(theKernel, ctlTag);
+        ctlTag.style = layoutConfig.style;
+        ctlTag.setAttr('id', theKernel.id);
+        var parentPath = this.getKernelParentPath(theKernel);
+        ctlTag.setAttr('parentPath', parentPath);
+
+        var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
+        var reactParentKernel = theKernel.getReactParentKernel(true);
+        var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
+        var parentMidData = this.projectCompiler.getMidData(reactParentKernel.id);
+
+        var fileFlow = theKernel.getAttribute('fileFlow');
+        var fileFlowItem = AllFileFlows_arr.find(x=>{return x.code == fileFlow;});
+        if(fileFlowItem){
+            ctlTag.setAttr('fileflow', fileFlow);
+        }
+        var formColumns_arr = null;
+        if (belongFormKernel != null && (belongFormKernel.isPageForm() || belongFormKernel.isKernelInRow(theKernel))) {
+            formColumns_arr = belongFormKernel.getCanuseColumns();
+        }
+
+        var title = theKernel.getAttribute(AttrNames.Title);
+        var titleParseRet = parseObj_CtlPropJsBind(title, project.scriptMaster);
+        var setTitleStateTiem = null;
+        if (titleParseRet.isScript) {
+            if (this.compileScriptAttribute(titleParseRet, theKernel, 'title', AttrNames.Title, { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (!IsEmptyString(titleParseRet.string)) {
+                if (formColumns_arr) {
+                    if (formColumns_arr.indexOf(title) != -1) {
+                        parentMidData.useColumns_map[title] = 1;
+                        setTitleStateTiem = {
+                            name: 'title',
+                            useColumn: { name: title },
+                        };
+                    }
+                }
+                else {
+                    ctlTag.setAttr('title', title);
+                }
+            }
+        }
+
+        var keyrecordid = theKernel.getAttribute(AttrNames.KeyRecrodID);
+        var keyrecordidParseRet = parseObj_CtlPropJsBind(keyrecordid, project.scriptMaster);
+        var setkeyrecordidStateTiem = null;
+        if (keyrecordidParseRet.isScript) {
+            if (this.compileScriptAttribute(keyrecordidParseRet, theKernel, 'relrecordid', AttrNames.Title, { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (!IsEmptyString(keyrecordidParseRet.string)) {
+                if (formColumns_arr) {
+                    if (formColumns_arr.indexOf(title) != -1) {
+                        parentMidData.useColumns_map[title] = 1;
+                        setkeyrecordidStateTiem = {
+                            name: 'relrecordid',
+                            useColumn: { name: title },
+                        };
+                    }
+                }
+                if(setkeyrecordidStateTiem == null) {
+                    logManager.errorEx([logManager.createBadgeItem(
+                        theKernel.getReadableName(),
+                        theKernel,
+                        this.projectCompiler.clickKernelLogBadgeItemHandler),
+                        '关联记录代码设置有误']);
+                    return false;
+                }
+            }
+        }
+
+        var attachmentid = theKernel.getAttribute(AttrNames.AttachmentID);
+        var attachmentidParseRet = parseObj_CtlPropJsBind(attachmentid, project.scriptMaster);
+        var setattachmentidStateTiem = null;
+        if (attachmentidParseRet.isScript) {
+            if (this.compileScriptAttribute(attachmentidParseRet, theKernel, 'defattachmentID', AttrNames.Title, { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (!IsEmptyString(attachmentidParseRet.string)) {
+                if (formColumns_arr) {
+                    if (formColumns_arr.indexOf(title) != -1) {
+                        parentMidData.useColumns_map[title] = 1;
+                        setattachmentidStateTiem = {
+                            name: 'defattachmentID',
+                            useColumn: { name: title },
+                        };
+                    }
+                }
+                if(setattachmentidStateTiem == null) {
+                    logManager.errorEx([logManager.createBadgeItem(
+                        theKernel.getReadableName(),
+                        theKernel,
+                        this.projectCompiler.clickKernelLogBadgeItemHandler),
+                        '附件记录代码设置有误']);
+                    return false;
+                }
+                else if(setkeyrecordidStateTiem != null || keyrecordidParseRet.isScript){
+                    logManager.errorEx([logManager.createBadgeItem(
+                        theKernel.getReadableName(),
+                        theKernel,
+                        this.projectCompiler.clickKernelLogBadgeItemHandler),
+                        '关联记录代码和附件记录代码不可同时设置']);
+                    return false;
+                }
+            }
+        }
+
+        if(setkeyrecordidStateTiem == null && !keyrecordidParseRet.isScript && setattachmentidStateTiem == null && !attachmentidParseRet.isScript) {
+            logManager.errorEx([logManager.createBadgeItem(
+                theKernel.getReadableName(),
+                theKernel,
+                this.projectCompiler.clickKernelLogBadgeItemHandler),
+                '关联记录代码和附件记录代码必须设置一项']);
+            return false;
+        }
+
+        if (setattachmentidStateTiem == null && !attachmentidParseRet.isScript && fileFlowItem == null) {
+            logManager.errorEx([logManager.createBadgeItem(
+                theKernel.getReadableName(),
+                theKernel,
+                this.projectCompiler.clickKernelLogBadgeItemHandler),
+                '不设置附件记录代码的情况下必须选择文件流程']);
+            return false;
+        }
+
+        if (setTitleStateTiem) {
+            kernelMidData.needSetStates_arr.push(setTitleStateTiem);
+        }
+        if (setkeyrecordidStateTiem) {
+            kernelMidData.needSetStates_arr.push(setkeyrecordidStateTiem);
+        }
+        if (setattachmentidStateTiem) {
+            kernelMidData.needSetStates_arr.push(setattachmentidStateTiem);
+        }
+
+        if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
+            parentMidData.needSetKernels_arr.push(theKernel);
         }
 
         if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }

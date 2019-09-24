@@ -144,10 +144,15 @@ fileSystem.uploadBlock = (req,res) => {
                 dbhelper.makeSqlparam('临时文件令牌', sqlTypes.NVarChar(100), fileIdentity),
                 dbhelper.makeSqlparam('已上传文件大小', sqlTypes.Int, nowFileSize + bytesWritten),
                 dbhelper.makeSqlparam('操作用户', sqlTypes.Int, req.session.g_envVar.userid),
+                dbhelper.makeSqlparam('归属流程代码', sqlTypes.Int, bundle.fileFlow == null ? 0 : bundle.fileFlow),
+                dbhelper.makeSqlparam('关联记录代码', sqlTypes.Int, bundle.relrecordid == null ? 0 : bundle.relrecordid),
+            ];
+            var outparams_arr=[
+                dbhelper.makeSqlparam('附件记录代码', sqlTypes.Int)
             ];
             var proRet;
             try{
-                proRet = yield dbhelper.asynExcute('PB00E同步文件信息',inparams_arr);
+                proRet = yield dbhelper.asynExcute('PB00E同步文件信息',inparams_arr,outparams_arr);
             }
             catch(eo){
                 return serverhelper.createErrorRet(eo.message);
@@ -155,6 +160,7 @@ fileSystem.uploadBlock = (req,res) => {
 
             var rlt = {
                 bytesWritten:bytesWritten,
+                attachmentID:proRet.output.附件记录代码,
             };
             if(nowFileSize + bytesWritten >= fileRecord.文件大小){
                 rlt.previewUrl = '/filehouse/' + belongDirPath + '/' + fileFullName;
@@ -178,24 +184,16 @@ fileSystem.uploadBlock = (req,res) => {
 fileSystem.getFileRecord = (req,res) => {
     var bundle=req.body.bundle;
     return co(function* () {
-        var fileid = bundle.fileid;
-        if(isNaN(fileid) || fileid == 0){
-            if(bundle.attachmentID > 0){
-                var attachmentRcdRlt = yield dbhelper.asynQueryWithParams("select 文件记录代码 from TB00C附件记录 where 附件记录代码=@id", [dbhelper.makeSqlparam('id', sqlTypes.Int, bundle.attachmentID)]);
-                if(attachmentRcdRlt.recordset.length == 0){
-                    return null; 
-                }
-                fileid = attachmentRcdRlt.recordset[0].文件记录代码;
-            }
+        var rcdRlt = yield dbhelper.asynQueryWithParams("select * from FTB00E查找附件信息(@附件记录代码,@归属流程代码,@关联记录代码)", 
+        [
+            dbhelper.makeSqlparam('附件记录代码', sqlTypes.Int, bundle.attachmentID == null ? 0 : bundle.attachmentID),
+            dbhelper.makeSqlparam('归属流程代码', sqlTypes.Int, bundle.fileFlow == null ? 0 : bundle.fileFlow),
+            dbhelper.makeSqlparam('关联记录代码', sqlTypes.Int, bundle.relrecordid == null ? 0 : bundle.relrecordid),
+        ]);
+        if(rcdRlt.recordset.length == 0){
+            return null; 
         }
-        if(fileid > 0){
-            var rcdRlt = yield dbhelper.asynQueryWithParams("select * from FTB00E文件信息(@id)", [dbhelper.makeSqlparam('id', sqlTypes.Int, fileid)]);
-            if(rcdRlt.recordset.length == 0){
-                return null; 
-            }
-            return rcdRlt.recordset[0];
-        }
-        return null;
+        return rcdRlt.recordset[0];
     });
 };
 

@@ -11,10 +11,31 @@ const SingleFileUploaderKernelAttrsSetting = GenControlKernelAttrsSetting([
             group:EJsBluePrintFunGroup.CtlAttr,
         }),
         new CAttribute('所属流程', 'fileFlow', ValueType.String, ValueType.String, null, false, AllFileFlows_arr, { text: 'label', value: 'code' }),
+        new CAttribute('关联记录代码',AttrNames.KeyRecrodID,ValueType.String,'', true, false, [], 
+        {
+            pullDataFun:GetKernelCanUseColumns,
+            text:'name',
+            editable:true,
+        }, true, {
+            scriptable:true,
+            type:FunType_Client,
+            group:EJsBluePrintFunGroup.CtlAttr,
+        }),
+        new CAttribute('附件记录代码',AttrNames.AttachmentID,ValueType.String,'', true, false, [], 
+        {
+            pullDataFun:GetKernelCanUseColumns,
+            text:'name',
+            editable:true,
+        }, true, {
+            scriptable:true,
+            type:FunType_Client,
+            group:EJsBluePrintFunGroup.CtlAttr,
+        }),
         genIsdisplayAttribute(),
         genNullableAttribute(),
         genValidCheckerAttribute(),
-        new CAttribute('fileid', 'fileid', ValueType.String, '', false, false,null,null,false),
+        new CAttribute('fileID', 'fileID', ValueType.String, '', false, false,null,null,false),
+        new CAttribute('attachmentid', 'attachmentID', ValueType.String, '', false, false,null,null,false),
     ]),
     new CAttributeGroup('事件', [
         new CAttribute('上传完成', AttrNames.Event.OnUploadComplete, ValueType.Event),
@@ -50,9 +71,13 @@ class SingleFileUploaderKernel extends ControlKernelBase {
     }
 }
 var SingleFileUploader_api = new ControlAPIClass(SingleFileUploader_Type);
-SingleFileUploader_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName('fileid',SingleFileUploaderKernelAttrsSetting), 'fileid', true, (ctlStateVarName)=>{
+SingleFileUploader_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName('fileID',SingleFileUploaderKernelAttrsSetting), 'fileID', true, (ctlStateVarName)=>{
     var uploaderStr = ctlStateVarName + '.uploader';
-    return makeStr_AddAll(ctlStateVarName,' == null ? null : (', uploaderStr, ' == null || ',uploaderStr + '.fileProfile == null ? ',ctlStateVarName + '.deffileID : ', uploaderStr + '.fileProfile.code)');
+    return makeStr_AddAll(ctlStateVarName,' == null ? null : (', uploaderStr, ' == null || ',uploaderStr + '.fileProfile == null ? ',ctlStateVarName + '.fileID : ', uploaderStr + '.fileProfile.code)');
+}));
+SingleFileUploader_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName('attachmentID',SingleFileUploaderKernelAttrsSetting), 'attachmentID', true, (ctlStateVarName)=>{
+    var uploaderStr = ctlStateVarName + '.uploader';
+    return makeStr_AddAll(ctlStateVarName,' == null ? null : (', uploaderStr, ' == null || ',uploaderStr + '.fileProfile == null ? ',ctlStateVarName + '.attachmentID : ', uploaderStr + '.fileProfile.attachmentID)');
 }));
 SingleFileUploader_api.pushApi(new ApiItem_fun({
     label:'Reset',
@@ -92,7 +117,7 @@ class CSingleFileUploader extends React.PureComponent {
         var layoutConfig = ctlKernel.getLayoutConfig();
         if (this.props.ctlKernel.__placing) {
             layoutConfig.addClass('M_placingCtl');
-            return (<div className={layoutConfig.getClassName()} style={layoutConfig.style} ref={this.rootElemRef}>多文件上传器</div>);
+            return (<div className={layoutConfig.getClassName()} style={layoutConfig.style} ref={this.rootElemRef}>单文件上传器</div>);
         }
         layoutConfig.addClass('M_SingleFileUploader');
         layoutConfig.addClass('border');
@@ -106,7 +131,7 @@ class CSingleFileUploader extends React.PureComponent {
         var title = titleParserRet.isScript ? (ReplaceIfNull(this.state.name,'') + '{脚本}') : (IsEmptyString(titleParserRet.string) ? '' : '[' +titleParserRet.string + ']');
 
         return (
-           <div className={layoutConfig.getClassName()}  onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+           <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {this.renderHandleBar()}
                 {title}
                 <div className='' style={{width:'7em',height:'7em'}}>

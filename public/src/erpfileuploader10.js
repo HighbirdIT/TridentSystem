@@ -1,13 +1,13 @@
 const fileSystemUrl = '/fileSystem';
 
-const EAcceptFileType={
-    All:1,
-    Image:2,
-    Vedio:3,
-    Excel:4,
-    Word:5,
-    PDF:6,
-    ImageVedio:7,
+const EAcceptFileType = {
+    All: 1,
+    Image: 2,
+    Vedio: 3,
+    Excel: 4,
+    Word: 5,
+    PDF: 6,
+    ImageVedio: 7,
 };
 
 var FileAcceptStr = {
@@ -68,6 +68,25 @@ function ResetSFileUploader(path) {
     }
 }
 
+function DataSizeToString(size) {
+    var kbsize = Math.round(size / 1024);
+    var sizeStr = '';
+    if (kbsize < 1000) {
+        sizeStr = kbsize + 'KB';
+    }
+    else {
+        var mbsize = Math.round(10 * kbsize / 1024) / 10.0;
+        if (mbsize < 1000) {
+            sizeStr = mbsize + 'MB';
+        }
+        else {
+            var gbsize = Math.round(10 * kbsize / 1024) / 10.0;
+            sizeStr = gbsize + 'GB';
+        }
+    }
+    return sizeStr;
+}
+
 const gByteToHex = [];
 for (var n = 0; n <= 0xff; ++n) {
     gByteToHex.push(n.toString(16).padStart(2, "0"));
@@ -91,12 +110,15 @@ class FileUploader extends EventEmitter {
         this.base64Data = null;
         this.fileData = null;
         this.previewUrl = null;
+        this.uploading = false;
+        this.blockreader = null;
+        this.speed = null;
         this.changeState(EFileUploaderState.WAITFILE);
 
-        if (this.readWorker) {
-            this.readWorker.terminate();
-            this.readWorker = null;
-            console.log('readWorker 已终止 by reset');
+        if (this.hexWorker) {
+            this.hexWorker.terminate();
+            this.hexWorker = null;
+            console.log('hexWorker 已终止 by reset');
         }
     }
 
@@ -114,36 +136,26 @@ class FileUploader extends EventEmitter {
         this.isPause = false;
         this.previewUrl = null;
         this.uploading = false;
-        this.changeState(EFileUploaderState.READING);
-        var reader = new FileReader();
-        reader.onerror = () => {
-            reader.abort();
-            self.meetError({ errorMsg: '读取文件出错' });
-        };
-        reader.onload = ev => {
-            if (self.fileProfile == null) {
-                console.log('上传器被删除');
-                return;
-            }
-            self.fileData = new Uint8Array(reader.result);
-            self.startPos = 0;
-            self.changeState(EFileUploaderState.CALMD5);
-            self._calMD5();
+        this.startPos = 0;
+        this.speed = null;
+        this.evalSize = 0;
+        this.evalTime = 0;
+        this.changeState(EFileUploaderState.PREPARE);
+        this._prepare();
 
-            if (theFile.type.indexOf('image/') != -1) {
-                reader.onerror = null;
-                reader.onload = ev => {
-                    if (self.fileProfile == null) {
-                        console.log('上传器被删除');
-                        return;
-                    }
-                    self.base64Data = reader.result;
-                    self._fireChanged();
-                };
-                reader.readAsDataURL(theFile);
-            }
-        };
-        reader.readAsArrayBuffer(theFile);
+        if (theFile.type.indexOf('image/') != -1) {
+            var imgReader = new FileReader();
+            imgReader.onerror = null;
+            imgReader.onload = ev => {
+                if (self.fileProfile == null) {
+                    console.log('上传器被删除');
+                    return;
+                }
+                self.base64Data = imgReader.result;
+                self._fireChanged();
+            };
+            imgReader.readAsDataURL(theFile);
+        }
     }
 
     pause() {
@@ -161,60 +173,15 @@ class FileUploader extends EventEmitter {
         }
     }
 
-    _calMD5() {
-        var self = this;
-        if (typeof (Worker) !== "undefined") {
-            if (this.readWorker == null) {
-                console.log('readWorker 已创建');
-                this.readWorker = new Worker("/js/woker_bytetohexstr2.js");
-                this.readWorker.onmessage = ev => {
-                    self._readerMsgHandler(ev.data);
-                };
-            }
-        }
-        this.readWorker.postMessage({ act: 'tohex', data: this.fileData });
-    }
-
-    _readerMsgHandler(ev) {
-        if (this.fileProfile == null) {
-            console.log('上传器被删除');
-            return;
-        }
-        if (ev.act == 'tohex') {
-            this.fileProfile.dataHexStr = ev.data;
-            this.readWorker.postMessage({ act: 'calmd5', data: ev.data });
-        }
-        else if (ev.act == 'calmd5') {
-            this.fileProfile.md5 = ev.data;
-            this.readWorker.terminate();
-            this.readWorker = null;
-            this.changeState(EFileUploaderState.PREPARE);
-            this._prepare();
-        }
-    }
-
     _prepare() {
         var theFile = this.file;
         var bundle = {
             name: theFile.name,
             size: theFile.size,
             type: theFile.type,
-            md5: this.fileProfile.md5,
+            md5: this.fileProfile.md5 == null ? '' : this.fileProfile.md5,
         };
-        var kbsize = Math.round(theFile.size / 1024);
-        if (kbsize < 1000) {
-            this.sizeStr = kbsize + 'KB';
-        }
-        else {
-            var mbsize = Math.round(10 * kbsize / 1024) / 10.0;
-            if (mbsize < 1000) {
-                this.sizeStr = mbsize + 'MB';
-            }
-            else {
-                var gbsize = Math.round(10 * kbsize / 1024) / 10.0;
-                this.sizeStr = gbsize + 'GB';
-            }
-        }
+        this.sizeStr = DataSizeToString(theFile.size);
         var self = this;
         store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'applyForTempFile' },
             makeFTD_Callback((state, data, error) => {
@@ -242,90 +209,134 @@ class FileUploader extends EventEmitter {
     }
 
     _uploadData() {
-        if (this.isPause || this.uploading) {
+        if (this.isPause || this.uploading || this.fileProfile == null) {
             return;
         }
         var self = this;
         var blockSize = this.fileProfile.size - this.startPos;
         if (blockSize == 0) {
+            this.changeState(EFileUploaderState.COMPLETE);
             if (typeof this.uploadedCallBack === 'function') {
                 this.uploadedCallBack(this);
             }
-            this.changeState(EFileUploaderState.COMPLETE);
             return;
         }
+        if (this.hexWorker == null) {
+            console.log('hexWorker 已创建');
+            this.hexWorker = new Worker("/js/woker_bytetohexstr3.js");
+            this.hexWorker.onmessage = ev => {
+                var bundle = {
+                    fileIdentity: self.fileProfile.identity,
+                    data: ev.data,
+                    startPos: self.startPos,
+                    fileFlow: self.fileFlow,
+                    relrecordid: self.relrecordid,
+                };
+                store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'uploadBlock' },
+                    makeFTD_Callback((state, data, error, fetchUseTime) => {
+                        setTimeout(() => {
+                            if (self.fileProfile == null) {
+                                console.log('上传器被删除');
+                                return;
+                            }
+                            self.uploading = false;
+                            if (error) {
+                                self.speed = '0kb/s(E)';
+                                console.log(error);
+                                switch (error.code) {
+                                    case EFileSystemError.WRONGSTART:
+                                        if (isNaN(error.data)) {
+                                            console.err("WRONGSTART's data is nan");
+                                        }
+                                        self.startPos = parseInt(error.data);
+                                        error = null;
+                                        break;
+                                    case EFileSystemError.EMPTYDATA:
+                                    case EFileSystemError.DATATOOLONG:
+                                    case EFileSystemError.FILELOCKED:
+                                        error = null;
+                                        break;
+                                    case EFileSystemError.UPLOADCOMPLATE:
+                                        error = null;
+                                        self.startPos = self.fileProfile.size;
+                                        break;
+                                }
+                                if (error != null) {
+                                    // 上传过程中遇到错误不断重试即可
+                                    //console.log(error);
+                                    self.myBlockMaxSize = MINPERBLOCKSIZE;
+                                }
+
+                                self.percent = Math.floor(100.0 * self.startPos / self.fileProfile.size);
+                                setTimeout(() => {
+                                    self._fireChanged();
+                                    self._uploadData();
+                                }, 20);
+                            }
+                            else {
+                                var thisUploadUseTime = (new Date().getTime() - self.uploadingStartTime);
+                                self.evalSize += data.bytesWritten;
+                                self.evalTime += thisUploadUseTime;
+                                if (self.evalTime > 1000) {
+                                    self.speed = DataSizeToString(Math.round((1000.0 * self.evalSize) / (self.evalTime))) + '/s';
+                                    self.evalSize = 0;
+                                    self.evalTime = 0;
+                                }
+                                //console.log('fetchUseTime:' + fetchUseTime + '  blksize:' + self.myBlockMaxSize);
+                                if (fetchUseTime < 200) {
+                                    self.myBlockMaxSize = Math.min(self.myBlockMaxSize + STEP_BLOCKSIZE, MAXPERBLOCKSIZE);
+                                }
+                                else if (fetchUseTime > 300) {
+                                    self.myBlockMaxSize = Math.max(self.myBlockMaxSize - STEP_BLOCKSIZE, MINPERBLOCKSIZE);
+                                }
+                                self.startPos += data.bytesWritten;
+                                self.percent = Math.floor(100.0 * self.startPos / self.fileProfile.size);
+                                //console.log(self.percent  + '%');
+                                if (data.previewUrl) {
+                                    self.previewUrl = data.previewUrl;
+                                }
+                                if (data.attachmentID > 0) {
+                                    self.fileProfile.attachmentID = data.attachmentID;
+                                }
+                                setTimeout(() => {
+                                    self._fireChanged();
+                                    self._uploadData();
+                                }, 20);
+                            }
+                        }, 20);
+                    }, false)));
+            };
+        }
+        var hexWorker = this.hexWorker;
         this.uploading = true;
+        this.uploadingStartTime = new Date().getTime();
         if (blockSize > this.myBlockMaxSize) {
             blockSize = this.myBlockMaxSize;
         }
         var endPos = this.startPos + blockSize;
-
-        var bundle = {
-            fileIdentity: this.fileProfile.identity,
-            data: this.fileProfile.dataHexStr.slice(this.startPos * 2, endPos * 2),
-            startPos: this.startPos,
-        };
-        store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'uploadBlock' },
-            makeFTD_Callback((state, data, error, fetchUseTime) => {
+        var blockreader = this.blockreader;
+        if (blockreader == null) {
+            blockreader = new FileReader();
+            blockreader.onerror = () => {
+                blockreader.abort();
+                if (self.fileProfile == null) {
+                    console.log('上传器被删除');
+                    return;
+                }
                 setTimeout(() => {
-                    if (self.fileProfile == null) {
-                        console.log('上传器被删除');
-                        return;
-                    }
-                    self.uploading = false;
-                    if (error) {
-                        console.log(error);
-                        switch (error.code) {
-                            case EFileSystemError.WRONGSTART:
-                                if (isNaN(error.data)) {
-                                    console.err("WRONGSTART's data is nan");
-                                }
-                                this.startPos = parseInt(error.data);
-                                error = null;
-                                break;
-                            case EFileSystemError.EMPTYDATA:
-                            case EFileSystemError.DATATOOLONG:
-                            case EFileSystemError.FILELOCKED:
-                                error = null;
-                                break;
-                            case EFileSystemError.UPLOADCOMPLATE:
-                                error = null;
-                                this.startPos = self.fileProfile.size;
-                                break;
-                        }
-                        if (error != null) {
-                            // 上传过程中遇到错误不断重试即可
-                            //console.log(error);
-                            this.myBlockMaxSize = MINPERBLOCKSIZE;
-                        }
-
-                        self.percent = Math.floor(100.0 * self.startPos / self.fileProfile.size);
-                        setTimeout(() => {
-                            self._fireChanged();
-                            self._uploadData();
-                        }, 20);
-                    }
-                    else {
-                        //console.log('fetchUseTime:' + fetchUseTime + '  blksize:' + this.myBlockMaxSize);
-                        if (fetchUseTime < 200) {
-                            this.myBlockMaxSize = Math.min(this.myBlockMaxSize + STEP_BLOCKSIZE, MAXPERBLOCKSIZE);
-                        }
-                        else if (fetchUseTime > 300) {
-                            this.myBlockMaxSize = Math.max(this.myBlockMaxSize - STEP_BLOCKSIZE, MINPERBLOCKSIZE);
-                        }
-                        self.startPos += data.bytesWritten;
-                        self.percent = Math.floor(100.0 * self.startPos / self.fileProfile.size);
-                        //console.log(self.percent  + '%');
-                        if (data.previewUrl) {
-                            this.previewUrl = data.previewUrl;
-                        }
-                        setTimeout(() => {
-                            self._fireChanged();
-                            self._uploadData();
-                        }, 20);
-                    }
-                }, 20);
-            }, false)));
+                    self._uploadData();
+                }, 1000);
+            };
+            blockreader.onload = ev => {
+                if (self.fileProfile == null) {
+                    console.log('上传器被删除');
+                    return;
+                }
+                var fileData = new Uint8Array(blockreader.result);
+                hexWorker.postMessage(fileData);
+            };
+        }
+        blockreader.readAsArrayBuffer(this.file.slice(this.startPos, endPos));
 
         if (this.errorCode) {
             this.errorCode = 0;
@@ -347,10 +358,10 @@ class FileUploader extends EventEmitter {
             this.percent = 0;
         }
         else if (newState == EFileUploaderState.COMPLETE) {
-            if (this.readWorker) {
-                this.readWorker.terminate();
-                this.readWorker = null;
-                console.log('readWorker 已终止');
+            if (this.hexWorker) {
+                this.hexWorker.terminate();
+                this.hexWorker = null;
+                console.log('hexWorker 已终止');
             }
         }
         this._fireChanged();
@@ -530,25 +541,50 @@ class ERPC_SingleFileUploader extends React.PureComponent {
 
     synRecordInfo() {
         var bundle = {
-            fileid: this.props.deffileID,
             attachmentID: this.props.defattachmentID,
+            fileFlow: this.props.fileflow,
+            relrecordid: this.props.relrecordid,
         };
         var self = this;
         store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'getFileRecord' },
             makeFTD_Callback((state, data, error) => {
                 var fileRecord = {
-                    fileid: bundle.fileid,
-                    attachmentID: bundle.attachmentID,
+                    fileID: data ? data.文件上传记录代码 : null,
+                    attachmentID: data ? data.附件记录代码 : null,
+                    fileFlow: data ? data.归属流程代码 : bundle.fileFlow,
+                    relrecordid: data ? data.关联记录代码 : bundle.relrecordid,
                     fileName: data ? data.文件名称 : null,
                     fileSize: data ? data.文件大小 : null,
                     type: data ? data.文件类型 : null,
                     url: data ? data.文件路径 : null,
                 };
                 setTimeout(() => {
-                    self.setState({
-                        fileRecord: fileRecord,
-                        loading: false,
-                    });
+                    if (self.props.defattachmentID == bundle.attachmentID && self.props.fileflow == bundle.fileFlow && self.props.relrecordid == bundle.relrecordid) {
+                        var needSetState = {
+                            fileID: fileRecord.fileID,
+                            attachmentID: fileRecord.attachmentID,
+                            invalidInfo: null,
+                        };
+                        if (data) {
+                            if (bundle.attachmentID > 0) {
+                                needSetState.fileFlow = fileRecord.fileFlow;
+                                needSetState.relrecordid = fileRecord.relrecordid;
+                            }
+                        }
+                        store.dispatch(makeAction_setManyStateByPath(needSetState, self.props.fullPath));
+
+                        self.setState({
+                            loading: false,
+                            fileRecord: fileRecord,
+                        });
+                    }
+                    else {
+                        // 信息发生了更改，重新获取
+                        console.log('信息发生了更改，重新获取');
+                        self.setState({
+                            loading: false,
+                        });
+                    }
                 }, 20);
             }, false)));
     }
@@ -557,9 +593,34 @@ class ERPC_SingleFileUploader extends React.PureComponent {
         this.unlistenUploader(this.props.uploader);
     }
 
+    uploaderJobDone(uploader) {
+        if (this.props.onuploadcomplete) {
+            this.props.onuploadcomplete(this.props.fullPath, uploader.fileProfile.code);
+        }
+        store.dispatch(makeAction_setManyStateByPath({
+            invalidInfo: null,
+            fileID: uploader.fileProfile.code,
+            attachmentID: uploader.fileProfile.attachmentID,
+        }, this.props.fullPath));
+    }
+
+    startUploadFile(theFile){
+        this.uploader.fileFlow = this.props.fileflow;
+        this.uploader.relrecordid = this.props.relrecordid;
+        this.uploader.definfo = {
+            defattachmentID:this.props.defattachmentID,
+            relrecordid:this.props.relrecordid,
+        };
+        this.uploader.uploadFile(theFile, this.uploaderJobDone);
+    }
+
     fileSelectedHandler(ev) {
+        if (ev.target.files.length > 1) {
+            SendToast('只能选一个文件');
+            return;
+        }
         var theFile = ev.target.files[0];
-        this.uploader.uploadFile(theFile);
+        this.startUploadFile(theFile);
         if (this.state.fileRecord) {
             this.setState({
                 fileRecord: Object.assign({}, this.state.fileRecord, { abandon: true }),
@@ -587,7 +648,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
         var fileType;
         var fileName;
         var url;
-        if(fileUploader.fileProfile != null){
+        if (fileUploader.fileProfile != null) {
             if (fileUploader.previewUrl == null) {
                 return;
             }
@@ -595,7 +656,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
             fileName = fileUploader.fileProfile.name;
             url = fileUploader.previewUrl;
         }
-        else if(this.state.fileRecord){
+        else if (this.state.fileRecord) {
             fileType = this.state.fileRecord.type;
             fileName = this.state.fileRecord.name;
             url = this.state.fileRecord.url;
@@ -633,51 +694,46 @@ class ERPC_SingleFileUploader extends React.PureComponent {
         });
     }
 
-    dragenter(ev){
+    dragenter(ev) {
         ev.stopPropagation();
         ev.preventDefault();
 
         var items = ev.dataTransfer.items;
         var isGood = false;
-        if(items){
-            for(var i=0;i<items.length;++i){
-                var item = items[i];
-                if(item.kind == 'file'){
-                    isGood = true;
-                    break;
-                }
+        if (items && items.length == 1) {
+            var item = items[0];
+            if (item.kind == 'file') {
+                isGood = true;
             }
         }
         this.setState({
-            dragstate:isGood ? 'good' : 'bad'
+            dragstate: isGood ? 'good' : 'bad'
         });
     }
 
-    dragleave(ev){
+    dragleave(ev) {
         ev.stopPropagation();
         ev.preventDefault();
         this.setState({
-            dragstate:null
+            dragstate: null
         });
     }
 
-    drop(ev){
+    drop(ev) {
         ev.stopPropagation();
         ev.preventDefault();
         this.setState({
-            dragstate:null
+            dragstate: null
         });
         var fileList = ev.dataTransfer.files;
-        var targetFile = null;
-        if(fileList.length > 0){
-            targetFile = fileList[0];
+        if (fileList.length > 1) {
+            SendToast('只能选一个文件');
+            return;
         }
-        if(targetFile){
-            this.uploader.uploadFile(targetFile);
-        }
+        this.startUploadFile(fileList[0]);
     }
 
-    dragOver(ev){
+    dragOver(ev) {
         ev.stopPropagation();
         ev.preventDefault();
     }
@@ -709,6 +765,21 @@ class ERPC_SingleFileUploader extends React.PureComponent {
 
         var childElem = null;
         var self = this;
+        var relrecordid = this.props.relrecordid;
+        if(relrecordid == 0 || isNaN(relrecordid)){
+            relrecordid = null;
+        }
+        if(fileUploader.state != EFileUploaderState.WAITFILE){
+            var nowdefinfo = {
+                defattachmentID:this.props.defattachmentID,
+                relrecordid:this.props.relrecordid,
+            };
+            if(!ObjIsEqual(nowdefinfo,fileUploader.definfo)){
+                setTimeout(() => {
+                    fileUploader.reset();
+                }, 20);
+            }
+        }
         switch (fileUploader.state) {
             case EFileUploaderState.WAITFILE:
                 canDelete = false;
@@ -718,8 +789,8 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                         <span className='centerelem position-absolute text-nowrap bg-white'><i className='fa fa-circle-o-notch fa-spin' />获取中</span>
                     </div>;
                 }
-                else if ((this.props.deffileID != null || this.props.defattachmentID != null) && (fileRecord == null || !fileRecord.abandon)) {
-                    if (fileRecord == null || fileRecord.fileid != this.props.deffileID || fileRecord.attachmentID != this.props.defattachmentID) {
+                else if ((this.props.defattachmentID > 0 || relrecordid != null) && (fileRecord == null || !fileRecord.abandon)) {
+                    if (fileRecord == null || (this.props.defattachmentID > 0 && fileRecord.attachmentID != this.props.defattachmentID) || (relrecordid != null && fileRecord.relrecordid != this.props.relrecordid)) {
                         setTimeout(() => {
                             self.setState({
                                 loading: true,
@@ -732,7 +803,9 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                     }
                     else {
                         if (fileRecord.fileName == null) {
-                            childElem = <span className='centerelem position-absolute text-nowrap text-danger'><i className='fa fa-warninig' />文件不存在</span>;
+                            if (this.props.defattachmentID > 0) {
+                                invalidInfoElem = <span className='bg-danger text-white'><i className='fa fa-warning' />文件不存在</span>
+                            }
                         }
                         else {
                             fileName = fileRecord.fileName;
@@ -745,15 +818,26 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                                 iconElem = <i className={'fa fa-5x centerelem position-absolute cursor_hand ' + aidData.fileIconType} onClick={this.wantChangeFile} />;
                             }
                             preViewBtn = <button onClick={this.clickPreviewHandler} type='button' className='btn btn-sm btn-primary'><i className={'fa fa-' + (aidData.canPreview ? 'eye' : 'download')} /></button>;
+                            contentElem = <span />
                         }
                     }
-                } else {
-                    contentElem = <div className='w-100 h-100 cursor_hand' onClick={this.clickPlusHandler} onDragEnter={this.dragenter} onDragLeave={this.dragleave} onDrop={this.drop} onDragOver={this.dragOver}>
-                        <span className='centerelem position-absolute pointerevent-none' >
-                            <div className='text-nowrap'><i className='fa fa-mouse-pointer' />上传文件</div>
-                            {isMobile ? null : <div className='text-nowrap'><i className='fa fa-hand-rock-o' />拖拽文件</div>}
-                        </span>
-                    </div>;
+                }
+                if (contentElem == null) {
+                    if (!(relrecordid != null && this.props.fileflow > 0)) {
+                        contentElem = <div className='w-100 h-100'>
+                            <span className='centerelem position-absolute pointerevent-none' >
+                                <div className='text-danger text-nowrap'><i className='fa fa-warning' />需要FR</div>
+                            </span>
+                        </div>;
+                    }
+                    else {
+                        contentElem = <div className='w-100 h-100 cursor_hand' onClick={this.clickPlusHandler} onDragEnter={this.dragenter} onDragLeave={this.dragleave} onDrop={this.drop} onDragOver={this.dragOver}>
+                            <span className='centerelem position-absolute pointerevent-none' >
+                                <div className='text-nowrap'><i className='fa fa-mouse-pointer' />上传文件</div>
+                                {isMobile ? null : <div className='text-nowrap'><i className='fa fa-hand-rock-o' />拖拽文件</div>}
+                            </span>
+                        </div>;
+                    }
                 }
                 break;
             case EFileUploaderState.READING:
@@ -794,10 +878,10 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                     </span>;
                 }
                 else {
-                    childElem = <span className='centerelem position-absolute text-nowrap bg-white'>
-                        <i className='fa fa-circle-o-notch fa-spin' />
-                        {fileUploader.percent}%
-                        </span>;
+                    childElem = <div className='centerelem position-absolute text-nowrap bg-white'>
+                        <div><i className='fa fa-circle-o-notch fa-spin' />{fileUploader.percent}%</div>
+                        <div>{fileUploader.speed}</div>
+                    </div>;
                 }
                 contentElem = <div className='w-100 h-100'>
                     {childElem}
@@ -813,21 +897,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
         }
 
         if (fileName) {
-            var sizeStr = '';
-            var kbsize = Math.round(fileSize / 1024);
-            if (kbsize < 1000) {
-                sizeStr = kbsize + 'KB';
-            }
-            else {
-                var mbsize = Math.round(10 * kbsize / 1024) / 10.0;
-                if (mbsize < 1000) {
-                    sizeStr = mbsize + 'MB';
-                }
-                else {
-                    var gbsize = Math.round(10 * kbsize / 1024) / 10.0;
-                    sizeStr = gbsize + 'GB';
-                }
-            }
+            var sizeStr = DataSizeToString(fileSize);
             fileName += '[' + sizeStr + ']';
             if (fileName.length > 32) {
                 fileName = '...' + fileName.substr(-32);
@@ -836,8 +906,8 @@ class ERPC_SingleFileUploader extends React.PureComponent {
 
         return <div className='fileuploadersingle'>
             <input onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' accept="image/*" />
-            <span id='title' className='flex-grow-0 flex-shrink-0'>
-                成果名称s
+            <span id='title' className='flex-grow-0 flex-shrink-0 wb-all'>
+                {this.props.title}
             </span>
             <div id='content' className='fileuploadersingle-content' dragstate={this.state.dragstate}>
                 {iconElem}
@@ -870,7 +940,7 @@ function ERPC_SingleFileUploader_mapstatetoprops(state, ownprops) {
         attachmentID: ctlState.attachmentID,
         fileID: ctlState.fileID,
         defattachmentID: ctlState.defattachmentID,
-        deffileID: ctlState.deffileID,
+        relrecordid: ctlState.relrecordid,
     };
 }
 
@@ -990,6 +1060,7 @@ class CFileUploaderBar extends React.PureComponent {
                             <div className='progress flex-grow-1 flex-shrink-1'>
                                 <div className="progress-bar progress-bar-striped" style={{ width: fileUploader.percent + '%' }} />
                             </div>
+                            {fileUploader.speed}
                         </span>;
                     }
                     //<button className={'btn btn-sm btn-dark'} onClick={this.clickPauseHandler}><i className={'fa fa-2x ' + (fileUploader.isPause ? 'fa-play-circle-o' : 'fa-pause-circle-o')} /></button>
@@ -1064,7 +1135,7 @@ class ERPC_MultiFileUploader extends React.PureComponent {
 
     }
 
-    addFileList(files){
+    addFileList(files) {
         var uploaders = this.props.uploaders;
         var newUploaders = uploaders ? uploaders.concat() : [];
         var addedCount = 0;
@@ -1124,44 +1195,44 @@ class ERPC_MultiFileUploader extends React.PureComponent {
         }
     }
 
-    dragenter(ev){
+    dragenter(ev) {
         ev.stopPropagation();
         ev.preventDefault();
 
         var items = ev.dataTransfer.items;
         var isGood = false;
-        if(items){
-            for(var i=0;i<items.length;++i){
+        if (items) {
+            for (var i = 0; i < items.length; ++i) {
                 var item = items[i];
-                if(item.kind == 'file'){
+                if (item.kind == 'file') {
                     isGood = true;
                     break;
                 }
             }
         }
         this.setState({
-            dragstate:isGood ? 'good' : 'bad'
+            dragstate: isGood ? 'good' : 'bad'
         });
     }
 
-    dragleave(ev){
+    dragleave(ev) {
         ev.stopPropagation();
         ev.preventDefault();
         this.setState({
-            dragstate:null
+            dragstate: null
         });
     }
 
-    drop(ev){
+    drop(ev) {
         ev.stopPropagation();
         ev.preventDefault();
         this.setState({
-            dragstate:null
+            dragstate: null
         });
         this.addFileList(ev.dataTransfer.files);
     }
 
-    dragOver(ev){
+    dragOver(ev) {
         ev.stopPropagation();
         ev.preventDefault();
     }

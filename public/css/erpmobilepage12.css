@@ -513,7 +513,7 @@ body{
     flex-direction: column !important;
 }
 
-.fileuploadersingle>div[id='content']{
+.fileuploadersingle-content{
     border: dashed #b8c3ce !important;
     border-radius: 0.25rem !important;
     position: relative;
@@ -522,7 +522,7 @@ body{
     margin: auto;
 }
 
-.fileuploadersingle>div[id='content']>div[id='toolbar']{
+.fileuploadersingle-content>div[id='toolbar']{
     position: absolute;
     bottom: 0%;
     right: 0%;
@@ -538,4 +538,33 @@ body{
     left: 50%;
     top: 50%;
     transform: translate(-50%,-50%)
+}
+
+.fileuploadersingle-content[dragstate='good']{
+    border: dashed green !important;
+}
+
+.fileuploadersingle-content[dragstate='bad']{
+    border: dashed red !important;
+}
+
+.pointerevent-none{
+    pointer-events: none;
+}
+
+.mfileuploader-addbtn{
+    border: dashed #b8c3ce !important;
+    border-radius: 0.25rem !important;
+}
+
+.mfileuploader-addbtn[dragstate='good']{
+    border: dashed green !important;
+}
+
+.mfileuploader-addbtn[dragstate='bad']{
+    border: dashed red !important;
+}
+
+.wb-all{
+    word-break: break-all;
 }

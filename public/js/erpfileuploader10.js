@@ -76,6 +76,23 @@ function ResetSFileUploader(path) {
     }
 }
 
+function DataSizeToString(size) {
+    var kbsize = Math.round(size / 1024);
+    var sizeStr = '';
+    if (kbsize < 1000) {
+        sizeStr = kbsize + 'KB';
+    } else {
+        var mbsize = Math.round(10 * kbsize / 1024) / 10.0;
+        if (mbsize < 1000) {
+            sizeStr = mbsize + 'MB';
+        } else {
+            var gbsize = Math.round(10 * kbsize / 1024) / 10.0;
+            sizeStr = gbsize + 'GB';
+        }
+    }
+    return sizeStr;
+}
+
 var gByteToHex = [];
 for (var n = 0; n <= 0xff; ++n) {
     gByteToHex.push(n.toString(16).padStart(2, "0"));
@@ -107,12 +124,15 @@ var FileUploader = function (_EventEmitter) {
             this.base64Data = null;
             this.fileData = null;
             this.previewUrl = null;
+            this.uploading = false;
+            this.blockreader = null;
+            this.speed = null;
             this.changeState(EFileUploaderState.WAITFILE);
 
-            if (this.readWorker) {
-                this.readWorker.terminate();
-                this.readWorker = null;
-                console.log('readWorker 已终止 by reset');
+            if (this.hexWorker) {
+                this.hexWorker.terminate();
+                this.hexWorker = null;
+                console.log('hexWorker 已终止 by reset');
             }
         }
     }, {
@@ -131,36 +151,26 @@ var FileUploader = function (_EventEmitter) {
             this.isPause = false;
             this.previewUrl = null;
             this.uploading = false;
-            this.changeState(EFileUploaderState.READING);
-            var reader = new FileReader();
-            reader.onerror = function () {
-                reader.abort();
-                self.meetError({ errorMsg: '读取文件出错' });
-            };
-            reader.onload = function (ev) {
-                if (self.fileProfile == null) {
-                    console.log('上传器被删除');
-                    return;
-                }
-                self.fileData = new Uint8Array(reader.result);
-                self.startPos = 0;
-                self.changeState(EFileUploaderState.CALMD5);
-                self._calMD5();
+            this.startPos = 0;
+            this.speed = null;
+            this.evalSize = 0;
+            this.evalTime = 0;
+            this.changeState(EFileUploaderState.PREPARE);
+            this._prepare();
 
-                if (theFile.type.indexOf('image/') != -1) {
-                    reader.onerror = null;
-                    reader.onload = function (ev) {
-                        if (self.fileProfile == null) {
-                            console.log('上传器被删除');
-                            return;
-                        }
-                        self.base64Data = reader.result;
-                        self._fireChanged();
-                    };
-                    reader.readAsDataURL(theFile);
-                }
-            };
-            reader.readAsArrayBuffer(theFile);
+            if (theFile.type.indexOf('image/') != -1) {
+                var imgReader = new FileReader();
+                imgReader.onerror = null;
+                imgReader.onload = function (ev) {
+                    if (self.fileProfile == null) {
+                        console.log('上传器被删除');
+                        return;
+                    }
+                    self.base64Data = imgReader.result;
+                    self._fireChanged();
+                };
+                imgReader.readAsDataURL(theFile);
+            }
         }
     }, {
         key: 'pause',
@@ -180,39 +190,6 @@ var FileUploader = function (_EventEmitter) {
             }
         }
     }, {
-        key: '_calMD5',
-        value: function _calMD5() {
-            var self = this;
-            if (typeof Worker !== "undefined") {
-                if (this.readWorker == null) {
-                    console.log('readWorker 已创建');
-                    this.readWorker = new Worker("/js/woker_bytetohexstr2.js");
-                    this.readWorker.onmessage = function (ev) {
-                        self._readerMsgHandler(ev.data);
-                    };
-                }
-            }
-            this.readWorker.postMessage({ act: 'tohex', data: this.fileData });
-        }
-    }, {
-        key: '_readerMsgHandler',
-        value: function _readerMsgHandler(ev) {
-            if (this.fileProfile == null) {
-                console.log('上传器被删除');
-                return;
-            }
-            if (ev.act == 'tohex') {
-                this.fileProfile.dataHexStr = ev.data;
-                this.readWorker.postMessage({ act: 'calmd5', data: ev.data });
-            } else if (ev.act == 'calmd5') {
-                this.fileProfile.md5 = ev.data;
-                this.readWorker.terminate();
-                this.readWorker = null;
-                this.changeState(EFileUploaderState.PREPARE);
-                this._prepare();
-            }
-        }
-    }, {
         key: '_prepare',
         value: function _prepare() {
             var theFile = this.file;
@@ -220,20 +197,9 @@ var FileUploader = function (_EventEmitter) {
                 name: theFile.name,
                 size: theFile.size,
                 type: theFile.type,
-                md5: this.fileProfile.md5
+                md5: this.fileProfile.md5 == null ? '' : this.fileProfile.md5
             };
-            var kbsize = Math.round(theFile.size / 1024);
-            if (kbsize < 1000) {
-                this.sizeStr = kbsize + 'KB';
-            } else {
-                var mbsize = Math.round(10 * kbsize / 1024) / 10.0;
-                if (mbsize < 1000) {
-                    this.sizeStr = mbsize + 'MB';
-                } else {
-                    var gbsize = Math.round(10 * kbsize / 1024) / 10.0;
-                    this.sizeStr = gbsize + 'GB';
-                }
-            }
+            this.sizeStr = DataSizeToString(theFile.size);
             var self = this;
             store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'applyForTempFile' }, makeFTD_Callback(function (state, data, error) {
                 if (self.fileProfile == null) {
@@ -260,89 +226,131 @@ var FileUploader = function (_EventEmitter) {
     }, {
         key: '_uploadData',
         value: function _uploadData() {
-            var _this2 = this;
-
-            if (this.isPause || this.uploading) {
+            if (this.isPause || this.uploading || this.fileProfile == null) {
                 return;
             }
             var self = this;
             var blockSize = this.fileProfile.size - this.startPos;
             if (blockSize == 0) {
+                this.changeState(EFileUploaderState.COMPLETE);
                 if (typeof this.uploadedCallBack === 'function') {
                     this.uploadedCallBack(this);
                 }
-                this.changeState(EFileUploaderState.COMPLETE);
                 return;
             }
+            if (this.hexWorker == null) {
+                console.log('hexWorker 已创建');
+                this.hexWorker = new Worker("/js/woker_bytetohexstr3.js");
+                this.hexWorker.onmessage = function (ev) {
+                    var bundle = {
+                        fileIdentity: self.fileProfile.identity,
+                        data: ev.data,
+                        startPos: self.startPos,
+                        fileFlow: self.fileFlow,
+                        relrecordid: self.relrecordid
+                    };
+                    store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'uploadBlock' }, makeFTD_Callback(function (state, data, error, fetchUseTime) {
+                        setTimeout(function () {
+                            if (self.fileProfile == null) {
+                                console.log('上传器被删除');
+                                return;
+                            }
+                            self.uploading = false;
+                            if (error) {
+                                self.speed = '0kb/s(E)';
+                                console.log(error);
+                                switch (error.code) {
+                                    case EFileSystemError.WRONGSTART:
+                                        if (isNaN(error.data)) {
+                                            console.err("WRONGSTART's data is nan");
+                                        }
+                                        self.startPos = parseInt(error.data);
+                                        error = null;
+                                        break;
+                                    case EFileSystemError.EMPTYDATA:
+                                    case EFileSystemError.DATATOOLONG:
+                                    case EFileSystemError.FILELOCKED:
+                                        error = null;
+                                        break;
+                                    case EFileSystemError.UPLOADCOMPLATE:
+                                        error = null;
+                                        self.startPos = self.fileProfile.size;
+                                        break;
+                                }
+                                if (error != null) {
+                                    // 上传过程中遇到错误不断重试即可
+                                    //console.log(error);
+                                    self.myBlockMaxSize = MINPERBLOCKSIZE;
+                                }
+
+                                self.percent = Math.floor(100.0 * self.startPos / self.fileProfile.size);
+                                setTimeout(function () {
+                                    self._fireChanged();
+                                    self._uploadData();
+                                }, 20);
+                            } else {
+                                var thisUploadUseTime = new Date().getTime() - self.uploadingStartTime;
+                                self.evalSize += data.bytesWritten;
+                                self.evalTime += thisUploadUseTime;
+                                if (self.evalTime > 1000) {
+                                    self.speed = DataSizeToString(Math.round(1000.0 * self.evalSize / self.evalTime)) + '/s';
+                                    self.evalSize = 0;
+                                    self.evalTime = 0;
+                                }
+                                //console.log('fetchUseTime:' + fetchUseTime + '  blksize:' + self.myBlockMaxSize);
+                                if (fetchUseTime < 200) {
+                                    self.myBlockMaxSize = Math.min(self.myBlockMaxSize + STEP_BLOCKSIZE, MAXPERBLOCKSIZE);
+                                } else if (fetchUseTime > 300) {
+                                    self.myBlockMaxSize = Math.max(self.myBlockMaxSize - STEP_BLOCKSIZE, MINPERBLOCKSIZE);
+                                }
+                                self.startPos += data.bytesWritten;
+                                self.percent = Math.floor(100.0 * self.startPos / self.fileProfile.size);
+                                //console.log(self.percent  + '%');
+                                if (data.previewUrl) {
+                                    self.previewUrl = data.previewUrl;
+                                }
+                                if (data.attachmentID > 0) {
+                                    self.fileProfile.attachmentID = data.attachmentID;
+                                }
+                                setTimeout(function () {
+                                    self._fireChanged();
+                                    self._uploadData();
+                                }, 20);
+                            }
+                        }, 20);
+                    }, false)));
+                };
+            }
+            var hexWorker = this.hexWorker;
             this.uploading = true;
+            this.uploadingStartTime = new Date().getTime();
             if (blockSize > this.myBlockMaxSize) {
                 blockSize = this.myBlockMaxSize;
             }
             var endPos = this.startPos + blockSize;
-
-            var bundle = {
-                fileIdentity: this.fileProfile.identity,
-                data: this.fileProfile.dataHexStr.slice(this.startPos * 2, endPos * 2),
-                startPos: this.startPos
-            };
-            store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'uploadBlock' }, makeFTD_Callback(function (state, data, error, fetchUseTime) {
-                setTimeout(function () {
+            var blockreader = this.blockreader;
+            if (blockreader == null) {
+                blockreader = new FileReader();
+                blockreader.onerror = function () {
+                    blockreader.abort();
                     if (self.fileProfile == null) {
                         console.log('上传器被删除');
                         return;
                     }
-                    self.uploading = false;
-                    if (error) {
-                        console.log(error);
-                        switch (error.code) {
-                            case EFileSystemError.WRONGSTART:
-                                if (isNaN(error.data)) {
-                                    console.err("WRONGSTART's data is nan");
-                                }
-                                _this2.startPos = parseInt(error.data);
-                                error = null;
-                                break;
-                            case EFileSystemError.EMPTYDATA:
-                            case EFileSystemError.DATATOOLONG:
-                            case EFileSystemError.FILELOCKED:
-                                error = null;
-                                break;
-                            case EFileSystemError.UPLOADCOMPLATE:
-                                error = null;
-                                _this2.startPos = self.fileProfile.size;
-                                break;
-                        }
-                        if (error != null) {
-                            // 上传过程中遇到错误不断重试即可
-                            //console.log(error);
-                            _this2.myBlockMaxSize = MINPERBLOCKSIZE;
-                        }
-
-                        self.percent = Math.floor(100.0 * self.startPos / self.fileProfile.size);
-                        setTimeout(function () {
-                            self._fireChanged();
-                            self._uploadData();
-                        }, 20);
-                    } else {
-                        //console.log('fetchUseTime:' + fetchUseTime + '  blksize:' + this.myBlockMaxSize);
-                        if (fetchUseTime < 200) {
-                            _this2.myBlockMaxSize = Math.min(_this2.myBlockMaxSize + STEP_BLOCKSIZE, MAXPERBLOCKSIZE);
-                        } else if (fetchUseTime > 300) {
-                            _this2.myBlockMaxSize = Math.max(_this2.myBlockMaxSize - STEP_BLOCKSIZE, MINPERBLOCKSIZE);
-                        }
-                        self.startPos += data.bytesWritten;
-                        self.percent = Math.floor(100.0 * self.startPos / self.fileProfile.size);
-                        //console.log(self.percent  + '%');
-                        if (data.previewUrl) {
-                            _this2.previewUrl = data.previewUrl;
-                        }
-                        setTimeout(function () {
-                            self._fireChanged();
-                            self._uploadData();
-                        }, 20);
+                    setTimeout(function () {
+                        self._uploadData();
+                    }, 1000);
+                };
+                blockreader.onload = function (ev) {
+                    if (self.fileProfile == null) {
+                        console.log('上传器被删除');
+                        return;
                     }
-                }, 20);
-            }, false)));
+                    var fileData = new Uint8Array(blockreader.result);
+                    hexWorker.postMessage(fileData);
+                };
+            }
+            blockreader.readAsArrayBuffer(this.file.slice(this.startPos, endPos));
 
             if (this.errorCode) {
                 this.errorCode = 0;
@@ -365,10 +373,10 @@ var FileUploader = function (_EventEmitter) {
             if (newState == EFileUploaderState.UPLOADING) {
                 this.percent = 0;
             } else if (newState == EFileUploaderState.COMPLETE) {
-                if (this.readWorker) {
-                    this.readWorker.terminate();
-                    this.readWorker = null;
-                    console.log('readWorker 已终止');
+                if (this.hexWorker) {
+                    this.hexWorker.terminate();
+                    this.hexWorker = null;
+                    console.log('hexWorker 已终止');
                 }
             }
             this._fireChanged();
@@ -515,14 +523,14 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
     function ERPC_SingleFileUploader(props) {
         _classCallCheck(this, ERPC_SingleFileUploader);
 
-        var _this3 = _possibleConstructorReturn(this, (ERPC_SingleFileUploader.__proto__ || Object.getPrototypeOf(ERPC_SingleFileUploader)).call(this));
+        var _this2 = _possibleConstructorReturn(this, (ERPC_SingleFileUploader.__proto__ || Object.getPrototypeOf(ERPC_SingleFileUploader)).call(this));
 
-        autoBind(_this3);
-        _this3.state = {
+        autoBind(_this2);
+        _this2.state = {
             loading: false
         };
-        _this3.fileTagRef = React.createRef();
-        return _this3;
+        _this2.fileTagRef = React.createRef();
+        return _this2;
     }
 
     _createClass(ERPC_SingleFileUploader, [{
@@ -564,24 +572,48 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
         key: 'synRecordInfo',
         value: function synRecordInfo() {
             var bundle = {
-                fileid: this.props.deffileID,
-                attachmentID: this.props.defattachmentID
+                attachmentID: this.props.defattachmentID,
+                fileFlow: this.props.fileflow,
+                relrecordid: this.props.relrecordid
             };
             var self = this;
             store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'getFileRecord' }, makeFTD_Callback(function (state, data, error) {
                 var fileRecord = {
-                    fileid: bundle.fileid,
-                    attachmentID: bundle.attachmentID,
+                    fileID: data ? data.文件上传记录代码 : null,
+                    attachmentID: data ? data.附件记录代码 : null,
+                    fileFlow: data ? data.归属流程代码 : bundle.fileFlow,
+                    relrecordid: data ? data.关联记录代码 : bundle.relrecordid,
                     fileName: data ? data.文件名称 : null,
                     fileSize: data ? data.文件大小 : null,
                     type: data ? data.文件类型 : null,
                     url: data ? data.文件路径 : null
                 };
                 setTimeout(function () {
-                    self.setState({
-                        fileRecord: fileRecord,
-                        loading: false
-                    });
+                    if (self.props.defattachmentID == bundle.attachmentID && self.props.fileflow == bundle.fileFlow && self.props.relrecordid == bundle.relrecordid) {
+                        var needSetState = {
+                            fileID: fileRecord.fileID,
+                            attachmentID: fileRecord.attachmentID,
+                            invalidInfo: null
+                        };
+                        if (data) {
+                            if (bundle.attachmentID > 0) {
+                                needSetState.fileFlow = fileRecord.fileFlow;
+                                needSetState.relrecordid = fileRecord.relrecordid;
+                            }
+                        }
+                        store.dispatch(makeAction_setManyStateByPath(needSetState, self.props.fullPath));
+
+                        self.setState({
+                            loading: false,
+                            fileRecord: fileRecord
+                        });
+                    } else {
+                        // 信息发生了更改，重新获取
+                        console.log('信息发生了更改，重新获取');
+                        self.setState({
+                            loading: false
+                        });
+                    }
                 }, 20);
             }, false)));
         }
@@ -591,10 +623,37 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
             this.unlistenUploader(this.props.uploader);
         }
     }, {
+        key: 'uploaderJobDone',
+        value: function uploaderJobDone(uploader) {
+            if (this.props.onuploadcomplete) {
+                this.props.onuploadcomplete(this.props.fullPath, uploader.fileProfile.code);
+            }
+            store.dispatch(makeAction_setManyStateByPath({
+                invalidInfo: null,
+                fileID: uploader.fileProfile.code,
+                attachmentID: uploader.fileProfile.attachmentID
+            }, this.props.fullPath));
+        }
+    }, {
+        key: 'startUploadFile',
+        value: function startUploadFile(theFile) {
+            this.uploader.fileFlow = this.props.fileflow;
+            this.uploader.relrecordid = this.props.relrecordid;
+            this.uploader.definfo = {
+                defattachmentID: this.props.defattachmentID,
+                relrecordid: this.props.relrecordid
+            };
+            this.uploader.uploadFile(theFile, this.uploaderJobDone);
+        }
+    }, {
         key: 'fileSelectedHandler',
         value: function fileSelectedHandler(ev) {
+            if (ev.target.files.length > 1) {
+                SendToast('只能选一个文件');
+                return;
+            }
             var theFile = ev.target.files[0];
-            this.uploader.uploadFile(theFile);
+            this.startUploadFile(theFile);
             if (this.state.fileRecord) {
                 this.setState({
                     fileRecord: Object.assign({}, this.state.fileRecord, { abandon: true })
@@ -679,13 +738,10 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
 
             var items = ev.dataTransfer.items;
             var isGood = false;
-            if (items) {
-                for (var i = 0; i < items.length; ++i) {
-                    var item = items[i];
-                    if (item.kind == 'file') {
-                        isGood = true;
-                        break;
-                    }
+            if (items && items.length == 1) {
+                var item = items[0];
+                if (item.kind == 'file') {
+                    isGood = true;
                 }
             }
             this.setState({
@@ -710,13 +766,11 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
                 dragstate: null
             });
             var fileList = ev.dataTransfer.files;
-            var targetFile = null;
-            if (fileList.length > 0) {
-                targetFile = fileList[0];
+            if (fileList.length > 1) {
+                SendToast('只能选一个文件');
+                return;
             }
-            if (targetFile) {
-                this.uploader.uploadFile(targetFile);
-            }
+            this.startUploadFile(fileList[0]);
         }
     }, {
         key: 'dragOver',
@@ -758,6 +812,21 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
 
             var childElem = null;
             var self = this;
+            var relrecordid = this.props.relrecordid;
+            if (relrecordid == 0 || isNaN(relrecordid)) {
+                relrecordid = null;
+            }
+            if (fileUploader.state != EFileUploaderState.WAITFILE) {
+                var nowdefinfo = {
+                    defattachmentID: this.props.defattachmentID,
+                    relrecordid: this.props.relrecordid
+                };
+                if (!ObjIsEqual(nowdefinfo, fileUploader.definfo)) {
+                    setTimeout(function () {
+                        fileUploader.reset();
+                    }, 20);
+                }
+            }
             switch (fileUploader.state) {
                 case EFileUploaderState.WAITFILE:
                     canDelete = false;
@@ -773,8 +842,8 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
                                 '\u83B7\u53D6\u4E2D'
                             )
                         );
-                    } else if ((this.props.deffileID != null || this.props.defattachmentID != null) && (fileRecord == null || !fileRecord.abandon)) {
-                        if (fileRecord == null || fileRecord.fileid != this.props.deffileID || fileRecord.attachmentID != this.props.defattachmentID) {
+                    } else if ((this.props.defattachmentID > 0 || relrecordid != null) && (fileRecord == null || !fileRecord.abandon)) {
+                        if (fileRecord == null || this.props.defattachmentID > 0 && fileRecord.attachmentID != this.props.defattachmentID || relrecordid != null && fileRecord.relrecordid != this.props.relrecordid) {
                             setTimeout(function () {
                                 self.setState({
                                     loading: true
@@ -793,12 +862,14 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
                             );
                         } else {
                             if (fileRecord.fileName == null) {
-                                childElem = React.createElement(
-                                    'span',
-                                    { className: 'centerelem position-absolute text-nowrap text-danger' },
-                                    React.createElement('i', { className: 'fa fa-warninig' }),
-                                    '\u6587\u4EF6\u4E0D\u5B58\u5728'
-                                );
+                                if (this.props.defattachmentID > 0) {
+                                    invalidInfoElem = React.createElement(
+                                        'span',
+                                        { className: 'bg-danger text-white' },
+                                        React.createElement('i', { className: 'fa fa-warning' }),
+                                        '\u6587\u4EF6\u4E0D\u5B58\u5728'
+                                    );
+                                }
                             } else {
                                 fileName = fileRecord.fileName;
                                 fileSize = fileRecord.size;
@@ -813,29 +884,48 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
                                     { onClick: this.clickPreviewHandler, type: 'button', className: 'btn btn-sm btn-primary' },
                                     React.createElement('i', { className: 'fa fa-' + (aidData.canPreview ? 'eye' : 'download') })
                                 );
+                                contentElem = React.createElement('span', null);
                             }
                         }
-                    } else {
-                        contentElem = React.createElement(
-                            'div',
-                            { className: 'w-100 h-100 cursor_hand', onClick: this.clickPlusHandler, onDragEnter: this.dragenter, onDragLeave: this.dragleave, onDrop: this.drop, onDragOver: this.dragOver },
-                            React.createElement(
-                                'span',
-                                { className: 'centerelem position-absolute pointerevent-none' },
+                    }
+                    if (contentElem == null) {
+                        if (!(relrecordid != null && this.props.fileflow > 0)) {
+                            contentElem = React.createElement(
+                                'div',
+                                { className: 'w-100 h-100' },
                                 React.createElement(
-                                    'div',
-                                    { className: 'text-nowrap' },
-                                    React.createElement('i', { className: 'fa fa-mouse-pointer' }),
-                                    '\u4E0A\u4F20\u6587\u4EF6'
-                                ),
-                                isMobile ? null : React.createElement(
-                                    'div',
-                                    { className: 'text-nowrap' },
-                                    React.createElement('i', { className: 'fa fa-hand-rock-o' }),
-                                    '\u62D6\u62FD\u6587\u4EF6'
+                                    'span',
+                                    { className: 'centerelem position-absolute pointerevent-none' },
+                                    React.createElement(
+                                        'div',
+                                        { className: 'text-danger text-nowrap' },
+                                        React.createElement('i', { className: 'fa fa-warning' }),
+                                        '\u9700\u8981FR'
+                                    )
                                 )
-                            )
-                        );
+                            );
+                        } else {
+                            contentElem = React.createElement(
+                                'div',
+                                { className: 'w-100 h-100 cursor_hand', onClick: this.clickPlusHandler, onDragEnter: this.dragenter, onDragLeave: this.dragleave, onDrop: this.drop, onDragOver: this.dragOver },
+                                React.createElement(
+                                    'span',
+                                    { className: 'centerelem position-absolute pointerevent-none' },
+                                    React.createElement(
+                                        'div',
+                                        { className: 'text-nowrap' },
+                                        React.createElement('i', { className: 'fa fa-mouse-pointer' }),
+                                        '\u4E0A\u4F20\u6587\u4EF6'
+                                    ),
+                                    isMobile ? null : React.createElement(
+                                        'div',
+                                        { className: 'text-nowrap' },
+                                        React.createElement('i', { className: 'fa fa-hand-rock-o' }),
+                                        '\u62D6\u62FD\u6587\u4EF6'
+                                    )
+                                )
+                            );
+                        }
                     }
                     break;
                 case EFileUploaderState.READING:
@@ -919,11 +1009,20 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
                         );
                     } else {
                         childElem = React.createElement(
-                            'span',
+                            'div',
                             { className: 'centerelem position-absolute text-nowrap bg-white' },
-                            React.createElement('i', { className: 'fa fa-circle-o-notch fa-spin' }),
-                            fileUploader.percent,
-                            '%'
+                            React.createElement(
+                                'div',
+                                null,
+                                React.createElement('i', { className: 'fa fa-circle-o-notch fa-spin' }),
+                                fileUploader.percent,
+                                '%'
+                            ),
+                            React.createElement(
+                                'div',
+                                null,
+                                fileUploader.speed
+                            )
                         );
                     }
                     contentElem = React.createElement(
@@ -946,19 +1045,7 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
             }
 
             if (fileName) {
-                var sizeStr = '';
-                var kbsize = Math.round(fileSize / 1024);
-                if (kbsize < 1000) {
-                    sizeStr = kbsize + 'KB';
-                } else {
-                    var mbsize = Math.round(10 * kbsize / 1024) / 10.0;
-                    if (mbsize < 1000) {
-                        sizeStr = mbsize + 'MB';
-                    } else {
-                        var gbsize = Math.round(10 * kbsize / 1024) / 10.0;
-                        sizeStr = gbsize + 'GB';
-                    }
-                }
+                var sizeStr = DataSizeToString(fileSize);
                 fileName += '[' + sizeStr + ']';
                 if (fileName.length > 32) {
                     fileName = '...' + fileName.substr(-32);
@@ -971,8 +1058,8 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
                 React.createElement('input', { onChange: this.fileSelectedHandler, ref: this.fileTagRef, type: 'file', className: 'd-none', accept: 'image/*' }),
                 React.createElement(
                     'span',
-                    { id: 'title', className: 'flex-grow-0 flex-shrink-0' },
-                    '\u6210\u679C\u540D\u79F0s'
+                    { id: 'title', className: 'flex-grow-0 flex-shrink-0 wb-all' },
+                    this.props.title
                 ),
                 React.createElement(
                     'div',
@@ -1018,7 +1105,7 @@ function ERPC_SingleFileUploader_mapstatetoprops(state, ownprops) {
         attachmentID: ctlState.attachmentID,
         fileID: ctlState.fileID,
         defattachmentID: ctlState.defattachmentID,
-        deffileID: ctlState.deffileID
+        relrecordid: ctlState.relrecordid
     };
 }
 
@@ -1032,10 +1119,10 @@ var CFileUploaderBar = function (_React$PureComponent2) {
     function CFileUploaderBar(props) {
         _classCallCheck(this, CFileUploaderBar);
 
-        var _this4 = _possibleConstructorReturn(this, (CFileUploaderBar.__proto__ || Object.getPrototypeOf(CFileUploaderBar)).call(this));
+        var _this3 = _possibleConstructorReturn(this, (CFileUploaderBar.__proto__ || Object.getPrototypeOf(CFileUploaderBar)).call(this));
 
-        autoBind(_this4);
-        return _this4;
+        autoBind(_this3);
+        return _this3;
     }
 
     _createClass(CFileUploaderBar, [{
@@ -1200,7 +1287,8 @@ var CFileUploaderBar = function (_React$PureComponent2) {
                                     'div',
                                     { className: 'progress flex-grow-1 flex-shrink-1' },
                                     React.createElement('div', { className: 'progress-bar progress-bar-striped', style: { width: fileUploader.percent + '%' } })
-                                )
+                                ),
+                                fileUploader.speed
                             );
                         }
                         //<button className={'btn btn-sm btn-dark'} onClick={this.clickPauseHandler}><i className={'fa fa-2x ' + (fileUploader.isPause ? 'fa-play-circle-o' : 'fa-pause-circle-o')} /></button>
@@ -1282,14 +1370,14 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
     function ERPC_MultiFileUploader(props) {
         _classCallCheck(this, ERPC_MultiFileUploader);
 
-        var _this5 = _possibleConstructorReturn(this, (ERPC_MultiFileUploader.__proto__ || Object.getPrototypeOf(ERPC_MultiFileUploader)).call(this));
+        var _this4 = _possibleConstructorReturn(this, (ERPC_MultiFileUploader.__proto__ || Object.getPrototypeOf(ERPC_MultiFileUploader)).call(this));
 
-        ERPControlBase(_this5);
-        _this5.state = {};
-        _this5.fileTagRef = React.createRef();
+        ERPControlBase(_this4);
+        _this4.state = {};
+        _this4.fileTagRef = React.createRef();
 
-        autoBind(_this5);
-        return _this5;
+        autoBind(_this4);
+        return _this4;
     }
 
     _createClass(ERPC_MultiFileUploader, [{
@@ -1424,7 +1512,7 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
     }, {
         key: 'render',
         value: function render() {
-            var _this6 = this;
+            var _this5 = this;
 
             if (this.props.visible == false) {
                 return null;
@@ -1449,7 +1537,7 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
                             ),
                             React.createElement(
                                 'button',
-                                { onClick: _this6.clickTrashHandler, className: 'btn btn-danger flex-grow-0 flex-shrink-0' },
+                                { onClick: _this5.clickTrashHandler, className: 'btn btn-danger flex-grow-0 flex-shrink-0' },
                                 React.createElement('i', { className: 'fa fa-trash' })
                             )
                         )
@@ -1550,13 +1638,13 @@ var ERPC_FilePreview = function (_React$PureComponent4) {
     function ERPC_FilePreview(props) {
         _classCallCheck(this, ERPC_FilePreview);
 
-        var _this7 = _possibleConstructorReturn(this, (ERPC_FilePreview.__proto__ || Object.getPrototypeOf(ERPC_FilePreview)).call(this));
+        var _this6 = _possibleConstructorReturn(this, (ERPC_FilePreview.__proto__ || Object.getPrototypeOf(ERPC_FilePreview)).call(this));
 
-        ERPControlBase(_this7);
-        _this7.state = {};
-        autoBind(_this7);
-        _this7.audioTagRef = React.createRef();
-        return _this7;
+        ERPControlBase(_this6);
+        _this6.state = {};
+        autoBind(_this6);
+        _this6.audioTagRef = React.createRef();
+        return _this6;
     }
 
     _createClass(ERPC_FilePreview, [{
@@ -1624,7 +1712,7 @@ var ERPC_FilePreview = function (_React$PureComponent4) {
     }, {
         key: 'clickTrashHandler',
         value: function clickTrashHandler(ev) {
-            var _this8 = this;
+            var _this7 = this;
 
             if (this.deleting) {
                 return;
@@ -1633,9 +1721,9 @@ var ERPC_FilePreview = function (_React$PureComponent4) {
             var msg = PopMessageBox('删除附件:"' + this.props.fileName + '"?', EMessageBoxType.Blank, '附件删除');
             msg.query('删除附件"' + this.props.fileName + '" ?', [{ label: '删除', key: '删除' }, { label: '算了', key: '算了' }], function (key) {
                 if (key == '删除') {
-                    _this8.deleting = true;
-                    var self = _this8;
-                    store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: { 附件id: _this8.props.attachmentID }, action: 'deleteAttachment' }, makeFTD_Callback(function (state, data, error) {
+                    _this7.deleting = true;
+                    var self = _this7;
+                    store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: { 附件id: _this7.props.attachmentID }, action: 'deleteAttachment' }, makeFTD_Callback(function (state, data, error) {
                         self.deleting = false;
                         if (error) {
                             alert(JSON.stringify(error));
