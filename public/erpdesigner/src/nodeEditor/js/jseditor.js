@@ -155,6 +155,11 @@ const JSNodeEditorControls_arr =[
         type:'转换'
     },
     {
+        label:'Math.RandInt',
+        nodeClass:JSNode_Math_RandInt,
+        type:'Math'
+    },
+    {
         label:'Get页面入口参数',
         nodeClass:JSNode_GetPageEntryParam,
         type:'窗体控制'
@@ -217,6 +222,11 @@ const JSNodeEditorControls_arr =[
     {
         label:'显示消息窗',
         nodeClass:JSNode_ShowMessageBox,
+        type:'消息窗控制'
+    },
+    {
+        label:'设置消息窗为加载模式',
+        nodeClass:JSNode_SetMessageBoxToLoading,
         type:'消息窗控制'
     },
     {

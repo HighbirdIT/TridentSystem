@@ -308,6 +308,10 @@ const AttrNames={
     OutputCharCount:'outputcharcount',
     AutoHomeBtn:'autoHomeBtn',
     AutoPull:'autoPull',
+    DefaultVisible:'defaultvisible',
+    InsertBtnLabel:'insertbtnlabel',
+    KeyRecrodID:'keyrecordid',
+    AttachmentID:'attachmentid',
 
     Event:{
         OnClick:'onclick',

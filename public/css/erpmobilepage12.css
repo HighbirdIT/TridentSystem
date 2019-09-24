@@ -506,3 +506,65 @@ body{
     top: 1%;
     opacity: 0.8;
 }
+
+.fileuploadersingle{
+    width: 7em;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.fileuploadersingle-content{
+    border: dashed #b8c3ce !important;
+    border-radius: 0.25rem !important;
+    position: relative;
+    width: 6.5em;
+    height: 6.5em;
+    margin: auto;
+}
+
+.fileuploadersingle-content>div[id='toolbar']{
+    position: absolute;
+    bottom: 0%;
+    right: 0%;
+}
+
+.fileuploadersingle>div[id='name']{
+    font-size: 0.5em;
+    background-color: white;
+    word-break: break-all;
+}
+
+.centerelem{
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%,-50%)
+}
+
+.fileuploadersingle-content[dragstate='good']{
+    border: dashed green !important;
+}
+
+.fileuploadersingle-content[dragstate='bad']{
+    border: dashed red !important;
+}
+
+.pointerevent-none{
+    pointer-events: none;
+}
+
+.mfileuploader-addbtn{
+    border: dashed #b8c3ce !important;
+    border-radius: 0.25rem !important;
+}
+
+.mfileuploader-addbtn[dragstate='good']{
+    border: dashed green !important;
+}
+
+.mfileuploader-addbtn[dragstate='bad']{
+    border: dashed red !important;
+}
+
+.wb-all{
+    word-break: break-all;
+}

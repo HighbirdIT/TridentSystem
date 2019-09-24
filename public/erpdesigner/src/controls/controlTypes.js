@@ -16,6 +16,7 @@ const TabControl_Type = 'tabcontrol';
 const TabItem_Type = 'tabitem';
 const TaskSelector_Type = 'taskselector';
 const MFileUploader_Type = 'mfileuploader';
+const SingleFileUploader_Type = 'singlefileuploader';
 const FilePreviewer_Type = 'filepreviewer';
 
 const M_LabelKernel_Prefix = 'M_Label';
@@ -35,6 +36,7 @@ const TabControl_Prefix = 'tabcontrol';
 const TabItem_Prefix = 'tabitem';
 const TaskSelector_Prefix = 'taskSel';
 const MFileUploader_Prefix = 'mfuploader';
+const SingleFileUploader_Prefix = 'singlefuploader';
 const FilePreviewer_Prefix = 'filepreviewer';
 
 function GetControlTypeReadableName(type){
@@ -77,6 +79,8 @@ function GetControlTypeReadableName(type){
         return '多文件上传器';
         case FilePreviewer_Type:
         return '文件查看器';
+        case SingleFileUploader_Type:
+        return '单文件上传器';
     }
     return type;
 }
