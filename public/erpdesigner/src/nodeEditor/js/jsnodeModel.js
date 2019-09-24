@@ -5993,6 +5993,12 @@ class JSNODE_Update_table extends JSNode_Base {
         }
         helper.addInitClientBundleBlock(initBundleBlock);
 
+        socketComRet = this.getSocketCompileValue(helper, this.keySocket, usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var kerSocketValue = socketComRet.value;
+
         var useClientVariablesRlt = new UseClientVariableResult();
         this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
         useClientVariablesRlt.variables_arr.forEach(varCon => {
@@ -6007,12 +6013,8 @@ class JSNODE_Update_table extends JSNode_Base {
 
         paramInitBlock.pushLine(paramVarName + "=[", 1);
 
-        socketComRet = this.getSocketCompileValue(helper, this.keySocket, usePreNodes_arr, belongBlock, true);
-        if (socketComRet.err) {
-            return false;
-        }
         var rcdkeyName = this.id + '_RCDKEY';
-        postCheckBlock.pushLine("var " + rcdkeyName + '=' + socketComRet.value + ';');
+        postCheckBlock.pushLine("var " + rcdkeyName + '=' + kerSocketValue + ';');
         postCheckBlock.pushLine("if(serverhelper.IsEmptyString(" + rcdkeyName + ')){return serverhelper.createErrorRet("参数[RCDKEY]传入错误");}');
         paramInitBlock.pushLine("dbhelper.makeSqlparam('RCDKEY', sqlTypes.Int, " + rcdkeyName + '),');
 
