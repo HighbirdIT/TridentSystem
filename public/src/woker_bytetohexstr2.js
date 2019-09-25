@@ -20,7 +20,15 @@ var UIntToHexStr = function (data_arr) {
 
 
 var onmessage = function (event) {
-    var rlt = UIntToHexStr(event.data);
+    var rlt = {
+        act: event.data.act,
+    };
+    if(event.data.act == 'calmd5'){
+        rlt.data = md5(event.data.data);
+    }
+    else if(event.data.act == 'tohex'){
+        rlt.data = UIntToHexStr(event.data.data);
+    }
     postMessage(rlt);
 };
 

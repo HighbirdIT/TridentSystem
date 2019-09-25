@@ -387,6 +387,9 @@ var autoViews = {};
 var erpPageCache = {};
 var fs = require('fs');
 
+//var tjspath = __dirname + '/views/erppage/server/pages/WLXXGL_s40.js'
+//var tt = require(tjspath);
+
 function processErppageServer(req, res, next){
     var pageName = req.path.substr(1).toUpperCase();
     var cache = erpPageCache[pageName];

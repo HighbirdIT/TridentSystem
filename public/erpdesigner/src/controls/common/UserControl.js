@@ -11,6 +11,7 @@ const UserControlKernelTempleAttrsSetting = GenControlKernelAttrsSetting([
 const UserControlKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置', [
         genIsdisplayAttribute(),
+        new CAttribute('默认可见', AttrNames.DefaultVisible, ValueType.Boolean, true),
         new CAttribute('refID', 'refID', ValueType.String, 'none', true, false, null, null, false),
     ]),
     new CAttributeGroup('属性接口', [

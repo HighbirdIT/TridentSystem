@@ -10,7 +10,6 @@ const MFileUploaderKernelAttrsSetting = GenControlKernelAttrsSetting([
             type:FunType_Client,
             group:EJsBluePrintFunGroup.CtlAttr,
         }),
-        new CAttribute('所属流程', 'fileFlow', ValueType.String, ValueType.String, null, false, AllFileFlows_arr, { text: 'label', value: 'code' }),
         genIsdisplayAttribute(),
         genNullableAttribute(),
         genValidCheckerAttribute(),

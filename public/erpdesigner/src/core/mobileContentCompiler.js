@@ -425,7 +425,7 @@ class MobileContentCompiler extends ContentCompiler {
         controlReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullParentPath), makeStr_DotProp('propProfile', VarNames.FullParentPath)));
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullPath), makeStr_DotProp('propProfile', VarNames.FullPath)));
-        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'visible'), makeStr_DotProp(VarNames.CtlState, 'visible != false')));
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'visible'), '(' + makeStr_DotProp(VarNames.CtlState, VarNames.Visible) + ' == null && ownprops.' + AttrNames.DefaultVisible + ' != false) || ' + makeStr_DotProp(VarNames.CtlState, VarNames.Visible) + ' == true'));
         userCtlKernel.getParamApiAttrArray().forEach(paramApiItem => {
             controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, paramApiItem.label), makeStr_DotProp(VarNames.CtlState, paramApiItem.label)));
         });
@@ -995,6 +995,9 @@ class MobileContentCompiler extends ContentCompiler {
             case MFileUploader_Type:
                 rlt = this.compileMFileUploaderKernel(theKernel, renderBlock, renderFun);
                 break;
+            case SingleFileUploader_Type:
+                rlt = this.compileSingleFileUploaderKernel(theKernel, renderBlock, renderFun);
+                break;
             case FilePreviewer_Type:
                 rlt = this.compileFilePreviewerKernel(theKernel, renderBlock, renderFun);
                 break;
@@ -1026,6 +1029,9 @@ class MobileContentCompiler extends ContentCompiler {
         var thisFullPath = makeStr_DotProp(parentFullPath, theKernel.id);
         ctlTag.setAttr('id', theKernel.id);
         ctlTag.setAttr('parentPath', parentPath);
+        if(!theKernel.getAttribute(AttrNames.DefaultVisible)){
+            ctlTag.setAttr('defvisible', '{false}');
+        }
 
         this.compileOnMouseDownEvent(theKernel, ctlTag);
 
@@ -1919,6 +1925,7 @@ class MobileContentCompiler extends ContentCompiler {
             gridBodyTag.setAttr('form', '{this}');
             if (insertBtnSetting) {
                 gridBodyTag.setAttr('hadNewRow', '{this.state.hadNewRow}');
+
             }
             if (clickSelectable || onSelectRowBp) {
                 gridBodyTag.setAttr('clickRowHandler', '{this.clickRowHandler}');
@@ -1952,7 +1959,8 @@ class MobileContentCompiler extends ContentCompiler {
             }
             renderContentFun.pushLine("{" + VarNames.RetElem + "}");
             if (insertBtnSetting) {
-                renderContentFun.pushLine("{!this.state.hadNewRow && <button onClick={this.clickNewRowHandler} type='button' className='btn btn-success' ><i className='fa fa-plus'/>新增</button>}");
+                var newbtnlabel = theKernel.getAttribute(AttrNames.InsertBtnLabel);
+                renderContentFun.pushLine("{!this.state.hadNewRow && <button onClick={this.clickNewRowHandler} type='button' className='btn btn-success' ><i className='fa fa-plus'/>" + (IsEmptyString(newbtnlabel) ? '新增' : newbtnlabel) + "</button>}");
             }
             renderContentFun.subNextIndent();
             renderContentFun.pushLine("</div>");
@@ -2039,16 +2047,13 @@ class MobileContentCompiler extends ContentCompiler {
             formTag.setAttr('reBindAT', 'ReBind' + theKernel.id + "Page");
         }
 
-        if(!theKernel.getAttribute(AttrNames.DefaultVisible)){
-            formTag.setAttr('defaultvisible', '{false}');
-        }
-
+        var defVisble = theKernel.getAttribute(AttrNames.DefaultVisible);
         renderBlock.pushChild(formTag);
 
         formReactClass.mapStateFun.scope.getVar('propProfile', true, "getControlPropProfile(ownprops, state)");
         formReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
 
-        formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Visible), '(' + makeStr_DotProp(VarNames.CtlState, VarNames.Visible) + ' == null && ownprops.' + AttrNames.DefaultVisible + ' != false) || ' + makeStr_DotProp(VarNames.CtlState, VarNames.Visible) + ' == true'));
+        formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Visible), makeStr_DotProp(VarNames.CtlState, VarNames.Visible) + ' == null ? ' + defVisble + ' : ' + makeStr_DotProp(VarNames.CtlState, VarNames.Visible) + ' == true'));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Fetching), makeStr_DotProp(VarNames.CtlState, VarNames.Fetching)));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FetchErr), makeStr_DotProp(VarNames.CtlState, VarNames.FetchErr)));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.Records_arr), makeStr_DotProp(VarNames.CtlState, VarNames.Records_arr)));
@@ -2223,6 +2228,11 @@ class MobileContentCompiler extends ContentCompiler {
 
             if (belongFormMidData != null) {
                 belongFormMidData.pullFun.beforeRetBlock.pushLine(VarNames.ReState + '=' + makeStr_callFun(pullFun.name, [VarNames.ReState, 'true', "fullParentPath + '." + belongForm.id + "'"]));
+            }
+            else if (belongUserControl != null) {
+                // 在自订控件里
+                var templateReactClass = this.clientSide.getReactClass(belongUserControl.getReactClassName());
+                templateReactClass.initFun.pushLine(makeStr_callFun(bindFun.name, [belongUserControl.id + '_state', 'null', 'null', "ctlFullPath + '." + theKernel.id + "'"]));
             }
             else {
                 var pageInitFun = clientSide.scope.getFunction(makeFName_initPage(belongPage));
@@ -2628,7 +2638,7 @@ class MobileContentCompiler extends ContentCompiler {
             bindPageFun.pushLine('for (var rowIndex = startRowIndex; rowIndex <= endRowIndex; ++rowIndex) {', 1);
             bindPageFun.pushLine('var ' + VarNames.NowRecord + ' = records_arr[rowIndex];');
 
-            bindPageFun.pushChild(staticBindBlock);
+            //bindPageFun.pushChild(staticBindBlock);
             bindPageFun.pushChild(bindNowRecordBlock);
             bindPageFun.pushChild(dynamicSetBlock_hadRecord);
             bindPageFun.subNextIndent(2);
@@ -2852,7 +2862,7 @@ class MobileContentCompiler extends ContentCompiler {
                                         }
                                         break;
                                     case ScriptBindMode.OnNewRow:
-                                        staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', "formPath + '.row_new'"])));
+                                        staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', theKernel.id + "_path + '.row_new'"])));
                                         break;
                                 }
                             } else {
@@ -3763,6 +3773,173 @@ class MobileContentCompiler extends ContentCompiler {
             if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
                 parentMidData.needSetKernels_arr.push(theKernel);
             }
+        }
+
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
+        if (this.compileValidCheckerAttribute(theKernel) == false) { return false; }
+        var onUploadCompleteFunName = theKernel.id + '_' + AttrNames.Event.OnUploadComplete;
+        var onUploadCompleteBp = project.scriptMaster.getBPByName(onUploadCompleteFunName);
+        if (onUploadCompleteBp != null) {
+            var compileRet = this.compileScriptBlueprint(onUploadCompleteBp, { muteMode: true, fetchKey: "'fileuploaded' + fileID" });
+            if (compileRet == false) {
+                return false;
+            }
+            ctlTag.setAttr('onuploadcomplete', bigbracketStr(onUploadCompleteFunName));
+        }
+
+        renderBlock.pushChild(ctlTag);
+    }
+
+    compileSingleFileUploaderKernel(theKernel, renderBlock, renderFun) {
+        var project = this.project;
+        var logManager = project.logManager;
+
+        var layoutConfig = theKernel.getLayoutConfig();
+        var ctlTag = new FormatHtmlTag(theKernel.id, 'VisibleERPC_SingleFileUploader', this.clientSide);
+        this.modifyControlTag(theKernel, ctlTag);
+        ctlTag.style = layoutConfig.style;
+        ctlTag.setAttr('id', theKernel.id);
+        var parentPath = this.getKernelParentPath(theKernel);
+        ctlTag.setAttr('parentPath', parentPath);
+
+        var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
+        var reactParentKernel = theKernel.getReactParentKernel(true);
+        var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
+        var parentMidData = this.projectCompiler.getMidData(reactParentKernel.id);
+
+        var fileFlow = theKernel.getAttribute('fileFlow');
+        var fileFlowItem = AllFileFlows_arr.find(x=>{return x.code == fileFlow;});
+        if(fileFlowItem){
+            ctlTag.setAttr('fileflow', fileFlow);
+        }
+        var formColumns_arr = null;
+        if (belongFormKernel != null && (belongFormKernel.isPageForm() || belongFormKernel.isKernelInRow(theKernel))) {
+            formColumns_arr = belongFormKernel.getCanuseColumns();
+        }
+
+        var title = theKernel.getAttribute(AttrNames.Title);
+        var titleParseRet = parseObj_CtlPropJsBind(title, project.scriptMaster);
+        var setTitleStateTiem = null;
+        if (titleParseRet.isScript) {
+            if (this.compileScriptAttribute(titleParseRet, theKernel, 'title', AttrNames.Title, { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (!IsEmptyString(titleParseRet.string)) {
+                if (formColumns_arr) {
+                    if (formColumns_arr.indexOf(title) != -1) {
+                        parentMidData.useColumns_map[title] = 1;
+                        setTitleStateTiem = {
+                            name: 'title',
+                            useColumn: { name: title },
+                        };
+                    }
+                }
+                else {
+                    ctlTag.setAttr('title', title);
+                }
+            }
+        }
+
+        var keyrecordid = theKernel.getAttribute(AttrNames.KeyRecrodID);
+        var keyrecordidParseRet = parseObj_CtlPropJsBind(keyrecordid, project.scriptMaster);
+        var setkeyrecordidStateTiem = null;
+        if (keyrecordidParseRet.isScript) {
+            if (this.compileScriptAttribute(keyrecordidParseRet, theKernel, 'relrecordid', AttrNames.Title, { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (!IsEmptyString(keyrecordidParseRet.string)) {
+                if (formColumns_arr) {
+                    if (formColumns_arr.indexOf(title) != -1) {
+                        parentMidData.useColumns_map[title] = 1;
+                        setkeyrecordidStateTiem = {
+                            name: 'relrecordid',
+                            useColumn: { name: title },
+                        };
+                    }
+                }
+                if(setkeyrecordidStateTiem == null) {
+                    logManager.errorEx([logManager.createBadgeItem(
+                        theKernel.getReadableName(),
+                        theKernel,
+                        this.projectCompiler.clickKernelLogBadgeItemHandler),
+                        '关联记录代码设置有误']);
+                    return false;
+                }
+            }
+        }
+
+        var attachmentid = theKernel.getAttribute(AttrNames.AttachmentID);
+        var attachmentidParseRet = parseObj_CtlPropJsBind(attachmentid, project.scriptMaster);
+        var setattachmentidStateTiem = null;
+        if (attachmentidParseRet.isScript) {
+            if (this.compileScriptAttribute(attachmentidParseRet, theKernel, 'defattachmentID', AttrNames.Title, { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (!IsEmptyString(attachmentidParseRet.string)) {
+                if (formColumns_arr) {
+                    if (formColumns_arr.indexOf(title) != -1) {
+                        parentMidData.useColumns_map[title] = 1;
+                        setattachmentidStateTiem = {
+                            name: 'defattachmentID',
+                            useColumn: { name: title },
+                        };
+                    }
+                }
+                if(setattachmentidStateTiem == null) {
+                    logManager.errorEx([logManager.createBadgeItem(
+                        theKernel.getReadableName(),
+                        theKernel,
+                        this.projectCompiler.clickKernelLogBadgeItemHandler),
+                        '附件记录代码设置有误']);
+                    return false;
+                }
+                else if(setkeyrecordidStateTiem != null || keyrecordidParseRet.isScript){
+                    logManager.errorEx([logManager.createBadgeItem(
+                        theKernel.getReadableName(),
+                        theKernel,
+                        this.projectCompiler.clickKernelLogBadgeItemHandler),
+                        '关联记录代码和附件记录代码不可同时设置']);
+                    return false;
+                }
+            }
+        }
+
+        if(setkeyrecordidStateTiem == null && !keyrecordidParseRet.isScript && setattachmentidStateTiem == null && !attachmentidParseRet.isScript) {
+            logManager.errorEx([logManager.createBadgeItem(
+                theKernel.getReadableName(),
+                theKernel,
+                this.projectCompiler.clickKernelLogBadgeItemHandler),
+                '关联记录代码和附件记录代码必须设置一项']);
+            return false;
+        }
+
+        if (setattachmentidStateTiem == null && !attachmentidParseRet.isScript && fileFlowItem == null) {
+            logManager.errorEx([logManager.createBadgeItem(
+                theKernel.getReadableName(),
+                theKernel,
+                this.projectCompiler.clickKernelLogBadgeItemHandler),
+                '不设置附件记录代码的情况下必须选择文件流程']);
+            return false;
+        }
+
+        if (setTitleStateTiem) {
+            kernelMidData.needSetStates_arr.push(setTitleStateTiem);
+        }
+        if (setkeyrecordidStateTiem) {
+            kernelMidData.needSetStates_arr.push(setkeyrecordidStateTiem);
+        }
+        if (setattachmentidStateTiem) {
+            kernelMidData.needSetStates_arr.push(setattachmentidStateTiem);
+        }
+
+        if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
+            parentMidData.needSetKernels_arr.push(theKernel);
         }
 
         if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
