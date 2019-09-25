@@ -526,6 +526,8 @@ class CFlowMaster extends React.PureComponent
             selectedFlow:null,
             selectedFlowBP:null,
             flowBPLoading:false,
+            flowKeyword:'',
+            stepKeyword:''
         };
         this.panelBaseRef = React.createRef();
 
@@ -651,6 +653,56 @@ class CFlowMaster extends React.PureComponent
             });
         }, 500);
     }
+    flowInputChange(ev){
+        this.setState({
+            flowKeyword:ev.target.value
+        })
+    }
+    renderFlowList() {
+        var selectedFlow = this.state.selectedFlow;
+        var temporary_flowArrs =this.state.flows;
+        var showFlowArr =[];
+        if (temporary_flowArrs == null){
+            return null
+        }
+        if(this.state.flowKeyword == '' || this.state.flowKeyword == null){
+            showFlowArr=temporary_flowArrs;
+        }else{
+            for(var i=0,len =temporary_flowArrs.length;i<len;i++){
+                if (temporary_flowArrs[i].name.indexOf(this.state.flowKeyword) >= 0) {
+                    showFlowArr.push(temporary_flowArrs[i]);
+                }
+            }
+        }
+        return showFlowArr.map((flow, index) => {
+            return <CFlowObject selectedCode={selectedFlow == null ? null : selectedFlow.code} onclick={this.clickFlowObject} key={flow.code ? flow.code : 'new' + index} flow={flow} />
+        })
+    }
+    stepInputChange(ev){
+        this.setState({
+            stepKeyword:ev.target.value
+        })
+    }
+    renderStepList(){
+        var selectedFlow = this.state.selectedFlow;
+        var temporary_stepArrs=selectedFlow && selectedFlow.steps_arr;
+        var showStepArr=[];
+        if(temporary_stepArrs == null ){
+            return null
+        }
+        if(this.state.stepKeyword ==''|| this.state.stepKeyword==''){
+            showStepArr=temporary_stepArrs;
+        }else{
+            for(var i=0,len=temporary_stepArrs.length;i<len;i++){
+                if(temporary_stepArrs[i].name.indexOf(this.state.stepKeyword)>=0){
+                    showStepArr.push(temporary_stepArrs[i]);
+                }
+            }
+        }
+        return showStepArr.map((step,index)=>{
+            return <CFlowStep  key={step.code ? step.code : 'new' + index} step={step} />
+        })
+    }
     
     render(){
         this.navItems[0].content = <C_FlowNode_Editor bluePrint={this.state.selectedFlowBP} />;
@@ -659,7 +711,7 @@ class CFlowMaster extends React.PureComponent
         }
 
         var saving = this.state.saving;
-        var selectedFlow = this.state.selectedFlow;
+        //var selectedFlow = this.state.selectedFlow;
         return (<FloatPanelbase title={'流程大师'} initShow={false} initMax={true} ref={this.panelBaseRef}>
                 <div className='d-flex flex-grow-0 flex-shrink-0 w-100 h-100'>
                     <SplitPanel 
@@ -676,7 +728,10 @@ class CFlowMaster extends React.PureComponent
                                 panel1={
                                     <div className='bg-dark w-100 h-100 d-flex flex-column'>
                                         <div className='d-flex text-light bg-dark flex-shrink-0 align-items-center'>
-                                            <div className='flex-grow-1'>所有流程</div>
+                                            <div className="input-group input-group-sm">
+                                                <span className="input-group-addon" id="sizing-addon3">所有流程:</span>
+                                                <input type="text" className="form-control" placeholder="请输入" aria-describedby="sizing-addon3" onChange={this.flowInputChange}/>
+                                            </div>
                                             <div className='btn-group'>
                                             <button type='button' className='btn btn-dark flex-shrink-0'>
                                                 <i className='fa fa-refresh' />
@@ -688,16 +743,21 @@ class CFlowMaster extends React.PureComponent
                                         </div>
                                         <div className='list-group autoScroll'>
                                             {
-                                                this.state.flows.map((flow,index)=>{
+                                                /*this.state.flows.map((flow,index)=>{
                                                     return <CFlowObject selectedCode={selectedFlow == null ? null : selectedFlow.code} onclick={this.clickFlowObject}  key={flow.code ? flow.code : 'new' + index} flow={flow} />
                                                 })
+                                                */
+                                                this.renderFlowList()
                                             }
                                         </div>
                                     </div>
                                 }
                                 panel2={<div className='w-100 h-100 d-flex flex-column'>
                                 <div className='d-flex text-light bg-dark flex-shrink-0 align-items-center'>
-                                            <div className='flex-grow-1'>步骤列表</div>
+                                        <div className="input-group input-group-sm">
+                                            <span className="input-group-addon" id="sizing-addon3">步骤列表:</span>
+                                            <input type="text" className="form-control" placeholder="请输入" aria-describedby="sizing-addon3" onChange={this.stepInputChange}/>
+                                        </div>
                                             <button type='button' className='btn btn-dark flex-shrink-0' onClick={this.clickPlusStepBtnHandler}>
                                                 <i className='fa fa-plus text-success' /> 
                                             </button>
@@ -705,9 +765,10 @@ class CFlowMaster extends React.PureComponent
                                         <div className='flex-grow-1 flex-shrink-1  autoScroll'>
                                         <div className='list-group '>
                                             {   
-                                                selectedFlow && selectedFlow.steps_arr.map((step,index)=>{
+                                                /*selectedFlow && selectedFlow.steps_arr.map((step,index)=>{
                                                     return <CFlowStep  key={step.code ? step.code : 'new' + index} step={step} />
-                                                })
+                                                })*/
+                                                this.renderStepList()
                                             }
                                         </div>
                                         </div>
