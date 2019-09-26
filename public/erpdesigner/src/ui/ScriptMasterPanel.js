@@ -92,6 +92,19 @@ class JSBPItemPanel extends React.PureComponent {
 
     render() {
         var selectedItem = this.state.selectedItem;
+        var groupedItems_arr = [];
+        this.state.items_arr.forEach(x=>{
+            var founedGroup = groupedItems_arr.find(y=>{return y.name == x.group;});
+            if(founedGroup == null){
+                groupedItems_arr.push({
+                    name:x.group,
+                    items:[x],
+                });
+            }
+            else{
+                founedGroup.items.push(x);
+            }
+        });
         return (
             <React.Fragment>
                 {
@@ -102,12 +115,21 @@ class JSBPItemPanel extends React.PureComponent {
                 maxSize='300px'
                 barClass='bg-secondary'
                 panel1={
-                    <div className='d-flex flex-column flex-grow-1 flex-shrink-1' >
+                    <div className='d-flex flex-column flex-grow-1 flex-shrink-1 w-100' >
                         已创建的:
-                        <div className='list-group flex-grow-1 flex-shrink-1 bg-dark autoScroll'>
+                        <div className='d-flex flex-column flex-grow-1 flex-shrink-1 bg-dark autoScroll'>
                             {
-                                this.state.items_arr.map(item=>{
-                                    return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>{item.name}<span className='badge badge-secondary'>{item.type}</span></div>
+                                groupedItems_arr.map(group=>{
+                                    return <div key={group.name} className='card m-2 flex-grow-0 flex-shrink-0'>
+                                        <div className='card-body p-1'>
+                                            <span className='card-title'>{group.name}</span>
+                                            {
+                                                group.items.map(item=>{
+                                                    return <div onClick={this.clickListItemHandler} key={item.code} data-itemvalue={item.code} className={'list-group-item list-group-item-action' + (selectedItem == item ? ' active' : '')}>{item.name}<span className='badge badge-secondary'>{item.type}</span></div>
+                                                })
+                                            }
+                                        </div>
+                                    </div>
                                 })
                             }
                         </div>

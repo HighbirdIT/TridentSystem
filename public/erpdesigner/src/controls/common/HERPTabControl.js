@@ -47,8 +47,8 @@ class HERPTabControlKernel extends ContainerKernelBase{
     __attributeChanged(attrName, oldValue, value, realAtrrName, indexInArray){
     }
 
-    renderSelf(clickHandler, replaceChildClick){
-        return (<HERPTabControl key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
+    renderSelf(clickHandler, replaceChildClick, designer){
+        return (<HERPTabControl key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
     }
 }
 
@@ -179,7 +179,7 @@ class HERPTabControl extends React.PureComponent {
                         if(childKernel.id != selectedItemID){
                             return null;
                         }
-                        return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null,this.props.replaceChildClick);
+                        return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null,this.props.replaceChildClick, this.props.designer);
                     })
                 }
                 </div>

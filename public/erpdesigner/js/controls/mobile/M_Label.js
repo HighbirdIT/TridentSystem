@@ -41,8 +41,8 @@ var M_LabelKernel = function (_ControlKernelBase) {
         }
     }, {
         key: 'renderSelf',
-        value: function renderSelf(clickHandler) {
-            return React.createElement(M_Label, { key: this.id, ctlKernel: this, onClick: clickHandler ? clickHandler : this.clickHandler });
+        value: function renderSelf(clickHandler, replaceChildClick, designer) {
+            return React.createElement(M_Label, { key: this.id, designer: designer, ctlKernel: this, onClick: clickHandler ? clickHandler : this.clickHandler });
         }
     }]);
 

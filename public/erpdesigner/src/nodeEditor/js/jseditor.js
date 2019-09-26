@@ -230,6 +230,11 @@ const JSNodeEditorControls_arr =[
         type:'消息窗控制'
     },
     {
+        label:'关闭Popper',
+        nodeClass:JSNode_ClosePopper,
+        type:'Popper控制'
+    },
+    {
         label:'钉钉-地图定位',
         nodeClass:JSNode_DD_MapSearch,
         type:'钉钉Api'

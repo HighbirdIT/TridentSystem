@@ -16,6 +16,8 @@ class ProjectCompiler extends EventEmitter{
         if(rlt== null){
             rlt = {
                 needSetStates_arr:[],
+                useColumns_map:[],
+                useControls_map:[],
             };
             this.midData_map[key] = rlt;
         }
@@ -34,7 +36,6 @@ class ProjectCompiler extends EventEmitter{
     }
 
     clickSqlCompilerLogBadgeItemHandler(badgeItem){
-        console.log('clickSqlCompilerLogBadgeItemHandler');
         if(badgeItem.data){
             var project = this.project;
             var designer = project.designer;
@@ -42,8 +43,17 @@ class ProjectCompiler extends EventEmitter{
         }
     }
 
+    clickJSCompilerLogBadgeItemHandler(badgeItem){
+        if(badgeItem.data){
+            var blueprint = badgeItem.data.bluePrint;
+            if(blueprint && blueprint.master){
+                var project = blueprint.master.project;
+                project.designer.editScriptBlueprint(blueprint);
+            }
+        }
+    }
+
     clickKernelLogBadgeItemHandler(badgeItem){
-        console.log('clickSqlCompilerLogBadgeItemHandler');
         if(badgeItem.data){
             var project = this.project;
             var designer = project.designer;
@@ -92,7 +102,6 @@ class ProjectCompiler extends EventEmitter{
             this.setCache(sql_blueprint.code + '_helper', bpCompileHelper);
         }
 
-
         this.projectName = this.projProfile ? this.projProfile.enName : project.getAttribute(AttrNames.RealName);
         this.flowName = this.projProfile ? this.projProfile.flowName : '';
         this.projectTitle = project.getAttribute(AttrNames.Title);
@@ -102,6 +111,24 @@ class ProjectCompiler extends EventEmitter{
 
         var mobileContentCompiler = new MobileContentCompiler(this);
         this.mobileContentCompiler = mobileContentCompiler;
+
+        // 编辑自订脚本
+        var BP_script_arr = project.scriptMaster.blueprints_arr.filter(x=>{return x.group == EJsBluePrintFunGroup.Custom;});
+        for(ti in BP_script_arr){
+            var js_blueprint = BP_script_arr[ti];
+            logManager.log("编译脚本[" + js_blueprint.name + ']');
+
+            var jsCompileHelper = new JSNode_CompileHelper(logManager, null,  js_blueprint.type == FunType_Client ? mobileContentCompiler.clientSide.scope : serverSide.scope);
+            jsCompileHelper.clickLogBadgeItemHandler = this.clickJSCompilerLogBadgeItemHandler;
+            jsCompileHelper.serverSide = serverSide;
+            jsCompileHelper.clientSide = mobileContentCompiler.clientSide;
+            jsCompileHelper.sqlBPCacheManager = this;
+            var jscompileRet = js_blueprint.compile(jsCompileHelper);
+            if(jscompileRet == false){
+                this.stopCompile(false, "发生错误,项目编译已终止");
+                return false;
+            }
+        }
 
         mobileContentCompiler.compile();
 

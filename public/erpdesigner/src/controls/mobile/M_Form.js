@@ -38,6 +38,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('点选模式', AttrNames.ClickSelectable, ValueType.Boolean, false),
         new CAttribute('访问控制', AttrNames.AcessAssert, ValueType.Event),
         new CAttribute(VarNames.RecordIndex, VarNames.RecordIndex, ValueType.Int, 1, false, false, null, null, false),
+        new CAttribute(VarNames.Records_arr, VarNames.Records_arr, ValueType.Array, 1, false, false, null, null, false),
     ]),
     new CAttributeGroup('操作设置', [
         genScripAttribute('Insert', AttrNames.Event.OnInsert, EJsBluePrintFunGroup.GridRowBtnHandler),
@@ -427,13 +428,14 @@ class M_FormKernel extends ContainerKernelBase {
         return getDSAttrCanuseColumns.call(this, AttrNames.DataSource, AttrNames.CustomDataSource);
     }
 
-    renderSelf(clickHandler, replaceChildClick) {
-        return (<M_Form key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
+    renderSelf(clickHandler, replaceChildClick, designer) {
+        return (<M_Form key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
     }
 }
 
 var MForm_api = new ControlAPIClass(M_FormKernel_Type);
-MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.RecordIndex, M_FormKernelAttrsSetting), VarNames.RecordIndex, true));
+MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.RecordIndex, M_FormKernelAttrsSetting), VarNames.RecordIndex, false));
+MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.Records_arr, M_FormKernelAttrsSetting), VarNames.Records_arr, false));
 g_controlApi_arr.push(MForm_api);
 
 class M_Form extends React.PureComponent {
@@ -565,7 +567,7 @@ class M_Form extends React.PureComponent {
                             </thead>
                         </table>
                     </div>
-                    {ctlKernel.gridFormBottomDiv && ctlKernel.gridFormBottomDiv.renderSelf(childClickHandlerParam, this.props.replaceChildClick)}
+                    {ctlKernel.gridFormBottomDiv && ctlKernel.gridFormBottomDiv.renderSelf(childClickHandlerParam, this.props.replaceChildClick, this.props.designer)}
                 </div>
             );
             if (widthType == EGridWidthType.Fixed) {
@@ -586,7 +588,7 @@ class M_Form extends React.PureComponent {
                             if (childKernel == ctlKernel.gridFormBottomDiv) {
                                 return null;
                             }
-                            return childKernel.renderSelf(childClickHandlerParam, this.props.replaceChildClick);
+                            return childKernel.renderSelf(childClickHandlerParam, this.props.replaceChildClick, this.props.designer);
                         })
                 }
                 </div>

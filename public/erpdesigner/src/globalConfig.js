@@ -135,7 +135,8 @@ const EJsBluePrintFunGroup={
     CtlFun:'ctlfun',
     CtlValid: 'ctlvalid',
     ServerScript: 'serverscript',
-    GridRowBtnHandler: 'gridrowbtnhandler'
+    GridRowBtnHandler: 'gridrowbtnhandler',
+    Custom:'custom',
 };
 
 var ESqlBluePrintGroup = {
@@ -311,6 +312,7 @@ var ValueType = {
     XML:'xml',
     UserControlEvent:'usercontrolevent',
     CustomFunction:'CustomFunction',
+    ModifyContent:'ModifyContent',
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

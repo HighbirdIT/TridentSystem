@@ -113,7 +113,9 @@ var OutlineItem = function (_React$PureComponent) {
     }, {
         key: 'clickhandler',
         value: function clickhandler() {
-            this.state.kernel.project.designer.selectKernel(this.state.kernel);
+            if (this.props.onClick) {
+                this.props.onClick(this.state.kernel, this);
+            }
         }
     }, {
         key: 'dragTimeOutHandler',
@@ -182,8 +184,8 @@ var OutlineItem = function (_React$PureComponent) {
                         (kernel.__placing ? '*' : '') + kernelLabel
                     )
                 ),
-                kernel.__placing || this.state.collapsed || kernel.children == null || kernel.children.length == 0 ? null : kernel.children.map(function (childKernel) {
-                    return React.createElement(OutlineItem, { key: childKernel.id, kernel: childKernel, deep: _this2.props.deep + 1, itemSelected: _this2.props.itemSelected, wantDragAct: _this2.props.wantDragAct });
+                kernel.__placing || this.state.collapsed || kernel.children == null || kernel.children.length == 0 || kernel.hideAllChildOutline ? null : kernel.children.map(function (childKernel) {
+                    return React.createElement(OutlineItem, { key: childKernel.id, kernel: childKernel, deep: _this2.props.deep + 1, itemSelected: _this2.props.itemSelected, wantDragAct: _this2.props.wantDragAct, onClick: _this2.props.onClick });
                 })
             );
         }
@@ -200,17 +202,25 @@ var OutlinePanel = function (_React$PureComponent2) {
 
         var _this3 = _possibleConstructorReturn(this, (OutlinePanel.__proto__ || Object.getPrototypeOf(OutlinePanel)).call(this, props));
 
-        var editingPage = _this3.props.project.getEditingPage();
-        var editingControl = _this3.props.project.getEditingControl();
-        _this3.state = {
-            editingPage: editingPage,
-            editingControl: editingControl
-        };
+        var rootItem = _this3.props.rootItem;
+        if (rootItem == null || _this3.props.project && rootItem.project == _this3.props.project) {
+            var editingPage = _this3.props.project.getEditingPage();
+            var editingControl = _this3.props.project.getEditingControl();
+            var rootItem = editingPage ? editingPage : editingControl;
+            _this3.state = {
+                rootIsProject: true,
+                rootItem: rootItem
+            };
+        } else {
+            _this3.state = {
+                rootItem: rootItem,
+                rootIsProject: false
+            };
+        }
         React_Make_AttributeListener(_this3, ['editingPage', 'children']);
+
         autoBind(_this3);
 
-        _this3.listenTarget(editingPage);
-        _this3.listenTarget(editingControl);
         _this3.scrollDivRef = React.createRef();
         _this3.bottomDivRef = React.createRef();
         return _this3;
@@ -225,11 +235,13 @@ var OutlinePanel = function (_React$PureComponent2) {
         key: 'componentWillMount',
         value: function componentWillMount() {
             this.listenTarget(this.props.project);
+            this.listenTarget(this.state.rootItem);
         }
     }, {
         key: 'componentWillUnmount',
         value: function componentWillUnmount() {
             this.unlistenTarget(this.props.project);
+            this.unlistenTarget(this.state.rootItem);
         }
     }, {
         key: 'aAttrChanged',
@@ -239,24 +251,13 @@ var OutlinePanel = function (_React$PureComponent2) {
             } else if (changedAttrName == 'editingPage') {
                 var newEditingPage = this.props.project.getEditingPage();
                 var newEditingControl = this.props.project.getEditingControl();
-                if (newEditingPage != this.state.editingPage) {
-                    this.unlistenTarget(this.state.editingPage);
-                    this.unlistenTarget(this.state.editingControl);
-                    if (newEditingPage) {
-                        this.listenTarget(newEditingPage);
-                    }
+                var newRootElem = newEditingPage ? newEditingPage : newEditingControl;
+
+                if (newRootElem != this.state.rootItem) {
+                    this.unlistenTarget(this.state.rootItem);
+                    this.listenTarget(newRootElem);
                     this.setState({
-                        editingPage: newEditingPage
-                    });
-                }
-                if (newEditingControl != this.state.editingControl) {
-                    this.unlistenTarget(this.state.editingPage);
-                    this.unlistenTarget(this.state.editingControl);
-                    if (newEditingControl) {
-                        this.listenTarget(newEditingControl);
-                    }
-                    this.setState({
-                        editingControl: newEditingControl
+                        rootItem: newRootElem
                     });
                 }
             }
@@ -277,7 +278,7 @@ var OutlinePanel = function (_React$PureComponent2) {
                 parent: kernel.parent,
                 index: kernel.parent.getChildIndex(kernel)
             };
-            this.props.project.designer.startPlaceKernel(kernel, this.dragEndHandler);
+            this.props.designer.startPlaceKernel(kernel, this.dragEndHandler);
         }
     }, {
         key: 'dragEndHandler',
@@ -296,7 +297,7 @@ var OutlinePanel = function (_React$PureComponent2) {
     }, {
         key: 'itemSelected',
         value: function itemSelected(itemCtl, itemElem) {
-            if (this.props.project.placingKernel != null && this.bMouseInPanel) {
+            if (this.bMouseInPanel && this.props.designer.placingKernel != null) {
                 return;
             }
             var itemRect = itemElem.getBoundingClientRect();
@@ -458,7 +459,12 @@ var OutlinePanel = function (_React$PureComponent2) {
     }, {
         key: 'clickTrashBtnHandler',
         value: function clickTrashBtnHandler(ev) {
-            this.props.project.designer.deleteSelectedKernel();
+            this.props.designer.deleteSelectedKernel();
+        }
+    }, {
+        key: 'clickItemHandler',
+        value: function clickItemHandler(data, outlineItem) {
+            this.props.designer.selectKernel(data);
         }
     }, {
         key: 'render',
@@ -488,11 +494,8 @@ var OutlinePanel = function (_React$PureComponent2) {
                     React.createElement(
                         'div',
                         { className: 'flex-grow-0 flex-shrink-0 d-flex flex-column' },
-                        this.state.editingPage && this.state.editingPage.children.map(function (kernal) {
-                            return React.createElement(OutlineItem, { key: kernal.id, kernel: kernal, deep: 0, itemSelected: _this4.itemSelected, wantDragAct: _this4.wantDragAct });
-                        }),
-                        this.state.editingControl && this.state.editingControl.children.map(function (kernal) {
-                            return React.createElement(OutlineItem, { key: kernal.id, kernel: kernal, deep: 0, itemSelected: _this4.itemSelected, wantDragAct: _this4.wantDragAct });
+                        this.state.rootItem && this.state.rootItem.children.map(function (kernal) {
+                            return React.createElement(OutlineItem, { key: kernal.id, kernel: kernal, deep: 0, itemSelected: _this4.itemSelected, wantDragAct: _this4.wantDragAct, onClick: _this4.clickItemHandler });
                         }),
                         React.createElement('div', { ref: this.bottomDivRef, style: { height: '20px' } })
                     )

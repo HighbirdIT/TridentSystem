@@ -304,16 +304,16 @@ class ControlKernelBase extends IAttributeable {
         }
     }
 
-    getLayoutConfig() {
+    getLayoutConfig(classAttrName, styleAttrName) {
         var rlt = new ControlLayoutConfig();
-        var apdAttrList = this.getAttrArrayList(AttrNames.LayoutNames.APDClass);
+        var apdAttrList = this.getAttrArrayList(classAttrName ? classAttrName : AttrNames.LayoutNames.APDClass);
         var self = this;
         apdAttrList.forEach(attrArrayItem => {
             var val = this.getAttribute(attrArrayItem.name);
             rlt.addClass(val);
         });
 
-        var styleAttrList = this.getAttrArrayList(AttrNames.LayoutNames.StyleAttr);
+        var styleAttrList = this.getAttrArrayList(styleAttrName ? styleAttrName : AttrNames.LayoutNames.StyleAttr);
         styleAttrList.forEach(attrArrayItem => {
             var val = this.getAttribute(attrArrayItem.name);
             if (val != null && !IsEmptyString(val.name) && !IsEmptyString(val.value)) {
@@ -517,16 +517,22 @@ class ControlKernelBase extends IAttributeable {
             meetParents_map[parent.id] = true;
             if(!needFilt|| parent.type == targetType)
             {
-                rlt.push(parent);
+                if(rlt.indexOf(parent) == -1){
+                    rlt.push(parent);
+                }
             }
             parent.children.forEach(child=>{
                 if(child != nowKernel){
                     if(!needFilt || child.type == targetType)
                     {
-                        rlt.push(child);
+                        if(rlt.indexOf(child) == -1){
+                            rlt.push(child);
+                        }
                     }
                     if(child.editor && (!needFilt || child.editor.type == targetType)){
-                        rlt.push(child.editor);
+                        if(rlt.indexOf(child.editor) == -1){
+                            rlt.push(child.editor);
+                        }
                     }
                     if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && child.isPageForm())){
                         // 穿透div
@@ -535,7 +541,11 @@ class ControlKernelBase extends IAttributeable {
                             var aidRlt_arr = [];
                             child.aidAccessableKernels(targetType, aidRlt_arr);
                             if(aidRlt_arr.length > 0){
-                                rlt = rlt.concat(aidRlt_arr);
+                                aidRlt_arr.forEach(x=>{
+                                    if(rlt.indexOf(x) == -1){
+                                        rlt.push(x);
+                                    }
+                                });
                             }
                         }
                     }

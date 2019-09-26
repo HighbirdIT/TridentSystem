@@ -52,8 +52,8 @@ class HERPAccordionKernel extends ContainerKernelBase{
     }
 
 
-    renderSelf(clickHandler, replaceChildClick){
-        return (<HERPAccordion key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
+    renderSelf(clickHandler, replaceChildClick, designer){
+        return (<HERPAccordion key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
     }
 }
 
@@ -126,7 +126,7 @@ class HERPAccordion extends React.PureComponent {
                     ctlKernel.children.length == 0 ?
                     ctlKernel.id :
                     ctlKernel.children.map(childKernel => {
-                        return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null,this.props.replaceChildClick);
+                        return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null,this.props.replaceChildClick, this.props.designer);
                     })
                 }
                 </div>

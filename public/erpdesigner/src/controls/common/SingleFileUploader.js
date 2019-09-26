@@ -66,8 +66,8 @@ class SingleFileUploaderKernel extends ControlKernelBase {
         }
     }
 
-    renderSelf(clickHandler) {
-        return (<CSingleFileUploader key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+    renderSelf(clickHandler, replaceChildClick, designer) {
+        return (<CSingleFileUploader key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 }
 var SingleFileUploader_api = new ControlAPIClass(SingleFileUploader_Type);

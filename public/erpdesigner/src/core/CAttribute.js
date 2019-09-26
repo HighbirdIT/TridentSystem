@@ -312,6 +312,7 @@ const AttrNames={
     InsertBtnLabel:'insertbtnlabel',
     KeyRecrodID:'keyrecordid',
     AttachmentID:'attachmentid',
+    ModifyContent:'modifycontent',
 
     Event:{
         OnClick:'onclick',

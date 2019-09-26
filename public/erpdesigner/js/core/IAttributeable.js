@@ -140,6 +140,7 @@ var IAttributeable = function (_EventEmitter) {
                         case AttrNames.CustomDataSource:
                         case AttrNames.ListFormContent:
                         case AttrNames.RelFlowStep:
+                        case AttrNames.ModifyContent:
                             break;
                         default:
                             if (attrItem.valueType == ValueType.CustomDataSource) {
@@ -178,7 +179,7 @@ var IAttributeable = function (_EventEmitter) {
             var rlt = this.cacheObj[attrName + '_arry_cache'];
             if (rlt == null) {
                 var tem_arr = [];
-                var nameReg = new RegExp(attrName + "_\\d+$");
+                var nameReg = new RegExp('^' + attrName + "_\\d+$");
                 var indexReg = /\d+$/;
                 for (var propName in this) {
                     if (nameReg.test(propName)) {

@@ -18,6 +18,7 @@ const TaskSelector_Type = 'taskselector';
 const MFileUploader_Type = 'mfileuploader';
 const SingleFileUploader_Type = 'singlefileuploader';
 const FilePreviewer_Type = 'filepreviewer';
+const PopperButtonKernel_Type = 'popperbutton';
 
 const M_LabelKernel_Prefix = 'M_Label';
 const M_PageKernel_Prefix = 'M_Page';
@@ -38,6 +39,7 @@ const TaskSelector_Prefix = 'taskSel';
 const MFileUploader_Prefix = 'mfuploader';
 const SingleFileUploader_Prefix = 'singlefuploader';
 const FilePreviewer_Prefix = 'filepreviewer';
+const PopperButtonKernel_Prefix = 'popperbutton';
 
 function GetControlTypeReadableName(type){
     switch(type){
@@ -81,6 +83,8 @@ function GetControlTypeReadableName(type){
         return '文件查看器';
         case SingleFileUploader_Type:
         return '单文件上传器';
+        case PopperButtonKernel_Type:
+        return 'PopperBtn';
     }
     return type;
 }

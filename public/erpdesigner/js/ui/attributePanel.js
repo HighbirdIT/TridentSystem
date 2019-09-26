@@ -120,13 +120,21 @@ var AttributePanel = function (_React$PureComponent) {
         key: 'render',
         value: function render() {
             var target = this.state.target;
+            var title = '';
+            if (target) {
+                if (target.getReadableName) {
+                    title = target.getReadableName();
+                } else {
+                    title = target.description + (target.id ? '[' + target.id + ']' : '') + (target.name ? '(' + target.name + ')' : '');
+                }
+            }
             return React.createElement(
                 'div',
-                { className: 'd-flex flex-grow-1 flex-shrink-1 flex-column minh-0', style: { width: '300px' } },
+                { className: 'd-flex flex-grow-1 flex-shrink-1 flex-column minh-0', style: this.props.nofixwidth ? null : { width: '300px' } },
                 React.createElement(
                     'button',
                     { type: 'button', className: 'mw-100 btn flex-grow-0 flex-shrink-0 bg-secondary text-light', style: { borderRadius: '0em', height: '2.5em', overflow: 'hidden' } },
-                    target == null ? '' : target.description + (target.id ? '[' + target.id + ']' : '') + (target.name ? '(' + target.name + ')' : '')
+                    title
                 ),
                 React.createElement(
                     'div',

@@ -145,6 +145,8 @@ var M_Page = function (_React$PureComponent) {
     }, {
         key: 'renderMobilePage',
         value: function renderMobilePage(ctlKernel) {
+            var _this5 = this;
+
             var layoutConfig = ctlKernel.getLayoutConfig();
             layoutConfig.addClass('d-flex');
             layoutConfig.addClass('flex-grow-1');
@@ -188,7 +190,7 @@ var M_Page = function (_React$PureComponent) {
                     'div',
                     { className: layoutConfig.getClassName(), ref: this.rootElemRef },
                     this.state.children.map(function (childData) {
-                        return childData.renderSelf();
+                        return childData.renderSelf(null, null, _this5.props.designer);
                     })
                 )
             );
@@ -196,7 +198,7 @@ var M_Page = function (_React$PureComponent) {
     }, {
         key: 'render',
         value: function render() {
-            var _this5 = this;
+            var _this6 = this;
 
             if (this.props.ctlKernel != this.state.ctlKernel) {
                 var self = this;
@@ -204,12 +206,12 @@ var M_Page = function (_React$PureComponent) {
                 this.listenTarget(this.props.ctlKernel);
                 setTimeout(function () {
                     self.setState({
-                        title: _this5.props.ctlKernel.getAttribute('title'),
-                        ctlKernel: _this5.props.ctlKernel,
-                        children: _this5.props.ctlKernel.children,
-                        orientation: _this5.props.ctlKernel.getAttribute(AttrNames.Orientation),
-                        popablePage: _this5.props.ctlKernel.getAttribute(AttrNames.PopablePage),
-                        autoCloseBtn: _this5.props.ctlKernel.getAttribute(AttrNames.AutoCloseBtn)
+                        title: _this6.props.ctlKernel.getAttribute('title'),
+                        ctlKernel: _this6.props.ctlKernel,
+                        children: _this6.props.ctlKernel.children,
+                        orientation: _this6.props.ctlKernel.getAttribute(AttrNames.Orientation),
+                        popablePage: _this6.props.ctlKernel.getAttribute(AttrNames.PopablePage),
+                        autoCloseBtn: _this6.props.ctlKernel.getAttribute(AttrNames.AutoCloseBtn)
                     });
                 }, 1);
                 return null;
