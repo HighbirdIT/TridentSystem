@@ -22,8 +22,8 @@ class FilePreviewer extends ControlKernelBase {
         autoBind(self);
     }
 
-    renderSelf(clickHandler) {
-        return (<CFilepreviewer key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+    renderSelf(clickHandler, replaceChildClick, designer){
+        return (<CFilepreviewer key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 }
 

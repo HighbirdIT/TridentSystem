@@ -36,8 +36,8 @@ class M_LabeledControlKernel extends ControlKernelBase{
         cildKernel.parent = this;
     }
 
-    renderSelf(clickHandler){
-        return (<M_LabeledControl key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />);
+    renderSelf(clickHandler, replaceChildClick, designer){
+        return (<M_LabeledControl key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />);
     }
 
     canAppand(){
@@ -217,7 +217,7 @@ class M_LabeledControl extends React.PureComponent {
                 {this.renderHandleBar()}
                 {leftElem}
                 <div className='rowlFameOne_right'>
-                    {editor != null && editor.renderSelf(this.props.onClick == ctlKernel.clickHandler ? null : this.props.onClick)}
+                    {editor != null && editor.renderSelf(this.props.onClick == ctlKernel.clickHandler ? null : this.props.onClick, null, this.props.designer)}
                 </div>
             </div>
         );

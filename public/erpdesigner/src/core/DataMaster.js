@@ -242,9 +242,6 @@ class DataMaster extends EventEmitter{
         this.database = g_dataBase;
         this.usedDBEnities_arr = [];
         this.dataView_usedDBEnities = new ListDataView(this.usedDBEnities_arr,'name','code');
-        //var cus1 = new SqlNode_BluePrint({name:'test',code:project.genControlName('cusDBE'),type:'表值',master:this});
-        //var tVar = cus1.createEmptyVariable();
-        //tVar.needEdit = false;
         this.BP_sql_arr = [];
         this.project = project;
 

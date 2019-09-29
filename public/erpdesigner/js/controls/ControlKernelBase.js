@@ -324,18 +324,18 @@ var ControlKernelBase = function (_IAttributeable) {
         }
     }, {
         key: 'getLayoutConfig',
-        value: function getLayoutConfig() {
+        value: function getLayoutConfig(classAttrName, styleAttrName) {
             var _this3 = this;
 
             var rlt = new ControlLayoutConfig();
-            var apdAttrList = this.getAttrArrayList(AttrNames.LayoutNames.APDClass);
+            var apdAttrList = this.getAttrArrayList(classAttrName ? classAttrName : AttrNames.LayoutNames.APDClass);
             var self = this;
             apdAttrList.forEach(function (attrArrayItem) {
                 var val = _this3.getAttribute(attrArrayItem.name);
                 rlt.addClass(val);
             });
 
-            var styleAttrList = this.getAttrArrayList(AttrNames.LayoutNames.StyleAttr);
+            var styleAttrList = this.getAttrArrayList(styleAttrName ? styleAttrName : AttrNames.LayoutNames.StyleAttr);
             styleAttrList.forEach(function (attrArrayItem) {
                 var val = _this3.getAttribute(attrArrayItem.name);
                 if (val != null && !IsEmptyString(val.name) && !IsEmptyString(val.value)) {
@@ -539,15 +539,21 @@ var ControlKernelBase = function (_IAttributeable) {
                 }
                 meetParents_map[parent.id] = true;
                 if (!needFilt || parent.type == targetType) {
-                    rlt.push(parent);
+                    if (rlt.indexOf(parent) == -1) {
+                        rlt.push(parent);
+                    }
                 }
                 parent.children.forEach(function (child) {
                     if (child != nowKernel) {
                         if (!needFilt || child.type == targetType) {
-                            rlt.push(child);
+                            if (rlt.indexOf(child) == -1) {
+                                rlt.push(child);
+                            }
                         }
                         if (child.editor && (!needFilt || child.editor.type == targetType)) {
-                            rlt.push(child.editor);
+                            if (rlt.indexOf(child.editor) == -1) {
+                                rlt.push(child.editor);
+                            }
                         }
                         if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type && child.isPageForm()) {
                             // 穿透div
@@ -556,7 +562,11 @@ var ControlKernelBase = function (_IAttributeable) {
                                 var aidRlt_arr = [];
                                 child.aidAccessableKernels(targetType, aidRlt_arr);
                                 if (aidRlt_arr.length > 0) {
-                                    rlt = rlt.concat(aidRlt_arr);
+                                    aidRlt_arr.forEach(function (x) {
+                                        if (rlt.indexOf(x) == -1) {
+                                            rlt.push(x);
+                                        }
+                                    });
                                 }
                             }
                         }
@@ -575,14 +585,17 @@ var ControlKernelBase = function (_IAttributeable) {
             var ignoreRowIndex = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
             var topestParant = arguments[4];
 
+            var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
+            switch (this.type) {
+                case M_ContainerKernel_Type:
+                    console.warn('getStatePath M_ContainerKernel_Type');
+                    rlt = '';
+                    break;
+            }
             if (this.parent == null || this == topestParant) {
-                return stateName;
+                return rlt;
             }
             var nowKernel = this.parent;
-            var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
-            if (this.type == M_ContainerKernel_Type) {
-                rlt = '';
-            }
             while (nowKernel != null && nowKernel != topestParant) {
                 switch (nowKernel.type) {
                     case M_PageKernel_Type:

@@ -39,8 +39,8 @@ class M_LabelKernel extends ControlKernelBase{
         }
     }
 
-    renderSelf(clickHandler){
-        return (<M_Label key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+    renderSelf(clickHandler, replaceChildClick, designer){
+        return (<M_Label key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 }
 

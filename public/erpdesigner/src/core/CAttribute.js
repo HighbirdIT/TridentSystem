@@ -267,6 +267,7 @@ const AttrNames={
     HadScroll:'hadScroll',
     AutoIndexColumn:'autoIndexColumn',
     NoDataTip:'noDataTip',
+    NoDataAct:'noDataAct',
     MultiSelect:'multiselect',
     RelFlowStep:'relflowstep',
     GenNavBar:'gennavbar',
@@ -312,6 +313,7 @@ const AttrNames={
     InsertBtnLabel:'insertbtnlabel',
     KeyRecrodID:'keyrecordid',
     AttachmentID:'attachmentid',
+    ModifyContent:'modifycontent',
 
     Event:{
         OnClick:'onclick',
@@ -324,6 +326,7 @@ const AttrNames={
         OnSelectRow:'onSelectRow',
         OnRowChanged:'onRowChanged',
         OnUploadComplete:'onUploadComplate',
+        OnDataSourceChanged:'onDataSourceChanged',
     },
 
     LayoutNames:{

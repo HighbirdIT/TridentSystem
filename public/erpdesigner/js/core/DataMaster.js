@@ -310,9 +310,6 @@ var DataMaster = function (_EventEmitter4) {
         _this6.database = g_dataBase;
         _this6.usedDBEnities_arr = [];
         _this6.dataView_usedDBEnities = new ListDataView(_this6.usedDBEnities_arr, 'name', 'code');
-        //var cus1 = new SqlNode_BluePrint({name:'test',code:project.genControlName('cusDBE'),type:'表值',master:this});
-        //var tVar = cus1.createEmptyVariable();
-        //tVar.needEdit = false;
         _this6.BP_sql_arr = [];
         _this6.project = project;
 

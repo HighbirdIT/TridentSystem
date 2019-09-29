@@ -161,7 +161,7 @@ class M_Page extends React.PureComponent {
                 <div className={layoutConfig.getClassName()} ref={this.rootElemRef}>
                     {
                         this.state.children.map(childData => {
-                            return childData.renderSelf()
+                            return childData.renderSelf(null, null, this.props.designer)
                         })
                     }
                 </div>

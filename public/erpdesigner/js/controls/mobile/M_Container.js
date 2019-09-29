@@ -57,8 +57,8 @@ var M_ContainerKernel = function (_ContainerKernelBase) {
         }
     }, {
         key: 'renderSelf',
-        value: function renderSelf(clickHandler, replaceChildClick) {
-            return React.createElement(M_Container, { key: this.id, ctlKernel: this, onClick: clickHandler ? clickHandler : this.clickHandler, replaceChildClick: replaceChildClick });
+        value: function renderSelf(clickHandler, replaceChildClick, designer) {
+            return React.createElement(M_Container, { key: this.id, designer: designer, ctlKernel: this, onClick: clickHandler ? clickHandler : this.clickHandler, replaceChildClick: replaceChildClick });
         }
     }]);
 
@@ -131,7 +131,7 @@ var M_Container = function (_React$PureComponent) {
             var contentElem = this.props.ctlKernel.id;
             if (this.props.ctlKernel.children.length > 0) {
                 contentElem = this.props.ctlKernel.children.map(function (childKernel) {
-                    return childKernel.renderSelf(_this3.props.replaceChildClick ? _this3.props.onClick : null, _this3.props.replaceChildClick);
+                    return childKernel.renderSelf(_this3.props.replaceChildClick ? _this3.props.onClick : null, _this3.props.replaceChildClick, _this3.props.designer);
                 });
             }
             var finalElem = null;

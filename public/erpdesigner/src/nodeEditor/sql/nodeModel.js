@@ -3586,6 +3586,9 @@ class SqlNode_GetPageEntryParam extends SqlNode_Base {
         }
 
         var belongPage = this.bluePrint.ctlKernel.searchParentKernel(M_PageKernel_Type, true);
+        if (this.checkCompileFlag(belongPage == null, '嘿，这里访问不到所属页面', helper)) {
+            return false;
+        }
         var paramName = belongPage.getAttribute(this.outSocket.defval);
         if (this.checkCompileFlag(IsEmptyString(paramName), '选择的参数非法', helper)) {
             return false;

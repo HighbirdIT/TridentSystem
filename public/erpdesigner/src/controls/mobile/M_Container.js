@@ -49,8 +49,8 @@ class M_ContainerKernel extends ContainerKernelBase {
         });
     }
 
-    renderSelf(clickHandler, replaceChildClick) {
-        return (<M_Container key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
+    renderSelf(clickHandler, replaceChildClick, designer) {
+        return (<M_Container key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
     }
 }
 
@@ -109,7 +109,7 @@ class M_Container extends React.PureComponent {
         var contentElem = this.props.ctlKernel.id;
         if (this.props.ctlKernel.children.length > 0) {
             contentElem = this.props.ctlKernel.children.map(childKernel => {
-                return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null, this.props.replaceChildClick);
+                return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null, this.props.replaceChildClick, this.props.designer);
             });
         }
         var finalElem = null;

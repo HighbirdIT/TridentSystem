@@ -38,8 +38,8 @@ class TaskSelctorKernel extends ControlKernelBase {
         }
     }
 
-    renderSelf(clickHandler) {
-        return (<CTaskSelector key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+    renderSelf(clickHandler, replaceChildClick, designer) {
+        return (<CTaskSelector key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 }
 var TaskSelector_api = new ControlAPIClass(TaskSelector_Type);

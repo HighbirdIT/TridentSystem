@@ -45,8 +45,8 @@ class MFileUploaderKernel extends ControlKernelBase {
         }
     }
 
-    renderSelf(clickHandler) {
-        return (<CMFileUploader key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+    renderSelf(clickHandler, replaceChildClick, designer) {
+        return (<CMFileUploader key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 }
 var MFileUploader_api = new ControlAPIClass(MFileUploader_Type);

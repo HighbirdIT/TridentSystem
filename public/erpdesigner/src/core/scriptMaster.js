@@ -38,6 +38,10 @@ class ScriptMaster extends EventEmitter{
         this.blueprints_arr.push(bpItem);
     }
 
+    getAllCustomScript(){
+        return this.blueprints_arr.filter(item=>{return item.group == EJsBluePrintFunGroup.Custom;});
+    }
+
     getBPByName(name){
         return this.blueprints_arr.find(item=>{return item.name == name;});
     }

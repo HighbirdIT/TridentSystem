@@ -1524,17 +1524,19 @@ class FlowNode_ColumnVar extends JSNode_Base {
     }
 
     freshLabel() {
-        var label = '';
         var keySocket = this.keySocketID == null ? null : this.bluePrint.getSocketById(this.keySocketID);
-        if (keySocket == null) {
-            label = '关联节点丢失!';
-        }
-        else {
-            label = keySocket.node.id + '.' + keySocket.getExtra('colName');
+        var columnName = '';
+        if (keySocket != null) {
+            if (keySocket.getExtra('colName') == null) {
+                columnName = keySocket.label;
+            }
+            else {
+                columnName = keySocket.getExtra('colName');
+            }
         }
         this.keySocket = keySocket;
         this.columnName = !keySocket ? '丢失' : keySocket.getExtra('colName');
-        this.outSocket.label = label;
+        this.outSocket.label = !keySocket ? '丢失节点' : keySocket.node.id + columnName;
         this.outSocket.fireEvent('changed');
     }
 
@@ -2139,7 +2141,7 @@ class FlowNode_Message_CardItem extends JSNode_Base {
         var titleValue = socketComRet.value;
 
         var strVarName = this.id + '_str';
-        myCodeBlock.pushLine(makeLine_DeclareVar(strVarName, project + " + ','",false));
+        myCodeBlock.pushLine(makeLine_DeclareVar(strVarName, project + " + ','", false));
         myCodeBlock.pushLine(strVarName + "+=" + flowStep + " + ',';");
         myCodeBlock.pushLine(strVarName + "+=" + intDataValue + " + ',';");
         myCodeBlock.pushLine(strVarName + "+=" + titleValue + ";");
@@ -2451,7 +2453,7 @@ class FlowNode_EXAM extends JSNode_Base {
         var titleValue = socketComRet.value;
 
         var strVarName = this.id + '_str';
-        myCodeBlock.pushLine(makeLine_DeclareVar(strVarName, project + " + ','",false));
+        myCodeBlock.pushLine(makeLine_DeclareVar(strVarName, project + " + ','", false));
         myCodeBlock.pushLine(strVarName + "+=" + flowStep + " + ',';");
         myCodeBlock.pushLine(strVarName + "+=" + intDataValue + " + ',';");
         myCodeBlock.pushLine(strVarName + "+=" + titleValue + ";");

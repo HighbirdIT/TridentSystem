@@ -960,6 +960,104 @@ class C_JSNode_HashFormDataRow extends React.PureComponent {
     }
 }
 
+class C_JSNode_CallCusScript extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        C_NodeCom_Base(this);
+
+        this.state = {
+        }
+
+        this.dropdownRef = React.createRef();
+    }
+
+    nodeDataChangedHandler() {
+        var nodeData = this.props.nodedata;
+        var script_id = nodeData.script_id;
+        this.dropdownRef.current.setValue(script_id);
+        this.setState({ magicObj: {} });
+    }
+
+    cus_componentWillMount() {
+        this.listenData(this.props.nodedata);
+    }
+
+    cus_componentWillUnmount() {
+        this.unlistenData(this.props.nodedata);
+    }
+
+    listenData(nodeData) {
+        if (nodeData) {
+            nodeData.on('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    unlistenData(nodeData) {
+        if (nodeData) {
+            nodeData.off('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    dropdownCtlChangedHandler(code) {
+        var nodeData = this.props.nodedata;
+        nodeData.script_id = code;
+        nodeData.synSockets();
+    }
+
+    customSocketRender(socket) {
+        if (socket.isIn == true) {
+            return null;
+        }
+        var nodeData = this.props.nodedata;
+        if (socket == nodeData.outDataSocket || socket == nodeData.outErrorSocket) {
+            return null;
+        }
+
+        var nowVal = socket.label;
+        return (<span className='d-flex align-items-center'>
+            <button onMouseDown={this.mouseDownOutSocketHand} d-colname={nowVal} type='button' className='btn btn-secondary'><i className='fa fa-hand-paper-o' /></button>
+        </span>);
+    }
+
+    mouseDownOutSocketHand(ev) {
+        var colName = getAttributeByNode(ev.target, 'd-colname', true, 5);
+        if (colName == null) {
+            return;
+        }
+        var socketid = getAttributeByNode(ev.target, 'd-socketid', true, 10);
+        if (socketid == null) {
+            return;
+        }
+        var nodeData = this.props.nodedata;
+        var theSocket = nodeData.bluePrint.getSocketById(socketid);
+        var bornPos = theSocket.currentComponent.getCenterPos();
+        var newNode = new FlowNode_ColumnVar({
+            keySocketID: socketid,
+            newborn: true,
+            left: bornPos.x,
+            top: bornPos.y,
+        }, nodeData.parent);
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        var script_id = nodeData.script_id;
+        var scriptMaster = nodeData.bluePrint.master;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='调用脚本'>
+            <div className='d-flex'>
+                <div className='flex-grow-1 flex-shrink-1'>
+                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={scriptMaster.getAllCustomScript} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={script_id ? script_id : -1} />
+                </div>
+            </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} nameMoveable={true} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} nameMoveable={true} customSocketRender={this.customSocketRender} />
+            </div>
+        </C_Node_Frame>
+    }
+}
+
 /*
 class C_JSNode_Control_Api_CallFun extends React.PureComponent {
     constructor(props) {
