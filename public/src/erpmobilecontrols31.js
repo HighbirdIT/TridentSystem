@@ -1453,15 +1453,15 @@ class ERPC_Label extends React.PureComponent {
         var contentElem = null;
         var tileLen = 0;
         if (this.props.fetching) {
-            rootDivClassName += ' rounded border p-1';
-            contentElem = <div className='flex-grow-1 flex-shrink-1'><i className='fa fa-spinner fa-pulse fa-fw' />通讯中</div>;
+            rootDivClassName += 'p-1';
+            contentElem = <span><i className='fa fa-spinner fa-pulse fa-fw' />通讯中</span>;
         }
         else if (this.props.fetchingErr) {
             var errInfo = this.props.fetchingErr.info;
             if (errInfo == gPreconditionInvalidInfo) {
                 errInfo = '';
             }
-            rootDivClassName += ' rounded border p-1 text-danger';
+            rootDivClassName += 'p-1 text-danger';
             contentElem = <span className='flex-grow-1 flex-shrink-1'><i className='fa fa-warning' />{errInfo}</span>;
         }
         else if (this.props.type == 'boolean') {

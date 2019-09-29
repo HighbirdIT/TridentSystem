@@ -128,6 +128,8 @@ class ProjectCompiler extends EventEmitter{
                 this.stopCompile(false, "发生错误,项目编译已终止");
                 return false;
             }
+
+            this.setCache(js_blueprint.code + '_fun', jscompileRet);
         }
 
         mobileContentCompiler.compile();

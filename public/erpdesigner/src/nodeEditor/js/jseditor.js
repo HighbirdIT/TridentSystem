@@ -20,6 +20,11 @@ const JSNodeEditorControls_arr =[
         type:'流控制'
     },
     {
+        label:'调用脚本',
+        nodeClass:JSNode_CallCusScript,
+        type:'流控制'
+    },
+    {
         label:'CallOnFetchEnd',
         nodeClass:JSNode_CallOnFetchEnd,
         type:'流控制'
@@ -547,7 +552,8 @@ class JSNodeEditorLeftPanel extends React.PureComponent{
                 }
                 panel2={
                     <div className='d-flex flex-column h-100 w-100'>
-                        <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} />
+                        <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} label='变量' isOutput={false} />
+                        {nowBlueprint.group != EJsBluePrintFunGroup.Custom ? null : <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} label='返回值' isOutput={true} />}
                         <JSNodeEditorCanUseNodePanel bluePrint={nowBlueprint} onMouseDown={this.props.onMouseDown} editor={this.props.editor} />
                     </div>
                 }
@@ -773,7 +779,7 @@ class JSNodeEditorVariables extends React.PureComponent{
     }
 
     clickAddHandler(ev){
-        this.props.editingNode.bluePrint.createEmptyVariable();
+        this.props.editingNode.bluePrint.createEmptyVariable(this.props.isOutput); // isOutput==true
     }
 
     varChangedhandler(){
@@ -803,24 +809,26 @@ class JSNodeEditorVariables extends React.PureComponent{
     }
 
     render() {
-        if(this.listenedNode != this.props.editingNode.bluePrint){
+        var bluePrint = this.props.editingNode.bluePrint;
+        if(this.listenedNode != bluePrint){
             this.unlistenNode(this.listenedNode);
-            this.listenNode(this.props.editingNode.bluePrint);
+            this.listenNode(bluePrint);
         }
-        var blueprintPrefix = this.props.editingNode.bluePrint.id + '_';
+        var blueprintPrefix = bluePrint.id + (this.props.isOutput ? '_o_' : '_');
         var targetID = blueprintPrefix + 'variables';
+        var vars_arr = this.props.isOutput ? bluePrint.returnVars_arr : bluePrint.vars_arr;
         return (
             <React.Fragment>
                 <div className='flex-grow-0 flex-shrink-0 bg-secondary d-flex align-items-center'>
-                    <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn bg-secondary flex-grow-1 flex-shrink-1 text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}> 变量</button>
+                    <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn bg-secondary flex-grow-1 flex-shrink-1 text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>{this.props.label}</button>
                     <i className='fa fa-plus fa-lg text-light cursor-pointer' onClick={this.clickAddHandler} style={{width:'30px'}} />
                 </div>
                 <div id={targetID} className="list-group flex-grow-0 flex-shrink-0 collapse show" style={{ overflow: 'auto' }}>
                     <div className='mw-100 d-flex flex-column'>
                         <div className='btn-group-vertical mw-100'>
                             {
-                                this.props.editingNode.bluePrint.vars_arr.map(varData=>{
-                                    return <JSDef_Variable_Component belongNode={this.props.editingNode} key={blueprintPrefix + varData.id} varData={varData} editor={this.props.editor} />
+                                vars_arr.map(varData=>{
+                                    return <JSDef_Variable_Component belongNode={this.props.editingNode} key={varData.id} varData={varData} editor={this.props.editor} />
                                 })
                             }
                         </div>
@@ -1800,7 +1808,7 @@ class JSDef_Variable_Component extends React.PureComponent{
                 <div className='d-flex flex-grow-0 flex-shrink-0 w-100 text-light align-items-center hidenOverflo'>
                     {varData.isfixed != true && <i className={'fa fa-edit fa-lg'} onClick={this.clickEditBtnHandler} />}
                     <div className='flex-grow-1 flex-shrink-1 text-nowrap cursor-arrow dragableItem'
-                         onMouseDown={this.labelMouseDownHandler}>
+                         onMouseDown={varData.isOutput ? null : this.labelMouseDownHandler}>
                         {varData.name}
                         {varData.isParam ? (<span className='m-1 badge badge-info' >{varData.isfixed ? '固定参数' : '参数'}</span>) : null}
                         <span className='m-1 badge badge-secondary' >{varData.valType}</span>
@@ -1818,7 +1826,7 @@ class JSDef_Variable_Component extends React.PureComponent{
                 <input onChange={this.defaultInputChangedHandler} type='text' value={this.state.default} className='flexinput flex-grow-1 flex-shrink-1' />
             </div>
             <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={JsValueTypes} textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
-                <DropDownControl itemChanged={this.isParamChangedHandler} btnclass='btn-dark' options_arr={ISParam_Options_arr} textAttrName='name' valueAttrName='code' value={this.state.isParam} /> 
+            {varData.isOutput ? null : <DropDownControl itemChanged={this.isParamChangedHandler} btnclass='btn-dark' options_arr={ISParam_Options_arr} textAttrName='name' valueAttrName='code' value={this.state.isParam} />}
         </div>);
     }
 }

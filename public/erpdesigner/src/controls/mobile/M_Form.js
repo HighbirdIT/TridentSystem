@@ -17,6 +17,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('表单类别', AttrNames.FormType, ValueType.String, EFormType.Page, true, false, FormTypes_arr),
         new CAttribute('控件类型', AttrNames.EditorType, ValueType.String, M_TextKernel_Type, true, false, [], { text: 'label', value: 'type', pullDataFun: getCanLabeledControls }),
         new CAttribute('无数据提示', AttrNames.NoDataTip, ValueType.String, ''),
+        new CAttribute('无数据动作', AttrNames.NoDataAct, ValueType.String, ENoDataAct.ShowTip, true, false, ENoDataActs_arr),
         new CAttribute('新增按钮标签', AttrNames.InsertBtnLabel, ValueType.String, '新增'),
         new CAttribute('', AttrNames.CustomDataSource, ValueType.CustomDataSource, null, true),
         new CAttribute('内容定制', AttrNames.ListFormContent, ValueType.ListFormContent, null, true, false, null, null, false),
@@ -46,7 +47,8 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         genScripAttribute('Delete', AttrNames.Event.OnDelete, EJsBluePrintFunGroup.GridRowBtnHandler),
     ]),
     new CAttributeGroup('事件', [
-        new CAttribute('数据行变更', AttrNames.Event.OnRowChanged, ValueType.Event),
+        new CAttribute('数据源变更', AttrNames.Event.OnDataSourceChanged, ValueType.Event),
+        new CAttribute('行变更', AttrNames.Event.OnRowChanged, ValueType.Event),
         new CAttribute('选了某行', AttrNames.Event.OnSelectRow, ValueType.Event),
     ]),
 ]);
@@ -96,6 +98,10 @@ class M_FormKernel extends ContainerKernelBase {
         theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnRowChanged);
         if(theBP){
             theBP.setFixParam(['fullPath','rowIndex','rowObj']);
+        }
+        theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnDataSourceChanged);
+        if(theBP){
+            theBP.setFixParam(['fullPath','records_arr']);
         }
 
         //this.autoSetCusDataSource();
@@ -210,6 +216,9 @@ class M_FormKernel extends ContainerKernelBase {
         }
         if(scriptBP.name.indexOf(AttrNames.Event.OnRowChanged) != -1){
             scriptBP.setFixParam(['fullPath','rowIndex','rowObj']);
+        }
+        if(scriptBP.name.indexOf(AttrNames.Event.OnDataSourceChanged) != -1){
+            scriptBP.setFixParam(['fullPath','records_arr']);
         }
     }
 

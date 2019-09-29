@@ -1687,10 +1687,10 @@ var ERPC_Label = function (_React$PureComponent7) {
             var contentElem = null;
             var tileLen = 0;
             if (this.props.fetching) {
-                rootDivClassName += ' rounded border p-1';
+                rootDivClassName += 'p-1';
                 contentElem = React.createElement(
-                    'div',
-                    { className: 'flex-grow-1 flex-shrink-1' },
+                    'span',
+                    null,
                     React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw' }),
                     '\u901A\u8BAF\u4E2D'
                 );
@@ -1699,7 +1699,7 @@ var ERPC_Label = function (_React$PureComponent7) {
                 if (errInfo == gPreconditionInvalidInfo) {
                     errInfo = '';
                 }
-                rootDivClassName += ' rounded border p-1 text-danger';
+                rootDivClassName += 'p-1 text-danger';
                 contentElem = React.createElement(
                     'span',
                     { className: 'flex-grow-1 flex-shrink-1' },

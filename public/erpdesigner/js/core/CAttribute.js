@@ -292,6 +292,7 @@ var AttrNames = {
     HadScroll: 'hadScroll',
     AutoIndexColumn: 'autoIndexColumn',
     NoDataTip: 'noDataTip',
+    NoDataAct: 'noDataAct',
     MultiSelect: 'multiselect',
     RelFlowStep: 'relflowstep',
     GenNavBar: 'gennavbar',
@@ -349,7 +350,8 @@ var AttrNames = {
         OnMouseDown: 'onMouseDown',
         OnSelectRow: 'onSelectRow',
         OnRowChanged: 'onRowChanged',
-        OnUploadComplete: 'onUploadComplate'
+        OnUploadComplete: 'onUploadComplate',
+        OnDataSourceChanged: 'onDataSourceChanged'
     },
 
     LayoutNames: {

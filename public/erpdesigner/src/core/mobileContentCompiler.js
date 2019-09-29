@@ -174,10 +174,14 @@ class MobileContentCompiler extends ContentCompiler {
 
         var goodSeqCtlTemp_arr = project.userControls_arr.concat();
         goodSeqCtlTemp_arr.sort((a, b) => {
-            return userCtlTemplateProfiles_map[a.id].relyOn_arr.length > userCtlTemplateProfiles_map[b.id].relyOn_arr.length;
+            return userCtlTemplateProfiles_map[a.id].relyOn_arr.length - userCtlTemplateProfiles_map[b.id].relyOn_arr.length;
         });
 
         console.log(userCtlTemplateProfiles_map);
+        goodSeqCtlTemp_arr.forEach((t,i)=>{
+            console.log('template:' + i);
+            console.log(userCtlTemplateProfiles_map[t.id]);
+        });
         for (userCtli in goodSeqCtlTemp_arr) {
             if (!this.compileUserControlTemplate(goodSeqCtlTemp_arr[userCtli])) {
                 return false;
@@ -356,6 +360,7 @@ class MobileContentCompiler extends ContentCompiler {
         compileHelper.serverSide = this.serverSide;
         compileHelper.clientSide = this.clientSide;
         compileHelper.sqlBPCacheManager = this.projectCompiler;
+        compileHelper.jsBPCacheManager = this.projectCompiler;
         compileHelper.config = config;
         logManager.log('编译脚本:' + targetBP.name);
         var compileRet = targetBP.compile(compileHelper);
@@ -1447,6 +1452,7 @@ class MobileContentCompiler extends ContentCompiler {
                         scriptCompileRet.startFtech_bk.pushLine("state = " + makeStr_callFun('setManyStateByPath', [VarNames.State, VarNames.FullParentPath + "+'." + theKernel.id + "'", '{fetching:true,fetchingErr:null}']));
                     }
                 }
+                scriptCompileRet.finalCallBackReturn_bk.pushLine("if(state == null){store.dispatch(makeAction_setManyStateByPath(needSetState, " + VarNames.FullParentPath + "+'." + theKernel.id + "'));return;}");
                 scriptCompileRet.finalCallBackReturn_bk.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, VarNames.FullParentPath + "+'." + theKernel.id + "'", 'needSetState']) + ';');
             }
             else {
@@ -1819,6 +1825,8 @@ class MobileContentCompiler extends ContentCompiler {
         var onSelectRowBp = project.scriptMaster.getBPByName(onSelectRowFunName);
         var onRowChangedFunName = theKernel.id + '_' + AttrNames.Event.OnRowChanged;
         var onRowChangedBp = project.scriptMaster.getBPByName(onRowChangedFunName);
+        var onDataSourceChangedFunName = theKernel.id + '_' + AttrNames.Event.OnDataSourceChanged;
+        var onDataSourceChangedBp = project.scriptMaster.getBPByName(onDataSourceChangedFunName);
 
         switch (formType) {
             case EFormType.Page:
@@ -1889,7 +1897,14 @@ class MobileContentCompiler extends ContentCompiler {
             if (IsEmptyString(noDataTip)) {
                 noDataTip = '没有查询到数据';
             }
-            ifNowRecordBlock.pushLine(VarNames.RetElem + " = <div className='m-auto'>" + noDataTip + "</div>;");
+            var noDataAct = theKernel.getAttribute(AttrNames.NoDataAct);
+            switch(noDataAct){
+                case ENoDataAct.Hidden:
+                ifNowRecordBlock.pushLine("return null;");
+                break;
+                default:
+                ifNowRecordBlock.pushLine(VarNames.RetElem + " = <div className='m-auto'>" + noDataTip + "</div>;");
+            }
             renderContentBlock = ifNowRecordBlock.falseBlock;
         }
 
@@ -2109,6 +2124,14 @@ class MobileContentCompiler extends ContentCompiler {
             recordsArraychangedFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''", VarNames.NeedSetState], ';'));
             recordsArraychangedFun.pushLine(makeStr_callFun(freshFun.name, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowIndexInfo_map']));
 
+            if (onDataSourceChangedBp) {
+                var onDataSourceChangedCompileRet = this.compileScriptBlueprint(onDataSourceChangedBp);
+                if (onDataSourceChangedCompileRet == false) {
+                    return false;
+                }
+                recordsArraychangedFun.pushLine('setTimeout(() => {' + makeStr_callFun(onDataSourceChangedFunName, ["getParentPathByKey(path,'" + theKernel.id + "')", 'newValue'], ';') + '},20);', 1);
+            }
+
             if (belongUserControl) {
                 belongUserCtlMidData.needSetStateChangedActs_arr.push(
                     {
@@ -2121,23 +2144,23 @@ class MobileContentCompiler extends ContentCompiler {
                 clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath, VarNames.Records_arr))] = recordsArraychangedFunName + '.bind(window)';
             }
             if (isPageForm) {
+                var recordIndexchangedFunName = theKernel.id + '_' + VarNames.RecordIndex + '_changed';
+                var recordIndexchangedFun = clientSide.scope.getFunction(recordIndexchangedFunName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowIndexInfo_map']);
+                recordIndexchangedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
+                recordIndexchangedFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''", VarNames.NeedSetState], ';'));
+                recordIndexchangedFun.pushLine(makeStr_callFun(makeFName_bindForm(theKernel), [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowIndexInfo_map']));
+
                 if (belongUserControl) {
+
                     belongUserCtlMidData.needSetStateChangedActs_arr.push(
                         {
                             propName: makeStr_DotProp(thisfullpath, VarNames.RecordIndex),
-                            funName: makeFName_bindForm(theKernel) + '.bind(window)',
+                            funName: recordIndexchangedFunName + '.bind(window)',
                         }
                     );
                 }
                 else {
-                    var recordIndexchangedFunName = theKernel.id + '_' + VarNames.RecordIndex + '_changed';
-                    var recordIndexchangedFun = clientSide.scope.getFunction(recordIndexchangedFunName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowIndexInfo_map']);
-                    recordIndexchangedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
-                    recordIndexchangedFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''", VarNames.NeedSetState], ';'));
                     clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath, VarNames.RecordIndex))] = recordIndexchangedFunName + '.bind(window)';
-
-                    recordIndexchangedFun.pushLine(makeStr_callFun(makeFName_bindForm(theKernel), [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowIndexInfo_map']));
-                    //clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath, VarNames.RecordIndex))] = makeFName_bindForm(theKernel) + '.bind(window)';
                 }
                 freshFun.pushLine(makeStr_callFun('simpleFreshFormFun', [VarNames.ReState, VarNames.Records_arr, pathVarName, bindFun.name], ';'));
             }
@@ -2650,9 +2673,10 @@ class MobileContentCompiler extends ContentCompiler {
             this.clientSide.addStyleObject(tableStyleID, gridTableStyle);
             this.clientSide.addStyleObject(headTableStyleID, gridHeadTableStyle);
 
-            var bindPageFun = this.clientSide.scope.getFunction(makeFName_bindFormPage(theKernel), true, [VarNames.ReState, 'formPath']);
+            var formPathVarName = theKernel.id + "_path";
+            var bindPageFun = this.clientSide.scope.getFunction(makeFName_bindFormPage(theKernel), true, [VarNames.ReState, formPathVarName]);
             //clientSide.addReducer('ReBind' + theKernel.id + "Page", bindPageFun.name + '.bind(window)');
-            bindPageFun.scope.getVar('formState', true, makeStr_getStateByPath(VarNames.ReState, 'formPath', '{}'));
+            bindPageFun.scope.getVar('formState', true, makeStr_getStateByPath(VarNames.ReState, formPathVarName, '{}'));
             bindPageFun.scope.getVar(VarNames.Records_arr, true, makeStr_DotProp('formState', VarNames.Records_arr));
             bindPageFun.scope.getVar(VarNames.NeedSetState, true, '{}');
             if (pageBreak) {
@@ -2676,7 +2700,7 @@ class MobileContentCompiler extends ContentCompiler {
             bindPageFun.pushLine('}');
             bindPageFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.NeedSetState, VarNames.StartRowIndex), VarNames.StartRowIndex));
             bindPageFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.NeedSetState, VarNames.EndRowIndex), VarNames.EndRowIndex));
-            bindPageFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.ReState, 'formPath', VarNames.NeedSetState], ';'));
+            bindPageFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.ReState, formPathVarName, VarNames.NeedSetState], ';'));
 
             gridBodyPureRectClass.renderFun.scope.getVar('trElems_arr', true, '[]');
             gridBodyPureRectClass.renderFun.scope.getVar(VarNames.StartRowIndex, true, makeStr_DotProp('this.props', VarNames.StartRowIndex));
@@ -2886,7 +2910,7 @@ class MobileContentCompiler extends ContentCompiler {
                                 switch (stateItem.bindMode) {
                                     case ScriptBindMode.OnForm:
                                         if (kernelInRow) {
-                                            bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', "formPath + '.row_' + rowIndex"])));
+                                            bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', theKernel.id + "_path + '.row_' + rowIndex"])));
                                         }
                                         else {
                                             endBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', theKernel.id + '_path'])));

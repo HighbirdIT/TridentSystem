@@ -585,14 +585,17 @@ var ControlKernelBase = function (_IAttributeable) {
             var ignoreRowIndex = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
             var topestParant = arguments[4];
 
+            var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
+            switch (this.type) {
+                case M_ContainerKernel_Type:
+                    console.warn('getStatePath M_ContainerKernel_Type');
+                    rlt = '';
+                    break;
+            }
             if (this.parent == null || this == topestParant) {
-                return stateName;
+                return rlt;
             }
             var nowKernel = this.parent;
-            var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
-            if (this.type == M_ContainerKernel_Type) {
-                rlt = '';
-            }
             while (nowKernel != null && nowKernel != topestParant) {
                 switch (nowKernel.type) {
                     case M_PageKernel_Type:
