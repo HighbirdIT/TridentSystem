@@ -53,8 +53,8 @@ class M_TextKernel extends ControlKernelBase {
         }
     }
 
-    renderSelf(clickHandler) {
-        return (<M_Text key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+    renderSelf(clickHandler, replaceChildClick, designer) {
+        return (<M_Text key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {

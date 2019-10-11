@@ -15,6 +15,7 @@ class ProjectDesigner extends React.PureComponent {
         this.quickScriptEditPanelRef = React.createRef();
         this.quickSqlBPEditPanelRef = React.createRef();
         this.quickListFormContentEditPanelRef = React.createRef();
+        this.quickKernelContentEditorPanelRef = React.createRef();
         autoBind(this);
         this.props.project.designer = this;
 
@@ -271,6 +272,12 @@ class ProjectDesigner extends React.PureComponent {
         }
     }
 
+    editKernelContent(kernel){
+        if (this.quickKernelContentEditorPanelRef.current != null) {
+            this.quickKernelContentEditorPanelRef.current.showKernel(kernel);
+        }
+    }
+
     rightNavChanged(oldItem, newItem) {
         this.setState({
             magicObj: {}
@@ -281,6 +288,7 @@ class ProjectDesigner extends React.PureComponent {
         var thisProject = this.props.project;
         return (
             <div className={this.props.className}>
+                <QuickKernelContentEditprPanel ref={this.quickKernelContentEditorPanelRef} project={thisProject} />
                 <DataMasterPanel ref={this.dataMasterPanelRef} project={thisProject} />
                 <ScriptMasterPanel ref={this.scriptMasterPanelRef} project={thisProject} />
                 <QuickScriptEditPanel ref={this.quickScriptEditPanelRef} project={thisProject} />
@@ -294,7 +302,7 @@ class ProjectDesigner extends React.PureComponent {
                         fixedOne={false}
                         flexColumn={true}
                         panel1={<ControlPanel project={thisProject} mouseDownControlIcon={this.mouseDownControlIcon} mouseDownUserControlIcon={this.mouseDownUserControlIcon} />}
-                        panel2={<OutlinePanel project={thisProject} ref={this.outlineRef} />}
+                        panel2={<OutlinePanel project={thisProject} designer={this} ref={this.outlineRef} />}
                     />}
                     panel2={
                         <SplitPanel defPercent={0.8}
@@ -306,7 +314,7 @@ class ProjectDesigner extends React.PureComponent {
                                     barClass='bg-secondary'
                                     fixedOne={false}
                                     flexColumn={true}
-                                    panel1={<ContentPanel project={thisProject} ref={this.contenPanelRef} wantOpenPanel={this.wantOpenPanel} />}
+                                    panel1={<ContentPanel project={thisProject} ref={this.contenPanelRef} wantOpenPanel={this.wantOpenPanel} designer={this} />}
                                     panel2={<LogOutputPanel source={thisProject.logManager} />}
                                 />
                             }

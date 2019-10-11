@@ -131,12 +131,14 @@ function M_ControlBase(target,watchedAttrs){
 }
 
 function M_ControlBase_ClickHandle_Trash(){
-    this.props.ctlKernel.project.designer.deleteSelectedKernel();
+    if(this.props.designer){
+        this.props.designer.deleteSelectedKernel();
+    }
 }
 
 function M_ControlBase_ClickHandle_Move(){
-    if(this.props.ctlKernel.project.designer.outlineRef.current){
-        this.props.ctlKernel.project.designer.outlineRef.current.startDragKernel(this.props.ctlKernel);
+    if(this.props.designer && this.props.designer.outlineRef.current){
+        this.props.designer.outlineRef.current.startDragKernel(this.props.ctlKernel);
     }
 }
 
@@ -166,7 +168,9 @@ function M_ControlBase_ClickHandle_Eraser(){
 function M_ControlBase_ClickHandle_GoParent(){
     var theKernel = this.props.ctlKernel;
     if(theKernel.parent){
-        theKernel.project.designer.selectKernel(theKernel.parent);
+        if(this.props.designer){
+            this.props.designer.selectKernel(theKernel.parent);
+        }
     }
 }
 

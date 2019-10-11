@@ -145,7 +145,7 @@ class CListFormContentEditor extends React.PureComponent {
                 {
                     return; // same socket
                 }
-                this.props.formKernel.appandChild(this.dragingKernel, i);
+                this.props.formKernel.appandChild(this.dragingKernel, i + 2);
                 var controls_arr = this.props.formKernel.searchChildKernel(M_LabeledControlKernel_Type, false);
                 this.setState({
                     controls_arr:controls_arr,

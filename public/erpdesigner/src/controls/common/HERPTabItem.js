@@ -3,6 +3,7 @@ const HERPTabItemKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('标题',AttrNames.Title,ValueType.String,''),
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr),
         new CAttribute('图标类型', AttrNames.IconType, ValueType.String, ''),
+        new CAttribute('有滚动条', AttrNames.AutoHeight, ValueType.Boolean, true),
     ]),
 ]);
 
@@ -26,8 +27,8 @@ class HERPTabItemKernel extends ContainerKernelBase{
     }
 
 
-    renderSelf(clickHandler, replaceChildClick){
-        return (<HERPTabItem key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
+    renderSelf(clickHandler, replaceChildClick, designer){
+        return (<HERPTabItem key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
     }
 }
 
@@ -89,7 +90,7 @@ class HERPTabItem extends React.PureComponent {
                     ctlKernel.children.length == 0 ?
                     ctlKernel.id :
                     ctlKernel.children.map(childKernel => {
-                        return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null,this.props.replaceChildClick);
+                        return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null,this.props.replaceChildClick, this.props.designer);
                     })
                 }
             </div>

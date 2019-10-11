@@ -506,7 +506,7 @@ class SqlNode_XApply extends SqlNode_Base {
         var socketOut = compileRet.getSocketOut(theLink.outSocket);
         if (outNode.type == SQLNODE_SELECT) {
             // select node 需要嵌套括号以及别名
-            socketOut.strContent = bracketStr(compileRet.strContent) + ' as ' + outNode.title;
+            socketOut.strContent = bracketStr(socketOut.strContent) + ' as ' + outNode.title;
         }
         socketOuts_arr.push(socketOut);
 

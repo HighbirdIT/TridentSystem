@@ -416,12 +416,27 @@ var AttributeEditor = function (_React$PureComponent) {
             project.designer.editListFormContent(this.props.targetobj);
         }
     }, {
+        key: 'clickEditKernelContent',
+        value: function clickEditKernelContent() {
+            var project = this.props.targetobj.project;
+            project.designer.editKernelContent(this.props.targetobj.getContentKernel());
+        }
+    }, {
         key: 'renderListFormContent',
         value: function renderListFormContent(nowVal, theAttr, attrName, inputID) {
             return React.createElement(
                 'button',
                 { type: 'button', className: 'btn btn-dark w-100', onClick: this.clickListFormContent },
                 '\u5B9A\u5236\u5217\u8868\u6570\u636E'
+            );
+        }
+    }, {
+        key: 'renderEditKernelContent',
+        value: function renderEditKernelContent(nowVal, theAttr, attrName, inputID) {
+            return React.createElement(
+                'button',
+                { type: 'button', className: 'btn btn-dark w-100', onClick: this.clickEditKernelContent },
+                '\u7F16\u8F91\u5185\u5BB9'
             );
         }
     }, {
@@ -445,6 +460,9 @@ var AttributeEditor = function (_React$PureComponent) {
             }
             if (theAttr.valueType == ValueType.ListFormContent) {
                 return this.renderListFormContent(nowVal, theAttr, attrName, inputID);
+            }
+            if (theAttr.valueType == ValueType.ModifyContent) {
+                return this.renderEditKernelContent(nowVal, theAttr, attrName, inputID);
             }
             var attrEditable = ReplaceIfNull(this.props.targetobj[attrName + '_editable'], theAttr.editable);
             if (!attrEditable) {

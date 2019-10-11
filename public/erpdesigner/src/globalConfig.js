@@ -40,6 +40,12 @@ var EMessageTargetType = {
 };
 var MessageTargetTypes_arr = [{ text: '指定人员', value: EMessageTargetType.Person }, { text: '指定岗位', value: EMessageTargetType.Post }];
 
+var ENoDataAct = {
+    ShowTip:'展示提示',
+    Hidden:'隐藏',
+};
+var ENoDataActs_arr = [ENoDataAct.ShowTip,ENoDataAct.Hidden];
+
 var PersonEductOptions_arr = [];
 var AllPosts_arr = [];
 var ProjectRecords_arr = [];
@@ -135,7 +141,8 @@ const EJsBluePrintFunGroup={
     CtlFun:'ctlfun',
     CtlValid: 'ctlvalid',
     ServerScript: 'serverscript',
-    GridRowBtnHandler: 'gridrowbtnhandler'
+    GridRowBtnHandler: 'gridrowbtnhandler',
+    Custom:'custom',
 };
 
 var ESqlBluePrintGroup = {
@@ -311,6 +318,7 @@ var ValueType = {
     XML:'xml',
     UserControlEvent:'usercontrolevent',
     CustomFunction:'CustomFunction',
+    ModifyContent:'ModifyContent',
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

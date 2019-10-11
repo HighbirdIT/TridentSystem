@@ -29,6 +29,7 @@ var ProjectDesigner = function (_React$PureComponent) {
         _this.quickScriptEditPanelRef = React.createRef();
         _this.quickSqlBPEditPanelRef = React.createRef();
         _this.quickListFormContentEditPanelRef = React.createRef();
+        _this.quickKernelContentEditorPanelRef = React.createRef();
         autoBind(_this);
         _this.props.project.designer = _this;
 
@@ -302,6 +303,13 @@ var ProjectDesigner = function (_React$PureComponent) {
             }
         }
     }, {
+        key: 'editKernelContent',
+        value: function editKernelContent(kernel) {
+            if (this.quickKernelContentEditorPanelRef.current != null) {
+                this.quickKernelContentEditorPanelRef.current.showKernel(kernel);
+            }
+        }
+    }, {
         key: 'rightNavChanged',
         value: function rightNavChanged(oldItem, newItem) {
             this.setState({
@@ -317,6 +325,7 @@ var ProjectDesigner = function (_React$PureComponent) {
             return React.createElement(
                 'div',
                 { className: this.props.className },
+                React.createElement(QuickKernelContentEditprPanel, { ref: this.quickKernelContentEditorPanelRef, project: thisProject }),
                 React.createElement(DataMasterPanel, { ref: this.dataMasterPanelRef, project: thisProject }),
                 React.createElement(ScriptMasterPanel, { ref: this.scriptMasterPanelRef, project: thisProject }),
                 React.createElement(QuickScriptEditPanel, { ref: this.quickScriptEditPanelRef, project: thisProject }),
@@ -330,7 +339,7 @@ var ProjectDesigner = function (_React$PureComponent) {
                         fixedOne: false,
                         flexColumn: true,
                         panel1: React.createElement(ControlPanel, { project: thisProject, mouseDownControlIcon: this.mouseDownControlIcon, mouseDownUserControlIcon: this.mouseDownUserControlIcon }),
-                        panel2: React.createElement(OutlinePanel, { project: thisProject, ref: this.outlineRef })
+                        panel2: React.createElement(OutlinePanel, { project: thisProject, designer: this, ref: this.outlineRef })
                     }),
                     panel2: React.createElement(SplitPanel, { defPercent: 0.8,
                         fixedOne: false,
@@ -340,7 +349,7 @@ var ProjectDesigner = function (_React$PureComponent) {
                             barClass: 'bg-secondary',
                             fixedOne: false,
                             flexColumn: true,
-                            panel1: React.createElement(ContentPanel, { project: thisProject, ref: this.contenPanelRef, wantOpenPanel: this.wantOpenPanel }),
+                            panel1: React.createElement(ContentPanel, { project: thisProject, ref: this.contenPanelRef, wantOpenPanel: this.wantOpenPanel, designer: this }),
                             panel2: React.createElement(LogOutputPanel, { source: thisProject.logManager })
                         }),
                         panel2: React.createElement(

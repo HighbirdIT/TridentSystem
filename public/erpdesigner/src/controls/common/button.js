@@ -45,8 +45,8 @@ class ButtonKernel extends ControlKernelBase{
         autoBind(self);
     }
 
-    renderSelf(clickHandler){
-        return (<CButton key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+    renderSelf(clickHandler, replaceChildClick, designer){
+        return (<CButton key={this.id} ctlKernel={this} designer={designer} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 
     getLayoutConfig(){
