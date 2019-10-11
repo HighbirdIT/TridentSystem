@@ -699,7 +699,7 @@ class CFlowMaster extends React.PureComponent
                 }
             }
         }
-        return showStepArr.map((step,index)=>{
+        return showStepArr                 .map((step,index)=>{
             return <CFlowStep  key={step.code ? step.code : 'new' + index} step={step} />
         })
     }
