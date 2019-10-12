@@ -268,6 +268,7 @@ const AttrNames={
     AutoIndexColumn:'autoIndexColumn',
     NoDataTip:'noDataTip',
     NoDataAct:'noDataAct',
+    FetchErrAct:'fetchErrAct',
     MultiSelect:'multiselect',
     RelFlowStep:'relflowstep',
     GenNavBar:'gennavbar',
@@ -314,6 +315,9 @@ const AttrNames={
     KeyRecrodID:'keyrecordid',
     AttachmentID:'attachmentid',
     ModifyContent:'modifycontent',
+    ToolTip:'toolTip',
+    Growable:'growable',
+    InvalidAct: 'invalidAct',
 
     Event:{
         OnClick:'onclick',

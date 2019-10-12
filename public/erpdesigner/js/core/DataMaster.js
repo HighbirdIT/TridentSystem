@@ -37,13 +37,24 @@ var DataBase = function (_EventEmitter) {
             var _this2 = this;
 
             console.log('doSyn_Unload_bycodes:' + codes_arr);
+            var maxCountPerFetch = 10;
             var needSynCodes_arr = [];
+            var newCodes_arr = [];
             if (codes_arr) {
                 codes_arr.forEach(function (code) {
                     if (_this2.entityCode_map[code] == null) {
+                        if (needSynCodes_arr.length == maxCountPerFetch) {
+                            return;
+                        }
                         needSynCodes_arr.push(code);
                     }
                 });
+
+                if (needSynCodes_arr.length == maxCountPerFetch) {
+                    newCodes_arr = codes_arr.filter(function (code) {
+                        return needSynCodes_arr.indexOf(code) == -1;
+                    });
+                }
             }
             if (needSynCodes_arr.length == 0) {
                 if (callBack != null) {
@@ -60,7 +71,9 @@ var DataBase = function (_EventEmitter) {
                     return;
                 }
                 self.synEnityFromFetch(json.data);
-                if (callBack != null) {
+                if (newCodes_arr.length > 0) {
+                    _this2.doSyn_Unload_bycodes(newCodes_arr, callBack);
+                } else if (callBack != null) {
                     callBack();
                 }
             });
@@ -470,7 +483,7 @@ var DataMaster = function (_EventEmitter4) {
         }
     }, {
         key: 'restoreFromJson',
-        value: function restoreFromJson(json) {
+        value: function restoreFromJson(json, restoreHelper) {
             var _this7 = this;
 
             if (json == null) {
@@ -479,6 +492,7 @@ var DataMaster = function (_EventEmitter4) {
             if (json.BP_sql_arr) {
                 json.BP_sql_arr.forEach(function (bpjson) {
                     var creationHelper = new NodeCreationHelper();
+                    creationHelper.restoreHelper = restoreHelper;
                     var newbp = new SqlNode_BluePrint(null, bpjson, creationHelper);
                     _this7.addSqlBP(newbp);
                 });

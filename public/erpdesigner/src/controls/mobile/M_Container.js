@@ -25,8 +25,14 @@ class M_ContainerKernel extends ContainerKernelBase {
             if (!needFilt || child.type == targetType) {
                 rlt_arr.push(child);
             }
-            if (child.editor && (!needFilt || child.editor.type == targetType)) {
-                rlt_arr.push(child.editor);
+            if(child.editor){
+                if(!needFilt || child.editor.type == targetType){
+                    rlt_arr.push(child.editor);
+                }
+                if(child.editor.type == M_ContainerKernel_Type){
+                    // 穿透div
+                    child.editor.aidAccessableKernels(targetType, rlt_arr);
+                }
             }
             if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && child.isPageForm())){
                 // 穿透div
@@ -180,4 +186,5 @@ DesignerConfig.registerControl(
         namePrefix: M_ContainerKernel_Prefix,
         kernelClass: M_ContainerKernel,
         reactClass: M_Container,
+        canbeLabeled: true,
     }, '布局');

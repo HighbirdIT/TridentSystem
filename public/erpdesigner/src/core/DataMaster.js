@@ -18,14 +18,25 @@ class DataBase extends EventEmitter{
 
     doSyn_Unload_bycodes(codes_arr, callBack){
         console.log('doSyn_Unload_bycodes:' + codes_arr);
+        var maxCountPerFetch = 10;
         var needSynCodes_arr = [];
+        var newCodes_arr = [];
         if(codes_arr)
         {
             codes_arr.forEach(code=>{
                 if(this.entityCode_map[code] == null){
+                    if(needSynCodes_arr.length == maxCountPerFetch){
+                        return;
+                    }
                     needSynCodes_arr.push(code);
                 }
             });
+
+            if(needSynCodes_arr.length == maxCountPerFetch){
+                newCodes_arr = codes_arr.filter(code=>{
+                    return needSynCodes_arr.indexOf(code) == -1;
+                });
+            }
         }
         if(needSynCodes_arr.length == 0){
             if(callBack != null){
@@ -42,7 +53,10 @@ class DataBase extends EventEmitter{
                 return;
             }
             self.synEnityFromFetch(json.data);
-            if(callBack != null){
+            if(newCodes_arr.length > 0){
+                this.doSyn_Unload_bycodes(newCodes_arr, callBack);
+            }
+            else if(callBack != null){
                 callBack();
             }
         });
@@ -373,13 +387,14 @@ class DataMaster extends EventEmitter{
         return this.BP_sql_arr.filter(x=>{return x.group == 'custom' && x.type == 'delete';}).concat(EmptyDBEntity);
     }
 
-    restoreFromJson(json){
+    restoreFromJson(json, restoreHelper){
         if(json == null){
             return;
         }
         if(json.BP_sql_arr){
             json.BP_sql_arr.forEach(bpjson=>{
-                var creationHelper = new NodeCreationHelper(); 
+                var creationHelper = new NodeCreationHelper();
+                creationHelper.restoreHelper = restoreHelper;
                 var newbp = new SqlNode_BluePrint(null, bpjson,creationHelper);
                 this.addSqlBP(newbp);
             });

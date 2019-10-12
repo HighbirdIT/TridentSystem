@@ -521,6 +521,7 @@ class ControlKernelBase extends IAttributeable {
                     rlt.push(parent);
                 }
             }
+            var aidRlt_arr;
             parent.children.forEach(child=>{
                 if(child != nowKernel){
                     if(!needFilt || child.type == targetType)
@@ -529,25 +530,36 @@ class ControlKernelBase extends IAttributeable {
                             rlt.push(child);
                         }
                     }
-                    if(child.editor && (!needFilt || child.editor.type == targetType)){
-                        if(rlt.indexOf(child.editor) == -1){
-                            rlt.push(child.editor);
+                    if(child.editor){
+                        if(!needFilt || child.editor.type == targetType){
+                            if(rlt.indexOf(child.editor) == -1){
+                                rlt.push(child.editor);
+                            }
+                        }
+                        if(child.editor.type == M_ContainerKernel_Type){
+                            // 穿透div
+                            if(meetParents_map[child.editor.id] == null){
+                                meetParents_map[child.editor.id] = 1;
+                                aidRlt_arr = [];
+                                child.editor.aidAccessableKernels(targetType, aidRlt_arr);
+                            }
                         }
                     }
                     if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && child.isPageForm())){
                         // 穿透div
                         if(meetParents_map[child.id] == null){
                             meetParents_map[child.id] = 1;
-                            var aidRlt_arr = [];
+                            aidRlt_arr = [];
                             child.aidAccessableKernels(targetType, aidRlt_arr);
-                            if(aidRlt_arr.length > 0){
-                                aidRlt_arr.forEach(x=>{
-                                    if(rlt.indexOf(x) == -1){
-                                        rlt.push(x);
-                                    }
-                                });
-                            }
                         }
+                    }
+
+                    if(aidRlt_arr && aidRlt_arr.length > 0){
+                        aidRlt_arr.forEach(x=>{
+                            if(rlt.indexOf(x) == -1){
+                                rlt.push(x);
+                            }
+                        });
                     }
                 }
             });
@@ -602,6 +614,10 @@ class ControlKernelBase extends IAttributeable {
 
     isAEditor(){
         return this.parent && this.parent.editor == this;
+    }
+
+    getParentLabledCtl(){
+        return this.searchParentKernel(M_LabeledControlKernel_Type, true);
     }
 
     canAppand(){
@@ -662,12 +678,21 @@ class ControlLayoutConfig {
         return true;
     }
 
+    removeClass(className){
+        delete this.class[className];
+        delete this.switch[className];
+    }
+
     addStyle(name, val) {
         if (IsEmptyString(name) || val == null) {
             return false;
         }
         this.style[name] = val;
         return true;
+    }
+
+    removeStyle(name) {
+        delete style[name];
     }
 
     getClassName() {

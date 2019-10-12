@@ -10,6 +10,12 @@ const M_LabeledControlKernelAttrsSetting=GenControlKernelAttrsSetting([
         genNullableAttribute(),
         new CAttribute('列宽设置',AttrNames.ColumnWidth,ValueType.Int, 0),
         new CAttribute('新行依赖',AttrNames.NewRowDepend,ValueType.Boolean, false),
+        new CAttribute('帮助提示',AttrNames.ToolTip,ValueType.String,'', true, false, null, 
+        null, true, {
+            scriptable:true,
+            type:FunType_Client,
+            group:EJsBluePrintFunGroup.CtlAttr,
+        }),
     ]),
 ]);
 
@@ -184,6 +190,14 @@ class M_LabeledControl extends React.PureComponent {
         }
         var editor = ctlKernel.editor;
         var isUserControl = editor && editor.type == UserControlKernel_Type;
+        if(editor.type == M_ContainerKernel_Type){
+            if(this.tryPlaceKernel == null){
+                this.tryPlaceKernel = M_ContainerBase_tryPlaceKernel.bind(this);
+            }
+        }
+        else{
+            this.tryPlaceKernel = null;
+        }
         layoutConfig.addClass('rowlFameOne');
         layoutConfig.addClass('hb-control');
         var interType = ctlKernel.getAttribute(AttrNames.InteractiveType);

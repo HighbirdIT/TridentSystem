@@ -443,7 +443,7 @@ function renderErpPage(req, res, next){
     res.locals.isProduction = app.get('env') == 'production';
     var childPath = req.path;
     var t_arr = childPath.split('/');
-    if (t_arr.length != 3) {
+    if (t_arr.length != 3 && (t_arr.length != 4 || t_arr[3] != '') ) {
         res.status(404);
         return res.render('404');
     }

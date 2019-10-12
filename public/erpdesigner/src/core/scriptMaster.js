@@ -87,13 +87,14 @@ class ScriptMaster extends EventEmitter{
         return rlt;
     }
 
-    restoreFromJson(json){
+    restoreFromJson(json, restoreHelper){
         if(json == null){
             return;
         }
         if(json.blueprints_arr){
             json.blueprints_arr.forEach(bpjson=>{
                 var creationHelper = new NodeCreationHelper(); 
+                creationHelper.restoreHelper = restoreHelper;
                 creationHelper.project = this.project;
                 var newbp = new JSNode_BluePrint(null, bpjson, creationHelper);
                 this.addBP(newbp);

@@ -175,8 +175,10 @@ class ContentPanel extends React.PureComponent {
 
     clickSaveBtnHanlder(ev){
         var project = this.props.project;
+        /*
         var jsonData =  project.getJson();
         console.log(jsonData);
+        */
         project.designer.saveProject();
     }
 
@@ -198,6 +200,62 @@ class ContentPanel extends React.PureComponent {
         var project = this.props.project;
         var jsonData =  project.getJson();
         console.log(JSON.stringify(jsonData));
+        /*
+        var lzwCompress = window.lzwCompress;
+        var t = lzwCompress.pack(jsonData);
+        console.log(t);
+        */
+        //console.log(JSON.stringify(jsonData));
+    }
+
+    DataSizeToString(size) {
+        var kbsize = Math.round(size / 1024);
+        var sizeStr = '';
+        if (kbsize < 1000) {
+            sizeStr = kbsize + 'KB';
+        }
+        else {
+            var mbsize = Math.round(10 * kbsize / 1024) / 10.0;
+            if (mbsize < 1000) {
+                sizeStr = mbsize + 'MB';
+            }
+            else {
+                var gbsize = Math.round(10 * kbsize / 1024) / 10.0;
+                sizeStr = gbsize + 'GB';
+            }
+        }
+        return sizeStr;
+    }
+
+    logJsonSize(jsonObj, objName){
+        if(typeof jsonObj != 'object'){
+            return;
+        }
+        if(jsonObj.id){
+            objName = jsonObj.id;
+        }
+        if(jsonObj.code){
+            objName = jsonObj.code;
+        }
+        if(jsonObj.name){
+            objName += '(' + jsonObj.name + ')';
+        }
+        var jsonStr = window.lzwCompress.pack(jsonObj);
+        //var len = JSON.stringify(jsonObj).length;
+        var len = jsonStr.length;
+        console.log(objName + ': ' + this.DataSizeToString(len));
+        if(jsonObj.id || jsonObj.code){
+            return;
+        }
+        for(var n in jsonObj){
+            this.logJsonSize(jsonObj[n], n)
+        }
+    }
+
+    clickEvalSizeBtnHandler(ev){
+        var project = this.props.project;
+        var jsonData =  project.getJson();
+        this.logJsonSize(jsonData, 'proj');
     }
 
     compileCompletedHandler(theCompile){
@@ -304,6 +362,7 @@ class ContentPanel extends React.PureComponent {
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickSaveBtnHanlder} ><div>保存</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPublickBtnHandler} ><div>发布</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickExprotBtnHandler} ><div>导出</div></button>
+                        <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickEvalSizeBtnHandler} ><div>评估</div></button>
                     </div>
                     <div onClick={this.clickContentDivHander} className='flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center'>
                         {editingPage && this.renderEditingPage(project, editingPage, isPC)}

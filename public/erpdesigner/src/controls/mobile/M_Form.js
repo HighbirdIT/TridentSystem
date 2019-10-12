@@ -10,7 +10,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
             type:FunType_Client,
             group:EJsBluePrintFunGroup.CtlAttr,
         }),
-        new CAttribute('标题对齐', AttrNames.TextAlign, ValueType.String, ETextAlign.Center, true, false, TextAligns_arr),
+        new CAttribute('标题对齐', AttrNames.TextAlign, ValueType.String, ETextAlign.Left, true, false, TextAligns_arr),
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
         new CAttribute('数据源', AttrNames.DataSource, ValueType.DataSource, null, true, false, 'getCanUseDataSource', { text: 'name', value: 'code' }),
         new CAttribute('操作表', AttrNames.ProcessTable, ValueType.DataSource, null, true, false, g_dataBase.getAllTable, { text: 'name', value: 'code' }),
@@ -18,6 +18,8 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('控件类型', AttrNames.EditorType, ValueType.String, M_TextKernel_Type, true, false, [], { text: 'label', value: 'type', pullDataFun: getCanLabeledControls }),
         new CAttribute('无数据提示', AttrNames.NoDataTip, ValueType.String, ''),
         new CAttribute('无数据动作', AttrNames.NoDataAct, ValueType.String, ENoDataAct.ShowTip, true, false, ENoDataActs_arr),
+        new CAttribute('获取错误动作', AttrNames.FetchErrAct, ValueType.String, ENoDataAct.ShowTip, true, false, ENoDataActs_arr),
+        new CAttribute('缺少前置动作', AttrNames.InvalidAct, ValueType.String, ENoDataAct.ShowTip, true, false, ENoDataActs_arr),
         new CAttribute('新增按钮标签', AttrNames.InsertBtnLabel, ValueType.String, '新增'),
         new CAttribute('', AttrNames.CustomDataSource, ValueType.CustomDataSource, null, true),
         new CAttribute('内容定制', AttrNames.ListFormContent, ValueType.ListFormContent, null, true, false, null, null, false),
@@ -25,7 +27,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('智能刷新', AttrNames.AutoPull, ValueType.Boolean, true),
         new CAttribute('自动分页', AttrNames.PageBreak, ValueType.Boolean, true),
         new CAttribute('生成导航栏', AttrNames.GenNavBar, ValueType.Boolean, true),
-        new CAttribute('每页条数', AttrNames.RowPerPage, ValueType.String, '20', true, false, ['20', '50', '100', '200']),
+        new CAttribute('每页条数', AttrNames.RowPerPage, ValueType.String, '20', true, false, ['5','10','20', '50', '100', '200']),
         new CAttribute('宽度类型', AttrNames.WidthType, ValueType.String, EGridWidthType.Auto, true, false, EGridWidthTypes_arr, { text: 'text', value: 'value' }),
         new CAttribute('首列序号', AttrNames.AutoIndexColumn, ValueType.Boolean, true),
         new CAttribute('隐藏表头', AttrNames.HideTabHead, ValueType.Boolean, false),
@@ -166,8 +168,14 @@ class M_FormKernel extends ContainerKernelBase {
             if (!needFilt || child.type == targetType) {
                 rlt_arr.push(child);
             }
-            if (child.editor && (!needFilt || child.editor.type == targetType)) {
-                rlt_arr.push(child.editor);
+            if(child.editor){
+                if(!needFilt || child.editor.type == targetType){
+                    rlt_arr.push(child.editor);
+                }
+                if(child.editor.type == M_ContainerKernel_Type){
+                    // 穿透div
+                    child.editor.aidAccessableKernels(targetType, rlt_arr);
+                }
             }
             if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && !child.isGridForm())) {
                 // 穿透div

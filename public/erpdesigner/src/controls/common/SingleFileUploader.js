@@ -151,5 +151,5 @@ DesignerConfig.registerControl(
         namePrefix: SingleFileUploader_Prefix,
         kernelClass: SingleFileUploaderKernel,
         reactClass: CSingleFileUploader,
-        canbeLabeled: false,
+        canbeLabeled: true,
     }, '基础');

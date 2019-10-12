@@ -1,5 +1,7 @@
 'use strict';
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -198,8 +200,10 @@ var ContentPanel = function (_React$PureComponent) {
         key: 'clickSaveBtnHanlder',
         value: function clickSaveBtnHanlder(ev) {
             var project = this.props.project;
-            var jsonData = project.getJson();
+            /*
+            var jsonData =  project.getJson();
             console.log(jsonData);
+            */
             project.designer.saveProject();
         }
     }, {
@@ -224,6 +228,63 @@ var ContentPanel = function (_React$PureComponent) {
             var project = this.props.project;
             var jsonData = project.getJson();
             console.log(JSON.stringify(jsonData));
+            /*
+            var lzwCompress = window.lzwCompress;
+            var t = lzwCompress.pack(jsonData);
+            console.log(t);
+            */
+            //console.log(JSON.stringify(jsonData));
+        }
+    }, {
+        key: 'DataSizeToString',
+        value: function DataSizeToString(size) {
+            var kbsize = Math.round(size / 1024);
+            var sizeStr = '';
+            if (kbsize < 1000) {
+                sizeStr = kbsize + 'KB';
+            } else {
+                var mbsize = Math.round(10 * kbsize / 1024) / 10.0;
+                if (mbsize < 1000) {
+                    sizeStr = mbsize + 'MB';
+                } else {
+                    var gbsize = Math.round(10 * kbsize / 1024) / 10.0;
+                    sizeStr = gbsize + 'GB';
+                }
+            }
+            return sizeStr;
+        }
+    }, {
+        key: 'logJsonSize',
+        value: function logJsonSize(jsonObj, objName) {
+            if ((typeof jsonObj === 'undefined' ? 'undefined' : _typeof(jsonObj)) != 'object') {
+                return;
+            }
+            if (jsonObj.id) {
+                objName = jsonObj.id;
+            }
+            if (jsonObj.code) {
+                objName = jsonObj.code;
+            }
+            if (jsonObj.name) {
+                objName += '(' + jsonObj.name + ')';
+            }
+            var jsonStr = window.lzwCompress.pack(jsonObj);
+            //var len = JSON.stringify(jsonObj).length;
+            var len = jsonStr.length;
+            console.log(objName + ': ' + this.DataSizeToString(len));
+            if (jsonObj.id || jsonObj.code) {
+                return;
+            }
+            for (var n in jsonObj) {
+                this.logJsonSize(jsonObj[n], n);
+            }
+        }
+    }, {
+        key: 'clickEvalSizeBtnHandler',
+        value: function clickEvalSizeBtnHandler(ev) {
+            var project = this.props.project;
+            var jsonData = project.getJson();
+            this.logJsonSize(jsonData, 'proj');
         }
     }, {
         key: 'compileCompletedHandler',
@@ -434,6 +495,15 @@ var ContentPanel = function (_React$PureComponent) {
                                 'div',
                                 null,
                                 '\u5BFC\u51FA'
+                            )
+                        ),
+                        React.createElement(
+                            'button',
+                            { type: 'button', className: 'btn btn-sm bg-dark text-light', onClick: this.clickEvalSizeBtnHandler },
+                            React.createElement(
+                                'div',
+                                null,
+                                '\u8BC4\u4F30'
                             )
                         )
                     ),
