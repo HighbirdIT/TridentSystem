@@ -607,6 +607,7 @@ class MobileContentCompiler extends ContentCompiler {
             var rowIndexInfo_map = {
                 mapVarName: 'rowIndexInfo_map',
             };
+
             var actKey;
             var accordionParents_arr = relyPath.relyCtl.searchParentKernel([Accordion_Type, TabItem_Type]);
             var accordionCheckStr = '';
@@ -637,20 +638,26 @@ class MobileContentCompiler extends ContentCompiler {
                 switch (relyPath.type) {
                     case ECtlReplyPathType.SetAP_On_BPChanged:
                         getValueStr = '';
-                        if (relyPath.approach.funName) {
-                            var useParentPath = this.getKernelFullParentPath(relyPath.relyCtl);
-                            if (useParentPath.length > 0) {
-                                useParentPath = ' + ' + singleQuotesStr('.' + useParentPath);
+                        var parentForms_arr = relyPath.relyCtl.searchParentKernel(M_FormKernel_Type, false);
+                        if(parentForms_arr && parentForms_arr.find(form=>{return form.isListForm() || form.isGridForm();})){
+                            // gird、list里面的关联让其自身去管理，不在自订控件中管理了
+                        }
+                        else{
+                            if (relyPath.approach.funName) {
+                                var useParentPath = this.getKernelFullParentPath(relyPath.relyCtl);
+                                if (useParentPath.length > 0) {
+                                    useParentPath = ' + ' + singleQuotesStr('.' + useParentPath);
+                                }
+                                getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State, 'null', 'this.props.fullPath' + useParentPath]);
                             }
-                            getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State, 'null', 'this.props.fullPath' + useParentPath]);
+                            else if (relyPath.approach.value) {
+                                getValueStr = relyPath.approach.value;
+                            }
+                            else {
+                                console.error('不支持的approach!');
+                            }
+                            changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName, '.', rowIndexInfo_map)), getValueStr));
                         }
-                        else if (relyPath.approach.value) {
-                            getValueStr = relyPath.approach.value;
-                        }
-                        else {
-                            console.error('不支持的approach!');
-                        }
-                        changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName, '.', rowIndexInfo_map)), getValueStr));
                         break;
                     case ECtlReplyPathType.CallFun_On_BPChanged:
                         actKey = 'call_' + relyPath.funName;
@@ -4157,8 +4164,15 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
 
+        var starValue = theKernel.getAttribute('starvalue');
         if (starSelectable) {
             ctlTag.setAttr('starSelectable', '{true}');
+            if(starValue.length > 0 && starValue != '*'){
+                ctlTag.setAttr('starval', starValue);
+            }
+            else{
+                starValue = '*';
+            }
         }
 
         var useDS = theKernel.getAttribute(AttrNames.DataSource);
@@ -4690,6 +4704,7 @@ class MobileContentCompiler extends ContentCompiler {
                             setTextStateItem.setNull = false;
                             setTextStateItem.staticValue = '*';
                         }
+                        setValueStateItem.staticValue = starValue;
                     }
                 }
             }

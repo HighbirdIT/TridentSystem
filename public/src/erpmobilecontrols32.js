@@ -600,7 +600,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             }
             if (filted_arr.length == 0) {
                 contentElem = <div ref={this.contentDivRef} className='list-group flex-grow-1 flex-shrink-0'>
-                    {this.state.starSelectable && <div onClick={this.clickStarItem} className={'d-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == '*' ? ' active' : '')}>*</div>}
+                    {this.state.starSelectable && <div onClick={this.clickStarItem} className={'d-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == this.props.starval ? ' active' : '')}>*</div>}
                     <span className='text-nowrap'>没有数据</span>
                 </div>
             }
@@ -615,7 +615,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
 
             if (filted_arr.length > 0) {
                 contentElem = (<div ref={this.contentDivRef} className='list-group flex-grow-1 flex-shrink-0 autoScroll_Touch' onScroll={filted_arr.length > maxRowCount ? this.contentDivScrollHandler : null}>
-                    {this.state.starSelectable && <div onClick={this.clickStarItem} className={'d-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == '*' ? ' active' : '')}>*</div>}
+                    {this.state.starSelectable && <div onClick={this.clickStarItem} className={'d-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == this.props.starval ? ' active' : '')}>*</div>}
                     {recentElem}
                     {
                         filted_arr.map((item, i) => {
@@ -771,8 +771,8 @@ class ERPC_DropDown extends React.PureComponent {
         var value = null;
         var text = null;
         var multiselect = this.props.multiselect;
-        if (theOptionItem == '*') {
-            value = '*';
+        if (theOptionItem == '*' || theOptionItem == this.props.starval) {
+            value = this.props.starval;
             text = '*';
         }
         else {
@@ -809,7 +809,7 @@ class ERPC_DropDown extends React.PureComponent {
             }
         }
 
-        if (autoClose != false && (value == '*' || !this.props.multiselect)) {
+        if (autoClose != false && (value == this.props.starval || !this.props.multiselect)) {
             this.dropDownClosed();
         }
 
@@ -851,6 +851,7 @@ class ERPC_DropDown extends React.PureComponent {
             multiselect: this.props.multiselect,
             selectOpt: selectOpt,
             label: ReplaceIfNull(this.props.label, this.props.textAttrName),
+            starval: this.props.starval,
         }
     }
 
@@ -943,7 +944,7 @@ class ERPC_DropDown extends React.PureComponent {
                     }
                 }
                 else if (this.props.optionsData.options_arr) {
-                    if (selectedVal != '*') {
+                    if (selectedVal != this.props.starval) {
                         if (multiselect) {
                             selectedItems_arr = this.props.optionsData.options_arr.filter(item => {
                                 return selectedVal.indexOf(item.value + '') != -1;
@@ -1190,10 +1191,11 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         ERPC_selector_map[selectorid] = optionsDataSelector;
     }
 
+    var starval = ownprops.starval == null ? '*' : ownprops.starval;
     var useValue = ctlState.value;
     var selectOpt = ctlState.selectOpt;
     if (useValue) {
-        if (ownprops.multiselect && useValue != '*') {
+        if (ownprops.multiselect && useValue != starval) {
             if (useValue[0] == '<') {
                 selectorid = propProfile.fullPath + 'value';
                 var valueSelector = ERPC_selector_map[selectorid];
@@ -1225,6 +1227,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         plainTextMode: rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
+        starval: starval,
     };
 }
 

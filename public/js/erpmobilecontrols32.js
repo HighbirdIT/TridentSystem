@@ -690,7 +690,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                         { ref: this.contentDivRef, className: 'list-group flex-grow-1 flex-shrink-0' },
                         this.state.starSelectable && React.createElement(
                             'div',
-                            { onClick: this.clickStarItem, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == '*' ? ' active' : '') },
+                            { onClick: this.clickStarItem, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == this.props.starval ? ' active' : '') },
                             '*'
                         ),
                         React.createElement(
@@ -717,7 +717,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                         { ref: this.contentDivRef, className: 'list-group flex-grow-1 flex-shrink-0 autoScroll_Touch', onScroll: filted_arr.length > maxRowCount ? this.contentDivScrollHandler : null },
                         this.state.starSelectable && React.createElement(
                             'div',
-                            { onClick: this.clickStarItem, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == '*' ? ' active' : '') },
+                            { onClick: this.clickStarItem, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == this.props.starval ? ' active' : '') },
                             '*'
                         ),
                         recentElem,
@@ -919,8 +919,8 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             var value = null;
             var text = null;
             var multiselect = this.props.multiselect;
-            if (theOptionItem == '*') {
-                value = '*';
+            if (theOptionItem == '*' || theOptionItem == this.props.starval) {
+                value = this.props.starval;
                 text = '*';
             } else {
                 if (multiselect) {
@@ -955,7 +955,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 }
             }
 
-            if (autoClose != false && (value == '*' || !this.props.multiselect)) {
+            if (autoClose != false && (value == this.props.starval || !this.props.multiselect)) {
                 this.dropDownClosed();
             }
 
@@ -998,7 +998,8 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 recentUsed: this.recentUsed,
                 multiselect: this.props.multiselect,
                 selectOpt: selectOpt,
-                label: ReplaceIfNull(this.props.label, this.props.textAttrName)
+                label: ReplaceIfNull(this.props.label, this.props.textAttrName),
+                starval: this.props.starval
             };
         }
     }, {
@@ -1091,7 +1092,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                             }
                         }
                     } else if (this.props.optionsData.options_arr) {
-                        if (selectedVal != '*') {
+                        if (selectedVal != this.props.starval) {
                             if (multiselect) {
                                 selectedItems_arr = this.props.optionsData.options_arr.filter(function (item) {
                                     return selectedVal.indexOf(item.value + '') != -1;
@@ -1361,10 +1362,11 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         ERPC_selector_map[selectorid] = optionsDataSelector;
     }
 
+    var starval = ownprops.starval == null ? '*' : ownprops.starval;
     var useValue = ctlState.value;
     var selectOpt = ctlState.selectOpt;
     if (useValue) {
-        if (ownprops.multiselect && useValue != '*') {
+        if (ownprops.multiselect && useValue != starval) {
             if (useValue[0] == '<') {
                 selectorid = propProfile.fullPath + 'value';
                 var valueSelector = ERPC_selector_map[selectorid];
@@ -1393,7 +1395,8 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         selectOpt: selectOpt,
         plainTextMode: rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
         fullParentPath: propProfile.fullParentPath,
-        fullPath: propProfile.fullPath
+        fullPath: propProfile.fullPath,
+        starval: starval
     };
 }
 

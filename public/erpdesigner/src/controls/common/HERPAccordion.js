@@ -47,7 +47,7 @@ class HERPAccordionKernel extends ContainerKernelBase{
                     child.editor.aidAccessableKernels(targetType, rlt_arr);
                 }
             }
-            if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && child.isPageForm())){
+            if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && child.isPageForm()) || child.type == PopperButtonKernel_Type){
                 // 穿透div
                 child.aidAccessableKernels(targetType, rlt_arr);
             }

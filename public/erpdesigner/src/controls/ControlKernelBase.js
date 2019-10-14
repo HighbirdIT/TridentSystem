@@ -545,7 +545,7 @@ class ControlKernelBase extends IAttributeable {
                             }
                         }
                     }
-                    if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && child.isPageForm())){
+                    if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && child.isPageForm()) || child.type == PopperButtonKernel_Type){
                         // 穿透div
                         if(meetParents_map[child.id] == null){
                             meetParents_map[child.id] = 1;
