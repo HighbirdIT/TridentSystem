@@ -900,7 +900,10 @@ class MobileContentCompiler extends ContentCompiler {
         else {
             // 非弹出式窗体
             activePageFun.pushLine(makeLine_Assign('state.nowPage', singleQuotesStr(pageKernel.id)));
-            activePageFun.pushLine("if(" + makeActStr_getGDataCache(pageKernel.id + '_opened') + "){return state;}");
+            if(pageKernel.getAllEntryParams().length == 0){
+                // 有入口参数的页面需要每次都执行init
+                activePageFun.pushLine("if(" + makeActStr_getGDataCache(pageKernel.id + '_opened') + "){return state;}");
+            }
             activePageFun.pushLine(makeLine_setGDataCache(pageKernel.id + '_opened', 1));
         }
         activePageFun.retBlock.pushLine('return ' + makeStr_callFun(initPageFun.name, ['state'], ';'));

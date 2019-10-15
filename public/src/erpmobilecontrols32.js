@@ -1659,7 +1659,7 @@ function ERPC_Button_mapstatetoprops(state, ownprops) {
         visible: ctlState.visible,
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
-        title: ctlState.title,
+        title: ctlState.title == null ? ownprops.title : ctlState.title,
         fetching: ctlState.fetching,
         fetchingErr: ctlState.fetchingErr,
     };
@@ -2831,6 +2831,7 @@ class ERPC_TopLevelFrame extends React.PureComponent {
         this.style = {
             left:'0px',
             top:'0px',
+            zIndex: 10000,
         };
         this.state = {
             srcs_arr:[],

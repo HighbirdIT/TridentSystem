@@ -533,8 +533,8 @@ class C_JSNode_JumpPage extends React.PureComponent {
         C_NodeCom_Base(this);
     }
 
-    targetPageDDCChanged(code, ddc, pageCode) {
-        this.props.nodedata.pageCode = code;
+    targetPageDDCChanged(pagename, ddc, page) {
+        this.props.nodedata.setPage(page);
     }
 
     render() {
