@@ -172,20 +172,53 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
 
+        /*
         var goodSeqCtlTemp_arr = project.userControls_arr.concat();
         goodSeqCtlTemp_arr.sort((a, b) => {
             return userCtlTemplateProfiles_map[a.id].relyOn_arr.length - userCtlTemplateProfiles_map[b.id].relyOn_arr.length;
         });
 
         console.log(userCtlTemplateProfiles_map);
-        goodSeqCtlTemp_arr.forEach((t,i)=>{
-            console.log('template:' + i);
+        goodSeqCtlTemp_arr.forEach((t, i) => {
+            console.log( 'template:' + i + '->' + t.id );
             console.log(userCtlTemplateProfiles_map[t.id]);
         });
         for (userCtli in goodSeqCtlTemp_arr) {
+            console.log( 'compile userTemplate:' + goodSeqCtlTemp_arr[userCtli].id );
             if (!this.compileUserControlTemplate(goodSeqCtlTemp_arr[userCtli])) {
                 return false;
             }
+        }
+        */
+        var waitCompileUserCtls_arr = project.userControls_arr.concat();
+        while (waitCompileUserCtls_arr.length > 0) {
+            var targetUserCtl = null;
+            var targetUserCtlProfile = null;
+            var targetUserCtlIndex = 0;
+            waitCompileUserCtls_arr.forEach((userCtl, index) => {
+                if(targetUserCtl != null){
+                    return;
+                }
+                targetUserCtlProfile = userCtlTemplateProfiles_map[userCtl.id];
+                if (targetUserCtlProfile.relyOn_arr.length == 0) {
+                    targetUserCtlIndex = index;
+                    targetUserCtl = userCtl;
+                }
+            });
+            if (targetUserCtl == null) {
+                logManager.error('无法继续编译自定义控件');
+            }
+            console.log('compile userTemplate:' + targetUserCtl.id);
+            if (!this.compileUserControlTemplate(targetUserCtl)) {
+                return false;
+            }
+            waitCompileUserCtls_arr.splice(targetUserCtlIndex, 1);
+            targetUserCtlProfile.beRely_arr.forEach(tid => {
+                var tindex = userCtlTemplateProfiles_map[tid].relyOn_arr.indexOf(targetUserCtl.id);
+                if(tindex >= 0){
+                    userCtlTemplateProfiles_map[tid].relyOn_arr.splice(tindex, 1);
+                }
+            });
         }
 
         this.mianPageKernel = null;
@@ -216,6 +249,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         clientSide.appClass.renderFun.pushLine(VarNames.RetElem + " = (", 1);
         clientSide.appClass.renderFun.pushLine("<div className='w-100 h-100'>");
+        clientSide.appClass.renderFun.pushLine("<ERPC_TopLevelFrame ref={gTopLevelFrameRef} />");
         clientSide.appClass.renderFun.pushLine("<CToastManger ref={gCToastMangerRef} />");
         clientSide.appClass.renderFun.pushLine("<CMessageBoxManger ref={gCMessageBoxMangerRef} />");
         clientSide.appClass.renderFun.pushLine("<FixedContainer ref={gFixedContainerRef} />");
@@ -573,6 +607,7 @@ class MobileContentCompiler extends ContentCompiler {
             var rowIndexInfo_map = {
                 mapVarName: 'rowIndexInfo_map',
             };
+
             var actKey;
             var accordionParents_arr = relyPath.relyCtl.searchParentKernel([Accordion_Type, TabItem_Type]);
             var accordionCheckStr = '';
@@ -603,20 +638,26 @@ class MobileContentCompiler extends ContentCompiler {
                 switch (relyPath.type) {
                     case ECtlReplyPathType.SetAP_On_BPChanged:
                         getValueStr = '';
-                        if (relyPath.approach.funName) {
-                            var useParentPath = this.getKernelFullParentPath(relyPath.relyCtl);
-                            if (useParentPath.length > 0) {
-                                useParentPath = ' + ' + singleQuotesStr('.' + useParentPath);
+                        var parentForms_arr = relyPath.relyCtl.searchParentKernel(M_FormKernel_Type, false);
+                        if(parentForms_arr && parentForms_arr.find(form=>{return form.isListForm() || form.isGridForm();})){
+                            // gird、list里面的关联让其自身去管理，不在自订控件中管理了
+                        }
+                        else{
+                            if (relyPath.approach.funName) {
+                                var useParentPath = this.getKernelFullParentPath(relyPath.relyCtl);
+                                if (useParentPath.length > 0) {
+                                    useParentPath = ' + ' + singleQuotesStr('.' + useParentPath);
+                                }
+                                getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State, 'null', 'this.props.fullPath' + useParentPath]);
                             }
-                            getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State, 'null', 'this.props.fullPath' + useParentPath]);
+                            else if (relyPath.approach.value) {
+                                getValueStr = relyPath.approach.value;
+                            }
+                            else {
+                                console.error('不支持的approach!');
+                            }
+                            changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName, '.', rowIndexInfo_map)), getValueStr));
                         }
-                        else if (relyPath.approach.value) {
-                            getValueStr = relyPath.approach.value;
-                        }
-                        else {
-                            console.error('不支持的approach!');
-                        }
-                        changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName, '.', rowIndexInfo_map)), getValueStr));
                         break;
                     case ECtlReplyPathType.CallFun_On_BPChanged:
                         actKey = 'call_' + relyPath.funName;
@@ -719,8 +760,12 @@ class MobileContentCompiler extends ContentCompiler {
         pageMidData.needSetKernels_arr = [];
         var pageReactClass = clientSide.getReactClass(pageKernel.getReactClassName(), true);
         pageReactClass.renderHeaderFun = pageReactClass.getFunction('renderHead', true);
+        pageReactClass.renderHeadButtonFun = pageReactClass.getFunction('renderHeadButton', true);
         var pageTitle = pageKernel.getAttribute(AttrNames.Title);
         var hideTitle = pageKernel.getAttribute(AttrNames.HideTitle);
+
+        pageReactClass.renderHeadButtonFun.headBlock.pushLine('var rlt_arr=[];');
+        pageReactClass.renderHeadButtonFun.retBlock.pushLine('return rlt_arr;');
         //pageReactClass.renderFootFun = pageReactClass.getFunction('renderFoot', true);
         //pageReactClass.renderFun.pushLine(makeLine_Assign(VarNames.RetElem, '<div>' + pageKernel.getAttribute(AttrNames.Title) + '</div>'));
 
@@ -736,11 +781,17 @@ class MobileContentCompiler extends ContentCompiler {
                 pageReactClass.renderHeaderFun.pushLine("return (<div className='d-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader'>", 1);
                 pageReactClass.renderHeaderFun.pushLine("<h3 onClick={pageRoute_Back}>{routeElem}" + pageTitle + "</h3>");
                 pageReactClass.renderHeaderFun.pushLine("<span className='flex-grow-1 flex-shrink-1' />");
-                if (autoHomeBtn) {
-                    pageReactClass.renderHeaderFun.pushLine("<button onClick={wantGoHomePage} className='btn-sm btn-light mr-1'><i className='fa fa-home' /></button>");
-                }
+                pageReactClass.renderHeaderFun.pushLine("{this.renderHeadButton()}");
                 pageReactClass.renderHeaderFun.subNextIndent();
                 pageReactClass.renderHeaderFun.pushLine("</div>);");
+
+                pageReactClass.renderHeadButtonFun.pushLine("if(gParentFrame){rlt_arr.push(<button key='_closebtn' onClick={wantCloseInFramePage} className='btn-sm btn-danger mr-1'><i className='fa fa-close' /></button>)}");
+                pageReactClass.renderHeadButtonFun.pushLine("else{", 1);
+                if (autoHomeBtn) {
+                    pageReactClass.renderHeaderFun.pushLine("rlt_arr.push(<button key='homebtn' onClick={wantGoHomePage} className='btn-sm btn-light mr-1'><i className='fa fa-home' /></button>);");
+                }
+                pageReactClass.renderHeadButtonFun.subNextIndent();
+                pageReactClass.renderHeadButtonFun.pushLine('}');
             }
         }
         else {
@@ -1105,8 +1156,8 @@ class MobileContentCompiler extends ContentCompiler {
             belongUserControlMidData = this.projectCompiler.getMidData(belongUserControl.id);
         }
         var eventParamGroup = attrsSetting.find(group => { return group.label == '事件接口'; });
-        eventParamGroup.attrs_arr.forEach(eventAttribute => {
-            //var attrValue = theKernel.getAttribute(attrName);
+        for(var eventAttribute_i in eventParamGroup.attrs_arr){
+            var eventAttribute = eventParamGroup.attrs_arr[eventAttribute_i];
             var eventBPname = theKernel.id + '_' + eventAttribute.name;
             var eventBp = project.scriptMaster.getBPByName(eventBPname);
             if (eventBp != null) {
@@ -1129,7 +1180,7 @@ class MobileContentCompiler extends ContentCompiler {
                     );
                 }
             }
-        });
+        }
 
         templateKernel.getFunctionApiAttrArray().forEach(funAttribute => {
             var funBPname = templateKernel.id + '_' + funAttribute.name;
@@ -1212,8 +1263,9 @@ class MobileContentCompiler extends ContentCompiler {
             ctlTag.setAttr('align', textAlign);
         }
         var isnullable = false;
-        if (theKernel.isAEditor()) {
-            isnullable = theKernel.parent.getAttribute(AttrNames.Nullable);
+        var parentLabledCtl = theKernel.getParentLabledCtl();
+        if (parentLabledCtl) {
+            isnullable = parentLabledCtl.getAttribute(AttrNames.Nullable);
         }
         else {
             isnullable = theKernel.getAttribute(AttrNames.Nullable);
@@ -1650,9 +1702,6 @@ class MobileContentCompiler extends ContentCompiler {
 
     compileLabeledControlKernel(theKernel, renderBlock, renderFun) {
         var clientSide = this.clientSide;
-        if (theKernel.id == 'M_LC_10') {
-            console.log('sadfsad');
-        }
         var layoutConfig = theKernel.getLayoutConfig();
         var project = this.project;
         var logManager = project.logManager;
@@ -1717,6 +1766,7 @@ class MobileContentCompiler extends ContentCompiler {
             labeledCtrlTag.setAttr('label', label);
         }
 
+
         var isdisplay = theKernel.getAttribute(AttrNames.Isdisplay);
         var isdisplayParseRet = parseObj_CtlPropJsBind(isdisplay, project.scriptMaster);
         if (isdisplayParseRet.isScript) {
@@ -1741,6 +1791,20 @@ class MobileContentCompiler extends ContentCompiler {
                     this.addNeedSetStateToParent(theKernel, { name: 'visible', staticValue: 'false' });
                     labeledCtrlTag.setAttr('visible', '{false}');
                 }
+            }
+        }
+
+        if (!dynamicColumn_obj) {
+            var tooltip = theKernel.getAttribute(AttrNames.ToolTip);
+            var tooltipParseRet = parseObj_CtlPropJsBind(tooltip, project.scriptMaster);
+            if (tooltipParseRet.isScript) {
+                compileConfig = { autoSetFetchState: true };
+                compileRet = this.compileScriptAttribute(textFieldParseRet, theKernel, 'tooltip', AttrNames.TextField, compileConfig);
+                if (compileRet == false) {
+                    return false;
+                }
+            } else {
+                labeledCtrlTag.setAttr('tooltip', tooltip);
             }
         }
 
@@ -1875,11 +1939,25 @@ class MobileContentCompiler extends ContentCompiler {
 
         var ifFetchErrBlock = new JSFile_IF(VarNames.FetchErr, makeStr_ThisProp(VarNames.FetchErr));
         ifFetingBlock.falseBlock.pushChild(ifFetchErrBlock);
-        ifFetchErrBlock.pushLine(VarNames.RetElem + " = renderFetcingErrDiv(" + makeStr_ThisProp(VarNames.FetchErr) + ".info);");
+        var fetchErrDataAct = theKernel.getAttribute(AttrNames.FetchErrAct);
+        switch (fetchErrDataAct) {
+            case ENoDataAct.Hidden:
+                ifFetchErrBlock.pushLine("return null;");
+                break;
+            default:
+                ifFetchErrBlock.pushLine(VarNames.RetElem + " = renderFetcingErrDiv(" + makeStr_ThisProp(VarNames.FetchErr) + ".info);");
+        }
 
         var ifInvalidBundleBlock = new JSFile_IF(VarNames.InvalidBundle, makeStr_ThisProp(VarNames.InvalidBundle));
         ifFetchErrBlock.falseBlock.pushChild(ifInvalidBundleBlock);
-        ifInvalidBundleBlock.pushLine(VarNames.RetElem + " = renderInvalidBundleDiv();");
+        var invalidAct = theKernel.getAttribute(AttrNames.InvalidAct);
+        switch (invalidAct) {
+            case ENoDataAct.Hidden:
+                ifInvalidBundleBlock.pushLine("return null;");
+                break;
+            default:
+                ifInvalidBundleBlock.pushLine(VarNames.RetElem + " = renderInvalidBundleDiv();");
+        }
 
         var renderContentBlock = ifInvalidBundleBlock.falseBlock;
 
@@ -1898,14 +1976,18 @@ class MobileContentCompiler extends ContentCompiler {
                 noDataTip = '没有查询到数据';
             }
             var noDataAct = theKernel.getAttribute(AttrNames.NoDataAct);
-            switch(noDataAct){
+            switch (noDataAct) {
                 case ENoDataAct.Hidden:
-                ifNowRecordBlock.pushLine("return null;");
-                break;
+                    ifNowRecordBlock.pushLine("return null;");
+                    break;
                 default:
-                ifNowRecordBlock.pushLine(VarNames.RetElem + " = <div className='m-auto'>" + noDataTip + "</div>;");
+                    ifNowRecordBlock.pushLine(VarNames.RetElem + " = <div className='m-auto'>" + noDataTip + "</div>;");
             }
             renderContentBlock = ifNowRecordBlock.falseBlock;
+
+            formReactClass.constructorFun.pushLine('this.clickFreshHandler = this.clickFreshHandler.bind(this);');
+            var clickFreshHandlerFun = formReactClass.getFunction('clickFreshHandler', true, ['ev']);
+            clickFreshHandlerFun.pushLine(makeFName_pull(theKernel) + "(null, true, this.props.parentPath);");
         }
 
         var formStyleID = theKernel.id + '_style';
@@ -1973,7 +2055,7 @@ class MobileContentCompiler extends ContentCompiler {
 
             renderContentFun.pushLine('return (', 1);
             renderContentFun.pushLine("<div ref={this.rootRef} className='" + layoutConfig.getClassName() + "' " + (hasFormStyle ? "style={" + formStyleID + "}" : '') + ">", 1);
-            renderContentFun.pushLine("{this.props.title && <div className='bg-dark text-light " + titleAlginStr + " d-flex flex-shrink-0 p-1'><span>{this.props.title}</span></div>}");
+            renderContentFun.pushLine("{this.props.title && <div className='bg-dark text-light " + titleAlginStr + " d-flex flex-shrink-0 p-1'><span>{this.props.title}{this.props.records_arr && this.props.records_arr.length > 0 ? '[' + this.props.records_arr.length + '条]' : null}{this.props.fetching ? null : <i className='btn btn-sm fa fa-refresh' onClick={this.clickFreshHandler} />}</span></div>}");
             if (!hideHeader) {
                 renderContentFun.pushLine("<div id={this.props.fullPath + 'tableheader'} className='mw-100 hidenOverflow flex-shrink-0 gridFormFixHeaderDiv'>", 1);
                 renderContentFun.pushLine("<table className='table' style={" + headTableStyleID + "}>", 1);
@@ -2017,7 +2099,7 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentBlock.subNextIndent();
             renderContentBlock.pushLine('});');
 
-            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'>", 1);
+            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column autoScroll " + layoutConfig.getClassName() + "'>", 1);
             renderContentFun.retBlock.pushLine("{this.props.title && <div className='bg-dark text-light " + titleAlginStr + " d-flex flex-shrink-0 p-1'><span>{this.props.title}</span></div>}");
             var isWrap = theKernel.getAttribute(AttrNames.Wrap);
             var contentDivClassStr = 'd-flex flex-grow-1 flex-shrink-1' + (isWrap ? ' flex-wrap' : '');
@@ -2487,13 +2569,13 @@ class MobileContentCompiler extends ContentCompiler {
         if (isGridForm) {
             var sumTableWidth = 0;
             var gridWidthType = theKernel.getAttribute(AttrNames.WidthType);
-            gridHeadPureRectClass.renderFun.pushLine('return (<thead className="thead-dark"><tr>', 1);
+            gridHeadPureRectClass.renderFun.pushLine('return (<thead className="thead-light"><tr>', 1);
             var gridHeadRowRenderBlock = new FormatFileBlock('tr');
             gridHeadPureRectClass.renderFun.pushChild(gridHeadRowRenderBlock, -1);
             gridHeadPureRectClass.renderFun.pushLine('</tr></thead>);');
             var gridHeadBodyRowRenderBlock = null;
             if (gridHeadBodyPureRectClass) {
-                gridHeadBodyPureRectClass.renderFun.pushLine(VarNames.RetElem + ' = (<tbody><tr>', 1);
+                gridHeadBodyPureRectClass.renderFun.pushLine(VarNames.RetElem + ' = (<tbody className="border border-top-0 border-bottom-0"><tr>', 1);
                 gridHeadBodyRowRenderBlock = new FormatFileBlock('tr');
                 gridHeadBodyPureRectClass.renderFun.pushChild(gridHeadBodyRowRenderBlock, -1);
                 gridHeadBodyPureRectClass.renderFun.pushLine('</tr></tbody>);');
@@ -3687,8 +3769,9 @@ class MobileContentCompiler extends ContentCompiler {
         }
 
         var isnullable = false;
-        if (theKernel.isAEditor()) {
-            isnullable = theKernel.parent.getAttribute(AttrNames.Nullable);
+        var parentLabledCtl = theKernel.getParentLabledCtl();
+        if (parentLabledCtl) {
+            isnullable = parentLabledCtl.getAttribute(AttrNames.Nullable);
         }
         else {
             isnullable = theKernel.getAttribute(AttrNames.Nullable);
@@ -3911,10 +3994,10 @@ class MobileContentCompiler extends ContentCompiler {
             if (!IsEmptyString(keyrecordidParseRet.string)) {
                 if (formColumns_arr) {
                     if (formColumns_arr.indexOf(keyrecordid) != -1) {
-                        parentMidData.useColumns_map[title] = 1;
+                        parentMidData.useColumns_map[keyrecordid] = 1;
                         setkeyrecordidStateTiem = {
                             name: 'relrecordid',
-                            useColumn: { name: title },
+                            useColumn: { name: keyrecordid },
                         };
                     }
                 }
@@ -3941,10 +4024,10 @@ class MobileContentCompiler extends ContentCompiler {
             if (!IsEmptyString(attachmentidParseRet.string)) {
                 if (formColumns_arr) {
                     if (formColumns_arr.indexOf(attachmentid) != -1) {
-                        parentMidData.useColumns_map[title] = 1;
+                        parentMidData.useColumns_map[attachmentid] = 1;
                         setattachmentidStateTiem = {
                             name: 'defattachmentID',
-                            useColumn: { name: title },
+                            useColumn: { name: attachmentid },
                         };
                     }
                 }
@@ -4052,6 +4135,9 @@ class MobileContentCompiler extends ContentCompiler {
         if (nullable) {
             ctlTag.setAttr('nullable', '{true}');
         }
+        if (!theKernel.getAttribute(AttrNames.Growable)) {
+            ctlTag.setAttr('growable', '{false}');
+        }
         if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
         if (this.compileValidCheckerAttribute(theKernel) == false) { return false; }
         if (this.compileOnChangedEventBlueprint(theKernel, ctlTag) == false) { return false; }
@@ -4078,8 +4164,15 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
 
+        var starValue = theKernel.getAttribute('starvalue');
         if (starSelectable) {
             ctlTag.setAttr('starSelectable', '{true}');
+            if(starValue.length > 0 && starValue != '*'){
+                ctlTag.setAttr('starval', starValue);
+            }
+            else{
+                starValue = '*';
+            }
         }
 
         var useDS = theKernel.getAttribute(AttrNames.DataSource);
@@ -4250,6 +4343,7 @@ class MobileContentCompiler extends ContentCompiler {
         var nullableChecker;
         var needPostValid;
         var useStateVarName;
+        var parentLabledCtl;
         if (!IsEmptyObject(bpCompileHelper.useGlobalControls_map)) {
             for (usectlid in bpCompileHelper.useGlobalControls_map) {
                 useCtlData = bpCompileHelper.useGlobalControls_map[usectlid];
@@ -4259,9 +4353,10 @@ class MobileContentCompiler extends ContentCompiler {
                     useStateVarName = belongUserControl.id + '_state';
                 }
                 ctlParentStateVarName = null;
-                if (useCtlData.kernel.isAEditor()) {
-                    ctlParentStateVarName = useCtlData.kernel.parent.id + '_state';
-                    initValue = makeStr_getStateByPath(useStateVarName, singleQuotesStr(useCtlData.kernel.parent.getStatePath()), '{}');
+                parentLabledCtl = useCtlData.kernel.getParentLabledCtl();
+                if (parentLabledCtl) {
+                    ctlParentStateVarName = parentLabledCtl.id + '_state';
+                    initValue = makeStr_getStateByPath(useStateVarName, singleQuotesStr(parentLabledCtl.getStatePath()), '{}');
                     pullFun.scope.getVar(ctlParentStateVarName, true, initValue);
                 }
 
@@ -4379,9 +4474,11 @@ class MobileContentCompiler extends ContentCompiler {
                     useCtlData = useFormData.useControls_map[usectlid];
                     ctlStateVarName = usectlid + '_state';
                     ctlParentStateVarName = null;
-                    if (useCtlData.kernel.isAEditor()) {
-                        ctlParentStateVarName = useCtlData.kernel.parent.id + '_state';
-                        initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(useCtlData.kernel.parent.id), '{}');
+
+                    parentLabledCtl = useCtlData.kernel.getParentLabledCtl();
+                    if (parentLabledCtl) {
+                        ctlParentStateVarName = parentLabledCtl.id + '_state';
+                        initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(parentLabledCtl.id), '{}');
                         pullFun.scope.getVar(ctlParentStateVarName, true, initValue);
                     }
                     initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(useCtlData.kernel.id), '{}');
@@ -4607,6 +4704,7 @@ class MobileContentCompiler extends ContentCompiler {
                             setTextStateItem.setNull = false;
                             setTextStateItem.staticValue = '*';
                         }
+                        setValueStateItem.staticValue = starValue;
                     }
                 }
             }
@@ -4914,6 +5012,7 @@ class MobileContentCompiler extends ContentCompiler {
         var belongUserCtlMidData = belongUserControl ? this.projectCompiler.getMidData(belongUserControl.id) : null;
         var reactParentKernel = theKernel.getReactParentKernel(true);
         var autoPull = theKernel.getAttribute(AttrNames.AutoPull);
+        var parentLabledCtl;
 
         var pullFun = midData.pullFun;
         var colName;
@@ -5038,9 +5137,10 @@ class MobileContentCompiler extends ContentCompiler {
                             initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(usectlid), '{}');
                             theFun.scope.getVar(ctlStateVarName, true, initValue);
                             ctlParentStateVarName = null;
-                            if (useCtlData.kernel.isAEditor()) {
-                                ctlParentStateVarName = useCtlData.kernel.parent.id + '_state';
-                                initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(useCtlData.kernel.parent.id), '{}');
+                            parentLabledCtl = useCtlData.kernel.getParentLabledCtl();
+                            if (parentLabledCtl) {
+                                ctlParentStateVarName = parentLabledCtl.id + '_state';
+                                initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(parentLabledCtl.id), '{}');
                                 theFun.scope.getVar(ctlParentStateVarName, true, initValue);
                             }
 
@@ -5052,7 +5152,7 @@ class MobileContentCompiler extends ContentCompiler {
                                 needPostValid = true;
                                 if (propApiitem.needValid && needCheckProps_map[varName] == null) {
                                     needCheckProps_map[varName] = 1;
-                                    nullableChecker = ctlParentStateVarName ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
+                                    nullableChecker = ctlParentStateVarName ? parentLabledCtl : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
                                     needPostValid = (nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : true) != true;
                                     needCheckVars_arr.push({
                                         kernel: useCtlData.kernel,
@@ -5099,9 +5199,10 @@ class MobileContentCompiler extends ContentCompiler {
                     theFun.scope.getVar(ctlStateVarName, true, initValue);
 
                     ctlParentStateVarName = null;
-                    if (useCtlData.kernel.isAEditor()) {
-                        ctlParentStateVarName = useCtlData.kernel.parent.id + '_state';
-                        initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.parent.id), '{}');
+                    parentLabledCtl = useCtlData.kernel.getParentLabledCtl();
+                    if (parentLabledCtl) {
+                        ctlParentStateVarName = parentLabledCtl.id + '_state';
+                        initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(parentLabledCtl.id), '{}');
                         theFun.scope.getVar(ctlParentStateVarName, true, initValue);
                     }
 
@@ -5187,14 +5288,14 @@ class MobileContentCompiler extends ContentCompiler {
                         checkVarValidIf.trueBlock.pushLine('if(' + VarNames.HadStateParam + '){', 1);
                         checkVarValidIf.trueBlock.pushLine(setErrStateLine, -1);
                         checkVarValidIf.trueBlock.pushLine('}');
-                        checkVarValidIf.trueBlock.pushLine('else{' + dispatchErrLine + '}');
+                        checkVarValidIf.trueBlock.pushLine('else{' + dispatchErrLine + ' return;}');
                     }
                     validBlock.pushChild(validKernelBlock);
                     validKernelBlock.pushLine('if(hadValidErr){', 1);
                     validKernelBlock.pushLine('if(' + VarNames.HadStateParam + '){', 1);
                     validKernelBlock.pushLine(setErrStateLine, -1);
                     validKernelBlock.pushLine('}');
-                    validKernelBlock.pushLine('else{' + dispatchErrLine + '}', -1);
+                    validKernelBlock.pushLine('else{' + dispatchErrLine + ' return;}', -1);
                     validKernelBlock.pushLine('return;');
                     validKernelBlock.subNextIndent();
                     validKernelBlock.pushLine('}');

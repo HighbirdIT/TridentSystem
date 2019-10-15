@@ -1,13 +1,23 @@
 var ctrlCurrentComponent_map = {};
 var gFixedContainerRef = React.createRef();
+var gTopLevelFrameRef = React.createRef();
 var gFixedItemCounter = 0;
 var gCusValidChecker_map = {};
+var gPageInFrame = false;
+var gParentFrame = null;
 const gPreconditionInvalidInfo = '前置条件不足';
 const gCantNullInfo = '不能为空值';
 
-
 const HashKey_FixItem = 'fixitem';
 const gEmptyArr = [];
+
+function AppInit(app){
+    if(gParentFrame){
+        console.log('gPageInFrame');
+        return gParentFrame.getUseState();
+    }
+    return null;
+}
 
 class DataCache {
     constructor(label) {
@@ -221,12 +231,21 @@ function openPage(name, stepcode, stepdata, mode) {
     var targetPath = '/erppage/' + (isMobile ? 'mb' : 'pc') + '/' + name;
     if (stepcode != null && stepcode != '0') {
         targetPath += '?flowStep=' + stepcode;
-        if (stepdata != null && stepdata.length > 0) {
+        if (stepdata != null) {
             targetPath += '&stepData' + stepcode + '=' + stepdata;
         }
     }
     if(mode == 'topframe'){
-        
+        if(gParentFrame){
+            setTimeout(() => {
+                var nowPageState = store.getState();
+                gParentFrame.push(window.location.origin + targetPath, nowPageState);   
+            }, 20);
+        }
+        else{
+            gTopLevelFrameRef.current.push(window.location.origin + targetPath);   
+        }
+        return;
     }
     location.href = targetPath;
 }
@@ -241,6 +260,12 @@ function wantGoHomePage() {
             msg.fireClose();
         }
     });
+}
+
+function wantCloseInFramePage() {
+    if(gParentFrame){
+        gParentFrame.pop();
+    }
 }
 
 function goHomePage() {
@@ -575,7 +600,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             }
             if (filted_arr.length == 0) {
                 contentElem = <div ref={this.contentDivRef} className='list-group flex-grow-1 flex-shrink-0'>
-                    {this.state.starSelectable && <div onClick={this.clickStarItem} className={'d-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == '*' ? ' active' : '')}>*</div>}
+                    {this.state.starSelectable && <div onClick={this.clickStarItem} className={'d-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == this.props.starval ? ' active' : '')}>*</div>}
                     <span className='text-nowrap'>没有数据</span>
                 </div>
             }
@@ -590,7 +615,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
 
             if (filted_arr.length > 0) {
                 contentElem = (<div ref={this.contentDivRef} className='list-group flex-grow-1 flex-shrink-0 autoScroll_Touch' onScroll={filted_arr.length > maxRowCount ? this.contentDivScrollHandler : null}>
-                    {this.state.starSelectable && <div onClick={this.clickStarItem} className={'d-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == '*' ? ' active' : '')}>*</div>}
+                    {this.state.starSelectable && <div onClick={this.clickStarItem} className={'d-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (selectedVal == this.props.starval ? ' active' : '')}>*</div>}
                     {recentElem}
                     {
                         filted_arr.map((item, i) => {
@@ -746,8 +771,8 @@ class ERPC_DropDown extends React.PureComponent {
         var value = null;
         var text = null;
         var multiselect = this.props.multiselect;
-        if (theOptionItem == '*') {
-            value = '*';
+        if (theOptionItem == '*' || theOptionItem == this.props.starval) {
+            value = this.props.starval;
             text = '*';
         }
         else {
@@ -784,7 +809,7 @@ class ERPC_DropDown extends React.PureComponent {
             }
         }
 
-        if (autoClose != false && (value == '*' || !this.props.multiselect)) {
+        if (autoClose != false && (value == this.props.starval || !this.props.multiselect)) {
             this.dropDownClosed();
         }
 
@@ -826,6 +851,7 @@ class ERPC_DropDown extends React.PureComponent {
             multiselect: this.props.multiselect,
             selectOpt: selectOpt,
             label: ReplaceIfNull(this.props.label, this.props.textAttrName),
+            starval: this.props.starval,
         }
     }
 
@@ -918,7 +944,7 @@ class ERPC_DropDown extends React.PureComponent {
                     }
                 }
                 else if (this.props.optionsData.options_arr) {
-                    if (selectedVal != '*') {
+                    if (selectedVal != this.props.starval) {
                         if (multiselect) {
                             selectedItems_arr = this.props.optionsData.options_arr.filter(item => {
                                 return selectedVal.indexOf(item.value + '') != -1;
@@ -1004,7 +1030,7 @@ class ERPC_DropDown extends React.PureComponent {
         var dropDownElem = null;
         if (this.props.editable) {
             dropDownElem = (
-                <div className={"d-flex btn-group flex-grow-1 flex-shrink-0 erpc_dropdown input-group"} style={this.props.style} ref={this.rootDivRef}>
+                <div className={"d-flex btn-group flex-shrink-0 erpc_dropdown input-group flex-grow-" + (this.props.growable == false ? '0' : '1')} style={this.props.style} ref={this.rootDivRef}>
                     <input onFocus={this.editableInputFocushandler} onBlur={this.editableInputBlurhandler} ref={this.editableInputRef} type='text' className='flex-grow-1 flex-shrink-1 flexinput form-control' onChange={this.editableInputChanged} value={inputingValue} placeholder='输入或选择' />
                     <div className="input-group-append">
                         <button type='button' onClick={this.clickOpenHandler} className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdownbtn dropdown-toggle-split'} ></button>
@@ -1014,7 +1040,7 @@ class ERPC_DropDown extends React.PureComponent {
         }
         else {
             dropDownElem = (
-                <div className={"d-flex btn-group flex-grow-1 flex-shrink-0 erpc_dropdown"} style={this.props.style} ref={this.rootDivRef}>
+                <div className={"d-flex btn-group flex-shrink-0 erpc_dropdown flex-grow-" + (this.props.growable == false ? '0' : '1')} style={this.props.style} ref={this.rootDivRef}>
                     <button onClick={this.clickOpenHandler} type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1 erpc_dropdownMainBtn' + textColor} hadmini={hadMini ? 1 : null} >
                         <div style={{ overflow: 'hidden' }} className='flex-grow-1 flex-shrink-1'>
                             {textElem}
@@ -1030,7 +1056,7 @@ class ERPC_DropDown extends React.PureComponent {
         if (errTipElem == null) {
             return dropDownElem;
         }
-        return <div className='d-flex flex-column flex-grow-1 flex-shrink-1'>
+        return <div className={'d-flex flex-column flex-shrink-1 flex-grow-' + (this.props.growable == false ? '0' : '1')}>
             {dropDownElem}
             {errTipElem}
         </div>
@@ -1165,10 +1191,11 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         ERPC_selector_map[selectorid] = optionsDataSelector;
     }
 
+    var starval = ownprops.starval == null ? '*' : ownprops.starval;
     var useValue = ctlState.value;
     var selectOpt = ctlState.selectOpt;
     if (useValue) {
-        if (ownprops.multiselect && useValue != '*') {
+        if (ownprops.multiselect && useValue != starval) {
             if (useValue[0] == '<') {
                 selectorid = propProfile.fullPath + 'value';
                 var valueSelector = ERPC_selector_map[selectorid];
@@ -1200,6 +1227,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         plainTextMode: rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
+        starval: starval,
     };
 }
 
@@ -1386,11 +1414,16 @@ class ERPC_LabeledControl extends React.PureComponent {
         if (this.props.visible == false) {
             return null;
         }
+        var toolTipIcon = null;
+        if(this.props.tooltip){
+            toolTipIcon = <ERPC_PopperBtn className='btn btn-sm btn-link' anchor='left' labelelem={<i className='fa fa-question-circle fa-2x' />} ><span>{this.props.tooltip}</span></ERPC_PopperBtn>;
+        }
         return (<div className={'rowlFameOne' + (this.props.className ? ' ' + this.props.className : '')}>
             <div className='rowlFameOne_Left'>
                 {this.props.label}
             </div>
             <div className='rowlFameOne_right'>
+                {toolTipIcon}
                 {this.props.children}
             </div>
         </div>);
@@ -1404,6 +1437,7 @@ function ERPC_LabeledControl_mapstatetoprops(state, ownprops) {
         label: useLabel,
         fetching: ctlState.fetching,
         visible: ctlState.visible,
+        tooltip: ctlState.tooltip ? ctlState.tooltip : ownprops.tooltip,
     };
 }
 
@@ -1744,7 +1778,7 @@ class ERPC_PopperBtn extends React.PureComponent {
             return null;
         }
         */
-        return <div ref={this.rootRef}>
+        return <span ref={this.rootRef}>
             <button className={this.props.className} style={this.props.style} onClick={this.clickHandler}>{this.props.labelelem}{this.props.title}</button>
             <div ref={this.popdivRef} className={nowPopper ? 'popper zindexPopper ' + (this.props.popperclassname ? this.props.popperclassname : '') : 'd-none'} style={this.props.popperstyle}>
                 <div className='popper__arrow' />
@@ -1756,7 +1790,7 @@ class ERPC_PopperBtn extends React.PureComponent {
                     </span>
                 </div>
             </div>
-        </div>
+        </span>
     }
 }
 
@@ -1786,6 +1820,7 @@ var VisibleERPC_Label = null;
 var VisibleERPC_CheckBox = null;
 var VisibleERPC_Button = null;
 var VisibleERPC_PopperBtn = null;
+var VisibleERPC_Frame = null;
 const gNeedCallOnErpControlInit_arr = [];
 
 function ErpControlInit() {
@@ -1796,6 +1831,7 @@ function ErpControlInit() {
     VisibleERPC_CheckBox = ReactRedux.connect(ERPC_CheckBox_mapstatetoprops, ERPC_CheckBox_dispatchtorprops)(ERPC_CheckBox);
     VisibleERPC_Button = ReactRedux.connect(ERPC_Button_mapstatetoprops, ERPC_Button_dispatchtorprops)(ERPC_Button);
     VisibleERPC_PopperBtn = ReactRedux.connect(ERPC_PopperBtn_mapstatetoprops, EERPC_PopperBtn_dispatchtorprops)(ERPC_PopperBtn);
+    VisibleERPC_Frame = ReactRedux.connect(ERPC_Frame_mapstatetoprops, ERPC_Frame_dispatchtorprops)(ERPC_Frame);
 
     gNeedCallOnErpControlInit_arr.forEach(elem => {
         if (typeof elem == 'function') {
@@ -1845,7 +1881,7 @@ function ERPC_PageForm_clickUnPlusNavBtnHandler() {
 }
 
 function ERPC_PageForm_renderNavigater() {
-    if (this.props.records_arr == null) {
+    if (this.props.records_arr == null || this.props.records_arr.length == 1) {
         return null;
     }
     var count = this.props.records_arr.length;
@@ -1935,11 +1971,15 @@ function ERPC_GridForm_PageIndexChangedHandler(ev) {
 }
 
 function ERPC_GridForm_PrePageClickHandler(ev) {
-    this.setPageIndex(this.props.pageIndex - 1);
+    if(this.props.pageCount > 1){
+        this.setPageIndex(this.props.pageIndex - 1);
+    }
 }
 
 function ERPC_GridForm_NxtPageClickHandler(ev) {
-    this.setPageIndex(this.props.pageIndex + 1);
+    if(this.props.pageCount > 1){
+        this.setPageIndex(this.props.pageIndex + 1);
+    }
 }
 
 function ERPC_GridForm_SetRowPerPage(value) {
@@ -2269,15 +2309,17 @@ class CBaseGridFormNavBar extends React.PureComponent {
             pageOptions_arr.push(<option key={pi} value={pi}>第{pi + 1}页</option>);
         }
         return (<div className='btn-group flex-shrink-0'>
-            <button onClick={this.props.prePageClickHandler} type='button' className='btn btn-dark flex-grow-1'><i className='fa fa-long-arrow-left' /></button>
-            <button onClick={this.props.nxtPageClickHandler} type='button' className='btn btn-dark flex-grow-1'><i className='fa fa-long-arrow-right' /></button>
-            <select className='btn btn-dark' value={this.props.rowPerPage} onChange={this.props.rowPerPageChangedHandler}>
+            <button onClick={this.props.prePageClickHandler} type='button' className='btn btn-light flex-grow-1'><i className='fa fa-long-arrow-left' /></button>
+            <button onClick={this.props.nxtPageClickHandler} type='button' className='btn btn-light flex-grow-1'><i className='fa fa-long-arrow-right' /></button>
+            <select className='btn btn-light' value={this.props.rowPerPage} onChange={this.props.rowPerPageChangedHandler}>
+                <option value={5}>5条/页</option>
+                <option value={10}>10条/页</option>
                 <option value={20}>20条/页</option>
                 <option value={50}>50条/页</option>
                 <option value={100}>100条/页</option>
                 <option value={200}>200条/页</option>
             </select>
-            <select className='btn btn-dark' value={this.props.pageIndex} onChange={this.props.pageIndexChangedHandler}>
+            <select className='btn btn-light' value={this.props.pageIndex} onChange={this.props.pageIndexChangedHandler}>
                 {pageOptions_arr}
             </select>
         </div>);
@@ -2752,6 +2794,104 @@ class CMessageBoxManger extends React.PureComponent {
         </div>);
     }
 }
+
+class ERPC_Frame extends React.PureComponent {
+    constructor(props) {
+        super(props);
+    }
+
+    render() {
+        if(this.props.src == null || this.props.visible == false){
+            return null;
+        }
+        return <frame src={this.props.src} className={this.props.className} style={this.props.style} />
+    }
+}
+
+function ERPC_Frame_mapstatetoprops(state, ownprops) {
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    var rowState = propProfile.rowState;
+    var src = ctlState.src ? ctlState.src : ownprops.src;
+
+    return {
+        visible: ctlState.visible,
+        src: src,
+    };
+}
+
+function ERPC_Frame_dispatchtorprops(dispatch, ownprops) {
+    return {
+    };
+}
+
+class ERPC_TopLevelFrame extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        this.style = {
+            left:'0px',
+            top:'0px',
+        };
+        this.state = {
+            srcs_arr:[],
+            states_arr:[],
+            useSrc:null,
+            useState:null,
+        };
+        this.onloadHandler = this.onloadHandler.bind(this);
+        this.push = this.push.bind(this);
+        this.pop = this.pop.bind(this);
+    }
+
+    push(src, oldPageState){
+        if(this.state.srcs_arr.length > 0 && this.state.srcs_arr[this.state.srcs_arr.length - 1] == src){
+            return;
+        }
+        if(this.state.srcs_arr.length == 0){
+            oldPageState = null;    // 宿主页面的state不用保存
+        }
+        this.setState({
+            srcs_arr:this.state.srcs_arr.concat(src),
+            states_arr:this.state.states_arr.concat(oldPageState),
+            useSrc:src,
+            useState:null,
+        });
+    }
+
+    pop(){
+        var newsrcs_arr = this.state.srcs_arr.concat();
+        var newstates_arr = this.state.states_arr.concat();
+        newsrcs_arr.pop();
+        var useSrc = newsrcs_arr.length == 0 ? null : newsrcs_arr[newsrcs_arr.length - 1];
+        var useState = newstates_arr.pop();
+        this.setState({
+            srcs_arr:newsrcs_arr,
+            states_arr:newstates_arr,
+            useState:useState,
+            useSrc:useSrc,
+        });
+    }
+
+    getUseState(){
+        return this.state.useState;
+    }
+
+    onloadHandler(ev){
+        //console.log(ev);
+        ev.target.contentWindow.gPageInFrame = true;
+        ev.target.contentWindow.gParentFrame = this;
+    }
+
+    render() {
+        if(this.state.useSrc == null){
+            return null;
+        }
+        return <div className='position-fixed border rounded bg-light w-100 h-100' style={this.style} >
+            <iframe src={this.state.useSrc} className='w-100 h-100' frameBorder='0' onLoad={this.onloadHandler} />
+        </div>;
+    }
+}
+
 
 const ERPXMLToolKit = {
     createDocFromString: (xmlString) => {

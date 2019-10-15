@@ -73,24 +73,30 @@ class CProject extends IAttributeable {
             if (jsonData.attr != null) {
                 Object.assign(this, jsonData.attr);
             }
-            this.dataMaster.restoreFromJson(jsonData.dataMaster);
-            this.scriptMaster.restoreFromJson(jsonData.scriptMaster);
+            var restoreHelper = new RestoreHelper(jsonData.dictionary);
+            this.dataMaster.restoreFromJson(jsonData.dataMaster, restoreHelper);
+            this.scriptMaster.restoreFromJson(jsonData.scriptMaster, restoreHelper);
 
+            var usertemplateCreatioinHelper = new CtlKernelCreationHelper();
+            usertemplateCreatioinHelper.restoreHelper = restoreHelper;
             if (jsonData.userControls_arr) {
                 jsonData.userControls_arr.forEach(ctlJson => {
-                    var newUCtl = new UserControlKernel({ project: this }, null, null, ctlJson);
+                    ctlJson.restoreHelper = restoreHelper;
+                    var newUCtl = new UserControlKernel({ project: this }, null, usertemplateCreatioinHelper, ctlJson);
                     this.userControls_arr.push(newUCtl);
                 });
 
                 jsonData.userControls_arr.forEach((ctlJson, index) => {
-                    this.userControls_arr[index].__restoreChildren(null, ctlJson);
+                    this.userControls_arr[index].__restoreChildren(usertemplateCreatioinHelper, ctlJson);
                 });
             }
 
 
             var self = this;
             var ctlCreatioinHelper = new CtlKernelCreationHelper();
+            ctlCreatioinHelper.restoreHelper = restoreHelper;
             jsonData.content_Mobile.pages.forEach(pageJson => {
+                pageJson.restoreHelper = restoreHelper;
                 var newPage = new M_PageKernel({}, this, ctlCreatioinHelper, pageJson);
                 this.content_Mobile.pages.push(newPage);
             });
@@ -390,6 +396,7 @@ class CProject extends IAttributeable {
             isPC = this.designeConfig.editingType == 'PC';
         }
         return isPC ? this.content_PC.pages.filter(page => { return page.getAttribute(AttrNames.PopablePage) == true; }) : this.content_Mobile.pages.filter(page => { return page.getAttribute(AttrNames.PopablePage) == true; });
+        //return isPC ? this.content_PC.pages : this.content_Mobile.pages;
     }
 
     getJumpablePages(isPC) {
@@ -432,6 +439,7 @@ class CProject extends IAttributeable {
         if (jsonProf == null) {
             jsonProf = new AttrJsonProfile();
         }
+        //jsonProf.hadDictionary = true;
         var attrJson = super.getJson(jsonProf);
         var rlt = {
             attr: attrJson,
@@ -463,6 +471,7 @@ class CProject extends IAttributeable {
         rlt.useEntities_arr = jsonProf.entities_arr.map(entity => {
             return entity.code;
         });
+        //rlt.dictionary = jsonProf.getDictionaryObj();
         return rlt;
     }
 
@@ -663,7 +672,7 @@ class CProject extends IAttributeable {
                 if (aidControlId_map[UCJson.id] != null) {
                     var newID = '';
                     for (i = 0; i < 9999; ++i) {
-                        newID = 'userControl_T' + i;
+                        newID = 'UserControl_T' + i;
                         if (aidControlId_map[newID] == null) {
                             if (useControlsID_all[newID] == null) {
                                 break;
@@ -828,13 +837,70 @@ class CProject extends IAttributeable {
     }
 }
 
+class RestoreHelper{
+    constructor(dictionary) {
+        this.dictionary = dictionary;
+    }
+
+    queryDictionnary(key){
+        if(this.dictionary == null || typeof key != 'string' || key[0] != '$' || this.dictionary[key] == null){
+            return key;
+        }
+        return this.dictionary[key];
+    }
+
+    trasnlateJson(targetJson){
+        if(this.dictionary == null){
+            return;
+        }
+        for(var name in targetJson){
+            var value = targetJson[name];
+            if(typeof value == 'string'){
+                targetJson[name] = this.queryDictionnary(value);
+            }
+        }
+    }
+}
+
 class AttrJsonProfile {
-    constructor() {
+    constructor(hadDictionary) {
         this.entities_arr = [];
         this.customDS_arr = [];
         this.useControl_map = {};
         this.useUserControl_map = {};
         this.refControl_map = {};
+        this.dictionary = {};
+        this.keyIndex = 0;
+        this.hadDictionary = hadDictionary == true;
+    }
+
+    addDictionnary(value){
+        if(!this.hadDictionary){
+            return value;
+        }
+        if(typeof value != 'string' || value.length < 2){
+            return value;
+        }
+        if(this.dictionary[value]){
+            return this.dictionary[value];
+        }
+        var newKey = '$' + this.keyIndex.toString(16).toLocaleLowerCase();
+        if(newKey.length >= value.length){
+            return value;
+        }
+        this.dictionary[value] = newKey;
+        this.keyIndex++;
+        return newKey;
+    }
+
+    getDictionaryObj(){
+        var rlt = {};
+        if(this.hadDictionary){
+            for(var key in this.dictionary){
+                rlt[this.dictionary[key]] = key;
+            }
+        }
+        return rlt;
     }
 
     useEntity(entity) {

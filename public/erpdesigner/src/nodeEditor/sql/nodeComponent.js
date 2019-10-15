@@ -1035,6 +1035,9 @@ class C_SqlNode_CurrentDataRow extends React.PureComponent {
                 left:bornPos.x,
                 top:bornPos.y,
             }, nodeData.parent);
+            if(nodeData.parent != nodeData.bluePrint){
+                nodeData.bluePrint.fireChanged(10);
+            }
         }
     }
 

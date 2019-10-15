@@ -56,6 +56,9 @@ class SqlNode_BluePrint extends EventEmitter {
             assginObjByProperties(this, bluePrintJson, ['type', 'code', 'name', 'retNodeId', 'editorLeft', 'editorTop', 'group','uuid']);
             if (!IsEmptyArray(bluePrintJson.variables_arr)) {
                 bluePrintJson.variables_arr.forEach(varJson => {
+                    if(createHelper && createHelper.restoreHelper){
+                        createHelper.restoreHelper.trasnlateJson(varJson);
+                    }
                     var newVar = new SqlDef_Variable({}, this, createHelper, varJson);
                 });
             }
@@ -63,7 +66,7 @@ class SqlNode_BluePrint extends EventEmitter {
             this.finalSelectNode = newChildNodes_arr.find(node => {
                 return node.id == bluePrintJson.retNodeId;
             });
-            this.linkPool.restorFromJson(bluePrintJson.links_arr, createHelper);
+            this.linkPool.restoreFromJson(bluePrintJson.links_arr, createHelper);
         }
         if(IsEmptyString(this.uuid)){
             this.uuid = guid2();
@@ -336,6 +339,9 @@ class SqlNode_BluePrint extends EventEmitter {
         if (!IsEmptyArray(jsonArr)) {
             var self = this;
             jsonArr.forEach(nodeJson => {
+                if(createHelper && createHelper.restoreHelper){
+                    createHelper.restoreHelper.trasnlateJson(nodeJson);
+                }
                 var newNode = self.genNodeByJson(parentNode, nodeJson, createHelper);
                 if (newNode) {
                     rlt_arr.push(newNode);

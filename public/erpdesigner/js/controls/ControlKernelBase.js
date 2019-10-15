@@ -543,6 +543,7 @@ var ControlKernelBase = function (_IAttributeable) {
                         rlt.push(parent);
                     }
                 }
+                var aidRlt_arr;
                 parent.children.forEach(function (child) {
                     if (child != nowKernel) {
                         if (!needFilt || child.type == targetType) {
@@ -550,25 +551,36 @@ var ControlKernelBase = function (_IAttributeable) {
                                 rlt.push(child);
                             }
                         }
-                        if (child.editor && (!needFilt || child.editor.type == targetType)) {
-                            if (rlt.indexOf(child.editor) == -1) {
-                                rlt.push(child.editor);
+                        if (child.editor) {
+                            if (!needFilt || child.editor.type == targetType) {
+                                if (rlt.indexOf(child.editor) == -1) {
+                                    rlt.push(child.editor);
+                                }
+                            }
+                            if (child.editor.type == M_ContainerKernel_Type) {
+                                // 穿透div
+                                if (meetParents_map[child.editor.id] == null) {
+                                    meetParents_map[child.editor.id] = 1;
+                                    aidRlt_arr = [];
+                                    child.editor.aidAccessableKernels(targetType, aidRlt_arr);
+                                }
                             }
                         }
-                        if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type && child.isPageForm()) {
+                        if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type && child.isPageForm() || child.type == PopperButtonKernel_Type) {
                             // 穿透div
                             if (meetParents_map[child.id] == null) {
                                 meetParents_map[child.id] = 1;
-                                var aidRlt_arr = [];
+                                aidRlt_arr = [];
                                 child.aidAccessableKernels(targetType, aidRlt_arr);
-                                if (aidRlt_arr.length > 0) {
-                                    aidRlt_arr.forEach(function (x) {
-                                        if (rlt.indexOf(x) == -1) {
-                                            rlt.push(x);
-                                        }
-                                    });
-                                }
                             }
+                        }
+
+                        if (aidRlt_arr && aidRlt_arr.length > 0) {
+                            aidRlt_arr.forEach(function (x) {
+                                if (rlt.indexOf(x) == -1) {
+                                    rlt.push(x);
+                                }
+                            });
                         }
                     }
                 });
@@ -629,6 +641,11 @@ var ControlKernelBase = function (_IAttributeable) {
         key: 'isAEditor',
         value: function isAEditor() {
             return this.parent && this.parent.editor == this;
+        }
+    }, {
+        key: 'getParentLabledCtl',
+        value: function getParentLabledCtl() {
+            return this.searchParentKernel(M_LabeledControlKernel_Type, true);
         }
     }, {
         key: 'canAppand',
@@ -699,6 +716,12 @@ var ControlLayoutConfig = function () {
             return true;
         }
     }, {
+        key: 'removeClass',
+        value: function removeClass(className) {
+            delete this.class[className];
+            delete this.switch[className];
+        }
+    }, {
         key: 'addStyle',
         value: function addStyle(name, val) {
             if (IsEmptyString(name) || val == null) {
@@ -706,6 +729,11 @@ var ControlLayoutConfig = function () {
             }
             this.style[name] = val;
             return true;
+        }
+    }, {
+        key: 'removeStyle',
+        value: function removeStyle(name) {
+            delete style[name];
         }
     }, {
         key: 'getClassName',

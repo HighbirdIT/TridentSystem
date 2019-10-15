@@ -801,7 +801,7 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
                         { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 w-100' },
                         React.createElement(
                             'div',
-                            { className: 'input-group input-group-sm' },
+                            { className: 'input-group input-group-sm flex-grow-0 flex-shrink-0' },
                             React.createElement(
                                 'span',
                                 { className: 'input-group-addon', id: 'sizing-addon3' },

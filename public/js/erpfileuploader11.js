@@ -558,6 +558,7 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
     }, {
         key: 'componentWillMount',
         value: function componentWillMount() {
+            this.unmounted = false;
             if (this.props.uploader == null) {
                 var newUploader = new FileUploader();
                 this.listenUploader(newUploader);
@@ -571,6 +572,8 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
     }, {
         key: 'synRecordInfo',
         value: function synRecordInfo() {
+            var _this3 = this;
+
             var bundle = {
                 attachmentID: this.props.defattachmentID,
                 fileFlow: this.props.fileflow,
@@ -603,16 +606,20 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
                         }
                         store.dispatch(makeAction_setManyStateByPath(needSetState, self.props.fullPath));
 
-                        self.setState({
-                            loading: false,
-                            fileRecord: fileRecord
-                        });
+                        if (!_this3.unmounted) {
+                            self.setState({
+                                loading: false,
+                                fileRecord: fileRecord
+                            });
+                        }
                     } else {
                         // 信息发生了更改，重新获取
                         console.log('信息发生了更改，重新获取');
-                        self.setState({
-                            loading: false
-                        });
+                        if (!_this3.unmounted) {
+                            self.setState({
+                                loading: false
+                            });
+                        }
                     }
                 }, 20);
             }, false)));
@@ -620,6 +627,7 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
     }, {
         key: 'componentWillUnmount',
         value: function componentWillUnmount() {
+            this.unmounted = true;
             this.unlistenUploader(this.props.uploader);
         }
     }, {
@@ -781,6 +789,8 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
     }, {
         key: 'render',
         value: function render() {
+            var _this4 = this;
+
             var preViewBtn = null;
             var canDelete = true;
             var fileUploader = this.props.uploader;
@@ -845,6 +855,9 @@ var ERPC_SingleFileUploader = function (_React$PureComponent) {
                     } else if ((this.props.defattachmentID > 0 || relrecordid != null) && (fileRecord == null || !fileRecord.abandon)) {
                         if (fileRecord == null || this.props.defattachmentID > 0 && fileRecord.attachmentID != this.props.defattachmentID || relrecordid != null && fileRecord.relrecordid != this.props.relrecordid) {
                             setTimeout(function () {
+                                if (_this4.unmounted) {
+                                    return;
+                                }
                                 self.setState({
                                     loading: true
                                 });
@@ -1119,10 +1132,10 @@ var CFileUploaderBar = function (_React$PureComponent2) {
     function CFileUploaderBar(props) {
         _classCallCheck(this, CFileUploaderBar);
 
-        var _this3 = _possibleConstructorReturn(this, (CFileUploaderBar.__proto__ || Object.getPrototypeOf(CFileUploaderBar)).call(this));
+        var _this5 = _possibleConstructorReturn(this, (CFileUploaderBar.__proto__ || Object.getPrototypeOf(CFileUploaderBar)).call(this));
 
-        autoBind(_this3);
-        return _this3;
+        autoBind(_this5);
+        return _this5;
     }
 
     _createClass(CFileUploaderBar, [{
@@ -1370,14 +1383,14 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
     function ERPC_MultiFileUploader(props) {
         _classCallCheck(this, ERPC_MultiFileUploader);
 
-        var _this4 = _possibleConstructorReturn(this, (ERPC_MultiFileUploader.__proto__ || Object.getPrototypeOf(ERPC_MultiFileUploader)).call(this));
+        var _this6 = _possibleConstructorReturn(this, (ERPC_MultiFileUploader.__proto__ || Object.getPrototypeOf(ERPC_MultiFileUploader)).call(this));
 
-        ERPControlBase(_this4);
-        _this4.state = {};
-        _this4.fileTagRef = React.createRef();
+        ERPControlBase(_this6);
+        _this6.state = {};
+        _this6.fileTagRef = React.createRef();
 
-        autoBind(_this4);
-        return _this4;
+        autoBind(_this6);
+        return _this6;
     }
 
     _createClass(ERPC_MultiFileUploader, [{
@@ -1512,7 +1525,7 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
     }, {
         key: 'render',
         value: function render() {
-            var _this5 = this;
+            var _this7 = this;
 
             if (this.props.visible == false) {
                 return null;
@@ -1537,7 +1550,7 @@ var ERPC_MultiFileUploader = function (_React$PureComponent3) {
                             ),
                             React.createElement(
                                 'button',
-                                { onClick: _this5.clickTrashHandler, className: 'btn btn-danger flex-grow-0 flex-shrink-0' },
+                                { onClick: _this7.clickTrashHandler, className: 'btn btn-danger flex-grow-0 flex-shrink-0' },
                                 React.createElement('i', { className: 'fa fa-trash' })
                             )
                         )
@@ -1638,13 +1651,13 @@ var ERPC_FilePreview = function (_React$PureComponent4) {
     function ERPC_FilePreview(props) {
         _classCallCheck(this, ERPC_FilePreview);
 
-        var _this6 = _possibleConstructorReturn(this, (ERPC_FilePreview.__proto__ || Object.getPrototypeOf(ERPC_FilePreview)).call(this));
+        var _this8 = _possibleConstructorReturn(this, (ERPC_FilePreview.__proto__ || Object.getPrototypeOf(ERPC_FilePreview)).call(this));
 
-        ERPControlBase(_this6);
-        _this6.state = {};
-        autoBind(_this6);
-        _this6.audioTagRef = React.createRef();
-        return _this6;
+        ERPControlBase(_this8);
+        _this8.state = {};
+        autoBind(_this8);
+        _this8.audioTagRef = React.createRef();
+        return _this8;
     }
 
     _createClass(ERPC_FilePreview, [{
@@ -1712,7 +1725,7 @@ var ERPC_FilePreview = function (_React$PureComponent4) {
     }, {
         key: 'clickTrashHandler',
         value: function clickTrashHandler(ev) {
-            var _this7 = this;
+            var _this9 = this;
 
             if (this.deleting) {
                 return;
@@ -1721,9 +1734,9 @@ var ERPC_FilePreview = function (_React$PureComponent4) {
             var msg = PopMessageBox('删除附件:"' + this.props.fileName + '"?', EMessageBoxType.Blank, '附件删除');
             msg.query('删除附件"' + this.props.fileName + '" ?', [{ label: '删除', key: '删除' }, { label: '算了', key: '算了' }], function (key) {
                 if (key == '删除') {
-                    _this7.deleting = true;
-                    var self = _this7;
-                    store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: { 附件id: _this7.props.attachmentID }, action: 'deleteAttachment' }, makeFTD_Callback(function (state, data, error) {
+                    _this9.deleting = true;
+                    var self = _this9;
+                    store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: { 附件id: _this9.props.attachmentID }, action: 'deleteAttachment' }, makeFTD_Callback(function (state, data, error) {
                         self.deleting = false;
                         if (error) {
                             alert(JSON.stringify(error));

@@ -1516,7 +1516,9 @@ class C_JSNode_Editor extends React.PureComponent{
     clickExportBtnHandler(ev){
         console.log("Start export");
         var editingNode = this.state.editingNode;
-        var json = editingNode.bluePrint.getJson(new AttrJsonProfile());
+        var ajp = new AttrJsonProfile();
+        var json = editingNode.bluePrint.getJson(ajp);
+        //json.dictionary = ajp.dictionary;
         var text = JSON.stringify(json);
         console.log(text);
     }

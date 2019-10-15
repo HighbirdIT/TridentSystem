@@ -304,6 +304,9 @@ class UserControlKernel extends ContainerKernelBase {
 
     getReadableName(){
         var template = this.getTemplateKernel();
+        if(template == null){
+            return '控件模板丢失';
+        }
         if(template == this){
             return this.id;
         }

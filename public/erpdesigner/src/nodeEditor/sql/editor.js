@@ -751,7 +751,9 @@ class C_SqlNode_Editor extends React.PureComponent{
     clickExportBtnHandler(ev){
         console.log("Start export");
         var editingNode = this.state.editingNode;
-        var json = editingNode.bluePrint.getJson(new AttrJsonProfile());
+        var ajp = new AttrJsonProfile(true);
+        var json = editingNode.bluePrint.getJson(ajp);
+        json.dictionary = ajp.getDictionaryObj();
         var text = JSON.stringify(json);
         console.log(text);
     }
