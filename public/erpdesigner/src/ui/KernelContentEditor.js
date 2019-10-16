@@ -313,6 +313,7 @@ class QuickKernelContentEditprPanel extends React.PureComponent {
             targetKernels: []
         }
         autoBind(this);
+        
     }
 
     showKernel(target) {

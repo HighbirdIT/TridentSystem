@@ -3468,6 +3468,7 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
             useState: null
         };
         _this25.onloadHandler = _this25.onloadHandler.bind(_this25);
+        _this25.onErrorHandler = _this25.onErrorHandler.bind(_this25);
         _this25.push = _this25.push.bind(_this25);
         _this25.pop = _this25.pop.bind(_this25);
         return _this25;
@@ -3501,7 +3502,8 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
                 srcs_arr: newsrcs_arr,
                 states_arr: newstates_arr,
                 useState: useState,
-                useSrc: useSrc
+                useSrc: useSrc,
+                err: null
             });
         }
     }, {
@@ -3512,9 +3514,22 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
     }, {
         key: 'onloadHandler',
         value: function onloadHandler(ev) {
-            //console.log(ev);
-            ev.target.contentWindow.gPageInFrame = true;
-            ev.target.contentWindow.gParentFrame = this;
+            console.log(ev);
+            try {
+                ev.target.contentWindow.gPageInFrame = true;
+                ev.target.contentWindow.gParentFrame = this;
+            } catch (eo) {
+                console.log(eo);
+                this.setState({
+                    err: JSON.stringify(eo)
+                });
+            }
+        }
+    }, {
+        key: 'onErrorHandler',
+        value: function onErrorHandler(ev) {
+            alert(JSON.stringify(ev));
+            this.pop();
         }
     }, {
         key: 'render',
@@ -3522,10 +3537,22 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
             if (this.state.useSrc == null) {
                 return null;
             }
+            if (this.state.err != null) {
+                return React.createElement(
+                    'div',
+                    { className: 'position-fixed border rounded bg-light w-100 h-100', style: this.style },
+                    React.createElement(
+                        'button',
+                        { className: 'btn btn-danger', onClick: this.pop },
+                        React.createElement('i', { className: 'fa fa-close' })
+                    ),
+                    this.state.err
+                );
+            }
             return React.createElement(
                 'div',
                 { className: 'position-fixed border rounded bg-light w-100 h-100', style: this.style },
-                React.createElement('iframe', { src: this.state.useSrc, className: 'w-100 h-100', frameBorder: '0', onLoad: this.onloadHandler })
+                React.createElement('iframe', { src: this.state.useSrc, className: 'w-100 h-100', frameBorder: '0', onLoad: this.onloadHandler, onError: this.onErrorHandler })
             );
         }
     }]);

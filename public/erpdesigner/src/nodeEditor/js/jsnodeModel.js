@@ -6451,6 +6451,78 @@ class JSNode_JumpPage extends JSNode_Base {
             this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
             this.addSocket(this.inFlowSocket);
         }
+
+        if (createHelper) {
+            if (!IsEmptyString(this.pageCode)) {
+                if (!createHelper.project.loaded) {
+                    createHelper.project.on('loaded', this.projLoadedHandler);
+                }
+                else {
+                    this.projLoadedHandler();
+                }
+            }
+        }
+    }
+
+    projLoadedHandler() {
+        var project = this.bluePrint.master.project;
+        var targetPage = project.getPageById(this.pageCode);
+        this.setPage(targetPage);
+    }
+
+    pageChangedHandler() {
+        if (this.targetPage == null) {
+            while (this.inputScokets_arr.length > 0) {
+                this.removeSocket(this.inputScokets_arr[this.inputScokets_arr.length - 1]);
+            }
+            return;
+        }
+        var pageEntryAttrs_arr = this.targetPage.getAttrArrayList(AttrNames.EntryParam);
+        pageEntryAttrs_arr.forEach((attrItem, index) => {
+            var inSocket = null;
+            if (index >= this.inputScokets_arr.length) {
+                inSocket = new NodeSocket(attrItem.name, this, true);
+                this.addSocket(inSocket);
+            }
+            else {
+                inSocket = this.inputScokets_arr[index];
+            }
+            var paramLabel = this.targetPage.getAttribute(attrItem.name);
+            if (paramLabel != inSocket.label) {
+                inSocket.label = paramLabel;
+                inSocket.fireEvent('changed');
+            }
+            inSocket.inputable = false;
+        });
+        while (this.inputScokets_arr.length > pageEntryAttrs_arr.length) {
+            this.removeSocket(this.inputScokets_arr[this.inputScokets_arr.length - 1]);
+        }
+
+        this.fireEvent(Event_SocketNumChanged, 20);
+        this.fireMoved(10);
+    }
+
+    listenPage(page) {
+        if (page) {
+            page.on(EATTRCHANGED, this.pageChangedHandler);
+        }
+    }
+
+    unlistenPage(page) {
+        if (page) {
+            page.off(EATTRCHANGED, this.pageChangedHandler);
+        }
+    }
+
+    setPage(target) {
+        if (target == this.targetPage) {
+            return;
+        }
+        this.unlistenPage(this.targetPage);
+        this.listenPage(target);
+        this.targetPage = target;
+        this.pageCode = target ? target.id : null;
+        this.pageChangedHandler();
     }
 
     requestSaveAttrs() {
@@ -6479,6 +6551,27 @@ class JSNode_JumpPage extends JSNode_Base {
         }
 
         var myJSBlock = new FormatFileBlock('');
+
+        this.pageChangedHandler();
+        if(this.inputScokets_arr.length > 0)
+        {
+            var entryParamName = this.id + 'entryParam';
+            myJSBlock.pushLine('var ' + entryParamName + '={', 1);
+            var i;
+            var theSocket;
+            for (i = 0; i < this.inputScokets_arr.length; ++i) {
+                theSocket = this.inputScokets_arr[i];
+                var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, myJSBlock, true);
+                if (socketComRet.err) {
+                    return false;
+                }
+                myJSBlock.pushLine(makeStr_AddAll(theSocket.label, ':', socketComRet.value, ','));
+            }
+            myJSBlock.subNextIndent();
+            myJSBlock.pushLine('};');
+            myJSBlock.pushLine(makeLine_setGDataCache(thePage.id + AttrNames.EntryParam, entryParamName));
+        }
+
         myJSBlock.pushLine("setTimeout(() => {store.dispatch(makeAction_gotoPage('" + this.pageCode + "'));},50);");
         belongBlock.pushChild(myJSBlock);
 

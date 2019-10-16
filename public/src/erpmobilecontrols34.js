@@ -2840,6 +2840,7 @@ class ERPC_TopLevelFrame extends React.PureComponent {
             useState:null,
         };
         this.onloadHandler = this.onloadHandler.bind(this);
+        this.onErrorHandler = this.onErrorHandler.bind(this);
         this.push = this.push.bind(this);
         this.pop = this.pop.bind(this);
     }
@@ -2870,6 +2871,7 @@ class ERPC_TopLevelFrame extends React.PureComponent {
             states_arr:newstates_arr,
             useState:useState,
             useSrc:useSrc,
+            err:null,
         });
     }
 
@@ -2878,17 +2880,36 @@ class ERPC_TopLevelFrame extends React.PureComponent {
     }
 
     onloadHandler(ev){
-        //console.log(ev);
-        ev.target.contentWindow.gPageInFrame = true;
-        ev.target.contentWindow.gParentFrame = this;
+        console.log(ev);
+        try{
+            ev.target.contentWindow.gPageInFrame = true;
+            ev.target.contentWindow.gParentFrame = this;
+        }
+        catch(eo){
+            console.log(eo);
+            this.setState({
+                err:JSON.stringify(eo)
+            });
+        }
+    }
+
+    onErrorHandler(ev){
+        alert(JSON.stringify(ev));
+        this.pop();
     }
 
     render() {
         if(this.state.useSrc == null){
             return null;
         }
+        if(this.state.err != null){
+            return <div className='position-fixed border rounded bg-light w-100 h-100' style={this.style} >
+                <button className='btn btn-danger' onClick={this.pop}><i className='fa fa-close' /></button>
+                {this.state.err}
+            </div>;
+        }
         return <div className='position-fixed border rounded bg-light w-100 h-100' style={this.style} >
-            <iframe src={this.state.useSrc} className='w-100 h-100' frameBorder='0' onLoad={this.onloadHandler} />
+            <iframe src={this.state.useSrc} className='w-100 h-100' frameBorder='0' onLoad={this.onloadHandler} onError={this.onErrorHandler} />
         </div>;
     }
 }
