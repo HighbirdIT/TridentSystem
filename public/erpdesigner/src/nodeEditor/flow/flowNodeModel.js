@@ -172,7 +172,7 @@ class FlowNode_BluePrint extends EventEmitter {
             this.dataMaster.restoreFromJson(bluePrintJson.dataMaster);
             createHelper.dataMaster = this.dataMaster;
             this.genNodesByJsonArr(this, bluePrintJson.nodes_arr, createHelper);
-            this.linkPool.restorFromJson(bluePrintJson.links_arr, createHelper);
+            this.linkPool.restoreFromJson(bluePrintJson.links_arr, createHelper);
         }
         else {
         }

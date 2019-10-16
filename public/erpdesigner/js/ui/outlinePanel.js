@@ -19,7 +19,8 @@ var OutlineItem = function (_React$PureComponent) {
         if (_this.props.kernel.outlineProfile == null) {
             _this.props.kernel.outlineProfile = {
                 collapsed: false,
-                selected: false
+                selected: false,
+                outlineItem: _this
             };
         } else {
             _this.props.kernel.outlineProfile.outlineItem = _this;
@@ -387,15 +388,9 @@ var OutlinePanel = function (_React$PureComponent2) {
                 }
 
                 var hitResult = null;
-                if (this.state.editingPage) {
-                    for (var ci in this.state.editingPage.children) {
-                        hitResult = this.searchHitResult(newPos, this.state.editingPage.children[ci]);
-                        if (hitResult) break;
-                    }
-                }
-                if (this.state.editingControl) {
-                    for (var ci in this.state.editingControl.children) {
-                        hitResult = this.searchHitResult(newPos, this.state.editingControl.children[ci]);
+                if (this.state.rootItem) {
+                    for (var ci in this.state.rootItem.children) {
+                        hitResult = this.searchHitResult(newPos, this.state.rootItem.children[ci]);
                         if (hitResult) break;
                     }
                 }
@@ -404,6 +399,7 @@ var OutlinePanel = function (_React$PureComponent2) {
                     var hitKernel = hitResult.kernel;
                     if (hitKernel.parent && hitKernel.parent == targetKernel.parent) {
                         hitKernel.parent.swapChild(hitKernel.parent.getChildIndex(hitKernel), hitKernel.parent.getChildIndex(targetKernel));
+                        return;
                     }
                     if (!this.checkAppandable(targetKernel, hitKernel)) {
                         return;
@@ -426,11 +422,8 @@ var OutlinePanel = function (_React$PureComponent2) {
                     // can not found
                     var bottomDivRect = this.bottomDivRef.current.getBoundingClientRect();
                     if (bottomDivRect.top < newPos.y) {
-                        if (this.state.editingPage && this.checkAppandable(targetKernel, this.state.editingPage)) {
-                            this.state.editingPage.appandChild(targetKernel);
-                        }
-                        if (this.state.editingControl && this.checkAppandable(targetKernel, this.state.editingControl)) {
-                            this.state.editingControl.appandChild(targetKernel);
+                        if (this.state.rootItem && this.checkAppandable(targetKernel, this.state.rootItem)) {
+                            this.state.rootItem.appandChild(targetKernel);
                         }
                     }
                 }

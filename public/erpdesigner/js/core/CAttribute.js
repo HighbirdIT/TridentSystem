@@ -293,6 +293,7 @@ var AttrNames = {
     AutoIndexColumn: 'autoIndexColumn',
     NoDataTip: 'noDataTip',
     NoDataAct: 'noDataAct',
+    FetchErrAct: 'fetchErrAct',
     MultiSelect: 'multiselect',
     RelFlowStep: 'relflowstep',
     GenNavBar: 'gennavbar',
@@ -339,6 +340,9 @@ var AttrNames = {
     KeyRecrodID: 'keyrecordid',
     AttachmentID: 'attachmentid',
     ModifyContent: 'modifycontent',
+    ToolTip: 'toolTip',
+    Growable: 'growable',
+    InvalidAct: 'invalidAct',
 
     Event: {
         OnClick: 'onclick',

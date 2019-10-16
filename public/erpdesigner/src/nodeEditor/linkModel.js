@@ -36,8 +36,8 @@ class SocketLink{
     getJson(jsonProf){
         if(this.inSocket && this.outSocket && this.inSocket.node && this.outSocket.node && this.inSocket.node.bluePrint && this.outSocket.node.bluePrint){
             return {
-                inSocketID:this.inSocket.id,
-                outSocketID:this.outSocket.id,
+                i:jsonProf.addDictionnary(this.inSocket.id),
+                o:jsonProf.addDictionnary(this.outSocket.id),
             };
         }
     }
@@ -221,12 +221,19 @@ class ScoketLinkPool{
         return rlt_arr;
     }
 
-    restorFromJson(linkjson_arr, createHelper){
+    restoreFromJson(linkjson_arr, createHelper){
         var self = this;
         if(linkjson_arr != null){
             linkjson_arr.forEach(linkJson => {
-                var inSocket = createHelper.getObjFromID(linkJson.inSocketID);
-                var outSocket = createHelper.getObjFromID(linkJson.outSocketID);
+                var inSocketID = linkJson.i ? linkJson.i : linkJson.inSocketID;
+                var outSocketID = linkJson.o ? linkJson.o : linkJson.outSocketID;
+                if(createHelper && createHelper.restoreHelper){
+                    inSocketID = createHelper.restoreHelper.queryDictionnary(inSocketID);
+                    outSocketID = createHelper.restoreHelper.queryDictionnary(outSocketID);
+                }
+
+                var inSocket = createHelper.getObjFromID(inSocketID);
+                var outSocket = createHelper.getObjFromID(outSocketID);
                 if(inSocket == null || outSocket == null){
                     console.warn('有一个link没有加载');
                     return;

@@ -47,6 +47,28 @@ class PopperButton extends ContainerKernelBase {
 
     }
 
+    aidAccessableKernels(targetType, rlt_arr) {
+        var needFilt = targetType != null;
+        this.children.forEach(child => {
+            if (!needFilt || child.type == targetType) {
+                rlt_arr.push(child);
+            }
+            if(child.editor){
+                if(!needFilt || child.editor.type == targetType){
+                    rlt_arr.push(child.editor);
+                }
+                if(child.editor.type == M_ContainerKernel_Type){
+                    // 穿透div
+                    child.editor.aidAccessableKernels(targetType, rlt_arr);
+                }
+            }
+            if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && child.isPageForm()) || child.type == PopperButtonKernel_Type){
+                // 穿透div
+                child.aidAccessableKernels(targetType, rlt_arr);
+            }
+        });
+    }
+
     getContentKernel(){
         var childdiv = this.children[0];
         childdiv.name = this.readableName;

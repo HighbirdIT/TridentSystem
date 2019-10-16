@@ -1108,6 +1108,7 @@ class CP_ClientSide extends JSFileMaker{
         ifLoginBK.falseBlock.pushLine("var search = location.search.replace('?','');");
         ifLoginBK.falseBlock.pushLine("location.href = '/?goto=' + location.pathname + '&' + search;");
 
+        this.endBlock.pushLine("AppInit(this);");
         this.endBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, { action: 'pageloaded' }, null, 'pageloaded', '正在加载[' + thisAppTitle + ']'));");
     }
 

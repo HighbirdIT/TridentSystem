@@ -80,23 +80,29 @@ var CProject = function (_IAttributeable) {
             if (jsonData.attr != null) {
                 Object.assign(_this, jsonData.attr);
             }
-            _this.dataMaster.restoreFromJson(jsonData.dataMaster);
-            _this.scriptMaster.restoreFromJson(jsonData.scriptMaster);
+            var restoreHelper = new RestoreHelper(jsonData.dictionary);
+            _this.dataMaster.restoreFromJson(jsonData.dataMaster, restoreHelper);
+            _this.scriptMaster.restoreFromJson(jsonData.scriptMaster, restoreHelper);
 
+            var usertemplateCreatioinHelper = new CtlKernelCreationHelper();
+            usertemplateCreatioinHelper.restoreHelper = restoreHelper;
             if (jsonData.userControls_arr) {
                 jsonData.userControls_arr.forEach(function (ctlJson) {
-                    var newUCtl = new UserControlKernel({ project: _this }, null, null, ctlJson);
+                    ctlJson.restoreHelper = restoreHelper;
+                    var newUCtl = new UserControlKernel({ project: _this }, null, usertemplateCreatioinHelper, ctlJson);
                     _this.userControls_arr.push(newUCtl);
                 });
 
                 jsonData.userControls_arr.forEach(function (ctlJson, index) {
-                    _this.userControls_arr[index].__restoreChildren(null, ctlJson);
+                    _this.userControls_arr[index].__restoreChildren(usertemplateCreatioinHelper, ctlJson);
                 });
             }
 
             var self = _this;
             var ctlCreatioinHelper = new CtlKernelCreationHelper();
+            ctlCreatioinHelper.restoreHelper = restoreHelper;
             jsonData.content_Mobile.pages.forEach(function (pageJson) {
+                pageJson.restoreHelper = restoreHelper;
                 var newPage = new M_PageKernel({}, _this, ctlCreatioinHelper, pageJson);
                 _this.content_Mobile.pages.push(newPage);
             });
@@ -430,6 +436,7 @@ var CProject = function (_IAttributeable) {
             }) : this.content_Mobile.pages.filter(function (page) {
                 return page.getAttribute(AttrNames.PopablePage) == true;
             });
+            //return isPC ? this.content_PC.pages : this.content_Mobile.pages;
         }
     }, {
         key: 'getJumpablePages',
@@ -481,6 +488,7 @@ var CProject = function (_IAttributeable) {
             if (jsonProf == null) {
                 jsonProf = new AttrJsonProfile();
             }
+            //jsonProf.hadDictionary = true;
             var attrJson = _get(CProject.prototype.__proto__ || Object.getPrototypeOf(CProject.prototype), 'getJson', this).call(this, jsonProf);
             var rlt = {
                 attr: attrJson,
@@ -508,6 +516,7 @@ var CProject = function (_IAttributeable) {
             rlt.useEntities_arr = jsonProf.entities_arr.map(function (entity) {
                 return entity.code;
             });
+            //rlt.dictionary = jsonProf.getDictionaryObj();
             return rlt;
         }
     }, {
@@ -714,7 +723,7 @@ var CProject = function (_IAttributeable) {
                     if (aidControlId_map[UCJson.id] != null) {
                         var newID = '';
                         for (i = 0; i < 9999; ++i) {
-                            newID = 'userControl_T' + i;
+                            newID = 'UserControl_T' + i;
                             if (aidControlId_map[newID] == null) {
                                 if (useControlsID_all[newID] == null) {
                                     break;
@@ -880,8 +889,41 @@ var CProject = function (_IAttributeable) {
     return CProject;
 }(IAttributeable);
 
+var RestoreHelper = function () {
+    function RestoreHelper(dictionary) {
+        _classCallCheck(this, RestoreHelper);
+
+        this.dictionary = dictionary;
+    }
+
+    _createClass(RestoreHelper, [{
+        key: 'queryDictionnary',
+        value: function queryDictionnary(key) {
+            if (this.dictionary == null || typeof key != 'string' || key[0] != '$' || this.dictionary[key] == null) {
+                return key;
+            }
+            return this.dictionary[key];
+        }
+    }, {
+        key: 'trasnlateJson',
+        value: function trasnlateJson(targetJson) {
+            if (this.dictionary == null) {
+                return;
+            }
+            for (var name in targetJson) {
+                var value = targetJson[name];
+                if (typeof value == 'string') {
+                    targetJson[name] = this.queryDictionnary(value);
+                }
+            }
+        }
+    }]);
+
+    return RestoreHelper;
+}();
+
 var AttrJsonProfile = function () {
-    function AttrJsonProfile() {
+    function AttrJsonProfile(hadDictionary) {
         _classCallCheck(this, AttrJsonProfile);
 
         this.entities_arr = [];
@@ -889,9 +931,43 @@ var AttrJsonProfile = function () {
         this.useControl_map = {};
         this.useUserControl_map = {};
         this.refControl_map = {};
+        this.dictionary = {};
+        this.keyIndex = 0;
+        this.hadDictionary = hadDictionary == true;
     }
 
     _createClass(AttrJsonProfile, [{
+        key: 'addDictionnary',
+        value: function addDictionnary(value) {
+            if (!this.hadDictionary) {
+                return value;
+            }
+            if (typeof value != 'string' || value.length < 2) {
+                return value;
+            }
+            if (this.dictionary[value]) {
+                return this.dictionary[value];
+            }
+            var newKey = '$' + this.keyIndex.toString(16).toLocaleLowerCase();
+            if (newKey.length >= value.length) {
+                return value;
+            }
+            this.dictionary[value] = newKey;
+            this.keyIndex++;
+            return newKey;
+        }
+    }, {
+        key: 'getDictionaryObj',
+        value: function getDictionaryObj() {
+            var rlt = {};
+            if (this.hadDictionary) {
+                for (var key in this.dictionary) {
+                    rlt[this.dictionary[key]] = key;
+                }
+            }
+            return rlt;
+        }
+    }, {
         key: 'useEntity',
         value: function useEntity(entity) {
             if (isNaN(entity.code)) {

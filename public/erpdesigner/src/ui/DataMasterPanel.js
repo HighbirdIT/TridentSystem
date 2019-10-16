@@ -616,7 +616,7 @@ class SqlBPItemPanel extends React.PureComponent {
                 barClass='bg-secondary'
                 panel1={
                     <div className='d-flex flex-column flex-grow-1 flex-shrink-1 w-100' >
-                        <div className="input-group input-group-sm">
+                        <div className="input-group input-group-sm flex-grow-0 flex-shrink-0">
                             <span className="input-group-addon" id="sizing-addon3">数据源:</span>
                             <input type="text" className="form-control" placeholder="请输入" aria-describedby="sizing-addon3"
                             onChange={this.sourceInputChange}/>

@@ -527,6 +527,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
     }
 
     componentWillMount() {
+        this.unmounted = false;
         if (this.props.uploader == null) {
             var newUploader = new FileUploader();
             this.listenUploader(newUploader);
@@ -573,23 +574,28 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                         }
                         store.dispatch(makeAction_setManyStateByPath(needSetState, self.props.fullPath));
 
-                        self.setState({
-                            loading: false,
-                            fileRecord: fileRecord,
-                        });
+                        if(!this.unmounted){
+                            self.setState({
+                                loading: false,
+                                fileRecord: fileRecord,
+                            });
+                        }
                     }
                     else {
                         // 信息发生了更改，重新获取
                         console.log('信息发生了更改，重新获取');
-                        self.setState({
-                            loading: false,
-                        });
+                        if(!this.unmounted){
+                            self.setState({
+                                loading: false,
+                            });
+                        }
                     }
                 }, 20);
             }, false)));
     }
 
     componentWillUnmount() {
+        this.unmounted = true;
         this.unlistenUploader(this.props.uploader);
     }
 
@@ -792,6 +798,9 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                 else if ((this.props.defattachmentID > 0 || relrecordid != null) && (fileRecord == null || !fileRecord.abandon)) {
                     if (fileRecord == null || (this.props.defattachmentID > 0 && fileRecord.attachmentID != this.props.defattachmentID) || (relrecordid != null && fileRecord.relrecordid != this.props.relrecordid)) {
                         setTimeout(() => {
+                            if(this.unmounted){
+                                return;
+                            }
                             self.setState({
                                 loading: true,
                             });

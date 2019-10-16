@@ -17,11 +17,13 @@ const M_DropdownKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('自动感应消值', AttrNames.AutoClearValue, ValueType.Boolean, true),
         new CAttribute('允许多选', AttrNames.MultiSelect, ValueType.Boolean, false),
         new CAttribute('允许选星', AttrNames.StarSelectable, ValueType.Boolean, false),
+        new CAttribute('星值替换', 'starvalue', ValueType.String, '', true, false),
         new CAttribute('稳定的数据', AttrNames.StableData, ValueType.Boolean, true),
         new CAttribute('数据分层', 'datagroup', ValueType.String, '', true, true, 'getCanuseColumns'),
         new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes),
         new CAttribute('接受输入值', AttrNames.Editeable, ValueType.Boolean, false),
         new CAttribute('历史Key', AttrNames.HisKey, ValueType.String, '', true, false),
+        new CAttribute('Growable', AttrNames.Growable, ValueType.Boolean, true),
     ]),
     new CAttributeGroup('事件',[
         new CAttribute('OnChanged', AttrNames.Event.OnChanged, ValueType.Event),
@@ -245,6 +247,7 @@ class M_Dropdown extends React.PureComponent {
             value: this.props.ctlKernel.getAttribute(AttrNames.ValueField),
             fromtext: this.props.ctlKernel.getAttribute(AttrNames.FromTextField),
             fromvalue: this.props.ctlKernel.getAttribute(AttrNames.FromValueField),
+            growable: this.props.ctlKernel.getAttribute(AttrNames.Growable),
         };
 
         autoBind(this);
@@ -254,6 +257,7 @@ class M_Dropdown extends React.PureComponent {
             AttrNames.ValueField,
             AttrNames.FromTextField,
             AttrNames.FromValueField,
+            AttrNames.Growable,
             AttrNames.LayoutNames.APDClass,
             AttrNames.LayoutNames.StyleAttr,
         ]);
@@ -269,6 +273,7 @@ class M_Dropdown extends React.PureComponent {
             value: this.props.ctlKernel.getAttribute(AttrNames.ValueField),
             fromtext: this.props.ctlKernel.getAttribute(AttrNames.FromTextField),
             fromvalue: this.props.ctlKernel.getAttribute(AttrNames.FromValueField),
+            growable: this.props.ctlKernel.getAttribute(AttrNames.Growable),
         });
     }
 
@@ -286,14 +291,22 @@ class M_Dropdown extends React.PureComponent {
         layoutConfig.addClass('M_Dropdown');
         layoutConfig.addClass('border');
         layoutConfig.addClass('hb-control');
-        layoutConfig.addClass('w-100');
+        //layoutConfig.addClass('w-100');
         layoutConfig.addClass('btn-group');
-        layoutConfig.addClass('h-100');
+        //layoutConfig.addClass('h-100');
         var defaultParseRet = parseObj_CtlPropJsBind(this.state.defaultVal);
         var textParseRet = parseObj_CtlPropJsBind(this.state.text);
         var valueParseRet = parseObj_CtlPropJsBind(this.state.value);
         var fromText = this.state.fromtext;
         var fromValue = this.state.fromvalue;
+
+        layoutConfig.removeClass(AttrNames.StyleAttrNames.FlexGrow);
+        layoutConfig.removeClass(AttrNames.StyleAttrNames.FlexShrink);
+
+        if(this.state.growable){
+            layoutConfig.addClass('w-100');
+        }
+        layoutConfig.addClass('flex-grow-' + (this.state.growable ? '1' : '0'));
 
         var showText = textParseRet.isScript ? '[{脚本}]' : '[' + textParseRet.string + ']';
         /*
@@ -301,9 +314,9 @@ class M_Dropdown extends React.PureComponent {
                         + ('[' + fromText + (IsEmptyString(fromValue) ? ']' : fromValue + ']'));
         */
         return (
-           <div className={layoutConfig.getClassName()} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+           <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {this.renderHandleBar()}
-                <span style={{width:'calc(100% - 30px)'}} className='bg-dark text-light flex-grow-1 flex-shrink-1' >{showText}</span>
+                <span style={{width:'calc(100% - 30px)'}} className='bg-dark text-light flex-grow-1 flex-shrink-1 hidenOverflow text-nowrap' >{showText}</span>
                 <span style={{width:'30px'}} className='bg-dark text-light flex-grow-0 flex-shrink-0 dropdown-toggle dropdown-toggle-split' />
             </div>
         );
