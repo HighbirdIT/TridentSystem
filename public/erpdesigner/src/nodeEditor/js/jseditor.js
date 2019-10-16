@@ -573,6 +573,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
             showCanUseDS:true,
             showCtlApi:false,
             showCanAccessCtl:false,
+            jsNodeKeyword:''
         };
         var self = this;
     }
@@ -689,6 +690,32 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         var apiItem = theApiObj.getApiItemByid(apiid);
         this.props.editor.createApiObj(theApiObj,apiItem);
     }
+    jsNodeInputChange(ev){
+        this.setState({
+            jsNodeKeyword:ev.target.value
+        })
+    }
+    renderJsNodeList(){
+        var showArr=[]
+        if (this.state.jsNodeKeyword != '' && this.state.jsNodeKeyword !=null){ 
+            for(var i=0,len =JSNodeEditorControls_arr.length;i<len;i++){
+                if (JSNodeEditorControls_arr[i].label.indexOf(this.state.jsNodeKeyword) >= 0) {
+                    showArr.push(JSNodeEditorControls_arr[i]);
+                  }
+            }
+        }else{
+            showArr=JSNodeEditorControls_arr
+            // 测试功能后续再修改
+            // console.log(pinyin("中心"));    
+        }
+
+        return showArr.map(
+                item=>{
+                    return <button key={item.label} onMouseDown={this.mouseDownHandler} data-value={item.label} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">
+                        {item.label}</button>
+                }
+            )
+    }
 
     render() {
         if(this.props.bluePrint != this.scanedBP){
@@ -755,13 +782,17 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
                             }
                         </div>
                         <div className='btn-group-vertical mw-100 flex-shrink-0'>
-                            <span className='btn btn-info'>节点</span>
+                            <span className='btn btn-info'>节点
+                                <input type="text" className="form-control" placeholder="请输入" aria-describedby="sizing-addon3" 
+                                    onChange={this.jsNodeInputChange}/>
+                            </span>
                             {
-                                JSNodeEditorControls_arr.map(
-                                    item=>{
-                                        return <button key={item.label} onMouseDown={this.mouseDownHandler} data-value={item.label} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>
-                                    }
-                                )
+                                // JSNodeEditorControls_arr.map(
+                                //     item=>{
+                                //         return <button key={item.label} onMouseDown={this.mouseDownHandler} data-value={item.label} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>
+                                //     }
+                                // )
+                                this.renderJsNodeList()
                             }
                         </div>
                     </div>
