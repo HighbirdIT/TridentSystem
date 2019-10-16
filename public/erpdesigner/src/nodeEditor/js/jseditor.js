@@ -25,6 +25,11 @@ const JSNodeEditorControls_arr =[
         type:'流控制'
     },
     {
+        label:'SetTimeout',
+        nodeClass:JSNode_SetTimeout,
+        type:'流控制'
+    },
+    {
         label:'CallOnFetchEnd',
         nodeClass:JSNode_CallOnFetchEnd,
         type:'流控制'
