@@ -965,6 +965,7 @@ class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
             canUseDS_arr:[],
             showCanUseDS:true,
             showCtlApi:false,
+            sqlNodeKeyword:''
         };
     }
 
@@ -1049,6 +1050,31 @@ class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
         var apiItem = theApiObj.getApiItemByid(apiid);
         this.props.editor.createApiObj(theApiObj,apiItem);
     }
+    sqlNodeInputChange(ev){
+        this.setState({
+            sqlNodeKeyword:ev.target.value
+        })
+    }
+    renderSqlNodeList(){
+        var showArr=[]
+        if (this.state.sqlNodeKeyword != '' && this.state.sqlNodeKeyword !=null){ 
+            for(var i=0,len =SqlNodeEditorControls_arr.length;i<len;i++){
+                if (SqlNodeEditorControls_arr[i].label.indexOf(this.state.sqlNodeKeyword) >= 0) {
+                    showArr.push(SqlNodeEditorControls_arr[i]);
+                  }
+            }
+        }else{
+            showArr=SqlNodeEditorControls_arr
+            // 测试功能后续再修改
+            // console.log(pinyin("中心"));    
+        }
+        return showArr.map(
+            item=>{
+                return <button key={item.label} onMouseDown={this.mouseDownHandler} data-value={item.label} type="button" 
+                    className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>
+            }
+        )
+    }
 
     render() {
         var editingBP = this.props.editingNode.bluePrint;
@@ -1109,13 +1135,11 @@ class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
                         </div>
                         
                         <div className='btn-group-vertical mw-100 flex-shrink-0'>
-                            <span className='btn btn-info'>SQL节点</span>
+                            <span className='btn btn-info'>SQL节点
+                                <input type="text" className="form-control" placeholder="请输入" aria-describedby="sizing-addon3" onChange={this.sqlNodeInputChange}/>
+                            </span>
                             {
-                                SqlNodeEditorControls_arr.map(
-                                    item=>{
-                                        return <button key={item.label} onMouseDown={this.mouseDownHandler} data-value={item.label} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>
-                                    }
-                                )
+                                this.renderSqlNodeList()
                             }
                         </div>
                     </div>
