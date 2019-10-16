@@ -5,6 +5,8 @@ var gFixedItemCounter = 0;
 var gCusValidChecker_map = {};
 var gPageInFrame = false;
 var gParentFrame = null;
+var gParentDingKit = null;
+var gParentIsInDingTalk = null;
 const gPreconditionInvalidInfo = '前置条件不足';
 const gCantNullInfo = '不能为空值';
 
@@ -2885,6 +2887,7 @@ class ERPC_TopLevelFrame extends React.PureComponent {
             ev.target.contentWindow.gPageInFrame = true;
             ev.target.contentWindow.gParentFrame = this;
             ev.target.contentWindow.gParentDingKit = dingdingKit;
+            ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
         }
         catch(eo){
             console.log(eo);
@@ -2910,7 +2913,7 @@ class ERPC_TopLevelFrame extends React.PureComponent {
             </div>;
         }
         return <div className='position-fixed border rounded bg-light w-100 h-100' style={this.style} >
-            <iframe style={{display:'none'}} src={this.state.useSrc} className='w-100 h-100' frameBorder='0' onLoad={this.onloadHandler} onError={this.onErrorHandler} ></iframe>
+            <iframe src={this.state.useSrc} className='w-100 h-100' frameBorder='0' onLoad={this.onloadHandler} onError={this.onErrorHandler} ></iframe>
         </div>;
     }
 }
