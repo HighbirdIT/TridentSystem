@@ -63,6 +63,7 @@ const JSNODE_ISNAN = 'isnan';
 const JSNODE_MATH_RANDINT = 'mathrandint';
 
 const JSDEF_VAR = 'def_variable';
+const JSNODE_SETTIMEOUT = 'settimeout';
 
 var JSNodeClassMap = {};
 
@@ -124,7 +125,7 @@ class JSNode_Base extends Node_Base {
         var group = this.bluePrint.group;
         for (var upi = usePreNodes_arr.length - 1; upi >= 0; --upi) {
             var preNode = usePreNodes_arr[upi];
-            if (preNode.type == JSNODE_POP_PAGE || preNode.type == JSNODE_POPMESSAGEBOX || preNode.type == JSNODE_DD_MAP_SEARCH) {
+            if (preNode.type == JSNODE_POP_PAGE || preNode.type == JSNODE_POPMESSAGEBOX || preNode.type == JSNODE_DD_MAP_SEARCH || preNode.type == JSNODE_SETTIMEOUT) {
                 return false;
             }
             if (preNode.type == JSNODE_START){
@@ -10702,6 +10703,72 @@ class JSNode_HashFormDataRow extends JSNode_Base {
     }
 }
 
+class JSNode_SetTimeout extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_SETTIMEOUT, 'SetTimeout', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+        if (this.inputScokets_arr.length > 0) {
+            this.inputSocket = this.inputScokets_arr[0];
+            this.inputSocket.inputable = false;
+        }
+
+        if (this.inputSocket == null) {
+            this.inputSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inputSocket);
+        }
+        this.inputSocket.label = 'interval';
+        this.inputSocket.type = ValueType.Int;
+        this.inputSocket.hideIcon = true;
+        this.inputSocket.inputable = true;
+        this.inputSocket.defval = 20;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var socketComRet = this.getSocketCompileValue(helper, this.inputSocket, usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var socketValue = socketComRet.value;
+
+        var myJSBlock = new FormatFileBlock(this.id);
+        var bodyBlock = new FormatFileBlock('body');
+        belongBlock.pushChild(myJSBlock);
+        
+        myJSBlock.pushLine('setTimeout(()=>{', 1);
+        myJSBlock.pushChild(bodyBlock);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('},' + socketValue + ');');
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, bodyBlock) == false) {
+            return false;
+        }
+
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_VAR_GET] = {
     modelClass: JSNode_Var_Get,
     comClass: C_JSNode_Var_Get,
@@ -10938,4 +11005,8 @@ JSNodeClassMap[JSNODE_CLOSEPOPPER] = {
 JSNodeClassMap[JSNODE_CALLCUSSCRIPT] = {
     modelClass: JSNode_CallCusScript,
     comClass: C_JSNode_CallCusScript,
+};
+JSNodeClassMap[JSNODE_SETTIMEOUT] = {
+    modelClass: JSNode_SetTimeout,
+    comClass: C_Node_SimpleNode,
 };
