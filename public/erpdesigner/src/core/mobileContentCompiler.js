@@ -969,6 +969,7 @@ class MobileContentCompiler extends ContentCompiler {
                     break;
                 case M_LabeledControlKernel_Type:
                 case M_ContainerKernel_Type:
+                case PopperButtonKernel_Type:
                     nowKernel = nowKernel.parent;
                     break;
                 default:
