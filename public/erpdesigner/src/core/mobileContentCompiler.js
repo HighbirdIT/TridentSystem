@@ -4570,7 +4570,8 @@ class MobileContentCompiler extends ContentCompiler {
 
         if (!IsEmptyObject(bpCompileHelper.usePageParam)) {
             for (var usPageParamName in bpCompileHelper.usePageParam) {
-                var usePageParamObj = { bundleName: 'pagein_' + usPageParamName, clientValue: makeStr_callFun('getPageEntryParam', [singleQuotesStr(belongPageKernel.id), singleQuotesStr(usPageParamName), bpCompileHelper.usePageParam[usPageParamName]]) };
+                pullFun.scope.getVar('pagein_' + usPageParamName, true, makeStr_callFun('getPageEntryParam', [singleQuotesStr(belongPageKernel.id), singleQuotesStr(usPageParamName), bpCompileHelper.usePageParam[usPageParamName]]));
+                var usePageParamObj = { bundleName: 'pagein_' + usPageParamName, clientValue: 'pagein_' + usPageParamName };
                 needSetParams_arr.push(usePageParamObj);
                 initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', usePageParamObj.bundleName), usePageParamObj.clientValue));
             }
@@ -4578,7 +4579,8 @@ class MobileContentCompiler extends ContentCompiler {
 
         if (!IsEmptyObject(bpCompileHelper.useUrlVar_map)) {
             for (var varName in bpCompileHelper.useUrlVar_map) {
-                var useUrlVarObj = { bundleName: varName, clientValue: makeStr_callFun('getQueryVariable', [singleQuotesStr(varName), bpCompileHelper.useUrlVar_map[varName]]) };
+                pullFun.scope.getVar(varName,true,makeStr_callFun('getQueryVariable', [singleQuotesStr(varName), bpCompileHelper.useUrlVar_map[varName]]));
+                var useUrlVarObj = { bundleName: varName, clientValue:varName };
                 needSetParams_arr.push(useUrlVarObj);
                 initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', useUrlVarObj.bundleName), useUrlVarObj.clientValue));
             }
@@ -5306,13 +5308,15 @@ class MobileContentCompiler extends ContentCompiler {
 
                 if (!IsEmptyObject(compilHelper.usePageParam)) {
                     for (var usPageParamName in compilHelper.usePageParam) {
-                        needSetParams_arr.push({ bundleName: 'pagein_' + usPageParamName, clientValue: makeStr_callFun('getPageEntryParam', [singleQuotesStr(belongPage.id), singleQuotesStr(usPageParamName), compilHelper.usePageParam[usPageParamName]]) });
+                        pullFun.scope.getVar('pagein_' + usPageParamName, true, makeStr_callFun('getPageEntryParam', [singleQuotesStr(belongPage.id), singleQuotesStr(usPageParamName), compilHelper.usePageParam[usPageParamName]]));
+                        needSetParams_arr.push({ bundleName: 'pagein_' + usPageParamName, clientValue: 'pagein_' + usPageParamName });
                     }
                 }
 
                 if (!IsEmptyObject(compilHelper.useUrlVar_map)) {
                     for (varName in compilHelper.useUrlVar_map) {
-                        var useUrlVarObj = { bundleName: varName, clientValue: makeStr_callFun('getQueryVariable', [singleQuotesStr(varName), compilHelper.useUrlVar_map[varName]]) };
+                        pullFun.scope.getVar(varName, true, makeStr_callFun('getQueryVariable', [singleQuotesStr(varName), compilHelper.useUrlVar_map[varName]]));
+                        var useUrlVarObj = { bundleName: varName, clientValue: varName };
                         needSetParams_arr.push(useUrlVarObj);
                     }
                 }

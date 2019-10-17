@@ -3606,6 +3606,9 @@ class SqlNode_GetPageEntryParam extends SqlNode_Base {
 
         helper.addUsePageParam(paramName, socketComRet.value);
 
+        if(this.parent == this.bluePrint){
+            // sql蓝图根节点下的此节点输出的
+        }
         var value = '@pagein_' + paramName;
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, value);
