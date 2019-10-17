@@ -205,6 +205,7 @@ class FormatHtmlTag extends FormatFile_ItemBase{
         this.attrObj = {};
         this.childs_map = {};
         this.childs_arr = [];
+        this.getStringCallbacker = [];
     }
 
     clear(){
@@ -225,6 +226,22 @@ class FormatHtmlTag extends FormatFile_ItemBase{
             clonedCallback(rlt, this);
         }
         return rlt;
+    }
+
+    addGetStringLisener(fun){
+        var index = this.getStringCallbacker.indexOf(fun);
+        if(index == -1)
+        {
+            this.getStringCallbacker.push(fun);
+        }
+    }
+
+    removeGetStringLisener(fun){
+        var index = this.getStringCallbacker.indexOf(fun);
+        if(index != -1)
+        {
+            this.getStringCallbacker.splice(indent,1);
+        }
     }
 
     setAttr(name, value){
@@ -346,6 +363,13 @@ class FormatHtmlTag extends FormatFile_ItemBase{
         else{
             rlt += ' />';
         }
+
+        this.getStringCallbacker.forEach(callBack=>{
+            rlt = callBack(rlt, indentChar, newLineChar, prefixStr);
+            if(rlt == null){
+                console.error('getStringCallbacker return null');
+            }
+        });
         return rlt;
     }
 }

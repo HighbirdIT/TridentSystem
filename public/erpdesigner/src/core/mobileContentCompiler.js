@@ -1859,6 +1859,8 @@ class MobileContentCompiler extends ContentCompiler {
         var isPageForm = formType == EFormType.Page;
         var isGridForm = formType == EFormType.Grid;
         var isListForm = formType == EFormType.List;
+        var selectMode = theKernel.getAttribute(AttrNames.SelectMode);
+        var rowIndexAttrName = theKernel.id.toLocaleLowerCase() + '_rowindex';
 
         var thisfullpath = makeStr_DotProp(fullParentPath, theKernel.id);
         var pathVarName = theKernel.id + '_path';
@@ -2001,6 +2003,7 @@ class MobileContentCompiler extends ContentCompiler {
         var headClassInBodyTag = null;
         var headClassInFormTag = null;
 
+        var keyColumn = theKernel.getAttribute(AttrNames.KeyColumn);
         var autoHeight = theKernel.getAttribute(AttrNames.AutoHeight);
         var gridBodyTag = null;
         var childRenderBlock = null;
@@ -2094,19 +2097,39 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else if (isListForm) {
             renderContentBlock.pushLine(VarNames.RetElem + " = this.props.records_arr.map((record," + VarNames.RowIndex + ")=>{", 1);
+            var itemLayoutConfig = theKernel.getLayoutConfig('item' + AttrNames.LayoutNames.APDClass, 'item' + AttrNames.LayoutNames.StyleAttr);
+            itemLayoutConfig.addClass('list-group-item');
+            itemLayoutConfig.addClass('flex-grow-0');
+            itemLayoutConfig.addClass('flex-shrink-0');
+            var itemStyleID = theKernel.id + '_item_style';
+            var hasItemFormStyle = this.clientSide.addStyleObject(itemStyleID, itemLayoutConfig.style);
+            if (selectMode != ESelectMode.None) {
+                itemLayoutConfig.addClass('list-group-item-action');
+            }
+            
+            var listItemTag = new FormatHtmlTag('listitem','div', this.clientSide);
+            listItemTag.setAttr('key', bigbracketStr(VarNames.RowIndex));
+            listItemTag.setAttr(rowIndexAttrName, bigbracketStr(VarNames.RowIndex));
+            listItemTag.setAttr('className', itemLayoutConfig.getClassName());
+            if(hasItemFormStyle){
+                listItemTag.setAttr('style', itemStyleID);
+            }
+            renderContentBlock.pushChild(listItemTag);
             childRenderBlock = new FormatFileBlock(theKernel.id + 'child');
-            renderContentBlock.pushChild(childRenderBlock);
-            childRenderBlock.getStringCallbacker.push((rlt) => {
+            listItemTag.pushChild(childRenderBlock);
+            
+            listItemTag.getStringCallbacker.push((rlt) => {
                 var keyPos = rlt.indexOf('<');
                 return rlt.substr(0, keyPos) + 'return ' + rlt.substr(keyPos);
             });
+            
             renderContentBlock.subNextIndent();
             renderContentBlock.pushLine('});');
 
-            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column autoScroll " + layoutConfig.getClassName() + "'>", 1);
+            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'>", 1);
             renderContentFun.retBlock.pushLine("{this.props.title && <div className='bg-dark text-light " + titleAlginStr + " d-flex flex-shrink-0 p-1'><span>{this.props.title}</span></div>}");
             var isWrap = theKernel.getAttribute(AttrNames.Wrap);
-            var contentDivClassStr = 'd-flex flex-grow-1 flex-shrink-1' + (isWrap ? ' flex-wrap' : '');
+            var contentDivClassStr = 'd-flex flex-grow-1 flex-shrink-1' + (isWrap ? ' flex-wrap' : '') + (autoHeight ? ' autoScroll ' : '');
             if (orientation == Orientation_V) {
                 contentDivClassStr += ' flex-column';
             }
@@ -2187,8 +2210,22 @@ class MobileContentCompiler extends ContentCompiler {
             formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.PageCount), makeStr_DotProp(VarNames.CtlState, VarNames.PageCount)));
             formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.PageIndex), makeStr_DotProp(VarNames.CtlState, VarNames.PageIndex)));
             formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.RowPerPage), makeStr_DotProp(VarNames.CtlState, VarNames.RowPerPage)));
-            formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.SelectMode), singleQuotesStr(theKernel.getAttribute(AttrNames.SelectMode))));
-            formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.SelectedRows_arr), 'ctlState.selectedRows_arr == null ? gEmptyArr : ctlState.selectedRows_arr'));
+            formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.SelectedRows_arr), 'ctlState.selectedRows_arr == null ? gEmptyArr : ctlState.selectedRows_arr'));        }
+        if(isGridForm || isListForm){
+            formTag.setAttr(VarNames.SelectMode, theKernel.getAttribute(AttrNames.SelectMode));
+
+            if(selectMode != ESelectMode.None){
+                var canUserColumns_arr = theKernel.getCanuseColumns();
+                if(canUserColumns_arr.indexOf(keyColumn) == -1){
+                    logManager.errorEx([logManager.createBadgeItem(
+                        theKernel.getReadableName(),
+                        theKernel,
+                        this.projectCompiler.clickKernelLogBadgeItemHandler),
+                        'Key列无效']);
+                    return false;
+                }
+                formTag.setAttr(AttrNames.KeyColumn, keyColumn);
+            }
         }
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullPath), makeStr_DotProp('propProfile', VarNames.FullPath)));
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullParentPath), makeStr_DotProp('propProfile', VarNames.FullParentPath)));
@@ -2507,11 +2544,11 @@ class MobileContentCompiler extends ContentCompiler {
         if (isListForm || isGridForm) {
             if (clickSelectable || onSelectRowBp) {
                 var clickRowHandlerFun = formReactClass.getFunction('clickRowHandler', true, ['ev']);
-                clickRowHandlerFun.pushLine("var rowIndex = !isNaN(ev) ? ev : getAttributeByNode(ev.target,'rowIndex');");
+                clickRowHandlerFun.pushLine("var rowIndex = !isNaN(ev) ? ev : getAttributeByNode(ev.target,'"+rowIndexAttrName+"');");
                 clickRowHandlerFun.pushLine("var state = store.getState();");
-                clickRowHandlerFun.pushLine("var thisState = getStateByPath(state, this.props.fullPath,{});");
-                clickRowHandlerFun.pushLine(makeStr_callFun(onSelectRowFunName, ['state', 'this.props.' + VarNames.FullPath, 'thisState.records_arr[rowIndex]']));
+                clickRowHandlerFun.pushLine("var this1State = getStateByPath(state, this.props.fullPath,{});");
                 if (onSelectRowBp) {
+                    clickRowHandlerFun.pushLine(makeStr_callFun(onSelectRowFunName, ['state', 'this.props.' + VarNames.FullPath, 'thisState.records_arr[rowIndex]']));
                     var onSelectRowCompileRet = this.compileScriptBlueprint(onSelectRowBp);
                     if (onSelectRowCompileRet == false) {
                         return false;
@@ -2585,7 +2622,7 @@ class MobileContentCompiler extends ContentCompiler {
                 gridHeadBodyPureRectClass.renderFun.pushLine('</tr></tbody>);');
             }
 
-            var selectMode = theKernel.getAttribute(AttrNames.SelectMode);
+            
             if (selectMode != ESelectMode.None) {
                 sumTableWidth += 3.5;
                 gridHeadRowRenderBlock.pushLine("<th scope='col' className='selectorTableHeader'></th>");

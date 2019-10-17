@@ -33,6 +33,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('隐藏表头', AttrNames.HideTabHead, ValueType.Boolean, false),
         new CAttribute('有滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
         new CAttribute('模式', AttrNames.SelectMode, ValueType.String, ESelectMode.None, true, false, SelectModes_arr),
+        new CAttribute('Key列', AttrNames.KeyColumn, ValueType.String, '', true, false, 'getCanuseColumns'),
         new CAttribute('bottomDivID', 'bottomDivID', ValueType.String, '', true, false, null, null, false),
         new CAttribute('editorID', 'editorID', ValueType.String, '', true, false, null, null, false),
         genIsdisplayAttribute(),
@@ -52,6 +53,10 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('数据源变更', AttrNames.Event.OnDataSourceChanged, ValueType.Event),
         new CAttribute('行变更', AttrNames.Event.OnRowChanged, ValueType.Event),
         new CAttribute('选了某行', AttrNames.Event.OnSelectRow, ValueType.Event),
+    ]),
+    new CAttributeGroup('List设置', [
+        new CAttribute('PopperStyle', 'item' + AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
+        new CAttribute('PopperClass', 'item' + AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true),
     ]),
 ]);
 
@@ -137,16 +142,22 @@ class M_FormKernel extends ContainerKernelBase {
         this[AttrNames.WidthType + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.AutoIndexColumn + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.GenNavBar + '_visible'] = nowft == EFormType.Grid || nowft == EFormType.Page;
-        this[AttrNames.SelectMode + '_visible'] = nowft == EFormType.Grid;
+        this[AttrNames.SelectMode + '_visible'] = nowft == EFormType.Grid || nowft == EFormType.List;
+        this[AttrNames.KeyColumn + '_visible'] = this[AttrNames.SelectMode + '_visible'] && this.getAttribute(AttrNames.SelectMode) != ESelectMode.None;
         this[AttrNames.HideTabHead + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.EditorType + '_visible'] = nowft == EFormType.List;
         this[AttrNames.NoRender + '_visible'] = nowft == EFormType.Page;
         this[AttrNames.Wrap + '_visible'] = nowft == EFormType.List;
+        this[AttrNames.ClickSelectable + '_visible'] = nowft == EFormType.List || nowft == EFormType.Grid;
+        
+        this.findAttrGroupByName('List设置').setVisible(this, nowft == EFormType.List);
+
         this[AttrNames.Event.OnSelectRow + '_visible'] = nowft == EFormType.List || nowft == EFormType.Grid;
         this[AttrNames.Event.OnRowChanged + '_visible'] = nowft == EFormType.Page;
         this[AttrNames.Event.OnDelete + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.Event.OnUpdate + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.Event.OnInsert + '_visible'] = nowft == EFormType.Grid;
+        
 
         var self = this;
         autoBind(self);
@@ -382,6 +393,8 @@ class M_FormKernel extends ContainerKernelBase {
         switch (attrItem.name) {
             case AttrNames.DataSource:
                 this.autoSetCusDataSource();
+                var columns_arr = this.getCanuseColumns();
+                this.setAttribute(AttrNames.KeyColumn, columns_arr.length == 0 ? '' : columns_arr[0]);
                 break;
             case AttrNames.FormType:
                 var isGridForm = newValue == EFormType.Grid;
@@ -393,16 +406,21 @@ class M_FormKernel extends ContainerKernelBase {
                 this.findAttributeByName(AttrNames.WidthType).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.AutoIndexColumn).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.GenNavBar).setVisible(this, isGridForm || isPageForm);
-                this.findAttributeByName(AttrNames.SelectMode).setVisible(this, isGridForm);
+                this.findAttributeByName(AttrNames.SelectMode).setVisible(this, isGridForm || isListForm);
+                this.findAttributeByName(AttrNames.KeyColumn).setVisible(this, (isGridForm || isListForm) && (this.getAttribute(AttrNames.SelectMode) != ESelectMode.None));
                 this.findAttributeByName(AttrNames.HideTabHead).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.EditorType).setVisible(this, isListForm);
                 this.findAttributeByName(AttrNames.NoRender).setVisible(this, isPageForm);
-
+                this.findAttributeByName(AttrNames.Wrap).setVisible(this, isListForm);
+                this.findAttributeByName(AttrNames.ClickSelectable).setVisible(this, isListForm || isPageForm);
+                
                 this.findAttributeByName(AttrNames.Event.OnSelectRow).setVisible(this, isGridForm || isListForm);
                 this.findAttributeByName(AttrNames.Event.OnRowChanged).setVisible(this, isPageForm);
                 this.findAttributeByName(AttrNames.Event.OnDelete).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.Event.OnUpdate).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.Event.OnInsert).setVisible(this, isGridForm);
+
+                this.findAttrGroupByName('List设置').setVisible(this, isListForm);
                 
                 if (isListForm) {
                     this.clearChildren();
@@ -421,6 +439,9 @@ class M_FormKernel extends ContainerKernelBase {
                 break;
             case AttrNames.Event.OnUpdate:
                 console.log('Names.Event.OnUpd');
+                break;
+            case AttrNames.SelectMode:
+                this.findAttributeByName(AttrNames.KeyColumn).setVisible(this, newValue != ESelectMode.None && (this.isGridForm() || this.isListForm()));
                 break;
         }
     }
@@ -461,7 +482,7 @@ class M_Form extends React.PureComponent {
         autoBind(this);
 
         var ctlKernel = this.props.ctlKernel;
-        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Orientation, AttrNames.Chidlren, AttrNames.FormType, AttrNames.WidthType, AttrNames.AutoIndexColumn, AttrNames.Title, AttrNames.SelectMode], inintState));
+        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Orientation, AttrNames.Chidlren, AttrNames.FormType, AttrNames.WidthType, AttrNames.AutoIndexColumn, AttrNames.Title, AttrNames.SelectMode, 'item' + AttrNames.LayoutNames.StyleAttr, 'item' + AttrNames.LayoutNames.APDClass], inintState));
         M_ContainerBase(this);
 
         inintState.orientation = ctlKernel.getAttribute(AttrNames.Orientation);
@@ -520,11 +541,11 @@ class M_Form extends React.PureComponent {
         }
         var titleParserRet = parseObj_CtlPropJsBind(this.state.title, ctlKernel.project.scriptMaster);
         var title = titleParserRet.isScript ? (ReplaceIfNull(this.state.name,'') + '{脚本}') : (IsEmptyString(titleParserRet.string) ? '' : '[' +titleParserRet.string + ']');
+        var selectMode = this.state.selectMode;
         if (this.state.formType == EFormType.Grid) {
             //var labelControls_arr = this.props.ctlKernel.searchChildKernel(M_LabeledControlKernel_Type, false);
             var widthType = this.state.widthType;
             var autoIndexColumn = this.state.autoIndexColumn;
-            var selectMode = this.state.selectMode;
             var tableStyle = {};
             var sumTableWidth = 0;
             if (autoIndexColumn) {
@@ -593,21 +614,38 @@ class M_Form extends React.PureComponent {
             return tableElem;
         }
 
+        var childElem = null;
+        if(this.props.ctlKernel.children.length > 0){
+            childElem = this.props.ctlKernel.children.map(childKernel => {
+                if (childKernel == ctlKernel.gridFormBottomDiv) {
+                    return null;
+                }
+                return childKernel.renderSelf(childClickHandlerParam, this.props.replaceChildClick, this.props.designer);
+            })
+        }
+        else{
+            childElem = this.props.ctlKernel.id;
+        }
+
+        var contentElem = childElem;
+        if(this.state.formType == EFormType.List) {
+            var itemLayoutConfig = this.props.ctlKernel.getLayoutConfig('item' + AttrNames.LayoutNames.APDClass, 'item' + AttrNames.LayoutNames.StyleAttr);
+            itemLayoutConfig.addClass('list-group-item');
+            if (selectMode != ESelectMode.None) {
+                itemLayoutConfig.addClass('list-group-item-action');
+                itemLayoutConfig.addClass('active');
+            }
+            contentElem = <div className={itemLayoutConfig.getClassName()} style={itemLayoutConfig.style} >
+                {childElem}
+            </div>
+        }
+
         return (
             <div className={outerDivClassStr} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {this.renderHandleBar()}
                 <span className='text-light bg-dark'>{title}</span>
                 <div className={'d-flex flex-grow-1 flex-shrink-1' + (this.state.orientation == Orientation_V ? ' flex-column' : '')} style={rootStyle}>
-                {
-                    this.props.ctlKernel.children.length == 0 ?
-                        this.props.ctlKernel.id :
-                        this.props.ctlKernel.children.map(childKernel => {
-                            if (childKernel == ctlKernel.gridFormBottomDiv) {
-                                return null;
-                            }
-                            return childKernel.renderSelf(childClickHandlerParam, this.props.replaceChildClick, this.props.designer);
-                        })
-                }
+                    {contentElem}
                 </div>
             </div>
         );

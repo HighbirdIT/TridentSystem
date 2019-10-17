@@ -343,6 +343,7 @@ var AttrNames = {
     ToolTip: 'toolTip',
     Growable: 'growable',
     InvalidAct: 'invalidAct',
+    KeyColumn: 'keyColumn',
 
     Event: {
         OnClick: 'onclick',
