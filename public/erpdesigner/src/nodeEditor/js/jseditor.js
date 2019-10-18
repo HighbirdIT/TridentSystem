@@ -210,6 +210,16 @@ const JSNodeEditorControls_arr =[
         type:'窗体控制'
     },
     {
+        label:'向父页发消息',
+        nodeClass:JSNode_Msg_SendToParent,
+        type:'窗体通信'
+    },
+    {
+        label:'关闭TopFrame',
+        nodeClass:JSNode_CloseTopFrame,
+        type:'窗体控制'
+    },
+    {
         label:'弹出页面',
         nodeClass:JSNode_PopPage,
         type:'窗体控制'

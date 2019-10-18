@@ -225,7 +225,7 @@ function closePage(pid) {
     }
 }
 
-function openPage(name, stepcode, stepdata, mode) {
+function openPage(name, stepcode, stepdata, mode, onMsgFun) {
     if (name == null || name.length == 0) {
         console.error('openPage 的name参数为空');
         return;
@@ -245,7 +245,7 @@ function openPage(name, stepcode, stepdata, mode) {
             }, 20);
         }
         else{
-            gTopLevelFrameRef.current.push(window.location.origin + targetPath);   
+            gTopLevelFrameRef.current.push(window.location.origin + targetPath, null, onMsgFun);   
         }
         return;
     }
@@ -2898,12 +2898,13 @@ class ERPC_TopLevelFrame extends React.PureComponent {
         this.pop = this.pop.bind(this);
     }
 
-    push(src, oldPageState){
+    push(src, oldPageState, onMessageFun){
         if(this.state.srcs_arr.length > 0 && this.state.srcs_arr[this.state.srcs_arr.length - 1] == src){
             return;
         }
         if(this.state.srcs_arr.length == 0){
             oldPageState = null;    // 宿主页面的state不用保存
+            this.onMessageFun = onMessageFun;
         }
         this.setState({
             srcs_arr:this.state.srcs_arr.concat(src),
@@ -2926,6 +2927,23 @@ class ERPC_TopLevelFrame extends React.PureComponent {
             useSrc:useSrc,
             err:null,
         });
+    }
+
+    close(){
+        this.onMessageFun = null;
+        this.setState({
+            srcs_arr:[],
+            states_arr:[],
+            useSrc:null,
+            useState:null,
+            err:null,
+        });
+    }
+
+    sendMessage(msgtype, data){
+        if(this.onMessageFun){
+            this.onMessageFun(msgtype, data);
+        }
     }
 
     getUseState(){

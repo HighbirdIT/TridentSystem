@@ -267,7 +267,7 @@ function closePage(pid) {
     }
 }
 
-function openPage(name, stepcode, stepdata, mode) {
+function openPage(name, stepcode, stepdata, mode, onMsgFun) {
     if (name == null || name.length == 0) {
         console.error('openPage 的name参数为空');
         return;
@@ -286,7 +286,7 @@ function openPage(name, stepcode, stepdata, mode) {
                 gParentFrame.push(window.location.origin + targetPath, nowPageState);
             }, 20);
         } else {
-            gTopLevelFrameRef.current.push(window.location.origin + targetPath);
+            gTopLevelFrameRef.current.push(window.location.origin + targetPath, null, onMsgFun);
         }
         return;
     }
@@ -3532,12 +3532,13 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
 
     _createClass(ERPC_TopLevelFrame, [{
         key: 'push',
-        value: function push(src, oldPageState) {
+        value: function push(src, oldPageState, onMessageFun) {
             if (this.state.srcs_arr.length > 0 && this.state.srcs_arr[this.state.srcs_arr.length - 1] == src) {
                 return;
             }
             if (this.state.srcs_arr.length == 0) {
                 oldPageState = null; // 宿主页面的state不用保存
+                this.onMessageFun = onMessageFun;
             }
             this.setState({
                 srcs_arr: this.state.srcs_arr.concat(src),
@@ -3561,6 +3562,25 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
                 useSrc: useSrc,
                 err: null
             });
+        }
+    }, {
+        key: 'close',
+        value: function close() {
+            this.onMessageFun = null;
+            this.setState({
+                srcs_arr: [],
+                states_arr: [],
+                useSrc: null,
+                useState: null,
+                err: null
+            });
+        }
+    }, {
+        key: 'sendMessage',
+        value: function sendMessage(msgtype, data) {
+            if (this.onMessageFun) {
+                this.onMessageFun(msgtype, data);
+            }
         }
     }, {
         key: 'getUseState',
