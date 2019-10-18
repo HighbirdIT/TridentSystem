@@ -1,13 +1,16 @@
 const JSNODE_WHILE = 'jswhile';
 const JSNODE_ARRAY_CONCAT = 'concat';
 const JSNODE_TERNARY_OPERATOR = 'ternary_operator';
-const JSNODE_ARRAY_PUSHPOP = 'push_pop';
+const JSNODE_ARRAY_PUSH = 'array_push';
+const JSNODE_ARRAY_POP = 'array_pop';
 const JSNODE_ARRAY_JOIN = 'array_join';
 const JSNODE_ARRAY_SLICE = 'array_slice';
+const JSNODE_ARRAY_GET = 'array_get';
 const JSNODE_GETDAY = 'getDay';
 const JSNODE_FORMATNUM = 'formatnum';
 const JSNODE_CAPITALNUM = 'capitalnum';
-const JSNODE_CONVERT_TIMEZONE='convert_timezone'
+const JSNODE_CONVERT_TIMEZONE = 'convert_timezone';
+
 class JSNode_While extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_WHILE, 'While', false, nodeJson);
@@ -153,27 +156,33 @@ class JSNode_Array_Concat extends JSNode_Base {
                 this.outSocket = this.outputScokets_arr[0];
             }
         }
-        if (this.inputScokets_arr.length == 0) {
-            this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Array, inputable: false }));
-            this.addSocket(new NodeSocket('inputtwo', this, true, { type: ValueType.Object, inputable: false }));
-        } else {
+        if (this.inputScokets_arr.length > 0) {
             this.inputScokets_arr.forEach(socket => {
-                if (socket.type == ValueType.Array) {
-                    socket.type = ValueType.Array;
-                    socket.inputable = false;
+                if (socket.name == 'arr') {
+                    this.arrSocket = socket;
                 }
-                else if (socket.type == ValueType.Object) {
-                    socket.type = ValueType.Object;
-                    socket.inputable = false;
+                if (socket.name == 'data') {
+                    this.dataSocket = socket;
                 }
             });
+        }
+        if (this.arrSocket == null) {
+            this.arrSocket = this.addSocket(new NodeSocket('arr', this, true));
+        }
+        if (this.dataSocket == null) {
+            this.dataSocket = this.addSocket(new NodeSocket('data', this, true));
         }
         if (this.outSocket == null) {
             this.outSocket = new NodeSocket('out', this, false);
             this.addSocket(this.outSocket);
         }
-        //this.inSocket.type = ValueType.Array;
-        //this.inSocket.inputable = false;
+        this.arrSocket.type = ValueType.Array;
+        this.arrSocket.inputable = false;
+        this.arrSocket.label = 'array';
+        this.dataSocket.type = ValueType.Object;
+        this.dataSocket.label = 'data';
+        this.dataSocket.inputable = true;
+
         this.outSocket.type = ValueType.Array;
     }
 
@@ -186,52 +195,88 @@ class JSNode_Array_Concat extends JSNode_Base {
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
-        var theSocket = this.inSocket;
-        var socketValue = null;
-        var arrar_addValue = null;
-        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
-            var theSocket = this.inputScokets_arr[i];
-            var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-            if (datalinks_arr.length == 0) {
-                helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                    thisNodeTitle,
-                    nodeThis,
-                    helper.clickLogBadgeItemHandler),
-                    '需要设置参数']);
-                return false;
-            }
-            else {
-                var dataLink = datalinks_arr[0];
-                var outNode = dataLink.outSocket.node;
 
-                var socket_type = theSocket.type
-                var compileRet = null;
-                if (outNode.isHadFlow()) {
-                    compileRet = helper.getCompileRetCache(outNode);
-                    if (compileRet == null) {
-                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                            thisNodeTitle,
-                            nodeThis,
-                            helper.clickLogBadgeItemHandler),
-                            '输入接口设置错误']);
-                        return false;
-                    }
-                }
-                else {
-                    compileRet = outNode.compile(helper, usePreNodes_arr);
-                }
-                if (compileRet == false) {
-                    return false;
-                }
-                if (socket_type == 'array') {
-                    socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
-                } else {
-                    arrar_addValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
-                }
+        var socketComRet = this.getSocketCompileValue(helper, this.arrSocket, usePreNodes_arr, belongBlock, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var arrValue = socketComRet.value;
+        socketComRet = this.getSocketCompileValue(helper, this.dataSocket, usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var dataValue = socketComRet.value;
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, arrValue + '.concat(' + dataValue + ')');
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+class JSNode_Array_Get extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_ARRAY_GET, '数据-Get', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
             }
         }
+        if (this.inputScokets_arr.length > 0) {
+            this.inputScokets_arr.forEach(socket => {
+                if (socket.name == 'arr') {
+                    this.arrSocket = socket;
+                }
+                if (socket.name == 'data') {
+                    this.dataSocket = socket;
+                }
+            });
+        }
+        if (this.arrSocket == null) {
+            this.arrSocket = this.addSocket(new NodeSocket('arr', this, true));
+        }
+        if (this.dataSocket == null) {
+            this.dataSocket = this.addSocket(new NodeSocket('data', this, true));
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.arrSocket.type = ValueType.Array;
+        this.arrSocket.inputable = false;
+        this.arrSocket.label = 'array';
+        this.dataSocket.type = ValueType.Object;
+        this.dataSocket.label = 'index';
+        this.dataSocket.inputable = true;
+
+        this.outSocket.type = ValueType.Array;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var socketComRet = this.getSocketCompileValue(helper, this.arrSocket, usePreNodes_arr, belongBlock, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var arrValue = socketComRet.value;
+        socketComRet = this.getSocketCompileValue(helper, this.dataSocket, usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var dataValue = socketComRet.value;
+
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, socketValue + '.concat(' + arrar_addValue + ')');
+        selfCompileRet.setSocketOut(this.outSocket, arrValue + '[' + dataValue + ']');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -297,31 +342,45 @@ class JSNode_Ternary_Operator extends JSNode_Base {
 
 
 // 数组函数
-class JSNode_Array_PushPop extends JSNode_Base {
+class JSNode_Array_Push extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, JSNODE_ARRAY_PUSHPOP, '数组尾部增加', false, nodeJson);
+        super(initData, parentNode, createHelper, JSNODE_ARRAY_PUSH, '数组-Push', false, nodeJson);
         autoBind(this);
 
-        if (nodeJson) {
-            if (this.outputScokets_arr.length > 0) {
-                this.outSocket = this.outputScokets_arr[0];
-            }
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
         }
-        if (this.inputScokets_arr.length == 0) {
-            this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Array, inputable: false }));
-            this.addSocket(new NodeSocket('inputtwo', this, true, { type: ValueType.String, inputable: true }));
-        } 
-        this.inputScokets_arr[0].label = '数组';
-        this.inputScokets_arr[0].inputable = false;
-        this.inputScokets_arr[1].inputable = true;
-        this.inputScokets_arr[1].label = '字符串';
 
-        if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false);
-            this.addSocket(this.outSocket);
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
         }
-      
-        this.outSocket.type = ValueType.Array;
+
+        if (this.inputScokets_arr.length > 0) {
+            this.inputScokets_arr.forEach(socket => {
+                if (socket.name == 'arr') {
+                    this.arrSocket = socket;
+                }
+                if (socket.name == 'data') {
+                    this.dataSocket = socket;
+                }
+            });
+        }
+
+        if (this.arrSocket == null) {
+            this.arrSocket = this.addSocket(new NodeSocket('arr', this, true));
+        }
+        if (this.dataSocket == null) {
+            this.dataSocket = this.addSocket(new NodeSocket('data', this, true));
+        }
+
+        this.arrSocket.type = ValueType.Array;
+        this.arrSocket.inputable = false;
+        this.arrSocket.label = 'array';
+        this.dataSocket.type = ValueType.Object;
+        this.dataSocket.label = 'data';
+        this.dataSocket.inputable = true;
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -333,64 +392,92 @@ class JSNode_Array_PushPop extends JSNode_Base {
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
-        var theSocket = this.inSocket;
-        var socketValue = null;
-        var tValue = null;
-        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
-            var theSocket = this.inputScokets_arr[i];
-            var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-            if (datalinks_arr.length == 0) {
-                if (theSocket.type == 'array' && IsEmptyString(theSocket.defval)) {
-                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                        thisNodeTitle,
-                        nodeThis,
-                        helper.clickLogBadgeItemHandler),
-                        '需要设置参数']);
-                    return false;
-                }
-                if (theSocket.type != 'array' && IsEmptyString(theSocket.defval)) {
-                    tValue = "','";
-                } else {
-                    tValue = theSocket.defval.replace(/\'/g, '');
-                    tValue = "'" + tValue + "'";
-                }
-            }
-            else {
-                var dataLink = datalinks_arr[0];
-                var outNode = dataLink.outSocket.node;
 
-                var socket_type = theSocket.type
-                var compileRet = null;
-                if (outNode.isHadFlow()) {
-                    compileRet = helper.getCompileRetCache(outNode);
-                    if (compileRet == null) {
-                        helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                            thisNodeTitle,
-                            nodeThis,
-                            helper.clickLogBadgeItemHandler),
-                            '输入接口设置错误']);
-                        return false;
-                    }
-                }
-                else {
-                    compileRet = outNode.compile(helper, usePreNodes_arr);
-                }
-                if (compileRet == false) {
-                    return false;
-                }
-                if (socket_type == 'array') {
-                    socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
-                    socketValue = socketValue.replace(/\'/g, '')
-
-                } else {
-                    tValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
-                    tValue = "'" + tValue.replace(/\'/g, '') + "'"
-                }
-            }
+        var socketComRet = this.getSocketCompileValue(helper, this.arrSocket, usePreNodes_arr, belongBlock, false);
+        if (socketComRet.err) {
+            return false;
         }
+        var arrValue = socketComRet.value;
+        socketComRet = this.getSocketCompileValue(helper, this.dataSocket, usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var dataValue = socketComRet.value;
+
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+        myJSBlock.pushLine(arrValue + '.push(' + dataValue + ');');
+
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, socketValue + '.push(' + tValue + ')');
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
+        return selfCompileRet;
+    }
+}
+
+class JSNode_Array_Pop extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_ARRAY_POP, '数组-Pop', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+        if (this.inputScokets_arr.length > 0) {
+            this.inputScokets_arr.forEach(socket => {
+                if (socket.name == 'arr') {
+                    this.arrSocket = socket;
+                }
+            });
+        }
+
+        if (this.arrSocket == null) {
+            this.arrSocket = this.addSocket(new NodeSocket('arr', this, true));
+        }
+
+        this.arrSocket.type = ValueType.Array;
+        this.arrSocket.inputable = false;
+        this.arrSocket.label = 'array';
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var socketComRet = this.getSocketCompileValue(helper, this.arrSocket, usePreNodes_arr, belongBlock, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var arrValue = socketComRet.value;
+
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+        myJSBlock.pushLine(arrValue + '.pop();');
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
         return selfCompileRet;
     }
 }
@@ -632,11 +719,11 @@ class JSNode_GetDay extends JSNode_Base {
             return false;
         }
         var dateStr = socketComRet.value;
-        var endstr='';
+        var endstr = '';
         var socketlink = socketComRet.link;
         var outSocket = this.outputScokets_arr[0];
         var selfCompileRet = new CompileResult(this);
-        if (socketComRet.link ==null){
+        if (socketComRet.link == null) {
             if (!checkDate(dateStr)) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle,
@@ -659,8 +746,8 @@ class JSNode_GetDay extends JSNode_Base {
             }
         }
         var funPreFix = blockInServer ? 'serverhelper.DateFun.' : '';
-        endstr=funPreFix+"getweekDay("+dateStr+")" ;
-        
+        endstr = funPreFix + "getweekDay(" + dateStr + ")";
+
         selfCompileRet.setSocketOut(outSocket, endstr);
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
@@ -710,7 +797,7 @@ class JSNode_FormatNum extends JSNode_Base {
             return false;
         }
         var dateStr = socketComRet.value;
-       
+
         var socketlink = socketComRet.link;
         if (socketlink == null) {
             if (isNaN(dateStr)) {
@@ -720,7 +807,7 @@ class JSNode_FormatNum extends JSNode_Base {
                     helper.clickLogBadgeItemHandler),
                     '应该输入数字']);
                 return false;
-            } 
+            }
         }
 
         var selfCompileRet = new CompileResult(this);
@@ -775,8 +862,8 @@ class JSNode_CapitalNum extends JSNode_Base {
 
         var socketlink = socketComRet.link;
 
-        if(socketlink == null){
-            
+        if (socketlink == null) {
+
             if (isNaN(dateStr)) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle,
@@ -794,7 +881,7 @@ class JSNode_CapitalNum extends JSNode_Base {
                 return false;
             }
         }
-        
+
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, ' NumToChinese(' + dateStr + ') ');
         helper.setCompileRetCache(this, selfCompileRet);
@@ -845,16 +932,16 @@ class JSNode_Convert_TimeZone extends JSNode_Base {
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
 
-        var result_arr=[];
+        var result_arr = [];
         for (var i = 0; i < this.inputScokets_arr.length; ++i) {
             var socketComRet = this.getSocketCompileValue(helper, this.inputScokets_arr[i], usePreNodes_arr, belongBlock, true);
             if (socketComRet.err) {
                 return false;
             }
             var dateStr = socketComRet.value;
-            if(socketComRet.link ==null){
-                if(i==0){
-                    if(!checkTime(dateStr)){
+            if (socketComRet.link == null) {
+                if (i == 0) {
+                    if (!checkTime(dateStr)) {
                         helper.logManager.errorEx([helper.logManager.createBadgeItem(
                             thisNodeTitle,
                             nodeThis,
@@ -862,7 +949,7 @@ class JSNode_Convert_TimeZone extends JSNode_Base {
                             "应该输入时间"]);
                         return false;
                     }
-                }else{
+                } else {
                     if (isNaN(dateStr)) {
                         helper.logManager.errorEx([helper.logManager.createBadgeItem(
                             thisNodeTitle,
@@ -875,11 +962,11 @@ class JSNode_Convert_TimeZone extends JSNode_Base {
             }
             result_arr.push(dateStr);
         }
-        var dateTime =result_arr[0];
-        var timeZoneO =result_arr[1];
-        var timeZoneT =result_arr[2];
+        var dateTime = result_arr[0];
+        var timeZoneO = result_arr[1];
+        var timeZoneT = result_arr[2];
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, ' Convert_TimeZone(' + dateTime+','+ timeZoneO+','+ timeZoneT+') ');
+        selfCompileRet.setSocketOut(this.outSocket, ' Convert_TimeZone(' + dateTime + ',' + timeZoneO + ',' + timeZoneT + ') ');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -899,8 +986,16 @@ JSNodeClassMap[JSNODE_TERNARY_OPERATOR] = {
     modelClass: JSNode_Ternary_Operator,
     comClass: C_Node_SimpleNode,
 };
-JSNodeClassMap[JSNODE_ARRAY_PUSHPOP] = {
-    modelClass: JSNode_Array_PushPop,
+JSNodeClassMap[JSNODE_ARRAY_PUSH] = {
+    modelClass: JSNode_Array_Push,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_ARRAY_POP] = {
+    modelClass: JSNode_Array_Pop,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_ARRAY_GET] = {
+    modelClass: JSNode_Array_Get,
     comClass: C_Node_SimpleNode,
 };
 
@@ -938,7 +1033,7 @@ JSNodeEditorControls_arr.push(
 */
 JSNodeEditorControls_arr.push(
     {
-        label: '数组-添加',
+        label: '数组-Concat',
         nodeClass: JSNode_Array_Concat,
         type: '数组操控'
     });
@@ -950,19 +1045,31 @@ JSNodeEditorControls_arr.push(
     });
 JSNodeEditorControls_arr.push(
     {
-        label: '数组尾部增减',
-        nodeClass: JSNode_Array_PushPop,
+        label: '数组-Get',
+        nodeClass: JSNode_Array_Get,
         type: '数组操控'
     });
 JSNodeEditorControls_arr.push(
     {
-        label: '数组并为字符串',
+        label: '数组-Push',
+        nodeClass: JSNode_Array_Push,
+        type: '数组操控'
+    });
+JSNodeEditorControls_arr.push(
+    {
+        label: '数组-Pop',
+        nodeClass: JSNode_Array_Pop,
+        type: '数组操控'
+    });
+JSNodeEditorControls_arr.push(
+    {
+        label: '数组-Join',
         nodeClass: JSNode_Array_Join,
         type: '数组操控'
     });
 JSNodeEditorControls_arr.push(
     {
-        label: '获取数组片段',
+        label: '数组-Slice',
         nodeClass: JSNode_Array_Slice,
         type: '数组操控'
     });

@@ -248,6 +248,8 @@ class FormatHtmlTag extends FormatFile_ItemBase{
         this.attrObj[name] = value;
     }
 
+    
+
     addSwitchClass(switchName, switchVal, existsProcess) {
         if (this.switch[switchName] != null) {
             switch (existsProcess) {

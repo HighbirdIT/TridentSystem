@@ -394,6 +394,9 @@ class ControlKernelBase extends IAttributeable {
     }
 
     hadAncestor(ancestorKernel){
+        if(ancestorKernel == null){
+            return false;
+        }
         var tparent = this.parent;
         while(tparent){
             if(tparent == ancestorKernel){
