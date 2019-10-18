@@ -1876,6 +1876,7 @@ class MobileContentCompiler extends ContentCompiler {
         var selectMode = theKernel.getAttribute(AttrNames.SelectMode);
         var rowIndexAttrName = theKernel.id.toLocaleLowerCase() + '_rowindex';
         var hadRefreshIcon = theKernel.getAttribute(AttrNames.RefreshIcon);
+        var stableData = theKernel.getAttribute(AttrNames.StableData);
 
         var thisfullpath = makeStr_DotProp(fullParentPath, theKernel.id);
         var pathVarName = theKernel.id + '_path';
@@ -1912,10 +1913,15 @@ class MobileContentCompiler extends ContentCompiler {
         var onRowChangedBp = project.scriptMaster.getBPByName(onRowChangedFunName);
         var onDataSourceChangedFunName = theKernel.id + '_' + AttrNames.Event.OnDataSourceChanged;
         var onDataSourceChangedBp = project.scriptMaster.getBPByName(onDataSourceChangedFunName);
+        var watchStateName = null;
 
         if (selectMode == ESelectMode.None) {
             OnSelectedChangedBp = null;
         }
+        else{
+            watchStateName = selectMode == ESelectMode.Single ? VarNames.SelectedValue : VarNames.SelectedValues_arr;
+        }
+
         if (clickSelectable) {
             if (isGridForm) {
                 if (selectMode != ESelectMode.None) {
@@ -2193,13 +2199,14 @@ class MobileContentCompiler extends ContentCompiler {
         formReactClass.renderFun.pushLine('if(this.props.visible == false){return null;}');
         formReactClass.renderFun.pushLine(VarNames.RetElem + " = this.renderContent();");
 
+        var formColumns_arr;
         var formTag = new FormatHtmlTag(theKernel.id, theKernel.getReactClassName(true), this.clientSide);
         formTag.setAttr('id', theKernel.id);
         formTag.setAttr('parentPath', parentPath);
         var pageBreak = false;
         var formTitle = theKernel.getAttribute(AttrNames.Title);
         var titleParseRet = parseObj_CtlPropJsBind(formTitle, project.scriptMaster);
-        var setTitleStateTiem = null;
+        var setTitleStateItem = null;
         if (titleParseRet.isScript) {
             if (this.compileScriptAttribute(titleParseRet, theKernel, 'title', AttrNames.Title, { autoSetFetchState: true }) == false) {
                 return false;
@@ -2208,10 +2215,10 @@ class MobileContentCompiler extends ContentCompiler {
         else {
             if (!IsEmptyString(titleParseRet.string)) {
                 if (belongFormKernel != null && (belongFormKernel.isPageForm() || belongFormKernel.isKernelInRow(theKernel))) {
-                    var formColumns_arr = belongFormKernel.getCanuseColumns();
+                    formColumns_arr = belongFormKernel.getCanuseColumns();
                     if (formColumns_arr.indexOf(formTitle) != -1) {
                         parentMidData.useColumns_map[formTitle] = 1;
-                        setTitleStateTiem = {
+                        setTitleStateItem = {
                             name: 'title',
                             useColumn: { name: formTitle },
                         };
@@ -2225,12 +2232,13 @@ class MobileContentCompiler extends ContentCompiler {
                 }
             }
         }
-        if (setTitleStateTiem) {
-            kernelMidData.needSetStates_arr.push(setTitleStateTiem);
+        if (setTitleStateItem) {
+            kernelMidData.needSetStates_arr.push(setTitleStateItem);
             if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
                 parentMidData.needSetKernels_arr.push(theKernel);
             }
         }
+
         if (isGridForm) {
             pageBreak = theKernel.getAttribute(AttrNames.PageBreak);
             formTag.setAttr('pagebreak', bigbracketStr(pageBreak));
@@ -2384,11 +2392,30 @@ class MobileContentCompiler extends ContentCompiler {
                     freshFun.rowInitBlk = initListRowBlock;
                     freshFun.pushChild(initListRowBlock);
                 }
+                var defaultSelectFirst = theKernel.getAttribute(AttrNames.DefaultSelectFirst);
                 if (selectMode == ESelectMode.Single) {
-                    freshFun.pushLine('needSetState.' + VarNames.SelectedValue + ' = ' + makeStr_callFun('GetFormSelectedProfile', [stateVarName, singleQuotesStr(keyColumn)]) + '.key;');
+                    if(defaultSelectFirst){
+                        freshFun.pushLine('var nowKey = ' + makeStr_callFun('GetFormSelectedProfile', [stateVarName, singleQuotesStr(keyColumn)]) + '.key;');
+                        freshFun.pushLine('if(nowKey == null){', 1);
+                        freshFun.pushLine('if(' + VarNames.Records_arr + '.length > 0){nowKey = ' + VarNames.Records_arr + '[0].' + keyColumn + ';}', -1);
+                        freshFun.pushLine('}');
+                        freshFun.pushLine('needSetState.' + VarNames.SelectedValue + ' = nowKey;');
+                    }
+                    else{
+                        freshFun.pushLine('needSetState.' + VarNames.SelectedValue + ' = ' + makeStr_callFun('GetFormSelectedProfile', [stateVarName, singleQuotesStr(keyColumn)]) + '.key;');
+                    }
                 }
                 else {
-                    freshFun.pushLine('needSetState.' + VarNames.SelectedValues_arr + ' = ' + makeStr_callFun('GetFormSelectedProfile', [stateVarName, singleQuotesStr(keyColumn)]) + '.keys_arr;');
+                    if(defaultSelectFirst){
+                        freshFun.pushLine('var nowKeys_arr = ' + makeStr_callFun('GetFormSelectedProfile', [stateVarName, singleQuotesStr(keyColumn)]) + '.keys_arr;');
+                        freshFun.pushLine('if(nowKeys_arr.length == 0){', 1);
+                        freshFun.pushLine('if(' + VarNames.Records_arr + '.length > 0){nowKeys_arr = [' + VarNames.Records_arr + '[0].' + keyColumn + '];}');
+                        freshFun.pushLine('}');
+                        freshFun.pushLine('needSetState.' + VarNames.SelectedValues_arr + ' = nowKeys_arr;');
+                    }
+                    else{
+                        freshFun.pushLine('needSetState.' + VarNames.SelectedValues_arr + ' = ' + makeStr_callFun('GetFormSelectedProfile', [stateVarName, singleQuotesStr(keyColumn)]) + '.keys_arr;');
+                    }
                 }
                 freshFun.pushLine(VarNames.ReState + '=' + makeStr_callFun('setManyStateByPath', [VarNames.ReState, pathVarName, 'needSetState'], ';'), -1);
                 freshFun.pushLine(makeStr_callFun(bindFun.name, [VarNames.ReState, 'null', 'null', VarNames.SatePath]) + ';');
@@ -2490,6 +2517,11 @@ class MobileContentCompiler extends ContentCompiler {
         else {
             pullFun.retBlock.pushLine(makeLine_Return(VarNames.State));
             pullFun.scope.getVar(VarNames.State, true, makeStr_AddAll(VarNames.HadStateParam, ' ? ', VarNames.ReState, ' : ', 'store.getState()'));
+
+            if(stableData){
+                pullFun.scope.getVar('formState', true, makeStr_callFun('getStateByPath',[VarNames.State, 'fullParentPath + ' + singleQuotesStr('.' + theKernel.id), '{}']));
+                pullFun.pushLine('if(formState.' + VarNames.Records_arr + ' != null && ' + 'formState.' + VarNames.Records_arr + '.length > 0){return ' + VarNames.State + ';}');
+            }
         }
 
         var belongAccordionKernel = null;
@@ -2663,14 +2695,11 @@ class MobileContentCompiler extends ContentCompiler {
                 formRowSelectedChangedFun.pushLine('var formState = getStateByPath(' + VarNames.State + ',' + VarNames.FullPath + ')');
                 formRowSelectedChangedFun.pushLine('var selectedProfile = ' + makeStr_callFun('GetFormSelectedProfile', ['formState', singleQuotesStr(keyColumn)], ';'));
 
-                var watchStateName = selectMode == ESelectMode.Single ? VarNames.SelectedValue : VarNames.SelectedValues_arr;
                 var callParams_arr = [];
                 if (selectMode == ESelectMode.Single) {
-                    watchStateName = VarNames.SelectedValue;
                     callParams_arr = ['state', VarNames.FullPath, 'selectedProfile.record', 'selectedProfile.index'];
                 }
                 else {
-                    watchStateName = VarNames.SelectedValues_arr;
                     callParams_arr = ['state', VarNames.FullPath, 'selectedProfile.records_arr', 'selectedProfile.indexes_arr'];
                 }
                 this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theKernel, formRowSelectedChangedFun.name, theKernel, watchStateName, ['state', makeStr_callFun('getParentPathByKey', ['path', singleQuotesStr(theKernel.id)])]);
@@ -3461,7 +3490,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
 
-        var setTitleStateTiem = null;
+        var setTitleStateItem = null;
         var title = theKernel.getAttribute(AttrNames.Title);
         var titleParseRet = parseObj_CtlPropJsBind(title, project.scriptMaster);
         if (titleParseRet.isScript) {
@@ -3475,7 +3504,7 @@ class MobileContentCompiler extends ContentCompiler {
                     var formColumns_arr = belongFormKernel.getCanuseColumns();
                     if (formColumns_arr.indexOf(title) != -1) {
                         parentMidData.useColumns_map[title] = 1;
-                        setTitleStateTiem = {
+                        setTitleStateItem = {
                             name: 'title',
                             useColumn: { name: title },
                         };
@@ -3484,8 +3513,8 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
 
-        if (setTitleStateTiem) {
-            kernelMidData.needSetStates_arr.push(setTitleStateTiem);
+        if (setTitleStateItem) {
+            kernelMidData.needSetStates_arr.push(setTitleStateItem);
             if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
                 parentMidData.needSetKernels_arr.push(theKernel);
             }
@@ -4055,7 +4084,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         var title = theKernel.getAttribute(AttrNames.Title);
         var titleParseRet = parseObj_CtlPropJsBind(title, project.scriptMaster);
-        var setTitleStateTiem = null;
+        var setTitleStateItem = null;
         if (titleParseRet.isScript) {
             if (this.compileScriptAttribute(titleParseRet, theKernel, 'title', AttrNames.Title, { autoSetFetchState: true }) == false) {
                 return false;
@@ -4067,7 +4096,7 @@ class MobileContentCompiler extends ContentCompiler {
                     var formColumns_arr = belongFormKernel.getCanuseColumns();
                     if (formColumns_arr.indexOf(title) != -1) {
                         parentMidData.useColumns_map[title] = 1;
-                        setTitleStateTiem = {
+                        setTitleStateItem = {
                             name: 'title',
                             useColumn: { name: title },
                         };
@@ -4081,8 +4110,8 @@ class MobileContentCompiler extends ContentCompiler {
                 ctlTag.setAttr('title', '附件列表');
             }
         }
-        if (setTitleStateTiem) {
-            kernelMidData.needSetStates_arr.push(setTitleStateTiem);
+        if (setTitleStateItem) {
+            kernelMidData.needSetStates_arr.push(setTitleStateItem);
             if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
                 parentMidData.needSetKernels_arr.push(theKernel);
             }
@@ -4132,7 +4161,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         var title = theKernel.getAttribute(AttrNames.Title);
         var titleParseRet = parseObj_CtlPropJsBind(title, project.scriptMaster);
-        var setTitleStateTiem = null;
+        var setTitleStateItem = null;
         if (titleParseRet.isScript) {
             if (this.compileScriptAttribute(titleParseRet, theKernel, 'title', AttrNames.Title, { autoSetFetchState: true }) == false) {
                 return false;
@@ -4143,7 +4172,7 @@ class MobileContentCompiler extends ContentCompiler {
                 if (formColumns_arr) {
                     if (formColumns_arr.indexOf(title) != -1) {
                         parentMidData.useColumns_map[title] = 1;
-                        setTitleStateTiem = {
+                        setTitleStateItem = {
                             name: 'title',
                             useColumn: { name: title },
                         };
@@ -4241,8 +4270,8 @@ class MobileContentCompiler extends ContentCompiler {
             return false;
         }
 
-        if (setTitleStateTiem) {
-            kernelMidData.needSetStates_arr.push(setTitleStateTiem);
+        if (setTitleStateItem) {
+            kernelMidData.needSetStates_arr.push(setTitleStateItem);
         }
         if (setkeyrecordidStateTiem) {
             kernelMidData.needSetStates_arr.push(setkeyrecordidStateTiem);
@@ -5136,7 +5165,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
 
-        var setTitleStateTiem = null;
+        var setTitleStateItem = null;
         var title = theKernel.getAttribute(AttrNames.Title);
         var titleParseRet = parseObj_CtlPropJsBind(title, project.scriptMaster);
         if (titleParseRet.isScript) {
@@ -5150,20 +5179,20 @@ class MobileContentCompiler extends ContentCompiler {
                     var formColumns_arr = belongFormKernel.getCanuseColumns();
                     if (formColumns_arr.indexOf(title) != -1) {
                         parentMidData.useColumns_map[title] = 1;
-                        setTitleStateTiem = {
+                        setTitleStateItem = {
                             name: 'title',
                             useColumn: { name: title },
                         };
                     }
                 }
-                if (setTitleStateTiem == null) {
+                if (setTitleStateItem == null) {
                     ctlTag.setAttr('title', title);
                 }
             }
         }
 
-        if (setTitleStateTiem) {
-            kernelMidData.needSetStates_arr.push(setTitleStateTiem);
+        if (setTitleStateItem) {
+            kernelMidData.needSetStates_arr.push(setTitleStateItem);
             if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
                 parentMidData.needSetKernels_arr.push(theKernel);
             }

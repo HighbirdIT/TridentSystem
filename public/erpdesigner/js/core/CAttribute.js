@@ -348,6 +348,7 @@ var AttrNames = {
     InvalidAct: 'invalidAct',
     KeyColumn: 'keyColumn',
     RefreshIcon: 'refreshicon',
+    DefaultSelectFirst: 'defaultSelectFirst',
 
     Event: {
         OnClick: 'onclick',
