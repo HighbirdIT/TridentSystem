@@ -115,6 +115,21 @@ const JSNodeEditorControls_arr =[
         type:'数据库交互'
     },
     {
+        label:'New-数据对象',
+        nodeClass:JSNode_CusObject_New,
+        type:'操纵数据对象'
+    },
+    {
+        label:'Visit-数据对象',
+        nodeClass:JSNode_CusObject_Visit,
+        type:'操纵数据对象'
+    },
+    {
+        label:'数组-创建',
+        nodeClass:JSNode_Array_New,
+        type:'操纵数组'
+    },
+    {
         label:'数组-长度',
         nodeClass:JSNode_Array_Length,
         type:'操纵数组'

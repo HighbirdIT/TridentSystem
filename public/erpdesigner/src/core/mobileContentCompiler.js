@@ -127,10 +127,14 @@ class MobileContentCompiler extends ContentCompiler {
         clientSide.gotoPageFun.switchBlock = gotoPageSwitchBlock;
         clientSide.gotoPageFun.retBlock.pushLine("return Object.assign({}, " + VarNames.ReState + ");");
 
-        clientSide.pageRouteBackFun = clientSide.scope.getFunction('pageRoute_Back', true);
+        clientSide.pageRouteBackFun = clientSide.scope.getFunction('pageRoute_Back', true, ['trigerCallBack']);
         clientSide.pageRouteBackFun.pushLine('if(' + VarNames.PageRouter + '.length > 1){', 1);
-        clientSide.pageRouteBackFun.pushLine(VarNames.PageRouter + '.pop();');
-        clientSide.pageRouteBackFun.pushLine('store.dispatch(makeAction_gotoPage(' + VarNames.PageRouter + '.pop()));', -1);
+        clientSide.pageRouteBackFun.pushLine('var popedPageName = ' + VarNames.PageRouter + '.pop();');
+        clientSide.pageRouteBackFun.pushLine('store.dispatch(makeAction_gotoPage(' + VarNames.PageRouter + '.pop()));');
+        clientSide.pageRouteBackFun.pushLine('if(trigerCallBack != false){', 1);
+        clientSide.pageRouteBackFun.pushLine("var close_callback = getPageEntryParam(popedPageName,'callBack');");
+        clientSide.pageRouteBackFun.pushLine('if(close_callback){close_callback({});}',-1);
+        clientSide.pageRouteBackFun.pushLine('}', -1);
         clientSide.pageRouteBackFun.pushLine('}');
 
         clientSide.addReducer('AT_PAGELOADED', 'pageLoadedReducer.bind(window)');
@@ -4811,7 +4815,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         if (needSetParams_arr.length > 0) {
             bodyCheckblock.pushLine("var bundle=req.body.bundle;");
-            bodyCheckblock.pushLine("if(req.body.bundle == null){" + makeLine_RetServerError('没有提供bundle') + '};');
+            bodyCheckblock.pushLine("if(req.body.bundle == null){" + makeLine_RetServerError('没有提供bundle') + '}');
             paramsetblock.pushLine("params_arr=[", 1);
             for (var si in needSetParams_arr) {
                 var useParam = needSetParams_arr[si];
@@ -5555,7 +5559,7 @@ class MobileContentCompiler extends ContentCompiler {
                 var serverBodyCheckblock = midData.bodyCheckblock;
                 var paramsetblock = midData.serverSqlParamsetBLK;
                 if (needSetParams_arr.length > 0) {
-                    serverBodyCheckblock.pushLine("if(req.body.bundle == null){" + makeLine_RetServerError('没有提供bundle') + '};');
+                    serverBodyCheckblock.pushLine("if(req.body.bundle == null){" + makeLine_RetServerError('没有提供bundle') + '}');
                     serverBodyCheckblock.pushLine("var bundle=req.body.bundle;");
                     paramsetblock.pushLine("params_arr=[", 1);
                     for (var si in needSetParams_arr) {

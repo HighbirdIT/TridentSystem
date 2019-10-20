@@ -220,6 +220,13 @@ function popPage(pid, pelem) {
 }
 
 function closePage(pid) {
+    if(pageRouter.length > 1){
+        pageRouter[pageRouter.length - 1] == pid;
+        setTimeout(() => {
+            pageRoute_Back(false);
+        }, 20);
+        return;
+	}
     if (gFixedContainerRef.current) {
         gFixedContainerRef.current.closePage(pid);
     }
@@ -234,6 +241,9 @@ function openPage(name, stepcode, stepdata, mode, onMsgFun) {
     if (stepcode != null && stepcode != '0') {
         targetPath += '?flowStep=' + stepcode;
         if (stepdata != null) {
+            if(typeof stepdata == 'object'){
+                stepdata = JSON.stringify(stepdata);
+            }
             targetPath += '&stepData' + stepcode + '=' + stepdata;
         }
     }
