@@ -547,6 +547,7 @@ class C_JSNode_JumpPage extends React.PureComponent {
             </div>
             <div className='d-flex'>
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
             </div>
         </C_Node_Frame>
     }
@@ -1050,6 +1051,97 @@ class C_JSNode_CallCusScript extends React.PureComponent {
                     <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={scriptMaster.getAllCustomScript} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={script_id ? script_id : -1} />
                 </div>
             </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} nameMoveable={true} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} nameMoveable={true} customSocketRender={this.customSocketRender} />
+            </div>
+        </C_Node_Frame>
+    }
+}
+
+class C_JSNode_CusObject_New extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+
+        C_NodeCom_Base(this);
+    }
+
+    dropdownCtlChangedHandler(code,ddc,cusobj) {
+        var nodeData = this.props.nodedata;
+        nodeData.setCusObj(cusobj);
+    }
+
+    cusHeaderFuc() {
+        var nodeData = this.props.nodedata;
+        var theProject = nodeData.bluePrint.master.project;
+        return <div f-canmove={1} className='d-flex flex-column'>
+                <span f-canmove={1}>创建数据对象</span>
+                <DropDownControl itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={theProject.scriptMaster.getAllCustomObject} rootclass='flex-grow-1 flex-shrink-1' value={nodeData.cusObj} textAttrName='name' valueAttrName='code' />
+            </div>
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' cusHeaderFuc={this.cusHeaderFuc} >
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} nameMoveable={true} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} nameMoveable={true} customSocketRender={this.customSocketRender} />
+            </div>
+        </C_Node_Frame>
+    }
+}
+
+class C_JSNode_CusObject_Visit extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+
+        C_NodeCom_Base(this);
+    }
+
+    dropdownCtlChangedHandler(code,ddc,cusobj) {
+        var nodeData = this.props.nodedata;
+        nodeData.setCusObj(cusobj);
+    }
+
+    cusHeaderFuc() {
+        var nodeData = this.props.nodedata;
+        var theProject = nodeData.bluePrint.master.project;
+        return <div f-canmove={1} className='d-flex flex-column'>
+                <span f-canmove={1}>访问数据对象</span>
+                <DropDownControl itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={theProject.scriptMaster.getAllCustomObject} rootclass='flex-grow-1 flex-shrink-1' value={nodeData.cusObj} textAttrName='name' valueAttrName='code' />
+            </div>
+    }
+
+    customSocketRender(socket) {
+        if (socket.isIn == true) {
+            return null;
+        }
+        
+        var nodeData = this.props.nodedata;
+        return <button onMouseDown={this.mouseDownOutSocketHand} type='button' className='btn btn-secondary ml-1'><i className='fa fa-hand-paper-o' /></button>;
+    }
+
+    mouseDownOutSocketHand(ev) {
+        var socketid = getAttributeByNode(ev.target, 'd-socketid', true, 10);
+        if (socketid == null) {
+            return;
+        }
+        var nodeData = this.props.nodedata;
+        var theSocket = nodeData.bluePrint.getSocketById(socketid);
+        var bornPos = theSocket.currentComponent.getCenterPos();
+        var newNode = new FlowNode_ColumnVar({
+            keySocketID: socketid,
+            newborn: true,
+            left: bornPos.x,
+            top: bornPos.y,
+        }, nodeData.parent);
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' cusHeaderFuc={this.cusHeaderFuc} >
             <div className='d-flex'>
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} nameMoveable={true} />
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} nameMoveable={true} customSocketRender={this.customSocketRender} />

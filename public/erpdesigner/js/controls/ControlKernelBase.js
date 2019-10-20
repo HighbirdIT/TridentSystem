@@ -418,6 +418,9 @@ var ControlKernelBase = function (_IAttributeable) {
     }, {
         key: 'hadAncestor',
         value: function hadAncestor(ancestorKernel) {
+            if (ancestorKernel == null) {
+                return false;
+            }
             var tparent = this.parent;
             while (tparent) {
                 if (tparent == ancestorKernel) {

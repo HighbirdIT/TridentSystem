@@ -129,6 +129,7 @@ class ApiItem_prop{
         this.attrItem = attrItem;
         this.needValid = needValid == true;
         this.stateName = stateName == null ? attrItem.name : stateName;
+        this.relyStateName = this.stateName;
         this.getInitValueFun = getInitValueFun;
     }
     toString(){

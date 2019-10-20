@@ -115,6 +115,21 @@ const JSNodeEditorControls_arr =[
         type:'数据库交互'
     },
     {
+        label:'New-数据对象',
+        nodeClass:JSNode_CusObject_New,
+        type:'操纵数据对象'
+    },
+    {
+        label:'Visit-数据对象',
+        nodeClass:JSNode_CusObject_Visit,
+        type:'操纵数据对象'
+    },
+    {
+        label:'数组-创建',
+        nodeClass:JSNode_Array_New,
+        type:'操纵数组'
+    },
+    {
         label:'数组-长度',
         nodeClass:JSNode_Array_Length,
         type:'操纵数组'
@@ -123,6 +138,11 @@ const JSNodeEditorControls_arr =[
         label:'数组-是否为空',
         nodeClass:JSNode_IsEmptyArray,
         type:'操纵数组'
+    },
+    {
+        label:'数组-For',
+        nodeClass:JSNode_Array_For,
+        type:'流控制'
     },
     {
         label:'字符串-是否为空',
@@ -202,6 +222,16 @@ const JSNodeEditorControls_arr =[
     {
         label:'打开外部页面',
         nodeClass:JsNode_OpenExternal_Page,
+        type:'窗体控制'
+    },
+    {
+        label:'向父页发消息',
+        nodeClass:JSNode_Msg_SendToParent,
+        type:'窗体通信'
+    },
+    {
+        label:'关闭TopFrame',
+        nodeClass:JSNode_CloseTopFrame,
         type:'窗体控制'
     },
     {
@@ -334,7 +364,6 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
             return;
         }
         var formObj = this.addUseForm(formKernel, rowSource);
-        formObj.useNowRecord = true;
         if(formObj.useColumns_map[columnName] == null){
             formObj.useColumns_map[columnName] = {
                 serverFuns_arr:[],
@@ -358,7 +387,6 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
             rlt = {
                 useColumns_map:{},
                 useControls_map:{},
-                useNowRecord:false,
                 useSelectedRow:false,
                 formKernel:formKernel,
             };
@@ -411,6 +439,9 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
 
     addUseControlPropApi(ctrKernel, apiitem, rowSource){
         var rlt = null;
+        if(apiitem.relyStateName == null){
+            apiitem.relyStateName = apiitem.stateName;
+        }
         var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
         var attrName = IsEmptyString(apiitem.useAttrName) ? apiitem.attrItem.name : apiitem.useAttrName;
         if(belongFormKernel == null){
