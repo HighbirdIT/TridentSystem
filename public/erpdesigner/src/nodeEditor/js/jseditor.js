@@ -699,7 +699,8 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         var showArr=[]
         if (this.state.jsNodeKeyword != '' && this.state.jsNodeKeyword !=null){ 
             for(var i=0,len =JSNodeEditorControls_arr.length;i<len;i++){
-                if (JSNodeEditorControls_arr[i].label.indexOf(this.state.jsNodeKeyword) >= 0) {
+                var jsNodeName =JSNodeEditorControls_arr[i].label.toLowerCase()
+                if (jsNodeName.indexOf(this.state.jsNodeKeyword.toLowerCase()) >= 0) {
                     showArr.push(JSNodeEditorControls_arr[i]);
                   }
             }
