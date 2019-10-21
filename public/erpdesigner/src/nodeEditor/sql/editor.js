@@ -1059,7 +1059,8 @@ class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
         var showArr=[]
         if (this.state.sqlNodeKeyword != '' && this.state.sqlNodeKeyword !=null){ 
             for(var i=0,len =SqlNodeEditorControls_arr.length;i<len;i++){
-                if (SqlNodeEditorControls_arr[i].label.indexOf(this.state.sqlNodeKeyword) >= 0) {
+                var sqlNodeName=SqlNodeEditorControls_arr[i].label.toLowerCase()
+                if (sqlNodeName.indexOf(this.state.sqlNodeKeyword.toLowerCase()) >= 0) {
                     showArr.push(SqlNodeEditorControls_arr[i]);
                   }
             }
