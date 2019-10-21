@@ -3,9 +3,69 @@ class ScriptMaster extends EventEmitter{
         super();
         autoBind(this);
         this.blueprints_arr = [];
+        this.cusobjects_arr = [];
         this.project = project;
 
         //this.createBP('test', 'test');
+    }
+
+    addCusObj(cobj){
+        if(this.cusobjects_arr.indexOf(cobj) != -1){
+            return;
+        }
+        var useCode = cobj.code;
+        var i = 0;
+        if(IsEmptyString(useCode) || this.getCusObjByCode(useCode) != null){
+            for(i=0;i<9999;++i){
+                useCode = 'cusobj_' + i;
+                if(this.getCusObjByCode(useCode) == null){
+                    break;
+                }
+            }
+        }
+        var useName = cobj.name;
+        if(IsEmptyString(useName) || this.getCusObjByName(useName) != null){
+            for(i=0;i<9999;++i){
+                useName = '数据对象_' + i;
+                if(this.getCusObjByName(useName) == null){
+                    break;
+                }
+            }
+        }
+        cobj.master = this;
+        cobj.name = useName;
+        cobj.code = useCode;
+        cobj.id = useCode;
+        this.cusobjects_arr.push(cobj);
+    }
+
+    getAllCustomObject(){
+        return this.cusobjects_arr;
+    }
+
+    getCusObjByCode(code){
+        return this.cusobjects_arr.find(item=>{return item.code == code;});
+    }
+
+    getCusObjByName(name){
+        return this.cusobjects_arr.find(item=>{return item.name == name;});
+    }
+
+    createCusObj(name){
+        var newItem = new CustomObject(name);
+        this.addCusObj(newItem);
+        return newItem;
+    }
+
+    modifyCusObj(cobj){
+    }
+
+    deleteCusObj(cobj){
+        var index = this.cusobjects_arr.indexOf(cobj);
+        if(index != -1){
+            this.cusobjects_arr.splice(index, 1);
+        }
+        cobj.master = null;
     }
 
     addBP(bpItem){
@@ -26,7 +86,7 @@ class ScriptMaster extends EventEmitter{
         if(IsEmptyString(useName) || this.getBPByName(useName) != null){
             for(i=0;i<9999;++i){
                 useName = '脚本蓝图_' + i;
-                if(this.getBPByName(useCode) == null){
+                if(this.getBPByName(useName) == null){
                     break;
                 }
             }
@@ -79,10 +139,14 @@ class ScriptMaster extends EventEmitter{
 
     getJson(jsonProf){
         var rlt = {
-            blueprints_arr:[]
+            blueprints_arr:[],
+            cusobjects_arr:[],
         };
         this.blueprints_arr.forEach(bp=>{
             rlt.blueprints_arr.push(bp.getJson(jsonProf));
+        });
+        this.cusobjects_arr.forEach(cusobj=>{
+            rlt.cusobjects_arr.push(cusobj.getJson());
         });
         return rlt;
     }
@@ -90,6 +154,14 @@ class ScriptMaster extends EventEmitter{
     restoreFromJson(json, restoreHelper){
         if(json == null){
             return;
+        }
+
+        if(json.cusobjects_arr){
+            json.cusobjects_arr.forEach(cusObjJson=>{
+                var newCusObj = new CustomObject(cusObjJson.name, cusObjJson.code, cusObjJson.dm);
+                newCusObj.code = cusObjJson.code;
+                this.addCusObj(newCusObj);
+            });
         }
         if(json.blueprints_arr){
             json.blueprints_arr.forEach(bpjson=>{
@@ -100,5 +172,22 @@ class ScriptMaster extends EventEmitter{
                 this.addBP(newbp);
             });
         }
+    }
+}
+
+class CustomObject extends EventEmitter{
+    constructor(name, code, dataMembers_arr){
+        super();
+        this.name = name;
+        this.code = code;
+        this.dataMembers_arr = dataMembers_arr == null ? [] : dataMembers_arr.concat();
+    }
+
+    getJson() {
+        return {
+            name:this.name,
+            code:this.code,
+            dm:this.dataMembers_arr,
+        };
     }
 }

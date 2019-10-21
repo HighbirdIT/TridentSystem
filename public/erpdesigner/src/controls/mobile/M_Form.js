@@ -510,6 +510,7 @@ class M_FormKernel extends ContainerKernelBase {
 }
 
 var MForm_api = new ControlAPIClass(M_FormKernel_Type);
+MForm_api.pushApi(new ApiItem_propsetter('title'));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.RecordIndex, M_FormKernelAttrsSetting), VarNames.RecordIndex, false));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.Records_arr, M_FormKernelAttrsSetting), VarNames.Records_arr, false));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.SelectedValue, M_FormKernelAttrsSetting), VarNames.SelectedValue, true));
