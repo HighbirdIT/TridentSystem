@@ -1486,6 +1486,17 @@ class SqlNode_CompileHelper{
         autoBind(this);
     }
 
+    isConst(){
+        return  this.useEntities_arr.length == 0 &&
+                this.useVariables_arr.length == 0 &&
+                this.useGlobalControls_map.length == 0 &&
+                IsEmptyObject(this.useForm_map) &&
+                IsEmptyObject(this.useEnvVars) &&
+                IsEmptyObject(this.usePageParam) &&
+                IsEmptyObject(this.useUrlVar_map);
+
+    }
+
     meetNode(theNode){
         if(this.startNode == null){
             this.startNode = theNode;
@@ -1583,7 +1594,6 @@ class SqlNode_CompileHelper{
             this.useForm_map[formKernel.id] = {
                 useColumns_map:{},
                 useControls_map:{},
-                useNowRecord:false,
                 formKernel:formKernel,
             };
         }
@@ -1600,6 +1610,9 @@ class SqlNode_CompileHelper{
 
     addUseControlPropApi(ctrKernel, apiitem){
         var rlt = null;
+        if(apiitem.relyStateName == null){
+            apiitem.relyStateName = apiitem.stateName;
+        }
         var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
         var attrName = IsEmptyString(apiitem.useAttrName) ? apiitem.attrItem.name : apiitem.useAttrName;
         if(belongFormKernel == null){

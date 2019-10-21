@@ -3021,9 +3021,12 @@ class SqlNode_Control_Api_Prop extends SqlNode_Base {
         var apiClass = this.apiClass;
         if (apiItem == null) {
             apiClass = g_controlApi_arr.find(e => { return e.ctltype == this.ctltype; });
-            apiItem = apiClass.getApiItemByid(this.apiid);
+            if(apiClass){
+                apiItem = apiClass.getApiItemByid(this.apiid);
+            }
             if (apiClass == null || apiItem == null) {
                 console.error('查询控件api失败！');
+                return;
             }
             this.apiClass = apiClass;
             this.apiItem = apiItem;
@@ -3050,6 +3053,30 @@ class SqlNode_Control_Api_Prop extends SqlNode_Base {
             this.addSocket(this.outSocket);
         }
         this.outSocket.type = apiItem.attrItem.valueType;
+    }
+
+    columnDDCChanged(value){
+        this.inSocket.setExtra('colname', value);
+    }
+
+    customSocketRender(socket) {
+        if (!socket.isIn) {
+            return null;
+        }
+        if(this.apiClass == null || this.apiItem == null){
+            return;
+        }
+        if(this.apiClass.ctltype == M_FormKernel_Type && this.apiItem.attrItem.name == VarNames.SelectedColumns){
+            var selectedCtlid = this.inSocket.getExtra('ctlid');
+            var selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
+            var options_arr = [];
+            if(selectedKernel){
+                options_arr = selectedKernel.getCanuseColumns;
+            }
+            var nowVal = this.inSocket.getExtra('colname');
+            return <DropDownControl itemChanged={this.columnDDCChanged} btnclass='btn-dark' options_arr={options_arr} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} />;
+        }
+        return null;
     }
 
     requestSaveAttrs() {
@@ -3107,6 +3134,20 @@ class SqlNode_Control_Api_Prop extends SqlNode_Base {
             useApiItem = Object.assign({}, useApiItem, {
                 stateName: propAttr.label,
                 useAttrName: propAttrName,
+                relyStateName: propAttr.label,
+            });
+        }
+        else if(this.apiClass.ctltype == M_FormKernel_Type && this.apiItem.attrItem.name == VarNames.SelectedColumns){
+            var colname = this.inSocket.getExtra('colname');
+            if (this.checkCompileFlag(selectedKernel.getCanuseColumns().indexOf(colname) == -1, '所选列无效', helper)) {
+                return false;
+            }
+
+            useApiItem = Object.assign({}, useApiItem, {
+                stateName: VarNames.SelectedColumns,
+                useAttrName: VarNames.SelectedColumns,
+                colname: colname,
+                relyStateName:VarNames.SelectedValues_arr,
             });
         }
         helper.addUseControlPropApi(selectedKernel, useApiItem);
@@ -3606,6 +3647,9 @@ class SqlNode_GetPageEntryParam extends SqlNode_Base {
 
         helper.addUsePageParam(paramName, socketComRet.value);
 
+        if(this.parent == this.bluePrint){
+            // sql蓝图根节点下的此节点输出的
+        }
         var value = '@pagein_' + paramName;
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, value);

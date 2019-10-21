@@ -216,6 +216,9 @@ const VarNames={
     FullPath:'fullPath',
     FullParentPath:'fullParentPath',
     SelectedRows_arr:'selectedRows_arr',
+    SelectedValue:'selectedValue',
+    SelectedValues_arr:'selectedValues_arr',
+    SelectedColumns:'selectedColumns',
     BaseBunlde:'baseBundle',
     HoldSelected:'holdSelected',
     Userctlpath:'userctlpath',
@@ -318,6 +321,9 @@ const AttrNames={
     ToolTip:'toolTip',
     Growable:'growable',
     InvalidAct: 'invalidAct',
+    KeyColumn:'keyColumn',
+    RefreshIcon: 'refreshicon',
+    DefaultSelectFirst: 'defaultSelectFirst',
 
     Event:{
         OnClick:'onclick',
@@ -327,7 +333,7 @@ const AttrNames={
         OnLoad:'onLoad',
         OnChanged:'onChanged',
         OnMouseDown:'onMouseDown',
-        OnSelectRow:'onSelectRow',
+        OnSelectedChanged:'onSelectedChanged',
         OnRowChanged:'onRowChanged',
         OnUploadComplete:'onUploadComplate',
         OnDataSourceChanged:'onDataSourceChanged',

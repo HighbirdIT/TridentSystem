@@ -5,6 +5,8 @@ var gFixedItemCounter = 0;
 var gCusValidChecker_map = {};
 var gPageInFrame = false;
 var gParentFrame = null;
+var gParentDingKit = null;
+var gParentIsInDingTalk = null;
 const gPreconditionInvalidInfo = '前置条件不足';
 const gCantNullInfo = '不能为空值';
 
@@ -223,7 +225,7 @@ function closePage(pid) {
     }
 }
 
-function openPage(name, stepcode, stepdata, mode) {
+function openPage(name, stepcode, stepdata, mode, onMsgFun) {
     if (name == null || name.length == 0) {
         console.error('openPage 的name参数为空');
         return;
@@ -243,7 +245,7 @@ function openPage(name, stepcode, stepdata, mode) {
             }, 20);
         }
         else{
-            gTopLevelFrameRef.current.push(window.location.origin + targetPath);   
+            gTopLevelFrameRef.current.push(window.location.origin + targetPath, null, onMsgFun);   
         }
         return;
     }
@@ -1515,7 +1517,7 @@ class ERPC_Label extends React.PureComponent {
             needCtlPath = true;
         }
 
-        return (<span className={rootDivClassName} charlen={this.props.boutcharlen ? tileLen : null} onMouseDown={this.props.onMouseDown} ctl-fullpath={needCtlPath ? this.props.fullPath : null} >{contentElem}</span>);
+        return (<span className={rootDivClassName} style={this.props.style} charlen={this.props.boutcharlen ? tileLen : null} onMouseDown={this.props.onMouseDown} ctl-fullpath={needCtlPath ? this.props.fullPath : null} >{contentElem}</span>);
     }
 }
 
@@ -1941,6 +1943,64 @@ function SmartSetScrollTop(theElem) {
     }
 }
 
+function GetFormSelectedRows(formState, keyColumn){
+    var rlt = GetFormSelectedProfile(formState, keyColumn);
+    return rlt.index != null ? [rlt.index] : rlt.indexes_arr;
+}
+
+function GetFormSelectedColumns(formState, keyColumn, targetColmun){
+    if(keyColumn == targetColmun){
+        return formState.selectedValues_arr == null ? [] : formState.selectedValues_arr;
+    }
+    var rlt = GetFormSelectedProfile(formState, keyColumn);
+    return rlt.records_arr.map(record=>{return record[targetColmun];})
+}
+
+function GetFormSelectedProfile(formState, keyColumn){
+    var rlt = {
+        index:null,
+        record:null,
+        key:null,
+        indexes_arr:[],
+        records_arr:[],
+        keys_arr:[],
+    }
+    var records_arr = formState.records_arr;
+    if(records_arr == null || records_arr.length == 0){
+        return rlt;
+    }
+    var count = records_arr.length;
+    var ri;
+    var record;
+    if(formState.selectedValue != null){
+        for(ri=0;ri<count;++ri){
+            record = records_arr[ri];
+            if(record[keyColumn] == formState.selectedValue){
+                rlt.index = ri;
+                rlt.record = record;
+                rlt.key = formState.selectedValue;
+                break;
+            }
+        }
+        return rlt;
+    }
+    var selectedValues_arr = formState.selectedValues_arr;
+    if(selectedValues_arr == null || selectedValues_arr.length == 0){
+        return rlt;
+    }
+    var key_map = {};
+    selectedValues_arr.forEach(k=>{key_map[k] = 1;});
+    for(ri=0;ri<count;++ri){
+        record = records_arr[ri];
+        if(key_map[record[keyColumn]] != null){
+            rlt.indexes_arr.push(ri);
+            rlt.records_arr.push(record);
+            rlt.keys_arr.push(record[keyColumn]);
+        }
+    }
+    return rlt;
+}
+
 function ERPC_GridForm(target) {
     target.rootRef = React.createRef();
     target.rowPerPageChangedHandler = ERPC_GridForm_RowPerPageChangedHandler.bind(target);
@@ -1958,7 +2018,6 @@ function ERPC_GridForm(target) {
     target.clickNewRowHandler = ERPC_GridForm_ClickNewRowHandler.bind(target);
     target.cancelInsert = ERPC_GridForm_CancelInsert.bind(target);
     target.confrimInsert = ERPC_GridForm_ConfirmInsert.bind(target);
-    target.getSelectedRowIndex = ERPC_GridForm_GetSelectedRowIndex.bind(target);
     target.selectorClicked = ERPC_GridForm_SelectorClicked.bind(target);
 }
 
@@ -2090,27 +2149,22 @@ function ERPC_GridForm_ConfirmInsert() {
     });
 }
 
-function ERPC_GridForm_GetSelectedRowIndex() {
-    return this.props.selectedRows_arr.length == 0 ? -1 : this.props.selectedRows_arr[0];
-}
-
 function ERPC_GridForm_SelectorClicked(rowIndex) {
     var needSetState = {};
+    var rowRecord = this.props.records_arr[rowIndex];
+    var keyValue = rowRecord[this.props.keyColumn];
     if (this.props.selectMode == 'single') {
-        if (this.getSelectedRowIndex() == rowIndex) {
-            return;
-        }
-        needSetState[this.props.fullPath + '.selectedRows_arr'] = [rowIndex];
+        needSetState[this.props.fullPath + '.selectedValue'] = keyValue;
     }
     else {
-        var index = this.props.selectedRows_arr.indexOf(rowIndex);
+        var index = this.props.selectedValues_arr.indexOf(keyValue);
         if (index == -1) {
-            needSetState[this.props.fullPath + '.selectedRows_arr'] = this.props.selectedRows_arr.concat(rowIndex);
+            needSetState[this.props.fullPath + '.selectedValues_arr'] = this.props.selectedValues_arr.concat(keyValue);
         }
         else {
-            var newArr = this.props.selectedRows_arr.concat();
+            var newArr = this.props.selectedValues_arr.concat();
             newArr.splice(index, 1);
-            needSetState[this.props.fullPath + '.selectedRows_arr'] = newArr;
+            needSetState[this.props.fullPath + '.selectedValues_arr'] = newArr;
         }
     }
 
@@ -2229,7 +2283,6 @@ class ERPC_GridSelectableRow extends React.PureComponent {
 
 function ERPC_GridSelectableRow_mapstatetoprops(state, ownprops) {
     return {
-        selected: ownprops.form.props.selectedRows_arr.indexOf(ownprops.rowIndex) != -1,
     };
 }
 
@@ -2845,12 +2898,13 @@ class ERPC_TopLevelFrame extends React.PureComponent {
         this.pop = this.pop.bind(this);
     }
 
-    push(src, oldPageState){
+    push(src, oldPageState, onMessageFun){
         if(this.state.srcs_arr.length > 0 && this.state.srcs_arr[this.state.srcs_arr.length - 1] == src){
             return;
         }
         if(this.state.srcs_arr.length == 0){
             oldPageState = null;    // 宿主页面的state不用保存
+            this.onMessageFun = onMessageFun;
         }
         this.setState({
             srcs_arr:this.state.srcs_arr.concat(src),
@@ -2875,6 +2929,23 @@ class ERPC_TopLevelFrame extends React.PureComponent {
         });
     }
 
+    close(){
+        this.onMessageFun = null;
+        this.setState({
+            srcs_arr:[],
+            states_arr:[],
+            useSrc:null,
+            useState:null,
+            err:null,
+        });
+    }
+
+    sendMessage(msgtype, data){
+        if(this.onMessageFun){
+            this.onMessageFun(msgtype, data);
+        }
+    }
+
     getUseState(){
         return this.state.useState;
     }
@@ -2885,6 +2956,7 @@ class ERPC_TopLevelFrame extends React.PureComponent {
             ev.target.contentWindow.gPageInFrame = true;
             ev.target.contentWindow.gParentFrame = this;
             ev.target.contentWindow.gParentDingKit = dingdingKit;
+            ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
         }
         catch(eo){
             console.log(eo);
@@ -2910,7 +2982,7 @@ class ERPC_TopLevelFrame extends React.PureComponent {
             </div>;
         }
         return <div className='position-fixed border rounded bg-light w-100 h-100' style={this.style} >
-            <iframe style={{display:'none'}} src={this.state.useSrc} className='w-100 h-100' frameBorder='0' onLoad={this.onloadHandler} onError={this.onErrorHandler} ></iframe>
+            <iframe src={this.state.useSrc} className='w-100 h-100' frameBorder='0' onLoad={this.onloadHandler} onError={this.onErrorHandler} ></iframe>
         </div>;
     }
 }
@@ -2986,7 +3058,7 @@ const ERPXMLToolKit = {
 
 function getPageEntryParam(pageid, paramName, defValue) {
     var entryObj = gDataCache.get(pageid + 'entryParam');
-    if (entryObj && entryObj[paramName] == null) {
+    if (entryObj == null || entryObj[paramName] == null) {
         return defValue;
     }
     return entryObj[paramName];

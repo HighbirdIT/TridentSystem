@@ -108,6 +108,9 @@ var IAttributeable = function (_EventEmitter) {
                 console.error('attrName is null');
             }
             if (index == null) {
+                if (attrName.lastIndexOf == null) {
+                    console.error('attrName.lastIndexOf == null');
+                }
                 var keypos = attrName.lastIndexOf('_');
                 if (keypos != -1) {
                     // maybe attrarry

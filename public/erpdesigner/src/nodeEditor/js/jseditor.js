@@ -25,6 +25,11 @@ const JSNodeEditorControls_arr =[
         type:'流控制'
     },
     {
+        label:'SetTimeout',
+        nodeClass:JSNode_SetTimeout,
+        type:'流控制'
+    },
+    {
         label:'CallOnFetchEnd',
         nodeClass:JSNode_CallOnFetchEnd,
         type:'流控制'
@@ -120,6 +125,11 @@ const JSNodeEditorControls_arr =[
         type:'操纵数组'
     },
     {
+        label:'数组-For',
+        nodeClass:JSNode_Array_For,
+        type:'流控制'
+    },
+    {
         label:'字符串-是否为空',
         nodeClass:JSNode_IsEmptyString,
         type:'操纵字符串'
@@ -197,6 +207,16 @@ const JSNodeEditorControls_arr =[
     {
         label:'打开外部页面',
         nodeClass:JsNode_OpenExternal_Page,
+        type:'窗体控制'
+    },
+    {
+        label:'向父页发消息',
+        nodeClass:JSNode_Msg_SendToParent,
+        type:'窗体通信'
+    },
+    {
+        label:'关闭TopFrame',
+        nodeClass:JSNode_CloseTopFrame,
         type:'窗体控制'
     },
     {
@@ -329,7 +349,6 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
             return;
         }
         var formObj = this.addUseForm(formKernel, rowSource);
-        formObj.useNowRecord = true;
         if(formObj.useColumns_map[columnName] == null){
             formObj.useColumns_map[columnName] = {
                 serverFuns_arr:[],
@@ -353,7 +372,6 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
             rlt = {
                 useColumns_map:{},
                 useControls_map:{},
-                useNowRecord:false,
                 useSelectedRow:false,
                 formKernel:formKernel,
             };
@@ -406,6 +424,9 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
 
     addUseControlPropApi(ctrKernel, apiitem, rowSource){
         var rlt = null;
+        if(apiitem.relyStateName == null){
+            apiitem.relyStateName = apiitem.stateName;
+        }
         var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
         var attrName = IsEmptyString(apiitem.useAttrName) ? apiitem.attrItem.name : apiitem.useAttrName;
         if(belongFormKernel == null){

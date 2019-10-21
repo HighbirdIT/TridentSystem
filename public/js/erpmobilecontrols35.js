@@ -19,6 +19,8 @@ var gFixedItemCounter = 0;
 var gCusValidChecker_map = {};
 var gPageInFrame = false;
 var gParentFrame = null;
+var gParentDingKit = null;
+var gParentIsInDingTalk = null;
 var gPreconditionInvalidInfo = '前置条件不足';
 var gCantNullInfo = '不能为空值';
 
@@ -3519,6 +3521,7 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
                 ev.target.contentWindow.gPageInFrame = true;
                 ev.target.contentWindow.gParentFrame = this;
                 ev.target.contentWindow.gParentDingKit = dingdingKit;
+                ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
             } catch (eo) {
                 console.log(eo);
                 this.setState({
@@ -3553,7 +3556,7 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
             return React.createElement(
                 'div',
                 { className: 'position-fixed border rounded bg-light w-100 h-100', style: this.style },
-                React.createElement('iframe', { style: { display: 'none' }, src: this.state.useSrc, className: 'w-100 h-100', frameBorder: '0', onLoad: this.onloadHandler, onError: this.onErrorHandler })
+                React.createElement('iframe', { src: this.state.useSrc, className: 'w-100 h-100', frameBorder: '0', onLoad: this.onloadHandler, onError: this.onErrorHandler })
             );
         }
     }]);
