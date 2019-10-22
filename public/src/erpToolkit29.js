@@ -50,6 +50,7 @@ const AT_SETSTATEBYPATH = 'AT_SETSTATEBYPATH';
 const AT_SETMANYSTATEBYPATH = 'AT_SETMANYSTATEBYPATH';
 const AT_GOTOPAGE = 'AT_GOTOPAGE';
 const AT_PAGELOADED = 'AT_PAGELOADED';
+const AT_SETROOTSTATE = 'AT_SETROOTSTATE';
 
 function makeAction_fetchbegin(key, fetchData) {
     return {
@@ -86,6 +87,7 @@ function delayAction() {
 const makeAction_setStateByPath = makeActionCreator(AT_SETSTATEBYPATH, 'value', 'path');
 const makeAction_setManyStateByPath = makeActionCreator(AT_SETMANYSTATEBYPATH, 'value', 'path');
 const makeAction_gotoPage = makeActionCreator(AT_GOTOPAGE, 'pageName');
+const makeAction_setRootState = makeActionCreator(AT_SETROOTSTATE, 'value');
 
 function setStateByPathHandler(state, action) {
     return setStateByPath(state, action.path, action.value);
@@ -93,6 +95,10 @@ function setStateByPathHandler(state, action) {
 
 function setManyStateByPathHandler(state, action) {
     return setManyStateByPath(state, action.path, action.value);
+}
+
+function setRootStateHandler(state, action){
+    return action.value ? action.value : state;
 }
 
 function myTrim(x) {
@@ -440,11 +446,13 @@ const EFetchKey = {
     FetchPropValue: 'fetchPropValue',
 }
 
-function createError(info, type) {
+function createError(info, type, code, data) {
     return {
         type: type == null ? ErrType.UNKNOWN : type,
         info: info,
         err: 1,
+        code: code,
+        data: data
     };
 }
 
@@ -501,6 +509,8 @@ function fetchJsonGet(url, sendData, triggerData, key = '', tip = '加载中', t
     return fetchJson(true, url, sendData, triggerData, key, tip, timeout);
 }
 
+var gFetchingCount = 0;
+
 function fetchJson(useGet, url, sendData, triggerData, key = '', tip = '加载中', timeout = 2) {
     switch (key) {
         case EFetchKey.FetchPropValue:
@@ -528,7 +538,7 @@ function fetchJson(useGet, url, sendData, triggerData, key = '', tip = '加载�
         timeout: timeout,
     };
     gFetchingQueue.push(thisFetch);
-    if (gFetchingQueue.length > gMaxFetchingCount) {
+    if (gFetchingCount > gMaxFetchingCount) {
         if (key == EFetchKey.FetchPropValue) {
             return function (dispatch) {
                 dispatch(makeAction_setManyStateByPath({
@@ -547,7 +557,7 @@ function fetchJson(useGet, url, sendData, triggerData, key = '', tip = '加载�
 }
 
 function _doNextFetching(dispatch) {
-    gFetchingQueue.shift();
+    --gFetchingCount;
     if (gFetchingQueue.length > 0) {
         _doFetching(dispatch);
     }
@@ -555,6 +565,8 @@ function _doNextFetching(dispatch) {
 
 function _doFetching(dispatch) {
     var thisFetch = gFetchingQueue[0];
+    gFetchingQueue.shift();
+    ++gFetchingCount;
     //console.log('_doFetching:' + JSON.stringify(thisFetch));
     var useGet = thisFetch.useGet;
     var sendData = thisFetch.sendData;
@@ -597,6 +609,7 @@ function _doFetching(dispatch) {
         var errObj = createError('啊哦，服务器没响应了', ErrType.TIMEOUT);
         dispatch(makeAction_fetchError(key, errObj, thisFetch));
     }, timeout);
+    var startTime = new Date().getTime();
     return fetch(url, fetchParam).then(
         response => {
             if (dispatched) {
@@ -609,34 +622,42 @@ function _doFetching(dispatch) {
                 return response.json();
             }
             else {
-                var errObj = createError(response.statusText, ErrType.NORESPONSE, thisFetch);
+                var errObj = createError(response.statusText, ErrType.NORESPONSE);
                 dispatch(makeAction_fetchError(key, errObj, thisFetch));
                 _doNextFetching(dispatch);
                 return null;
             }
         },
         error => {
+            clearTimeout(timeoutHandler);
             if (dispatched) {
                 console.log('response at dispatched');
                 _doNextFetching(dispatch);
                 return null;
             }
             console.warn('An error occurred.', error);
-            var errObj = createError(error.toString(), ErrType.NORESPONSE, thisFetch);
+            var errObj = createError(error.toString(), ErrType.NORESPONSE);
+            thisFetch.errObj = errObj;
             dispatch(makeAction_fetchError(key, errObj, thisFetch));
             _doNextFetching(dispatch);
         }
     ).then(json => {
+        if(thisFetch.errObj){
+            // 已经处理郭error
+            return;
+        }
+        var endTime = new Date().getTime();
+        thisFetch.useTime = endTime - startTime;
         if (dispatched) {
             console.log('response at dispatched');
             _doNextFetching(dispatch);
             return null;
         }
         if (json == null) {
-            dispatch(makeAction_fetchError(key, createError('"' + url + '"没有响应', ErrType.SERVERSIDE, thisFetch), thisFetch));
+            dispatch(makeAction_fetchError(key, createError('"' + url + '"没有响应', ErrType.SERVERSIDE), thisFetch));
         }
         else if (json.err != null) {
-            dispatch(makeAction_fetchError(key, createError(json.err.info, ErrType.SERVERSIDE, thisFetch), thisFetch));
+            dispatch(makeAction_fetchError(key, createError(json.err.info, ErrType.SERVERSIDE, json.err.code, json.err.data), thisFetch));
         }
         else {
             //setTimeout(() => {
@@ -681,12 +702,12 @@ function nativeFetchJson(useGet, url, sendData) {
                 return response.json();
             }
             else {
-                var errObj = createError(response.statusText, ErrType.NORESPONSE, thisFetch);
+                var errObj = createError(response.statusText, ErrType.NORESPONSE);
                 return { err: errObj };
             }
         },
         error => {
-            var errObj = createError(error.toString(), ErrType.NORESPONSE, thisFetch);
+            var errObj = createError(error.toString(), ErrType.NORESPONSE);
             return { err: errObj };
         }
     ).then(json => {
@@ -704,6 +725,9 @@ function getNumberFromCookies(identity, defaultVal) {
 }
 
 function getStateByPath(state, path, def) {
+    if(state == null){
+        return def;
+    }
     var t_arr = path.split('.');
     var nowState = state;
     for (var si in t_arr) {
@@ -1048,7 +1072,7 @@ function fetchEndHandler(state, action) {
         if (triggerData) {
             if (triggerData.callBack) {
                 if (!discardResult) {
-                    var callbackret = triggerData.callBack(retState, null, action.err);
+                    var callbackret = triggerData.callBack(retState, null, action.err, action.fetchData.useTime);
                     if (callbackret != null) {
                         retState = callbackret;
                     }
@@ -1090,9 +1114,11 @@ function fetchEndHandler(state, action) {
     var tPath;
     switch (action.key) {
         case 'pageloaded':
-            setTimeout(() => {
-                store.dispatch({ type: AT_PAGELOADED });
-            }, 50);
+            if(!gDingDingIniting){
+                setTimeout(() => {
+                    store.dispatch({ type: AT_PAGELOADED });
+                }, 50);
+            }
             return Object.assign({}, retState, { loaded: true });
         case EFetchKey.FetchPropValue:
             {
@@ -1114,7 +1140,7 @@ function fetchEndHandler(state, action) {
             }
         default:
             if (triggerData.callBack) {
-                var callbackret = triggerData.callBack(retState, action.json.data);
+                var callbackret = triggerData.callBack(retState, action.json.data, null, action.fetchData.useTime);
                 if (callbackret != null) {
                     retState = callbackret;
                 }
@@ -1130,6 +1156,7 @@ var baseReducerSetting = {
     AT_FETCHEND: fetchEndHandler,
     AT_SETSTATEBYPATH: setStateByPathHandler,
     AT_SETMANYSTATEBYPATH: setManyStateByPathHandler,
+    AT_SETROOTSTATE:setRootStateHandler,
 };
 
 function baseRenderLoadingTip() {
@@ -1263,6 +1290,31 @@ function simpleFreshFormFun(retState, records_arr, formFullID, directBindFun) {
     return setManyStateByPath(retState, formFullID, needSetState);
 }
 
+function simpleFreshFormFun2(retState, records_arr, formFullID, rowChangedFun, visited, delayActs, rowIndexInfo_map) {
+    var formState = getStateByPath(retState, formFullID);
+    var needSetState = {};
+    if (records_arr == null || records_arr.length == 0) {
+        needSetState.recordIndex = -1;
+    }
+    else {
+        var useIndex = formState.recordIndex == null ? 0 : parseInt(formState.recordIndex);
+        if (useIndex >= records_arr.length) {
+            useIndex = records_arr.length - 1;
+        }
+        else if (useIndex <= -1) {
+            useIndex = 0;
+        }
+        needSetState.recordIndex = useIndex;
+    }
+    if (formState.recordIndex == useIndex) {
+        if(rowChangedFun != null){
+            return rowChangedFun(retState, useIndex,useIndex,formFullID+'.recordIndex',visited,delayActs, rowIndexInfo_map);
+        }
+        return retState;
+    }
+    return setManyStateByPath(retState, formFullID, needSetState);
+}
+
 function IsEmptyObject(val) {
     for (var si in val) {
         if (val[si] != null) {
@@ -1288,7 +1340,12 @@ function getQueryVariable(variable, defVal) {
     var vars = query.split("&");
     for (var i = 0; i < vars.length; i++) {
         var pair = vars[i].split("=");
-        if (pair[0] == variable) { return pair[1]; }
+        if (pair[0] == variable) {
+            if(pair[1].length > 2 && pair[1][0] == '{'){
+                return JSON.parse(decodeURI(pair[1]));
+            }
+            return pair[1]; 
+        }
     }
     return defVal;
 }
@@ -1421,15 +1478,18 @@ function getParentPathByKey(orginPath, key) {
     if (index == -1) {
         return '';
     }
+    /*
     var endPos = orginPath.indexOf('.', index + 1);
     if (endPos == -1) {
         endPos = orginPath.length;
     }
-    return orginPath.substring(0, endPos);
+    */
+    return orginPath.substring(0, index) + key;
 }
 
-function getBelongUserCtlPath(orginPath) {
-    var index = orginPath.lastIndexOf('UserControl');
+function getBelongUserCtlPath(orginPath, fromId) {
+    var lastDostPos = fromId ? orginPath.lastIndexOf(fromId) - fromId.length : orginPath.length;
+    var index = orginPath.lastIndexOf('.UserControl',lastDostPos);
     if (index == -1) {
         return '';
     }
@@ -1469,59 +1529,238 @@ function CombineDotStr() {
     return rlt;
 }
 
-
-
 // getday
+const gWeekDayName_arr = ["日", "一", "二", "三", "四", "五", "六"];
 function getweekDay(date) {
-	var weekarr = ["日", "一", "二", "三", "四", "五", "六"];
-	if (!checkDate(date)) {
-		date = castDate(date);
-	}
-	return "星期" + weekarr[date.getDay()]
+    if (typeof date === 'string') {
+        date = castDate(date);
+    }
+    return "星期" + gWeekDayName_arr[date.getDay()]
 }
 
 //格式化数字加逗号
-function addComma(num){
-	var reg = num.toString().indexOf('.') > -1 ? /(\d)(?=(\d{3})+\.)/g : /(\d)(?=(\d{3})+$)/g;
-	return num.toString().replace(reg,'$1,');
+function addComma(num) {
+    var reg = num.toString().indexOf('.') > -1 ? /(\d)(?=(\d{3})+\.)/g : /(\d)(?=(\d{3})+$)/g;
+    return num.toString().replace(reg, '$1,');
 }
 
 //数字转中文
- function NumToChinese(n) {
-	for (i = n.length - 1; i >= 0; i--) {
-		n = n.replace(",", "")//替换Num中的“,” 替换Num中的空格
-		n = n.replace(" ", "")
-	}
-	
-	if (isNaN(n)) { 
-		return "请检查输入金额是否正确";
-	}
-	if (!/^(0|[1-9]\d*)(\.\d+)?$/.test(n)){
-		return "数据非法";  //判断数据是否大于0
-	}
+function NumToChinese(n) {
+    for (i = n.length - 1; i >= 0; i--) {
+        n = n.replace(",", "")//替换Num中的“,” 替换Num中的空格
+        n = n.replace(" ", "")
+    }
 
-	var unit = "千百拾亿千百拾万千百拾元角分", str = "";
-	n += "00";  
+    if (isNaN(n)) {
+        return "请检查输入金额是否正确";
+    }
+    if (!/^(0|[1-9]\d*)(\.\d+)?$/.test(n)) {
+        return "数据非法";  //判断数据是否大于0
+    }
 
-	var indexpoint = n.indexOf('.');  // 如果是小数，截取小数点前面的位数
-	if(indexpoint >12){
-		return '数据过大';
-	}
-	if(indexpoint<0 && n.length>14){
-		return '数据过大';
-	}
-	if (indexpoint >= 0){
+    var unit = "千百拾亿千百拾万千百拾元角分", str = "";
+    n += "00";
 
-		n = n.substring(0, indexpoint) + n.substr(indexpoint+1, 2);   // 若为小数，截取需要使用的unit单位
-	}
+    var indexpoint = n.indexOf('.');  // 如果是小数，截取小数点前面的位数
+    if (indexpoint > 12) {
+        return '数据过大';
+    }
+    if (indexpoint < 0 && n.length > 14) {
+        return '数据过大';
+    }
+    if (indexpoint >= 0) {
 
-	unit = unit.substr(unit.length - n.length);  // 若为整数，截取需要使用的unit单位
-	for (var i=0; i < n.length; i++){
-		str += "零壹贰叁肆伍陆柒捌玖".charAt(n.charAt(i)) + unit.charAt(i);  //遍历转化为大写的数字
-	}
-	var result = str.replace(/零(千|百|拾|角)/g, "零").
-		replace(/(零)+/g, "零").replace(/零(万|亿|元)/g, "$1").
-		replace(/(亿)万|壹(拾)/g, "$1$2").replace(/^元零?|零分/g, "").
-		replace(/元$/g, "元整"); // 替换掉数字里面的零字符，得到结果
-	return result;
+        n = n.substring(0, indexpoint) + n.substr(indexpoint + 1, 2);   // 若为小数，截取需要使用的unit单位
+    }
+
+    unit = unit.substr(unit.length - n.length);  // 若为整数，截取需要使用的unit单位
+    for (var i = 0; i < n.length; i++) {
+        str += "零壹贰叁肆伍陆柒捌玖".charAt(n.charAt(i)) + unit.charAt(i);  //遍历转化为大写的数字
+    }
+    var result = str.replace(/零(千|百|拾|角)/g, "零").
+        replace(/(零)+/g, "零").replace(/零(万|亿|元)/g, "$1").
+        replace(/(亿)万|壹(拾)/g, "$1$2").replace(/^元零?|零分/g, "").
+        replace(/元$/g, "元整"); // 替换掉数字里面的零字符，得到结果
+    return result;
+}
+
+function Convert_TimeZone(time, zoneSrc, zoneDst) {
+    var firsttime;
+    if (typeof time === 'string') {
+        firsttime = castDateFromTimePart(time);
+    }
+    var time = firsttime.getTime();
+    var offset = 0;
+    zoneSrc = parseInt(zoneSrc);
+    zoneDst = parseInt(zoneDst);
+    offset = -zoneSrc + zoneDst;
+    return new Date(Firsttime.setTime(datetime + 1000 * 60 * 60 * (offset)));
+}
+
+var gDingDingIniting = false;
+
+function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
+    if(gPageInFrame){
+        gDingDingIniting = true;
+        dingdingKit = gParentDingKit;
+        isInDingTalk = gParentIsInDingTalk;
+        store.dispatch({ type: AT_PAGELOADED });
+        callBack();
+        return;
+    }
+    if (isMobile) {
+        dingdingKit = dd;
+        isInDingTalk = dd.env.platform != 'notInDingTalk';
+        var jsapiArr = [
+            'runtime.info',
+            'device.notification.prompt',
+            'device.notification.confirm',
+            'device.notification.alert',
+            'device.notification.toast',
+            'biz.navigation.close',
+            'biz.ding.post',
+            'biz.navigation.setRight',
+            'biz.navigation.setTitle'];
+        if(mobileAppendApi_arr){
+            jsapiArr = jsapiArr.concat(mobileAppendApi_arr);
+        }
+
+        dd.config({
+            agentId: "29816043",
+            corpId: theCorpId,
+            timeStamp: pTimeStamp,
+            nonceStr: pNonceStr,
+            signature: pSignature,
+            jsApiList: jsapiArr
+        });
+    }
+    else {
+        dingdingKit = DingTalkPC;
+        isInDingTalk = dingdingKit.ua.isInDingTalk;
+        var jsapiArr = [
+            'device.notification.alert',
+            'device.notification.confirm',
+            'device.notification.toast',
+            'biz.navigation.close',
+            'runtime.permission.requestAuthCode',
+            'biz.ding.post'];
+        if(pcAppendApi_arr){
+            jsapiArr = jsapiArr.concat(pcAppendApi_arr);
+        }
+        DingTalkPC.config({
+            agentId: "29816043",
+            corpId: theCorpId,
+            timeStamp: pTimeStamp,
+            nonceStr: pNonceStr,
+            signature: pSignature,
+            jsApiList: jsapiArr
+        });
+    }
+    if (!isProduction || !isInDingTalk) {
+        callBack();
+        return;
+    }
+    gDingDingIniting = true;
+    dingdingKit.error(err=>{
+        alert('出错了:' + JSON.stringify(err));
+    });
+    dingdingKit.ready(()=>{
+        store.dispatch({ type: AT_PAGELOADED });
+        callBack();
+    });
+}
+
+function pickLocation(successAct, failAct) {
+    if (failAct == null) {
+        failAct = function (err) {
+            myApp.alert(JSON.stringify(err), "获取位置失败");
+        }
+    }
+
+    if (!isMobile) {
+        if (failAct != null) {
+            failAct('需要在手机端使用');
+        }
+        return;
+    }
+
+    dingdingKit.biz.map.locate({
+        onSuccess: successAct,
+        onFail: failAct
+    });
+}
+
+function gGetNowLocation(successAct, failAct) {
+    if (!isMobile) {
+        failAct();
+        return;
+    }
+    dd.device.geolocation.get({
+        targetAccuracy: 100,
+        coordinate: 1,
+        withReGeocode: false,
+        onSuccess: successAct,
+        onFail: failAct
+    });
+}
+
+function DynamicLoadJs(url, callback) {
+    var script = document.createElement('script');
+    script.type = "text/javascript";
+    if (typeof (callback) != "undefined") {
+        if (script.readyState) {
+            script.onreadystatechange = function () {
+                if (script.readyState == "loaded" || script.readyState == "complete") {
+                    script.onreadystatechange = null;
+                    callback();
+                }
+            }
+        } else {
+            script.onload = function () {
+                callback();
+            }
+        }
+    }
+    script.src = url;
+    document.body.appendChild(script);
+}
+
+var AMapJsLoaded = false;
+var gAMapCallBacks_arr = [];
+
+function Regeocoder(lat, lon, callBack) {
+    if(!AMapJsLoaded){
+        gAMapCallBacks_arr.push({
+            lat:lat,
+            lon:lon,
+            callBack:callBack,
+        });
+        if(gAMapCallBacks_arr.length == 1){
+            DynamicLoadJs('http://webapi.amap.com/maps?v=1.4.3&key=1ca423f502c4a4d054c8d0572847a623&plugin=AMap.Geocoder', ()=>{
+                AMapJsLoaded = true;
+                gAMapCallBacks_arr.forEach(p=>{
+                    __regeocoder(p.lat, p.lon, p.callBack);
+                });
+            });
+        }
+        return;
+    }
+    __regeocoder(lat, lon, callBack);
+}
+
+function __regeocoder(lat, lon, callBack) {
+    var geocoder = new AMap.Geocoder({
+        radius: 200,
+        extensions: "all"
+    });
+    lat = Math.round(lat * 1000000) / 1000000;
+    lon = Math.round(lon * 1000000) / 1000000;
+    geocoder.getAddress([lon, lat], function (status, result) {
+        if (status === 'complete' && result.info === 'OK') {
+            callBack(result);
+        }
+        else {
+            callBack(null);
+        }
+    });
 }

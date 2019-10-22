@@ -1,17 +1,28 @@
-const PAGE_LOADED = 'PAGE_LOADED';
+'use strict';
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var PAGE_LOADED = 'PAGE_LOADED';
 
 var fetchTracer = {};
 
-function makeActionCreator(type, ...argNames) {
-    return function (...args) {
-        let action = { type };
-        argNames.forEach((arg, index) => {
-            action[argNames[index]] = args[index]
+function makeActionCreator(type) {
+    for (var _len = arguments.length, argNames = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+        argNames[_key - 1] = arguments[_key];
+    }
+
+    return function () {
+        for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+            args[_key2] = arguments[_key2];
+        }
+
+        var action = { type: type };
+        argNames.forEach(function (arg, index) {
+            action[argNames[index]] = args[index];
         });
         return action;
-    }
+    };
 }
-
 
 function updateObject(oldObject, newValues) {
     if (oldObject == null) {
@@ -21,11 +32,11 @@ function updateObject(oldObject, newValues) {
 }
 
 function updateItemInArray(array, itemId, updateItemCallback) {
-    const updatedItems = array.map(item => {
+    var updatedItems = array.map(function (item) {
         if (item.id !== itemId) {
             return item;
         }
-        const updatedItem = updateItemCallback(item);
+        var updatedItem = updateItemCallback(item);
         return updatedItem;
     });
 
@@ -33,23 +44,26 @@ function updateItemInArray(array, itemId, updateItemCallback) {
 }
 
 function createReducer(initialState, handlers) {
-    return function reducer(state = initialState, action) {
+    return function reducer() {
+        var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : initialState;
+        var action = arguments[1];
+
         if (handlers.hasOwnProperty(action.type)) {
             return handlers[action.type](state, action);
         } else {
             return state;
         }
-    }
+    };
 }
 
-
 // post functions
-const AT_FETCHBEGIN = 'AT_FETCHBEGIN';
-const AT_FETCHEND = 'AT_FETCHEND';
-const AT_SETSTATEBYPATH = 'AT_SETSTATEBYPATH';
-const AT_SETMANYSTATEBYPATH = 'AT_SETMANYSTATEBYPATH';
-const AT_GOTOPAGE = 'AT_GOTOPAGE';
-const AT_PAGELOADED = 'AT_PAGELOADED';
+var AT_FETCHBEGIN = 'AT_FETCHBEGIN';
+var AT_FETCHEND = 'AT_FETCHEND';
+var AT_SETSTATEBYPATH = 'AT_SETSTATEBYPATH';
+var AT_SETMANYSTATEBYPATH = 'AT_SETMANYSTATEBYPATH';
+var AT_GOTOPAGE = 'AT_GOTOPAGE';
+var AT_PAGELOADED = 'AT_PAGELOADED';
+var AT_SETROOTSTATE = 'AT_SETROOTSTATE';
 
 function makeAction_fetchbegin(key, fetchData) {
     return {
@@ -79,13 +93,12 @@ function makeAction_fetchError(key, err, fetchData) {
     };
 }
 
-function delayAction() {
+function delayAction() {}
 
-}
-
-const makeAction_setStateByPath = makeActionCreator(AT_SETSTATEBYPATH, 'value', 'path');
-const makeAction_setManyStateByPath = makeActionCreator(AT_SETMANYSTATEBYPATH, 'value', 'path');
-const makeAction_gotoPage = makeActionCreator(AT_GOTOPAGE, 'pageName');
+var makeAction_setStateByPath = makeActionCreator(AT_SETSTATEBYPATH, 'value', 'path');
+var makeAction_setManyStateByPath = makeActionCreator(AT_SETMANYSTATEBYPATH, 'value', 'path');
+var makeAction_gotoPage = makeActionCreator(AT_GOTOPAGE, 'pageName');
+var makeAction_setRootState = makeActionCreator(AT_SETROOTSTATE, 'value');
 
 function setStateByPathHandler(state, action) {
     return setStateByPath(state, action.path, action.value);
@@ -95,12 +108,16 @@ function setManyStateByPathHandler(state, action) {
     return setManyStateByPath(state, action.path, action.value);
 }
 
+function setRootStateHandler(state, action) {
+    return action.value ? action.value : state;
+}
+
 function myTrim(x) {
     return x.replace(/^\s+|\s+$/gm, '');
 }
 
 function getNowDate() {
-    return new Date(getFormatDateString(new Date()) + ' 00:00');
+    return castDate(getFormatDateString(new Date()) + ' 00:00');
 }
 
 function checkDate(date) {
@@ -144,8 +161,8 @@ var gDateReg = /\d+[-/]\d+[-/]\d+/;
 var gTimeReg = /\d+:\d+:\d+/;
 var gShortTimeReg = /\d+:\d+/;
 
-const gNumCommaReg_float = /(\d)(?=(\d{3})+\.)/g;
-const gNumCommaReg_int = /(\d)(?=(\d{3})+$)/g;
+var gNumCommaReg_float = /(\d)(?=(\d{3})+\.)/g;
+var gNumCommaReg_int = /(\d)(?=(\d{3})+$)/g;
 
 function formatMoneyByComma(num) {
     var reg = num.toString().indexOf('.') > -1 ? gNumCommaReg_float : gNumCommaReg_int;
@@ -164,8 +181,7 @@ function castDate(val) {
             }
             if (timeRegRlt != null) {
                 dateStr += ' ' + timeRegRlt[0];
-            }
-            else {
+            } else {
                 dateStr += ' 00:00';
             }
             var rlt = new Date(dateStr);
@@ -180,7 +196,15 @@ function castDate(val) {
 }
 
 function castDateFromTimePart(val) {
-    return new Date('2000-1-1 ' + val);
+    var timeRegRlt = gTimeReg.exec(val);
+    if (timeRegRlt == null) {
+        timeRegRlt = gShortTimeReg.exec(val);
+    }
+    if (timeRegRlt == null) {
+        return null;
+    }
+
+    return new Date('2000/1/1 ' + timeRegRlt[0]);
 }
 
 function getDateDiff(type, dateA, dateB) {
@@ -215,35 +239,43 @@ function getDateDiff(type, dateA, dateB) {
 }
 
 // commonreducer
-const logger = store => next => action => {
-    if (isDebug != false) {
-        console.log('dispatching', action);
-    }
-    let result = next(action);
-    if (isDebug != false) {
-        console.log('next state', store.getState());
-    }
-    return result;
-}
-
-const crashReporter = store => next => action => {
-    //console.log('crashReporter start');
-    let rlt = null;
-    try {
-        rlt = next(action);
-    } catch (err) {
-        console.error('Caught an exception!', err);
-        Raven.captureException(err, {
-            extra: {
-                action,
-                state: store.getState()
+var logger = function logger(store) {
+    return function (next) {
+        return function (action) {
+            if (isDebug != false) {
+                console.log('dispatching', action);
             }
-        })
-        throw err;
-    }
-    //console.log('crashReporter end');
-    return rlt;
-}
+            var result = next(action);
+            if (isDebug != false) {
+                console.log('next state', store.getState());
+            }
+            return result;
+        };
+    };
+};
+
+var crashReporter = function crashReporter(store) {
+    return function (next) {
+        return function (action) {
+            //console.log('crashReporter start');
+            var rlt = null;
+            try {
+                rlt = next(action);
+            } catch (err) {
+                console.error('Caught an exception!', err);
+                Raven.captureException(err, {
+                    extra: {
+                        action: action,
+                        state: store.getState()
+                    }
+                });
+                throw err;
+            }
+            //console.log('crashReporter end');
+            return rlt;
+        };
+    };
+};
 
 //const timeoutScheduler = store => next => action => {
 function createThunkMiddleware(extraArgument) {
@@ -264,8 +296,10 @@ function createThunkMiddleware(extraArgument) {
 
 function autoBind(self, options) {
     options = Object.assign({}, options);
-    const filter = key => {
-        const match = pattern => typeof pattern === 'string' ? key === pattern : pattern.test(key);
+    var filter = function filter(key) {
+        var match = function match(pattern) {
+            return typeof pattern === 'string' ? key === pattern : pattern.test(key);
+        };
         if (options.include) {
             return options.include.some(match);
         }
@@ -275,11 +309,32 @@ function autoBind(self, options) {
         return true;
     };
 
-    for (const key of Object.getOwnPropertyNames(self.constructor.prototype)) {
-        const val = self[key];
+    var _iteratorNormalCompletion = true;
+    var _didIteratorError = false;
+    var _iteratorError = undefined;
 
-        if (key !== 'constructor' && typeof val === 'function' && filter(key)) {
-            self[key] = val.bind(self);
+    try {
+        for (var _iterator = Object.getOwnPropertyNames(self.constructor.prototype)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var key = _step.value;
+
+            var val = self[key];
+
+            if (key !== 'constructor' && typeof val === 'function' && filter(key)) {
+                self[key] = val.bind(self);
+            }
+        }
+    } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion && _iterator.return) {
+                _iterator.return();
+            }
+        } finally {
+            if (_didIteratorError) {
+                throw _iteratorError;
+            }
         }
     }
 
@@ -287,14 +342,13 @@ function autoBind(self, options) {
 }
 
 function assginObjByProperties(dstObj, srcObj, pros_arr) {
-    pros_arr.forEach(pName => {
+    pros_arr.forEach(function (pName) {
         dstObj[pName] = srcObj[pName];
     });
 }
 
 function getAttributeByNode(targetNode, attrName, upserach, maxDeep) {
-    if (upserach == null)
-        upserach = true;
+    if (upserach == null) upserach = true;
     var tNode = targetNode;
     var count = 0;
     do {
@@ -339,10 +393,8 @@ function isNodeHasParent(targetNode, parentNode) {
 
 function extractPropsFromObj(obj, props_arr) {
     var rlt = {};
-    props_arr.forEach(prop => {
-        if (obj && obj[prop.name] != null)
-            rlt[prop.name] = obj[prop.name];
-        else {
+    props_arr.forEach(function (prop) {
+        if (obj && obj[prop.name] != null) rlt[prop.name] = obj[prop.name];else {
             rlt[prop.name] = typeof prop.default == 'function' ? prop.default() : prop.default;
         }
     });
@@ -367,8 +419,7 @@ function EV_AllowEvent(et) {
     var nowVal = this.suspressEvents[et];
     if (nowVal > 0) {
         this.suspressEvents[et] = nowVal - 1;
-    }
-    else {
+    } else {
         console.warn('allowEvent执行时count等于' + nowVal);
     }
 }
@@ -383,17 +434,15 @@ function EV_FireEvent(et, delay, arg) {
     }
     if (delay < 0) {
         delay = 0;
-    }
-    else if (delay > 500) {
+    } else if (delay > 500) {
         console.warn('长达' + delay + '毫秒的延迟fire' + et);
     }
     var self = this;
     if (delay > 0) {
-        setTimeout(() => {
+        setTimeout(function () {
             self.emit(et, arg == null ? self : arg);
         }, delay);
-    }
-    else {
+    } else {
         self.emit(et, arg == null ? self : arg);
     }
 }
@@ -421,54 +470,59 @@ function IsEmptyArray(val) {
     return val == null || val.length == 0;
 }
 
-const ErrType = {
+var ErrType = {
     UNKNOWN: 'UNKNOWN',
     TIMEOUT: 'TIMEOUT',
     SERVERSIDE: 'SERVERSIDE',
-    NORESPONSE: 'NORESPONSE',
+    NORESPONSE: 'NORESPONSE'
 };
 
-const EFetchKey = {
-    FetchPropValue: 'fetchPropValue',
-}
+var EFetchKey = {
+    FetchPropValue: 'fetchPropValue'
+};
 
-function createError(info, type) {
+function createError(info, type, code, data) {
     return {
         type: type == null ? ErrType.UNKNOWN : type,
         info: info,
         err: 1,
+        code: code,
+        data: data
     };
 }
 
-function makeFTD_Prop(basePath, id, propName, isModel = true) {
+function makeFTD_Prop(basePath, id, propName) {
+    var isModel = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+
     return {
         base: basePath,
         id: id,
         propName: propName,
-        isModel: isModel,
+        isModel: isModel
     };
 }
 
-function makeFTD_Callback(callBack, isModel = true) {
+function makeFTD_Callback(callBack) {
+    var isModel = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
     return {
         callBack: callBack,
-        isModel: isModel,
+        isModel: isModel
     };
 }
-const gFetchingProp = {};
-const gFetchingQueue = [];
-const gMaxFetchingCount = 5;
+var gFetchingProp = {};
+var gFetchingQueue = [];
+var gMaxFetchingCount = 5;
 
 function hookPropFetch(ftpProp, bundle, autoAdd) {
     var key = ftpProp.id + '_' + ftpProp.propName;
     if (gFetchingProp[key] == null) {
-        if(!autoAdd){
+        if (!autoAdd) {
             return false;
         }
         gFetchingProp[key] = [];
-    }
-    else if (gFetchingProp[key].length > 0) {
-        var hited = gFetchingProp[key].find(x => {
+    } else if (gFetchingProp[key].length > 0) {
+        var hited = gFetchingProp[key].find(function (x) {
             return ObjIsEqual(x.bundle, bundle);
         });
         if (hited) {
@@ -476,7 +530,7 @@ function hookPropFetch(ftpProp, bundle, autoAdd) {
             return true;
         }
     }
-    if(autoAdd){
+    if (autoAdd) {
         gFetchingProp[key].push({
             bundle: bundle,
             queues_arr: []
@@ -485,15 +539,29 @@ function hookPropFetch(ftpProp, bundle, autoAdd) {
     return false;
 }
 
-function fetchJsonPost(url, sendData, triggerData, key = '', tip = '加载中', timeout = 2) {
+function fetchJsonPost(url, sendData, triggerData) {
+    var key = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+    var tip = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '加载中';
+    var timeout = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 2;
+
     return fetchJson(false, url, sendData, triggerData, key, tip, timeout);
 }
 
-function fetchJsonGet(url, sendData, triggerData, key = '', tip = '加载中', timeout = 2) {
+function fetchJsonGet(url, sendData, triggerData) {
+    var key = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+    var tip = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '加载中';
+    var timeout = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 2;
+
     return fetchJson(true, url, sendData, triggerData, key, tip, timeout);
 }
 
-function fetchJson(useGet, url, sendData, triggerData, key = '', tip = '加载中', timeout = 2) {
+var gFetchingCount = 0;
+
+function fetchJson(useGet, url, sendData, triggerData) {
+    var key = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
+    var tip = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : '加载中';
+    var timeout = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 2;
+
     switch (key) {
         case EFetchKey.FetchPropValue:
             {
@@ -503,9 +571,9 @@ function fetchJson(useGet, url, sendData, triggerData, key = '', tip = '加载�
                         dispatch(makeAction_setManyStateByPath({
                             fetching: true,
                             fetchingpropname: triggerData.propName,
-                            fetchingErr: null,
+                            fetchingErr: null
                         }, MakePath(triggerData.base, triggerData.id)));
-                    }
+                    };
                 }
             }
     }
@@ -517,36 +585,37 @@ function fetchJson(useGet, url, sendData, triggerData, key = '', tip = '加载�
         sendData: sendData,
         key: key,
         tip: tip,
-        timeout: timeout,
+        timeout: timeout
     };
     gFetchingQueue.push(thisFetch);
-    if (gFetchingQueue.length > gMaxFetchingCount) {
+    if (gFetchingCount > gMaxFetchingCount) {
         if (key == EFetchKey.FetchPropValue) {
             return function (dispatch) {
                 dispatch(makeAction_setManyStateByPath({
                     fetching: true,
                     fetchingpropname: triggerData.propName,
-                    fetchingErr: null,
+                    fetchingErr: null
                 }, MakePath(triggerData.base, triggerData.id)));
-            }
+            };
         }
         // enqueue
-        return function (dispatch) {
-        };
+        return function (dispatch) {};
     }
 
     return _doFetching;
 }
 
-function _doNextFetching(dispatch){
-    gFetchingQueue.shift();
-    if(gFetchingQueue.length > 0){
+function _doNextFetching(dispatch) {
+    --gFetchingCount;
+    if (gFetchingQueue.length > 0) {
         _doFetching(dispatch);
     }
 }
 
 function _doFetching(dispatch) {
     var thisFetch = gFetchingQueue[0];
+    gFetchingQueue.shift();
+    ++gFetchingCount;
     //console.log('_doFetching:' + JSON.stringify(thisFetch));
     var useGet = thisFetch.useGet;
     var sendData = thisFetch.sendData;
@@ -565,8 +634,8 @@ function _doFetching(dispatch) {
         headers: {
             "Content-Type": "application/json"
         },
-        credentials: "include",
-    }
+        credentials: "include"
+    };
     var dispatched = false;
     if (useGet) {
         if (sendData != null) {
@@ -578,59 +647,61 @@ function _doFetching(dispatch) {
                 url += '?' + str;
             }
         }
-    }
-    else {
+    } else {
         fetchParam.body = JSON.stringify(sendData);
     }
 
     dispatch(makeAction_fetchbegin(key, thisFetch));
-    var timeoutHandler = setTimeout(() => {
+    var timeoutHandler = setTimeout(function () {
         dispatched = true;
         var errObj = createError('啊哦，服务器没响应了', ErrType.TIMEOUT);
         dispatch(makeAction_fetchError(key, errObj, thisFetch));
     }, timeout);
-    return fetch(url, fetchParam).then(
-        response => {
-            if (dispatched) {
-                console.log('response at dispatched');
-                _doNextFetching(dispatch);
-                return null;
-            }
-            clearTimeout(timeoutHandler);
-            if (response.ok) {
-                return response.json();
-            }
-            else {
-                var errObj = createError(response.statusText, ErrType.NORESPONSE, thisFetch);
-                dispatch(makeAction_fetchError(key, errObj, thisFetch));
-                _doNextFetching(dispatch);
-                return null;
-            }
-        },
-        error => {
-            if (dispatched) {
-                console.log('response at dispatched');
-                _doNextFetching(dispatch);
-                return null;
-            }
-            console.warn('An error occurred.', error);
-            var errObj = createError(error.toString(), ErrType.NORESPONSE, thisFetch);
+    var startTime = new Date().getTime();
+    return fetch(url, fetchParam).then(function (response) {
+        if (dispatched) {
+            console.log('response at dispatched');
+            _doNextFetching(dispatch);
+            return null;
+        }
+        clearTimeout(timeoutHandler);
+        if (response.ok) {
+            return response.json();
+        } else {
+            var errObj = createError(response.statusText, ErrType.NORESPONSE);
             dispatch(makeAction_fetchError(key, errObj, thisFetch));
             _doNextFetching(dispatch);
+            return null;
         }
-    ).then(json => {
+    }, function (error) {
+        clearTimeout(timeoutHandler);
+        if (dispatched) {
+            console.log('response at dispatched');
+            _doNextFetching(dispatch);
+            return null;
+        }
+        console.warn('An error occurred.', error);
+        var errObj = createError(error.toString(), ErrType.NORESPONSE);
+        thisFetch.errObj = errObj;
+        dispatch(makeAction_fetchError(key, errObj, thisFetch));
+        _doNextFetching(dispatch);
+    }).then(function (json) {
+        if (thisFetch.errObj) {
+            // 已经处理郭error
+            return;
+        }
+        var endTime = new Date().getTime();
+        thisFetch.useTime = endTime - startTime;
         if (dispatched) {
             console.log('response at dispatched');
             _doNextFetching(dispatch);
             return null;
         }
         if (json == null) {
-            dispatch(makeAction_fetchError(key, createError('"' + url + '"没有响应', ErrType.SERVERSIDE, thisFetch), thisFetch));
-        }
-        else if (json.err != null) {
-            dispatch(makeAction_fetchError(key, createError(json.err.info, ErrType.SERVERSIDE, thisFetch), thisFetch));
-        }
-        else {
+            dispatch(makeAction_fetchError(key, createError('"' + url + '"没有响应', ErrType.SERVERSIDE), thisFetch));
+        } else if (json.err != null) {
+            dispatch(makeAction_fetchError(key, createError(json.err.info, ErrType.SERVERSIDE, json.err.code, json.err.data), thisFetch));
+        } else {
             //setTimeout(() => {
             dispatch(makeAction_fetchend(key, json, thisFetch));
             //}, 2000);
@@ -643,15 +714,15 @@ function nativeFetchJson(useGet, url, sendData) {
     var thisFetch = {
         useGet: useGet,
         url: url,
-        sendData: sendData,
+        sendData: sendData
     };
     var fetchParam = {
         method: useGet ? "GET" : "POST",
         headers: {
             "Content-Type": "application/json"
         },
-        credentials: "include",
-    }
+        credentials: "include"
+    };
     if (useGet) {
         if (sendData != null) {
             var str = '';
@@ -662,26 +733,21 @@ function nativeFetchJson(useGet, url, sendData) {
                 url += '?' + str;
             }
         }
-    }
-    else {
+    } else {
         fetchParam.body = JSON.stringify(sendData);
     }
 
-    return fetch(url, fetchParam).then(
-        response => {
-            if (response.ok) {
-                return response.json();
-            }
-            else {
-                var errObj = createError(response.statusText, ErrType.NORESPONSE, thisFetch);
-                return { err: errObj };
-            }
-        },
-        error => {
-            var errObj = createError(error.toString(), ErrType.NORESPONSE, thisFetch);
+    return fetch(url, fetchParam).then(function (response) {
+        if (response.ok) {
+            return response.json();
+        } else {
+            var errObj = createError(response.statusText, ErrType.NORESPONSE);
             return { err: errObj };
         }
-    ).then(json => {
+    }, function (error) {
+        var errObj = createError(error.toString(), ErrType.NORESPONSE);
+        return { err: errObj };
+    }).then(function (json) {
         return json;
     });
 }
@@ -696,6 +762,9 @@ function getNumberFromCookies(identity, defaultVal) {
 }
 
 function getStateByPath(state, path, def) {
+    if (state == null) {
+        return def;
+    }
     var t_arr = path.split('.');
     var nowState = state;
     for (var si in t_arr) {
@@ -734,8 +803,7 @@ function setStateByPath(state, path, value, visited) {
                 newStateName = preStateName;
                 newStateValue = {};
                 newStateValue[name] = value;
-            }
-            else {
+            } else {
                 nowState[name] = value;
             }
             break;
@@ -747,13 +815,11 @@ function setStateByPath(state, path, value, visited) {
                 nowState = {};
                 newStateValue = {};
                 newStateValue[name] = nowState;
-            }
-            else {
+            } else {
                 nowState[name] = {};
                 nowState = nowState[name];
             }
-        }
-        else {
+        } else {
             preState = nowState;
             preStateName = name;
             nowState = nowState[name];
@@ -762,18 +828,17 @@ function setStateByPath(state, path, value, visited) {
     var retState = null;
     if (preStateName == null) {
         retState = Object.assign({}, state, newStateValue);
-    }
-    else {
+    } else {
         newStateParent[newStateName] = updateObject(newStateParent[newStateName], newStateValue);
         retState = state;
     }
     var delayActs = {};
     retState = aStateChanged(retState, path, value, oldValue, visited == null ? {} : visited, delayActs);
     if (!IsEmptyObject(delayActs)) {
-        setTimeout(() => {
+        setTimeout(function () {
             for (var acti in delayActs) {
                 var theAct = delayActs[acti];
-                if (typeof (theAct.callfun) === 'function') {
+                if (typeof theAct.callfun === 'function') {
                     theAct.callfun.apply(theAct.thisParam ? theAct.thisParam : window, theAct.params_arr);
                 }
             }
@@ -834,21 +899,18 @@ function setManyStateByPath(state, path, valuesObj, visited) {
             name = t_arr[i];
             if (i >= len - 1) {
                 if (value != nowState[name]) {
-                    changed_arr.push(
-                        {
-                            path: valueParentPath + '.' + name,
-                            name: name,
-                            oldValue: nowState[name],
-                            newValue: value,
-                            state: nowState,
-                            preState: aidPidPreState,
-                            preStateName: aidPreStateName,
-                            parentPath: valueParentPath,
-                        }
-                    );
+                    changed_arr.push({
+                        path: valueParentPath + '.' + name,
+                        name: name,
+                        oldValue: nowState[name],
+                        newValue: value,
+                        state: nowState,
+                        preState: aidPidPreState,
+                        preStateName: aidPreStateName,
+                        parentPath: valueParentPath
+                    });
                 }
-            }
-            else {
+            } else {
                 valueParentPath += (valueParentPath.length == 0 ? '' : '.') + name;
                 if (nowState[name] == null) {
                     nowState[name] = {};
@@ -907,15 +969,14 @@ function setManyStateByPath(state, path, valuesObj, visited) {
     var delayActs = {};
     for (i in changed_arr) {
         var changedInfo = changed_arr[i];
-        if (changedInfo.changed == false)
-            continue;
+        if (changedInfo.changed == false) continue;
         retState = aStateChanged(retState, changedInfo.path, changedInfo.newValue, changedInfo.oldValue, visited, delayActs);
     }
     if (!IsEmptyObject(delayActs)) {
-        setTimeout(() => {
+        setTimeout(function () {
             for (var acti in delayActs) {
                 var theAct = delayActs[acti];
-                if (typeof (theAct.callfun) === 'function') {
+                if (typeof theAct.callfun === 'function') {
                     theAct.callfun.apply(theAct.thisParam ? theAct.thisParam : window, theAct.params_arr);
                 }
             }
@@ -924,7 +985,10 @@ function setManyStateByPath(state, path, valuesObj, visited) {
     return retState == state ? Object.assign({}, retState) : retState;
 }
 
-function aStateChanged(state, path, newValue, oldValue, visited = {}, delayActs) {
+function aStateChanged(state, path, newValue, oldValue) {
+    var visited = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
+    var delayActs = arguments[5];
+
     if (visited[path] != null) {
         console.error('aStateChanged回路访问:' + path);
     }
@@ -952,8 +1016,7 @@ function aStateChanged(state, path, newValue, oldValue, visited = {}, delayActs)
 function MakePath() {
     var rlt = '';
     for (var i = 0; i < arguments.length; ++i) {
-        if (arguments[i] == null || arguments[i].length == 0)
-            continue;
+        if (arguments[i] == null || arguments[i].length == 0) continue;
         rlt += (rlt.length == 0 ? '' : '.') + arguments[i];
     }
     return rlt;
@@ -985,7 +1048,7 @@ function fetchBeginHandler(state, action) {
             retState = setManyStateByPath(retState, propPath, {
                 fetching: true,
                 fetchingpropname: triggerData.propName,
-                fetchingErr: null,
+                fetchingErr: null
             });
         }
     }
@@ -1023,15 +1086,14 @@ function fetchEndHandler(state, action) {
             var newFetchState = Object.assign({}, retState.ui.fetchState);
             newFetchState.err = action.err;
             retState.ui.fetchState = newFetchState;
-        }
-        else {
+        } else {
             if (triggerData) {
                 if (triggerData.base != null && triggerData.id != null) {
                     var propPath = MakePath(triggerData.base, triggerData.id);
-                    if(!discardResult){
+                    if (!discardResult) {
                         retState = setManyStateByPath(retState, propPath, {
                             fetching: false,
-                            fetchingErr: action.err,
+                            fetchingErr: action.err
                         });
                     }
                 }
@@ -1039,23 +1101,22 @@ function fetchEndHandler(state, action) {
         }
         if (triggerData) {
             if (triggerData.callBack) {
-                if(!discardResult){
-                    var callbackret = triggerData.callBack(retState, null, action.err);
+                if (!discardResult) {
+                    var callbackret = triggerData.callBack(retState, null, action.err, action.fetchData.useTime);
                     if (callbackret != null) {
                         retState = callbackret;
                     }
                 }
-            }
-            else if (action.key == EFetchKey.FetchPropValue) {
+            } else if (action.key == EFetchKey.FetchPropValue) {
                 var ftpProp = triggerData;
                 var ftpKey = ftpProp.id + '_' + ftpProp.propName;
                 needSetState = {};
                 var fetching_arr = gFetchingProp[ftpKey];
-                var hited = fetching_arr.find(x => {
+                var hited = fetching_arr.find(function (x) {
                     return ObjIsEqual(x.bundle, action.fetchData.sendData.bundle);
                 });
-                if(!discardResult){
-                    hited.queues_arr.forEach(x => {
+                if (!discardResult) {
+                    hited.queues_arr.forEach(function (x) {
                         needSetState[MakePath(x.base, x.id, 'fetching')] = false;
                         needSetState[MakePath(x.base, x.id, 'fetchingErr')] = action.err;
                     });
@@ -1082,9 +1143,11 @@ function fetchEndHandler(state, action) {
     var tPath;
     switch (action.key) {
         case 'pageloaded':
-            setTimeout(() => {
-                store.dispatch({ type: AT_PAGELOADED });
-            }, 50);
+            if (!gDingDingIniting) {
+                setTimeout(function () {
+                    store.dispatch({ type: AT_PAGELOADED });
+                }, 50);
+            }
             return Object.assign({}, retState, { loaded: true });
         case EFetchKey.FetchPropValue:
             {
@@ -1092,11 +1155,11 @@ function fetchEndHandler(state, action) {
                 var ftpKey = ftpProp.id + '_' + ftpProp.propName;
                 needSetState = {};
                 var fetching_arr = gFetchingProp[ftpKey];
-                var hited = fetching_arr.find(x => {
+                var hited = fetching_arr.find(function (x) {
                     return ObjIsEqual(x.bundle, action.fetchData.sendData.bundle);
                 });
                 needSetState[MakePath(triggerData.base, triggerData.id, triggerData.propName)] = action.json.data;
-                hited.queues_arr.forEach(x => {
+                hited.queues_arr.forEach(function (x) {
                     needSetState[MakePath(x.base, x.id, x.propName)] = action.json.data;
                     needSetState[MakePath(x.base, x.id, 'fetching')] = false;
                     needSetState[MakePath(x.base, x.id, 'fetchingErr')] = null;
@@ -1106,7 +1169,7 @@ function fetchEndHandler(state, action) {
             }
         default:
             if (triggerData.callBack) {
-                var callbackret = triggerData.callBack(retState, action.json.data);
+                var callbackret = triggerData.callBack(retState, action.json.data, null, action.fetchData.useTime);
                 if (callbackret != null) {
                     retState = callbackret;
                 }
@@ -1116,12 +1179,12 @@ function fetchEndHandler(state, action) {
     return retState == state ? Object.assign({}, retState) : retState;
 }
 
-
 var baseReducerSetting = {
     AT_FETCHBEGIN: fetchBeginHandler,
     AT_FETCHEND: fetchEndHandler,
     AT_SETSTATEBYPATH: setStateByPathHandler,
     AT_SETMANYSTATEBYPATH: setManyStateByPathHandler,
+    AT_SETROOTSTATE: setRootStateHandler
 };
 
 function baseRenderLoadingTip() {
@@ -1131,59 +1194,101 @@ function baseRenderLoadingTip() {
     var fetchState = this.props.fetchState;
     var tipElem = null;
     if (fetchState.err == null) {
-        tipElem = (<div className='d-flex align-items-center'>
-            <i className='fa fa-spinner fa-pulse fa-fw fa-3x' />
-            {fetchState.tip}
-        </div>)
+        tipElem = React.createElement(
+            'div',
+            { className: 'd-flex align-items-center' },
+            React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw fa-3x' }),
+            fetchState.tip
+        );
+    } else {
+        tipElem = React.createElement(
+            React.Fragment,
+            null,
+            React.createElement(
+                'div',
+                { className: 'bg-danger text-light d-flex d-flex align-items-center' },
+                React.createElement('i', { className: 'fa fa-warning fa-2x' }),
+                React.createElement(
+                    'h3',
+                    null,
+                    '\u9519\u8BEF'
+                )
+            ),
+            React.createElement('div', { className: 'dropdown-divider' }),
+            React.createElement(
+                'div',
+                { className: 'd-flex align-items-center' },
+                fetchState.err.info
+            ),
+            React.createElement(
+                'button',
+                { onClick: this.props.clickLoadingErrorBtn, type: 'button', className: 'btn btn-danger' },
+                '\u77E5\u9053\u4E86'
+            )
+        );
     }
-    else {
-        tipElem = (<React.Fragment>
-            <div className='bg-danger text-light d-flex d-flex align-items-center'><i className='fa fa-warning fa-2x' /><h3>错误</h3></div>
-            <div className='dropdown-divider' />
-            <div className='d-flex align-items-center'>
-                {fetchState.err.info}
-            </div>
-            <button onClick={this.props.clickLoadingErrorBtn} type='button' className='btn btn-danger'>知道了</button>
-        </React.Fragment>);
-    }
-    return (<div className='loadingTipBG'>
-        <div className='loadingTip bg-light rounded d-flex flex-column'>
-            {tipElem}
-        </div>
-    </div>);
-}
-
-function renderFetcingTipDiv(tipstr = '数据加载中') {
-    return (
-        <div className='w-100 h-100 flex-grow-1 d-flex align-items-center'>
-            <div className='m-auto d-flex align-items-center border rounded'>
-                <i className='fa fa-spinner fa-pulse fa-fw fa-2x' />
-                <div className='text-nowrap'>{tipstr}</div>
-            </div>
-        </div>
+    return React.createElement(
+        'div',
+        { className: 'loadingTipBG' },
+        React.createElement(
+            'div',
+            { className: 'loadingTip bg-light rounded d-flex flex-column' },
+            tipElem
+        )
     );
 }
 
+function renderFetcingTipDiv() {
+    var tipstr = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '数据加载中';
+
+    return React.createElement(
+        'div',
+        { className: 'w-100 h-100 flex-grow-1 d-flex align-items-center' },
+        React.createElement(
+            'div',
+            { className: 'm-auto d-flex align-items-center border rounded' },
+            React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw fa-2x' }),
+            React.createElement(
+                'div',
+                { className: 'text-nowrap' },
+                tipstr
+            )
+        )
+    );
+}
 
 function renderFetcingErrDiv(errInfo) {
-    return (
-        <div className='w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch'>
-            <div className='m-auto d-flex align-items-center border rounded text-danger flex-shrink-0 mw-100'>
-                <i className='fa fa-warning fa-fw fa-2x' />
-                <div className='text'>出错了:{errInfo}</div>
-            </div>
-        </div>
+    return React.createElement(
+        'div',
+        { className: 'w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch' },
+        React.createElement(
+            'div',
+            { className: 'm-auto d-flex align-items-center border rounded text-danger flex-shrink-0 mw-100' },
+            React.createElement('i', { className: 'fa fa-warning fa-fw fa-2x' }),
+            React.createElement(
+                'div',
+                { className: 'text' },
+                '\u51FA\u9519\u4E86:',
+                errInfo
+            )
+        )
     );
 }
 
 function renderInvalidBundleDiv() {
-    return (
-        <div className='w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch'>
-            <div className='m-auto d-flex align-items-center border rounded flex-shrink-0 mw-100'>
-                <i className='fa fa-warning fa-fw fa-2x' />
-                <div className='text'>前置条件不足</div>
-            </div>
-        </div>
+    return React.createElement(
+        'div',
+        { className: 'w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch' },
+        React.createElement(
+            'div',
+            { className: 'm-auto d-flex align-items-center border rounded flex-shrink-0 mw-100' },
+            React.createElement('i', { className: 'fa fa-warning fa-fw fa-2x' }),
+            React.createElement(
+                'div',
+                { className: 'text' },
+                '\u524D\u7F6E\u6761\u4EF6\u4E0D\u8DB3'
+            )
+        )
     );
 }
 
@@ -1200,14 +1305,18 @@ function getFormatDateString(date) {
     return y + (m < 10 ? '-0' : '-') + m + (d < 10 ? '-0' : '-') + d;
 }
 
-function getFormatTimeString(date, hadSec = true) {
+function getFormatTimeString(date) {
+    var hadSec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
     var h = date.getHours();
     var m = date.getMinutes();
     var s = date.getSeconds();
     return (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m + (hadSec ? (s < 10 ? ':0' : ':') + s : '');
 }
 
-function getFormatDateTimeString(date, hadSec = true) {
+function getFormatDateTimeString(date) {
+    var hadSec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
     var y = date.getFullYear();
     var month = date.getMonth() + 1;
     var d = date.getDate();
@@ -1218,7 +1327,9 @@ function getFormatDateTimeString(date, hadSec = true) {
     return y + (month < 10 ? '-0' : '-') + month + (d < 10 ? '-0' : '-') + d + ' ' + (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m + (hadSec ? (s < 10 ? ':0' : ':') + s : '');
 }
 
-function getFullFormatDateString(date, hadSec = true) {
+function getFullFormatDateString(date) {
+    var hadSec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
     var y = date.getFullYear();
     var m = date.getMonth() + 1;
     var d = date.getDate();
@@ -1235,13 +1346,11 @@ function simpleFreshFormFun(retState, records_arr, formFullID, directBindFun) {
     var needSetState = {};
     if (records_arr == null || records_arr.length == 0) {
         needSetState.recordIndex = -1;
-    }
-    else {
+    } else {
         var useIndex = formState.recordIndex == null ? 0 : parseInt(formState.recordIndex);
         if (useIndex >= records_arr.length) {
             useIndex = records_arr.length - 1;
-        }
-        else if (useIndex <= -1) {
+        } else if (useIndex <= -1) {
             useIndex = 0;
         }
         needSetState.recordIndex = useIndex;
@@ -1249,6 +1358,29 @@ function simpleFreshFormFun(retState, records_arr, formFullID, directBindFun) {
     if (formState.recordIndex == useIndex) {
         if (directBindFun != null) {
             return directBindFun(retState, useIndex, formState.recordIndex, formFullID);
+        }
+        return retState;
+    }
+    return setManyStateByPath(retState, formFullID, needSetState);
+}
+
+function simpleFreshFormFun2(retState, records_arr, formFullID, rowChangedFun, visited, delayActs, rowIndexInfo_map) {
+    var formState = getStateByPath(retState, formFullID);
+    var needSetState = {};
+    if (records_arr == null || records_arr.length == 0) {
+        needSetState.recordIndex = -1;
+    } else {
+        var useIndex = formState.recordIndex == null ? 0 : parseInt(formState.recordIndex);
+        if (useIndex >= records_arr.length) {
+            useIndex = records_arr.length - 1;
+        } else if (useIndex <= -1) {
+            useIndex = 0;
+        }
+        needSetState.recordIndex = useIndex;
+    }
+    if (formState.recordIndex == useIndex) {
+        if (rowChangedFun != null) {
+            return rowChangedFun(retState, useIndex, useIndex, formFullID + '.recordIndex', visited, delayActs, rowIndexInfo_map);
         }
         return retState;
     }
@@ -1280,7 +1412,12 @@ function getQueryVariable(variable, defVal) {
     var vars = query.split("&");
     for (var i = 0; i < vars.length; i++) {
         var pair = vars[i].split("=");
-        if (pair[0] == variable) { return pair[1]; }
+        if (pair[0] == variable) {
+            if (pair[1].length > 2 && pair[1][0] == '{') {
+                return JSON.parse(decodeURI(pair[1]));
+            }
+            return pair[1];
+        }
     }
     return defVal;
 }
@@ -1312,21 +1449,18 @@ function FormatStringValue(val, type, precision) {
         case 'datetime':
             if (!checkDate(val)) {
                 rlt = '';
-            }
-            else if (val.length > 10) {
-                var theDate = new Date(val)
+            } else if (val.length > 10) {
+                var theDate = new Date(val);
                 rlt = getFormatDateString(theDate) + (type == 'datetime' ? ' ' + getFormatTimeString(theDate) : '');
             }
             break;
         case 'dateMD':
             if (typeof val == 'string' && val.length == 5) {
                 rlt = val;
-            }
-            else if (!checkDate(val)) {
+            } else if (!checkDate(val)) {
                 rlt = '';
-            }
-            else if (val.length > 10) {
-                var theDate = new Date(val)
+            } else if (val.length > 10) {
+                var theDate = new Date(val);
                 rlt = getFormatDateString_MD(theDate);
             }
             break;
@@ -1334,8 +1468,7 @@ function FormatStringValue(val, type, precision) {
             if (val && val.length > 8 && checkDate(val)) {
                 var regRlt = gTimeReg.exec(val);
                 return regRlt[0];
-            }
-            else if (!checkTime(val)) {
+            } else if (!checkTime(val)) {
                 rlt = '';
             }
             break;
@@ -1347,7 +1480,7 @@ function plainClone(obj) {
     var rlt = {};
     for (var s in obj) {
         var v = obj[s];
-        switch (typeof v) {
+        switch (typeof v === 'undefined' ? 'undefined' : _typeof(v)) {
             case 'boolean':
             case 'number':
             case 'string':
@@ -1401,8 +1534,7 @@ function getRowIndexMapFromPath(path) {
             newPatchs_arr.push(patch);
         }
         rowIndexInfo_map.newPath = newPatchs_arr.join('.');
-    }
-    else {
+    } else {
         rowIndexInfo_map.newPath = path;
     }
     return rowIndexInfo_map;
@@ -1413,15 +1545,18 @@ function getParentPathByKey(orginPath, key) {
     if (index == -1) {
         return '';
     }
+    /*
     var endPos = orginPath.indexOf('.', index + 1);
     if (endPos == -1) {
         endPos = orginPath.length;
     }
-    return orginPath.substring(0, endPos);
+    */
+    return orginPath.substring(0, index) + key;
 }
 
-function getBelongUserCtlPath(orginPath) {
-    var index = orginPath.lastIndexOf('UserControl');
+function getBelongUserCtlPath(orginPath, fromId) {
+    var lastDostPos = fromId ? orginPath.lastIndexOf(fromId) - fromId.length : orginPath.length;
+    var index = orginPath.lastIndexOf('.UserControl', lastDostPos);
     if (index == -1) {
         return '';
     }
@@ -1447,16 +1582,232 @@ function getBelongUserCtlProfile(orginPath) {
         parentPath: orginPath.substring(0, endPos),
         ctlID: ctlID,
         classID: classID,
-        statePath: classID + orginPath.substr(endPos),
+        statePath: classID + orginPath.substr(endPos)
     };
 }
 
 function CombineDotStr() {
     var rlt = '';
     for (var i = 0; i < arguments.length; ++i) {
-        if (arguments[i] == null || arguments[i].length == 0)
-            continue;
+        if (arguments[i] == null || arguments[i].length == 0) continue;
         rlt += (rlt.length == 0 ? '' : '.') + arguments[i];
     }
     return rlt;
+}
+
+// getday
+var gWeekDayName_arr = ["日", "一", "二", "三", "四", "五", "六"];
+function getweekDay(date) {
+    if (typeof date === 'string') {
+        date = castDate(date);
+    }
+    return "星期" + gWeekDayName_arr[date.getDay()];
+}
+
+//格式化数字加逗号
+function addComma(num) {
+    var reg = num.toString().indexOf('.') > -1 ? /(\d)(?=(\d{3})+\.)/g : /(\d)(?=(\d{3})+$)/g;
+    return num.toString().replace(reg, '$1,');
+}
+
+//数字转中文
+function NumToChinese(n) {
+    for (i = n.length - 1; i >= 0; i--) {
+        n = n.replace(",", ""); //替换Num中的“,” 替换Num中的空格
+        n = n.replace(" ", "");
+    }
+
+    if (isNaN(n)) {
+        return "请检查输入金额是否正确";
+    }
+    if (!/^(0|[1-9]\d*)(\.\d+)?$/.test(n)) {
+        return "数据非法"; //判断数据是否大于0
+    }
+
+    var unit = "千百拾亿千百拾万千百拾元角分",
+        str = "";
+    n += "00";
+
+    var indexpoint = n.indexOf('.'); // 如果是小数，截取小数点前面的位数
+    if (indexpoint > 12) {
+        return '数据过大';
+    }
+    if (indexpoint < 0 && n.length > 14) {
+        return '数据过大';
+    }
+    if (indexpoint >= 0) {
+
+        n = n.substring(0, indexpoint) + n.substr(indexpoint + 1, 2); // 若为小数，截取需要使用的unit单位
+    }
+
+    unit = unit.substr(unit.length - n.length); // 若为整数，截取需要使用的unit单位
+    for (var i = 0; i < n.length; i++) {
+        str += "零壹贰叁肆伍陆柒捌玖".charAt(n.charAt(i)) + unit.charAt(i); //遍历转化为大写的数字
+    }
+    var result = str.replace(/零(千|百|拾|角)/g, "零").replace(/(零)+/g, "零").replace(/零(万|亿|元)/g, "$1").replace(/(亿)万|壹(拾)/g, "$1$2").replace(/^元零?|零分/g, "").replace(/元$/g, "元整"); // 替换掉数字里面的零字符，得到结果
+    return result;
+}
+
+function Convert_TimeZone(time, zoneSrc, zoneDst) {
+    var firsttime;
+    if (typeof time === 'string') {
+        firsttime = castDateFromTimePart(time);
+    }
+    var time = firsttime.getTime();
+    var offset = 0;
+    zoneSrc = parseInt(zoneSrc);
+    zoneDst = parseInt(zoneDst);
+    offset = -zoneSrc + zoneDst;
+    return new Date(Firsttime.setTime(datetime + 1000 * 60 * 60 * offset));
+}
+
+var gDingDingIniting = false;
+
+function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
+    if (gPageInFrame) {
+        gDingDingIniting = true;
+        dingdingKit = gParentDingKit;
+        isInDingTalk = gParentIsInDingTalk;
+        store.dispatch({ type: AT_PAGELOADED });
+        callBack();
+        return;
+    }
+    if (isMobile) {
+        dingdingKit = dd;
+        isInDingTalk = dd.env.platform != 'notInDingTalk';
+        var jsapiArr = ['runtime.info', 'device.notification.prompt', 'device.notification.confirm', 'device.notification.alert', 'device.notification.toast', 'biz.navigation.close', 'biz.ding.post', 'biz.navigation.setRight', 'biz.navigation.setTitle'];
+        if (mobileAppendApi_arr) {
+            jsapiArr = jsapiArr.concat(mobileAppendApi_arr);
+        }
+
+        dd.config({
+            agentId: "29816043",
+            corpId: theCorpId,
+            timeStamp: pTimeStamp,
+            nonceStr: pNonceStr,
+            signature: pSignature,
+            jsApiList: jsapiArr
+        });
+    } else {
+        dingdingKit = DingTalkPC;
+        isInDingTalk = dingdingKit.ua.isInDingTalk;
+        var jsapiArr = ['device.notification.alert', 'device.notification.confirm', 'device.notification.toast', 'biz.navigation.close', 'runtime.permission.requestAuthCode', 'biz.ding.post'];
+        if (pcAppendApi_arr) {
+            jsapiArr = jsapiArr.concat(pcAppendApi_arr);
+        }
+        DingTalkPC.config({
+            agentId: "29816043",
+            corpId: theCorpId,
+            timeStamp: pTimeStamp,
+            nonceStr: pNonceStr,
+            signature: pSignature,
+            jsApiList: jsapiArr
+        });
+    }
+    if (!isProduction || !isInDingTalk) {
+        callBack();
+        return;
+    }
+    gDingDingIniting = true;
+    dingdingKit.error(function (err) {
+        alert('出错了:' + JSON.stringify(err));
+    });
+    dingdingKit.ready(function () {
+        store.dispatch({ type: AT_PAGELOADED });
+        callBack();
+    });
+}
+
+function pickLocation(successAct, failAct) {
+    if (failAct == null) {
+        failAct = function failAct(err) {
+            myApp.alert(JSON.stringify(err), "获取位置失败");
+        };
+    }
+
+    if (!isMobile) {
+        if (failAct != null) {
+            failAct('需要在手机端使用');
+        }
+        return;
+    }
+
+    dingdingKit.biz.map.locate({
+        onSuccess: successAct,
+        onFail: failAct
+    });
+}
+
+function gGetNowLocation(successAct, failAct) {
+    if (!isMobile) {
+        failAct();
+        return;
+    }
+    dd.device.geolocation.get({
+        targetAccuracy: 100,
+        coordinate: 1,
+        withReGeocode: false,
+        onSuccess: successAct,
+        onFail: failAct
+    });
+}
+
+function DynamicLoadJs(url, callback) {
+    var script = document.createElement('script');
+    script.type = "text/javascript";
+    if (typeof callback != "undefined") {
+        if (script.readyState) {
+            script.onreadystatechange = function () {
+                if (script.readyState == "loaded" || script.readyState == "complete") {
+                    script.onreadystatechange = null;
+                    callback();
+                }
+            };
+        } else {
+            script.onload = function () {
+                callback();
+            };
+        }
+    }
+    script.src = url;
+    document.body.appendChild(script);
+}
+
+var AMapJsLoaded = false;
+var gAMapCallBacks_arr = [];
+
+function Regeocoder(lat, lon, callBack) {
+    if (!AMapJsLoaded) {
+        gAMapCallBacks_arr.push({
+            lat: lat,
+            lon: lon,
+            callBack: callBack
+        });
+        if (gAMapCallBacks_arr.length == 1) {
+            DynamicLoadJs('http://webapi.amap.com/maps?v=1.4.3&key=1ca423f502c4a4d054c8d0572847a623&plugin=AMap.Geocoder', function () {
+                AMapJsLoaded = true;
+                gAMapCallBacks_arr.forEach(function (p) {
+                    __regeocoder(p.lat, p.lon, p.callBack);
+                });
+            });
+        }
+        return;
+    }
+    __regeocoder(lat, lon, callBack);
+}
+
+function __regeocoder(lat, lon, callBack) {
+    var geocoder = new AMap.Geocoder({
+        radius: 200,
+        extensions: "all"
+    });
+    lat = Math.round(lat * 1000000) / 1000000;
+    lon = Math.round(lon * 1000000) / 1000000;
+    geocoder.getAddress([lon, lat], function (status, result) {
+        if (status === 'complete' && result.info === 'OK') {
+            callBack(result);
+        } else {
+            callBack(null);
+        }
+    });
 }

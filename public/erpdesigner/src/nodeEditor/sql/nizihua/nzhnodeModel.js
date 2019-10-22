@@ -663,9 +663,11 @@ class SqlNode_In_Operator extends SqlNode_Base {
         }
         var firstLink = first_socketlinks[0];
         var firstoutNode = firstLink.outSocket.node;
+        /*
         if (this.checkCompileFlag(firstoutNode.type != SQLNODE_COLUMN, '第一个输入必须是列名', helper)) {
             return false;
         }
+        */
         var socketComRet = this.getSocketCompileValue(helper, first_socket, usePreNodes_arr, null);
         if (socketComRet.err) {
             return false;
