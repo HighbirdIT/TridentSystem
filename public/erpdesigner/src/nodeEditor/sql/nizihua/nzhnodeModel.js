@@ -995,6 +995,7 @@ class SqlNode_CaseWhen extends SqlNode_Base {
         if (this.inputScokets_arr.length == 0) {
             this.addSocket(new NodeSocket('input1', this, true, { type: SqlVarType_Scalar, inputable: false }));
             this.addSocket(new NodeSocket('input2', this, true, { type: SqlVarType_Scalar, inputable: false }));
+            this.addSocket(new NodeSocket('input3', this, true, { type: SqlVarType_Scalar, inputable: false }))
         }
         else {
             this.inputScokets_arr.forEach(socket => {
@@ -1002,7 +1003,7 @@ class SqlNode_CaseWhen extends SqlNode_Base {
                 socket.inputable = false;
             });
         }
-        var inputLabels_arr=['列名','变量'];
+        var inputLabels_arr=['列名','变量','自定义值'];
         this.inputScokets_arr.forEach((soket, i) => {
             soket.label = inputLabels_arr[i];
         });
@@ -1032,8 +1033,9 @@ class SqlNode_CaseWhen extends SqlNode_Base {
         for (var i = 0; i < this.inputScokets_arr.length; ++i) {
             var theSocket = this.inputScokets_arr[i];
             var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-            
-            if (tLinks.length == 0) {
+            var link = tLinks[0];
+            var input_value="'*'"
+            if (tLinks.length == 0 && i!=2) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle
                     , nodeThis
@@ -1041,8 +1043,7 @@ class SqlNode_CaseWhen extends SqlNode_Base {
                     , '输入不能为空']);
                 return false;
             }
-            else {
-                var link = tLinks[0];
+            else if (tLinks.length != 0){
                 var outNode = link.outSocket.node;
                 var compileRet = outNode.compile(helper, usePreNodes_arr);
                 if (compileRet == false) {
@@ -1050,13 +1051,15 @@ class SqlNode_CaseWhen extends SqlNode_Base {
                 }
                 if (i==0){
                     column_value=compileRet.getSocketOut(link.outSocket).strContent;
-                }else{
+                }else if(i==1){
                     tValue = compileRet.getSocketOut(link.outSocket).strContent;
+                }else if(i==2){
+                    input_value =compileRet.getSocketOut(link.outSocket).strContent;
                 }
             }
         }
         var finalSql = '';
-        finalSql = 'case when ' + tValue + "='*'" +' then 1 when ' +column_value+'=' +tValue+' then 1 else 0 end=1 ';
+        finalSql = 'case when ' + tValue + "=" +input_value+' then 1 when ' +column_value+'=' +tValue+' then 1 else 0 end=1 ';
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, ' ' + finalSql);
         helper.setCompileRetCache(this, selfCompileRet);
