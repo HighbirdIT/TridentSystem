@@ -5531,22 +5531,22 @@ class MobileContentCompiler extends ContentCompiler {
                         validKernelBlock.pushLine("if(validErr != null) hadValidErr = true;");
                         //checkVarValidStr += (checkVarValidStr.length == 0 ? 'IsEmptyString(' : ' || IsEmptyString(') + varName + ')';
                     });
-                    validBlock.pushLine('var _invalidstate={', 1);
-                    validBlock.pushLine(modifyStatePath(theKernel.getStatePath(VarNames.InvalidBundle), belongUserControl) + ':gPreconditionInvalidInfo,');
-                    validBlock.pushLine(modifyStatePath(theKernel.getStatePath(VarNames.Records_arr), belongUserControl) + ':[],');
+                    
+
+                    validBlock.pushLine('var _invalidstate={};');
+                    validBlock.pushLine('_invalidstate[' +modifyStatePath(theKernel.getStatePath(VarNames.InvalidBundle), belongUserControl) + ']=gPreconditionInvalidInfo;');
+                    validBlock.pushLine('_invalidstate[' +modifyStatePath(theKernel.getStatePath(VarNames.Records_arr), belongUserControl) + ']=[];');
                     if(theKernel.isPageForm()){
-                        validBlock.pushLine(modifyStatePath(theKernel.getStatePath(VarNames.RecordIndex), belongUserControl) + ':-1,');
+                        validBlock.pushLine('_invalidstate[' +modifyStatePath(theKernel.getStatePath(VarNames.RecordIndex), belongUserControl) + ']=-1;');
                     }
                     else{
                         if(selectMode == ESelectMode.Single){
-                            validBlock.pushLine(modifyStatePath(theKernel.getStatePath(VarNames.SelectedValue), belongUserControl) + ':null,');
+                            validBlock.pushLine('_invalidstate[' +modifyStatePath(theKernel.getStatePath(VarNames.SelectedValue), belongUserControl) + ']=null;');
                         }
                         else if(selectMode == ESelectMode.Multi){
-                            validBlock.pushLine(modifyStatePath(theKernel.getStatePath(VarNames.SelectedValues_arr), belongUserControl) + ':[],');
+                            validBlock.pushLine('_invalidstate[' +modifyStatePath(theKernel.getStatePath(VarNames.SelectedValues_arr), belongUserControl) + ']=[];');
                         }
                     }
-                    validBlock.subNextIndent();
-                    validBlock.pushLine('};');
                     var dispatchErrLine = "store.dispatch(makeAction_setManyStateByPath(_invalidstate,''));";
                     var setErrStateLine = makeStr_AddAll('return setManyStateByPath(', VarNames.State, ",'',_invalidstate);");
                     if (checkVarValidStr.length > 0) {
