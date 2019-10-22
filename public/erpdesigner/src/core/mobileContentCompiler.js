@@ -38,9 +38,10 @@ class ControlGraphPath {
 }
 
 class ControlRelyOnGraph {
-    constructor() {
+    constructor(compiler) {
         this.allpath_map = {};
         this.allgraph_map = {};
+        this.compiler = compiler;
     }
 
     addRely_setAPOnBPChanged(relyCtl, relyPropName, berelyCtl, berelyPropName, approach) {
@@ -101,7 +102,7 @@ class MobileContentCompiler extends ContentCompiler {
         var logManager = project.logManager;
         this.compileChain = [];
         this.compiledScriptBP_map = {};
-        this.ctlRelyOnGraph = new ControlRelyOnGraph();
+        this.ctlRelyOnGraph = new ControlRelyOnGraph(this);
 
         var theSwicth = new JSFile_Switch('switchpage', makeStr_ThisProp(VarNames.NowPage));
         this.appRenderSwicth = theSwicth;
@@ -1538,6 +1539,7 @@ class MobileContentCompiler extends ContentCompiler {
                     useThisFormData = useFormData;
                 }
                 var useControl = !IsEmptyObject(useFormData.useControls_map);
+                var useColumn = !IsEmptyObject(useFormData.useColumns_map);
                 if (useControl) {
                     bindMode = ScriptBindMode.OnRelAttrChanged;
                     for (cid in useFormData.useControls_map) {
@@ -1561,6 +1563,14 @@ class MobileContentCompiler extends ContentCompiler {
                                     funName: scriptCompileRet.name
                                 });
                             }
+                        }
+                    }
+                    else if(useFormData.formKernel.isPageForm()){
+                        if(useColumn){
+                            bindMode = ScriptBindMode.OnRelAttrChanged;
+                            this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, stateName, useFormData.formKernel, VarNames.RecordIndex, {
+                                funName: scriptCompileRet.name
+                            });
                         }
                     }
                     else {
@@ -2299,7 +2309,7 @@ class MobileContentCompiler extends ContentCompiler {
         formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, AttrNames.Title), makeStr_DotProp(VarNames.CtlState, AttrNames.Title) + ' == null ? ownprops.title : ' + makeStr_DotProp(VarNames.CtlState, AttrNames.Title)));
 
 
-        var freshFun = clientSide.scope.getFunction(makeFName_freshForm(theKernel), true, [VarNames.ReState, VarNames.Records_arr, VarNames.OldValue, VarNames.SatePath]);
+        var freshFun = clientSide.scope.getFunction(makeFName_freshForm(theKernel), true, [VarNames.ReState, VarNames.Records_arr, VarNames.OldValue, VarNames.SatePath, 'visited', 'delayActs', 'rowIndexInfo_map']);
         freshFun.scope.getVar(pathVarName, true, makeStr_callFun('getParentPathByKey', [VarNames.SatePath, singleQuotesStr(theKernel.id)]));
         var bindFun = clientSide.scope.getFunction(makeFName_bindForm(theKernel), true, [VarNames.ReState, 'newIndex', 'oldIndex', VarNames.SatePath]);
         bindFun.scope.getVar(pathVarName, true, makeStr_callFun('getParentPathByKey', [VarNames.SatePath, singleQuotesStr(theKernel.id)]));
@@ -2352,7 +2362,7 @@ class MobileContentCompiler extends ContentCompiler {
                 else {
                     clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath, VarNames.RecordIndex))] = recordIndexchangedFunName + '.bind(window)';
                 }
-                freshFun.pushLine(makeStr_callFun('simpleFreshFormFun', [VarNames.ReState, VarNames.Records_arr, pathVarName, bindFun.name], ';'));
+                freshFun.pushLine(makeStr_callFun('simpleFreshFormFun2', [VarNames.ReState, VarNames.Records_arr, pathVarName, recordIndexchangedFunName, 'visited', 'delayActs', 'rowIndexInfo_map'], ';'));
             }
             if (isGridForm) {
                 if (belongUserControl) {
@@ -5246,6 +5256,8 @@ class MobileContentCompiler extends ContentCompiler {
         var autoPull = theKernel.getAttribute(AttrNames.AutoPull);
         var parentLabledCtl;
 
+        var selectMode = theKernel.getAttribute(AttrNames.SelectMode);
+
         var pullFun = midData.pullFun;
         var colName;
 
@@ -5519,9 +5531,24 @@ class MobileContentCompiler extends ContentCompiler {
                         validKernelBlock.pushLine("if(validErr != null) hadValidErr = true;");
                         //checkVarValidStr += (checkVarValidStr.length == 0 ? 'IsEmptyString(' : ' || IsEmptyString(') + varName + ')';
                     });
-                    var invalidBundleStatePath = modifyStatePath(theKernel.getStatePath(VarNames.InvalidBundle), belongUserControl);
-                    var dispatchErrLine = 'store.dispatch(makeAction_setStateByPath(gPreconditionInvalidInfo,' + invalidBundleStatePath + '));';
-                    var setErrStateLine = makeStr_AddAll('return setStateByPath(', VarNames.State, ',', invalidBundleStatePath, ",gPreconditionInvalidInfo);");
+                    validBlock.pushLine('var _invalidstate={', 1);
+                    validBlock.pushLine(modifyStatePath(theKernel.getStatePath(VarNames.InvalidBundle), belongUserControl) + ':gPreconditionInvalidInfo,');
+                    validBlock.pushLine(modifyStatePath(theKernel.getStatePath(VarNames.Records_arr), belongUserControl) + ':[],');
+                    if(theKernel.isPageForm()){
+                        validBlock.pushLine(modifyStatePath(theKernel.getStatePath(VarNames.RecordIndex), belongUserControl) + ':-1,');
+                    }
+                    else{
+                        if(selectMode == ESelectMode.Single){
+                            validBlock.pushLine(modifyStatePath(theKernel.getStatePath(VarNames.SelectedValue), belongUserControl) + ':null,');
+                        }
+                        else if(selectMode == ESelectMode.Multi){
+                            validBlock.pushLine(modifyStatePath(theKernel.getStatePath(VarNames.SelectedValues_arr), belongUserControl) + ':[],');
+                        }
+                    }
+                    validBlock.subNextIndent();
+                    validBlock.pushLine('};');
+                    var dispatchErrLine = "store.dispatch(makeAction_setManyStateByPath(_invalidstate,''));";
+                    var setErrStateLine = makeStr_AddAll('return setManyStateByPath(', VarNames.State, ",'',_invalidstate);");
                     if (checkVarValidStr.length > 0) {
                         var checkVarValidIf = new JSFile_IF('checkVar', checkVarValidStr);
                         validBlock.pushChild(checkVarValidIf);
@@ -5536,7 +5563,6 @@ class MobileContentCompiler extends ContentCompiler {
                     validKernelBlock.pushLine(setErrStateLine, -1);
                     validKernelBlock.pushLine('}');
                     validKernelBlock.pushLine('else{' + dispatchErrLine + ' return;}', -1);
-                    validKernelBlock.pushLine('return;');
                     validKernelBlock.subNextIndent();
                     validKernelBlock.pushLine('}');
                 }
