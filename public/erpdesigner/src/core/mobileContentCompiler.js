@@ -314,7 +314,7 @@ class MobileContentCompiler extends ContentCompiler {
                                 var sameReactKernelPathInitStr = sameReactKernel.isComplicatedPath() ? "getParentPathByKey(path,'" + sameReactKernel.id + "')" : singleQuotesStr(sameReactKernel.getStatePath(''));
                                 changedFun.scope.getVar(sameReactKernel.id + '_path', true, sameReactKernelPathInitStr);
                                 if (sameReactKernel != relyCtlReactParent) {
-                                    thirdParam += "+" + singleQuotesStr(relyCtlReactParent.getStatePath('', '.', null, true, sameReactKernel));
+                                    thirdParam += "+" + singleQuotesStr('.' + relyCtlReactParent.getStatePath('', '.', null, true, sameReactKernel));
                                 }
                                 getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State, 'null', thirdParam]);
                             }
@@ -536,7 +536,7 @@ class MobileContentCompiler extends ContentCompiler {
         var ctlPathParamName = 'ctlFullPath';
         ctlInitFun = clientSide.scope.getFunction('init' + userCtlKernel.id, true, [VarNames.State, ctlPathParamName]);
         ctlInitFun.scope.getVar(VarNames.NeedSetState, true, '{}');
-        ctlInitFun.scope.getVar(userCtlKernel.id + '_state', true, makeStr_callFun('getStateByPath', [VarNames.State, ctlPathParamName]));
+        ctlInitFun.scope.getVar(userCtlKernel.id + '_state', true, makeStr_callFun('getStateByPath', [VarNames.State, ctlPathParamName,'{}']));
         controlReactClass.initFun = ctlInitFun;
         ctlInitFun.retBlock.pushLine(makeLine_Return(VarNames.State));
 
@@ -1567,10 +1567,12 @@ class MobileContentCompiler extends ContentCompiler {
                     }
                     else if(useFormData.formKernel.isPageForm()){
                         if(useColumn){
-                            bindMode = ScriptBindMode.OnRelAttrChanged;
-                            this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, stateName, useFormData.formKernel, VarNames.RecordIndex, {
-                                funName: scriptCompileRet.name
-                            });
+                            if(belongFormKernel == null || belongFormKernel.id != formID){
+                                bindMode = ScriptBindMode.OnRelAttrChanged;
+                                this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, stateName, useFormData.formKernel, VarNames.RecordIndex, {
+                                    funName: scriptCompileRet.name
+                                });
+                            }
                         }
                     }
                     else {

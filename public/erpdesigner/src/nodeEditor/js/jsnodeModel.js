@@ -1180,13 +1180,15 @@ class JSNode_BluePrint extends EventEmitter {
                     // 静默模式下前置条件不足的提示也不要了
                     checkVarValidIf.trueBlock.pushLine("hadValidErr = true;");
                 }
-                if (IsEmptyString(defRetValue)) {
-                    checkVarValidIf.trueBlock.pushLine("return callback_final(state, null, {info:gPreconditionInvalidInfo});");
+                else{
+                    if(IsEmptyString(defRetValue)){
+                        checkVarValidIf.trueBlock.pushLine("callback_final(state, null, {info:gPreconditionInvalidInfo});");
+                        checkVarValidIf.trueBlock.pushLine('return;');
+                    }
+                    else{
+                        checkVarValidIf.trueBlock.pushLine('return ' + defRetValue + ';');
+                    }
                 }
-                else {
-                    checkVarValidIf.trueBlock.pushLine("return callback_final(state, " + defRetValue + ");");
-                }
-
             }
             theFun.headBlock.pushChild(validKernelBlock);
             var stateParam = 'null';
@@ -1196,7 +1198,16 @@ class JSNode_BluePrint extends EventEmitter {
                     break;
             }
             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
-                theFun.headBlock.pushLine("if(hadValidErr){callback_final(" + stateParam + ", null, {info:gPreconditionInvalidInfo});return " + defRetValue + ";}");
+                theFun.headBlock.pushLine("if(hadValidErr){",1);
+                if(IsEmptyString(defRetValue)){
+                    theFun.headBlock.pushLine("callback_final(" + stateParam + ", null, {info:gPreconditionInvalidInfo});");
+                    theFun.headBlock.pushLine('return;');
+                }
+                else{
+                    theFun.headBlock.pushLine('return ' + defRetValue + ';');
+                }
+                theFun.headBlock.subNextIndent();
+                theFun.headBlock.pushLine('}');
             }
             else {
                 theFun.headBlock.pushLine("if(hadValidErr){return callback_final(" + stateParam + ", null, {info:gPreconditionInvalidInfo});}");
@@ -9615,7 +9626,7 @@ class JSNode_Attachment_Pro extends JSNode_Base {
             }
         }
 
-        if(this.serverFlowSocket){
+        if (this.serverFlowSocket) {
             this.serverFlowSocket.label = 'server';
         }
 
