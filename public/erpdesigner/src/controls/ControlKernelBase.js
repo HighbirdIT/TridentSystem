@@ -501,10 +501,27 @@ class ControlKernelBase extends IAttributeable {
         if(rlt.editor && (!needFilt || rlt.editor.type == targetType)){
             rlt.push(rlt.editor);
         }
+        var meetParents_map = [];
         var nowKernel = this;
         var parent = nowKernel.parent;
-        if(nowKernel.type == M_FormKernel_Type && nowKernel.isPageForm()){
-            parent = nowKernel; // page型的form可以访问到孩子控件
+        var aidRlt_arr;
+        if(nowKernel.type == M_FormKernel_Type){
+            if(nowKernel.isPageForm()){
+                parent = nowKernel; // page型的form可以访问到孩子控件
+            }
+            else if(nowKernel.isGridForm()){
+                // grid型的form可以访问到bottom的控件
+                meetParents_map[nowKernel.gridFormBottomDiv.id] = 1;
+                aidRlt_arr = [];
+                nowKernel.gridFormBottomDiv.aidAccessableKernels(targetType, aidRlt_arr);
+                if(aidRlt_arr && aidRlt_arr.length > 0){
+                    aidRlt_arr.forEach(x=>{
+                        if(rlt.indexOf(x) == -1){
+                            rlt.push(x);
+                        }
+                    });
+                }
+            }
         }
         if(parent == null){
             if(this.type == M_PageKernel_Type || this.type == UserControlKernel_Type){
@@ -512,7 +529,6 @@ class ControlKernelBase extends IAttributeable {
                 rlt.pop();
             }
         }
-        var meetParents_map = [];
         while(parent != null){
             if(meetParents_map[parent.id]){
                 return;
@@ -524,7 +540,6 @@ class ControlKernelBase extends IAttributeable {
                     rlt.push(parent);
                 }
             }
-            var aidRlt_arr;
             parent.children.forEach(child=>{
                 if(child != nowKernel){
                     if(!needFilt || child.type == targetType)

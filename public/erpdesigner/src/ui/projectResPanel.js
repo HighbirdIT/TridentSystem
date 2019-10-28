@@ -6,35 +6,33 @@ class ProjectResPanel extends React.PureComponent {
             nweUserControlName:''
         };
         this.state = initState;
+        this.watchedAttrs = ['editingType'];
+        this.watchAttrMatch = attrName => this.watchedAttrs.indexOf(attrName) != -1;
 
         autoBind(this,{exclude:[]});
     }
 
-    clickAddMobilePageHandler(ev){
+    clickAddPageHandler(ev){
         var project = this.props.project;
-        project.createEmptyPage(false);
-        this.setState({
-            magicObj:{}
-        });
+        project.createEmptyPage(project.getNowEditingType() == 'PC');
+        this.reRender();
     }
 
-    clickDeleteMobilePageHandler(ev){
+    clickDeletePageHandler(ev){
         var pageID = getAttributeByNode(ev.target,'d-id', true);
         var project = this.props.project;
         var thePage = project.getPageById(pageID);
         if(thePage == null){
             return;
         }
-        gTipWindow.popAlert(makeAlertData('警告', '确定要删除页面:' + thePage.title,this.clickDeleteMobilePageTipCallback,[makeAlertBtnData('确定', 'ok'),makeAlertBtnData('取消', 'cancel')], pageID));
+        gTipWindow.popAlert(makeAlertData('警告', '确定要删除页面:' + thePage.title,this.clickDeletePageTipCallback,[makeAlertBtnData('确定', 'ok'),makeAlertBtnData('取消', 'cancel')], pageID));
     }
 
-    clickDeleteMobilePageTipCallback(key, pageID){
+    clickDeletePageTipCallback(key, pageID){
         if(key == 'ok'){
             var project = this.props.project;
             project.deletePage(pageID);
-            this.setState({
-                magicObj:{}
-            });
+            this.reRender();
         }
     }
 
@@ -42,9 +40,7 @@ class ProjectResPanel extends React.PureComponent {
         var pageID = getAttributeByNode(ev.target,'d-id', true);
         var project = this.props.project;
         project.setEditingPageById(pageID);
-        this.setState({
-            magicObj:{}
-        });
+        this.reRender();
     }
 
     nweUserControlNameChanged(ev){
@@ -55,9 +51,7 @@ class ProjectResPanel extends React.PureComponent {
 
     clickCreateNewUserControlHandler(ev){
         if(this.props.project.addUserControl(this.state.nweUserControlName)){
-            this.setState({
-                magicObj:{}
-            });
+            this.reRender();
         }
     }
 
@@ -65,9 +59,7 @@ class ProjectResPanel extends React.PureComponent {
         var ctlID = getAttributeByNode(ev.target,'d-id', true);
         var project = this.props.project;
         project.setEditingControlById(ctlID);
-        this.setState({
-            magicObj:{}
-        });
+        this.reRender();
     }
 
     clickTrashUserControlBtn(ev){
@@ -83,37 +75,74 @@ class ProjectResPanel extends React.PureComponent {
     clickDeleteUserControlTipCallback(key, userCtl){
         if(key == 'ok'){
             this.props.project.deleteUserControl(userCtl);
-            this.setState({
-                magicObj:{}
-            });
+            this.reRender();
         }
+    }
+
+    reRender(){
+        this.setState({
+            magicObj:{}
+        });
+    }
+
+    attrChangedHandler(ev){
+        var needFresh = false;
+        if(typeof ev.name === 'string'){
+            needFresh = this.watchedAttrs.indexOf(ev.name) != -1;
+        }
+        else{
+            needFresh = ev.name.some(this.watchAttrMatch);
+        }
+        if(needFresh){
+            this.reRender();
+        }
+    }
+
+    componentWillMount(){
+        this.props.project.on(EATTRCHANGED, this.attrChangedHandler);
+    }
+
+    componentWillUnmount(){
+        this.props.project.off(EATTRCHANGED, this.attrChangedHandler);
     }
 
     render() {
         var project = this.props.project;
+        var editingType = project.designeConfig.editingType;
         var editingPage = project.getEditingPage();
         var editingControl = project.getEditingControl();
 
-        return (
-            <div className='d-flex flex-grow-1 flex-shrink-1 flex-column autoScroll'>
+        var pagesElem = null;
+        if(editingType == 'MB'){
+            pagesElem = <React.Fragment>
                 <div className='bg-secondary text-light'>手机页面</div>
                 <div className='list-group flex-shrink-0'>
                     {
                         project.content_Mobile.pages.map((page)=>{
-                            return (<div key={page.id} d-id={page.id} className='d-flex align-items-center'><span onClick={this.clickPageitem} className={'list-group-item list-group-item-action ' + (editingPage == page ? 'active' : '')}>{page.title}</span><div onClick={this.clickDeleteMobilePageHandler} className='btn btn-dark'><i className='fa fa-trash text-danger fa-2x' /></div></div>);
+                            return (<div key={page.id} d-id={page.id} className='d-flex align-items-center'><span onClick={this.clickPageitem} className={'list-group-item list-group-item-action ' + (editingPage == page ? 'active' : '')}>{page.title}</span><div onClick={this.clickDeletePageHandler} className='btn btn-dark'><i className='fa fa-trash text-danger fa-2x' /></div></div>);
                         })
                     }
-                    <button className='btn btn-success' onClick={this.clickAddMobilePageHandler} >新增手机页面</button>
+                    <button className='btn btn-success' onClick={this.clickAddPageHandler} >新增手机页面</button>
                 </div>
-
+            </React.Fragment>
+        }
+        else{
+            pagesElem = <React.Fragment>
                 <div className='bg-secondary text-light'>PC端页面</div>
                 <div className='list-group flex-shrink-0'>
                     {
                         project.content_PC.pages.map((page)=>{
-                            return (<span onClick={this.clickPageitem} d-id={page.id} key={page.id} className={'list-group-item  list-group-item-action ' + (editingPage == page ? 'active' : '')}>{page.title}</span>);
+                            return (<div key={page.id} d-id={page.id} className='d-flex align-items-center'><span onClick={this.clickPageitem} className={'list-group-item list-group-item-action ' + (editingPage == page ? 'active' : '')}>{page.title}</span><div onClick={this.clickDeletePageHandler} className='btn btn-dark'><i className='fa fa-trash text-danger fa-2x' /></div></div>);
                         })
                     }
+                    <button className='btn btn-success' onClick={this.clickAddPageHandler} >新增电脑页面</button>
                 </div>
+                </React.Fragment>
+        }
+
+        return (
+            <div className='d-flex flex-grow-1 flex-shrink-1 flex-column autoScroll'>
+                {pagesElem}
                 <div className='bg-secondary text-light'>自订控件</div>
                 <div className='list-group flex-shrink-0'>
                     {

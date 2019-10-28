@@ -699,7 +699,6 @@ class M_Form extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC: false,
         label: 'Form',
         type: M_FormKernel_Type,
         namePrefix: M_FormKernel_Prefix,

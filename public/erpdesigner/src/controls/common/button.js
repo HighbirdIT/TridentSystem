@@ -178,7 +178,6 @@ class CButton extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC : false,
         label : '按钮',
         type : ButtonKernel_Type,
         namePrefix : ButtonKernel_Prefix,

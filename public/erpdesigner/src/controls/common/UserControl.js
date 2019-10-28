@@ -471,7 +471,6 @@ class CUserControl extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC: false,
         invisible: true,
         label: '自订控件',
         type: UserControlKernel_Type,
