@@ -173,6 +173,15 @@ var EButtonVisibleType = {
 };
 var ButtonVisibleTypes_arr = [EButtonVisibleType.Insert, EButtonVisibleType.Update, EButtonVisibleType.Both, EButtonVisibleType.Default];
 
+var EWidthFactor = {
+    Scale: 0,
+    Half: -1,
+    Default: 1,
+    Twice: 2,
+    Triple: 3
+};
+var WidthFactors_arr = [{ text: '自动', value: EWidthFactor.Scale }, { text: '0.5倍', value: EWidthFactor.Half }, { text: '默认', value: EWidthFactor.Default }, { text: '2倍', value: EWidthFactor.Twice }, { text: '3倍', value: EWidthFactor.Triple }];
+
 var EUseEntityStage = {
     Select: 'select',
     Insert: 'isnert',
@@ -271,9 +280,11 @@ DesignerConfig.registerControl = function (ctlConfig, groupName) {
         this.controlConfig.groups.push(ctlGroup);
     }
 
-    if (ctlConfig.forPC) {
+    if (ctlConfig.forPC != false) {
         ctlGroup.controlsForPC.push(ctlConfig);
-    } else {
+    }
+
+    if (ctlConfig.forMoible != false) {
         ctlGroup.controlsForMobile.push(ctlConfig);
     }
     this.controlConfig.configs_obj[ctlConfig.type] = ctlConfig;

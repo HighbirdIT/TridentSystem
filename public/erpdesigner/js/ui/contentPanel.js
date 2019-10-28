@@ -92,15 +92,11 @@ var ContentPanel = function (_React$PureComponent) {
         key: 'renderEditingPage',
         value: function renderEditingPage(project, editingPage, isPC) {
             if (editingPage == null) return null;
-            if (isPC) {
-                return null;
-            } else {
-                return React.createElement(
-                    'div',
-                    { id: 'pageContainer', className: 'bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-1 mobilePage rounded' },
-                    React.createElement(M_Page, { project: project, ctlKernel: editingPage, isPC: isPC, ref: this.pageCtlRef, designer: this.props.designer })
-                );
-            }
+            return React.createElement(
+                'div',
+                { id: 'pageContainer', className: 'bg-light d-flex flex-column border border-primary flex-grow-0 flex-shrink-1 rounded ' + (isPC ? 'pcPage' : 'mobilePage') },
+                React.createElement(M_Page, { project: project, ctlKernel: editingPage, isPC: isPC, ref: this.pageCtlRef, designer: this.props.designer })
+            );
         }
     }, {
         key: 'renderEditingControl',
@@ -109,7 +105,7 @@ var ContentPanel = function (_React$PureComponent) {
 
             return React.createElement(
                 'div',
-                { id: 'pageContainer', className: 'bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-1 mobilePage rounded' },
+                { id: 'pageContainer', className: 'bg-light d-flex flex-column border border-primary flex-grow-0 flex-shrink-1 mobilePage rounded' },
                 React.createElement(CUserControl, { project: project, ctlKernel: editingControl, ref: this.userCtlRef, designer: this.props.designer })
             );
         }
@@ -295,8 +291,9 @@ var ContentPanel = function (_React$PureComponent) {
                 project.logManager.log('开始上传');
                 var compileResult = {
                     mbLayoutName: 'erppagetype_MA',
-                    pcLayoutName: 'erppagetype_MA',
+                    pcLayoutName: 'erppagetype_MA_PC',
                     mobilePart: theCompile.mobileContentCompiler.getString(),
+                    pcPart: theCompile.pcContentCompiler.getString(),
                     serverPart: theCompile.serverSide.getString()
                 };
                 fetchJsonPost('server', { action: 'publishProject', projTitle: project.title, compileResult: compileResult }, this.uploadResultCallBack);
@@ -509,7 +506,7 @@ var ContentPanel = function (_React$PureComponent) {
                     ),
                     React.createElement(
                         'div',
-                        { onClick: this.clickContentDivHander, className: 'flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center' },
+                        { onClick: this.clickContentDivHander, className: 'flex-grow-1 flex-shrink-1 autoScroll d-flex width-1' },
                         editingPage && this.renderEditingPage(project, editingPage, isPC),
                         editingControl && this.renderEditingControl(project, editingControl)
                     )

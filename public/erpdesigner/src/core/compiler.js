@@ -112,6 +112,9 @@ class ProjectCompiler extends EventEmitter{
         var mobileContentCompiler = new MobileContentCompiler(this);
         this.mobileContentCompiler = mobileContentCompiler;
 
+        var pcContentCompiler = new PCContentCompiler(this);
+        this.pcContentCompiler = pcContentCompiler;
+
         // 编辑自订脚本
         var BP_script_arr = project.scriptMaster.blueprints_arr.filter(x=>{return x.group == EJsBluePrintFunGroup.Custom;});
         for(ti in BP_script_arr){
@@ -121,24 +124,34 @@ class ProjectCompiler extends EventEmitter{
             var jsCompileHelper = new JSNode_CompileHelper(logManager, null,  js_blueprint.type == FunType_Client ? mobileContentCompiler.clientSide.scope : serverSide.scope);
             jsCompileHelper.clickLogBadgeItemHandler = this.clickJSCompilerLogBadgeItemHandler;
             jsCompileHelper.serverSide = serverSide;
-            jsCompileHelper.clientSide = mobileContentCompiler.clientSide;
             jsCompileHelper.sqlBPCacheManager = this;
             var jscompileRet = js_blueprint.compile(jsCompileHelper);
             if(jscompileRet == false){
                 this.stopCompile(false, "发生错误,项目编译已终止");
                 return false;
             }
+            if(js_blueprint.type == FunType_Client){
+                // 自定义脚本在两个平台都要出现
+                jsCompileHelper = new JSNode_CompileHelper(logManager, null,  pcContentCompiler.clientSide.scope);
+                jsCompileHelper.clickLogBadgeItemHandler = this.clickJSCompilerLogBadgeItemHandler;
+                jsCompileHelper.serverSide = serverSide;
+                jsCompileHelper.sqlBPCacheManager = this;
+                js_blueprint.compile(jsCompileHelper);
+            }
 
             this.setCache(js_blueprint.code + '_fun', jscompileRet);
         }
 
         mobileContentCompiler.compile();
-
         mobileContentCompiler.compileEnd();
+
+        pcContentCompiler.compile();
+        pcContentCompiler.compileEnd();
+
         this.serverSide.compileEnd();
 
-        console.log(mobileContentCompiler.getString());
-        console.log(this.serverSide.getString());
+        //console.log(mobileContentCompiler.getString());
+        //console.log(this.serverSide.getString());
 
         this.stopCompile(true);
     }

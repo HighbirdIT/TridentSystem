@@ -40,17 +40,20 @@ class CProject extends IAttributeable {
         this.project = this;
         this.userControls_arr = [];
 
-        this.designeConfig = {
+        var designeConfig = {
             name: genProjectName(),
-            editingType: 'MB',
+            editingType: jsonData == null || jsonData.editingType == null ? 'MB' : jsonData.editingType,
             editingPage: {
+                mbid:jsonData == null || jsonData.lastEditingMBPageID == null ? -1 : jsonData.lastEditingMBPageID,
+                pcid:jsonData == null || jsonData.lastEditingPCPageID == null ? -1 : jsonData.lastEditingPCPageID,
                 id: jsonData == null ? -1 : jsonData.lastEditingPageID
             },
             description: '页面',
             editingControl: {
                 id: jsonData == null ? -1 : jsonData.lastEditingControlID
-            }
+            },
         };
+        this.designeConfig = designeConfig;
 
         this.content_PC = {
             pages: [],
@@ -95,10 +98,19 @@ class CProject extends IAttributeable {
             var self = this;
             var ctlCreatioinHelper = new CtlKernelCreationHelper();
             ctlCreatioinHelper.restoreHelper = restoreHelper;
+            var newPage;
             jsonData.content_Mobile.pages.forEach(pageJson => {
                 pageJson.restoreHelper = restoreHelper;
-                var newPage = new M_PageKernel({}, this, ctlCreatioinHelper, pageJson);
+                newPage = new M_PageKernel({}, this, ctlCreatioinHelper, pageJson);
+                newPage.ispcPage = false;
                 this.content_Mobile.pages.push(newPage);
+            });
+
+            jsonData.content_PC.pages.forEach(pageJson => {
+                pageJson.restoreHelper = restoreHelper;
+                newPage = new M_PageKernel({}, this, ctlCreatioinHelper, pageJson);
+                newPage.ispcPage = true;
+                this.content_PC.pages.push(newPage);
             });
         }
         this.loaded = true;
@@ -346,7 +358,7 @@ class CProject extends IAttributeable {
             var hadItem = null;
             newTitle = (!isPC ? '手机页面_' : 'PC页面_') + i;
             if (isPC) {
-                hadItem = this.content_PC.pages.find(item => { return item.getAttribute('title') == newTitle; });
+                hadItem = this.content_PC.pages.find(item => { return item.getAttribute('title') == newTitle;    });
             }
             else {
                 hadItem = this.content_Mobile.pages.find(item => { return item.getAttribute('title') == newTitle; });
@@ -362,6 +374,7 @@ class CProject extends IAttributeable {
         else {
             this.content_Mobile.pages.push(newPage);
         }
+        newPage.ispcPage = isPC;
         return newPage;
     }
 
@@ -411,13 +424,34 @@ class CProject extends IAttributeable {
     }
 
     setEditingType(newValue) {
-
+        var nowValue = this.designeConfig.editingType;
+        var editingPage = this.getEditingPage();
+        if(newValue == nowValue){
+            return;
+        }
+        if(nowValue == 'PC'){
+            this.designeConfig.editingPage.pcid = editingPage == null ? -1 : editingPage.id;
+        }
+        else{
+            this.designeConfig.editingPage.mbid = editingPage == null ? -1 : editingPage.id;
+        }
+        this.designeConfig.editingType = newValue == 'PC' ? 'PC' : 'MB';
+        if(newValue == 'PC'){
+            this.setEditingPageById(this.designeConfig.editingPage.pcid);
+        }
+        else{
+            this.setEditingPageById(this.designeConfig.editingPage.mbid);
+        }
+        this.attrChanged('editingType');
     }
 
-    toggleEditingType(newValue) {
-        this.designeConfig.editingType = this.designeConfig.editingType == 'PC' ? 'MB' : 'PC';
-        this.attrChanged('editingType');
+    toggleEditingType() {
+        this.setEditingType(this.designeConfig.editingType == 'PC' ? 'MB' : 'PC');
         return true;
+    }
+
+    getNowEditingType(){
+        return this.designeConfig.editingType;
     }
 
     set_title(newtitle) {
@@ -443,7 +477,10 @@ class CProject extends IAttributeable {
         var attrJson = super.getJson(jsonProf);
         var rlt = {
             attr: attrJson,
+            editingType: this.designeConfig.editingType,
             lastEditingPageID: this.designeConfig.editingPage.id,
+            lastEditingPCPageID: this.designeConfig.editingPage.pcid,
+            lastEditingMBPageID: this.designeConfig.editingPage.mbid,
             lastEditingControlID: this.designeConfig.editingControl.id
         };
         rlt.content_PC = {

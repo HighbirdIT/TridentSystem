@@ -100,7 +100,6 @@ class M_Label extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC : false,
         label : '标签',
         type : M_LabelKernel_Type,
         namePrefix : M_LabelKernel_Prefix,

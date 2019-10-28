@@ -197,7 +197,6 @@ class M_Page extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC: false,
         label: '页面',
         type: 'M_Page',
         invisible: true,

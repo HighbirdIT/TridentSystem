@@ -8,6 +8,7 @@ const M_LabeledControlKernelAttrsSetting=GenControlKernelAttrsSetting([
             pullDataFun:GetCanInteractiveColumns,
         }),
         genNullableAttribute(),
+        new CAttribute('占宽',AttrNames.WidthFactor,ValueType.Int, EWidthFactor.Default, true, false, WidthFactors_arr, {text:'text', value:'value'}),
         new CAttribute('列宽设置',AttrNames.ColumnWidth,ValueType.Int, 0),
         new CAttribute('新行依赖',AttrNames.NewRowDepend,ValueType.Boolean, false),
         new CAttribute('帮助提示',AttrNames.ToolTip,ValueType.String,'', true, false, null, 
@@ -156,6 +157,7 @@ class M_LabeledControl extends React.PureComponent {
         this.state={
             label:this.props.ctlKernel.getAttribute(AttrNames.TextField),
             editor:this.props.ctlKernel.editor,
+            widthFactor:this.props.ctlKernel.getAttribute(AttrNames.WidthFactor),
         };
 
         autoBind(this);
@@ -164,6 +166,7 @@ class M_LabeledControl extends React.PureComponent {
             AttrNames.EditorType,
             AttrNames.InteractiveType,
             AttrNames.Nullable,
+            AttrNames.WidthFactor,
             AttrNames.LayoutNames.APDClass,
             AttrNames.LayoutNames.StyleAttr,
         ]);
@@ -176,6 +179,7 @@ class M_LabeledControl extends React.PureComponent {
         this.setState({
             label:this.props.ctlKernel.getAttribute(AttrNames.TextField),
             editor:this.props.ctlKernel.editor,
+            widthFactor:this.props.ctlKernel.getAttribute(AttrNames.WidthFactor),
         });
     }
 
@@ -198,7 +202,7 @@ class M_LabeledControl extends React.PureComponent {
         else{
             this.tryPlaceKernel = null;
         }
-        layoutConfig.addClass('rowlFameOne');
+        
         layoutConfig.addClass('hb-control');
         var interType = ctlKernel.getAttribute(AttrNames.InteractiveType);
         var interField = ctlKernel.getAttribute(AttrNames.InteractiveField);
@@ -207,6 +211,66 @@ class M_LabeledControl extends React.PureComponent {
         var nullableFlag = nullable ? (<i className='fa fa-square-o text-info' />) : null;
         var interFieldElem = IsEmptyString(interField) ? null : <span className='badge badge-info'>{interField}</span>;
         var leftElem = null;
+        var belongPage = ctlKernel.searchParentKernel(M_PageKernel_Type, true);
+        if(belongPage){
+            var belongGridForm = ctlKernel.parent && ctlKernel.parent.type == M_FormKernel_Type && ctlKernel.parent.isGridForm() ? ctlKernel.parent : null;
+            if(belongPage.ispcPage && belongGridForm == null){
+                var widthFactor = parseInt(this.state.widthFactor);
+                layoutConfig.addClass('rowlFameTwo');
+                layoutConfig.addClass('border');
+                if(interFieldElem == null){
+                    leftElem = <label className='d-flex flex-grow-0 flex-shrink-0' onClick={this.props.onClick}>
+                        {showLabel}
+                        {interFlag}
+                        {nullableFlag}
+                    </label>;
+                }
+                else{
+                    leftElem = <div className='rowlFameOne_Left' onClick={this.props.onClick}>
+                        <div className='d-flex flex-column'>
+                            <div className='d-flex align-items-center'>
+                                {showLabel}
+                                {interFlag}
+                                {nullableFlag}
+                            </div>
+                            {interFieldElem}
+                        </div>
+                    </div>;
+                }
+                var widthValue = 150;
+                switch(widthFactor){
+                    case EWidthFactor.Half:
+                    widthValue = 65;
+                    break;
+                    case EWidthFactor.Scale:
+                    widthValue = 0;
+                    break;
+                    case EWidthFactor.Twice:
+                    widthValue = 320;
+                    break;
+                    case EWidthFactor.Triple:
+                    widthValue = 480;
+                    break;
+                }
+                if(widthValue > 0){
+                    layoutConfig.style.width = widthValue + 'px';
+                }
+                else{
+                    layoutConfig.style.flexGrow = 1;
+                }
+                return(
+                    <div className={layoutConfig.getClassName()} style={layoutConfig.style} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+                        {this.renderHandleBar()}
+                        {leftElem}
+                        <div>
+                            {editor != null && editor.renderSelf(this.props.onClick == ctlKernel.clickHandler ? null : this.props.onClick, null, this.props.designer)}
+                        </div>
+                    </div>
+                );
+            }
+        }
+        layoutConfig.addClass('rowlFameOne');
+
         if(interFieldElem == null){
             leftElem = <div className='rowlFameOne_Left' onClick={this.props.onClick}>
                 {showLabel}
@@ -241,7 +305,6 @@ class M_LabeledControl extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC : false,
         label : '操作控件',
         type : M_LabeledControlKernel_Type,
         namePrefix : M_LabeledControlKernel_Prefix,

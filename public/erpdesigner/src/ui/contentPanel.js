@@ -72,16 +72,11 @@ class ContentPanel extends React.PureComponent {
     renderEditingPage(project, editingPage, isPC) {
         if (editingPage == null)
             return null;
-        if (isPC) {
-            return null;
-        }
-        else {
-            return (
-                <div id='pageContainer' className='bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-1 mobilePage rounded' >
-                    <M_Page project={project} ctlKernel={editingPage} isPC={isPC} ref={this.pageCtlRef} designer={this.props.designer} />
-                </div>
-            );
-        }
+        return (
+            <div id='pageContainer' className={'bg-light d-flex flex-column border border-primary flex-grow-0 flex-shrink-1 rounded ' + (isPC ? 'pcPage' : 'mobilePage')} >
+                <M_Page project={project} ctlKernel={editingPage} isPC={isPC} ref={this.pageCtlRef} designer={this.props.designer} />
+            </div>
+        );
     }
 
     renderEditingControl(project, editingControl){
@@ -89,7 +84,7 @@ class ContentPanel extends React.PureComponent {
             return null;
 
         return (
-                <div id='pageContainer' className='bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-1 mobilePage rounded' >
+                <div id='pageContainer' className='bg-light d-flex flex-column border border-primary flex-grow-0 flex-shrink-1 mobilePage rounded' >
                     <CUserControl project={project} ctlKernel={editingControl} ref={this.userCtlRef} designer={this.props.designer} />
                 </div>
         );
@@ -265,8 +260,9 @@ class ContentPanel extends React.PureComponent {
             project.logManager.log('开始上传');
             var compileResult = {
                 mbLayoutName:'erppagetype_MA',
-                pcLayoutName:'erppagetype_MA',
+                pcLayoutName:'erppagetype_MA_PC',
                 mobilePart:theCompile.mobileContentCompiler.getString(),
+                pcPart:theCompile.pcContentCompiler.getString(),
                 serverPart:theCompile.serverSide.getString(),
             };
             fetchJsonPost('server', { action: 'publishProject', projTitle:project.title, compileResult:compileResult}, this.uploadResultCallBack);
@@ -364,7 +360,7 @@ class ContentPanel extends React.PureComponent {
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickExprotBtnHandler} ><div>导出</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickEvalSizeBtnHandler} ><div>评估</div></button>
                     </div>
-                    <div onClick={this.clickContentDivHander} className='flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center'>
+                    <div onClick={this.clickContentDivHander} className='flex-grow-1 flex-shrink-1 autoScroll d-flex width-1'>
                         {editingPage && this.renderEditingPage(project, editingPage, isPC)}
                         {editingControl && this.renderEditingControl(project, editingControl)}
                     </div>

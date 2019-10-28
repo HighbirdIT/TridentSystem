@@ -220,7 +220,6 @@ var M_Container = function (_React$PureComponent) {
 }(React.PureComponent);
 
 DesignerConfig.registerControl({
-    forPC: false,
     label: 'DIV',
     type: M_ContainerKernel_Type,
     namePrefix: M_ContainerKernel_Prefix,

@@ -143,7 +143,6 @@ class HERPAccordion extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC : false,
         label : '可折叠控件',
         type : Accordion_Type,
         namePrefix : Accordion_Prefix,
