@@ -10,7 +10,7 @@ const HERPAccordionKernelAttrsSetting = GenControlKernelAttrsSetting([
             type:FunType_Client,
             group:EJsBluePrintFunGroup.CtlAttr,
         }),
-        new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr),
+        new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
         genIsdisplayAttribute(),
         new CAttribute('初始折叠', AttrNames.InitCollapsed, ValueType.Boolean, false),
         new CAttribute('模式', AttrNames.Mode, ValueType.String, AccordionMode.Default, true, false, AccordionModes_arr),
@@ -38,10 +38,16 @@ class HERPAccordionKernel extends ContainerKernelBase{
             if (!needFilt || child.type == targetType) {
                 rlt_arr.push(child);
             }
-            if (child.editor && (!needFilt || child.editor.type == targetType)) {
-                rlt_arr.push(child.editor);
+            if(child.editor){
+                if(!needFilt || child.editor.type == targetType){
+                    rlt_arr.push(child.editor);
+                }
+                if(child.editor.type == M_ContainerKernel_Type){
+                    // 穿透div
+                    child.editor.aidAccessableKernels(targetType, rlt_arr);
+                }
             }
-            if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && !child.isGridForm())){
+            if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && child.isPageForm()) || child.type == PopperButtonKernel_Type){
                 // 穿透div
                 child.aidAccessableKernels(targetType, rlt_arr);
             }
@@ -52,8 +58,8 @@ class HERPAccordionKernel extends ContainerKernelBase{
     }
 
 
-    renderSelf(clickHandler, replaceChildClick){
-        return (<HERPAccordion key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
+    renderSelf(clickHandler, replaceChildClick, designer){
+        return (<HERPAccordion key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
     }
 }
 
@@ -126,7 +132,7 @@ class HERPAccordion extends React.PureComponent {
                     ctlKernel.children.length == 0 ?
                     ctlKernel.id :
                     ctlKernel.children.map(childKernel => {
-                        return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null,this.props.replaceChildClick);
+                        return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null,this.props.replaceChildClick, this.props.designer);
                     })
                 }
                 </div>
@@ -137,7 +143,6 @@ class HERPAccordion extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC : false,
         label : '可折叠控件',
         type : Accordion_Type,
         namePrefix : Accordion_Prefix,

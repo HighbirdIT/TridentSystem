@@ -8,6 +8,7 @@ var connect = require('connect');
 var React = require('react');
 var dbhelper = require('./dbhelper.js');
 var flowhelper = require('./flowhelper.js');
+var fileSystem = require('./fileSystem.js');
 var co = require('co');
 var dingHelper = require('./dingHelper');
 var developconfig = require('./developconfig');
@@ -50,7 +51,8 @@ app.set('port', process.env.PORT || 1330);
 
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
-if (app.get('env') == 'production') {
+var inProduction = app.get('env') == 'production';
+if (inProduction) {
     app.set('view cache', true);
 }
 
@@ -116,6 +118,32 @@ app.use(function (req, res, next) {
     next();
 });
 
+function checkLogState(req, res, next, process){
+    if(req.session.g_envVar == null){
+        if (!inProduction) {
+            req.session.g_envVar = developconfig.envVar;
+            process(req, res, next);
+        }
+        else {
+            var logrcd = req.signedCookies._erplogrcdid;
+            if (logrcd != null) {
+                dingHelper.aysnLoginfFromRcdID(logrcd, req, res).then(data=>{
+                    process(req, res, next);
+                });
+            }
+            else{
+                process(req, res, next);
+            }
+        }
+    }
+    else{
+        if(req.session.g_envVar.userid == 0){
+            req.session.g_envVar.userid = null;
+        }
+        process(req, res, next);
+    }
+}
+
 app.use('/', function (req, res, next) {
     if (req.path == '/' || req.path == '#') {
         /*
@@ -178,6 +206,15 @@ app.use('/', function (req, res, next) {
     }
 
     next();
+});
+
+app.use('/fileSystem', function (req, res, next) {
+    var hostIp = app.get('hostip');
+    if(hostIp == '192.168.0.202'){
+        hostIp = 'erp.highbird.cn';
+    }
+    res.locals.rootUrl = 'http://' + hostIp + ':' + app.get('port');
+    checkLogState(req, res, next, fileSystem.process);
 });
 
 app.use('/fromNotify', function (req, res, next) {
@@ -350,7 +387,10 @@ var autoViews = {};
 var erpPageCache = {};
 var fs = require('fs');
 
-app.use('/erppage/server', function (req, res, next) {
+//var tjspath = __dirname + '/views/erppage/server/pages/WLXXGL_s40.js'
+//var tt = require(tjspath);
+
+function processErppageServer(req, res, next){
     var pageName = req.path.substr(1).toUpperCase();
     var cache = erpPageCache[pageName];
     var jspath = null;
@@ -370,6 +410,10 @@ app.use('/erppage/server', function (req, res, next) {
         }
         return require(jspath)(req, res, next, app);
     });
+}
+
+app.use('/erppage/server', function (req, res, next) {
+    checkLogState(req, res, next, processErppageServer);
 });
 
 app.use('/erppage/login', function (req, res, next) {
@@ -387,11 +431,19 @@ app.use('/erppage/login', function (req, res, next) {
     }
 });
 
-app.use('/erppage', function (req, res, next) {
+app.use('/videoplayer', function (req, res, next) {
+    return res.render('empty', { layout: 'videoPlayer' });
+});
+
+app.use('/audioplayer', function (req, res, next) {
+    return res.render('empty', { layout: 'audioPlayer' });
+});
+
+function renderErpPage(req, res, next){
     res.locals.isProduction = app.get('env') == 'production';
     var childPath = req.path;
     var t_arr = childPath.split('/');
-    if (t_arr.length != 3) {
+    if (t_arr.length != 3 && (t_arr.length != 4 || t_arr[3] != '') ) {
         res.status(404);
         return res.render('404');
     }
@@ -428,8 +480,13 @@ app.use('/erppage', function (req, res, next) {
     }
     res.status(404);
     return res.render('404');
+}
+
+app.use('/erppage', function (req, res, next) {
+    checkLogState(req, res, next, renderErpPage);
 });
 
+var jsCache = {};
 app.use('/interview', function (req, res, next) {
     var childPath = req.path.toLowerCase();
     var path = '/interview' + childPath; // 检查 缓存； 如果 它在 那里， 渲染 这个 视图 

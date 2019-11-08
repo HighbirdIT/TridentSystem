@@ -129,12 +129,14 @@ function M_ControlBase(target, watchedAttrs) {
 }
 
 function M_ControlBase_ClickHandle_Trash() {
-    this.props.ctlKernel.project.designer.deleteSelectedKernel();
+    if (this.props.designer) {
+        this.props.designer.deleteSelectedKernel();
+    }
 }
 
 function M_ControlBase_ClickHandle_Move() {
-    if (this.props.ctlKernel.project.designer.outlineRef.current) {
-        this.props.ctlKernel.project.designer.outlineRef.current.startDragKernel(this.props.ctlKernel);
+    if (this.props.designer && this.props.designer.outlineRef.current) {
+        this.props.designer.outlineRef.current.startDragKernel(this.props.ctlKernel);
     }
 }
 
@@ -164,7 +166,9 @@ function M_ControlBase_ClickHandle_Eraser() {
 function M_ControlBase_ClickHandle_GoParent() {
     var theKernel = this.props.ctlKernel;
     if (theKernel.parent) {
-        theKernel.project.designer.selectKernel(theKernel.parent);
+        if (this.props.designer) {
+            this.props.designer.selectKernel(theKernel.parent);
+        }
     }
 }
 
@@ -175,39 +179,43 @@ function M_ControlBase_RenderHandleBar() {
 
     return React.createElement(
         'div',
-        { className: 'controlHandleBar' },
+        { className: 'position-relative', style: { width: '0px', height: "0px" } },
         React.createElement(
             'div',
-            { className: 'btn-group' },
+            { className: 'controlHandleBar' },
             React.createElement(
-                'button',
-                { className: 'btn btn-dark', onMouseDown: this.clickHandleMove },
-                React.createElement('i', { className: 'fa fa-arrows' })
-            ),
-            this.props.ctlKernel.parent ? React.createElement(
-                'button',
-                { className: 'btn btn-dark', onClick: this.clickHandleGoParent },
-                React.createElement('i', { className: 'fa fa-reply' })
-            ) : null,
-            React.createElement(
-                'button',
-                { className: 'btn btn-dark', onClick: this.clickHandleCopy },
-                React.createElement('i', { className: 'fa fa-copy' })
-            ),
-            gCopiedKernelData && React.createElement(
-                'button',
-                { className: 'btn btn-dark', onClick: this.clickHandlePaste },
-                React.createElement('i', { className: 'fa fa-paste' })
-            ),
-            gCopiedKernelData && React.createElement(
-                'button',
-                { className: 'btn btn-dark', onClick: this.clickHandleEraser },
-                React.createElement('i', { className: 'fa fa-eraser' })
-            ),
-            React.createElement(
-                'button',
-                { className: 'btn btn-danger', onClick: this.clickHandleTrash },
-                React.createElement('i', { className: 'fa fa-trash' })
+                'div',
+                { className: 'btn-group' },
+                React.createElement(
+                    'button',
+                    { className: 'btn btn-dark', onMouseDown: this.clickHandleMove },
+                    React.createElement('i', { className: 'fa fa-arrows' })
+                ),
+                this.props.ctlKernel.parent ? React.createElement(
+                    'button',
+                    { className: 'btn btn-dark', onClick: this.clickHandleGoParent },
+                    React.createElement('i', { className: 'fa fa-reply' })
+                ) : null,
+                React.createElement(
+                    'button',
+                    { className: 'btn btn-dark', onClick: this.clickHandleCopy },
+                    React.createElement('i', { className: 'fa fa-copy' })
+                ),
+                gCopiedKernelData && React.createElement(
+                    'button',
+                    { className: 'btn btn-dark', onClick: this.clickHandlePaste },
+                    React.createElement('i', { className: 'fa fa-paste' })
+                ),
+                gCopiedKernelData && React.createElement(
+                    'button',
+                    { className: 'btn btn-dark', onClick: this.clickHandleEraser },
+                    React.createElement('i', { className: 'fa fa-eraser' })
+                ),
+                React.createElement(
+                    'button',
+                    { className: 'btn btn-danger', onClick: this.clickHandleTrash },
+                    React.createElement('i', { className: 'fa fa-trash' })
+                )
             )
         )
     );

@@ -38,8 +38,8 @@ class TaskSelctorKernel extends ControlKernelBase {
         }
     }
 
-    renderSelf(clickHandler) {
-        return (<CTaskSelector key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+    renderSelf(clickHandler, replaceChildClick, designer) {
+        return (<CTaskSelector key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 }
 var TaskSelector_api = new ControlAPIClass(TaskSelector_Type);
@@ -108,7 +108,6 @@ class CTaskSelector extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC: false,
         label: '任务选择器',
         type: TaskSelector_Type,
         namePrefix: TaskSelector_Prefix,

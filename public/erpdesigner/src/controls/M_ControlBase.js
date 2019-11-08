@@ -131,12 +131,14 @@ function M_ControlBase(target,watchedAttrs){
 }
 
 function M_ControlBase_ClickHandle_Trash(){
-    this.props.ctlKernel.project.designer.deleteSelectedKernel();
+    if(this.props.designer){
+        this.props.designer.deleteSelectedKernel();
+    }
 }
 
 function M_ControlBase_ClickHandle_Move(){
-    if(this.props.ctlKernel.project.designer.outlineRef.current){
-        this.props.ctlKernel.project.designer.outlineRef.current.startDragKernel(this.props.ctlKernel);
+    if(this.props.designer && this.props.designer.outlineRef.current){
+        this.props.designer.outlineRef.current.startDragKernel(this.props.ctlKernel);
     }
 }
 
@@ -166,7 +168,9 @@ function M_ControlBase_ClickHandle_Eraser(){
 function M_ControlBase_ClickHandle_GoParent(){
     var theKernel = this.props.ctlKernel;
     if(theKernel.parent){
-        theKernel.project.designer.selectKernel(theKernel.parent);
+        if(this.props.designer){
+            this.props.designer.selectKernel(theKernel.parent);
+        }
     }
 }
 
@@ -176,14 +180,16 @@ function M_ControlBase_RenderHandleBar(){
         return null;
     }
     
-    return (<div className='controlHandleBar'>
-                <div className='btn-group'>
-                    <button className='btn btn-dark' onMouseDown={this.clickHandleMove}><i className='fa fa-arrows' /></button>
-                    {this.props.ctlKernel.parent ? <button className='btn btn-dark' onClick={this.clickHandleGoParent}><i className='fa fa-reply' /></button> : null}
-                    <button className='btn btn-dark' onClick={this.clickHandleCopy}><i className='fa fa-copy' /></button>
-                    {gCopiedKernelData && <button className='btn btn-dark' onClick={this.clickHandlePaste}><i className='fa fa-paste' /></button>}
-                    {gCopiedKernelData && <button className='btn btn-dark' onClick={this.clickHandleEraser}><i className='fa fa-eraser' /></button>}
-                    <button className='btn btn-danger' onClick={this.clickHandleTrash}><i className='fa fa-trash' /></button>
+    return (<div className='position-relative' style={{width:'0px',height:"0px"}}>
+                <div className='controlHandleBar'>
+                    <div className='btn-group'>
+                        <button className='btn btn-dark' onMouseDown={this.clickHandleMove}><i className='fa fa-arrows' /></button>
+                        {this.props.ctlKernel.parent ? <button className='btn btn-dark' onClick={this.clickHandleGoParent}><i className='fa fa-reply' /></button> : null}
+                        <button className='btn btn-dark' onClick={this.clickHandleCopy}><i className='fa fa-copy' /></button>
+                        {gCopiedKernelData && <button className='btn btn-dark' onClick={this.clickHandlePaste}><i className='fa fa-paste' /></button>}
+                        {gCopiedKernelData && <button className='btn btn-dark' onClick={this.clickHandleEraser}><i className='fa fa-eraser' /></button>}
+                        <button className='btn btn-danger' onClick={this.clickHandleTrash}><i className='fa fa-trash' /></button>
+                    </div>
                 </div>
             </div>);
 }

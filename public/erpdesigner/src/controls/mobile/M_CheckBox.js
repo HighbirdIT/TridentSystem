@@ -42,8 +42,8 @@ class M_CheckBoxKernel extends ControlKernelBase {
         }
     }
 
-    renderSelf(clickHandler) {
-        return (<M_CheckBox key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+    renderSelf(clickHandler, replaceChildClick, designer) {
+        return (<M_CheckBox key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {
@@ -118,7 +118,6 @@ class M_CheckBox extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC: false,
         label: '复选框',
         type: M_CheckBoxKernel_Type,
         namePrefix: M_CheckBoxKernel_Prefix,

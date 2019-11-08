@@ -10,7 +10,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var M_LabelKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [genTextFiledAttribute(), new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes), new CAttribute('小数精度', AttrNames.FloatNum, ValueType.Int, 2, true, false, null, null, false), genIsdisplayAttribute()])]);
+var M_LabelKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [genTextFiledAttribute(), new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes), new CAttribute('小数精度', AttrNames.FloatNum, ValueType.Int, 2, true, false, null, null, false), new CAttribute('输出字数', AttrNames.OutputCharCount, ValueType.Boolean, false), genIsdisplayAttribute()]), new CAttributeGroup('事件', [new CAttribute('OnMDown', AttrNames.Event.OnMouseDown, ValueType.Event)])]);
 
 var M_LabelKernel = function (_ControlKernelBase) {
     _inherits(M_LabelKernel, _ControlKernelBase);
@@ -41,8 +41,8 @@ var M_LabelKernel = function (_ControlKernelBase) {
         }
     }, {
         key: 'renderSelf',
-        value: function renderSelf(clickHandler) {
-            return React.createElement(M_Label, { key: this.id, ctlKernel: this, onClick: clickHandler ? clickHandler : this.clickHandler });
+        value: function renderSelf(clickHandler, replaceChildClick, designer) {
+            return React.createElement(M_Label, { key: this.id, designer: designer, ctlKernel: this, onClick: clickHandler ? clickHandler : this.clickHandler });
         }
     }]);
 
@@ -112,7 +112,6 @@ var M_Label = function (_React$PureComponent) {
 }(React.PureComponent);
 
 DesignerConfig.registerControl({
-    forPC: false,
     label: '标签',
     type: M_LabelKernel_Type,
     namePrefix: M_LabelKernel_Prefix,

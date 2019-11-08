@@ -16,7 +16,7 @@ const HERPTabControlKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('selectedItemID','selectedItemID',ValueType.String,'',true,false,null,null,false),
         new CAttribute('贪心模式', AttrNames.GreedMode, ValueType.Boolean, false),
         new CAttribute('默认打开', 'defaultTabitemID', ValueType.String, 0, true, false, [], {text:'name', value:'code',pullDataFun:GetTabItems}),
-        new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr,null,false),
+        new CAttribute('样式', AttrNames.DockType, ValueType.String, DockType_Top, true, false, DockType_Options_arr),
     ]),
 ]);
 
@@ -47,8 +47,8 @@ class HERPTabControlKernel extends ContainerKernelBase{
     __attributeChanged(attrName, oldValue, value, realAtrrName, indexInArray){
     }
 
-    renderSelf(clickHandler, replaceChildClick){
-        return (<HERPTabControl key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
+    renderSelf(clickHandler, replaceChildClick, designer){
+        return (<HERPTabControl key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
     }
 }
 
@@ -60,12 +60,13 @@ class HERPTabControl extends React.PureComponent {
         super(props);
 
         var ctlKernel = this.props.ctlKernel;
-        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Chidlren,'selectedItemID',AttrNames.GreedMode]));
+        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Chidlren,'selectedItemID',AttrNames.GreedMode,AttrNames.DockType]));
         M_ContainerBase(this);
         
         inintState.children = ctlKernel.children;
         inintState.selectedItemID = ctlKernel.selectedItemID;
         inintState.greedMode = ctlKernel.getAttribute(AttrNames.GreedMode);
+        inintState.dockType = ctlKernel.getAttribute(AttrNames.DockType);
 
         this.state = inintState;
 
@@ -85,6 +86,7 @@ class HERPTabControl extends React.PureComponent {
             children: childrenVal,
             selectedItemID:ctlKernel.getAttribute('selectedItemID'),
             greedMode: ctlKernel.getAttribute(AttrNames.GreedMode),
+            dockType: ctlKernel.getAttribute(AttrNames.DockType),
         });
     }
 
@@ -121,26 +123,55 @@ class HERPTabControl extends React.PureComponent {
         }
         layoutConfig.addClass('hb-control');
         layoutConfig.addClass('d-flex');
-        layoutConfig.addClass('flex-column');
         layoutConfig.addClass('border');
         var rootStyle = layoutConfig.style;
         var itemBtns_arr = [];
         ctlKernel.children.forEach(tabItemKernel => {
-            itemBtns_arr.push(<button onClick={this.clickTabItemHandler} key={tabItemKernel.id} ctlid={tabItemKernel.id} type='button' className={'btn ' + (tabItemKernel.id == selectedItemID ? 'btn-primary' : 'btn-dark') + (this.state.greedMode ? ' flex-grow-1 flex-shrink-1' : '')}>{tabItemKernel.getAttribute(AttrNames.Title)}</button>);
+            var iconType = tabItemKernel.getAttribute(AttrNames.IconType);
+            var iconElem = null;
+            if(!IsEmptyString(iconType)){
+                iconElem = <i className={'fa fa-' + iconType} />
+            }
+            itemBtns_arr.push(<button onClick={this.clickTabItemHandler} key={tabItemKernel.id} ctlid={tabItemKernel.id} type='button' className={'btn ' + (tabItemKernel.id == selectedItemID ? 'btn-primary' : 'btn-dark') + (this.state.greedMode ? ' flex-grow-1 flex-shrink-1' : '')}>
+                {iconElem}
+                {tabItemKernel.getAttribute(AttrNames.Title)}
+                </button>);
         });
         if(!this.props.replaceChildClick){
             itemBtns_arr.push(<button onClick={this.clickCreateButtonHandler} key='add' type='button' className='btn btn-success'>新建<i className='fa fa-plus' /></button>);
         }
-        
+
         var title = IsEmptyString(this.state.title) ? '[未命名]' : this.state.title;
-        return(
-            <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+        var retElem = null;
+        var dockType = this.state.dockType;
+        var bodyDivClassName = 'd-flex flex-grow-1 flex-shrink-1';
+
+        switch(dockType){
+            case DockType_Top:
+            layoutConfig.addClass('flex-column');
+            bodyDivClassName += ' border-top';
+            break;
+            case DockType_Bottom:
+            layoutConfig.addClass('flex-column');
+            bodyDivClassName += ' border-bottom';
+            break;
+            case DockType_Left:
+            bodyDivClassName += ' border-left';
+            break;
+            case DockType_Right:
+            bodyDivClassName += ' border-right';
+            break;
+        }
+
+        var cardItemsElem = (<div className={'btn-group' + (dockType == DockType_Left || dockType == DockType_Right ? '-vertical' : '')}>
+                                {itemBtns_arr}
+                                <button type='button' className='btn btn-dark flex-shrink-0'><i className='fa fa-at' /></button>
+                            </div>);
+        
+        return <div className={layoutConfig.getClassName()} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {this.renderHandleBar()}
-                <div className='btn-group'>
-                    {itemBtns_arr}
-                    <button type='button' className='btn btn-dark flex-shrink-0'><i className='fa fa-at' /></button>
-                </div>
-                <div className='border-top' style={{minHeight:'2em'}}>
+                {dockType == DockType_Top || dockType == DockType_Left ? cardItemsElem : null}
+                <div className={bodyDivClassName} style={{minHeight:'2em'}}>
                 {
                     ctlKernel.children.length == 0 ?
                     ctlKernel.id :
@@ -148,12 +179,12 @@ class HERPTabControl extends React.PureComponent {
                         if(childKernel.id != selectedItemID){
                             return null;
                         }
-                        return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null,this.props.replaceChildClick);
+                        return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null,this.props.replaceChildClick, this.props.designer);
                     })
                 }
                 </div>
+                {dockType == DockType_Bottom || dockType == DockType_Right ? cardItemsElem : null}
             </div>
-        ); 
     }
 }
 

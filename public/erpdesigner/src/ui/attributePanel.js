@@ -91,9 +91,18 @@ class AttributePanel extends React.PureComponent {
 
     render() {
         var target = this.state.target;
+        var title = '';
+        if(target){
+            if(target.getReadableName){
+                title = target.getReadableName()
+            }
+            else{
+                title = target.description + (target.id ? '[' + target.id + ']' : '') + (target.name ? '(' + target.name + ')' : '');
+            }
+        }
         return (
-            <div className='d-flex flex-grow-1 flex-shrink-1 flex-column' style={{width:'300px'}}>
-                <button type="button" className='mw-100 btn flex-grow-0 flex-shrink-0 bg-secondary text-light' style={{borderRadius:'0em',height:'2.5em',overflow:'hidden'}}>{target == null ? '' : target.description + (target.id ? '[' + target.id + ']' : '') + (target.name ? '(' + target.name + ')' : '')}</button>
+            <div className='d-flex flex-grow-1 flex-shrink-1 flex-column minh-0' style={this.props.nofixwidth ? null : {width:'300px'}}>
+                <button type="button" className='mw-100 btn flex-grow-0 flex-shrink-0 bg-secondary text-light' style={{borderRadius:'0em',height:'2.5em',overflow:'hidden'}}>{title}</button>
                 <div className='flex-grow-1 flex-shrink-1 bg-secondary d-flex flex-column autoScroll'>
                     {
                         this.renderAttribute(target)

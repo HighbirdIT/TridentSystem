@@ -139,35 +139,42 @@ class Node_Base extends EventEmitter {
 
         if (nodeJson != null) {
             assginObjByProperties(this, nodeJson, ['id', 'left', 'top', 'title', 'extra', 'editorLeft', 'editorTop']);
+
             if (this.restorFromAttrs) {
                 this.restorFromAttrs(nodeJson);
             }
             // createSocket
-            if (!IsEmptyArray(nodeJson.inputScokets_arr)) {
-                nodeJson.inputScokets_arr.forEach(socketJson => {
+            var inputScokets_arr = nodeJson.is_arr ? nodeJson.is_arr : nodeJson.inputScokets_arr;
+            if (!IsEmptyArray(inputScokets_arr)) {
+                inputScokets_arr.forEach(socketJson => {
                     self.addSocket(CreateNodeSocketByJson(this, socketJson, createHelper));
                 });
             }
-            if (!IsEmptyArray(nodeJson.outputScokets_arr)) {
-                nodeJson.outputScokets_arr.forEach(socketJson => {
+            var outputScokets_arr = nodeJson.os_arr ? nodeJson.os_arr : nodeJson.outputScokets_arr;
+            if (!IsEmptyArray(outputScokets_arr)) {
+                outputScokets_arr.forEach(socketJson => {
                     self.addSocket(CreateNodeSocketByJson(this, socketJson, createHelper));
                 });
             }
-            if(nodeJson.inFlowSocket){
-                self.inFlowSocket = self.addSocket(CreateNodeSocketByJson(this, nodeJson.inFlowSocket, createHelper));
+            var inFlowSocket = nodeJson.ifs ? nodeJson.ifs : nodeJson.inFlowSocket;
+            if(inFlowSocket){
+                self.inFlowSocket = self.addSocket(CreateNodeSocketByJson(this, inFlowSocket, createHelper));
             }
-            if(nodeJson.outFlowSocket){
-                self.outFlowSocket = self.addSocket(CreateNodeSocketByJson(this, nodeJson.outFlowSocket, createHelper));
+            var outFlowSocket = nodeJson.ofs ? nodeJson.ofs : nodeJson.outFlowSocket;
+            if(outFlowSocket){
+                self.outFlowSocket = self.addSocket(CreateNodeSocketByJson(this, outFlowSocket, createHelper));
             }
-            if (!IsEmptyArray(nodeJson.outFlowSockets_arr)) {
+            var outFlowSockets_arr = nodeJson.ofs_arr ? nodeJson.ofs_arr : nodeJson.outFlowSockets_arr;
+            if (!IsEmptyArray(outFlowSockets_arr)) {
                 this.outFlowSockets_arr = [];
-                nodeJson.outFlowSockets_arr.forEach(socketJson => {
+                outFlowSockets_arr.forEach(socketJson => {
                     self.addSocket(CreateNodeSocketByJson(this, socketJson, createHelper));
                 });
             }
-            if (!IsEmptyArray(nodeJson.inFlowSockets_arr)) {
+            var inFlowSockets_arr = nodeJson.ifs_arr ? nodeJson.ifs_arr : nodeJson.inFlowSockets_arr;
+            if (!IsEmptyArray(inFlowSockets_arr)) {
                 this.inFlowSockets_arr = [];
-                nodeJson.inFlowSockets_arr.forEach(socketJson => {
+                inFlowSockets_arr.forEach(socketJson => {
                     self.addSocket(CreateNodeSocketByJson(this, socketJson, createHelper));
                 });
             }
@@ -639,6 +646,8 @@ class Node_Base extends EventEmitter {
             var stringVal = null;
             switch (pValType) {
                 case 'string':
+                stringVal = jsonProf.addDictionnary(pval);
+                break;
                 case 'number':
                 case 'boolean':
                     {
@@ -648,6 +657,7 @@ class Node_Base extends EventEmitter {
                 default:
                     console.error('不支持的pValType:' + pValType);
             }
+            //pname = jsonProf.addDictionnary(pname);
             rlt[pname] = stringVal;
         }
         // input sockets
@@ -656,34 +666,34 @@ class Node_Base extends EventEmitter {
             this.inputScokets_arr.forEach(data => {
                 t_insocketJson_arr.push(data.getJson(jsonProf));
             });
-            rlt.inputScokets_arr = t_insocketJson_arr;
+            rlt.is_arr = t_insocketJson_arr;
         }
         if (this.outputScokets_arr.length > 0) {
             var t_outsocketJson_arr = [];
             this.outputScokets_arr.forEach(data => {
                 t_outsocketJson_arr.push(data.getJson(jsonProf));
             });
-            rlt.outputScokets_arr = t_outsocketJson_arr;
+            rlt.os_arr = t_outsocketJson_arr;
         }
         if(this.outFlowSockets_arr && this.outFlowSockets_arr.length > 0){
             var t_outflowsocketJson_arr = [];
             this.outFlowSockets_arr.forEach(data => {
                 t_outflowsocketJson_arr.push(data.getJson(jsonProf));
             });
-            rlt.outFlowSockets_arr = t_outflowsocketJson_arr;
+            rlt.ofs_arr = t_outflowsocketJson_arr;
         }
         if(this.inFlowSockets_arr && this.inFlowSockets_arr.length > 0){
             var t_inflowsocketJson_arr = [];
             this.inFlowSockets_arr.forEach(data => {
                 t_inflowsocketJson_arr.push(data.getJson(jsonProf));
             });
-            rlt.inFlowSockets_arr = t_inflowsocketJson_arr;
+            rlt.ifs_arr = t_inflowsocketJson_arr;
         }
         if(this.inFlowSocket){
-            rlt.inFlowSocket = this.inFlowSocket.getJson(jsonProf);
+            rlt.ifs = this.inFlowSocket.getJson(jsonProf);
         }
         if(this.outFlowSocket){
-            rlt.outFlowSocket = this.outFlowSocket.getJson(jsonProf);
+            rlt.ofs = this.outFlowSocket.getJson(jsonProf);
         }
         // child node
         if (this.nodes_arr && this.nodes_arr.length > 0) {
@@ -746,7 +756,7 @@ class Node_Base extends EventEmitter {
             }
             socketValue = compileRet.getSocketOut(theLink.outSocket).strContent;
         }
-        if(this.checkCompileFlag(!nullable && IsEmptyString(socketValue), '接口' + theSocket.label + '需要一个值', helper)){
+        if(this.checkCompileFlag(!nullable && IsEmptyString(socketValue), '接口' + ReplaceIfNull(theSocket.label,theSocket.name) + '需要一个值', helper)){
             return {err:1};
         }
         return {value:socketValue,link:theLink};
@@ -1200,7 +1210,7 @@ function NodeEditor_CopyNodes(targets_arr) {
         }
     });
     rlt.linkJson_arr = needSaveLink_arr.map(theLink => {
-        return theLink.getJson();
+        return theLink.getJson(jsonProf);
     });
 
     return rlt;
@@ -1234,8 +1244,8 @@ function NodeEditor_PasteNodes(data_json, anchorPos,  parentNode) {
     var newNodes_arr = this.genNodesByJsonArr(parentNode, newNodeJson_arr, createHelper);
     if (data_json.linkJson_arr) {
         data_json.linkJson_arr.forEach(linkJson => {
-            if (createHelper.orginID_map[linkJson.inSocketID] && createHelper.orginID_map[linkJson.outSocketID]) {
-                this.linkPool.addLink(createHelper.orginID_map[linkJson.inSocketID], createHelper.orginID_map[linkJson.outSocketID]);
+            if (createHelper.orginID_map[linkJson.i] && createHelper.orginID_map[linkJson.o]) {
+                this.linkPool.addLink(createHelper.orginID_map[linkJson.i], createHelper.orginID_map[linkJson.o]);
             }
         });
     }

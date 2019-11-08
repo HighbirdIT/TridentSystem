@@ -11,11 +11,15 @@ const UserControlKernelTempleAttrsSetting = GenControlKernelAttrsSetting([
 const UserControlKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置', [
         genIsdisplayAttribute(),
+        new CAttribute('默认可见', AttrNames.DefaultVisible, ValueType.Boolean, true),
         new CAttribute('refID', 'refID', ValueType.String, 'none', true, false, null, null, false),
     ]),
     new CAttributeGroup('属性接口', [
     ]),
     new CAttributeGroup('事件接口', [
+    ]),
+    new CAttributeGroup('原生事件',[
+        new CAttribute('OnMDown', AttrNames.Event.OnMouseDown, ValueType.Event),
     ]),
 ], true, false);
 
@@ -41,14 +45,19 @@ class UserControlKernel extends ContainerKernelBase {
                 this.uuid = guid2();
             }
             this.attrsSettingID = this.project.designeConfig.name + '_' + this.id;
+            var oldAttrsSettingID = this.project.designeConfig.name + '_' + this.id[0].toLowerCase() + this.id.substr(1);
             gUserControlAttsByType_map[this.attrsSettingID] = UserControlKernelAttrsSetting.map(group => {
                 return group.clone();
             });
+            gUserControlAttsByType_map[oldAttrsSettingID] = gUserControlAttsByType_map[this.attrsSettingID];
             this.synControlAttrs();
         }
         else {
             if (kernelJson) {
-                this.attrsSettingID = parentKernel.project.designeConfig.name + '_' + kernelJson.attr.refID;
+                var refID = kernelJson.attr.refID;
+                refID = refID[0].toUpperCase() + refID.substr(1);
+                this.attrsSettingID = parentKernel.project.designeConfig.name + '_' + refID;
+                this.refID = refID;
             }
             else {
                 this.attrsSettingID = parentKernel.project.designeConfig.name + '_' + this.refID;
@@ -258,8 +267,8 @@ class UserControlKernel extends ContainerKernelBase {
         }
     }
 
-    renderSelf(clickHandler) {
-        return (<CUserControl key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} hadClickProxy={clickHandler != null} />)
+    renderSelf(clickHandler, replaceChildClick, designer) {
+        return (<CUserControl key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} hadClickProxy={clickHandler != null} />)
     }
 
     getLayoutConfig() {
@@ -291,6 +300,17 @@ class UserControlKernel extends ContainerKernelBase {
             jsonProf.useUserControl(this.getTemplateKernel());
         }
         return rlt;
+    }
+
+    getReadableName(){
+        var template = this.getTemplateKernel();
+        if(template == null){
+            return '控件模板丢失';
+        }
+        if(template == this){
+            return this.id;
+        }
+        return this.id + '[' + template.getAttribute(AttrNames.Name) + ']';
     }
 }
 
@@ -394,7 +414,7 @@ class CUserControl extends React.PureComponent {
                     ctlKernel.children.length == 0 ?
                         ctlKernel.id :
                         ctlKernel.children.map(childKernel => {
-                            return childKernel.renderSelf();
+                            return childKernel.renderSelf(null, null, this.props.designer);
                         })
                 }
             </div>
@@ -403,7 +423,7 @@ class CUserControl extends React.PureComponent {
 
     renderInstance() {
         var ctlKernel = this.props.ctlKernel;
-        var templateKernel = this.state.templateKernel;
+        var templateKernel = ctlKernel.getTemplateKernel();
         var layoutConfig = templateKernel.getLayoutConfig();
         if (this.props.ctlKernel.__placing) {
             layoutConfig.addClass('M_placingCtl');
@@ -422,7 +442,7 @@ class CUserControl extends React.PureComponent {
                     templateKernel.children.length == 0 ?
                         ctlKernel.id :
                         templateKernel.children.map(childKernel => {
-                            return childKernel.renderSelf(this.clickInsHandler, true);
+                            return childKernel.renderSelf(this.clickInsHandler, true, this.props.designer);
                         })
                 }
             </div>
@@ -435,9 +455,11 @@ class CUserControl extends React.PureComponent {
                 this.unlistenTarget(this.state.templateKernel);
                 this.listenTarget(this.props.ctlKernel);
                 var self = this;
+                var ctlKernel = this.props.ctlKernel;
                 setTimeout(() => {
                     self.setState({
-                        templateKernel: self.props.ctlKernel
+                        templateKernel: ctlKernel,
+                        orientation: ctlKernel.getAttribute(AttrNames.Orientation),
                     });
                 }, 50);
             }
@@ -449,7 +471,6 @@ class CUserControl extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC: false,
         invisible: true,
         label: '自订控件',
         type: UserControlKernel_Type,

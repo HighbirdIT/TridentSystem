@@ -12,6 +12,16 @@ var OrderType_DESC = 'desc';
 var OrderType_ASCE = 'asce';
 var OrderTypes_arr = [OrderType_DESC, OrderType_ASCE];
 
+var DockType_Top = 'TOP';
+var DockType_Bottom = 'BOTTOM';
+var DockType_Left = 'LEFT';
+var DockType_Right = 'RIGHT';
+var DockType_Options_arr = [DockType_Top, DockType_Bottom, DockType_Left, DockType_Right];
+
+var ButtonType_Normal = 'Normal';
+var ButtonType_ListBtn = 'ListLike';
+var ButtonType_Options_arr = [ButtonType_Normal, ButtonType_ListBtn];
+
 var EMessageType = {
     Normal: 0,
     Process: 2
@@ -30,9 +40,16 @@ var EMessageTargetType = {
 };
 var MessageTargetTypes_arr = [{ text: '指定人员', value: EMessageTargetType.Person }, { text: '指定岗位', value: EMessageTargetType.Post }];
 
+var ENoDataAct = {
+    ShowTip: '展示提示',
+    Hidden: '隐藏'
+};
+var ENoDataActs_arr = [ENoDataAct.ShowTip, ENoDataAct.Hidden];
+
 var PersonEductOptions_arr = [];
 var AllPosts_arr = [];
 var ProjectRecords_arr = [];
+var AllFileFlows_arr = [];
 
 var SqlVarType_Unknown = 'unknown';
 var SqlVarType_Int = 'int';
@@ -122,7 +139,8 @@ var EJsBluePrintFunGroup = {
     CtlFun: 'ctlfun',
     CtlValid: 'ctlvalid',
     ServerScript: 'serverscript',
-    GridRowBtnHandler: 'gridrowbtnhandler'
+    GridRowBtnHandler: 'gridrowbtnhandler',
+    Custom: 'custom'
 };
 
 var ESqlBluePrintGroup = {
@@ -132,10 +150,11 @@ var ESqlBluePrintGroup = {
 
 var EFormType = {
     Page: 'page',
-    Grid: 'grid'
+    Grid: 'grid',
+    List: 'list'
 };
 
-var FormTypes_arr = [EFormType.Page, EFormType.Grid];
+var FormTypes_arr = [EFormType.Page, EFormType.Grid, EFormType.List];
 
 var ESelectMode = {
     None: 'none',
@@ -153,6 +172,15 @@ var EButtonVisibleType = {
     Default: 'default'
 };
 var ButtonVisibleTypes_arr = [EButtonVisibleType.Insert, EButtonVisibleType.Update, EButtonVisibleType.Both, EButtonVisibleType.Default];
+
+var EWidthFactor = {
+    Scale: 0,
+    Half: -1,
+    Default: 1,
+    Twice: 2,
+    Triple: 3
+};
+var WidthFactors_arr = [{ text: '自动', value: EWidthFactor.Scale }, { text: '0.5倍', value: EWidthFactor.Half }, { text: '默认', value: EWidthFactor.Default }, { text: '2倍', value: EWidthFactor.Twice }, { text: '3倍', value: EWidthFactor.Triple }];
 
 var EUseEntityStage = {
     Select: 'select',
@@ -252,9 +280,11 @@ DesignerConfig.registerControl = function (ctlConfig, groupName) {
         this.controlConfig.groups.push(ctlGroup);
     }
 
-    if (ctlConfig.forPC) {
+    if (ctlConfig.forPC != false) {
         ctlGroup.controlsForPC.push(ctlConfig);
-    } else {
+    }
+
+    if (ctlConfig.forMoible != false) {
         ctlGroup.controlsForMobile.push(ctlConfig);
     }
     this.controlConfig.configs_obj[ctlConfig.type] = ctlConfig;
@@ -296,7 +326,8 @@ var ValueType = {
     Object: 'Object',
     XML: 'xml',
     UserControlEvent: 'usercontrolevent',
-    CustomFunction: 'CustomFunction'
+    CustomFunction: 'CustomFunction',
+    ModifyContent: 'ModifyContent'
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

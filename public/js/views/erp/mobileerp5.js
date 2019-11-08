@@ -277,6 +277,8 @@ var MainApp = function (_React$PureComponent3) {
                     location.href = gotourl + search;
                     return;
                 }
+                goHomePage();
+                return;
             }
             var newState = {
                 userid: userid,

@@ -161,7 +161,6 @@ function saveProject(req, projJson) {
                 id: userData.name,
                 time: new Date(),
             });
-
             if (!fs.existsSync(baseFileDir))
                 fs.mkdirSync(baseFileDir);
 
@@ -297,7 +296,16 @@ function getBaseConfigData(req) {
         rlt.personEducts_arr = yield getPersonEductOptions();
         rlt.posts_arr = yield getAllPost();
         rlt.projects_arr = yield getAllProjectRecord();
+        rlt.fileFlows_arr = yield getAllFileFlowRecord();
         return rlt;
+    });
+}
+
+function getAllFileFlowRecord(){
+    return co(function* () {
+        var sql = 'SELECT [附件事务流程代码] as code,[事务流程名称] as label FROM [base1].[dbo].[TB00B附件事务流程]';
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
+        return rcdRlt.recordset;
     });
 }
 
@@ -319,7 +327,7 @@ function getAllPost(){
 
 function getAllProjectRecord(){
     return co(function* () {
-        var sql = 'SELECT [系统方案名称] as text,[系统方案名称代码] as value FROM [base1].[dbo].[T002C系统方案名称] where 终止确认状态=0 order by 系统方案名称';
+        var sql = 'SELECT [系统方案名称] as text,[系统方案名称代码] as value,[方案英文名称] as 英文名称 FROM [base1].[dbo].[V002C系统方案名称] where 终止确认状态=0 order by 系统方案名称';
         var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
         return rcdRlt.recordset;
     });
@@ -574,7 +582,7 @@ function WriteEntity(库内对象_dr, 目标库内对象_dic,req) {
 
 function getAllFlow(req){
     return co(function* () {
-        var sql = 'SELECT [T007C系统流程名称].[系统流程名称代码],[系统流程名称],[系统流程简称],[流程操作步骤代码],[操作步骤名称],[参数数量],[参数1],[参数2],[参数3],[是否周期步骤],[周期起始时间],[周期类型],[周期值],[下次执行时间] FROM [base1].[dbo].[T007C系统流程名称] left join [T007D流程操作步骤] on [T007D流程操作步骤].[系统流程名称代码] = [T007C系统流程名称].[系统流程名称代码] where [终止确认状态] = 0';
+        var sql = 'SELECT [T007C系统流程名称].[系统流程名称代码],[系统流程名称],[系统流程简称],[流程操作步骤代码],[操作步骤名称],[参数数量],[参数1],[参数2],[参数3],[是否周期步骤],[周期起始时间],[周期类型],[周期值],[进入待办队列],[下次执行时间] FROM [base1].[dbo].[T007C系统流程名称] left join [T007D流程操作步骤] on [T007D流程操作步骤].[系统流程名称代码] = [T007C系统流程名称].[系统流程名称代码] where [终止确认状态] = 0';
         var rcdRlt = yield dbhelper.asynQueryWithParams(sql,null,null,req);
         return rcdRlt.recordset;
     });
@@ -623,43 +631,22 @@ function publishProject(req, res){
         var modifyRecordID = 0;
 
         var hostDir = httpApp.get('hostDirName') + '/';
-        if(compileResult.mobilePart != null){
+        if(compileResult.mobilePart != null && compileResult.mobilePart.length > 0){
             if(compileResult.mbLayoutName == null || compileResult.mbLayoutName.length == 0){
                 return {err:{info:'no mbLayoutName'}};
             }
             jsMobileClientName = projProfile.flowName + projProfile.enName + '_mb_' + newVersion;
             jsMobileClientPath = clientJsSrcDir + jsMobileClientName + ".js";
             fs.writeFileSync(jsMobileClientPath, compileResult.mobilePart);
-
-            var srcJsPath = hostDir + jsMobileClientPath;
-            var outputJsPath = hostDir + clientJsOutputDir + jsMobileClientName + ".js";
-            var execPath = 'npx babel '+ srcJsPath + ' --out-file ' + outputJsPath;
-            child_process.exec(execPath,function (error, stdout, stderr) {
-                var info = 'OK';
-                if (error !== null) {
-                    info = error.toString();
-                    console.log('exec error: ' + error);
-                }
-                
-            });
         }
 
-        if(compileResult.pcPart != null){
+        if(compileResult.pcPart != null && compileResult.pcPart.length > 0){
             if(compileResult.pcLayoutName == null || compileResult.pcLayoutName.length == 0){
                 return {err:{info:'no pcLayoutName'}};
             }
             jsPCClientName = projProfile.flowName + projProfile.enName + '_pc_' + newVersion;
             jsPCClientPath = clientJsSrcDir + jsPCClientName + ".js";
             fs.writeFileSync(jsPCClientPath, compileResult.pcPart);
-
-            var srcJsPath = hostDir + jsPCClientName;
-            var outputJsPath = hostDir + clientJsOutputDir + jsPCClientName + ".js";
-            var execPath = 'npx babel '+ srcJsPath + ' --out-file ' + outputJsPath;
-            child_process.exec(execPath,function (error, stdout, stderr) {
-                if (error !== null) {
-                    console.log('exec error: ' + error);
-                }
-            });
         }
 
         if(compileResult.serverPart != null){
@@ -699,7 +686,7 @@ function publishProject(req, res){
             version:newVersion,
         }
 
-        if(compileResult.mobilePart != null){
+        if(compileResult.mobilePart != null && compileResult.mobilePart.length > 0){
             var srcJsPath = hostDir + jsMobileClientPath;
             var outputJsPath = hostDir + clientJsOutputDir + jsMobileClientName + ".js";
             var execPath = 'npx babel '+ srcJsPath + ' --out-file ' + outputJsPath;
@@ -717,8 +704,8 @@ function publishProject(req, res){
             });
         }
 
-        if(compileResult.pcPart != null){
-            var srcJsPath = hostDir + jsPCClientName;
+        if(compileResult.pcPart != null && compileResult.pcPart.length > 0){
+            var srcJsPath = hostDir + jsPCClientPath;
             var outputJsPath = hostDir + clientJsOutputDir + jsPCClientName + ".js";
             var execPath = 'npx babel '+ srcJsPath + ' --out-file ' + outputJsPath;
             child_process.exec(execPath,function (error, stdout, stderr) {
@@ -822,8 +809,8 @@ function createFlowStep(req){
             return { err: { info: '参数3不合法' } };
         }
 
-        var insertPart = 'INSERT INTO [dbo].[T007D流程操作步骤]([系统流程名称代码],[操作步骤名称],[登记确认用户],[登记确认时间],[参数数量],[参数1],[参数2],[参数3]';
-        var valuePart = 'values(@flowCode,@name,@userID,getdate(),@paramCount,@param1,@param2,@param3';
+        var insertPart = 'INSERT INTO [dbo].[T007D流程操作步骤]([系统流程名称代码],[操作步骤名称],[登记确认用户],[登记确认时间],[参数数量],[参数1],[参数2],[参数3],[进入待办队列]';
+        var valuePart = 'values(@flowCode,@name,@userID,getdate(),@paramCount,@param1,@param2,@param3,@进入待办队列';
         if(req.body.是否周期步骤){
             if(req.body.周期起始时间 == null){
                 return { err: { info: '没有周期起始时间' } };
@@ -850,6 +837,7 @@ function createFlowStep(req){
             dbhelper.makeSqlparam('起始时间', sqlTypes.NVarChar(20), req.body.周期起始时间),
             dbhelper.makeSqlparam('周期值', sqlTypes.NVarChar(20), req.body.周期值),
             dbhelper.makeSqlparam('周期类型', sqlTypes.NVarChar(20), req.body.周期类型),
+            dbhelper.makeSqlparam('进入待办队列', sqlTypes.NVarChar(20), req.body.进入待办队列),
         ];
         var sql = insertPart + ')' + valuePart + ") select SCOPE_IDENTITY()";
         var newRcdid = yield dbhelper.asynGetScalar(sql, params_arr,req);
@@ -883,7 +871,7 @@ function modifyFlowStep(req){
             return { err: { info: '参数3不合法' } };
         }
 
-        var updatePart = 'update [dbo].[T007D流程操作步骤] set [操作步骤名称]=@name,[参数数量]=@paramCount,[参数1]=@param1,[参数2]=@param2,[参数3]=@param3,[是否周期步骤]=' + (req.body.是否周期步骤 ? 1 : 0);
+        var updatePart = 'update [dbo].[T007D流程操作步骤] set [操作步骤名称]=@name,[参数数量]=@paramCount,[参数1]=@param1,[参数2]=@param2,[参数3]=@param3,[进入待办队列]=@进入待办队列,[是否周期步骤]=' + (req.body.是否周期步骤 ? 1 : 0);
         if(req.body.是否周期步骤){
             if(req.body.周期起始时间 == null){
                 return { err: { info: '没有周期起始时间' } };
@@ -910,6 +898,7 @@ function modifyFlowStep(req){
             dbhelper.makeSqlparam('起始时间', sqlTypes.NVarChar(20), req.body.周期起始时间),
             dbhelper.makeSqlparam('周期值', sqlTypes.NVarChar(20), req.body.周期值),
             dbhelper.makeSqlparam('周期类型', sqlTypes.NVarChar(20), req.body.周期类型),
+            dbhelper.makeSqlparam('进入待办队列', sqlTypes.NVarChar(20), req.body.进入待办队列),
         ];
 
         var updateSql = updatePart + ' where [流程操作步骤代码]=@code';

@@ -22,6 +22,16 @@ function genTextFiledAttribute() {
     });
 }
 
+function genColumnFieldAttribute(label, name) {
+    var def = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+
+    return new CAttribute(label, name, ValueType.String, def, true, false, [], {
+        pullDataFun: GetKernelCanUseColumns,
+        text: 'name',
+        editable: false
+    }, true);
+}
+
 function genValueFiledAttribute() {
     var label = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '码值字段';
     var def = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
@@ -232,12 +242,16 @@ var VarNames = {
     FullPath: 'fullPath',
     FullParentPath: 'fullParentPath',
     SelectedRows_arr: 'selectedRows_arr',
+    SelectedValue: 'selectedValue',
+    SelectedValues_arr: 'selectedValues_arr',
+    SelectedColumns: 'selectedColumns',
     BaseBunlde: 'baseBundle',
     HoldSelected: 'holdSelected',
     Userctlpath: 'userctlpath',
     OldValue: 'oldValue',
     SatePath: 'statePath',
-    Visible: 'visible'
+    Visible: 'visible',
+    NowRow: 'nowrow'
 };
 
 var AttrNames = {
@@ -278,8 +292,11 @@ var AttrNames = {
     WidthType: 'widthType',
     ColumnWidth: 'columnWidth',
     AutoHeight: 'autoHeight',
+    HadScroll: 'hadScroll',
     AutoIndexColumn: 'autoIndexColumn',
     NoDataTip: 'noDataTip',
+    NoDataAct: 'noDataAct',
+    FetchErrAct: 'fetchErrAct',
     MultiSelect: 'multiselect',
     RelFlowStep: 'relflowstep',
     GenNavBar: 'gennavbar',
@@ -312,6 +329,27 @@ var AttrNames = {
     IconType: 'icontype',
     AutoCloseBtn: 'autoclosebtn',
     HaveDoneTip: 'havedonetip',
+    DockType: 'dockType',
+    HideTitle: 'hidetitle',
+    ButtonType: 'buttontype',
+    ManualChanged: 'manualChanged',
+    RendererCtlType: 'rendererctltype',
+    Wrap: 'wrap',
+    OutputCharCount: 'outputcharcount',
+    AutoHomeBtn: 'autoHomeBtn',
+    AutoPull: 'autoPull',
+    DefaultVisible: 'defaultvisible',
+    InsertBtnLabel: 'insertbtnlabel',
+    KeyRecrodID: 'keyrecordid',
+    AttachmentID: 'attachmentid',
+    ModifyContent: 'modifycontent',
+    ToolTip: 'toolTip',
+    Growable: 'growable',
+    InvalidAct: 'invalidAct',
+    KeyColumn: 'keyColumn',
+    RefreshIcon: 'refreshicon',
+    DefaultSelectFirst: 'defaultSelectFirst',
+    WidthFactor: 'widthfactor',
 
     Event: {
         OnClick: 'onclick',
@@ -319,7 +357,12 @@ var AttrNames = {
         OnDelete: 'onDelete',
         OnInsert: 'onInsert',
         OnLoad: 'onLoad',
-        OnChanged: 'onChanged'
+        OnChanged: 'onChanged',
+        OnMouseDown: 'onMouseDown',
+        OnSelectedChanged: 'onSelectedChanged',
+        OnRowChanged: 'onRowChanged',
+        OnUploadComplete: 'onUploadComplate',
+        OnDataSourceChanged: 'onDataSourceChanged'
     },
 
     LayoutNames: {

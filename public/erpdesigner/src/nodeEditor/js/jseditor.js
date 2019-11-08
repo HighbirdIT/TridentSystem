@@ -20,6 +20,16 @@ const JSNodeEditorControls_arr =[
         type:'流控制'
     },
     {
+        label:'调用脚本',
+        nodeClass:JSNode_CallCusScript,
+        type:'流控制'
+    },
+    {
+        label:'SetTimeout',
+        nodeClass:JSNode_SetTimeout,
+        type:'流控制'
+    },
+    {
         label:'CallOnFetchEnd',
         nodeClass:JSNode_CallOnFetchEnd,
         type:'流控制'
@@ -85,6 +95,11 @@ const JSNodeEditorControls_arr =[
         type:'数据库交互'
     },
     {
+        label:'附件操作',
+        nodeClass:JSNode_Attachment_Pro,
+        type:'数据库交互'
+    },
+    {
         label:'日期函数',
         nodeClass:JSNode_DateFun,
         type:'运算'
@@ -100,9 +115,39 @@ const JSNodeEditorControls_arr =[
         type:'数据库交互'
     },
     {
+        label:'New-数据对象',
+        nodeClass:JSNode_CusObject_New,
+        type:'操纵数据对象'
+    },
+    {
+        label:'Visit-数据对象',
+        nodeClass:JSNode_CusObject_Visit,
+        type:'操纵数据对象'
+    },
+    {
+        label:'数组-创建',
+        nodeClass:JSNode_Array_New,
+        type:'操纵数组'
+    },
+    {
         label:'数组-长度',
         nodeClass:JSNode_Array_Length,
         type:'操纵数组'
+    },
+    {
+        label:'数组-是否为空',
+        nodeClass:JSNode_IsEmptyArray,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-For',
+        nodeClass:JSNode_Array_For,
+        type:'流控制'
+    },
+    {
+        label:'字符串-是否为空',
+        nodeClass:JSNode_IsEmptyString,
+        type:'操纵字符串'
     },
     {
         label:'字符串-长度',
@@ -140,6 +185,11 @@ const JSNodeEditorControls_arr =[
         type:'转换'
     },
     {
+        label:'Math.RandInt',
+        nodeClass:JSNode_Math_RandInt,
+        type:'Math'
+    },
+    {
         label:'Get页面入口参数',
         nodeClass:JSNode_GetPageEntryParam,
         type:'窗体控制'
@@ -155,6 +205,11 @@ const JSNodeEditorControls_arr =[
         type:'错误控制'
     },
     {
+        label:'散列表单行数据',
+        nodeClass:JSNode_HashFormDataRow,
+        type:'表单访问'
+    },
+    {
         label:'刷新表单',
         nodeClass:JSNode_FreshForm,
         type:'表单控制'
@@ -162,6 +217,21 @@ const JSNodeEditorControls_arr =[
     {
         label:'跳转页面',
         nodeClass:JSNode_JumpPage,
+        type:'窗体控制'
+    },
+    {
+        label:'打开外部页面',
+        nodeClass:JsNode_OpenExternal_Page,
+        type:'窗体控制'
+    },
+    {
+        label:'向父页发消息',
+        nodeClass:JSNode_Msg_SendToParent,
+        type:'窗体通信'
+    },
+    {
+        label:'关闭TopFrame',
+        nodeClass:JSNode_CloseTopFrame,
         type:'窗体控制'
     },
     {
@@ -195,8 +265,23 @@ const JSNodeEditorControls_arr =[
         type:'消息窗控制'
     },
     {
+        label:'设置消息窗为加载模式',
+        nodeClass:JSNode_SetMessageBoxToLoading,
+        type:'消息窗控制'
+    },
+    {
+        label:'关闭Popper',
+        nodeClass:JSNode_ClosePopper,
+        type:'Popper控制'
+    },
+    {
         label:'钉钉-地图定位',
         nodeClass:JSNode_DD_MapSearch,
+        type:'钉钉Api'
+    },
+    {
+        label:'钉钉-GetGeoLoc',
+        nodeClass:JSNode_DD_GetGeoLoaction,
         type:'钉钉Api'
     },
     {
@@ -279,7 +364,6 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
             return;
         }
         var formObj = this.addUseForm(formKernel, rowSource);
-        formObj.useNowRecord = true;
         if(formObj.useColumns_map[columnName] == null){
             formObj.useColumns_map[columnName] = {
                 serverFuns_arr:[],
@@ -303,7 +387,6 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
             rlt = {
                 useColumns_map:{},
                 useControls_map:{},
-                useNowRecord:false,
                 useSelectedRow:false,
                 formKernel:formKernel,
             };
@@ -328,8 +411,37 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         };
     }
 
+    addUseControlPath(ctrKernel){
+        var rlt = null;
+        var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
+        if(belongFormKernel == null){
+            rlt = this.useGlobalControls_map[ctrKernel.id];
+            if(rlt == null){
+                rlt = this.createUserKernelData(ctrKernel);
+                this.useGlobalControls_map[ctrKernel.id] = rlt;
+            }
+            rlt.usePath = true;
+            return;
+        }
+        else{
+            if(!belongFormKernel.isKernelInRow(ctrKernel)){
+                rowSource = EFormRowSource.None;
+            }
+            var formObj = this.addUseForm(belongFormKernel, rowSource);
+            rlt = formObj.useControls_map[ctrKernel.id];
+            if(rlt == null){
+                rlt = this.createUserKernelData(ctrKernel);
+                formObj.useControls_map[ctrKernel.id] = rlt;
+            }
+        }
+        rlt.usePath = true;
+    }
+
     addUseControlPropApi(ctrKernel, apiitem, rowSource){
         var rlt = null;
+        if(apiitem.relyStateName == null){
+            apiitem.relyStateName = apiitem.stateName;
+        }
         var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
         var attrName = IsEmptyString(apiitem.useAttrName) ? apiitem.attrItem.name : apiitem.useAttrName;
         if(belongFormKernel == null){
@@ -476,7 +588,8 @@ class JSNodeEditorLeftPanel extends React.PureComponent{
                 }
                 panel2={
                     <div className='d-flex flex-column h-100 w-100'>
-                        <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} />
+                        <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} label='变量' isOutput={false} />
+                        {nowBlueprint.group != EJsBluePrintFunGroup.Custom ? null : <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} label='返回值' isOutput={true} />}
                         <JSNodeEditorCanUseNodePanel bluePrint={nowBlueprint} onMouseDown={this.props.onMouseDown} editor={this.props.editor} />
                     </div>
                 }
@@ -496,6 +609,7 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
             showCanUseDS:true,
             showCtlApi:false,
             showCanAccessCtl:false,
+            jsNodeKeyword:''
         };
         var self = this;
     }
@@ -612,6 +726,33 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
         var apiItem = theApiObj.getApiItemByid(apiid);
         this.props.editor.createApiObj(theApiObj,apiItem);
     }
+    jsNodeInputChange(ev){
+        this.setState({
+            jsNodeKeyword:ev.target.value
+        })
+    }
+    renderJsNodeList(){
+        var showArr=[]
+        if (this.state.jsNodeKeyword != '' && this.state.jsNodeKeyword !=null){ 
+            for(var i=0,len =JSNodeEditorControls_arr.length;i<len;i++){
+                var jsNodeName =JSNodeEditorControls_arr[i].label.toLowerCase()
+                if (jsNodeName.indexOf(this.state.jsNodeKeyword.toLowerCase()) >= 0) {
+                    showArr.push(JSNodeEditorControls_arr[i]);
+                  }
+            }
+        }else{
+            showArr=JSNodeEditorControls_arr
+            // 测试功能后续再修改
+            // console.log(pinyin("中心"));    
+        }
+
+        return showArr.map(
+                item=>{
+                    return <button key={item.label} onMouseDown={this.mouseDownHandler} data-value={item.label} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">
+                        {item.label}</button>
+                }
+            )
+    }
 
     render() {
         if(this.props.bluePrint != this.scanedBP){
@@ -678,13 +819,17 @@ class JSNodeEditorCanUseNodePanel extends React.PureComponent{
                             }
                         </div>
                         <div className='btn-group-vertical mw-100 flex-shrink-0'>
-                            <span className='btn btn-info'>节点</span>
+                            <span className='btn btn-info'>节点
+                                <input type="text" className="form-control" placeholder="请输入" aria-describedby="sizing-addon3" 
+                                    onChange={this.jsNodeInputChange}/>
+                            </span>
                             {
-                                JSNodeEditorControls_arr.map(
-                                    item=>{
-                                        return <button key={item.label} onMouseDown={this.mouseDownHandler} data-value={item.label} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>
-                                    }
-                                )
+                                // JSNodeEditorControls_arr.map(
+                                //     item=>{
+                                //         return <button key={item.label} onMouseDown={this.mouseDownHandler} data-value={item.label} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>
+                                //     }
+                                // )
+                                this.renderJsNodeList()
                             }
                         </div>
                     </div>
@@ -702,7 +847,7 @@ class JSNodeEditorVariables extends React.PureComponent{
     }
 
     clickAddHandler(ev){
-        this.props.editingNode.bluePrint.createEmptyVariable();
+        this.props.editingNode.bluePrint.createEmptyVariable(this.props.isOutput); // isOutput==true
     }
 
     varChangedhandler(){
@@ -732,24 +877,26 @@ class JSNodeEditorVariables extends React.PureComponent{
     }
 
     render() {
-        if(this.listenedNode != this.props.editingNode.bluePrint){
+        var bluePrint = this.props.editingNode.bluePrint;
+        if(this.listenedNode != bluePrint){
             this.unlistenNode(this.listenedNode);
-            this.listenNode(this.props.editingNode.bluePrint);
+            this.listenNode(bluePrint);
         }
-        var blueprintPrefix = this.props.editingNode.bluePrint.id + '_';
+        var blueprintPrefix = bluePrint.id + (this.props.isOutput ? '_o_' : '_');
         var targetID = blueprintPrefix + 'variables';
+        var vars_arr = this.props.isOutput ? bluePrint.returnVars_arr : bluePrint.vars_arr;
         return (
             <React.Fragment>
                 <div className='flex-grow-0 flex-shrink-0 bg-secondary d-flex align-items-center'>
-                    <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn bg-secondary flex-grow-1 flex-shrink-1 text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}> 变量</button>
+                    <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn bg-secondary flex-grow-1 flex-shrink-1 text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>{this.props.label}</button>
                     <i className='fa fa-plus fa-lg text-light cursor-pointer' onClick={this.clickAddHandler} style={{width:'30px'}} />
                 </div>
                 <div id={targetID} className="list-group flex-grow-0 flex-shrink-0 collapse show" style={{ overflow: 'auto' }}>
                     <div className='mw-100 d-flex flex-column'>
                         <div className='btn-group-vertical mw-100'>
                             {
-                                this.props.editingNode.bluePrint.vars_arr.map(varData=>{
-                                    return <JSDef_Variable_Component belongNode={this.props.editingNode} key={blueprintPrefix + varData.id} varData={varData} editor={this.props.editor} />
+                                vars_arr.map(varData=>{
+                                    return <JSDef_Variable_Component belongNode={this.props.editingNode} key={varData.id} varData={varData} editor={this.props.editor} />
                                 })
                             }
                         </div>
@@ -1437,7 +1584,9 @@ class C_JSNode_Editor extends React.PureComponent{
     clickExportBtnHandler(ev){
         console.log("Start export");
         var editingNode = this.state.editingNode;
-        var json = editingNode.bluePrint.getJson(new AttrJsonProfile());
+        var ajp = new AttrJsonProfile();
+        var json = editingNode.bluePrint.getJson(ajp);
+        //json.dictionary = ajp.dictionary;
         var text = JSON.stringify(json);
         console.log(text);
     }
@@ -1505,6 +1654,7 @@ class C_JSNode_Editor extends React.PureComponent{
                                         <button type='button' onClick={this.clickExportBtnHandler} className='btn btn-dark' >导出</button>
                                         <button type='button' onClick={this.clickBigBtnHandler} className='btn btn-dark' ><i className='fa fa-search-plus' /></button>
                                         <button type='button' onClick={this.clickSmallBtnHandler} className='btn btn-dark' ><i className='fa fa-search-minus' /></button>
+                                        <QuickKeyWordSynBar />
                                     </div>
                                 </div>
                             </div>
@@ -1728,7 +1878,7 @@ class JSDef_Variable_Component extends React.PureComponent{
                 <div className='d-flex flex-grow-0 flex-shrink-0 w-100 text-light align-items-center hidenOverflo'>
                     {varData.isfixed != true && <i className={'fa fa-edit fa-lg'} onClick={this.clickEditBtnHandler} />}
                     <div className='flex-grow-1 flex-shrink-1 text-nowrap cursor-arrow dragableItem'
-                         onMouseDown={this.labelMouseDownHandler}>
+                         onMouseDown={varData.isOutput ? null : this.labelMouseDownHandler}>
                         {varData.name}
                         {varData.isParam ? (<span className='m-1 badge badge-info' >{varData.isfixed ? '固定参数' : '参数'}</span>) : null}
                         <span className='m-1 badge badge-secondary' >{varData.valType}</span>
@@ -1746,7 +1896,7 @@ class JSDef_Variable_Component extends React.PureComponent{
                 <input onChange={this.defaultInputChangedHandler} type='text' value={this.state.default} className='flexinput flex-grow-1 flex-shrink-1' />
             </div>
             <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={JsValueTypes} textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
-                <DropDownControl itemChanged={this.isParamChangedHandler} btnclass='btn-dark' options_arr={ISParam_Options_arr} textAttrName='name' valueAttrName='code' value={this.state.isParam} /> 
+            {varData.isOutput ? null : <DropDownControl itemChanged={this.isParamChangedHandler} btnclass='btn-dark' options_arr={ISParam_Options_arr} textAttrName='name' valueAttrName='code' value={this.state.isParam} />}
         </div>);
     }
 }

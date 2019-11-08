@@ -17,7 +17,7 @@ var TitleHeaderItem = function (_React$PureComponent) {
         var _this = _possibleConstructorReturn(this, (TitleHeaderItem.__proto__ || Object.getPrototypeOf(TitleHeaderItem)).call(this, props));
 
         var initState = {
-            title: _this.props.project.getAttribute('title')
+            title: _this.props.project.loading ? _this.props.project.title : _this.props.project.getAttribute('title')
         };
 
         _this.state = initState;
@@ -43,11 +43,17 @@ var TitleHeaderItem = function (_React$PureComponent) {
     }, {
         key: 'componentWillMount',
         value: function componentWillMount() {
+            if (this.props.project.loading) {
+                return;
+            }
             this.props.project.on(EATTRCHANGED, this.attrChangedHandler);
         }
     }, {
         key: 'componentWillUnmount',
         value: function componentWillUnmount() {
+            if (this.props.project.loading) {
+                return;
+            }
             this.props.project.off(EATTRCHANGED, this.attrChangedHandler);
         }
     }, {
@@ -59,7 +65,8 @@ var TitleHeaderItem = function (_React$PureComponent) {
                 React.createElement(
                     'button',
                     { onClick: this.props.clickTitlehandler, type: 'button', className: "btn btn-" + (this.props.active ? 'primary' : 'dark') },
-                    this.state.title
+                    this.state.title,
+                    this.props.project.loading ? React.createElement('i', { className: 'fa fa-refresh fa-spin fa-fw' }) : null
                 ),
                 !this.props.hideClose && React.createElement(
                     'button',
@@ -166,33 +173,32 @@ var ProjectContainer = function (_React$PureComponent2) {
                 title: projTitle
             };
             fetchJsonGet(path, { rnd: Math.random() }, this.fetchProjJsonCallback);
+            var newProjects = this.state.projects.concat({
+                path: path,
+                title: projTitle,
+                loading: true
+            });
+            this.setState({
+                projects: newProjects
+            });
+
             return true;
         }
     }, {
         key: 'synProjUseEntitiesCallback',
         value: function synProjUseEntitiesCallback(response) {
             var newProject = new CProject(null, response.json);
-            var newProjects = this.state.projects.concat(newProject);
+            var newProjects = this.state.projects.map(function (proj) {
+                if (proj.loading && proj.title == newProject.title) {
+                    return newProject;
+                }
+                return proj;
+            });
             this.setState({
                 projects: newProjects
             });
 
             this.openedPageChanged();
-            /*
-            var openPage_his = ReplaceIfNull(Cookies.get('openPage_his'),'');
-            var t_arr = openPage_his.split('|P|');
-            var newProjTitle = this.openingProj.title;
-            var index = t_arr.indexOf(newProjTitle);
-            if(index != 0){
-                var newHis = newProjTitle;
-                t_arr.forEach(item=>{
-                    if(item != newProjTitle && item != null && item.length > 0){
-                        newHis += '|P|' + item;
-                    }
-                });
-                Cookies.set('openPage_his', newHis, { expires: 7 });
-            }
-            */
         }
     }, {
         key: 'fetchProjJsonCallback',
@@ -327,17 +333,25 @@ var ProjectContainer = function (_React$PureComponent2) {
                     { className: 'flex-grow-1 flex-shrink-1 d-flex flex-column' },
                     React.createElement(
                         'div',
-                        { className: 'btn-group flex-grow-0 flex-shrink-0', role: 'group' },
+                        { className: 'd-flex flex-grow-0 flex-shrink-0' },
                         React.createElement(
-                            MenuItem,
-                            { id: 'MI_HB', text: "HB" + (LoginUser == null ? '' : LoginUser.name), className: 'text-primary' },
-                            React.createElement(MenuCammandItem, { text: '\u6253\u5F00\u9879\u76EE', cmd: 'open', executFun: this.executCmd }),
-                            React.createElement(MenuCammandItem, { text: '\u521B\u5EFA\u7A7A\u9879\u76EE', cmd: 'create', executFun: this.executCmd }),
-                            React.createElement(MenuCammandItem, { text: '\u6253\u5F00\u6D41\u7A0B\u5927\u5E08', cmd: 'openflowmaster', executFun: this.executCmd })
+                            'div',
+                            { className: 'btn-group flex-grow-1 flex-shrink-1', role: 'group' },
+                            React.createElement(
+                                MenuItem,
+                                { id: 'MI_HB', text: "HB" + (LoginUser == null ? '' : LoginUser.name), className: 'text-primary' },
+                                React.createElement(MenuCammandItem, { text: '\u6253\u5F00\u9879\u76EE', cmd: 'open', executFun: this.executCmd }),
+                                React.createElement(MenuCammandItem, { text: '\u521B\u5EFA\u7A7A\u9879\u76EE', cmd: 'create', executFun: this.executCmd }),
+                                React.createElement(MenuCammandItem, { text: '\u6253\u5F00\u6D41\u7A0B\u5927\u5E08', cmd: 'openflowmaster', executFun: this.executCmd })
+                            ),
+                            this.state.projects.map(function (item, i) {
+                                if (item.loading) {
+                                    return React.createElement(TitleHeaderItem, { key: item.title, project: item, index: i, clickTitlehandler: _this4.clickTitlehandler, active: i == _this4.state.selectedIndex });
+                                }
+                                return React.createElement(TitleHeaderItem, { key: item.designeConfig.name, project: item, index: i, clickTitlehandler: _this4.clickTitlehandler, clickClosehandler: _this4.clickClosehandler, active: i == _this4.state.selectedIndex });
+                            })
                         ),
-                        this.state.projects.map(function (item, i) {
-                            return React.createElement(TitleHeaderItem, { key: item.designeConfig.name, project: item, index: i, clickTitlehandler: _this4.clickTitlehandler, clickClosehandler: _this4.clickClosehandler, active: i == _this4.state.selectedIndex });
-                        })
+                        React.createElement(QuickKeyWordSynBar, null)
                     ),
                     React.createElement(ProjectManagerPanel, { ref: this.projManagerRef, wantOpenProjectFun: this.wantOpenProject }),
                     React.createElement(LoginPanel, { logCompleteFun: this.logCompleteFun }),
@@ -345,6 +359,13 @@ var ProjectContainer = function (_React$PureComponent2) {
                         'div',
                         { className: 'flex-grow-1 flex-shrink-1 bg-dark d-flex' },
                         this.state.projects.map(function (item, i) {
+                            if (item.loading) {
+                                return React.createElement(
+                                    'div',
+                                    { key: item.title, className: 'flex-grow-1 flex-shrink-1 ' + (_this4.state.selectedIndex == i ? 'd-flex' : 'd-none') },
+                                    item.title
+                                );
+                            }
                             item.projectIndex = i;
                             item.projectManager = projectManager;
                             return React.createElement(ProjectDesigner, { key: item.designeConfig.name, project: item, className: 'flex-grow-1 flex-shrink-1 ' + (_this4.state.selectedIndex == i ? 'd-flex' : 'd-none'), savePanelRef: _this4.savePanelRef });

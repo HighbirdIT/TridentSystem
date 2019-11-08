@@ -40,6 +40,12 @@ class LoginPanel extends React.PureComponent {
             PersonEductOptions_arr = respon.json.data.personEducts_arr;
             AllPosts_arr = respon.json.data.posts_arr;
             ProjectRecords_arr = respon.json.data.projects_arr;
+            while(AllFileFlows_arr.length > 0){
+                AllFileFlows_arr.pop();
+            }
+            respon.json.data.fileFlows_arr.forEach(t=>{
+                AllFileFlows_arr.push(t);
+            });
 
             this.endFetch('获取成功');
             var self = this;

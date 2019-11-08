@@ -25,10 +25,16 @@ class M_ContainerKernel extends ContainerKernelBase {
             if (!needFilt || child.type == targetType) {
                 rlt_arr.push(child);
             }
-            if (child.editor && (!needFilt || child.editor.type == targetType)) {
-                rlt_arr.push(child.editor);
+            if(child.editor){
+                if(!needFilt || child.editor.type == targetType){
+                    rlt_arr.push(child.editor);
+                }
+                if(child.editor.type == M_ContainerKernel_Type){
+                    // 穿透div
+                    child.editor.aidAccessableKernels(targetType, rlt_arr);
+                }
             }
-            if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && !child.isGridForm())){
+            if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && child.isPageForm()) || child.type == PopperButtonKernel_Type){
                 // 穿透div
                 child.aidAccessableKernels(targetType, rlt_arr);
             }
@@ -49,8 +55,8 @@ class M_ContainerKernel extends ContainerKernelBase {
         });
     }
 
-    renderSelf(clickHandler, replaceChildClick) {
-        return (<M_Container key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
+    renderSelf(clickHandler, replaceChildClick, designer) {
+        return (<M_Container key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
     }
 }
 
@@ -109,7 +115,7 @@ class M_Container extends React.PureComponent {
         var contentElem = this.props.ctlKernel.id;
         if (this.props.ctlKernel.children.length > 0) {
             contentElem = this.props.ctlKernel.children.map(childKernel => {
-                return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null, this.props.replaceChildClick);
+                return childKernel.renderSelf(this.props.replaceChildClick ? this.props.onClick : null, this.props.replaceChildClick, this.props.designer);
             });
         }
         var finalElem = null;
@@ -174,10 +180,10 @@ class M_Container extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC: false,
         label: 'DIV',
         type: M_ContainerKernel_Type,
         namePrefix: M_ContainerKernel_Prefix,
         kernelClass: M_ContainerKernel,
         reactClass: M_Container,
+        canbeLabeled: true,
     }, '布局');

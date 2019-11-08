@@ -324,18 +324,18 @@ var ControlKernelBase = function (_IAttributeable) {
         }
     }, {
         key: 'getLayoutConfig',
-        value: function getLayoutConfig() {
+        value: function getLayoutConfig(classAttrName, styleAttrName) {
             var _this3 = this;
 
             var rlt = new ControlLayoutConfig();
-            var apdAttrList = this.getAttrArrayList(AttrNames.LayoutNames.APDClass);
+            var apdAttrList = this.getAttrArrayList(classAttrName ? classAttrName : AttrNames.LayoutNames.APDClass);
             var self = this;
             apdAttrList.forEach(function (attrArrayItem) {
                 var val = _this3.getAttribute(attrArrayItem.name);
                 rlt.addClass(val);
             });
 
-            var styleAttrList = this.getAttrArrayList(AttrNames.LayoutNames.StyleAttr);
+            var styleAttrList = this.getAttrArrayList(styleAttrName ? styleAttrName : AttrNames.LayoutNames.StyleAttr);
             styleAttrList.forEach(function (attrArrayItem) {
                 var val = _this3.getAttribute(attrArrayItem.name);
                 if (val != null && !IsEmptyString(val.name) && !IsEmptyString(val.value)) {
@@ -418,6 +418,9 @@ var ControlKernelBase = function (_IAttributeable) {
     }, {
         key: 'hadAncestor',
         value: function hadAncestor(ancestorKernel) {
+            if (ancestorKernel == null) {
+                return false;
+            }
             var tparent = this.parent;
             while (tparent) {
                 if (tparent == ancestorKernel) {
@@ -458,7 +461,7 @@ var ControlKernelBase = function (_IAttributeable) {
         value: function isComplicatedPath() {
             var tKernel = this.parent;
             while (tKernel != null) {
-                if (tKernel == UserControlKernel_Type || tKernel == M_FormKernel_Type && tKernel.isGridForm()) {
+                if (tKernel == UserControlKernel_Type || tKernel == M_FormKernel_Type && !tKernel.isPageForm()) {
                     return true;
                 }
                 tKernel = tKernel.parent;
@@ -521,41 +524,80 @@ var ControlKernelBase = function (_IAttributeable) {
             if (rlt.editor && (!needFilt || rlt.editor.type == targetType)) {
                 rlt.push(rlt.editor);
             }
+            var meetParents_map = [];
             var nowKernel = this;
             var parent = nowKernel.parent;
+            var aidRlt_arr;
+            if (nowKernel.type == M_FormKernel_Type) {
+                if (nowKernel.isPageForm()) {
+                    parent = nowKernel; // page型的form可以访问到孩子控件
+                } else if (nowKernel.isGridForm()) {
+                    // grid型的form可以访问到bottom的控件
+                    meetParents_map[nowKernel.gridFormBottomDiv.id] = 1;
+                    aidRlt_arr = [];
+                    nowKernel.gridFormBottomDiv.aidAccessableKernels(targetType, aidRlt_arr);
+                    if (aidRlt_arr && aidRlt_arr.length > 0) {
+                        aidRlt_arr.forEach(function (x) {
+                            if (rlt.indexOf(x) == -1) {
+                                rlt.push(x);
+                            }
+                        });
+                    }
+                }
+            }
             if (parent == null) {
                 if (this.type == M_PageKernel_Type || this.type == UserControlKernel_Type) {
                     parent = this;
                     rlt.pop();
                 }
             }
-            var meetParents_map = [];
             while (parent != null) {
                 if (meetParents_map[parent.id]) {
                     return;
                 }
                 meetParents_map[parent.id] = true;
                 if (!needFilt || parent.type == targetType) {
-                    rlt.push(parent);
+                    if (rlt.indexOf(parent) == -1) {
+                        rlt.push(parent);
+                    }
                 }
                 parent.children.forEach(function (child) {
                     if (child != nowKernel) {
                         if (!needFilt || child.type == targetType) {
-                            rlt.push(child);
+                            if (rlt.indexOf(child) == -1) {
+                                rlt.push(child);
+                            }
                         }
-                        if (child.editor && (!needFilt || child.editor.type == targetType)) {
-                            rlt.push(child.editor);
+                        if (child.editor) {
+                            if (!needFilt || child.editor.type == targetType) {
+                                if (rlt.indexOf(child.editor) == -1) {
+                                    rlt.push(child.editor);
+                                }
+                            }
+                            if (child.editor.type == M_ContainerKernel_Type) {
+                                // 穿透div
+                                if (meetParents_map[child.editor.id] == null) {
+                                    meetParents_map[child.editor.id] = 1;
+                                    aidRlt_arr = [];
+                                    child.editor.aidAccessableKernels(targetType, aidRlt_arr);
+                                }
+                            }
                         }
-                        if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type && !child.isGridForm()) {
+                        if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type && child.isPageForm() || child.type == PopperButtonKernel_Type) {
                             // 穿透div
                             if (meetParents_map[child.id] == null) {
                                 meetParents_map[child.id] = 1;
-                                var aidRlt_arr = [];
+                                aidRlt_arr = [];
                                 child.aidAccessableKernels(targetType, aidRlt_arr);
-                                if (aidRlt_arr.length > 0) {
-                                    rlt = rlt.concat(aidRlt_arr);
-                                }
                             }
+                        }
+
+                        if (aidRlt_arr && aidRlt_arr.length > 0) {
+                            aidRlt_arr.forEach(function (x) {
+                                if (rlt.indexOf(x) == -1) {
+                                    rlt.push(x);
+                                }
+                            });
                         }
                     }
                 });
@@ -572,14 +614,17 @@ var ControlKernelBase = function (_IAttributeable) {
             var ignoreRowIndex = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
             var topestParant = arguments[4];
 
+            var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
+            switch (this.type) {
+                case M_ContainerKernel_Type:
+                    console.warn('getStatePath M_ContainerKernel_Type');
+                    rlt = '';
+                    break;
+            }
             if (this.parent == null || this == topestParant) {
-                return stateName;
+                return rlt;
             }
             var nowKernel = this.parent;
-            var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
-            if (this.type == M_ContainerKernel_Type) {
-                rlt = '';
-            }
             while (nowKernel != null && nowKernel != topestParant) {
                 switch (nowKernel.type) {
                     case M_PageKernel_Type:
@@ -613,6 +658,11 @@ var ControlKernelBase = function (_IAttributeable) {
         key: 'isAEditor',
         value: function isAEditor() {
             return this.parent && this.parent.editor == this;
+        }
+    }, {
+        key: 'getParentLabledCtl',
+        value: function getParentLabledCtl() {
+            return this.searchParentKernel(M_LabeledControlKernel_Type, true);
         }
     }, {
         key: 'canAppand',
@@ -683,6 +733,12 @@ var ControlLayoutConfig = function () {
             return true;
         }
     }, {
+        key: 'removeClass',
+        value: function removeClass(className) {
+            delete this.class[className];
+            delete this.switch[className];
+        }
+    }, {
         key: 'addStyle',
         value: function addStyle(name, val) {
             if (IsEmptyString(name) || val == null) {
@@ -690,6 +746,11 @@ var ControlLayoutConfig = function () {
             }
             this.style[name] = val;
             return true;
+        }
+    }, {
+        key: 'removeStyle',
+        value: function removeStyle(name) {
+            delete style[name];
         }
     }, {
         key: 'getClassName',
@@ -700,6 +761,11 @@ var ControlLayoutConfig = function () {
                 rlt += si + ' ';
             }
             return rlt;
+        }
+    }, {
+        key: 'hadClass',
+        value: function hadClass(name) {
+            return this.class[name] != null;
         }
     }]);
 

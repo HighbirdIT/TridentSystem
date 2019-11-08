@@ -304,16 +304,16 @@ class ControlKernelBase extends IAttributeable {
         }
     }
 
-    getLayoutConfig() {
+    getLayoutConfig(classAttrName, styleAttrName) {
         var rlt = new ControlLayoutConfig();
-        var apdAttrList = this.getAttrArrayList(AttrNames.LayoutNames.APDClass);
+        var apdAttrList = this.getAttrArrayList(classAttrName ? classAttrName : AttrNames.LayoutNames.APDClass);
         var self = this;
         apdAttrList.forEach(attrArrayItem => {
             var val = this.getAttribute(attrArrayItem.name);
             rlt.addClass(val);
         });
 
-        var styleAttrList = this.getAttrArrayList(AttrNames.LayoutNames.StyleAttr);
+        var styleAttrList = this.getAttrArrayList(styleAttrName ? styleAttrName : AttrNames.LayoutNames.StyleAttr);
         styleAttrList.forEach(attrArrayItem => {
             var val = this.getAttribute(attrArrayItem.name);
             if (val != null && !IsEmptyString(val.name) && !IsEmptyString(val.value)) {
@@ -394,6 +394,9 @@ class ControlKernelBase extends IAttributeable {
     }
 
     hadAncestor(ancestorKernel){
+        if(ancestorKernel == null){
+            return false;
+        }
         var tparent = this.parent;
         while(tparent){
             if(tparent == ancestorKernel){
@@ -434,7 +437,7 @@ class ControlKernelBase extends IAttributeable {
     isComplicatedPath(){
         var tKernel = this.parent;
         while(tKernel != null){
-            if(tKernel == UserControlKernel_Type || (tKernel == M_FormKernel_Type && tKernel.isGridForm())){
+            if(tKernel == UserControlKernel_Type || (tKernel == M_FormKernel_Type && !tKernel.isPageForm())){
                 return true;
             }
             tKernel = tKernel.parent;
@@ -498,15 +501,34 @@ class ControlKernelBase extends IAttributeable {
         if(rlt.editor && (!needFilt || rlt.editor.type == targetType)){
             rlt.push(rlt.editor);
         }
+        var meetParents_map = [];
         var nowKernel = this;
         var parent = nowKernel.parent;
+        var aidRlt_arr;
+        if(nowKernel.type == M_FormKernel_Type){
+            if(nowKernel.isPageForm()){
+                parent = nowKernel; // page型的form可以访问到孩子控件
+            }
+            else if(nowKernel.isGridForm()){
+                // grid型的form可以访问到bottom的控件
+                meetParents_map[nowKernel.gridFormBottomDiv.id] = 1;
+                aidRlt_arr = [];
+                nowKernel.gridFormBottomDiv.aidAccessableKernels(targetType, aidRlt_arr);
+                if(aidRlt_arr && aidRlt_arr.length > 0){
+                    aidRlt_arr.forEach(x=>{
+                        if(rlt.indexOf(x) == -1){
+                            rlt.push(x);
+                        }
+                    });
+                }
+            }
+        }
         if(parent == null){
             if(this.type == M_PageKernel_Type || this.type == UserControlKernel_Type){
                 parent = this;
                 rlt.pop();
             }
         }
-        var meetParents_map = [];
         while(parent != null){
             if(meetParents_map[parent.id]){
                 return;
@@ -514,27 +536,48 @@ class ControlKernelBase extends IAttributeable {
             meetParents_map[parent.id] = true;
             if(!needFilt|| parent.type == targetType)
             {
-                rlt.push(parent);
+                if(rlt.indexOf(parent) == -1){
+                    rlt.push(parent);
+                }
             }
             parent.children.forEach(child=>{
                 if(child != nowKernel){
                     if(!needFilt || child.type == targetType)
                     {
-                        rlt.push(child);
+                        if(rlt.indexOf(child) == -1){
+                            rlt.push(child);
+                        }
                     }
-                    if(child.editor && (!needFilt || child.editor.type == targetType)){
-                        rlt.push(child.editor);
+                    if(child.editor){
+                        if(!needFilt || child.editor.type == targetType){
+                            if(rlt.indexOf(child.editor) == -1){
+                                rlt.push(child.editor);
+                            }
+                        }
+                        if(child.editor.type == M_ContainerKernel_Type){
+                            // 穿透div
+                            if(meetParents_map[child.editor.id] == null){
+                                meetParents_map[child.editor.id] = 1;
+                                aidRlt_arr = [];
+                                child.editor.aidAccessableKernels(targetType, aidRlt_arr);
+                            }
+                        }
                     }
-                    if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && !child.isGridForm())){
+                    if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && child.isPageForm()) || child.type == PopperButtonKernel_Type){
                         // 穿透div
                         if(meetParents_map[child.id] == null){
                             meetParents_map[child.id] = 1;
-                            var aidRlt_arr = [];
+                            aidRlt_arr = [];
                             child.aidAccessableKernels(targetType, aidRlt_arr);
-                            if(aidRlt_arr.length > 0){
-                                rlt = rlt.concat(aidRlt_arr);
-                            }
                         }
+                    }
+
+                    if(aidRlt_arr && aidRlt_arr.length > 0){
+                        aidRlt_arr.forEach(x=>{
+                            if(rlt.indexOf(x) == -1){
+                                rlt.push(x);
+                            }
+                        });
                     }
                 }
             });
@@ -545,14 +588,17 @@ class ControlKernelBase extends IAttributeable {
     }
 
     getStatePath(stateName, splitChar = '.', rowIndexVar_map = {}, ignoreRowIndex = false, topestParant){
+        var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
+        switch(this.type){
+            case M_ContainerKernel_Type:
+            console.warn('getStatePath M_ContainerKernel_Type');
+            rlt = '';
+            break;
+        }
         if(this.parent == null || this == topestParant){
-            return stateName;
+            return rlt;
         }
         var nowKernel = this.parent;
-        var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
-        if(this.type == M_ContainerKernel_Type){
-            rlt = '';
-        }
         while(nowKernel != null && nowKernel != topestParant){
             switch(nowKernel.type){
                 case M_PageKernel_Type:
@@ -586,6 +632,10 @@ class ControlKernelBase extends IAttributeable {
 
     isAEditor(){
         return this.parent && this.parent.editor == this;
+    }
+
+    getParentLabledCtl(){
+        return this.searchParentKernel(M_LabeledControlKernel_Type, true);
     }
 
     canAppand(){
@@ -646,12 +696,21 @@ class ControlLayoutConfig {
         return true;
     }
 
+    removeClass(className){
+        delete this.class[className];
+        delete this.switch[className];
+    }
+
     addStyle(name, val) {
         if (IsEmptyString(name) || val == null) {
             return false;
         }
         this.style[name] = val;
         return true;
+    }
+
+    removeStyle(name) {
+        delete style[name];
     }
 
     getClassName() {
@@ -662,6 +721,10 @@ class ControlLayoutConfig {
             rlt += si + ' ';
         }
         return rlt;
+    }
+
+    hadClass(name){
+        return this.class[name] != null;
     }
 }
 

@@ -53,8 +53,8 @@ class M_TextKernel extends ControlKernelBase {
         }
     }
 
-    renderSelf(clickHandler) {
-        return (<M_Text key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+    renderSelf(clickHandler, replaceChildClick, designer) {
+        return (<M_Text key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {
@@ -136,7 +136,6 @@ class M_Text extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC: false,
         label: '文本框',
         type: M_TextKernel_Type,
         namePrefix: M_TextKernel_Prefix,

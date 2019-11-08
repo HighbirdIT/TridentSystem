@@ -40,17 +40,20 @@ class CProject extends IAttributeable {
         this.project = this;
         this.userControls_arr = [];
 
-        this.designeConfig = {
+        var designeConfig = {
             name: genProjectName(),
-            editingType: 'MB',
+            editingType: jsonData == null || jsonData.editingType == null ? 'MB' : jsonData.editingType,
             editingPage: {
+                mbid:jsonData == null || jsonData.lastEditingMBPageID == null ? -1 : jsonData.lastEditingMBPageID,
+                pcid:jsonData == null || jsonData.lastEditingPCPageID == null ? -1 : jsonData.lastEditingPCPageID,
                 id: jsonData == null ? -1 : jsonData.lastEditingPageID
             },
             description: '页面',
             editingControl: {
                 id: jsonData == null ? -1 : jsonData.lastEditingControlID
-            }
-        }
+            },
+        };
+        this.designeConfig = designeConfig;
 
         this.content_PC = {
             pages: [],
@@ -73,26 +76,41 @@ class CProject extends IAttributeable {
             if (jsonData.attr != null) {
                 Object.assign(this, jsonData.attr);
             }
-            this.dataMaster.restoreFromJson(jsonData.dataMaster);
-            this.scriptMaster.restoreFromJson(jsonData.scriptMaster);
+            var restoreHelper = new RestoreHelper(jsonData.dictionary);
+            this.dataMaster.restoreFromJson(jsonData.dataMaster, restoreHelper);
+            this.scriptMaster.restoreFromJson(jsonData.scriptMaster, restoreHelper);
 
+            var usertemplateCreatioinHelper = new CtlKernelCreationHelper();
+            usertemplateCreatioinHelper.restoreHelper = restoreHelper;
             if (jsonData.userControls_arr) {
                 jsonData.userControls_arr.forEach(ctlJson => {
-                    var newUCtl = new UserControlKernel({ project: this }, null, null, ctlJson);
+                    ctlJson.restoreHelper = restoreHelper;
+                    var newUCtl = new UserControlKernel({ project: this }, null, usertemplateCreatioinHelper, ctlJson);
                     this.userControls_arr.push(newUCtl);
                 });
 
                 jsonData.userControls_arr.forEach((ctlJson, index) => {
-                    this.userControls_arr[index].__restoreChildren(null, ctlJson);
+                    this.userControls_arr[index].__restoreChildren(usertemplateCreatioinHelper, ctlJson);
                 });
             }
 
 
             var self = this;
             var ctlCreatioinHelper = new CtlKernelCreationHelper();
+            ctlCreatioinHelper.restoreHelper = restoreHelper;
+            var newPage;
             jsonData.content_Mobile.pages.forEach(pageJson => {
-                var newPage = new M_PageKernel({}, this, ctlCreatioinHelper, pageJson);
+                pageJson.restoreHelper = restoreHelper;
+                newPage = new M_PageKernel({}, this, ctlCreatioinHelper, pageJson);
+                newPage.ispcPage = false;
                 this.content_Mobile.pages.push(newPage);
+            });
+
+            jsonData.content_PC.pages.forEach(pageJson => {
+                pageJson.restoreHelper = restoreHelper;
+                newPage = new M_PageKernel({}, this, ctlCreatioinHelper, pageJson);
+                newPage.ispcPage = true;
+                this.content_PC.pages.push(newPage);
             });
         }
         this.loaded = true;
@@ -130,10 +148,10 @@ class CProject extends IAttributeable {
         if (foundItem != null) {
             return null;
         }
-        var newID = 'userControl';
+        var newID = 'UserControl';
         var ki = 0;
         do {
-            newID = 'userControl_T' + ki;
+            newID = 'UserControl_T' + ki;
             foundItem = this.userControls_arr.find(x => { return x.id == newID; });
             if (foundItem == null) {
                 break;
@@ -206,16 +224,21 @@ class CProject extends IAttributeable {
             console.warn(useID + ' 已被占用');
             useID = null;
         }
+        var ctlType = ctlKernel.type;
         if (IsEmptyString(useID)) {
-            var ctlType = ctlKernel.type;
             if(ctlType == UserControlKernel_Type){
-                ctlType = ctlKernel.refID == null ? 'userControl_T' : 'userControl';
+                ctlType = ctlKernel.refID == null ? 'UserControl_T' : 'UserControl';
             }
             for (var i = 0; i < 9999; ++i) {
                 useID = ctlType + '_' + i;
                 if (this.getControlById(useID) == null) {
                     break;
                 }
+            }
+        }
+        else{
+            if(ctlType == UserControlKernel_Type){
+                useID = useID[0].toUpperCase() + useID.substring(1, useID.length);
             }
         }
         ctlKernel.id = useID;
@@ -335,7 +358,7 @@ class CProject extends IAttributeable {
             var hadItem = null;
             newTitle = (!isPC ? '手机页面_' : 'PC页面_') + i;
             if (isPC) {
-                hadItem = this.content_PC.pages.find(item => { return item.getAttribute('title') == newTitle; });
+                hadItem = this.content_PC.pages.find(item => { return item.getAttribute('title') == newTitle;    });
             }
             else {
                 hadItem = this.content_Mobile.pages.find(item => { return item.getAttribute('title') == newTitle; });
@@ -351,6 +374,7 @@ class CProject extends IAttributeable {
         else {
             this.content_Mobile.pages.push(newPage);
         }
+        newPage.ispcPage = isPC;
         return newPage;
     }
 
@@ -385,6 +409,7 @@ class CProject extends IAttributeable {
             isPC = this.designeConfig.editingType == 'PC';
         }
         return isPC ? this.content_PC.pages.filter(page => { return page.getAttribute(AttrNames.PopablePage) == true; }) : this.content_Mobile.pages.filter(page => { return page.getAttribute(AttrNames.PopablePage) == true; });
+        //return isPC ? this.content_PC.pages : this.content_Mobile.pages;
     }
 
     getJumpablePages(isPC) {
@@ -399,13 +424,34 @@ class CProject extends IAttributeable {
     }
 
     setEditingType(newValue) {
-
+        var nowValue = this.designeConfig.editingType;
+        var editingPage = this.getEditingPage();
+        if(newValue == nowValue){
+            return;
+        }
+        if(nowValue == 'PC'){
+            this.designeConfig.editingPage.pcid = editingPage == null ? -1 : editingPage.id;
+        }
+        else{
+            this.designeConfig.editingPage.mbid = editingPage == null ? -1 : editingPage.id;
+        }
+        this.designeConfig.editingType = newValue == 'PC' ? 'PC' : 'MB';
+        if(newValue == 'PC'){
+            this.setEditingPageById(this.designeConfig.editingPage.pcid);
+        }
+        else{
+            this.setEditingPageById(this.designeConfig.editingPage.mbid);
+        }
+        this.attrChanged('editingType');
     }
 
-    toggleEditingType(newValue) {
-        this.designeConfig.editingType = this.designeConfig.editingType == 'PC' ? 'MB' : 'PC';
-        this.attrChanged('editingType');
+    toggleEditingType() {
+        this.setEditingType(this.designeConfig.editingType == 'PC' ? 'MB' : 'PC');
         return true;
+    }
+
+    getNowEditingType(){
+        return this.designeConfig.editingType;
     }
 
     set_title(newtitle) {
@@ -427,10 +473,14 @@ class CProject extends IAttributeable {
         if (jsonProf == null) {
             jsonProf = new AttrJsonProfile();
         }
+        //jsonProf.hadDictionary = true;
         var attrJson = super.getJson(jsonProf);
         var rlt = {
             attr: attrJson,
+            editingType: this.designeConfig.editingType,
             lastEditingPageID: this.designeConfig.editingPage.id,
+            lastEditingPCPageID: this.designeConfig.editingPage.pcid,
+            lastEditingMBPageID: this.designeConfig.editingPage.mbid,
             lastEditingControlID: this.designeConfig.editingControl.id
         };
         rlt.content_PC = {
@@ -458,6 +508,7 @@ class CProject extends IAttributeable {
         rlt.useEntities_arr = jsonProf.entities_arr.map(entity => {
             return entity.code;
         });
+        //rlt.dictionary = jsonProf.getDictionaryObj();
         return rlt;
     }
 
@@ -658,7 +709,7 @@ class CProject extends IAttributeable {
                 if (aidControlId_map[UCJson.id] != null) {
                     var newID = '';
                     for (i = 0; i < 9999; ++i) {
-                        newID = 'userControl_T' + i;
+                        newID = 'UserControl_T' + i;
                         if (aidControlId_map[newID] == null) {
                             if (useControlsID_all[newID] == null) {
                                 break;
@@ -823,13 +874,70 @@ class CProject extends IAttributeable {
     }
 }
 
+class RestoreHelper{
+    constructor(dictionary) {
+        this.dictionary = dictionary;
+    }
+
+    queryDictionnary(key){
+        if(this.dictionary == null || typeof key != 'string' || key[0] != '$' || this.dictionary[key] == null){
+            return key;
+        }
+        return this.dictionary[key];
+    }
+
+    trasnlateJson(targetJson){
+        if(this.dictionary == null){
+            return;
+        }
+        for(var name in targetJson){
+            var value = targetJson[name];
+            if(typeof value == 'string'){
+                targetJson[name] = this.queryDictionnary(value);
+            }
+        }
+    }
+}
+
 class AttrJsonProfile {
-    constructor() {
+    constructor(hadDictionary) {
         this.entities_arr = [];
         this.customDS_arr = [];
         this.useControl_map = {};
         this.useUserControl_map = {};
         this.refControl_map = {};
+        this.dictionary = {};
+        this.keyIndex = 0;
+        this.hadDictionary = hadDictionary == true;
+    }
+
+    addDictionnary(value){
+        if(!this.hadDictionary){
+            return value;
+        }
+        if(typeof value != 'string' || value.length < 2){
+            return value;
+        }
+        if(this.dictionary[value]){
+            return this.dictionary[value];
+        }
+        var newKey = '$' + this.keyIndex.toString(16).toLocaleLowerCase();
+        if(newKey.length >= value.length){
+            return value;
+        }
+        this.dictionary[value] = newKey;
+        this.keyIndex++;
+        return newKey;
+    }
+
+    getDictionaryObj(){
+        var rlt = {};
+        if(this.hadDictionary){
+            for(var key in this.dictionary){
+                rlt[this.dictionary[key]] = key;
+            }
+        }
+        return rlt;
     }
 
     useEntity(entity) {

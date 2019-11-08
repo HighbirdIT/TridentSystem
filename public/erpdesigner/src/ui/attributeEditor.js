@@ -333,8 +333,17 @@ class AttributeEditor extends React.PureComponent {
         project.designer.editListFormContent(this.props.targetobj);
     }
 
+    clickEditKernelContent() {
+        var project = this.props.targetobj.project;
+        project.designer.editKernelContent(this.props.targetobj.getContentKernel());
+    }
+
     renderListFormContent(nowVal, theAttr, attrName, inputID) {
         return (<button type='button' className='btn btn-dark w-100' onClick={this.clickListFormContent}>定制列表数据</button>);
+    }
+
+    renderEditKernelContent(nowVal, theAttr, attrName, inputID) {
+        return (<button type='button' className='btn btn-dark w-100' onClick={this.clickEditKernelContent}>编辑内容</button>);
     }
 
     rednerEditor(theAttr, attrName, inputID) {
@@ -356,6 +365,9 @@ class AttributeEditor extends React.PureComponent {
         }
         if (theAttr.valueType == ValueType.ListFormContent) {
             return this.renderListFormContent(nowVal, theAttr, attrName, inputID);
+        }
+        if (theAttr.valueType == ValueType.ModifyContent) {
+            return this.renderEditKernelContent(nowVal, theAttr, attrName, inputID);
         }
         var attrEditable = ReplaceIfNull(this.props.targetobj[attrName + '_editable'], theAttr.editable);
         if (!attrEditable) {

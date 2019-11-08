@@ -11,6 +11,15 @@ function genTextFiledAttribute(label='显示字段', def='', editable = true){
     });
 }
 
+function genColumnFieldAttribute(label, name, def=''){
+    return new CAttribute(label,name,ValueType.String, def, true, false, [], 
+    {
+        pullDataFun:GetKernelCanUseColumns,
+        text:'name',
+        editable:false,
+    }, true);
+}
+
 function genValueFiledAttribute(label='码值字段', def='', editable = true){
     return new CAttribute(label,AttrNames.ValueField,ValueType.String, def, true, false, [], 
     {
@@ -207,13 +216,18 @@ const VarNames={
     FullPath:'fullPath',
     FullParentPath:'fullParentPath',
     SelectedRows_arr:'selectedRows_arr',
+    SelectedValue:'selectedValue',
+    SelectedValues_arr:'selectedValues_arr',
+    SelectedColumns:'selectedColumns',
     BaseBunlde:'baseBundle',
     HoldSelected:'holdSelected',
     Userctlpath:'userctlpath',
     OldValue:'oldValue',
     SatePath:'statePath',
     Visible:'visible',
+    NowRow:'nowrow',
 };
+
 
 const AttrNames={
     ButtonClass:'btnclass',
@@ -253,8 +267,11 @@ const AttrNames={
     WidthType:'widthType',
     ColumnWidth:'columnWidth',
     AutoHeight:'autoHeight',
+    HadScroll:'hadScroll',
     AutoIndexColumn:'autoIndexColumn',
     NoDataTip:'noDataTip',
+    NoDataAct:'noDataAct',
+    FetchErrAct:'fetchErrAct',
     MultiSelect:'multiselect',
     RelFlowStep:'relflowstep',
     GenNavBar:'gennavbar',
@@ -287,6 +304,27 @@ const AttrNames={
     IconType:'icontype',
     AutoCloseBtn:'autoclosebtn',
     HaveDoneTip: 'havedonetip',
+    DockType:'dockType',
+    HideTitle:'hidetitle',
+    ButtonType:'buttontype',
+    ManualChanged:'manualChanged',
+    RendererCtlType:'rendererctltype',
+    Wrap:'wrap',
+    OutputCharCount:'outputcharcount',
+    AutoHomeBtn:'autoHomeBtn',
+    AutoPull:'autoPull',
+    DefaultVisible:'defaultvisible',
+    InsertBtnLabel:'insertbtnlabel',
+    KeyRecrodID:'keyrecordid',
+    AttachmentID:'attachmentid',
+    ModifyContent:'modifycontent',
+    ToolTip:'toolTip',
+    Growable:'growable',
+    InvalidAct: 'invalidAct',
+    KeyColumn:'keyColumn',
+    RefreshIcon: 'refreshicon',
+    DefaultSelectFirst: 'defaultSelectFirst',
+    WidthFactor: 'widthfactor',
 
     Event:{
         OnClick:'onclick',
@@ -295,6 +333,11 @@ const AttrNames={
         OnInsert:'onInsert',
         OnLoad:'onLoad',
         OnChanged:'onChanged',
+        OnMouseDown:'onMouseDown',
+        OnSelectedChanged:'onSelectedChanged',
+        OnRowChanged:'onRowChanged',
+        OnUploadComplete:'onUploadComplate',
+        OnDataSourceChanged:'onDataSourceChanged',
     },
 
     LayoutNames:{

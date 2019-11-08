@@ -55,8 +55,12 @@ class FormatFile_Line extends FormatFile_ItemBase{
         this.content = content;
     }
 
-    clone(){
-        return new FormatFile_Line(this.content, this.indent, this.endChar);
+    clone(clonedCallback){
+        var rlt = new FormatFile_Line(this.content, this.indent, this.endChar);
+        if(clonedCallback){
+            clonedCallback(rlt, this);
+        }
+        return rlt;
     }
 
     append(content){
@@ -103,12 +107,15 @@ class FormatFileBlock extends FormatFile_ItemBase{
         this.childs_map = {};
     }
 
-    clone(){
+    clone(clonedCallback){
         var rlt = new FormatFileBlock(this.name, this.priority);
         this.childs_arr.forEach(child=>{
-            rlt.pushChild(child.clone());
+            rlt.pushChild(child.clone(clonedCallback));
         });
         rlt.nextLineIndent = this.nextLineIndent;
+        if(clonedCallback){
+            clonedCallback(rlt, this);
+        }
         return rlt;
     }
 
@@ -198,6 +205,7 @@ class FormatHtmlTag extends FormatFile_ItemBase{
         this.attrObj = {};
         this.childs_map = {};
         this.childs_arr = [];
+        this.getStringCallbacker = [];
     }
 
     clear(){
@@ -205,21 +213,42 @@ class FormatHtmlTag extends FormatFile_ItemBase{
         this.childs_map = {};
     }
 
-    clone(){
+    clone(clonedCallback){
         var rlt = new FormatHtmlTag(this.name, this.tagName, this.clientSide);
         this.childs_arr.forEach(child=>{
-            rlt.pushChild(child.clone());
+            rlt.pushChild(child.clone(clonedCallback));
         });
         rlt.class = Object.assign({}, this.class);
         rlt.style = Object.assign({}, this.style);
         rlt.switch = Object.assign({}, this.switch);
         rlt.attrObj = Object.assign({}, this.attrObj);
+        if(clonedCallback){
+            clonedCallback(rlt, this);
+        }
         return rlt;
+    }
+
+    addGetStringLisener(fun){
+        var index = this.getStringCallbacker.indexOf(fun);
+        if(index == -1)
+        {
+            this.getStringCallbacker.push(fun);
+        }
+    }
+
+    removeGetStringLisener(fun){
+        var index = this.getStringCallbacker.indexOf(fun);
+        if(index != -1)
+        {
+            this.getStringCallbacker.splice(indent,1);
+        }
     }
 
     setAttr(name, value){
         this.attrObj[name] = value;
     }
+
+    
 
     addSwitchClass(switchName, switchVal, existsProcess) {
         if (this.switch[switchName] != null) {
@@ -336,6 +365,13 @@ class FormatHtmlTag extends FormatFile_ItemBase{
         else{
             rlt += ' />';
         }
+
+        this.getStringCallbacker.forEach(callBack=>{
+            rlt = callBack(rlt, indentChar, newLineChar, prefixStr);
+            if(rlt == null){
+                console.error('getStringCallbacker return null');
+            }
+        });
         return rlt;
     }
 }
@@ -351,15 +387,18 @@ class FormatFileRegion extends FormatFile_ItemBase{
         this.defaultBlock = defaultBlock;
     }
 
-    clone(){
+    clone(clonedCallback){
         var rlt = new FormatFileRegion(this.name, this.priority);
         rlt.blocks_map = {};
         rlt.blocks_arr = [];
         this.blocks_arr.forEach(block=>{
-            var newBlock = block.clone();
+            var newBlock = block.clone(clonedCallback);
             rlt.getBlock(newBlock.name, true, newBlock.priority);
         });
         rlt.defaultBlock = rlt.getBlock('default');
+        if(clonedCallback){
+            clonedCallback(rlt, this);
+        }
         return rlt;
     }
 
@@ -511,11 +550,14 @@ class JSFile_Switch extends FormatFileBlock{
         this.defaultBlock.parent = this;
     }
 
-    clone(){
+    clone(clonedCallback){
         var rlt = new JSFile_Switch(this.name, this.flagName);
         for(var ci in this.caseBloks_map){
-            rlt.caseBloks_map[ci] = this.caseBloks_map[ci].clone();
+            rlt.caseBloks_map[ci] = this.caseBloks_map[ci].clone(clonedCallback);
             rlt.caseBloks_map[ci].parent = rlt;
+        }
+        if(clonedCallback){
+            clonedCallback(rlt, this);
         }
         return rlt;
     }
@@ -565,15 +607,18 @@ class JSFile_IF extends FormatFileBlock{
         this.falseBlock.parent = this;
     }
 
-    clone(){
+    clone(clonedCallback){
         var rlt = new JSFile_IF(this.name, this.condition);
-        rlt.trueBlock = this.trueBlock.clone();
-        rlt.falseBlock = this.falseBlock.clone();
+        rlt.trueBlock = this.trueBlock.clone(clonedCallback);
+        rlt.falseBlock = this.falseBlock.clone(clonedCallback);
         for(var ci in this.elseIfs_arr){
-            rlt.elseIfs_arr.push(this.elseIfs_arr[ci].clone());
+            rlt.elseIfs_arr.push(this.elseIfs_arr[ci].clone(clonedCallback));
         }
         rlt.trueBlock.parent = rlt;
         rlt.falseBlock.parent = rlt;
+        if(clonedCallback){
+            clonedCallback(rlt, this);
+        }
         return rlt;
     }
 
@@ -632,13 +677,16 @@ class JSFile_Try extends FormatFileBlock{
         this.errorBlock.parent = this;
     }
 
-    clone(){
+    clone(clonedCallback){
         var rlt = new JSFile_Try(this.name);
-        rlt.bodyBlock = this.bodyBlock.clone();
-        rlt.errorBlock = this.errorBlock.clone();
+        rlt.bodyBlock = this.bodyBlock.clone(clonedCallback);
+        rlt.errorBlock = this.errorBlock.clone(clonedCallback);
 
         rlt.bodyBlock.parent = rlt;
         rlt.errorBlock.parent = rlt;
+        if(clonedCallback){
+            clonedCallback(rlt, this);
+        }
         return rlt;
     }
 
@@ -1086,6 +1134,7 @@ class CP_ClientSide extends JSFileMaker{
         ifLoginBK.falseBlock.pushLine("var search = location.search.replace('?','');");
         ifLoginBK.falseBlock.pushLine("location.href = '/?goto=' + location.pathname + '&' + search;");
 
+        this.endBlock.pushLine("AppInit(this);");
         this.endBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, { action: 'pageloaded' }, null, 'pageloaded', '正在加载[' + thisAppTitle + ']'));");
     }
 

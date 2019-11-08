@@ -70,7 +70,7 @@ var ErpDesigner = function (_React$PureComponent) {
                 React.createElement(MainMenu, null),
                 React.createElement(
                     "div",
-                    { className: "flex-grow-1 d-flex flex-column", style: { overflow: "hidden" } },
+                    { className: "flex-grow-1 flex-shrink-1 d-flex flex-column minh-0", style: { overflow: "hidden" } },
                     React.createElement(ProjectContainer, null)
                 ),
                 React.createElement(StatusBar, null)
@@ -81,4 +81,4 @@ var ErpDesigner = function (_React$PureComponent) {
     return ErpDesigner;
 }(React.PureComponent);
 
-ReactDOM.render(React.createElement(ErpDesigner, { className: "w-100 h-100 d-flex flex-column" }), document.getElementById('reactRoot'));
+ReactDOM.render(React.createElement(ErpDesigner, { className: "w-100 h-100 d-flex flex-column minh-0" }), document.getElementById('reactRoot'));

@@ -15,6 +15,19 @@
     min-width: 450px;
     max-height: 800px;
     max-width: 700px;
+    margin: auto;
+}
+
+.pcPage{
+  min-height: 600px;
+  min-width: 1024px;
+  max-height: 1600px;
+  max-width: 2048px;
+  margin: auto;
+}
+
+.width-1{
+  width: 1px;
 }
 
 .projectContentHeader{
@@ -621,6 +634,14 @@
   flex-grow: 1;
 }
 
+.rowlFameTwo{
+  flex-shrink: 0;
+  flex-grow: 0;
+  flex-direction: column;
+  display: flex;
+  margin: 10px;
+}
+
 .attrEditorLabel{
   width: 6.5em;
   padding: 2px;
@@ -667,5 +688,36 @@
 
 .controlHandleBar{
   position: absolute;
-  transform: translate(0%, -100%);
+  left: 0%;
+  bottom: 10px;
+}
+
+.projectlink{
+  border: 2px solid #007bff !important;
+  font-size: 1em;
+  margin: 4px;
+  padding: 4px;
+  border-radius: 0.25rem !important;
+  cursor: pointer;
+}
+
+.minh-0{
+  min-height: 0
+}
+
+.filepreviewer{
+  text-align: center;
+  margin: 4px;
+  border-radius: 0.25rem !important;
+  border: 2px solid #dee2e6 !important;
+  width: 7em;
+  height: 7em;
+  position: relative;
+}
+
+.M_SingleFileUploader{
+  text-align: center;
+  border-radius: 0.25rem !important;
+  border: 2px solid #dee2e6 !important;
+  width: 7em;
 }

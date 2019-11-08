@@ -2,7 +2,7 @@ class TitleHeaderItem extends React.PureComponent {
     constructor(props) {
         super(props);
         var initState = {
-            title: this.props.project.getAttribute('title'),
+            title: this.props.project.loading ? this.props.project.title : this.props.project.getAttribute('title'),
         };
 
         this.state = initState;
@@ -25,10 +25,16 @@ class TitleHeaderItem extends React.PureComponent {
     }
  
     componentWillMount(){
+        if(this.props.project.loading){
+            return;
+        }
         this.props.project.on(EATTRCHANGED, this.attrChangedHandler);
     }
 
     componentWillUnmount(){
+        if(this.props.project.loading){
+            return;
+        }
         this.props.project.off(EATTRCHANGED, this.attrChangedHandler);
     }
 
@@ -37,6 +43,7 @@ class TitleHeaderItem extends React.PureComponent {
             <div className="btn-group" projectindex={this.props.index}>
                 <button onClick={this.props.clickTitlehandler} type="button" className={"btn btn-" + (this.props.active ? 'primary' : 'dark')}>
                     {this.state.title}
+                    {this.props.project.loading ? <i className='fa fa-refresh fa-spin fa-fw' /> : null}
                 </button>
                 {
                     !this.props.hideClose &&  <button onClick={this.props.clickClosehandler} className={"btn btn-" + (this.props.active ? 'primary' : 'dark')} type="button"><span>&times;</span></button>
@@ -123,32 +130,31 @@ class ProjectContainer extends React.PureComponent {
             title:projTitle,
         }
         fetchJsonGet(path, {rnd:Math.random()}, this.fetchProjJsonCallback);
+        var newProjects = this.state.projects.concat({
+            path:path,
+            title:projTitle,
+            loading:true,
+        });
+        this.setState({
+            projects:newProjects
+        });
+
         return true;
     }
 
     synProjUseEntitiesCallback(response){
         var newProject = new CProject(null, response.json);
-        var newProjects = this.state.projects.concat(newProject);
+        var newProjects = this.state.projects.map(proj=>{
+            if(proj.loading && proj.title == newProject.title){
+                return newProject;
+            }
+            return proj;
+        });
         this.setState({
             projects:newProjects
         });
 
         this.openedPageChanged();
-        /*
-        var openPage_his = ReplaceIfNull(Cookies.get('openPage_his'),'');
-        var t_arr = openPage_his.split('|P|');
-        var newProjTitle = this.openingProj.title;
-        var index = t_arr.indexOf(newProjTitle);
-        if(index != 0){
-            var newHis = newProjTitle;
-            t_arr.forEach(item=>{
-                if(item != newProjTitle && item != null && item.length > 0){
-                    newHis += '|P|' + item;
-                }
-            });
-            Cookies.set('openPage_his', newHis, { expires: 7 });
-        }
-        */
     }
 
     fetchProjJsonCallback(response){
@@ -267,25 +273,34 @@ class ProjectContainer extends React.PureComponent {
             <React.Fragment>
                 <CFlowMaster ref={gFlowMasterRef} />
                 <div className='flex-grow-1 flex-shrink-1 d-flex flex-column'>
-                    <div className="btn-group flex-grow-0 flex-shrink-0" role="group">
-                        <MenuItem id='MI_HB' text={"HB" + (LoginUser == null ? '' : LoginUser.name)} className='text-primary' >
-                            <MenuCammandItem text="打开项目" cmd='open' executFun={this.executCmd} />
-                            <MenuCammandItem text="创建空项目" cmd='create' executFun={this.executCmd} />
-                            <MenuCammandItem text="打开流程大师" cmd='openflowmaster' executFun={this.executCmd} />
-                        </MenuItem>
-                        {
-                            this.state.projects.map((item, i) => {
-                                return (
-                                    <TitleHeaderItem key={item.designeConfig.name} project={item} index={i} clickTitlehandler={this.clickTitlehandler} clickClosehandler = {this.clickClosehandler} active={i == this.state.selectedIndex} />
-                                )
-                            })
-                        }
+                    <div className="d-flex flex-grow-0 flex-shrink-0" >
+                        <div className="btn-group flex-grow-1 flex-shrink-1" role="group">
+                            <MenuItem id='MI_HB' text={"HB" + (LoginUser == null ? '' : LoginUser.name)} className='text-primary' >
+                                <MenuCammandItem text="打开项目" cmd='open' executFun={this.executCmd} />
+                                <MenuCammandItem text="创建空项目" cmd='create' executFun={this.executCmd} />
+                                <MenuCammandItem text="打开流程大师" cmd='openflowmaster' executFun={this.executCmd} />
+                            </MenuItem>
+                            {
+                                this.state.projects.map((item, i) => {
+                                    if(item.loading){
+                                        return <TitleHeaderItem key={item.title} project={item} index={i} clickTitlehandler={this.clickTitlehandler} active={i == this.state.selectedIndex} />
+                                    }
+                                    return (
+                                        <TitleHeaderItem key={item.designeConfig.name} project={item} index={i} clickTitlehandler={this.clickTitlehandler} clickClosehandler = {this.clickClosehandler} active={i == this.state.selectedIndex} />
+                                    )
+                                })
+                            }
+                        </div>
+                        <QuickKeyWordSynBar />
                     </div>
                     <ProjectManagerPanel ref={this.projManagerRef} wantOpenProjectFun={this.wantOpenProject} />
                     <LoginPanel logCompleteFun={this.logCompleteFun} />
                     <div className="flex-grow-1 flex-shrink-1 bg-dark d-flex" >
                         {
                             this.state.projects.map((item, i) => {
+                                if(item.loading){
+                                    return <div key={item.title} className={'flex-grow-1 flex-shrink-1 ' + (this.state.selectedIndex == i ? 'd-flex' : 'd-none')} >{item.title}</div>
+                                }
                                 item.projectIndex = i;
                                 item.projectManager = projectManager;
                                 return (

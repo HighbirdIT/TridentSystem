@@ -2,10 +2,12 @@ const M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置', [
         new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'),
         new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false),
+        new CAttribute('隐藏标题', AttrNames.HideTitle, ValueType.Boolean, false),
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
-        new CAttribute('高度适应', AttrNames.AutoHeight, ValueType.Boolean, true),
+        new CAttribute('有滚动条', AttrNames.HadScroll, ValueType.Boolean, true),
         new CAttribute('弹出式页面', AttrNames.PopablePage, ValueType.Boolean, false),
         new CAttribute('有关闭按钮', AttrNames.AutoCloseBtn, ValueType.Boolean, true),
+        new CAttribute('有主页按钮', AttrNames.AutoHomeBtn, ValueType.Boolean, true),
         new CAttribute('关联步骤', AttrNames.RelFlowStep, ValueType.Int, null, true, true, gFlowMaster.getAllSteps, {text:'fullName', value:'code'}),
     ]),
     new CAttributeGroup('接口设置',[
@@ -36,17 +38,6 @@ class M_PageKernel extends ContainerKernelBase {
         if(eventBP){
             eventBP.ctlID = this.id;
         }
-        /*
-        var nowParent = this;
-        for(var i=0;i<1;++i){
-            var newC = new M_ContainerKernel(null, project);
-            nowParent.appandChild(newC);
-            nowParent = newC;
-            for(var j=0;j<5;++j){
-                newC.appandChild(new M_LabelKernel(null, project));
-            }
-        }
-        */
     }
 
     getUseFlowSteps(){
@@ -170,7 +161,7 @@ class M_Page extends React.PureComponent {
                 <div className={layoutConfig.getClassName()} ref={this.rootElemRef}>
                     {
                         this.state.children.map(childData => {
-                            return childData.renderSelf()
+                            return childData.renderSelf(null, null, this.props.designer)
                         })
                     }
                 </div>
@@ -206,7 +197,6 @@ class M_Page extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC: false,
         label: '页面',
         type: 'M_Page',
         invisible: true,

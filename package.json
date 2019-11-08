@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "highbird company",
   "main": "hbnewsite.js",
+  "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -12,13 +13,15 @@
   "author": "dryperson",
   "license": "MIT",
   "dependencies": {
+    "@uppy/core": "^1.4.0",
+    "@uppy/dashboard": "^1.3.0",
+    "@uppy/xhr-upload": "^1.3.0",
     "EventEmitter": "^1.0.0",
     "auto-bind": "^1.2.1",
     "babel-cli": "^6.26.0",
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-react-app": "^3.1.2",
     "body-parser": "^1.18.3",
-    "bootstrap": "^4.1.3",
     "co": "^4.6.0",
     "compression": "^1.7.2",
     "connect": "^3.6.6",
@@ -28,6 +31,8 @@
     "express-session": "^1.15.6",
     "express3-handlebars": "^0.5.2",
     "images": "^3.0.1",
+    "lzwcompress": "^0.5.7",
+    "md5": "^2.2.1",
     "morgan": "^1.9.0",
     "mssql": "^4.1.0",
     "node-fetch": "^2.3.0",
@@ -42,10 +47,7 @@
     "request": "^2.88.0",
     "restler": "^3.4.0",
     "sharp": "^0.20.8",
-    "uuid": "^3.3.2",
-    "webpack": "^4.15.1"
+    "uuid": "^3.3.2"
   },
-  "devDependencies": {
-    "amazeui-touch": "^2.0.0-alpha.1"
-  }
+  "devDependencies": {}
 }

@@ -3,7 +3,11 @@ const M_LabelKernelAttrsSetting = GenControlKernelAttrsSetting([
         genTextFiledAttribute(),
         new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes),
         new CAttribute('小数精度', AttrNames.FloatNum, ValueType.Int, 2, true, false, null, null, false),
+        new CAttribute('输出字数', AttrNames.OutputCharCount, ValueType.Boolean, false),
         genIsdisplayAttribute(),
+    ]),
+    new CAttributeGroup('事件',[
+        new CAttribute('OnMDown', AttrNames.Event.OnMouseDown, ValueType.Event),
     ]),
 ]);
 
@@ -35,8 +39,8 @@ class M_LabelKernel extends ControlKernelBase{
         }
     }
 
-    renderSelf(clickHandler){
-        return (<M_Label key={this.id} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+    renderSelf(clickHandler, replaceChildClick, designer){
+        return (<M_Label key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 }
 
@@ -96,7 +100,6 @@ class M_Label extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC : false,
         label : '标签',
         type : M_LabelKernel_Type,
         namePrefix : M_LabelKernel_Prefix,

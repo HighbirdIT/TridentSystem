@@ -72,16 +72,11 @@ class ContentPanel extends React.PureComponent {
     renderEditingPage(project, editingPage, isPC) {
         if (editingPage == null)
             return null;
-        if (isPC) {
-            return null;
-        }
-        else {
-            return (
-                <div id='pageContainer' className='bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-1 mobilePage rounded' >
-                    <M_Page project={project} ctlKernel={editingPage} isPC={isPC} ref={this.pageCtlRef} />
-                </div>
-            );
-        }
+        return (
+            <div id='pageContainer' className={'bg-light d-flex flex-column border border-primary flex-grow-0 flex-shrink-1 rounded ' + (isPC ? 'pcPage' : 'mobilePage')} >
+                <M_Page project={project} ctlKernel={editingPage} isPC={isPC} ref={this.pageCtlRef} designer={this.props.designer} />
+            </div>
+        );
     }
 
     renderEditingControl(project, editingControl){
@@ -89,8 +84,8 @@ class ContentPanel extends React.PureComponent {
             return null;
 
         return (
-                <div id='pageContainer' className='bg-light d-flex flex-column m-4 border border-primary flex-grow-0 flex-shrink-1 mobilePage rounded' >
-                    <CUserControl project={project} ctlKernel={editingControl} ref={this.userCtlRef} />
+                <div id='pageContainer' className='bg-light d-flex flex-column border border-primary flex-grow-0 flex-shrink-1 mobilePage rounded' >
+                    <CUserControl project={project} ctlKernel={editingControl} ref={this.userCtlRef} designer={this.props.designer} />
                 </div>
         );
     }
@@ -175,8 +170,10 @@ class ContentPanel extends React.PureComponent {
 
     clickSaveBtnHanlder(ev){
         var project = this.props.project;
+        /*
         var jsonData =  project.getJson();
         console.log(jsonData);
+        */
         project.designer.saveProject();
     }
 
@@ -198,6 +195,62 @@ class ContentPanel extends React.PureComponent {
         var project = this.props.project;
         var jsonData =  project.getJson();
         console.log(JSON.stringify(jsonData));
+        /*
+        var lzwCompress = window.lzwCompress;
+        var t = lzwCompress.pack(jsonData);
+        console.log(t);
+        */
+        //console.log(JSON.stringify(jsonData));
+    }
+
+    DataSizeToString(size) {
+        var kbsize = Math.round(size / 1024);
+        var sizeStr = '';
+        if (kbsize < 1000) {
+            sizeStr = kbsize + 'KB';
+        }
+        else {
+            var mbsize = Math.round(10 * kbsize / 1024) / 10.0;
+            if (mbsize < 1000) {
+                sizeStr = mbsize + 'MB';
+            }
+            else {
+                var gbsize = Math.round(10 * kbsize / 1024) / 10.0;
+                sizeStr = gbsize + 'GB';
+            }
+        }
+        return sizeStr;
+    }
+
+    logJsonSize(jsonObj, objName){
+        if(typeof jsonObj != 'object'){
+            return;
+        }
+        if(jsonObj.id){
+            objName = jsonObj.id;
+        }
+        if(jsonObj.code){
+            objName = jsonObj.code;
+        }
+        if(jsonObj.name){
+            objName += '(' + jsonObj.name + ')';
+        }
+        var jsonStr = window.lzwCompress.pack(jsonObj);
+        //var len = JSON.stringify(jsonObj).length;
+        var len = jsonStr.length;
+        console.log(objName + ': ' + this.DataSizeToString(len));
+        if(jsonObj.id || jsonObj.code){
+            return;
+        }
+        for(var n in jsonObj){
+            this.logJsonSize(jsonObj[n], n)
+        }
+    }
+
+    clickEvalSizeBtnHandler(ev){
+        var project = this.props.project;
+        var jsonData =  project.getJson();
+        this.logJsonSize(jsonData, 'proj');
     }
 
     compileCompletedHandler(theCompile){
@@ -207,8 +260,9 @@ class ContentPanel extends React.PureComponent {
             project.logManager.log('开始上传');
             var compileResult = {
                 mbLayoutName:'erppagetype_MA',
-                pcLayoutName:'erppagetype_MA',
+                pcLayoutName:'erppagetype_MA_PC',
                 mobilePart:theCompile.mobileContentCompiler.getString(),
+                pcPart:theCompile.pcContentCompiler.getString(),
                 serverPart:theCompile.serverSide.getString(),
             };
             fetchJsonPost('server', { action: 'publishProject', projTitle:project.title, compileResult:compileResult}, this.uploadResultCallBack);
@@ -262,7 +316,7 @@ class ContentPanel extends React.PureComponent {
         var editingControl = this.state.editingControl;
         return (
             <div className='flex-grow-1 flex-shrink-1 d-flex flex-column'>
-                <div className='flex-grow-0 flex-shrink-1 d-flex bg-secondary projectContentHeader align-items-center'>
+                <div className='flex-grow-0 flex-shrink-0 d-flex bg-secondary projectContentHeader align-items-center'>
                     <div className='flex-grow-1 flex-shrink-1 d-flex justify-content-center align-items-center text-light'>
                         <h4 >
                             {this.state.title}
@@ -295,7 +349,7 @@ class ContentPanel extends React.PureComponent {
                         </div>
                     </div>
                 </div>
-                <div className='d-flex flex-grow-1 flex-shrink-1'>
+                <div className='d-flex flex-grow-1 flex-shrink-1 minh-0'>
                     <div className='d-flex flex-grow-0 flex-shrink-0 flex-column'>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} pname='datamaster' ><div>数据</div><div>大师</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPanelNameBtn} pname='scriptmaster' ><div>脚本</div><div>大师</div></button>
@@ -304,8 +358,9 @@ class ContentPanel extends React.PureComponent {
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickSaveBtnHanlder} ><div>保存</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickPublickBtnHandler} ><div>发布</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickExprotBtnHandler} ><div>导出</div></button>
+                        <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickEvalSizeBtnHandler} ><div>评估</div></button>
                     </div>
-                    <div onClick={this.clickContentDivHander} className='flex-grow-1 flex-shrink-1 autoScroll d-flex justify-content-center'>
+                    <div onClick={this.clickContentDivHander} className='flex-grow-1 flex-shrink-1 autoScroll d-flex width-1'>
                         {editingPage && this.renderEditingPage(project, editingPage, isPC)}
                         {editingControl && this.renderEditingControl(project, editingControl)}
                     </div>
@@ -314,66 +369,3 @@ class ContentPanel extends React.PureComponent {
         )
     }
 }
-
-/*
-function decode64(e) {
-    try {
-        var t = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-        var n = "";
-        var r = void 0;
-        var o = void 0;
-        var a = "";
-        var i = void 0;
-        var u = void 0;
-        var l = "";
-        var s = 0;
-        if (/[^A-Za-z0-9\+\/\=]/g.exec(e))
-            return false;
-        e = e.replace(/[^A-Za-z0-9\+\/\=]/g, "");
-        do {
-            r = t.indexOf(e.charAt(s++)) << 2 | (i = t.indexOf(e.charAt(s++))) >> 4;
-            o = (15 & i) << 4 | (u = t.indexOf(e.charAt(s++))) >> 2;
-            a = (3 & u) << 6 | (l = t.indexOf(e.charAt(s++)));
-            n += String.fromCharCode(r);
-            if (64 !== u)
-                n += String.fromCharCode(o);
-            if (64 !== l)
-                n += String.fromCharCode(a);
-            r = "";
-            o = "";
-            a = "";
-            i = "";
-            u = "";
-            l = "";
-        } while (s < e.length);
-        return unescape(n);
-    } catch (e) {
-        return false;
-    }
-}
-
-
-function convertRate(e) {
-    try {
-        var t = e.substr(e.length - 4);
-        var n = t.charCodeAt(0) + t.charCodeAt(1) + t.charCodeAt(2) + t.charCodeAt(3);
-        n = (n = (e.length - 10) % n) > e.length - 10 - 4 ? e.length - 10 - 4 : n;
-        var r = e.substr(n, 10);
-        e = e.substr(0, n) + e.substr(n + 10);
-        var o = decode64(decodeURIComponent(e));
-        if (!o)
-            return false;
-        var a = "";
-        var i = 0;
-        var u = 0;
-        for (i = 0; i < o.length; i += 10) {
-            var l = o.charAt(i);
-            var s = r.charAt(u % r.length - 1 < 0 ? r.length + u % r.length - 1 : u % r.length - 1);
-            a += (l = String.fromCharCode(l.charCodeAt(0) - s.charCodeAt(0))) + o.substring(i + 1, i + 10);
-            u++;
-        }
-        return a
-    }
-    catch (e) { return !1 }
-}
-*/

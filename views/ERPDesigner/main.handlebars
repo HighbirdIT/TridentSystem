@@ -6,7 +6,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
         <!-- Bootstrap CSS -->
-        <link rel="stylesheet" href="/vendor/bootstrap4/css/bootstrap.css">
+        <link rel="stylesheet" href="/vendor/bootstrap4/css/bootstrap.min.m.css">
         <link rel="stylesheet" href="/erpdesigner/css/main.css">
         <link rel="stylesheet" href="/vendor/font-awesome-4.7.0/css/font-awesome.min.css">
 
@@ -14,7 +14,7 @@
     </head>
 
     <body class="w-100 h-100">
-        <div id="reactRoot" class="w-100 h-100 bg-secondary unselectable">
+        <div id="reactRoot" class="w-100 h-100 bg-secondary unselectable minh-0">
         </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.6.1/prop-types.js"></script>
@@ -36,6 +36,8 @@
         <script src="https://cdn.bootcss.com/clipboard.js/2.0.1/clipboard.js"></script>
         <script src="https://cdn.bootcss.com/forge/0.7.6/forge.min.js"></script>
 
+        <script src="/vendor/js/lzwCompress.js"></script>
+
         <script src="/erpdesigner/js/core/account.js"></script>
         <script src="/erpdesigner/js/globalConfig.js"></script>
         <script src="/erpdesigner/js/myMath.js"></script>
@@ -50,6 +52,7 @@
         <script src="/erpdesigner/js/core/formatFileMaker.js"></script>
         <script src="/erpdesigner/js/core/compiler.js"></script>
         <script src="/erpdesigner/js/core/mobileContentCompiler.js"></script>
+        <script src="/erpdesigner/js/core/pcContentCompiler.js"></script>
 
         <script src="/erpdesigner/js/ui/FlowMasterPanel.js"></script>
 
@@ -97,6 +100,9 @@
         <script src="/erpdesigner/js/controls/mobile/M_LabeledControl.js"></script>
         <script src="/erpdesigner/js/controls/mobile/M_Dropdown.js"></script>
 
+        <script src="/erpdesigner/js/controls/common/FilePreviewer.js"></script>
+        <script src="/erpdesigner/js/controls/common/MultiFileUploader.js"></script>
+        <script src="/erpdesigner/js/controls/common/SingleFileUploader.js"></script>
         <script src="/erpdesigner/js/controls/common/TaskSelector.js"></script>
         <script src="/erpdesigner/js/controls/common/button.js"></script>
         <script src="/erpdesigner/js/controls/common/empty.js"></script>
@@ -104,6 +110,8 @@
         <script src="/erpdesigner/js/controls/common/HERPAccordion.js"></script>
         <script src="/erpdesigner/js/controls/common/HERPTabControl.js"></script>
         <script src="/erpdesigner/js/controls/common/HERPTabItem.js"></script>
+        <script src="/erpdesigner/js/controls/common/PopperButton.js"></script>
+        
 
         <script src="/erpdesigner/js/ui/mouseSelectManager.js"></script>
         
@@ -129,9 +137,10 @@
         <script src="/erpdesigner/js/ui/projectManagerPanel.js"></script>
         <script src="/erpdesigner/js/ui/loginPanel.js"></script>
         <script src="/erpdesigner/js/ui/ListFormContentEditor.js"></script>
+        <script src="/erpdesigner/js/ui/KernelContentEditor.js"></script>
         
         
-        
+
         <script src="/erpdesigner/js/ui/projectDesigner.js"></script>
         <script src="/erpdesigner/js/ui/projectContainer.js"></script>
         <script src="/erpdesigner/js/main.js"></script>

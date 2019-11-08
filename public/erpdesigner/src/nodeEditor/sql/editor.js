@@ -751,7 +751,9 @@ class C_SqlNode_Editor extends React.PureComponent{
     clickExportBtnHandler(ev){
         console.log("Start export");
         var editingNode = this.state.editingNode;
-        var json = editingNode.bluePrint.getJson(new AttrJsonProfile());
+        var ajp = new AttrJsonProfile(true);
+        var json = editingNode.bluePrint.getJson(ajp);
+        json.dictionary = ajp.getDictionaryObj();
         var text = JSON.stringify(json);
         console.log(text);
     }
@@ -850,6 +852,7 @@ class C_SqlNode_Editor extends React.PureComponent{
                                         <button type='button' onClick={this.clickExportBtnHandler} className='btn btn-dark' >导出</button>
                                         <button type='button' onClick={this.clickBigBtnHandler} className='btn btn-dark' ><i className='fa fa-search-plus' /></button>
                                         <button type='button' onClick={this.clickSmallBtnHandler} className='btn btn-dark' ><i className='fa fa-search-minus' /></button>
+                                        <QuickKeyWordSynBar />
                                     </div>
                                 </div>
                             </div>
@@ -962,6 +965,7 @@ class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
             canUseDS_arr:[],
             showCanUseDS:true,
             showCtlApi:false,
+            sqlNodeKeyword:''
         };
     }
 
@@ -1046,6 +1050,32 @@ class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
         var apiItem = theApiObj.getApiItemByid(apiid);
         this.props.editor.createApiObj(theApiObj,apiItem);
     }
+    sqlNodeInputChange(ev){
+        this.setState({
+            sqlNodeKeyword:ev.target.value
+        })
+    }
+    renderSqlNodeList(){
+        var showArr=[]
+        if (this.state.sqlNodeKeyword != '' && this.state.sqlNodeKeyword !=null){ 
+            for(var i=0,len =SqlNodeEditorControls_arr.length;i<len;i++){
+                var sqlNodeName=SqlNodeEditorControls_arr[i].label.toLowerCase()
+                if (sqlNodeName.indexOf(this.state.sqlNodeKeyword.toLowerCase()) >= 0) {
+                    showArr.push(SqlNodeEditorControls_arr[i]);
+                  }
+            }
+        }else{
+            showArr=SqlNodeEditorControls_arr
+            // 测试功能后续再修改
+            // console.log(pinyin("中心"));    
+        }
+        return showArr.map(
+            item=>{
+                return <button key={item.label} onMouseDown={this.mouseDownHandler} data-value={item.label} type="button" 
+                    className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>
+            }
+        )
+    }
 
     render() {
         var editingBP = this.props.editingNode.bluePrint;
@@ -1106,13 +1136,11 @@ class SqlNodeEditorCanUseNodePanel extends React.PureComponent{
                         </div>
                         
                         <div className='btn-group-vertical mw-100 flex-shrink-0'>
-                            <span className='btn btn-info'>SQL节点</span>
+                            <span className='btn btn-info'>SQL节点
+                                <input type="text" className="form-control" placeholder="请输入" aria-describedby="sizing-addon3" onChange={this.sqlNodeInputChange}/>
+                            </span>
                             {
-                                SqlNodeEditorControls_arr.map(
-                                    item=>{
-                                        return <button key={item.label} onMouseDown={this.mouseDownHandler} data-value={item.label} type="button" className="btn flex-grow-0 flex-shrink-0 btn-dark text-left">{item.label}</button>
-                                    }
-                                )
+                                this.renderSqlNodeList()
                             }
                         </div>
                     </div>
@@ -1458,6 +1486,17 @@ class SqlNode_CompileHelper{
         autoBind(this);
     }
 
+    isConst(){
+        return  this.useEntities_arr.length == 0 &&
+                this.useVariables_arr.length == 0 &&
+                this.useGlobalControls_map.length == 0 &&
+                IsEmptyObject(this.useForm_map) &&
+                IsEmptyObject(this.useEnvVars) &&
+                IsEmptyObject(this.usePageParam) &&
+                IsEmptyObject(this.useUrlVar_map);
+
+    }
+
     meetNode(theNode){
         if(this.startNode == null){
             this.startNode = theNode;
@@ -1555,7 +1594,6 @@ class SqlNode_CompileHelper{
             this.useForm_map[formKernel.id] = {
                 useColumns_map:{},
                 useControls_map:{},
-                useNowRecord:false,
                 formKernel:formKernel,
             };
         }
@@ -1572,6 +1610,9 @@ class SqlNode_CompileHelper{
 
     addUseControlPropApi(ctrKernel, apiitem){
         var rlt = null;
+        if(apiitem.relyStateName == null){
+            apiitem.relyStateName = apiitem.stateName;
+        }
         var belongFormKernel = ctrKernel.searchParentKernel(M_FormKernel_Type,true);
         var attrName = IsEmptyString(apiitem.useAttrName) ? apiitem.attrItem.name : apiitem.useAttrName;
         if(belongFormKernel == null){
