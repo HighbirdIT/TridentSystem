@@ -10,6 +10,7 @@ var dbhelper = require('./dbhelper.js');
 var flowhelper = require('./flowhelper.js');
 var fileSystem = require('./fileSystem.js');
 var co = require('co');
+var dingTalkCrypt = require('./dingTalkCrypt');
 var dingHelper = require('./dingHelper');
 var developconfig = require('./developconfig');
 var debug = require('debug');
@@ -19,6 +20,16 @@ var cluster = require('cluster');
 debug.enabled = () => {
     return false;
 };
+/*
+var temDing = dingTalkCrypt.CreateDingTalkCrypt('ibj41N1p4ZMI9Qzm', 'xwr2exx10uyns59sqwqzaf86deykmfmfgxbigmta8l5', 'suiteez10hnwwjhpkogt6');
+//var ff = temDing.DecryptMsg('8e682dfb3b484800619a84ea0aa00f8f35c4e898', '1573545773331', 'wUGOh8p5', 'zDSToIIyL3H4LNcAaREQzKITDYbG8588GRxYD0HyTclR0w7iE26cHF8KHnN4x1jji3oICWvjuz1Uux6xfPBInfTZrW5QHsZBePyNcHQMv2xCWz6BmpJuUgketbLvB+mgbdoJ8A0lD3eCHwRfOBrJig2MQeriK5idixU6J+Rb0ttkZbJerpqd3n0LXR4AIq7hDPkh8D/667oeUBG+ONQ5vw==');
+//var ff = temDing.DecryptMsg('8150fd782ab6d3cefe3f66906d952ebe6a129fff', '1573545091568', 'HvZpfo2e', '83gT/TSrHF8OyTQmXRngDQ==');
+var ff = temDing.EncryptMsg('hahababwawayayalala','1573542495654','b00t7jde');
+var ff2 = temDing.DecryptMsg(ff.signature, '1573542495654', 'b00t7jde',ff.sEncryptMsg);
+console.log(ff);
+*/
+
+
 
 const sqlTypes = dbhelper.Types;
 
@@ -40,7 +51,7 @@ var handlebars = require('express3-handlebars').create({
             var t = this;
             return new handlebars.handlebars.SafeString(inputData);
         },
-        toString: function(inputData){
+        toString: function (inputData) {
             return inputData.toString();
         }
     }
@@ -118,8 +129,8 @@ app.use(function (req, res, next) {
     next();
 });
 
-function checkLogState(req, res, next, process){
-    if(req.session.g_envVar == null){
+function checkLogState(req, res, next, process) {
+    if (req.session.g_envVar == null) {
         if (!inProduction) {
             req.session.g_envVar = developconfig.envVar;
             process(req, res, next);
@@ -127,17 +138,17 @@ function checkLogState(req, res, next, process){
         else {
             var logrcd = req.signedCookies._erplogrcdid;
             if (logrcd != null) {
-                dingHelper.aysnLoginfFromRcdID(logrcd, req, res).then(data=>{
+                dingHelper.aysnLoginfFromRcdID(logrcd, req, res).then(data => {
                     process(req, res, next);
                 });
             }
-            else{
+            else {
                 process(req, res, next);
             }
         }
     }
-    else{
-        if(req.session.g_envVar.userid == 0){
+    else {
+        if (req.session.g_envVar.userid == 0) {
             req.session.g_envVar.userid = null;
         }
         process(req, res, next);
@@ -210,7 +221,7 @@ app.use('/', function (req, res, next) {
 
 app.use('/fileSystem', function (req, res, next) {
     var hostIp = app.get('hostip');
-    if(hostIp == '192.168.0.202'){
+    if (hostIp == '192.168.0.202') {
         hostIp = 'erp.highbird.cn';
     }
     res.locals.rootUrl = 'http://' + hostIp + ':' + app.get('port');
@@ -390,7 +401,7 @@ var fs = require('fs');
 //var tjspath = __dirname + '/views/erppage/server/pages/WLXXGL_s40.js'
 //var tt = require(tjspath);
 
-function processErppageServer(req, res, next){
+function processErppageServer(req, res, next) {
     var pageName = req.path.substr(1).toUpperCase();
     var cache = erpPageCache[pageName];
     var jspath = null;
@@ -439,11 +450,11 @@ app.use('/audioplayer', function (req, res, next) {
     return res.render('empty', { layout: 'audioPlayer' });
 });
 
-function renderErpPage(req, res, next){
+function renderErpPage(req, res, next) {
     res.locals.isProduction = app.get('env') == 'production';
     var childPath = req.path;
     var t_arr = childPath.split('/');
-    if (t_arr.length != 3 && (t_arr.length != 4 || t_arr[3] != '') ) {
+    if (t_arr.length != 3 && (t_arr.length != 4 || t_arr[3] != '')) {
         res.status(404);
         return res.render('404');
     }
@@ -515,6 +526,40 @@ app.use('/interview', function (req, res, next) {
     next();
 });
 
+app.use('/dingcallback', function (req, res, next) {
+    if (req.query.signature == null || req.query.timestamp == null || req.query.nonce == null) {
+        res.json({ err: '缺失参数' });
+        return;
+    }
+    if (req.body.encrypt == null) {
+        res.json({ err: '缺失body参数' });
+        return;
+    }
+    var theDingTalkCrypt = dingTalkCrypt.CreateDingTalkCrypt('ibj41N1p4ZMI9Qzm', 'xwr2exx10uyns59sqwqzaf86deykmfmfgxbigmta8l5', 'suiteez10hnwwjhpkogt6');
+    var msg = theDingTalkCrypt.DecryptMsg(req.query.signature, req.query.timestamp, req.query.nonce, req.body.encrypt);
+    if (msg == false) {
+        res.json({ err: '解析失败' });
+        return;
+    }
+    /*
+    msg_signature	消息体签名
+    timeStamp	时间戳
+    nonce	随机字符串
+    encrypt	"success"字段的加密字符串
+    */
+    var msgJson = JSON.parse(msg);
+    var retMsg = dingHelper.receiveCallback(msgJson);
+    var rlt = theDingTalkCrypt.EncryptMsg(retMsg, req.query.timestamp, req.query.nonce);
+    
+    res.json({
+        msg_signature: rlt.signature,
+        encrypt: rlt.sEncryptMsg,
+        timeStamp: req.query.timestamp,
+        nonce: req.query.nonce,
+    });
+    return;
+});
+
 app.use(function (req, res, next) {
     var path = req.path.toLowerCase(); // 检查 缓存； 如果 它在 那里， 渲染 这个 视图 
     if (autoViews[path]) {
@@ -546,7 +591,7 @@ function startServer() {
     setInterval(freshPageCache, 1000 * 30);
     http.createServer(app).listen(app.get('port'), function () {
         var hostIp = app.get('hostip');
-        if(hostIp == '192.168.0.202'){
+        if (hostIp == '192.168.0.202') {
             hostIp = 'erp.highbird.cn';
         }
         console.log('Express started on http://' + hostIp + ':' + app.get('port') + '; press Ctl-C to terminate.');
