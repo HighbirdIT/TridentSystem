@@ -446,16 +446,20 @@ class SqlNode_XApply extends SqlNode_Base {
 
     }
 
-    getContext(finder) {
+    getContext(finder,depth) {
         finder.setTest(this.id);
-        var inlinks = this.bluePrint.linkPool.getLinksByNode(this, 'i');
-        for (var i in inlinks) {
-            var tLink = inlinks[i];
-            var outNode = tLink.outSocket.node;
-            if (!finder.isTest(outNode.id)) {
-                outNode.getContext(finder);
-            }
-        }
+        //var inlinks = this.bluePrint.linkPool.getLinksByNode(this, 'i');
+        // for (var i in inlinks) {
+        //     var tLink = inlinks[i];
+        //     var outNode = tLink.outSocket.node;
+        //     if (!finder.isTest(outNode.id)) {
+                    
+        //             outNode.getContext(finder);
+                
+                
+        //     }
+        // }
+
         if (this.targetEntity == null) {
             return;
         }
@@ -465,6 +469,12 @@ class SqlNode_XApply extends SqlNode_Base {
                 theLabel = this.targetEntity.loaded ? this.targetEntity.name : this.targetEntity.code;
             }
             finder.addItem(theLabel, this.targetEntity);
+        }
+        if (depth == null) {
+            depth = 0;
+        }
+        if (depth == 0) {
+            return super.getContext(finder, 1);
         }
     }
     compile(helper, preNodes_arr) {

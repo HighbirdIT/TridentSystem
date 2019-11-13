@@ -157,4 +157,170 @@ dingHelper.aysnLoginfFromRcdID = (logrcdid, req, res) => {
     });
 };
 
+const baseServerUrl = 'https://oapi.dingtalk.com/service/';
+function saveAppConfig(){
+    inparams_arr=[
+        dbhelper.makeSqlparam('ticket', sqlTypes.NVarChar(100), appTicket == null ? '' : appTicket),
+        dbhelper.makeSqlparam('accessToken', sqlTypes.NVarChar(100), appAccessToken == null ? '' : appAccessToken),
+        dbhelper.makeSqlparam('tokenexpiretime', sqlTypes.BigInt, appAccessToken_expiretime),
+    ];
+    try{
+        dbhelper.asynExcute('P更新钉APP配置',inparams_arr);
+    }
+    catch(eo){
+    }
+}
+
+function getAppAccessToken(){
+    return co(function* () {
+        if(appAccessToken){
+            var nowTime = new Date().getTime();
+            if(nowTime > appAccessToken_expiretime){
+                appAccessToken = null;  // expired
+            }
+        }
+        if(appAccessToken != null){
+            return appAccessToken;
+        }
+        var rcd_ret;
+        var rcd;
+        if(appTicket == null){
+            rcd_ret = yield dbhelper.asynQuery('select [ticket],[accessToken],[tokenexpiretime] from [T钉钉APP配置]');
+            if(rcd_ret.recordset.length == 0){
+                return;
+            }
+            rcd = rcd_ret.recordset[0];
+            appTicket = rcd.ticket;
+            appAccessToken = rcd.accessToken;
+            appAccessToken_expiretime = parseInt(rcd.tokenexpiretime);
+        }
+        if(appTicket == null || appTicket.length == 0){
+            return null;
+        }
+        if(appAccessToken == null){
+            rcd_ret = yield dbhelper.asynQuery('select [accessToken],[tokenexpiretime] from [T钉钉APP配置]');
+            if(rcd_ret.recordset.length == 0){
+                return;
+            }
+            rcd = rcd_ret.recordset[0];
+            appAccessToken = rcd.accessToken;
+            appAccessToken_expiretime = parseInt(rcd.tokenexpiretime);
+        }
+        if(appAccessToken == null || appAccessToken.length == 0){
+            var get_tokenRet = yield fetch(baseServerUrl + "get_suite_token", {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body:JSON.stringify({suite_ticket:appTicket,suite_key:'suiteez10hnwwjhpkogt6',suite_secret:'9BD28PzqV1BQKaVvh-bVEA_YMOdvT8iv4oO9IxbR5rAwC6Frga5_CbkhMdM1DsX0'}),
+            }).then(
+                response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    else {
+                        return { errInfo: 'no response' };
+                    }
+                }
+            ).then(
+                json => {
+                    return json;
+                }
+            );
+            appAccessToken = get_tokenRet.suite_access_token;
+            appAccessToken_expiretime = new Date().getTime() + (get_tokenRet.expires_in - 60) * 1000;
+            saveAppConfig();
+        }
+        return appAccessToken;
+    });
+}
+
+function activeCorp(tem_authCode, auth_corpid){
+    return co(function* () {
+        var accessToken = yield getAppAccessToken();
+        if(accessToken == null){
+            return;
+        }
+        var get_permanentRet = yield fetch(baseServerUrl + "get_permanent_code?suite_access_token=" + accessToken, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body:JSON.stringify({tmp_auth_code: tem_authCode}),
+        }).then(
+            response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                else {
+                    return { errInfo: 'no response' };
+                }
+            }
+        ).then(
+            json => {
+                return json;
+            }
+        );
+
+        console.log(JSON.stringify(get_permanentRet));
+        /*
+        "permanent_code": "xxxx",
+            "auth_corp_info":
+            {
+              "corpid": "xxxx",
+              "corp_name": "name"
+            }
+        */
+        var activateRet = yield fetch(baseServerUrl + "activate_suite?suite_access_token=" + accessToken, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body:JSON.stringify({suite_key: 'suiteez10hnwwjhpkogt6',auth_corpid:auth_corpid,permanent_code:get_permanentRet.permanent_code}),
+        }).then(
+            response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                else {
+                    return { errInfo: 'no response' };
+                }
+            }
+        ).then(
+            json => {
+                return json;
+            }
+        );
+        console.log(JSON.stringify(activateRet));
+    });
+}
+
+var appTicket = null;
+var appAccessToken = null;
+var appAccessToken_expiretime = 0;
+dingHelper.receiveCallback = (msgJson)=>{
+    console.log(JSON.stringify(msgJson));
+    var retMsg = 'success';
+    var inparams_arr = null;
+    switch(msgJson.EventType){
+        case 'check_update_suite_url':
+        case 'check_create_suite_url':
+        retMsg = msgJson.Random;
+        break;
+        case 'suite_ticket':
+        var ticket = msgJson.SuiteTicket;
+        appTicket = ticket;
+        appAccessToken = null;
+        appAccessToken_expiretime = 0;
+        saveAppConfig();
+        break;
+        case 'tmp_auth_code':
+        var authCode = msgJson.AuthCode;
+        var corpId = msgJson.AuthCorpId;
+        activeCorp(authCode, corpId);
+        break;
+    }
+    return retMsg;
+};
+
 module.exports = dingHelper;
