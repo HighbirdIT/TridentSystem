@@ -129,7 +129,7 @@ class JSNode_Base extends Node_Base {
         return false;
     }
 
-    isInReducer(usePreNodes_arr) {
+    isInReducer(usePreNodes_arr, startIsInReducer) {
         var group = this.bluePrint.group;
         for (var upi = usePreNodes_arr.length - 1; upi >= 0; --upi) {
             var preNode = usePreNodes_arr[upi];
@@ -137,6 +137,9 @@ class JSNode_Base extends Node_Base {
                 return false;
             }
             if (preNode.type == JSNODE_START) {
+                if(startIsInReducer != null){
+                    return startIsInReducer;
+                }
                 switch (group) {
                     case EJsBluePrintFunGroup.CtlAttr:
                     case EJsBluePrintFunGroup.CtlValid:
@@ -1719,6 +1722,13 @@ class JSNode_Return extends JSNode_Base {
 
         var socketComRet;
         var socketValue;
+
+        if (this.bluePrint.group == EJsBluePrintFunGroup.CtlAttr || this.bluePrint.group == EJsBluePrintFunGroup.CtlValid) {
+            var inreducer = this.isInReducer(preNodes_arr, false);
+            if (this.checkCompileFlag(inreducer, '此处应该用CallOnFetchEnd', helper)) {
+                return false;
+            }
+        }
 
         if (this.bluePrint.group == EJsBluePrintFunGroup.Custom) {
             this.synInSocket();
