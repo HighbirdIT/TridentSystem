@@ -4678,6 +4678,7 @@ class MobileContentCompiler extends ContentCompiler {
                 pullFun.scope.getVar(formStateVarName, true, makeStr_getStateByPath(useStateVarName, singleQuotesStr(useFormData.formKernel.getStatePath()), '{}'));
 
                 if (isUseFormCtl || isUseFormColumn) {
+                    var forUseDS = useFormData.formKernel.getAttribute(AttrNames.DataSource);
                     if (isGridForm || isListForm) {
                         var inGridRow = useFormData.formKernel.isKernelInRow(theKernel);
                         ctlBelongStateVarName = nowRowStateVarName;
@@ -4687,7 +4688,6 @@ class MobileContentCompiler extends ContentCompiler {
                             pullFun.scope.getVar(nowRecordVarName, true);
                             needCheckVars_arr.push(selectedRowsVarName);
 
-                            var forUseDS = useFormData.formKernel.getAttribute(AttrNames.DataSource);
                             for (var ucname in useFormData.useColumns_map) {
                                 var useColumnParamObj = { bundleName: ucname + '_' + forUseDS.code };
                                 needSetParams_arr.push(useColumnParamObj);
@@ -4732,6 +4732,12 @@ class MobileContentCompiler extends ContentCompiler {
                         if (isUseFormColumn) {
                             initValue = formStateVarName + '.' + VarNames.NowRecord;
                             pullFun.scope.getVar(nowRecordVarName, true, initValue);
+
+                            for (var ucname in useFormData.useColumns_map) {
+                                var useColumnParamObj = { bundleName: ucname + '_' + forUseDS.code };
+                                needSetParams_arr.push(useColumnParamObj);
+                                initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', ucname + '_' + forUseDS.code), nowRecordVarName + '.' + ucname));
+                            }
                         }
                     }
                 }

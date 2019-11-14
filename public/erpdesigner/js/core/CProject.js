@@ -593,7 +593,7 @@ var CProject = function (_IAttributeable) {
                 var dsJson = cusEntity.getJson(cusDSJsonProf);
                 cusDSJsonProf.customDS_arr.forEach(function (entity) {
                     if (entity.isCustomDS) {
-                        copyCusDS(entity, refControl_map);
+                        copyCusDS(entity, cusDS_arr, refControl_map);
                     }
                 });
                 if (refControl_map) {
