@@ -115,6 +115,10 @@ function makeFName_bindFormPage(formKernel){
     return 'bind_' + formKernel.id + 'Page';
 }
 
+function makeFName_SaveInsertForm(formKernel){
+    return 'saveInsertCache' + formKernel.id;
+}
+
 function makeFName_pull(formKernel){
     return 'pull_' + formKernel.id;
 }
