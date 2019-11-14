@@ -182,6 +182,13 @@ var EWidthFactor = {
 };
 var WidthFactors_arr = [{ text: '自动', value: EWidthFactor.Scale }, { text: '0.5倍', value: EWidthFactor.Half }, { text: '默认', value: EWidthFactor.Default }, { text: '2倍', value: EWidthFactor.Twice }, { text: '3倍', value: EWidthFactor.Triple }];
 
+var ERenderMode = {
+    Auto: 'auto',
+    PC: 'pc',
+    Mobile: 'mb'
+};
+var RenderModes_arr = [{ text: '自动', value: ERenderMode.Auto }, { text: '桌面端', value: ERenderMode.PC }, { text: '移动端', value: ERenderMode.Mobile }];
+
 var EUseEntityStage = {
     Select: 'select',
     Insert: 'isnert',

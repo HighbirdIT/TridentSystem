@@ -150,6 +150,9 @@ class ProjectCompiler extends EventEmitter{
 
         this.serverSide.compileEnd();
 
+        var mobilePart = mobileContentCompiler.getString();
+        var pcPart = pcContentCompiler.getString();
+
         //console.log(mobileContentCompiler.getString());
         //console.log(this.serverSide.getString());
 

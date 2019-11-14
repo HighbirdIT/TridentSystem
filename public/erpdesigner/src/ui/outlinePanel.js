@@ -434,6 +434,10 @@ class OutlinePanel extends React.PureComponent {
         this.props.designer.deleteSelectedKernel();
     }
 
+    clickCopyBtnHandler(ev) {
+        this.props.designer.copySelectedKernel();
+    }
+
     clickItemHandler(data, outlineItem) {
         this.props.designer.selectKernel(data);
     }
@@ -445,6 +449,9 @@ class OutlinePanel extends React.PureComponent {
                 <div className='btn-group flex-grow-0 flex-shrink-0 bg-dark'>
                     <div className='btn btn-dark' onClick={this.clickTrashBtnHandler}>
                         <i className='fa fa-trash text-danger' />
+                    </div>
+                    <div className='btn btn-dark' onClick={this.clickCopyBtnHandler}>
+                        <i className='fa fa-copy text-light' />
                     </div>
                 </div>
                 <div className='flex-grow-1 flex-shrink-1 autoScroll' ref={this.scrollDivRef} >

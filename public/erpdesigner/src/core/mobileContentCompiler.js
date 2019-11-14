@@ -1756,18 +1756,23 @@ class MobileContentCompiler extends ContentCompiler {
             return false;
         }
 
-        var ControlKernel_targetArr = [];
-        ControlKernel_targetArr = theKernel.parent.children
-        var current_ControlKernelId = theKernel.id
-
-        for (var i = 0; i < ControlKernel_targetArr.length; i++) {
-            var CKtemporary_Id = ControlKernel_targetArr[i].id
-            if (i != ControlKernel_targetArr.length - 1) {
-                if (current_ControlKernelId == CKtemporary_Id && ControlKernel_targetArr[i + 1].type == "M_Label") {
-                    layoutConfig.addClass('border-bottom');
+        /*
+        if(){
+            var ControlKernel_targetArr = [];
+            ControlKernel_targetArr = theKernel.parent.children;
+            var current_ControlKernelId = theKernel.id;
+    
+            for (var i = 0; i < ControlKernel_targetArr.length; i++) {
+                var CKtemporary_Id = ControlKernel_targetArr[i].id;
+                if (current_ControlKernelId == CKtemporary_Id) {
+                    if(i == ControlKernel_targetArr.length - 1 || ControlKernel_targetArr[i + 1].type != M_LabeledControlKernel_Type){
+                        layoutConfig.addClass('border-bottom');
+                    }
                 }
             }
         }
+        */
+        
 
         var parentForm = theKernel.parent.type == M_FormKernel_Type ? theKernel.parent : null;
         var parentPath = this.getKernelParentPath(theKernel);
@@ -1780,6 +1785,14 @@ class MobileContentCompiler extends ContentCompiler {
         labeledCtrlTag.setAttr('parentPath', parentPath);
         var widthFactor = theKernel.getAttribute(AttrNames.WidthFactor);
         labeledCtrlTag.setAttr('wf', widthFactor);
+        var renderMode = theKernel.getAttribute(AttrNames.RenderMode);
+        if(renderMode != ERenderMode.Auto){
+            labeledCtrlTag.setAttr('rm', renderMode);
+        }
+        var wordNum = theKernel.getAttribute('WordNum');
+        if(wordNum != 6){
+            labeledCtrlTag.setAttr('wn', wordNum);
+        }
 
         var dynamicColumn_obj = null;
         var compileConfig = null;
@@ -2293,7 +2306,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
         if (isGridForm || isListForm) {
             formTag.setAttr(VarNames.SelectMode, theKernel.getAttribute(AttrNames.SelectMode));
-            if (selectMode != ESelectMode.None) {
+            if (selectMode != ESelectMode.None || clickSelectable) {
                 var canUserColumns_arr = theKernel.getCanuseColumns();
                 if (canUserColumns_arr.indexOf(keyColumn) == -1) {
                     logManager.errorEx([logManager.createBadgeItem(
@@ -2457,7 +2470,6 @@ class MobileContentCompiler extends ContentCompiler {
         bindFun.scope.getVar(VarNames.NeedSetState, true, '{}');
         var bundleVar = bindFun.scope.getVar('bundle', true, '{}');
         var saveInsertBlock = null;
-        var saveInsertIfBlock = null;
         var insertModeIf = null;
         var hadInsertCacheIf = null;
         var hadInsertCacheTrueDynamicBlock = null;
@@ -2744,9 +2756,14 @@ class MobileContentCompiler extends ContentCompiler {
 
             formCanInsert = thisFormMidData.hadInsertMode == true;
             if (formCanInsert) {
-                saveInsertIfBlock = new JSFile_IF('saveinsert', 'oldIndex == -1');
-                saveInsertBlock.pushChild(saveInsertIfBlock);
-                bindFun.saveInsertBlock = saveInsertIfBlock.trueBlock;
+                var saveInsertFun = formReactClass.getFunction('saveInsertCache', true);
+                saveInsertFun.scope.getVar(theKernel.id + '_path', true, 'this.props.fullPath');
+                saveInsertFun.scope.getVar('state', true, 'store.getState()');
+                saveInsertFun.scope.getVar('formState', true, 'getStateByPath(state,'+theKernel.id + '_path)');
+                saveInsertFun.scope.getVar('needSetState', true, '{}');
+                saveInsertFun.retBlock.pushLine('store.dispatch(makeAction_setStateByPath(needSetState, ' + theKernel.id + '_path + ".insertCache"));');
+                formReactClass.saveInsertFun = saveInsertFun;
+                
                 insertModeIf.trueBlock.pushLine(makeLine_Assign('var ' + VarNames.InsertCache, makeStr_getStateByPath("formState", singleQuotesStr(VarNames.InsertCache))));
                 hadInsertCacheIf = new JSFile_IF(VarNames.InsertCache, VarNames.InsertCache);
                 hadInsertCacheTrueDynamicBlock = new FormatFileBlock('hadInsertCacheTrueDynamicBlock');
@@ -3352,7 +3369,9 @@ class MobileContentCompiler extends ContentCompiler {
                                 }
                             }
                             if (needSaveThisState) {
-                                saveInsertIfBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, VarNames.InsertCache + '.' + state_Name), makeStr_getStateByPath('formState', singleQuotesStr(stateName))));
+                                if(formReactClass.saveInsertFun){
+                                    formReactClass.saveInsertFun.pushLine(makeLine_Assign(VarNames.NeedSetState + '.' + state_Name, makeStr_getStateByPath('formState', singleQuotesStr(stateName))));
+                                }
                                 hadInsertCacheIf.trueBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), VarNames.InsertCache + '.' + state_Name));
                                 if (needResetThisState) {
                                     hadInsertCacheIf.falseBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), stateItem.alterValue ? stateItem.alterValue : 'null'));

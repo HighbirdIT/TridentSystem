@@ -1,6 +1,7 @@
 const UserControlKernelTempleAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置', [
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr),
+        new CAttribute('默认渲染', 'DefRender', ValueType.String, '手机', true, false, ['手机', '电脑']),
         new CAttribute('refID', 'refID', ValueType.String, 'none', true, false, null, null, false),
         new CAttribute('属性列表', AttrNames.ParamApi, ValueType.String, '', true, true),
         new CAttribute('自订事件', AttrNames.EventApi, ValueType.UserControlEvent, '', true, true),
@@ -345,6 +346,7 @@ class CUserControl extends React.PureComponent {
             initState.children = ctlKernel.children;
 
             M_ControlBase(this, [
+                'DefRender',
                 AttrNames.Name,
                 AttrNames.Orientation,
                 AttrNames.Chidlren,
@@ -380,6 +382,7 @@ class CUserControl extends React.PureComponent {
             this.setState({
                 orientation: ctlKernel.getAttribute(AttrNames.Orientation),
                 children: childrenVal,
+                defRender: ctlKernel.getAttribute('DefRender'),
             });
         }
     }

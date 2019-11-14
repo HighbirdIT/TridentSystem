@@ -3448,6 +3448,19 @@ class JSNODE_Insert_table extends JSNode_Base {
             if (this.checkCompileFlag(blockInServer, '节点是从服务端代码节点过来的，所以客户端成功出口无效', helper)) {
                 return false;
             }
+            var belongForm = relKernel.searchParentKernel(M_FormKernel_Type, true);
+            if(belongForm.isPageForm()){
+                var formBelongUserControl = belongForm.searchParentKernel(UserControlKernel_Type, true);
+                var formStatePath = '';
+                if (formBelongUserControl) {
+                    formStatePath = formBelongUserControl.id + '_path + ' + singleQuotesStr('.' + belongForm.getStatePath('insertCache'));
+                }
+                else {
+                    
+                    formStatePath = singleQuotesStr(belongForm.getStatePath('insertCache'));
+                }
+                errCheckIf.trueBlock.pushLine("setStateByPath(state, " + formStatePath + ", null);");
+            }
             if (this.compileFlowNode(trueFlowLinks_arr[0], helper, usePreNodes_arr, errCheckIf.trueBlock) == false) {
                 return false;
             }

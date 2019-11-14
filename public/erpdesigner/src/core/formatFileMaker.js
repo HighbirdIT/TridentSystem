@@ -334,7 +334,7 @@ class FormatHtmlTag extends FormatFile_ItemBase{
         if(!IsEmptyString(className)){
             rlt += " className='" + className + "'";
         }
-        var styleID = (this.attrObj.id == null ? (this.styleCounter++) : this.attrObj.id) + '_style';
+        var styleID = this.attrObj.id + '_style';
         if(this.clientSide.addStyleObject(styleID,this.style)){
             rlt += " style={" + styleID + "}";
         }

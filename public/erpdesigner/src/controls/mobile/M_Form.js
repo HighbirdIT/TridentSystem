@@ -61,8 +61,8 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('选择行变更', AttrNames.Event.OnSelectedChanged, ValueType.Event),
     ]),
     new CAttributeGroup('List设置', [
-        new CAttribute('PopperStyle', 'item' + AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
-        new CAttribute('PopperClass', 'item' + AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true),
+        new CAttribute('ItemStyle', 'item' + AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
+        new CAttribute('ItemClass', 'item' + AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true),
     ]),
 ]);
 
@@ -143,7 +143,7 @@ class M_FormKernel extends ContainerKernelBase {
         this[AttrNames.AutoIndexColumn + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.GenNavBar + '_visible'] = nowft == EFormType.Grid || nowft == EFormType.Page;
         this[AttrNames.SelectMode + '_visible'] = nowft == EFormType.Grid || nowft == EFormType.List;
-        this[AttrNames.KeyColumn + '_visible'] = this[AttrNames.SelectMode + '_visible'] && this.getAttribute(AttrNames.SelectMode) != ESelectMode.None;
+        this[AttrNames.KeyColumn + '_visible'] = this[AttrNames.SelectMode + '_visible'] && (this.getAttribute(AttrNames.ClickSelectable) || this.getAttribute(AttrNames.SelectMode) != ESelectMode.None);        
         this[AttrNames.DefaultSelectFirst + '_visible'] = this[AttrNames.KeyColumn + '_visible'];
         this[AttrNames.HideTabHead + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.EditorType + '_visible'] = nowft == EFormType.List;
@@ -439,7 +439,7 @@ class M_FormKernel extends ContainerKernelBase {
                 this.findAttributeByName(AttrNames.AutoIndexColumn).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.GenNavBar).setVisible(this, isGridForm || isPageForm);
                 this.findAttributeByName(AttrNames.SelectMode).setVisible(this, isGridForm || isListForm);
-                keyColumnVisible = (isGridForm || isListForm) && (this.getAttribute(AttrNames.SelectMode) != ESelectMode.None);
+                keyColumnVisible = (isGridForm || isListForm) && (this.getAttribute(AttrNames.ClickSelectable) || (this.getAttribute(AttrNames.SelectMode) != ESelectMode.None));
                 this.findAttributeByName(AttrNames.KeyColumn).setVisible(this, keyColumnVisible);
                 this.findAttributeByName(AttrNames.DefaultSelectFirst).setVisible(this, keyColumnVisible);
                 this.findAttributeByName(AttrNames.HideTabHead).setVisible(this, isGridForm);
