@@ -1756,18 +1756,23 @@ class MobileContentCompiler extends ContentCompiler {
             return false;
         }
 
-        var ControlKernel_targetArr = [];
-        ControlKernel_targetArr = theKernel.parent.children
-        var current_ControlKernelId = theKernel.id
-
-        for (var i = 0; i < ControlKernel_targetArr.length; i++) {
-            var CKtemporary_Id = ControlKernel_targetArr[i].id
-            if (i != ControlKernel_targetArr.length - 1) {
-                if (current_ControlKernelId == CKtemporary_Id && ControlKernel_targetArr[i + 1].type == "M_Label") {
-                    layoutConfig.addClass('border-bottom');
+        /*
+        if(){
+            var ControlKernel_targetArr = [];
+            ControlKernel_targetArr = theKernel.parent.children;
+            var current_ControlKernelId = theKernel.id;
+    
+            for (var i = 0; i < ControlKernel_targetArr.length; i++) {
+                var CKtemporary_Id = ControlKernel_targetArr[i].id;
+                if (current_ControlKernelId == CKtemporary_Id) {
+                    if(i == ControlKernel_targetArr.length - 1 || ControlKernel_targetArr[i + 1].type != M_LabeledControlKernel_Type){
+                        layoutConfig.addClass('border-bottom');
+                    }
                 }
             }
         }
+        */
+        
 
         var parentForm = theKernel.parent.type == M_FormKernel_Type ? theKernel.parent : null;
         var parentPath = this.getKernelParentPath(theKernel);
@@ -1780,6 +1785,14 @@ class MobileContentCompiler extends ContentCompiler {
         labeledCtrlTag.setAttr('parentPath', parentPath);
         var widthFactor = theKernel.getAttribute(AttrNames.WidthFactor);
         labeledCtrlTag.setAttr('wf', widthFactor);
+        var renderMode = theKernel.getAttribute(AttrNames.RenderMode);
+        if(renderMode != ERenderMode.Auto){
+            labeledCtrlTag.setAttr('rm', renderMode);
+        }
+        var wordNum = theKernel.getAttribute('WordNum');
+        if(wordNum != 6){
+            labeledCtrlTag.setAttr('wn', wordNum);
+        }
 
         var dynamicColumn_obj = null;
         var compileConfig = null;
@@ -2293,7 +2306,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
         if (isGridForm || isListForm) {
             formTag.setAttr(VarNames.SelectMode, theKernel.getAttribute(AttrNames.SelectMode));
-            if (selectMode != ESelectMode.None) {
+            if (selectMode != ESelectMode.None || clickSelectable) {
                 var canUserColumns_arr = theKernel.getCanuseColumns();
                 if (canUserColumns_arr.indexOf(keyColumn) == -1) {
                     logManager.errorEx([logManager.createBadgeItem(

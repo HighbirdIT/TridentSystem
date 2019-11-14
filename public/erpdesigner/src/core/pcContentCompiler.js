@@ -68,8 +68,9 @@ class PCContentCompiler extends MobileContentCompiler {
                 beRely_arr: [],
             };
         }
+        var kernelProfile;
         var setRelyFun = (kernelid, relyOnid) => {
-            var kernelProfile = userCtlTemplateProfiles_map[kernelid];
+            kernelProfile = userCtlTemplateProfiles_map[kernelid];
             var relyOnKernelProfile = userCtlTemplateProfiles_map[relyOnid];
 
             if (kernelProfile.relyOn_arr.indexOf((relyOnid)) == -1) {

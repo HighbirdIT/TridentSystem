@@ -325,6 +325,7 @@ const AttrNames={
     RefreshIcon: 'refreshicon',
     DefaultSelectFirst: 'defaultSelectFirst',
     WidthFactor: 'widthfactor',
+    RenderMode: 'rendermode',
 
     Event:{
         OnClick:'onclick',

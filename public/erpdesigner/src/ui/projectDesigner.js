@@ -47,20 +47,54 @@ class ProjectDesigner extends React.PureComponent {
     }
 
     selectKernel(kernel) {
-        /*
-        if(this.selectedKernel == kernel){
+        var thisProject = this.props.project;
+        var editingPage = thisProject.getEditingPage();
+        var editingControl = thisProject.getEditingControl();
+        var belongPage = kernel.searchParentKernel(M_PageKernel_Type, true);
+        var delaySelect = false;
+        if(belongPage){
+            if(editingPage != belongPage){
+                thisProject.setEditingPageById(belongPage.id);
+                delaySelect = true;
+            }
+        }
+        else{
+            var belongUserControl = kernel.searchParentKernel(UserControlKernel_Type, true);
+            if(belongUserControl != editingControl){
+                thisProject.setEditingControlById(belongUserControl.id);
+                delaySelect = true;
+            }
+        }
+        var self = this;
+        if(delaySelect){
+            setTimeout(() => {
+                if (self.attrbutePanelRef.current)
+                    self.attrbutePanelRef.current.setTarget(kernel);       
+            }, 50);
+        }
+        else{
+            if (this.attrbutePanelRef.current)
+                this.attrbutePanelRef.current.setTarget(kernel);  
+        }
+    }
+
+    copySelectedKernel(){
+        if (this.attrbutePanelRef.current == null) {
             return;
         }
-        if(this.selectedKernel){
-            this.selectedKernel.setSelected(false);
+        var nowTarget = this.attrbutePanelRef.current.getTarget();
+        if (nowTarget == null) {
+            return;
         }
-        if(kernel){
-            kernel.setSelected(true);
+        if (nowTarget.parent == null) {
+            return;
         }
-        this.selectedKernel = kernel;
-        */
-        if (this.attrbutePanelRef.current)
-            this.attrbutePanelRef.current.setTarget(kernel);
+
+        if (ControlKernelBase.prototype.isPrototypeOf(nowTarget)) {
+            var thisProject = this.props.project;
+            gCopiedKernelData = thisProject.copyKernel(nowTarget);
+            thisProject.logManager.log('已复制');
+        }
     }
 
     deleteSelectedKernel() {

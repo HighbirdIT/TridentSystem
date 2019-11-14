@@ -197,19 +197,7 @@ class QuickControlSelector extends React.PureComponent {
             ctlpath:theKernel ? theKernel.getStatePath('','.',{},true) : null,
         });
         if(theKernel){
-            var belongPage = theKernel.searchParentKernel(M_PageKernel_Type, true);
-            if(belongPage){
-                project.setEditingPageById(belongPage.id);
-            }
-            else{
-                var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
-                if(belongUserControl){
-                    project.setEditingControlById(belongUserControl.id);
-                }
-            }
-            setTimeout(() => {
-                project.designer.selectKernel(theKernel);
-            }, 50);
+            project.designer.selectKernel(theKernel);
         }
     }
 

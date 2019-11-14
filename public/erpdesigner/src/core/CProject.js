@@ -319,6 +319,9 @@ class CProject extends IAttributeable {
         this.designeConfig.editingControl.id = -1;
         this.designeConfig.editingPage.id = pageID;
         this.attrChanged('editingPage');
+        if(thePage){
+            this.setEditingType(!thePage.ispcPage ? 'MB' : 'PC');
+        }
     }
 
     getPageById(pageID) {
