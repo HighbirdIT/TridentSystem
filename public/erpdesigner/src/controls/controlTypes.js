@@ -124,12 +124,12 @@ class ControlAPIClass{
 }
 
 class ApiItem_prop{
-    constructor(attrItem, stateName, needValid, getInitValueFun){
+    constructor(attrItem, stateName, needValid, getInitValueFun, relyStateName){
         this.type = EApiType.Prop;
         this.attrItem = attrItem;
         this.needValid = needValid == true;
         this.stateName = stateName == null ? attrItem.name : stateName;
-        this.relyStateName = this.stateName;
+        this.relyStateName = relyStateName == null ? stateName : relyStateName;
         this.getInitValueFun = getInitValueFun;
     }
     toString(){

@@ -21,6 +21,7 @@ var gPageInFrame = false;
 var gParentFrame = null;
 var gParentDingKit = null;
 var gParentIsInDingTalk = null;
+var gPCRenderMode = false;
 var gPreconditionInvalidInfo = '前置条件不足';
 var gCantNullInfo = '不能为空值';
 
@@ -163,7 +164,10 @@ var FixedContainer = function (_React$PureComponent) {
                 var foundElem = state.pages_arr.find(function (x) {
                     return x.id == id;
                 });
-                if (foundElem != null) return state;
+                if (foundElem != null) {
+                    foundElem.closed = false;
+                    return state;
+                }
                 return {
                     pages_arr: state.pages_arr.concat({ id: id, elem: pageElem })
                 };
@@ -172,18 +176,18 @@ var FixedContainer = function (_React$PureComponent) {
     }, {
         key: 'closePage',
         value: function closePage(id) {
-            this.setState(function (state) {
-                var foundElem = state.pages_arr.find(function (x) {
-                    return x.id == id;
-                });
-                if (foundElem == null) return state;
-                var newArr = state.pages_arr.filter(function (x) {
-                    return x != foundElem;
-                });
-                return {
-                    pages_arr: newArr
-                };
+            var foundElem = this.state.pages_arr.find(function (x) {
+                return x.id == id;
             });
+            if (foundElem == null) return false;
+            foundElem.closed = true;
+            var newArr = this.state.pages_arr.filter(function (x) {
+                return !x.closed && x != foundElem;
+            });
+            this.setState({
+                pages_arr: newArr
+            });
+            return true;
         }
     }, {
         key: 'addItem',
@@ -262,15 +266,17 @@ function popPage(pid, pelem) {
 }
 
 function closePage(pid) {
+    if (gFixedContainerRef.current) {
+        if (gFixedContainerRef.current.closePage(pid)) {
+            return;
+        }
+    }
     if (pageRouter.length > 1) {
         pageRouter[pageRouter.length - 1] == pid;
         setTimeout(function () {
             pageRoute_Back(false);
         }, 20);
         return;
-    }
-    if (gFixedContainerRef.current) {
-        gFixedContainerRef.current.closePage(pid);
     }
 }
 
@@ -359,6 +365,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
 
         autoBind(_this2);
         _this2.contentDivRef = React.createRef();
+        _this2.containerRef = React.createRef();
         _this2.state = {
             maxCount: 50
         };
@@ -367,6 +374,24 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
     }
 
     _createClass(ERPC_DropDown_PopPanel, [{
+        key: 'windowMouseDownHandler',
+        value: function windowMouseDownHandler(ev) {
+            var target;
+            if (ev) {
+                target = ev.target;
+            } else {
+                target = window.event.srcElement;
+            }
+            var parent = target.parentElement;
+            while (parent) {
+                if (parent == this.containerRef.current) {
+                    return;
+                }
+                parent = parent.parentElement;
+            }
+            this.foceClose();
+        }
+    }, {
         key: 'componentWillMount',
         value: function componentWillMount() {
             var _this3 = this;
@@ -374,13 +399,21 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             var self = this;
             setTimeout(function () {
                 self.inited = true;
-                self.setState(_this3.props.dropdownctl.getPopPanelInitState());
+                var dropdownctl = _this3.props.dropdownctl;
+                if (gPCRenderMode) {
+                    self.rootStyle = dropdownctl.getPopItemStyle();
+                    window.addEventListener('mousedown', _this3.windowMouseDownHandler);
+                }
+                self.setState(dropdownctl.getPopPanelInitState());
             }, 50);
         }
     }, {
         key: 'componentWillUnmount',
         value: function componentWillUnmount() {
             this.inited = false;
+            if (gPCRenderMode) {
+                window.removeEventListener('mousedown', this.windowMouseDownHandler);
+            }
         }
     }, {
         key: 'foceClose',
@@ -503,14 +536,13 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             }
             //console.log(selectedElem);
             if (!this.inited) {
+                if (gPCRenderMode) {
+                    return null;
+                }
                 return React.createElement(
                     'div',
                     { className: 'fixedBackGround' },
-                    React.createElement(
-                        'div',
-                        { className: 'dropDownItemContainer d-flex flex-column bg-light flex-shrink-0 rounded' },
-                        '.'
-                    )
+                    React.createElement('div', { className: 'dropDownItemContainer d-flex flex-column bg-light flex-shrink-0 rounded' })
                 );
             }
             var keyword = this.state.keyword.trim();
@@ -537,7 +569,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                     React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw fa-2x' })
                 );
             } else {
-                freshIconElem = React.createElement('i', { onClick: this.clickFreshHandler, className: 'fa fa-refresh text-success ml-1' });
+                freshIconElem = React.createElement('i', { onClick: this.clickFreshHandler, className: 'fa fa-refresh text-success cursor_hand' });
                 if (options_arr == null) {
                     options_arr = [];
                 }
@@ -693,7 +725,20 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                                 React.createElement('i', { className: 'fa fa-close' })
                             );
                         }),
-                        React.createElement('input', { type: 'text', className: 'flex-grow-1 flex-shrink-0 multiddcsearchinput', placeholder: '\u641C\u7D22', value: keyword, onChange: this.keyInputChanged })
+                        React.createElement(
+                            'div',
+                            { className: 'flex-grow-1 flex-shrink-1 input-group flex-nowrap w-initial' },
+                            React.createElement('input', { type: 'text', className: 'form-control flex-grow-1 flex-shrink-1 multiddcsearchinput', placeholder: '\u641C\u7D22', value: keyword, onChange: this.keyInputChanged }),
+                            React.createElement(
+                                'div',
+                                { className: 'input-group-append' },
+                                React.createElement(
+                                    'span',
+                                    { className: 'text-primary input-group-text p-1' },
+                                    freshIconElem
+                                )
+                            )
+                        )
                     );
                 }
                 if (filted_arr.length == 0) {
@@ -715,9 +760,26 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                 if (!multiselect && options_arr.length > 20) {
                     searchItem = React.createElement(
                         'div',
-                        { className: 'd-flex flex-shrink-0 align-items-center' },
-                        React.createElement('span', { className: 'fa fa-search fa-2x text-primary' }),
-                        React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 flexinput', type: 'text', value: keyword, onChange: this.keyInputChanged })
+                        { className: 'flex-shrink-0 input-group flex-nowrap' },
+                        React.createElement(
+                            'div',
+                            { className: 'input-group-prepend' },
+                            React.createElement(
+                                'span',
+                                { className: 'text-primary input-group-text p-1' },
+                                React.createElement('i', { className: 'fa fa-search' })
+                            )
+                        ),
+                        React.createElement('input', { className: 'form-control', type: 'text', value: keyword, onChange: this.keyInputChanged }),
+                        gPCRenderMode ? React.createElement(
+                            'div',
+                            { className: 'input-group-append' },
+                            React.createElement(
+                                'span',
+                                { className: 'text-primary input-group-text p-1' },
+                                freshIconElem
+                            )
+                        ) : null
                     );
                 }
 
@@ -789,12 +851,22 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                 titleBarRightElem = this.props.dropdownctl.props.createTitleBarRightElem();
             }
 
+            if (gPCRenderMode) {
+                return React.createElement(
+                    'div',
+                    { ref: this.containerRef, style: this.rootStyle, className: 'dropDownItemContainer_pc d-flex flex-column bg-light flex-shrink-0 rounded' },
+                    multiSelectedElem,
+                    searchItem,
+                    finalContentElem
+                );
+            }
+
             return React.createElement(
                 'div',
                 { className: 'fixedBackGround' },
                 React.createElement(
                     'div',
-                    { className: 'dropDownItemContainer d-flex flex-column bg-light flex-shrink-0 rounded' },
+                    { ref: this.containerRef, className: 'dropDownItemContainer d-flex flex-column bg-light flex-shrink-0 rounded' },
                     React.createElement(
                         'div',
                         { className: 'd-flex flex-shrink-0' },
@@ -849,7 +921,9 @@ var ERPC_DropDown = function (_React$PureComponent3) {
         _this5.contentDivRef = React.createRef();
 
         _this5.popPanelRef = React.createRef();
-        _this5.popPanelItem = React.createElement(ERPC_DropDown_PopPanel, { ref: _this5.popPanelRef, dropdownctl: _this5, key: gFixedItemCounter++ });
+        if (!gPCRenderMode) {
+            _this5.popPanelItem = React.createElement(ERPC_DropDown_PopPanel, { ref: _this5.popPanelRef, dropdownctl: _this5, key: gFixedItemCounter++ });
+        }
         return _this5;
     }
 
@@ -884,7 +958,9 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             }
             this.recentValues_arr = recentValues_arr;
             this.recentUsed = recentUsed;
-            addFixedItem(this.popPanelItem);
+            if (!gPCRenderMode) {
+                addFixedItem(this.popPanelItem);
+            }
 
             this.setState({
                 keyword: '',
@@ -903,7 +979,9 @@ var ERPC_DropDown = function (_React$PureComponent3) {
         value: function dropDownClosed() {
             if (this.state.opened) {
                 this.setState({ opened: false });
-                removeFixedItem(this.popPanelItem);
+                if (!gPCRenderMode) {
+                    removeFixedItem(this.popPanelItem);
+                }
             }
         }
     }, {
@@ -1038,6 +1116,28 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             });
         }
     }, {
+        key: 'getPopItemStyle',
+        value: function getPopItemStyle() {
+            var rootDiv = this.rootDivRef.current;
+            var rootRect = rootDiv.getBoundingClientRect();
+            var $window = $(window);
+            var windowHeight = $window.height();
+            var topSpace = rootRect.top;
+            var bottomSpace = windowHeight - rootRect.bottom;
+            var rlt = {
+                width: rootDiv.offsetWidth + 'px',
+                left: rootRect.left + 'px'
+            };
+            if (bottomSpace > topSpace) {
+                rlt.top = rootRect.bottom + 'px';
+                rlt.maxHeight = bottomSpace - 20 + 'px';
+            } else {
+                rlt.bottom = windowHeight - rootRect.top + 'px';
+                rlt.maxHeight = topSpace - 20 + 'px';
+            }
+            return rlt;
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this6 = this;
@@ -1141,7 +1241,12 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 }
             }
 
+            var popPanelElem = null;
             if (this.state.opened) {
+                if (gPCRenderMode) {
+                    popPanelElem = React.createElement(ERPC_DropDown_PopPanel, { ref: this.popPanelRef, dropdownctl: this, width: this.rootDivRef.current.offsetWidth });
+                }
+
                 var popPanelRefCurrent = this.popPanelRef.current;
                 if (popPanelRefCurrent) {
                     var newState = {
@@ -1232,14 +1337,15 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 );
             }
 
-            if (errTipElem == null) {
+            if (errTipElem == null && popPanelElem == null) {
                 return dropDownElem;
             }
             return React.createElement(
                 'div',
                 { className: 'd-flex flex-column flex-shrink-1 flex-grow-' + (this.props.growable == false ? '0' : '1') },
                 dropDownElem,
-                errTipElem
+                errTipElem,
+                popPanelElem
             );
         }
     }]);
@@ -1333,14 +1439,14 @@ function getControlPropProfile(ownprops, useState) {
     var rowState;
     var fullParentPath;
     var fullPath;
-    if (ownprops.rowIndex == null) {
+    if (ownprops.rowkey == null) {
         fullParentPath = ownprops.parentPath;
         fullPath = MakePath(ownprops.parentPath, ownprops.id);
         if (useState) {
             ctlState = getStateByPath(useState, fullPath, {});
         }
     } else {
-        fullParentPath = MakePath(ownprops.parentPath, 'row_' + ownprops.rowIndex);
+        fullParentPath = MakePath(ownprops.parentPath, 'row_' + ownprops.rowkey);
         fullPath = fullParentPath + '.' + ownprops.id;
         if (useState) {
             rowState = getStateByPath(useState, fullParentPath, {});
@@ -1352,7 +1458,7 @@ function getControlPropProfile(ownprops, useState) {
         rowState: rowState,
         fullParentPath: fullParentPath,
         fullPath: fullPath,
-        rowIndex: ownprops.rowIndex
+        rowkey: ownprops.rowkey
     };
 }
 
@@ -1405,7 +1511,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         visible: ctlState.visible,
         invalidInfo: invalidInfo,
         selectOpt: selectOpt,
-        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
+        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowkey != 'new',
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
         starval: starval
@@ -1513,7 +1619,7 @@ var ERPC_Text = function (_React$PureComponent4) {
                     errInfo = '';
                 }
                 contentElem = React.createElement(
-                    'div',
+                    'small',
                     { className: 'flex-grow-1 flex-shrink-1' },
                     React.createElement('i', { className: 'fa fa-warning' }),
                     errInfo
@@ -1541,7 +1647,7 @@ var ERPC_Text = function (_React$PureComponent4) {
                         nowValue
                     );
                 } else if (this.props.type == 'string' && this.props.linetype != null && this.props.linetype != 'single') {
-                    contentElem = React.createElement('textarea', { onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 w-100 form-control textarea-' + this.props.linetype + (this.props.align ? ' text-' + this.props.align : ''), value: this.props.value, onBlur: this.endInputHandler });
+                    contentElem = React.createElement('textarea', { id: this.props.id, onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 w-100 form-control textarea-' + this.props.linetype + (this.props.align ? ' text-' + this.props.align : ''), value: this.props.value, onBlur: this.endInputHandler });
                 } else {
                     var useType = this.props.type;
                     var useChecked = null;
@@ -1566,13 +1672,13 @@ var ERPC_Text = function (_React$PureComponent4) {
                             }, 10);
                         }
                     }
-                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control invalid ' + (this.props.align ? ' text-' + this.props.align : ''), type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged, onBlur: this.endInputHandler });
+                    contentElem = React.createElement('input', { id: this.props.id, className: 'flex-grow-1 flex-shrink-1 form-control invalid ' + (this.props.align ? ' text-' + this.props.align : ''), type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged, onBlur: this.endInputHandler });
                 }
 
                 if (this.props.invalidInfo) {
                     rootDivClassName += ' flex-column';
                     errTipElem = React.createElement(
-                        'span',
+                        'small',
                         { className: 'text-danger' },
                         React.createElement('i', { className: 'fa fa-warning' }),
                         this.props.invalidInfo
@@ -1602,7 +1708,7 @@ function ERPC_Text_mapstatetoprops(state, ownprops) {
         visible: ctlState.visible,
         fetchingErr: ctlState.fetchingErr,
         invalidInfo: ctlState.invalidInfo == gPreconditionInvalidInfo ? null : ctlState.invalidInfo,
-        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
+        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowkey != 'new',
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath
     };
@@ -1628,6 +1734,25 @@ var ERPC_LabeledControl = function (_React$PureComponent5) {
     }
 
     _createClass(ERPC_LabeledControl, [{
+        key: 'renderInPC',
+        value: function renderInPC(toolTipIcon) {
+            return React.createElement(
+                'div',
+                { className: 'rowlFameTwo' + (this.props.className ? ' ' + this.props.className : ''), wf: this.props.wf },
+                React.createElement(
+                    'label',
+                    { className: 'rowlFameTwo_Top font-weight-bold', htmlFor: this.props.forid },
+                    this.props.label
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'rowlFameTwo_Bottom' },
+                    toolTipIcon,
+                    this.props.children
+                )
+            );
+        }
+    }, {
         key: 'render',
         value: function render() {
             if (this.props.visible == false) {
@@ -1645,17 +1770,27 @@ var ERPC_LabeledControl = function (_React$PureComponent5) {
                     )
                 );
             }
+            var renderMode = this.props.rm;
+            if (renderMode == null) {
+                if (gPCRenderMode) {
+                    renderMode = 'pc';
+                }
+            }
+            if (renderMode == 'pc') {
+                return this.renderInPC(toolTipIcon);
+            }
             return React.createElement(
                 'div',
                 { className: 'rowlFameOne' + (this.props.className ? ' ' + this.props.className : '') },
                 React.createElement(
                     'div',
-                    { className: 'rowlFameOne_Left' },
+                    { className: 'rowlFameOne_Left', wn: this.props.wn },
                     this.props.label
                 ),
+                React.createElement('span', { className: 'rowlFameDivider' }),
                 React.createElement(
                     'div',
-                    { className: 'rowlFameOne_right' },
+                    { className: 'rowlFameOne_right', wn: this.props.wn },
                     toolTipIcon,
                     this.props.children
                 )
@@ -2211,11 +2346,14 @@ function ERPC_PageForm_clickPlusNavBtnHandler() {
 }
 
 function ERPC_PageForm_clickUnPlusNavBtnHandler() {
+    if (this.saveInsertCache) {
+        this.saveInsertCache();
+    }
     store.dispatch(makeAction_setStateByPath(this.prePlusIndex, MakePath(this.props.parentPath, this.props.id, 'recordIndex')));
 }
 
 function ERPC_PageForm_renderNavigater() {
-    if (this.props.records_arr == null || this.props.records_arr.length == 1) {
+    if (this.props.records_arr == null || this.props.records_arr.length == 1 && !this.canInsert) {
         return null;
     }
     var count = this.props.records_arr.length;
@@ -2299,7 +2437,7 @@ function SmartSetScrollTop(theElem) {
 
 function GetFormSelectedRows(formState, keyColumn) {
     var rlt = GetFormSelectedProfile(formState, keyColumn);
-    return rlt.index != null ? [rlt.index] : rlt.indexes_arr;
+    return rlt.key != null ? [rlt.key] : rlt.keys_arr;
 }
 
 function GetFormSelectedColumns(formState, keyColumn, targetColmun) {
@@ -2407,14 +2545,17 @@ function ERPC_GridForm_SetRowPerPage(value) {
     var pageCount = Math.ceil(this.props.records_arr.length / value);
     var pageIndex = this.props.pageIndex >= pageCount ? pageCount - 1 : this.props.pageIndex;
     var pageIndexChanaged = pageIndex != this.props.pageIndex;
-    var formPath = MakePath(this.props.parentPath, this.props.rowIndex == null ? null : 'row_' + this.props.rowIndex, this.props.id);
+    var formPath = MakePath(this.props.parentPath, this.props.rowkey == null ? null : 'row_' + this.props.rowkey, this.props.id);
     store.dispatch(makeAction_setManyStateByPath({
         rowPerPage: value,
         pageIndex: pageIndex,
         pageCount: pageCount
     }, formPath));
-    if (!pageIndexChanaged) {
-        store.dispatch({ type: this.props.reBindAT });
+    if (!pageIndexChanaged && this.props.bindpagefun) {
+        var self = this;
+        store.dispatch(makeAction_callFunction(function (state) {
+            self.props.bindpagefun(state, self.props.fullPath);
+        }));
     }
 }
 
@@ -2429,25 +2570,25 @@ function ERPC_GridForm_SetPageIndex(value) {
         value = 0;
     }
     SmartSetScrollTop(this.rootRef.current);
-    var statePath = MakePath(this.props.parentPath, this.props.rowIndex == null ? null : 'row_' + this.props.rowIndex, this.props.id, 'pageIndex');
+    var statePath = MakePath(this.props.parentPath, this.props.rowkey == null ? null : 'row_' + this.props.rowkey, this.props.id, 'pageIndex');
     store.dispatch(makeAction_setStateByPath(value, statePath));
 }
 
-function ERPC_GridForm_GetRowPath(rowIndex) {
-    return MakePath(this.props.parentPath, this.props.id, 'row_' + rowIndex);
+function ERPC_GridForm_GetRowPath(rowkey) {
+    return MakePath(this.props.parentPath, this.props.id, 'row_' + rowkey);
 }
 
-function ERPC_GridForm_GetRowState(rowIndex, state) {
+function ERPC_GridForm_GetRowState(rowkey, state) {
     if (state == null) {
         state = store.getState();
     }
-    var path = this.getRowPath(rowIndex);
+    var path = this.getRowPath(rowkey);
     return getStateByPath(state, path);
 }
 
-function ERPC_GridForm_RoweditClicked(rowIndex) {
-    var rowPath = this.getRowPath(rowIndex);
-    var rowState = this.getRowState(rowIndex);
+function ERPC_GridForm_RoweditClicked(rowkey) {
+    var rowPath = this.getRowPath(rowkey);
+    var rowState = this.getRowState(rowkey);
     var rowStateShot = JSON.stringify(rowState);
     store.dispatch(makeAction_setManyStateByPath({
         editing: true,
@@ -2455,28 +2596,28 @@ function ERPC_GridForm_RoweditClicked(rowIndex) {
     }, rowPath));
 }
 
-function ERPC_GridForm_RowcanceleditClicked(rowIndex) {
-    var rowPath = this.getRowPath(rowIndex);
-    var rowState = this.getRowState(rowIndex);
+function ERPC_GridForm_RowcanceleditClicked(rowkey) {
+    var rowPath = this.getRowPath(rowkey);
+    var rowState = this.getRowState(rowkey);
     var needSetState = JSON.parse(rowState.stateshot);
     needSetState.editing = false;
     store.dispatch(makeAction_setManyStateByPath(needSetState, rowPath));
 }
 
-function ERPC_GridForm_RowdeleteClicked(rowIndex) {
+function ERPC_GridForm_RowdeleteClicked(rowkey) {
     var deleteBtn = this.btns.find(function (x) {
         return x.key == 'delete';
     });
-    deleteBtn.handler(rowIndex);
+    deleteBtn.handler(rowkey);
 }
 
-function ERPC_GridForm_RowconfirmeditClicked(rowIndex) {
+function ERPC_GridForm_RowconfirmeditClicked(rowkey) {
     var self = this;
-    var rowPath = self.getRowPath(rowIndex);
+    var rowPath = self.getRowPath(rowkey);
     var editBtn = this.btns.find(function (x) {
         return x.key == 'edit';
     });
-    editBtn.handler(rowIndex, function (state) {
+    editBtn.handler(rowkey, function (state) {
         if (state == null) {
             store.dispatch(makeAction_setStateByPath(false, rowPath + '.editing'));
         } else {
@@ -2508,16 +2649,14 @@ function ERPC_GridForm_ConfirmInsert() {
     });
 }
 
-function ERPC_GridForm_SelectorClicked(rowIndex) {
+function ERPC_GridForm_SelectorClicked(rowkey) {
     var needSetState = {};
-    var rowRecord = this.props.records_arr[rowIndex];
-    var keyValue = rowRecord[this.props.keyColumn];
     if (this.props.selectMode == 'single') {
-        needSetState[this.props.fullPath + '.selectedValue'] = keyValue;
+        needSetState[this.props.fullPath + '.selectedValue'] = rowkey;
     } else {
-        var index = this.props.selectedValues_arr.indexOf(keyValue);
+        var index = this.props.selectedValues_arr.indexOf(rowkey);
         if (index == -1) {
-            needSetState[this.props.fullPath + '.selectedValues_arr'] = this.props.selectedValues_arr.concat(keyValue);
+            needSetState[this.props.fullPath + '.selectedValues_arr'] = this.props.selectedValues_arr.concat(rowkey);
         } else {
             var newArr = this.props.selectedValues_arr.concat();
             newArr.splice(index, 1);
@@ -2526,7 +2665,7 @@ function ERPC_GridForm_SelectorClicked(rowIndex) {
     }
 
     if (this.clickRowHandler) {
-        this.clickRowHandler(rowIndex);
+        this.clickRowHandler(rowkey);
     }
 
     store.dispatch(makeAction_setManyStateByPath(needSetState, ''));
@@ -2547,7 +2686,7 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent11) {
     _createClass(ERPC_GridForm_BtnCol, [{
         key: 'clickHandler',
         value: function clickHandler(ev) {
-            if (this.props.rowIndex == null) {
+            if (this.props.rowkey == null) {
                 return;
             }
             var key = getAttributeByNode(ev.target, 'd-key', true, 5);
@@ -2560,16 +2699,16 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent11) {
             });
             switch (key) {
                 case 'edit':
-                    this.props.form['roweditClicked'](this.props.rowIndex);
+                    this.props.form['roweditClicked'](this.props.rowkey);
                     break;
                 case 'delete':
-                    this.props.form['rowdeleteClicked'](this.props.rowIndex);
+                    this.props.form['rowdeleteClicked'](this.props.rowkey);
                     break;
                 case 'confirmedit':
-                    this.props.form['rowconfirmeditClicked'](this.props.rowIndex);
+                    this.props.form['rowconfirmeditClicked'](this.props.rowkey);
                     break;
                 case 'canceledit':
-                    this.props.form['rowcanceleditClicked'](this.props.rowIndex);
+                    this.props.form['rowcanceleditClicked'](this.props.rowkey);
                     break;
                 case 'cancelInsert':
                     this.props.form.cancelInsert();
@@ -2578,7 +2717,7 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent11) {
                     this.props.form.confrimInsert();
                     break;
                 default:
-                    btnSetting.handler(this.props.rowIndex);
+                    btnSetting.handler(this.props.rowkey);
             }
         }
     }, {
@@ -2586,7 +2725,7 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent11) {
         value: function render() {
             var _this16 = this;
 
-            if (this.props.rowIndex == 'new') {
+            if (this.props.rowkey == 'new') {
                 return React.createElement(
                     'div',
                     { className: 'btn-group gridFormBtnsCol' },
@@ -2637,7 +2776,7 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent11) {
 }(React.PureComponent);
 
 function ERPC_GridForm_BtnCol_mapstatetoprops(state, ownprops) {
-    var rowState = ownprops.form.getRowState(ownprops.rowIndex);
+    var rowState = ownprops.form.getRowState(ownprops.rowkey);
     return {
         editing: rowState && rowState.editing
     };
@@ -2662,7 +2801,7 @@ var ERPC_GridSelectableRow = function (_React$PureComponent12) {
     _createClass(ERPC_GridSelectableRow, [{
         key: 'clickHandler',
         value: function clickHandler(ev) {
-            this.props.form.selectorClicked(this.props.rowIndex);
+            this.props.form.selectorClicked(this.props.rowkey);
         }
     }, {
         key: 'render',
@@ -3648,6 +3787,123 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
     return ERPC_TopLevelFrame;
 }(React.PureComponent);
 
+var ERPC_IFrame = function (_React$PureComponent19) {
+    _inherits(ERPC_IFrame, _React$PureComponent19);
+
+    function ERPC_IFrame(props) {
+        _classCallCheck(this, ERPC_IFrame);
+
+        var _this26 = _possibleConstructorReturn(this, (ERPC_IFrame.__proto__ || Object.getPrototypeOf(ERPC_IFrame)).call(this, props));
+
+        _this26.onloadHandler = _this26.onloadHandler.bind(_this26);
+        _this26.onErrorHandler = _this26.onErrorHandler.bind(_this26);
+        _this26.push = _this26.push.bind(_this26);
+        _this26.pop = _this26.pop.bind(_this26);
+
+        _this26.state = {
+            srcs_arr: [],
+            states_arr: [],
+            useSrc: null,
+            useState: null
+        };
+        return _this26;
+    }
+
+    _createClass(ERPC_IFrame, [{
+        key: 'push',
+        value: function push(src, oldPageState, onMessageFun) {
+            if (this.state.srcs_arr.length > 0 && this.state.srcs_arr[this.state.srcs_arr.length - 1] == src) {
+                return;
+            }
+            this.setState({
+                srcs_arr: this.state.srcs_arr.concat(src),
+                states_arr: this.state.states_arr.concat(oldPageState),
+                useSrc: src,
+                useState: null
+            });
+        }
+    }, {
+        key: 'pop',
+        value: function pop() {
+            if (this.state.srcs_arr.length == 0) {
+                return;
+            }
+            var newsrcs_arr = this.state.srcs_arr.concat();
+            var newstates_arr = this.state.states_arr.concat();
+            newsrcs_arr.pop();
+            var useSrc = newsrcs_arr.length == 0 ? null : newsrcs_arr[newsrcs_arr.length - 1];
+            var useState = newstates_arr.pop();
+            this.setState({
+                srcs_arr: newsrcs_arr,
+                states_arr: newstates_arr,
+                useState: useState,
+                useSrc: useSrc,
+                err: null
+            });
+        }
+    }, {
+        key: 'close',
+        value: function close() {
+            this.onMessageFun = null;
+            this.setState({
+                srcs_arr: [],
+                states_arr: [],
+                useSrc: null,
+                useState: null,
+                err: null
+            });
+        }
+    }, {
+        key: 'sendMessage',
+        value: function sendMessage(msgtype, data) {
+            if (this.onMessageFun) {
+                this.onMessageFun(msgtype, data);
+            }
+        }
+    }, {
+        key: 'onloadHandler',
+        value: function onloadHandler(ev) {
+            console.log(ev);
+            try {
+                ev.target.contentWindow.gPageInFrame = true;
+                ev.target.contentWindow.gParentFrame = this;
+                ev.target.contentWindow.gParentDingKit = dingdingKit;
+                ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
+            } catch (eo) {
+                console.log(eo);
+                this.setState({
+                    err: JSON.stringify(eo)
+                });
+            }
+        }
+    }, {
+        key: 'onErrorHandler',
+        value: function onErrorHandler(ev) {
+            alert(JSON.stringify(ev));
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            if (this.state.useSrc == null) {
+                return null;
+            }
+            var iframElem = null;
+            if (this.state.err != null) {
+                iframElem = this.state.err;
+            } else if (!IsEmptyString(this.props.src != null)) {
+                iframElem = React.createElement('iframe', { src: this.props.src, className: 'w-100 h-100', frameBorder: '0', onLoad: this.onloadHandler, onError: this.onErrorHandler });
+            }
+            return React.createElement(
+                'div',
+                { className: this.props.className, style: this.props.style },
+                iframElem
+            );
+        }
+    }]);
+
+    return ERPC_IFrame;
+}(React.PureComponent);
+
 var ERPXMLToolKit = {
     createDocFromString: function createDocFromString(xmlString) {
         var xmlDoc = null;
@@ -3738,4 +3994,14 @@ function GetDistance(lat1, lng1, lat2, lng2) {
     s = s * 6378137;
     s = Math.floor(s * 10000) / 10000;
     return s;
+}
+
+function GetFromatRowKey(rowkey) {
+    if (typeof rowkey == 'number') {
+        return rowkey;
+    }
+    if (!isNaN(rowkey)) {
+        return parseInt(rowkey);
+    }
+    return rowkey;
 }

@@ -846,16 +846,16 @@ class JSNode_BluePrint extends EventEmitter {
                 }
             }
             else if (this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
-                params_arr = [VarNames.RowIndex, VarNames.CallBack];
+                params_arr = [VarNames.RowKey, VarNames.CallBack];
                 if (compilHelper.config) {
                     if (compilHelper.config.key == 'insert') {
                         params_arr = [VarNames.CallBack];
-                        theFun.scope.getVar(VarNames.RowIndex, true, singleQuotesStr('new'));
+                        theFun.scope.getVar(VarNames.RowKey, true, singleQuotesStr('new'));
                     }
-                    fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.parent.id + '_' + compilHelper.config.actLabel + '_'), '+', VarNames.RowIndex);
+                    fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.parent.id + '_' + compilHelper.config.actLabel + '_'), '+', VarNames.RowKey);
                 }
                 else {
-                    fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.id + funName + '_'), '+', VarNames.RowIndex);
+                    fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.id + funName + '_'), '+', VarNames.RowKey);
                 }
                 theFun.scope.getVar(belongFormControl.id + "_path", true, 'this.props.fullPath');
                 theFun.scope.getVar(belongFormControl.id + "_state", true, makeStr_callFun('getStateByPath', [VarNames.State, 'this.props.fullPath', '{}']));
@@ -881,16 +881,21 @@ class JSNode_BluePrint extends EventEmitter {
                 var formStateVarName = formId + '_state';
                 var formNowRowStateVarName = formId + '_' + VarNames.RowState;
                 var formNowRecordVarName = formId + '_' + VarNames.NowRecord;
+                var formPathVarName = formId + '_path';
                 var selectedRowsVarName = formId + '_' + VarNames.SelectedRows_arr;
                 var isUseFormCtl = !IsEmptyObject(useFormData.useControls_map);
                 var isUseFormColumn = !IsEmptyObject(useFormData.useColumns_map);
+                var formPath = useFormData.formKernel.getStatePath();
 
                 if (belongUserControl) {
+                    formPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + formPath);
                     initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
                 }
                 else {
+                    formPath = singleQuotesStr(formPath);
                     initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
                 }
+                theFun.scope.getVar(formPathVarName, true, formPath);
                 theFun.scope.getVar(formStateVarName, true, initValue);
                 var controlStateDelayGet = false;
 
@@ -899,18 +904,16 @@ class JSNode_BluePrint extends EventEmitter {
                     if (isGridForm || isListForm) {
                         if (useFormData.useContextRow) {
                             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
-                                theFun.scope.getVar(VarNames.RowIndexInfo_map, true, 'getRowIndexMapFromPath(' + VarNames.FullParentPath + ')');
-                                theFun.scope.getVar(VarNames.RowIndex, true, VarNames.RowIndexInfo_map + '.' + formId);
+                                theFun.scope.getVar(VarNames.RowKeyInfo_map, true, 'getRowKeyMapFromPath(' + VarNames.FullParentPath + ')');
+                                theFun.scope.getVar(VarNames.RowKey, true, VarNames.RowKeyInfo_map + '.' + formId);
                             }
                             if (this.group == EJsBluePrintFunGroup.CtlEvent) {
-                                theFun.scope.getVar(VarNames.RowIndexInfo_map, true, "getRowIndexMapFromPath(" + ctlKernel.id + "_path)");
-                                theFun.scope.getVar(VarNames.RowIndex, true, VarNames.RowIndexInfo_map + '.' + formId);
+                                theFun.scope.getVar(VarNames.RowKeyInfo_map, true, "getRowKeyMapFromPath(" + ctlKernel.id + "_path)");
+                                theFun.scope.getVar(VarNames.RowKey, true, VarNames.RowKeyInfo_map + '.' + formId);
                             }
+                            theFun.scope.getVar(formNowRowStateVarName, true, makeStr_callFun('getStateByPath', [formStateVarName,"'row_' + " + VarNames.RowKey, '{}']));
                             if (isUseFormColumn) {
-                                theFun.scope.getVar(formNowRecordVarName, true, formStateVarName + '.' + VarNames.Records_arr + midbracketStr(VarNames.RowIndex));
-                            }
-                            if (isUseFormCtl) {
-                                theFun.scope.getVar(formNowRowStateVarName, true, formStateVarName + "['row_' + " + VarNames.RowIndex + ']');
+                                theFun.scope.getVar(formNowRecordVarName, true, makeStr_callFun('getRecordFromRowKey',[formPathVarName,VarNames.RowKey]));
                             }
                         }
                         if (useFormData.useSelectedRow) {
@@ -919,13 +922,13 @@ class JSNode_BluePrint extends EventEmitter {
                             if (!muteMode) {
                                 validFormSelectBlock.pushLine(makeStr_AddAll("SendToast('需要在[" + useFormData.formKernel.getAttribute(AttrNames.Title) + "]中选择" + (isSingleSelectMode ? '一条' : '几条') + "数据。', EToastType.Warning);"));
                             }
-                            validFormSelectBlock.pushLine("return;", -1);
+                            validFormSelectBlock.pushLine("return" + (IsEmptyString(defRetValue) ? '' : ' ' + defRetValue) + ";", -1);
                             validFormSelectBlock.pushLine('}');
 
                             if (isSingleSelectMode) {
                                 if (isUseFormColumn) {
                                     theFun.scope.getVar(formNowRecordVarName, true);
-                                    validFormSelectBlock.pushLine(makeStr_AddAll(formNowRecordVarName, '=', formStateVarName, '.', VarNames.Records_arr, '[', selectedRowsVarName, '[0]];'));
+                                    validFormSelectBlock.pushLine(formNowRecordVarName + '=' + makeStr_callFun('getRecordFromRowKey',[formPathVarName,selectedRowsVarName + '[0]'],';'));
                                 }
                             }
                             if (isUseFormCtl) {
@@ -1121,15 +1124,15 @@ class JSNode_BluePrint extends EventEmitter {
             needFinalCallback = true;
             var checkVarValidStr = '';
             var validKernelBlock = new FormatFileBlock('validkernel');
-            var griRowIndexVars_map = {};
+            var gridRowKeyVars_map = {};
             switch (ctlKernel.type) {
                 case M_FormKernel_Type:
-                    griRowIndexVars_map[ctlKernel.id] = VarNames.RowIndex;
+                    gridRowKeyVars_map[ctlKernel.id] = VarNames.RowKey;
                     break;
                 default:
                     var belongForm = ctlKernel.searchParentKernel(M_FormKernel_Type, true);
                     if (belongForm) {
-                        griRowIndexVars_map[belongForm.id] = VarNames.RowIndex;
+                        gridRowKeyVars_map[belongForm.id] = VarNames.RowKey;
                     }
                     break;
             }
@@ -1144,7 +1147,7 @@ class JSNode_BluePrint extends EventEmitter {
                     valueType = varObj.kernel.getAttribute(AttrNames.ValueType);
                 }
 
-                var infoStatePath = varObj.kernel.getStatePath('invalidInfo', '.', griRowIndexVars_map);
+                var infoStatePath = varObj.kernel.getStatePath('invalidInfo', '.', gridRowKeyVars_map);
                 if (this.group == EJsBluePrintFunGroup.CtlValid) {
                     validKernelBlock.pushLine("if(validErrState.hasOwnProperty('" + infoStatePath + "')){validErr=validErrState['" + infoStatePath + "'];}");
                     validKernelBlock.pushLine('else{', 1);
@@ -2550,7 +2553,8 @@ class JSNode_CurrentDataRow extends JSNode_Base {
                         clientForEachDeclarBlock = new FormatFileBlock('clientforeachdeclar');
                         clientForEachBodyBlock = new FormatFileBlock('clientforeachbody');
                         clientForEachBlock.pushLine(makeStr_AddAll('for(var ', indexVarName, '=0;', indexVarName, '<', selectedRowsVarName, '.length;++', indexVarName, '){'), 1);
-                        clientForEachBlock.pushLine('var ' + nowRowVarName + '=' + makeStr_AddAll(formStateVarName, '.', VarNames.Records_arr, '[', selectedRowsVarName, '[', indexVarName, ']];'));
+                        //clientForEachBlock.pushLine('var ' + nowRowVarName + '=' + makeStr_AddAll(formStateVarName, '.', VarNames.Records_arr, '[', selectedRowsVarName, '[', indexVarName, ']];'));
+                        clientForEachBlock.pushLine('var ' + nowRowVarName + '=' + makeStr_callFun('getRecordFromRowKey',[formKernel.id + '_path',selectedRowsVarName + '['+indexVarName+']'],';'));
                         clientForEachBlock.pushChild(clientForEachDeclarBlock);
                         clientForEachBlock.pushChild(clientForEachBodyBlock);
                         clientForEachBlock.subNextIndent();
@@ -3570,6 +3574,30 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
         result.pushVariable(socketValue, targetSocket);
     }
 
+    columnDDCChanged(value){
+        this.inSocket.setExtra('colname', value);
+    }
+
+    customSocketRender(socket) {
+        if (!socket.isIn) {
+            return null;
+        }
+        if(this.apiClass == null || this.apiItem == null){
+            return;
+        }
+        if(this.apiClass.ctltype == M_FormKernel_Type && this.apiItem.attrItem.name == VarNames.SelectedColumns){
+            var selectedCtlid = this.inSocket.getExtra('ctlid');
+            var selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
+            var options_arr = [];
+            if(selectedKernel){
+                options_arr = selectedKernel.getCanuseColumns;
+            }
+            var nowVal = this.inSocket.getExtra('colname');
+            return <DropDownControl itemChanged={this.columnDDCChanged} btnclass='btn-dark' options_arr={options_arr} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} />;
+        }
+        return null;
+    }
+
     compile(helper, preNodes_arr, belongBlock) {
         var superRet = super.compile(helper, preNodes_arr);
         if (superRet == false || superRet != null) {
@@ -3606,6 +3634,19 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
                 stateName: propAttr.label,
                 useAttrName: propAttr.label,
                 relyStateName: propAttr.label,
+            });
+        }
+        else if(this.apiClass.ctltype == M_FormKernel_Type && this.apiItem.attrItem.name == VarNames.SelectedColumns){
+            var colname = this.inSocket.getExtra('colname');
+            if (this.checkCompileFlag(selectedKernel.getCanuseColumns().indexOf(colname) == -1, '所选列无效', helper)) {
+                return false;
+            }
+
+            useApiItem = Object.assign({}, useApiItem, {
+                stateName: VarNames.SelectedColumns,
+                useAttrName: VarNames.SelectedColumns,
+                colname: colname,
+                relyStateName:VarNames.SelectedValues_arr,
             });
         }
         if (selectedKernel.type == M_FormKernel_Type) {
@@ -3678,7 +3719,6 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
     restorFromAttrs(attrsJson) {
         assginObjByProperties(this, attrsJson, ['ctltype', 'apiid']);
     }
-
     compile(helper, preNodes_arr, belongBlock) {
         var superRet = super.compile(helper, preNodes_arr);
         if (superRet == false || superRet != null) {
@@ -3722,7 +3762,7 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
             if (this.checkCompileFlag(propAttr == null, '目标属性无效', helper)) {
                 return false;
             }
-            var pathVar = singleQuotesStr(selectedKernel.getStatePath(propAttr.label, '.', { mapVarName: VarNames.RowIndexInfo_map }));
+            var pathVar = singleQuotesStr(selectedKernel.getStatePath(propAttr.label, '.', { mapVarName: VarNames.RowKeyInfo_map }));
             var belongUserCtl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
             if (selectedKernel.parent == null) {
                 // 在自订控件内部设置属性，需要加本控件path
@@ -3747,7 +3787,7 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
         }
         else {
             var belongUserControl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
-            var statePath = (belongUserControl ? belongUserControl.id + "_path + '." : "'") + selectedKernel.getStatePath(this.apiItem.stateName, '.', { mapVarName: VarNames.RowIndexInfo_map }) + "'";
+            var statePath = (belongUserControl ? belongUserControl.id + "_path + '." : "'") + selectedKernel.getStatePath(this.apiItem.stateName, '.', { mapVarName: VarNames.RowKeyInfo_map }) + "'";
             if (batchNode) {
                 myJSBlock.pushLine(needSetVarName + '[' + statePath + '] = ' + valueStr + ';');
             }
@@ -7053,7 +7093,7 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         }
         else {
             if (selectedKernel.type == MFileUploader_Type && this.funItem.name == 'Reset') {
-                var cltPathVar = singleQuotesStr(selectedKernel.getStatePath('', '.', { mapVarName: VarNames.RowIndexInfo_map }));
+                var cltPathVar = singleQuotesStr(selectedKernel.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map }));
                 if (belongUserCtl) {
                     cltPathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath(''));
                 }
@@ -8353,7 +8393,7 @@ class JSNode_ClosePopper extends JSNode_Base {
             batchNode = preNodes_arr[preNodes_arr.length - 1];
         }
 
-        var pathVar = belongPopper.getStatePath('', '.', { mapVarName: VarNames.RowIndexInfo_map });
+        var pathVar = belongPopper.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map });
         var belongUserCtl = belongPopper.searchParentKernel(UserControlKernel_Type, true);
         if (belongUserCtl) {
             pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + pathVar);

@@ -171,7 +171,9 @@ function makeActStr_getGDataCache(key) {
 }
 
 function makeLine_setGDataCache(key, value) {
-    return VarNames.gDataCache + '.set(' + singleQuotesStr(key) + ',' + value + ');';
+    var autoQuote = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+
+    return VarNames.gDataCache + '.set(' + (autoQuote ? singleQuotesStr(key) : key) + ',' + value + ');';
 }
 
 function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr, paramObj) {
@@ -238,10 +240,11 @@ var VarNames = {
     PageRouter: 'pageRouter',
     gDataCache: 'gDataCache',
     RowIndex: 'rowIndex',
+    RowKey: 'rowkey',
     CallBack: 'callBack',
     FetchKey: 'fetchKey',
     ParentPath: 'parentPath',
-    RowIndexInfo_map: 'rowIndexInfo_map',
+    RowKeyInfo_map: 'rowKeyInfo_map',
     SelectMode: 'selectMode',
     FullPath: 'fullPath',
     FullParentPath: 'fullParentPath',
@@ -255,7 +258,9 @@ var VarNames = {
     OldValue: 'oldValue',
     SatePath: 'statePath',
     Visible: 'visible',
-    NowRow: 'nowrow'
+    NowRow: 'nowrow',
+    SelectedProfile: 'selectedProfile'
+
 };
 
 var AttrNames = {

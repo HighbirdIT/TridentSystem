@@ -8,6 +8,7 @@ class AttributeEditor extends React.PureComponent {
             targetobj: this.props.targetobj,
         };
         this.state = initState;
+        this.ddc_ref = React.createRef();
     }
 
     getAttrNowValue(notclone) {
@@ -80,8 +81,13 @@ class AttributeEditor extends React.PureComponent {
             isMyAttrChaned = ev.name.some(match);
         }
         if (isMyAttrChaned) {
+            var self = this;
             this.setState(nowState => {
-                return { value: this.getAttrNowValue(), };
+                var newValue = self.getAttrNowValue();
+                if(self.ddc_ref && self.ddc_ref.current){
+                    self.ddc_ref.current.setValue(newValue);
+                }
+                return { value: newValue, };
             });
         }
     }
@@ -419,13 +425,13 @@ class AttributeEditor extends React.PureComponent {
                     return (<div className='text-light'>加载中</div>);
                 }
             }
-            var ddc = (<DropDownControl options_arr={useOptioins_arr} value={nowVal} itemChanged={this.itemChangedHandler} textAttrName={dropdownSetting.text} valueAttrName={dropdownSetting.value} editable={dropdownSetting.editable} />);
+            var ddc = (<DropDownControl ref={this.ddc_ref} options_arr={useOptioins_arr} value={nowVal} itemChanged={this.itemChangedHandler} textAttrName={dropdownSetting.text} valueAttrName={dropdownSetting.value} editable={dropdownSetting.editable} />);
             if (jsIconElem == null) {
                 return ddc;
             }
             return (<div className='d-flex flex-grow-1 flex-shrink-1'>
                 <div className='d-flex flex-column flex-grow-1 flex-shrink-1'>
-                    <DropDownControl options_arr={useOptioins_arr} value={nowVal} itemChanged={this.itemChangedHandler} textAttrName={dropdownSetting.text} valueAttrName={dropdownSetting.value} editable={dropdownSetting.editable} />
+                    {ddc}
                 </div>
                 {jsIconElem}
             </div>)
