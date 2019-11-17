@@ -2078,6 +2078,9 @@ class MobileContentCompiler extends ContentCompiler {
         var headClassInFormTag = null;
 
         var keyColumn = theKernel.getAttribute(AttrNames.KeyColumn);
+        if(keyColumn == null){
+            keyColumn = DefaultKeyColumn;
+        }
         var autoHeight = theKernel.getAttribute(AttrNames.AutoHeight);
         var gridBodyTag = null;
         var childRenderBlock = null;
@@ -2179,7 +2182,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else if (isListForm) {
             renderContentBlock.pushLine(VarNames.RetElem + " = this.props.records_arr.map((record," + VarNames.RowIndex + ")=>{", 1);
-            renderContentBlock.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == null ? VarNames.RowIndex : 'GetFromatRowKey(record.' + keyColumn + ')') + ';');
+            renderContentBlock.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == DefaultKeyColumn ? VarNames.RowIndex : 'GetFromatRowKey(record.' + keyColumn + ')') + ';');
             var itemLayoutConfig = theKernel.getLayoutConfig('item' + AttrNames.LayoutNames.APDClass, 'item' + AttrNames.LayoutNames.StyleAttr);
             itemLayoutConfig.addClass('list-group-item');
             itemLayoutConfig.addClass('flex-grow-0');
@@ -2309,7 +2312,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
         if (isGridForm || isListForm) {
             formTag.setAttr(VarNames.SelectMode, theKernel.getAttribute(AttrNames.SelectMode));
-            if(keyColumn != null){
+            if(keyColumn != DefaultKeyColumn){
                 var canUserColumns_arr = theKernel.getCanuseColumns();
                 if (canUserColumns_arr.indexOf(keyColumn) == -1) {
                     logManager.errorEx([logManager.createBadgeItem(
@@ -2322,7 +2325,9 @@ class MobileContentCompiler extends ContentCompiler {
                 kernelMidData.useColumns_map[keyColumn] = 1;
             }
             if (selectMode != ESelectMode.None || clickSelectable) {
-                formTag.setAttr(AttrNames.KeyColumn, keyColumn);
+                if(keyColumn != DefaultKeyColumn){
+                    formTag.setAttr(AttrNames.KeyColumn, keyColumn);
+                }
                 if (selectMode == ESelectMode.Single) {
                     formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.SelectedValue), 'ctlState.' + VarNames.SelectedValue + ' == null ? null : ctlState.' + VarNames.SelectedValue));
                 }
@@ -2412,7 +2417,7 @@ class MobileContentCompiler extends ContentCompiler {
                 freshFun.pushLine('if(oldValue != null){', 1);
                 freshFun.pushLine('var newRowCount = ' + VarNames.Records_arr + '.length;');
                 freshFun.pushLine('oldValue.forEach((x,i)=>{', 1);
-                freshFun.pushLine('var rowkey=' + (keyColumn == null ? 'i' : 'x.' + keyColumn) + ';', 1);
+                freshFun.pushLine('var rowkey=' + (keyColumn == DefaultKeyColumn ? 'i' : 'x.' + keyColumn) + ';', 1);
                 freshFun.pushLine("if(" + stateVarName + ".hasOwnProperty('row_' + rowkey)){", 1);
                 freshFun.pushLine("needSetState['row_' + rowkey + '._isdirty'] = true;", -1);
                 freshFun.pushLine("}", -1);
@@ -2421,7 +2426,7 @@ class MobileContentCompiler extends ContentCompiler {
                 freshFun.pushLine("}");
 
                 freshFun.pushLine(makeLine_DeclareVar('newKey_map', '{}', false));
-                freshFun.pushLine(VarNames.Records_arr + '.forEach(rcd=>{newKey_map[rcd.' + keyColumn + ']=rcd;})');
+                freshFun.pushLine(VarNames.Records_arr + '.forEach((rcd,index)=>{newKey_map[' + (keyColumn == DefaultKeyColumn ? 'index' : 'rcd.' + keyColumn) + ']=rcd;})');
                 freshFun.pushLine(makeLine_setGDataCache(theKernel.id + '_path + ".KeyToRcd_map"', 'newKey_map', false));
 
                 if (isGridForm) {
@@ -2793,7 +2798,7 @@ class MobileContentCompiler extends ContentCompiler {
             }
             freshFun.rowInitBlk.pushLine("for (var rowIndex = 0; rowIndex < " + VarNames.Records_arr + ".length; ++rowIndex) {", 1);
             freshFun.rowInitBlk.pushLine(makeLine_DeclareVar(VarNames.NowRecord, VarNames.Records_arr + '[rowIndex]', false));
-            freshFun.rowInitBlk.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == null ? VarNames.RowIndex : 'GetFromatRowKey(' + VarNames.NowRecord + '.' + keyColumn + ')') + ';');
+            freshFun.rowInitBlk.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == DefaultKeyColumn ? VarNames.RowIndex : 'GetFromatRowKey(' + VarNames.NowRecord + '.' + keyColumn + ')') + ';');
             freshFun.pushLine('needSetState["row_" + ' + VarNames.RowKey + ' + "._isdirty"] = false;');
             //freshFun.rowInitBlk.pushLine('if(needSetState.hasOwnProperty("row_"+'+VarNames.RowKey+')){delete needSetState["row_"+'+VarNames.RowKey+'];}');
             //freshFun.rowInitBlk.pushLine('var rowstate=getStateByPath(' + theKernel.id + '_state,"row_" + ' + VarNames.RowKey + ');');
@@ -3018,7 +3023,7 @@ class MobileContentCompiler extends ContentCompiler {
             }
             bindPageFun.pushLine('for (var rowIndex = startRowIndex; rowIndex <= endRowIndex; ++rowIndex) {', 1);
             bindPageFun.pushLine('var ' + VarNames.NowRecord + ' = records_arr[rowIndex];');
-            bindPageFun.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == null ? VarNames.RowIndex : 'GetFromatRowKey(' + VarNames.NowRecord + '.' + keyColumn + ')') + ';');
+            bindPageFun.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == DefaultKeyColumn ? VarNames.RowIndex : 'GetFromatRowKey(' + VarNames.NowRecord + '.' + keyColumn + ')') + ';');
             bindPageFun.pushLine('var rowstate=getStateByPath(formState,"row_" + ' + VarNames.RowKey + ',{});');
             bindPageFun.pushLine('if(rowstate._isdirty != false){',1);
             bindPageFun.pushLine('needSetState["row_" + ' + VarNames.RowKey + ' + "._isdirty"] = false;');
@@ -3039,7 +3044,7 @@ class MobileContentCompiler extends ContentCompiler {
             gridBodyPureRectClass.renderFun.scope.getVar('formProp', true, 'this.props.form.props');
             gridBodyPureRectClass.renderFun.pushLine('for (var rowIndex = startRowIndex; rowIndex <= endRowIndex; ++rowIndex) {', 1);
             gridBodyPureRectClass.renderFun.pushLine('var rowRecord = formProp.records_arr[rowIndex];');
-            gridBodyPureRectClass.renderFun.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == null ? 'rowIndex' : 'GetFromatRowKey(rowRecord.' + keyColumn + ')') + ';');
+            gridBodyPureRectClass.renderFun.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == DefaultKeyColumn ? 'rowIndex' : 'GetFromatRowKey(rowRecord.' + keyColumn + ')') + ';');
             if (selectMode != ESelectMode.None) {
                 if (selectMode == ESelectMode.Single) {
                     gridBodyPureRectClass.renderFun.pushLine("var selected = this.props." + VarNames.SelectedValue + " == " + VarNames.RowKey + ";");
