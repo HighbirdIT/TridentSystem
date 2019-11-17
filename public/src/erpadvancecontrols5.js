@@ -70,7 +70,7 @@ class ERPC_TaskSelector extends React.PureComponent {
                 optionsData={this.props.optionsData}
                 invalidInfo={this.props.invalidInfo}
                 selectOpt={this.props.selectOpt}
-                rowIndex={this.props.rowIndex}
+                rowkey={this.props.rowkey}
                 id={this.props.id}
                 parentPath={this.props.parentPath}
                 type='string'
@@ -133,7 +133,7 @@ function ERPC_TaskSelector_mapstatetoprops(state, ownprops) {
         visible: ctlState.visible,
         invalidInfo: invalidInfo,
         selectOpt: selectOpt,
-        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
+        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowkey != 'new',
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
     };

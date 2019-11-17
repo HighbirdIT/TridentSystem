@@ -7,14 +7,15 @@ var gPageInFrame = false;
 var gParentFrame = null;
 var gParentDingKit = null;
 var gParentIsInDingTalk = null;
+var gPCRenderMode = false;
 const gPreconditionInvalidInfo = '前置条件不足';
 const gCantNullInfo = '不能为空值';
 
 const HashKey_FixItem = 'fixitem';
 const gEmptyArr = [];
 
-function AppInit(app){
-    if(gParentFrame){
+function AppInit(app) {
+    if (gParentFrame) {
         console.log('gPageInFrame');
         return gParentFrame.getUseState();
     }
@@ -132,8 +133,10 @@ class FixedContainer extends React.PureComponent {
     popPage(id, pageElem) {
         this.setState(state => {
             var foundElem = state.pages_arr.find(x => { return x.id == id; });
-            if (foundElem != null)
+            if (foundElem != null) {
+                foundElem.closed = false;
                 return state;
+            }
             return {
                 pages_arr: state.pages_arr.concat({ id: id, elem: pageElem }),
             };
@@ -141,15 +144,15 @@ class FixedContainer extends React.PureComponent {
     }
 
     closePage(id) {
-        this.setState(state => {
-            var foundElem = state.pages_arr.find(x => { return x.id == id; });
-            if (foundElem == null)
-                return state;
-            var newArr = state.pages_arr.filter(x => { return x != foundElem; });
-            return {
-                pages_arr: newArr,
-            };
+        var foundElem = this.state.pages_arr.find(x => { return x.id == id; });
+        if (foundElem == null)
+            return false;
+        foundElem.closed = true;
+        var newArr = this.state.pages_arr.filter(x => { return !x.closed && x != foundElem; });
+        this.setState({
+            pages_arr: newArr,
         });
+        return true;
     }
 
     addItem(target) {
@@ -220,15 +223,17 @@ function popPage(pid, pelem) {
 }
 
 function closePage(pid) {
-    if(pageRouter.length > 1){
+    if (gFixedContainerRef.current) {
+        if (gFixedContainerRef.current.closePage(pid)) {
+            return;
+        }
+    }
+    if (pageRouter.length > 1) {
         pageRouter[pageRouter.length - 1] == pid;
         setTimeout(() => {
             pageRoute_Back(false);
         }, 20);
         return;
-	}
-    if (gFixedContainerRef.current) {
-        gFixedContainerRef.current.closePage(pid);
     }
 }
 
@@ -241,21 +246,21 @@ function openPage(name, stepcode, stepdata, mode, onMsgFun) {
     if (stepcode != null && stepcode != '0') {
         targetPath += '?flowStep=' + stepcode;
         if (stepdata != null) {
-            if(typeof stepdata == 'object'){
+            if (typeof stepdata == 'object') {
                 stepdata = JSON.stringify(stepdata);
             }
             targetPath += '&stepData' + stepcode + '=' + stepdata;
         }
     }
-    if(mode == 'topframe'){
-        if(gParentFrame){
+    if (mode == 'topframe') {
+        if (gParentFrame) {
             setTimeout(() => {
                 var nowPageState = store.getState();
-                gParentFrame.push(window.location.origin + targetPath, nowPageState);   
+                gParentFrame.push(window.location.origin + targetPath, nowPageState);
             }, 20);
         }
-        else{
-            gTopLevelFrameRef.current.push(window.location.origin + targetPath, null, onMsgFun);   
+        else {
+            gTopLevelFrameRef.current.push(window.location.origin + targetPath, null, onMsgFun);
         }
         return;
     }
@@ -275,7 +280,7 @@ function wantGoHomePage() {
 }
 
 function wantCloseInFramePage() {
-    if(gParentFrame){
+    if (gParentFrame) {
         gParentFrame.pop();
     }
 }
@@ -314,22 +319,49 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
         super(props);
         autoBind(this);
         this.contentDivRef = React.createRef();
+        this.containerRef = React.createRef();
         this.state = {
             maxCount: 50,
         };
         this.inited = false;
     }
 
+    windowMouseDownHandler(ev){
+        var target;
+        if(ev){
+            target = ev.target;
+        }
+        else{
+            target = window.event.srcElement;
+        }
+        var parent = target.parentElement;
+        while(parent){
+            if(parent == this.containerRef.current){
+                return;
+            }
+            parent = parent.parentElement;
+        }
+        this.foceClose();
+    }
+
     componentWillMount() {
         var self = this;
         setTimeout(() => {
             self.inited = true;
-            self.setState(this.props.dropdownctl.getPopPanelInitState());
+            var dropdownctl = this.props.dropdownctl;
+            if (gPCRenderMode) {
+                self.rootStyle = dropdownctl.getPopItemStyle();
+                window.addEventListener('mousedown', this.windowMouseDownHandler);
+            }
+            self.setState(dropdownctl.getPopPanelInitState());
         }, 50);
     }
 
     componentWillUnmount() {
         this.inited = false;
+        if (gPCRenderMode) {
+            window.removeEventListener('mousedown', this.windowMouseDownHandler);
+        }
     }
 
     foceClose() {
@@ -442,9 +474,11 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
         }
         //console.log(selectedElem);
         if (!this.inited) {
+            if (gPCRenderMode) {
+                return null;
+            }
             return (<div className='fixedBackGround'>
                 <div className='dropDownItemContainer d-flex flex-column bg-light flex-shrink-0 rounded'>
-                    .
                 </div>
             </div>);
         }
@@ -469,7 +503,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             contentElem = (<div className='d-flex align-items-center m-auto'>正在获取数据<i className='fa fa-spinner fa-pulse fa-fw fa-2x' /></div>);
         }
         else {
-            freshIconElem = <i onClick={this.clickFreshHandler} className='fa fa-refresh text-success ml-1' />
+            freshIconElem = <i onClick={this.clickFreshHandler} className='fa fa-refresh text-success cursor_hand' />
             if (options_arr == null) {
                 options_arr = [];
             }
@@ -607,7 +641,12 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
                             return <span key={item.value} onClick={this.clickSelectedItemTag} value={item.value} className='border btn' >{item.text}<i className='fa fa-close' /></span>
                         })
                     }
-                    <input type='text' className='flex-grow-1 flex-shrink-0 multiddcsearchinput' placeholder='搜索' value={keyword} onChange={this.keyInputChanged} />
+                    <div className='flex-grow-1 flex-shrink-1 input-group flex-nowrap w-initial'>
+                        <input type='text' className='form-control flex-grow-1 flex-shrink-1 multiddcsearchinput' placeholder='搜索' value={keyword} onChange={this.keyInputChanged} />
+                        <div className='input-group-append'>
+                            <span className='text-primary input-group-text p-1' >{freshIconElem}</span>
+                        </div>
+                    </div>
                 </div>);
             }
             if (filted_arr.length == 0) {
@@ -617,9 +656,18 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
                 </div>
             }
             if (!multiselect && options_arr.length > 20) {
-                searchItem = (<div className='d-flex flex-shrink-0 align-items-center'>
-                    <span className='fa fa-search fa-2x text-primary' />
-                    <input className='flex-grow-1 flex-shrink-1 flexinput' type='text' value={keyword} onChange={this.keyInputChanged} />
+                searchItem = (<div className='flex-shrink-0 input-group flex-nowrap'>
+                    <div className="input-group-prepend">
+                        <span className='text-primary input-group-text p-1' ><i className='fa fa-search' /></span>
+                    </div>
+                    <input className='form-control' type='text' value={keyword} onChange={this.keyInputChanged} />
+                    {
+                        gPCRenderMode ? 
+                        <div className='input-group-append'>
+                            <span className='text-primary input-group-text p-1' >{freshIconElem}</span>
+                        </div>
+                        : null
+                    }
                 </div>);
             }
 
@@ -673,9 +721,19 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             titleBarRightElem = this.props.dropdownctl.props.createTitleBarRightElem();
         }
 
+        if (gPCRenderMode) {
+            return (
+                <div ref={this.containerRef} style={this.rootStyle} className='dropDownItemContainer_pc d-flex flex-column bg-light flex-shrink-0 rounded'>
+                    {multiSelectedElem}
+                    {searchItem}
+                    {finalContentElem}
+                </div>
+            );
+        }
+
         return (
             <div className='fixedBackGround'>
-                <div className='dropDownItemContainer d-flex flex-column bg-light flex-shrink-0 rounded'>
+                <div ref={this.containerRef} className='dropDownItemContainer d-flex flex-column bg-light flex-shrink-0 rounded'>
                     <div className='d-flex flex-shrink-0'>
                         <h3><span onClick={this.clickCloseHandler}>
                             <i className='fa fa-arrow-left text-primary' /></span>
@@ -711,7 +769,9 @@ class ERPC_DropDown extends React.PureComponent {
         this.contentDivRef = React.createRef();
 
         this.popPanelRef = React.createRef();
-        this.popPanelItem = (<ERPC_DropDown_PopPanel ref={this.popPanelRef} dropdownctl={this} key={gFixedItemCounter++} />)
+        if (!gPCRenderMode) {
+            this.popPanelItem = (<ERPC_DropDown_PopPanel ref={this.popPanelRef} dropdownctl={this} key={gFixedItemCounter++} />)
+        }
     }
 
     dropDownOpened() {
@@ -741,7 +801,9 @@ class ERPC_DropDown extends React.PureComponent {
         }
         this.recentValues_arr = recentValues_arr;
         this.recentUsed = recentUsed;
-        addFixedItem(this.popPanelItem);
+        if (!gPCRenderMode) {
+            addFixedItem(this.popPanelItem);
+        }
 
         this.setState({
             keyword: '',
@@ -758,7 +820,9 @@ class ERPC_DropDown extends React.PureComponent {
     dropDownClosed() {
         if (this.state.opened) {
             this.setState({ opened: false });
-            removeFixedItem(this.popPanelItem);
+            if (!gPCRenderMode) {
+                removeFixedItem(this.popPanelItem);
+            }
         }
     }
 
@@ -887,6 +951,28 @@ class ERPC_DropDown extends React.PureComponent {
         });
     }
 
+    getPopItemStyle() {
+        var rootDiv = this.rootDivRef.current;
+        var rootRect = rootDiv.getBoundingClientRect();
+        var $window = $(window);
+        var windowHeight = $window.height();
+        var topSpace = rootRect.top;
+        var bottomSpace = windowHeight - rootRect.bottom;
+        var rlt = {
+            width:rootDiv.offsetWidth + 'px',
+            left:rootRect.left + 'px',
+        };
+        if(bottomSpace > topSpace){
+            rlt.top = rootRect.bottom + 'px';
+            rlt.maxHeight = (bottomSpace - 20) + 'px';
+        }
+        else{
+            rlt.bottom = (windowHeight - rootRect.top) + 'px';
+            rlt.maxHeight = (topSpace - 20) + 'px';
+        }
+        return rlt;
+    }
+
     render() {
         if (this.props.visible == false) {
             return null;
@@ -996,7 +1082,12 @@ class ERPC_DropDown extends React.PureComponent {
             }
         }
 
+        var popPanelElem = null;
         if (this.state.opened) {
+            if (gPCRenderMode) {
+                popPanelElem = (<ERPC_DropDown_PopPanel ref={this.popPanelRef} dropdownctl={this} width={this.rootDivRef.current.offsetWidth} />);
+            }
+
             var popPanelRefCurrent = this.popPanelRef.current;
             if (popPanelRefCurrent) {
                 var newState = {
@@ -1065,12 +1156,13 @@ class ERPC_DropDown extends React.PureComponent {
             );
         }
 
-        if (errTipElem == null) {
+        if (errTipElem == null && popPanelElem == null) {
             return dropDownElem;
         }
         return <div className={'d-flex flex-column flex-shrink-1 flex-grow-' + (this.props.growable == false ? '0' : '1')}>
             {dropDownElem}
             {errTipElem}
+            {popPanelElem}
         </div>
     }
 }
@@ -1161,7 +1253,7 @@ function getControlPropProfile(ownprops, useState) {
     var rowState;
     var fullParentPath;
     var fullPath;
-    if (ownprops.rowIndex == null) {
+    if (ownprops.rowkey == null) {
         fullParentPath = ownprops.parentPath;
         fullPath = MakePath(ownprops.parentPath, ownprops.id);
         if (useState) {
@@ -1169,7 +1261,7 @@ function getControlPropProfile(ownprops, useState) {
         }
     }
     else {
-        fullParentPath = MakePath(ownprops.parentPath, 'row_' + ownprops.rowIndex);
+        fullParentPath = MakePath(ownprops.parentPath, 'row_' + ownprops.rowkey);
         fullPath = fullParentPath + '.' + ownprops.id;
         if (useState) {
             rowState = getStateByPath(useState, fullParentPath, {});
@@ -1181,7 +1273,7 @@ function getControlPropProfile(ownprops, useState) {
         rowState: rowState,
         fullParentPath: fullParentPath,
         fullPath: fullPath,
-        rowIndex: ownprops.rowIndex,
+        rowkey: ownprops.rowkey,
     };
 }
 
@@ -1236,7 +1328,7 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         visible: ctlState.visible,
         invalidInfo: invalidInfo,
         selectOpt: selectOpt,
-        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
+        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowkey != 'new',
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
         starval: starval,
@@ -1328,7 +1420,7 @@ class ERPC_Text extends React.PureComponent {
             if (errInfo == gPreconditionInvalidInfo) {
                 errInfo = '';
             }
-            contentElem = <div className='flex-grow-1 flex-shrink-1'><i className='fa fa-warning' />{errInfo}</div>;
+            contentElem = <small className='flex-grow-1 flex-shrink-1'><i className='fa fa-warning' />{errInfo}</small>;
         }
         else {
             if (this.props.plainTextMode) {
@@ -1348,7 +1440,7 @@ class ERPC_Text extends React.PureComponent {
                 contentElem = <div className='flex-grow-1 flex-shrink-1'>{nowValue}</div>
             }
             else if (this.props.type == 'string' && this.props.linetype != null && this.props.linetype != 'single') {
-                contentElem = <textarea onChange={this.inputChanged} className={'flex-grow-1 flex-shrink-1 w-100 form-control textarea-' + this.props.linetype + (this.props.align ? ' text-' + this.props.align : '')} value={this.props.value} onBlur={this.endInputHandler} />
+                contentElem = <textarea id={this.props.id} onChange={this.inputChanged} className={'flex-grow-1 flex-shrink-1 w-100 form-control textarea-' + this.props.linetype + (this.props.align ? ' text-' + this.props.align : '')} value={this.props.value} onBlur={this.endInputHandler} />
             }
             else {
                 var useType = this.props.type;
@@ -1376,12 +1468,12 @@ class ERPC_Text extends React.PureComponent {
                         }, 10);
                     }
                 }
-                contentElem = (<input className={'flex-grow-1 flex-shrink-1 form-control invalid ' + (this.props.align ? ' text-' + this.props.align : '')} type={useType} value={useValue} checked={useChecked} onChange={this.inputChanged} onBlur={this.endInputHandler} />);
+                contentElem = (<input id={this.props.id} className={'flex-grow-1 flex-shrink-1 form-control invalid ' + (this.props.align ? ' text-' + this.props.align : '')} type={useType} value={useValue} checked={useChecked} onChange={this.inputChanged} onBlur={this.endInputHandler} />);
             }
 
             if (this.props.invalidInfo) {
                 rootDivClassName += ' flex-column';
-                errTipElem = <span className='text-danger'><i className='fa fa-warning' />{this.props.invalidInfo}</span>
+                errTipElem = <small className='text-danger'><i className='fa fa-warning' />{this.props.invalidInfo}</small>
             }
         }
         return (<div className={rootDivClassName} ref={this.rootDivRef} style={this.props.style}>
@@ -1402,7 +1494,7 @@ function ERPC_Text_mapstatetoprops(state, ownprops) {
         visible: ctlState.visible,
         fetchingErr: ctlState.fetchingErr,
         invalidInfo: ctlState.invalidInfo == gPreconditionInvalidInfo ? null : ctlState.invalidInfo,
-        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowIndex != 'new',
+        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowkey != 'new',
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
     };
@@ -1422,19 +1514,41 @@ class ERPC_LabeledControl extends React.PureComponent {
         this.state = this.initState;
     }
 
+    renderInPC(toolTipIcon) {
+        return (<div className={'rowlFameTwo' + (this.props.className ? ' ' + this.props.className : '')} wf={this.props.wf}>
+            <label className='rowlFameTwo_Top font-weight-bold' htmlFor={this.props.forid}>
+                {this.props.label}
+            </label>
+            <div className='rowlFameTwo_Bottom'>
+                {toolTipIcon}
+                {this.props.children}
+            </div>
+        </div>);
+    }
+
     render() {
         if (this.props.visible == false) {
             return null;
         }
         var toolTipIcon = null;
-        if(this.props.tooltip){
+        if (this.props.tooltip) {
             toolTipIcon = <ERPC_PopperBtn className='btn btn-sm btn-link' anchor='left' labelelem={<i className='fa fa-question-circle fa-2x' />} ><span>{this.props.tooltip}</span></ERPC_PopperBtn>;
         }
+        var renderMode = this.props.rm;
+        if(renderMode == null){
+            if(gPCRenderMode){
+                renderMode = 'pc';
+            }
+        }
+        if (renderMode == 'pc') {
+            return this.renderInPC(toolTipIcon);
+        }
         return (<div className={'rowlFameOne' + (this.props.className ? ' ' + this.props.className : '')}>
-            <div className='rowlFameOne_Left'>
+            <div className='rowlFameOne_Left' wn={this.props.wn}>
                 {this.props.label}
             </div>
-            <div className='rowlFameOne_right'>
+            <span className='rowlFameDivider' />
+            <div className='rowlFameOne_right' wn={this.props.wn}>
                 {toolTipIcon}
                 {this.props.children}
             </div>
@@ -1683,11 +1797,11 @@ function ERPC_Button_dispatchtorprops(dispatch, ownprops) {
     };
 }
 
-function ClosePopperBtn(fullPath, needSetState){
-    if(needSetState){
+function ClosePopperBtn(fullPath, needSetState) {
+    if (needSetState) {
         needSetState[fullPath + '.closeSignal'] = Math.round(Math.random() * 9999);
     }
-    else{
+    else {
         store.dispatch(makeAction_setStateByPath(Math.round(Math.random() * 9999), fullPath + '.closeSignal'));
     }
 }
@@ -1704,22 +1818,22 @@ class ERPC_PopperBtn extends React.PureComponent {
         this.rootRef = React.createRef();
     }
 
-    clickHandler(ev){
-        if(this.popdivRef.current == null){
+    clickHandler(ev) {
+        if (this.popdivRef.current == null) {
             return;
         }
-        if(this.state.popper){
+        if (this.state.popper) {
             this.state.popper.destroy();
             this.setState({
-                popper : null,
+                popper: null,
             });
             return;
         }
         var popper = new Popper(this.rootRef.current, this.popdivRef.current, {
-			placement: this.props.anchor
+            placement: this.props.anchor
         });
         this.setState({
-            popper:popper,
+            popper: popper,
         });
         /*
         if(gLastPopper){
@@ -1747,8 +1861,8 @@ class ERPC_PopperBtn extends React.PureComponent {
         */
     }
 
-    cusComponentWillUnmount(){
-        if(this.state.popper){
+    cusComponentWillUnmount() {
+        if (this.state.popper) {
             this.state.popper.destroy();
         }
         /*
@@ -1764,17 +1878,17 @@ class ERPC_PopperBtn extends React.PureComponent {
             return null;
         }
         var nowPopper = this.state.popper;
-        if(this.state.closeSignal != this.props.closeSignal){
+        if (this.state.closeSignal != this.props.closeSignal) {
             var self = this;
             var newCloseSignal = this.props.closeSignal;
-            if(nowPopper){
+            if (nowPopper) {
                 nowPopper.destroy();
                 nowPopper = null;
             }
             setTimeout(() => {
                 self.setState({
-                    popper : null,
-                    closeSignal : newCloseSignal,
+                    popper: null,
+                    closeSignal: newCloseSignal,
                 });
             }, 20);
         }
@@ -1889,11 +2003,14 @@ function ERPC_PageForm_clickPlusNavBtnHandler() {
 }
 
 function ERPC_PageForm_clickUnPlusNavBtnHandler() {
+    if(this.saveInsertCache){
+        this.saveInsertCache();
+    }
     store.dispatch(makeAction_setStateByPath(this.prePlusIndex, MakePath(this.props.parentPath, this.props.id, 'recordIndex')));
 }
 
 function ERPC_PageForm_renderNavigater() {
-    if (this.props.records_arr == null || this.props.records_arr.length == 1) {
+    if (this.props.records_arr == null || (this.props.records_arr.length == 1 && !this.canInsert)) {
         return null;
     }
     var count = this.props.records_arr.length;
@@ -1953,39 +2070,39 @@ function SmartSetScrollTop(theElem) {
     }
 }
 
-function GetFormSelectedRows(formState, keyColumn){
+function GetFormSelectedRows(formState, keyColumn) {
     var rlt = GetFormSelectedProfile(formState, keyColumn);
-    return rlt.index != null ? [rlt.index] : rlt.indexes_arr;
+    return rlt.key != null ? [rlt.key] : rlt.keys_arr;
 }
 
-function GetFormSelectedColumns(formState, keyColumn, targetColmun){
-    if(keyColumn == targetColmun){
+function GetFormSelectedColumns(formState, keyColumn, targetColmun) {
+    if (keyColumn == targetColmun) {
         return formState.selectedValues_arr == null ? [] : formState.selectedValues_arr;
     }
     var rlt = GetFormSelectedProfile(formState, keyColumn);
-    return rlt.records_arr.map(record=>{return record[targetColmun];})
+    return rlt.records_arr.map(record => { return record[targetColmun]; })
 }
 
-function GetFormSelectedProfile(formState, keyColumn){
+function GetFormSelectedProfile(formState, keyColumn) {
     var rlt = {
-        index:null,
-        record:null,
-        key:null,
-        indexes_arr:[],
-        records_arr:[],
-        keys_arr:[],
+        index: null,
+        record: null,
+        key: null,
+        indexes_arr: [],
+        records_arr: [],
+        keys_arr: [],
     }
     var records_arr = formState.records_arr;
-    if(records_arr == null || records_arr.length == 0){
+    if (records_arr == null || records_arr.length == 0) {
         return rlt;
     }
     var count = records_arr.length;
     var ri;
     var record;
-    if(formState.selectedValue != null){
-        for(ri=0;ri<count;++ri){
+    if (formState.selectedValue != null) {
+        for (ri = 0; ri < count; ++ri) {
             record = records_arr[ri];
-            if(record[keyColumn] == formState.selectedValue){
+            if (record[keyColumn] == formState.selectedValue) {
                 rlt.index = ri;
                 rlt.record = record;
                 rlt.key = formState.selectedValue;
@@ -1995,14 +2112,14 @@ function GetFormSelectedProfile(formState, keyColumn){
         return rlt;
     }
     var selectedValues_arr = formState.selectedValues_arr;
-    if(selectedValues_arr == null || selectedValues_arr.length == 0){
+    if (selectedValues_arr == null || selectedValues_arr.length == 0) {
         return rlt;
     }
     var key_map = {};
-    selectedValues_arr.forEach(k=>{key_map[k] = 1;});
-    for(ri=0;ri<count;++ri){
+    selectedValues_arr.forEach(k => { key_map[k] = 1; });
+    for (ri = 0; ri < count; ++ri) {
         record = records_arr[ri];
-        if(key_map[record[keyColumn]] != null){
+        if (key_map[record[keyColumn]] != null) {
             rlt.indexes_arr.push(ri);
             rlt.records_arr.push(record);
             rlt.keys_arr.push(record[keyColumn]);
@@ -2040,13 +2157,13 @@ function ERPC_GridForm_PageIndexChangedHandler(ev) {
 }
 
 function ERPC_GridForm_PrePageClickHandler(ev) {
-    if(this.props.pageCount > 1){
+    if (this.props.pageCount > 1) {
         this.setPageIndex(this.props.pageIndex - 1);
     }
 }
 
 function ERPC_GridForm_NxtPageClickHandler(ev) {
-    if(this.props.pageCount > 1){
+    if (this.props.pageCount > 1) {
         this.setPageIndex(this.props.pageIndex + 1);
     }
 }
@@ -2059,14 +2176,17 @@ function ERPC_GridForm_SetRowPerPage(value) {
     var pageCount = Math.ceil(this.props.records_arr.length / value);
     var pageIndex = this.props.pageIndex >= pageCount ? pageCount - 1 : this.props.pageIndex;
     var pageIndexChanaged = pageIndex != this.props.pageIndex;
-    var formPath = MakePath(this.props.parentPath, (this.props.rowIndex == null ? null : 'row_' + this.props.rowIndex), this.props.id);
+    var formPath = MakePath(this.props.parentPath, (this.props.rowkey == null ? null : 'row_' + this.props.rowkey), this.props.id);
     store.dispatch(makeAction_setManyStateByPath({
         rowPerPage: value,
         pageIndex: pageIndex,
         pageCount: pageCount,
     }, formPath));
-    if (!pageIndexChanaged) {
-        store.dispatch({ type: this.props.reBindAT });
+    if (!pageIndexChanaged && this.props.bindpagefun) {
+        var self = this;
+        store.dispatch(makeAction_callFunction(state=>{
+            self.props.bindpagefun(state, self.props.fullPath);
+        }));
     }
 }
 
@@ -2082,25 +2202,25 @@ function ERPC_GridForm_SetPageIndex(value) {
         value = 0;
     }
     SmartSetScrollTop(this.rootRef.current);
-    var statePath = MakePath(this.props.parentPath, (this.props.rowIndex == null ? null : 'row_' + this.props.rowIndex), this.props.id, 'pageIndex');
+    var statePath = MakePath(this.props.parentPath, (this.props.rowkey == null ? null : 'row_' + this.props.rowkey), this.props.id, 'pageIndex');
     store.dispatch(makeAction_setStateByPath(value, statePath));
 }
 
-function ERPC_GridForm_GetRowPath(rowIndex) {
-    return MakePath(this.props.parentPath, this.props.id, 'row_' + rowIndex);
+function ERPC_GridForm_GetRowPath(rowkey) {
+    return MakePath(this.props.parentPath, this.props.id, 'row_' + rowkey);
 }
 
-function ERPC_GridForm_GetRowState(rowIndex, state) {
+function ERPC_GridForm_GetRowState(rowkey, state) {
     if (state == null) {
         state = store.getState();
     }
-    var path = this.getRowPath(rowIndex);
+    var path = this.getRowPath(rowkey);
     return getStateByPath(state, path);
 }
 
-function ERPC_GridForm_RoweditClicked(rowIndex) {
-    var rowPath = this.getRowPath(rowIndex);
-    var rowState = this.getRowState(rowIndex);
+function ERPC_GridForm_RoweditClicked(rowkey) {
+    var rowPath = this.getRowPath(rowkey);
+    var rowState = this.getRowState(rowkey);
     var rowStateShot = JSON.stringify(rowState);
     store.dispatch(makeAction_setManyStateByPath({
         editing: true,
@@ -2108,24 +2228,24 @@ function ERPC_GridForm_RoweditClicked(rowIndex) {
     }, rowPath));
 }
 
-function ERPC_GridForm_RowcanceleditClicked(rowIndex) {
-    var rowPath = this.getRowPath(rowIndex);
-    var rowState = this.getRowState(rowIndex);
+function ERPC_GridForm_RowcanceleditClicked(rowkey) {
+    var rowPath = this.getRowPath(rowkey);
+    var rowState = this.getRowState(rowkey);
     var needSetState = JSON.parse(rowState.stateshot);
     needSetState.editing = false;
     store.dispatch(makeAction_setManyStateByPath(needSetState, rowPath));
 }
 
-function ERPC_GridForm_RowdeleteClicked(rowIndex) {
+function ERPC_GridForm_RowdeleteClicked(rowkey) {
     var deleteBtn = this.btns.find(x => { return x.key == 'delete' });
-    deleteBtn.handler(rowIndex);
+    deleteBtn.handler(rowkey);
 }
 
-function ERPC_GridForm_RowconfirmeditClicked(rowIndex) {
+function ERPC_GridForm_RowconfirmeditClicked(rowkey) {
     var self = this;
-    var rowPath = self.getRowPath(rowIndex);
+    var rowPath = self.getRowPath(rowkey);
     var editBtn = this.btns.find(x => { return x.key == 'edit' });
-    editBtn.handler(rowIndex, (state) => {
+    editBtn.handler(rowkey, (state) => {
         if (state == null) {
             store.dispatch(makeAction_setStateByPath(false, rowPath + '.editing'));
         }
@@ -2159,17 +2279,15 @@ function ERPC_GridForm_ConfirmInsert() {
     });
 }
 
-function ERPC_GridForm_SelectorClicked(rowIndex) {
+function ERPC_GridForm_SelectorClicked(rowkey) {
     var needSetState = {};
-    var rowRecord = this.props.records_arr[rowIndex];
-    var keyValue = rowRecord[this.props.keyColumn];
     if (this.props.selectMode == 'single') {
-        needSetState[this.props.fullPath + '.selectedValue'] = keyValue;
+        needSetState[this.props.fullPath + '.selectedValue'] = rowkey;
     }
     else {
-        var index = this.props.selectedValues_arr.indexOf(keyValue);
+        var index = this.props.selectedValues_arr.indexOf(rowkey);
         if (index == -1) {
-            needSetState[this.props.fullPath + '.selectedValues_arr'] = this.props.selectedValues_arr.concat(keyValue);
+            needSetState[this.props.fullPath + '.selectedValues_arr'] = this.props.selectedValues_arr.concat(rowkey);
         }
         else {
             var newArr = this.props.selectedValues_arr.concat();
@@ -2179,7 +2297,7 @@ function ERPC_GridForm_SelectorClicked(rowIndex) {
     }
 
     if (this.clickRowHandler) {
-        this.clickRowHandler(rowIndex);
+        this.clickRowHandler(rowkey);
     }
 
     store.dispatch(makeAction_setManyStateByPath(needSetState, ''));
@@ -2192,7 +2310,7 @@ class ERPC_GridForm_BtnCol extends React.PureComponent {
     }
 
     clickHandler(ev) {
-        if (this.props.rowIndex == null) {
+        if (this.props.rowkey == null) {
             return;
         }
         var key = getAttributeByNode(ev.target, 'd-key', true, 5);
@@ -2203,16 +2321,16 @@ class ERPC_GridForm_BtnCol extends React.PureComponent {
         var btnSetting = this.props.form.btns.find(x => { return x.key == key });
         switch (key) {
             case 'edit':
-                this.props.form['roweditClicked'](this.props.rowIndex);
+                this.props.form['roweditClicked'](this.props.rowkey);
                 break;
             case 'delete':
-                this.props.form['rowdeleteClicked'](this.props.rowIndex);
+                this.props.form['rowdeleteClicked'](this.props.rowkey);
                 break;
             case 'confirmedit':
-                this.props.form['rowconfirmeditClicked'](this.props.rowIndex);
+                this.props.form['rowconfirmeditClicked'](this.props.rowkey);
                 break;
             case 'canceledit':
-                this.props.form['rowcanceleditClicked'](this.props.rowIndex);
+                this.props.form['rowcanceleditClicked'](this.props.rowkey);
                 break;
             case 'cancelInsert':
                 this.props.form.cancelInsert();
@@ -2221,12 +2339,12 @@ class ERPC_GridForm_BtnCol extends React.PureComponent {
                 this.props.form.confrimInsert();
                 break;
             default:
-                btnSetting.handler(this.props.rowIndex);
+                btnSetting.handler(this.props.rowkey);
         }
     }
 
     render() {
-        if (this.props.rowIndex == 'new') {
+        if (this.props.rowkey == 'new') {
             return <div className='btn-group gridFormBtnsCol'>
                 <button onClick={this.clickHandler} d-key='confirminsert' className='btn btn-dark' type='button'><i className='fa fa-upload text-success' /></button>
                 <button onClick={this.clickHandler} d-key='cancelInsert' className='btn btn-dark' type='button'><i className='fa fa-close text-danger' /></button>
@@ -2249,7 +2367,7 @@ class ERPC_GridForm_BtnCol extends React.PureComponent {
 }
 
 function ERPC_GridForm_BtnCol_mapstatetoprops(state, ownprops) {
-    var rowState = ownprops.form.getRowState(ownprops.rowIndex);
+    var rowState = ownprops.form.getRowState(ownprops.rowkey);
     return {
         editing: rowState && rowState.editing,
     };
@@ -2266,7 +2384,7 @@ class ERPC_GridSelectableRow extends React.PureComponent {
         this.clickHandler = this.clickHandler.bind(this);
     }
     clickHandler(ev) {
-        this.props.form.selectorClicked(this.props.rowIndex);
+        this.props.form.selectorClicked(this.props.rowkey);
     }
     render() {
         var selectMode = this.props.form.props.selectMode;
@@ -2401,23 +2519,23 @@ function BaseIsValueValid(nowState, visibleBelongState, ctlState, value, valueTy
         else if (ctlState.fetchingErr) {
             return ctlState.fetchingErr.info;
         }
-        if(ctlState.uploaders){
-            if(nullable != true && ctlState.uploaders.length == 0){
+        if (ctlState.uploaders) {
+            if (nullable != true && ctlState.uploaders.length == 0) {
                 return '请至少上传一个附件';
             }
-            if(ctlState.uploaders.find(x=>{return x.state != EFileUploaderState.COMPLETE}) != null){
+            if (ctlState.uploaders.find(x => { return x.state != EFileUploaderState.COMPLETE }) != null) {
                 return '请等待附件上传完毕';
             }
         }
-        else if(ctlState.uploader){
-            if(ctlState.uploader.state == EFileUploaderState.WAITFILE){
-                if(isNaN(ctlState.fileID) || isNaN(ctlState.attachmentID)){
-                    if(nullable != true){
+        else if (ctlState.uploader) {
+            if (ctlState.uploader.state == EFileUploaderState.WAITFILE) {
+                if (isNaN(ctlState.fileID) || isNaN(ctlState.attachmentID)) {
+                    if (nullable != true) {
                         return '请上传文件';
                     }
                 }
             }
-            else if(ctlState.uploader.state != EFileUploaderState.COMPLETE){
+            else if (ctlState.uploader.state != EFileUploaderState.COMPLETE) {
                 return '等待完成';
             }
         }
@@ -2631,7 +2749,7 @@ class MessageBoxItem {
             changed = true;
         }
         if (changed) {
-            if(this.manager){
+            if (this.manager) {
                 this.manager.addMessage(this);
             }
             this.dataVersion += 1;
@@ -2821,7 +2939,7 @@ class CMessageBoxManger extends React.PureComponent {
     }
 
     addMessage(msgItem) {
-        if(this.state.msg_arr.indexOf(msgItem) != -1){
+        if (this.state.msg_arr.indexOf(msgItem) != -1) {
             return;
         }
         msgItem.manager = this;
@@ -2864,7 +2982,7 @@ class ERPC_Frame extends React.PureComponent {
     }
 
     render() {
-        if(this.props.src == null || this.props.visible == false){
+        if (this.props.src == null || this.props.visible == false) {
             return null;
         }
         return <frame src={this.props.src} className={this.props.className} style={this.props.style} />
@@ -2892,15 +3010,15 @@ class ERPC_TopLevelFrame extends React.PureComponent {
     constructor(props) {
         super(props);
         this.style = {
-            left:'0px',
-            top:'0px',
+            left: '0px',
+            top: '0px',
             zIndex: 10000,
         };
         this.state = {
-            srcs_arr:[],
-            states_arr:[],
-            useSrc:null,
-            useState:null,
+            srcs_arr: [],
+            states_arr: [],
+            useSrc: null,
+            useState: null,
         };
         this.onloadHandler = this.onloadHandler.bind(this);
         this.onErrorHandler = this.onErrorHandler.bind(this);
@@ -2908,84 +3026,84 @@ class ERPC_TopLevelFrame extends React.PureComponent {
         this.pop = this.pop.bind(this);
     }
 
-    push(src, oldPageState, onMessageFun){
-        if(this.state.srcs_arr.length > 0 && this.state.srcs_arr[this.state.srcs_arr.length - 1] == src){
+    push(src, oldPageState, onMessageFun) {
+        if (this.state.srcs_arr.length > 0 && this.state.srcs_arr[this.state.srcs_arr.length - 1] == src) {
             return;
         }
-        if(this.state.srcs_arr.length == 0){
+        if (this.state.srcs_arr.length == 0) {
             oldPageState = null;    // 宿主页面的state不用保存
             this.onMessageFun = onMessageFun;
         }
         this.setState({
-            srcs_arr:this.state.srcs_arr.concat(src),
-            states_arr:this.state.states_arr.concat(oldPageState),
-            useSrc:src,
-            useState:null,
+            srcs_arr: this.state.srcs_arr.concat(src),
+            states_arr: this.state.states_arr.concat(oldPageState),
+            useSrc: src,
+            useState: null,
         });
     }
 
-    pop(){
+    pop() {
         var newsrcs_arr = this.state.srcs_arr.concat();
         var newstates_arr = this.state.states_arr.concat();
         newsrcs_arr.pop();
         var useSrc = newsrcs_arr.length == 0 ? null : newsrcs_arr[newsrcs_arr.length - 1];
         var useState = newstates_arr.pop();
         this.setState({
-            srcs_arr:newsrcs_arr,
-            states_arr:newstates_arr,
-            useState:useState,
-            useSrc:useSrc,
-            err:null,
+            srcs_arr: newsrcs_arr,
+            states_arr: newstates_arr,
+            useState: useState,
+            useSrc: useSrc,
+            err: null,
         });
     }
 
-    close(){
+    close() {
         this.onMessageFun = null;
         this.setState({
-            srcs_arr:[],
-            states_arr:[],
-            useSrc:null,
-            useState:null,
-            err:null,
+            srcs_arr: [],
+            states_arr: [],
+            useSrc: null,
+            useState: null,
+            err: null,
         });
     }
 
-    sendMessage(msgtype, data){
-        if(this.onMessageFun){
+    sendMessage(msgtype, data) {
+        if (this.onMessageFun) {
             this.onMessageFun(msgtype, data);
         }
     }
 
-    getUseState(){
+    getUseState() {
         return this.state.useState;
     }
 
-    onloadHandler(ev){
+    onloadHandler(ev) {
         console.log(ev);
-        try{
+        try {
             ev.target.contentWindow.gPageInFrame = true;
             ev.target.contentWindow.gParentFrame = this;
             ev.target.contentWindow.gParentDingKit = dingdingKit;
             ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
         }
-        catch(eo){
+        catch (eo) {
             console.log(eo);
             this.setState({
-                err:JSON.stringify(eo)
+                err: JSON.stringify(eo)
             });
         }
     }
 
-    onErrorHandler(ev){
+    onErrorHandler(ev) {
         alert(JSON.stringify(ev));
         this.pop();
     }
 
     render() {
-        if(this.state.useSrc == null){
+        if (this.state.useSrc == null) {
             return null;
         }
-        if(this.state.err != null){
+        if (this.state.err != null) {
             return <div className='position-fixed border rounded bg-light w-100 h-100' style={this.style} >
                 <button className='btn btn-danger' onClick={this.pop}><i className='fa fa-close' /></button>
                 {this.state.err}
@@ -2993,6 +3111,106 @@ class ERPC_TopLevelFrame extends React.PureComponent {
         }
         return <div className='position-fixed border rounded bg-light w-100 h-100' style={this.style} >
             <iframe src={this.state.useSrc} className='w-100 h-100' frameBorder='0' onLoad={this.onloadHandler} onError={this.onErrorHandler} ></iframe>
+        </div>;
+    }
+}
+
+class ERPC_IFrame extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        this.onloadHandler = this.onloadHandler.bind(this);
+        this.onErrorHandler = this.onErrorHandler.bind(this);
+        this.push = this.push.bind(this);
+        this.pop = this.pop.bind(this);
+
+        this.state = {
+            srcs_arr: [],
+            states_arr: [],
+            useSrc: null,
+            useState: null,
+        };
+    }
+
+    push(src, oldPageState, onMessageFun) {
+        if (this.state.srcs_arr.length > 0 && this.state.srcs_arr[this.state.srcs_arr.length - 1] == src) {
+            return;
+        }
+        this.setState({
+            srcs_arr: this.state.srcs_arr.concat(src),
+            states_arr: this.state.states_arr.concat(oldPageState),
+            useSrc: src,
+            useState: null,
+        });
+    }
+
+    pop() {
+        if(this.state.srcs_arr.length == 0){
+            return;
+        }
+        var newsrcs_arr = this.state.srcs_arr.concat();
+        var newstates_arr = this.state.states_arr.concat();
+        newsrcs_arr.pop();
+        var useSrc = newsrcs_arr.length == 0 ? null : newsrcs_arr[newsrcs_arr.length - 1];
+        var useState = newstates_arr.pop();
+        this.setState({
+            srcs_arr: newsrcs_arr,
+            states_arr: newstates_arr,
+            useState: useState,
+            useSrc: useSrc,
+            err: null,
+        });
+    }
+
+    close() {
+        this.onMessageFun = null;
+        this.setState({
+            srcs_arr: [],
+            states_arr: [],
+            useSrc: null,
+            useState: null,
+            err: null,
+        });
+    }
+
+    sendMessage(msgtype, data) {
+        if (this.onMessageFun) {
+            this.onMessageFun(msgtype, data);
+        }
+    }
+
+    onloadHandler(ev) {
+        console.log(ev);
+        try {
+            ev.target.contentWindow.gPageInFrame = true;
+            ev.target.contentWindow.gParentFrame = this;
+            ev.target.contentWindow.gParentDingKit = dingdingKit;
+            ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
+        }
+        catch (eo) {
+            console.log(eo);
+            this.setState({
+                err: JSON.stringify(eo)
+            });
+        }
+    }
+
+    onErrorHandler(ev) {
+        alert(JSON.stringify(ev));
+    }
+
+    render() {
+        if (this.state.useSrc == null) {
+            return null;
+        }
+        var iframElem = null;
+        if (this.state.err != null) {
+            iframElem = this.state.err;
+        }
+        else if(!IsEmptyString(this.props.src != null)){
+            iframElem = <iframe src={this.props.src} className='w-100 h-100' frameBorder='0' onLoad={this.onloadHandler} onError={this.onErrorHandler} ></iframe>;
+        }
+        return <div className={this.props.className} style={this.props.style} >
+            {iframElem}
         </div>;
     }
 }
@@ -3092,4 +3310,14 @@ function GetDistance(lat1, lng1, lat2, lng2) {
     s = s * 6378137;
     s = Math.floor(s * 10000) / 10000;
     return s;
+}
+
+function GetFromatRowKey(rowkey){
+    if(typeof rowkey == 'number'){
+        return rowkey;
+    }
+    if(!isNaN(rowkey)){
+        return parseInt(rowkey);
+    }
+    return rowkey;
 }

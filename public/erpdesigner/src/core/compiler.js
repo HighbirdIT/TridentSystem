@@ -143,9 +143,17 @@ class ProjectCompiler extends EventEmitter{
         }
 
         mobileContentCompiler.compile();
+        if(logManager.getCount(LogTag_Error) > 0){
+            this.stopCompile(false, "发生错误,项目编译已终止");
+            return false;
+        }
         mobileContentCompiler.compileEnd();
 
         pcContentCompiler.compile();
+        if(logManager.getCount(LogTag_Error) > 0){
+            this.stopCompile(false, "发生错误,项目编译已终止");
+            return false;
+        }
         pcContentCompiler.compileEnd();
 
         this.serverSide.compileEnd();

@@ -19,6 +19,9 @@ var gFixedItemCounter = 0;
 var gCusValidChecker_map = {};
 var gPageInFrame = false;
 var gParentFrame = null;
+var gParentDingKit = null;
+var gParentIsInDingTalk = null;
+var gPCRenderMode = false;
 var gPreconditionInvalidInfo = '前置条件不足';
 var gCantNullInfo = '不能为空值';
 
@@ -161,7 +164,10 @@ var FixedContainer = function (_React$PureComponent) {
                 var foundElem = state.pages_arr.find(function (x) {
                     return x.id == id;
                 });
-                if (foundElem != null) return state;
+                if (foundElem != null) {
+                    foundElem.closed = false;
+                    return state;
+                }
                 return {
                     pages_arr: state.pages_arr.concat({ id: id, elem: pageElem })
                 };
@@ -170,18 +176,18 @@ var FixedContainer = function (_React$PureComponent) {
     }, {
         key: 'closePage',
         value: function closePage(id) {
-            this.setState(function (state) {
-                var foundElem = state.pages_arr.find(function (x) {
-                    return x.id == id;
-                });
-                if (foundElem == null) return state;
-                var newArr = state.pages_arr.filter(function (x) {
-                    return x != foundElem;
-                });
-                return {
-                    pages_arr: newArr
-                };
+            var foundElem = this.state.pages_arr.find(function (x) {
+                return x.id == id;
             });
+            if (foundElem == null) return false;
+            foundElem.closed = true;
+            var newArr = this.state.pages_arr.filter(function (x) {
+                return !x.closed && x != foundElem;
+            });
+            this.setState({
+                pages_arr: newArr
+            });
+            return true;
         }
     }, {
         key: 'addItem',
@@ -261,11 +267,20 @@ function popPage(pid, pelem) {
 
 function closePage(pid) {
     if (gFixedContainerRef.current) {
-        gFixedContainerRef.current.closePage(pid);
+        if (gFixedContainerRef.current.closePage(pid)) {
+            return;
+        }
+    }
+    if (pageRouter.length > 1) {
+        pageRouter[pageRouter.length - 1] == pid;
+        setTimeout(function () {
+            pageRoute_Back(false);
+        }, 20);
+        return;
     }
 }
 
-function openPage(name, stepcode, stepdata, mode) {
+function openPage(name, stepcode, stepdata, mode, onMsgFun) {
     if (name == null || name.length == 0) {
         console.error('openPage 的name参数为空');
         return;
@@ -274,6 +289,9 @@ function openPage(name, stepcode, stepdata, mode) {
     if (stepcode != null && stepcode != '0') {
         targetPath += '?flowStep=' + stepcode;
         if (stepdata != null) {
+            if ((typeof stepdata === 'undefined' ? 'undefined' : _typeof(stepdata)) == 'object') {
+                stepdata = JSON.stringify(stepdata);
+            }
             targetPath += '&stepData' + stepcode + '=' + stepdata;
         }
     }
@@ -284,7 +302,7 @@ function openPage(name, stepcode, stepdata, mode) {
                 gParentFrame.push(window.location.origin + targetPath, nowPageState);
             }, 20);
         } else {
-            gTopLevelFrameRef.current.push(window.location.origin + targetPath);
+            gTopLevelFrameRef.current.push(window.location.origin + targetPath, null, onMsgFun);
         }
         return;
     }
@@ -347,6 +365,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
 
         autoBind(_this2);
         _this2.contentDivRef = React.createRef();
+        _this2.containerRef = React.createRef();
         _this2.state = {
             maxCount: 50
         };
@@ -355,6 +374,24 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
     }
 
     _createClass(ERPC_DropDown_PopPanel, [{
+        key: 'windowMouseDownHandler',
+        value: function windowMouseDownHandler(ev) {
+            var target;
+            if (ev) {
+                target = ev.target;
+            } else {
+                target = window.event.srcElement;
+            }
+            var parent = target.parentElement;
+            while (parent) {
+                if (parent == this.containerRef.current) {
+                    return;
+                }
+                parent = parent.parentElement;
+            }
+            this.foceClose();
+        }
+    }, {
         key: 'componentWillMount',
         value: function componentWillMount() {
             var _this3 = this;
@@ -362,13 +399,21 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             var self = this;
             setTimeout(function () {
                 self.inited = true;
-                self.setState(_this3.props.dropdownctl.getPopPanelInitState());
+                var dropdownctl = _this3.props.dropdownctl;
+                if (gPCRenderMode) {
+                    self.rootStyle = dropdownctl.getPopItemStyle();
+                    window.addEventListener('mousedown', _this3.windowMouseDownHandler);
+                }
+                self.setState(dropdownctl.getPopPanelInitState());
             }, 50);
         }
     }, {
         key: 'componentWillUnmount',
         value: function componentWillUnmount() {
             this.inited = false;
+            if (gPCRenderMode) {
+                window.removeEventListener('mousedown', this.windowMouseDownHandler);
+            }
         }
     }, {
         key: 'foceClose',
@@ -491,14 +536,13 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             }
             //console.log(selectedElem);
             if (!this.inited) {
+                if (gPCRenderMode) {
+                    return null;
+                }
                 return React.createElement(
                     'div',
                     { className: 'fixedBackGround' },
-                    React.createElement(
-                        'div',
-                        { className: 'dropDownItemContainer d-flex flex-column bg-light flex-shrink-0 rounded' },
-                        '.'
-                    )
+                    React.createElement('div', { className: 'dropDownItemContainer d-flex flex-column bg-light flex-shrink-0 rounded' })
                 );
             }
             var keyword = this.state.keyword.trim();
@@ -525,7 +569,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                     React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw fa-2x' })
                 );
             } else {
-                freshIconElem = React.createElement('i', { onClick: this.clickFreshHandler, className: 'fa fa-refresh text-success ml-1' });
+                freshIconElem = React.createElement('i', { onClick: this.clickFreshHandler, className: 'fa fa-refresh text-success cursor_hand' });
                 if (options_arr == null) {
                     options_arr = [];
                 }
@@ -681,7 +725,20 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                                 React.createElement('i', { className: 'fa fa-close' })
                             );
                         }),
-                        React.createElement('input', { type: 'text', className: 'flex-grow-1 flex-shrink-0 multiddcsearchinput', placeholder: '\u641C\u7D22', value: keyword, onChange: this.keyInputChanged })
+                        React.createElement(
+                            'div',
+                            { className: 'flex-grow-1 flex-shrink-1 input-group flex-nowrap w-initial' },
+                            React.createElement('input', { type: 'text', className: 'form-control flex-grow-1 flex-shrink-1 multiddcsearchinput', placeholder: '\u641C\u7D22', value: keyword, onChange: this.keyInputChanged }),
+                            React.createElement(
+                                'div',
+                                { className: 'input-group-append' },
+                                React.createElement(
+                                    'span',
+                                    { className: 'text-primary input-group-text p-1' },
+                                    freshIconElem
+                                )
+                            )
+                        )
                     );
                 }
                 if (filted_arr.length == 0) {
@@ -703,9 +760,26 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                 if (!multiselect && options_arr.length > 20) {
                     searchItem = React.createElement(
                         'div',
-                        { className: 'd-flex flex-shrink-0 align-items-center' },
-                        React.createElement('span', { className: 'fa fa-search fa-2x text-primary' }),
-                        React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 flexinput', type: 'text', value: keyword, onChange: this.keyInputChanged })
+                        { className: 'flex-shrink-0 input-group flex-nowrap' },
+                        React.createElement(
+                            'div',
+                            { className: 'input-group-prepend' },
+                            React.createElement(
+                                'span',
+                                { className: 'text-primary input-group-text p-1' },
+                                React.createElement('i', { className: 'fa fa-search' })
+                            )
+                        ),
+                        React.createElement('input', { className: 'form-control', type: 'text', value: keyword, onChange: this.keyInputChanged }),
+                        gPCRenderMode ? React.createElement(
+                            'div',
+                            { className: 'input-group-append' },
+                            React.createElement(
+                                'span',
+                                { className: 'text-primary input-group-text p-1' },
+                                freshIconElem
+                            )
+                        ) : null
                     );
                 }
 
@@ -777,12 +851,22 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                 titleBarRightElem = this.props.dropdownctl.props.createTitleBarRightElem();
             }
 
+            if (gPCRenderMode) {
+                return React.createElement(
+                    'div',
+                    { ref: this.containerRef, style: this.rootStyle, className: 'dropDownItemContainer_pc d-flex flex-column bg-light flex-shrink-0 rounded' },
+                    multiSelectedElem,
+                    searchItem,
+                    finalContentElem
+                );
+            }
+
             return React.createElement(
                 'div',
                 { className: 'fixedBackGround' },
                 React.createElement(
                     'div',
-                    { className: 'dropDownItemContainer d-flex flex-column bg-light flex-shrink-0 rounded' },
+                    { ref: this.containerRef, className: 'dropDownItemContainer d-flex flex-column bg-light flex-shrink-0 rounded' },
                     React.createElement(
                         'div',
                         { className: 'd-flex flex-shrink-0' },
@@ -837,7 +921,9 @@ var ERPC_DropDown = function (_React$PureComponent3) {
         _this5.contentDivRef = React.createRef();
 
         _this5.popPanelRef = React.createRef();
-        _this5.popPanelItem = React.createElement(ERPC_DropDown_PopPanel, { ref: _this5.popPanelRef, dropdownctl: _this5, key: gFixedItemCounter++ });
+        if (!gPCRenderMode) {
+            _this5.popPanelItem = React.createElement(ERPC_DropDown_PopPanel, { ref: _this5.popPanelRef, dropdownctl: _this5, key: gFixedItemCounter++ });
+        }
         return _this5;
     }
 
@@ -872,7 +958,9 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             }
             this.recentValues_arr = recentValues_arr;
             this.recentUsed = recentUsed;
-            addFixedItem(this.popPanelItem);
+            if (!gPCRenderMode) {
+                addFixedItem(this.popPanelItem);
+            }
 
             this.setState({
                 keyword: '',
@@ -891,7 +979,9 @@ var ERPC_DropDown = function (_React$PureComponent3) {
         value: function dropDownClosed() {
             if (this.state.opened) {
                 this.setState({ opened: false });
-                removeFixedItem(this.popPanelItem);
+                if (!gPCRenderMode) {
+                    removeFixedItem(this.popPanelItem);
+                }
             }
         }
     }, {
@@ -1026,6 +1116,28 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             });
         }
     }, {
+        key: 'getPopItemStyle',
+        value: function getPopItemStyle() {
+            var rootDiv = this.rootDivRef.current;
+            var rootRect = rootDiv.getBoundingClientRect();
+            var $window = $(window);
+            var windowHeight = $window.height();
+            var topSpace = rootRect.top;
+            var bottomSpace = windowHeight - rootRect.bottom;
+            var rlt = {
+                width: rootDiv.offsetWidth + 'px',
+                left: rootRect.left + 'px'
+            };
+            if (bottomSpace > topSpace) {
+                rlt.top = rootRect.bottom + 'px';
+                rlt.maxHeight = bottomSpace - 20 + 'px';
+            } else {
+                rlt.bottom = windowHeight - rootRect.top + 'px';
+                rlt.maxHeight = topSpace - 20 + 'px';
+            }
+            return rlt;
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this6 = this;
@@ -1129,7 +1241,12 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 }
             }
 
+            var popPanelElem = null;
             if (this.state.opened) {
+                if (gPCRenderMode) {
+                    popPanelElem = React.createElement(ERPC_DropDown_PopPanel, { ref: this.popPanelRef, dropdownctl: this, width: this.rootDivRef.current.offsetWidth });
+                }
+
                 var popPanelRefCurrent = this.popPanelRef.current;
                 if (popPanelRefCurrent) {
                     var newState = {
@@ -1220,14 +1337,15 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 );
             }
 
-            if (errTipElem == null) {
+            if (errTipElem == null && popPanelElem == null) {
                 return dropDownElem;
             }
             return React.createElement(
                 'div',
                 { className: 'd-flex flex-column flex-shrink-1 flex-grow-' + (this.props.growable == false ? '0' : '1') },
                 dropDownElem,
-                errTipElem
+                errTipElem,
+                popPanelElem
             );
         }
     }]);
@@ -1501,7 +1619,7 @@ var ERPC_Text = function (_React$PureComponent4) {
                     errInfo = '';
                 }
                 contentElem = React.createElement(
-                    'div',
+                    'small',
                     { className: 'flex-grow-1 flex-shrink-1' },
                     React.createElement('i', { className: 'fa fa-warning' }),
                     errInfo
@@ -1529,7 +1647,7 @@ var ERPC_Text = function (_React$PureComponent4) {
                         nowValue
                     );
                 } else if (this.props.type == 'string' && this.props.linetype != null && this.props.linetype != 'single') {
-                    contentElem = React.createElement('textarea', { onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 w-100 form-control textarea-' + this.props.linetype + (this.props.align ? ' text-' + this.props.align : ''), value: this.props.value, onBlur: this.endInputHandler });
+                    contentElem = React.createElement('textarea', { id: this.props.id, onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 w-100 form-control textarea-' + this.props.linetype + (this.props.align ? ' text-' + this.props.align : ''), value: this.props.value, onBlur: this.endInputHandler });
                 } else {
                     var useType = this.props.type;
                     var useChecked = null;
@@ -1554,13 +1672,13 @@ var ERPC_Text = function (_React$PureComponent4) {
                             }, 10);
                         }
                     }
-                    contentElem = React.createElement('input', { className: 'flex-grow-1 flex-shrink-1 form-control invalid ' + (this.props.align ? ' text-' + this.props.align : ''), type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged, onBlur: this.endInputHandler });
+                    contentElem = React.createElement('input', { id: this.props.id, className: 'flex-grow-1 flex-shrink-1 form-control invalid ' + (this.props.align ? ' text-' + this.props.align : ''), type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged, onBlur: this.endInputHandler });
                 }
 
                 if (this.props.invalidInfo) {
                     rootDivClassName += ' flex-column';
                     errTipElem = React.createElement(
-                        'span',
+                        'small',
                         { className: 'text-danger' },
                         React.createElement('i', { className: 'fa fa-warning' }),
                         this.props.invalidInfo
@@ -1616,6 +1734,25 @@ var ERPC_LabeledControl = function (_React$PureComponent5) {
     }
 
     _createClass(ERPC_LabeledControl, [{
+        key: 'renderInPC',
+        value: function renderInPC(toolTipIcon) {
+            return React.createElement(
+                'div',
+                { className: 'rowlFameTwo' + (this.props.className ? ' ' + this.props.className : ''), wf: this.props.wf },
+                React.createElement(
+                    'label',
+                    { className: 'rowlFameTwo_Top font-weight-bold', htmlFor: this.props.forid },
+                    this.props.label
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'rowlFameTwo_Bottom' },
+                    toolTipIcon,
+                    this.props.children
+                )
+            );
+        }
+    }, {
         key: 'render',
         value: function render() {
             if (this.props.visible == false) {
@@ -1633,17 +1770,27 @@ var ERPC_LabeledControl = function (_React$PureComponent5) {
                     )
                 );
             }
+            var renderMode = this.props.rm;
+            if (renderMode == null) {
+                if (gPCRenderMode) {
+                    renderMode = 'pc';
+                }
+            }
+            if (renderMode == 'pc') {
+                return this.renderInPC(toolTipIcon);
+            }
             return React.createElement(
                 'div',
                 { className: 'rowlFameOne' + (this.props.className ? ' ' + this.props.className : '') },
                 React.createElement(
                     'div',
-                    { className: 'rowlFameOne_Left' },
+                    { className: 'rowlFameOne_Left', wn: this.props.wn },
                     this.props.label
                 ),
+                React.createElement('span', { className: 'rowlFameDivider' }),
                 React.createElement(
                     'div',
-                    { className: 'rowlFameOne_right' },
+                    { className: 'rowlFameOne_right', wn: this.props.wn },
                     toolTipIcon,
                     this.props.children
                 )
@@ -1767,7 +1914,7 @@ var ERPC_Label = function (_React$PureComponent7) {
 
             return React.createElement(
                 'span',
-                { className: rootDivClassName, charlen: this.props.boutcharlen ? tileLen : null, onMouseDown: this.props.onMouseDown, 'ctl-fullpath': needCtlPath ? this.props.fullPath : null },
+                { className: rootDivClassName, style: this.props.style, charlen: this.props.boutcharlen ? tileLen : null, onMouseDown: this.props.onMouseDown, 'ctl-fullpath': needCtlPath ? this.props.fullPath : null },
                 contentElem
             );
         }
@@ -2199,11 +2346,14 @@ function ERPC_PageForm_clickPlusNavBtnHandler() {
 }
 
 function ERPC_PageForm_clickUnPlusNavBtnHandler() {
+    if (this.saveInsertCache) {
+        this.saveInsertCache();
+    }
     store.dispatch(makeAction_setStateByPath(this.prePlusIndex, MakePath(this.props.parentPath, this.props.id, 'recordIndex')));
 }
 
 function ERPC_PageForm_renderNavigater() {
-    if (this.props.records_arr == null || this.props.records_arr.length == 1) {
+    if (this.props.records_arr == null || this.props.records_arr.length == 1 && !this.canInsert) {
         return null;
     }
     var count = this.props.records_arr.length;
@@ -2285,6 +2435,68 @@ function SmartSetScrollTop(theElem) {
     }
 }
 
+function GetFormSelectedRows(formState, keyColumn) {
+    var rlt = GetFormSelectedProfile(formState, keyColumn);
+    return rlt.index != null ? [rlt.index] : rlt.indexes_arr;
+}
+
+function GetFormSelectedColumns(formState, keyColumn, targetColmun) {
+    if (keyColumn == targetColmun) {
+        return formState.selectedValues_arr == null ? [] : formState.selectedValues_arr;
+    }
+    var rlt = GetFormSelectedProfile(formState, keyColumn);
+    return rlt.records_arr.map(function (record) {
+        return record[targetColmun];
+    });
+}
+
+function GetFormSelectedProfile(formState, keyColumn) {
+    var rlt = {
+        index: null,
+        record: null,
+        key: null,
+        indexes_arr: [],
+        records_arr: [],
+        keys_arr: []
+    };
+    var records_arr = formState.records_arr;
+    if (records_arr == null || records_arr.length == 0) {
+        return rlt;
+    }
+    var count = records_arr.length;
+    var ri;
+    var record;
+    if (formState.selectedValue != null) {
+        for (ri = 0; ri < count; ++ri) {
+            record = records_arr[ri];
+            if (record[keyColumn] == formState.selectedValue) {
+                rlt.index = ri;
+                rlt.record = record;
+                rlt.key = formState.selectedValue;
+                break;
+            }
+        }
+        return rlt;
+    }
+    var selectedValues_arr = formState.selectedValues_arr;
+    if (selectedValues_arr == null || selectedValues_arr.length == 0) {
+        return rlt;
+    }
+    var key_map = {};
+    selectedValues_arr.forEach(function (k) {
+        key_map[k] = 1;
+    });
+    for (ri = 0; ri < count; ++ri) {
+        record = records_arr[ri];
+        if (key_map[record[keyColumn]] != null) {
+            rlt.indexes_arr.push(ri);
+            rlt.records_arr.push(record);
+            rlt.keys_arr.push(record[keyColumn]);
+        }
+    }
+    return rlt;
+}
+
 function ERPC_GridForm(target) {
     target.rootRef = React.createRef();
     target.rowPerPageChangedHandler = ERPC_GridForm_RowPerPageChangedHandler.bind(target);
@@ -2302,7 +2514,6 @@ function ERPC_GridForm(target) {
     target.clickNewRowHandler = ERPC_GridForm_ClickNewRowHandler.bind(target);
     target.cancelInsert = ERPC_GridForm_CancelInsert.bind(target);
     target.confrimInsert = ERPC_GridForm_ConfirmInsert.bind(target);
-    target.getSelectedRowIndex = ERPC_GridForm_GetSelectedRowIndex.bind(target);
     target.selectorClicked = ERPC_GridForm_SelectorClicked.bind(target);
 }
 
@@ -2435,25 +2646,20 @@ function ERPC_GridForm_ConfirmInsert() {
     });
 }
 
-function ERPC_GridForm_GetSelectedRowIndex() {
-    return this.props.selectedRows_arr.length == 0 ? -1 : this.props.selectedRows_arr[0];
-}
-
 function ERPC_GridForm_SelectorClicked(rowIndex) {
     var needSetState = {};
+    var rowRecord = this.props.records_arr[rowIndex];
+    var keyValue = rowRecord[this.props.keyColumn];
     if (this.props.selectMode == 'single') {
-        if (this.getSelectedRowIndex() == rowIndex) {
-            return;
-        }
-        needSetState[this.props.fullPath + '.selectedRows_arr'] = [rowIndex];
+        needSetState[this.props.fullPath + '.selectedValue'] = keyValue;
     } else {
-        var index = this.props.selectedRows_arr.indexOf(rowIndex);
+        var index = this.props.selectedValues_arr.indexOf(keyValue);
         if (index == -1) {
-            needSetState[this.props.fullPath + '.selectedRows_arr'] = this.props.selectedRows_arr.concat(rowIndex);
+            needSetState[this.props.fullPath + '.selectedValues_arr'] = this.props.selectedValues_arr.concat(keyValue);
         } else {
-            var newArr = this.props.selectedRows_arr.concat();
+            var newArr = this.props.selectedValues_arr.concat();
             newArr.splice(index, 1);
-            needSetState[this.props.fullPath + '.selectedRows_arr'] = newArr;
+            needSetState[this.props.fullPath + '.selectedValues_arr'] = newArr;
         }
     }
 
@@ -2634,9 +2840,7 @@ var ERPC_GridSelectableRow = function (_React$PureComponent12) {
 }(React.PureComponent);
 
 function ERPC_GridSelectableRow_mapstatetoprops(state, ownprops) {
-    return {
-        selected: ownprops.form.props.selectedRows_arr.indexOf(ownprops.rowIndex) != -1
-    };
+    return {};
 }
 
 function ERPC_GridSelectableRow_dispatchtorprops(dispatch, ownprops) {
@@ -3468,6 +3672,7 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
             useState: null
         };
         _this25.onloadHandler = _this25.onloadHandler.bind(_this25);
+        _this25.onErrorHandler = _this25.onErrorHandler.bind(_this25);
         _this25.push = _this25.push.bind(_this25);
         _this25.pop = _this25.pop.bind(_this25);
         return _this25;
@@ -3475,12 +3680,13 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
 
     _createClass(ERPC_TopLevelFrame, [{
         key: 'push',
-        value: function push(src, oldPageState) {
+        value: function push(src, oldPageState, onMessageFun) {
             if (this.state.srcs_arr.length > 0 && this.state.srcs_arr[this.state.srcs_arr.length - 1] == src) {
                 return;
             }
             if (this.state.srcs_arr.length == 0) {
                 oldPageState = null; // 宿主页面的state不用保存
+                this.onMessageFun = onMessageFun;
             }
             this.setState({
                 srcs_arr: this.state.srcs_arr.concat(src),
@@ -3501,8 +3707,28 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
                 srcs_arr: newsrcs_arr,
                 states_arr: newstates_arr,
                 useState: useState,
-                useSrc: useSrc
+                useSrc: useSrc,
+                err: null
             });
+        }
+    }, {
+        key: 'close',
+        value: function close() {
+            this.onMessageFun = null;
+            this.setState({
+                srcs_arr: [],
+                states_arr: [],
+                useSrc: null,
+                useState: null,
+                err: null
+            });
+        }
+    }, {
+        key: 'sendMessage',
+        value: function sendMessage(msgtype, data) {
+            if (this.onMessageFun) {
+                this.onMessageFun(msgtype, data);
+            }
         }
     }, {
         key: 'getUseState',
@@ -3512,9 +3738,24 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
     }, {
         key: 'onloadHandler',
         value: function onloadHandler(ev) {
-            //console.log(ev);
-            ev.target.contentWindow.gPageInFrame = true;
-            ev.target.contentWindow.gParentFrame = this;
+            console.log(ev);
+            try {
+                ev.target.contentWindow.gPageInFrame = true;
+                ev.target.contentWindow.gParentFrame = this;
+                ev.target.contentWindow.gParentDingKit = dingdingKit;
+                ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
+            } catch (eo) {
+                console.log(eo);
+                this.setState({
+                    err: JSON.stringify(eo)
+                });
+            }
+        }
+    }, {
+        key: 'onErrorHandler',
+        value: function onErrorHandler(ev) {
+            alert(JSON.stringify(ev));
+            this.pop();
         }
     }, {
         key: 'render',
@@ -3522,15 +3763,144 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
             if (this.state.useSrc == null) {
                 return null;
             }
+            if (this.state.err != null) {
+                return React.createElement(
+                    'div',
+                    { className: 'position-fixed border rounded bg-light w-100 h-100', style: this.style },
+                    React.createElement(
+                        'button',
+                        { className: 'btn btn-danger', onClick: this.pop },
+                        React.createElement('i', { className: 'fa fa-close' })
+                    ),
+                    this.state.err
+                );
+            }
             return React.createElement(
                 'div',
                 { className: 'position-fixed border rounded bg-light w-100 h-100', style: this.style },
-                React.createElement('iframe', { src: this.state.useSrc, className: 'w-100 h-100', frameBorder: '0', onLoad: this.onloadHandler })
+                React.createElement('iframe', { src: this.state.useSrc, className: 'w-100 h-100', frameBorder: '0', onLoad: this.onloadHandler, onError: this.onErrorHandler })
             );
         }
     }]);
 
     return ERPC_TopLevelFrame;
+}(React.PureComponent);
+
+var ERPC_IFrame = function (_React$PureComponent19) {
+    _inherits(ERPC_IFrame, _React$PureComponent19);
+
+    function ERPC_IFrame(props) {
+        _classCallCheck(this, ERPC_IFrame);
+
+        var _this26 = _possibleConstructorReturn(this, (ERPC_IFrame.__proto__ || Object.getPrototypeOf(ERPC_IFrame)).call(this, props));
+
+        _this26.onloadHandler = _this26.onloadHandler.bind(_this26);
+        _this26.onErrorHandler = _this26.onErrorHandler.bind(_this26);
+        _this26.push = _this26.push.bind(_this26);
+        _this26.pop = _this26.pop.bind(_this26);
+
+        _this26.state = {
+            srcs_arr: [],
+            states_arr: [],
+            useSrc: null,
+            useState: null
+        };
+        return _this26;
+    }
+
+    _createClass(ERPC_IFrame, [{
+        key: 'push',
+        value: function push(src, oldPageState, onMessageFun) {
+            if (this.state.srcs_arr.length > 0 && this.state.srcs_arr[this.state.srcs_arr.length - 1] == src) {
+                return;
+            }
+            this.setState({
+                srcs_arr: this.state.srcs_arr.concat(src),
+                states_arr: this.state.states_arr.concat(oldPageState),
+                useSrc: src,
+                useState: null
+            });
+        }
+    }, {
+        key: 'pop',
+        value: function pop() {
+            if (this.state.srcs_arr.length == 0) {
+                return;
+            }
+            var newsrcs_arr = this.state.srcs_arr.concat();
+            var newstates_arr = this.state.states_arr.concat();
+            newsrcs_arr.pop();
+            var useSrc = newsrcs_arr.length == 0 ? null : newsrcs_arr[newsrcs_arr.length - 1];
+            var useState = newstates_arr.pop();
+            this.setState({
+                srcs_arr: newsrcs_arr,
+                states_arr: newstates_arr,
+                useState: useState,
+                useSrc: useSrc,
+                err: null
+            });
+        }
+    }, {
+        key: 'close',
+        value: function close() {
+            this.onMessageFun = null;
+            this.setState({
+                srcs_arr: [],
+                states_arr: [],
+                useSrc: null,
+                useState: null,
+                err: null
+            });
+        }
+    }, {
+        key: 'sendMessage',
+        value: function sendMessage(msgtype, data) {
+            if (this.onMessageFun) {
+                this.onMessageFun(msgtype, data);
+            }
+        }
+    }, {
+        key: 'onloadHandler',
+        value: function onloadHandler(ev) {
+            console.log(ev);
+            try {
+                ev.target.contentWindow.gPageInFrame = true;
+                ev.target.contentWindow.gParentFrame = this;
+                ev.target.contentWindow.gParentDingKit = dingdingKit;
+                ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
+            } catch (eo) {
+                console.log(eo);
+                this.setState({
+                    err: JSON.stringify(eo)
+                });
+            }
+        }
+    }, {
+        key: 'onErrorHandler',
+        value: function onErrorHandler(ev) {
+            alert(JSON.stringify(ev));
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            if (this.state.useSrc == null) {
+                return null;
+            }
+            var iframElem = null;
+            if (this.state.err != null) {
+                iframElem = this.state.err;
+            } else if (!IsEmptyString(this.props.src != null)) {
+                iframElem = React.createElement('iframe', { src: this.props.src, className: 'w-100 h-100', frameBorder: '0', onLoad: this.onloadHandler, onError: this.onErrorHandler });
+            }
+            return React.createElement(
+                'div',
+                { className: this.props.className, style: this.props.style },
+                iframElem
+            );
+        }
+    }]);
+
+    return ERPC_IFrame;
 }(React.PureComponent);
 
 var ERPXMLToolKit = {
@@ -3602,7 +3972,7 @@ var ERPXMLToolKit = {
 
 function getPageEntryParam(pageid, paramName, defValue) {
     var entryObj = gDataCache.get(pageid + 'entryParam');
-    if (entryObj && entryObj[paramName] == null) {
+    if (entryObj == null || entryObj[paramName] == null) {
         return defValue;
     }
     return entryObj[paramName];

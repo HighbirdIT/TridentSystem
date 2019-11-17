@@ -145,8 +145,8 @@ function makeActStr_getGDataCache(key){
     return VarNames.gDataCache + '.get(' + singleQuotesStr(key) + ')';
 }
 
-function makeLine_setGDataCache(key, value){
-    return VarNames.gDataCache + '.set(' + singleQuotesStr(key) + ',' + value + ');';
+function makeLine_setGDataCache(key, value, autoQuote = true){
+    return VarNames.gDataCache + '.set(' + (autoQuote ? singleQuotesStr(key) : key) + ',' + value + ');';
 }
 
 function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr, paramObj, isModel = true, url = 'appServerUrl'){
@@ -212,10 +212,11 @@ const VarNames={
     PageRouter:'pageRouter',
     gDataCache:'gDataCache',
     RowIndex:'rowIndex',
+    RowKey:'rowkey',
     CallBack:'callBack',
     FetchKey:'fetchKey',
     ParentPath:'parentPath',
-    RowIndexInfo_map:'rowIndexInfo_map',
+    RowKeyInfo_map:'rowKeyInfo_map',
     SelectMode:'selectMode',
     FullPath:'fullPath',
     FullParentPath:'fullParentPath',
@@ -230,6 +231,8 @@ const VarNames={
     SatePath:'statePath',
     Visible:'visible',
     NowRow:'nowrow',
+    SelectedProfile:'selectedProfile',
+
 };
 
 

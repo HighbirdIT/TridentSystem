@@ -209,7 +209,7 @@ class PCContentCompiler extends MobileContentCompiler {
                         propChangedHandlerName = relyPath.berelyCtl.id + '_' + relyPath.berelyPropName + '_changed';
                         changedFun = clientSide.scope.getFunction(propChangedHandlerName);
                         if (changedFun == null) {
-                            changedFun = clientSide.scope.getFunction(propChangedHandlerName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowIndexInfo_map']);
+                            changedFun = clientSide.scope.getFunction(propChangedHandlerName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowKeyInfo_map']);
                             changedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
                             changedFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''", VarNames.NeedSetState], ';'));
                             clientSide.stateChangedAct[singleQuotesStr(propFulPath)] = propChangedHandlerName + '.bind(window)';
@@ -242,10 +242,10 @@ class PCContentCompiler extends MobileContentCompiler {
                             else {
                                 console.error('不支持的approach!');
                             }
-                            var rowIndexInfo_map = {
-                                mapVarName: 'rowIndexInfo_map',
+                            var rowKeyInfo_map = {
+                                mapVarName: 'rowKeyInfo_map',
                             };
-                            changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName, '.', rowIndexInfo_map)), getValueStr));
+                            changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName, '.', rowKeyInfo_map)), getValueStr));
                         }
                         else {
                             var actKey = 'call_' + relyPath.funName;
