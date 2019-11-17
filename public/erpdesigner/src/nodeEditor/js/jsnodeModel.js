@@ -3463,7 +3463,7 @@ class JSNODE_Insert_table extends JSNode_Base {
                 return false;
             }
             var belongForm = relKernel.searchParentKernel(M_FormKernel_Type, true);
-            if(belongForm.isPageForm()){
+            if(belongForm && belongForm.isPageForm()){
                 var formBelongUserControl = belongForm.searchParentKernel(UserControlKernel_Type, true);
                 var formStatePath = '';
                 if (formBelongUserControl) {
