@@ -447,7 +447,7 @@ class CProject extends IAttributeable {
             }
         }
         else{
-            restorePage = this.getPageById(this.designeConfig.editingPage.pcid);
+            restorePage = this.getPageById(this.designeConfig.editingPage.mbid);
             if(restorePage.ispcPage){
                 restorePage = null;
             }
