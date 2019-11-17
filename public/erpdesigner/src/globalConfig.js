@@ -22,6 +22,8 @@ var ButtonType_Normal = 'Normal';
 var ButtonType_ListBtn = 'ListLike';
 var ButtonType_Options_arr = [ButtonType_Normal, ButtonType_ListBtn];
 
+const DefaultKeyColumn = '_default';
+
 var EMessageType = {
     Normal: 0,
     Process: 2

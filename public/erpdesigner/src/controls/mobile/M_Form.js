@@ -13,7 +13,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('标题对齐', AttrNames.TextAlign, ValueType.String, ETextAlign.Left, true, false, TextAligns_arr),
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
         new CAttribute('数据源', AttrNames.DataSource, ValueType.DataSource, null, true, false, 'getCanUseDataSource', { text: 'name', value: 'code' }),
-        new CAttribute('Key列', AttrNames.KeyColumn, ValueType.String, '', true, false, 'getCanuseColumns'),
+        new CAttribute('Key列', AttrNames.KeyColumn, ValueType.String, '', true, false, 'getKeyCanuseColumns'),
         new CAttribute('稳定的数据', AttrNames.StableData, ValueType.Boolean, false),
         new CAttribute('操作表', AttrNames.ProcessTable, ValueType.DataSource, null, true, false, g_dataBase.getAllTable, { text: 'name', value: 'code' }),
         new CAttribute('表单类别', AttrNames.FormType, ValueType.String, EFormType.Page, true, false, FormTypes_arr),
@@ -506,6 +506,10 @@ class M_FormKernel extends ContainerKernelBase {
 
     getCanuseColumns() {
         return getDSAttrCanuseColumns.call(this, AttrNames.DataSource, AttrNames.CustomDataSource);
+    }
+
+    getKeyCanuseColumns() {
+        return getDSAttrCanuseColumns.call(this, AttrNames.DataSource, AttrNames.CustomDataSource).concat(DefaultKeyColumn);
     }
 
     renderSelf(clickHandler, replaceChildClick, designer) {

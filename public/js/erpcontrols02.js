@@ -2463,13 +2463,15 @@ function GetFormSelectedProfile(formState, keyColumn) {
     if (records_arr == null || records_arr.length == 0) {
         return rlt;
     }
+    var key = null;
     var count = records_arr.length;
     var ri;
     var record;
     if (formState.selectedValue != null) {
         for (ri = 0; ri < count; ++ri) {
             record = records_arr[ri];
-            if (record[keyColumn] == formState.selectedValue) {
+            key = keyColumn == '_default' ? ri : record[keyColumn];
+            if (key == formState.selectedValue) {
                 rlt.index = ri;
                 rlt.record = record;
                 rlt.key = formState.selectedValue;
@@ -2488,10 +2490,11 @@ function GetFormSelectedProfile(formState, keyColumn) {
     });
     for (ri = 0; ri < count; ++ri) {
         record = records_arr[ri];
-        if (key_map[record[keyColumn]] != null) {
+        key = keyColumn == '_default' ? ri : record[keyColumn];
+        if (key_map[key] != null) {
             rlt.indexes_arr.push(ri);
             rlt.records_arr.push(record);
-            rlt.keys_arr.push(record[keyColumn]);
+            rlt.keys_arr.push(key);
         }
     }
     return rlt;
