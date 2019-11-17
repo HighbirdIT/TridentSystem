@@ -439,12 +439,20 @@ class CProject extends IAttributeable {
             this.designeConfig.editingPage.mbid = editingPage == null ? -1 : editingPage.id;
         }
         this.designeConfig.editingType = newValue == 'PC' ? 'PC' : 'MB';
+        var restorePage = null;
         if(newValue == 'PC'){
-            this.setEditingPageById(this.designeConfig.editingPage.pcid);
+            restorePage = this.getPageById(this.designeConfig.editingPage.pcid);
+            if(!restorePage.ispcPage){
+                restorePage = null;
+            }
         }
         else{
-            this.setEditingPageById(this.designeConfig.editingPage.mbid);
+            restorePage = this.getPageById(this.designeConfig.editingPage.pcid);
+            if(restorePage.ispcPage){
+                restorePage = null;
+            }
         }
+        this.setEditingPageById(restorePage ? restorePage.id : -1);
         this.attrChanged('editingType');
     }
 
