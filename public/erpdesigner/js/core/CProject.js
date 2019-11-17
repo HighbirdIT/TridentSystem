@@ -480,20 +480,24 @@ var CProject = function (_IAttributeable) {
                 return;
             }
             if (nowValue == 'PC') {
-                this.designeConfig.editingPage.pcid = editingPage == null ? -1 : editingPage.id;
+                if (editingPage) {
+                    this.designeConfig.editingPage.pcid = editingPage.id;
+                }
             } else {
-                this.designeConfig.editingPage.mbid = editingPage == null ? -1 : editingPage.id;
+                if (editingPage) {
+                    this.designeConfig.editingPage.mbid = editingPage.id;
+                }
             }
             this.designeConfig.editingType = newValue == 'PC' ? 'PC' : 'MB';
             var restorePage = null;
             if (newValue == 'PC') {
                 restorePage = this.getPageById(this.designeConfig.editingPage.pcid);
-                if (!restorePage.ispcPage) {
+                if (restorePage && !restorePage.ispcPage) {
                     restorePage = null;
                 }
             } else {
                 restorePage = this.getPageById(this.designeConfig.editingPage.mbid);
-                if (restorePage.ispcPage) {
+                if (restorePage && restorePage.ispcPage) {
                     restorePage = null;
                 }
             }
