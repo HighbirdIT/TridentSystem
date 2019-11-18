@@ -5898,7 +5898,7 @@ class JSNode_Do_FlowStep extends JSNode_Base {
                 myClientBlock.pushLine('setTimeout(() => {', 1);
             }
             if (this.bluePrint.group != EJsBluePrintFunGroup.Custom) {
-                myJSBlock.pushLine("if(fetchTracer[" + VarNames.FetchKey + "] != fetchid) return;");
+                myClientBlock.pushLine("if(fetchTracer[" + VarNames.FetchKey + "] != fetchid) return;");
             }
             var dataVarName = 'data_' + this.id;
             var errVarName = 'error_' + this.id;
