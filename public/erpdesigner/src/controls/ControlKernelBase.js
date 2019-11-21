@@ -50,9 +50,10 @@ function GenControlKernelAttrsSetting(cusGroups_arr, includeDefault, includeLayo
     return rlt;
 }
 
+
 function getDSAttrCanuseColumns(dsAttrName, csAttrName){
     var useDS = this.getAttribute(dsAttrName);
-    if(useDS == null){
+    if(useDS == null || !useDS.loaded){
         return [];
     }
     var rlt = useDS.columns.map(col=>{
