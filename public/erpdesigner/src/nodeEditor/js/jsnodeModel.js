@@ -8857,7 +8857,7 @@ class JSNode_ClosePage extends JSNode_Base {
 
     getBelongPage() {
         var kernel = this.bluePrint.master.project.getControlById(this.bluePrint.ctlID);
-        return kernel == null ? null : kernel.searchParentKernel(M_PageKernel_Type, true);;
+        return kernel == null ? null : (kernel.type == M_PageKernel_Type ? kernel : kernel.searchParentKernel(M_PageKernel_Type, true));
     }
 
     projLoadedHandler() {

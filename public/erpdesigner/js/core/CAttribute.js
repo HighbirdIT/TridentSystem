@@ -372,7 +372,8 @@ var AttrNames = {
         OnSelectedChanged: 'onSelectedChanged',
         OnRowChanged: 'onRowChanged',
         OnUploadComplete: 'onUploadComplate',
-        OnDataSourceChanged: 'onDataSourceChanged'
+        OnDataSourceChanged: 'onDataSourceChanged',
+        OnClickCloseBtn: 'onClickCloseBtn'
     },
 
     LayoutNames: {
