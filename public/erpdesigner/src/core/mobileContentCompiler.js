@@ -818,10 +818,21 @@ class MobileContentCompiler extends ContentCompiler {
             pageReactClass.constructorFun.pushLine('this.close = this.close.bind(this);');
             var closeFun = pageReactClass.getFunction('close', true, ['exportParam']);
 
-            closeFun.pushLine('exportParam = exportParam == null ? {} : exportParam;');
-            closeFun.pushLine('closePage(' + singleQuotesStr(pageKernel.id) + ');');
-            closeFun.pushLine('var callBack = ' + makeStr_callFun('getPageEntryParam', [singleQuotesStr(pageKernel.id), singleQuotesStr('callBack')], ';'));
-            closeFun.pushLine('if(callBack){callBack(exportParam);}');
+            var onClickCloseFunName = pageKernel.id + '_' + AttrNames.Event.OnClickCloseBtn;
+            var onClickCloseBp = project.scriptMaster.getBPByName(onClickCloseFunName);
+            if (onClickCloseBp != null) {
+                var compileRet = this.compileScriptBlueprint(onClickCloseBp, { params: [], haveDoneTip: false });
+                if (compileRet == false) {
+                    return false;
+                }
+                closeFun.pushLine(onClickCloseFunName + '();');
+            }
+            else{
+                closeFun.pushLine('exportParam = exportParam == null ? {} : exportParam;');
+                closeFun.pushLine('closePage(' + singleQuotesStr(pageKernel.id) + ');');
+                closeFun.pushLine('var callBack = ' + makeStr_callFun('getPageEntryParam', [singleQuotesStr(pageKernel.id), singleQuotesStr('callBack')], ';'));
+                closeFun.pushLine('if(callBack){callBack(exportParam);}');
+            }
         }
         /*
         pageReactClass.renderFootFun.pushLine("return (<div className='flex-grow-0 flex-shrink-0 bg-primary text-light pageFooter'>", 1);

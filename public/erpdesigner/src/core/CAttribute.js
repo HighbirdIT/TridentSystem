@@ -346,6 +346,7 @@ const AttrNames={
         OnRowChanged:'onRowChanged',
         OnUploadComplete:'onUploadComplate',
         OnDataSourceChanged:'onDataSourceChanged',
+        OnClickCloseBtn:'onClickCloseBtn',
     },
 
     LayoutNames:{
