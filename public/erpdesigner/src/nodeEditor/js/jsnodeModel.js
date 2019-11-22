@@ -1025,7 +1025,13 @@ class JSNode_BluePrint extends EventEmitter {
                 }
                 if (!IsEmptyObject(useFormData.useColumns_map)) {
                     if (theFun.scope.getVar(formNowRecordVarName) != null) {
-                        needCheckVars_arr.push(formNowRecordVarName);
+                        var isDataSourceChangedFun = false;
+                        if (this.group == EJsBluePrintFunGroup.CtlEvent && this.name) {
+                            isDataSourceChangedFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnDataSourceChanged;
+                        }
+                        if(!isDataSourceChangedFun){
+                            needCheckVars_arr.push(formNowRecordVarName);
+                        }
                         for (var columnName in useFormData.useColumns_map) {
                             var useFormColumn = useFormData.useColumns_map[columnName];
                             if (useFormColumn.serverFuns_arr.length > 0) {
