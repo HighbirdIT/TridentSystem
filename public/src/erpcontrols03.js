@@ -3112,7 +3112,7 @@ class ERPC_FrameSet extends React.PureComponent {
             itemsElem_arr = items_arr.map(item => {
                 var isSelected = item.key == selectedKey;
                 var btnElem = <button d-key={item.key} onClick={this.clickHeaderHandler} key={item.key} type='button' className={'btn btn-sm rounded-0 btn-' + (isSelected ? 'light' : 'secondary')} style={this.headerItemStyle}>{item.title}</button>;
-                if (isSelected) {
+                if (isSelected && item.closeable != false) {
                     selectedItem = item;
                     return [btnElem,
                         <button onClick={this.clickCloseHandler} key='close' type='button' className='btn btn-sm btn-light fa fa-close text-secondary rounded-0' ></button>
