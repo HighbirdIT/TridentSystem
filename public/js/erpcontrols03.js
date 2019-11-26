@@ -3776,7 +3776,7 @@ var ERPC_FrameSet = function (_React$PureComponent18) {
                         { 'd-key': item.key, onClick: _this27.clickHeaderHandler, key: item.key, type: 'button', className: 'btn btn-sm rounded-0 btn-' + (isSelected ? 'light' : 'secondary'), style: _this27.headerItemStyle },
                         item.title
                     );
-                    if (isSelected) {
+                    if (isSelected && item.closeable != false) {
                         selectedItem = item;
                         return [btnElem, React.createElement('button', { onClick: _this27.clickCloseHandler, key: 'close', type: 'button', className: 'btn btn-sm btn-light fa fa-close text-secondary rounded-0' })];
                     }
