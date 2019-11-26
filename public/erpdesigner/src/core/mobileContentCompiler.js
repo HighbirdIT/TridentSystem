@@ -2746,8 +2746,6 @@ class MobileContentCompiler extends ContentCompiler {
                     clickRowHandlerFun.pushLine("var nowArr = formState." + VarNames.SelectedValues_arr + ";");
                     clickRowHandlerFun.pushLine("if(nowArr == null){nowArr=[keyvalue];}");
                     clickRowHandlerFun.pushLine('else{', 1);
-                    clickRowHandlerFun.pushLine('if(nowArr.indexOf(keyvalue) == -1){nowArr=nowArr.concat(keyvalue);}');
-                    clickRowHandlerFun.pushLine('else{', 1);
                     clickRowHandlerFun.pushLine('var index = nowArr.indexOf(keyvalue);');
                     clickRowHandlerFun.pushLine('if(index == -1){nowArr=nowArr.concat(keyvalue);}');
                     clickRowHandlerFun.pushLine('else{', 1);
@@ -2757,11 +2755,17 @@ class MobileContentCompiler extends ContentCompiler {
                     clickRowHandlerFun.pushLine('}');
                     clickRowHandlerFun.subNextIndent();
                     clickRowHandlerFun.pushLine('}');
-                    clickRowHandlerFun.subNextIndent();
-                    clickRowHandlerFun.pushLine('}');
                     clickRowHandlerFun.pushLine("store.dispatch(makeAction_setStateByPath(nowArr,this.props.fullPath + '." + VarNames.SelectedValues_arr + "'));");
                 }
                 else {
+                    if(OnSelectedChangedBp){
+                        clickRowHandlerFun.pushLine("var nowRowKey = formState." + VarNames.SelectedValue + ";");
+                        clickRowHandlerFun.pushLine("if(nowRowKey == rowkey){",1);
+                        clickRowHandlerFun.pushLine("var selectedProfile = GetFormSelectedProfile(formState,'" + keyColumn + "');",1);
+                        clickRowHandlerFun.pushLine(makeStr_callFun(OnSelectedChangedBp.name,['state','this.props.fullPath','selectedProfile.record','selectedProfile.index','selectedProfile.key'],';'));
+                        clickRowHandlerFun.subNextIndent();
+                        clickRowHandlerFun.pushLine('}');
+                    }
                     clickRowHandlerFun.pushLine("store.dispatch(makeAction_setStateByPath(keyvalue,this.props.fullPath + '." + VarNames.SelectedValue + "'));");
                 }
             }

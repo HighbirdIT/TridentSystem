@@ -65,6 +65,11 @@ const JSNodeEditorControls_arr =[
         type:'流控制'
     },
     {
+        label:'Continue',
+        nodeClass:JSNode_Continue,
+        type:'流控制'
+    },
+    {
         label:'Sequence',
         nodeClass:JSNode_Sequence,
         type:'流控制'

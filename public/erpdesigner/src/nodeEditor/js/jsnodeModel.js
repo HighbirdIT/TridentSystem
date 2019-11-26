@@ -9,6 +9,7 @@ const JSNODE_COMPARE = 'compare';
 const JSNODE_IF = 'jsif';
 const JSNODE_SWITCH = 'jsswitch';
 const JSNODE_BREAK = 'jsbreak';
+const JSNODE_CONTINURE = 'jscontinue';
 const JSNODE_SEQUENCE = 'sequence';
 const JSNODE_CURRENTDATAROW = 'currentdatarow';
 const JSNODE_CTLKERNEL = 'ctlkernel';
@@ -2295,6 +2296,32 @@ class JSNode_Break extends JSNode_Base {
             return superRet;
         }
         var setLine = new FormatFile_Line('break;');
+        belongBlock.pushChild(setLine);
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', setLine);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        return selfCompileRet;
+    }
+}
+
+class JSNode_Continue extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_CONTINURE, 'continue', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var setLine = new FormatFile_Line('continue;');
         belongBlock.pushChild(setLine);
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', setLine);
@@ -11692,6 +11719,10 @@ JSNodeClassMap[JSNODE_SWITCH] = {
 };
 JSNodeClassMap[JSNODE_BREAK] = {
     modelClass: JSNode_Break,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_CONTINURE] = {
+    modelClass: JSNode_Continue,
     comClass: C_Node_SimpleNode,
 };
 JSNodeClassMap[JSNODE_SEQUENCE] = {
