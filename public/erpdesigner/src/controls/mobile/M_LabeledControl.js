@@ -148,6 +148,7 @@ class M_LabeledControlKernel extends ControlKernelBase {
 
 var M_LabeledControl_api = new ControlAPIClass(M_LabeledControlKernel_Type);
 M_LabeledControl_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.TextField, M_LabeledControlKernelAttrsSetting), 'label'));
+M_LabeledControl_api.pushApi(new ApiItem_propsetter('label'));
 
 g_controlApi_arr.push(M_LabeledControl_api);
 

@@ -251,7 +251,7 @@ class JSNode_Array_Get extends JSNode_Base {
         this.dataSocket.label = 'index';
         this.dataSocket.inputable = true;
 
-        this.outSocket.type = ValueType.Array;
+        this.outSocket.type = ValueType.Object;
     }
 
     compile(helper, preNodes_arr, belongBlock) {

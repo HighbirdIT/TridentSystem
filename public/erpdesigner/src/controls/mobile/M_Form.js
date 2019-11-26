@@ -248,14 +248,9 @@ class M_FormKernel extends ContainerKernelBase {
         }
         if(scriptBP.name.indexOf(AttrNames.Event.OnSelectedChanged) != -1){
             var selectMode = this.getAttribute(AttrNames.SelectMode);
-            var fixParams_arr = [];
-            switch(selectMode){
-                case ESelectMode.Single:
-                fixParams_arr = ['state','fullPath','record', 'rowIndex', 'rowKey'];
-                break;
-                case ESelectMode.Multi:
+            var fixParams_arr = ['state','fullPath','record', 'rowIndex', 'rowKey'];
+            if(selectMode == ESelectMode.Multi){
                 fixParams_arr = ['state','fullPath','records_arr','rowIndexes_arr', 'rowKeys_arr'];
-                break;
             }
             scriptBP.setFixParam(fixParams_arr);
         }

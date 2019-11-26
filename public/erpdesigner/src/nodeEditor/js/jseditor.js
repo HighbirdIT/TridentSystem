@@ -165,7 +165,7 @@ const JSNodeEditorControls_arr =[
         type:'操纵字符串'
     },
     {
-        label:'字符串-IndexOf',
+        label:'IndexOf',
         nodeClass:JSNode_String_IndexOf,
         type:'操纵字符串'
     },
@@ -242,6 +242,11 @@ const JSNodeEditorControls_arr =[
     {
         label:'关闭页面',
         nodeClass:JSNode_ClosePage,
+        type:'窗体控制'
+    },
+    {
+        label:'添加页面到框架集',
+        nodeClass:JSNode_AddPageToFrameSet,
         type:'窗体控制'
     },
     {

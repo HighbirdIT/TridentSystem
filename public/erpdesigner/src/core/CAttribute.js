@@ -333,6 +333,7 @@ const AttrNames={
     DefaultSelectFirst: 'defaultSelectFirst',
     WidthFactor: 'widthfactor',
     RenderMode: 'rendermode',
+    InitOnRowChanged: 'initOnRowChanged',
 
     Event:{
         OnClick:'onclick',
@@ -340,6 +341,7 @@ const AttrNames={
         OnDelete:'onDelete',
         OnInsert:'onInsert',
         OnLoad:'onLoad',
+        OnInit:'onInit',
         OnChanged:'onChanged',
         OnMouseDown:'onMouseDown',
         OnSelectedChanged:'onSelectedChanged',
