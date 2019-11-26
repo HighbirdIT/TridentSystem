@@ -145,6 +145,9 @@ class JSNode_Base extends Node_Base {
                     case EJsBluePrintFunGroup.CtlValid:
                     case EJsBluePrintFunGroup.Custom:
                         return true;
+                    case EJsBluePrintFunGroup.Event:
+                        return this.bluePrint.startIsInReducer == true;
+                        break;
                 }
             }
             if (preNode.type == JSNODE_CALLCUSSCRIPT) {
@@ -647,6 +650,7 @@ class JSNode_BluePrint extends EventEmitter {
                 //console.log('wer');
             }
         }
+        this.ctlKernel = ctlKernel;
         var haveDoneTip = true;
         var muteMode = false;
         var funName = this.name.replace('#', '_');
@@ -764,6 +768,7 @@ class JSNode_BluePrint extends EventEmitter {
         var isOnmouseDownFun = false;
         var isOnloadFun = false;
         var isNavieFun = false;
+        var isUserControlInitFun = false;
         if (this.group == EJsBluePrintFunGroup.CtlEvent) {
             isOnclickFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnClick;
             isOnchangedFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnChanged;
@@ -771,6 +776,8 @@ class JSNode_BluePrint extends EventEmitter {
             isOnmouseDownFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnMouseDown;
 
             isNavieFun = isOnclickFun || isOnchangedFun || isOnloadFun || isOnmouseDownFun;
+
+            isUserControlInitFun = ctlKernel.type == UserControlKernel_Type && this.name == ctlKernel.id + '_' + AttrNames.Event.OnInit;
         }
         if (this.group == EJsBluePrintFunGroup.CtlAttr || this.group == EJsBluePrintFunGroup.CtlEvent || this.group == EJsBluePrintFunGroup.CtlValid || this.group == EJsBluePrintFunGroup.GridRowBtnHandler || this.group == EJsBluePrintFunGroup.CtlFun) {
             var hadCallParm = this.group == EJsBluePrintFunGroup.CtlAttr;
@@ -806,11 +813,16 @@ class JSNode_BluePrint extends EventEmitter {
                 else if (ctlKernel.type == ButtonKernel_Type) {
                     theFun.scope.getVar(ctlKernel.id + '_path', true, "ev == null ? null : getAttributeByNode(ev.target,'ctl-fullpath')");
                 }
-                else if (ctlKernel.type == UserControlKernel_Type && !isNavieFun) {
-                    theFun.scope.getVar(ctlKernel.id + '_path', true, "getBelongUserCtlPath(_path)");
-                    orginParams_arr.forEach(p => {
-                        theFun.scope.getVar(p, true, "_params." + p);
-                    });
+                else if (ctlKernel.type == UserControlKernel_Type) {
+                    if(!isNavieFun && !isUserControlInitFun){
+                        theFun.scope.getVar(ctlKernel.id + '_path', true, "getBelongUserCtlPath(_path)");
+                        orginParams_arr.forEach(p => {
+                            theFun.scope.getVar(p, true, "_params." + p);
+                        });
+                    }
+                    if(isUserControlInitFun){
+                        theFun.scope.getVar(ctlKernel.id + '_state', true, VarNames.State);
+                    }
                 }
                 else {
                     if (isOnchangedFun) {
@@ -831,6 +843,7 @@ class JSNode_BluePrint extends EventEmitter {
                 if (ctlKernel.type == UserControlKernel_Type) {
                     params_arr = ['state,_params,_oldParams,_path'];
                     theFun.scope.getVar(ctlKernel.id + '_path', true, "getBelongUserCtlPath(_path)");
+                    theFun.scope.getVar(ctlKernel.id + '_state', true, makeStr_getStateByPath(VarNames.State, ctlKernel.id + '_path', '{}'));
                     orginParams_arr.forEach(p => {
                         theFun.scope.getVar(p, true, "_params." + p);
                     });
@@ -959,9 +972,11 @@ class JSNode_BluePrint extends EventEmitter {
                         if (useCtlData.kernel.parent == null) {
                             // usercontrol template
                             //initValue = VarNames.State;
-                            if (theFun.scope.getVar(ctlStateVarName) == null) {
-                                console.error('useCtlData.kernel.parent == null 错误');
-                                return;
+                            if(useCtlData.kernel.type != UserControlKernel_Type){
+                                if (theFun.scope.getVar(ctlStateVarName) == null) {
+                                    console.error('useCtlData.kernel.parent == null 错误');
+                                    return;
+                                }
                             }
                         }
                         var useCtlBelongStateVarName = useFormData.formKernel.isKernelInRow(useCtlData.kernel) ? formNowRowStateVarName : formStateVarName;
@@ -1050,15 +1065,12 @@ class JSNode_BluePrint extends EventEmitter {
                 initValue = null;
                 if (useCtlData.kernel.parent == null) {
                     // usercontrol template
-                    if (theFun.scope.getVar(ctlStateVarName) == null) {
-                        console.error('useCtlData.kernel.parent == null 错误');
-                        return;
+                    if(useCtlData.kernel.type != UserControlKernel_Type){
+                        if (theFun.scope.getVar(ctlStateVarName) == null) {
+                            console.error('useCtlData.kernel.parent == null 错误');
+                            return;
+                        }
                     }
-                    /*
-                    if (this.group == EJsBluePrintFunGroup.CtlAttr) {
-                        initValue = VarNames.State;
-                    }
-                    */
                 }
                 else {
                     if (this.group == EJsBluePrintFunGroup.CtlAttr) {
@@ -1072,9 +1084,24 @@ class JSNode_BluePrint extends EventEmitter {
                             initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.getStatePath()), '{}');
                         }
                     }
+
+                    if(useCtlData.kernel.type == UserControlKernel_Type){
+                        var pathValue = useCtlData.kernel.getStatePath();
+                        if (belongUserControl) {
+                            pathValue = belongUserControl.id + '_path + ' + singleQuotesStr('.' + pathValue);
+                        }
+                        else {
+                            pathValue = singleQuotesStr(pathValue);
+                        }
+                        theFun.scope.getVar(usectlid + '_path', true, pathValue);
+                    }
                 }
 
                 if (initValue) {
+                    if (this.group == EJsBluePrintFunGroup.CtlAttr) {
+                        initValue = "bundle != null && bundle['" + ctlStateVarName + "'] != null ? bundle['" + ctlStateVarName + "'] : " + makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.getStatePath()), '{}');
+                    }
+
                     theFun.scope.getVar(ctlStateVarName, true, initValue);
                 }
 
@@ -7086,7 +7113,7 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             }
             var pathVar = selectedKernel.id + "_path + '.fun_" + funAttrValue.name + "'";
             if (this.isUserControlFunction) {
-                if (!selectedKernel.isTemplate()) {
+                if (!selectedKernel.isTemplate() && belongUserCtl) {
                     pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath('fun_' + funAttrValue.name));
                 }
                 //bundleStr += (bundleStr.length > 0 ? ',' : '') + selectedKernel.getTemplateKernel().id + '_path:' + selectedKernel.id + '_path';
@@ -10113,7 +10140,7 @@ class JSNode_String_Substr extends JSNode_Base {
 
 class JSNode_String_IndexOf extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, JSNODE_STRING_INDEXOF, '字符串-IndexOf', false, nodeJson);
+        super(initData, parentNode, createHelper, JSNODE_STRING_INDEXOF, 'IndexOf', false, nodeJson);
         autoBind(this);
 
         if (nodeJson) {

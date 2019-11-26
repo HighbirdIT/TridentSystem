@@ -457,11 +457,12 @@ class MobileContentCompiler extends ContentCompiler {
         if (orientation == Orientation_V) {
             layoutConfig.addClass('flex-column');
         }
-
+        
         var ctlMidData = this.projectCompiler.getMidData(userCtlKernel.id);
         ctlMidData.needSetKernels_arr = [];
         ctlMidData.inst_arr = [];
         ctlMidData.needSetStateChangedActs_arr = [];
+        ctlMidData.initOnRowChanged = userCtlKernel.getAttribute(AttrNames.InitOnRowChanged);
 
         var childRenderBlock = new FormatFileBlock(userCtlKernel.id);
         var renderBlock = controlReactClass.renderFun;
@@ -749,6 +750,15 @@ class MobileContentCompiler extends ContentCompiler {
         }
         this.ctlRelyOnGraph.allpath_map = [];
         this.ctlRelyOnGraph.allgraph_map = [];
+
+        var onInitunName = userCtlKernel.id + '_' + AttrNames.Event.OnInit;
+        var onInitBp = project.scriptMaster.getBPByName(onInitunName);
+        if (onInitBp != null) {
+            if (this.compileScriptBlueprint(onInitBp, { nomsgbox: true, muteMode:true }) == false) {
+                return false;
+            }
+            ctlInitFun.pushLine(makeStr_callFun(onInitunName, [userCtlKernel.id + '_state', ctlPathParamName]));
+        }
 
         return true;
     }
@@ -1233,6 +1243,7 @@ class MobileContentCompiler extends ContentCompiler {
                 funName: templateReactClass.initFun.name,
                 kernel: theKernel,
                 isDynamic: true,
+                initOnRowChanged: templateKernelMidData.initOnRowChanged,
             });
         }
         if (belongUserControl == null) {
@@ -1925,6 +1936,7 @@ class MobileContentCompiler extends ContentCompiler {
         var rowKeyAttrName = theKernel.id.toLocaleLowerCase() + '_rowkey';
         var hadRefreshIcon = theKernel.getAttribute(AttrNames.RefreshIcon);
         var stableData = theKernel.getAttribute(AttrNames.StableData);
+        var autoPull = theKernel.getAttribute(AttrNames.AutoPull);
 
         var thisfullpath = makeStr_DotProp(fullParentPath, theKernel.id);
         var pathVarName = theKernel.id + '_path';
@@ -2587,14 +2599,18 @@ class MobileContentCompiler extends ContentCompiler {
             belongAccordionKernel = reactParentKernel;
             belongAccordionMidData = this.projectCompiler.getMidData(belongAccordionKernel.id);
             belongAccordionMidData.needSetKernels_arr.push(theKernel);
-            belongAccordionMidData.needCallOnInit_arr.push({
-                name: pullFun.name,
-                params_arr: ['null', 'null', 'this.props.fullPath']
-            });
+            if(autoPull){
+                belongAccordionMidData.needCallOnInit_arr.push({
+                    name: pullFun.name,
+                    params_arr: ['null', 'null', 'this.props.fullPath']
+                });
+            }
         }
 
         var dynamicSetBlock_hadRecord = new FormatFileBlock('dynamicbindhadrow');
         var staticBindBlock = new FormatFileBlock('static');
+        var initUserControlBlock = new FormatFileBlock('initUserControl');
+        var rowInitUserControlBlock = new FormatFileBlock('rowinitUserControl');
         bindFun.pushChild(staticBindBlock);
         thisFormMidData.pullFun = pullFun;
 
@@ -2810,7 +2826,7 @@ class MobileContentCompiler extends ContentCompiler {
             freshFun.rowInitBlk.pushLine("for (var rowIndex = 0; rowIndex < " + VarNames.Records_arr + ".length; ++rowIndex) {", 1);
             freshFun.rowInitBlk.pushLine(makeLine_DeclareVar(VarNames.NowRecord, VarNames.Records_arr + '[rowIndex]', false));
             freshFun.rowInitBlk.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == DefaultKeyColumn ? VarNames.RowIndex : 'GetFromatRowKey(' + VarNames.NowRecord + '.' + keyColumn + ')') + ';');
-            freshFun.pushLine('needSetState["row_" + ' + VarNames.RowKey + ' + "._isdirty"] = false;');
+            freshFun.rowInitBlk.pushLine('needSetState["row_" + ' + VarNames.RowKey + ' + "._isdirty"] = false;');
             //freshFun.rowInitBlk.pushLine('if(needSetState.hasOwnProperty("row_"+'+VarNames.RowKey+')){delete needSetState["row_"+'+VarNames.RowKey+'];}');
             //freshFun.rowInitBlk.pushLine('var rowstate=getStateByPath(' + theKernel.id + '_state,"row_" + ' + VarNames.RowKey + ');');
             //freshFun.rowInitBlk.pushLine('if(rowstate == null){',1);
@@ -3032,11 +3048,13 @@ class MobileContentCompiler extends ContentCompiler {
                 bindPageFun.scope.getVar(VarNames.StartRowIndex, true, '0');
                 bindPageFun.scope.getVar(VarNames.EndRowIndex, true, VarNames.Records_arr + '.length-1');
             }
+            bindPageFun.pushLine('var freshrows_arr = [];');
             bindPageFun.pushLine('for (var rowIndex = startRowIndex; rowIndex <= endRowIndex; ++rowIndex) {', 1);
             bindPageFun.pushLine('var ' + VarNames.NowRecord + ' = records_arr[rowIndex];');
             bindPageFun.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == DefaultKeyColumn ? VarNames.RowIndex : 'GetFromatRowKey(' + VarNames.NowRecord + '.' + keyColumn + ')') + ';');
             bindPageFun.pushLine('var rowstate=getStateByPath(formState,"row_" + ' + VarNames.RowKey + ',{});');
             bindPageFun.pushLine('if(rowstate._isdirty != false){',1);
+            bindPageFun.pushLine('freshrows_arr.push(' + VarNames.RowKey + ');');
             bindPageFun.pushLine('needSetState["row_" + ' + VarNames.RowKey + ' + "._isdirty"] = false;');
             //bindPageFun.pushChild(staticBindBlock);
             bindPageFun.pushChild(bindNowRecordBlock);
@@ -3265,18 +3283,30 @@ class MobileContentCompiler extends ContentCompiler {
                                 console.log(stateName);
                             }
                             if (stateItem.isDynamic) {
-                                switch (stateItem.bindMode) {
-                                    case ScriptBindMode.OnForm:
-                                        if (kernelInRow) {
-                                            bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', theKernel.id + "_path + '.row_' + rowkey"])));
+                                if(stateItem.isInitUserControlCall){
+                                    if (kernelInRow) {
+                                        if(stateItem.initOnRowChanged){
+                                            rowInitUserControlBlock.pushLine(makeStr_callFun(stateItem.funName, [VarNames.State, theKernel.id + "_path + '.row_' + rowkey + " + singleQuotesStr('.' + stateItem.kernel.getStatePath(null, null, null, true, theKernel))], ';'));
                                         }
-                                        else {
-                                            endBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', theKernel.id + '_path'])));
-                                        }
-                                        break;
-                                    case ScriptBindMode.OnNewRow:
-                                        staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', theKernel.id + "_path + '.row_new'"])));
-                                        break;
+                                    }
+                                    else{
+                                        initUserControlBlock.pushLine(makeStr_callFun(stateItem.funName, [VarNames.State, theKernel.id + "_path + " + singleQuotesStr('.' + stateItem.kernel.getStatePath(null, null, null, true, theKernel))], ';'));
+                                    }
+                                }
+                                else{
+                                    switch (stateItem.bindMode) {
+                                        case ScriptBindMode.OnForm:
+                                            if (kernelInRow) {
+                                                bindNowRecordBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', theKernel.id + "_path + '.row_' + rowkey"])));
+                                            }
+                                            else {
+                                                endBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', theKernel.id + '_path'])));
+                                            }
+                                            break;
+                                        case ScriptBindMode.OnNewRow:
+                                            staticBindBlock.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, "row_new." + orginStateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, 'null', theKernel.id + "_path + '.row_new'"])));
+                                            break;
+                                    }
                                 }
                             } else {
                                 if (stateItem.staticValue) {
@@ -3335,7 +3365,10 @@ class MobileContentCompiler extends ContentCompiler {
                             var needResetThisState = true;
                             targetBlocks = [];
                             if (stateItem.isDynamic) {
-                                if (stateItem.bindMode == ScriptBindMode.OnForm) {
+                                if(stateItem.isInitUserControlCall){
+                                    initUserControlBlock.pushLine(makeStr_callFun(stateItem.funName, [VarNames.State, theKernel.id + '_path + ' + singleQuotesStr('.' + stateItem.kernel.getStatePath(null, null, null, true, theKernel))], ';'));
+                                }
+                                else if (stateItem.bindMode == ScriptBindMode.OnForm) {
                                     setLine = makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, stateName), makeStr_callFun(stateItem.funName, [VarNames.ReState, bundleVar.name, pathVarName]));
                                     var otherUseColumnSetState = targetKernelMidData.needSetStates_arr.find(item => {
                                         return item != stateItem && item.name == stateItem.name && !item.isDynamic && item.useColumn;
@@ -3427,6 +3460,39 @@ class MobileContentCompiler extends ContentCompiler {
         if (isPageForm) {
             if (useDS) {
                 bindFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, VarNames.NowRecord), VarNames.NowRecord));
+            }
+            if(initUserControlBlock.childs_arr.length > 0){
+                bindFun.pushLine('setTimeout(() => {', 1);
+                bindFun.pushLine('store.dispatch(makeAction_callFunction(state=>{', 1);
+                bindFun.pushChild(initUserControlBlock);
+                bindFun.subNextIndent();
+                bindFun.pushLine('}));');
+                bindFun.subNextIndent();
+                bindFun.pushLine('},20);');
+            }
+        }
+        else{
+            if(rowInitUserControlBlock.childs_arr.length > 0 || initUserControlBlock.childs_arr.length > 0){
+                var useBindFun = isGridForm ? bindPageFun : freshFun;
+                useBindFun.pushLine('setTimeout(() => {', 1);
+                useBindFun.pushLine('store.dispatch(makeAction_callFunction(state=>{', 1);
+                if(rowInitUserControlBlock.childs_arr.length > 0){
+                    if(isGridForm){
+                        useBindFun.pushLine('freshrows_arr.forEach(rowkey=>{',1);
+                    }
+                    else{
+                        useBindFun.pushLine(VarNames.Records_arr + ".forEach(record=>{", 1);
+                        useBindFun.pushLine('var rowkey = record.' + keyColumn + ';');
+                    }
+                    useBindFun.pushChild(rowInitUserControlBlock);
+                    useBindFun.subNextIndent();
+                    useBindFun.pushLine('});');
+                }
+                useBindFun.pushChild(initUserControlBlock);
+                useBindFun.subNextIndent();
+                useBindFun.pushLine('}));');
+                useBindFun.subNextIndent();
+                useBindFun.pushLine('},20);');
             }
         }
 
@@ -5688,7 +5754,7 @@ class MobileContentCompiler extends ContentCompiler {
                 if (hadNeedWatchParam) {
                     // 有用到参数,等待参数变更时触发pullfun
                 }
-                else {
+                else if(autoPull) {
                     // 没有用到参数，父对象刷新时出发pullfun
                     //var timeoutBlock = null;
                     if (belongFormMidData != null) {

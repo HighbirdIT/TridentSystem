@@ -165,7 +165,7 @@ const JSNodeEditorControls_arr =[
         type:'操纵字符串'
     },
     {
-        label:'字符串-IndexOf',
+        label:'IndexOf',
         nodeClass:JSNode_String_IndexOf,
         type:'操纵字符串'
     },

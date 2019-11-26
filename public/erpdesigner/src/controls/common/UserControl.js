@@ -3,9 +3,13 @@ const UserControlKernelTempleAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr),
         new CAttribute('默认渲染', 'DefRender', ValueType.String, '手机', true, false, ['手机', '电脑']),
         new CAttribute('refID', 'refID', ValueType.String, 'none', true, false, null, null, false),
+        new CAttribute('每行初始化', AttrNames.InitOnRowChanged, ValueType.Boolean, false),
         new CAttribute('属性列表', AttrNames.ParamApi, ValueType.String, '', true, true),
         new CAttribute('自订事件', AttrNames.EventApi, ValueType.UserControlEvent, '', true, true),
         new CAttribute('自订方法', AttrNames.FunctionApi, ValueType.CustomFunction, '', true, true),
+    ]),
+    new CAttributeGroup('事件',[
+        new CAttribute('OnInit', AttrNames.Event.OnInit, ValueType.Event),
     ]),
 ], true);
 
@@ -52,6 +56,9 @@ class UserControlKernel extends ContainerKernelBase {
             });
             gUserControlAttsByType_map[oldAttrsSettingID] = gUserControlAttsByType_map[this.attrsSettingID];
             this.synControlAttrs();
+
+            var theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnInit);
+            this.scriptCreated(null, theBP);
         }
         else {
             if (kernelJson) {
@@ -66,6 +73,17 @@ class UserControlKernel extends ContainerKernelBase {
         }
         var self = this;
         autoBind(self);
+    }
+
+    scriptCreated(attrName, scriptBP) {
+        if(scriptBP == null){
+            return;
+        }
+
+        if(scriptBP.name.indexOf(AttrNames.Event.OnInit) != -1){
+            scriptBP.startIsInReducer = true;
+            scriptBP.setFixParam([VarNames.State, this.id + '_path']);
+        }
     }
 
     __restoreChildren(createHelper, kernelJson) {
