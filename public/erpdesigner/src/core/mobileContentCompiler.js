@@ -1097,6 +1097,9 @@ class MobileContentCompiler extends ContentCompiler {
             case PopperButtonKernel_Type:
                 rlt = this.compilePopperButtonKernel(theKernel, renderBlock, renderFun);
                 break;
+            case FrameSetKernel_Type:
+                rlt = this.compileFrameSetKernel(theKernel, renderBlock, renderFun);
+                break;
             default:
                 logManager.error('不支持的编译kernel type:' + theKernel.type);
         }
@@ -1197,6 +1200,7 @@ class MobileContentCompiler extends ContentCompiler {
             var eventBPname = theKernel.id + '_' + eventAttribute.name;
             var eventBp = project.scriptMaster.getBPByName(eventBPname);
             if (eventBp != null) {
+                eventBp.startIsInReducer = true;  // 自订事件都是在reducer中
                 var templateAttrValue = templateKernel.getAttribute(eventAttribute.name.replace('#', '_'));
                 var eventFunName = theKernel.id + '_' + templateAttrValue.name;
                 var compileRet = this.compileScriptBlueprint(eventBp, { funName: eventFunName, params: ['state', '_params', '_oldParams', '_path'] });
@@ -1976,7 +1980,11 @@ class MobileContentCompiler extends ContentCompiler {
         var watchStateName = null;
 
         if (selectMode == ESelectMode.None) {
-            OnSelectedChangedBp = null;
+            if(OnSelectedChangedBp){
+                if(!clickSelectable){
+                    OnSelectedChangedBp = null;
+                }
+            }
         }
         else{
             watchStateName = selectMode == ESelectMode.Single ? VarNames.SelectedValue : VarNames.SelectedValues_arr;
@@ -2769,13 +2777,14 @@ class MobileContentCompiler extends ContentCompiler {
                 formRowSelectedChangedFun.pushLine('var selectedProfile = ' + makeStr_callFun('GetFormSelectedProfile', ['formState', singleQuotesStr(keyColumn)], ';'));
 
                 var callParams_arr = [];
-                if (selectMode == ESelectMode.Single) {
+                if (selectMode != ESelectMode.Multi) {
                     callParams_arr = ['state', VarNames.FullPath, 'selectedProfile.record', 'selectedProfile.index', 'selectedProfile.key'];
                 }
                 else {
                     callParams_arr = ['state', VarNames.FullPath, 'selectedProfile.records_arr', 'selectedProfile.indexes_arr', 'selectedProfile.keys_arr'];
                 }
-                this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theKernel, formRowSelectedChangedFun.name, theKernel, watchStateName, ['state', makeStr_callFun('getParentPathByKey', ['path', singleQuotesStr(theKernel.id)])]);
+                
+                this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theKernel, formRowSelectedChangedFun.name, theKernel, selectMode == ESelectMode.Multi ? VarNames.SelectedValues_arr : VarNames.SelectedValue, ['state', makeStr_callFun('getParentPathByKey', ['path', singleQuotesStr(theKernel.id)])]);
                 formRowSelectedChangedFun.pushLine('setTimeout(() => {' + makeStr_callFun(OnSelectedChangedFunName, callParams_arr, ';') + '},20);', 1);
             }
         }
@@ -5366,6 +5375,24 @@ class MobileContentCompiler extends ContentCompiler {
                 return false;
             }
         }
+    }
+
+    compileFrameSetKernel(theKernel, renderBlock, renderFun) {
+        var project = this.project;
+        var layoutConfig = theKernel.getLayoutConfig();
+        var clientSide = this.clientSide;
+
+        var ctlTag = new FormatHtmlTag(theKernel.id, 'VisibleERPC_FrameSet', this.clientSide);
+        this.modifyControlTag(theKernel, ctlTag);
+        ctlTag.class = layoutConfig.class;
+        ctlTag.style = layoutConfig.style;
+
+        ctlTag.setAttr('id', theKernel.id);
+        var parentPath = this.getKernelParentPath(theKernel);
+        ctlTag.setAttr('parentPath', parentPath);
+        renderBlock.pushChild(ctlTag);
+
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
     }
 
     compileEnd() {

@@ -245,6 +245,11 @@ const JSNodeEditorControls_arr =[
         type:'窗体控制'
     },
     {
+        label:'添加页面到框架集',
+        nodeClass:JSNode_AddPageToFrameSet,
+        type:'窗体控制'
+    },
+    {
         label:'弹出消息窗',
         nodeClass:JSNode_PopMessageBox,
         type:'消息窗控制'

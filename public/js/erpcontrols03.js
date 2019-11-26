@@ -280,11 +280,7 @@ function closePage(pid) {
     }
 }
 
-function openPage(name, stepcode, stepdata, mode, onMsgFun) {
-    if (name == null || name.length == 0) {
-        console.error('openPage 的name参数为空');
-        return;
-    }
+function getPagePath(name, stepcode, stepdata) {
     var targetPath = '/erppage/' + (isMobile ? 'mb' : 'pc') + '/' + name;
     if (stepcode != null && stepcode != '0') {
         targetPath += '?flowStep=' + stepcode;
@@ -295,6 +291,15 @@ function openPage(name, stepcode, stepdata, mode, onMsgFun) {
             targetPath += '&stepData' + stepcode + '=' + stepdata;
         }
     }
+    return targetPath;
+}
+
+function openPage(name, stepcode, stepdata, mode, onMsgFun) {
+    if (name == null || name.length == 0) {
+        console.error('openPage 的name参数为空');
+        return;
+    }
+    var targetPath = getPagePath(name, stepcode, stepdata);
     if (mode == 'topframe') {
         if (gParentFrame) {
             setTimeout(function () {
@@ -2290,6 +2295,7 @@ var VisibleERPC_CheckBox = null;
 var VisibleERPC_Button = null;
 var VisibleERPC_PopperBtn = null;
 var VisibleERPC_Frame = null;
+var VisibleERPC_FrameSet = null;
 var gNeedCallOnErpControlInit_arr = [];
 
 function ErpControlInit() {
@@ -2300,7 +2306,8 @@ function ErpControlInit() {
     VisibleERPC_CheckBox = ReactRedux.connect(ERPC_CheckBox_mapstatetoprops, ERPC_CheckBox_dispatchtorprops)(ERPC_CheckBox);
     VisibleERPC_Button = ReactRedux.connect(ERPC_Button_mapstatetoprops, ERPC_Button_dispatchtorprops)(ERPC_Button);
     VisibleERPC_PopperBtn = ReactRedux.connect(ERPC_PopperBtn_mapstatetoprops, EERPC_PopperBtn_dispatchtorprops)(ERPC_PopperBtn);
-    VisibleERPC_Frame = ReactRedux.connect(ERPC_Frame_mapstatetoprops, ERPC_Frame_dispatchtorprops)(ERPC_Frame);
+    VisibleERPC_FrameSet = ReactRedux.connect(ERPC_FrameSet_mapstatetoprops, ERPC_FrameSet_dispatchtorprops)(ERPC_FrameSet);
+    ERPC_FrameSet_mapstatetoprops;
 
     gNeedCallOnErpControlInit_arr.forEach(function (elem) {
         if (typeof elem == 'function') {
@@ -3656,30 +3663,190 @@ function ERPC_Frame_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
-var ERPC_TopLevelFrame = function (_React$PureComponent18) {
-    _inherits(ERPC_TopLevelFrame, _React$PureComponent18);
+function AddPageToFrameSet(state, ctlpath, title, pageCode, pageName, stepCode, stepData, closeable) {
+    var hadState = state != null;
+    state = hadState ? state : store.getState();
+    var ctlState = getStateByPath(state, ctlpath, {});
+    var nowItems_arr = ctlState.items_arr == null ? [] : ctlState.items_arr.concat();
+    var itemKey = pageCode + (stepCode == null ? '' : '-' + stepCode);
+    var sameKeyItem = nowItems_arr.find(function (item) {
+        return item.key == itemKey;
+    });
+
+    if (sameKeyItem != null) {
+        sameKeyItem.title = title;
+        sameKeyItem.stepCode = stepCode;
+        sameKeyItem.stepData = stepData;
+    }
+    if (sameKeyItem == null) {
+        sameKeyItem = {
+            pageCode: pageCode,
+            pageName: pageName,
+            stepCode: stepCode,
+            stepData: stepData,
+            title: title,
+            key: itemKey,
+            closeable: closeable
+        };
+        nowItems_arr.push(sameKeyItem);
+    }
+    var pagesrc = window.location.origin + getPagePath(pageName, stepCode, stepData);
+    sameKeyItem.contentElem = React.createElement('iframe', { src: pagesrc, className: 'w-100 h-100', frameBorder: '0' });
+    var needSetState = {
+        selectedKey: itemKey,
+        items_arr: nowItems_arr
+    };
+    if (hadState) {
+        setManyStateByPath(state, ctlpath, needSetState);
+    } else {
+        store.dispatch(makeAction_setManyStateByPath(needSetState, ctlpath));
+    }
+}
+
+var ERPC_FrameSet = function (_React$PureComponent18) {
+    _inherits(ERPC_FrameSet, _React$PureComponent18);
+
+    function ERPC_FrameSet(props) {
+        _classCallCheck(this, ERPC_FrameSet);
+
+        var _this25 = _possibleConstructorReturn(this, (ERPC_FrameSet.__proto__ || Object.getPrototypeOf(ERPC_FrameSet)).call(this, props));
+
+        _this25.headerItemStyle = { minWidth: '6em' };
+        _this25.clickCloseHandler = _this25.clickCloseHandler.bind(_this25);
+        _this25.clickHeaderHandler = _this25.clickHeaderHandler.bind(_this25);
+        return _this25;
+    }
+
+    _createClass(ERPC_FrameSet, [{
+        key: 'clickCloseHandler',
+        value: function clickCloseHandler() {
+            var _this26 = this;
+
+            var newItems_arr = [];
+            var pos = 0;
+            this.props.items_arr.forEach(function (item, index) {
+                if (item.key != _this26.props.selectedKey) {
+                    newItems_arr.push(item);
+                } else {
+                    pos = index;
+                }
+            });
+            var newSelectedValue = null;
+            if (pos < newItems_arr.length) {
+                newSelectedValue = newItems_arr[pos].key;
+            } else if (newItems_arr.length > 0) {
+                newSelectedValue = newItems_arr[newItems_arr.length - 1].key;
+            }
+            store.dispatch(makeAction_setManyStateByPath({
+                selectedKey: newSelectedValue,
+                items_arr: newItems_arr
+            }, this.props.fullPath));
+        }
+    }, {
+        key: 'clickHeaderHandler',
+        value: function clickHeaderHandler(ev) {
+            var key = getAttributeByNode(ev.target, 'd-key');
+            if (key == this.props.selectedKey) {
+                return;
+            }
+            store.dispatch(makeAction_setStateByPath(key, MakePath(this.props.fullPath, 'selectedKey')));
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var _this27 = this;
+
+            if (this.props.visible == false) {
+                return null;
+            }
+            var itemsElem_arr = [];
+            var selectedKey = this.props.selectedKey;
+            var items_arr = this.props.items_arr;
+            var selectedItem = null;
+            if (items_arr != null) {
+                if (selectedKey == null) {
+                    if (items_arr.length > 0) {
+                        selectedKey = items_arr[0].key;
+                    }
+                }
+                itemsElem_arr = items_arr.map(function (item) {
+                    var isSelected = item.key == selectedKey;
+                    var btnElem = React.createElement(
+                        'button',
+                        { 'd-key': item.key, onClick: _this27.clickHeaderHandler, key: item.key, type: 'button', className: 'btn btn-sm rounded-0 btn-' + (isSelected ? 'light' : 'secondary'), style: _this27.headerItemStyle },
+                        item.title
+                    );
+                    if (isSelected) {
+                        selectedItem = item;
+                        return [btnElem, React.createElement('button', { onClick: _this27.clickCloseHandler, key: 'close', type: 'button', className: 'btn btn-sm btn-light fa fa-close text-secondary rounded-0' })];
+                    }
+                    return btnElem;
+                });
+            }
+            return React.createElement(
+                'div',
+                { className: 'd-flex flex-column ' + (this.props.className == null ? '' : this.props.className), style: this.props.style },
+                React.createElement(
+                    'div',
+                    { className: 'btn-group bg-secondary flex-grow-0 flex-shrink-0', style: { minHeight: '2em' } },
+                    itemsElem_arr
+                ),
+                items_arr && items_arr.map(function (item) {
+                    return React.createElement(
+                        'div',
+                        { key: item.key, className: 'w-100 h-100' + (item == selectedItem ? '' : ' d-none') },
+                        item.contentElem
+                    );
+                })
+            );
+        }
+    }]);
+
+    return ERPC_FrameSet;
+}(React.PureComponent);
+
+function ERPC_FrameSet_mapstatetoprops(state, ownprops) {
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    var rowState = propProfile.rowState;
+
+    return {
+        visible: ctlState.visible,
+        items_arr: ctlState.items_arr,
+        selectedKey: ctlState.selectedKey,
+        fullParentPath: propProfile.fullParentPath,
+        fullPath: propProfile.fullPath
+    };
+}
+
+function ERPC_FrameSet_dispatchtorprops(dispatch, ownprops) {
+    return {};
+}
+
+var ERPC_TopLevelFrame = function (_React$PureComponent19) {
+    _inherits(ERPC_TopLevelFrame, _React$PureComponent19);
 
     function ERPC_TopLevelFrame(props) {
         _classCallCheck(this, ERPC_TopLevelFrame);
 
-        var _this25 = _possibleConstructorReturn(this, (ERPC_TopLevelFrame.__proto__ || Object.getPrototypeOf(ERPC_TopLevelFrame)).call(this, props));
+        var _this28 = _possibleConstructorReturn(this, (ERPC_TopLevelFrame.__proto__ || Object.getPrototypeOf(ERPC_TopLevelFrame)).call(this, props));
 
-        _this25.style = {
+        _this28.style = {
             left: '0px',
             top: '0px',
             zIndex: 10000
         };
-        _this25.state = {
+        _this28.state = {
             srcs_arr: [],
             states_arr: [],
             useSrc: null,
             useState: null
         };
-        _this25.onloadHandler = _this25.onloadHandler.bind(_this25);
-        _this25.onErrorHandler = _this25.onErrorHandler.bind(_this25);
-        _this25.push = _this25.push.bind(_this25);
-        _this25.pop = _this25.pop.bind(_this25);
-        return _this25;
+        _this28.onloadHandler = _this28.onloadHandler.bind(_this28);
+        _this28.onErrorHandler = _this28.onErrorHandler.bind(_this28);
+        _this28.push = _this28.push.bind(_this28);
+        _this28.pop = _this28.pop.bind(_this28);
+        return _this28;
     }
 
     _createClass(ERPC_TopLevelFrame, [{
@@ -3790,26 +3957,26 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
     return ERPC_TopLevelFrame;
 }(React.PureComponent);
 
-var ERPC_IFrame = function (_React$PureComponent19) {
-    _inherits(ERPC_IFrame, _React$PureComponent19);
+var ERPC_IFrame = function (_React$PureComponent20) {
+    _inherits(ERPC_IFrame, _React$PureComponent20);
 
     function ERPC_IFrame(props) {
         _classCallCheck(this, ERPC_IFrame);
 
-        var _this26 = _possibleConstructorReturn(this, (ERPC_IFrame.__proto__ || Object.getPrototypeOf(ERPC_IFrame)).call(this, props));
+        var _this29 = _possibleConstructorReturn(this, (ERPC_IFrame.__proto__ || Object.getPrototypeOf(ERPC_IFrame)).call(this, props));
 
-        _this26.onloadHandler = _this26.onloadHandler.bind(_this26);
-        _this26.onErrorHandler = _this26.onErrorHandler.bind(_this26);
-        _this26.push = _this26.push.bind(_this26);
-        _this26.pop = _this26.pop.bind(_this26);
+        _this29.onloadHandler = _this29.onloadHandler.bind(_this29);
+        _this29.onErrorHandler = _this29.onErrorHandler.bind(_this29);
+        _this29.push = _this29.push.bind(_this29);
+        _this29.pop = _this29.pop.bind(_this29);
 
-        _this26.state = {
+        _this29.state = {
             srcs_arr: [],
             states_arr: [],
             useSrc: null,
             useState: null
         };
-        return _this26;
+        return _this29;
     }
 
     _createClass(ERPC_IFrame, [{

@@ -237,11 +237,7 @@ function closePage(pid) {
     }
 }
 
-function openPage(name, stepcode, stepdata, mode, onMsgFun) {
-    if (name == null || name.length == 0) {
-        console.error('openPage 的name参数为空');
-        return;
-    }
+function getPagePath(name, stepcode, stepdata) {
     var targetPath = '/erppage/' + (isMobile ? 'mb' : 'pc') + '/' + name;
     if (stepcode != null && stepcode != '0') {
         targetPath += '?flowStep=' + stepcode;
@@ -252,6 +248,15 @@ function openPage(name, stepcode, stepdata, mode, onMsgFun) {
             targetPath += '&stepData' + stepcode + '=' + stepdata;
         }
     }
+    return targetPath;
+}
+
+function openPage(name, stepcode, stepdata, mode, onMsgFun) {
+    if (name == null || name.length == 0) {
+        console.error('openPage 的name参数为空');
+        return;
+    }
+    var targetPath = getPagePath(name, stepcode, stepdata);
     if (mode == 'topframe') {
         if (gParentFrame) {
             setTimeout(() => {
@@ -326,17 +331,17 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
         this.inited = false;
     }
 
-    windowMouseDownHandler(ev){
+    windowMouseDownHandler(ev) {
         var target;
-        if(ev){
+        if (ev) {
             target = ev.target;
         }
-        else{
+        else {
             target = window.event.srcElement;
         }
         var parent = target.parentElement;
-        while(parent){
-            if(parent == this.containerRef.current){
+        while (parent) {
+            if (parent == this.containerRef.current) {
                 return;
             }
             parent = parent.parentElement;
@@ -662,11 +667,11 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
                     </div>
                     <input className='form-control' type='text' value={keyword} onChange={this.keyInputChanged} />
                     {
-                        gPCRenderMode ? 
-                        <div className='input-group-append'>
-                            <span className='text-primary input-group-text p-1' >{freshIconElem}</span>
-                        </div>
-                        : null
+                        gPCRenderMode ?
+                            <div className='input-group-append'>
+                                <span className='text-primary input-group-text p-1' >{freshIconElem}</span>
+                            </div>
+                            : null
                     }
                 </div>);
             }
@@ -959,14 +964,14 @@ class ERPC_DropDown extends React.PureComponent {
         var topSpace = rootRect.top;
         var bottomSpace = windowHeight - rootRect.bottom;
         var rlt = {
-            width:rootDiv.offsetWidth + 'px',
-            left:rootRect.left + 'px',
+            width: rootDiv.offsetWidth + 'px',
+            left: rootRect.left + 'px',
         };
-        if(bottomSpace > topSpace){
+        if (bottomSpace > topSpace) {
             rlt.top = rootRect.bottom + 'px';
             rlt.maxHeight = (bottomSpace - 20) + 'px';
         }
-        else{
+        else {
             rlt.bottom = (windowHeight - rootRect.top) + 'px';
             rlt.maxHeight = (topSpace - 20) + 'px';
         }
@@ -1535,8 +1540,8 @@ class ERPC_LabeledControl extends React.PureComponent {
             toolTipIcon = <ERPC_PopperBtn className='btn btn-sm btn-link' anchor='left' labelelem={<i className='fa fa-question-circle fa-2x' />} ><span>{this.props.tooltip}</span></ERPC_PopperBtn>;
         }
         var renderMode = this.props.rm;
-        if(renderMode == null){
-            if(gPCRenderMode){
+        if (renderMode == null) {
+            if (gPCRenderMode) {
                 renderMode = 'pc';
             }
         }
@@ -1947,6 +1952,7 @@ var VisibleERPC_CheckBox = null;
 var VisibleERPC_Button = null;
 var VisibleERPC_PopperBtn = null;
 var VisibleERPC_Frame = null;
+var VisibleERPC_FrameSet = null;
 const gNeedCallOnErpControlInit_arr = [];
 
 function ErpControlInit() {
@@ -1957,7 +1963,8 @@ function ErpControlInit() {
     VisibleERPC_CheckBox = ReactRedux.connect(ERPC_CheckBox_mapstatetoprops, ERPC_CheckBox_dispatchtorprops)(ERPC_CheckBox);
     VisibleERPC_Button = ReactRedux.connect(ERPC_Button_mapstatetoprops, ERPC_Button_dispatchtorprops)(ERPC_Button);
     VisibleERPC_PopperBtn = ReactRedux.connect(ERPC_PopperBtn_mapstatetoprops, EERPC_PopperBtn_dispatchtorprops)(ERPC_PopperBtn);
-    VisibleERPC_Frame = ReactRedux.connect(ERPC_Frame_mapstatetoprops, ERPC_Frame_dispatchtorprops)(ERPC_Frame);
+    VisibleERPC_FrameSet = ReactRedux.connect(ERPC_FrameSet_mapstatetoprops, ERPC_FrameSet_dispatchtorprops)(ERPC_FrameSet);
+    ERPC_FrameSet_mapstatetoprops
 
     gNeedCallOnErpControlInit_arr.forEach(elem => {
         if (typeof elem == 'function') {
@@ -2003,7 +2010,7 @@ function ERPC_PageForm_clickPlusNavBtnHandler() {
 }
 
 function ERPC_PageForm_clickUnPlusNavBtnHandler() {
-    if(this.saveInsertCache){
+    if (this.saveInsertCache) {
         this.saveInsertCache();
     }
     store.dispatch(makeAction_setStateByPath(this.prePlusIndex, MakePath(this.props.parentPath, this.props.id, 'recordIndex')));
@@ -2187,7 +2194,7 @@ function ERPC_GridForm_SetRowPerPage(value) {
     }, formPath));
     if (!pageIndexChanaged && this.props.bindpagefun) {
         var self = this;
-        store.dispatch(makeAction_callFunction(state=>{
+        store.dispatch(makeAction_callFunction(state => {
             self.props.bindpagefun(state, self.props.fullPath);
         }));
     }
@@ -3009,6 +3016,141 @@ function ERPC_Frame_dispatchtorprops(dispatch, ownprops) {
     };
 }
 
+function AddPageToFrameSet(state, ctlpath, title, pageCode, pageName, stepCode, stepData, closeable) {
+    var hadState = state != null;
+    state = hadState ? state : store.getState();
+    var ctlState = getStateByPath(state, ctlpath, {});
+    var nowItems_arr = ctlState.items_arr == null ? [] : ctlState.items_arr.concat();
+    var itemKey = pageCode + (stepCode == null ? '' : '-' + stepCode);
+    var sameKeyItem = nowItems_arr.find(item => { return item.key == itemKey; });
+
+    if (sameKeyItem != null) {
+        sameKeyItem.title = title;
+        sameKeyItem.stepCode = stepCode;
+        sameKeyItem.stepData = stepData;
+    }
+    if (sameKeyItem == null) {
+        sameKeyItem = {
+            pageCode: pageCode,
+            pageName: pageName,
+            stepCode: stepCode,
+            stepData: stepData,
+            title: title,
+            key: itemKey,
+            closeable: closeable,
+        };
+        nowItems_arr.push(sameKeyItem);
+    }
+    var pagesrc = window.location.origin + getPagePath(pageName, stepCode, stepData);
+    sameKeyItem.contentElem = <iframe src={pagesrc} className='w-100 h-100' frameBorder='0' ></iframe>;
+    var needSetState = {
+        selectedKey: itemKey,
+        items_arr: nowItems_arr,
+    };
+    if (hadState) {
+        setManyStateByPath(state, ctlpath, needSetState);
+    }
+    else {
+        store.dispatch(makeAction_setManyStateByPath(needSetState, ctlpath));
+    }
+}
+
+class ERPC_FrameSet extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        this.headerItemStyle = { minWidth: '6em' };
+        this.clickCloseHandler = this.clickCloseHandler.bind(this);
+        this.clickHeaderHandler = this.clickHeaderHandler.bind(this);
+    }
+
+    clickCloseHandler(){
+        var newItems_arr = [];
+        var pos = 0;
+        this.props.items_arr.forEach((item,index)=>{
+            if(item.key != this.props.selectedKey){
+                newItems_arr.push(item);
+            }
+            else{
+                pos = index;
+            }
+        });
+        var newSelectedValue = null;
+        if(pos < newItems_arr.length){
+            newSelectedValue = newItems_arr[pos].key;
+        }
+        else if(newItems_arr.length > 0){
+            newSelectedValue = newItems_arr[newItems_arr.length - 1].key;
+        }
+        store.dispatch(makeAction_setManyStateByPath({
+            selectedKey: newSelectedValue,
+            items_arr: newItems_arr,
+        }, this.props.fullPath));
+    }
+
+    clickHeaderHandler(ev){
+        var key = getAttributeByNode(ev.target,'d-key');
+        if(key == this.props.selectedKey){
+            return;
+        }
+        store.dispatch(makeAction_setStateByPath(key, MakePath(this.props.fullPath, 'selectedKey')));
+    }
+
+    render() {
+        if (this.props.visible == false) {
+            return null;
+        }
+        var itemsElem_arr = [];
+        var selectedKey = this.props.selectedKey;
+        var items_arr = this.props.items_arr;
+        var selectedItem = null;
+        if (items_arr != null) {
+            if (selectedKey == null) {
+                if (items_arr.length > 0) {
+                    selectedKey = items_arr[0].key;
+                }
+            }
+            itemsElem_arr = items_arr.map(item => {
+                var isSelected = item.key == selectedKey;
+                var btnElem = <button d-key={item.key} onClick={this.clickHeaderHandler} key={item.key} type='button' className={'btn btn-sm rounded-0 btn-' + (isSelected ? 'light' : 'secondary')} style={this.headerItemStyle}>{item.title}</button>;
+                if (isSelected) {
+                    selectedItem = item;
+                    return [btnElem,
+                        <button onClick={this.clickCloseHandler} key='close' type='button' className='btn btn-sm btn-light fa fa-close text-secondary rounded-0' ></button>
+                    ];
+                }
+                return btnElem;
+            });
+        }
+        return <div className={'d-flex flex-column ' + (this.props.className == null ? '' : this.props.className)} style={this.props.style} >
+            <div className='btn-group bg-secondary flex-grow-0 flex-shrink-0' style={{ minHeight: '2em' }}>
+                {itemsElem_arr}
+            </div>
+            {items_arr && items_arr.map(item => {
+                return <div key={item.key} className={'w-100 h-100' + (item == selectedItem ? '' : ' d-none')}>{item.contentElem}</div>
+            })}
+        </div>
+    }
+}
+
+function ERPC_FrameSet_mapstatetoprops(state, ownprops) {
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    var rowState = propProfile.rowState;
+
+    return {
+        visible: ctlState.visible,
+        items_arr: ctlState.items_arr,
+        selectedKey: ctlState.selectedKey,
+        fullParentPath: propProfile.fullParentPath,
+        fullPath: propProfile.fullPath,
+    };
+}
+
+function ERPC_FrameSet_dispatchtorprops(dispatch, ownprops) {
+    return {
+    };
+}
+
 class ERPC_TopLevelFrame extends React.PureComponent {
     constructor(props) {
         super(props);
@@ -3147,7 +3289,7 @@ class ERPC_IFrame extends React.PureComponent {
     }
 
     pop() {
-        if(this.state.srcs_arr.length == 0){
+        if (this.state.srcs_arr.length == 0) {
             return;
         }
         var newsrcs_arr = this.state.srcs_arr.concat();
@@ -3209,7 +3351,7 @@ class ERPC_IFrame extends React.PureComponent {
         if (this.state.err != null) {
             iframElem = this.state.err;
         }
-        else if(!IsEmptyString(this.props.src != null)){
+        else if (!IsEmptyString(this.props.src != null)) {
             iframElem = <iframe src={this.props.src} className='w-100 h-100' frameBorder='0' onLoad={this.onloadHandler} onError={this.onErrorHandler} ></iframe>;
         }
         return <div className={this.props.className} style={this.props.style} >
@@ -3315,11 +3457,11 @@ function GetDistance(lat1, lng1, lat2, lng2) {
     return s;
 }
 
-function GetFromatRowKey(rowkey){
-    if(typeof rowkey == 'number'){
+function GetFromatRowKey(rowkey) {
+    if (typeof rowkey == 'number') {
         return rowkey;
     }
-    if(!isNaN(rowkey)){
+    if (!isNaN(rowkey)) {
         return parseInt(rowkey);
     }
     return rowkey;
