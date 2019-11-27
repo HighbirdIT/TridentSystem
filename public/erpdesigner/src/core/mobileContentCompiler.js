@@ -5816,7 +5816,7 @@ class MobileContentCompiler extends ContentCompiler {
                     else {
                         var pageInitFun = clientSide.scope.getFunction(makeFName_initPage(belongPage));
                         var timeoutBlock = pageInitFun.getChild('timeout');
-                        timeoutBlock.pushLine(makeStr_callFun(pullFun.name, ['null', true, singleQuotesStr(belongPage.id)]) + ';');
+                        timeoutBlock.pushLine(makeStr_callFun(pullFun.name, ['null', true, singleQuotesStr(theKernel.fullParentPath)]) + ';');
                     }
                 }
 
