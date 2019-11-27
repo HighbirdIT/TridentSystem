@@ -3830,7 +3830,13 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
                 belongUserCtl = selectedKernel;
             }
             if (belongUserCtl) {
-                pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath(propAttr.label, '.', { mapVarName: VarNames.RowKeyInfo_map }));
+                if(belongUserCtl == relCtlKernel){
+                    // 这中情况是自订控件内部方法
+                    pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + propAttr.label);
+                }
+                else{
+                    pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath(propAttr.label, '.', { mapVarName: VarNames.RowKeyInfo_map }));
+                }
             }
             if (batchNode) {
                 myJSBlock.pushLine(needSetVarName + '[' + pathVar + '] = ' + valueStr + ';');
@@ -7005,20 +7011,23 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         if (!this.isUserControlEvent && !this.isUserControlFunction) {
             return;
         }
+        var project = this.bluePrint.master.project;
         var params_arr = [];
         var selectedCtlid = this.ctlSocket.getExtra('ctlid');
         var funAttrName = this.ctlSocket.getExtra('funAttrName');
-        var selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
-        if (selectedKernel && selectedKernel.isTemplate()) {
+        var selectedKernel = project.getControlById(selectedCtlid);
+        if (selectedKernel) {
             if (this.isUserControlEvent) {
-                funAttrName = funAttrName.replace('#', '_');
-                var funAttrValue = selectedKernel[funAttrName];
-                if (funAttrValue && !IsEmptyString(funAttrValue.params)) {
-                    params_arr = funAttrValue.params.split(';');
+                if(selectedKernel.isTemplate()){
+                    funAttrName = funAttrName.replace('#', '_');
+                    var funAttrValue = selectedKernel[funAttrName];
+                    if (funAttrValue && !IsEmptyString(funAttrValue.params)) {
+                        params_arr = funAttrValue.params.split(';');
+                    }
                 }
             }
             else {
-                var funBPname = selectedKernel.id + '_' + funAttrName;
+                var funBPname = selectedKernel.getTemplateKernel().id + '_' + funAttrName;
                 var funBp = project.scriptMaster.getBPByName(funBPname);
                 if (funBp != null) {
                     params_arr = funBp.getParamNames();
