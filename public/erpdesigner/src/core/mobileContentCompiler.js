@@ -3942,7 +3942,7 @@ class MobileContentCompiler extends ContentCompiler {
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'selectedIndex'), makeStr_DotProp(VarNames.CtlState, 'selectedIndex') + (defaultTabitemID == '0' ? '' : ' ? ' + makeStr_DotProp(VarNames.CtlState, 'selectedIndex') + ' : ' + singleQuotesStr(defaultTabitemID))));
 
         var isGreedMode = theKernel.getAttribute(AttrNames.GreedMode);
-        var navBtnClassStr = "'btn " + (isGreedMode ? 'flex-grow-1 flex-shrink-1 ' : '') + "'";
+        var navBtnClassStr = "'btn rounded-0 " + (isGreedMode ? 'flex-grow-1 flex-shrink-1 ' : '') + "'";
         for (var ci in theKernel.children) {
             var childKernel = theKernel.children[ci];
             var childRenderBlock = new FormatFileBlock(childKernel.id);
