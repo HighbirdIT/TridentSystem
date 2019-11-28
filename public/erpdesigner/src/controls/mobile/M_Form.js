@@ -147,7 +147,7 @@ class M_FormKernel extends ContainerKernelBase {
         this[AttrNames.HideTabHead + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.EditorType + '_visible'] = nowft == EFormType.List;
         this[AttrNames.NoRender + '_visible'] = nowft == EFormType.Page;
-        this[AttrNames.Wrap + '_visible'] = nowft == EFormType.List;
+        this[AttrNames.Wrap + '_visible'] = nowft == EFormType.List || nowft == EFormType.Page;
         this[AttrNames.ClickSelectable + '_visible'] = nowft == EFormType.List || nowft == EFormType.Grid;
         
         this.findAttrGroupByName('List设置').setVisible(this, nowft == EFormType.List);
@@ -445,7 +445,7 @@ class M_FormKernel extends ContainerKernelBase {
                 this.findAttributeByName(AttrNames.HideTabHead).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.EditorType).setVisible(this, isListForm);
                 this.findAttributeByName(AttrNames.NoRender).setVisible(this, isPageForm);
-                this.findAttributeByName(AttrNames.Wrap).setVisible(this, isListForm);
+                this.findAttributeByName(AttrNames.Wrap).setVisible(this, isListForm || isPageForm);
                 this.findAttributeByName(AttrNames.ClickSelectable).setVisible(this, isListForm || isPageForm);
                 
                 this.findAttributeByName(AttrNames.Event.OnSelectedChanged).setVisible(this, isGridForm || isListForm);
@@ -519,7 +519,9 @@ MForm_api.pushApi(new ApiItem_propsetter(VarNames.RecordIndex));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.Records_arr, M_FormKernelAttrsSetting), VarNames.Records_arr, false));
 MForm_api.pushApi(new ApiItem_propsetter(VarNames.Records_arr));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.SelectedValue, M_FormKernelAttrsSetting), VarNames.SelectedValue, true));
+MForm_api.pushApi(new ApiItem_propsetter(VarNames.SelectedValue));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.SelectedValues_arr, M_FormKernelAttrsSetting), VarNames.SelectedValues_arr, true));
+MForm_api.pushApi(new ApiItem_propsetter(VarNames.SelectedValues_arr));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.SelectedColumns, M_FormKernelAttrsSetting), VarNames.SelectedColumns, true,(ctlStateVarName, ctlKernel, propApiitem)=>{
     return makeStr_AddAll(ctlStateVarName,'==null ? "" : ', makeStr_callFun('GetFormSelectedColumns',[ctlStateVarName,singleQuotesStr(ctlKernel.getAttribute(AttrNames.KeyColumn)), singleQuotesStr(propApiitem.colname)]) + '.join(",")');
 }));  // 
@@ -532,7 +534,7 @@ class M_Form extends React.PureComponent {
         autoBind(this);
 
         var ctlKernel = this.props.ctlKernel;
-        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Orientation, AttrNames.Chidlren, AttrNames.FormType, AttrNames.WidthType, AttrNames.AutoIndexColumn, AttrNames.Title, AttrNames.SelectMode, 'item' + AttrNames.LayoutNames.StyleAttr, 'item' + AttrNames.LayoutNames.APDClass], inintState));
+        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Wrap,AttrNames.Orientation, AttrNames.Chidlren, AttrNames.FormType, AttrNames.WidthType, AttrNames.AutoIndexColumn, AttrNames.Title, AttrNames.SelectMode, 'item' + AttrNames.LayoutNames.StyleAttr, 'item' + AttrNames.LayoutNames.APDClass], inintState));
         M_ContainerBase(this);
 
         inintState.orientation = ctlKernel.getAttribute(AttrNames.Orientation);
@@ -542,6 +544,7 @@ class M_Form extends React.PureComponent {
         inintState.autoIndexColumn = ctlKernel.getAttribute(AttrNames.AutoIndexColumn);
         inintState.title = ctlKernel.getAttribute(AttrNames.Title);
         inintState.selectMode = ctlKernel.getAttribute(AttrNames.SelectMode);
+        inintState.wrap = ctlKernel.getAttribute(AttrNames.Wrap);
 
         this.state = inintState;
     }
@@ -563,6 +566,7 @@ class M_Form extends React.PureComponent {
             autoIndexColumn: ctlKernel.getAttribute(AttrNames.AutoIndexColumn),
             title: ctlKernel.getAttribute(AttrNames.Title),
             selectMode: ctlKernel.getAttribute(AttrNames.SelectMode),
+            wrap: ctlKernel.getAttribute(AttrNames.Wrap),
         });
     }
 
@@ -694,7 +698,7 @@ class M_Form extends React.PureComponent {
             <div className={outerDivClassStr} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {this.renderHandleBar()}
                 <span className='text-light bg-dark'>{title}</span>
-                <div className={'d-flex flex-grow-1 flex-shrink-1' + (this.state.orientation == Orientation_V ? ' flex-column' : '')} style={rootStyle}>
+                <div className={'d-flex flex-grow-1 flex-shrink-1' + (this.state.orientation == Orientation_V ? ' flex-column' : '') + (this.state.wrap ? ' flex-wrap' : '')} style={rootStyle}>
                     {contentElem}
                 </div>
             </div>

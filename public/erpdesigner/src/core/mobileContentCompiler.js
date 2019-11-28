@@ -1941,6 +1941,7 @@ class MobileContentCompiler extends ContentCompiler {
         var hadRefreshIcon = theKernel.getAttribute(AttrNames.RefreshIcon);
         var stableData = theKernel.getAttribute(AttrNames.StableData);
         var autoPull = theKernel.getAttribute(AttrNames.AutoPull);
+        var isWrap = theKernel.getAttribute(AttrNames.Wrap);
 
         var thisfullpath = makeStr_DotProp(fullParentPath, theKernel.id);
         var pathVarName = theKernel.id + '_path';
@@ -2127,7 +2128,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
         if (isPageForm) {
             renderContentBlock.pushLine(VarNames.RetElem + " = (<React.Fragment>", 1);
-            renderContentBlock.pushLine("<div className='d-flex flex-grow-1 flex-shrink-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + "'>", 1);
+            renderContentBlock.pushLine("<div className='d-flex flex-grow-1 flex-shrink-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + (isWrap ? ' flex-wrap' : '') + "'>", 1);
             childRenderBlock = new FormatFileBlock(theKernel.id + 'child');
             renderContentBlock.pushChild(childRenderBlock);
             renderContentBlock.subNextIndent();
@@ -2254,7 +2255,6 @@ class MobileContentCompiler extends ContentCompiler {
 
             renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'>", 1);
             renderContentFun.retBlock.pushLine("{this.props.title && <div className='bg-dark text-light " + titleAlginStr + " d-flex flex-shrink-0 p-1'><span>{this.props.title}"+(hadRefreshIcon ? "{this.props.fetching ? null : <i className='btn btn-sm fa fa-refresh' onClick={this.clickFreshHandler} />}" : '')+"</span></div>}");
-            var isWrap = theKernel.getAttribute(AttrNames.Wrap);
             var contentDivClassStr = 'd-flex flex-grow-1 flex-shrink-1' + (isWrap ? ' flex-wrap' : '') + (autoHeight ? ' autoScroll ' : '');
             if (orientation == Orientation_V) {
                 contentDivClassStr += ' flex-column';
