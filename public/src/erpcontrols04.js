@@ -1684,7 +1684,7 @@ class ERPC_CheckBox extends React.PureComponent {
     clickHandler(ev) {
         store.dispatch(makeAction_setManyStateByPath({
             value: this.checked ? 0 : 1,
-        }, MakePath(this.props.parentPath, this.props.id)));
+        }, this.props.fullPath));
         if (typeof this.props.onchanged === 'function') {
             this.props.onchanged(this.props.fullParentPath, this.checked ? 0 : 1);
         }
@@ -1700,7 +1700,7 @@ class ERPC_CheckBox extends React.PureComponent {
             checked = !(value == false || value == 0 || value == 'false' || value == 'FALSE');
         }
         this.checked = checked;
-        if (this.props.readonly) {
+        if (this.props.readonly || this.props.plainTextMode) {
             return (<span className={'erpc_checkbox ' + (this.props.className == null ? '' : this.props.className)} >
                 <i className={'fa ' + (checked ? ' fa-check text-success' : ' fa-close text-danger')} />
             </span>);
@@ -1726,6 +1726,7 @@ function ERPC_CheckBox_mapstatetoprops(state, ownprops) {
         fetchingErr: ctlState.fetchingErr,
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
+        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowkey != 'new',
     };
 }
 

@@ -1967,7 +1967,7 @@ var ERPC_CheckBox = function (_React$PureComponent8) {
         value: function clickHandler(ev) {
             store.dispatch(makeAction_setManyStateByPath({
                 value: this.checked ? 0 : 1
-            }, MakePath(this.props.parentPath, this.props.id)));
+            }, this.props.fullPath));
             if (typeof this.props.onchanged === 'function') {
                 this.props.onchanged(this.props.fullParentPath, this.checked ? 0 : 1);
             }
@@ -1984,7 +1984,7 @@ var ERPC_CheckBox = function (_React$PureComponent8) {
                 checked = !(value == false || value == 0 || value == 'false' || value == 'FALSE');
             }
             this.checked = checked;
-            if (this.props.readonly) {
+            if (this.props.readonly || this.props.plainTextMode) {
                 return React.createElement(
                     'span',
                     { className: 'erpc_checkbox ' + (this.props.className == null ? '' : this.props.className) },
@@ -2018,7 +2018,8 @@ function ERPC_CheckBox_mapstatetoprops(state, ownprops) {
         fetching: ctlState.fetching,
         fetchingErr: ctlState.fetchingErr,
         fullParentPath: propProfile.fullParentPath,
-        fullPath: propProfile.fullPath
+        fullPath: propProfile.fullPath,
+        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowkey != 'new'
     };
 }
 
