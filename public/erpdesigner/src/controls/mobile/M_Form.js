@@ -44,6 +44,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('NoRender', AttrNames.NoRender, ValueType.Boolean, false),
         new CAttribute('点选模式', AttrNames.ClickSelectable, ValueType.Boolean, false),
         new CAttribute('访问控制', AttrNames.AcessAssert, ValueType.Event),
+        new CAttribute(VarNames.NowRecord, VarNames.NowRecord, ValueType.Object, 1, false, false, null, null, false),
         new CAttribute(VarNames.RecordIndex, VarNames.RecordIndex, ValueType.Int, 1, false, false, null, null, false),
         new CAttribute(VarNames.Records_arr, VarNames.Records_arr, ValueType.Array, 1, false, false, null, null, false),
         new CAttribute(VarNames.SelectedValue, VarNames.SelectedValue, ValueType.Int, 1, false, false, null, null, false),
@@ -516,6 +517,7 @@ var MForm_api = new ControlAPIClass(M_FormKernel_Type);
 MForm_api.pushApi(new ApiItem_propsetter('title'));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.RecordIndex, M_FormKernelAttrsSetting), VarNames.RecordIndex, false));
 MForm_api.pushApi(new ApiItem_propsetter(VarNames.RecordIndex));
+MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.NowRecord, M_FormKernelAttrsSetting), VarNames.NowRecord, false));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.Records_arr, M_FormKernelAttrsSetting), VarNames.Records_arr, false));
 MForm_api.pushApi(new ApiItem_propsetter(VarNames.Records_arr));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.SelectedValue, M_FormKernelAttrsSetting), VarNames.SelectedValue, true));

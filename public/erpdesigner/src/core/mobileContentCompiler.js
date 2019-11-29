@@ -357,20 +357,22 @@ class MobileContentCompiler extends ContentCompiler {
             var formType = belongForm.getAttribute(AttrNames.FormType);
             if (formType == EFormType.Grid || formType == EFormType.List) {
                 var needModify = false;
-                if (formType == EFormType.Grid) {
-                    if (ctlKernel.parent.type == M_LabeledControlKernel_Type && ctlKernel.parent.parent == belongForm) {
-                        needModify = true;
-                    }
+                if(formType == EFormType.Grid){
+                    needModify = belongForm.isKernelInRow(ctlKernel);
                 }
-                else if (formType == EFormType.List) {
-                    needModify = ctlKernel.parent == belongForm;
+                else{
+                    needModify = true;
                 }
 
                 if (needModify) {
                     ctlTag.setAttr('rowkey', '{rowkey}');
+                    /*
                     if (formType == EFormType.List) {
-                        ctlTag.setAttr('key', '{rowkey}');
+                        if(belongForm == ctlKernel.parent){
+                            ctlTag.setAttr('key', '{rowkey}');
+                        }
                     }
+                    */
                 }
             }
         }
@@ -482,8 +484,10 @@ class MobileContentCompiler extends ContentCompiler {
             controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, paramApiItem.label), makeStr_DotProp(VarNames.CtlState, paramApiItem.label)));
         });
         var attrValue;
-        userCtlKernel.getEventApiAttrArray().forEach(eventApiItem => {
-            var attrValue = userCtlKernel.getAttribute(eventApiItem.name.replace('#', '_'));
+        var eventApiAttr_arr = userCtlKernel.getEventApiAttrArray();
+        for(var eai in eventApiAttr_arr){
+            var eventApiItem = eventApiAttr_arr[eai];
+            attrValue = userCtlKernel.getAttribute(eventApiItem.name.replace('#', '_'));
             if (attrValue != null) {
                 if (IsEmptyString(attrValue.name)) {
                     logManager.errorEx([logManager.createBadgeItem(
@@ -494,8 +498,11 @@ class MobileContentCompiler extends ContentCompiler {
                     return false;
                 }
             }
-        });
-        userCtlKernel.getFunctionApiAttrArray().forEach(funApiItem => {
+        }
+
+        var funApiAttr_arr = userCtlKernel.getFunctionApiAttrArray();
+        for(var fai in funApiAttr_arr){
+            var funApiItem = funApiAttr_arr[fai];
             attrValue = userCtlKernel.getAttribute(funApiItem.name);
             if (IsEmptyString(attrValue)) {
                 logManager.errorEx([logManager.createBadgeItem(
@@ -519,9 +526,7 @@ class MobileContentCompiler extends ContentCompiler {
             if (funBoComRet == false) {
                 return false;
             }
-
-        });
-
+        }
 
         var savePropCheckBlock = new FormatFileBlock('savePropCheckBlock');
         controlReactClass.renderFun.pushChild(savePropCheckBlock);
@@ -1688,6 +1693,11 @@ class MobileContentCompiler extends ContentCompiler {
                     ctlTag.setAttr('defVisible', '{false}');
                 }
             }
+            if(theKernel.hasAttribute(AttrNames.DefaultVisible)){
+                if(!theKernel.getAttribute(AttrNames.DefaultVisible)){
+                    ctlTag.setAttr('definvisible', '{true}');
+                }
+            }
         }
         else {
             if (!isdisplay) {
@@ -2227,7 +2237,7 @@ class MobileContentCompiler extends ContentCompiler {
             listItemTag.setAttr(rowKeyAttrName, bigbracketStr(VarNames.RowKey));
             listItemTag.setAttr('className', itemLayoutConfig.getClassName());
             if (hasItemFormStyle) {
-                listItemTag.setAttr('style', itemStyleID);
+                listItemTag.setAttr('style', bigbracketStr(itemStyleID));
             }
             if (clickSelectable) {
                 itemLayoutConfig.addClass('list-group-item-action');
@@ -4257,7 +4267,7 @@ class MobileContentCompiler extends ContentCompiler {
                         };
                     }
                 }
-                else {
+                if(setTitleStateItem == null){
                     ctlTag.setAttr('title', title);
                 }
             }
@@ -4734,7 +4744,7 @@ class MobileContentCompiler extends ContentCompiler {
                     if (propApiitem.needValid) {
                         if (needCheckProps_map[varName] == null) {
                             needCheckProps_map[varName] = 1;
-                            nullableChecker = ctlParentStateVarName ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
+                            nullableChecker = ctlParentStateVarName ? parentLabledCtl : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
                             needPostValid = (nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : true) != true;
                             needCheckVars_arr.push({
                                 kernel: useCtlData.kernel,
@@ -4891,7 +4901,7 @@ class MobileContentCompiler extends ContentCompiler {
                         needSetParams_arr.push({ bundleName: varName, clientValue: varName });
                         if (propApiitem.needValid && needCheckProps_map[varName] == null) {
                             needCheckProps_map[varName] = 1;
-                            nullableChecker = ctlParentStateVarName ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
+                            nullableChecker = ctlParentStateVarName ? parentLabledCtl : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
                             needPostValid = (nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : true) != true;
                             needCheckVars_arr.push({
                                 kernel: useCtlData.kernel,
@@ -5649,7 +5659,7 @@ class MobileContentCompiler extends ContentCompiler {
                         if (propApiitem.needValid) {
                             if (needCheckProps_map[varName] == null) {
                                 needCheckProps_map[varName] = 1;
-                                nullableChecker = ctlParentStateVarName ? useCtlData.kernel.parent : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
+                                nullableChecker = ctlParentStateVarName ? parentLabledCtl : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
                                 needPostValid = (nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : true) != true;
                                 needCheckVars_arr.push({
                                     kernel: useCtlData.kernel,

@@ -55,6 +55,11 @@ const JSNodeEditorControls_arr =[
         type:'数学'
     },
     {
+        label:'NOT(!)',
+        nodeClass:JSNode_OP_Not,
+        type:'数学'
+    },
+    {
         label:'Switch',
         nodeClass:JSNode_Switch,
         type:'流控制'
