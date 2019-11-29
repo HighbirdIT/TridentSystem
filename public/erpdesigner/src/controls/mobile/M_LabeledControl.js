@@ -8,6 +8,7 @@ const M_LabeledControlKernelAttrsSetting = GenControlKernelAttrsSetting([
             pullDataFun: GetCanInteractiveColumns,
         }),
         genNullableAttribute(),
+        new CAttribute('默认可见', AttrNames.DefaultVisible, ValueType.Boolean, true),
         new CAttribute('渲染模式', AttrNames.RenderMode, ValueType.String, ERenderMode.Auto, true, false, RenderModes_arr, { text: 'text', value: 'value' }),
         new CAttribute('标题字数', 'WordNum', ValueType.Int, '6', true, false, ['2','4','6']),
         new CAttribute('占宽', AttrNames.WidthFactor, ValueType.Int, EWidthFactor.Default, true, false, WidthFactors_arr, { text: 'text', value: 'value' }),
