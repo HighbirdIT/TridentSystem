@@ -170,8 +170,14 @@ class PCContentCompiler extends MobileContentCompiler {
         clientSide.pageLoadedReducerFun.flowStepSwitch = flowStepSwitch;
         clientSide.pageLoadedReducerFun.pushLine("return gotoPage(targetPageID, state);");
 
+        var projLayoutConfig = project.getLayoutConfig(AttrNames.LayoutNames.APDClass, AttrNames.LayoutNames.StyleAttr);
+        projLayoutConfig.addClass('w-100');
+        projLayoutConfig.addClass('h-100');
+        var projStyleID = '_project_style';
+        var hasProjStyle = this.clientSide.addStyleObject(projStyleID, projLayoutConfig.style);
+
         clientSide.appClass.renderFun.pushLine(VarNames.RetElem + " = (", 1);
-        clientSide.appClass.renderFun.pushLine("<div className='w-100 h-100'>");
+        clientSide.appClass.renderFun.pushLine("<div className=" + singleQuotesStr(projLayoutConfig.getClassName()) + (hasProjStyle ? ' style={' + projStyleID + '}' : '') + ">");
         clientSide.appClass.renderFun.pushLine("<ERPC_TopLevelFrame ref={gTopLevelFrameRef} />");
         clientSide.appClass.renderFun.pushLine("<CToastManger ref={gCToastMangerRef} />");
         clientSide.appClass.renderFun.pushLine("<CMessageBoxManger ref={gCMessageBoxMangerRef} />");
