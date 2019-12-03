@@ -1694,8 +1694,10 @@ class MobileContentCompiler extends ContentCompiler {
                 }
             }
             if(theKernel.hasAttribute(AttrNames.DefaultVisible)){
-                if(!theKernel.getAttribute(AttrNames.DefaultVisible)){
-                    ctlTag.setAttr('definvisible', '{true}');
+                if(ctlTag){
+                    if(!theKernel.getAttribute(AttrNames.DefaultVisible)){
+                        ctlTag.setAttr('definvisible', '{true}');
+                    }
                 }
             }
         }
