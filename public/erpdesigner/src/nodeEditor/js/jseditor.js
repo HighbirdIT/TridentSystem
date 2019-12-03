@@ -304,6 +304,16 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_DD_NavClose,
         type:'钉钉Api'
     },
+    {
+        label:'函数-创建局部函数',
+        nodeClass:JSNode_Fun_Create,
+        type:'操作函数'
+    },
+    {
+        label:'函数-调用函数',
+        nodeClass:JSNode_Fun_Call,
+        type:'操作函数'
+    },
 ];
 
 var gCopyed_JsNodes_data=null;

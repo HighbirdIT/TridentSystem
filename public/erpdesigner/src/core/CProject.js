@@ -4,7 +4,11 @@ const CProjectAttrsSetting = {
         new CAttributeGroup('基本设置', [
             new CAttribute('页面名称', 'title', ValueType.String, true),
             new CAttribute('真实名称', 'realName', ValueType.String, false),
-        ])
+        ]),
+        new CAttributeGroup('顶层设置', [
+            new CAttribute('样式', AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
+            new CAttribute('类', AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true),
+        ]),
     ]
 };
 
@@ -137,6 +141,50 @@ class CProject extends IAttributeable {
                 });
             }
         }
+    }
+    
+    getLayoutConfig(classAttrName, styleAttrName) {
+        var rlt = new ControlLayoutConfig();
+        var apdAttrList = this.getAttrArrayList(classAttrName ? classAttrName : AttrNames.LayoutNames.APDClass);
+        var self = this;
+        apdAttrList.forEach(attrArrayItem => {
+            var val = this.getAttribute(attrArrayItem.name);
+            rlt.addClass(val);
+        });
+
+        var styleAttrList = this.getAttrArrayList(styleAttrName ? styleAttrName : AttrNames.LayoutNames.StyleAttr);
+        styleAttrList.forEach(attrArrayItem => {
+            var val = this.getAttribute(attrArrayItem.name);
+            if (val != null && !IsEmptyString(val.name) && !IsEmptyString(val.value)) {
+                var styleName = val.name;
+                var styleValue = val.value;
+                switch (styleName) {
+                    case AttrNames.StyleAttrNames.Width:
+                    case AttrNames.StyleAttrNames.Height:
+                        {
+                            styleValue = isNaN(styleValue) ? styleValue : styleValue + 'px';
+                            break;
+                        }
+                    case AttrNames.StyleAttrNames.FlexGrow:
+                        {
+                            rlt.addSwitchClass(AttrNames.StyleAttrNames.FlexGrow, styleValue ? 1 : 0);
+                            styleName = null;
+                            break;
+                        }
+                    case AttrNames.StyleAttrNames.FlexShrink:
+                        {
+                            rlt.addSwitchClass(AttrNames.StyleAttrNames.FlexShrink, styleValue ? 1 : 0);
+                            styleName = null;
+                            break;
+                        }
+                }
+
+                if (styleName != null) {
+                    rlt.addStyle(styleName, styleValue);
+                }
+            }
+        });
+        return rlt;
     }
 
     addUserControl(name) {

@@ -153,6 +153,9 @@ class JSNode_Base extends Node_Base {
                     return false;   // 自订脚本如果内部有fetch的话，返回时是离开时了fetchend环境的
                 }
             }
+            if (preNode.type == JSNODE_FUN_CREATE) {
+                return false;   // 本地方法会自动去除fetch
+            }
             if (preNode.hadServerFetch) {
                 return true;
             }
@@ -747,6 +750,9 @@ class JSNode_BluePrint extends EventEmitter {
 
         var ctlIsUserControl = ctlKernel ? ctlKernel.type == UserControlKernel_Type : false;
         var belongUserControl = !ctlKernel ? null : ctlKernel.searchParentKernel(UserControlKernel_Type, true);
+        if(ctlKernel && ctlKernel.parent == null && ctlKernel.type == UserControlKernel_Type){
+            belongUserControl = ctlKernel;  // 这就是自定义控件
+        }
         var belongFormControl = !ctlKernel ? null : ctlKernel.searchParentKernel(M_FormKernel_Type, true);
         var reactParentControl = !ctlKernel ? null : ctlKernel.getReactParentKernel(true);
         var baseBundleInitBlock = new FormatFileBlock('baseBundle');
@@ -837,8 +843,10 @@ class JSNode_BluePrint extends EventEmitter {
                 }
                 if (belongUserControl) {
                     // 自订控件中的按钮
-                    theFun.scope.getVar(belongUserControl.id + '_path', true, "getBelongUserCtlPath(" + ctlKernel.id + "_path" + (ctlIsUserControl ? ',' + singleQuotesStr(ctlKernel.id) : '') + ")");  // 本控件也是自订控件时，获取所属自订控件路径需要特殊处理
-                    theFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath', [VarNames.State, belongUserControl.id + '_path', '{}']));
+                    if(!isUserControlInitFun){
+                        theFun.scope.getVar(belongUserControl.id + '_path', true, "getBelongUserCtlPath(" + ctlKernel.id + "_path" + (ctlIsUserControl ? ',' + singleQuotesStr(ctlKernel.id) : '') + ")");  // 本控件也是自订控件时，获取所属自订控件路径需要特殊处理
+                        theFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath', [VarNames.State, belongUserControl.id + '_path', '{}']));
+                    }
                 }
             }
             if (this.group == EJsBluePrintFunGroup.CtlFun) {
@@ -981,7 +989,13 @@ class JSNode_BluePrint extends EventEmitter {
                                 }
                             }
                         }
-                        var useCtlBelongStateVarName = useFormData.formKernel.isKernelInRow(useCtlData.kernel) ? formNowRowStateVarName : formStateVarName;
+                        var isKernelInRow = useFormData.formKernel.isKernelInRow(useCtlData.kernel);
+                        if(isKernelInRow){
+                            if(!useFormData.useContextRow){
+                                continue;
+                            }
+                        }
+                        var useCtlBelongStateVarName = isKernelInRow ? formNowRowStateVarName : formStateVarName;
                         initValue = makeStr_getStateByPath(useCtlBelongStateVarName, singleQuotesStr(usectlid), '{}');
                         if (controlStateDelayGet) {
                             theFun.scope.getVar(ctlStateVarName, true);
@@ -1048,7 +1062,7 @@ class JSNode_BluePrint extends EventEmitter {
                             isDataSourceChangedFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnDataSourceChanged;
                             isRowChangedFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnRowChanged;
                         }
-                        if (!isDataSourceChangedFun && !isRowChangedFun) {
+                        if (!isDataSourceChangedFun && !isRowChangedFun && !this.isUserControlFunction) {
                             needCheckVars_arr.push(formNowRecordVarName);
                         }
                         for (var columnName in useFormData.useColumns_map) {
@@ -3835,7 +3849,7 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
                 belongUserCtl = selectedKernel;
             }
             if (belongUserCtl) {
-                if(belongUserCtl == relCtlKernel){
+                if(belongUserCtl == selectedKernel){
                     // 这中情况是自订控件内部方法
                     pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + propAttr.label);
                 }
@@ -5444,7 +5458,7 @@ class JSNode_Array_For extends JSNode_Base {
         var dataVarName = this.id + '_data';
         myJSBlock.pushLine('var ' + indexVarName + '=0;');
         myJSBlock.pushLine('var ' + dataVarName + '=null;');
-        myJSBlock.pushLine('for(' + indexVarName + '=0;' + indexVarName + '<' + socketValue + '.length;++' + indexVarName + '){', 1);
+        myJSBlock.pushLine('for(' + indexVarName + '=0;' + socketValue + '!=null && ' + indexVarName + '<' + socketValue + '.length;++' + indexVarName + '){', 1);
         myJSBlock.pushLine(dataVarName + '=' + socketValue + '[' + indexVarName + '];');
         var childBlock = new FormatFileBlock('child');
         myJSBlock.pushChild(childBlock);
@@ -6975,17 +6989,36 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         }
         if (nodeJson) {
             if (this.inputScokets_arr.length > 0) {
-                this.ctlSocket = this.inputScokets_arr[0];
+                this.inputScokets_arr.forEach(socket => {
+                    switch (socket.name) {
+                        case 'ctl':
+                            this.ctlSocket = socket;
+                            break;
+                        case 'key':
+                            this.keySocket = socket;
+                            break;
+                    }
+                });
             }
         }
         if (this.ctlSocket == null) {
             this.ctlSocket = new NodeSocket('ctl', this, true);
             this.addSocket(this.ctlSocket);
         }
+        if (this.isUserControlFunction) {
+            if(this.keySocket == null){
+                this.keySocket = new NodeSocket('key', this, true);
+                this.addSocket(this.keySocket);
+            }
+        }
         this.ctlSocket.inputable = false;
         this.ctlSocket.type = SocketType_CtlKernel;
         this.ctlSocket.kernelType = apiClass.ctltype;
         this.ctlSocket.index = -999;
+        if(this.keySocket){
+            this.keySocket.label = 'key';
+            this.keySocket.inputable = false;
+        }
 
         if (this.isUserControlEvent || this.isUserControlFunction) {
             if (createHelper && createHelper.project) {
@@ -7040,7 +7073,7 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             }
         }
         this.inputScokets_arr.forEach(item => {
-            if (item != this.ctlSocket) {
+            if (item != this.ctlSocket && item != this.keySocket) {
                 item._validparam = false;
             }
         });
@@ -7101,6 +7134,7 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         if (this.checkCompileFlag(selectedKernel == null, '需要选择控件', helper)) {
             return false;
         }
+        var belongForm = selectedKernel.searchParentKernel(M_FormKernel_Type, true);
         var funAttrName;
         var funAttrValue;
         if (this.isUserControlEvent) {
@@ -7137,6 +7171,16 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         if (this.checkCompileFlag(canAccessCtls_arr.indexOf(selectedKernel) == -1, '指定的控件不可访问', helper)) {
             return false;
         }
+        var rowKeyValue = null;
+        if (this.isUserControlFunction) {
+            if(belongForm && !belongForm.isPageForm()){
+                var keySocketComRet = this.getSocketCompileValue(helper, this.keySocket, usePreNodes_arr, belongBlock, false);
+                if (keySocketComRet.err) {
+                    return false;
+                }
+                rowKeyValue = keySocketComRet.value;
+            }
+        }
         var myJSBlock = new FormatFileBlock(this.id);
         var belongUserCtl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
 
@@ -7144,8 +7188,11 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         myJSBlock.pushLine('setTimeout(() => {', 1);
         if (this.isUserControlEvent || this.isUserControlFunction) {
             var bundleStr = '';
-            for (var i = 1; i < this.inputScokets_arr.length; ++i) {
+            for (var i = 0; i < this.inputScokets_arr.length; ++i) {
                 var theSocket = this.inputScokets_arr[i];
+                if(theSocket == this.keySocket || theSocket == this.ctlSocket){
+                    continue;
+                }
                 var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
                 if (socketComRet.err) {
                     return false;
@@ -7155,8 +7202,15 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             }
             var pathVar = selectedKernel.id + "_path + '.fun_" + funAttrValue.name + "'";
             if (this.isUserControlFunction) {
-                if (!selectedKernel.isTemplate() && belongUserCtl) {
-                    pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath('fun_' + funAttrValue.name));
+                if(!selectedKernel.isTemplate()){
+                    if(rowKeyValue){
+                        pathVar = belongForm.id + "_path + '.row_'+" + rowKeyValue + '+' + singleQuotesStr('.' + selectedKernel.getStatePath('fun_' + funAttrValue.name, '.', null, true, belongForm));
+                    }
+                    else{
+                        if(belongUserCtl){
+                            pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath('fun_' + funAttrValue.name));
+                        }
+                    }
                 }
                 //bundleStr += (bundleStr.length > 0 ? ',' : '') + selectedKernel.getTemplateKernel().id + '_path:' + selectedKernel.id + '_path';
             }
@@ -7164,7 +7218,7 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             useApiItem = {
                 name: funAttrValue.name,
             };
-            helper.addUseControlEventApi(selectedKernel, useApiItem, EFormRowSource.Context);
+            helper.addUseControlEventApi(selectedKernel, useApiItem, EFormRowSource.None);
         }
         else {
             if (selectedKernel.type == MFileUploader_Type && this.funItem.name == 'Reset') {

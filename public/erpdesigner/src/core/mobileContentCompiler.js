@@ -1825,6 +1825,12 @@ class MobileContentCompiler extends ContentCompiler {
         if(renderMode != ERenderMode.Auto){
             labeledCtrlTag.setAttr('rm', renderMode);
         }
+        else{
+            var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
+            if(belongUserControl){
+                labeledCtrlTag.setAttr('rm', belongUserControl.getAttribute('DefRender') == '电脑' ? ERenderMode.PC : ERenderMode.Mobile);
+            }
+        }
         var wordNum = theKernel.getAttribute('WordNum');
         if(wordNum != 6){
             labeledCtrlTag.setAttr('wn', wordNum);
