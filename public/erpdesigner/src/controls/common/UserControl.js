@@ -4,6 +4,7 @@ const UserControlKernelTempleAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('默认渲染', 'DefRender', ValueType.String, '手机', true, false, ['手机', '电脑']),
         new CAttribute('refID', 'refID', ValueType.String, 'none', true, false, null, null, false),
         new CAttribute('每行初始化', AttrNames.InitOnRowChanged, ValueType.Boolean, false),
+        new CAttribute('不可见处理', AttrNames.InvisibleAct, ValueType.String, EInvisibleAct.Default, true, false, EInvisibleActs_arr),
         new CAttribute('属性列表', AttrNames.ParamApi, ValueType.String, '', true, true),
         new CAttribute('自订事件', AttrNames.EventApi, ValueType.UserControlEvent, '', true, true),
         new CAttribute('自订方法', AttrNames.FunctionApi, ValueType.CustomFunction, '', true, true),
@@ -17,6 +18,7 @@ const UserControlKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置', [
         genIsdisplayAttribute(),
         new CAttribute('默认可见', AttrNames.DefaultVisible, ValueType.Boolean, true),
+        new CAttribute('临时高度', 'designheight', ValueType.Int, 0),
         new CAttribute('refID', 'refID', ValueType.String, 'none', true, false, null, null, false),
     ]),
     new CAttributeGroup('属性接口', [
@@ -375,7 +377,9 @@ class CUserControl extends React.PureComponent {
         else {
             M_ControlBase(this, [
                 AttrNames.Name,
+                'designheight',
             ]);
+            initState.designheight = ctlKernel.getAttribute('designheight');
         }
 
         this.state = initState;
@@ -401,6 +405,11 @@ class CUserControl extends React.PureComponent {
                 orientation: ctlKernel.getAttribute(AttrNames.Orientation),
                 children: childrenVal,
                 defRender: ctlKernel.getAttribute('DefRender'),
+            });
+        }
+        else{
+            this.setState({
+                designheight: ctlKernel.getAttribute('designheight'),
             });
         }
     }
@@ -451,21 +460,34 @@ class CUserControl extends React.PureComponent {
             return (<div className={layoutConfig.getClassName()} style={layoutConfig.style} ref={this.rootElemRef}>自订控件</div>);
         }
         layoutConfig.addClass('hb-control');
+        var containerClassName = 'd-flex flex-grow-1 flex-shrink-1';
         if (templateKernel.getAttribute(AttrNames.Orientation) == Orientation_V) {
-            layoutConfig.addClass('flex-column');
+            //layoutConfig.addClass('flex-column');
+            containerClassName += ' flex-column';
         }
         layoutConfig.addClass('d-flex');
+
+        var designheight = this.state.designheight;
+        var containerStyle;
+        if(designheight > 0){
+            containerStyle = {
+                overflow:'auto',
+                maxHeight:designheight + 'px',
+            }
+        }
 
         return (
             <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.clickInsHandler} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {this.renderHandleBar()}
-                {
-                    templateKernel.children.length == 0 ?
-                        ctlKernel.id :
-                        templateKernel.children.map(childKernel => {
-                            return childKernel.renderSelf(this.clickInsHandler, true, this.props.designer);
-                        })
-                }
+                <div className={containerClassName} style={containerStyle}>
+                    {
+                        templateKernel.children.length == 0 ?
+                            ctlKernel.id :
+                            templateKernel.children.map(childKernel => {
+                                return childKernel.renderSelf(this.clickInsHandler, true, this.props.designer);
+                            })
+                    }
+                </div>
             </div>
         );
     }

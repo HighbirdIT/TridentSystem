@@ -240,6 +240,11 @@ const JSNodeEditorControls_arr =[
         type:'窗体通信'
     },
     {
+        label:'向i框架发消息',
+        nodeClass:JSNode_IFrame_SendMsg,
+        type:'窗体通信'
+    },
+    {
         label:'关闭TopFrame',
         nodeClass:JSNode_CloseTopFrame,
         type:'窗体控制'

@@ -451,7 +451,6 @@ class MobileContentCompiler extends ContentCompiler {
 
         var controlReactClass = clientSide.getReactClass(userCtlKernel.getReactClassName(), true);
         var layoutConfig = userCtlKernel.getLayoutConfig();
-        layoutConfig.addClass('d-flex');
         layoutConfig.addClass('erp-control');
         var styleID = userCtlKernel.id + '_style';
         var styleStr = clientSide.addStyleObject(styleID, layoutConfig.style) ? 'style={' + styleID + '}' : '';
@@ -465,12 +464,21 @@ class MobileContentCompiler extends ContentCompiler {
         ctlMidData.inst_arr = [];
         ctlMidData.needSetStateChangedActs_arr = [];
         ctlMidData.initOnRowChanged = userCtlKernel.getAttribute(AttrNames.InitOnRowChanged);
+        var invisbleAct = userCtlKernel.getAttribute(AttrNames.InvisibleAct);
 
         var childRenderBlock = new FormatFileBlock(userCtlKernel.id);
         var renderBlock = controlReactClass.renderFun;
-        renderBlock.pushLine('if(this.props.visible == false){return null;}');
+        var retElemClassName;
+        if(invisbleAct == EInvisibleAct.Default){
+            layoutConfig.addClass('d-flex');
+            renderBlock.pushLine('if(this.props.visible == false){return null;}');
+            retElemClassName = singleQuotesStr(layoutConfig.getClassName());
+        }
+        else{
+            retElemClassName = '{' + singleQuotesStr(layoutConfig.getClassName()) + "+(this.props.visible == false ? ' d-none' : ' d-flex')}";
+        }
         renderBlock.pushLine('var needFullPath = this.props.onMouseDown != null;');
-        renderBlock.pushLine(makeStr_AddAll(VarNames.RetElem, " = <div className='", layoutConfig.getClassName(), "' ", styleStr, " userctlpath={this.props.fullPath} ctl-fullpath={needFullPath ? this.props.fullPath : null} onMouseDown={this.props.onMouseDown}", ">"), 1);
+        renderBlock.pushLine(makeStr_AddAll(VarNames.RetElem, " = <div className=", retElemClassName, " ", styleStr, " userctlpath={this.props.fullPath} ctl-fullpath={needFullPath ? this.props.fullPath : null} onMouseDown={this.props.onMouseDown}", ">"), 1);
         renderBlock.pushChild(childRenderBlock);
         renderBlock.subNextIndent();
         renderBlock.pushLine('</div>');
@@ -931,6 +939,15 @@ class MobileContentCompiler extends ContentCompiler {
             pageLoadBlock.pushLine('setTimeout(() => {' + makeStr_callFun(onloadFunName) + ';},50);');
         }
 
+        var onreceiveMsgFunName = pageKernel.id + '_' + AttrNames.Event.OnReceiveMsg;
+        var onReceiveMsgBp = project.scriptMaster.getBPByName(onreceiveMsgFunName);
+        if (onReceiveMsgBp != null) {
+            if (this.compileScriptBlueprint(onReceiveMsgBp, { nomsgbox: true }) == false) {
+                return false;
+            }
+            clientSide.endBlock.pushLine('gPageReceiveMsgHandlers_arr.push(' + onreceiveMsgFunName + ');');
+        }
+
         if (isPopable) {
             // 弹出式窗体
         }
@@ -1104,6 +1121,9 @@ class MobileContentCompiler extends ContentCompiler {
                 break;
             case FrameSetKernel_Type:
                 rlt = this.compileFrameSetKernel(theKernel, renderBlock, renderFun);
+                break;
+            case IFrameKernel_Type:
+                rlt = this.compileIFrameKernel(theKernel, renderBlock, renderFun);
                 break;
             default:
                 logManager.error('不支持的编译kernel type:' + theKernel.type);
@@ -4965,7 +4985,8 @@ class MobileContentCompiler extends ContentCompiler {
                     singleQuotesStr(valueType),
                     varObj.nullable ? varObj.nullable.toString() : 'false',
                     singleQuotesStr(varObj.kernel.id),
-                    validErrStateVar.name
+                    validErrStateVar.name,
+                    VarNames.ParentPath
                 ]) + ";");
                 validKernelBlock.pushLine("validErrState[" + modifyStatePath(infoStatePath, belongUserControl) + "]=validErr;");
                 validKernelBlock.pushLine("if(validErr != null) hadValidErr = true;");
@@ -5417,6 +5438,84 @@ class MobileContentCompiler extends ContentCompiler {
         if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
     }
 
+    compileIFrameKernel(theKernel, renderBlock, renderFun){
+        var project = this.project;
+        var layoutConfig = theKernel.getLayoutConfig();
+        var clientSide = this.clientSide;
+
+        layoutConfig.addClass('d-flex');
+        layoutConfig.addClass('flex-column');
+
+        var ctlTag = new FormatHtmlTag(theKernel.id, 'VisibleERPC_IFrame', this.clientSide);
+        this.modifyControlTag(theKernel, ctlTag);
+        ctlTag.class = layoutConfig.class;
+        ctlTag.style = layoutConfig.style;
+        this.modifyControlTag(theKernel, ctlTag);
+        var projCode = theKernel.getAttribute(AttrNames.ProjectCode);
+        var projItem = ProjectRecords_arr.find(item=>{return item.value == projCode;});
+        if(projItem){
+            ctlTag.setAttr('proj', projItem.英文名称);    
+        }
+        var flowCode = theKernel.getAttribute(AttrNames.FlowStepCode);
+        if(!IsEmptyString(flowCode)){
+            ctlTag.setAttr('flowCode', flowCode);    
+        }
+
+        var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
+        var reactParentKernel = theKernel.getReactParentKernel(true);
+        var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
+        var parentMidData = this.projectCompiler.getMidData(reactParentKernel.id);
+        var setFlowDataStateItem = null;
+        var flowData = theKernel.getAttribute(AttrNames.FlowStepData);
+        var flowDataParseRet = parseObj_CtlPropJsBind(flowData, project.scriptMaster);
+        if (flowDataParseRet.isScript) {
+            if (this.compileScriptAttribute(flowDataParseRet, theKernel, 'flowData', AttrNames.FlowStepData, { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (!IsEmptyString(flowDataParseRet.string)) {
+                if (belongFormKernel != null && (!belongFormKernel.isGridForm() || belongFormKernel.isKernelInRow(theKernel))) {
+                    var formColumns_arr = belongFormKernel.getCanuseColumns();
+                    if (formColumns_arr.indexOf(flowData) != -1) {
+                        parentMidData.useColumns_map[flowData] = 1;
+                        setFlowDataStateItem = {
+                            name: 'flowData',
+                            useColumn: { name: flowData },
+                        };
+                    }
+                }
+                if(setFlowDataStateItem == null){
+                    ctlTag.setAttr('flowData', flowData);
+                }
+            }
+        }
+
+        if (setFlowDataStateItem) {
+            kernelMidData.needSetStates_arr.push(setFlowDataStateItem);
+            if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
+                parentMidData.needSetKernels_arr.push(theKernel);
+            }
+        }
+
+        var onreceiveFunName = theKernel.id + '_' + AttrNames.Event.OnReceiveMsg;
+        var onReceiveBp = project.scriptMaster.getBPByName(onreceiveFunName);
+        if (onReceiveBp != null) {
+            var compileRet = this.compileScriptBlueprint(onReceiveBp, {haveDoneTip: false, nomsgbox:true});
+            if (compileRet == false) {
+                return false;
+            }
+            ctlTag.setAttr('onMessageFun', bigbracketStr(onreceiveFunName));
+        }
+
+        ctlTag.setAttr('id', theKernel.id);
+        var parentPath = this.getKernelParentPath(theKernel);
+        ctlTag.setAttr('parentPath', parentPath);
+        renderBlock.pushChild(ctlTag);
+
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
+    }
+
     compileEnd() {
         super.compileEnd();
     }
@@ -5726,7 +5825,8 @@ class MobileContentCompiler extends ContentCompiler {
                             singleQuotesStr(valueType),
                             varObj.nullable ? varObj.nullable.toString() : 'false',
                             singleQuotesStr(varObj.kernel.id),
-                            validErrStateVar.name
+                            validErrStateVar.name,
+                            formPathVarName
                         ]) + ";");
                         validKernelBlock.pushLine("validErrState[" + modifyStatePath(infoStatePath, belongUserControl) + "]=validErr;");
                         validKernelBlock.pushLine("if(validErr != null) hadValidErr = true;");

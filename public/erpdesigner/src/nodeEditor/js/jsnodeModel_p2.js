@@ -4,6 +4,7 @@ const JSNODE_CUSOBJECT_NEW = 'cusobjectnew';
 const JSNODE_CUSOBJECT_VISIT = 'cusobjectvisit';
 const JSNODE_FUN_CREATE = 'createlocalfun';
 const JSNODE_FUN_CALL = 'callfun';
+const JSNODE_IFRAME_SENDMSG = 'iframesendmsg';
 
 class JSNode_AddPageToFrameSet extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
@@ -87,7 +88,7 @@ class JSNode_AddPageToFrameSet extends JSNode_Base {
             this.closeableScoket.defval = true;
         }
 
-        this.framesetScoket.inputable = true;
+        this.framesetScoket.inputable = false;
         this.framesetScoket.type = SocketType_CtlKernel;
         this.framesetScoket.kernelType = FrameSetKernel_Type;
     }
@@ -604,6 +605,122 @@ class JSNode_Fun_Call extends JSNode_Base {
     }
 }
 
+class JSNode_IFrame_SendMsg extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_IFRAME_SENDMSG, '向i框架发消息', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+        if (nodeJson) {
+            this.inputScokets_arr.forEach(socket => {
+                switch (socket.name) {
+                    case 'data':
+                        this.dataScoket = socket;
+                        break;
+                    case 'type':
+                        this.typeScoket = socket;
+                        break;
+                    case 'frame':
+                        this.frameScoket = socket;
+                        break;
+                }
+            });
+        }
+        if (this.frameScoket == null) {
+            this.frameScoket = this.addSocket(new NodeSocket('frame', this, true));
+        }
+        if (this.typeScoket == null) {
+            this.typeScoket = this.addSocket(new NodeSocket('type', this, true));
+        }
+        if (this.dataScoket == null) {
+            this.dataScoket = this.addSocket(new NodeSocket('data', this, true));
+        }
+
+        this.typeScoket.label = '消息类型';
+        this.dataScoket.label = '消息数据';
+        this.frameScoket.label = 'i框架';
+
+        this.typeScoket.type = ValueType.String;
+        this.dataScoket.type = ValueType.Object;
+
+        this.typeScoket.inputable = true;
+        this.dataScoket.inputable = true;
+        this.frameScoket.inputable = false;
+        this.frameScoket.type = SocketType_CtlKernel;
+        this.frameScoket.kernelType = IFrameKernel_Type;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var theProject = this.bluePrint.master.project;
+
+        var myJSBlock = new FormatFileBlock('');
+        belongBlock.pushChild(myJSBlock);
+        var socketComRet = this.getSocketCompileValue(helper, this.typeScoket, usePreNodes_arr, myJSBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var msgtype = socketComRet.value;
+        socketComRet = this.getSocketCompileValue(helper, this.dataScoket, usePreNodes_arr, myJSBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var msgdata = socketComRet.value;
+
+        var selectedCtlid = this.frameScoket.getExtra('ctlid');
+        var selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
+        if (this.checkCompileFlag(selectedKernel == null, '需要i框架', helper)) {
+            return false;
+        }
+        var relCtlKernel = this.bluePrint.ctlKernel;
+        var canAccessCtls_arr = relCtlKernel.getAccessableKernels(IFrameKernel_Type);
+        if (this.checkCompileFlag(canAccessCtls_arr.indexOf(selectedKernel) == -1, '指定的控件不可访问', helper)) {
+            return false;
+        }        
+        var pathVar = singleQuotesStr(selectedKernel.getStatePath('msg', '.', { mapVarName: VarNames.RowKeyInfo_map }));
+        var belongUserCtl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
+        if (belongUserCtl) {
+            pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath('msg', '.', { mapVarName: VarNames.RowKeyInfo_map }));
+        }
+
+        var inreducer = this.isInReducer(preNodes_arr);
+        var msgstr = "{type:" + msgtype + ",data:" + msgdata + "}";
+        if(inreducer){
+            myJSBlock.pushLine("setStateByPath(state, " + pathVar + ", " + msgstr + ");");
+        }
+        else{
+            myJSBlock.pushLine('setTimeout(() => {', 1);
+            myJSBlock.pushLine("store.dispatch(makeAction_setStateByPath(" + msgstr + "," + pathVar + "));", -1);
+            myJSBlock.pushLine('},50);');
+        }
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
+
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_OP_NOT] = {
     modelClass: JSNode_OP_Not,
     comClass: C_Node_SimpleNode,
@@ -626,5 +743,9 @@ JSNodeClassMap[JSNODE_FUN_CREATE] = {
 };
 JSNodeClassMap[JSNODE_FUN_CALL] = {
     modelClass: JSNode_Fun_Call,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_IFRAME_SENDMSG] = {
+    modelClass: JSNode_IFrame_SendMsg,
     comClass: C_Node_SimpleNode,
 };
