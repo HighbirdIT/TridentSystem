@@ -1003,7 +1003,7 @@ class SqlNode_CaseWhen extends SqlNode_Base {
                 socket.inputable = false;
             });
         }
-        var inputLabels_arr=['列名','变量','自定义值'];
+        var inputLabels_arr=['列名','变量','自定义值(*)'];
         this.inputScokets_arr.forEach((soket, i) => {
             soket.label = inputLabels_arr[i];
         });
