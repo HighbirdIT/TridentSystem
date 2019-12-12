@@ -228,7 +228,6 @@ var M_Page = function (_React$PureComponent) {
 }(React.PureComponent);
 
 DesignerConfig.registerControl({
-    forPC: false,
     label: '页面',
     type: 'M_Page',
     invisible: true,

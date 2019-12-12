@@ -324,6 +324,7 @@ const AttrNames={
     KeyColumn:'keyColumn',
     RefreshIcon: 'refreshicon',
     DefaultSelectFirst: 'defaultSelectFirst',
+    WidthFactor: 'widthfactor',
 
     Event:{
         OnClick:'onclick',

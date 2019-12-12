@@ -48,10 +48,12 @@ var CProject = function (_IAttributeable) {
         _this.project = _this;
         _this.userControls_arr = [];
 
-        _this.designeConfig = {
+        var designeConfig = {
             name: genProjectName(),
-            editingType: 'MB',
+            editingType: jsonData == null || jsonData.editingType == null ? 'MB' : jsonData.editingType,
             editingPage: {
+                mbid: jsonData == null || jsonData.lastEditingMBPageID == null ? -1 : jsonData.lastEditingMBPageID,
+                pcid: jsonData == null || jsonData.lastEditingPCPageID == null ? -1 : jsonData.lastEditingPCPageID,
                 id: jsonData == null ? -1 : jsonData.lastEditingPageID
             },
             description: '页面',
@@ -59,6 +61,7 @@ var CProject = function (_IAttributeable) {
                 id: jsonData == null ? -1 : jsonData.lastEditingControlID
             }
         };
+        _this.designeConfig = designeConfig;
 
         _this.content_PC = {
             pages: []
@@ -101,10 +104,19 @@ var CProject = function (_IAttributeable) {
             var self = _this;
             var ctlCreatioinHelper = new CtlKernelCreationHelper();
             ctlCreatioinHelper.restoreHelper = restoreHelper;
+            var newPage;
             jsonData.content_Mobile.pages.forEach(function (pageJson) {
                 pageJson.restoreHelper = restoreHelper;
-                var newPage = new M_PageKernel({}, _this, ctlCreatioinHelper, pageJson);
+                newPage = new M_PageKernel({}, _this, ctlCreatioinHelper, pageJson);
+                newPage.ispcPage = false;
                 _this.content_Mobile.pages.push(newPage);
+            });
+
+            jsonData.content_PC.pages.forEach(function (pageJson) {
+                pageJson.restoreHelper = restoreHelper;
+                newPage = new M_PageKernel({}, _this, ctlCreatioinHelper, pageJson);
+                newPage.ispcPage = true;
+                _this.content_PC.pages.push(newPage);
             });
         }
         _this.loaded = true;
@@ -395,6 +407,7 @@ var CProject = function (_IAttributeable) {
             } else {
                 this.content_Mobile.pages.push(newPage);
             }
+            newPage.ispcPage = isPC;
             return newPage;
         }
     }, {
@@ -457,13 +470,35 @@ var CProject = function (_IAttributeable) {
         }
     }, {
         key: 'setEditingType',
-        value: function setEditingType(newValue) {}
+        value: function setEditingType(newValue) {
+            var nowValue = this.designeConfig.editingType;
+            var editingPage = this.getEditingPage();
+            if (newValue == nowValue) {
+                return;
+            }
+            if (nowValue == 'PC') {
+                this.designeConfig.editingPage.pcid = editingPage == null ? -1 : editingPage.id;
+            } else {
+                this.designeConfig.editingPage.mbid = editingPage == null ? -1 : editingPage.id;
+            }
+            this.designeConfig.editingType = newValue == 'PC' ? 'PC' : 'MB';
+            if (newValue == 'PC') {
+                this.setEditingPageById(this.designeConfig.editingPage.pcid);
+            } else {
+                this.setEditingPageById(this.designeConfig.editingPage.mbid);
+            }
+            this.attrChanged('editingType');
+        }
     }, {
         key: 'toggleEditingType',
-        value: function toggleEditingType(newValue) {
-            this.designeConfig.editingType = this.designeConfig.editingType == 'PC' ? 'MB' : 'PC';
-            this.attrChanged('editingType');
+        value: function toggleEditingType() {
+            this.setEditingType(this.designeConfig.editingType == 'PC' ? 'MB' : 'PC');
             return true;
+        }
+    }, {
+        key: 'getNowEditingType',
+        value: function getNowEditingType() {
+            return this.designeConfig.editingType;
         }
     }, {
         key: 'set_title',
@@ -492,7 +527,10 @@ var CProject = function (_IAttributeable) {
             var attrJson = _get(CProject.prototype.__proto__ || Object.getPrototypeOf(CProject.prototype), 'getJson', this).call(this, jsonProf);
             var rlt = {
                 attr: attrJson,
+                editingType: this.designeConfig.editingType,
                 lastEditingPageID: this.designeConfig.editingPage.id,
+                lastEditingPCPageID: this.designeConfig.editingPage.pcid,
+                lastEditingMBPageID: this.designeConfig.editingPage.mbid,
                 lastEditingControlID: this.designeConfig.editingControl.id
             };
             rlt.content_PC = {

@@ -74,7 +74,6 @@ class CEmpty extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC : false,
         invisible : true,
         label : '占位对象',
         type : EmptyKernel_Type,

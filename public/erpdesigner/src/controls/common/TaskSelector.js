@@ -108,7 +108,6 @@ class CTaskSelector extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC: false,
         label: '任务选择器',
         type: TaskSelector_Type,
         namePrefix: TaskSelector_Prefix,

@@ -160,7 +160,6 @@ class CPopperButton extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC: false,
         label: 'PopperBtn',
         type: PopperButtonKernel_Type,
         namePrefix: FilePreviewer_Prefix,

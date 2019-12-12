@@ -631,43 +631,22 @@ function publishProject(req, res){
         var modifyRecordID = 0;
 
         var hostDir = httpApp.get('hostDirName') + '/';
-        if(compileResult.mobilePart != null){
+        if(compileResult.mobilePart != null && compileResult.mobilePart.length > 0){
             if(compileResult.mbLayoutName == null || compileResult.mbLayoutName.length == 0){
                 return {err:{info:'no mbLayoutName'}};
             }
             jsMobileClientName = projProfile.flowName + projProfile.enName + '_mb_' + newVersion;
             jsMobileClientPath = clientJsSrcDir + jsMobileClientName + ".js";
             fs.writeFileSync(jsMobileClientPath, compileResult.mobilePart);
-
-            var srcJsPath = hostDir + jsMobileClientPath;
-            var outputJsPath = hostDir + clientJsOutputDir + jsMobileClientName + ".js";
-            var execPath = 'npx babel '+ srcJsPath + ' --out-file ' + outputJsPath;
-            child_process.exec(execPath,function (error, stdout, stderr) {
-                var info = 'OK';
-                if (error !== null) {
-                    info = error.toString();
-                    console.log('exec error: ' + error);
-                }
-                
-            });
         }
 
-        if(compileResult.pcPart != null){
+        if(compileResult.pcPart != null && compileResult.pcPart.length > 0){
             if(compileResult.pcLayoutName == null || compileResult.pcLayoutName.length == 0){
                 return {err:{info:'no pcLayoutName'}};
             }
             jsPCClientName = projProfile.flowName + projProfile.enName + '_pc_' + newVersion;
             jsPCClientPath = clientJsSrcDir + jsPCClientName + ".js";
             fs.writeFileSync(jsPCClientPath, compileResult.pcPart);
-
-            var srcJsPath = hostDir + jsPCClientName;
-            var outputJsPath = hostDir + clientJsOutputDir + jsPCClientName + ".js";
-            var execPath = 'npx babel '+ srcJsPath + ' --out-file ' + outputJsPath;
-            child_process.exec(execPath,function (error, stdout, stderr) {
-                if (error !== null) {
-                    console.log('exec error: ' + error);
-                }
-            });
         }
 
         if(compileResult.serverPart != null){
@@ -707,7 +686,7 @@ function publishProject(req, res){
             version:newVersion,
         }
 
-        if(compileResult.mobilePart != null){
+        if(compileResult.mobilePart != null && compileResult.mobilePart.length > 0){
             var srcJsPath = hostDir + jsMobileClientPath;
             var outputJsPath = hostDir + clientJsOutputDir + jsMobileClientName + ".js";
             var execPath = 'npx babel '+ srcJsPath + ' --out-file ' + outputJsPath;
@@ -725,8 +704,8 @@ function publishProject(req, res){
             });
         }
 
-        if(compileResult.pcPart != null){
-            var srcJsPath = hostDir + jsPCClientName;
+        if(compileResult.pcPart != null && compileResult.pcPart.length > 0){
+            var srcJsPath = hostDir + jsPCClientPath;
             var outputJsPath = hostDir + clientJsOutputDir + jsPCClientName + ".js";
             var execPath = 'npx babel '+ srcJsPath + ' --out-file ' + outputJsPath;
             child_process.exec(execPath,function (error, stdout, stderr) {

@@ -325,7 +325,6 @@ class M_Dropdown extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC: false,
         label: '下拉框',
         type: M_DropdownKernel_Type,
         namePrefix: M_DropdownKernel_Prefix,

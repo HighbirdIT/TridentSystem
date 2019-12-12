@@ -163,7 +163,10 @@ var FixedContainer = function (_React$PureComponent) {
                 var foundElem = state.pages_arr.find(function (x) {
                     return x.id == id;
                 });
-                if (foundElem != null) return state;
+                if (foundElem != null) {
+                    foundElem.closed = false;
+                    return state;
+                }
                 return {
                     pages_arr: state.pages_arr.concat({ id: id, elem: pageElem })
                 };
@@ -176,8 +179,9 @@ var FixedContainer = function (_React$PureComponent) {
                 return x.id == id;
             });
             if (foundElem == null) return false;
+            foundElem.closed = true;
             var newArr = this.state.pages_arr.filter(function (x) {
-                return x != foundElem;
+                return !x.closed && x != foundElem;
             });
             this.setState({
                 pages_arr: newArr

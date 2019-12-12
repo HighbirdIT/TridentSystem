@@ -118,7 +118,6 @@ class M_CheckBox extends React.PureComponent {
 
 DesignerConfig.registerControl(
     {
-        forPC: false,
         label: '复选框',
         type: M_CheckBoxKernel_Type,
         namePrefix: M_CheckBoxKernel_Prefix,
