@@ -68,8 +68,9 @@ class PCContentCompiler extends MobileContentCompiler {
                 beRely_arr: [],
             };
         }
+        var kernelProfile;
         var setRelyFun = (kernelid, relyOnid) => {
-            var kernelProfile = userCtlTemplateProfiles_map[kernelid];
+            kernelProfile = userCtlTemplateProfiles_map[kernelid];
             var relyOnKernelProfile = userCtlTemplateProfiles_map[relyOnid];
 
             if (kernelProfile.relyOn_arr.indexOf((relyOnid)) == -1) {
@@ -169,8 +170,14 @@ class PCContentCompiler extends MobileContentCompiler {
         clientSide.pageLoadedReducerFun.flowStepSwitch = flowStepSwitch;
         clientSide.pageLoadedReducerFun.pushLine("return gotoPage(targetPageID, state);");
 
+        var projLayoutConfig = project.getLayoutConfig(AttrNames.LayoutNames.APDClass, AttrNames.LayoutNames.StyleAttr);
+        projLayoutConfig.addClass('w-100');
+        projLayoutConfig.addClass('h-100');
+        var projStyleID = '_project_style';
+        var hasProjStyle = this.clientSide.addStyleObject(projStyleID, projLayoutConfig.style);
+
         clientSide.appClass.renderFun.pushLine(VarNames.RetElem + " = (", 1);
-        clientSide.appClass.renderFun.pushLine("<div className='w-100 h-100'>");
+        clientSide.appClass.renderFun.pushLine("<div className=" + singleQuotesStr(projLayoutConfig.getClassName()) + (hasProjStyle ? ' style={' + projStyleID + '}' : '') + ">");
         clientSide.appClass.renderFun.pushLine("<ERPC_TopLevelFrame ref={gTopLevelFrameRef} />");
         clientSide.appClass.renderFun.pushLine("<CToastManger ref={gCToastMangerRef} />");
         clientSide.appClass.renderFun.pushLine("<CMessageBoxManger ref={gCMessageBoxMangerRef} />");
@@ -208,7 +215,7 @@ class PCContentCompiler extends MobileContentCompiler {
                         propChangedHandlerName = relyPath.berelyCtl.id + '_' + relyPath.berelyPropName + '_changed';
                         changedFun = clientSide.scope.getFunction(propChangedHandlerName);
                         if (changedFun == null) {
-                            changedFun = clientSide.scope.getFunction(propChangedHandlerName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowIndexInfo_map']);
+                            changedFun = clientSide.scope.getFunction(propChangedHandlerName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowKeyInfo_map']);
                             changedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
                             changedFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''", VarNames.NeedSetState], ';'));
                             clientSide.stateChangedAct[singleQuotesStr(propFulPath)] = propChangedHandlerName + '.bind(window)';
@@ -241,10 +248,10 @@ class PCContentCompiler extends MobileContentCompiler {
                             else {
                                 console.error('不支持的approach!');
                             }
-                            var rowIndexInfo_map = {
-                                mapVarName: 'rowIndexInfo_map',
+                            var rowKeyInfo_map = {
+                                mapVarName: 'rowKeyInfo_map',
                             };
-                            changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName, '.', rowIndexInfo_map)), getValueStr));
+                            changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName, '.', rowKeyInfo_map)), getValueStr));
                         }
                         else {
                             var actKey = 'call_' + relyPath.funName;

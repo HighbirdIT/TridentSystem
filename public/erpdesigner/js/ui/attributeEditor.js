@@ -25,6 +25,7 @@ var AttributeEditor = function (_React$PureComponent) {
             targetobj: _this.props.targetobj
         };
         _this.state = initState;
+        _this.ddc_ref = React.createRef();
         return _this;
     }
 
@@ -94,8 +95,6 @@ var AttributeEditor = function (_React$PureComponent) {
     }, {
         key: 'attrChangedHandler',
         value: function attrChangedHandler(ev) {
-            var _this2 = this;
-
             var myAttrName = this.props.targetattr.name;
             var match = function match(pattern) {
                 return typeof pattern === 'string' ? myAttrName === pattern : pattern.test(key);
@@ -110,8 +109,13 @@ var AttributeEditor = function (_React$PureComponent) {
                 isMyAttrChaned = ev.name.some(match);
             }
             if (isMyAttrChaned) {
+                var self = this;
                 this.setState(function (nowState) {
-                    return { value: _this2.getAttrNowValue() };
+                    var newValue = self.getAttrNowValue();
+                    if (self.ddc_ref && self.ddc_ref.current) {
+                        self.ddc_ref.current.setValue(newValue);
+                    }
+                    return { value: newValue };
                 });
             }
         }
@@ -528,7 +532,7 @@ var AttributeEditor = function (_React$PureComponent) {
                         );
                     }
                 }
-                var ddc = React.createElement(DropDownControl, { options_arr: useOptioins_arr, value: nowVal, itemChanged: this.itemChangedHandler, textAttrName: dropdownSetting.text, valueAttrName: dropdownSetting.value, editable: dropdownSetting.editable });
+                var ddc = React.createElement(DropDownControl, { ref: this.ddc_ref, options_arr: useOptioins_arr, value: nowVal, itemChanged: this.itemChangedHandler, textAttrName: dropdownSetting.text, valueAttrName: dropdownSetting.value, editable: dropdownSetting.editable });
                 if (jsIconElem == null) {
                     return ddc;
                 }
@@ -538,7 +542,7 @@ var AttributeEditor = function (_React$PureComponent) {
                     React.createElement(
                         'div',
                         { className: 'd-flex flex-column flex-grow-1 flex-shrink-1' },
-                        React.createElement(DropDownControl, { options_arr: useOptioins_arr, value: nowVal, itemChanged: this.itemChangedHandler, textAttrName: dropdownSetting.text, valueAttrName: dropdownSetting.value, editable: dropdownSetting.editable })
+                        ddc
                     ),
                     jsIconElem
                 );
@@ -568,7 +572,7 @@ var AttributeEditor = function (_React$PureComponent) {
     }, {
         key: 'render',
         value: function render() {
-            var _this3 = this;
+            var _this2 = this;
 
             if (this.state.targetobj != this.props.targetobj) {
                 var self = this;
@@ -578,7 +582,7 @@ var AttributeEditor = function (_React$PureComponent) {
                         targetobj: self.props.targetobj,
                         value: self.getAttrNowValue()
                     });
-                    self.listenTarget(_this3.props.targetobj);
+                    self.listenTarget(_this2.props.targetobj);
                 }, 1);
                 return null;
             }
@@ -636,15 +640,15 @@ var AttributeGroup = function (_React$PureComponent2) {
     function AttributeGroup(props) {
         _classCallCheck(this, AttributeGroup);
 
-        var _this4 = _possibleConstructorReturn(this, (AttributeGroup.__proto__ || Object.getPrototypeOf(AttributeGroup)).call(this, props));
+        var _this3 = _possibleConstructorReturn(this, (AttributeGroup.__proto__ || Object.getPrototypeOf(AttributeGroup)).call(this, props));
 
-        autoBind(_this4);
+        autoBind(_this3);
 
         var initState = {
-            target: _this4.props.target
+            target: _this3.props.target
         };
-        _this4.state = initState;
-        return _this4;
+        _this3.state = initState;
+        return _this3;
     }
 
     _createClass(AttributeGroup, [{
@@ -727,13 +731,13 @@ var AttributeGroup = function (_React$PureComponent2) {
     }, {
         key: 'render',
         value: function render() {
-            var _this5 = this;
+            var _this4 = this;
 
             var self = this;
             if (this.state.target != this.props.target) {
                 setTimeout(function () {
                     self.setState({
-                        target: _this5.props.target
+                        target: _this4.props.target
                     });
                 }, 1);
                 return null;
@@ -759,7 +763,7 @@ var AttributeGroup = function (_React$PureComponent2) {
                     'div',
                     { id: "attrGroup" + projectName + attrGroup.label, className: "list-group flex-grow-0 flex-shrink-0 collapse" + (attrGroupIndex >= 0 ? ' show' : '') },
                     attrGroup.attrs_arr.map(function (attr) {
-                        return _this5.renderAttribute(attr);
+                        return _this4.renderAttribute(attr);
                     })
                 )
             );

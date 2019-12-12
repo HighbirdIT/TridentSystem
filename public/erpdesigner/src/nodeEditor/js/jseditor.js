@@ -55,6 +55,11 @@ const JSNodeEditorControls_arr =[
         type:'数学'
     },
     {
+        label:'NOT(!)',
+        nodeClass:JSNode_OP_Not,
+        type:'数学'
+    },
+    {
         label:'Switch',
         nodeClass:JSNode_Switch,
         type:'流控制'
@@ -62,6 +67,11 @@ const JSNodeEditorControls_arr =[
     {
         label:'Break',
         nodeClass:JSNode_Break,
+        type:'流控制'
+    },
+    {
+        label:'Continue',
+        nodeClass:JSNode_Continue,
         type:'流控制'
     },
     {
@@ -165,7 +175,7 @@ const JSNodeEditorControls_arr =[
         type:'操纵字符串'
     },
     {
-        label:'字符串-IndexOf',
+        label:'IndexOf',
         nodeClass:JSNode_String_IndexOf,
         type:'操纵字符串'
     },
@@ -245,6 +255,11 @@ const JSNodeEditorControls_arr =[
         type:'窗体控制'
     },
     {
+        label:'添加页面到框架集',
+        nodeClass:JSNode_AddPageToFrameSet,
+        type:'窗体控制'
+    },
+    {
         label:'弹出消息窗',
         nodeClass:JSNode_PopMessageBox,
         type:'消息窗控制'
@@ -288,6 +303,16 @@ const JSNodeEditorControls_arr =[
         label:'钉钉-关闭浏览器',
         nodeClass:JSNode_DD_NavClose,
         type:'钉钉Api'
+    },
+    {
+        label:'函数-创建局部函数',
+        nodeClass:JSNode_Fun_Create,
+        type:'操作函数'
+    },
+    {
+        label:'函数-调用函数',
+        nodeClass:JSNode_Fun_Call,
+        type:'操作函数'
     },
 ];
 

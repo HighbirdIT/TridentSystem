@@ -37,6 +37,10 @@ class DropDownControl extends React.PureComponent {
     }
 
     setValue(val){
+        if(typeof val == 'object'){
+            var valueAttrName = this.props.valueAttrName == null ? this.props.textAttrName : this.props.valueAttrName;
+            val = val[valueAttrName];
+        }
         if(this.props.editable && !this.editIsKeyword){
             this.setState({
                 value:val,

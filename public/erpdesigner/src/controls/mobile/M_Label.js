@@ -5,6 +5,7 @@ const M_LabelKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('小数精度', AttrNames.FloatNum, ValueType.Int, 2, true, false, null, null, false),
         new CAttribute('输出字数', AttrNames.OutputCharCount, ValueType.Boolean, false),
         genIsdisplayAttribute(),
+        new CAttribute('默认可见', AttrNames.DefaultVisible, ValueType.Boolean, true),
     ]),
     new CAttributeGroup('事件',[
         new CAttribute('OnMDown', AttrNames.Event.OnMouseDown, ValueType.Event),

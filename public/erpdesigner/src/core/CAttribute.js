@@ -115,6 +115,10 @@ function makeFName_bindFormPage(formKernel){
     return 'bind_' + formKernel.id + 'Page';
 }
 
+function makeFName_SaveInsertForm(formKernel){
+    return 'saveInsertCache' + formKernel.id;
+}
+
 function makeFName_pull(formKernel){
     return 'pull_' + formKernel.id;
 }
@@ -141,8 +145,8 @@ function makeActStr_getGDataCache(key){
     return VarNames.gDataCache + '.get(' + singleQuotesStr(key) + ')';
 }
 
-function makeLine_setGDataCache(key, value){
-    return VarNames.gDataCache + '.set(' + singleQuotesStr(key) + ',' + value + ');';
+function makeLine_setGDataCache(key, value, autoQuote = true){
+    return VarNames.gDataCache + '.set(' + (autoQuote ? singleQuotesStr(key) : key) + ',' + value + ');';
 }
 
 function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr, paramObj, isModel = true, url = 'appServerUrl'){
@@ -208,10 +212,11 @@ const VarNames={
     PageRouter:'pageRouter',
     gDataCache:'gDataCache',
     RowIndex:'rowIndex',
+    RowKey:'rowkey',
     CallBack:'callBack',
     FetchKey:'fetchKey',
     ParentPath:'parentPath',
-    RowIndexInfo_map:'rowIndexInfo_map',
+    RowKeyInfo_map:'rowKeyInfo_map',
     SelectMode:'selectMode',
     FullPath:'fullPath',
     FullParentPath:'fullParentPath',
@@ -226,6 +231,8 @@ const VarNames={
     SatePath:'statePath',
     Visible:'visible',
     NowRow:'nowrow',
+    SelectedProfile:'selectedProfile',
+
 };
 
 
@@ -325,6 +332,8 @@ const AttrNames={
     RefreshIcon: 'refreshicon',
     DefaultSelectFirst: 'defaultSelectFirst',
     WidthFactor: 'widthfactor',
+    RenderMode: 'rendermode',
+    InitOnRowChanged: 'initOnRowChanged',
 
     Event:{
         OnClick:'onclick',
@@ -332,12 +341,14 @@ const AttrNames={
         OnDelete:'onDelete',
         OnInsert:'onInsert',
         OnLoad:'onLoad',
+        OnInit:'onInit',
         OnChanged:'onChanged',
         OnMouseDown:'onMouseDown',
         OnSelectedChanged:'onSelectedChanged',
         OnRowChanged:'onRowChanged',
         OnUploadComplete:'onUploadComplate',
         OnDataSourceChanged:'onDataSourceChanged',
+        OnClickCloseBtn:'onClickCloseBtn',
     },
 
     LayoutNames:{

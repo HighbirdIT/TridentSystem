@@ -13,6 +13,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('标题对齐', AttrNames.TextAlign, ValueType.String, ETextAlign.Left, true, false, TextAligns_arr),
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
         new CAttribute('数据源', AttrNames.DataSource, ValueType.DataSource, null, true, false, 'getCanUseDataSource', { text: 'name', value: 'code' }),
+        new CAttribute('Key列', AttrNames.KeyColumn, ValueType.String, '', true, false, 'getKeyCanuseColumns'),
         new CAttribute('稳定的数据', AttrNames.StableData, ValueType.Boolean, false),
         new CAttribute('操作表', AttrNames.ProcessTable, ValueType.DataSource, null, true, false, g_dataBase.getAllTable, { text: 'name', value: 'code' }),
         new CAttribute('表单类别', AttrNames.FormType, ValueType.String, EFormType.Page, true, false, FormTypes_arr),
@@ -35,7 +36,6 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('有滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
         new CAttribute('有刷新图标', AttrNames.RefreshIcon, ValueType.Boolean, true),
         new CAttribute('模式', AttrNames.SelectMode, ValueType.String, ESelectMode.None, true, false, SelectModes_arr),
-        new CAttribute('Key列', AttrNames.KeyColumn, ValueType.String, '', true, false, 'getCanuseColumns'),
         new CAttribute('默认选中首项', AttrNames.DefaultSelectFirst, ValueType.Boolean, false),
         new CAttribute('bottomDivID', 'bottomDivID', ValueType.String, '', true, false, null, null, false),
         new CAttribute('editorID', 'editorID', ValueType.String, '', true, false, null, null, false),
@@ -44,6 +44,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('NoRender', AttrNames.NoRender, ValueType.Boolean, false),
         new CAttribute('点选模式', AttrNames.ClickSelectable, ValueType.Boolean, false),
         new CAttribute('访问控制', AttrNames.AcessAssert, ValueType.Event),
+        new CAttribute(VarNames.NowRecord, VarNames.NowRecord, ValueType.Object, 1, false, false, null, null, false),
         new CAttribute(VarNames.RecordIndex, VarNames.RecordIndex, ValueType.Int, 1, false, false, null, null, false),
         new CAttribute(VarNames.Records_arr, VarNames.Records_arr, ValueType.Array, 1, false, false, null, null, false),
         new CAttribute(VarNames.SelectedValue, VarNames.SelectedValue, ValueType.Int, 1, false, false, null, null, false),
@@ -61,8 +62,8 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('选择行变更', AttrNames.Event.OnSelectedChanged, ValueType.Event),
     ]),
     new CAttributeGroup('List设置', [
-        new CAttribute('PopperStyle', 'item' + AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
-        new CAttribute('PopperClass', 'item' + AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true),
+        new CAttribute('ItemStyle', 'item' + AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
+        new CAttribute('ItemClass', 'item' + AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true),
     ]),
 ]);
 
@@ -143,12 +144,11 @@ class M_FormKernel extends ContainerKernelBase {
         this[AttrNames.AutoIndexColumn + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.GenNavBar + '_visible'] = nowft == EFormType.Grid || nowft == EFormType.Page;
         this[AttrNames.SelectMode + '_visible'] = nowft == EFormType.Grid || nowft == EFormType.List;
-        this[AttrNames.KeyColumn + '_visible'] = this[AttrNames.SelectMode + '_visible'] && this.getAttribute(AttrNames.SelectMode) != ESelectMode.None;
-        this[AttrNames.DefaultSelectFirst + '_visible'] = this[AttrNames.KeyColumn + '_visible'];
+        this[AttrNames.DefaultSelectFirst + '_visible'] = this[AttrNames.SelectMode + '_visible'] && (this.getAttribute(AttrNames.ClickSelectable) || this.getAttribute(AttrNames.SelectMode) != ESelectMode.None);
         this[AttrNames.HideTabHead + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.EditorType + '_visible'] = nowft == EFormType.List;
         this[AttrNames.NoRender + '_visible'] = nowft == EFormType.Page;
-        this[AttrNames.Wrap + '_visible'] = nowft == EFormType.List;
+        this[AttrNames.Wrap + '_visible'] = nowft == EFormType.List || nowft == EFormType.Page;
         this[AttrNames.ClickSelectable + '_visible'] = nowft == EFormType.List || nowft == EFormType.Grid;
         
         this.findAttrGroupByName('List设置').setVisible(this, nowft == EFormType.List);
@@ -158,7 +158,14 @@ class M_FormKernel extends ContainerKernelBase {
         this[AttrNames.Event.OnDelete + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.Event.OnUpdate + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.Event.OnInsert + '_visible'] = nowft == EFormType.Grid;
-        
+
+        var KeyColumn = this.getAttribute(AttrNames.KeyColumn);
+        if(IsEmptyString(KeyColumn)){
+            var columns_arr = this.getCanuseColumns();
+            if(columns_arr.length > 0){
+                this.setAttribute(AttrNames.KeyColumn, columns_arr[0]);    
+            }
+        }
 
         var self = this;
         autoBind(self);
@@ -242,14 +249,9 @@ class M_FormKernel extends ContainerKernelBase {
         }
         if(scriptBP.name.indexOf(AttrNames.Event.OnSelectedChanged) != -1){
             var selectMode = this.getAttribute(AttrNames.SelectMode);
-            var fixParams_arr = [];
-            switch(selectMode){
-                case ESelectMode.Single:
-                fixParams_arr = ['state','fullPath','record', 'rowIndex'];
-                break;
-                case ESelectMode.Multi:
-                fixParams_arr = ['state','fullPath','records_arr','rowIndexes_arr'];
-                break;
+            var fixParams_arr = ['state','fullPath','record', 'rowIndex', 'rowKey'];
+            if(selectMode == ESelectMode.Multi){
+                fixParams_arr = ['state','fullPath','records_arr','rowIndexes_arr', 'rowKeys_arr'];
             }
             scriptBP.setFixParam(fixParams_arr);
         }
@@ -426,7 +428,8 @@ class M_FormKernel extends ContainerKernelBase {
             case AttrNames.DataSource:
                 this.autoSetCusDataSource();
                 var columns_arr = this.getCanuseColumns();
-                this.setAttribute(AttrNames.KeyColumn, columns_arr.length == 0 ? '' : columns_arr[0]);
+                this.setAttribute(AttrNames.KeyColumn, columns_arr.length == 0 ? '' : columns_arr[0]);    
+                
                 break;
             case AttrNames.FormType:
                 var isGridForm = newValue == EFormType.Grid;
@@ -439,13 +442,11 @@ class M_FormKernel extends ContainerKernelBase {
                 this.findAttributeByName(AttrNames.AutoIndexColumn).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.GenNavBar).setVisible(this, isGridForm || isPageForm);
                 this.findAttributeByName(AttrNames.SelectMode).setVisible(this, isGridForm || isListForm);
-                keyColumnVisible = (isGridForm || isListForm) && (this.getAttribute(AttrNames.SelectMode) != ESelectMode.None);
-                this.findAttributeByName(AttrNames.KeyColumn).setVisible(this, keyColumnVisible);
-                this.findAttributeByName(AttrNames.DefaultSelectFirst).setVisible(this, keyColumnVisible);
+                this.findAttributeByName(AttrNames.DefaultSelectFirst).setVisible(this, (isGridForm || isListForm) && (this.getAttribute(AttrNames.ClickSelectable) || (this.getAttribute(AttrNames.SelectMode) != ESelectMode.None)));
                 this.findAttributeByName(AttrNames.HideTabHead).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.EditorType).setVisible(this, isListForm);
                 this.findAttributeByName(AttrNames.NoRender).setVisible(this, isPageForm);
-                this.findAttributeByName(AttrNames.Wrap).setVisible(this, isListForm);
+                this.findAttributeByName(AttrNames.Wrap).setVisible(this, isListForm || isPageForm);
                 this.findAttributeByName(AttrNames.ClickSelectable).setVisible(this, isListForm || isPageForm);
                 
                 this.findAttributeByName(AttrNames.Event.OnSelectedChanged).setVisible(this, isGridForm || isListForm);
@@ -475,8 +476,7 @@ class M_FormKernel extends ContainerKernelBase {
                 console.log('Names.Event.OnUpd');
                 break;
             case AttrNames.SelectMode:
-                keyColumnVisible = newValue != ESelectMode.None && (this.isGridForm() || this.isListForm());
-                this.findAttributeByName(AttrNames.KeyColumn).setVisible(this, keyColumnVisible);
+                this.findAttributeByName(AttrNames.KeyColumn).setVisible(this, newValue != ESelectMode.None && (this.isGridForm() || this.isListForm()));
                 this.findAttributeByName(AttrNames.DefaultSelectFirst).setVisible(this, keyColumnVisible);
                 var theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnSelectedChanged);
                 this.scriptCreated(null, theBP);
@@ -504,6 +504,10 @@ class M_FormKernel extends ContainerKernelBase {
         return getDSAttrCanuseColumns.call(this, AttrNames.DataSource, AttrNames.CustomDataSource);
     }
 
+    getKeyCanuseColumns() {
+        return getDSAttrCanuseColumns.call(this, AttrNames.DataSource, AttrNames.CustomDataSource).concat(DefaultKeyColumn);
+    }
+
     renderSelf(clickHandler, replaceChildClick, designer) {
         return (<M_Form key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} replaceChildClick={replaceChildClick} />)
     }
@@ -512,9 +516,14 @@ class M_FormKernel extends ContainerKernelBase {
 var MForm_api = new ControlAPIClass(M_FormKernel_Type);
 MForm_api.pushApi(new ApiItem_propsetter('title'));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.RecordIndex, M_FormKernelAttrsSetting), VarNames.RecordIndex, false));
+MForm_api.pushApi(new ApiItem_propsetter(VarNames.RecordIndex));
+MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.NowRecord, M_FormKernelAttrsSetting), VarNames.NowRecord, false));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.Records_arr, M_FormKernelAttrsSetting), VarNames.Records_arr, false));
+MForm_api.pushApi(new ApiItem_propsetter(VarNames.Records_arr));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.SelectedValue, M_FormKernelAttrsSetting), VarNames.SelectedValue, true));
+MForm_api.pushApi(new ApiItem_propsetter(VarNames.SelectedValue));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.SelectedValues_arr, M_FormKernelAttrsSetting), VarNames.SelectedValues_arr, true));
+MForm_api.pushApi(new ApiItem_propsetter(VarNames.SelectedValues_arr));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.SelectedColumns, M_FormKernelAttrsSetting), VarNames.SelectedColumns, true,(ctlStateVarName, ctlKernel, propApiitem)=>{
     return makeStr_AddAll(ctlStateVarName,'==null ? "" : ', makeStr_callFun('GetFormSelectedColumns',[ctlStateVarName,singleQuotesStr(ctlKernel.getAttribute(AttrNames.KeyColumn)), singleQuotesStr(propApiitem.colname)]) + '.join(",")');
 }));  // 
@@ -527,7 +536,7 @@ class M_Form extends React.PureComponent {
         autoBind(this);
 
         var ctlKernel = this.props.ctlKernel;
-        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Orientation, AttrNames.Chidlren, AttrNames.FormType, AttrNames.WidthType, AttrNames.AutoIndexColumn, AttrNames.Title, AttrNames.SelectMode, 'item' + AttrNames.LayoutNames.StyleAttr, 'item' + AttrNames.LayoutNames.APDClass], inintState));
+        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Wrap,AttrNames.Orientation, AttrNames.Chidlren, AttrNames.FormType, AttrNames.WidthType, AttrNames.AutoIndexColumn, AttrNames.Title, AttrNames.SelectMode, 'item' + AttrNames.LayoutNames.StyleAttr, 'item' + AttrNames.LayoutNames.APDClass], inintState));
         M_ContainerBase(this);
 
         inintState.orientation = ctlKernel.getAttribute(AttrNames.Orientation);
@@ -537,6 +546,7 @@ class M_Form extends React.PureComponent {
         inintState.autoIndexColumn = ctlKernel.getAttribute(AttrNames.AutoIndexColumn);
         inintState.title = ctlKernel.getAttribute(AttrNames.Title);
         inintState.selectMode = ctlKernel.getAttribute(AttrNames.SelectMode);
+        inintState.wrap = ctlKernel.getAttribute(AttrNames.Wrap);
 
         this.state = inintState;
     }
@@ -558,6 +568,7 @@ class M_Form extends React.PureComponent {
             autoIndexColumn: ctlKernel.getAttribute(AttrNames.AutoIndexColumn),
             title: ctlKernel.getAttribute(AttrNames.Title),
             selectMode: ctlKernel.getAttribute(AttrNames.SelectMode),
+            wrap: ctlKernel.getAttribute(AttrNames.Wrap),
         });
     }
 
@@ -689,7 +700,7 @@ class M_Form extends React.PureComponent {
             <div className={outerDivClassStr} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {this.renderHandleBar()}
                 <span className='text-light bg-dark'>{title}</span>
-                <div className={'d-flex flex-grow-1 flex-shrink-1' + (this.state.orientation == Orientation_V ? ' flex-column' : '')} style={rootStyle}>
+                <div className={'d-flex flex-grow-1 flex-shrink-1' + (this.state.orientation == Orientation_V ? ' flex-column' : '') + (this.state.wrap ? ' flex-wrap' : '')} style={rootStyle}>
                     {contentElem}
                 </div>
             </div>

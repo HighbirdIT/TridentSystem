@@ -6,6 +6,7 @@ const fs = require("fs");
 var cluster = require('cluster');
 var cleanOldpages = require('./cleanOldpages');
 var backupWorker = require('./backupWorker.js');
+var currencyHelper = require('./currencyHelper');
 
 //path模块，可以生产相对和绝对路径
 const path =require('path');
@@ -16,6 +17,7 @@ var started = false;
 var workInt = 0;
 var cleanWorkInt = 0;
 var backupWorkInt = 0;
+var getCurrencyRateWorkInt = 0;
 var workTimeInt = 5 * 1000;
 var dayTimeInt = 1000 * 60  * 60 * 24;
 
@@ -30,6 +32,10 @@ function startWork(){
     if(backupWorkInt == 0){
         backupWorker.doWork();
         backupWorkInt = setInterval(backupWorker.doWork, dayTimeInt);
+    }
+    if(getCurrencyRateWorkInt == 0){
+        currencyHelper.freshCurrencyRate();
+        getCurrencyRateWorkInt = setInterval(currencyHelper.freshCurrencyRate, 1000 * 60  * 60 * 12);
     }
 }
 

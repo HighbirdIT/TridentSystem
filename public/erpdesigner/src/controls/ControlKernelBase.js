@@ -50,9 +50,10 @@ function GenControlKernelAttrsSetting(cusGroups_arr, includeDefault, includeLayo
     return rlt;
 }
 
+
 function getDSAttrCanuseColumns(dsAttrName, csAttrName){
     var useDS = this.getAttribute(dsAttrName);
-    if(useDS == null){
+    if(useDS == null || !useDS.loaded){
         return [];
     }
     var rlt = useDS.columns.map(col=>{
@@ -587,7 +588,7 @@ class ControlKernelBase extends IAttributeable {
         return rlt;
     }
 
-    getStatePath(stateName, splitChar = '.', rowIndexVar_map = {}, ignoreRowIndex = false, topestParant){
+    getStatePath(stateName, splitChar = '.', rowKeyVar_map = {}, ignoreRowKey = false, topestParant){
         var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
         switch(this.type){
             case M_ContainerKernel_Type:
@@ -608,18 +609,18 @@ class ControlKernelBase extends IAttributeable {
                 rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
                 break;
                 case M_FormKernel_Type:
-                if(ignoreRowIndex == true || !nowKernel.isKernelInRow(this)){
+                if(ignoreRowKey == true || !nowKernel.isKernelInRow(this)){
                     rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
                 }
                 else{
-                    var rowIndexVar = rowIndexVar_map[nowKernel.id];
-                    if(rowIndexVar == null && rowIndexVar_map.mapVarName){
-                        rowIndexVar = rowIndexVar_map.mapVarName + '.' + nowKernel.id;
+                    var rowKeyVar = rowKeyVar_map[nowKernel.id];
+                    if(rowKeyVar == null && rowKeyVar_map.mapVarName){
+                        rowKeyVar = rowKeyVar_map.mapVarName + '.' + nowKernel.id;
                     }
-                    if(rowIndexVar == null){
-                        console.error('getStatePath 遇到grid表单但是没有rowindex变量信息');
+                    if(rowKeyVar == null){
+                        console.error('getStatePath 遇到grid表单但是没有rowkey变量信息');
                     }
-                    rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + "row_'+" + rowIndexVar + "+'." + rlt;
+                    rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + "row_'+" + rowKeyVar + "+'." + rlt;
                 }
                 break;
             }

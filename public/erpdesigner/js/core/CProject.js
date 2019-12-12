@@ -11,7 +11,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var CProjectAttrsSetting = {
-    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('页面名称', 'title', ValueType.String, true), new CAttribute('真实名称', 'realName', ValueType.String, false)])]
+    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('页面名称', 'title', ValueType.String, true), new CAttribute('真实名称', 'realName', ValueType.String, false)]), new CAttributeGroup('顶层设置', [new CAttribute('样式', AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true), new CAttribute('类', AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true)])]
 };
 
 var projNames_project = {};
@@ -147,6 +147,53 @@ var CProject = function (_IAttributeable) {
             }
         }
     }, {
+        key: 'getLayoutConfig',
+        value: function getLayoutConfig(classAttrName, styleAttrName) {
+            var _this2 = this;
+
+            var rlt = new ControlLayoutConfig();
+            var apdAttrList = this.getAttrArrayList(classAttrName ? classAttrName : AttrNames.LayoutNames.APDClass);
+            var self = this;
+            apdAttrList.forEach(function (attrArrayItem) {
+                var val = _this2.getAttribute(attrArrayItem.name);
+                rlt.addClass(val);
+            });
+
+            var styleAttrList = this.getAttrArrayList(styleAttrName ? styleAttrName : AttrNames.LayoutNames.StyleAttr);
+            styleAttrList.forEach(function (attrArrayItem) {
+                var val = _this2.getAttribute(attrArrayItem.name);
+                if (val != null && !IsEmptyString(val.name) && !IsEmptyString(val.value)) {
+                    var styleName = val.name;
+                    var styleValue = val.value;
+                    switch (styleName) {
+                        case AttrNames.StyleAttrNames.Width:
+                        case AttrNames.StyleAttrNames.Height:
+                            {
+                                styleValue = isNaN(styleValue) ? styleValue : styleValue + 'px';
+                                break;
+                            }
+                        case AttrNames.StyleAttrNames.FlexGrow:
+                            {
+                                rlt.addSwitchClass(AttrNames.StyleAttrNames.FlexGrow, styleValue ? 1 : 0);
+                                styleName = null;
+                                break;
+                            }
+                        case AttrNames.StyleAttrNames.FlexShrink:
+                            {
+                                rlt.addSwitchClass(AttrNames.StyleAttrNames.FlexShrink, styleValue ? 1 : 0);
+                                styleName = null;
+                                break;
+                            }
+                    }
+
+                    if (styleName != null) {
+                        rlt.addStyle(styleName, styleValue);
+                    }
+                }
+            });
+            return rlt;
+        }
+    }, {
         key: 'addUserControl',
         value: function addUserControl(name) {
             name = name.trim();
@@ -264,7 +311,7 @@ var CProject = function (_IAttributeable) {
     }, {
         key: 'unRegisterControl',
         value: function unRegisterControl(ctlKernel) {
-            var _this2 = this;
+            var _this3 = this;
 
             var useID = ctlKernel.id;
             var registedCtl = this.getControlById(useID);
@@ -275,7 +322,7 @@ var CProject = function (_IAttributeable) {
 
             var useBPs_arr = this.scriptMaster.getBPsByControlKernel(useID);
             useBPs_arr.forEach(function (bp) {
-                _this2.scriptMaster.deleteBP(bp);
+                _this3.scriptMaster.deleteBP(bp);
             });
         }
     }, {
@@ -344,6 +391,9 @@ var CProject = function (_IAttributeable) {
             this.designeConfig.editingControl.id = -1;
             this.designeConfig.editingPage.id = pageID;
             this.attrChanged('editingPage');
+            if (thePage) {
+                this.setEditingType(!thePage.ispcPage ? 'MB' : 'PC');
+            }
         }
     }, {
         key: 'getPageById',
@@ -477,16 +527,28 @@ var CProject = function (_IAttributeable) {
                 return;
             }
             if (nowValue == 'PC') {
-                this.designeConfig.editingPage.pcid = editingPage == null ? -1 : editingPage.id;
+                if (editingPage) {
+                    this.designeConfig.editingPage.pcid = editingPage.id;
+                }
             } else {
-                this.designeConfig.editingPage.mbid = editingPage == null ? -1 : editingPage.id;
+                if (editingPage) {
+                    this.designeConfig.editingPage.mbid = editingPage.id;
+                }
             }
             this.designeConfig.editingType = newValue == 'PC' ? 'PC' : 'MB';
+            var restorePage = null;
             if (newValue == 'PC') {
-                this.setEditingPageById(this.designeConfig.editingPage.pcid);
+                restorePage = this.getPageById(this.designeConfig.editingPage.pcid);
+                if (restorePage && !restorePage.ispcPage) {
+                    restorePage = null;
+                }
             } else {
-                this.setEditingPageById(this.designeConfig.editingPage.mbid);
+                restorePage = this.getPageById(this.designeConfig.editingPage.mbid);
+                if (restorePage && restorePage.ispcPage) {
+                    restorePage = null;
+                }
             }
+            this.setEditingPageById(restorePage ? restorePage.id : -1);
             this.attrChanged('editingType');
         }
     }, {
@@ -560,7 +622,7 @@ var CProject = function (_IAttributeable) {
     }, {
         key: 'copyKernel',
         value: function copyKernel(theKernel) {
-            var _this3 = this;
+            var _this4 = this;
 
             if (theKernel == null) {
                 return;
@@ -590,7 +652,7 @@ var CProject = function (_IAttributeable) {
                 var dsJson = cusEntity.getJson(cusDSJsonProf);
                 cusDSJsonProf.customDS_arr.forEach(function (entity) {
                     if (entity.isCustomDS) {
-                        copyCusDS(entity, refControl_map);
+                        copyCusDS(entity, cusDS_arr, refControl_map);
                     }
                 });
                 if (refControl_map) {
@@ -664,7 +726,7 @@ var CProject = function (_IAttributeable) {
                         userCtlProfile.controlsID_map[ctlType] = [];
                     }
                     userCtlProfile.controlsID_map[ctlType].push(ctlid);
-                    var useScripteBP_arr = _this3.scriptMaster.getBPsByControlKernel(ctlid);
+                    var useScripteBP_arr = _this4.scriptMaster.getBPsByControlKernel(ctlid);
                     useScripteBP_arr.forEach(function (scriptBP) {
                         copyScript(scriptBP, userCtlProfile.scripts_arr, userCtlProfile.cusDS_arr, userCtlProfile.refControlID_map);
                     });
@@ -687,7 +749,7 @@ var CProject = function (_IAttributeable) {
     }, {
         key: 'pasteKernel',
         value: function pasteKernel(copiedData, parentKernel, targetIndex) {
-            var _this4 = this;
+            var _this5 = this;
 
             var copyFromThisProject = copiedData.project == this;
             var ctlID;
@@ -751,7 +813,7 @@ var CProject = function (_IAttributeable) {
             if (!copyFromThisProject) {
                 copiedData.userControls_arr.forEach(function (userCtlProfile) {
                     var UCJson = userCtlProfile.jsonData;
-                    var hadUserControl = _this4.getUserControlByUUID(UCJson.uuid);
+                    var hadUserControl = _this5.getUserControlByUUID(UCJson.uuid);
                     if (hadUserControl) {
                         if (hadUserControl.id != UCJson.id) {
                             renameContrls_map[UCJson.id] = hadUserControl.id;
@@ -808,7 +870,7 @@ var CProject = function (_IAttributeable) {
                         if (copyFromThisProject) {
                             return; // 从本方案里来的，自订数据源已经存在了肯定
                         }
-                        var hadSqlBp = _this4.dataMaster.getSqlBPByUUID(cusDSBP.uuid);
+                        var hadSqlBp = _this5.dataMaster.getSqlBPByUUID(cusDSBP.uuid);
                         if (hadSqlBp) {
                             if (cusDSBP.code != hadSqlBp.code) {
                                 renameCusDS_map[cusDSBP.code] = hadSqlBp.code;
@@ -835,7 +897,7 @@ var CProject = function (_IAttributeable) {
                     if (copyFromThisProject) {
                         return; // 从本方案里来的，自订数据源已经存在了肯定
                     }
-                    var hadSqlBp = _this4.dataMaster.getSqlBPByUUID(cusDSBP.uuid);
+                    var hadSqlBp = _this5.dataMaster.getSqlBPByUUID(cusDSBP.uuid);
                     if (hadSqlBp) {
                         return;
                     }
@@ -847,48 +909,48 @@ var CProject = function (_IAttributeable) {
                 }
                 var expireBP = null;
                 var sqlBPCreationHelper = new NodeCreationHelper();
-                sqlBPCreationHelper.project = _this4.project;
+                sqlBPCreationHelper.project = _this5.project;
                 var jsonStr = JSON.stringify(cusDSBP);
                 var goodJson = JSON.parse(replaceIDChangedInJsonString(jsonStr));
                 goodJson.uuid = useUUID;
                 if (cusDSBP.group == 'ctlcus') {
-                    expireBP = _this4.dataMaster.getSqlBPByName(goodJson.name);
+                    expireBP = _this5.dataMaster.getSqlBPByName(goodJson.name);
                     if (expireBP) {
-                        _this4.dataMaster.deleteSqlBP(expireBP);
+                        _this5.dataMaster.deleteSqlBP(expireBP);
                     }
                 }
-                var newbp = new SqlNode_BluePrint({ master: _this4.dataMaster }, goodJson, sqlBPCreationHelper);
-                _this4.dataMaster.addSqlBP(newbp);
+                var newbp = new SqlNode_BluePrint({ master: _this5.dataMaster }, goodJson, sqlBPCreationHelper);
+                _this5.dataMaster.addSqlBP(newbp);
             });
 
             needPasteScripts_arr.forEach(function (scriptBP) {
                 useUUID = null;
                 var expireBP = null;
                 var scriptBPCreationHelper = new NodeCreationHelper();
-                scriptBPCreationHelper.project = _this4.project;
+                scriptBPCreationHelper.project = _this5.project;
 
                 var jsonStr = JSON.stringify(scriptBP);
                 var goodJson = JSON.parse(replaceIDChangedInJsonString(jsonStr));
-                expireBP = _this4.scriptMaster.getBPByName(goodJson.name);
+                expireBP = _this5.scriptMaster.getBPByName(goodJson.name);
                 if (expireBP) {
-                    _this4.scriptMaster.deleteBP(expireBP);
+                    _this5.scriptMaster.deleteBP(expireBP);
                 }
                 goodJson.uuid = useUUID;
-                var newbp = new JSNode_BluePrint({ master: _this4.scriptMaster }, goodJson, scriptBPCreationHelper);
-                _this4.scriptMaster.addBP(newbp);
+                var newbp = new JSNode_BluePrint({ master: _this5.scriptMaster }, goodJson, scriptBPCreationHelper);
+                _this5.scriptMaster.addBP(newbp);
             });
 
             var createdUserCtls_arr = [];
             if (!copyFromThisProject) {
                 copiedData.userControls_arr.forEach(function (userCtlProfile) {
                     var UCJson = userCtlProfile.jsonData;
-                    var hadUserControl = _this4.getUserControlByUUID(UCJson.uuid);
+                    var hadUserControl = _this5.getUserControlByUUID(UCJson.uuid);
                     if (!hadUserControl) {
                         var userCtlCreatioinHelper = new CtlKernelCreationHelper();
-                        userCtlCreatioinHelper.project = _this4;
+                        userCtlCreatioinHelper.project = _this5;
                         var goodUserCtlJson = JSON.parse(replaceIDChangedInJsonString(JSON.stringify(UCJson)));
-                        var newUCtl = new UserControlKernel({ project: _this4 }, null, userCtlCreatioinHelper, goodUserCtlJson);
-                        _this4.userControls_arr.push(newUCtl);
+                        var newUCtl = new UserControlKernel({ project: _this5 }, null, userCtlCreatioinHelper, goodUserCtlJson);
+                        _this5.userControls_arr.push(newUCtl);
                         createdUserCtls_arr.push({
                             ctl: newUCtl,
                             json: goodUserCtlJson

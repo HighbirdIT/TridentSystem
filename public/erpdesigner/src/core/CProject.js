@@ -4,7 +4,11 @@ const CProjectAttrsSetting = {
         new CAttributeGroup('基本设置', [
             new CAttribute('页面名称', 'title', ValueType.String, true),
             new CAttribute('真实名称', 'realName', ValueType.String, false),
-        ])
+        ]),
+        new CAttributeGroup('顶层设置', [
+            new CAttribute('样式', AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
+            new CAttribute('类', AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true),
+        ]),
     ]
 };
 
@@ -137,6 +141,50 @@ class CProject extends IAttributeable {
                 });
             }
         }
+    }
+    
+    getLayoutConfig(classAttrName, styleAttrName) {
+        var rlt = new ControlLayoutConfig();
+        var apdAttrList = this.getAttrArrayList(classAttrName ? classAttrName : AttrNames.LayoutNames.APDClass);
+        var self = this;
+        apdAttrList.forEach(attrArrayItem => {
+            var val = this.getAttribute(attrArrayItem.name);
+            rlt.addClass(val);
+        });
+
+        var styleAttrList = this.getAttrArrayList(styleAttrName ? styleAttrName : AttrNames.LayoutNames.StyleAttr);
+        styleAttrList.forEach(attrArrayItem => {
+            var val = this.getAttribute(attrArrayItem.name);
+            if (val != null && !IsEmptyString(val.name) && !IsEmptyString(val.value)) {
+                var styleName = val.name;
+                var styleValue = val.value;
+                switch (styleName) {
+                    case AttrNames.StyleAttrNames.Width:
+                    case AttrNames.StyleAttrNames.Height:
+                        {
+                            styleValue = isNaN(styleValue) ? styleValue : styleValue + 'px';
+                            break;
+                        }
+                    case AttrNames.StyleAttrNames.FlexGrow:
+                        {
+                            rlt.addSwitchClass(AttrNames.StyleAttrNames.FlexGrow, styleValue ? 1 : 0);
+                            styleName = null;
+                            break;
+                        }
+                    case AttrNames.StyleAttrNames.FlexShrink:
+                        {
+                            rlt.addSwitchClass(AttrNames.StyleAttrNames.FlexShrink, styleValue ? 1 : 0);
+                            styleName = null;
+                            break;
+                        }
+                }
+
+                if (styleName != null) {
+                    rlt.addStyle(styleName, styleValue);
+                }
+            }
+        });
+        return rlt;
     }
 
     addUserControl(name) {
@@ -319,6 +367,9 @@ class CProject extends IAttributeable {
         this.designeConfig.editingControl.id = -1;
         this.designeConfig.editingPage.id = pageID;
         this.attrChanged('editingPage');
+        if(thePage){
+            this.setEditingType(!thePage.ispcPage ? 'MB' : 'PC');
+        }
     }
 
     getPageById(pageID) {
@@ -430,18 +481,30 @@ class CProject extends IAttributeable {
             return;
         }
         if(nowValue == 'PC'){
-            this.designeConfig.editingPage.pcid = editingPage == null ? -1 : editingPage.id;
+            if(editingPage){
+                this.designeConfig.editingPage.pcid = editingPage.id;
+            }
         }
         else{
-            this.designeConfig.editingPage.mbid = editingPage == null ? -1 : editingPage.id;
+            if(editingPage){
+                this.designeConfig.editingPage.mbid = editingPage.id;
+            }
         }
         this.designeConfig.editingType = newValue == 'PC' ? 'PC' : 'MB';
+        var restorePage = null;
         if(newValue == 'PC'){
-            this.setEditingPageById(this.designeConfig.editingPage.pcid);
+            restorePage = this.getPageById(this.designeConfig.editingPage.pcid);
+            if(restorePage && !restorePage.ispcPage){
+                restorePage = null;
+            }
         }
         else{
-            this.setEditingPageById(this.designeConfig.editingPage.mbid);
+            restorePage = this.getPageById(this.designeConfig.editingPage.mbid);
+            if(restorePage && restorePage.ispcPage){
+                restorePage = null;
+            }
         }
+        this.setEditingPageById(restorePage ? restorePage.id : -1);
         this.attrChanged('editingType');
     }
 
@@ -541,7 +604,7 @@ class CProject extends IAttributeable {
             var dsJson = cusEntity.getJson(cusDSJsonProf);
             cusDSJsonProf.customDS_arr.forEach(entity => {
                 if (entity.isCustomDS) {
-                    copyCusDS(entity, refControl_map);
+                    copyCusDS(entity, cusDS_arr, refControl_map);
                 }
             });
             if(refControl_map){

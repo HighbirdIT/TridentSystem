@@ -58,7 +58,7 @@ function GenControlKernelAttrsSetting(cusGroups_arr, includeDefault, includeLayo
 
 function getDSAttrCanuseColumns(dsAttrName, csAttrName) {
     var useDS = this.getAttribute(dsAttrName);
-    if (useDS == null) {
+    if (useDS == null || !useDS.loaded) {
         return [];
     }
     var rlt = useDS.columns.map(function (col) {
@@ -610,8 +610,8 @@ var ControlKernelBase = function (_IAttributeable) {
         key: 'getStatePath',
         value: function getStatePath(stateName) {
             var splitChar = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '.';
-            var rowIndexVar_map = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-            var ignoreRowIndex = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+            var rowKeyVar_map = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+            var ignoreRowKey = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
             var topestParant = arguments[4];
 
             var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
@@ -634,17 +634,17 @@ var ControlKernelBase = function (_IAttributeable) {
                         rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
                         break;
                     case M_FormKernel_Type:
-                        if (ignoreRowIndex == true || !nowKernel.isKernelInRow(this)) {
+                        if (ignoreRowKey == true || !nowKernel.isKernelInRow(this)) {
                             rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
                         } else {
-                            var rowIndexVar = rowIndexVar_map[nowKernel.id];
-                            if (rowIndexVar == null && rowIndexVar_map.mapVarName) {
-                                rowIndexVar = rowIndexVar_map.mapVarName + '.' + nowKernel.id;
+                            var rowKeyVar = rowKeyVar_map[nowKernel.id];
+                            if (rowKeyVar == null && rowKeyVar_map.mapVarName) {
+                                rowKeyVar = rowKeyVar_map.mapVarName + '.' + nowKernel.id;
                             }
-                            if (rowIndexVar == null) {
-                                console.error('getStatePath 遇到grid表单但是没有rowindex变量信息');
+                            if (rowKeyVar == null) {
+                                console.error('getStatePath 遇到grid表单但是没有rowkey变量信息');
                             }
-                            rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + "row_'+" + rowIndexVar + "+'." + rlt;
+                            rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + "row_'+" + rowKeyVar + "+'." + rlt;
                         }
                         break;
                 }

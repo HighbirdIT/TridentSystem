@@ -16,6 +16,7 @@ const M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([
     ]),
     new CAttributeGroup('事件',[
         new CAttribute('OnLoad', AttrNames.Event.OnLoad, ValueType.Event),
+        new CAttribute('点击关闭', AttrNames.Event.OnClickCloseBtn, ValueType.Event),
     ]),
 ],false);
 
