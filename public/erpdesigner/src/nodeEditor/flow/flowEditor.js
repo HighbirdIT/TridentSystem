@@ -154,6 +154,11 @@ const FlowNodeEditorControls_arr =[
         nodeClass:JSNode_Do_FlowStep,
         type:'数据库交互'
     },
+    {
+        label:'赋值运算符',
+        nodeClass:FlowNode_Assignment_Operator,
+        type:'运算'
+    },
 ];
 
 var gCopyed_FlowNodes_data = null;
