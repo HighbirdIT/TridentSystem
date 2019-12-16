@@ -978,7 +978,22 @@ class JSNode_Assignment_Operator extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_ASSIGNMENT_OPERATOR, '赋值运算符', false, nodeJson);
         autoBind(this);
-
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+        if (this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0) {
+            this.outFlowSockets_arr = [];
+        }
+        else {
+            this.outFlowSockets_arr.forEach(item => {
+                item.inputable = true;
+            });
+        }
         if (nodeJson) {
             if (this.outputScokets_arr.length > 0) {
                 this.outSocket = this.outputScokets_arr[0];
@@ -1055,6 +1070,12 @@ class JSNode_Assignment_Operator extends JSNode_Base {
             finalStr += (i == 0 ? '' : nodeThis.operator) + x;
         });
         var selfCompileRet = new CompileResult(this);
+
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+        myJSBlock.pushLine('' + finalStr + '');
+        myJSBlock.addNextIndent();
+
         selfCompileRet.setSocketOut(this.outSocket, finalStr);
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
