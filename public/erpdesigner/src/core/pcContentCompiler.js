@@ -205,6 +205,7 @@ class PCContentCompiler extends MobileContentCompiler {
             else {
                 var propFulPath;
                 var propChangedHandlerName;
+                var actKey;
                 switch (relyPath.type) {
                     case ECtlReplyPathType.SetAP_On_BPChanged:
                     case ECtlReplyPathType.CallFun_On_BPChanged:
@@ -240,7 +241,14 @@ class PCContentCompiler extends MobileContentCompiler {
                                 if (sameReactKernel != relyCtlReactParent) {
                                     thirdParam += "+" + singleQuotesStr('.' + relyCtlReactParent.getStatePath('', '.', null, true, sameReactKernel));
                                 }
-                                getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State, 'null', thirdParam]);
+                                if(relyPath.approach.delaycall){
+                                    actKey = 'call_' + relyPath.approach.funName;
+                                    changedFun.pushLine("if(delayActs." + actKey + " == null){delayActs." + actKey + " = {callfun:" + relyPath.approach.funName + ",params_arr:[" + [VarNames.State, 'null', thirdParam].join(',') + "]};};");
+                                    getValueStr = '';
+                                }
+                                else{
+                                    getValueStr = makeStr_callFun(relyPath.approach.funName, [VarNames.State, 'null', thirdParam]);
+                                }
                             }
                             else if (relyPath.approach.value) {
                                 getValueStr = relyPath.approach.value;
@@ -251,11 +259,13 @@ class PCContentCompiler extends MobileContentCompiler {
                             var rowKeyInfo_map = {
                                 mapVarName: 'rowKeyInfo_map',
                             };
-                            changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName, '.', rowKeyInfo_map)), getValueStr));
+                            if(!IsEmptyString(getValueStr)){
+                                changedFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, relyPath.relyCtl.getStatePath(relyPath.relyPropName, '.', rowKeyInfo_map)), getValueStr));
+                            }
                         }
                         else {
-                            var actKey = 'call_' + relyPath.funName;
-                            changedFun.pushLine("if(delayActs['" + actKey + "'] == null){delayActs['" + actKey + "'] = {callfun:" + relyPath.funName + (relyPath.params_arr ? ",params_arr:[" + relyPath.params_arr.join(',') + ']' : '') + "};};");
+                            actKey = 'call_' + relyPath.funName;
+                            changedFun.pushLine("if(delayActs." + actKey + " == null){delayActs." + actKey + " = {callfun:" + relyPath.funName + (relyPath.params_arr ? ",params_arr:[" + relyPath.params_arr.join(',') + ']' : '') + "};};");
                         }
                         if (accordionParents_arr) {
                             changedFun.subNextIndent();

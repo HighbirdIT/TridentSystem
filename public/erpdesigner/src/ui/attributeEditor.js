@@ -17,6 +17,8 @@ class AttributeEditor extends React.PureComponent {
             switch (this.props.targetattr.valueType) {
                 case ValueType.StyleValues:
                 case ValueType.UserControlEvent:
+                case ValueType.AttrHook:
+                case ValueType.AttrChecker:
                     rlt = {};
                     break;
                 default:
@@ -30,7 +32,9 @@ class AttributeEditor extends React.PureComponent {
         }
         switch (this.props.targetattr.valueType) {
             case ValueType.StyleValues:
+            case ValueType.AttrHook:
             case ValueType.UserControlEvent:
+            case ValueType.AttrChecker:
                 if (typeof rlt === 'string') {
                     rlt = {};
                 }
@@ -195,6 +199,38 @@ class AttributeEditor extends React.PureComponent {
 
     }
 
+    UCAttrHookParamChanged(ev) {
+        var nowVal = this.state.value;
+        nowVal.params = ev.target.value.trim();
+        this.doSetAttribute(nowVal);
+    }
+    
+    renderUserControlAttrHookEditor(nowVal, theAttr, attrName, inputID) {
+        var project = this.props.targetobj.project;
+        var params = ReplaceIfNull(nowVal.params, '');
+        var funName = this.props.targetobj.id + '_' + attrName;
+        var jsBP = project.scriptMaster.getBPByName(funName);
+
+        return (<div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
+            <input onChange={this.UCAttrHookParamChanged} type="text" className="form-control flex-grow-1 flex-shrink-1" value={params} placeholder=";分割属性名" />
+            <span onClick={this.clickModifyScriptBtnHandler} className='btn btn-dark flex-grow-1 flex-shrink-1'>{jsBP ? '编辑' : '创建'}</span>
+        </div>);
+
+    }
+
+    renderUserControlAttrCheckerEditor(nowVal, theAttr, attrName, inputID) {
+        var project = this.props.targetobj.project;
+        var params = ReplaceIfNull(nowVal.params, '');
+        var funName = this.props.targetobj.id + '_' + attrName;
+        var jsBP = project.scriptMaster.getBPByName(funName);
+
+        return (<div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
+            <input onChange={this.UCAttrHookParamChanged} type="text" className="form-control flex-grow-1 flex-shrink-1" value={params} placeholder=";分割属性名" />
+            <span onClick={this.clickModifyScriptBtnHandler} className='btn btn-dark flex-grow-1 flex-shrink-1'>{jsBP ? '编辑' : '创建'}</span>
+        </div>);
+
+    }
+
     CusFunNameChanged(ev) {
         this.doSetAttribute(ev.target.value.trim());
     }
@@ -261,11 +297,14 @@ class AttributeEditor extends React.PureComponent {
                 jsGroup = theAttr.scriptSetting.group;
                 fixParams_arr = theAttr.scriptSetting.fixParams_arr;
             }
-            else if (theAttr.valueType == ValueType.Event) {
+            else if (theAttr.valueType == ValueType.Event || theAttr.valueType == ValueType.AttrHook) {
                 jsGroup = EJsBluePrintFunGroup.CtlEvent;
             }
             else if (theAttr.valueType == ValueType.CustomFunction) {
                 jsGroup = EJsBluePrintFunGroup.CtlFun;
+            }
+            else if(theAttr.valueType == ValueType.AttrChecker){
+                jsGroup = EJsBluePrintFunGroup.CtlAttr;
             }
 
             if (jsGroup == null) {
@@ -362,6 +401,12 @@ class AttributeEditor extends React.PureComponent {
         }
         if (theAttr.valueType == ValueType.UserControlEvent) {
             return this.renderUserControlEventAttrEditor(nowVal, theAttr, attrName, inputID);
+        }
+        if (theAttr.valueType == ValueType.AttrHook) {
+            return this.renderUserControlAttrHookEditor(nowVal, theAttr, attrName, inputID);
+        }
+        if (theAttr.valueType == ValueType.AttrChecker) {
+            return this.renderUserControlAttrCheckerEditor(nowVal, theAttr, attrName, inputID);
         }
         if (theAttr.valueType == ValueType.CustomFunction) {
             return this.renderCustomFunctonAttrEditor(nowVal, theAttr, attrName, inputID);

@@ -48,10 +48,20 @@ var ENoDataAct = {
 };
 var ENoDataActs_arr = [ENoDataAct.ShowTip, ENoDataAct.Hidden];
 
+var EInvisibleAct = {
+    Default: 'default',
+    DNONE: 'd-none'
+};
+var EInvisibleActs_arr = [EInvisibleAct.Default, EInvisibleAct.DNONE];
+
 var PersonEductOptions_arr = [];
 var AllPosts_arr = [];
 var ProjectRecords_arr = [];
 var AllFileFlows_arr = [];
+
+function GetProjectRecords_arr() {
+    return ProjectRecords_arr;
+}
 
 var SqlVarType_Unknown = 'unknown';
 var SqlVarType_Int = 'int';
@@ -336,7 +346,9 @@ var ValueType = {
     XML: 'xml',
     UserControlEvent: 'usercontrolevent',
     CustomFunction: 'CustomFunction',
-    ModifyContent: 'ModifyContent'
+    ModifyContent: 'ModifyContent',
+    AttrHook: 'attrhook',
+    AttrChecker: 'attrchecker'
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

@@ -9,7 +9,7 @@ const FLOWNODE_MESSAGE_CARDITEM = 'messagecarditem';
 const FLOWNODE_CONFIRM_FLOWSTEP = 'confirmflowstep';
 const FLOWNODE_NOWDATE = 'nowdate';
 const FLOWNODE_EXAM = 'exam';
-const FLOWNODE_ASSIGNMENT_OPERATOR='addition_assignment_operator'
+
 var FlowNodeClassMap = {
 };
 
@@ -1523,15 +1523,35 @@ class FlowNode_ColumnVar extends JSNode_Base {
         assginObjByProperties(this, attrsJson, ['targetEntity', 'keySocketID']);
     }
 
+    getKeySocket(){
+        return this.keySocketID == null ? null : this.bluePrint.getSocketById(this.keySocketID);
+    }
+
     freshLabel() {
         var keySocket = this.keySocketID == null ? null : this.bluePrint.getSocketById(this.keySocketID);
         var columnName = '';
+        var project = this.bluePrint.master.project;
         if (keySocket != null) {
-            if (keySocket.getExtra('colName') == null) {
-                columnName = keySocket.label;
+            if(keySocket.type == SocketType_CtlKernel){
+                var ctlid = keySocket.getExtra('ctlid');
+                var ctlkernel = project.getControlById(ctlid);
+                if(ctlkernel){
+                    this.outSocket.type = SocketType_CtlKernel;
+                    this.outSocket.kernelType = ctlkernel.type;
+                    var formkernel = ctlkernel.searchParentKernel(M_FormKernel_Type, true);
+                    columnName = (formkernel ? formkernel.getReadableName() + '.' : '') + ctlkernel.getReadableName()
+                }
+                else{
+                    columnName = '找不到控件';
+                }
             }
-            else {
-                columnName = keySocket.getExtra('colName');
+            else{
+                if (keySocket.getExtra('colName') == null) {
+                    columnName = keySocket.label;
+                }
+                else {
+                    columnName = keySocket.getExtra('colName');
+                }
             }
         }
         this.keySocket = keySocket;
@@ -1541,7 +1561,7 @@ class FlowNode_ColumnVar extends JSNode_Base {
     }
 
     getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
-        this.keySocket.node.getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result);
+        this.keySocket.node.getScoketClientVariable(helper, srcNode, belongFun, this.keySocket, result);
     }
 
     compile(helper, preNodes_arr) {
@@ -2467,111 +2487,6 @@ class FlowNode_EXAM extends JSNode_Base {
     }
 }
 
-//+=
-class FlowNode_Assignment_Operator extends JSNode_Base {
-    constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, FLOWNODE_ASSIGNMENT_OPERATOR, '赋值运算符', false, nodeJson);
-        autoBind(this);
-
-        if (nodeJson) {
-            if (this.outputScokets_arr.length > 0) {
-                this.outSocket = this.outputScokets_arr[0];
-                this.outSocket.type = ValueType.String;
-            }
-        }
-        if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false, { type: ValueType.String });
-            this.addSocket(this.outSocket);
-        }
-        this.outSocket.isSimpleVal = false;
-        this.insocketInitVal = {
-            type: ValueType.String,
-        };
-        if (this.inputScokets_arr.length == 0) {
-            this.addSocket(new NodeSocket('var', this, true, { type: ValueType.Object }));
-            this.addSocket(new NodeSocket('value', this, true, { type: ValueType.String }));
-        }
-        else {
-            this.inputScokets_arr.forEach(socket => {
-                socket.set(this.insocketInitVal);
-            });
-        }
-        this.inputScokets_arr[0].label = '参数';
-        this.inputScokets_arr[0].inputable = false;
-        this.inputScokets_arr[0].type =ValueType.Object
-        this.inputScokets_arr[1].type =ValueType.String
-        this.inputScokets_arr[1].inputable = true;
-        this.inputScokets_arr[1].label = '值';
-        if (this.operator == null) {
-            this.operator = '+=';
-        }
-        this.minInSocketCount = 2;
-    }
-
-    requestSaveAttrs() {
-        var rlt = super.requestSaveAttrs();
-        rlt.operator = this.operator;
-        return rlt;
-    }
-
-    restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['operator']);
-    }
-
-    getNodeTitle() {
-        return '运算:' + this.operator;
-    }
-
-
-    compile(helper, preNodes_arr, belongBlock) {
-        var superRet = super.compile(helper, preNodes_arr);
-        if (superRet == false || superRet != null) {
-            return superRet;
-        }
-        var nodeThis = this;
-        var thisNodeTitle = nodeThis.getNodeTitle();
-        var usePreNodes_arr = preNodes_arr.concat(this);
-        var socketVal_arr = [];
-        var allNumberic = true;
-        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
-            var theSocket = this.inputScokets_arr[i];
-            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
-            if (socketComRet.err) {
-                return false;
-            }
-            var tValue = socketComRet.value;
-            if (socketComRet.link) {
-                if (!socketComRet.link.outSocket.isSimpleVal) {
-                    tValue = '(' + tValue + ')';
-                }
-            }
-            else {
-                if (isNaN(tValue)) {
-                    allNumberic = false;
-                }
-            }
-
-            socketVal_arr.push(tValue);
-        }
-        if (!allNumberic) {
-            // 不是所有的输入都是数值类型，把是数值类型的值转为字符值
-            for (var si in socketVal_arr) {
-                if (!isNaN(socketVal_arr[si])) {
-                    socketVal_arr[si] = singleQuotesStr(socketVal_arr[si]);
-                }
-            }
-        }
-        var finalStr = '';
-        socketVal_arr.forEach((x, i) => {
-            finalStr += (i == 0 ? '' : nodeThis.operator) + x;
-        });
-        var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, finalStr);
-        helper.setCompileRetCache(this, selfCompileRet);
-        return selfCompileRet;
-    }
-}
-
 FlowNodeClassMap[FLOWNODE_VAR_GET] = {
     modelClass: FlowNode_Var_Get,
     comClass: C_FlowNodeDef_Var_Get,
@@ -2720,8 +2635,8 @@ FlowNodeClassMap[JSNODE_ISNAN] = {
     modelClass: JSNode_IsNaN,
     comClass: C_Node_SimpleNode,
 };
-FlowNodeClassMap[FLOWNODE_ASSIGNMENT_OPERATOR] = {
-    modelClass: FlowNode_Assignment_Operator,
-    comClass: C_FlowNode_Assignment_Operator,
+FlowNodeClassMap[JSNODE_ASSIGNMENT_OPERATOR] = {
+    modelClass: JSNode_Assignment_Operator,
+    comClass: C_JSNode_Assignment_Operator,
 };
 

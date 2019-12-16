@@ -10,6 +10,7 @@ const JSNODE_GETDAY = 'getDay';
 const JSNODE_FORMATNUM = 'formatnum';
 const JSNODE_CAPITALNUM = 'capitalnum';
 const JSNODE_CONVERT_TIMEZONE = 'convert_timezone';
+const JSNODE_ASSIGNMENT_OPERATOR = 'addition_assignment_operator';
 
 class JSNode_While extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
@@ -972,6 +973,94 @@ class JSNode_Convert_TimeZone extends JSNode_Base {
     }
 }
 
+//+=
+class JSNode_Assignment_Operator extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_ASSIGNMENT_OPERATOR, '赋值运算符', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+                this.outSocket.type = ValueType.String;
+            }
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false, { type: ValueType.String });
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.isSimpleVal = false;
+        if (this.inputScokets_arr.length == 0) {
+            this.addSocket(new NodeSocket('var', this, true, { type: ValueType.Object }));
+            this.addSocket(new NodeSocket('value', this, true, { type: ValueType.String }));
+        }
+        this.inputScokets_arr[0].label = '变量';
+        this.inputScokets_arr[0].type = ValueType.Object;
+        this.inputScokets_arr[1].label = '值';
+        this.inputScokets_arr[1].type = ValueType.String;
+        if (this.operator == null) {
+            this.operator = '+=';
+        }
+        this.minInSocketCount = 2;
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.operator = this.operator;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['operator']);
+    }
+
+    getNodeTitle() {
+        return '运算:' + this.operator;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketVal_arr = [];
+        var allNumberic = true;
+        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+            var theSocket = this.inputScokets_arr[i];
+            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            var tValue = socketComRet.value;
+            if(i == 1){
+                if (socketComRet.link) {
+                    if (!socketComRet.link.outSocket.isSimpleVal) {
+                        tValue = '(' + tValue + ')';
+                    }
+                }
+                else {
+                    if (isNaN(tValue)) {
+                        allNumberic = false;
+                    }
+                }
+            }
+
+            socketVal_arr.push(tValue);
+        }
+        var finalStr = '';
+        socketVal_arr.forEach((x, i) => {
+            finalStr += (i == 0 ? '' : nodeThis.operator) + x;
+        });
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_WHILE] = {
     modelClass: JSNode_While,
     comClass: C_Node_SimpleNode,
@@ -1022,6 +1111,14 @@ JSNodeClassMap[JSNODE_CAPITALNUM] = {
 JSNodeClassMap[JSNODE_CONVERT_TIMEZONE] = {
     modelClass: JSNode_Convert_TimeZone,
     comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_CONVERT_TIMEZONE] = {
+    modelClass: JSNode_Convert_TimeZone,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_ASSIGNMENT_OPERATOR] = {
+    modelClass: JSNode_Assignment_Operator,
+    comClass: C_JSNode_Assignment_Operator,
 };
 /*
 JSNodeEditorControls_arr.push(
@@ -1090,5 +1187,11 @@ JSNodeEditorControls_arr.push(
     {
         label: '货币中文大写',
         nodeClass: JSNode_CapitalNum,
+        type: '基础'
+    });
+JSNodeEditorControls_arr.push(
+    {
+        label: '赋值运算符',
+        nodeClass: JSNode_Assignment_Operator,
         type: '基础'
     });

@@ -17,6 +17,7 @@ const M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('事件',[
         new CAttribute('OnLoad', AttrNames.Event.OnLoad, ValueType.Event),
         new CAttribute('点击关闭', AttrNames.Event.OnClickCloseBtn, ValueType.Event),
+        new CAttribute('消息处理', AttrNames.Event.OnReceiveMsg, ValueType.Event),
     ]),
 ],false);
 
@@ -90,6 +91,15 @@ class M_PageKernel extends ContainerKernelBase {
             }
         });
         return rlt_arr;
+    }
+
+    scriptCreated(attrName, scriptBP) {
+        if(scriptBP == null){
+            return;
+        }
+        if(scriptBP.name.indexOf(AttrNames.Event.OnReceiveMsg) != -1){
+            scriptBP.setFixParam(['msgtype','data']);
+        }
     }
 }
 

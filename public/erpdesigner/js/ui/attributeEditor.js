@@ -37,6 +37,8 @@ var AttributeEditor = function (_React$PureComponent) {
                 switch (this.props.targetattr.valueType) {
                     case ValueType.StyleValues:
                     case ValueType.UserControlEvent:
+                    case ValueType.AttrHook:
+                    case ValueType.AttrChecker:
                         rlt = {};
                         break;
                     default:
@@ -49,7 +51,9 @@ var AttributeEditor = function (_React$PureComponent) {
             }
             switch (this.props.targetattr.valueType) {
                 case ValueType.StyleValues:
+                case ValueType.AttrHook:
                 case ValueType.UserControlEvent:
+                case ValueType.AttrChecker:
                     if (typeof rlt === 'string') {
                         rlt = {};
                     }
@@ -248,6 +252,51 @@ var AttributeEditor = function (_React$PureComponent) {
             );
         }
     }, {
+        key: 'UCAttrHookParamChanged',
+        value: function UCAttrHookParamChanged(ev) {
+            var nowVal = this.state.value;
+            nowVal.params = ev.target.value.trim();
+            this.doSetAttribute(nowVal);
+        }
+    }, {
+        key: 'renderUserControlAttrHookEditor',
+        value: function renderUserControlAttrHookEditor(nowVal, theAttr, attrName, inputID) {
+            var project = this.props.targetobj.project;
+            var params = ReplaceIfNull(nowVal.params, '');
+            var funName = this.props.targetobj.id + '_' + attrName;
+            var jsBP = project.scriptMaster.getBPByName(funName);
+
+            return React.createElement(
+                'div',
+                { className: 'd-flex flex-grow-1 flex-shrink-1 flex-column' },
+                React.createElement('input', { onChange: this.UCAttrHookParamChanged, type: 'text', className: 'form-control flex-grow-1 flex-shrink-1', value: params, placeholder: ';\u5206\u5272\u5C5E\u6027\u540D' }),
+                React.createElement(
+                    'span',
+                    { onClick: this.clickModifyScriptBtnHandler, className: 'btn btn-dark flex-grow-1 flex-shrink-1' },
+                    jsBP ? '编辑' : '创建'
+                )
+            );
+        }
+    }, {
+        key: 'renderUserControlAttrCheckerEditor',
+        value: function renderUserControlAttrCheckerEditor(nowVal, theAttr, attrName, inputID) {
+            var project = this.props.targetobj.project;
+            var params = ReplaceIfNull(nowVal.params, '');
+            var funName = this.props.targetobj.id + '_' + attrName;
+            var jsBP = project.scriptMaster.getBPByName(funName);
+
+            return React.createElement(
+                'div',
+                { className: 'd-flex flex-grow-1 flex-shrink-1 flex-column' },
+                React.createElement('input', { onChange: this.UCAttrHookParamChanged, type: 'text', className: 'form-control flex-grow-1 flex-shrink-1', value: params, placeholder: ';\u5206\u5272\u5C5E\u6027\u540D' }),
+                React.createElement(
+                    'span',
+                    { onClick: this.clickModifyScriptBtnHandler, className: 'btn btn-dark flex-grow-1 flex-shrink-1' },
+                    jsBP ? '编辑' : '创建'
+                )
+            );
+        }
+    }, {
         key: 'CusFunNameChanged',
         value: function CusFunNameChanged(ev) {
             this.doSetAttribute(ev.target.value.trim());
@@ -327,10 +376,12 @@ var AttributeEditor = function (_React$PureComponent) {
                 if (theAttr.scriptSetting != null) {
                     jsGroup = theAttr.scriptSetting.group;
                     fixParams_arr = theAttr.scriptSetting.fixParams_arr;
-                } else if (theAttr.valueType == ValueType.Event) {
+                } else if (theAttr.valueType == ValueType.Event || theAttr.valueType == ValueType.AttrHook) {
                     jsGroup = EJsBluePrintFunGroup.CtlEvent;
                 } else if (theAttr.valueType == ValueType.CustomFunction) {
                     jsGroup = EJsBluePrintFunGroup.CtlFun;
+                } else if (theAttr.valueType == ValueType.AttrChecker) {
+                    jsGroup = EJsBluePrintFunGroup.CtlAttr;
                 }
 
                 if (jsGroup == null) {
@@ -455,6 +506,12 @@ var AttributeEditor = function (_React$PureComponent) {
             }
             if (theAttr.valueType == ValueType.UserControlEvent) {
                 return this.renderUserControlEventAttrEditor(nowVal, theAttr, attrName, inputID);
+            }
+            if (theAttr.valueType == ValueType.AttrHook) {
+                return this.renderUserControlAttrHookEditor(nowVal, theAttr, attrName, inputID);
+            }
+            if (theAttr.valueType == ValueType.AttrChecker) {
+                return this.renderUserControlAttrCheckerEditor(nowVal, theAttr, attrName, inputID);
             }
             if (theAttr.valueType == ValueType.CustomFunction) {
                 return this.renderCustomFunctonAttrEditor(nowVal, theAttr, attrName, inputID);

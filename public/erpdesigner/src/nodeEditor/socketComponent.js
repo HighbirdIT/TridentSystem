@@ -178,7 +178,7 @@ class C_Node_Socket extends React.PureComponent{
         var valTypeElem = null;
         if(socket.type == SocketType_CtlKernel){
             var kernelType = socket.kernelType;
-            socket.hideIcon = true;
+            //socket.hideIcon = true;
             if(kernelType == null){
                 if(socket.isIn){
                     valTypeElem = <span f-canmove={1} className='badge badge-primary'>任意控件</span>
@@ -189,8 +189,12 @@ class C_Node_Socket extends React.PureComponent{
             }
             else{
                 if(socket.isIn){
+                    var nowCtlId;
+                    var nowCtlkernel;
+                    var nowPropValue;
+                    var nowFunValue;
+                    var bluePrint = socket.node.bluePrint;
                     if(socket.getLinks().length == 0){
-                        var bluePrint = socket.node.bluePrint;
                         switch(bluePrint.group){
                             case EJsBluePrintFunGroup.CtlAttr:
                             case EJsBluePrintFunGroup.CtlFun:
@@ -200,23 +204,23 @@ class C_Node_Socket extends React.PureComponent{
                             case EJsBluePrintFunGroup.GridRowBtnHandler:
                             var ctlKernel = bluePrint.master.project.getControlById(bluePrint.ctlID);
                             if(ctlKernel != null){
-                                var nowCtlId = socket.getExtra('ctlid');
+                                nowCtlId = socket.getExtra('ctlid');
                                 if(nowCtlId == null){
                                     nowCtlId = 0;
                                 }
                             inputElem = [<DropDownControl key='ctlddc' socket={socket} options_arr={ctlKernel.getAccessableKernels} funparamobj={kernelType} value={nowCtlId} itemChanged={this.kernelChangedHandler} textAttrName='readableName' valueAttrName='id' />];
                                 if(kernelType == UserControlKernel_Type){
-                                    var nowCtlkernel;
+                                    nowCtlkernel;
                                     if(socket.node.type == JSNODE_CONTROL_API_PROP || socket.node.type == JSNODE_CONTROL_API_PROPSETTER){
                                         nowCtlkernel = bluePrint.master.project.getControlById(nowCtlId);
-                                        var nowPropValue = socket.getExtra('propAttrName');
+                                        nowPropValue = socket.getExtra('propAttrName');
                                         if(nowCtlkernel){
                                             inputElem.push(<DropDownControl key='propddc' socket={socket} options_arr={nowCtlkernel.getParamApiAttrArray} value={nowPropValue} itemChanged={this.userCtlPropChangedHandler} textAttrName='label' valueAttrName='name' />);
                                         }
                                     }
                                     if(socket.node.type == JSNODE_CONTROL_API_CALLFUN){
                                         nowCtlkernel = bluePrint.master.project.getControlById(nowCtlId);
-                                        var nowFunValue = socket.getExtra('funAttrName');
+                                        nowFunValue = socket.getExtra('funAttrName');
                                         if(nowCtlkernel){
                                             inputElem.push(<DropDownControl key='funddc' socket={socket} options_arr={socket.node.isUserControlEvent ? nowCtlkernel.getEventApiAttrArray : nowCtlkernel.getFunctionApiAttrArray} value={nowFunValue} itemChanged={this.userCtlFunChangedHandler} textAttrName='label' valueAttrName='name' />);
                                         }
@@ -224,6 +228,39 @@ class C_Node_Socket extends React.PureComponent{
                                 }
                             }
                             break;
+                        }
+                    }
+                    else{
+                        if(kernelType == UserControlKernel_Type){
+                            if(inputElem == null){
+                                inputElem = [];
+                            }
+                            var link = socket.getLinks()[0];
+                            var fromNode = link.outSocket.node;
+                            if (fromNode.type == FLOWNODE_COLUMN_VAR) {
+                                var keySocket = fromNode.getKeySocket();
+                                if (keySocket) {
+                                    if (keySocket.node.type == JSNODE_TRAVERSALFORM) {
+                                        nowCtlId = keySocket.getExtra('ctlid');
+                                    }
+                                }
+                            }
+                            else if (fromNode.type == JSNODE_TRAVERSALFORM) {
+                                nowCtlId = link.outSocket.getExtra('ctlid');
+                            }
+                            nowCtlkernel = bluePrint.master.project.getControlById(nowCtlId);
+                            if(socket.node.type == JSNODE_CONTROL_API_PROP || socket.node.type == JSNODE_CONTROL_API_PROPSETTER){
+                                nowPropValue = socket.getExtra('propAttrName');
+                                if(nowCtlkernel){
+                                    inputElem.push(<DropDownControl key='propddc' socket={socket} options_arr={nowCtlkernel.getParamApiAttrArray} value={nowPropValue} itemChanged={this.userCtlPropChangedHandler} textAttrName='label' valueAttrName='name' />);
+                                }
+                            }
+                            if(socket.node.type == JSNODE_CONTROL_API_CALLFUN){
+                                nowFunValue = socket.getExtra('funAttrName');
+                                if(nowCtlkernel){
+                                    inputElem.push(<DropDownControl key='funddc' socket={socket} options_arr={socket.node.isUserControlEvent ? nowCtlkernel.getEventApiAttrArray : nowCtlkernel.getFunctionApiAttrArray} value={nowFunValue} itemChanged={this.userCtlFunChangedHandler} textAttrName='label' valueAttrName='name' />);
+                                }
+                            }
                         }
                     }
                 }
@@ -254,7 +291,7 @@ class C_Node_Socket extends React.PureComponent{
         }
         var iconElem = (<i ref={this.flagRef} onClick={this.clickHandler} className={iconClass} vt={socket.type} /> );
         if(socket.hideIcon == true){
-            iconElem = null;
+            iconElem = <span ref={this.flagRef}/>;
         }
         return <div className='d-flex align-items-center text-nowrap text-light socketCell' d-socketid={socket.id} isin={socket.isIn ? 1 : null} isout={!socket.isIn ? 1 : null}> 
                     {arrowsItem}

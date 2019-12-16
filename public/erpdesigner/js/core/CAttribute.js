@@ -210,6 +210,10 @@ function makeLine_DeclareVar(varName, initVal, autoQuote) {
     return 'var ' + varName + '=' + initVal + ';';
 }
 
+function makeLine_SetValue(leftName, rightName) {
+    return leftName + '=' + rightName + ';';
+}
+
 var VarNames = {
     RetProps: 'retProps',
     ReState: 'retState',
@@ -259,8 +263,8 @@ var VarNames = {
     SatePath: 'statePath',
     Visible: 'visible',
     NowRow: 'nowrow',
-    SelectedProfile: 'selectedProfile'
-
+    SelectedProfile: 'selectedProfile',
+    BaseValidCheckPath: 'baseValidCheckPath'
 };
 
 var AttrNames = {
@@ -361,6 +365,13 @@ var AttrNames = {
     WidthFactor: 'widthfactor',
     RenderMode: 'rendermode',
     InitOnRowChanged: 'initOnRowChanged',
+    ProjectCode: 'projectCode',
+    FlowStepCode: 'flowStepCode',
+    FlowStepData: 'flowStepData',
+    InvisibleAct: 'invisibleact',
+    AwaysEditable: 'awayseditable',
+    AttrHook: 'attrhook',
+    AttrChecker: 'attrchecker',
 
     Event: {
         OnClick: 'onclick',
@@ -375,7 +386,8 @@ var AttrNames = {
         OnRowChanged: 'onRowChanged',
         OnUploadComplete: 'onUploadComplate',
         OnDataSourceChanged: 'onDataSourceChanged',
-        OnClickCloseBtn: 'onClickCloseBtn'
+        OnClickCloseBtn: 'onClickCloseBtn',
+        OnReceiveMsg: 'onReceiveMsg'
     },
 
     LayoutNames: {
