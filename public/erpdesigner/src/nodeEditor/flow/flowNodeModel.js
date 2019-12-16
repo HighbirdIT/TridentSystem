@@ -9,7 +9,7 @@ const FLOWNODE_MESSAGE_CARDITEM = 'messagecarditem';
 const FLOWNODE_CONFIRM_FLOWSTEP = 'confirmflowstep';
 const FLOWNODE_NOWDATE = 'nowdate';
 const FLOWNODE_EXAM = 'exam';
-
+const FLOWNODE_ASSIGNMENT_OPERATOR='addition_assignment_operator'
 var FlowNodeClassMap = {
 };
 
@@ -2487,6 +2487,115 @@ class FlowNode_EXAM extends JSNode_Base {
     }
 }
 
+//+=
+class FlowNode_Assignment_Operator extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, FLOWNODE_ASSIGNMENT_OPERATOR, '赋值运算符', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+                this.outSocket.type = ValueType.String;
+            }
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false, { type: ValueType.String });
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.isSimpleVal = false;
+        this.insocketInitVal = {
+            type: ValueType.String,
+        };
+        if (this.inputScokets_arr.length == 0) {
+            this.addSocket(this.genInSocket());
+            this.addSocket(this.genInSocket());
+        }
+        else {
+            this.inputScokets_arr.forEach(socket => {
+                socket.set(this.insocketInitVal);
+            });
+        }
+        if (this.operator == null) {
+            this.operator = '+=';
+        }
+        this.minInSocketCount = 2;
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.operator = this.operator;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['operator']);
+    }
+
+    getNodeTitle() {
+        return '运算:' + this.operator;
+    }
+
+    genInSocket() {
+        var nameI = this.inputScokets_arr.length;
+        while (nameI < 999) {
+            if (this.getScoketByName('in' + nameI, true) == null) {
+                break;
+            }
+            ++nameI;
+        }
+        return new NodeSocket('in' + nameI, this, true, this.insocketInitVal);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketVal_arr = [];
+        var allNumberic = true;
+        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+            var theSocket = this.inputScokets_arr[i];
+            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            var tValue = socketComRet.value;
+            if (socketComRet.link) {
+                if (!socketComRet.link.outSocket.isSimpleVal) {
+                    tValue = '(' + tValue + ')';
+                }
+            }
+            else {
+                if (isNaN(tValue)) {
+                    allNumberic = false;
+                }
+            }
+
+            socketVal_arr.push(tValue);
+        }
+        if (!allNumberic) {
+            // 不是所有的输入都是数值类型，把是数值类型的值转为字符值
+            for (var si in socketVal_arr) {
+                if (!isNaN(socketVal_arr[si])) {
+                    socketVal_arr[si] = singleQuotesStr(socketVal_arr[si]);
+                }
+            }
+        }
+        var finalStr = '';
+        socketVal_arr.forEach((x, i) => {
+            finalStr += (i == 0 ? '' : nodeThis.operator) + x;
+        });
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
 FlowNodeClassMap[FLOWNODE_VAR_GET] = {
     modelClass: FlowNode_Var_Get,
     comClass: C_FlowNodeDef_Var_Get,
@@ -2635,3 +2744,8 @@ FlowNodeClassMap[JSNODE_ISNAN] = {
     modelClass: JSNode_IsNaN,
     comClass: C_Node_SimpleNode,
 };
+FlowNodeClassMap[FLOWNODE_ASSIGNMENT_OPERATOR] = {
+    modelClass: FlowNode_Assignment_Operator,
+    comClass: C_FlowNode_Assignment_Operator,
+};
+
