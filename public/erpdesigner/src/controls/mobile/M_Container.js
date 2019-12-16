@@ -20,7 +20,7 @@ class M_ContainerKernel extends ContainerKernelBase {
     }
 
     aidAccessableKernels(targetType, rlt_arr) {
-        var needFilt = targetType != null;
+        var needFilt = targetType != null || needFilt == '*';
         this.children.forEach(child => {
             if (!needFilt || child.type == targetType) {
                 rlt_arr.push(child);

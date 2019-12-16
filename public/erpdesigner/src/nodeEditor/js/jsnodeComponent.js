@@ -1150,6 +1150,100 @@ class C_JSNode_CusObject_Visit extends React.PureComponent {
     }
 }
 
+class C_JSNode_TraversalForm extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+
+        C_NodeCom_Base(this);
+    }
+
+    ctlSocketSelectChanged(newVal, ddc, data) {
+        var socket = ddc.props.socket;
+        socket.setExtra('ctlid', newVal);
+        socket.kernelType = data.ctl.type;
+    }
+
+    getCanUseControls() {
+        var nodeData = this.props.nodedata;
+        var formid = nodeData.formSocket.getExtra('ctlid');
+        var formKernel = nodeData.bluePrint.master.project.getControlById(formid);
+        if (formKernel == null || formKernel.isPageForm()) {
+            return [];
+        }
+        var allRowCtls_arr = formKernel.getAllRowControls();
+        return allRowCtls_arr.map(ctl=>{
+            return {
+                name:ctl.getReadableName(),
+                id:ctl.id,
+                ctl:ctl,
+            };
+        });
+    }
+
+    getFormDS() {
+        var nodeData = this.props.nodedata;
+        var formKernel = nodeData.bluePrint.master.project.getControlById(nodeData.formID);
+        return formKernel == null ? null : formKernel.getAttribute(AttrNames.DataSource);
+    }
+
+    customSocketRender(socket) {
+        if (socket.isIn == true) {
+            return null;
+        }
+        var nodeData = this.props.nodedata;
+        if (socket == nodeData.recordSocket 
+            || socket == nodeData.selectedSocket 
+            || socket == nodeData.keySocket 
+            || socket == nodeData.rowindexSocket 
+            || socket == nodeData.rowcountSocket 
+            || socket == nodeData.validrowSocket) {
+            return null;
+        }
+
+        var nowVal = socket.getExtra('ctlid');
+        return (<span className='d-flex align-items-center'><DropDownControl itemChanged={this.ctlSocketSelectChanged} btnclass='btn-dark' options_arr={this.getCanUseControls} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} socket={socket} textAttrName='name' valueAttrName='id' />
+            <button onMouseDown={this.mouseDownOutSocketHand} d-colname={nowVal} type='button' className='btn btn-secondary'><i className='fa fa-hand-paper-o' /></button>
+        </span>);
+    }
+
+    mouseDownOutSocketHand(ev) {
+        var socketid = getAttributeByNode(ev.target, 'd-socketid', true, 10);
+        if (socketid == null) {
+            return;
+        }
+        var nodeData = this.props.nodedata;
+        var theProject = nodeData.bluePrint.master.project;
+        var theSocket = nodeData.bluePrint.getSocketById(socketid);
+        var ctlid = theSocket.getExtra('ctlid');
+        var ctlKernel = theProject.getControlById(ctlid);
+        var bornPos = theSocket.currentComponent.getCenterPos();
+        if (ctlKernel != null) {
+            var newNode = new FlowNode_ColumnVar({
+                keySocketID: socketid,
+                newborn: true,
+                left: bornPos.x,
+                top: bornPos.y,
+            }, nodeData.parent);
+        }
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        var theProject = nodeData.bluePrint.master.project;
+
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={nodeData.label} >
+            <div className='d-flex'>
+            <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} nameMoveable={true} />
+                <div className='d-flex flex-column'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} nameMoveable={true} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} customSocketRender={this.customSocketRender} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
+                </div>
+            </div>
+        </C_Node_Frame>
+    }
+}
+
 /*
 class C_JSNode_Control_Api_CallFun extends React.PureComponent {
     constructor(props) {

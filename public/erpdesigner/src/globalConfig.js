@@ -355,6 +355,8 @@ var ValueType = {
     UserControlEvent:'usercontrolevent',
     CustomFunction:'CustomFunction',
     ModifyContent:'ModifyContent',
+    AttrHook:'attrhook',
+    AttrChecker:'attrchecker',
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

@@ -35,6 +35,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('隐藏表头', AttrNames.HideTabHead, ValueType.Boolean, false),
         new CAttribute('有滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
         new CAttribute('有刷新图标', AttrNames.RefreshIcon, ValueType.Boolean, true),
+        new CAttribute('永远可编辑', AttrNames.AwaysEditable, ValueType.Boolean, false),
         new CAttribute('模式', AttrNames.SelectMode, ValueType.String, ESelectMode.None, true, false, SelectModes_arr),
         new CAttribute('默认选中首项', AttrNames.DefaultSelectFirst, ValueType.Boolean, false),
         new CAttribute('bottomDivID', 'bottomDivID', ValueType.String, '', true, false, null, null, false),
@@ -150,6 +151,8 @@ class M_FormKernel extends ContainerKernelBase {
         this[AttrNames.NoRender + '_visible'] = nowft == EFormType.Page;
         this[AttrNames.Wrap + '_visible'] = nowft == EFormType.List || nowft == EFormType.Page;
         this[AttrNames.ClickSelectable + '_visible'] = nowft == EFormType.List || nowft == EFormType.Grid;
+        this[AttrNames.AwaysEditable + '_visible'] = nowft == EFormType.Grid;
+        
         
         this.findAttrGroupByName('List设置').setVisible(this, nowft == EFormType.List);
 
@@ -226,6 +229,40 @@ class M_FormKernel extends ContainerKernelBase {
             }
         });
         return rlt;
+    }
+
+    getAllRowControls(){
+        var rlt = [];
+        this.children.forEach(child => {
+            if (child == this.gridFormBottomDiv || child == this.placeHolderKernel)
+                return;
+            if(child == M_ContainerKernel_Type){
+                child.aidAccessableKernels(null, rlt);
+            }
+            else{
+                rlt.push(child);
+            }
+        });
+        var ret = [];
+        var bIsGrid = this.isGridForm();
+        rlt.forEach(item=>{
+            if(item.type == M_LabeledControlKernel_Type){
+                ret.push(item.editor);
+                if(!bIsGrid){
+                    ret.push(item);
+                }
+                else{
+                    if(item.parent != this){
+                        ret.push(item);
+                    }
+                }
+            }
+            else{
+                ret.push(item);
+            }
+        });
+        
+        return ret;
     }
 
     projectLoadedHanlder() {
@@ -448,6 +485,7 @@ class M_FormKernel extends ContainerKernelBase {
                 this.findAttributeByName(AttrNames.NoRender).setVisible(this, isPageForm);
                 this.findAttributeByName(AttrNames.Wrap).setVisible(this, isListForm || isPageForm);
                 this.findAttributeByName(AttrNames.ClickSelectable).setVisible(this, isListForm || isPageForm);
+                this.findAttributeByName(AttrNames.AwaysEditable).setVisible(this, isGridForm);
                 
                 this.findAttributeByName(AttrNames.Event.OnSelectedChanged).setVisible(this, isGridForm || isListForm);
                 this.findAttributeByName(AttrNames.Event.OnRowChanged).setVisible(this, isPageForm);

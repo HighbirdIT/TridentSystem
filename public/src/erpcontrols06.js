@@ -432,13 +432,21 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             console.error('没有找到对应的item' + value);
         }
         if (multiselect) {
+            var needClearKeyword = false; 
             if (!Array.isArray(this.state.selectOpt)) {
                 this.props.dropdownctl.selectItem([theOptionItem]);
+                needClearKeyword = this.unSelectedCount == 1;
             }
             else if (this.state.selectOpt.find(item => {
                 return item.value == theOptionItem.value;
             }) == null) {
                 this.props.dropdownctl.selectItem(this.state.selectOpt.concat(theOptionItem));
+                needClearKeyword = this.unSelectedCount == 1;
+            }
+            if(needClearKeyword){
+                this.setState({
+                    keyword:''
+                });
             }
         }
         else {
@@ -685,6 +693,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
             }
 
             this.needListedCount = filted_arr.length;
+            var unSelectedCount = 0;
 
             if (filted_arr.length > 0) {
                 contentElem = (<div ref={this.contentDivRef} className='list-group flex-grow-1 flex-shrink-0 autoScroll_Touch' onScroll={filted_arr.length > maxRowCount ? this.contentDivScrollHandler : null}>
@@ -701,6 +710,9 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
                             else {
                                 tItemSelected = item.value == selectedVal;
                             }
+                            if(!tItemSelected){
+                                unSelectedCount++;
+                            }
                             return (<div onClick={this.listItemClick} className={'d-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (tItemSelected ? ' active' : '')} key={item.value} value={item.value}>
                                 <div>{item.text}</div>
                             </div>)
@@ -713,6 +725,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
                     }
                 </div>);
             }
+            this.unSelectedCount = unSelectedCount;
         }
 
         var finalContentElem = contentElem;
@@ -1528,7 +1541,7 @@ class ERPC_LabeledControl extends React.PureComponent {
     }
 
     renderInPC(toolTipIcon) {
-        return (<div className={'rowlFameTwo' + (this.props.className ? ' ' + this.props.className : '')} wf={this.props.wf}>
+        return (<div className={'rowlFameTwo' + (this.props.className ? ' ' + this.props.className : '')} wf={this.props.wf} style={this.props.style}>
             <label className='rowlFameTwo_Top font-weight-bold' htmlFor={this.props.forid}>
                 {this.props.label}
             </label>
@@ -1556,7 +1569,7 @@ class ERPC_LabeledControl extends React.PureComponent {
         if (renderMode == 'pc') {
             return this.renderInPC(toolTipIcon);
         }
-        return (<div className={'rowlFameOne' + (this.props.className ? ' ' + this.props.className : '')}>
+        return (<div className={'rowlFameOne' + (this.props.className ? ' ' + this.props.className : '')} style={this.props.style}>
             <div className='rowlFameOne_Left' wn={this.props.wn}>
                 {this.props.label}
             </div>
@@ -3210,6 +3223,7 @@ class ERPC_TopLevelFrame extends React.PureComponent {
         try {
             ev.target.contentWindow.gPageInFrame = true;
             ev.target.contentWindow.gParentFrame = this;
+            ev.target.contentWindow.gPCRenderMode = gPCRenderMode;
             ev.target.contentWindow.gParentDingKit = dingdingKit;
             ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
         }
@@ -3264,6 +3278,7 @@ class ERPC_IFrame extends React.PureComponent {
         try {
             ev.target.contentWindow.gPageInFrame = true;
             ev.target.contentWindow.gWeakParentFrame = this;
+            ev.target.contentWindow.gPCRenderMode = gPCRenderMode;
             ev.target.contentWindow.gParentDingKit = dingdingKit;
             ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
         }

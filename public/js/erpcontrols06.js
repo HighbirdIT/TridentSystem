@@ -489,12 +489,20 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                 console.error('没有找到对应的item' + value);
             }
             if (multiselect) {
+                var needClearKeyword = false;
                 if (!Array.isArray(this.state.selectOpt)) {
                     this.props.dropdownctl.selectItem([theOptionItem]);
+                    needClearKeyword = this.unSelectedCount == 1;
                 } else if (this.state.selectOpt.find(function (item) {
                     return item.value == theOptionItem.value;
                 }) == null) {
                     this.props.dropdownctl.selectItem(this.state.selectOpt.concat(theOptionItem));
+                    needClearKeyword = this.unSelectedCount == 1;
+                }
+                if (needClearKeyword) {
+                    this.setState({
+                        keyword: ''
+                    });
                 }
             } else {
                 this.props.dropdownctl.selectItem(theOptionItem);
@@ -797,6 +805,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                 }
 
                 this.needListedCount = filted_arr.length;
+                var unSelectedCount = 0;
 
                 if (filted_arr.length > 0) {
                     contentElem = React.createElement(
@@ -816,6 +825,9 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                                 tItemSelected = selectedVal.indexOf(item.value + '') != -1;
                             } else {
                                 tItemSelected = item.value == selectedVal;
+                            }
+                            if (!tItemSelected) {
+                                unSelectedCount++;
                             }
                             return React.createElement(
                                 'div',
@@ -840,6 +852,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                         )
                     );
                 }
+                this.unSelectedCount = unSelectedCount;
             }
 
             var finalContentElem = contentElem;
@@ -1751,7 +1764,7 @@ var ERPC_LabeledControl = function (_React$PureComponent5) {
         value: function renderInPC(toolTipIcon) {
             return React.createElement(
                 'div',
-                { className: 'rowlFameTwo' + (this.props.className ? ' ' + this.props.className : ''), wf: this.props.wf },
+                { className: 'rowlFameTwo' + (this.props.className ? ' ' + this.props.className : ''), wf: this.props.wf, style: this.props.style },
                 React.createElement(
                     'label',
                     { className: 'rowlFameTwo_Top font-weight-bold', htmlFor: this.props.forid },
@@ -1794,7 +1807,7 @@ var ERPC_LabeledControl = function (_React$PureComponent5) {
             }
             return React.createElement(
                 'div',
-                { className: 'rowlFameOne' + (this.props.className ? ' ' + this.props.className : '') },
+                { className: 'rowlFameOne' + (this.props.className ? ' ' + this.props.className : ''), style: this.props.style },
                 React.createElement(
                     'div',
                     { className: 'rowlFameOne_Left', wn: this.props.wn },
@@ -3887,6 +3900,7 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
             try {
                 ev.target.contentWindow.gPageInFrame = true;
                 ev.target.contentWindow.gParentFrame = this;
+                ev.target.contentWindow.gPCRenderMode = gPCRenderMode;
                 ev.target.contentWindow.gParentDingKit = dingdingKit;
                 ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
             } catch (eo) {
@@ -3962,6 +3976,7 @@ var ERPC_IFrame = function (_React$PureComponent19) {
             try {
                 ev.target.contentWindow.gPageInFrame = true;
                 ev.target.contentWindow.gWeakParentFrame = this;
+                ev.target.contentWindow.gPCRenderMode = gPCRenderMode;
                 ev.target.contentWindow.gParentDingKit = dingdingKit;
                 ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
             } catch (eo) {

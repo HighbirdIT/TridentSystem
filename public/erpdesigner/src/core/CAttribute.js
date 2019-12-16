@@ -182,6 +182,10 @@ function makeLine_DeclareVar(varName, initVal, autoQuote){
     return 'var ' + varName + '=' + initVal + ';';
 }
 
+function makeLine_SetValue(leftName, rightName){
+    return leftName + '=' + rightName + ';';
+}
+
 const VarNames={
     RetProps:'retProps',
     ReState:'retState',
@@ -338,6 +342,9 @@ const AttrNames={
     FlowStepCode: 'flowStepCode',
     FlowStepData: 'flowStepData',
     InvisibleAct: 'invisibleact',
+    AwaysEditable: 'awayseditable',
+    AttrHook: 'attrhook',
+    AttrChecker: 'attrchecker',
 
     Event:{
         OnClick:'onclick',

@@ -12,6 +12,12 @@ const UserControlKernelTempleAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('事件',[
         new CAttribute('OnInit', AttrNames.Event.OnInit, ValueType.Event),
     ]),
+    new CAttributeGroup('侦听器',[
+        new CAttribute('属性侦听器', AttrNames.AttrHook, ValueType.AttrHook, null, true, true),
+    ]),
+    new CAttributeGroup('自订验证',[
+        new CAttribute('属性验证', AttrNames.AttrChecker, ValueType.AttrChecker, null, true, true),
+    ]),
 ], true);
 
 const UserControlKernelAttrsSetting = GenControlKernelAttrsSetting([
@@ -61,6 +67,14 @@ class UserControlKernel extends ContainerKernelBase {
 
             var theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnInit);
             this.scriptCreated(null, theBP);
+            this.getAttrArrayList(AttrNames.AttrHook).forEach(hookAtrr=>{
+                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + hookAtrr.name);
+                this.scriptCreated(null, theBP);
+            });
+            this.getAttrArrayList(AttrNames.AttrChecker).forEach(checkerAtrr=>{
+                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + checkerAtrr.name);
+                this.scriptCreated(null, theBP);
+            });
         }
         else {
             if (kernelJson) {
@@ -85,6 +99,13 @@ class UserControlKernel extends ContainerKernelBase {
         if(scriptBP.name.indexOf(AttrNames.Event.OnInit) != -1){
             scriptBP.startIsInReducer = true;
             scriptBP.setFixParam([VarNames.State, this.id + '_path']);
+        }
+        else if(scriptBP.name.indexOf(AttrNames.AttrHook) != -1){
+            scriptBP.startIsInReducer = true;
+            scriptBP.setFixParam([VarNames.State, this.id + '_path', this.id + '_state', VarNames.NeedSetState]);
+        }
+        else if(scriptBP.name.indexOf(AttrNames.AttrChecker) != -1){
+            scriptBP.setFixParam(['comeState', this.id + '_path', VarNames.NeedSetState]);
         }
     }
 
@@ -199,10 +220,12 @@ class UserControlKernel extends ContainerKernelBase {
                 });
             }
         }
-        if (attrName == AttrNames.FunctionApi) {
+        var funBPname;
+        var funBp;
+        if (attrName == AttrNames.FunctionApi || attrName == AttrNames.AttrHook || attrName == AttrNames.AttrChecker) {
             if (value == null) {
-                var funBPname = this.id + '_' + realAtrrName;
-                var funBp = project.scriptMaster.getBPByName(funBPname);
+                funBPname = this.id + '_' + realAtrrName;
+                funBp = project.scriptMaster.getBPByName(funBPname);
                 if (funBp != null) {
                     project.scriptMaster.deleteBP(funBp);
                 }

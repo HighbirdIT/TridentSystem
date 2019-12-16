@@ -220,6 +220,16 @@ const JSNodeEditorControls_arr =[
         type:'表单访问'
     },
     {
+        label:'遍历表单行',
+        nodeClass:JSNode_TraversalForm,
+        type:'表单访问'
+    },
+    {
+        label:'遍历结束',
+        nodeClass:JSNode_CircleEnd,
+        type:'表单访问'
+    },
+    {
         label:'刷新表单',
         nodeClass:JSNode_FreshForm,
         type:'表单控制'
@@ -439,6 +449,11 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
             useprops_map:{},
             useevents_map:{},
         };
+    }
+
+    setUseFormTraveral(fromKernel){
+        var formObj = this.addUseForm(fromKernel, EFormRowSource.None);
+        formObj.useTraversal = true;
     }
 
     addUseControlPath(ctrKernel){

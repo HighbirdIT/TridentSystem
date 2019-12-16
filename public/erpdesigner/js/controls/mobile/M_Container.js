@@ -26,7 +26,7 @@ var M_ContainerKernel = function (_ContainerKernelBase) {
     _createClass(M_ContainerKernel, [{
         key: 'aidAccessableKernels',
         value: function aidAccessableKernels(targetType, rlt_arr) {
-            var needFilt = targetType != null;
+            var needFilt = targetType != null || needFilt == '*';
             this.children.forEach(function (child) {
                 if (!needFilt || child.type == targetType) {
                     rlt_arr.push(child);

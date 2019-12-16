@@ -800,6 +800,24 @@ class Node_Base extends EventEmitter {
     isInReducer(){
         return false;
     }
+
+    findFlowSocketByNode(ancestorNode){
+        if(this.inFlowSocket == null){
+            return;
+        }
+        var links_arr = this.bluePrint.linkPool.getLinksBySocket(this.inFlowSocket);
+        for(var li in links_arr){
+            var link = links_arr[li];
+            if(link.outSocket.node == ancestorNode){
+                return link.outSocket;
+            }
+            var ret = link.outSocket.node.findFlowSocketByNode(ancestorNode);
+            if(ret != null){
+                return ret;
+            }
+        }
+        return null;
+    }
 }
 
 class UseClientVariableResult{
