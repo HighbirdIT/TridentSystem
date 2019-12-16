@@ -2488,14 +2488,20 @@ class FlowNode_Assignment_Operator extends JSNode_Base {
             type: ValueType.String,
         };
         if (this.inputScokets_arr.length == 0) {
-            this.addSocket(this.genInSocket());
-            this.addSocket(this.genInSocket());
+            this.addSocket(new NodeSocket('var', this, true, { type: ValueType.Object }));
+            this.addSocket(new NodeSocket('value', this, true, { type: ValueType.String }));
         }
         else {
             this.inputScokets_arr.forEach(socket => {
                 socket.set(this.insocketInitVal);
             });
         }
+        this.inputScokets_arr[0].label = '参数';
+        this.inputScokets_arr[0].inputable = false;
+        this.inputScokets_arr[0].type =ValueType.Object
+        this.inputScokets_arr[1].type =ValueType.String
+        this.inputScokets_arr[1].inputable = true;
+        this.inputScokets_arr[1].label = '值';
         if (this.operator == null) {
             this.operator = '+=';
         }
@@ -2516,16 +2522,6 @@ class FlowNode_Assignment_Operator extends JSNode_Base {
         return '运算:' + this.operator;
     }
 
-    genInSocket() {
-        var nameI = this.inputScokets_arr.length;
-        while (nameI < 999) {
-            if (this.getScoketByName('in' + nameI, true) == null) {
-                break;
-            }
-            ++nameI;
-        }
-        return new NodeSocket('in' + nameI, this, true, this.insocketInitVal);
-    }
 
     compile(helper, preNodes_arr, belongBlock) {
         var superRet = super.compile(helper, preNodes_arr);
