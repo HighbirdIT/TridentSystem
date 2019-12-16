@@ -231,7 +231,7 @@ class C_FlowNode_QueryKeyRecord extends React.PureComponent {
     }
 }
 
-class C_FlowNode_Assignment_Operator extends React.PureComponent {
+class C_JSNode_Assignment_Operator extends React.PureComponent {
     constructor(props) {
         super(props);
         autoBind(this);
