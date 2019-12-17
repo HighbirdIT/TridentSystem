@@ -5745,6 +5745,39 @@ class MobileContentCompiler extends ContentCompiler {
             pullFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath', [VarNames.State, belongUserControl.id + '_path', '{}']));
         }
 
+        if(midData.useFormXML){
+            var getXmlRowFunName = theKernel.id + '_' + AttrNames.Function.GetXMLRowItem;
+            var getXmlRowBp = project.scriptMaster.getBPByName(getXmlRowFunName);
+            if(getXmlRowBp == null){
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '有地方使用了此控件的XML数据，却没有设定[获取XML行]方法']);
+                return false;
+            }
+            if(getXmlRowBp.returnVars_arr.length == 0){
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '[获取XML行]方法必须要有返回值设置']);
+                return false;
+            }
+            var compileRet = this.compileScriptBlueprint(getXmlRowBp);
+            if (compileRet == false) {
+                return false;
+            }
+            
+            var xmlconfig = {
+                colcount:getXmlRowBp.returnVars_arr.length
+            };
+            getXmlRowBp.returnVars_arr.forEach((varData,index) => {
+                xmlconfig['col' + (index+1)] = varData.name;
+            });
+            clientSide.scope.getVar(theKernel.id + '_xmlconfig', true, JSON.stringify(xmlconfig));
+        }
+
         if (midData.useDS) {
             var mustSelectColumns_arr = [];
             for (colName in midData.useColumns_map) {

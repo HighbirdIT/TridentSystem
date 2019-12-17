@@ -237,6 +237,7 @@ const VarNames={
     NowRow:'nowrow',
     SelectedProfile:'selectedProfile',
     BaseValidCheckPath: 'baseValidCheckPath',
+    FormXML:'formxml',
 };
 
 
@@ -361,6 +362,10 @@ const AttrNames={
         OnDataSourceChanged:'onDataSourceChanged',
         OnClickCloseBtn:'onClickCloseBtn',
         OnReceiveMsg:'onReceiveMsg',
+    },
+
+    Function:{
+        GetXMLRowItem:'getxmlrowitem',
     },
 
     LayoutNames:{

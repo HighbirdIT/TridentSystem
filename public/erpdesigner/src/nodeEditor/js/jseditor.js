@@ -345,7 +345,6 @@ function gCreateControlApiItem(apiType, apiName){
 }
 
 const g_controlApi_arr = [];
-
 function gFindPropApiItem(ctltype, attrName){
     var rlt = null;
     var ctlApi = g_controlApi_arr.find(item=>{return item.ctltype == ctltype;});
@@ -634,7 +633,7 @@ class JSNodeEditorLeftPanel extends React.PureComponent{
                 panel2={
                     <div className='d-flex flex-column h-100 w-100'>
                         <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} label='变量' isOutput={false} />
-                        {nowBlueprint.group != EJsBluePrintFunGroup.Custom ? null : <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} label='返回值' isOutput={true} />}
+                        {nowBlueprint.group != EJsBluePrintFunGroup.Custom && !nowBlueprint.canCustomReturnValue ? null : <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} label='返回值' isOutput={true} />}
                         <JSNodeEditorCanUseNodePanel bluePrint={nowBlueprint} onMouseDown={this.props.onMouseDown} editor={this.props.editor} />
                     </div>
                 }

@@ -3485,3 +3485,44 @@ function GetFromatRowKey(rowkey) {
     }
     return rowkey;
 }
+
+function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath){
+    var state = store.getState();
+    var records_arr = formState.records_arr;
+    var xmlHeadStr = '<Data fNum="' + xmlconfig.colcount + '"';
+    var i;
+    var cols_arr = [];
+    for(i=1;i<=xmlconfig.colcount;++i){
+        var colName = xmlconfig['col' + i];
+        xmlHeadStr += ' f' + i + '="' + colName + '"';
+        cols_arr.push({
+            index:i,
+            name:colName,
+        });
+    }
+    xmlHeadStr += '>'
+    if(records_arr == null || records_arr.length == 0){
+        return xmlHeadStr + '</Data>';
+    }
+    var itemStrs_arr = [];
+    for(var ri = 0; ri < records_arr.length; ++ri){
+        var record = records_arr[ri];
+        var rowKey = keyColumn == '_default' ? ri : record[keyColumn];
+        var rowState = formState['row_' + rowKey];
+        if(rowState == null || rowState._isdirty){
+            return null;
+        }
+        var rowItem = getRowItemFun(state, rowState, formPath + '.row_' + rowKey, record);
+        if(rowItem == null){
+            return null;
+        }
+        var itemStr = '<Item'
+        cols_arr.forEach(col=>{
+            itemStr += ' f' + col.index + '="' + (rowItem[col.name] == null ? '' : rowItem[col.name]) + '"';
+        });
+        itemStrs_arr.push(itemStr);
+        itemStr += ' />'
+    }
+    console.log(xmlHeadStr + itemStrs_arr.join('') + '</Data>');
+    return xmlHeadStr + itemStrs_arr.join('') + '</Data>';
+}

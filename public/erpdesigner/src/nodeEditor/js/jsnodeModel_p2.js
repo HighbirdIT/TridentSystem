@@ -1125,7 +1125,8 @@ class JSNode_TraversalForm extends JSNode_Base {
             var ctlset = useControls_arr[ci];
             for(var pi in ctlset.useProps){
                 var apiitem = ctlset.useProps[pi];
-                helper.addUseControlPropApi(ctlset.ctl, apiitem, EFormRowSource.None);
+                //这里的属性引用也不需要汇报
+                //helper.addUseControlPropApi(ctlset.ctl, apiitem, EFormRowSource.None);
                 var stateVarName = this.id + '_' + ctlset.ctl.id + '_' + apiitem.stateName;
                 ctlDeclareBlock.pushLine(makeLine_DeclareVar(stateVarName, 'null', false));
                 checkCtlBlock.pushLine(stateVarName + '=' + ctlset.stateVarName + '.' + apiitem.stateName + ';');
