@@ -11,7 +11,7 @@ const JSNODE_FORMATNUM = 'formatnum';
 const JSNODE_CAPITALNUM = 'capitalnum';
 const JSNODE_CONVERT_TIMEZONE = 'convert_timezone';
 const JSNODE_ASSIGNMENT_OPERATOR = 'addition_assignment_operator';
-
+const JSNODE_ISNULLOPERATOR='IsNullOperator';
 class JSNode_While extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_WHILE, 'While', false, nodeJson);
@@ -1081,7 +1081,88 @@ class JSNode_Assignment_Operator extends JSNode_Base {
         return selfCompileRet;
     }
 }
+// js isnull
+class JSNode_IsNullOperator extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_ISNULLOPERATOR, 'IsNullOperator', false, nodeJson);
+        autoBind(this);
 
+        if (this.operator == null) {
+            this.operator = SqlOperator_IsNull;
+        }
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+                this.outSocket.type = SqlVarType_Boolean;
+            }
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false, { type: SqlVarType_Boolean });
+            this.addSocket(this.outSocket);
+        }
+
+        if (this.inputScokets_arr.length == 0) {
+            this.addSocket(new NodeSocket('in0', this, true, { type: SqlVarType_Scalar, inputable: false }));
+        }
+        else {
+            this.inputScokets_arr.forEach(socket => {
+                socket.type = SqlVarType_Scalar;
+                socket.inputable = false;
+            });
+        }
+
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.operator = this.operator;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsIsNull) {
+        assginObjByProperties(this, attrsIsNull, ['operator']);
+    }
+
+    compile(helper, preNodes_arr) {
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketVal_arr = [];
+        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+            var theSocket = this.inputScokets_arr[i];
+            var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+            var tValue = null;
+            if (tLinks.length == 0) {
+                if (tValue == null) {
+                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                        thisNodeTitle
+                        , nodeThis
+                        , helper.clickLogBadgeItemHandler)
+                        , '输入不能为空']);
+                    return false;
+                }
+            }
+            else {
+                var link = tLinks[0];
+                var outNode = link.outSocket.node;
+                var compileRet = outNode.compile(helper, usePreNodes_arr);
+                if (compileRet == false) {
+                    return false;
+                }
+                tValue = compileRet.getSocketOut(link.outSocket).strContent;
+                if (!outNode.outputIsSimpleValue()) {
+                    tValue = '(' + tValue + ')';
+                }
+            }
+            socketVal_arr.push(tValue);
+        }
+        var finalStr = tValue + ' ' + (this.operator == 'is null'?' == null':' != null');
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
 JSNodeClassMap[JSNODE_WHILE] = {
     modelClass: JSNode_While,
     comClass: C_Node_SimpleNode,
@@ -1141,6 +1222,10 @@ JSNodeClassMap[JSNODE_ASSIGNMENT_OPERATOR] = {
     modelClass: JSNode_Assignment_Operator,
     comClass: C_JSNode_Assignment_Operator,
 };
+JSNodeClassMap[JSNODE_ISNULLOPERATOR]={
+    modelClass:JSNode_IsNullOperator,
+    comClass:C_JSNode_IsNullOperator
+}
 /*
 JSNodeEditorControls_arr.push(
     {
@@ -1214,5 +1299,11 @@ JSNodeEditorControls_arr.push(
     {
         label: '赋值运算符',
         nodeClass: JSNode_Assignment_Operator,
+        type: '基础'
+    });
+JSNodeEditorControls_arr.push(
+    {
+        label: 'isNull判断',
+        nodeClass: JSNode_IsNullOperator,
         type: '基础'
     });
