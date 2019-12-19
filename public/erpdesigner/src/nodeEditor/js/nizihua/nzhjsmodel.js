@@ -1110,7 +1110,6 @@ class JSNode_IsNullOperator extends SqlNode_Base {
                 socket.inputable = false;
             });
         }
-
     }
 
     requestSaveAttrs() {

@@ -3529,6 +3529,7 @@ function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath
     }
     var textStr = '';
     var itemStrs_arr = [];
+    var rowText_arr = [];
     var count = 0;
     for(var ri = 0; ri < records_arr.length; ++ri){
         var record = records_arr[ri];
@@ -3543,6 +3544,7 @@ function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath
         }
         if(rowItem.rowtext){
             textStr += rowItem.rowtext;
+            rowText_arr.push(rowItem.rowtext);
         }
         ++count;
         var itemStr = '<Item'
@@ -3553,7 +3555,7 @@ function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath
         itemStrs_arr.push(itemStr);
     }
     //console.log(xmlHeadStr + itemStrs_arr.join('') + '</Data>');
-    rlt.textarr = itemStrs_arr;
+    rlt.textarr = rowText_arr;
     rlt.xml = xmlHeadStr + itemStrs_arr.join(splitChar) + '</Data>';
     rlt.count = count;
     rlt.text = textStr;
