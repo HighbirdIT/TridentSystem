@@ -6,12 +6,14 @@ const JSNODE_FUN_CREATE = 'createlocalfun';
 const JSNODE_FUN_CALL = 'callfun';
 const JSNODE_IFRAME_SENDMSG = 'iframesendmsg';
 const JSNODE_TRAVERSALFORM = 'traversalform';
+const JSNODE_GETFORMXMLDATA = 'getformxmldata';
 const JSNODE_CIRCLEEND = 'circleend';
 const JSNODE_OPENEXTERNAL_PAGE = 'openexternalpage';
 
 const JSNODE_DD_GETGEO_LOCATION = 'ddgetgeolocation';
 const JSNODE_DD_MAP_SEARCH = 'ddmapsearch';
 const JSNODE_DD_NAV_CLOSE = 'ddnavclose';
+
 
 class JSNode_AddPageToFrameSet extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
@@ -310,6 +312,14 @@ class JSNode_CusObject_New extends JSNode_Base {
         assginObjByProperties(this, attrsJson, ['code']);
     }
 
+    getJson(jsonProf) {
+        var theJson = super.getJson(jsonProf);
+        if (jsonProf) {
+            jsonProf.addCusObject(this.cusObj);
+        }
+        return theJson;
+    }
+
     compile(helper, preNodes_arr, belongBlock) {
         var superRet = super.compile(helper, preNodes_arr);
         if (superRet == false || superRet != null) {
@@ -413,6 +423,14 @@ class JSNode_CusObject_Visit extends JSNode_Base {
 
     restorFromAttrs(attrsJson) {
         assginObjByProperties(this, attrsJson, ['code']);
+    }
+
+    getJson(jsonProf) {
+        var theJson = super.getJson(jsonProf);
+        if (jsonProf) {
+            jsonProf.addCusObject(this.cusObj);
+        }
+        return theJson;
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -889,7 +907,7 @@ class JSNode_TraversalForm extends JSNode_Base {
             apiitem.relyStateName = apiitem.stateName;
         }
         var attrName = IsEmptyString(apiitem.useAttrName) ? apiitem.attrItem.name : apiitem.useAttrName;
-        var ctlset = this.useControls_arr.find(x=>{
+        var ctlset = this.useControls_arr.find(x => {
             return x.ctl == ctrKernel;
         });
         if (ctlset != null) {
@@ -898,7 +916,7 @@ class JSNode_TraversalForm extends JSNode_Base {
     }
 
     addUseControlPath(ctrKernel) {
-        var ctlset = this.useControls_arr.find(x=>{
+        var ctlset = this.useControls_arr.find(x => {
             return x.ctl == ctrKernel;
         });
         if (ctlset != null) {
@@ -966,8 +984,8 @@ class JSNode_TraversalForm extends JSNode_Base {
             norelyact: true,
         }, EFormRowSource.None);
         helper.setUseFormTraveral(formKernel);
-        if(formKernel.isGridForm()){
-            if(this.bluePrint.linkPool.getLinksBySocket(this.selectedSocket).length > 0){
+        if (formKernel.isGridForm()) {
+            if (this.bluePrint.linkPool.getLinksBySocket(this.selectedSocket).length > 0) {
                 // 使用了selected标志,侦听变更方法
                 var listenAttrName = selectMode == ESelectMode.Single ? VarNames.SelectedValue : VarNames.SelectedValues_arr;
                 helper.addUseControlPropApi(formKernel, {
@@ -999,7 +1017,7 @@ class JSNode_TraversalForm extends JSNode_Base {
         myJSBlock.pushLine('}');
         //myJSBlock.pushLine(makeStr_AddAll('for(var ', indexVarName, '=0;', formrowsVarName + '!=null && ' + indexVarName, '<', formrowsVarName, '.length;++', indexVarName, '){'), 1);
         circleBlock.pushLine(indexVarName + '++;');
-        circleBlock.pushLine('if(' + indexVarName + '>=' + countVarName + '){',1);
+        circleBlock.pushLine('if(' + indexVarName + '>=' + countVarName + '){', 1);
         circleBlock.pushLine(this.id + '_endfun();');
         circleBlock.pushLine('return;');
         circleBlock.subNextIndent();
@@ -1073,17 +1091,16 @@ class JSNode_TraversalForm extends JSNode_Base {
                 outCtls_arr.push(ctlKernel);
                 var nullable = false;
                 var belongLabeledKernel = null;
-                if(ctlKernel.type != M_LabelKernel_Type){
-                    belongLabeledKernel = ctlKernel.searchParentKernel(M_LabelKernel_Type,true);
-                    if(belongLabeledKernel)
-                    {
+                if (ctlKernel.type != M_LabelKernel_Type) {
+                    belongLabeledKernel = ctlKernel.searchParentKernel(M_LabelKernel_Type, true);
+                    if (belongLabeledKernel) {
                         nullable = belongLabeledKernel.getAttribute(AttrNames.Nullable);
-                        if(formKernel.isGridForm() && belongLabeledKernel.parent == formKernel){
+                        if (formKernel.isGridForm() && belongLabeledKernel.parent == formKernel) {
                             belongLabeledKernel = null;
                         }
                     }
-                    else{
-                        if(ctlKernel.hasAttribute(AttrNames.Nullable)){
+                    else {
+                        if (ctlKernel.hasAttribute(AttrNames.Nullable)) {
                             nullable = ctlKernel.getAttribute(AttrNames.Nullable);
                         }
                     }
@@ -1096,9 +1113,9 @@ class JSNode_TraversalForm extends JSNode_Base {
                     stateVarName: ctlStateVarName,
                     nullable: nullable,
                 });
-                
-                if(belongLabeledKernel){
-                    if(outCtls_arr.indexOf(belongLabeledKernel) == -1){
+
+                if (belongLabeledKernel) {
+                    if (outCtls_arr.indexOf(belongLabeledKernel) == -1) {
                         outCtls_arr.push(belongLabeledKernel);
                         ctlDeclareBlock.pushLine(makeLine_DeclareVar(this.id + '_' + belongLabeledKernel.id + '_state', 'null', false));
                         checkCtlBlock.pushLine(this.id + '_' + belongLabeledKernel.id + "_state=" + makeStr_getStateByPath(rowStateVarName, singleQuotesStr(belongLabeledKernel.getStatePath(null, '.', null, true, formKernel)), '{}') + ";");
@@ -1121,21 +1138,21 @@ class JSNode_TraversalForm extends JSNode_Base {
         }
 
         var needCheckProps_map = {};
-        for(var ci in useControls_arr){
+        for (var ci in useControls_arr) {
             var ctlset = useControls_arr[ci];
-            for(var pi in ctlset.useProps){
+            for (var pi in ctlset.useProps) {
                 var apiitem = ctlset.useProps[pi];
                 //这里的属性引用也不需要汇报
                 //helper.addUseControlPropApi(ctlset.ctl, apiitem, EFormRowSource.None);
                 var stateVarName = this.id + '_' + ctlset.ctl.id + '_' + apiitem.stateName;
                 ctlDeclareBlock.pushLine(makeLine_DeclareVar(stateVarName, 'null', false));
                 checkCtlBlock.pushLine(stateVarName + '=' + ctlset.stateVarName + '.' + apiitem.stateName + ';');
-                if (apiitem.needValid){
+                if (apiitem.needValid) {
                     var valueType = 'string';
                     if (ctlset.ctl.hasAttribute(AttrNames.ValueType)) {
                         valueType = ctlset.ctl.getAttribute(AttrNames.ValueType);
                     }
-                    
+
                     checkCtlBlock.pushLine(validErrVarName + ' = ' + makeStr_callFun('BaseIsValueValid', [
                         VarNames.State,
                         ctlset.labeledKernel ? this.id + '_' + ctlset.labeledKernel.id + '_state' : 'null',
@@ -1149,15 +1166,15 @@ class JSNode_TraversalForm extends JSNode_Base {
                     ]) + ";");
                     checkCtlBlock.pushLine('if(' + validErrVarName + '){' + hadErrVarName + '=true;};');
                 }
-                else{
-                    if(helper.projectCompiler){
-                        if(ctlset.ctl.type == UserControlKernel_Type){
+                else {
+                    if (helper.projectCompiler) {
+                        if (ctlset.ctl.type == UserControlKernel_Type) {
                             var templateKernelMidData = helper.projectCompiler.getMidData(ctlset.ctl.getTemplateKernel().id);
                             var propChecker = templateKernelMidData.propChecker_map[apiitem.stateName];
-                            if(propChecker){
-                                if(needCheckProps_map[ctlset.ctl.id+propChecker] == null){
-                                    needCheckProps_map[ctlset.ctl.id+propChecker] = 1;
-                                    checkCtlBlock.pushLine(validErrVarName + ' = ' + makeStr_callFun(propChecker, [VarNames.State, this.id + '_rowpath + ' + singleQuotesStr('.' + ctlset.ctl.getStatePath('','.',null,true,formKernel))]));
+                            if (propChecker) {
+                                if (needCheckProps_map[ctlset.ctl.id + propChecker] == null) {
+                                    needCheckProps_map[ctlset.ctl.id + propChecker] = 1;
+                                    checkCtlBlock.pushLine(validErrVarName + ' = ' + makeStr_callFun(propChecker, [VarNames.State, this.id + '_rowpath + ' + singleQuotesStr('.' + ctlset.ctl.getStatePath('', '.', null, true, formKernel))]));
                                     checkCtlBlock.pushLine('if(' + validErrVarName + '){' + hadErrVarName + '=true;};');
                                 }
                             }
@@ -1226,11 +1243,11 @@ class JSNode_CircleEnd extends JSNode_Base {
         var myJSBlock = new FormatFileBlock('myjs');
         belongBlock.pushChild(myJSBlock);
         var inreducer = this.isInReducer(preNodes_arr);
-        if(inreducer){
+        if (inreducer) {
             myJSBlock.pushLine('setTimeout(() => {', 1);
         }
         myJSBlock.pushLine(traverNode.id + '_processNext();');
-        if(inreducer){
+        if (inreducer) {
             myJSBlock.subNextIndent();
             myJSBlock.pushLine('},10);');
         }
@@ -1698,6 +1715,206 @@ class JsNode_OpenExternal_Page extends JSNode_Base {
     }
 }
 
+class JSNode_GetFormXMLData extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_GETFORMXMLDATA, 'FormXMLData', false, nodeJson);
+        autoBind(this);
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outputScokets_arr.forEach(socket => {
+                    if (socket.name == 'xml') {
+                        this.xmlSocket = socket;
+                    }
+                    else if (socket.name == 'text') {
+                        this.textSocket = socket;
+                    }
+                    else if (socket.name == 'textarr') {
+                        this.textarrSocket = socket;
+                    }
+                    else if (socket.name == 'count') {
+                        this.countSocket = socket;
+                    }
+                    else if (socket.name == 'valid') {
+                        this.validSocket = socket;
+                    }
+                });
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.inputScokets_arr.forEach(socket => {
+                    if (socket.name == 'form') {
+                        this.formSocket = socket;
+                    }
+                    else if (socket.name == 'split') {
+                        this.splitSocket = socket;
+                    }
+                });
+            }
+        }
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+        if (this.formSocket == null) {
+            this.formSocket = new NodeSocket('form', this, true);
+            this.addSocket(this.formSocket);
+        }
+        if (this.splitSocket == null) {
+            this.splitSocket = new NodeSocket('split', this, true);
+            this.addSocket(this.splitSocket);
+        }
+        if (this.xmlSocket == null) {
+            this.xmlSocket = this.addSocket(new NodeSocket('xml', this, false));
+        }
+        if (this.textSocket == null) {
+            this.textSocket = this.addSocket(new NodeSocket('text', this, false));
+        }
+        if (this.textarrSocket == null) {
+            this.textarrSocket = this.addSocket(new NodeSocket('textarr', this, false));
+        }
+        if (this.countSocket == null) {
+            this.countSocket = this.addSocket(new NodeSocket('count', this, false));
+        }
+        if (this.validSocket == null) {
+            this.validSocket = this.addSocket(new NodeSocket('valid', this, false));
+        }
+        
+        this.formSocket.inputable = false;
+        this.formSocket.type = SocketType_CtlKernel;
+        this.formSocket.kernelType = M_FormKernel_Type;
+        this.formSocket.label = 'form';
+
+        this.splitSocket.inputable = true;
+        this.splitSocket.label = '分隔符';
+        this.splitSocket.type = ValueType.String;
+
+        this.xmlSocket.label = 'xml';
+        this.textSocket.label = 'text';
+        this.textarrSocket.label = 'textArr';
+        this.countSocket.label = 'count';
+        this.validSocket.label = 'isValid';
+
+        this.xmlSocket.type = ValueType.String;
+        this.textSocket.type = ValueType.String;
+        this.countSocket.type = ValueType.Int;
+        this.validSocket.type = ValueType.Boolean;
+    }
+
+    getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
+        var compileRet = helper.getCompileRetCache(this);
+        var socketValue = compileRet.getSocketOut(targetSocket).strContent;
+        result.pushVariable(socketValue, targetSocket);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var project = this.bluePrint.master.project;
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var links_arr = this.bluePrint.linkPool.getLinksBySocket(this.formSocket);
+        var selectedCtlid;
+        var selectedKernel;
+        var traversalFromNode = null;
+        if (links_arr.length > 0) {
+            var link = links_arr[0];
+            var fromNode = link.outSocket.node;
+            if (fromNode.type == FLOWNODE_COLUMN_VAR) {
+                var keySocket = fromNode.getKeySocket();
+                if (keySocket) {
+                    if (keySocket.node.type == JSNODE_TRAVERSALFORM) {
+                        selectedCtlid = keySocket.getExtra('ctlid');
+                        traversalFromNode = keySocket.node;
+                    }
+                }
+            }
+            else if (fromNode.type == JSNODE_TRAVERSALFORM) {
+                selectedCtlid = link.outSocket.getExtra('ctlid');
+                traversalFromNode = fromNode;
+            }
+        }
+        else {
+            selectedCtlid = this.formSocket.getExtra('ctlid');
+        }
+        if (!IsEmptyString(selectedCtlid)) {
+            selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
+        }
+
+        if (this.checkCompileFlag(selectedKernel == null, '需要选择控件', helper)) {
+            return false;
+        }
+        var relCtlKernel = this.bluePrint.ctlKernel;
+        if (traversalFromNode == null) {
+            var canAccessCtls_arr = relCtlKernel.getAccessableKernels(this.ctltype);
+            if (this.checkCompileFlag(canAccessCtls_arr.indexOf(selectedKernel) == -1, '指定的控件不可访问', helper)) {
+                return false;
+            }
+        }
+
+        if (this.checkCompileFlag(selectedKernel.isPageForm(), '页面form无法使用此属性', helper)) {
+            return false;
+        }
+
+        var socketComRet = this.getSocketCompileValue(helper, this.splitSocket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var splitChar = socketComRet.value;
+        if(IsEmptyString(splitChar)){
+            splitChar = "''";
+        }
+
+        var rltVarName = this.id + '_data';
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+
+        var formStateVarName = selectedKernel.id + '_state';
+        var formPathVarName = selectedKernel.id + '_path';
+        if (traversalFromNode == null) {
+            helper.addUseForm(selectedKernel, EFormRowSource.Context);
+        }
+        else {
+            traversalFromNode.addUseControlPath(selectedKernel);
+            formStateVarName = traversalFromNode.id + '_' + selectedKernel.id + '_state';
+            formPathVarName = traversalFromNode.id + '_' + selectedKernel.id + '_path';
+        }
+        links_arr = this.bluePrint.linkPool.getLinksBySocket(this.xmlSocket);
+        var useXmlSocket = links_arr.length > 0;
+        links_arr = this.bluePrint.linkPool.getLinksBySocket(this.textSocket);
+        var useTextSocket = links_arr.length > 0;
+        if (this.checkCompileFlag(!useXmlSocket && !useTextSocket, '并没有使用xml或text数据', helper)) {
+            return false;
+        }
+        if (helper.projectCompiler) {
+            var formMidData = helper.projectCompiler.getMidData(selectedKernel.id);
+            formMidData.useFormXML = useXmlSocket;
+            formMidData.useFormXMLText = useTextSocket;
+        }
+        myJSBlock.pushLine(makeLine_DeclareVar(rltVarName, makeStr_callFun('GenFormXmlData',[formStateVarName, selectedKernel.id + '_' + AttrNames.Function.GetXMLRowItem, selectedKernel.id + '_xmlconfig', singleQuotesStr(selectedKernel.getAttribute(AttrNames.KeyColumn)), formPathVarName, splitChar]), false));
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        selfCompileRet.setSocketOut(this.xmlSocket, rltVarName + '.xml');
+        selfCompileRet.setSocketOut(this.textSocket, rltVarName + '.text');
+        selfCompileRet.setSocketOut(this.countSocket, rltVarName + '.count');
+        selfCompileRet.setSocketOut(this.validSocket, rltVarName + '.isValid');
+        selfCompileRet.setSocketOut(this.textarrSocket, rltVarName + '.textarr');
+        helper.setCompileRetCache(this, selfCompileRet);
+        if (this.compileOutFlow(helper, usePreNodes_arr, belongBlock) == false) {
+            return false;
+        }
+
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_OP_NOT] = {
     modelClass: JSNode_OP_Not,
     comClass: C_Node_SimpleNode,
@@ -1752,5 +1969,9 @@ JSNodeClassMap[JSNODE_DD_MAP_SEARCH] = {
 };
 JSNodeClassMap[JSNODE_DD_NAV_CLOSE] = {
     modelClass: JSNode_DD_NavClose,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_GETFORMXMLDATA] = {
+    modelClass: JSNode_GetFormXMLData,
     comClass: C_Node_SimpleNode,
 };

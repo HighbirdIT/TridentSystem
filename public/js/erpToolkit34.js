@@ -772,6 +772,9 @@ function getNumberFromCookies(identity, defaultVal) {
 }
 
 function getStateByPath(state, path, def) {
+    if (path == '') {
+        return state;
+    }
     if (state == null) {
         return def;
     }

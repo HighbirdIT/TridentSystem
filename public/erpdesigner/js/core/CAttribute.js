@@ -265,7 +265,8 @@ var VarNames = {
     NowRow: 'nowrow',
     SelectedProfile: 'selectedProfile',
     BaseValidCheckPath: 'baseValidCheckPath',
-    FormXML: 'formxml'
+    FormXML: 'formxml',
+    FormXMLText: 'formxmltext'
 };
 
 var AttrNames = {
@@ -373,6 +374,9 @@ var AttrNames = {
     AwaysEditable: 'awayseditable',
     AttrHook: 'attrhook',
     AttrChecker: 'attrchecker',
+    RowText: 'rowtext',
+    AppandColumn: 'appandColumn',
+    ColumnName: 'columnname',
 
     Event: {
         OnClick: 'onclick',

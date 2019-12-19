@@ -413,7 +413,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             setTimeout(function () {
                 self.inited = true;
                 var dropdownctl = _this3.props.dropdownctl;
-                if (gPCRenderMode) {
+                if (!isMobile) {
                     self.rootStyle = dropdownctl.getPopItemStyle();
                     window.addEventListener('mousedown', _this3.windowMouseDownHandler);
                 }
@@ -424,7 +424,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
         key: 'componentWillUnmount',
         value: function componentWillUnmount() {
             this.inited = false;
-            if (gPCRenderMode) {
+            if (!isMobile) {
                 window.removeEventListener('mousedown', this.windowMouseDownHandler);
             }
         }
@@ -557,7 +557,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             }
             //console.log(selectedElem);
             if (!this.inited) {
-                if (gPCRenderMode) {
+                if (!isMobile) {
                     return null;
                 }
                 return React.createElement(
@@ -792,7 +792,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                             )
                         ),
                         React.createElement('input', { className: 'form-control', type: 'text', value: keyword, onChange: this.keyInputChanged }),
-                        gPCRenderMode ? React.createElement(
+                        !isMobile ? React.createElement(
                             'div',
                             { className: 'input-group-append' },
                             React.createElement(
@@ -877,7 +877,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                 titleBarRightElem = this.props.dropdownctl.props.createTitleBarRightElem();
             }
 
-            if (gPCRenderMode) {
+            if (!isMobile) {
                 return React.createElement(
                     'div',
                     { ref: this.containerRef, style: this.rootStyle, className: 'dropDownItemContainer_pc d-flex flex-column bg-light flex-shrink-0 rounded border-dark p-2' },
@@ -947,7 +947,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
         _this5.contentDivRef = React.createRef();
 
         _this5.popPanelRef = React.createRef();
-        if (!gPCRenderMode) {
+        if (isMobile) {
             _this5.popPanelItem = React.createElement(ERPC_DropDown_PopPanel, { ref: _this5.popPanelRef, dropdownctl: _this5, key: gFixedItemCounter++ });
         }
         return _this5;
@@ -984,7 +984,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             }
             this.recentValues_arr = recentValues_arr;
             this.recentUsed = recentUsed;
-            if (!gPCRenderMode) {
+            if (isMobile) {
                 addFixedItem(this.popPanelItem);
             }
 
@@ -1005,7 +1005,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
         value: function dropDownClosed() {
             if (this.state.opened) {
                 this.setState({ opened: false });
-                if (!gPCRenderMode) {
+                if (isMobile) {
                     removeFixedItem(this.popPanelItem);
                 }
             }
@@ -1081,14 +1081,22 @@ var ERPC_DropDown = function (_React$PureComponent3) {
         key: 'confirmChanged',
         value: function confirmChanged(text, value, theOptionItem) {
             var invalidInfo = BaseIsValueValid(null, null, null, value == null || text == null ? null : value, this.props.type, this.props.nullable, this.props.id, null, this.props.fullPath);
-            store.dispatch(makeAction_setManyStateByPath({
+            var changedObj = {
                 value: value,
                 text: text,
                 invalidInfo: invalidInfo,
                 selectOpt: theOptionItem
-            }, this.props.fullPath));
+            };
+            var record;
+            if (this.props.dataCols) {
+                record = theOptionItem.data ? theOptionItem.data : {};
+                this.props.dataCols.split(',').forEach(function (col) {
+                    changedObj[col] = record[col];
+                });
+            }
+            store.dispatch(makeAction_setManyStateByPath(changedObj, this.props.fullPath));
             if (typeof this.props.onchanged === 'function') {
-                this.props.onchanged(this.props.fullParentPath, text, value);
+                this.props.onchanged(this.props.fullParentPath, text, value, record);
             }
         }
     }, {
@@ -1150,15 +1158,16 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             var windowHeight = $window.height();
             var topSpace = rootRect.top;
             var bottomSpace = windowHeight - rootRect.bottom;
+            var rootPos = $(rootDiv).position();
             var rlt = {
                 width: rootDiv.offsetWidth + 'px',
-                left: rootRect.left + 'px'
+                left: rootPos.left + 'px'
             };
             if (bottomSpace > topSpace) {
-                rlt.top = rootRect.bottom + 'px';
+                rlt.top = rootPos.top + rootRect.height + 'px';
                 rlt.maxHeight = bottomSpace - 20 + 'px';
             } else {
-                rlt.bottom = windowHeight - rootRect.top + 'px';
+                rlt.bottom = rootRect.top + 'px';
                 rlt.maxHeight = topSpace - 20 + 'px';
             }
             return rlt;
@@ -1269,7 +1278,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
 
             var popPanelElem = null;
             if (this.state.opened) {
-                if (gPCRenderMode) {
+                if (!isMobile) {
                     popPanelElem = React.createElement(ERPC_DropDown_PopPanel, { ref: this.popPanelRef, dropdownctl: this, width: this.rootDivRef.current.offsetWidth });
                 }
 
@@ -2545,7 +2554,12 @@ function ERPC_GridForm(target) {
     target.roweditClicked = ERPC_GridForm_RoweditClicked.bind(target);
     target.rowcanceleditClicked = ERPC_GridForm_RowcanceleditClicked.bind(target);
     target.rowdeleteClicked = ERPC_GridForm_RowdeleteClicked.bind(target);
-    target.rowconfirmeditClicked = ERPC_GridForm_RowconfirmeditClicked.bind(target);
+    var editBtn = target.btns && target.btns.find(function (x) {
+        return x.key == 'edit';
+    });
+    if (editBtn) {
+        target.rowconfirmeditClicked = ERPC_GridForm_RowconfirmeditClicked.bind(target);
+    }
     target.clickNewRowHandler = ERPC_GridForm_ClickNewRowHandler.bind(target);
     target.cancelInsert = ERPC_GridForm_CancelInsert.bind(target);
     target.confrimInsert = ERPC_GridForm_ConfirmInsert.bind(target);
@@ -2620,7 +2634,7 @@ function ERPC_GridForm_GetRowState(rowkey, state) {
     var path = this.getRowPath(rowkey);
     return getStateByPath(state, path);
 }
-
+-2;
 function ERPC_GridForm_RoweditClicked(rowkey) {
     var rowPath = this.getRowPath(rowkey);
     var rowState = this.getRowState(rowkey);
@@ -2812,8 +2826,12 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent11) {
 
 function ERPC_GridForm_BtnCol_mapstatetoprops(state, ownprops) {
     var rowState = ownprops.form.getRowState(ownprops.rowkey);
+    var editing = rowState && rowState.editing && ownprops.form.rowconfirmeditClicked != null;
+    if (editing) {
+        console.log('editing');
+    }
     return {
-        editing: rowState && rowState.editing
+        editing: editing
     };
 }
 
@@ -3900,7 +3918,6 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
             try {
                 ev.target.contentWindow.gPageInFrame = true;
                 ev.target.contentWindow.gParentFrame = this;
-                ev.target.contentWindow.gPCRenderMode = gPCRenderMode;
                 ev.target.contentWindow.gParentDingKit = dingdingKit;
                 ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
             } catch (eo) {
@@ -3976,7 +3993,6 @@ var ERPC_IFrame = function (_React$PureComponent19) {
             try {
                 ev.target.contentWindow.gPageInFrame = true;
                 ev.target.contentWindow.gWeakParentFrame = this;
-                ev.target.contentWindow.gPCRenderMode = gPCRenderMode;
                 ev.target.contentWindow.gParentDingKit = dingdingKit;
                 ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
             } catch (eo) {
@@ -4187,11 +4203,20 @@ function GetFromatRowKey(rowkey) {
 }
 
 function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath) {
+    var splitChar = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : '';
+
     var state = store.getState();
     var records_arr = formState.records_arr;
     var xmlHeadStr = '<Data fNum="' + xmlconfig.colcount + '"';
     var i;
     var cols_arr = [];
+    var rlt = {
+        xml: null,
+        count: 0,
+        text: null,
+        textarr: null,
+        isValid: false
+    };
     for (i = 1; i <= xmlconfig.colcount; ++i) {
         var colName = xmlconfig['col' + i];
         xmlHeadStr += ' f' + i + '="' + colName + '"';
@@ -4202,27 +4227,40 @@ function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath
     }
     xmlHeadStr += '>';
     if (records_arr == null || records_arr.length == 0) {
-        return xmlHeadStr + '</Data>';
+        rlt.xml = xmlHeadStr + '</Data>';
+        rlt.isValid = true;
+        return rlt;
     }
+    var textStr = '';
     var itemStrs_arr = [];
+    var count = 0;
     for (var ri = 0; ri < records_arr.length; ++ri) {
         var record = records_arr[ri];
         var rowKey = keyColumn == '_default' ? ri : record[keyColumn];
         var rowState = formState['row_' + rowKey];
         if (rowState == null || rowState._isdirty) {
-            return null;
+            return rlt;
         }
         var rowItem = getRowItemFun(state, rowState, formPath + '.row_' + rowKey, record);
         if (rowItem == null) {
-            return null;
+            return rlt;
         }
+        if (rowItem.rowtext) {
+            textStr += rowItem.rowtext;
+        }
+        ++count;
         var itemStr = '<Item';
         cols_arr.forEach(function (col) {
             itemStr += ' f' + col.index + '="' + (rowItem[col.name] == null ? '' : rowItem[col.name]) + '"';
         });
-        itemStrs_arr.push(itemStr);
         itemStr += ' />';
+        itemStrs_arr.push(itemStr);
     }
-    console.log(xmlHeadStr + itemStrs_arr.join('') + '</Data>');
-    return xmlHeadStr + itemStrs_arr.join('') + '</Data>';
+    //console.log(xmlHeadStr + itemStrs_arr.join('') + '</Data>');
+    rlt.textarr = itemStrs_arr;
+    rlt.xml = xmlHeadStr + itemStrs_arr.join(splitChar) + '</Data>';
+    rlt.count = count;
+    rlt.text = textStr;
+    rlt.isValid = true;
+    return rlt;
 }

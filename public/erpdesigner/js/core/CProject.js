@@ -634,7 +634,8 @@ var CProject = function (_IAttributeable) {
                 userControls_arr: [],
                 controlsID_map: {},
                 refControlID_map: {},
-                targetControl: null
+                targetControl: null,
+                cusObjects_arr: []
             };
             var controlJsonProf = new AttrJsonProfile();
             var controlJson = theKernel.getJson(controlJsonProf);
@@ -1032,11 +1033,22 @@ var AttrJsonProfile = function () {
         this.useUserControl_map = {};
         this.refControl_map = {};
         this.dictionary = {};
+        this.customObjects_arr = [];
         this.keyIndex = 0;
         this.hadDictionary = hadDictionary == true;
     }
 
     _createClass(AttrJsonProfile, [{
+        key: 'addCusObject',
+        value: function addCusObject(cusObj) {
+            if (cusObj == null) {
+                return;
+            }
+            if (this.customObjects_arr.indexOf(cusObj) == -1) {
+                this.customObjects_arr.push(cusObj);
+            }
+        }
+    }, {
         key: 'addDictionnary',
         value: function addDictionnary(value) {
             if (!this.hadDictionary) {

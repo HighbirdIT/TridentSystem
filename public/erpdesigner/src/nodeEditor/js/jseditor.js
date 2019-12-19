@@ -225,6 +225,11 @@ const JSNodeEditorControls_arr =[
         type:'表单访问'
     },
     {
+        label:'获取表单XML数据',
+        nodeClass:JSNode_GetFormXMLData,
+        type:'表单访问'
+    },
+    {
         label:'遍历结束',
         nodeClass:JSNode_CircleEnd,
         type:'表单访问'

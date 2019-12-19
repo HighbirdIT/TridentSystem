@@ -52,7 +52,6 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute(VarNames.SelectedValue, VarNames.SelectedValue, ValueType.Int, 1, false, false, null, null, false),
         new CAttribute(VarNames.SelectedValues_arr, VarNames.SelectedValues_arr, ValueType.Array, 1, false, false, null, null, false),
         new CAttribute(VarNames.SelectedColumns, VarNames.SelectedColumns, ValueType.Array, 1, false, false, null, null, false),
-        new CAttribute(VarNames.FormXML, VarNames.FormXML, ValueType.XML, 1, false, false, null, null, false),
     ]),
     new CAttributeGroup('操作设置', [
         genScripAttribute('Insert', AttrNames.Event.OnInsert, EJsBluePrintFunGroup.GridRowBtnHandler),
@@ -309,7 +308,17 @@ class M_FormKernel extends ContainerKernelBase {
         }
         if(scriptBP.name.indexOf(AttrNames.Function.GetXMLRowItem) != -1){
             scriptBP.setFixParam([VarNames.State,this.id + '_rowState',this.id + '_rowpath',this.id + '_' + VarNames.NowRecord]);
+            var rowTextParam = scriptBP.returnVars_arr.find(item=>{return item.name == AttrNames.RowText;});
+            if(rowTextParam == null){
+                rowTextParam = scriptBP.createEmptyVariable(true);
+                rowTextParam.name = AttrNames.RowText;
+                rowTextParam.needEdit = false;
+                scriptBP.returnVars_arr.push(rowTextParam);
+            }
             scriptBP.canCustomReturnValue = true;
+        }
+        if(scriptBP.name.indexOf(AttrNames.Event.OnDelete) != -1){
+            scriptBP.setFixParam([VarNames.RowKey, 'callBack']);
         }
     }
 
@@ -577,8 +586,10 @@ MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.SelectedV
 MForm_api.pushApi(new ApiItem_propsetter(VarNames.SelectedValues_arr));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.SelectedColumns, M_FormKernelAttrsSetting), VarNames.SelectedColumns, true,(ctlStateVarName, ctlKernel, propApiitem)=>{
     return makeStr_AddAll(ctlStateVarName,'==null ? "" : ', makeStr_callFun('GetFormSelectedColumns',[ctlStateVarName,singleQuotesStr(ctlKernel.getAttribute(AttrNames.KeyColumn)), singleQuotesStr(propApiitem.colname)]) + '.join(",")');
-}));  // 
+})); 
+/*
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.FormXML, M_FormKernelAttrsSetting), VarNames.FormXML, true,(ctlStateVarName, ctlKernel, propApiitem)=>{
+    return ctlKernel.id + '_xmldata.xml';
     var formPath = ctlKernel.getStatePath('', '.');
     var belongUserCtl = ctlKernel.searchParentKernel(UserControlKernel_Type, true);
     if(belongUserCtl){
@@ -589,6 +600,10 @@ MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.FormXML, 
     }
     return makeStr_callFun('GenFormXmlData',[ctlStateVarName, ctlKernel.id + '_' + AttrNames.Function.GetXMLRowItem, ctlKernel.id + '_xmlconfig', singleQuotesStr(ctlKernel.getAttribute(AttrNames.KeyColumn)), formPath]);
 })); 
+MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.FormXMLText, M_FormKernelAttrsSetting), VarNames.FormXMLText, true,(ctlStateVarName, ctlKernel, propApiitem)=>{
+    return ctlKernel.id + '_xmldata.text';
+})); 
+*/
 
 g_controlApi_arr.push(MForm_api);
 

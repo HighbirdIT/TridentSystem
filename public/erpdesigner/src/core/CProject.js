@@ -587,6 +587,7 @@ class CProject extends IAttributeable {
             controlsID_map: {},
             refControlID_map: {},
             targetControl: null,
+            cusObjects_arr: [],
         };
         var controlJsonProf = new AttrJsonProfile();
         var controlJson = theKernel.getJson(controlJsonProf);
@@ -970,8 +971,18 @@ class AttrJsonProfile {
         this.useUserControl_map = {};
         this.refControl_map = {};
         this.dictionary = {};
+        this.customObjects_arr = [];
         this.keyIndex = 0;
         this.hadDictionary = hadDictionary == true;
+    }
+
+    addCusObject(cusObj){
+        if(cusObj == null){
+            return;
+        }
+        if(this.customObjects_arr.indexOf(cusObj) == -1){
+            this.customObjects_arr.push(cusObj);
+        }
     }
 
     addDictionnary(value){
