@@ -220,6 +220,21 @@ const JSNodeEditorControls_arr =[
         type:'表单访问'
     },
     {
+        label:'遍历表单行',
+        nodeClass:JSNode_TraversalForm,
+        type:'表单访问'
+    },
+    {
+        label:'获取表单XML数据',
+        nodeClass:JSNode_GetFormXMLData,
+        type:'表单访问'
+    },
+    {
+        label:'遍历结束',
+        nodeClass:JSNode_CircleEnd,
+        type:'表单访问'
+    },
+    {
         label:'刷新表单',
         nodeClass:JSNode_FreshForm,
         type:'表单控制'
@@ -237,6 +252,11 @@ const JSNodeEditorControls_arr =[
     {
         label:'向父页发消息',
         nodeClass:JSNode_Msg_SendToParent,
+        type:'窗体通信'
+    },
+    {
+        label:'向i框架发消息',
+        nodeClass:JSNode_IFrame_SendMsg,
         type:'窗体通信'
     },
     {
@@ -330,7 +350,6 @@ function gCreateControlApiItem(apiType, apiName){
 }
 
 const g_controlApi_arr = [];
-
 function gFindPropApiItem(ctltype, attrName){
     var rlt = null;
     var ctlApi = g_controlApi_arr.find(item=>{return item.ctltype == ctltype;});
@@ -434,6 +453,11 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
             useprops_map:{},
             useevents_map:{},
         };
+    }
+
+    setUseFormTraveral(fromKernel){
+        var formObj = this.addUseForm(fromKernel, EFormRowSource.None);
+        formObj.useTraversal = true;
     }
 
     addUseControlPath(ctrKernel){
@@ -614,7 +638,7 @@ class JSNodeEditorLeftPanel extends React.PureComponent{
                 panel2={
                     <div className='d-flex flex-column h-100 w-100'>
                         <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} label='变量' isOutput={false} />
-                        {nowBlueprint.group != EJsBluePrintFunGroup.Custom ? null : <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} label='返回值' isOutput={true} />}
+                        {nowBlueprint.group != EJsBluePrintFunGroup.Custom && !nowBlueprint.canCustomReturnValue ? null : <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} label='返回值' isOutput={true} />}
                         <JSNodeEditorCanUseNodePanel bluePrint={nowBlueprint} onMouseDown={this.props.onMouseDown} editor={this.props.editor} />
                     </div>
                 }

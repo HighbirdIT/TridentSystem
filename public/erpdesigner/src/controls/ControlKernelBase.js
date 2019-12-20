@@ -163,7 +163,11 @@ class ControlKernelBase extends IAttributeable {
             if(newValue){
                 this.listenDS(newValue, attrName);
             }
-            
+        }
+        var bpname = this.id + '_' + realAtrrName;
+        var jsbp = this.project.scriptMaster.getBPByName(bpname);
+        if (jsbp != null) {
+            this.project.scriptMaster.deleteBP(jsbp);
         }
 
         if(attrItem.name == AttrNames.TextField || attrItem.name == AttrNames.Name){

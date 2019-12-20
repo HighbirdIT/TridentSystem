@@ -10,7 +10,8 @@ const JSNODE_GETDAY = 'getDay';
 const JSNODE_FORMATNUM = 'formatnum';
 const JSNODE_CAPITALNUM = 'capitalnum';
 const JSNODE_CONVERT_TIMEZONE = 'convert_timezone';
-
+const JSNODE_ASSIGNMENT_OPERATOR = 'addition_assignment_operator';
+const JSNODE_ISNULLOPERATOR='IsNullOperator';
 class JSNode_While extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_WHILE, 'While', false, nodeJson);
@@ -687,7 +688,14 @@ class JSNode_GetDay extends JSNode_Base {
 
         if (nodeJson) {
             if (this.outputScokets_arr.length > 0) {
-                this.outSocket = this.outputScokets_arr[0];
+                this.outputScokets_arr.forEach(socket => {
+                    if (socket.name == 'out') {
+                        this.nameSocket = socket;
+                    }
+                    else if (socket.name == 'num') {
+                        this.numSocket = socket;
+                    }
+                });
             }
         }
         if (this.inputScokets_arr.length == 0) {
@@ -696,11 +704,18 @@ class JSNode_GetDay extends JSNode_Base {
         this.inputScokets_arr[0].label = '日期';
         this.inputScokets_arr[0].inputable = true;
 
-        if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false);
-            this.addSocket(this.outSocket);
+        if (this.nameSocket == null) {
+            this.nameSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.nameSocket);
         }
-        this.outSocket.type = ValueType.Object;
+        if (this.numSocket == null) {
+            this.numSocket = new NodeSocket('num', this, false);
+            this.addSocket(this.numSocket);
+        }
+        this.nameSocket.label = '中文';
+        this.nameSocket.type = ValueType.String;
+        this.numSocket.label = '数字';
+        this.numSocket.type = ValueType.Int;
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -720,8 +735,6 @@ class JSNode_GetDay extends JSNode_Base {
         }
         var dateStr = socketComRet.value;
         var endstr = '';
-        var socketlink = socketComRet.link;
-        var outSocket = this.outputScokets_arr[0];
         var selfCompileRet = new CompileResult(this);
         if (socketComRet.link == null) {
             if (!checkDate(dateStr)) {
@@ -748,7 +761,8 @@ class JSNode_GetDay extends JSNode_Base {
         var funPreFix = blockInServer ? 'serverhelper.DateFun.' : '';
         endstr = funPreFix + "getweekDay(" + dateStr + ")";
 
-        selfCompileRet.setSocketOut(outSocket, endstr);
+        selfCompileRet.setSocketOut(this.nameSocket, endstr);
+        selfCompileRet.setSocketOut(this.numSocket, dateStr + '.getDay()');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -905,7 +919,7 @@ class JSNode_Convert_TimeZone extends JSNode_Base {
             }
         }
         if (this.inputScokets_arr.length == 0) {
-            this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Object, inputable: true }));
+            this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Object,  }));
             this.addSocket(new NodeSocket('inputtwo', this, true, { type: ValueType.Object, inputable: true }));
             this.addSocket(new NodeSocket('inputthree', this, true, { type: ValueType.Object, inputable: true }));
         }
@@ -972,6 +986,187 @@ class JSNode_Convert_TimeZone extends JSNode_Base {
     }
 }
 
+//+=
+class JSNode_Assignment_Operator extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_ASSIGNMENT_OPERATOR, '赋值运算符', false, nodeJson);
+        autoBind(this);
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+        if (this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0) {
+            this.outFlowSockets_arr = [];
+        }
+        else {
+            this.outFlowSockets_arr.forEach(item => {
+                item.inputable = true;
+            });
+        }
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+                this.outSocket.type = ValueType.String;
+            }
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false, { type: ValueType.String });
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.isSimpleVal = false;
+        if (this.inputScokets_arr.length == 0) {
+            this.addSocket(new NodeSocket('var', this, true, { type: ValueType.Object }));
+            this.addSocket(new NodeSocket('value', this, true, { type: ValueType.String }));
+        }
+        this.inputScokets_arr[0].label = '变量';
+        this.inputScokets_arr[0].type = ValueType.Object;
+        this.inputScokets_arr[1].label = '值';
+        this.inputScokets_arr[1].type = ValueType.String;
+        if (this.operator == null) {
+            this.operator = '+=';
+        }
+        this.minInSocketCount = 2;
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.operator = this.operator;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['operator']);
+    }
+
+    getNodeTitle() {
+        return '运算:' + this.operator;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketVal_arr = [];
+        var allNumberic = true;
+        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+            var theSocket = this.inputScokets_arr[i];
+            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            var tValue = socketComRet.value;
+            if(i == 1){
+                if (socketComRet.link) {
+                    if (!socketComRet.link.outSocket.isSimpleVal) {
+                        tValue = '(' + tValue + ')';
+                    }
+                }
+                else {
+                    if (isNaN(tValue)) {
+                        allNumberic = false;
+                    }
+                }
+            }
+
+            socketVal_arr.push(tValue);
+        }
+        var finalStr = '';
+        socketVal_arr.forEach((x, i) => {
+            finalStr += (i == 0 ? '' : nodeThis.operator) + x;
+        });
+        var selfCompileRet = new CompileResult(this);
+
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+        myJSBlock.pushLine('' + finalStr + '');
+        myJSBlock.addNextIndent();
+
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+// js isnull
+class JSNode_IsNullOperator extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_ISNULLOPERATOR, 'IsNullOperator', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+                this.outSocket.type = ValueType.Boolean;
+            }
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false, { type: ValueType.Boolean });
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.isSimpleVal = false;
+        this.insocketInitVal = {
+            type: ValueType.String,
+        };
+        if (this.inputScokets_arr.length == 0) {
+            this.addSocket(new NodeSocket('in0', this, true, { type: ValueType.String ,inputable:false}));
+        }
+        else {
+            this.inputScokets_arr.forEach(socket => {
+                socket.set(this.insocketInitVal);
+            })
+        }
+        if (this.operator == null) {
+            this.operator = 'is null';
+        }
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.operator = this.operator;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['operator']);
+    }
+
+    getNodeTitle() {
+        return '比较:' + this.operator;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        //for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+            var theSocket = this.inputScokets_arr[0];
+            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            var tValue = socketComRet.value;
+            if (socketComRet.link && !socketComRet.link.outSocket.isSimpleVal) {
+                tValue = tValue 
+            }
+        //}
+        var finalStr = tValue + ' ' + (this.operator == 'is null'?' == null':' != null')
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket,finalStr);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
 JSNodeClassMap[JSNODE_WHILE] = {
     modelClass: JSNode_While,
     comClass: C_Node_SimpleNode,
@@ -1023,6 +1218,18 @@ JSNodeClassMap[JSNODE_CONVERT_TIMEZONE] = {
     modelClass: JSNode_Convert_TimeZone,
     comClass: C_Node_SimpleNode,
 };
+JSNodeClassMap[JSNODE_CONVERT_TIMEZONE] = {
+    modelClass: JSNode_Convert_TimeZone,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_ASSIGNMENT_OPERATOR] = {
+    modelClass: JSNode_Assignment_Operator,
+    comClass: C_JSNode_Assignment_Operator,
+};
+JSNodeClassMap[JSNODE_ISNULLOPERATOR]={
+    modelClass:JSNode_IsNullOperator,
+    comClass:C_JSNode_IsNullOperator
+}
 /*
 JSNodeEditorControls_arr.push(
     {
@@ -1090,5 +1297,17 @@ JSNodeEditorControls_arr.push(
     {
         label: '货币中文大写',
         nodeClass: JSNode_CapitalNum,
+        type: '基础'
+    });
+JSNodeEditorControls_arr.push(
+    {
+        label: '赋值运算符',
+        nodeClass: JSNode_Assignment_Operator,
+        type: '基础'
+    });
+JSNodeEditorControls_arr.push(
+    {
+        label: 'isNull判断',
+        nodeClass: JSNode_IsNullOperator,
         type: '基础'
     });

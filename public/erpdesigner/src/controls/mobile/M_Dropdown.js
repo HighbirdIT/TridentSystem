@@ -24,9 +24,15 @@ const M_DropdownKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('接受输入值', AttrNames.Editeable, ValueType.Boolean, false),
         new CAttribute('历史Key', AttrNames.HisKey, ValueType.String, '', true, false),
         new CAttribute('Growable', AttrNames.Growable, ValueType.Boolean, true),
+        new CAttribute(AttrNames.ColumnName, AttrNames.ColumnName, ValueType.String, null, false, false, null, null, false),
     ]),
     new CAttributeGroup('事件',[
         new CAttribute('OnChanged', AttrNames.Event.OnChanged, ValueType.Event),
+    ]),
+    new CAttributeGroup('附加数据',[
+        new CAttribute('附加数据', AttrNames.AppandColumn, ValueType.NameAndScript, '', true, true, 'getUseDSColumns', null, true, {
+            group:EJsBluePrintFunGroup.CtlAttr
+        }),
     ]),
 ]);
 
@@ -50,7 +56,6 @@ class M_DropdownKernel extends ControlKernelBase {
         cusDS_bp.ctlKernel = this;
         cusDS_bp.group = 'ctlcus';
         this.setAttribute(AttrNames.CustomDataSource, cusDS_bp);
-
         var self = this;
         autoBind(self);
 
@@ -62,6 +67,46 @@ class M_DropdownKernel extends ControlKernelBase {
             eventBP.ctlID = this.id;
             this.scriptCreated(AttrNames.Event.OnChanged,eventBP);
         }
+    }
+
+    scriptCreated(attrName, scriptBP){
+        if(scriptBP == null){
+            return;
+        }
+        if(scriptBP.name == this.id + '_' + AttrNames.Event.OnChanged){
+            var fixParams_arr = [VarNames.ParentPath, 'newText', 'newValue'].concat(this.getAppandColumns());
+            scriptBP.setFixParam(fixParams_arr);
+        }
+    }
+
+    getAppandColumns(onlyName = true){
+        if(this.getAttribute(AttrNames.MultiSelect)){
+            // 可多选的下拉框附加列无效
+            return [];
+        }
+        var attrValue;
+        var rlt_arr = [];
+        var attrs_arr = this.getAttrArrayList(AttrNames.AppandColumn);
+        var canuseColumns = this.getCanuseColumns();
+        attrs_arr.forEach(attr=>{
+            attrValue = this.getAttribute(attr.name);
+            if(attrValue != null && !IsEmptyString(attrValue.name)){
+                if(canuseColumns.indexOf(attrValue.name) != -1){
+                    if(onlyName){
+                        rlt_arr.push(attrValue.name);
+                    }
+                    else{
+                        var funName = this.id + '_' + attr.name;
+                        var jsBP = this.project.scriptMaster.getBPByName(funName);
+                        rlt_arr.push({
+                            name:attrValue.name,
+                            jsBP:jsBP,
+                        });
+                    }
+                }
+            }
+        });
+        return rlt_arr;
     }
 
     autoSetCusDataSource(groupCols_arr){
@@ -98,6 +143,14 @@ class M_DropdownKernel extends ControlKernelBase {
         }
         if(useDS && groupCols_arr != null && groupCols_arr.length > 0){
             needSelectColumns_arr = needSelectColumns_arr.concat(groupCols_arr);
+        }
+        if(useDS){
+            var appandColumns_arr = this.getAppandColumns();
+            appandColumns_arr.forEach(colname=>{
+                if(needSelectColumns_arr.indexOf(colname) == -1){
+                    needSelectColumns_arr.push(colname);
+                }
+            });
         }
 
         while(columnNode.inputScokets_arr.length < needSelectColumns_arr.length){
@@ -198,12 +251,6 @@ class M_DropdownKernel extends ControlKernelBase {
         return val == null ? ValueType.String : val;
     }
 
-    scriptCreated(attrName, scriptBP){
-        if(attrName == AttrNames.Event.OnChanged){
-            scriptBP.setFixParam([VarNames.ParentPath, 'newText', 'newValue']);
-        }
-    }
-
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {
         super.__attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray);
         var attrItem = this.findAttributeByName(attrName);
@@ -219,11 +266,21 @@ class M_DropdownKernel extends ControlKernelBase {
                 this.setAttribute(AttrNames.ValueField, newValue);
             }
         }
+        else if (attrItem.name == AttrNames.AppandColumn) {
+            var funName = this.id + '_' + AttrNames.Event.OnChanged;
+            var eventBP = this.project.scriptMaster.getBPByName(funName);
+            if(eventBP){
+                this.scriptCreated(AttrNames.Event.OnChanged,eventBP);
+            }
+        }
+
+        
 
         switch(attrItem.name){
             case AttrNames.DataSource:
             case AttrNames.FromTextField:
             case AttrNames.FromValueField:
+            case AttrNames.AppandColumn:
                 this.autoSetCusDataSource();
                 break;
         }
@@ -232,9 +289,13 @@ class M_DropdownKernel extends ControlKernelBase {
 
 var M_DropdownKernel_api = new ControlAPIClass(M_DropdownKernel_Type);
 M_DropdownKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.TextField,M_DropdownKernelAttrsSetting), 'text', true));
+M_DropdownKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.ValueField,M_DropdownKernelAttrsSetting), 'value', true));
+M_DropdownKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.ColumnName,M_DropdownKernelAttrsSetting), AttrNames.ColumnName, true));
 M_DropdownKernel_api.pushApi(new ApiItem_propsetter('value'));
 M_DropdownKernel_api.pushApi(new ApiItem_propsetter('text'));
-M_DropdownKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.ValueField,M_DropdownKernelAttrsSetting), 'value', true));
+M_DropdownKernel_api.pushApi(new ApiItem_propsetter('附加数据'));
+M_DropdownKernel_api.pushApi(new ApiItem_propsetter('清空数据'));
+
 g_controlApi_arr.push(M_DropdownKernel_api);
 
 class M_Dropdown extends React.PureComponent {

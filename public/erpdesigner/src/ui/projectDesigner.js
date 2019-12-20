@@ -59,7 +59,7 @@ class ProjectDesigner extends React.PureComponent {
             }
         }
         else{
-            var belongUserControl = kernel.searchParentKernel(UserControlKernel_Type, true);
+            var belongUserControl = kernel.parent == null ? kernel : kernel.searchParentKernel(UserControlKernel_Type, true);
             if(belongUserControl != editingControl){
                 thisProject.setEditingControlById(belongUserControl.id);
                 delaySelect = true;

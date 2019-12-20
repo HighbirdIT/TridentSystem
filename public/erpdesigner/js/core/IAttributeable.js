@@ -134,7 +134,7 @@ var IAttributeable = function (_EventEmitter) {
                     console.error('访问不存在的属性:' + attrName);
                 }
                 rlt = attrItem.defaultVal;
-                if (rlt == null && attrItem.valueType != ValueType.Event && attrItem.valueType != ValueType.Script) {
+                if (rlt == null && attrItem.valueType != ValueType.Event && attrItem.valueType != ValueType.Script && attrItem.valueType != ValueType.AttrHook && attrItem.valueType != ValueType.AttrChecker) {
                     switch (attrItem.name) {
                         case AttrNames.LayoutNames.StyleAttr:
                         case AttrNames.Name:

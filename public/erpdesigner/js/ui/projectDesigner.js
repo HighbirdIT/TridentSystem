@@ -74,7 +74,7 @@ var ProjectDesigner = function (_React$PureComponent) {
                     delaySelect = true;
                 }
             } else {
-                var belongUserControl = kernel.searchParentKernel(UserControlKernel_Type, true);
+                var belongUserControl = kernel.parent == null ? kernel : kernel.searchParentKernel(UserControlKernel_Type, true);
                 if (belongUserControl != editingControl) {
                     thisProject.setEditingControlById(belongUserControl.id);
                     delaySelect = true;

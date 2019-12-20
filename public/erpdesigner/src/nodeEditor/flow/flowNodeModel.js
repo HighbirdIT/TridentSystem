@@ -1523,15 +1523,35 @@ class FlowNode_ColumnVar extends JSNode_Base {
         assginObjByProperties(this, attrsJson, ['targetEntity', 'keySocketID']);
     }
 
+    getKeySocket(){
+        return this.keySocketID == null ? null : this.bluePrint.getSocketById(this.keySocketID);
+    }
+
     freshLabel() {
         var keySocket = this.keySocketID == null ? null : this.bluePrint.getSocketById(this.keySocketID);
         var columnName = '';
+        var project = this.bluePrint.master.project;
         if (keySocket != null) {
-            if (keySocket.getExtra('colName') == null) {
-                columnName = keySocket.label;
+            if(keySocket.type == SocketType_CtlKernel){
+                var ctlid = keySocket.getExtra('ctlid');
+                var ctlkernel = project.getControlById(ctlid);
+                if(ctlkernel){
+                    this.outSocket.type = SocketType_CtlKernel;
+                    this.outSocket.kernelType = ctlkernel.type;
+                    var formkernel = ctlkernel.searchParentKernel(M_FormKernel_Type, true);
+                    columnName = (formkernel ? formkernel.getReadableName() + '.' : '') + ctlkernel.getReadableName()
+                }
+                else{
+                    columnName = '找不到控件';
+                }
             }
-            else {
-                columnName = keySocket.getExtra('colName');
+            else{
+                if (keySocket.getExtra('colName') == null) {
+                    columnName = keySocket.label;
+                }
+                else {
+                    columnName = keySocket.getExtra('colName');
+                }
             }
         }
         this.keySocket = keySocket;
@@ -1541,7 +1561,7 @@ class FlowNode_ColumnVar extends JSNode_Base {
     }
 
     getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
-        this.keySocket.node.getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result);
+        this.keySocket.node.getScoketClientVariable(helper, srcNode, belongFun, this.keySocket, result);
     }
 
     compile(helper, preNodes_arr) {
@@ -2615,3 +2635,8 @@ FlowNodeClassMap[JSNODE_ISNAN] = {
     modelClass: JSNode_IsNaN,
     comClass: C_Node_SimpleNode,
 };
+FlowNodeClassMap[JSNODE_ASSIGNMENT_OPERATOR] = {
+    modelClass: JSNode_Assignment_Operator,
+    comClass: C_JSNode_Assignment_Operator,
+};
+

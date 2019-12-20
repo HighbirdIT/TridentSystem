@@ -20,6 +20,7 @@ const SingleFileUploader_Type = 'singlefileuploader';
 const FilePreviewer_Type = 'filepreviewer';
 const PopperButtonKernel_Type = 'popperbutton';
 const FrameSetKernel_Type = 'frameset';
+const IFrameKernel_Type = 'iframe';
 
 const M_LabelKernel_Prefix = 'M_Label';
 const M_PageKernel_Prefix = 'M_Page';
@@ -42,6 +43,7 @@ const SingleFileUploader_Prefix = 'singlefuploader';
 const FilePreviewer_Prefix = 'filepreviewer';
 const PopperButtonKernel_Prefix = 'popperbutton';
 const FrameSetKernel_Prefix = 'frameset';
+const IFrameKernel_Prefix = 'iframe';
 
 function GetControlTypeReadableName(type){
     switch(type){
@@ -89,6 +91,8 @@ function GetControlTypeReadableName(type){
         return 'PopperBtn';
         case FrameSetKernel_Type:
         return '框架集';
+        case IFrameKernel_Type:
+        return 'i框架';
     }
     return type;
 }

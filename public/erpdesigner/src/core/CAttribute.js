@@ -182,6 +182,10 @@ function makeLine_DeclareVar(varName, initVal, autoQuote){
     return 'var ' + varName + '=' + initVal + ';';
 }
 
+function makeLine_SetValue(leftName, rightName){
+    return leftName + '=' + rightName + ';';
+}
+
 const VarNames={
     RetProps:'retProps',
     ReState:'retState',
@@ -232,7 +236,9 @@ const VarNames={
     Visible:'visible',
     NowRow:'nowrow',
     SelectedProfile:'selectedProfile',
-
+    BaseValidCheckPath: 'baseValidCheckPath',
+    FormXML:'formxml',
+    FormXMLText:'formxmltext',
 };
 
 
@@ -334,6 +340,16 @@ const AttrNames={
     WidthFactor: 'widthfactor',
     RenderMode: 'rendermode',
     InitOnRowChanged: 'initOnRowChanged',
+    ProjectCode: 'projectCode',
+    FlowStepCode: 'flowStepCode',
+    FlowStepData: 'flowStepData',
+    InvisibleAct: 'invisibleact',
+    AwaysEditable: 'awayseditable',
+    AttrHook: 'attrhook',
+    AttrChecker: 'attrchecker',
+    RowText: 'rowtext',
+    AppandColumn:'appandColumn',
+    ColumnName:'columnname',
 
     Event:{
         OnClick:'onclick',
@@ -349,6 +365,11 @@ const AttrNames={
         OnUploadComplete:'onUploadComplate',
         OnDataSourceChanged:'onDataSourceChanged',
         OnClickCloseBtn:'onClickCloseBtn',
+        OnReceiveMsg:'onReceiveMsg',
+    },
+
+    Function:{
+        GetXMLRowItem:'getxmlrowitem',
     },
 
     LayoutNames:{

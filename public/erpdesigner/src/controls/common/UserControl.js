@@ -4,6 +4,7 @@ const UserControlKernelTempleAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('默认渲染', 'DefRender', ValueType.String, '手机', true, false, ['手机', '电脑']),
         new CAttribute('refID', 'refID', ValueType.String, 'none', true, false, null, null, false),
         new CAttribute('每行初始化', AttrNames.InitOnRowChanged, ValueType.Boolean, false),
+        new CAttribute('不可见处理', AttrNames.InvisibleAct, ValueType.String, EInvisibleAct.Default, true, false, EInvisibleActs_arr),
         new CAttribute('属性列表', AttrNames.ParamApi, ValueType.String, '', true, true),
         new CAttribute('自订事件', AttrNames.EventApi, ValueType.UserControlEvent, '', true, true),
         new CAttribute('自订方法', AttrNames.FunctionApi, ValueType.CustomFunction, '', true, true),
@@ -11,12 +12,19 @@ const UserControlKernelTempleAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('事件',[
         new CAttribute('OnInit', AttrNames.Event.OnInit, ValueType.Event),
     ]),
+    new CAttributeGroup('侦听器',[
+        new CAttribute('属性侦听器', AttrNames.AttrHook, ValueType.AttrHook, null, true, true),
+    ]),
+    new CAttributeGroup('自订验证',[
+        new CAttribute('属性验证', AttrNames.AttrChecker, ValueType.AttrChecker, null, true, true),
+    ]),
 ], true);
 
 const UserControlKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置', [
         genIsdisplayAttribute(),
         new CAttribute('默认可见', AttrNames.DefaultVisible, ValueType.Boolean, true),
+        new CAttribute('临时高度', 'designheight', ValueType.Int, 0),
         new CAttribute('refID', 'refID', ValueType.String, 'none', true, false, null, null, false),
     ]),
     new CAttributeGroup('属性接口', [
@@ -59,6 +67,14 @@ class UserControlKernel extends ContainerKernelBase {
 
             var theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnInit);
             this.scriptCreated(null, theBP);
+            this.getAttrArrayList(AttrNames.AttrHook).forEach(hookAtrr=>{
+                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + hookAtrr.name);
+                this.scriptCreated(null, theBP);
+            });
+            this.getAttrArrayList(AttrNames.AttrChecker).forEach(checkerAtrr=>{
+                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + checkerAtrr.name);
+                this.scriptCreated(null, theBP);
+            });
         }
         else {
             if (kernelJson) {
@@ -83,6 +99,13 @@ class UserControlKernel extends ContainerKernelBase {
         if(scriptBP.name.indexOf(AttrNames.Event.OnInit) != -1){
             scriptBP.startIsInReducer = true;
             scriptBP.setFixParam([VarNames.State, this.id + '_path']);
+        }
+        else if(scriptBP.name.indexOf(AttrNames.AttrHook) != -1){
+            scriptBP.startIsInReducer = true;
+            scriptBP.setFixParam([VarNames.State, this.id + '_path', this.id + '_state', VarNames.NeedSetState]);
+        }
+        else if(scriptBP.name.indexOf(AttrNames.AttrChecker) != -1){
+            scriptBP.setFixParam(['comeState', this.id + '_path', VarNames.NeedSetState]);
         }
     }
 
@@ -197,10 +220,12 @@ class UserControlKernel extends ContainerKernelBase {
                 });
             }
         }
-        if (attrName == AttrNames.FunctionApi) {
+        var funBPname;
+        var funBp;
+        if (attrName == AttrNames.FunctionApi || attrName == AttrNames.AttrHook || attrName == AttrNames.AttrChecker) {
             if (value == null) {
-                var funBPname = this.id + '_' + realAtrrName;
-                var funBp = project.scriptMaster.getBPByName(funBPname);
+                funBPname = this.id + '_' + realAtrrName;
+                funBp = project.scriptMaster.getBPByName(funBPname);
                 if (funBp != null) {
                     project.scriptMaster.deleteBP(funBp);
                 }
@@ -375,7 +400,9 @@ class CUserControl extends React.PureComponent {
         else {
             M_ControlBase(this, [
                 AttrNames.Name,
+                'designheight',
             ]);
+            initState.designheight = ctlKernel.getAttribute('designheight');
         }
 
         this.state = initState;
@@ -401,6 +428,11 @@ class CUserControl extends React.PureComponent {
                 orientation: ctlKernel.getAttribute(AttrNames.Orientation),
                 children: childrenVal,
                 defRender: ctlKernel.getAttribute('DefRender'),
+            });
+        }
+        else{
+            this.setState({
+                designheight: ctlKernel.getAttribute('designheight'),
             });
         }
     }
@@ -451,21 +483,34 @@ class CUserControl extends React.PureComponent {
             return (<div className={layoutConfig.getClassName()} style={layoutConfig.style} ref={this.rootElemRef}>自订控件</div>);
         }
         layoutConfig.addClass('hb-control');
+        var containerClassName = 'd-flex flex-grow-1 flex-shrink-1';
         if (templateKernel.getAttribute(AttrNames.Orientation) == Orientation_V) {
-            layoutConfig.addClass('flex-column');
+            //layoutConfig.addClass('flex-column');
+            containerClassName += ' flex-column';
         }
         layoutConfig.addClass('d-flex');
+
+        var designheight = this.state.designheight;
+        var containerStyle;
+        if(designheight > 0){
+            containerStyle = {
+                overflow:'auto',
+                maxHeight:designheight + 'px',
+            }
+        }
 
         return (
             <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.clickInsHandler} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {this.renderHandleBar()}
-                {
-                    templateKernel.children.length == 0 ?
-                        ctlKernel.id :
-                        templateKernel.children.map(childKernel => {
-                            return childKernel.renderSelf(this.clickInsHandler, true, this.props.designer);
-                        })
-                }
+                <div className={containerClassName} style={containerStyle}>
+                    {
+                        templateKernel.children.length == 0 ?
+                            ctlKernel.id :
+                            templateKernel.children.map(childKernel => {
+                                return childKernel.renderSelf(this.clickInsHandler, true, this.props.designer);
+                            })
+                    }
+                </div>
             </div>
         );
     }
