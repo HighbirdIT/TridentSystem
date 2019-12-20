@@ -928,7 +928,7 @@ class ERPC_DropDown extends React.PureComponent {
         };
         var record;
         if(this.props.dataCols){
-            record = theOptionItem.data ? theOptionItem.data : {};
+            record = theOptionItem && theOptionItem.data ? theOptionItem.data : {};
             this.props.dataCols.split(',').forEach(col=>{
                 changedObj[col] = record[col];
             });
@@ -993,6 +993,7 @@ class ERPC_DropDown extends React.PureComponent {
         var topSpace = rootRect.top;
         var bottomSpace = windowHeight - rootRect.bottom;
         var rootPos = $(rootDiv).position();
+        var offsetParentHeight = rootDiv.offsetParent.scrollHeight;
         var rlt = {
             width: rootDiv.offsetWidth + 'px',
             left: rootPos.left + 'px',
@@ -1002,7 +1003,7 @@ class ERPC_DropDown extends React.PureComponent {
             rlt.maxHeight = (bottomSpace - 20) + 'px';
         }
         else {
-            rlt.bottom = rootRect.top + 'px';
+            rlt.bottom = (offsetParentHeight - rootPos.top) + 'px';
             rlt.maxHeight = (topSpace - 20) + 'px';
         }
         return rlt;

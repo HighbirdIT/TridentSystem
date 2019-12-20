@@ -652,7 +652,7 @@ class JSNode_BluePrint extends EventEmitter {
         var muteMode = false;
         var funName = this.name.replace('#', '_');
         var useScope = compilHelper.scope;
-        var nomsgbox = false;
+        var nomsgbox = null;
         if (compilHelper.config) {
             if (compilHelper.config.funName) {
                 funName = compilHelper.config.funName;
@@ -660,7 +660,7 @@ class JSNode_BluePrint extends EventEmitter {
             if (compilHelper.config.scope) {
                 useScope = compilHelper.config.scope;
             }
-            nomsgbox = compilHelper.config.nomsgbox == true;
+            nomsgbox = compilHelper.config.nomsgbox;
             haveDoneTip = compilHelper.config.haveDoneTip != false;
             muteMode = compilHelper.config.muteMode == true;
         }
@@ -714,6 +714,10 @@ class JSNode_BluePrint extends EventEmitter {
         this.isAttrHookFun = isAttrHookFun;
         this.isAttrCheckFun = isAttrCheckFun;
         this.isGetXmlRowFun = isGetXmlRowFun;
+
+        if(nomsgbox == null){
+            nomsgbox = !(isOnclickFun || isOnmouseDownFun); // 默认只有click和mouseDown才有对话框
+        }
 
         if (paramVars_arr.length > 0) {
             paramVars_arr.sort((a, b) => {
@@ -832,6 +836,9 @@ class JSNode_BluePrint extends EventEmitter {
 
             if (this.group == EJsBluePrintFunGroup.CtlEvent) {
                 validCheckBasePath = ctlKernel.id + '_path';
+                if(belongUserControl){
+                    validCheckBasePath = "''";    // 在自订控件中的所有方法都被替换为控件自身的state了，所哟basepath就为空
+                }
                 if (ctlKernel.type == M_FormKernel_Type) {
                     if (
                         this.name == ctlKernel.id + '_' + AttrNames.Event.OnSelectedChanged ||
@@ -864,11 +871,9 @@ class JSNode_BluePrint extends EventEmitter {
                         orginParams_arr.forEach(p => {
                             theFun.scope.getVar(p, true, "_params." + p);
                         });
-                        validCheckBasePath = '';
                     }
                     if (isUserControlInitFun) {
                         theFun.scope.getVar(ctlKernel.id + '_state', true, VarNames.State);
-                        validCheckBasePath = '';
                     }
                     if (isOnmouseDownFun) {
                         theFun.scope.getVar(ctlKernel.id + '_path', true, "getAttributeByNode(ev.target,'userctlpath')");
@@ -876,7 +881,6 @@ class JSNode_BluePrint extends EventEmitter {
                     }
                     if (isAttrCheckFun) {
                         theFun.scope.getVar(ctlKernel.id + '_state', true, makeStr_callFun('getStateByPath', [VarNames.State, ctlKernel.id + '_path', '{}']));
-                        validCheckBasePath = '';
                     }
                 }
                 else if (ctlKernel.type == M_PageKernel_Type) {
@@ -2019,7 +2023,7 @@ class JSNode_ConstValue extends JSNode_Base {
     }
 
     getValue() {
-        return this.outSocket.defval;
+        return this.outSocket.defval ? this.outSocket.defval.trim() : null;
     }
 
     getValueType() {
@@ -3396,6 +3400,7 @@ class JSNODE_Insert_table extends JSNode_Base {
             if (this.checkCompileFlag(columnProfile.value != null, '第' + (si) + '个输入接口重复设置了[' + socket.defval + ']', helper)) {
                 return false;
             }
+            socket.evalInServer = true;
             var socketComRet = this.getSocketCompileValue(helper, socket, usePreNodes_arr, belongBlock, false);
             if (socketComRet.err) {
                 return false;
@@ -4614,7 +4619,7 @@ class JSNode_DateFun extends JSNode_Base {
                 break;
             case 'AddDay':
                 var varName = socketVal_arr[0];
-                callStr = 'new Date(' + varName + '.setDate(' + varName + '.getDate() + ' + socketVal_arr[1] + '))';
+                callStr = 'new Date(' + varName + '.setDate(' + varName + '.getDate() + ' + (isNaN(socketVal_arr[1]) ? bracketStr(socketVal_arr[1]) : socketVal_arr[1]) + '))';
                 break;
             case 'CastDate':
                 callStr = funPreFix + 'castDate(' + socketVal_arr[0] + ')';
@@ -10880,6 +10885,8 @@ class JSNode_IsEmptyString extends JSNode_Base {
 
         var nodeThis = this;
         var usePreNodes_arr = preNodes_arr.concat(this);
+        var theScope = belongBlock && belongBlock.getScope();
+        var blockInServer = theScope && theScope.isServerSide;
         var theSocket = this.inSocket;
         var socketValue = null;
         var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, false);
@@ -10887,9 +10894,10 @@ class JSNode_IsEmptyString extends JSNode_Base {
             return false;
         }
         var socketValue = socketComRet.value;
+        
 
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, 'IsEmptyString(' + socketValue + ')');
+        selfCompileRet.setSocketOut(this.outSocket, (blockInServer ? 'serverhelper.' : '') + 'IsEmptyString(' + socketValue + ')');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -10926,7 +10934,8 @@ class JSNode_IsEmptyArray extends JSNode_Base {
         if (superRet == false || superRet != null) {
             return superRet;
         }
-
+        var theScope = belongBlock && belongBlock.getScope();
+        var blockInServer = theScope && theScope.isServerSide;
         var nodeThis = this;
         var usePreNodes_arr = preNodes_arr.concat(this);
         var theSocket = this.inSocket;
@@ -10938,7 +10947,7 @@ class JSNode_IsEmptyArray extends JSNode_Base {
         var socketValue = socketComRet.value;
 
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, 'IsEmptyArray(' + socketValue + ')');
+        selfCompileRet.setSocketOut(this.outSocket, (blockInServer ? 'serverhelper.' : '') + 'IsEmptyArray(' + socketValue + ')');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }

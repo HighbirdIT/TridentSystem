@@ -1089,7 +1089,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             };
             var record;
             if (this.props.dataCols) {
-                record = theOptionItem.data ? theOptionItem.data : {};
+                record = theOptionItem && theOptionItem.data ? theOptionItem.data : {};
                 this.props.dataCols.split(',').forEach(function (col) {
                     changedObj[col] = record[col];
                 });
@@ -1159,6 +1159,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             var topSpace = rootRect.top;
             var bottomSpace = windowHeight - rootRect.bottom;
             var rootPos = $(rootDiv).position();
+            var offsetParentHeight = rootDiv.offsetParent.scrollHeight;
             var rlt = {
                 width: rootDiv.offsetWidth + 'px',
                 left: rootPos.left + 'px'
@@ -1167,7 +1168,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                 rlt.top = rootPos.top + rootRect.height + 'px';
                 rlt.maxHeight = bottomSpace - 20 + 'px';
             } else {
-                rlt.bottom = rootRect.top + 'px';
+                rlt.bottom = offsetParentHeight - rootPos.top + 'px';
                 rlt.maxHeight = topSpace - 20 + 'px';
             }
             return rlt;

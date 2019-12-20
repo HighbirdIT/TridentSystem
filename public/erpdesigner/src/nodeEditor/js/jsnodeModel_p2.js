@@ -1005,12 +1005,12 @@ class JSNode_TraversalForm extends JSNode_Base {
         else {
             formPathInitval = singleQuotesStr(formPathInitval);
         }
-
         myJSBlock.pushLine(makeLine_DeclareVar(this.id + '_' + VarNames.NeedSetState, '{}', false));
         myJSBlock.pushLine(makeLine_DeclareVar(fromPathVarName, formPathInitval, false));
         myJSBlock.pushLine(makeLine_DeclareVar(indexVarName, '-1', false));
         myJSBlock.pushLine(makeLine_DeclareVar(countVarName, formrowsVarName + ' == null ? 0 : ' + formrowsVarName + '.length', false));
         myJSBlock.pushLine('var ' + this.id + '_processNext = ()=>{', 1);
+        myJSBlock.pushLine("if(fetchTracer[" + VarNames.FetchKey + "] != fetchid) return;");
         var circleBlock = new FormatFileBlock('circleblcok');
         myJSBlock.pushChild(circleBlock);
         myJSBlock.subNextIndent();
@@ -1040,13 +1040,15 @@ class JSNode_TraversalForm extends JSNode_Base {
         selfCompileRet.setSocketOut(this.rowcountSocket, countVarName);
         circleBlock.pushLine(makeLine_DeclareVar(recordVarName, formrowsVarName + '[' + indexVarName + ']', false));
         var formKeyColumn = formKernel.getAttribute(AttrNames.KeyColumn);
+        /*
         if (IsEmptyString(formKeyColumn)) {
             formKeyColumn = indexVarName;
         }
         else {
             formKeyColumn = singleQuotesStr(formKeyColumn);
         }
-        circleBlock.pushLine(makeLine_DeclareVar(keyVarName, recordVarName + '[' + formKeyColumn + ']', false));
+        */
+        circleBlock.pushLine(makeLine_DeclareVar(keyVarName, formKeyColumn == DefaultKeyColumn ? indexVarName : recordVarName + '.' + formKeyColumn, false));
         circleBlock.pushLine(makeLine_DeclareVar(this.id + '_rowpath', fromPathVarName + " + '.row_' + " + keyVarName, false));
         circleBlock.pushLine(makeLine_DeclareVar(rowStateVarName, formStateVarName + "['row_'+" + keyVarName + "]", false));
         circleBlock.pushLine(makeLine_DeclareVar(isvalidVarName, 'true', false));
