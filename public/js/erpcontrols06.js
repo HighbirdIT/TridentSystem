@@ -2555,10 +2555,7 @@ function ERPC_GridForm(target) {
     target.roweditClicked = ERPC_GridForm_RoweditClicked.bind(target);
     target.rowcanceleditClicked = ERPC_GridForm_RowcanceleditClicked.bind(target);
     target.rowdeleteClicked = ERPC_GridForm_RowdeleteClicked.bind(target);
-    var editBtn = target.btns && target.btns.find(function (x) {
-        return x.key == 'edit';
-    });
-    if (editBtn) {
+    if (target.onUpdate != null) {
         target.rowconfirmeditClicked = ERPC_GridForm_RowconfirmeditClicked.bind(target);
     }
     target.clickNewRowHandler = ERPC_GridForm_ClickNewRowHandler.bind(target);
