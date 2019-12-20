@@ -3223,7 +3223,7 @@ class MobileContentCompiler extends ContentCompiler {
             if (hadRowButton || insertBtnSetting) {
                 gridHeadRowRenderBlock.pushLine("<th scope='col'></th>");
                 if (gridHeadBodyRowRenderBlock) {
-                    gridHeadBodyRowRenderBlock.pushLine("<td calssName='gridbtncoltd'><VisibleERPC_GridForm_BtnCol form={this.props.form} /></td>");
+                    gridHeadBodyRowRenderBlock.pushLine("<td className='gridbtncoltd'><VisibleERPC_GridForm_BtnCol form={this.props.form} /></td>");
                 }
             }
 
@@ -5123,7 +5123,7 @@ class MobileContentCompiler extends ContentCompiler {
                     useCtlData = useFormData.useControls_map[usectlid];
                     ctlStateVarName = usectlid + '_state';
                     ctlParentStateVarName = null;
-                    initPath = singleQuotesStr(useCtlData.kernel.getStatePath());
+                    initPath = singleQuotesStr(useCtlData.kernel.getStatePath('', '.', {mapVarName:VarNames.RowKeyInfo_map}));
                     if (belongUserControl) {
                         initPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath());
                     }
@@ -5995,7 +5995,7 @@ class MobileContentCompiler extends ContentCompiler {
                         hadNeedWatchParam = true;
                         for (usectlid in useFormData.useControls_map) {
                             useCtlData = useFormData.useControls_map[usectlid];
-                            initPath = singleQuotesStr(useCtlData.kernel.getStatePath());
+                            initPath = singleQuotesStr(useCtlData.kernel.getStatePath('','.',{mapVarName:VarNames.RowKeyInfo_map}));
                             if (belongUserControl) {
                                 initPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath());
                             }

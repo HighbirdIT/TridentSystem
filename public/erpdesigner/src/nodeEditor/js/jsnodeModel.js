@@ -902,6 +902,7 @@ class JSNode_BluePrint extends EventEmitter {
                         theFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath', [VarNames.State, belongUserControl.id + '_path', '{}']));
                     }
                 }
+                theFun.scope.getVar(VarNames.RowKeyInfo_map, true, "getRowKeyMapFromPath(" + ctlKernel.id + "_path)");
             }
             if (this.group == EJsBluePrintFunGroup.CtlFun) {
                 if (ctlKernel.type == UserControlKernel_Type) {
@@ -934,6 +935,7 @@ class JSNode_BluePrint extends EventEmitter {
                     validCheckBasePath = VarNames.FullParentPath;
                 }
                 //theFun.scope.getVar(belongFormControl.id + "_path", true, 'this.props.fullPath');
+                theFun.scope.getVar(VarNames.RowKeyInfo_map, true, 'getRowKeyMapFromPath(' + VarNames.FullParentPath + ')');
             }
             else if (this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
                 params_arr = [VarNames.RowKey, VarNames.CallBack];
@@ -1001,11 +1003,9 @@ class JSNode_BluePrint extends EventEmitter {
                     if (isGridForm || isListForm) {
                         if (useFormData.useContextRow) {
                             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
-                                theFun.scope.getVar(VarNames.RowKeyInfo_map, true, 'getRowKeyMapFromPath(' + VarNames.FullParentPath + ')');
                                 theFun.scope.getVar(VarNames.RowKey, true, VarNames.RowKeyInfo_map + '.' + formId);
                             }
                             if (this.group == EJsBluePrintFunGroup.CtlEvent) {
-                                theFun.scope.getVar(VarNames.RowKeyInfo_map, true, "getRowKeyMapFromPath(" + ctlKernel.id + "_path)");
                                 theFun.scope.getVar(VarNames.RowKey, true, VarNames.RowKeyInfo_map + '.' + formId);
                             }
                             if(!isGetXmlRowFun){
@@ -1064,7 +1064,7 @@ class JSNode_BluePrint extends EventEmitter {
                                 initPath = formId + '_rowpath + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath(null, '.', VarNames.RowKeyInfo_map, false, useFormData.formKernel));
                             }
                             else{
-                                initPath = singleQuotesStr(useCtlData.kernel.getStatePath(null, '.', VarNames.RowKeyInfo_map, false));
+                                initPath = singleQuotesStr(useCtlData.kernel.getStatePath(null, '.', {mapVarName:VarNames.RowKeyInfo_map}));
                                 if (belongUserControl) {
                                     initPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath(null, '.', VarNames.RowKeyInfo_map, false));
                                 }
@@ -1215,7 +1215,7 @@ class JSNode_BluePrint extends EventEmitter {
                 }
                 else {
                     if (useCtlData.kernel.type == UserControlKernel_Type) {
-                        initPath = singleQuotesStr(useCtlData.kernel.getStatePath(null, '.', VarNames.RowKeyInfo_map, false));
+                        initPath = singleQuotesStr(useCtlData.kernel.getStatePath(null, '.', {mapVarName:VarNames.RowKeyInfo_map}));
                         if (belongUserControl) {
                             initPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath(null, '.', VarNames.RowKeyInfo_map, false));
                         }
@@ -4386,6 +4386,7 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
             }
             // set 不需要设定属性引用
             //helper.addUseControlPropApi(selectedKernel, useApiItem, EFormRowSource.Context);
+            helper.addUseForm
         }
 
         belongBlock.pushChild(myJSBlock);
