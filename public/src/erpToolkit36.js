@@ -1633,7 +1633,7 @@ var gDingDingIniting = false;
 
 function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
     DeubgApp('InitDingDing satrt');
-    DeubgApp(JSON.stringify({isMobile:isMobile,dingdingKit:dingdingKit,isInDingTalk:isInDingTalk,userid:userid,username:username}));
+    DeubgApp(JSON.stringify({isMobile:isMobile,dingdingKit:dingdingKit,isInDingTalk:isInDingTalk}));
     if (gPageInFrame || gWeakParentFrame) {
         gDingDingIniting = true;
         dingdingKit = gParentDingKit;
