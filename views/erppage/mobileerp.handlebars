@@ -27,7 +27,6 @@
   var ticketErrInfo = "{{DingErrInfo}}";  
 
 $(document).ready(function(){
-    DeubgApp(JSON.stringify({isMobile:isMobile,dingdingKit:dingdingKit,isInDingTalk:isInDingTalk,userid:userid,username:username}));
     if (isMobile) {
         dingdingKit = dd;
         isInDingTalk = dd.env.platform != 'notInDingTalk';
