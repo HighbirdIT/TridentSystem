@@ -1056,7 +1056,6 @@ class CP_ClientSide extends JSFileMaker{
         this.importBlock.pushLine('var Redux = window.Redux;');
         this.importBlock.pushLine('var Provider = ReactRedux.Provider;');
 
-        this.scope.getVar('isDebug', true, 'false');
         this.scope.getVar('appServerUrl', true, "'/erppage/server/" + projectCompiler.projectName + "'");
         this.scope.getVar('thisAppTitle', true, singleQuotesStr(projectCompiler.projectTitle));
         this.appInitStateVar = this.scope.getVar('appInitState', true);

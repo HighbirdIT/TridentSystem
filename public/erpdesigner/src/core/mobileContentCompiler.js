@@ -100,6 +100,7 @@ class MobileContentCompiler extends ContentCompiler {
         var clientSide = this.clientSide;
         var project = this.project;
         var logManager = project.logManager;
+        var isDebugMode = project.getAttribute('debugmode');
         this.compileChain = [];
         this.compiledScriptBP_map = {};
         this.ctlRelyOnGraph = new ControlRelyOnGraph(this);
@@ -117,6 +118,9 @@ class MobileContentCompiler extends ContentCompiler {
         clientSide.appClass.mapStateFun.pushChild(unloadedIfBlock);
         unloadedIfBlock.pushLine(makeLine_Assign(VarNames.RetProps + '.fetchState', 'state.ui.fetchState'));
 
+        if(isDebugMode){
+            clientSide.globalVarBlock.pushLine("gDebugMode = true;");
+        }
         clientSide.scope.getVar(VarNames.PageRouter, true, '[]');
         clientSide.scope.getVar('gPCRenderMode', true, 'false');
         clientSide.pageLoadedReducerFun = clientSide.scope.getFunction('pageLoadedReducer', true, ['state']);
