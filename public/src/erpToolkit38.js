@@ -1632,16 +1632,16 @@ function Convert_TimeZone(time, zoneSrc, zoneDst) {
 var gDingDingIniting = false;
 
 function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
-    DeubgApp('InitDingDing satrt');
-    DeubgApp(JSON.stringify({isMobile:isMobile,dingdingKit:dingdingKit}));
-    DeubgApp(JSON.stringify({gPageInFrame:gPageInFrame,gWeakParentFrame:gWeakParentFrame,dingdingKit:dingdingKit,isInDingTalk:isInDingTalk}));
+    DebugApp('InitDingDing satrt');
+    DebugApp(JSON.stringify({isMobile:isMobile,dingdingKit:dingdingKit}));
+    DebugApp(JSON.stringify({gPageInFrame:gPageInFrame,gWeakParentFrame:gWeakParentFrame,dingdingKit:dingdingKit,isInDingTalk:isInDingTalk}));
     if (gPageInFrame || gWeakParentFrame) {
         gDingDingIniting = true;
         dingdingKit = gParentDingKit;
         isInDingTalk = gParentIsInDingTalk;
         store.dispatch({ type: AT_PAGELOADED });
         callBack();
-        DeubgApp('InitDingDing end');
+        DebugApp('InitDingDing end');
         return;
     }
     if (isMobile) {
@@ -1692,22 +1692,22 @@ function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
             jsApiList: jsapiArr
         });
     }
-    DeubgApp(JSON.stringify({isMobile:isMobile,dingdingKit:dingdingKit,isInDingTalk:isInDingTalk,isProduction:isProduction}));
+    DebugApp(JSON.stringify({isMobile:isMobile,dingdingKit:dingdingKit,isInDingTalk:isInDingTalk,isProduction:isProduction}));
     if (!isProduction || !isInDingTalk) {
         callBack();
-        DeubgApp('InitDingDing end');
+        DebugApp('InitDingDing end');
         return;
     }
     gDingDingIniting = true;
     dingdingKit.error(err => {
         alert('出错了:' + JSON.stringify(err));
     });
-    DeubgApp('wait dingdingKit.ready');
+    DebugApp('wait dingdingKit.ready');
     dingdingKit.ready(() => {
-        DeubgApp('dingdingKit.ready called');
+        DebugApp('dingdingKit.ready called');
         store.dispatch({ type: AT_PAGELOADED });
         callBack();
-        DeubgApp('InitDingDing end');
+        DebugApp('InitDingDing end');
     });
 }
 
