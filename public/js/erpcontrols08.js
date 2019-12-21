@@ -49,6 +49,8 @@ function DebugApp(info) {
             spanElem.appendChild(document.createTextNode(info));
             debugpanel.appendChild(spanElem);
         }
+    } else {
+        console.log(info);
     }
 }
 
