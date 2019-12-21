@@ -4,6 +4,7 @@ const CProjectAttrsSetting = {
         new CAttributeGroup('基本设置', [
             new CAttribute('页面名称', 'title', ValueType.String, true),
             new CAttribute('真实名称', 'realName', ValueType.String, false),
+            new CAttribute('DEBUG模式', 'debugmode', ValueType.Boolean, false),
         ]),
         new CAttributeGroup('顶层设置', [
             new CAttribute('样式', AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
