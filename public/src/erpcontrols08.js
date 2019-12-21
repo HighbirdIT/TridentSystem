@@ -36,6 +36,9 @@ function DebugApp(info){
             debugpanel.appendChild(spanElem);
         }
     }
+    else{
+        console.log(info);
+    }
 }
 
 function DistpathMsgFromParent(msgtype, data){
