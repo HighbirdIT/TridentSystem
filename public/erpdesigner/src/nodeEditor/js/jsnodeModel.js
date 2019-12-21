@@ -902,7 +902,12 @@ class JSNode_BluePrint extends EventEmitter {
                         theFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath', [VarNames.State, belongUserControl.id + '_path', '{}']));
                     }
                 }
-                theFun.scope.getVar(VarNames.RowKeyInfo_map, true, "getRowKeyMapFromPath(" + ctlKernel.id + "_path)");
+                var belongForms_arr = ctlKernel.searchParentKernel(M_FormKernel_Type);
+                if(belongForms_arr){
+                    if(belongForms_arr.find(formkernel=>{return !formkernel.isPageForm();})){
+                        theFun.scope.getVar(VarNames.RowKeyInfo_map, true, "getRowKeyMapFromPath(" + ctlKernel.id + "_path)");
+                    }
+                }
             }
             if (this.group == EJsBluePrintFunGroup.CtlFun) {
                 if (ctlKernel.type == UserControlKernel_Type) {
