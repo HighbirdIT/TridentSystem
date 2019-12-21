@@ -3682,6 +3682,13 @@ var CMessageBoxManger = function (_React$PureComponent16) {
     return CMessageBoxManger;
 }(React.PureComponent);
 
+function IFrameOnloadHandler(ev) {
+    DebugApp('frameLoaded');
+    ev.target.contentWindow.gWeakParentFrame = true;
+    ev.target.contentWindow.gParentDingKit = dingdingKit;
+    ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
+}
+
 function AddPageToFrameSet(state, ctlpath, title, pageCode, pageName, stepCode, stepData, closeable) {
     var hadState = state != null;
     state = hadState ? state : store.getState();
@@ -3710,7 +3717,7 @@ function AddPageToFrameSet(state, ctlpath, title, pageCode, pageName, stepCode, 
         nowItems_arr.push(sameKeyItem);
     }
     var pagesrc = window.location.origin + getPagePath(pageName, stepCode, stepData);
-    sameKeyItem.contentElem = React.createElement('iframe', { src: pagesrc, className: 'w-100 h-100', frameBorder: '0' });
+    sameKeyItem.contentElem = React.createElement('iframe', { src: pagesrc, className: 'w-100 h-100', frameBorder: '0', onLoad: IFrameOnloadHandler });
     var needSetState = {
         selectedKey: itemKey,
         items_arr: nowItems_arr
