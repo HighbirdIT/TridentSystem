@@ -732,7 +732,7 @@ class Node_Base extends EventEmitter {
         if (tLinks.length == 0) {
             if(canUseDefval){
                 socketValue = IsEmptyString(theSocket.defval) ? null : theSocket.defval;
-                if (isNaN(socketValue)) {
+                if (isNaN(socketValue) && socketValue[0] != "'" && socketValue[0] != '"') {
                     socketValue = "'" + theSocket.defval + "'";
                 }
             }
