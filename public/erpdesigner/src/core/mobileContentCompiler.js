@@ -3143,7 +3143,7 @@ class MobileContentCompiler extends ContentCompiler {
                         columnWidth = 4 * GridHead_PerCharWidth;
                     }
                 }
-                columnWidth = Math.round(10 * columnWidth);
+                columnWidth = columnWidth;
                 sumTableWidth += columnWidth;
                 gridColumnsProfile_obj[childKernel.id] = {
                     id: childKernel.id,
@@ -3174,7 +3174,7 @@ class MobileContentCompiler extends ContentCompiler {
                     if (columnProfile.width != 'auto') {
                         if (gridWidthType == EGridWidthType.Fixed) {
                             headStyleObj = {
-                                width: (columnProfile.width / 10) + 'em',
+                                width: (columnProfile.width) + 'em',
                             };
                         }
                         else {
