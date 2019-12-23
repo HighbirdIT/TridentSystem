@@ -716,7 +716,7 @@ class JSNode_BluePrint extends EventEmitter {
         this.isGetXmlRowFun = isGetXmlRowFun;
 
         if(nomsgbox == null){
-            nomsgbox = !(isOnclickFun || isOnmouseDownFun); // 默认只有click和mouseDown才有对话框
+            nomsgbox = !(isOnclickFun || isOnmouseDownFun || this.group == EJsBluePrintFunGroup.GridRowBtnHandler); // 默认只有click和mouseDown才有对话框
         }
 
         if (paramVars_arr.length > 0) {
