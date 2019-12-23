@@ -4073,6 +4073,8 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
         if (!this.isDropdownReset && this.valueSocket == null) {
             this.valueSocket = new NodeSocket('val', this, true);
             this.addSocket(this.valueSocket);
+        }
+        if(this.valueSocket){
             this.valueSocket.type = ValueType.Any;
             this.valueSocket.inputable = true;
         }
@@ -6105,27 +6107,11 @@ class JSNode_FreshForm extends JSNode_Base {
             }
         }
         else {
-            var dataLink = datalinks_arr[0];
-            var outNode = dataLink.outSocket.node;
-            var compileRet = null;
-            if (outNode.isHadFlow()) {
-                compileRet = helper.getCompileRetCache(outNode);
-                if (compileRet == null) {
-                    helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                        thisNodeTitle,
-                        nodeThis,
-                        helper.clickLogBadgeItemHandler),
-                        '输入接口设置错误']);
-                    return false;
-                }
-            }
-            else {
-                compileRet = outNode.compile(helper, usePreNodes_arr);
-            }
-            if (compileRet == false) {
+            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, false, true);
+            if (socketComRet == false) {
                 return false;
             }
-            socketValue = compileRet.getSocketOut(dataLink.outSocket).strContent;
+            socketValue = socketComRet.value;
         }
         if (IsEmptyString(socketValue)) {
             // 探寻目标formkernel
