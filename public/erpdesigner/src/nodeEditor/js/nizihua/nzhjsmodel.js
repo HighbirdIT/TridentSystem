@@ -12,6 +12,7 @@ const JSNODE_CAPITALNUM = 'capitalnum';
 const JSNODE_CONVERT_TIMEZONE = 'convert_timezone';
 const JSNODE_ASSIGNMENT_OPERATOR = 'addition_assignment_operator';
 const JSNODE_ISNULLOPERATOR='IsNullOperator';
+const JSNODE_MATHFUN = 'mathfun';
 class JSNode_While extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_WHILE, 'While', false, nodeJson);
@@ -1154,6 +1155,146 @@ class JSNode_IsNullOperator extends JSNode_Base {
         return selfCompileRet;
     }
 }
+//数学函数
+class JSNode_Mathfun extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_MATHFUN, 'mathfun', false, nodeJson);
+        this.size_1 = ReplaceIfNaN(this.size_1, 0);
+        this.size_2 = ReplaceIfNaN(this.size_2, 0);
+        autoBind(this);
+
+        //this.isConstNode = true; //使节点不可被删除
+        //复原
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+                this.outSocket.type = ValueType.Boolean;
+            }
+        }
+
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false, { type: ValueType.Boolean });
+            this.addSocket(this.outSocket);
+        }
+        if (this.mathType == null) {
+            this.mathType = Math_ABS;
+        }
+        this.setMathType(this.mathType);
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.mathType = this.mathType;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['mathType']);
+    }
+
+    setMathType(newMathType) {
+        this.mathType = newMathType;
+        var inputCount = 1;
+        var inputLabels_arr = ['num'];
+        switch (newMathType) {
+            case Math_RAND:
+                inputCount = 0;
+                break;
+            case Math_ROUND:
+                inputCount = 2;
+                inputLabels_arr.push('精度');
+                break;
+            case Math_POWER:
+                inputCount = 2;
+                inputLabels_arr.push('幂');
+                break;
+        }
+        var nowCount = this.inputScokets_arr.length;
+        if (nowCount != inputCount) {
+            var step = Math.sign(inputCount - nowCount);
+            for (var i = nowCount; i != inputCount; i += step) {
+                if (step > 0) {
+                    this.addSocket(new NodeSocket('in' + i, this, true, { type: ValueType.String, inputable: true }));
+                }
+                else {
+
+                    this.removeSocket(this.inputScokets_arr[this.inputScokets_arr.length - 1]);
+                }
+            }
+            this.fireEvent(Event_SocketNumChanged, 0);
+        }
+        this.inputScokets_arr.forEach((soket, i) => {
+            if (soket.label != inputLabels_arr[i]) {
+                soket.label = inputLabels_arr[i];
+                soket.fireEvent('changed');
+            }
+        });
+    }
+    
+    compile(helper, preNodes_arr,belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        //节点名称
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var inSocket = this.inSocket;
+
+        var finalStr = this.mathType + '(';
+        switch (this.mathType) {
+            case Math_ROUND:
+            case Math_POWER:
+                var socketVal_arr = [];
+                for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+                    var theSocket = this.inputScokets_arr[i];
+                    var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
+                    if (socketComRet.err) {
+                        return false;
+                    }
+                    var tValue = socketComRet.value;
+                    if (socketComRet.link && !socketComRet.link.outSocket.isSimpleVal) {
+                        tValue = tValue 
+                    }
+                    socketVal_arr.push(tValue)
+                }
+                finalStr += socketVal_arr[0] + ',' + socketVal_arr[1] + ')';
+                break;
+            case Math_ABS:
+            case Math_CEILING:
+            case Math_FLOOR:
+            case Math_SQUARE:
+            case Math_SQRT:
+                var socketVal_arr = [];
+                var theSocket = this.inputScokets_arr[i];
+                var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+                var tValue = null;
+                for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+                    var theSocket = this.inputScokets_arr[0];
+                    var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
+                    if (socketComRet.err) {
+                        return false;
+                    }
+                    var tValue = socketComRet.value;
+                    if (socketComRet.link && !socketComRet.link.outSocket.isSimpleVal) {
+                        tValue = tValue 
+                    }
+                }
+                finalStr += tValue + ')';
+                break;
+            case Math_RAND:
+                finalStr += ')';
+                break;
+        }
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
 JSNodeClassMap[JSNODE_WHILE] = {
     modelClass: JSNode_While,
     comClass: C_Node_SimpleNode,
@@ -1217,6 +1358,10 @@ JSNodeClassMap[JSNODE_ISNULLOPERATOR]={
     modelClass:JSNode_IsNullOperator,
     comClass:C_JSNode_IsNullOperator
 }
+JSNodeClassMap[JSNODE_MATHFUN] = {
+    modelClass: JSNode_Mathfun,
+    comClass: C_JSNode_Mathfun,
+};
 /*
 JSNodeEditorControls_arr.push(
     {
@@ -1296,5 +1441,11 @@ JSNodeEditorControls_arr.push(
     {
         label: 'isNull判断',
         nodeClass: JSNode_IsNullOperator,
+        type: '基础'
+    });
+JSNodeEditorControls_arr.push(
+    {
+        label: '数学函数',
+        nodeClass: JSNode_Mathfun,
         type: '基础'
     });
