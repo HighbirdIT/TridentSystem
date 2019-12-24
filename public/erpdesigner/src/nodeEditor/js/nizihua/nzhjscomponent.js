@@ -247,9 +247,9 @@ class C_JSNode_Mathfun extends React.PureComponent {
         case 'Math_FLOOR':
             buttonPrompt= '计算小于等于参数的最大整数'
         break;
-        case 'Math_RAND':
-            buttonPrompt= '获取随机数'
-        break;
+        // case 'Math_RAND':
+        //     buttonPrompt= '获取随机数'
+        // break;
     }   
     this.setState({
         text:buttonPrompt

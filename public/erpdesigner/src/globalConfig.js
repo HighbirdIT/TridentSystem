@@ -111,12 +111,11 @@ var SocketType_CtlKernel = 'st_ctlkernel';
 var Math_ABS = 'ABS'; //计算绝对值
 var Math_CEILING = 'CEILING'; //计算大于等于参数的最小整数
 var Math_FLOOR = 'FLOOR'; //计算小于等于参数的最大整数
-var Math_RAND = 'RAND'; //获取随机数
 var Math_ROUND = 'ROUND'; //获取参数制定的长度和精度
 var Math_POWER = 'POWER'; //计算指定表达式的制定幂的值
 var Math_SQUARE = 'SQUARE'; //计算参数的平方值
 var Math_SQRT = 'SQRT'; //计算参数的平方根
-var Math_arr = [Math_ABS, Math_CEILING, Math_FLOOR, Math_RAND, Math_ROUND, Math_POWER, Math_SQUARE, Math_SQRT];
+var Math_arr = [Math_ABS, Math_CEILING, Math_FLOOR, Math_ROUND, Math_POWER, Math_SQUARE, Math_SQRT];
 
 //2018-23-31黄永恒编辑charfunType
 var CharfunType_ASCII = 'ASCII'; //返回字符表达式中最左侧字符的ASCII代码值  select ASCII('a')--97

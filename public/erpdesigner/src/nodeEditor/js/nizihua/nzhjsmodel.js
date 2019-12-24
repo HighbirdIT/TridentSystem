@@ -1197,9 +1197,6 @@ class JSNode_Mathfun extends JSNode_Base {
         var inputCount = 1;
         var inputLabels_arr = ['num'];
         switch (newMathType) {
-            case Math_RAND:
-                inputCount = 0;
-                break;
             case Math_ROUND:
                 inputCount = 2;
                 inputLabels_arr.push('精度');
