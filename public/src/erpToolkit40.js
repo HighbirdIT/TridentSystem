@@ -1632,12 +1632,18 @@ function Convert_TimeZone(time, zoneSrc, zoneDst) {
 var gDingDingIniting = false;
 
 function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
+    DebugApp('InitDingDing satrt');
+    var tjson = {isMobile:isMobile,dingdingKit:dingdingKit};
+    DebugApp(JSON.stringify(tjson));
+    tjson = {gPageInFrame:gPageInFrame,gWeakParentFrame:(gWeakParentFrame ? 'true' : 'false'),dingdingKit:dingdingKit,isInDingTalk:isInDingTalk};
+    DebugApp(JSON.stringify(tjson));
     if (gPageInFrame || gWeakParentFrame) {
         gDingDingIniting = true;
         dingdingKit = gParentDingKit;
         isInDingTalk = gParentIsInDingTalk;
         store.dispatch({ type: AT_PAGELOADED });
         callBack();
+        DebugApp('InitDingDing end');
         return;
     }
     if (isMobile) {
@@ -1688,17 +1694,23 @@ function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
             jsApiList: jsapiArr
         });
     }
+    tjson = {isMobile:isMobile,dingdingKit:dingdingKit,isInDingTalk:isInDingTalk,isProduction:isProduction};
+    DebugApp(JSON.stringify(tjson));
     if (!isProduction || !isInDingTalk) {
         callBack();
+        DebugApp('InitDingDing end');
         return;
     }
     gDingDingIniting = true;
     dingdingKit.error(err => {
         alert('出错了:' + JSON.stringify(err));
     });
+    DebugApp('wait dingdingKit.ready');
     dingdingKit.ready(() => {
+        DebugApp('dingdingKit.ready called');
         store.dispatch({ type: AT_PAGELOADED });
         callBack();
+        DebugApp('InitDingDing end');
     });
 }
 

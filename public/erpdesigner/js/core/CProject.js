@@ -11,7 +11,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var CProjectAttrsSetting = {
-    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('页面名称', 'title', ValueType.String, true), new CAttribute('真实名称', 'realName', ValueType.String, false)]), new CAttributeGroup('顶层设置', [new CAttribute('样式', AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true), new CAttribute('类', AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true)])]
+    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('页面名称', 'title', ValueType.String, true), new CAttribute('真实名称', 'realName', ValueType.String, false), new CAttribute('DEBUG模式', 'debugmode', ValueType.Boolean, false)]), new CAttributeGroup('顶层设置', [new CAttribute('样式', AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true), new CAttribute('类', AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true)])]
 };
 
 var projNames_project = {};
@@ -634,7 +634,8 @@ var CProject = function (_IAttributeable) {
                 userControls_arr: [],
                 controlsID_map: {},
                 refControlID_map: {},
-                targetControl: null
+                targetControl: null,
+                cusObjects_arr: []
             };
             var controlJsonProf = new AttrJsonProfile();
             var controlJson = theKernel.getJson(controlJsonProf);
@@ -1032,11 +1033,22 @@ var AttrJsonProfile = function () {
         this.useUserControl_map = {};
         this.refControl_map = {};
         this.dictionary = {};
+        this.customObjects_arr = [];
         this.keyIndex = 0;
         this.hadDictionary = hadDictionary == true;
     }
 
     _createClass(AttrJsonProfile, [{
+        key: 'addCusObject',
+        value: function addCusObject(cusObj) {
+            if (cusObj == null) {
+                return;
+            }
+            if (this.customObjects_arr.indexOf(cusObj) == -1) {
+                this.customObjects_arr.push(cusObj);
+            }
+        }
+    }, {
         key: 'addDictionnary',
         value: function addDictionnary(value) {
             if (!this.hadDictionary) {

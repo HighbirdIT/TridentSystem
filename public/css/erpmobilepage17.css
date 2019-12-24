@@ -426,7 +426,7 @@
 }
 
 .gridFormBtnsCol{
-    min-width: 80px;
+    min-width: 65px;
 }
 
 .gridFormFixHeaderDiv{
@@ -646,4 +646,8 @@
     top: 0%;
     right: 0%;
     transform: translate(50%,-50%);
+}
+
+.gridbtncoltd{
+    vertical-align: middle !important;
 }

@@ -100,6 +100,7 @@ class MobileContentCompiler extends ContentCompiler {
         var clientSide = this.clientSide;
         var project = this.project;
         var logManager = project.logManager;
+        var isDebugMode = project.getAttribute('debugmode');
         this.compileChain = [];
         this.compiledScriptBP_map = {};
         this.ctlRelyOnGraph = new ControlRelyOnGraph(this);
@@ -117,6 +118,9 @@ class MobileContentCompiler extends ContentCompiler {
         clientSide.appClass.mapStateFun.pushChild(unloadedIfBlock);
         unloadedIfBlock.pushLine(makeLine_Assign(VarNames.RetProps + '.fetchState', 'state.ui.fetchState'));
 
+        if(isDebugMode){
+            clientSide.globalVarBlock.pushLine("gDebugMode = true;");
+        }
         clientSide.scope.getVar(VarNames.PageRouter, true, '[]');
         clientSide.scope.getVar('gPCRenderMode', true, 'false');
         clientSide.pageLoadedReducerFun = clientSide.scope.getFunction('pageLoadedReducer', true, ['state']);
@@ -398,8 +402,19 @@ class MobileContentCompiler extends ContentCompiler {
         var onchangedFunName = theKernel.id + '_' + AttrNames.Event.OnChanged;
         var onchangedBp = this.project.scriptMaster.getBPByName(onchangedFunName);
         if (onchangedBp != null) {
-            if (this.compileScriptBlueprint(onchangedBp, { nomsgbox: true }) == false) {
+            var config = { nomsgbox: true };
+            if (theKernel.type == M_DropdownKernel_Type) {
+                config.params = [VarNames.ParentPath, 'newText', 'newValue', VarNames.NowRecord];
+            }
+            var compileRet = this.compileScriptBlueprint(onchangedBp, config);
+            if (compileRet == false) {
                 return false;
+            }
+            if (theKernel.type == M_DropdownKernel_Type) {
+                var appandColumns_arr = theKernel.getAppandColumns();
+                appandColumns_arr.forEach(x => {
+                    compileRet.scope.getVar(x, true, VarNames.NowRecord + '.' + x);
+                });
             }
             ctlTag.setAttr('onchanged', '{' + onchangedFunName + '}');
         }
@@ -593,7 +608,7 @@ class MobileContentCompiler extends ContentCompiler {
         var createPropChangedFun = (propName) => {
             var changedFunName = propName + 'changed';
             var changedFun = controlReactClass.getFunction(changedFunName);
-            if(changedFun == null){
+            if (changedFun == null) {
                 changedFun = controlReactClass.getFunction(changedFunName, true, ['nowState', VarNames.State, 'calledAct_map']);
                 changedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
                 changedFun.retBlock.pushLine('return ' + VarNames.NeedSetState + ';');
@@ -678,7 +693,7 @@ class MobileContentCompiler extends ContentCompiler {
                     '属性验证器' + cpi + '的属性"' + targetParam + '"找不到']);
                     return false;
                 }
-                if(ctlMidData.propChecker_map[targetParam] != null){
+                if (ctlMidData.propChecker_map[targetParam] != null) {
                     logManager.errorEx([logManager.createBadgeItem(
                         userCtlKernel.getReadableName(),
                         userCtlKernel,
@@ -1664,6 +1679,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         var reactParentKernel = theKernel.getReactParentKernel(true);
         var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
+        var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
         /*
         if(belongFormKernel == null){
             logManager.errorEx([logManager.createBadgeItem(
@@ -1686,8 +1702,18 @@ class MobileContentCompiler extends ContentCompiler {
                     if (config.autoSetFetchState) {
                         scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState.fetching = false;");
                         scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState.fetchingErr = err;");
-
-                        scriptCompileRet.startFtech_bk.pushLine("state = " + makeStr_callFun('setManyStateByPath', [VarNames.State, VarNames.FullParentPath + "+'." + theKernel.id + "'", '{fetching:true,fetchingErr:null}']));
+                        var ctlStatePath = VarNames.FullParentPath + '+' + singleQuotesStr('.' + theKernel.id);
+                        if (belongUserControl) {
+                            var ctlRelpath = theKernel.getStatePath('', '.', null, true, belongUserControl);
+                            if (ctlRelpath.indexOf('.') != -1) {
+                                scriptCompileRet.startFtech_bk.pushLine('var _realstatepath = ' + VarNames.FullParentPath + '.replace(' + belongUserControl.id + '_path' + " + '.','') + " + singleQuotesStr('.' + theKernel.id) + ";");
+                                ctlStatePath = '_realstatepath';
+                            }
+                            else {
+                                ctlStatePath = singleQuotesStr(theKernel.id);
+                            }
+                        }
+                        scriptCompileRet.startFtech_bk.pushLine("state = " + makeStr_callFun('setManyStateByPath', [VarNames.State, ctlStatePath, '{fetching:true,fetchingErr:null}']));
                     }
                 }
                 scriptCompileRet.finalCallBackReturn_bk.pushLine("if(state == null){store.dispatch(makeAction_setManyStateByPath(needSetState, " + VarNames.FullParentPath + "+'." + theKernel.id + "'));return;}");
@@ -3117,7 +3143,7 @@ class MobileContentCompiler extends ContentCompiler {
                         columnWidth = 4 * GridHead_PerCharWidth;
                     }
                 }
-                columnWidth = Math.round(10 * columnWidth);
+                columnWidth = columnWidth;
                 sumTableWidth += columnWidth;
                 gridColumnsProfile_obj[childKernel.id] = {
                     id: childKernel.id,
@@ -3148,7 +3174,7 @@ class MobileContentCompiler extends ContentCompiler {
                     if (columnProfile.width != 'auto') {
                         if (gridWidthType == EGridWidthType.Fixed) {
                             headStyleObj = {
-                                width: (columnProfile.width / 10) + 'em',
+                                width: (columnProfile.width) + 'em',
                             };
                         }
                         else {
@@ -3201,7 +3227,7 @@ class MobileContentCompiler extends ContentCompiler {
             if (hadRowButton || insertBtnSetting) {
                 gridHeadRowRenderBlock.pushLine("<th scope='col'></th>");
                 if (gridHeadBodyRowRenderBlock) {
-                    gridHeadBodyRowRenderBlock.pushLine("<td><VisibleERPC_GridForm_BtnCol form={this.props.form} /></td>");
+                    gridHeadBodyRowRenderBlock.pushLine("<td className='gridbtncoltd'><VisibleERPC_GridForm_BtnCol form={this.props.form} /></td>");
                 }
             }
 
@@ -3415,9 +3441,9 @@ class MobileContentCompiler extends ContentCompiler {
             }
 
             if (hadRowButton || insertBtnSetting) {
-                gridBodyTableRowRenderBlock.pushLine("<td><VisibleERPC_GridForm_BtnCol rowkey={rowkey} form={this.props.form} /></td>");
+                gridBodyTableRowRenderBlock.pushLine("<td className='gridbtncoltd'><VisibleERPC_GridForm_BtnCol rowkey={rowkey} form={this.props.form} /></td>");
                 if (insertBtnSetting) {
-                    gridBodyTableNewRowRenderBlock.pushLine("<td><VisibleERPC_GridForm_BtnCol rowkey={rowkey} form={this.props.form} /></td>");
+                    gridBodyTableNewRowRenderBlock.pushLine("<td className='gridbtncoltd'><VisibleERPC_GridForm_BtnCol rowkey={rowkey} form={this.props.form} /></td>");
                 }
             }
         }
@@ -4672,6 +4698,33 @@ class MobileContentCompiler extends ContentCompiler {
         if (!theKernel.getAttribute(AttrNames.Growable)) {
             ctlTag.setAttr('growable', '{false}');
         }
+        var appandColumns_arr = [];
+        var appandColAttrs_arr = theKernel.getAttrArrayList(AttrNames.AppandColumn);
+        var canuseColumns = theKernel.getCanuseColumns();
+        appandColAttrs_arr.forEach((attr, attrIndex) => {
+            var attrValue = theKernel.getAttribute(attr.name);
+            if (attrValue != null && !IsEmptyString(attrValue.name)) {
+                if (canuseColumns.indexOf(attrValue.name) != -1) {
+                    var funName = theKernel.id + '_' + attr.name;
+                    var jsBP = project.scriptMaster.getBPByName(funName);
+                    appandColumns_arr.push({
+                        name: attrValue.name,
+                        jsBP: jsBP,
+                    });
+                }
+                else {
+                    logManager.errorEx([logManager.createBadgeItem(
+                        theKernel.getReadableName(),
+                        theKernel,
+                        this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '附加数据列' + attrIndex + '不在数据源中']);
+                    return false;
+                }
+            }
+        });
+        if (appandColumns_arr.length > 0) {
+            ctlTag.setAttr('dataCols', singleQuotesStr(appandColumns_arr.map(item=>{return item.name;}).join(',')));
+        }
         if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
         if (this.compileValidCheckerAttribute(theKernel) == false) { return false; }
         if (this.compileOnChangedEventBlueprint(theKernel, ctlTag) == false) { return false; }
@@ -4879,6 +4932,7 @@ class MobileContentCompiler extends ContentCompiler {
         var useStateVarName;
         var parentLabledCtl;
         var initPath = '';
+        var bundleParam = null;
         if (!IsEmptyObject(bpCompileHelper.useGlobalControls_map)) {
             for (usectlid in bpCompileHelper.useGlobalControls_map) {
                 useCtlData = bpCompileHelper.useGlobalControls_map[usectlid];
@@ -4889,7 +4943,7 @@ class MobileContentCompiler extends ContentCompiler {
                     useStateVarName = belongUserControl.id + '_state';
                     initPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath());
                 }
-                if(useCtlData.kernel.type == UserControlKernel_Type){
+                if (useCtlData.kernel.type == UserControlKernel_Type) {
                     pullFun.scope.getVar(useCtlData.kernel.id + '_path', true, initPath);
                 }
                 ctlParentStateVarName = null;
@@ -4911,7 +4965,8 @@ class MobileContentCompiler extends ContentCompiler {
                         initValue = propApiitem.getInitValueFun(ctlStateVarName, useCtlData.kernel, propApiitem);
                     }
                     pullFun.scope.getVar(varName, true, initValue);
-                    needSetParams_arr.push({ bundleName: varName, clientValue: varName });
+                    bundleParam = { bundleName: varName, clientValue: varName };
+                    needSetParams_arr.push(bundleParam);
                     needPostValid = true;
                     if (propApiitem.needValid) {
                         if (needCheckProps_map[varName] == null) {
@@ -4928,16 +4983,22 @@ class MobileContentCompiler extends ContentCompiler {
                             });
                         }
                     }
-                    else{
-                        if(useCtlData.kernel.type == UserControlKernel_Type){
-                            var templateKernelMidData = this.projectCompiler.getMidData(useCtlData.kernel.getTemplateKernel().id);
-                            var propChecker = templateKernelMidData.propChecker_map[propApiitem.stateName];
-                            if(propChecker){
-                                if(needCheckProps_map[useCtlData.kernel.id+propChecker] == null){
-                                    needCheckProps_map[useCtlData.kernel.id+propChecker] = 1;
-                                    needCheckVars_arr.push({
-                                        callFun:makeStr_callFun(propChecker, [useStateVarName, usectlid + '_path', 'null']),
-                                    });
+                    else {
+                        if (useCtlData.kernel.type == UserControlKernel_Type) {
+                            if (useCtlData.kernel.isTemplate()) {
+                                bundleParam.nullable = true;    // 模板自订控件里面的属性不做null验证
+                            }
+                            else {
+                                // 模板自订控件里面的方法一律不做属性验证
+                                var templateKernelMidData = this.projectCompiler.getMidData(useCtlData.kernel.getTemplateKernel().id);
+                                var propChecker = templateKernelMidData.propChecker_map[propApiitem.stateName];
+                                if (propChecker) {
+                                    if (needCheckProps_map[useCtlData.kernel.id + propChecker] == null) {
+                                        needCheckProps_map[useCtlData.kernel.id + propChecker] = 1;
+                                        needCheckVars_arr.push({
+                                            callFun: makeStr_callFun(propChecker, [useStateVarName, usectlid + '_path', 'null']),
+                                        });
+                                    }
                                 }
                             }
                         }
@@ -5066,11 +5127,11 @@ class MobileContentCompiler extends ContentCompiler {
                     useCtlData = useFormData.useControls_map[usectlid];
                     ctlStateVarName = usectlid + '_state';
                     ctlParentStateVarName = null;
-                    initPath = singleQuotesStr(useCtlData.kernel.getStatePath());
+                    initPath = singleQuotesStr(useCtlData.kernel.getStatePath('', '.', {mapVarName:VarNames.RowKeyInfo_map}));
                     if (belongUserControl) {
                         initPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath());
                     }
-                    if(useCtlData.kernel.type == UserControlKernel_Type){
+                    if (useCtlData.kernel.type == UserControlKernel_Type) {
                         pullFun.scope.getVar(useCtlData.kernel.id + '_path', true, initPath);
                     }
 
@@ -5105,15 +5166,15 @@ class MobileContentCompiler extends ContentCompiler {
                                 propApi: propApiitem
                             });
                         }
-                        else{
-                            if(useCtlData.kernel.type == UserControlKernel_Type){
+                        else {
+                            if (useCtlData.kernel.type == UserControlKernel_Type) {
                                 var templateKernelMidData = this.projectCompiler.getMidData(useCtlData.kernel.getTemplateKernel().id);
                                 var propChecker = templateKernelMidData.propChecker_map[propApiitem.stateName];
-                                if(propChecker){
-                                    if(needCheckProps_map[useCtlData.kernel.id+propChecker] == null){
-                                        needCheckProps_map[useCtlData.kernel.id+propChecker] = 1;
+                                if (propChecker) {
+                                    if (needCheckProps_map[useCtlData.kernel.id + propChecker] == null) {
+                                        needCheckProps_map[useCtlData.kernel.id + propChecker] = 1;
                                         needCheckVars_arr.push({
-                                            callFun:makeStr_callFun(propChecker, [useStateVarName, usectlid + '_path', 'null']),
+                                            callFun: makeStr_callFun(propChecker, [useStateVarName, usectlid + '_path', 'null']),
                                         });
                                     }
                                 }
@@ -5151,7 +5212,7 @@ class MobileContentCompiler extends ContentCompiler {
                     checkVarValidStr += (checkVarValidStr.length == 0 ? 'IsEmptyString(' : ' || IsEmptyString(') + varObj + ')';
                     return;
                 }
-                if(varObj.callFun != null){
+                if (varObj.callFun != null) {
                     validKernelBlock.pushLine('validErr = ' + varObj.callFun + ';');
                     validKernelBlock.pushLine("if(validErr != null){hadValidErr = true;}");
                     return;
@@ -5213,7 +5274,9 @@ class MobileContentCompiler extends ContentCompiler {
                 var useParam = needSetParams_arr[si];
                 var serverValue = ReplaceIfNull(useParam.serverValue, 'bundle.' + useParam.bundleName);
                 paramsetblock.pushLine("dbhelper.makeSqlparam('" + useParam.bundleName + "', sqlTypes.NVarChar(4000), " + serverValue + "),");
-                bodyCheckblock.pushLine("if(req.body.bundle." + useParam.bundleName + " == null){" + makeLine_RetServerError('没有提供' + useParam.bundleName) + '};');
+                if (!useParam.nullable) {
+                    bodyCheckblock.pushLine("if(req.body.bundle." + useParam.bundleName + " == null){" + makeLine_RetServerError('没有提供' + useParam.bundleName) + '};');
+                }
             }
         }
 
@@ -5262,9 +5325,11 @@ class MobileContentCompiler extends ContentCompiler {
                 }
             }
 
+            var belongFormKernel;
+            var formColumns_arr;
             if (reactParentKernel.type == M_FormKernel_Type) {
-                var belongFormKernel = reactParentKernel;
-                var formColumns_arr = belongFormKernel.getCanuseColumns();
+                belongFormKernel = reactParentKernel;
+                formColumns_arr = belongFormKernel.getCanuseColumns();
                 if (formColumns_arr.indexOf(textField) != -1) {
                     parentMidData.useColumns_map[textField] = 1;
                     kernelMidData.columnName = textField;
@@ -5338,6 +5403,31 @@ class MobileContentCompiler extends ContentCompiler {
             }
             if (setValueStateItem != null) {
                 kernelMidData.needSetStates_arr.push(setValueStateItem);
+            }
+            if (appandColumns_arr.length > 0) {
+                for (var apci in appandColumns_arr) {
+                    var apc = appandColumns_arr[apci];
+                    if (apc.jsBP) {
+                        if (this.compileScriptAttribute({ jsBp: apc.jsBP }, theKernel, apc.name, apc.name, { autoSetFetchState: true }) == false) {
+                            return false;
+                        }
+                    }
+                    else {
+                        if (belongFormKernel && formColumns_arr.indexOf(apc.name) != -1) {
+                            parentMidData.useColumns_map[apc.name] = 1;
+                            kernelMidData.needSetStates_arr.push({
+                                name: apc.name,
+                                useColumn: { name: apc.name },
+                            });
+                        }
+                        else{
+                            kernelMidData.needSetStates_arr.push({
+                                name: apc.name,
+                                setNull: true,
+                            });
+                        }
+                    }
+                }
             }
         }
     }
@@ -5745,6 +5835,52 @@ class MobileContentCompiler extends ContentCompiler {
             pullFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath', [VarNames.State, belongUserControl.id + '_path', '{}']));
         }
 
+        if (midData.useFormXML || midData.useFormXMLText) {
+            var getXmlRowFunName = theKernel.id + '_' + AttrNames.Function.GetXMLRowItem;
+            var getXmlRowBp = project.scriptMaster.getBPByName(getXmlRowFunName);
+            if (getXmlRowBp == null) {
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '有地方使用了此Grid的XML数据，却没有设定[获取XML行]方法']);
+                return false;
+            }
+            var returnVars_arr = getXmlRowBp.returnVars_arr.filter(item => {
+                return item.name != AttrNames.RowText;
+            });
+            if (midData.useFormXML) {
+                if (returnVars_arr.length == 0) {
+                    logManager.errorEx([logManager.createBadgeItem(
+                        theKernel.getReadableName(),
+                        theKernel,
+                        this.projectCompiler.clickKernelLogBadgeItemHandler),
+                        '[获取XML行]方法必须要有返回值设置']);
+                    return false;
+                }
+            }
+            if (midData.useFormXMLText && returnVars_arr.length == getXmlRowBp.returnVars_arr.length) {
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '有地方使用了此Grid的文本数据，却没在[获取XML行]设定RowText返回']);
+                return false;
+            }
+            var compileRet = this.compileScriptBlueprint(getXmlRowBp);
+            if (compileRet == false) {
+                return false;
+            }
+
+            var xmlconfig = {
+                colcount: returnVars_arr.length
+            };
+            returnVars_arr.forEach((varData, index) => {
+                xmlconfig['col' + (index + 1)] = varData.name;
+            });
+            clientSide.scope.getVar(theKernel.id + '_xmlconfig', true, JSON.stringify(xmlconfig));
+        }
+
         if (midData.useDS) {
             var mustSelectColumns_arr = [];
             for (colName in midData.useColumns_map) {
@@ -5863,11 +5999,11 @@ class MobileContentCompiler extends ContentCompiler {
                         hadNeedWatchParam = true;
                         for (usectlid in useFormData.useControls_map) {
                             useCtlData = useFormData.useControls_map[usectlid];
-                            initPath = singleQuotesStr(useCtlData.kernel.getStatePath());
+                            initPath = singleQuotesStr(useCtlData.kernel.getStatePath('','.',{mapVarName:VarNames.RowKeyInfo_map}));
                             if (belongUserControl) {
                                 initPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath());
                             }
-                            if(useCtlData.kernel.type == UserControlKernel_Type){
+                            if (useCtlData.kernel.type == UserControlKernel_Type) {
                                 theFun.scope.getVar(useCtlData.kernel.id + '_path', true, initPath);
                             }
                             ctlStateVarName = usectlid + '_state';
@@ -5903,15 +6039,15 @@ class MobileContentCompiler extends ContentCompiler {
                                         propApi: propApiitem
                                     });
                                 }
-                                else{
-                                    if(useCtlData.kernel.type == UserControlKernel_Type){
+                                else {
+                                    if (useCtlData.kernel.type == UserControlKernel_Type) {
                                         var templateKernelMidData = this.projectCompiler.getMidData(useCtlData.kernel.getTemplateKernel().id);
                                         var propChecker = templateKernelMidData.propChecker_map[propApiitem.stateName];
-                                        if(propChecker){
-                                            if(needCheckProps_map[useCtlData.kernel.id+propChecker] == null){
-                                                needCheckProps_map[useCtlData.kernel.id+propChecker] = 1;
+                                        if (propChecker) {
+                                            if (needCheckProps_map[useCtlData.kernel.id + propChecker] == null) {
+                                                needCheckProps_map[useCtlData.kernel.id + propChecker] = 1;
                                                 needCheckVars_arr.push({
-                                                    callFun:makeStr_callFun(propChecker, [VarNames.State, usectlid + '_path']),
+                                                    callFun: makeStr_callFun(propChecker, [VarNames.State, usectlid + '_path']),
                                                 });
                                             }
                                         }
@@ -5944,7 +6080,7 @@ class MobileContentCompiler extends ContentCompiler {
                     hadNeedWatchParam = true;
                     useCtlData = compilHelper.useGlobalControls_map[usectlid];
                     initPath = singleQuotesStr(useCtlData.kernel.getStatePath());
-                    if(useCtlData.kernel.type == UserControlKernel_Type){
+                    if (useCtlData.kernel.type == UserControlKernel_Type) {
                         if (belongUserControl) {
                             initPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath());
                         }
@@ -5992,15 +6128,21 @@ class MobileContentCompiler extends ContentCompiler {
                             }
                         }
                         else {
-                            if(useCtlData.kernel.type == UserControlKernel_Type){
-                                var templateKernelMidData = this.projectCompiler.getMidData(useCtlData.kernel.getTemplateKernel().id);
-                                var propChecker = templateKernelMidData.propChecker_map[propApiitem.stateName];
-                                if(propChecker){
-                                    if(needCheckProps_map[useCtlData.kernel.id+propChecker] == null){
-                                        needCheckProps_map[useCtlData.kernel.id+propChecker] = 1;
-                                        needCheckVars_arr.push({
-                                            callFun:makeStr_callFun(propChecker, [VarNames.State, usectlid + '_path']),
-                                        });
+                            // 模板自订控件里面的方法一律不做属性验证
+                            if (useCtlData.kernel.type == UserControlKernel_Type) {
+                                if (useCtlData.kernel.isTemplate()) {
+                                    needPostValid = false;
+                                }
+                                else {
+                                    var templateKernelMidData = this.projectCompiler.getMidData(useCtlData.kernel.getTemplateKernel().id);
+                                    var propChecker = templateKernelMidData.propChecker_map[propApiitem.stateName];
+                                    if (propChecker) {
+                                        if (needCheckProps_map[useCtlData.kernel.id + propChecker] == null) {
+                                            needCheckProps_map[useCtlData.kernel.id + propChecker] = 1;
+                                            needCheckVars_arr.push({
+                                                callFun: makeStr_callFun(propChecker, [VarNames.State, usectlid + '_path']),
+                                            });
+                                        }
                                     }
                                 }
                             }
@@ -6032,7 +6174,7 @@ class MobileContentCompiler extends ContentCompiler {
                             checkVarValidStr += (checkVarValidStr.length == 0 ? 'IsEmptyString(' : ' || IsEmptyString(') + varObj + ')';
                             return;
                         }
-                        if(varObj.callFun != null){
+                        if (varObj.callFun != null) {
                             validKernelBlock.pushLine('validErr = ' + varObj.callFun + ';');
                             validKernelBlock.pushLine("if(validErr != null){hadValidErr = true;}");
                             return;

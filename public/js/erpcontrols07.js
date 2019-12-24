@@ -24,6 +24,7 @@ var gParentDingKit = null;
 var gParentIsInDingTalk = null;
 var gPCRenderMode = false;
 var gPageReceiveMsgHandlers_arr = [];
+var gDebugMode = false;
 var gPreconditionInvalidInfo = '前置条件不足';
 var gCantNullInfo = '不能为空值';
 
@@ -31,11 +32,24 @@ var HashKey_FixItem = 'fixitem';
 var gEmptyArr = [];
 
 function AppInit(app) {
+    DebugApp('app init' + (gParentFrame ? ' with parentFrame' : ''));
     if (gParentFrame) {
         console.log('gPageInFrame');
         return gParentFrame.getUseState();
     }
     return null;
+}
+
+function DebugApp(info) {
+    if (gDebugMode) {
+        var debugpanel = document.getElementById('_debugpanel');
+        if (debugpanel) {
+            var spanElem = document.createElement('span');
+            spanElem.className = 'border flex-grow-0 flex-shrink-0 p-1';
+            spanElem.appendChild(document.createTextNode(info));
+            debugpanel.appendChild(spanElem);
+        }
+    }
 }
 
 function DistpathMsgFromParent(msgtype, data) {
@@ -2331,6 +2345,7 @@ var VisibleERPC_IFrame = null;
 var gNeedCallOnErpControlInit_arr = [];
 
 function ErpControlInit() {
+    DebugApp('ErpControlInit start');
     VisibleERPC_DropDown = ReactRedux.connect(ERPC_DropDown_mapstatetoprops, ERPC_DropDown_dispatchtoprops)(ERPC_DropDown);
     VisibleERPC_Text = ReactRedux.connect(ERPC_Text_mapstatetoprops, ERPC_Text_dispatchtorprops)(ERPC_Text);
     VisibleERPC_LabeledControl = ReactRedux.connect(ERPC_LabeledControl_mapstatetoprops, ERPC_LabeledControl_dispatchtorprops)(ERPC_LabeledControl);
@@ -2346,6 +2361,7 @@ function ErpControlInit() {
             elem.call();
         }
     });
+    DebugApp('ErpControlInit end');
 }
 
 function ERPC_PageForm(target) {

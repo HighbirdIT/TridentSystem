@@ -689,7 +689,14 @@ class JSNode_GetDay extends JSNode_Base {
 
         if (nodeJson) {
             if (this.outputScokets_arr.length > 0) {
-                this.outSocket = this.outputScokets_arr[0];
+                this.outputScokets_arr.forEach(socket => {
+                    if (socket.name == 'out') {
+                        this.nameSocket = socket;
+                    }
+                    else if (socket.name == 'num') {
+                        this.numSocket = socket;
+                    }
+                });
             }
         }
         if (this.inputScokets_arr.length == 0) {
@@ -698,11 +705,18 @@ class JSNode_GetDay extends JSNode_Base {
         this.inputScokets_arr[0].label = '日期';
         this.inputScokets_arr[0].inputable = true;
 
-        if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false);
-            this.addSocket(this.outSocket);
+        if (this.nameSocket == null) {
+            this.nameSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.nameSocket);
         }
-        this.outSocket.type = ValueType.Object;
+        if (this.numSocket == null) {
+            this.numSocket = new NodeSocket('num', this, false);
+            this.addSocket(this.numSocket);
+        }
+        this.nameSocket.label = '中文';
+        this.nameSocket.type = ValueType.String;
+        this.numSocket.label = '数字';
+        this.numSocket.type = ValueType.Int;
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -722,8 +736,6 @@ class JSNode_GetDay extends JSNode_Base {
         }
         var dateStr = socketComRet.value;
         var endstr = '';
-        var socketlink = socketComRet.link;
-        var outSocket = this.outputScokets_arr[0];
         var selfCompileRet = new CompileResult(this);
         if (socketComRet.link == null) {
             if (!checkDate(dateStr)) {
@@ -750,7 +762,8 @@ class JSNode_GetDay extends JSNode_Base {
         var funPreFix = blockInServer ? 'serverhelper.DateFun.' : '';
         endstr = funPreFix + "getweekDay(" + dateStr + ")";
 
-        selfCompileRet.setSocketOut(outSocket, endstr);
+        selfCompileRet.setSocketOut(this.nameSocket, endstr);
+        selfCompileRet.setSocketOut(this.numSocket, dateStr + '.getDay()');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }

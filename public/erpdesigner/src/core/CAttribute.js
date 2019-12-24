@@ -237,6 +237,8 @@ const VarNames={
     NowRow:'nowrow',
     SelectedProfile:'selectedProfile',
     BaseValidCheckPath: 'baseValidCheckPath',
+    FormXML:'formxml',
+    FormXMLText:'formxmltext',
 };
 
 
@@ -345,6 +347,9 @@ const AttrNames={
     AwaysEditable: 'awayseditable',
     AttrHook: 'attrhook',
     AttrChecker: 'attrchecker',
+    RowText: 'rowtext',
+    AppandColumn:'appandColumn',
+    ColumnName:'columnname',
 
     Event:{
         OnClick:'onclick',
@@ -361,6 +366,10 @@ const AttrNames={
         OnDataSourceChanged:'onDataSourceChanged',
         OnClickCloseBtn:'onClickCloseBtn',
         OnReceiveMsg:'onReceiveMsg',
+    },
+
+    Function:{
+        GetXMLRowItem:'getxmlrowitem',
     },
 
     LayoutNames:{

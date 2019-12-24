@@ -356,6 +356,7 @@ var ValueType = {
     ModifyContent:'ModifyContent',
     AttrHook:'attrhook',
     AttrChecker:'attrchecker',
+    NameAndScript:'nameandscrupt',
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];

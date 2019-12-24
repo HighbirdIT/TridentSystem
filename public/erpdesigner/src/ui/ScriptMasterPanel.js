@@ -1,3 +1,5 @@
+var gCopiedCustomObjectData = null;
+
 class ScriptMasterPanel extends React.PureComponent {
     constructor(props) {
         super(props);
@@ -71,6 +73,22 @@ class CusObjEditor extends React.PureComponent {
         this.reRender();
     }
 
+    clickCopyBtn(){
+        var dataJson = this.props.cusObj.getJson();
+        gCopiedCustomObjectData = dataJson;
+    }
+
+    clickTrashBtn(){
+        gTipWindow.popAlert(makeAlertData('警告','确定删除对接对象[' + this.props.cusObj.name + ']?',this.deleteTipCallback,[TipBtnOK,TipBtnNo]));
+    }
+
+    deleteTipCallback(key, nodeData_arr){
+        if(key == 'ok'){
+            this.props.wantDeleteAct(this.props.cusObj);
+            this.reRender();
+        }
+    }
+
     inputChangedHandler(ev){
         var propName = getAttributeByNode(ev.target,'propname',true,3);
         if(propName){
@@ -110,6 +128,8 @@ class CusObjEditor extends React.PureComponent {
         return <div className='list-group-item p-1 flex-shrink-0 d-flex align-items-center'>
             <span className='flex-grow-1 flex-shrink-1'>{cusObj.name}</span>
             <button onClick={this.clickEditBtn} className='btn btn-sm fa fa-edit'></button>
+            <button onClick={this.clickCopyBtn} className='btn btn-sm btn-dark fa fa-copy'></button>
+            <button onClick={this.clickTrashBtn} className='btn btn-danger btn-sm fa fa-trash'></button>
         </div>
     }
 }
@@ -163,6 +183,19 @@ class CusObjManager extends React.PureComponent {
         this.reRender();
     }
 
+    clickPasteBtn(){
+        if(gCopiedCustomObjectData){
+            var newCusObj = new CustomObject(gCopiedCustomObjectData.name, gCopiedCustomObjectData.code, gCopiedCustomObjectData.dm);
+            this.state.master.addCusObj(newCusObj);
+            this.reRender();
+        }
+    }
+
+    wantDeleteAct(custObj){
+        this.state.master.deleteCusObj(custObj);
+        this.reRender();
+    }
+
     render(){
         if(this.state.master == null){
             return null;
@@ -170,12 +203,13 @@ class CusObjManager extends React.PureComponent {
         return <React.Fragment>
             <span className='text-light flex-grow-0 flex-shrink-0 bg-dark d-flex align-items-center bg-secondary p-1'>
                 <span className='flex-grow-1 flex-shrink-1'>数据对象</span>
+                <button onClick={this.clickPasteBtn} className='btn btn-sm btn-dark fa fa-paste'></button>
                 <button onClick={this.clickAddBtn} className='btn btn-sm btn-success fa fa-plus'></button>
             </span>
             <div className='list-group flex-grow-0 flex-shrink-0 autoScroll' style={{maxHeight:'300px'}}>
             {
                 this.state.master.cusobjects_arr.map(item=>{
-                    return <CusObjEditor key={item.code} cusObj={item} />
+                    return <CusObjEditor wantDeleteAct={this.wantDeleteAct} key={item.code} cusObj={item} />
                 })
             }
             </div>

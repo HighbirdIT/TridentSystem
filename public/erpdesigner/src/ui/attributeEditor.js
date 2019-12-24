@@ -19,6 +19,7 @@ class AttributeEditor extends React.PureComponent {
                 case ValueType.UserControlEvent:
                 case ValueType.AttrHook:
                 case ValueType.AttrChecker:
+                case ValueType.NameAndScript:
                     rlt = {};
                     break;
                 default:
@@ -35,6 +36,7 @@ class AttributeEditor extends React.PureComponent {
             case ValueType.AttrHook:
             case ValueType.UserControlEvent:
             case ValueType.AttrChecker:
+            case ValueType.NameAndScript:
                 if (typeof rlt === 'string') {
                     rlt = {};
                 }
@@ -199,6 +201,48 @@ class AttributeEditor extends React.PureComponent {
 
     }
 
+    NAS_nameChanged(ev) {
+        var nowVal = this.state.value;
+        nowVal.name = ev.target.value.trim();
+        this.doSetAttribute(nowVal);
+    }
+
+    NAS_nameddcChanged(newVal) {
+        var nowVal = this.state.value;
+        nowVal.name = newVal;
+        this.doSetAttribute(nowVal);
+    }
+
+    renderNameAndScriptAttrEditor(nowVal, theAttr, attrName, inputID){
+        var project = this.props.targetobj.project;
+        var name = ReplaceIfNull(nowVal.name, '');
+        var funName = this.props.targetobj.id + '_' + attrName;
+        var jsBP = project.scriptMaster.getBPByName(funName);
+        var options_arr = theAttr.options_arr;
+        var nameCtl = null;
+        if(options_arr == null){
+            nameCtl = <input onChange={this.NAS_nameChanged} type="text" className="form-control flex-grow-1 flex-shrink-1" value={name} />;
+        }
+        else{
+            var useOptioins_arr = options_arr;
+            if (typeof options_arr === 'string') {
+                useOptioins_arr = this.props.targetobj[options_arr];
+                if (useOptioins_arr == null) {
+                    console.error('没有找到:' + options_arr);
+                }
+            }
+            nameCtl = (<DropDownControl options_arr={useOptioins_arr} value={name} itemChanged={this.NAS_nameddcChanged} />);
+        }
+
+        return (<div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
+            {nameCtl}
+            <div className='btn-group'>
+                <span onClick={this.clickModifyScriptBtnHandler} className='btn btn-dark flex-grow-1 flex-shrink-1'>{jsBP ? '编辑' : '创建'}</span>
+                {jsBP ? <span onClick={this.clickTrshScriptBtnHandler} className='btn btn-danger flex-grow-0 flex-shrink-0 fa fa-trash'></span> : null}
+            </div>
+        </div>);
+    }
+
     UCAttrHookParamChanged(ev) {
         var nowVal = this.state.value;
         nowVal.params = ev.target.value.trim();
@@ -328,7 +372,7 @@ class AttributeEditor extends React.PureComponent {
 
     clickTrshScriptBtnHandler(ev) {
         var theAttr = this.props.targetattr;
-        var funName = this.props.targetobj.id + '_' + theAttr.name;
+        var funName = this.props.targetobj.id + '_' + this.getRealAttrName();
         var project = this.props.targetobj.project;
         var jsBP = project.scriptMaster.getBPByName(funName);
         if (jsBP != null) {
@@ -401,6 +445,9 @@ class AttributeEditor extends React.PureComponent {
         }
         if (theAttr.valueType == ValueType.UserControlEvent) {
             return this.renderUserControlEventAttrEditor(nowVal, theAttr, attrName, inputID);
+        }
+        if (theAttr.valueType == ValueType.NameAndScript) {
+            return this.renderNameAndScriptAttrEditor(nowVal, theAttr, attrName, inputID);
         }
         if (theAttr.valueType == ValueType.AttrHook) {
             return this.renderUserControlAttrHookEditor(nowVal, theAttr, attrName, inputID);

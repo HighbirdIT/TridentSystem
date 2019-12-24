@@ -4,6 +4,7 @@ const CProjectAttrsSetting = {
         new CAttributeGroup('基本设置', [
             new CAttribute('页面名称', 'title', ValueType.String, true),
             new CAttribute('真实名称', 'realName', ValueType.String, false),
+            new CAttribute('DEBUG模式', 'debugmode', ValueType.Boolean, false),
         ]),
         new CAttributeGroup('顶层设置', [
             new CAttribute('样式', AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
@@ -587,6 +588,7 @@ class CProject extends IAttributeable {
             controlsID_map: {},
             refControlID_map: {},
             targetControl: null,
+            cusObjects_arr: [],
         };
         var controlJsonProf = new AttrJsonProfile();
         var controlJson = theKernel.getJson(controlJsonProf);
@@ -970,8 +972,18 @@ class AttrJsonProfile {
         this.useUserControl_map = {};
         this.refControl_map = {};
         this.dictionary = {};
+        this.customObjects_arr = [];
         this.keyIndex = 0;
         this.hadDictionary = hadDictionary == true;
+    }
+
+    addCusObject(cusObj){
+        if(cusObj == null){
+            return;
+        }
+        if(this.customObjects_arr.indexOf(cusObj) == -1){
+            this.customObjects_arr.push(cusObj);
+        }
     }
 
     addDictionnary(value){

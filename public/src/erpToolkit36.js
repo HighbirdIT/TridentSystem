@@ -1632,12 +1632,16 @@ function Convert_TimeZone(time, zoneSrc, zoneDst) {
 var gDingDingIniting = false;
 
 function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
+    DebugApp('InitDingDing satrt');
+    DebugApp(JSON.stringify({isMobile:isMobile,dingdingKit:dingdingKit,isInDingTalk:isInDingTalk,isProduction:isProduction}));
+    DebugApp(JSON.stringify({gPageInFrame:gPageInFrame,gWeakParentFrame:gWeakParentFrame,dingdingKit:dingdingKit,isInDingTalk:isInDingTalk}));
     if (gPageInFrame || gWeakParentFrame) {
         gDingDingIniting = true;
         dingdingKit = gParentDingKit;
         isInDingTalk = gParentIsInDingTalk;
         store.dispatch({ type: AT_PAGELOADED });
         callBack();
+        DebugApp('InitDingDing end');
         return;
     }
     if (isMobile) {
@@ -1688,17 +1692,22 @@ function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
             jsApiList: jsapiArr
         });
     }
+    DebugApp('isProduction || !isInDingTalk == true');
     if (!isProduction || !isInDingTalk) {
         callBack();
+        DebugApp('InitDingDing end');
         return;
     }
     gDingDingIniting = true;
     dingdingKit.error(err => {
         alert('出错了:' + JSON.stringify(err));
     });
+    DebugApp('wait dingdingKit.ready');
     dingdingKit.ready(() => {
+        DebugApp('dingdingKit.ready called');
         store.dispatch({ type: AT_PAGELOADED });
         callBack();
+        DebugApp('InitDingDing end');
     });
 }
 

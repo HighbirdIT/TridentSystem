@@ -12,6 +12,7 @@ class PCContentCompiler extends MobileContentCompiler {
         var clientSide = this.clientSide;
         var project = this.project;
         var logManager = project.logManager;
+        var isDebugMode = project.getAttribute('debugmode');
         this.compileChain = [];
         this.compiledScriptBP_map = {};
         this.ctlRelyOnGraph = new ControlRelyOnGraph(this);
@@ -24,6 +25,9 @@ class PCContentCompiler extends MobileContentCompiler {
         clientSide.appClass.renderFun.pushChild(theSwicth);
         var pageElemVar = clientSide.appClass.renderFun.scope.getVar('pageElem', true);
 
+        if(isDebugMode){
+            clientSide.globalVarBlock.pushLine("gDebugMode = true;");
+        }
         clientSide.appClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'loaded'), 'state.loaded'));
         var unloadedIfBlock = new JSFile_IF('unloaded', '!state.loaded');
         clientSide.appClass.mapStateFun.pushChild(unloadedIfBlock);

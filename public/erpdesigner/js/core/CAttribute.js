@@ -264,7 +264,9 @@ var VarNames = {
     Visible: 'visible',
     NowRow: 'nowrow',
     SelectedProfile: 'selectedProfile',
-    BaseValidCheckPath: 'baseValidCheckPath'
+    BaseValidCheckPath: 'baseValidCheckPath',
+    FormXML: 'formxml',
+    FormXMLText: 'formxmltext'
 };
 
 var AttrNames = {
@@ -372,6 +374,9 @@ var AttrNames = {
     AwaysEditable: 'awayseditable',
     AttrHook: 'attrhook',
     AttrChecker: 'attrchecker',
+    RowText: 'rowtext',
+    AppandColumn: 'appandColumn',
+    ColumnName: 'columnname',
 
     Event: {
         OnClick: 'onclick',
@@ -388,6 +393,10 @@ var AttrNames = {
         OnDataSourceChanged: 'onDataSourceChanged',
         OnClickCloseBtn: 'onClickCloseBtn',
         OnReceiveMsg: 'onReceiveMsg'
+    },
+
+    Function: {
+        GetXMLRowItem: 'getxmlrowitem'
     },
 
     LayoutNames: {
