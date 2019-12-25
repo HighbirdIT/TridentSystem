@@ -49,6 +49,8 @@ function DebugApp(info) {
             spanElem.appendChild(document.createTextNode(info));
             debugpanel.appendChild(spanElem);
         }
+    } else {
+        console.log(info);
     }
 }
 
@@ -1362,7 +1364,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             if (this.props.editable) {
                 dropDownElem = React.createElement(
                     'div',
-                    { className: "d-flex btn-group flex-shrink-0 erpc_dropdown input-group flex-grow-" + (this.props.growable == false ? '0' : '1'), style: this.props.style, ref: this.rootDivRef },
+                    { className: "d-flex mw-100 btn-group flex-shrink-0 erpc_dropdown input-group flex-grow-" + (this.props.growable == false ? '0' : '1'), style: this.props.style, ref: this.rootDivRef },
                     React.createElement('input', { onFocus: this.editableInputFocushandler, onBlur: this.editableInputBlurhandler, ref: this.editableInputRef, type: 'text', className: 'flex-grow-1 flex-shrink-1 flexinput form-control', onChange: this.editableInputChanged, value: inputingValue, placeholder: '\u8F93\u5165\u6216\u9009\u62E9' }),
                     React.createElement(
                         'div',
@@ -1373,7 +1375,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             } else {
                 dropDownElem = React.createElement(
                     'div',
-                    { className: "d-flex btn-group flex-shrink-0 erpc_dropdown flex-grow-" + (this.props.growable == false ? '0' : '1'), style: this.props.style, ref: this.rootDivRef },
+                    { className: "d-flex mw-100 btn-group flex-shrink-0 erpc_dropdown flex-grow-" + (this.props.growable == false ? '0' : '1'), style: this.props.style, ref: this.rootDivRef },
                     React.createElement(
                         'button',
                         { onClick: this.clickOpenHandler, type: 'button', className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1 erpc_dropdownMainBtn' + textColor, hadmini: hadMini ? 1 : null },
@@ -3682,6 +3684,13 @@ var CMessageBoxManger = function (_React$PureComponent16) {
     return CMessageBoxManger;
 }(React.PureComponent);
 
+function IFrameOnloadHandler(ev) {
+    DebugApp('frameLoaded');
+    ev.target.contentWindow.gWeakParentFrame = window;
+    ev.target.contentWindow.gParentDingKit = dingdingKit;
+    ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
+}
+
 function AddPageToFrameSet(state, ctlpath, title, pageCode, pageName, stepCode, stepData, closeable) {
     var hadState = state != null;
     state = hadState ? state : store.getState();
@@ -3710,7 +3719,7 @@ function AddPageToFrameSet(state, ctlpath, title, pageCode, pageName, stepCode, 
         nowItems_arr.push(sameKeyItem);
     }
     var pagesrc = window.location.origin + getPagePath(pageName, stepCode, stepData);
-    sameKeyItem.contentElem = React.createElement('iframe', { src: pagesrc, className: 'w-100 h-100', frameBorder: '0' });
+    sameKeyItem.contentElem = React.createElement('iframe', { src: pagesrc, className: 'w-100 h-100', frameBorder: '0', onLoad: IFrameOnloadHandler });
     var needSetState = {
         selectedKey: itemKey,
         items_arr: nowItems_arr
@@ -4080,7 +4089,7 @@ var ERPC_IFrame = function (_React$PureComponent19) {
             this.trySendMsg(true);
             return React.createElement(
                 'div',
-                { className: this.props.className, style: this.props.style },
+                { className: this.props.className + (this.props.visible ? '' : ' invisible'), style: this.props.style },
                 React.createElement('iframe', { ref: this.frameRef, src: this.props.src, className: 'w-100 h-100 flex-grow-1 flex-shrink-1', frameBorder: '0', onLoad: this.onloadHandler, onError: this.onErrorHandler })
             );
         }
