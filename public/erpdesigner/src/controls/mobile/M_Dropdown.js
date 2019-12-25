@@ -295,6 +295,7 @@ M_DropdownKernel_api.pushApi(new ApiItem_propsetter('value'));
 M_DropdownKernel_api.pushApi(new ApiItem_propsetter('text'));
 M_DropdownKernel_api.pushApi(new ApiItem_propsetter('附加数据'));
 M_DropdownKernel_api.pushApi(new ApiItem_propsetter('清空数据'));
+M_DropdownKernel_api.pushApi(new ApiItem_propsetter('options_arr'));
 
 g_controlApi_arr.push(M_DropdownKernel_api);
 
