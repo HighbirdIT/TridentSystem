@@ -732,8 +732,17 @@ class Node_Base extends EventEmitter {
         if (tLinks.length == 0) {
             if(canUseDefval){
                 socketValue = IsEmptyString(theSocket.defval) ? null : theSocket.defval;
-                if (isNaN(socketValue) && socketValue[0] != "'" && socketValue[0] != '"') {
-                    socketValue = "'" + theSocket.defval + "'";
+                if (socketValue != null && isNaN(socketValue)) {
+                    var needQute = true;
+                    if(socketValue.length >=2){
+                        var lastChar = socketValue[socketValue.length-1];
+                        if(lastChar == socketValue[0] && (lastChar == '"' || lastChar == "'")){
+                            needQute = false;
+                        }
+                    }
+                    if(needQute){
+                        socketValue = "'" + theSocket.defval + "'";
+                    }
                 }
             }
         }
