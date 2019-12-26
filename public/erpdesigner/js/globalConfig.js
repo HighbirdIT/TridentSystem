@@ -115,8 +115,12 @@ var Math_ROUND = 'ROUND'; //获取参数制定的长度和精度
 var Math_POWER = 'POWER'; //计算指定表达式的制定幂的值
 var Math_SQUARE = 'SQUARE'; //计算参数的平方值
 var Math_SQRT = 'SQRT'; //计算参数的平方根
+var Math_SIN = 'SIN';
+var Math_COS = 'COS';
+var Math_TAN = 'TAN';
+var Math_SIGN = 'SING';
 var Math_arr = [Math_ABS, Math_CEILING, Math_FLOOR, Math_ROUND, Math_POWER, Math_SQUARE, Math_SQRT];
-
+var JSMath_arr = [Math_ABS, Math_CEILING, Math_FLOOR, Math_ROUND, Math_POWER, Math_SQUARE, Math_SQRT, Math_SIN, Math_COS, Math_TAN, Math_SIGN];
 //2018-23-31黄永恒编辑charfunType
 var CharfunType_ASCII = 'ASCII'; //返回字符表达式中最左侧字符的ASCII代码值  select ASCII('a')--97
 var CharfunType_CHAR = 'CHAR'; //将整数ASCII代码转换为字符 select CHAR(97)--a

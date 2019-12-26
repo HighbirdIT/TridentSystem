@@ -1277,6 +1277,10 @@ class JSNode_Mathfun extends JSNode_Base {
             case Math_FLOOR:
             case Math_SQUARE:
             case Math_SQRT:
+            case Math_TAN:
+            case Math_SIN:
+            case Math_COS:
+            case Math_SIGN:
                 var socketVal_arr = [];
                 var theSocket = this.inputScokets_arr[i];
                 var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
