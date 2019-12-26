@@ -25,7 +25,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('新增按钮标签', AttrNames.InsertBtnLabel, ValueType.String, '新增'),
         new CAttribute('', AttrNames.CustomDataSource, ValueType.CustomDataSource, null, true),
         new CAttribute('内容定制', AttrNames.ListFormContent, ValueType.ListFormContent, null, true, false, null, null, false),
-        new CAttribute('Wrap', AttrNames.Wrap, ValueType.Boolean, false),
+        new CAttribute('Wrap', AttrNames.Wrap, ValueType.Boolean, true),
         new CAttribute('智能刷新', AttrNames.AutoPull, ValueType.Boolean, true),
         new CAttribute('自动分页', AttrNames.PageBreak, ValueType.Boolean, true),
         new CAttribute('生成导航栏', AttrNames.GenNavBar, ValueType.Boolean, true),
