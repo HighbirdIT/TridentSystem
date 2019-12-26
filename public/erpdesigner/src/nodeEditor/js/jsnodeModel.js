@@ -940,7 +940,9 @@ class JSNode_BluePrint extends EventEmitter {
                     validCheckBasePath = VarNames.FullParentPath;
                 }
                 //theFun.scope.getVar(belongFormControl.id + "_path", true, 'this.props.fullPath');
-                theFun.scope.getVar(VarNames.RowKeyInfo_map, true, 'getRowKeyMapFromPath(' + VarNames.FullParentPath + ')');
+                if(!isAttrCheckFun && !isAttrCheckFun){
+                    theFun.scope.getVar(VarNames.RowKeyInfo_map, true, 'getRowKeyMapFromPath(' + VarNames.FullParentPath + ')');   
+                }
             }
             else if (this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
                 params_arr = [VarNames.RowKey, VarNames.CallBack];
