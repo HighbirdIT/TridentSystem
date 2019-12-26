@@ -10,6 +10,7 @@ var gParentDingKit = null;
 var gParentIsInDingTalk = null;
 var gPCRenderMode = false;
 var gPageReceiveMsgHandlers_arr = [];
+var gDebugMode = false;
 const gPreconditionInvalidInfo = '前置条件不足';
 const gCantNullInfo = '不能为空值';
 
@@ -17,11 +18,27 @@ const HashKey_FixItem = 'fixitem';
 const gEmptyArr = [];
 
 function AppInit(app) {
+    DebugApp('app init' + (gParentFrame ? ' with parentFrame' : ''));
     if (gParentFrame) {
         console.log('gPageInFrame');
         return gParentFrame.getUseState();
     }
     return null;
+}
+
+function DebugApp(info){
+    if(gDebugMode){
+        var debugpanel = document.getElementById('_debugpanel');
+        if(debugpanel){
+            var spanElem = document.createElement('span');
+            spanElem.className = 'border flex-grow-0 flex-shrink-0 p-1';
+            spanElem.appendChild(document.createTextNode(info));
+            debugpanel.appendChild(spanElem);
+        }
+    }
+    else{
+        console.log(info);
+    }
 }
 
 function DistpathMsgFromParent(msgtype, data){
@@ -1169,7 +1186,7 @@ class ERPC_DropDown extends React.PureComponent {
         var dropDownElem = null;
         if (this.props.editable) {
             dropDownElem = (
-                <div className={"d-flex btn-group flex-shrink-0 erpc_dropdown input-group flex-grow-" + (this.props.growable == false ? '0' : '1')} style={this.props.style} ref={this.rootDivRef}>
+                <div className={"d-flex mw-100 btn-group flex-shrink-0 erpc_dropdown input-group flex-grow-" + (this.props.growable == false ? '0' : '1')} style={this.props.style} ref={this.rootDivRef}>
                     <input onFocus={this.editableInputFocushandler} onBlur={this.editableInputBlurhandler} ref={this.editableInputRef} type='text' className='flex-grow-1 flex-shrink-1 flexinput form-control' onChange={this.editableInputChanged} value={inputingValue} placeholder='输入或选择' />
                     <div className="input-group-append">
                         <button type='button' onClick={this.clickOpenHandler} className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' btn flex-grow-0 flex-shrink-0 dropdownbtn dropdown-toggle-split'} ></button>
@@ -1179,7 +1196,7 @@ class ERPC_DropDown extends React.PureComponent {
         }
         else {
             dropDownElem = (
-                <div className={"d-flex btn-group flex-shrink-0 erpc_dropdown flex-grow-" + (this.props.growable == false ? '0' : '1')} style={this.props.style} ref={this.rootDivRef}>
+                <div className={"d-flex mw-100 btn-group flex-shrink-0 erpc_dropdown flex-grow-" + (this.props.growable == false ? '0' : '1')} style={this.props.style} ref={this.rootDivRef}>
                     <button onClick={this.clickOpenHandler} type='button' className={(this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1 erpc_dropdownMainBtn' + textColor} hadmini={hadMini ? 1 : null} >
                         <div style={{ overflow: 'hidden' }} className='flex-grow-1 flex-shrink-1'>
                             {textElem}
@@ -1988,6 +2005,7 @@ var VisibleERPC_IFrame = null;
 const gNeedCallOnErpControlInit_arr = [];
 
 function ErpControlInit() {
+    DebugApp('ErpControlInit start');
     VisibleERPC_DropDown = ReactRedux.connect(ERPC_DropDown_mapstatetoprops, ERPC_DropDown_dispatchtoprops)(ERPC_DropDown);
     VisibleERPC_Text = ReactRedux.connect(ERPC_Text_mapstatetoprops, ERPC_Text_dispatchtorprops)(ERPC_Text);
     VisibleERPC_LabeledControl = ReactRedux.connect(ERPC_LabeledControl_mapstatetoprops, ERPC_LabeledControl_dispatchtorprops)(ERPC_LabeledControl);
@@ -2003,6 +2021,7 @@ function ErpControlInit() {
             elem.call();
         }
     });
+    DebugApp('ErpControlInit end');
 }
 
 function ERPC_PageForm(target) {
@@ -3027,6 +3046,13 @@ class CMessageBoxManger extends React.PureComponent {
     }
 }
 
+function IFrameOnloadHandler(ev) {
+    DebugApp('frameLoaded');
+    ev.target.contentWindow.gWeakParentFrame = window;
+    ev.target.contentWindow.gParentDingKit = dingdingKit;
+    ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
+}
+
 function AddPageToFrameSet(state, ctlpath, title, pageCode, pageName, stepCode, stepData, closeable) {
     var hadState = state != null;
     state = hadState ? state : store.getState();
@@ -3053,7 +3079,7 @@ function AddPageToFrameSet(state, ctlpath, title, pageCode, pageName, stepCode, 
         nowItems_arr.push(sameKeyItem);
     }
     var pagesrc = window.location.origin + getPagePath(pageName, stepCode, stepData);
-    sameKeyItem.contentElem = <iframe src={pagesrc} className='w-100 h-100' frameBorder='0' ></iframe>;
+    sameKeyItem.contentElem = <iframe src={pagesrc} className='w-100 h-100' frameBorder='0' onLoad={IFrameOnloadHandler} ></iframe>;
     var needSetState = {
         selectedKey: itemKey,
         items_arr: nowItems_arr,
@@ -3361,7 +3387,7 @@ class ERPC_IFrame extends React.PureComponent {
             return null;
         }
         this.trySendMsg(true);
-        return <div className={this.props.className} style={this.props.style} >
+        return <div className={this.props.className + (this.props.visible ? '' : ' invisible')} style={this.props.style} >
             <iframe ref={this.frameRef} src={this.props.src} className='w-100 h-100 flex-grow-1 flex-shrink-1' frameBorder='0' onLoad={this.onloadHandler} onError={this.onErrorHandler} ></iframe>
         </div>;
     }

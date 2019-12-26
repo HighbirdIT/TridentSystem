@@ -1530,10 +1530,16 @@ class FlowNode_ColumnVar extends JSNode_Base {
     freshLabel() {
         var keySocket = this.keySocketID == null ? null : this.bluePrint.getSocketById(this.keySocketID);
         var columnName = '';
-        var project = this.bluePrint.master.project;
+        var project = null;
+        if(this.bluePrint.master){
+            project = this.bluePrint.master.project;
+        }
         if (keySocket != null) {
             if(keySocket.type == SocketType_CtlKernel){
                 var ctlid = keySocket.getExtra('ctlid');
+                if (this.checkCompileFlag(project == null, '此处找不到project', helper)) {
+                    return false;
+                }
                 var ctlkernel = project.getControlById(ctlid);
                 if(ctlkernel){
                     this.outSocket.type = SocketType_CtlKernel;

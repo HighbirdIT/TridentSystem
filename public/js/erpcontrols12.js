@@ -19,9 +19,13 @@ var gFixedItemCounter = 0;
 var gCusValidChecker_map = {};
 var gPageInFrame = false;
 var gParentFrame = null;
+var gWeakParentFrame = null;
 var gParentDingKit = null;
 var gParentIsInDingTalk = null;
 var gPCRenderMode = false;
+var gPageReceiveMsgHandlers_arr = [];
+var gDebugMode = false;
+var gAppMsgPipe = null;
 var gPreconditionInvalidInfo = '前置条件不足';
 var gCantNullInfo = '不能为空值';
 
@@ -29,11 +33,32 @@ var HashKey_FixItem = 'fixitem';
 var gEmptyArr = [];
 
 function AppInit(app) {
+    DebugApp('app init' + (gParentFrame ? ' with parentFrame' : ''));
     if (gParentFrame) {
         console.log('gPageInFrame');
         return gParentFrame.getUseState();
     }
     return null;
+}
+
+function DebugApp(info) {
+    if (gDebugMode) {
+        var debugpanel = document.getElementById('_debugpanel');
+        if (debugpanel) {
+            var spanElem = document.createElement('span');
+            spanElem.className = 'border flex-grow-0 flex-shrink-0 p-1';
+            spanElem.appendChild(document.createTextNode(info));
+            debugpanel.appendChild(spanElem);
+        }
+    } else {
+        console.log(info);
+    }
+}
+
+function DistpathMsgFromParent(msgtype, data) {
+    gPageReceiveMsgHandlers_arr.forEach(function (handler) {
+        handler(msgtype, data);
+    });
 }
 
 var DataCache = function () {
@@ -280,11 +305,7 @@ function closePage(pid) {
     }
 }
 
-function openPage(name, stepcode, stepdata, mode, onMsgFun) {
-    if (name == null || name.length == 0) {
-        console.error('openPage 的name参数为空');
-        return;
-    }
+function getPagePath(name, stepcode, stepdata) {
     var targetPath = '/erppage/' + (isMobile ? 'mb' : 'pc') + '/' + name;
     if (stepcode != null && stepcode != '0') {
         targetPath += '?flowStep=' + stepcode;
@@ -295,6 +316,15 @@ function openPage(name, stepcode, stepdata, mode, onMsgFun) {
             targetPath += '&stepData' + stepcode + '=' + stepdata;
         }
     }
+    return targetPath;
+}
+
+function openPage(name, stepcode, stepdata, mode, onMsgFun) {
+    if (name == null || name.length == 0) {
+        console.error('openPage 的name参数为空');
+        return;
+    }
+    var targetPath = getPagePath(name, stepcode, stepdata);
     if (mode == 'topframe') {
         if (gParentFrame) {
             setTimeout(function () {
@@ -400,7 +430,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             setTimeout(function () {
                 self.inited = true;
                 var dropdownctl = _this3.props.dropdownctl;
-                if (gPCRenderMode) {
+                if (!isMobile) {
                     self.rootStyle = dropdownctl.getPopItemStyle();
                     window.addEventListener('mousedown', _this3.windowMouseDownHandler);
                 }
@@ -411,7 +441,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
         key: 'componentWillUnmount',
         value: function componentWillUnmount() {
             this.inited = false;
-            if (gPCRenderMode) {
+            if (!isMobile) {
                 window.removeEventListener('mousedown', this.windowMouseDownHandler);
             }
         }
@@ -476,12 +506,20 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                 console.error('没有找到对应的item' + value);
             }
             if (multiselect) {
+                var needClearKeyword = false;
                 if (!Array.isArray(this.state.selectOpt)) {
                     this.props.dropdownctl.selectItem([theOptionItem]);
+                    needClearKeyword = this.unSelectedCount == 1;
                 } else if (this.state.selectOpt.find(function (item) {
                     return item.value == theOptionItem.value;
                 }) == null) {
                     this.props.dropdownctl.selectItem(this.state.selectOpt.concat(theOptionItem));
+                    needClearKeyword = this.unSelectedCount == 1;
+                }
+                if (needClearKeyword) {
+                    this.setState({
+                        keyword: ''
+                    });
                 }
             } else {
                 this.props.dropdownctl.selectItem(theOptionItem);
@@ -536,7 +574,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
             }
             //console.log(selectedElem);
             if (!this.inited) {
-                if (gPCRenderMode) {
+                if (!isMobile) {
                     return null;
                 }
                 return React.createElement(
@@ -569,7 +607,11 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                     React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw fa-2x' })
                 );
             } else {
-                freshIconElem = React.createElement('i', { onClick: this.clickFreshHandler, className: 'fa fa-refresh text-success cursor_hand' });
+                if (isMobile) {
+                    freshIconElem = React.createElement('i', { onClick: this.clickFreshHandler, className: 'fa fa-refresh text-success cursor_hand' });
+                } else {
+                    freshIconElem = React.createElement('button', { type: 'button', onClick: this.clickFreshHandler, className: 'btn fa fa-refresh btn-success btn-sm' });
+                }
                 if (options_arr == null) {
                     options_arr = [];
                 }
@@ -771,7 +813,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                             )
                         ),
                         React.createElement('input', { className: 'form-control', type: 'text', value: keyword, onChange: this.keyInputChanged }),
-                        gPCRenderMode ? React.createElement(
+                        !isMobile ? React.createElement(
                             'div',
                             { className: 'input-group-append' },
                             React.createElement(
@@ -784,6 +826,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                 }
 
                 this.needListedCount = filted_arr.length;
+                var unSelectedCount = 0;
 
                 if (filted_arr.length > 0) {
                     contentElem = React.createElement(
@@ -803,6 +846,9 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                                 tItemSelected = selectedVal.indexOf(item.value + '') != -1;
                             } else {
                                 tItemSelected = item.value == selectedVal;
+                            }
+                            if (!tItemSelected) {
+                                unSelectedCount++;
                             }
                             return React.createElement(
                                 'div',
@@ -827,6 +873,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                         )
                     );
                 }
+                this.unSelectedCount = unSelectedCount;
             }
 
             var finalContentElem = contentElem;
@@ -851,13 +898,26 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                 titleBarRightElem = this.props.dropdownctl.props.createTitleBarRightElem();
             }
 
-            if (gPCRenderMode) {
+            if (!isMobile) {
+                if (searchItem) {
+                    freshIconElem = null;
+                }
+                var bottomElem = null;
+                if (titleBarRightElem || freshIconElem) {
+                    bottomElem = React.createElement(
+                        'div',
+                        { className: 'd-flex justify-content-end p-1 btn-group' },
+                        titleBarRightElem,
+                        freshIconElem
+                    );
+                }
                 return React.createElement(
                     'div',
-                    { ref: this.containerRef, style: this.rootStyle, className: 'dropDownItemContainer_pc d-flex flex-column bg-light flex-shrink-0 rounded' },
+                    { ref: this.containerRef, style: this.rootStyle, className: 'dropDownItemContainer_pc d-flex flex-column bg-light flex-shrink-0 rounded border-dark p-2' },
                     multiSelectedElem,
                     searchItem,
-                    finalContentElem
+                    finalContentElem,
+                    bottomElem
                 );
             }
 
@@ -921,7 +981,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
         _this5.contentDivRef = React.createRef();
 
         _this5.popPanelRef = React.createRef();
-        if (!gPCRenderMode) {
+        if (isMobile) {
             _this5.popPanelItem = React.createElement(ERPC_DropDown_PopPanel, { ref: _this5.popPanelRef, dropdownctl: _this5, key: gFixedItemCounter++ });
         }
         return _this5;
@@ -958,7 +1018,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             }
             this.recentValues_arr = recentValues_arr;
             this.recentUsed = recentUsed;
-            if (!gPCRenderMode) {
+            if (isMobile) {
                 addFixedItem(this.popPanelItem);
             }
 
@@ -979,7 +1039,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
         value: function dropDownClosed() {
             if (this.state.opened) {
                 this.setState({ opened: false });
-                if (!gPCRenderMode) {
+                if (isMobile) {
                     removeFixedItem(this.popPanelItem);
                 }
             }
@@ -1054,15 +1114,23 @@ var ERPC_DropDown = function (_React$PureComponent3) {
     }, {
         key: 'confirmChanged',
         value: function confirmChanged(text, value, theOptionItem) {
-            var invalidInfo = BaseIsValueValid(null, null, null, value == null || text == null ? null : value, this.props.type, this.props.nullable, this.props.id);
-            store.dispatch(makeAction_setManyStateByPath({
+            var invalidInfo = BaseIsValueValid(null, null, null, value == null || text == null ? null : value, this.props.type, this.props.nullable, this.props.id, null, this.props.fullPath);
+            var changedObj = {
                 value: value,
                 text: text,
                 invalidInfo: invalidInfo,
                 selectOpt: theOptionItem
-            }, this.props.fullPath));
+            };
+            var record;
+            if (this.props.dataCols) {
+                record = theOptionItem && theOptionItem.data ? theOptionItem.data : {};
+                this.props.dataCols.split(',').forEach(function (col) {
+                    changedObj[col] = record[col];
+                });
+            }
+            store.dispatch(makeAction_setManyStateByPath(changedObj, this.props.fullPath));
             if (typeof this.props.onchanged === 'function') {
-                this.props.onchanged(this.props.fullParentPath, text, value);
+                this.props.onchanged(this.props.fullParentPath, text, value, record);
             }
         }
     }, {
@@ -1124,15 +1192,17 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             var windowHeight = $window.height();
             var topSpace = rootRect.top;
             var bottomSpace = windowHeight - rootRect.bottom;
+            var rootPos = $(rootDiv).position();
+            var offsetParentHeight = rootDiv.offsetParent.scrollHeight;
             var rlt = {
                 width: rootDiv.offsetWidth + 'px',
-                left: rootRect.left + 'px'
+                left: rootPos.left + 'px'
             };
             if (bottomSpace > topSpace) {
-                rlt.top = rootRect.bottom + 'px';
+                rlt.top = rootPos.top + rootRect.height + 'px';
                 rlt.maxHeight = bottomSpace - 20 + 'px';
             } else {
-                rlt.bottom = windowHeight - rootRect.top + 'px';
+                rlt.bottom = offsetParentHeight - rootPos.top + 'px';
                 rlt.maxHeight = topSpace - 20 + 'px';
             }
             return rlt;
@@ -1243,7 +1313,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
 
             var popPanelElem = null;
             if (this.state.opened) {
-                if (gPCRenderMode) {
+                if (!isMobile) {
                     popPanelElem = React.createElement(ERPC_DropDown_PopPanel, { ref: this.popPanelRef, dropdownctl: this, width: this.rootDivRef.current.offsetWidth });
                 }
 
@@ -1312,7 +1382,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             if (this.props.editable) {
                 dropDownElem = React.createElement(
                     'div',
-                    { className: "d-flex btn-group flex-shrink-0 erpc_dropdown input-group flex-grow-" + (this.props.growable == false ? '0' : '1'), style: this.props.style, ref: this.rootDivRef },
+                    { className: "d-flex mw-100 btn-group flex-shrink-0 erpc_dropdown input-group flex-grow-" + (this.props.growable == false ? '0' : '1'), style: this.props.style, ref: this.rootDivRef },
                     React.createElement('input', { onFocus: this.editableInputFocushandler, onBlur: this.editableInputBlurhandler, ref: this.editableInputRef, type: 'text', className: 'flex-grow-1 flex-shrink-1 flexinput form-control', onChange: this.editableInputChanged, value: inputingValue, placeholder: '\u8F93\u5165\u6216\u9009\u62E9' }),
                     React.createElement(
                         'div',
@@ -1323,7 +1393,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             } else {
                 dropDownElem = React.createElement(
                     'div',
-                    { className: "d-flex btn-group flex-shrink-0 erpc_dropdown flex-grow-" + (this.props.growable == false ? '0' : '1'), style: this.props.style, ref: this.rootDivRef },
+                    { className: "d-flex mw-100 btn-group flex-shrink-0 erpc_dropdown flex-grow-" + (this.props.growable == false ? '0' : '1'), style: this.props.style, ref: this.rootDivRef },
                     React.createElement(
                         'button',
                         { onClick: this.clickOpenHandler, type: 'button', className: (this.props.btnclass ? this.props.btnclass : 'btn-dark') + ' d-flex btn flex-grow-1 flex-shrink-1 erpc_dropdownMainBtn' + textColor, hadmini: hadMini ? 1 : null },
@@ -1541,7 +1611,7 @@ var ERPC_Text = function (_React$PureComponent4) {
         key: 'inputChanged',
         value: function inputChanged(ev) {
             var text = ev.target.value;
-            var invalidInfo = BaseIsValueValid(null, null, null, text, this.props.type, this.props.nullable, this.props.id);
+            var invalidInfo = BaseIsValueValid(null, null, null, text, this.props.type, this.props.nullable, this.props.id, null, this.props.fullPath);
             store.dispatch(makeAction_setManyStateByPath({
                 value: text,
                 invalidInfo: invalidInfo
@@ -1590,7 +1660,7 @@ var ERPC_Text = function (_React$PureComponent4) {
     }, {
         key: 'endInputHandler',
         value: function endInputHandler() {
-            var invalidInfo = BaseIsValueValid(null, null, null, this.props.value, this.props.type, this.props.nullable, this.props.id);
+            var invalidInfo = BaseIsValueValid(null, null, null, this.props.value, this.props.type, this.props.nullable, this.props.id, null, this.props.fullPath);
             store.dispatch(makeAction_setStateByPath(invalidInfo, MakePath(this.props.fullPath, 'invalidInfo')));
         }
     }, {
@@ -1738,7 +1808,7 @@ var ERPC_LabeledControl = function (_React$PureComponent5) {
         value: function renderInPC(toolTipIcon) {
             return React.createElement(
                 'div',
-                { className: 'rowlFameTwo' + (this.props.className ? ' ' + this.props.className : ''), wf: this.props.wf },
+                { className: 'rowlFameTwo' + (this.props.className ? ' ' + this.props.className : ''), wf: this.props.wf, style: this.props.style },
                 React.createElement(
                     'label',
                     { className: 'rowlFameTwo_Top font-weight-bold', htmlFor: this.props.forid },
@@ -1781,7 +1851,7 @@ var ERPC_LabeledControl = function (_React$PureComponent5) {
             }
             return React.createElement(
                 'div',
-                { className: 'rowlFameOne' + (this.props.className ? ' ' + this.props.className : '') },
+                { className: 'rowlFameOne' + (this.props.className ? ' ' + this.props.className : ''), style: this.props.style },
                 React.createElement(
                     'div',
                     { className: 'rowlFameOne_Left', wn: this.props.wn },
@@ -1803,7 +1873,7 @@ var ERPC_LabeledControl = function (_React$PureComponent5) {
 
 function ERPC_LabeledControl_mapstatetoprops(state, ownprops) {
     var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
-    var useLabel = ownprops.label != null ? ownprops.label : ctlState.label != null ? ctlState.label : '';
+    var useLabel = ctlState.label != null ? ctlState.label : ownprops.label != null ? ownprops.label : '';
     return {
         label: useLabel,
         fetching: ctlState.fetching,
@@ -1935,7 +2005,7 @@ function ERPC_Label_mapstatetoprops(state, ownprops) {
         text: useText,
         visible: ctlState.visible,
         fetching: ctlState.fetching
-    }, _defineProperty(_ref, 'visible', ctlState.visible), _defineProperty(_ref, 'fetchingErr', ctlState.fetchingErr), _defineProperty(_ref, 'fullParentPath', propProfile.fullParentPath), _defineProperty(_ref, 'fullPath', propProfile.fullPath), _ref;
+    }, _defineProperty(_ref, 'visible', ctlState.visible == false || ownprops.definvisible ? false : true), _defineProperty(_ref, 'fetchingErr', ctlState.fetchingErr), _defineProperty(_ref, 'fullParentPath', propProfile.fullParentPath), _defineProperty(_ref, 'fullPath', propProfile.fullPath), _ref;
 }
 
 function ERPC_Label_dispatchtorprops(dispatch, ownprops) {
@@ -1962,7 +2032,7 @@ var ERPC_CheckBox = function (_React$PureComponent8) {
         value: function clickHandler(ev) {
             store.dispatch(makeAction_setManyStateByPath({
                 value: this.checked ? 0 : 1
-            }, MakePath(this.props.parentPath, this.props.id)));
+            }, this.props.fullPath));
             if (typeof this.props.onchanged === 'function') {
                 this.props.onchanged(this.props.fullParentPath, this.checked ? 0 : 1);
             }
@@ -1979,7 +2049,7 @@ var ERPC_CheckBox = function (_React$PureComponent8) {
                 checked = !(value == false || value == 0 || value == 'false' || value == 'FALSE');
             }
             this.checked = checked;
-            if (this.props.readonly) {
+            if (this.props.readonly || this.props.plainTextMode) {
                 return React.createElement(
                     'span',
                     { className: 'erpc_checkbox ' + (this.props.className == null ? '' : this.props.className) },
@@ -2013,7 +2083,8 @@ function ERPC_CheckBox_mapstatetoprops(state, ownprops) {
         fetching: ctlState.fetching,
         fetchingErr: ctlState.fetchingErr,
         fullParentPath: propProfile.fullParentPath,
-        fullPath: propProfile.fullPath
+        fullPath: propProfile.fullPath,
+        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowkey != 'new'
     };
 }
 
@@ -2289,10 +2360,12 @@ var VisibleERPC_Label = null;
 var VisibleERPC_CheckBox = null;
 var VisibleERPC_Button = null;
 var VisibleERPC_PopperBtn = null;
-var VisibleERPC_Frame = null;
+var VisibleERPC_FrameSet = null;
+var VisibleERPC_IFrame = null;
 var gNeedCallOnErpControlInit_arr = [];
 
 function ErpControlInit() {
+    DebugApp('ErpControlInit start');
     VisibleERPC_DropDown = ReactRedux.connect(ERPC_DropDown_mapstatetoprops, ERPC_DropDown_dispatchtoprops)(ERPC_DropDown);
     VisibleERPC_Text = ReactRedux.connect(ERPC_Text_mapstatetoprops, ERPC_Text_dispatchtorprops)(ERPC_Text);
     VisibleERPC_LabeledControl = ReactRedux.connect(ERPC_LabeledControl_mapstatetoprops, ERPC_LabeledControl_dispatchtorprops)(ERPC_LabeledControl);
@@ -2300,13 +2373,15 @@ function ErpControlInit() {
     VisibleERPC_CheckBox = ReactRedux.connect(ERPC_CheckBox_mapstatetoprops, ERPC_CheckBox_dispatchtorprops)(ERPC_CheckBox);
     VisibleERPC_Button = ReactRedux.connect(ERPC_Button_mapstatetoprops, ERPC_Button_dispatchtorprops)(ERPC_Button);
     VisibleERPC_PopperBtn = ReactRedux.connect(ERPC_PopperBtn_mapstatetoprops, EERPC_PopperBtn_dispatchtorprops)(ERPC_PopperBtn);
-    VisibleERPC_Frame = ReactRedux.connect(ERPC_Frame_mapstatetoprops, ERPC_Frame_dispatchtorprops)(ERPC_Frame);
+    VisibleERPC_FrameSet = ReactRedux.connect(ERPC_FrameSet_mapstatetoprops, ERPC_FrameSet_dispatchtorprops)(ERPC_FrameSet);
+    VisibleERPC_IFrame = ReactRedux.connect(ERPC_IFrame_mapstatetoprops, ERPC_IFrame_dispatchtorprops)(ERPC_IFrame);
 
     gNeedCallOnErpControlInit_arr.forEach(function (elem) {
         if (typeof elem == 'function') {
             elem.call();
         }
     });
+    DebugApp('ErpControlInit end');
 }
 
 function ERPC_PageForm(target) {
@@ -2353,10 +2428,13 @@ function ERPC_PageForm_clickUnPlusNavBtnHandler() {
 }
 
 function ERPC_PageForm_renderNavigater() {
-    if (this.props.records_arr == null || this.props.records_arr.length == 1 && !this.canInsert) {
-        return null;
+    var records_arr = this.props.records_arr;
+    if (records_arr == null || records_arr.length == 1) {
+        if (!this.canInsert) {
+            return null;
+        }
     }
-    var count = this.props.records_arr.length;
+    var count = records_arr == null ? 0 : records_arr.length;
     var plushBtnItem = null;
     var exitPlushBtnItem = null;
     var preBtnItem = null;
@@ -2513,7 +2591,9 @@ function ERPC_GridForm(target) {
     target.roweditClicked = ERPC_GridForm_RoweditClicked.bind(target);
     target.rowcanceleditClicked = ERPC_GridForm_RowcanceleditClicked.bind(target);
     target.rowdeleteClicked = ERPC_GridForm_RowdeleteClicked.bind(target);
-    target.rowconfirmeditClicked = ERPC_GridForm_RowconfirmeditClicked.bind(target);
+    if (target.onUpdate != null) {
+        target.rowconfirmeditClicked = ERPC_GridForm_RowconfirmeditClicked.bind(target);
+    }
     target.clickNewRowHandler = ERPC_GridForm_ClickNewRowHandler.bind(target);
     target.cancelInsert = ERPC_GridForm_CancelInsert.bind(target);
     target.confrimInsert = ERPC_GridForm_ConfirmInsert.bind(target);
@@ -2588,7 +2668,7 @@ function ERPC_GridForm_GetRowState(rowkey, state) {
     var path = this.getRowPath(rowkey);
     return getStateByPath(state, path);
 }
-
+-2;
 function ERPC_GridForm_RoweditClicked(rowkey) {
     var rowPath = this.getRowPath(rowkey);
     var rowState = this.getRowState(rowkey);
@@ -2734,12 +2814,12 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent11) {
                     { className: 'btn-group gridFormBtnsCol' },
                     React.createElement(
                         'button',
-                        { onClick: this.clickHandler, 'd-key': 'confirminsert', className: 'btn btn-dark', type: 'button' },
+                        { onClick: this.clickHandler, 'd-key': 'confirminsert', className: 'btn btn-sm btn-dark', type: 'button' },
                         React.createElement('i', { className: 'fa fa-upload text-success' })
                     ),
                     React.createElement(
                         'button',
-                        { onClick: this.clickHandler, 'd-key': 'cancelInsert', className: 'btn btn-dark', type: 'button' },
+                        { onClick: this.clickHandler, 'd-key': 'cancelInsert', className: 'btn btn-sm btn-dark', type: 'button' },
                         React.createElement('i', { className: 'fa fa-close text-danger' })
                     )
                 );
@@ -2750,12 +2830,12 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent11) {
                     { className: 'btn-group gridFormBtnsCol' },
                     React.createElement(
                         'button',
-                        { onClick: this.clickHandler, 'd-key': 'confirmedit', className: 'btn btn-dark', type: 'button' },
+                        { onClick: this.clickHandler, 'd-key': 'confirmedit', className: 'btn btn-sm btn-dark', type: 'button' },
                         React.createElement('i', { className: 'fa fa-save text-success' })
                     ),
                     React.createElement(
                         'button',
-                        { onClick: this.clickHandler, 'd-key': 'canceledit', className: 'btn btn-dark', type: 'button' },
+                        { onClick: this.clickHandler, 'd-key': 'canceledit', className: 'btn btn-sm btn-dark', type: 'button' },
                         React.createElement('i', { className: 'fa fa-close text-danger' })
                     )
                 );
@@ -2767,7 +2847,7 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent11) {
                 this.props.form.btns.map(function (btn) {
                     return React.createElement(
                         'button',
-                        { key: btn.key, onClick: _this16.clickHandler, 'd-key': btn.key, className: 'btn btn-dark', type: 'button' },
+                        { key: btn.key, onClick: _this16.clickHandler, 'd-key': btn.key, className: 'btn btn-sm btn-dark', type: 'button' },
                         btn.content
                     );
                 })
@@ -2780,8 +2860,12 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent11) {
 
 function ERPC_GridForm_BtnCol_mapstatetoprops(state, ownprops) {
     var rowState = ownprops.form.getRowState(ownprops.rowkey);
+    var editing = rowState && rowState.editing && ownprops.form.rowconfirmeditClicked != null;
+    if (editing) {
+        console.log('editing');
+    }
     return {
-        editing: rowState && rowState.editing
+        editing: editing
     };
 }
 
@@ -2815,14 +2899,14 @@ var ERPC_GridSelectableRow = function (_React$PureComponent12) {
             if (selectMode == 'multi') {
                 selectElem = React.createElement(
                     'span',
-                    { onClick: this.clickHandler, className: 'fa-stack fa-lg' },
+                    { onClick: this.clickHandler, className: 'fa-stack' },
                     React.createElement('i', { className: "fa fa-square-o fa-stack-2x" }),
                     React.createElement('i', { className: 'fa fa-stack-1x ' + (checked ? ' fa-check text-success' : '') })
                 );
             } else if (selectMode == 'single') {
                 selectElem = React.createElement(
                     'span',
-                    { onClick: this.clickHandler, className: 'fa-stack fa-lg' },
+                    { onClick: this.clickHandler, className: 'fa-stack' },
                     React.createElement('i', { className: "fa fa-circle-o fa-stack-2x" }),
                     React.createElement('i', { className: 'fa fa-stack-1x ' + (checked ? ' fa-check text-success' : '') })
                 );
@@ -3010,7 +3094,7 @@ var CBaseGridFormNavBar = function (_React$PureComponent13) {
     return CBaseGridFormNavBar;
 }(React.PureComponent);
 
-function BaseIsValueValid(nowState, visibleBelongState, ctlState, value, valueType, nullable, ctlID, validErrState) {
+function BaseIsValueValid(nowState, visibleBelongState, ctlState, value, valueType, nullable, ctlID, validErrState, basePath) {
     if (visibleBelongState && visibleBelongState.visible == false) {
         // not visible is always valid
         return null;
@@ -3064,7 +3148,7 @@ function BaseIsValueValid(nowState, visibleBelongState, ctlState, value, valueTy
             }
     }
     if (gCusValidChecker_map[ctlID]) {
-        return gCusValidChecker_map[ctlID](value, nowState, validErrState);
+        return gCusValidChecker_map[ctlID](value, nowState, validErrState, basePath);
     }
     return null;
 }
@@ -3618,41 +3702,170 @@ var CMessageBoxManger = function (_React$PureComponent16) {
     return CMessageBoxManger;
 }(React.PureComponent);
 
-var ERPC_Frame = function (_React$PureComponent17) {
-    _inherits(ERPC_Frame, _React$PureComponent17);
+function IFrameOnloadHandler(ev) {
+    DebugApp('frameLoaded');
+    ev.target.contentWindow.gWeakParentFrame = window;
+    ev.target.contentWindow.gParentDingKit = dingdingKit;
+    ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
+}
 
-    function ERPC_Frame(props) {
-        _classCallCheck(this, ERPC_Frame);
+function AddPageToFrameSet(state, ctlpath, title, pageCode, pageName, stepCode, stepData, closeable) {
+    var hadState = state != null;
+    state = hadState ? state : store.getState();
+    var ctlState = getStateByPath(state, ctlpath, {});
+    var nowItems_arr = ctlState.items_arr == null ? [] : ctlState.items_arr.concat();
+    var itemKey = pageCode + (stepCode == null ? '' : '-' + stepCode);
+    var sameKeyItem = nowItems_arr.find(function (item) {
+        return item.key == itemKey;
+    });
 
-        return _possibleConstructorReturn(this, (ERPC_Frame.__proto__ || Object.getPrototypeOf(ERPC_Frame)).call(this, props));
+    if (sameKeyItem != null) {
+        sameKeyItem.title = title;
+        sameKeyItem.stepCode = stepCode;
+        sameKeyItem.stepData = stepData;
+    }
+    if (sameKeyItem == null) {
+        sameKeyItem = {
+            pageCode: pageCode,
+            pageName: pageName,
+            stepCode: stepCode,
+            stepData: stepData,
+            title: title,
+            key: itemKey,
+            closeable: closeable
+        };
+        nowItems_arr.push(sameKeyItem);
+    }
+    var pagesrc = window.location.origin + getPagePath(pageName, stepCode, stepData);
+    sameKeyItem.contentElem = React.createElement('iframe', { src: pagesrc, className: 'w-100 h-100', frameBorder: '0', onLoad: IFrameOnloadHandler });
+    var needSetState = {
+        selectedKey: itemKey,
+        items_arr: nowItems_arr
+    };
+    if (hadState) {
+        setManyStateByPath(state, ctlpath, needSetState);
+    } else {
+        store.dispatch(makeAction_setManyStateByPath(needSetState, ctlpath));
+    }
+}
+
+var ERPC_FrameSet = function (_React$PureComponent17) {
+    _inherits(ERPC_FrameSet, _React$PureComponent17);
+
+    function ERPC_FrameSet(props) {
+        _classCallCheck(this, ERPC_FrameSet);
+
+        var _this24 = _possibleConstructorReturn(this, (ERPC_FrameSet.__proto__ || Object.getPrototypeOf(ERPC_FrameSet)).call(this, props));
+
+        _this24.headerItemStyle = { minWidth: '6em' };
+        _this24.clickCloseHandler = _this24.clickCloseHandler.bind(_this24);
+        _this24.clickHeaderHandler = _this24.clickHeaderHandler.bind(_this24);
+        return _this24;
     }
 
-    _createClass(ERPC_Frame, [{
+    _createClass(ERPC_FrameSet, [{
+        key: 'clickCloseHandler',
+        value: function clickCloseHandler() {
+            var _this25 = this;
+
+            var newItems_arr = [];
+            var pos = 0;
+            this.props.items_arr.forEach(function (item, index) {
+                if (item.key != _this25.props.selectedKey) {
+                    newItems_arr.push(item);
+                } else {
+                    pos = index;
+                }
+            });
+            var newSelectedValue = null;
+            if (pos < newItems_arr.length) {
+                newSelectedValue = newItems_arr[pos].key;
+            } else if (newItems_arr.length > 0) {
+                newSelectedValue = newItems_arr[newItems_arr.length - 1].key;
+            }
+            store.dispatch(makeAction_setManyStateByPath({
+                selectedKey: newSelectedValue,
+                items_arr: newItems_arr
+            }, this.props.fullPath));
+        }
+    }, {
+        key: 'clickHeaderHandler',
+        value: function clickHeaderHandler(ev) {
+            var key = getAttributeByNode(ev.target, 'd-key');
+            if (key == this.props.selectedKey) {
+                return;
+            }
+            store.dispatch(makeAction_setStateByPath(key, MakePath(this.props.fullPath, 'selectedKey')));
+        }
+    }, {
         key: 'render',
         value: function render() {
-            if (this.props.src == null || this.props.visible == false) {
+            var _this26 = this;
+
+            if (this.props.visible == false) {
                 return null;
             }
-            return React.createElement('frame', { src: this.props.src, className: this.props.className, style: this.props.style });
+            var itemsElem_arr = [];
+            var selectedKey = this.props.selectedKey;
+            var items_arr = this.props.items_arr;
+            var selectedItem = null;
+            if (items_arr != null) {
+                if (selectedKey == null) {
+                    if (items_arr.length > 0) {
+                        selectedKey = items_arr[0].key;
+                    }
+                }
+                itemsElem_arr = items_arr.map(function (item) {
+                    var isSelected = item.key == selectedKey;
+                    var btnElem = React.createElement(
+                        'button',
+                        { 'd-key': item.key, onClick: _this26.clickHeaderHandler, key: item.key, type: 'button', className: 'btn btn-sm rounded-0 btn-' + (isSelected ? 'light' : 'secondary'), style: _this26.headerItemStyle },
+                        item.title
+                    );
+                    if (isSelected && item.closeable != false) {
+                        selectedItem = item;
+                        return [btnElem, React.createElement('button', { onClick: _this26.clickCloseHandler, key: 'close', type: 'button', className: 'btn btn-sm btn-light fa fa-close text-secondary rounded-0' })];
+                    }
+                    return btnElem;
+                });
+            }
+            return React.createElement(
+                'div',
+                { className: 'd-flex flex-column ' + (this.props.className == null ? '' : this.props.className), style: this.props.style },
+                React.createElement(
+                    'div',
+                    { className: 'btn-group bg-secondary flex-grow-0 flex-shrink-0', style: { minHeight: '2em' } },
+                    itemsElem_arr
+                ),
+                items_arr && items_arr.map(function (item) {
+                    return React.createElement(
+                        'div',
+                        { key: item.key, className: 'w-100 h-100' + (item == selectedItem ? '' : ' d-none') },
+                        item.contentElem
+                    );
+                })
+            );
         }
     }]);
 
-    return ERPC_Frame;
+    return ERPC_FrameSet;
 }(React.PureComponent);
 
-function ERPC_Frame_mapstatetoprops(state, ownprops) {
+function ERPC_FrameSet_mapstatetoprops(state, ownprops) {
     var propProfile = getControlPropProfile(ownprops, state);
     var ctlState = propProfile.ctlState;
     var rowState = propProfile.rowState;
-    var src = ctlState.src ? ctlState.src : ownprops.src;
 
     return {
         visible: ctlState.visible,
-        src: src
+        items_arr: ctlState.items_arr,
+        selectedKey: ctlState.selectedKey,
+        fullParentPath: propProfile.fullParentPath,
+        fullPath: propProfile.fullPath
     };
 }
 
-function ERPC_Frame_dispatchtorprops(dispatch, ownprops) {
+function ERPC_FrameSet_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
@@ -3662,24 +3875,25 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
     function ERPC_TopLevelFrame(props) {
         _classCallCheck(this, ERPC_TopLevelFrame);
 
-        var _this25 = _possibleConstructorReturn(this, (ERPC_TopLevelFrame.__proto__ || Object.getPrototypeOf(ERPC_TopLevelFrame)).call(this, props));
+        var _this27 = _possibleConstructorReturn(this, (ERPC_TopLevelFrame.__proto__ || Object.getPrototypeOf(ERPC_TopLevelFrame)).call(this, props));
 
-        _this25.style = {
+        _this27.style = {
             left: '0px',
             top: '0px',
             zIndex: 10000
         };
-        _this25.state = {
+        _this27.state = {
             srcs_arr: [],
             states_arr: [],
             useSrc: null,
             useState: null
         };
-        _this25.onloadHandler = _this25.onloadHandler.bind(_this25);
-        _this25.onErrorHandler = _this25.onErrorHandler.bind(_this25);
-        _this25.push = _this25.push.bind(_this25);
-        _this25.pop = _this25.pop.bind(_this25);
-        return _this25;
+        _this27.onloadHandler = _this27.onloadHandler.bind(_this27);
+        _this27.onErrorHandler = _this27.onErrorHandler.bind(_this27);
+        _this27.sendMessage = _this27.sendMessage.bind(_this27);
+        _this27.push = _this27.push.bind(_this27);
+        _this27.pop = _this27.pop.bind(_this27);
+        return _this27;
     }
 
     _createClass(ERPC_TopLevelFrame, [{
@@ -3796,71 +4010,23 @@ var ERPC_IFrame = function (_React$PureComponent19) {
     function ERPC_IFrame(props) {
         _classCallCheck(this, ERPC_IFrame);
 
-        var _this26 = _possibleConstructorReturn(this, (ERPC_IFrame.__proto__ || Object.getPrototypeOf(ERPC_IFrame)).call(this, props));
+        var _this28 = _possibleConstructorReturn(this, (ERPC_IFrame.__proto__ || Object.getPrototypeOf(ERPC_IFrame)).call(this, props));
 
-        _this26.onloadHandler = _this26.onloadHandler.bind(_this26);
-        _this26.onErrorHandler = _this26.onErrorHandler.bind(_this26);
-        _this26.push = _this26.push.bind(_this26);
-        _this26.pop = _this26.pop.bind(_this26);
-
-        _this26.state = {
-            srcs_arr: [],
-            states_arr: [],
-            useSrc: null,
-            useState: null
-        };
-        return _this26;
+        _this28.onloadHandler = _this28.onloadHandler.bind(_this28);
+        _this28.onErrorHandler = _this28.onErrorHandler.bind(_this28);
+        _this28.sendMessage = _this28.sendMessage.bind(_this28);
+        _this28.trySendMsg = _this28.trySendMsg.bind(_this28);
+        _this28.frameRef = React.createRef();
+        _this28.tryIntval = null;
+        _this28.tryCount = 0;
+        return _this28;
     }
 
     _createClass(ERPC_IFrame, [{
-        key: 'push',
-        value: function push(src, oldPageState, onMessageFun) {
-            if (this.state.srcs_arr.length > 0 && this.state.srcs_arr[this.state.srcs_arr.length - 1] == src) {
-                return;
-            }
-            this.setState({
-                srcs_arr: this.state.srcs_arr.concat(src),
-                states_arr: this.state.states_arr.concat(oldPageState),
-                useSrc: src,
-                useState: null
-            });
-        }
-    }, {
-        key: 'pop',
-        value: function pop() {
-            if (this.state.srcs_arr.length == 0) {
-                return;
-            }
-            var newsrcs_arr = this.state.srcs_arr.concat();
-            var newstates_arr = this.state.states_arr.concat();
-            newsrcs_arr.pop();
-            var useSrc = newsrcs_arr.length == 0 ? null : newsrcs_arr[newsrcs_arr.length - 1];
-            var useState = newstates_arr.pop();
-            this.setState({
-                srcs_arr: newsrcs_arr,
-                states_arr: newstates_arr,
-                useState: useState,
-                useSrc: useSrc,
-                err: null
-            });
-        }
-    }, {
-        key: 'close',
-        value: function close() {
-            this.onMessageFun = null;
-            this.setState({
-                srcs_arr: [],
-                states_arr: [],
-                useSrc: null,
-                useState: null,
-                err: null
-            });
-        }
-    }, {
         key: 'sendMessage',
         value: function sendMessage(msgtype, data) {
-            if (this.onMessageFun) {
-                this.onMessageFun(msgtype, data);
+            if (this.props.onMessageFun) {
+                this.props.onMessageFun(msgtype, data, this.props.fullPath);
             }
         }
     }, {
@@ -3869,7 +4035,7 @@ var ERPC_IFrame = function (_React$PureComponent19) {
             console.log(ev);
             try {
                 ev.target.contentWindow.gPageInFrame = true;
-                ev.target.contentWindow.gParentFrame = this;
+                ev.target.contentWindow.gWeakParentFrame = this;
                 ev.target.contentWindow.gParentDingKit = dingdingKit;
                 ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
             } catch (eo) {
@@ -3880,32 +4046,102 @@ var ERPC_IFrame = function (_React$PureComponent19) {
             }
         }
     }, {
+        key: 'componentWillUnmount',
+        value: function componentWillUnmount() {
+            if (this.tryIntval != null) {
+                clearTimeout(this.tryIntval);
+                this.tryIntval = null;
+            }
+        }
+    }, {
         key: 'onErrorHandler',
         value: function onErrorHandler(ev) {
             alert(JSON.stringify(ev));
         }
     }, {
+        key: 'trySendMsg',
+        value: function trySendMsg(needDelay) {
+            var _this29 = this;
+
+            var self = this;
+            if (this.props.msg == null) {
+                return;
+            }
+            //console.log('trySendMsg:' + JSON.stringify(this.props.msg));
+            var sendOK = false;
+            if (this.frameRef.current != null) {
+                var frameContentWindow = this.frameRef.current.contentWindow;
+                if (frameContentWindow.DistpathMsgFromParent) {
+                    frameContentWindow.DistpathMsgFromParent(this.props.msg.type, this.props.msg.data);
+                    sendOK = true;
+                }
+            }
+            ++this.tryCount;
+            //console.log('sendOK:' + sendOK + '  c:' + this.tryCount);
+            if (this.tryCount >= 50) {
+                //console.log('clear');
+                sendOK = true;
+            }
+            if (!sendOK) {
+                if (this.tryIntval == null) {
+                    this.tryIntval = setTimeout(function () {
+                        self.tryIntval = null;
+                        self.trySendMsg();
+                    }, 200);
+                }
+            } else {
+                this.tryCount = 0;
+                if (needDelay) {
+                    setTimeout(function () {
+                        store.dispatch(makeAction_setStateByPath(null, _this29.props.fullPath + '.msg'));
+                    }, 20);
+                } else {
+                    store.dispatch(makeAction_setStateByPath(null, this.props.fullPath + '.msg'));
+                }
+            }
+        }
+    }, {
         key: 'render',
         value: function render() {
-            if (this.state.useSrc == null) {
+            if (this.props.src == null || this.props.src.length == 0) {
                 return null;
             }
-            var iframElem = null;
-            if (this.state.err != null) {
-                iframElem = this.state.err;
-            } else if (!IsEmptyString(this.props.src != null)) {
-                iframElem = React.createElement('iframe', { src: this.props.src, className: 'w-100 h-100', frameBorder: '0', onLoad: this.onloadHandler, onError: this.onErrorHandler });
-            }
+            this.trySendMsg(true);
             return React.createElement(
                 'div',
-                { className: this.props.className, style: this.props.style },
-                iframElem
+                { className: this.props.className + (this.props.visible ? '' : ' invisible'), style: this.props.style },
+                React.createElement('iframe', { ref: this.frameRef, src: this.props.src, className: 'w-100 h-100 flex-grow-1 flex-shrink-1', frameBorder: '0', onLoad: this.onloadHandler, onError: this.onErrorHandler })
             );
         }
     }]);
 
     return ERPC_IFrame;
 }(React.PureComponent);
+
+function ERPC_IFrame_mapstatetoprops(state, ownprops) {
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    var rowState = propProfile.rowState;
+    var proj = ctlState.proj ? ctlState.proj : ownprops.proj;
+    var usesrc = null;
+    if (proj != null) {
+        var flowCode = ctlState.flowCode ? ctlState.flowCode : ownprops.flowCode;
+        var flowData = ctlState.flowData ? ctlState.flowData : ownprops.flowData;
+        usesrc = getPagePath(proj, flowCode, flowData);
+    }
+
+    return {
+        visible: ctlState.visible,
+        src: usesrc,
+        fullParentPath: propProfile.fullParentPath,
+        fullPath: propProfile.fullPath,
+        msg: ctlState.msg
+    };
+}
+
+function ERPC_IFrame_dispatchtorprops(dispatch, ownprops) {
+    return {};
+}
 
 var ERPXMLToolKit = {
     createDocFromString: function createDocFromString(xmlString) {
@@ -4007,4 +4243,69 @@ function GetFromatRowKey(rowkey) {
         return parseInt(rowkey);
     }
     return rowkey;
+}
+
+function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath) {
+    var splitChar = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : '';
+
+    var state = store.getState();
+    var records_arr = formState.records_arr;
+    var xmlHeadStr = '<Data fNum="' + xmlconfig.colcount + '"';
+    var i;
+    var cols_arr = [];
+    var rlt = {
+        xml: null,
+        count: 0,
+        text: null,
+        textarr: null,
+        isValid: false
+    };
+    for (i = 1; i <= xmlconfig.colcount; ++i) {
+        var colName = xmlconfig['col' + i];
+        xmlHeadStr += ' f' + i + '="' + colName + '"';
+        cols_arr.push({
+            index: i,
+            name: colName
+        });
+    }
+    xmlHeadStr += '>';
+    if (records_arr == null || records_arr.length == 0) {
+        rlt.xml = xmlHeadStr + '</Data>';
+        rlt.isValid = true;
+        return rlt;
+    }
+    var textStr = '';
+    var itemStrs_arr = [];
+    var rowText_arr = [];
+    var count = 0;
+    for (var ri = 0; ri < records_arr.length; ++ri) {
+        var record = records_arr[ri];
+        var rowKey = keyColumn == '_default' ? ri : record[keyColumn];
+        var rowState = formState['row_' + rowKey];
+        if (rowState == null || rowState._isdirty) {
+            return rlt;
+        }
+        var rowItem = getRowItemFun(state, rowState, formPath + '.row_' + rowKey, record);
+        if (rowItem == null) {
+            return rlt;
+        }
+        if (rowItem.rowtext) {
+            textStr += rowItem.rowtext;
+            rowText_arr.push(rowItem.rowtext);
+        }
+        ++count;
+        var itemStr = '<Item';
+        cols_arr.forEach(function (col) {
+            itemStr += ' f' + col.index + '="' + (rowItem[col.name] == null ? '' : rowItem[col.name]) + '"';
+        });
+        itemStr += ' />';
+        itemStrs_arr.push(itemStr);
+    }
+    //console.log(xmlHeadStr + itemStrs_arr.join('') + '</Data>');
+    rlt.textarr = rowText_arr;
+    rlt.xml = xmlHeadStr + itemStrs_arr.join(splitChar) + '</Data>';
+    rlt.count = count;
+    rlt.text = textStr;
+    rlt.isValid = true;
+    return rlt;
 }
