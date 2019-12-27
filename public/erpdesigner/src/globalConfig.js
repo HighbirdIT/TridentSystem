@@ -115,6 +115,7 @@ var Math_ROUND = 'ROUND'; //获取参数制定的长度和精度
 var Math_POWER = 'POWER'; //计算指定表达式的制定幂的值
 var Math_SQUARE = 'SQUARE'; //计算参数的平方值
 var Math_SQRT = 'SQRT'; //计算参数的平方根
+var Math_RAND ='RAND'
 var Math_SIN ='SIN'
 var Math_COS ='COS'
 var Math_TAN ='TAN'
