@@ -277,7 +277,7 @@ class C_JSNode_Mathfun extends React.PureComponent {
         
         var nodeData = this.props.nodedata;
         return (<div style={this.outDivStyle} f-canmove={1}>
-                    <DropDownControl options_arr={Math_arr} value={nodeData.mathType} onMouseEnter={this.onMouseOver.bind(nodeData.mathType)} itemChanged={this.mathChangedHandler} style={this.ddcStyle} />
+                    <DropDownControl options_arr={JSMath_arr} value={nodeData.mathType} onMouseEnter={this.onMouseOver.bind(nodeData.mathType)} itemChanged={this.mathChangedHandler} style={this.ddcStyle} />
                 </div> 
            
         );

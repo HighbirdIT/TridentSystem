@@ -653,22 +653,22 @@ class JSNode_Array_Slice extends JSNode_Base {
         socketValue = execute_arr[0];
         start_value = execute_arr[1];
         end_value = execute_arr[2];
-        if ((start_value | 0) != start_value || (end_value | 0) != end_value) {
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                '应该输入整数']);
-            return false;
-        }
-        if (start_value > end_value) {
-            helper.logManager.errorEx([helper.logManager.createBadgeItem(
-                thisNodeTitle,
-                nodeThis,
-                helper.clickLogBadgeItemHandler),
-                '起始参数应该小于结束参数']);
-            return false;
-        }
+        // if ((start_value | 0) != start_value || (end_value | 0) != end_value) {
+        //     helper.logManager.errorEx([helper.logManager.createBadgeItem(
+        //         thisNodeTitle,
+        //         nodeThis,
+        //         helper.clickLogBadgeItemHandler),
+        //         '应该输入整数']);
+        //     return false;
+        // }
+        // if (start_value > end_value) {
+        //     helper.logManager.errorEx([helper.logManager.createBadgeItem(
+        //         thisNodeTitle,
+        //         nodeThis,
+        //         helper.clickLogBadgeItemHandler),
+        //         '起始参数应该小于结束参数']);
+        //     return false;
+        // }
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, execute_arr[0].replace(/\'/g, '') + '.slice(' + start_value + ',' + end_value + ')');
         helper.setCompileRetCache(this, selfCompileRet);
@@ -1277,6 +1277,10 @@ class JSNode_Mathfun extends JSNode_Base {
             case Math_FLOOR:
             case Math_SQUARE:
             case Math_SQRT:
+            case Math_TAN:
+            case Math_SIN:
+            case Math_COS:
+            case Math_SIGN:
                 var socketVal_arr = [];
                 var theSocket = this.inputScokets_arr[i];
                 var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
