@@ -3094,6 +3094,7 @@ function AddIFrameOnloadWatch(frameRef, frameParent, isWeak){
     }
 }
 
+
 function CheckIFrameLoadState(){
     DebugApp('CheckIFrameLoadState');
     var newArr = [];
@@ -3638,6 +3639,7 @@ function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath
     var records_arr = formState.records_arr;
     var xmlHeadStr = '<Data fNum="' + xmlconfig.colcount + '"';
     var i;
+    var j;
     var cols_arr = [];
     var rlt = {
         xml:null,
