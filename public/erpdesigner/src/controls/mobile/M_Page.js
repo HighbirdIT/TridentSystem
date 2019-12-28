@@ -19,6 +19,9 @@ const M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('点击关闭', AttrNames.Event.OnClickCloseBtn, ValueType.Event),
         new CAttribute('消息处理', AttrNames.Event.OnReceiveMsg, ValueType.Event),
     ]),
+    new CAttributeGroup('自订方法', [
+        new CAttribute('自订方法', AttrNames.FunctionApi, ValueType.CustomFunction, '', true, true),
+    ]),
 ],false);
 
 class M_PageKernel extends ContainerKernelBase {
@@ -36,10 +39,14 @@ class M_PageKernel extends ContainerKernelBase {
         autoBind(self);
 
         var funName = this.id + '_' + AttrNames.Event.OnLoad;
-        var eventBP = this.project.scriptMaster.getBPByName(funName);
-        if(eventBP){
-            eventBP.ctlID = this.id;
+        var theBP = this.project.scriptMaster.getBPByName(funName);
+        if(theBP){
+            theBP.ctlID = this.id;
         }
+        this.getAttrArrayList(AttrNames.FunctionApi).forEach(funAtrr=>{
+            theBP = this.project.scriptMaster.getBPByName(this.id + '_' + funAtrr.name);
+            this.scriptCreated(null, theBP);
+        });
     }
 
     getUseFlowSteps(){
@@ -100,6 +107,28 @@ class M_PageKernel extends ContainerKernelBase {
         if(scriptBP.name.indexOf(AttrNames.Event.OnReceiveMsg) != -1){
             scriptBP.setFixParam(['msgtype','data']);
         }
+        if(scriptBP.name.indexOf(AttrNames.FunctionApi) != -1){
+            scriptBP.startIsInReducer = false; 
+        }
+    }
+
+    getFunctionApiAttrArray() {
+        var attrValue;
+        var rlt_arr = [];
+        var funApis_arr = this.getAttrArrayList(AttrNames.FunctionApi);
+        funApis_arr.forEach(attr=>{
+            attrValue = this.getAttribute(attr.name);
+            if(IsEmptyString(attrValue)){
+                return;
+            }
+            rlt_arr.push({
+                label: attrValue,
+                name: attr.name,
+                fullname: this.id + '_' + attr.name,
+            });
+        });
+
+        return rlt_arr;
     }
 }
 

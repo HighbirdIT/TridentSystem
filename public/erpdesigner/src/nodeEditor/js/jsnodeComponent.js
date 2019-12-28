@@ -1244,6 +1244,85 @@ class C_JSNode_TraversalForm extends React.PureComponent {
     }
 }
 
+class C_JSNode_Page_CallFun extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        C_NodeCom_Base(this);
+
+        this.state = {
+        }
+
+        this.dropdownRef = React.createRef();
+    }
+
+    nodeDataChangedHandler() {
+        var nodeData = this.props.nodedata;
+        var script_id = nodeData.script_id;
+        this.dropdownRef.current.setValue(script_id);
+        this.setState({ magicObj: {} });
+    }
+
+    cus_componentWillMount() {
+        this.listenData(this.props.nodedata);
+    }
+
+    cus_componentWillUnmount() {
+        this.unlistenData(this.props.nodedata);
+    }
+
+    listenData(nodeData) {
+        if (nodeData) {
+            nodeData.on('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    unlistenData(nodeData) {
+        if (nodeData) {
+            nodeData.off('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    dropdownCtlChangedHandler(code) {
+        var nodeData = this.props.nodedata;
+        nodeData.script_name = code;
+        nodeData.synSockets();
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        var ctlKernel = nodeData.bluePrint.master.project.getControlById(nodeData.bluePrint.ctlID);
+        var elem = null;
+        if(ctlKernel == null){
+            elem = <span className='text-danger'>没有关联控件</span>;
+        }
+        else{
+            var belongPage = ctlKernel.type == M_PageKernel_Type ? ctlKernel : ctlKernel.searchParentKernel(M_PageKernel_Type, true);
+            if(belongPage == null){
+                elem = <span className='text-danger'>控件必须在页面中才能使用</span>;
+            }
+            else{
+                var script_name = nodeData.script_name;
+                elem = <React.Fragment>
+                    <div className='d-flex'>
+                        <div className='flex-grow-1 flex-shrink-1'>
+                            <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={belongPage.getFunctionApiAttrArray} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='label' valueAttrName='fullname' value={script_name ? script_name : '-1'} />
+                        </div>
+                    </div>
+                    <div className='d-flex'>
+                        <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} nameMoveable={true} />
+                        <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} nameMoveable={true} customSocketRender={this.customSocketRender} />
+                    </div>
+                </React.Fragment>
+            }
+        }
+        
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='Call页面方法'>
+            {elem}
+        </C_Node_Frame>
+    }
+}
+
 /*
 class C_JSNode_Control_Api_CallFun extends React.PureComponent {
     constructor(props) {
