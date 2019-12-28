@@ -3974,14 +3974,14 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
     }, {
         key: 'onloadHandler',
         value: function onloadHandler(ev) {
-            console.log(ev);
+            DebugApp('frameLoaded');
             try {
                 ev.target.contentWindow.gPageInFrame = true;
                 ev.target.contentWindow.gParentFrame = this;
                 ev.target.contentWindow.gParentDingKit = dingdingKit;
                 ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
             } catch (eo) {
-                console.log(eo);
+                DebugApp(ep.toString());
                 this.setState({
                     err: JSON.stringify(eo)
                 });
@@ -4050,14 +4050,14 @@ var ERPC_IFrame = function (_React$PureComponent19) {
     }, {
         key: 'onloadHandler',
         value: function onloadHandler(ev) {
-            console.log(ev);
+            DebugApp('frameLoaded');
             try {
                 ev.target.contentWindow.gPageInFrame = true;
                 ev.target.contentWindow.gWeakParentFrame = this;
                 ev.target.contentWindow.gParentDingKit = dingdingKit;
                 ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
             } catch (eo) {
-                console.log(eo);
+                DebugApp(eo.toString());
                 this.setState({
                     err: JSON.stringify(eo)
                 });

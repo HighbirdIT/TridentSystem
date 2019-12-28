@@ -3289,7 +3289,7 @@ class ERPC_TopLevelFrame extends React.PureComponent {
     }
 
     onloadHandler(ev) {
-        console.log(ev);
+        DebugApp('frameLoaded');
         try {
             ev.target.contentWindow.gPageInFrame = true;
             ev.target.contentWindow.gParentFrame = this;
@@ -3297,7 +3297,7 @@ class ERPC_TopLevelFrame extends React.PureComponent {
             ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
         }
         catch (eo) {
-            console.log(eo);
+            DebugApp(ep.toString());
             this.setState({
                 err: JSON.stringify(eo)
             });
@@ -3344,7 +3344,7 @@ class ERPC_IFrame extends React.PureComponent {
     }
 
     onloadHandler(ev) {
-        console.log(ev);
+        DebugApp('frameLoaded');
         try {
             ev.target.contentWindow.gPageInFrame = true;
             ev.target.contentWindow.gWeakParentFrame = this;
@@ -3352,7 +3352,7 @@ class ERPC_IFrame extends React.PureComponent {
             ev.target.contentWindow.gParentIsInDingTalk = isInDingTalk;
         }
         catch (eo) {
-            console.log(eo);
+            DebugApp(eo.toString());
             this.setState({
                 err: JSON.stringify(eo)
             });
