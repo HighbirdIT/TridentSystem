@@ -134,14 +134,14 @@ class JSNode_Base extends Node_Base {
                 if (startIsInReducer != null) {
                     return startIsInReducer;
                 }
+                if(this.bluePrint.startIsInReducer != null){
+                    return this.bluePrint.startIsInReducer;
+                }
                 switch (group) {
                     case EJsBluePrintFunGroup.CtlAttr:
                     case EJsBluePrintFunGroup.CtlValid:
                     case EJsBluePrintFunGroup.Custom:
                         return true;
-                    case EJsBluePrintFunGroup.CtlEvent:
-                        return this.bluePrint.startIsInReducer == true;
-                        break;
                 }
             }
             if (preNode.type == JSNODE_CALLCUSSCRIPT) {
@@ -1554,14 +1554,19 @@ class JSNode_BluePrint extends EventEmitter {
                 }
 
                 setInvalidStateBlock.pushLine("if(err){", 1);
-                setInvalidStateBlock.pushLine("if(" + msgBoxVarName + "){" + msgBoxVarName + ".setData(err.info, EMessageBoxType.Error, '" + ctlName + "');}");
+                setInvalidStateBlock.pushLine('console.error(err);');
+                if(!nomsgbox){
+                    setInvalidStateBlock.pushLine("if(" + msgBoxVarName + "){" + msgBoxVarName + ".setData(err.info, EMessageBoxType.Error, '" + ctlName + "');}");
+                }
                 if (ctlKernel.type == ButtonKernel_Type) {
                     setInvalidStateBlock.pushLine("else{SendToast(err.info, EToastType.Error);}");
                 }
                 setInvalidStateBlock.pushLine("return;", -1);
                 setInvalidStateBlock.pushLine("}");
 
-                finalCallBackReturn_bk.pushLine("if(" + msgBoxVarName + "){" + msgBoxVarName + ".fireClose();}");
+                if(!nomsgbox){
+                    finalCallBackReturn_bk.pushLine("if(" + msgBoxVarName + "){" + msgBoxVarName + ".fireClose();}");
+                }
                 if (haveDoneTip && !muteMode) {
                     finalCallBackReturn_bk.pushLine("SendToast('执行成功');");
                 }
@@ -1591,11 +1596,15 @@ class JSNode_BluePrint extends EventEmitter {
                     setInvalidStateBlock.pushLine("if(hadValidErr){SendToast('验证失败，无法执行', EToastType.Warning);return;}");
                 }
                 setInvalidStateBlock.pushLine("if(err){", 1);
-                setInvalidStateBlock.pushLine("if(" + msgBoxVarName + "){" + msgBoxVarName + ".setData(err.info, EMessageBoxType.Error, '" + ctlName + "');}");
+                if(!nomsgbox){
+                    setInvalidStateBlock.pushLine("if(" + msgBoxVarName + "){" + msgBoxVarName + ".setData(err.info, EMessageBoxType.Error, '" + ctlName + "');}");
+                }
                 setInvalidStateBlock.pushLine("return;", -1);
                 setInvalidStateBlock.pushLine("}");
 
-                finalCallBackReturn_bk.pushLine("if(" + msgBoxVarName + "){" + msgBoxVarName + ".fireClose();}");
+                if(!nomsgbox){
+                    finalCallBackReturn_bk.pushLine("if(" + msgBoxVarName + "){" + msgBoxVarName + ".fireClose();}");
+                }
                 finalCallBackReturn_bk.pushLine('if(err == null && ' + VarNames.CallBack + ' != null){' + VarNames.CallBack + '(' + VarNames.State + ');}');
             }
             else {
@@ -8369,7 +8378,8 @@ class JSNODE_Delete_Table extends JSNode_Base {
         if (this.checkCompileFlag(targetEntity == null || targetEntity.type != 'delete', '必须选择一个delete数据源', helper)) {
             return false;
         }
-        if (this.checkCompileFlag(targetEntity.getParams().length == 0, targetEntity.name + '不是一个合法的delete数据源', helper)) {
+        var entityParams = targetEntity.getParams();
+        if (this.checkCompileFlag(entityParams == null || entityParams.length == 0, targetEntity.name + '不是一个合法的delete数据源', helper)) {
             return false;
         }
         helper.addUseEntity(targetEntity, EUseEntityStage.Delete);

@@ -8,7 +8,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'), new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false), new CAttribute('隐藏标题', AttrNames.HideTitle, ValueType.Boolean, false), new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr), new CAttribute('有滚动条', AttrNames.HadScroll, ValueType.Boolean, true), new CAttribute('弹出式页面', AttrNames.PopablePage, ValueType.Boolean, false), new CAttribute('有关闭按钮', AttrNames.AutoCloseBtn, ValueType.Boolean, true), new CAttribute('有主页按钮', AttrNames.AutoHomeBtn, ValueType.Boolean, true), new CAttribute('关联步骤', AttrNames.RelFlowStep, ValueType.Int, null, true, true, gFlowMaster.getAllSteps, { text: 'fullName', value: 'code' })]), new CAttributeGroup('接口设置', [new CAttribute('入口参数', AttrNames.EntryParam, ValueType.String, '', true, true), new CAttribute('出口参数', AttrNames.ExportParam, ValueType.String, '', true, true)]), new CAttributeGroup('事件', [new CAttribute('OnLoad', AttrNames.Event.OnLoad, ValueType.Event), new CAttribute('点击关闭', AttrNames.Event.OnClickCloseBtn, ValueType.Event), new CAttribute('消息处理', AttrNames.Event.OnReceiveMsg, ValueType.Event)])], false);
+var M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'), new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false), new CAttribute('隐藏标题', AttrNames.HideTitle, ValueType.Boolean, false), new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr), new CAttribute('有滚动条', AttrNames.HadScroll, ValueType.Boolean, true), new CAttribute('弹出式页面', AttrNames.PopablePage, ValueType.Boolean, false), new CAttribute('有关闭按钮', AttrNames.AutoCloseBtn, ValueType.Boolean, true), new CAttribute('有主页按钮', AttrNames.AutoHomeBtn, ValueType.Boolean, true), new CAttribute('关联步骤', AttrNames.RelFlowStep, ValueType.Int, null, true, true, gFlowMaster.getAllSteps, { text: 'fullName', value: 'code' })]), new CAttributeGroup('接口设置', [new CAttribute('入口参数', AttrNames.EntryParam, ValueType.String, '', true, true), new CAttribute('出口参数', AttrNames.ExportParam, ValueType.String, '', true, true)]), new CAttributeGroup('事件', [new CAttribute('OnLoad', AttrNames.Event.OnLoad, ValueType.Event), new CAttribute('点击关闭', AttrNames.Event.OnClickCloseBtn, ValueType.Event), new CAttribute('消息处理', AttrNames.Event.OnReceiveMsg, ValueType.Event)]), new CAttributeGroup('自订方法', [new CAttribute('自订方法', AttrNames.FunctionApi, ValueType.CustomFunction, '', true, true)])], false);
 
 var M_PageKernel = function (_ContainerKernelBase) {
     _inherits(M_PageKernel, _ContainerKernelBase);
@@ -23,10 +23,14 @@ var M_PageKernel = function (_ContainerKernelBase) {
         autoBind(self);
 
         var funName = _this.id + '_' + AttrNames.Event.OnLoad;
-        var eventBP = _this.project.scriptMaster.getBPByName(funName);
-        if (eventBP) {
-            eventBP.ctlID = _this.id;
+        var theBP = _this.project.scriptMaster.getBPByName(funName);
+        if (theBP) {
+            theBP.ctlID = _this.id;
         }
+        _this.getAttrArrayList(AttrNames.FunctionApi).forEach(function (funAtrr) {
+            theBP = _this.project.scriptMaster.getBPByName(_this.id + '_' + funAtrr.name);
+            _this.scriptCreated(null, theBP);
+        });
         return _this;
     }
 
@@ -99,6 +103,31 @@ var M_PageKernel = function (_ContainerKernelBase) {
             if (scriptBP.name.indexOf(AttrNames.Event.OnReceiveMsg) != -1) {
                 scriptBP.setFixParam(['msgtype', 'data']);
             }
+            if (scriptBP.name.indexOf(AttrNames.FunctionApi) != -1) {
+                scriptBP.startIsInReducer = false;
+            }
+        }
+    }, {
+        key: 'getFunctionApiAttrArray',
+        value: function getFunctionApiAttrArray() {
+            var _this4 = this;
+
+            var attrValue;
+            var rlt_arr = [];
+            var funApis_arr = this.getAttrArrayList(AttrNames.FunctionApi);
+            funApis_arr.forEach(function (attr) {
+                attrValue = _this4.getAttribute(attr.name);
+                if (IsEmptyString(attrValue)) {
+                    return;
+                }
+                rlt_arr.push({
+                    label: attrValue,
+                    name: attr.name,
+                    fullname: _this4.id + '_' + attr.name
+                });
+            });
+
+            return rlt_arr;
         }
     }]);
 
@@ -111,21 +140,21 @@ var M_Page = function (_React$PureComponent) {
     function M_Page(props) {
         _classCallCheck(this, M_Page);
 
-        var _this4 = _possibleConstructorReturn(this, (M_Page.__proto__ || Object.getPrototypeOf(M_Page)).call(this, props));
+        var _this5 = _possibleConstructorReturn(this, (M_Page.__proto__ || Object.getPrototypeOf(M_Page)).call(this, props));
 
-        _this4.state = {
-            title: _this4.props.ctlKernel.getAttribute(AttrNames.Title),
-            ctlKernel: _this4.props.ctlKernel,
-            children: _this4.props.ctlKernel.children,
-            orientation: _this4.props.ctlKernel.getAttribute(AttrNames.Orientation),
-            popablePage: _this4.props.ctlKernel.getAttribute(AttrNames.PopablePage),
-            autoCloseBtn: _this4.props.ctlKernel.getAttribute(AttrNames.AutoCloseBtn)
+        _this5.state = {
+            title: _this5.props.ctlKernel.getAttribute(AttrNames.Title),
+            ctlKernel: _this5.props.ctlKernel,
+            children: _this5.props.ctlKernel.children,
+            orientation: _this5.props.ctlKernel.getAttribute(AttrNames.Orientation),
+            popablePage: _this5.props.ctlKernel.getAttribute(AttrNames.PopablePage),
+            autoCloseBtn: _this5.props.ctlKernel.getAttribute(AttrNames.AutoCloseBtn)
         };
 
-        autoBind(_this4);
-        M_ControlBase(_this4, [AttrNames.Title, AttrNames.Chidlren, AttrNames.Orientation, AttrNames.PopablePage, AttrNames.AutoCloseBtn, AttrNames.LayoutNames.APDClass]);
-        M_ContainerBase(_this4);
-        return _this4;
+        autoBind(_this5);
+        M_ControlBase(_this5, [AttrNames.Title, AttrNames.Chidlren, AttrNames.Orientation, AttrNames.PopablePage, AttrNames.AutoCloseBtn, AttrNames.LayoutNames.APDClass]);
+        M_ContainerBase(_this5);
+        return _this5;
     }
 
     _createClass(M_Page, [{
@@ -155,7 +184,7 @@ var M_Page = function (_React$PureComponent) {
     }, {
         key: 'renderMobilePage',
         value: function renderMobilePage(ctlKernel) {
-            var _this5 = this;
+            var _this6 = this;
 
             var layoutConfig = ctlKernel.getLayoutConfig();
             layoutConfig.addClass('d-flex');
@@ -200,7 +229,7 @@ var M_Page = function (_React$PureComponent) {
                     'div',
                     { className: layoutConfig.getClassName(), ref: this.rootElemRef },
                     this.state.children.map(function (childData) {
-                        return childData.renderSelf(null, null, _this5.props.designer);
+                        return childData.renderSelf(null, null, _this6.props.designer);
                     })
                 )
             );
@@ -208,7 +237,7 @@ var M_Page = function (_React$PureComponent) {
     }, {
         key: 'render',
         value: function render() {
-            var _this6 = this;
+            var _this7 = this;
 
             if (this.props.ctlKernel != this.state.ctlKernel) {
                 var self = this;
@@ -216,12 +245,12 @@ var M_Page = function (_React$PureComponent) {
                 this.listenTarget(this.props.ctlKernel);
                 setTimeout(function () {
                     self.setState({
-                        title: _this6.props.ctlKernel.getAttribute('title'),
-                        ctlKernel: _this6.props.ctlKernel,
-                        children: _this6.props.ctlKernel.children,
-                        orientation: _this6.props.ctlKernel.getAttribute(AttrNames.Orientation),
-                        popablePage: _this6.props.ctlKernel.getAttribute(AttrNames.PopablePage),
-                        autoCloseBtn: _this6.props.ctlKernel.getAttribute(AttrNames.AutoCloseBtn)
+                        title: _this7.props.ctlKernel.getAttribute('title'),
+                        ctlKernel: _this7.props.ctlKernel,
+                        children: _this7.props.ctlKernel.children,
+                        orientation: _this7.props.ctlKernel.getAttribute(AttrNames.Orientation),
+                        popablePage: _this7.props.ctlKernel.getAttribute(AttrNames.PopablePage),
+                        autoCloseBtn: _this7.props.ctlKernel.getAttribute(AttrNames.AutoCloseBtn)
                     });
                 }, 1);
                 return null;

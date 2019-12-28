@@ -14,6 +14,8 @@ const JSNODE_DD_GETGEO_LOCATION = 'ddgetgeolocation';
 const JSNODE_DD_MAP_SEARCH = 'ddmapsearch';
 const JSNODE_DD_NAV_CLOSE = 'ddnavclose';
 
+const JSNODE_PAGE_CALLFUN = 'pagecallfun';
+
 
 class JSNode_AddPageToFrameSet extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
@@ -1917,6 +1919,145 @@ class JSNode_GetFormXMLData extends JSNode_Base {
     }
 }
 
+class JSNode_Page_CallFun extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_PAGE_CALLFUN, 'Call页面方法', false, nodeJson);
+        autoBind(this);
+        this.genCloseure = true;
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+        if (createHelper) {
+            if (!IsEmptyString(this.script_id)) {
+                if (!createHelper.project.loaded) {
+                    createHelper.project.on('loaded', this.projLoadedHandler);
+                }
+                else {
+                    this.projLoadedHandler();
+                }
+            }
+        }
+    }
+
+    projLoadedHandler() {
+        this.synSockets();
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.script_name = this.script_name;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['script_name']);
+    }
+
+    synSockets() {
+        var scriptBP = this.bluePrint.master.getBPByName(this.script_name);
+        this.inputScokets_arr.forEach(s => {
+            s.valid = false;
+        });
+
+        var socket;
+        if (scriptBP) {
+            scriptBP.vars_arr.filter(varData => {
+                return varData.isParam;
+            }).forEach(varData => {
+                socket = this.getScoketByName(varData.id);
+                if (socket) {
+                    socket.valid = true;
+                    if (socket.label != varData.name) {
+                        socket.label = varData.name;
+                        socket.fireEvent('changed');
+                    }
+                }
+                else {
+                    socket = new NodeSocket(varData.id, this, true, { label: varData.name });
+                    this.addSocket(socket);
+                }
+                socket.inputable = true;
+            });
+        }
+
+        this.inputScokets_arr.filter(s => { return s.valid == false; }).forEach(s => { this.removeSocket(s) });
+
+        this.fireEvent(Event_SocketNumChanged, 20);
+        this.fireMoved(10);
+    }
+
+    getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
+        if (belongFun.scope.isServerSide) {
+            return;
+        }
+        var compileRet = helper.getCompileRetCache(this);
+        var socketValue = compileRet.getSocketOut(targetSocket).strContent;
+        result.pushVariable(socketValue, targetSocket);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var project = this.bluePrint.master.project;
+
+        if (this.checkCompileFlag(IsEmptyString(this.script_name), '需要选择目标脚本', helper)) {
+            return false;
+        }
+        var targetBP = this.bluePrint.master.getBPByName(this.script_name);
+        if (this.checkCompileFlag(targetBP == null, '选择的脚本无效', helper)) {
+            return false;
+        }
+        var pageKernel = this.bluePrint.master.project.getControlById(targetBP.ctlid); 
+        if (this.checkCompileFlag(pageKernel, '选定的方法无效', helper)) {
+            return false;
+        }
+        this.synSockets();
+
+        var inputs_arr = [];
+        for (var si in this.inputScokets_arr) {
+            var socket = this.inputScokets_arr[si];
+            var socketComRet = this.getSocketCompileValue(helper, socket, usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            inputs_arr.push(socketComRet.value);
+        }
+        
+        var myJSBlock = new FormatFileBlock(this.id);
+        var flowUseBlock = myJSBlock;
+        belongBlock.pushChild(myJSBlock);
+        var inreducer = this.isInReducer(preNodes_arr);
+        if (inreducer) {
+            myJSBlock.pushLine('setTimeout(() => {', 1);
+        }
+        myJSBlock.pushLine(makeStr_callFun(targetBP.name, inputs_arr, ';'));
+        if (inreducer) {
+            myJSBlock.subNextIndent();
+            myJSBlock.pushLine('}, 50);');
+        }
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, flowUseBlock) == false) {
+            return false;
+        }
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_OP_NOT] = {
     modelClass: JSNode_OP_Not,
     comClass: C_Node_SimpleNode,
@@ -1976,4 +2117,8 @@ JSNodeClassMap[JSNODE_DD_NAV_CLOSE] = {
 JSNodeClassMap[JSNODE_GETFORMXMLDATA] = {
     modelClass: JSNode_GetFormXMLData,
     comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_PAGE_CALLFUN] = {
+    modelClass: JSNode_Page_CallFun,
+    comClass: C_JSNode_Page_CallFun,
 };

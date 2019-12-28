@@ -1041,6 +1041,35 @@ class MobileContentCompiler extends ContentCompiler {
         pageReactClass.renderContentFun.scope.getVar(VarNames.RetElem, true, 'null');
         pageReactClass.renderContentFun.retBlock.pushLine(makeLine_Return(VarNames.RetElem));
 
+        var funApiAttr_arr = pageKernel.getFunctionApiAttrArray();
+        var attrValue;
+        for (var fai in funApiAttr_arr) {
+            var funApiItem = funApiAttr_arr[fai];
+            attrValue = pageKernel.getAttribute(funApiItem.name);
+            if (IsEmptyString(attrValue)) {
+                logManager.errorEx([logManager.createBadgeItem(
+                    pageKernel.getReadableName(),
+                    pageKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '自订方法没有名称']);
+                return false;
+            }
+            var funBPname = pageKernel.id + '_' + funApiItem.name;
+            var funBp = project.scriptMaster.getBPByName(funBPname);
+            if (funBp == null) {
+                logManager.errorEx([logManager.createBadgeItem(
+                    pageKernel.getReadableName(),
+                    pageKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '自订方法没有实现']);
+                return false;
+            }
+            var funBoComRet = this.compileScriptBlueprint(funBp, null);
+            if (funBoComRet == false) {
+                return false;
+            }
+        }
+
         var activePageFun = clientSide.scope.getFunction(makeFName_activePage(pageKernel), true, ['state']);
         var initPageFun = clientSide.scope.getFunction(makeFName_initPage(pageKernel), true, ['state']);
         var pageLoadBlock = new FormatFileBlock('onLoad');
@@ -1292,7 +1321,9 @@ class MobileContentCompiler extends ContentCompiler {
             ctlTag.setAttr('defvisible', '{false}');
         }
 
-        this.compileOnMouseDownEvent(theKernel, ctlTag);
+        if(this.compileOnMouseDownEvent(theKernel, ctlTag) == false){
+            return false;
+        }
 
         renderBlock.pushChild(ctlTag);
         if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
@@ -3811,7 +3842,9 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
 
-        this.compileOnMouseDownEvent(theKernel, ctlTag);
+        if(this.compileOnMouseDownEvent(theKernel, ctlTag) == false){
+            return false;
+        }
     }
 
     compileButtonKernel(theKernel, renderBlock, renderFun) {

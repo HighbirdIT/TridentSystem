@@ -25,6 +25,11 @@ const JSNodeEditorControls_arr =[
         type:'流控制'
     },
     {
+        label:'Call页面方法',
+        nodeClass:JSNode_Page_CallFun,
+        type:'流控制'
+    },
+    {
         label:'SetTimeout',
         nodeClass:JSNode_SetTimeout,
         type:'流控制'
