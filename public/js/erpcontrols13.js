@@ -12,6 +12,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+
 var ctrlCurrentComponent_map = {};
 var gFixedContainerRef = React.createRef();
 var gTopLevelFrameRef = React.createRef();
