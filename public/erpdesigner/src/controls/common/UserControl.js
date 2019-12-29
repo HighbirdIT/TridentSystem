@@ -67,6 +67,18 @@ class UserControlKernel extends ContainerKernelBase {
 
             var theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnInit);
             this.scriptCreated(null, theBP);
+            this.getAttrArrayList(AttrNames.EventApi).forEach(evenAttr=>{
+                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + evenAttr.name);
+                if(theBP){
+                    theBP.startIsInReducer = true;
+                }
+            });
+            this.getAttrArrayList(AttrNames.FunctionApi).forEach(funAttr=>{
+                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + funAttr.name);
+                if(theBP){
+                    theBP.startIsInReducer = true;
+                }
+            });
             this.getAttrArrayList(AttrNames.AttrHook).forEach(hookAtrr=>{
                 theBP = this.project.scriptMaster.getBPByName(this.id + '_' + hookAtrr.name);
                 this.scriptCreated(null, theBP);
