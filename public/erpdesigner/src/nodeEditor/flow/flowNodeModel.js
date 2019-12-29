@@ -1537,18 +1537,20 @@ class FlowNode_ColumnVar extends JSNode_Base {
         if (keySocket != null) {
             if(keySocket.type == SocketType_CtlKernel){
                 var ctlid = keySocket.getExtra('ctlid');
-                if (this.checkCompileFlag(project == null, '此处找不到project', helper)) {
-                    return false;
-                }
-                var ctlkernel = project.getControlById(ctlid);
-                if(ctlkernel){
-                    this.outSocket.type = SocketType_CtlKernel;
-                    this.outSocket.kernelType = ctlkernel.type;
-                    var formkernel = ctlkernel.searchParentKernel(M_FormKernel_Type, true);
-                    columnName = (formkernel ? formkernel.getReadableName() + '.' : '') + ctlkernel.getReadableName()
+                if (project == null) {
+                    columnName = '找不到project';
                 }
                 else{
-                    columnName = '找不到控件';
+                    var ctlkernel = project.getControlById(ctlid);
+                    if(ctlkernel){
+                        this.outSocket.type = SocketType_CtlKernel;
+                        this.outSocket.kernelType = ctlkernel.type;
+                        var formkernel = ctlkernel.searchParentKernel(M_FormKernel_Type, true);
+                        columnName = (formkernel ? formkernel.getReadableName() + '.' : '') + ctlkernel.getReadableName()
+                    }
+                    else{
+                        columnName = '找不到控件';
+                    }
                 }
             }
             else{

@@ -353,11 +353,13 @@ var ValueType = {
     ModifyContent: 'ModifyContent',
     AttrHook: 'attrhook',
     AttrChecker: 'attrchecker',
-    NameAndScript: 'nameandscrupt'
+    NameAndScript: 'nameandscrupt',
+    BatchVar: 'batchvar'
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
 var JsValueTypes = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time, ValueType.DateMD];
+var JsVarNodeValueTypes = JsValueTypes.concat(ValueType.BatchVar);
 
 function TransSVTToJSVT(sqlType) {
     switch (sqlType) {

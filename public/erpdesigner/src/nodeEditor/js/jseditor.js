@@ -90,6 +90,16 @@ const JSNodeEditorControls_arr =[
         type:'控件交互'
     },
     {
+        label:'动态添加批量设置',
+        nodeClass:JSNode_Add_Dynamic_Batch_Api,
+        type:'控件交互'
+    },
+    {
+        label:'执行动态批量设置',
+        nodeClass:JSNode_Excute_Dynamic_Batch_Api,
+        type:'控件交互'
+    },
+    {
         label:'Insert',
         nodeClass:JSNODE_Insert_table,
         type:'数据库交互'
@@ -1949,7 +1959,7 @@ class JSDef_Variable_Component extends React.PureComponent{
                 <span className='text-light flex-shrink-0'>默认值</span>
                 <input onChange={this.defaultInputChangedHandler} type='text' value={this.state.default} className='flexinput flex-grow-1 flex-shrink-1' />
             </div>
-            <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={JsValueTypes} textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
+            <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={JsVarNodeValueTypes} textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
             {varData.isOutput ? null : <DropDownControl itemChanged={this.isParamChangedHandler} btnclass='btn-dark' options_arr={ISParam_Options_arr} textAttrName='name' valueAttrName='code' value={this.state.isParam} />}
         </div>);
     }

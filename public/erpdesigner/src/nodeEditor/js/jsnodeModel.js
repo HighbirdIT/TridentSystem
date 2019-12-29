@@ -671,6 +671,9 @@ class JSNode_BluePrint extends EventEmitter {
                 paramVars_arr.push(varData);
             }
             else {
+                if(varData.valType == ValueType.BatchVar){
+                    varData.default = '{}';
+                }
                 theFun.scope.getVar(varData.name, true, varData.default);
             }
         });
@@ -4184,11 +4187,14 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
         var batchNode = null;
         var batchMode = false;
         var maybebatchMode = false;
-        if (preNodes_arr[preNodes_arr.length - 1].type == JSNODE_BATCH_CONTROL_API_PROPSETTER) {
+        if (preNodes_arr[preNodes_arr.length - 1].type == JSNODE_BATCH_CONTROL_API_PROPSETTER
+            ||
+            preNodes_arr[preNodes_arr.length - 1].type == JSNODE_ADD_DYNAMIC_BATCH_API
+        ) {
             batchNode = preNodes_arr[preNodes_arr.length - 1];
             batchMode = true;
         }
-        var needSetVarName = batchNode ? batchNode.id : null;
+        var needSetVarName = batchNode ? batchNode.needSetVarName : null;
         var belongTraversalNode = null;
         var topmostParent = null;
 
@@ -4215,7 +4221,6 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
         }
         else {
             selectedCtlid = this.ctlSocket.getExtra('ctlid');
-
             if (!batchMode) {
                 var closureNode = null;
                 for (var i = preNodes_arr.length - 1; i >= 0; --i) {
@@ -7592,6 +7597,20 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         var usePreNodes_arr = preNodes_arr.concat(this);
         var project = this.bluePrint.master.project;
 
+        var batchNode = null;
+        var batchMode = false;
+        var maybebatchMode = false;
+        if (preNodes_arr[preNodes_arr.length - 1].type == JSNODE_BATCH_CONTROL_API_PROPSETTER
+            ||
+            preNodes_arr[preNodes_arr.length - 1].type == JSNODE_ADD_DYNAMIC_BATCH_API
+        ) {
+            batchNode = preNodes_arr[preNodes_arr.length - 1];
+            batchMode = true;
+        }
+        var needSetVarName = batchNode ? batchNode.needSetVarName : null;
+        var belongTraversalNode = null;
+        var topmostParent = null;
+
         var selectedCtlid;
         var selectedKernel;
         var traversalFromNode = null;
@@ -7615,6 +7634,27 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         }
         else {
             selectedCtlid = this.ctlSocket.getExtra('ctlid');
+            if (!batchMode) {
+                var closureNode = null;
+                for (var i = preNodes_arr.length - 1; i >= 0; --i) {
+                    if (preNodes_arr[i].genCloseure) {
+                        closureNode = true;
+                        break;
+                    }
+                }
+                if (closureNode == null) {
+                    if (this.bluePrint.isAttrHookFun) {
+                        batchMode = true;
+                        needSetVarName = VarNames.NeedSetState;
+                        topmostParent = this.bluePrint.ctlKernel;
+                    }
+                    if (this.bluePrint.isAttrCheckFun) {
+                        batchMode = true;
+                        needSetVarName = VarNames.NeedSetState;
+                        maybebatchMode = true;
+                    }
+                }
+            }
         }
         if (!IsEmptyString(selectedCtlid)) {
             selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
@@ -7655,9 +7695,11 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             this.synUCEParams();
         }
         var relCtlKernel = this.bluePrint.ctlKernel;
-        var canAccessCtls_arr = relCtlKernel.getAccessableKernels(this.ctltype);
-        if (this.checkCompileFlag(canAccessCtls_arr.indexOf(selectedKernel) == -1, '指定的控件不可访问', helper)) {
-            return false;
+        if (traversalFromNode == null) {
+            var canAccessCtls_arr = relCtlKernel.getAccessableKernels(this.ctltype);
+            if (this.checkCompileFlag(canAccessCtls_arr.indexOf(selectedKernel) == -1, '指定的控件不可访问', helper)) {
+                return false;
+            }
         }
         var rowKeyValue = null;
         if (this.isUserControlFunction) {
@@ -7674,7 +7716,9 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
 
         var useApiItem = this.apiItem;
         if (traversalFromNode == null) {
-            myJSBlock.pushLine('setTimeout(() => {', 1);
+            if(!batchMode){
+                myJSBlock.pushLine('setTimeout(() => {', 1);
+            }
         }
         if (this.isUserControlEvent || this.isUserControlFunction) {
             var bundleStr = '';
@@ -7704,10 +7748,17 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
                 }
                 //bundleStr += (bundleStr.length > 0 ? ',' : '') + selectedKernel.getTemplateKernel().id + '_path:' + selectedKernel.id + '_path';
             }
-            if (traversalFromNode != null) {
-                pathVar = traversalFromNode.id + "_rowpath + " + singleQuotesStr('.' + selectedKernel.getStatePath('fun_' + funAttrValue.name, '.', null, true, traversalFromNode.formKernel));
+            if (traversalFromNode) {                
+                myJSBlock.pushLine(traversalFromNode.id + '_' + VarNames.NeedSetState + "[" + traversalFromNode.id + '_rowpath + ' + singleQuotesStr('.' + selectedKernel.getStatePath('fun_' + funAttrValue.name, '.', null, false, traversalFromNode.formKernel)) + "]={" + bundleStr + "};", -1);
             }
-            myJSBlock.pushLine("store.dispatch(makeAction_setStateByPath({" + bundleStr + "}," + pathVar + "));", -1);
+            else{
+                if(batchMode){
+                    myJSBlock.pushLine(needSetVarName + "[" + pathVar + "]={" + bundleStr + "};", -1);
+                }
+                else{
+                    myJSBlock.pushLine("store.dispatch(makeAction_setStateByPath({" + bundleStr + "}," + pathVar + "));", -1);   
+                }
+            }
             useApiItem = {
                 name: funAttrValue.name,
             };
@@ -7716,6 +7767,9 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             }
         }
         else {
+            if (this.checkCompileFlag(batchMode || traversalFromNode, '不支持batch的用法', helper)) {
+                return false;
+            }
             if (selectedKernel.type == MFileUploader_Type && this.funItem.name == 'Reset') {
                 var cltPathVar = singleQuotesStr(selectedKernel.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map }));
                 if (belongUserCtl) {
@@ -7728,7 +7782,9 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             }
         }
         if (traversalFromNode == null) {
-            myJSBlock.pushLine('},50);');
+            if(!batchMode){
+                myJSBlock.pushLine('},50);');
+            }
         }
         belongBlock.pushChild(myJSBlock);
 
@@ -7736,10 +7792,11 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
 
-
-        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
-            return false;
-        }
+        if(!batchMode){
+            if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+                return false;
+            }
+        }        
         return selfCompileRet;
     }
 }
@@ -9342,12 +9399,21 @@ class JSNode_Batch_Control_Api_Propsetter extends JSNode_Base {
         belongBlock.pushChild(myJSBlock);
 
         var needSetVarName = this.id;
+        this.needSetVarName = needSetVarName;
         myJSBlock.pushLine('var ' + needSetVarName + ' = {};');
         myJSBlock.pushChild(setBodyBlock);
-        myJSBlock.pushLine('setTimeout(() => {', 1);
-        myJSBlock.pushLine("store.dispatch(makeAction_setManyStateByPath(" + needSetVarName + ", ''));");
-        myJSBlock.subNextIndent();
-        myJSBlock.pushLine('},50);');
+        var inreducer = this.isInReducer(usePreNodes_arr);
+        if (!inreducer) {
+            myJSBlock.pushLine('setTimeout(() => {', 1);
+            myJSBlock.pushLine("store.dispatch(makeAction_setManyStateByPath(" + needSetVarName + ", ''));");
+        }
+        else{
+            myJSBlock.pushLine(makeStr_callFun("setManyStateByPath", [VarNames.State, "''", needSetVarName],';'));
+        }
+        if (!inreducer) {
+            myJSBlock.subNextIndent();
+            myJSBlock.pushLine('}, 50);');
+        }
 
         var i;
         var theSocket;
@@ -9358,7 +9424,7 @@ class JSNode_Batch_Control_Api_Propsetter extends JSNode_Base {
                 return false;
             }
             var theNode = links_arr[0].outSocket.node;
-            if (this.checkCompileFlag(theNode.type != JSNODE_CONTROL_API_PROPSETTER && theNode.type != JSNODE_CLOSEPOPPER, '输入只能链接API设置节点或ClosePopper', helper)) {
+            if (this.checkCompileFlag(theNode.type != JSNODE_CONTROL_API_PROPSETTER && theNode.type != JSNODE_CLOSEPOPPER && theNode.type != JSNODE_CONTROL_API_CALLFUN, '输入只能链接API设置节点或ClosePopper或callfun', helper)) {
                 return false;
             }
             if (theNode.compile(helper, usePreNodes_arr, setBodyBlock) == false) {

@@ -23,6 +23,9 @@ const JSNODE_ARRAY_FOR = 'arrayfor';
 const JSNODE_MSG_SENDTOPARENT = 'msgsendtoparent';
 const JSNODE_CLOSETOPFRAME = 'closetopframe';
 
+const JSNODE_ADD_DYNAMIC_BATCH_API = 'adddynamicbatchapi';
+const JSNODE_EXCUTE_DYNAMIC_BATCH_API = 'excutedynamicbatchapi';
+
 
 class JSNode_AddPageToFrameSet extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
@@ -2104,7 +2107,10 @@ class JSNode_ClosePopper extends JSNode_Base {
         }
 
         var batchNode = null;
-        if (preNodes_arr[preNodes_arr.length - 1].type == JSNODE_BATCH_CONTROL_API_PROPSETTER) {
+        if (preNodes_arr[preNodes_arr.length - 1].type == JSNODE_BATCH_CONTROL_API_PROPSETTER
+            ||
+            preNodes_arr[preNodes_arr.length - 1].type == JSNODE_ADD_DYNAMIC_BATCH_API
+        ) {
             batchNode = preNodes_arr[preNodes_arr.length - 1];
         }
 
@@ -2118,7 +2124,7 @@ class JSNode_ClosePopper extends JSNode_Base {
         }
 
         if (batchNode) {
-            myJSBlock.pushLine('ClosePopperBtn(' + pathVar + ',' + batchNode.id + ');');
+            myJSBlock.pushLine('ClosePopperBtn(' + pathVar + ',' + batchNode.needSetVarName + ');');
         }
         else {
             var inreducer = this.isInReducer(preNodes_arr);
@@ -2647,6 +2653,196 @@ class JSNode_CloseTopFrame extends JSNode_Base {
     }
 }
 
+class JSNode_Add_Dynamic_Batch_Api extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_ADD_DYNAMIC_BATCH_API, '动态添加api', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+        if (this.inFlowSockets_arr == null) {
+            this.inFlowSockets_arr = [];
+        }
+
+        if(this.inputScokets_arr.length > 0){
+            this.varSocket = this.inputScokets_arr[0];
+        }
+        if(this.varSocket == null){
+            this.varSocket = this.addSocket(new NodeSocket('var', this, true));
+        }
+        this.varSocket.label = '变量';
+        this.varSocket.type = ValueType.Object;
+        this.varSocket.inputable = false;
+    }
+
+    genInputFlowSocket() {
+        var nameI = this.inFlowSockets_arr.length;
+        while (nameI < 999) {
+            if (this.getScoketByName('inflow' + nameI, true) == null) {
+                break;
+            }
+            ++nameI;
+        }
+        return new NodeFlowSocket('inflow' + nameI, this, true);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        if (this.checkCompileFlag(this.inFlowSockets_arr.length == 0, '不能为空', helper)) {
+            return false;
+        }
+
+        var myJSBlock = new FormatFileBlock('');
+        belongBlock.pushChild(myJSBlock);
+
+        var temLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.varSocket);
+        if (this.checkCompileFlag(temLinks_arr.length == 0, '必须提供变量', helper)) {
+            return false;
+        }
+        var link = temLinks_arr[0];
+        var varNode = link.outSocket.node;
+        if (this.checkCompileFlag(varNode.type != JSNODE_VAR_GET, '必须提供的是变量节点', helper)) {
+            return false;
+        }
+        if (this.checkCompileFlag(varNode.varData.valType != ValueType.BatchVar, '变量必须是batchvar类型', helper)) {
+            return false;
+        }
+        var comret = varNode.compile(helper, usePreNodes_arr, belongBlock);
+        if(comret == false){
+            return false;
+        }
+
+        var needSetVarName = comret.getSocketOut(link.outSocket).strContent;
+        this.needSetVarName = needSetVarName;
+        var i;
+        var theSocket;
+        for (i = 0; i < this.inFlowSockets_arr.length; ++i) {
+            theSocket = this.inFlowSockets_arr[i];
+            var links_arr = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+            if (this.checkCompileFlag(links_arr.length == 0, '输入不可为空', helper)) {
+                return false;
+            }
+            var theNode = links_arr[0].outSocket.node;
+            if (this.checkCompileFlag(theNode.type != JSNODE_CONTROL_API_PROPSETTER && theNode.type != JSNODE_CLOSEPOPPER && theNode.type != JSNODE_CONTROL_API_CALLFUN, '输入只能链接API设置节点或ClosePopper或callfun', helper)) {
+                return false;
+            }
+            if (theNode.compile(helper, usePreNodes_arr, myJSBlock) == false) {
+                return false;
+            }
+        }
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
+
+        return selfCompileRet;
+    }
+}
+
+class JSNode_Excute_Dynamic_Batch_Api extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_EXCUTE_DYNAMIC_BATCH_API, '执行动态批量api', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+        
+        if(this.inputScokets_arr.length > 0){
+            this.varSocket = this.inputScokets_arr[0];
+        }
+        if(this.varSocket == null){
+            this.varSocket = this.addSocket(new NodeSocket('var', this, true));
+        }
+        this.varSocket.label = '变量';
+        this.varSocket.type = ValueType.Object;
+        this.varSocket.inputable = false;
+    }
+
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var myJSBlock = new FormatFileBlock('');
+        belongBlock.pushChild(myJSBlock);
+
+        var temLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.varSocket);
+        if (this.checkCompileFlag(temLinks_arr.length == 0, '必须提供变量', helper)) {
+            return false;
+        }
+        var link = temLinks_arr[0];
+        var varNode = link.outSocket.node;
+        if (this.checkCompileFlag(varNode.type != JSNODE_VAR_GET, '必须提供的是变量节点', helper)) {
+            return false;
+        }
+        if (this.checkCompileFlag(varNode.varData.valType != ValueType.BatchVar, '变量必须是batchvar类型', helper)) {
+            return false;
+        }
+        var comret = varNode.compile(helper, usePreNodes_arr, belongBlock);
+        if(comret == false){
+            return false;
+        }
+
+        var needSetVarName = comret.getSocketOut(link.outSocket).strContent;
+        var inreducer = this.isInReducer(usePreNodes_arr);
+        if (!inreducer) {
+            myJSBlock.pushLine('setTimeout(() => {', 1);
+            myJSBlock.pushLine("store.dispatch(makeAction_setManyStateByPath(" + needSetVarName + ", ''));");
+        }
+        else{
+            myJSBlock.pushLine(makeStr_callFun("setManyStateByPath", [VarNames.State, "''", needSetVarName],';'));
+        }
+
+        if (!inreducer) {
+            myJSBlock.subNextIndent();
+            myJSBlock.pushLine('}, 50);');
+        }
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
+
+        return selfCompileRet;
+    }
+}
+
 
 JSNodeClassMap[JSNODE_OP_NOT] = {
     modelClass: JSNode_OP_Not,
@@ -2735,5 +2931,13 @@ JSNodeClassMap[JSNODE_MSG_SENDTOPARENT] = {
 };
 JSNodeClassMap[JSNODE_CLOSETOPFRAME] = {
     modelClass: JSNode_CloseTopFrame,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_ADD_DYNAMIC_BATCH_API] = {
+    modelClass: JSNode_Add_Dynamic_Batch_Api,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_EXCUTE_DYNAMIC_BATCH_API] = {
+    modelClass: JSNode_Excute_Dynamic_Batch_Api,
     comClass: C_Node_SimpleNode,
 };
