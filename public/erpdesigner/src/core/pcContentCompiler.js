@@ -203,7 +203,7 @@ class PCContentCompiler extends MobileContentCompiler {
             var berelyCtl = relyPath.berelyCtl;
             var changedFun;
             var getValueStr = '';
-            if (berelyCtl.parent == null) {
+            if (berelyCtl.parent == null && berelyCtl.type != M_PageKernel_Type) {
                 console.error('这里berelyCtl.parent 不能为空');
             }
             else {
