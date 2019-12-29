@@ -285,7 +285,7 @@ class MobileContentCompiler extends ContentCompiler {
             var berelyCtl = relyPath.berelyCtl;
             var changedFun;
             var getValueStr = '';
-            if (berelyCtl.parent == null) {
+            if (berelyCtl.parent == null && berelyCtl.type != M_PageKernel_Type) {
                 console.error('这里berelyCtl.parent 不能为空');
             }
             else {
@@ -6181,10 +6181,16 @@ class MobileContentCompiler extends ContentCompiler {
                             }
                             var tempCallParams_arr = callParams_arr;
                             if (useCtlData.kernel.parent == null) {
-                                // 自订控件
-                                tempCallParams_arr = ['nowState', true, 'this.props.fullPath'];
-                                if (this.getKernelFullParentPath(theKernel).length > 0) {
-                                    tempCallParams_arr[2] += " + '." + this.getKernelFullParentPath(theKernel) + "'";
+                                if(useCtlData.kernel.type == UserControlKernel_Type){
+                                    // 自订控件
+                                    tempCallParams_arr = ['nowState', true, 'this.props.fullPath'];
+                                    if (this.getKernelFullParentPath(theKernel).length > 0) {
+                                        tempCallParams_arr[2] += " + '." + this.getKernelFullParentPath(theKernel) + "'";
+                                    }
+                                }
+                                else{
+                                    // 页面
+                                    tempCallParams_arr = ['state', true, singleQuotesStr(useCtlData.kernel.id)];
                                 }
                             }
                             if (autoPull) {

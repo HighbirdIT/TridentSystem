@@ -3076,6 +3076,16 @@ class SqlNode_Control_Api_Prop extends SqlNode_Base {
             var nowVal = this.inSocket.getExtra('colname');
             return <DropDownControl itemChanged={this.columnDDCChanged} btnclass='btn-dark' options_arr={options_arr} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} />;
         }
+        else if(this.apiClass.ctltype == M_PageKernel_Type && this.apiItem.attrItem.name == AttrNames.ParamApi){
+            var selectedCtlid = this.inSocket.getExtra('ctlid');
+            var selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
+            var options_arr = [];
+            if(selectedKernel){
+                options_arr = selectedKernel.getParamApiAttrArray;
+            }
+            var nowVal = this.inSocket.getExtra('colname');
+            return <DropDownControl itemChanged={this.columnDDCChanged} textAttrName='label' valueAttrName='name' btnclass='btn-dark' options_arr={options_arr} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} />;
+        }
         return null;
     }
 
@@ -3148,6 +3158,20 @@ class SqlNode_Control_Api_Prop extends SqlNode_Base {
                 useAttrName: VarNames.SelectedColumns,
                 colname: colname,
                 relyStateName:VarNames.SelectedValues_arr,
+            });
+        }
+        else if(this.apiClass.ctltype == M_PageKernel_Type && this.apiItem.attrItem.name == AttrNames.ParamApi){
+            var colname = this.inSocket.getExtra('colname');
+            var theParam = selectedKernel.getParamApiAttrArray().find(x=>{return x.name == colname;});
+            if (this.checkCompileFlag(theParam == null, '所选属性无效', helper)) {
+                return false;
+            }
+
+            useApiItem = Object.assign({}, useApiItem, {
+                stateName: theParam.label,
+                useAttrName: theParam.label,
+                colname: theParam.label,
+                relyStateName:theParam.label,
             });
         }
         helper.addUseControlPropApi(selectedKernel, useApiItem);

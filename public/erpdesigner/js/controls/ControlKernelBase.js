@@ -411,6 +411,11 @@ var ControlKernelBase = function (_IAttributeable) {
     }, {
         key: 'searchSameReactParentKernel',
         value: function searchSameReactParentKernel(otherKernel) {
+            if (this.type == M_PageKernel_Type) {
+                return this;
+            } else if (otherKernel.type == M_PageKernel_Type) {
+                return otherKernel;
+            }
             var selfParents_arr = this.getReactParentKernel();
             var otherParents_arr = otherKernel.getReactParentKernel();
             for (var i = 0; i < selfParents_arr.length; ++i) {
