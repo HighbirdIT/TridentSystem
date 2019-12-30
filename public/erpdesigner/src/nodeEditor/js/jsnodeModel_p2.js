@@ -2107,11 +2107,15 @@ class JSNode_ClosePopper extends JSNode_Base {
         }
 
         var batchNode = null;
-        if (preNodes_arr[preNodes_arr.length - 1].type == JSNODE_BATCH_CONTROL_API_PROPSETTER
-            ||
-            preNodes_arr[preNodes_arr.length - 1].type == JSNODE_ADD_DYNAMIC_BATCH_API
-        ) {
-            batchNode = preNodes_arr[preNodes_arr.length - 1];
+        var links_arr = this.bluePrint.linkPool.getLinksBySocket(this.outFlowSocket);
+        if(links_arr.length > 0){
+            var nextNode =  links_arr[0].inSocket.node;
+            if (nextNode.type == JSNODE_BATCH_CONTROL_API_PROPSETTER
+                ||
+                nextNode.type == JSNODE_ADD_DYNAMIC_BATCH_API
+            ) {
+                batchNode = nextNode;
+            }
         }
 
         var pathVar = belongPopper.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map });

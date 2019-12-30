@@ -4187,18 +4187,22 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
         var batchNode = null;
         var batchMode = false;
         var maybebatchMode = false;
-        if (preNodes_arr[preNodes_arr.length - 1].type == JSNODE_BATCH_CONTROL_API_PROPSETTER
-            ||
-            preNodes_arr[preNodes_arr.length - 1].type == JSNODE_ADD_DYNAMIC_BATCH_API
-        ) {
-            batchNode = preNodes_arr[preNodes_arr.length - 1];
-            batchMode = true;
+        var links_arr = this.bluePrint.linkPool.getLinksBySocket(this.outFlowSocket);
+        if(links_arr.length > 0){
+            var nextNode =  links_arr[0].inSocket.node;
+            if (nextNode.type == JSNODE_BATCH_CONTROL_API_PROPSETTER
+                ||
+                nextNode.type == JSNODE_ADD_DYNAMIC_BATCH_API
+            ) {
+                batchNode = nextNode;
+                batchMode = true;
+            }
         }
         var needSetVarName = batchNode ? batchNode.needSetVarName : null;
         var belongTraversalNode = null;
         var topmostParent = null;
 
-        var links_arr = this.bluePrint.linkPool.getLinksBySocket(this.ctlSocket);
+        links_arr = this.bluePrint.linkPool.getLinksBySocket(this.ctlSocket);
         var selectedCtlid;
         var selectedKernel;
         var traversalFromNode = null;
@@ -7600,12 +7604,16 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         var batchNode = null;
         var batchMode = false;
         var maybebatchMode = false;
-        if (preNodes_arr[preNodes_arr.length - 1].type == JSNODE_BATCH_CONTROL_API_PROPSETTER
-            ||
-            preNodes_arr[preNodes_arr.length - 1].type == JSNODE_ADD_DYNAMIC_BATCH_API
-        ) {
-            batchNode = preNodes_arr[preNodes_arr.length - 1];
-            batchMode = true;
+        var links_arr = this.bluePrint.linkPool.getLinksBySocket(this.outFlowSocket);
+        if(links_arr.length > 0){
+            var nextNode =  links_arr[0].inSocket.node;
+            if (nextNode.type == JSNODE_BATCH_CONTROL_API_PROPSETTER
+                ||
+                nextNode.type == JSNODE_ADD_DYNAMIC_BATCH_API
+            ) {
+                batchNode = nextNode;
+                batchMode = true;
+            }
         }
         var needSetVarName = batchNode ? batchNode.needSetVarName : null;
         var belongTraversalNode = null;
@@ -7614,7 +7622,7 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         var selectedCtlid;
         var selectedKernel;
         var traversalFromNode = null;
-        var links_arr = this.bluePrint.linkPool.getLinksBySocket(this.ctlSocket);
+        links_arr = this.bluePrint.linkPool.getLinksBySocket(this.ctlSocket);
         if (links_arr.length > 0) {
             var link = links_arr[0];
             var fromNode = link.outSocket.node;
@@ -7721,6 +7729,10 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             }
         }
         if (this.isUserControlEvent || this.isUserControlFunction) {
+            if (selectedKernel.parent == null) {
+                // 在自订控件内部设置属性，需要加本控件path
+                belongUserCtl = selectedKernel;
+            }
             var bundleStr = '';
             for (var i = 0; i < this.inputScokets_arr.length; ++i) {
                 var theSocket = this.inputScokets_arr[i];
@@ -7734,24 +7746,32 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
                 var tValue = socketComRet.value;
                 bundleStr += (bundleStr.length > 0 ? ',' : '') + theSocket.label + ':' + tValue
             }
-            var pathVar = selectedKernel.id + "_path + '.fun_" + funAttrValue.name + "'";
-            if (this.isUserControlFunction) {
-                if (!selectedKernel.isTemplate()) {
-                    if (rowKeyValue) {
-                        pathVar = belongForm.id + "_path + '.row_'+" + rowKeyValue + '+' + singleQuotesStr('.' + selectedKernel.getStatePath('fun_' + funAttrValue.name, '.', null, true, belongForm));
-                    }
-                    else {
-                        if (belongUserCtl) {
-                            pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath('fun_' + funAttrValue.name));
-                        }
-                    }
-                }
-                //bundleStr += (bundleStr.length > 0 ? ',' : '') + selectedKernel.getTemplateKernel().id + '_path:' + selectedKernel.id + '_path';
-            }
             if (traversalFromNode) {                
                 myJSBlock.pushLine(traversalFromNode.id + '_' + VarNames.NeedSetState + "[" + traversalFromNode.id + '_rowpath + ' + singleQuotesStr('.' + selectedKernel.getStatePath('fun_' + funAttrValue.name, '.', null, false, traversalFromNode.formKernel)) + "]={" + bundleStr + "};", -1);
             }
             else{
+                var pathVar = selectedKernel.id + "_path + '.fun_" + funAttrValue.name + "'";
+                if (belongUserCtl == topmostParent) {
+                    // 控件内部的调用
+                    if (batchMode) {
+                        var relPath = selectedKernel.getStatePath('', '.', null, true, topmostParent);
+                        pathVar = singleQuotesStr((relPath.length > 0 ? relPath + '.' : '') +  "fun_" + funAttrValue.name);
+                    }
+                }
+                else if (this.isUserControlFunction) {
+                    if (!selectedKernel.isTemplate()) {
+                        if (rowKeyValue) {
+                            pathVar = belongForm.id + "_path + '.row_'+" + rowKeyValue + '+' + singleQuotesStr('.' + selectedKernel.getStatePath('fun_' + funAttrValue.name, '.', null, true, belongForm));
+                        }
+                        else {
+                            if (belongUserCtl) {
+                                pathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath('fun_' + funAttrValue.name));
+                            }
+                        }
+                    }
+                    //bundleStr += (bundleStr.length > 0 ? ',' : '') + selectedKernel.getTemplateKernel().id + '_path:' + selectedKernel.id + '_path';
+                }
+
                 if(batchMode){
                     myJSBlock.pushLine(needSetVarName + "[" + pathVar + "]={" + bundleStr + "};", -1);
                 }
