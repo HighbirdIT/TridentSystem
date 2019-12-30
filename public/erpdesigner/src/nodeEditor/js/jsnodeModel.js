@@ -9403,6 +9403,7 @@ class JSNode_Batch_Control_Api_Propsetter extends JSNode_Base {
         myJSBlock.pushLine('var ' + needSetVarName + ' = {};');
         myJSBlock.pushChild(setBodyBlock);
         var inreducer = this.isInReducer(usePreNodes_arr);
+        inreducer = false;  // 没有调试清除，还是做延迟处理
         if (!inreducer) {
             myJSBlock.pushLine('setTimeout(() => {', 1);
             myJSBlock.pushLine("store.dispatch(makeAction_setManyStateByPath(" + needSetVarName + ", ''));");

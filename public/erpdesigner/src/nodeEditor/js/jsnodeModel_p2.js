@@ -2818,6 +2818,7 @@ class JSNode_Excute_Dynamic_Batch_Api extends JSNode_Base {
 
         var needSetVarName = comret.getSocketOut(link.outSocket).strContent;
         var inreducer = this.isInReducer(usePreNodes_arr);
+        inreducer = false;  // 没有调试清除，还是做延迟处理
         if (!inreducer) {
             myJSBlock.pushLine('setTimeout(() => {', 1);
             myJSBlock.pushLine("store.dispatch(makeAction_setManyStateByPath(" + needSetVarName + ", ''));");
