@@ -7751,7 +7751,7 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             }
             else{
                 var pathVar = selectedKernel.id + "_path + '.fun_" + funAttrValue.name + "'";
-                if (belongUserCtl == topmostParent) {
+                if (belongUserCtl && belongUserCtl == topmostParent) {
                     // 控件内部的调用
                     if (batchMode) {
                         var relPath = selectedKernel.getStatePath('', '.', null, true, topmostParent);
