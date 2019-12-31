@@ -1269,7 +1269,7 @@ class FlowNode_QueryKeyRecord extends JSNode_Base {
             );
             var needSort = false;
             for (var si = 1; si < this.inputScokets_arr.length; ++si) {
-                var theSocket = this.inputScokets_arr[si - 1];
+                var theSocket = this.inputScokets_arr[si];
                 if (theSocket._validparam == false) {
                     this.removeSocket(theSocket);
                     --si;

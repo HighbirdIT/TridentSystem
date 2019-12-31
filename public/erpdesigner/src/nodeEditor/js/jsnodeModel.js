@@ -6814,7 +6814,6 @@ class JSNODE_Update_table extends JSNode_Base {
         myServerBlock.subNextIndent();
         myServerBlock.pushLine('}');
         myServerBlock.pushChild(serverCompleteBlock);
-        myServerBlock.pushLine("return " + dataVarName + ";");
 
         paramInitBlock.subNextIndent();
         paramInitBlock.pushLine('];');
