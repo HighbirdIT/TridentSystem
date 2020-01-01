@@ -1189,6 +1189,7 @@ class JSNode_Mathfun extends JSNode_Base {
             this.outSocket = new NodeSocket('out', this, false, { type: ValueType.Boolean });
             this.addSocket(this.outSocket);
         }
+        this.outSocket.isSimpleVal = true;
         if (this.mathType == null) {
             this.mathType = Math_ABS;
         }
@@ -1253,50 +1254,33 @@ class JSNode_Mathfun extends JSNode_Base {
         var usePreNodes_arr = preNodes_arr.concat(this);
         var inSocket = this.inSocket;
 
-        var finalStr = this.mathType + '(';
+        var finalStr = 'Math.' + this.mathType.toLocaleLowerCase() + '(';
+        var socketVal_arr = [];
+        var theSocket;
+        var socketComRet;
+        var i;
+        for (i = 0; i < this.inputScokets_arr.length; ++i) {
+            theSocket = this.inputScokets_arr[i];
+            socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            socketVal_arr.push(socketComRet.value);
+        }
         switch (this.mathType) {
             case Math_ROUND:
             case Math_POWER:
-                var socketVal_arr = [];
-                for (var i = 0; i < this.inputScokets_arr.length; ++i) {
-                    var theSocket = this.inputScokets_arr[i];
-                    var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
-                    if (socketComRet.err) {
-                        return false;
-                    }
-                    var tValue = socketComRet.value;
-                    if (socketComRet.link && !socketComRet.link.outSocket.isSimpleVal) {
-                        tValue = tValue 
-                    }
-                    socketVal_arr.push(tValue)
-                }
                 finalStr += socketVal_arr[0] + ',' + socketVal_arr[1] + ')';
                 break;
             case Math_ABS:
             case Math_CEILING:
             case Math_FLOOR:
-            case Math_SQUARE:
             case Math_SQRT:
             case Math_TAN:
             case Math_SIN:
             case Math_COS:
             case Math_SIGN:
-                var socketVal_arr = [];
-                var theSocket = this.inputScokets_arr[i];
-                var tLinks = this.bluePrint.linkPool.getLinksBySocket(theSocket);
-                var tValue = null;
-                for (var i = 0; i < this.inputScokets_arr.length; ++i) {
-                    var theSocket = this.inputScokets_arr[0];
-                    var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
-                    if (socketComRet.err) {
-                        return false;
-                    }
-                    var tValue = socketComRet.value;
-                    if (socketComRet.link && !socketComRet.link.outSocket.isSimpleVal) {
-                        tValue = tValue 
-                    }
-                }
-                finalStr += tValue + ')';
+                finalStr += socketVal_arr[0] + ')';
                 break;
             case Math_RAND:
                 finalStr += ')';

@@ -2107,14 +2107,15 @@ class JSNode_ClosePopper extends JSNode_Base {
         }
 
         var batchNode = null;
-        var links_arr = this.bluePrint.linkPool.getLinksBySocket(this.outFlowSocket);
-        if(links_arr.length > 0){
-            var nextNode =  links_arr[0].inSocket.node;
+        var links_arr = this.bluePrint.linkPool.getLinksBySocket(this.inFlowSocket);
+        if (links_arr.length == 0) {
+            var nextNode = preNodes_arr[preNodes_arr.length - 1];
             if (nextNode.type == JSNODE_BATCH_CONTROL_API_PROPSETTER
                 ||
                 nextNode.type == JSNODE_ADD_DYNAMIC_BATCH_API
             ) {
                 batchNode = nextNode;
+                batchMode = true;
             }
         }
 
