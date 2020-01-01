@@ -1699,6 +1699,19 @@ function Convert_TimeZone(pTime, zoneSrc, zoneDst) {
     return rltDate;
 }
 
+function Convert_DateZone(pDate, zoneDst) {
+    var rltDate = new Date(pDate);
+    var time = pDate.getTime();
+    var offset = 0;
+    var zoneSrc = Math.floor(rltDate.getTimezoneOffset() / -60);
+    zoneDst = parseInt(zoneDst);
+    offset = -zoneSrc + zoneDst;
+    if (offset != 0) {
+        rltDate.setTime(time + 1000 * 60 * 60 * offset);
+    }
+    return rltDate;
+}
+
 var gDingDingIniting = false;
 var gInitDingCallBack = null;
 

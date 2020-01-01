@@ -2065,7 +2065,9 @@ class JSNode_ConstValue extends JSNode_Base {
             if (value.toLocaleLowerCase() == 'null') {
                 value = 'null';
             }
-            else if (value != "''") {
+            var first = value[0];
+            var last = value[value.length - 1];
+            if (first != last && first != '"' && first != "'") {
                 value = "'" + value + "'";
             }
         }
@@ -4580,6 +4582,12 @@ const gJSDateFuns_arr = [
         outputs: [{ label: '', type: ValueType.Date }]
     },
     {
+        name: 'Convert_DateZone',
+        inputs: [{ label: '日期', type: ValueType.Date },
+        { label: '目标时区', type: ValueType.Int, inputable: true }],
+        outputs: [{ label: '', type: ValueType.Date }]
+    },
+    {
         name: 'GetTimeZone',
         inputs: [{ label: '日期', type: ValueType.Date }],
         outputs: [{ label: '时区', type: ValueType.Int }]
@@ -4744,13 +4752,16 @@ class JSNode_DateFun extends JSNode_Base {
                 callStr = funPreFix + 'Convert_TimeZone(' + socketVal_arr[0] + ',' + socketVal_arr[1] + ',' + socketVal_arr[2] + ') ';
                 break;
             case 'GetTimeZone':
-                callStr = '(' + socketVal_arr[0] + '.getTimezoneOffset()/-60)';
+                callStr = 'Math.floor(' + socketVal_arr[0] + '.getTimezoneOffset()/-60)';
                 break;
             case 'GetTime':
                 callStr = socketVal_arr[0] + '.getTime()';
                 break;
             case 'CastDateByTimeNumber':
                 callStr = 'new Date(parseInt(' + socketVal_arr[0] + '))';
+                break;
+            case 'Convert_DateZone':
+            callStr = funPreFix + 'Convert_DateZone(' + socketVal_arr[0] + ',' + socketVal_arr[1] + ') ';
                 break;
             default:
                 if (this.checkCompileFlag(true, '不支持的日期方法', helper)) {
