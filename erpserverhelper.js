@@ -290,6 +290,19 @@ function Convert_TimeZone(time, zoneSrc, zoneDst) {
     return new Date(firsttime.setTime(datetime + 1000 * 60 * 60 * offset));
 }
 
+function Convert_DateZone(pDate, zoneDst) {
+    var rltDate = new Date(pDate);
+    var time = pDate.getTime();
+    var offset = 0;
+    var zoneSrc = Math.floor(rltDate.getTimezoneOffset()/-60);    
+    zoneDst = parseInt(zoneDst);
+    offset = -zoneSrc + zoneDst;
+    if(offset != 0){
+        rltDate.setTime(time + 1000 * 60 * 60 * offset);
+    }
+    return rltDate;
+}
+
 helper.DateFun={
     getNowDate:GetNowDate,
     checkDate:CheckDate,
@@ -306,6 +319,7 @@ helper.DateFun={
     castDateFromTimePart:CastDateFromTimePart,
     getweekDay:GetweekDay,
     Convert_TimeZone:Convert_TimeZone,
+    Convert_DateZone:Convert_DateZone,
 };
 
 module.exports = helper;

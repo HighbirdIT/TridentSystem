@@ -3103,7 +3103,7 @@ class MobileContentCompiler extends ContentCompiler {
 
 
             if (selectMode != ESelectMode.None) {
-                sumTableWidth += 3.5;
+                //sumTableWidth += 3.5;
                 gridHeadRowRenderBlock.pushLine("<th scope='col' className='selectorTableHeader'></th>");
                 if (gridHeadBodyRowRenderBlock) {
                     gridHeadBodyRowRenderBlock.pushLine("<td className='selectorTableHeader'></td>");
@@ -3112,7 +3112,7 @@ class MobileContentCompiler extends ContentCompiler {
             }
             var autoIndexColumn = theKernel.getAttribute(AttrNames.AutoIndexColumn);
             if (autoIndexColumn) {
-                sumTableWidth += 3;
+                //sumTableWidth += 3;
                 gridHeadRowRenderBlock.pushLine("<th scope='col' className='indexTableHeader'>序号</th>");
                 if (gridHeadBodyRowRenderBlock) {
                     gridHeadBodyRowRenderBlock.pushLine("<td className='indexTableHeader'></td>");
