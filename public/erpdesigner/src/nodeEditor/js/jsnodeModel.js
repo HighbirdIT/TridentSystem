@@ -2065,10 +2065,12 @@ class JSNode_ConstValue extends JSNode_Base {
             if (value.toLocaleLowerCase() == 'null') {
                 value = 'null';
             }
-            var first = value[0];
-            var last = value[value.length - 1];
-            if (first != last && first != '"' && first != "'") {
-                value = "'" + value + "'";
+            else{
+                var first = value[0];
+                var last = value[value.length - 1];
+                if (first != last && first != '"' && first != "'") {
+                    value = "'" + value + "'";
+                }
             }
         }
         var selfCompileRet = new CompileResult(this);
