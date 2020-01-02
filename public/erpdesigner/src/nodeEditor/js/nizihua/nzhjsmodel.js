@@ -13,6 +13,7 @@ const JSNODE_CONVERT_TIMEZONE = 'convert_timezone';
 const JSNODE_ASSIGNMENT_OPERATOR = 'addition_assignment_operator';
 const JSNODE_ISNULLOPERATOR='IsNullOperator';
 const JSNODE_MATHFUN = 'mathfun';
+const JSNODE_ARRAY_CLEAR='clear';
 class JSNode_While extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_WHILE, 'While', false, nodeJson);
@@ -1008,17 +1009,17 @@ class JSNode_Assignment_Operator extends JSNode_Base {
                 item.inputable = true;
             });
         }
-        if (nodeJson) {
-            if (this.outputScokets_arr.length > 0) {
-                this.outSocket = this.outputScokets_arr[0];
-                this.outSocket.type = ValueType.String;
-            }
-        }
-        if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false, { type: ValueType.String });
-            this.addSocket(this.outSocket);
-        }
-        this.outSocket.isSimpleVal = false;
+        // if (nodeJson) {
+        //     if (this.outputScokets_arr.length > 0) {
+        //         this.outSocket = this.outputScokets_arr[0];
+        //         this.outSocket.type = ValueType.String;
+        //     }
+        // }
+        // if (this.outSocket == null) {
+        //     this.outSocket = new NodeSocket('out', this, false, { type: ValueType.String });
+        //     this.addSocket(this.outSocket);
+        // }
+        // this.outSocket.isSimpleVal = false;
         if (this.inputScokets_arr.length == 0) {
             this.addSocket(new NodeSocket('var', this, true, { type: ValueType.Object }));
             this.addSocket(new NodeSocket('value', this, true, { type: ValueType.String }));
@@ -1056,7 +1057,8 @@ class JSNode_Assignment_Operator extends JSNode_Base {
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
         var socketVal_arr = [];
-        var allNumberic = true;
+        // var flowSocket = this.outFlowSockets_arr[0];
+        // var flowLink = this.bluePrint.linkPool.getLinksBySocket(flowSocket)[0];
         for (var i = 0; i < this.inputScokets_arr.length; ++i) {
             var theSocket = this.inputScokets_arr[i];
             var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
@@ -1083,15 +1085,37 @@ class JSNode_Assignment_Operator extends JSNode_Base {
         socketVal_arr.forEach((x, i) => {
             finalStr += (i == 0 ? '' : nodeThis.operator) + x;
         });
-        var selfCompileRet = new CompileResult(this);
 
-        var myJSBlock = new FormatFileBlock(this.id);
+        var myJSBlock = new FormatFileBlock('');
         belongBlock.pushChild(myJSBlock);
-        myJSBlock.pushLine('' + finalStr + '');
+        myJSBlock.pushLine(' ' + finalStr + ' ');
         myJSBlock.addNextIndent();
+        // selfCompileRet.setSocketOut(this.outSocket, finalStr);
 
-        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
+
+        var flowLinks_arr = null;
+        var flowLink = null;
+        var nextNodeCompileRet = null;
+
+        for (var fi = 0; fi < 2; ++fi) {
+            var theFlowSocket = fi == 0 ? this.trueFlowSocket : this.falseFlowSocket;
+            // var useBlock = fi == 0 ? myJS.trueBlock : myJS.falseBlock;
+            flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(theFlowSocket);
+            if (flowLinks_arr.length != 0) {
+                flowLink = flowLinks_arr[0];
+                nextNodeCompileRet = this.compileFlowNode(flowLink, helper, usePreNodes_arr, myJSBlock);
+                if (nextNodeCompileRet == false) {
+                    return false;
+                }
+            }
+        }
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
         return selfCompileRet;
     }
 }
@@ -1181,12 +1205,12 @@ class JSNode_Mathfun extends JSNode_Base {
         if (nodeJson) {
             if (this.outputScokets_arr.length > 0) {
                 this.outSocket = this.outputScokets_arr[0];
-                this.outSocket.type = ValueType.Boolean;
+                this.outSocket.type = ValueType.String;
             }
         }
 
         if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false, { type: ValueType.Boolean });
+            this.outSocket = new NodeSocket('out', this, false, { type: ValueType.String });
             this.addSocket(this.outSocket);
         }
         if (this.mathType == null) {
@@ -1252,8 +1276,22 @@ class JSNode_Mathfun extends JSNode_Base {
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
         var inSocket = this.inSocket;
-
-        var finalStr = this.mathType + '(';
+        var JsMathType=''
+        switch(this.mathType){
+            case Math_ROUND:
+            case Math_POWER:
+            case Math_ABS:
+                JsMathType = 'abs'
+            case Math_CEILING:
+            case Math_FLOOR:
+            case Math_SQUARE:
+            case Math_SQRT:
+            case Math_TAN:
+            case Math_SIN:
+            case Math_COS:
+            case Math_SIGN:
+        }
+        var finalStr = 'Math.'+JsMathType+ '(';
         switch (this.mathType) {
             case Math_ROUND:
             case Math_POWER:
@@ -1297,9 +1335,6 @@ class JSNode_Mathfun extends JSNode_Base {
                     }
                 }
                 finalStr += tValue + ')';
-                break;
-            case Math_RAND:
-                finalStr += ')';
                 break;
         }
 
