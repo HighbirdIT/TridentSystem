@@ -2068,7 +2068,7 @@ class JSNode_ConstValue extends JSNode_Base {
             else{
                 var first = value[0];
                 var last = value[value.length - 1];
-                if (first != last && first != '"' && first != "'") {
+                if(!(first == last && (first == '"' || first == "'"))){
                     value = "'" + value + "'";
                 }
             }
