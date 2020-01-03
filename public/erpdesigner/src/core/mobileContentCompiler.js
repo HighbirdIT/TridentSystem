@@ -2815,7 +2815,15 @@ class MobileContentCompiler extends ContentCompiler {
             else if (belongUserControl != null) {
                 // 在自订控件里
                 var templateReactClass = this.clientSide.getReactClass(belongUserControl.getReactClassName());
-                templateReactClass.initFun.pushLine(makeStr_callFun(bindFun.name, [belongUserControl.id + '_state', 'null', 'null', "ctlFullPath + '." + theKernel.id + "'"]));
+
+                // 延迟调用
+                templateReactClass.initFun.pushLine('setTimeout(() => {', 1);
+                templateReactClass.initFun.pushLine('store.dispatch(makeAction_callFunction(state=>{', 1);
+                templateReactClass.initFun.pushLine(makeStr_callFun(bindFun.name, ['state', 'null', 'null', "ctlFullPath + '." + theKernel.id + "'"]));
+                templateReactClass.initFun.subNextIndent();
+                templateReactClass.initFun.pushLine('}));');
+                templateReactClass.initFun.subNextIndent();
+                templateReactClass.initFun.pushLine('},20);');
             }
             else {
                 var pageInitFun = clientSide.scope.getFunction(makeFName_initPage(belongPage));
