@@ -91,13 +91,13 @@ function check_log(src) {
             if (data[file_src] == null || data[file_src] === false || data['err'] != null) {
                 console.log('缺失文件备份', file_src);
                 result = false;
-                return result
+                return false;
             }
         } else if (statInfo.isDirectory()) {
             check_log(file_src);
         }
     });
-    return result
+    return result;
 }
 module.exports={
     doWork:doBackUpWork
