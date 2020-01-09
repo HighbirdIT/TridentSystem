@@ -4485,7 +4485,6 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
             }
             // set 不需要设定属性引用
             //helper.addUseControlPropApi(selectedKernel, useApiItem, EFormRowSource.Context);
-            helper.addUseForm
         }
 
         belongBlock.pushChild(myJSBlock);
