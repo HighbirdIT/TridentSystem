@@ -5481,6 +5481,7 @@ class MobileContentCompiler extends ContentCompiler {
         if (belongPageKernel == null) {
             belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
         }
+        var belongUserCtlMidData = belongUserControl ? this.projectCompiler.getMidData(belongUserControl.id) : null;
 
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
         var reactParentKernel = theKernel.getReactParentKernel(true);
@@ -5521,9 +5522,18 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
 
-        var fullParentPath = this.getKernelFullParentPath(theKernel);
+        var pureFullParentPath = this.getKernelFullParentPath(theKernel);
+        var fullParentPath = pureFullParentPath;
         if (belongUserControl) {
-            fullParentPath = makeStr_callFun('CombineDotStr', [belongUserControl.id + '_path', singleQuotesStr(fullParentPath)]);
+            if(IsEmptyString(fullParentPath)){
+                fullParentPath = belongUserControl.id + '_path';
+            }
+            else{
+                fullParentPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + fullParentPath);
+            }
+        }
+        else{
+            fullParentPath = singleQuotesStr(fullParentPath);
         }
         var self = this;
         var needCallPullFun = true;
@@ -5531,7 +5541,16 @@ class MobileContentCompiler extends ContentCompiler {
         var compileCDSRet = this.compileCustomDataSourceAttribute(theKernel, 'records_arr', {
             useCtlProp: (useCtlData, propApiitem, pullFun) => {
                 if(autoPull){
-                    this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theKernel, pullFun.name, useCtlData.kernel, propApiitem.relyStateName, [singleQuotesStr(fullParentPath)]);
+                    var useFullParentPath = fullParentPath;
+                    if(useCtlData.kernel.type == UserControlKernel_Type && useCtlData.kernel.isTemplate()){
+                        if(IsEmptyString(pureFullParentPath)){
+                            useFullParentPath = 'this.props.fullPath';
+                        }
+                        else{
+                            useFullParentPath = 'this.props.fullPath + ' + singleQuotesStr('.' + pureFullParentPath);
+                        }
+                    }
+                    this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theKernel, pullFun.name, useCtlData.kernel, propApiitem.relyStateName, [useFullParentPath]);
                 }
                 needCallPullFun = false;
             },
@@ -5539,7 +5558,7 @@ class MobileContentCompiler extends ContentCompiler {
                 var useFormMidData = this.projectCompiler.getMidData(useFormData.formKernel.id);
                 if (useFormMidData.isPageForm) {
                     if(autoPull){
-                        useFormMidData.bindFun.bindEndBlock.pushLine(makeStr_callFun(pullFun.name, [singleQuotesStr(fullParentPath)], ';'));
+                        useFormMidData.bindFun.bindEndBlock.pushLine(makeStr_callFun(pullFun.name, [fullParentPath], ';'));
                     }
                 }
                 needCallPullFun = false;
@@ -5574,7 +5593,7 @@ class MobileContentCompiler extends ContentCompiler {
             else {
                 var pageInitFun = clientSide.scope.getFunction(makeFName_initPage(belongPageKernel));
                 var timeoutBlock = pageInitFun.getChild('timeout');
-                timeoutBlock.pushLine(makeStr_callFun(pullFun.name, [singleQuotesStr(theKernel.fullParentPath)]) + ';');
+                timeoutBlock.pushLine(makeStr_callFun(pullFun.name, [fullParentPath]) + ';');
             }
         }
 
@@ -5610,7 +5629,17 @@ class MobileContentCompiler extends ContentCompiler {
         var parentPath = this.getKernelParentPath(theKernel);
         var parentFullPath = this.getKernelFullParentPath(theKernel);
         var thisFullPath = makeStr_DotProp(parentFullPath, theKernel.id);
-        clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisFullPath, VarNames.Records_arr))] = recordsArraychangedFunName + '.bind(window)';
+        if (belongUserControl) {
+            belongUserCtlMidData.needSetStateChangedActs_arr.push(
+                {
+                    propName: makeStr_DotProp(thisFullPath, VarNames.Records_arr),
+                    funName: recordsArraychangedFunName + '.bind(window)',
+                }
+            );
+        }
+        else {
+            clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisFullPath, VarNames.Records_arr))] = recordsArraychangedFunName + '.bind(window)';
+        }
         ctlTag.setAttr('parentPath', parentPath);
         renderBlock.pushChild(ctlTag);
 
