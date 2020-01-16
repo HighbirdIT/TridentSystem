@@ -367,6 +367,14 @@ var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean,
 var JsValueTypes = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time, ValueType.DateMD];
 var JsVarNodeValueTypes = JsValueTypes.concat(ValueType.BatchVar);
 
+const EChartType={
+    Pie:'pie',
+    Line:'line',
+    Bar:'bar',
+    HorizontalBar:'horizontalBar',
+};
+var ChartTypes_arr = [EChartType.Pie, EChartType.Line, EChartType.Bar,EChartType.HorizontalBar];
+
 function TransSVTToJSVT(sqlType) {
     switch (sqlType) {
         case 'bigint':

@@ -26,6 +26,9 @@ const JSNODE_CLOSETOPFRAME = 'closetopframe';
 const JSNODE_ADD_DYNAMIC_BATCH_API = 'adddynamicbatchapi';
 const JSNODE_EXCUTE_DYNAMIC_BATCH_API = 'excutedynamicbatchapi';
 
+const JSNODE_CHART_NEWDATASET = 'chart_newdateset';
+const JSNODE_CHART_GENCOLOR = 'chart_gencolor';
+
 
 class JSNode_AddPageToFrameSet extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
@@ -2849,6 +2852,320 @@ class JSNode_Excute_Dynamic_Batch_Api extends JSNode_Base {
     }
 }
 
+class JSNode_Chart_NewDataset extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_CHART_NEWDATASET, '创建Dataset', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+        
+        if(this.inputScokets_arr.length > 0){
+            this.inputScokets_arr.forEach(socket=>{
+                switch (socket.name) {
+                    case 'borderColor':
+                        this.borderColorScoket = socket;
+                        break;
+                    case 'borderWidth':
+                        this.borderWidthScoket = socket;
+                        break;
+                    case 'backgroundColor':
+                        this.backgroundColorScoket = socket;
+                        break;
+                    case 'label':
+                        this.labelScoket = socket;
+                        break;
+                    case 'fill':
+                        this.fillScoket = socket;
+                        break;
+                }
+            });
+        }
+        if(this.outputScokets_arr.length > 0){
+            this.outputScokets_arr.forEach(socket=>{
+                switch (socket.name) {
+                    case 'name':
+                        this.nameScoket = socket;
+                        break;
+                    case 'data_arr':
+                        this.dataArrScoket = socket;
+                        break;
+                    case 'colors_arr':
+                        this.colorsArrScoket = socket;
+                        break;
+                }
+            });
+        }
+        if(this.labelScoket == null){
+            this.labelScoket = this.addSocket(new NodeSocket('label', this, true));
+        }
+        if(this.fillScoket == null){
+            this.fillScoket = this.addSocket(new NodeSocket('fill', this, true));
+        }
+        if(this.borderColorScoket == null){
+            this.borderColorScoket = this.addSocket(new NodeSocket('borderColor', this, true));
+        }
+        if(this.borderWidthScoket == null){
+            this.borderWidthScoket = this.addSocket(new NodeSocket('borderWidth', this, true));
+        }
+        /*
+        if(this.backgroundColorScoket == null){
+            this.backgroundColorScoket = this.addSocket(new NodeSocket('backgroundColor', this, true));
+        }
+        this.backgroundColorScoket.label = 'backgroundColor';
+        this.backgroundColorScoket.type = ValueType.String;
+        this.backgroundColorScoket.inputable = true;
+        */
+        if(this.nameScoket == null){
+            this.nameScoket = this.addSocket(new NodeSocket('name', this, false));
+        }
+        if(this.dataArrScoket == null){
+            this.dataArrScoket = this.addSocket(new NodeSocket('data_arr', this, false));
+        }
+        if(this.colorsArrScoket == null){
+            this.colorsArrScoket = this.addSocket(new NodeSocket('colors_arr', this, false));
+        }
+        if(this.fillScoket.defval == null){
+            this.fillScoket.defval = false;
+        }
+        this.labelScoket.label = '标签';
+        this.labelScoket.type = ValueType.String;
+        this.labelScoket.inputable = true;
+        this.fillScoket.label = '是否填充';
+        this.fillScoket.type = ValueType.Boolean;
+        this.fillScoket.inputable = true;
+        this.borderColorScoket.label = 'borderColor';
+        this.borderColorScoket.type = ValueType.String;
+        this.borderColorScoket.inputable = true;
+        this.borderWidthScoket.label = 'borderWidth';
+        this.borderWidthScoket.type = ValueType.Int;
+        this.borderWidthScoket.inputable = true;
+
+        this.nameScoket.label = 'name';
+        this.nameScoket.type = ValueType.Object;
+        this.dataArrScoket.label = 'data_arr';
+        this.dataArrScoket.type = ValueType.Array;
+        this.colorsArrScoket.label = 'colors_arr';
+        this.colorsArrScoket.type = ValueType.Array;
+    }
+
+    mouseDownOutSocketHand(ev) {
+        var socketid = getAttributeByNode(ev.target, 'd-socketid', true, 10);
+        if (socketid == null) {
+            return;
+        }
+        var theSocket = this.sockets_map[socketid];
+        var bornPos = theSocket.currentComponent.getCenterPos();
+        var newNode = new FlowNode_ColumnVar({
+            keySocketID: socketid,
+            newborn: true,
+            left: bornPos.x,
+            top: bornPos.y,
+        }, this.parent);
+    }
+
+    customSocketRender(socket) {
+        if (socket.isIn == true) {
+            return null;
+        }
+        return (<span className='d-flex align-items-center'>{socket.label}
+            <button onMouseDown={this.mouseDownOutSocketHand} type='button' className='btn btn-secondary'><i className='fa fa-hand-paper-o' /></button>
+        </span>);
+    }
+
+    getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
+        if (belongFun.scope.isServerSide) {
+            return;
+        }
+        var compileRet = helper.getCompileRetCache(this);
+        var socketValue = compileRet.getSocketOut(targetSocket).strContent;
+        result.pushVariable(socketValue, targetSocket);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var myJSBlock = new FormatFileBlock('');
+        belongBlock.pushChild(myJSBlock);
+
+        var socketComRet = this.getSocketCompileValue(helper, this.borderColorScoket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var borderColor = socketComRet.value;
+        socketComRet = this.getSocketCompileValue(helper, this.borderWidthScoket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var borderWidth = socketComRet.value;
+        if (this.checkCompileFlag(IsEmptyString(borderColor) ^ IsEmptyString(borderWidth) ? 1 : 0, 'borderColor和borderWidth必须同时有效或无效', helper)) {
+            return false;
+        }
+        socketComRet = this.getSocketCompileValue(helper, this.labelScoket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var label = socketComRet.value;
+        socketComRet = this.getSocketCompileValue(helper, this.fillScoket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var isFill = socketComRet.value;
+        /*
+        socketComRet = this.getSocketCompileValue(helper, this.backgroundColorScoket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var backgroundColor = socketComRet.value;
+        */
+        var dataArrVarName = this.id + '_dataarr';
+        var colorArrVarName = this.id + '_colorarr';
+        belongBlock.pushLine(makeLine_DeclareVar(dataArrVarName, '[]', false));
+        belongBlock.pushLine(makeLine_DeclareVar(colorArrVarName, '[]', false));
+        belongBlock.pushLine('var ' + this.id + '={', 1);
+        belongBlock.pushLine('data:' + dataArrVarName + ',');
+        belongBlock.pushLine('backgroundColor:' + colorArrVarName + ',');
+        belongBlock.pushLine('label:' + label + ',');
+        belongBlock.pushLine('fill:' + isFill + ',');
+        if(!IsEmptyString(borderColor)){
+            belongBlock.pushLine('borderColor:' + borderColor + ',');
+            belongBlock.pushLine('borderWidth:' + borderWidth + ',');
+        }
+        belongBlock.subNextIndent();
+        belongBlock.pushLine('};');
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        selfCompileRet.setSocketOut(this.nameScoket, this.id);
+        selfCompileRet.setSocketOut(this.dataArrScoket, dataArrVarName);
+        selfCompileRet.setSocketOut(this.colorsArrScoket, colorArrVarName);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, belongBlock) == false) {
+            return false;
+        }
+
+        return selfCompileRet;
+    }
+}
+
+class JSNode_Chart_GenColor extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_CHART_GENCOLOR, '图表-创建颜色', false, nodeJson);
+        autoBind(this);
+        
+        if(this.inputScokets_arr.length > 0){
+            this.inputScokets_arr.forEach(socket=>{
+                switch (socket.name) {
+                    case 'key':
+                        this.keyScoket = socket;
+                        break;
+                    case 'useRand':
+                        this.useRandScoket = socket;
+                        break;
+                    case 'setid':
+                        this.setidScoket = socket;
+                        break;
+                }
+            });
+        }
+        if(this.outputScokets_arr.length > 0){
+            this.dataSocket = this.outputScokets_arr[0];
+        }
+        if(this.keyScoket == null){
+            this.keyScoket = this.addSocket(new NodeSocket('key', this, true));
+        }
+        if(this.useRandScoket == null){
+            this.useRandScoket = this.addSocket(new NodeSocket('useRand', this, true));
+        }
+        if(this.dataSocket == null){
+            this.dataSocket = this.addSocket(new NodeSocket('data', this, false));
+        }
+        if(this.setidScoket == null){
+            this.setidScoket = this.addSocket(new NodeSocket('setid', this, true));
+        }
+
+        if(this.useRandScoket.defval == null){
+            this.useRandScoket.defval = false;
+        }
+
+        this.setidScoket.label = '所属集合';
+        this.setidScoket.type = ValueType.String;
+        this.setidScoket.inputable = true;
+        this.keyScoket.label = 'key';
+        this.keyScoket.type = ValueType.String;
+        this.keyScoket.inputable = true;
+        this.useRandScoket.label = '可随机';
+        this.useRandScoket.type = ValueType.Boolean;
+        this.useRandScoket.inputable = true;
+
+        this.dataSocket.label = '颜色';
+        this.dataSocket.type = ValueType.String;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var myJSBlock = new FormatFileBlock('');
+        belongBlock.pushChild(myJSBlock);
+
+        var socketComRet = this.getSocketCompileValue(helper, this.keyScoket, usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var keyValue = socketComRet.value;
+        socketComRet = this.getSocketCompileValue(helper, this.useRandScoket, usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var useRand = socketComRet.value;
+        socketComRet = this.getSocketCompileValue(helper, this.setidScoket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var setid = socketComRet.value;
+
+        var flagValue = null;
+        if(this.ctlkernel){
+            flagValue = this.ctlkernel.id;
+        }
+        else{
+            flagValue = this.bluePrint.id;
+        }
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.dataSocket, makeStr_callFun('GenColor', [IsEmptyString(setid) ? singleQuotesStr(flagValue) : setid,keyValue,useRand]));
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, belongBlock) == false) {
+            return false;
+        }
+
+        return selfCompileRet;
+    }
+}
+
 
 JSNodeClassMap[JSNODE_OP_NOT] = {
     modelClass: JSNode_OP_Not,
@@ -2945,5 +3262,13 @@ JSNodeClassMap[JSNODE_ADD_DYNAMIC_BATCH_API] = {
 };
 JSNodeClassMap[JSNODE_EXCUTE_DYNAMIC_BATCH_API] = {
     modelClass: JSNode_Excute_Dynamic_Batch_Api,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_CHART_NEWDATASET] = {
+    modelClass: JSNode_Chart_NewDataset,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_CHART_GENCOLOR] = {
+    modelClass: JSNode_Chart_GenColor,
     comClass: C_Node_SimpleNode,
 };

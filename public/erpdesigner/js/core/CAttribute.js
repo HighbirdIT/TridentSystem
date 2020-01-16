@@ -377,6 +377,7 @@ var AttrNames = {
     RowText: 'rowtext',
     AppandColumn: 'appandColumn',
     ColumnName: 'columnname',
+    ChartType: 'charttype',
 
     Event: {
         OnClick: 'onclick',
@@ -396,7 +397,8 @@ var AttrNames = {
     },
 
     Function: {
-        GetXMLRowItem: 'getxmlrowitem'
+        GetXMLRowItem: 'getxmlrowitem',
+        GenarateChartData: 'generateChartData'
     },
 
     LayoutNames: {

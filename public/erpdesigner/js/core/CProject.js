@@ -356,11 +356,20 @@ var CProject = function (_IAttributeable) {
     }, {
         key: 'getControlsByType',
         value: function getControlsByType(theType) {
+            var isArray = Array.isArray(theType);
             var rlt_arr = [];
             for (var id in this.controlId_map) {
                 var ctl = this.controlId_map[id];
-                if (ctl && ctl.type == theType) {
-                    rlt_arr.push(ctl);
+                if (ctl) {
+                    var hit = false;
+                    if (isArray) {
+                        hit = theType.indexOf(ctl.type) != -1;
+                    } else {
+                        hit = ctl.type == theType;
+                    }
+                    if (hit) {
+                        rlt_arr.push(ctl);
+                    }
                 }
             }
             return rlt_arr;
