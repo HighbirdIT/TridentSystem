@@ -350,6 +350,7 @@ const AttrNames={
     RowText: 'rowtext',
     AppandColumn:'appandColumn',
     ColumnName:'columnname',
+    ChartType:'charttype',
 
     Event:{
         OnClick:'onclick',
@@ -370,6 +371,7 @@ const AttrNames={
 
     Function:{
         GetXMLRowItem:'getxmlrowitem',
+        GenarateChartData:'generateChartData',
     },
 
     LayoutNames:{

@@ -745,6 +745,7 @@ class JSNode_BluePrint extends EventEmitter {
             defRetValue = defRetSocketComRet.value;
         }
         compilHelper.defRetValue = defRetValue;
+        theFun.defRetValue = defRetValue;
 
         compilHelper.compileEnd();
         var validCheckBasePath = null;
@@ -10975,12 +10976,12 @@ class JSNode_HashFormDataRow extends JSNode_Base {
     }
 
     genOutSocket() {
-        var formKernel = this.bluePrint.master.project.getControlById(this.formID);
-        if (formKernel == null) {
+        var targetKernel = this.bluePrint.master.project.getControlById(this.formID);
+        if (targetKernel == null) {
             return null;
         }
-        var theDS = formKernel.getAttribute(AttrNames.DataSource);
-        if (theDS == null) {
+        var canUseColumns_arr = targetKernel.getCanuseColumns();
+        if (canUseColumns_arr == null) {
             return null;
         }
         var hadColumns_arr = [];
@@ -10991,14 +10992,14 @@ class JSNode_HashFormDataRow extends JSNode_Base {
                 hadColumns_arr.push(columnName);
             }
         }
-        var emptyCol = theDS.columns.find(colItem => {
-            return hadColumns_arr.indexOf(colItem.name) == -1
+        var emptyCol = canUseColumns_arr.find(colName => {
+            return hadColumns_arr.indexOf(colName) == -1
         });
         if (emptyCol == null) {
             return null;
         }
         var newSocket = new NodeSocket(this.getUseableOutSocketName('col'), this, false, { type: ValueType.String });
-        newSocket.setExtra('colName', emptyCol.name);
+        newSocket.setExtra('colName', emptyCol);
         return newSocket;
     }
 
@@ -11020,17 +11021,15 @@ class JSNode_HashFormDataRow extends JSNode_Base {
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
 
-        var formKernel = this.bluePrint.master.project.getControlById(this.formID);
-        if (this.checkCompileFlag(formKernel == null, this.formID + '没找到！', helper)) {
+        var targetKernel = this.bluePrint.master.project.getControlById(this.formID);
+        if (this.checkCompileFlag(targetKernel == null, this.formID + '没找到！', helper)) {
             return false;
         }
-        var theDS = formKernel.getAttribute(AttrNames.DataSource);
-        if (this.checkCompileFlag(theDS == null, '关联Form没有数据源！', helper)) {
+        var canUseColumns_arr = targetKernel.getCanuseColumns();
+        if (this.checkCompileFlag(IsEmptyArray(canUseColumns_arr), '关联对象没有数据列可用！', helper)) {
             return false;
         }
-
-        this.targetEntity = theDS;
-        this.formKernel = formKernel;
+        this.targetKernel = targetKernel;
 
         var nowRowVarName = this.id + '_data';
         var inSocketComRet = this.getSocketCompileValue(helper, this.inSocket, usePreNodes_arr, belongBlock, true, false);
@@ -11048,7 +11047,7 @@ class JSNode_HashFormDataRow extends JSNode_Base {
         for (var si in this.outputScokets_arr) {
             var outSocket = this.outputScokets_arr[si];
             var colName = outSocket.getExtra('colName');
-            var columnItem = theDS.columns.find(x => { return x.name == colName; });
+            var columnItem = canUseColumns_arr.find(x => { return x == colName; });
             if (columnItem == null) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle,
@@ -11057,7 +11056,9 @@ class JSNode_HashFormDataRow extends JSNode_Base {
                 '第' + (si + 1) + '个输出接口列名无效！']);
                 return false;
             }
-            helper.addUseColumn(formKernel, colName, null, EFormRowSource.None);
+            if(targetKernel.type == M_FormKernel_Type){
+                helper.addUseColumn(targetKernel, colName, null, EFormRowSource.None);
+            }
             selfCompileRet.setSocketOut(outSocket, nowRowVarName + '.' + colName);
         }
         if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {

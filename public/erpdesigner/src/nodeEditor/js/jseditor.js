@@ -349,6 +349,16 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_Fun_Call,
         type:'操作函数'
     },
+    {
+        label:'图表-创建Dateset',
+        nodeClass:JSNode_Chart_NewDataset,
+        type:'图表操作'
+    },
+    {
+        label:'图表-创建颜色',
+        nodeClass:JSNode_Chart_GenColor,
+        type:'图表操作'
+    },
 ];
 
 var gCopyed_JsNodes_data=null;

@@ -23,7 +23,7 @@ const IFrameAttrsSetting = GenControlKernelAttrsSetting([
     ]),
 ]);
 
-class FrameSet extends ControlKernelBase {
+class IFrame extends ControlKernelBase {
     constructor(initData, parentKernel, createHelper, kernelJson) {
         super(initData,
             IFrameKernel_Type,
@@ -37,7 +37,7 @@ class FrameSet extends ControlKernelBase {
     }
 
     renderSelf(clickHandler, replaceChildClick, designer) {
-        return (<CFrameSet key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
+        return (<CIFrame key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
 
     scriptCreated(attrName, scriptBP) {
@@ -52,7 +52,7 @@ class FrameSet extends ControlKernelBase {
 var IFrame_api = new ControlAPIClass(IFrameKernel_Type);
 g_controlApi_arr.push(IFrame_api);
 
-class CFrameSet extends React.PureComponent {
+class CIFrame extends React.PureComponent {
     constructor(props) {
         super(props);
 
@@ -96,8 +96,8 @@ DesignerConfig.registerControl(
     {
         label: 'i框架',
         type: IFrameKernel_Type,
-        namePrefix: FilePreviewer_Prefix,
-        kernelClass: FrameSet,
-        reactClass: CFrameSet,
+        namePrefix: IFrameKernel_Prefix,
+        kernelClass: IFrame,
+        reactClass: CIFrame,
         canbeLabeled: true,
     }, '基础');

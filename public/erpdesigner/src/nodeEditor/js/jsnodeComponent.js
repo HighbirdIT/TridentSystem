@@ -816,14 +816,14 @@ class C_JSNode_HashFormDataRow extends React.PureComponent {
         C_NodeCom_Base(this);
         var nodeData = this.props.nodedata;
         var theProject = nodeData.bluePrint.master.project;
-        var formKernel = theProject.getControlById(nodeData.formID);
+        var targetKernel = theProject.getControlById(nodeData.formID);
 
         this.state = {
-            formKernel: formKernel,
+            targetKernel: targetKernel,
         }
     }
 
-    formAttrChangedHandler(ev) {
+    targetAttrChangedHandler(ev) {
         if (ev.name == AttrNames.DataSource
             || ev.name == AttrNames.name) {
             this.this.canUseColumns_arr = null;
@@ -831,24 +831,24 @@ class C_JSNode_HashFormDataRow extends React.PureComponent {
         }
     }
 
-    listenForm(formKernel){
-        if (formKernel) {
-            formKernel.on(EATTRCHANGED, this.formAttrChangedHandler);
+    listenTarget(targetKernel){
+        if (targetKernel) {
+            targetKernel.on(EATTRCHANGED, this.targetAttrChangedHandler);
         }
     }
 
-    unlistenForm(formKernel){
-        if (formKernel) {
-            formKernel.off(EATTRCHANGED, this.formAttrChangedHandler);
+    unlistenTarget(targetKernel){
+        if (targetKernel) {
+            targetKernel.off(EATTRCHANGED, this.targetAttrChangedHandler);
         }
     }
 
     cus_componentWillMount() {
-        this.listenForm(this.state.formKernel);
+        this.listenTarget(this.state.targetKernel);
     }
 
     cus_componentWillUnmount() {
-        this.unlistenForm(this.state.formKernel);
+        this.unlistenTarget(this.state.targetKernel);
     }
 
     socketColumnSelectChanged(newVal, ddc) {
@@ -860,10 +860,12 @@ class C_JSNode_HashFormDataRow extends React.PureComponent {
         return this.canUseColumns_arr == null ? [] : this.canUseColumns_arr;
     }
 
-    getFormDS() {
-        var nodeData = this.props.nodedata;
-        var formKernel = nodeData.bluePrint.master.project.getControlById(nodeData.formID);
-        return formKernel == null ? null : formKernel.getAttribute(AttrNames.DataSource);
+    freshCanUseColumns(targetKernel) {
+        if(targetKernel == null){
+            this.canUseColumns_arr = null;
+            return;
+        }
+        this.canUseColumns_arr = targetKernel.getCanuseColumns();
     }
 
     customSocketRender(socket) {
@@ -891,13 +893,10 @@ class C_JSNode_HashFormDataRow extends React.PureComponent {
             return;
         }
         var nodeData = this.props.nodedata;
-        var entity = this.getFormDS();
-        if (entity == null) {
-            return;
-        }
+        var canUseColumns_arr = this.getCanUseColumns();
         var theSocket = nodeData.bluePrint.getSocketById(socketid);
         var bornPos = theSocket.currentComponent.getCenterPos();
-        if (entity.containColumn(colName)) {
+        if (canUseColumns_arr.indexOf(colName) != -1) {
             var newNode = new FlowNode_ColumnVar({
                 keySocketID: socketid,
                 newborn: true,
@@ -907,19 +906,19 @@ class C_JSNode_HashFormDataRow extends React.PureComponent {
         }
     }
 
-    formChangedHandler(newFormID) {
+    targetChangedHandler(newTargetID) {
         var nodeData = this.props.nodedata;
-        nodeData.formID = newFormID;
+        nodeData.formID = newTargetID;
         var theProject = nodeData.bluePrint.master.project;
-        this.setTargetForm(theProject.getControlById(newFormID));
+        this.setTargetForm(theProject.getControlById(newTargetID));
     }
 
-    setTargetForm(formKernel){
+    setTargetForm(targetKernel){
         this.canUseColumns_arr = null;
-        this.unlistenForm(this.state.formKernel);
-        this.listenForm(formKernel);
+        this.unlistenTarget(this.state.targetKernel);
+        this.listenTarget(targetKernel);
         this.setState({
-            formKernel: formKernel,
+            targetKernel: targetKernel,
         });
         var nodeData = this.props.nodedata;
         setTimeout(() => {
@@ -932,26 +931,21 @@ class C_JSNode_HashFormDataRow extends React.PureComponent {
     render() {
         var nodeData = this.props.nodedata;
         var theProject = nodeData.bluePrint.master.project;
-        var targetFormKernel = theProject.getControlById(nodeData.formID);
-        if(targetFormKernel != this.state.formKernel){
+        var targetKernel = theProject.getControlById(nodeData.formID);
+        if(targetKernel != this.state.targetKernel){
             var self = this;
             setTimeout(() => {
-                self.targetFormChange(targetFormKernel);
+                self.setTargetForm(targetKernel);
             }, 50);
         }
         if(this.canUseColumns_arr == null){
-            var formKernel = this.state.formKernel;
-            var formDS = formKernel ? formKernel.getAttribute(AttrNames.DataSource) : null;
-            if (formDS != null) {
-                this.canUseColumns_arr = formDS.columns.map(colItem => {
-                    return colItem.name;
-                });
-            }
+            var targetKernel = this.state.targetKernel;
+            this.freshCanUseColumns(targetKernel);
         }
 
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={nodeData.label} >
             <div className='d-flex flex-column'>
-                <DropDownControl options_arr={theProject.getControlsByType} funparamobj={M_FormKernel_Type} value={formKernel ? formKernel.id : -1} itemChanged={this.formChangedHandler} textAttrName='readableName' valueAttrName='id' />
+                <DropDownControl options_arr={theProject.getControlsByType} funparamobj={[M_FormKernel_Type,ChartKernel_Type]} value={targetKernel ? targetKernel.id : -1} itemChanged={this.targetChangedHandler} textAttrName='readableName' valueAttrName='id' />
                 <div className='d-flex'>
                     <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor}  nameMoveable={true} />
                     <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} customSocketRender={this.customSocketRender} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />

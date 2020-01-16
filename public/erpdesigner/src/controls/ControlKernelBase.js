@@ -52,21 +52,23 @@ function GenControlKernelAttrsSetting(cusGroups_arr, includeDefault, includeLayo
 
 
 function getDSAttrCanuseColumns(dsAttrName, csAttrName){
-    var useDS = this.getAttribute(dsAttrName);
-    if(useDS == null || !useDS.loaded){
-        return [];
+    var rlt = [];
+    if(dsAttrName != null){
+        var useDS = this.getAttribute(dsAttrName);
+        if(useDS == null || !useDS.loaded){
+            return [];
+        }
+        rlt = useDS.columns.map(col=>{
+            return col.name;
+        });
     }
-    var rlt = useDS.columns.map(col=>{
-        return col.name;
-    });
     if(csAttrName != null){
         var cusDS_bp = this.getAttribute(csAttrName);
         if(cusDS_bp != null){
-            var retColumnNode = cusDS_bp.finalSelectNode.columnNode;
-            retColumnNode.inputScokets_arr.forEach(socket=>{
-                var alias = socket.getExtra('alias');
-                if(!IsEmptyString(alias))
-                    rlt.push(alias);
+            cusDS_bp.columns.forEach(colItem=>{
+                if(rlt.indexOf(colItem.name) == -1){
+                    rlt.push(colItem.name);
+                }
             });
         }
     }

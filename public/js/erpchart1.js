@@ -8,6 +8,41 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+//const gColorNames_arr = ['aliceblue','antiquewhite','aqua','aquamarine','azure','beige','bisque','black','blanchedalmond','blue','blueviolet','brown','burlywood','cadetblue','chartreuse','chocolate','coral','cornflowerblue','cornsilk','crimson','cyan','darkblue','darkcyan','darkgoldenrod','darkgray','darkgreen','darkgrey','darkkhaki','darkmagenta','darkolivegreen','darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkslateblue','darkslategray','darkslategrey','darkturquoise','darkviolet','deeppink','deepskyblue','dimgray','dimgrey','dodgerblue','firebrick','floralwhite','forestgreen','fuchsia','gainsboro','ghostwhite','gold','goldenrod','gray','green','greenyellow','grey','honeydew','hotpink','indianred','indigo','ivory','khaki','lavender','lavenderblush','lawngreen','lemonchiffon','lightblue','lightcoral','lightcyan','lightgoldenrodyellow','lightgray','lightgreen','lightgrey','lightpink','lightsalmon','lightseagreen','lightskyblue','lightslategray','lightslategrey','lightsteelblue','lightyellow','lime','limegreen','linen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid','mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise','mediumvioletred','midnightblue','mintcream','mistyrose','moccasin','navajowhite','navy','oldlace','olive','olivedrab','orange','orangered','orchid','palegoldenrod','palegreen','paleturquoise','palevioletred','papayawhip','peachpuff','peru','pink','plum','powderblue','purple','rebeccapurple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown','seagreen','seashell','sienna','silver','skyblue','slateblue','slategray','slategrey','snow','springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat','whitesmoke','yellow','yellowgreen'];
+var gColorNames_arr = ['blue', 'red', 'yellow', 'cyan', 'green', 'gray', 'purple', 'pink', 'orange', 'deeppink', 'violet', 'indigo', 'blueviolet', 'midnightblue', 'royalblue', 'dodgerblue', 'deepskyblue', 'darkcyan', 'mediumspringgreen', 'lime', 'yellowgreen', 'darkkhaki', 'gold', 'darkgoldenrod', 'tan', 'chocolate', 'saddlebrown', 'orangered', 'darkred', 'black'];
+
+function GenColor(cacheName, value, useRand) {
+    var cacheData = gDataCache.get(cacheName);
+    if (cacheData == null) {
+        cacheData = {
+            colorIndex: -1
+        };
+        gDataCache.set(cacheName, cacheData);
+    }
+    if (cacheData[value]) {
+        return cacheData[value];
+    }
+    var colorValue;
+    if (!useRand) {
+        cacheData.colorIndex = (cacheData.colorIndex + 1) % gColorNames_arr.length;
+        colorValue = gColorNames_arr[cacheData.colorIndex];
+    } else {
+        var randIndex = Math.floor(Math.random() * gColorNames_arr.length);
+        var testCount = 0;
+        colorValue = gColorNames_arr[randIndex];
+
+        while (gDataCache[colorValue] && testCount < gColorNames_arr.length) {
+            randIndex = (randIndex + 1) % gColorNames_arr.length;
+            colorValue = gColorNames_arr[randIndex];
+            ++testCount;
+        }
+        gDataCache[colorValue] = 1;
+    }
+
+    cacheData[value] = colorValue;
+    return colorValue;
+}
+
 var ERPC_Chart = function (_React$PureComponent) {
     _inherits(ERPC_Chart, _React$PureComponent);
 
@@ -22,6 +57,7 @@ var ERPC_Chart = function (_React$PureComponent) {
         _this.state = _this.initState;
         _this.canvasRef = null;
         _this.myChart = null;
+        _this.chartConfig = null;
         return _this;
     }
 
@@ -31,6 +67,7 @@ var ERPC_Chart = function (_React$PureComponent) {
             this.canvasRef = null;
             if (this.myChart) {
                 this.myChart.destroy();
+                this.myChart = null;
             }
         }
     }, {
@@ -38,47 +75,57 @@ var ERPC_Chart = function (_React$PureComponent) {
         value: function canvasCreated(canvasRef) {
             this.canvasRef = canvasRef;
 
+            if (canvasRef == null) {
+                if (this.myChart) {
+                    this.myChart.destroy();
+                    this.myChart = null;
+                }
+                return;
+            }
             var myCtx = canvasRef.getContext('2d');
-            //ctx.fillText('Hello World',100,100);
-            //return;
-            var myChart = new Chart(myCtx, {
+            this.chartConfig = {
                 type: this.props.type,
-                data: {
-                    labels: ['人力成本'],
-                    datasets: [{
-                        label: '上海海勃',
-                        steppedLine: true,
-                        data: [980563],
-                        backgroundColor: 'green',
-                        borderColor: 'green',
-                        borderWidth: 1
-                    }, {
-                        label: '江苏海勃',
-                        data: [351267],
-                        backgroundColor: 'red',
-                        borderColor: 'red',
-                        borderWidth: 1
-                    }]
-                },
+                data: this.props.data,
                 options: {
                     maintainAspectRatio: false,
                     responsive: true,
                     title: {
-                        display: true,
-                        text: '哈哈'
-                    },
-                    tooltips: {
-                        mode: 'index',
-                        intersect: false
+                        display: this.props.title != null,
+                        text: this.props.title
                     },
                     hover: {
-                        mode: 'nearest',
-                        intersect: true
+                        mode: this.props.hovermode == null ? 'point' : this.props.hovermode,
+                        intersect: this.props.intersect == null ? true : this.props.intersect
                     }
-                }
-            });
+                },
+                useData: this.props.data
+            };
+            //ctx.fillText('Hello World',100,100);
+            //return;
+            var myChart = new Chart(myCtx, this.chartConfig);
+            this.myChart = myChart;
             /*
-                            animation: {
+            legend: {
+            onHover: function(event, legendItem) {
+            console.log('onHover: ' + legendItem.text);
+            },
+            onLeave: function(event, legendItem) {
+            console.log('onLeave: ' + legendItem.text);
+            },
+            onClick: function(event, legendItem) {
+            console.log('onClick:' + legendItem.text);
+            }
+                    },
+                    
+            data: {
+                    labels: ['上海海勃','江苏海勃'],
+                    datasets: [{
+                        steppedLine:true,
+                        data: [100,300],
+                        backgroundColor: ['green','Red'],
+                    }]
+                },
+                              animation: {
                         duration: 1,
                         onComplete: function () {
                             var chartInstance = this.chart;
@@ -109,16 +156,56 @@ var ERPC_Chart = function (_React$PureComponent) {
             if (this.props.visible == false) {
                 return null;
             }
+            var charVisible = false;
+            var contentElem = null;
+            if (this.props.fetchingErr) {
+                contentElem = renderFetcingErrDiv(this.props.fetchingErr.info);
+            } else if (this.props.fetching) {
+                contentElem = renderFetcingTipDiv();
+            } else if (this.props.invalidInfo) {
+                contentElem = renderInvalidBundleDiv();
+            } else {
+                charVisible = true;
+                if (this.myChart) {
+                    var chartConfig = this.chartConfig;
+                    var isChanged = false;
+                    if (chartConfig) {
+                        if (chartConfig.options.title.text != this.props.title) {
+                            isChanged = true;
+                            chartConfig.options.title.text = this.props.title;
+                            chartConfig.options.title.display = this.props.title != null;
+                        }
+                        if (chartConfig.useData != this.props.data) {
+                            isChanged = true;
+                            chartConfig.data = this.props.data;
+                            chartConfig.useData = this.props.data;
+                        }
+                        if (isChanged) {
+                            this.myChart.update();
+                        }
+                    }
+                }
+            }
+
             return React.createElement(
                 'div',
                 { className: this.props.className, style: this.props.style },
-                React.createElement('canvas', { ref: this.canvasCreated })
+                contentElem,
+                React.createElement('canvas', { ref: this.canvasCreated, className: charVisible ? 'visible' : 'invisible' })
             );
         }
     }]);
 
     return ERPC_Chart;
 }(React.PureComponent);
+
+var selectERPC_Chart_Records = function selectERPC_Chart_Records(state, ownprops) {
+    if (ownprops.records_arr != null) {
+        return ownprops.records_arr;
+    }
+    var propProfile = getControlPropProfile(ownprops, state);
+    return propProfile.ctlState.records_arr;
+};
 
 function ERPC_Chart_mapstatetoprops(state, ownprops) {
     var propProfile = getControlPropProfile(ownprops, state);
@@ -129,31 +216,16 @@ function ERPC_Chart_mapstatetoprops(state, ownprops) {
     if (ctlState.invalidInfo != gPreconditionInvalidInfo && ctlState.invalidInfo != gCantNullInfo) {
         invalidInfo = ctlState.invalidInfo;
     }
-    var selectorid = propProfile.fullPath + 'optionsData';
-    var optionsDataSelector = ERPC_selector_map[selectorid];
-    if (optionsDataSelector == null) {
-        optionsDataSelector = Reselect.createSelector(selectERPC_DropDown_options, selectERPC_TaskSelector_textName, selectERPC_TaskSelector_valueName, selectERPC_TaskSelector_groupAttrName, selectERPC_DropDown_textType, formatERPC_DropDown_options);
-        ERPC_selector_map[selectorid] = optionsDataSelector;
-    }
-
-    var useValue = ctlState.value;
-    var selectOpt = ctlState.selectOpt;
-    if (!useValue) {
-        selectOpt = null;
-    }
 
     return {
-        value: useValue,
-        text: ctlState.text,
         fetching: ctlState.fetching,
         fetchingErr: ctlState.fetchingErr,
-        optionsData: optionsDataSelector(state, ownprops),
-        visible: ctlState.visible,
+        data: ctlState.data,
+        visible: ctlState.visible == null ? ownprops.defVisible : ctlState.visible,
         invalidInfo: invalidInfo,
-        selectOpt: selectOpt,
-        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowkey != 'new',
         fullParentPath: propProfile.fullParentPath,
-        fullPath: propProfile.fullPath
+        fullPath: propProfile.fullPath,
+        title: ctlState.title == null ? ownprops.title : ctlState.title
     };
 }
 
@@ -161,9 +233,9 @@ function ERPC_Chart_dispatchtoprops(dispatch, ownprops) {
     return {};
 }
 
-var VisibleERPC_TaskSelector = null;
+var VisibleERPC_Chart = null;
 gNeedCallOnErpControlInit_arr.push(function () {
-    VisibleERPC_TaskSelector = ReactRedux.connect(ERPC_TaskSelector_mapstatetoprops, ERPC_TaskSelector_dispatchtoprops)(ERPC_TaskSelector);
+    VisibleERPC_Chart = ReactRedux.connect(ERPC_Chart_mapstatetoprops, ERPC_Chart_dispatchtoprops)(ERPC_Chart);
 });
 
 /*

@@ -2,6 +2,8 @@ const JSNODE_WHILE = 'jswhile';
 const JSNODE_ARRAY_CONCAT = 'concat';
 const JSNODE_TERNARY_OPERATOR = 'ternary_operator';
 const JSNODE_ARRAY_PUSH = 'array_push';
+const JSNODE_ARRAY_SHIFT = 'array_shift';
+const JSNODE_ARRAY_UNSHIFT = 'array_unshift';
 const JSNODE_ARRAY_POP = 'array_pop';
 const JSNODE_ARRAY_JOIN = 'array_join';
 const JSNODE_ARRAY_SLICE = 'array_slice';
@@ -11,9 +13,9 @@ const JSNODE_FORMATNUM = 'formatnum';
 const JSNODE_CAPITALNUM = 'capitalnum';
 const JSNODE_CONVERT_TIMEZONE = 'convert_timezone';
 const JSNODE_ASSIGNMENT_OPERATOR = 'addition_assignment_operator';
-const JSNODE_ISNULLOPERATOR='IsNullOperator';
+const JSNODE_ISNULLOPERATOR = 'IsNullOperator';
 const JSNODE_MATHFUN = 'mathfun';
-const JSNODE_ARRAY_CLEAR='clear';
+const JSNODE_ARRAY_CLEAR = 'clear';
 class JSNode_While extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_WHILE, 'While', false, nodeJson);
@@ -921,7 +923,7 @@ class JSNode_Convert_TimeZone extends JSNode_Base {
             }
         }
         if (this.inputScokets_arr.length == 0) {
-            this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Object,  }));
+            this.addSocket(new NodeSocket('inputone', this, true, { type: ValueType.Object, }));
             this.addSocket(new NodeSocket('inputtwo', this, true, { type: ValueType.Object, inputable: true }));
             this.addSocket(new NodeSocket('inputthree', this, true, { type: ValueType.Object, inputable: true }));
         }
@@ -1066,7 +1068,7 @@ class JSNode_Assignment_Operator extends JSNode_Base {
                 return false;
             }
             var tValue = socketComRet.value;
-            if(i == 1){
+            if (i == 1) {
                 if (socketComRet.link) {
                     if (!socketComRet.link.outSocket.isSimpleVal) {
                         tValue = '(' + tValue + ')';
@@ -1140,7 +1142,7 @@ class JSNode_IsNullOperator extends JSNode_Base {
             type: ValueType.String,
         };
         if (this.inputScokets_arr.length == 0) {
-            this.addSocket(new NodeSocket('in0', this, true, { type: ValueType.String ,inputable:false}));
+            this.addSocket(new NodeSocket('in0', this, true, { type: ValueType.String, inputable: false }));
         }
         else {
             this.inputScokets_arr.forEach(socket => {
@@ -1175,19 +1177,19 @@ class JSNode_IsNullOperator extends JSNode_Base {
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
         //for (var i = 0; i < this.inputScokets_arr.length; ++i) {
-            var theSocket = this.inputScokets_arr[0];
-            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
-            if (socketComRet.err) {
-                return false;
-            }
-            var tValue = socketComRet.value;
-            if (socketComRet.link && !socketComRet.link.outSocket.isSimpleVal) {
-                tValue = tValue 
-            }
+        var theSocket = this.inputScokets_arr[0];
+        var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var tValue = socketComRet.value;
+        if (socketComRet.link && !socketComRet.link.outSocket.isSimpleVal) {
+            tValue = tValue
+        }
         //}
-        var finalStr = tValue + ' ' + (this.operator == 'is null'?' == null':' != null')
+        var finalStr = tValue + ' ' + (this.operator == 'is null' ? ' == null' : ' != null')
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket,finalStr);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -1265,8 +1267,8 @@ class JSNode_Mathfun extends JSNode_Base {
             }
         });
     }
-    
-    compile(helper, preNodes_arr,belongBlock) {
+
+    compile(helper, preNodes_arr, belongBlock) {
         var superRet = super.compile(helper, preNodes_arr);
 
         if (superRet == false || superRet != null) {
@@ -1311,6 +1313,145 @@ class JSNode_Mathfun extends JSNode_Base {
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, finalStr);
         helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+class JSNode_Array_Shift extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_ARRAY_SHIFT, '数组-Shift', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+        if (this.inputScokets_arr.length > 0) {
+            this.inputScokets_arr.forEach(socket => {
+                if (socket.name == 'arr') {
+                    this.arrSocket = socket;
+                }
+            });
+        }
+
+        if (this.arrSocket == null) {
+            this.arrSocket = this.addSocket(new NodeSocket('arr', this, true));
+        }
+
+        this.arrSocket.type = ValueType.Array;
+        this.arrSocket.inputable = false;
+        this.arrSocket.label = 'array';
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var socketComRet = this.getSocketCompileValue(helper, this.arrSocket, usePreNodes_arr, belongBlock, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var arrValue = socketComRet.value;
+
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+        myJSBlock.pushLine(arrValue + '.shift();');
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
+        return selfCompileRet;
+    }
+}
+
+class JSNode_Array_Unshift extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_ARRAY_UNSHIFT, '数组-Unshift', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+        if (this.inputScokets_arr.length > 0) {
+            this.inputScokets_arr.forEach(socket => {
+                if (socket.name == 'arr') {
+                    this.arrSocket = socket;
+                }
+                if (socket.name == 'data') {
+                    this.dataSocket = socket;
+                }
+            });
+        }
+
+        if (this.arrSocket == null) {
+            this.arrSocket = this.addSocket(new NodeSocket('arr', this, true));
+        }
+        if (this.dataSocket == null) {
+            this.dataSocket = this.addSocket(new NodeSocket('data', this, true));
+        }
+
+        this.arrSocket.type = ValueType.Array;
+        this.arrSocket.inputable = false;
+        this.arrSocket.label = 'array';
+        this.dataSocket.type = ValueType.Object;
+        this.dataSocket.label = 'data';
+        this.dataSocket.inputable = true;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var socketComRet = this.getSocketCompileValue(helper, this.arrSocket, usePreNodes_arr, belongBlock, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var arrValue = socketComRet.value;
+        socketComRet = this.getSocketCompileValue(helper, this.dataSocket, usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var dataValue = socketComRet.value;
+
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+        myJSBlock.pushLine(arrValue + '.unshift(' + dataValue + ');');
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
         return selfCompileRet;
     }
 }
@@ -1373,13 +1514,21 @@ JSNodeClassMap[JSNODE_ASSIGNMENT_OPERATOR] = {
     modelClass: JSNode_Assignment_Operator,
     comClass: C_JSNode_Assignment_Operator,
 };
-JSNodeClassMap[JSNODE_ISNULLOPERATOR]={
-    modelClass:JSNode_IsNullOperator,
-    comClass:C_JSNode_IsNullOperator
+JSNodeClassMap[JSNODE_ISNULLOPERATOR] = {
+    modelClass: JSNode_IsNullOperator,
+    comClass: C_JSNode_IsNullOperator
 }
 JSNodeClassMap[JSNODE_MATHFUN] = {
     modelClass: JSNode_Mathfun,
     comClass: C_JSNode_Mathfun,
+};
+JSNodeClassMap[JSNODE_ARRAY_SHIFT] = {
+    modelClass: JSNode_Array_Shift,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_ARRAY_UNSHIFT] = {
+    modelClass: JSNode_Array_Unshift,
+    comClass: C_Node_SimpleNode,
 };
 /*
 JSNodeEditorControls_arr.push(
@@ -1417,6 +1566,18 @@ JSNodeEditorControls_arr.push(
     {
         label: '数组-Pop',
         nodeClass: JSNode_Array_Pop,
+        type: '数组操控'
+    });
+JSNodeEditorControls_arr.push(
+    {
+        label: '数组-Shift',
+        nodeClass: JSNode_Array_Shift,
+        type: '数组操控'
+    });
+JSNodeEditorControls_arr.push(
+    {
+        label: '数组-Unshift',
+        nodeClass: JSNode_Array_Unshift,
         type: '数组操控'
     });
 JSNodeEditorControls_arr.push(
