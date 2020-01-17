@@ -2382,7 +2382,9 @@ class JSNode_SetTimeout extends JSNode_Base {
         this.inputSocket.type = ValueType.Int;
         this.inputSocket.hideIcon = true;
         this.inputSocket.inputable = true;
-        this.inputSocket.defval = 20;
+        if(this.inputSocket.defval == null){
+            this.inputSocket.defval = 20;
+        }
     }
 
     compile(helper, preNodes_arr, belongBlock) {
