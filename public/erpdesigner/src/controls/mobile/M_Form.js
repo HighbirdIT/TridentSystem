@@ -613,7 +613,7 @@ class M_Form extends React.PureComponent {
         autoBind(this);
 
         var ctlKernel = this.props.ctlKernel;
-        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Wrap,AttrNames.Orientation, AttrNames.Chidlren, AttrNames.FormType, AttrNames.WidthType, AttrNames.AutoIndexColumn, AttrNames.Title, AttrNames.SelectMode, 'item' + AttrNames.LayoutNames.StyleAttr, 'item' + AttrNames.LayoutNames.APDClass], inintState));
+        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Wrap,AttrNames.Orientation, AttrNames.Chidlren, AttrNames.FormType, AttrNames.WidthType, AttrNames.AutoIndexColumn, AttrNames.Title, AttrNames.SelectMode, 'item' + AttrNames.LayoutNames.StyleAttr, 'item' + AttrNames.LayoutNames.APDClass, AttrNames.AutoHeight], inintState));
         M_ContainerBase(this);
 
         inintState.orientation = ctlKernel.getAttribute(AttrNames.Orientation);
@@ -624,6 +624,7 @@ class M_Form extends React.PureComponent {
         inintState.title = ctlKernel.getAttribute(AttrNames.Title);
         inintState.selectMode = ctlKernel.getAttribute(AttrNames.SelectMode);
         inintState.wrap = ctlKernel.getAttribute(AttrNames.Wrap);
+        inintState.autoHeight = ctlKernel.getAttribute(AttrNames.AutoHeight);
 
         this.state = inintState;
     }
@@ -646,6 +647,7 @@ class M_Form extends React.PureComponent {
             title: ctlKernel.getAttribute(AttrNames.Title),
             selectMode: ctlKernel.getAttribute(AttrNames.SelectMode),
             wrap: ctlKernel.getAttribute(AttrNames.Wrap),
+            autoHeight: ctlKernel.getAttribute(AttrNames.AutoHeight),
         });
     }
 
@@ -777,7 +779,7 @@ class M_Form extends React.PureComponent {
             <div className={outerDivClassStr} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {this.renderHandleBar()}
                 <span className='text-light bg-dark'>{title}</span>
-                <div className={'d-flex flex-grow-1 flex-shrink-1' + (this.state.orientation == Orientation_V ? ' flex-column' : '') + (this.state.wrap ? ' flex-wrap' : '')} style={rootStyle}>
+                <div className={'d-flex flex-grow-1 flex-shrink-1' + (this.state.orientation == Orientation_V ? ' flex-column' : '') + (this.state.wrap ? ' flex-wrap' : '') + (this.state.formType == EFormType.Page && this.state.autoHeight ? ' autoScroll' : '')} style={rootStyle}>
                     {contentElem}
                 </div>
             </div>

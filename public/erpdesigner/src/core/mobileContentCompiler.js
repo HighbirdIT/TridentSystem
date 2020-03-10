@@ -327,7 +327,7 @@ class MobileContentCompiler extends ContentCompiler {
                                 if (sameReactKernel != relyCtlReactParent) {
                                     thirdParam += "+" + singleQuotesStr('.' + relyCtlReactParent.getStatePath('', '.', null, true, sameReactKernel));
                                 }
-                                else if(sameReactKernel.type == M_FormKernel_Type && !sameReactKernel.isPageForm()){
+                                else if (sameReactKernel.type == M_FormKernel_Type && !sameReactKernel.isPageForm()) {
                                     thirdParam += ' + ".row_" + rowKeyInfo_map.' + sameReactKernel.id;
                                 }
                                 if (relyPath.approach.delaycall) {
@@ -2379,7 +2379,7 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentBlock.subNextIndent();
             renderContentBlock.pushLine("</React.Fragment>);");
 
-            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'>", 1);
+            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'" + (hasFormStyle ? " style={" + formStyleID + "}" : '') + ">", 1);
             renderContentFun.retBlock.pushLine("{this.props.title && <div className='bg-dark text-light " + titleAlginStr + " d-flex flex-shrink-0 p-1'><span>{this.props.title}</span></div>}");
             renderContentFun.retBlock.pushLine('{' + VarNames.RetElem + '}');
             renderContentFun.retBlock.subNextIndent();
@@ -2490,7 +2490,7 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentBlock.subNextIndent();
             renderContentBlock.pushLine('});');
 
-            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'>", 1);
+            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'" + (hasFormStyle ? " style={" + formStyleID + "}" : '') + ">", 1);
             renderContentFun.retBlock.pushLine("{this.props.title && <div className='bg-dark text-light " + titleAlginStr + " d-flex flex-shrink-0 p-1'><span>{this.props.title}" + (hadRefreshIcon ? "{this.props.fetching ? null : <i className='btn btn-sm fa fa-refresh' onClick={this.clickFreshHandler} />}" : '') + "</span></div>}");
             var contentDivClassStr = 'd-flex flex-grow-1 flex-shrink-1' + (isWrap ? ' flex-wrap' : '') + (autoHeight ? ' autoScroll ' : '');
             if (orientation == Orientation_V) {
@@ -4745,6 +4745,9 @@ class MobileContentCompiler extends ContentCompiler {
         if (!theKernel.getAttribute(AttrNames.Growable)) {
             ctlTag.setAttr('growable', '{false}');
         }
+        if (theKernel.getAttribute('poppanelminwidth') > 100) {
+            ctlTag.setAttr('poppanelminwidth', theKernel.getAttribute('poppanelminwidth'));
+        }
         var appandColumns_arr = [];
         var appandColAttrs_arr = theKernel.getAttrArrayList(AttrNames.AppandColumn);
         var canuseColumns = theKernel.getCanuseColumns();
@@ -4778,8 +4781,10 @@ class MobileContentCompiler extends ContentCompiler {
 
         var defaultVal = theKernel.getAttribute(AttrNames.DefaultValue);
         var defaultValParseRet = parseObj_CtlPropJsBind(defaultVal, project.scriptMaster);
+        var defaultCompileRet;
         if (defaultValParseRet.isScript) {
-            if (this.compileScriptAttribute(defaultValParseRet, theKernel, 'value', AttrNames.DefaultValue, { autoSetFetchState: true }) == false) {
+            defaultCompileRet = this.compileScriptAttribute(defaultValParseRet, theKernel, 'value', AttrNames.DefaultValue, { autoSetFetchState: true });
+            if (defaultCompileRet == false) {
                 return false;
             }
         }
@@ -5036,6 +5041,11 @@ class MobileContentCompiler extends ContentCompiler {
                     };
                     setTextStateItem.alterValue = alterValue;
                 }
+            }
+
+            if (defaultCompileRet && belongFormKernel && belongFormKernel.getInsertSetting()) {
+                // 所在gridform有新增行,默认值要绑定到新增行
+                defaultCompileRet.setStateItem.bindMode = ScriptBindMode.OnNewRow;
             }
 
             if (setValueStateItem != null && setTextStateItem == null) {
@@ -5528,14 +5538,14 @@ class MobileContentCompiler extends ContentCompiler {
         var pureFullParentPath = this.getKernelFullParentPath(theKernel);
         var fullParentPath = pureFullParentPath;
         if (belongUserControl) {
-            if(IsEmptyString(fullParentPath)){
+            if (IsEmptyString(fullParentPath)) {
                 fullParentPath = belongUserControl.id + '_path';
             }
-            else{
+            else {
                 fullParentPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + fullParentPath);
             }
         }
-        else{
+        else {
             fullParentPath = singleQuotesStr(fullParentPath);
         }
         var self = this;
@@ -5543,13 +5553,13 @@ class MobileContentCompiler extends ContentCompiler {
         var autoPull = theKernel.getAttribute(AttrNames.AutoPull);
         var compileCDSRet = this.compileCustomDataSourceAttribute(theKernel, 'records_arr', {
             useCtlProp: (useCtlData, propApiitem, pullFun) => {
-                if(autoPull){
+                if (autoPull) {
                     var useFullParentPath = fullParentPath;
-                    if(useCtlData.kernel.type == UserControlKernel_Type && useCtlData.kernel.isTemplate()){
-                        if(IsEmptyString(pureFullParentPath)){
+                    if (useCtlData.kernel.type == UserControlKernel_Type && useCtlData.kernel.isTemplate()) {
+                        if (IsEmptyString(pureFullParentPath)) {
                             useFullParentPath = 'this.props.fullPath';
                         }
-                        else{
+                        else {
                             useFullParentPath = 'this.props.fullPath + ' + singleQuotesStr('.' + pureFullParentPath);
                         }
                     }
@@ -5560,7 +5570,7 @@ class MobileContentCompiler extends ContentCompiler {
             useFormColumn: (useFormData, pullFun) => {
                 var useFormMidData = this.projectCompiler.getMidData(useFormData.formKernel.id);
                 if (useFormMidData.isPageForm) {
-                    if(autoPull){
+                    if (autoPull) {
                         useFormMidData.bindFun.bindEndBlock.pushLine(makeStr_callFun(pullFun.name, [fullParentPath], ';'));
                     }
                 }
@@ -5614,7 +5624,7 @@ class MobileContentCompiler extends ContentCompiler {
         if (compileRet == false) {
             return false;
         }
-        
+
         var recordsArraychangedFunName = theKernel.id + '_' + VarNames.Records_arr + '_changed';
         var recordsArraychangedFun = clientSide.scope.getFunction(recordsArraychangedFunName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowKeyInfo_map']);
         recordsArraychangedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
@@ -5623,8 +5633,8 @@ class MobileContentCompiler extends ContentCompiler {
         recordsArraychangedFun.scope.getVar('datasets_arr', true, '[]');
         recordsArraychangedFun.scope.getVar('ctlpath', true, "getParentPathByKey(path,'" + theKernel.id + "')");
         recordsArraychangedFun.pushLine(makeStr_callFun(compileRet.name, [VarNames.State, 'newValue', 'labels_arr', 'datasets_arr'], ';'));
-        recordsArraychangedFun.pushLine('datasets_arr.forEach(dataset=>{',1);
-        recordsArraychangedFun.pushLine('if(dataset.backgroundColor.length == 1){dataset.backgroundColor = dataset.backgroundColor[0];}',-1);
+        recordsArraychangedFun.pushLine('datasets_arr.forEach(dataset=>{', 1);
+        recordsArraychangedFun.pushLine('if(dataset.backgroundColor.length == 1){dataset.backgroundColor = dataset.backgroundColor[0];}', -1);
         recordsArraychangedFun.pushLine('});');
         recordsArraychangedFun.pushLine(VarNames.NeedSetState + "[ctlpath+'.data']={labels: labels_arr,datasets: datasets_arr};");
 
