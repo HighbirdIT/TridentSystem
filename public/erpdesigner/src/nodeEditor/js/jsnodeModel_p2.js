@@ -28,6 +28,7 @@ const JSNODE_EXCUTE_DYNAMIC_BATCH_API = 'excutedynamicbatchapi';
 
 const JSNODE_CHART_NEWDATASET = 'chart_newdateset';
 const JSNODE_CHART_GENCOLOR = 'chart_gencolor';
+const JSNODE_CHART_FRESH = 'chart_fresh';
 
 
 class JSNode_AddPageToFrameSet extends JSNode_Base {
@@ -3168,6 +3169,119 @@ class JSNode_Chart_GenColor extends JSNode_Base {
     }
 }
 
+class JSNode_Chart_Fresh extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_CHART_FRESH, 'CharFresh', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+            }
+        }
+
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inSocket);
+        }
+
+        this.inSocket.inputable = false;
+        this.inSocket.type = SocketType_CtlKernel;
+        this.inSocket.kernelType = ChartKernel_Type;
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        return rlt;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketValue = null;
+        var theSocket = this.inSocket;
+        var datalinks_arr = this.bluePrint.linkPool.getLinksBySocket(theSocket);
+        var selectedKernel = null;
+        if (datalinks_arr.length == 0) {
+            var selectedCtlid = theSocket.getExtra('ctlid');
+            selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
+            if (selectedKernel != null) {
+                socketValue = selectedCtlid;
+            }
+        }
+        else {
+            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, false, true);
+            if (socketComRet == false) {
+                return false;
+            }
+            socketValue = socketComRet.value;
+        }
+        if (IsEmptyString(socketValue)) {
+            if (this.checkCompileFlag(this.bluePrint.ctlKernel == null, '无法定目标Chart', helper)) {
+                return false;
+            }
+            var chartKernel = this.bluePrint.ctlKernel.searchParentKernel([ChartKernel_Type], true);
+            if (this.checkCompileFlag(chartKernel == null, '无法定目标Chart', helper)) {
+                return false;
+            }
+            socketValue = chartKernel.id;
+            selectedKernel = chartKernel;
+        }
+        var belongUserControl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
+
+        var parentPath = null;
+        if (belongUserControl) {
+            if (selectedKernel.parent != belongUserControl) {
+                parentPath = selectedKernel.parent.getStatePath('');
+            }
+            else {
+                parentPath = '';
+            }
+            parentPath = belongUserControl.id + '_path' + (parentPath.length == 0 ? '' : "+'." + parentPath + "'");
+        }
+        else {
+            if (selectedKernel.parent.type == M_PageKernel_Type) {
+                parentPath = singleQuotesStr(selectedKernel.parent.id);
+            }
+            else {
+                parentPath = singleQuotesStr(selectedKernel.parent.getStatePath(''));
+            }
+        }
+
+        var myJSBlock = new FormatFileBlock('ret');
+        var freshFunName = makeFName_pull(selectedKernel);
+        myJSBlock.pushLine('setTimeout(() => {' + makeStr_callFun(freshFunName, [parentPath]) + ';},50);');
+
+        belongBlock.pushChild(myJSBlock);
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
+
+        return selfCompileRet;
+    }
+}
 
 JSNodeClassMap[JSNODE_OP_NOT] = {
     modelClass: JSNode_OP_Not,
@@ -3272,5 +3386,9 @@ JSNodeClassMap[JSNODE_CHART_NEWDATASET] = {
 };
 JSNodeClassMap[JSNODE_CHART_GENCOLOR] = {
     modelClass: JSNode_Chart_GenColor,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_CHART_FRESH] = {
+    modelClass: JSNode_Chart_Fresh,
     comClass: C_Node_SimpleNode,
 };

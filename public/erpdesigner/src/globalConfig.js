@@ -112,6 +112,7 @@ var Math_ABS = 'ABS'; //计算绝对值
 var Math_CEILING = 'CEILING'; //计算大于等于参数的最小整数
 var Math_FLOOR = 'FLOOR'; //计算小于等于参数的最大整数
 var Math_ROUND = 'ROUND'; //获取参数制定的长度和精度
+var Math_RAND = 'RAND'; //获取随机小数
 var Math_POWER = 'POWER'; //计算指定表达式的制定幂的值
 var Math_SQRT = 'SQRT'; //计算参数的平方根
 var Math_SIN ='SIN';

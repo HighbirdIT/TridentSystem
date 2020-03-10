@@ -359,6 +359,11 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_Chart_GenColor,
         type:'图表操作'
     },
+    {
+        label:'图表-刷新',
+        nodeClass:JSNode_Chart_Fresh,
+        type:'图表操作'
+    },
 ];
 
 var gCopyed_JsNodes_data=null;

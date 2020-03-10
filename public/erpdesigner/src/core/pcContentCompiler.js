@@ -245,6 +245,9 @@ class PCContentCompiler extends MobileContentCompiler {
                                 if (sameReactKernel != relyCtlReactParent) {
                                     thirdParam += "+" + singleQuotesStr('.' + relyCtlReactParent.getStatePath('', '.', null, true, sameReactKernel));
                                 }
+                                else if(sameReactKernel.type == M_FormKernel_Type && !sameReactKernel.isPageForm()){
+                                    thirdParam += '+ ".row_" + rowKeyInfo_map.' + sameReactKernel.id;
+                                }
                                 if(relyPath.approach.delaycall){
                                     actKey = 'call_' + relyPath.approach.funName;
                                     changedFun.pushLine("if(delayActs." + actKey + " == null){delayActs." + actKey + " = {callfun:" + relyPath.approach.funName + ",params_arr:[" + [VarNames.State, 'null', thirdParam].join(',') + "]};};");
