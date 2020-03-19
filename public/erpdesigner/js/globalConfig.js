@@ -58,6 +58,7 @@ var PersonEductOptions_arr = [];
 var AllPosts_arr = [];
 var ProjectRecords_arr = [];
 var AllFileFlows_arr = [];
+var AllReports_arr = [];
 
 function GetProjectRecords_arr() {
     return ProjectRecords_arr;

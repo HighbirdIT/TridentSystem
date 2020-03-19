@@ -360,7 +360,7 @@ class ContentPanel extends React.PureComponent {
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickExprotBtnHandler} ><div>导出</div></button>
                         <button type='button' className='btn btn-sm bg-dark text-light' onClick={this.clickEvalSizeBtnHandler} ><div>评估</div></button>
                     </div>
-                    <div onClick={this.clickContentDivHander} className='flex-grow-1 flex-shrink-1 autoScroll d-flex width-1'>
+                    <div onClick={this.clickContentDivHander} className='flex-grow-1 flex-shrink-1 autoScroll d-flex width-1 p-5'>
                         {editingPage && this.renderEditingPage(project, editingPage, isPC)}
                         {editingControl && this.renderEditingControl(project, editingControl)}
                     </div>

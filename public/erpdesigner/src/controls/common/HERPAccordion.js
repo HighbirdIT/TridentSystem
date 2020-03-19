@@ -15,6 +15,9 @@ const HERPAccordionKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('初始折叠', AttrNames.InitCollapsed, ValueType.Boolean, false),
         new CAttribute('模式', AttrNames.Mode, ValueType.String, AccordionMode.Default, true, false, AccordionModes_arr),
     ]),
+    new CAttributeGroup('事件',[
+        new CAttribute('打开时', AttrNames.Event.OnUnCollapse, ValueType.Event),
+    ]),
 ]);
 
 
