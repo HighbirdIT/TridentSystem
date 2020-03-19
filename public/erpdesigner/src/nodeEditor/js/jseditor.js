@@ -250,6 +250,11 @@ const JSNodeEditorControls_arr =[
         type:'表单访问'
     },
     {
+        label:'打开报表',
+        nodeClass:JSNode_OpenReport,
+        type:'报表控制'
+    },
+    {
         label:'刷新表单',
         nodeClass:JSNode_FreshForm,
         type:'表单控制'

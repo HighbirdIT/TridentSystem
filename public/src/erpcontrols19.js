@@ -213,6 +213,20 @@ class FixedContainer extends React.PureComponent {
         });
     }
 
+    removeTopestItem(){
+        if (this.banItemChange || this.state.items_arr.length == 0) {
+            return;
+        }
+        this.setState(state => {
+            var newArr = state.items_arr.concat();
+            newArr.pop();
+            setLocHash(HashKey_FixItem, newArr.length == 0 ? null : newArr.length);
+            return {
+                items_arr: newArr,
+            };
+        });
+    }
+
     render() {
         var items_arr = this.state.items_arr;
         var pages_arr = this.state.pages_arr;
@@ -242,6 +256,12 @@ function removeFixedItem(target) {
     }
 }
 
+function removeTopestFixedItem(target) {
+    if (gFixedContainerRef.current) {
+        gFixedContainerRef.current.removeTopestItem(target);
+    }
+}
+
 function popPage(pid, pelem) {
     if (gFixedContainerRef.current) {
         gFixedContainerRef.current.popPage(pid, pelem);
@@ -261,6 +281,33 @@ function closePage(pid) {
         }, 20);
         return;
     }
+}
+
+class C_ReportPanel extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        this.close = this.close.bind(this);
+    }
+
+    close(){
+        removeTopestFixedItem();
+    }
+
+    render(){
+        return <div className='w-100 h-100 d-flex flex-column'>
+            <div className='d-flex flex-grow-0 flex-shrink-0 bg-primary p-1 align-items-center'>
+                <h5 className='flex-grow-1 flex-shrink-1 text-light'>{this.props.label}</h5>
+                <button className='btn btn-sm btn-danger flex-grow-0 flex-shrink-0' onClick={this.close}><i className='fa fa-close' /></button>
+            </div>
+            <div className='flex-grow-1 flex-shrink-1 bg-light' style={{height:'calc(100% - 40px)'}}>
+                <iframe src={this.props.src} className='w-100 h-100' frameBorder='0' ></iframe>
+            </div>
+        </div>;
+    }
+}
+
+function OpenReport(identity, label){
+    addFixedItem(<C_ReportPanel key={identity} identity={identity} label={label} src={"http://erp.highbird.cn/rpt/rptEx.aspx?rptidentity=" + identity} />);
 }
 
 function getPagePath(name, stepcode, stepdata) {
@@ -1071,7 +1118,12 @@ class ERPC_DropDown extends React.PureComponent {
         else {
             if (!IsEmptyString(selectedVal)) {
                 if (IsEmptyString(selectedText)) {
-                    if (this.props.fetchingErr != null) {
+                    if(selectedVal == this.props.starval){
+                        setTimeout(() => {
+                            self.selectItem('*');
+                        }, 50);
+                    }
+                    else if (this.props.fetchingErr != null) {
                         setTimeout(() => {
                             self.selectItem(null);
                         }, 50);
@@ -2576,6 +2628,11 @@ function ERPC_Accordion_Rebind() {
     }
     this.rebindging = true;
     this.rebindBody();
+    if(typeof this.props.onUnCollapse === 'function'){
+        setTimeout(() => {
+            this.props.onUnCollapse(this.props.fullPath);
+        }, 200);
+    }
 }
 
 function ERPC_Accordion(target) {

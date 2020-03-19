@@ -374,7 +374,7 @@ class C_JSNode_Query_Sql extends React.PureComponent {
             return null;
         }
         var nodeData = this.props.nodedata;
-        if (socket == nodeData.outDataSocket || socket == nodeData.outErrorSocket) {
+        if (socket == nodeData.outDataSocket || socket == nodeData.outErrorSocket || socket == nodeData.outRecordSocket) {
             return null;
         }
         var entity = nodeData.targetEntity;
@@ -1313,6 +1313,72 @@ class C_JSNode_Page_CallFun extends React.PureComponent {
         
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='Call页面方法'>
             {elem}
+        </C_Node_Frame>
+    }
+}
+
+class C_JSNode_OpenReport extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        C_NodeCom_Base(this);
+
+        this.state = {
+        }
+
+        this.dropdownRef = React.createRef();
+    }
+
+    nodeDataChangedHandler() {
+        var nodeData = this.props.nodedata;
+        var report = nodeData.report;
+        if (report) {
+            this.dropdownRef.current.setValue(report.code);
+        }
+        this.setState({ magicObj: {} });
+    }
+
+    cus_componentWillMount() {
+        this.listenData(this.props.nodedata);
+    }
+
+    cus_componentWillUnmount() {
+        this.unlistenData(this.props.nodedata);
+    }
+
+    listenData(nodeData) {
+        if (nodeData) {
+            nodeData.on('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    unlistenData(nodeData) {
+        if (nodeData) {
+            nodeData.off('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    dropdownCtlChangedHandler(code, ddc, selectedReport) {
+        var nodeData = this.props.nodedata;
+        nodeData.setReport(selectedReport);
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        var report = nodeData.report;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='打开报表'>
+            <div className='d-flex'>
+                <div className='flex-grow-1 flex-shrink-1'>
+                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={AllReports_arr} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={report ? report.code : -1} />
+                </div>
+            </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} nameMoveable={true} />
+                <div className='d-flex flex-column'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} nameMoveable={true} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} nameMoveable={true} />
+                </div>
+            </div>
         </C_Node_Frame>
     }
 }

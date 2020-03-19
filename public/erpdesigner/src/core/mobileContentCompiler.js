@@ -4037,6 +4037,15 @@ class MobileContentCompiler extends ContentCompiler {
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'inited'), 'ctlState.inited == true;'));
 
 
+        var onUnCollapseFunName = theKernel.id + '_' + AttrNames.Event.OnUnCollapse;
+        var onUnCollapseBp = project.scriptMaster.getBPByName(onUnCollapseFunName);
+        if (onUnCollapseBp != null) {
+            var compileRet = this.compileScriptBlueprint(onUnCollapseBp, { params: [theKernel.id + '_path'] });
+            if (compileRet == false) {
+                return false;
+            }
+            ctlTag.setAttr(AttrNames.Event.OnUnCollapse, bigbracketStr(onUnCollapseFunName));
+        }
 
         var title = theKernel.getAttribute(AttrNames.Title);
         var titleParseRet = parseObj_CtlPropJsBind(title, project.scriptMaster);
@@ -4157,10 +4166,10 @@ class MobileContentCompiler extends ContentCompiler {
                 navBtnContainerBlk.pushLine("<div className='btn-group flex-grow-0 flex-shrink-0 border-top'>");
                 break;
             case DockType_Left:
-                navBtnContainerBlk.pushLine("<div className='btn-group-vertical flex-grow-0 flex-shrink-0 border-right'>");
+                navBtnContainerBlk.pushLine("<div className='btn-group-vertical flex-grow-0 flex-shrink-0 border-right justify-content-start'>");
                 break;
             case DockType_Right:
-                navBtnContainerBlk.pushLine("<div className='btn-group-vertical flex-grow-0 flex-shrink-0 border-left'>");
+                navBtnContainerBlk.pushLine("<div className='btn-group-vertical flex-grow-0 flex-shrink-0 border-left justify-content-start'>");
                 break;
         }
         navBtnContainerBlk.addNextIndent();
@@ -4171,6 +4180,7 @@ class MobileContentCompiler extends ContentCompiler {
         var selftRenderBlock = controlReactClass.renderFun;
         selftRenderBlock.scope.getVar('childElem', true);
         selftRenderBlock.scope.getVar('self', true, 'this');
+        selftRenderBlock.pushLine('if(this.props.visible == false){return null;}');
         selftRenderBlock.pushChild(itemSwitchBlock);
         selftRenderBlock.pushLine(VarNames.RetElem + " = <div className='" + layoutConfig.getClassName() + "' " + styleStr + ">", 1);
         if (dockType == DockType_Top || dockType == DockType_Left) {
@@ -4186,11 +4196,12 @@ class MobileContentCompiler extends ContentCompiler {
 
         controlReactClass.mapStateFun.scope.getVar('propProfile', true, "getControlPropProfile(ownprops, state)");
         controlReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
+        controlReactClass.mapStateFun.scope.getVar('visible', true, makeStr_DotProp(VarNames.CtlState, 'visible'));
+        controlReactClass.mapStateFun.pushLine('if(visible == null){visible = ownprops.definvisible ? false : true;}');
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullParentPath), makeStr_DotProp('propProfile', VarNames.FullParentPath)));
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullPath), makeStr_DotProp('propProfile', VarNames.FullPath)));
-        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'visible'), makeStr_DotProp(VarNames.CtlState, 'visible != false')));
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'visible'), 'visible'));
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'selectedIndex'), makeStr_DotProp(VarNames.CtlState, 'selectedIndex') + (defaultTabitemID == '0' ? '' : ' ? ' + makeStr_DotProp(VarNames.CtlState, 'selectedIndex') + ' : ' + singleQuotesStr(defaultTabitemID))));
-
         var isGreedMode = theKernel.getAttribute(AttrNames.GreedMode);
         var navBtnClassStr = "'btn rounded-0 " + (isGreedMode ? 'flex-grow-1 flex-shrink-1 ' : '') + "'";
         for (var ci in theKernel.children) {
@@ -6478,7 +6489,7 @@ class MobileContentCompiler extends ContentCompiler {
                             varObj.nullable ? varObj.nullable.toString() : 'false',
                             singleQuotesStr(varObj.kernel.id),
                             validErrStateVar.name,
-                            formPathVarName
+                            VarNames.FullParentPath
                         ]) + ";");
                         validKernelBlock.pushLine("validErrState[" + modifyStatePath(infoStatePath, belongUserControl) + "]=validErr;");
                         validKernelBlock.pushLine("if(validErr != null) hadValidErr = true;");

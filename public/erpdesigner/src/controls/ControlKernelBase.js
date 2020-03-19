@@ -536,6 +536,9 @@ class ControlKernelBase extends IAttributeable {
                 }
             }
         }
+        if(nowKernel.type == Accordion_Type){
+            parent = nowKernel; // 折叠控件可以访问到孩子控件
+        }
         if(parent == null){
             if(this.type == M_PageKernel_Type || this.type == UserControlKernel_Type){
                 parent = this;

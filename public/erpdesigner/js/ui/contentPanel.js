@@ -506,7 +506,7 @@ var ContentPanel = function (_React$PureComponent) {
                     ),
                     React.createElement(
                         'div',
-                        { onClick: this.clickContentDivHander, className: 'flex-grow-1 flex-shrink-1 autoScroll d-flex width-1' },
+                        { onClick: this.clickContentDivHander, className: 'flex-grow-1 flex-shrink-1 autoScroll d-flex width-1 p-5' },
                         editingPage && this.renderEditingPage(project, editingPage, isPC),
                         editingControl && this.renderEditingControl(project, editingControl)
                     )

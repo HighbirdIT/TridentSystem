@@ -393,7 +393,9 @@ var AttrNames = {
         OnUploadComplete: 'onUploadComplate',
         OnDataSourceChanged: 'onDataSourceChanged',
         OnClickCloseBtn: 'onClickCloseBtn',
-        OnReceiveMsg: 'onReceiveMsg'
+        OnReceiveMsg: 'onReceiveMsg',
+        OnCollapse: 'onCollapse',
+        OnUnCollapse: 'onUnCollapse'
     },
 
     Function: {

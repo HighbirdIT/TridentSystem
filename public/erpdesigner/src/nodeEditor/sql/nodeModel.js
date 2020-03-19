@@ -3086,6 +3086,16 @@ class SqlNode_Control_Api_Prop extends SqlNode_Base {
             var nowVal = this.inSocket.getExtra('colname');
             return <DropDownControl itemChanged={this.columnDDCChanged} textAttrName='label' valueAttrName='name' btnclass='btn-dark' options_arr={options_arr} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} />;
         }
+        else if (this.apiClass.ctltype == M_DropdownKernel_Type && this.apiItem.attrItem.name == AttrNames.ColumnName) {
+            var selectedCtlid = this.inSocket.getExtra('ctlid');
+            var selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
+            var options_arr = [];
+            if (selectedKernel) {
+                options_arr = selectedKernel.getAppandColumns;
+            }
+            var nowVal = this.inSocket.getExtra('colname');
+            return <DropDownControl itemChanged={this.columnDDCChanged} textAttrName='label' valueAttrName='name' btnclass='btn-dark' options_arr={options_arr} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} />;
+        }
         return null;
     }
 
@@ -3172,6 +3182,19 @@ class SqlNode_Control_Api_Prop extends SqlNode_Base {
                 useAttrName: theParam.label,
                 colname: theParam.label,
                 relyStateName:theParam.label,
+            });
+        }
+        else if(this.apiClass.ctltype == M_DropdownKernel_Type && this.apiItem.attrItem.name == AttrNames.ColumnName){
+            var colname = this.inSocket.getExtra('colname');
+            if (this.checkCompileFlag(selectedKernel.getAppandColumns().indexOf(colname) == -1, '所选列无效', helper)) {
+                return false;
+            }
+
+            useApiItem = Object.assign({}, useApiItem, {
+                stateName: colname,
+                useAttrName: colname,
+                colname: colname,
+                relyStateName: colname,
             });
         }
         helper.addUseControlPropApi(selectedKernel, useApiItem);

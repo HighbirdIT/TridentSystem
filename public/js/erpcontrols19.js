@@ -247,6 +247,21 @@ var FixedContainer = function (_React$PureComponent) {
             });
         }
     }, {
+        key: 'removeTopestItem',
+        value: function removeTopestItem() {
+            if (this.banItemChange || this.state.items_arr.length == 0) {
+                return;
+            }
+            this.setState(function (state) {
+                var newArr = state.items_arr.concat();
+                newArr.pop();
+                setLocHash(HashKey_FixItem, newArr.length == 0 ? null : newArr.length);
+                return {
+                    items_arr: newArr
+                };
+            });
+        }
+    }, {
         key: 'render',
         value: function render() {
             var items_arr = this.state.items_arr;
@@ -284,6 +299,12 @@ function removeFixedItem(target) {
     }
 }
 
+function removeTopestFixedItem(target) {
+    if (gFixedContainerRef.current) {
+        gFixedContainerRef.current.removeTopestItem(target);
+    }
+}
+
 function popPage(pid, pelem) {
     if (gFixedContainerRef.current) {
         gFixedContainerRef.current.popPage(pid, pelem);
@@ -303,6 +324,59 @@ function closePage(pid) {
         }, 20);
         return;
     }
+}
+
+var C_ReportPanel = function (_React$PureComponent2) {
+    _inherits(C_ReportPanel, _React$PureComponent2);
+
+    function C_ReportPanel(props) {
+        _classCallCheck(this, C_ReportPanel);
+
+        var _this2 = _possibleConstructorReturn(this, (C_ReportPanel.__proto__ || Object.getPrototypeOf(C_ReportPanel)).call(this, props));
+
+        _this2.close = _this2.close.bind(_this2);
+        return _this2;
+    }
+
+    _createClass(C_ReportPanel, [{
+        key: 'close',
+        value: function close() {
+            removeTopestFixedItem();
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            return React.createElement(
+                'div',
+                { className: 'w-100 h-100 d-flex flex-column' },
+                React.createElement(
+                    'div',
+                    { className: 'd-flex flex-grow-0 flex-shrink-0 bg-primary p-1 align-items-center' },
+                    React.createElement(
+                        'h5',
+                        { className: 'flex-grow-1 flex-shrink-1 text-light' },
+                        this.props.label
+                    ),
+                    React.createElement(
+                        'button',
+                        { className: 'btn btn-sm btn-danger flex-grow-0 flex-shrink-0', onClick: this.close },
+                        React.createElement('i', { className: 'fa fa-close' })
+                    )
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'flex-grow-1 flex-shrink-1 bg-light', style: { height: 'calc(100% - 40px)' } },
+                    React.createElement('iframe', { src: this.props.src, className: 'w-100 h-100', frameBorder: '0' })
+                )
+            );
+        }
+    }]);
+
+    return C_ReportPanel;
+}(React.PureComponent);
+
+function OpenReport(identity, label) {
+    addFixedItem(React.createElement(C_ReportPanel, { key: identity, identity: identity, label: label, src: "http://erp.highbird.cn/rpt/rptEx.aspx?rptidentity=" + identity }));
 }
 
 function getPagePath(name, stepcode, stepdata) {
@@ -385,22 +459,22 @@ function ERPControlBase(target, initState) {
     target.componentWillMount = ERPC_Fun_ComponentWillMount.bind(target);
 }
 
-var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
-    _inherits(ERPC_DropDown_PopPanel, _React$PureComponent2);
+var ERPC_DropDown_PopPanel = function (_React$PureComponent3) {
+    _inherits(ERPC_DropDown_PopPanel, _React$PureComponent3);
 
     function ERPC_DropDown_PopPanel(props) {
         _classCallCheck(this, ERPC_DropDown_PopPanel);
 
-        var _this2 = _possibleConstructorReturn(this, (ERPC_DropDown_PopPanel.__proto__ || Object.getPrototypeOf(ERPC_DropDown_PopPanel)).call(this, props));
+        var _this3 = _possibleConstructorReturn(this, (ERPC_DropDown_PopPanel.__proto__ || Object.getPrototypeOf(ERPC_DropDown_PopPanel)).call(this, props));
 
-        autoBind(_this2);
-        _this2.contentDivRef = React.createRef();
-        _this2.containerRef = React.createRef();
-        _this2.state = {
+        autoBind(_this3);
+        _this3.contentDivRef = React.createRef();
+        _this3.containerRef = React.createRef();
+        _this3.state = {
             maxCount: 50
         };
-        _this2.inited = false;
-        return _this2;
+        _this3.inited = false;
+        return _this3;
     }
 
     _createClass(ERPC_DropDown_PopPanel, [{
@@ -424,15 +498,15 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
     }, {
         key: 'componentWillMount',
         value: function componentWillMount() {
-            var _this3 = this;
+            var _this4 = this;
 
             var self = this;
             setTimeout(function () {
                 self.inited = true;
-                var dropdownctl = _this3.props.dropdownctl;
+                var dropdownctl = _this4.props.dropdownctl;
                 if (!isMobile) {
                     self.rootStyle = dropdownctl.getPopItemStyle();
-                    window.addEventListener('mousedown', _this3.windowMouseDownHandler);
+                    window.addEventListener('mousedown', _this4.windowMouseDownHandler);
                 }
                 self.setState(dropdownctl.getPopPanelInitState());
             }, 50);
@@ -559,7 +633,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
     }, {
         key: 'render',
         value: function render() {
-            var _this4 = this;
+            var _this5 = this;
 
             var multiselect = this.state.multiselect;
             var selectedVal = this.state.selectedVal;
@@ -644,7 +718,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                         if (recentUsed.hasOwnProperty(item.value)) {
                             recentUsed[item.value] = item;
                         }
-                        return item.text.indexOf(_this4.state.keyword) >= 0;
+                        return item.text.indexOf(_this5.state.keyword) >= 0;
                     });
                 } else {
                     if (groupCount > 0) {
@@ -704,7 +778,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                             }
                             recentElem.push(React.createElement(
                                 'div',
-                                { onClick: _this4.listItemClick, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (tItemSelected ? ' active' : ''), key: '_ck' + item.value, value: item.value },
+                                { onClick: _this5.listItemClick, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (tItemSelected ? ' active' : ''), key: '_ck' + item.value, value: item.value },
                                 React.createElement(
                                     'div',
                                     null,
@@ -737,7 +811,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                                 var isSelected = item.value == gvSelectedVal;
                                 return React.createElement(
                                     'div',
-                                    { onClick: _this4.groupListItemClick, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (isSelected ? ' active' : ''), key: item.value, value: item.value, index: index },
+                                    { onClick: _this5.groupListItemClick, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (isSelected ? ' active' : ''), key: item.value, value: item.value, index: index },
                                     React.createElement(
                                         'div',
                                         null,
@@ -762,7 +836,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                         selectedOption && selectedOption.map(function (item) {
                             return React.createElement(
                                 'span',
-                                { key: item.value, onClick: _this4.clickSelectedItemTag, value: item.value, className: 'border btn' },
+                                { key: item.value, onClick: _this5.clickSelectedItemTag, value: item.value, className: 'border btn' },
                                 item.text,
                                 React.createElement('i', { className: 'fa fa-close' })
                             );
@@ -852,7 +926,7 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
                             }
                             return React.createElement(
                                 'div',
-                                { onClick: _this4.listItemClick, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (tItemSelected ? ' active' : ''), key: item.value, value: item.value },
+                                { onClick: _this5.listItemClick, className: 'd-flex text-nowrap flex-grow-0 flex-shrink-0 list-group-item list-group-item-action ' + (tItemSelected ? ' active' : ''), key: item.value, value: item.value },
                                 React.createElement(
                                     'div',
                                     null,
@@ -959,32 +1033,32 @@ var ERPC_DropDown_PopPanel = function (_React$PureComponent2) {
     return ERPC_DropDown_PopPanel;
 }(React.PureComponent);
 
-var ERPC_DropDown = function (_React$PureComponent3) {
-    _inherits(ERPC_DropDown, _React$PureComponent3);
+var ERPC_DropDown = function (_React$PureComponent4) {
+    _inherits(ERPC_DropDown, _React$PureComponent4);
 
     function ERPC_DropDown(props) {
         _classCallCheck(this, ERPC_DropDown);
 
-        var _this5 = _possibleConstructorReturn(this, (ERPC_DropDown.__proto__ || Object.getPrototypeOf(ERPC_DropDown)).call(this, props));
+        var _this6 = _possibleConstructorReturn(this, (ERPC_DropDown.__proto__ || Object.getPrototypeOf(ERPC_DropDown)).call(this, props));
 
-        autoBind(_this5);
+        autoBind(_this6);
 
-        ERPControlBase(_this5);
-        _this5.state = Object.assign(_this5.initState, {
+        ERPControlBase(_this6);
+        _this6.state = Object.assign(_this6.initState, {
             keyword: '',
             opened: false
         });
 
-        _this5.hadValueAttr = _this5.props.valueAttrName != null;
-        _this5.editableInputRef = React.createRef();
-        _this5.initState = null;
-        _this5.contentDivRef = React.createRef();
+        _this6.hadValueAttr = _this6.props.valueAttrName != null;
+        _this6.editableInputRef = React.createRef();
+        _this6.initState = null;
+        _this6.contentDivRef = React.createRef();
 
-        _this5.popPanelRef = React.createRef();
+        _this6.popPanelRef = React.createRef();
         if (isMobile) {
-            _this5.popPanelItem = React.createElement(ERPC_DropDown_PopPanel, { ref: _this5.popPanelRef, dropdownctl: _this5, key: gFixedItemCounter++ });
+            _this6.popPanelItem = React.createElement(ERPC_DropDown_PopPanel, { ref: _this6.popPanelRef, dropdownctl: _this6, key: gFixedItemCounter++ });
         }
-        return _this5;
+        return _this6;
     }
 
     _createClass(ERPC_DropDown, [{
@@ -1215,7 +1289,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
     }, {
         key: 'render',
         value: function render() {
-            var _this6 = this;
+            var _this7 = this;
 
             if (this.props.visible == false) {
                 return null;
@@ -1240,7 +1314,11 @@ var ERPC_DropDown = function (_React$PureComponent3) {
             } else {
                 if (!IsEmptyString(selectedVal)) {
                     if (IsEmptyString(selectedText)) {
-                        if (this.props.fetchingErr != null) {
+                        if (selectedVal == this.props.starval) {
+                            setTimeout(function () {
+                                self.selectItem('*');
+                            }, 50);
+                        } else if (this.props.fetchingErr != null) {
                             setTimeout(function () {
                                 self.selectItem(null);
                             }, 50);
@@ -1250,7 +1328,7 @@ var ERPC_DropDown = function (_React$PureComponent3) {
                                 if (!this.props.fetching) {
                                     if (this.autoPullTO == null) {
                                         this.autoPullTO = setTimeout(function () {
-                                            self.props.pullDataSource(_this6.props.fullParentPath);
+                                            self.props.pullDataSource(_this7.props.fullParentPath);
                                             self.autoPullTO = null;
                                         }, 50);
                                     }
@@ -1601,19 +1679,19 @@ function ERPC_DropDown_dispatchtoprops(dispatch, ownprops) {
     return {};
 }
 
-var ERPC_Text = function (_React$PureComponent4) {
-    _inherits(ERPC_Text, _React$PureComponent4);
+var ERPC_Text = function (_React$PureComponent5) {
+    _inherits(ERPC_Text, _React$PureComponent5);
 
     function ERPC_Text(props) {
         _classCallCheck(this, ERPC_Text);
 
-        var _this7 = _possibleConstructorReturn(this, (ERPC_Text.__proto__ || Object.getPrototypeOf(ERPC_Text)).call(this));
+        var _this8 = _possibleConstructorReturn(this, (ERPC_Text.__proto__ || Object.getPrototypeOf(ERPC_Text)).call(this));
 
-        autoBind(_this7);
+        autoBind(_this8);
 
-        ERPControlBase(_this7);
-        _this7.state = _this7.initState;
-        return _this7;
+        ERPControlBase(_this8);
+        _this8.state = _this8.initState;
+        return _this8;
     }
 
     _createClass(ERPC_Text, [{
@@ -1675,7 +1753,7 @@ var ERPC_Text = function (_React$PureComponent4) {
     }, {
         key: 'render',
         value: function render() {
-            var _this8 = this;
+            var _this9 = this;
 
             if (this.props.visible == false) {
                 return null;
@@ -1747,7 +1825,7 @@ var ERPC_Text = function (_React$PureComponent4) {
                     if (useValue != this.props.value) {
                         if (!IsEmptyString(useValue) && !IsEmptyString(this.props.value) && useValue != this.props.value && (this.props.type == 'time' || this.props.type == 'date' || this.props.type == 'float')) {
                             setTimeout(function () {
-                                store.dispatch(makeAction_setStateByPath(useValue, _this8.props.fullPath + '.value'));
+                                store.dispatch(makeAction_setStateByPath(useValue, _this9.props.fullPath + '.value'));
                             }, 10);
                         }
                     }
@@ -1797,19 +1875,19 @@ function ERPC_Text_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
-var ERPC_LabeledControl = function (_React$PureComponent5) {
-    _inherits(ERPC_LabeledControl, _React$PureComponent5);
+var ERPC_LabeledControl = function (_React$PureComponent6) {
+    _inherits(ERPC_LabeledControl, _React$PureComponent6);
 
     function ERPC_LabeledControl(props) {
         _classCallCheck(this, ERPC_LabeledControl);
 
-        var _this9 = _possibleConstructorReturn(this, (ERPC_LabeledControl.__proto__ || Object.getPrototypeOf(ERPC_LabeledControl)).call(this));
+        var _this10 = _possibleConstructorReturn(this, (ERPC_LabeledControl.__proto__ || Object.getPrototypeOf(ERPC_LabeledControl)).call(this));
 
-        autoBind(_this9);
+        autoBind(_this10);
 
-        ERPControlBase(_this9);
-        _this9.state = _this9.initState;
-        return _this9;
+        ERPControlBase(_this10);
+        _this10.state = _this10.initState;
+        return _this10;
     }
 
     _createClass(ERPC_LabeledControl, [{
@@ -1913,19 +1991,19 @@ function ERPC_LabeledControl_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
-var ERPC_Form = function (_React$PureComponent6) {
-    _inherits(ERPC_Form, _React$PureComponent6);
+var ERPC_Form = function (_React$PureComponent7) {
+    _inherits(ERPC_Form, _React$PureComponent7);
 
     function ERPC_Form(props) {
         _classCallCheck(this, ERPC_Form);
 
-        var _this10 = _possibleConstructorReturn(this, (ERPC_Form.__proto__ || Object.getPrototypeOf(ERPC_Form)).call(this));
+        var _this11 = _possibleConstructorReturn(this, (ERPC_Form.__proto__ || Object.getPrototypeOf(ERPC_Form)).call(this));
 
-        autoBind(_this10);
+        autoBind(_this11);
 
-        ERPControlBase(_this10);
-        _this10.state = _this10.initState;
-        return _this10;
+        ERPControlBase(_this11);
+        _this11.state = _this11.initState;
+        return _this11;
     }
 
     _createClass(ERPC_Form, [{
@@ -1951,19 +2029,19 @@ function ERPC_Form_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
-var ERPC_Label = function (_React$PureComponent7) {
-    _inherits(ERPC_Label, _React$PureComponent7);
+var ERPC_Label = function (_React$PureComponent8) {
+    _inherits(ERPC_Label, _React$PureComponent8);
 
     function ERPC_Label(props) {
         _classCallCheck(this, ERPC_Label);
 
-        var _this11 = _possibleConstructorReturn(this, (ERPC_Label.__proto__ || Object.getPrototypeOf(ERPC_Label)).call(this));
+        var _this12 = _possibleConstructorReturn(this, (ERPC_Label.__proto__ || Object.getPrototypeOf(ERPC_Label)).call(this));
 
-        autoBind(_this11);
+        autoBind(_this12);
 
-        ERPControlBase(_this11);
-        _this11.state = _this11.initState;
-        return _this11;
+        ERPControlBase(_this12);
+        _this12.state = _this12.initState;
+        return _this12;
     }
 
     _createClass(ERPC_Label, [{
@@ -2039,19 +2117,19 @@ function ERPC_Label_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
-var ERPC_CheckBox = function (_React$PureComponent8) {
-    _inherits(ERPC_CheckBox, _React$PureComponent8);
+var ERPC_CheckBox = function (_React$PureComponent9) {
+    _inherits(ERPC_CheckBox, _React$PureComponent9);
 
     function ERPC_CheckBox(props) {
         _classCallCheck(this, ERPC_CheckBox);
 
-        var _this12 = _possibleConstructorReturn(this, (ERPC_CheckBox.__proto__ || Object.getPrototypeOf(ERPC_CheckBox)).call(this));
+        var _this13 = _possibleConstructorReturn(this, (ERPC_CheckBox.__proto__ || Object.getPrototypeOf(ERPC_CheckBox)).call(this));
 
-        autoBind(_this12);
+        autoBind(_this13);
 
-        ERPControlBase(_this12);
-        _this12.state = _this12.initState;
-        return _this12;
+        ERPControlBase(_this13);
+        _this13.state = _this13.initState;
+        return _this13;
     }
 
     _createClass(ERPC_CheckBox, [{
@@ -2119,19 +2197,19 @@ function ERPC_CheckBox_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
-var ERPC_Button = function (_React$PureComponent9) {
-    _inherits(ERPC_Button, _React$PureComponent9);
+var ERPC_Button = function (_React$PureComponent10) {
+    _inherits(ERPC_Button, _React$PureComponent10);
 
     function ERPC_Button(props) {
         _classCallCheck(this, ERPC_Button);
 
-        var _this13 = _possibleConstructorReturn(this, (ERPC_Button.__proto__ || Object.getPrototypeOf(ERPC_Button)).call(this));
+        var _this14 = _possibleConstructorReturn(this, (ERPC_Button.__proto__ || Object.getPrototypeOf(ERPC_Button)).call(this));
 
-        autoBind(_this13);
+        autoBind(_this14);
 
-        ERPControlBase(_this13);
-        _this13.state = _this13.initState;
-        return _this13;
+        ERPControlBase(_this14);
+        _this14.state = _this14.initState;
+        return _this14;
     }
 
     _createClass(ERPC_Button, [{
@@ -2222,22 +2300,22 @@ function ClosePopperBtn(fullPath, needSetState) {
     }
 }
 
-var ERPC_PopperBtn = function (_React$PureComponent10) {
-    _inherits(ERPC_PopperBtn, _React$PureComponent10);
+var ERPC_PopperBtn = function (_React$PureComponent11) {
+    _inherits(ERPC_PopperBtn, _React$PureComponent11);
 
     function ERPC_PopperBtn(props) {
         _classCallCheck(this, ERPC_PopperBtn);
 
-        var _this14 = _possibleConstructorReturn(this, (ERPC_PopperBtn.__proto__ || Object.getPrototypeOf(ERPC_PopperBtn)).call(this));
+        var _this15 = _possibleConstructorReturn(this, (ERPC_PopperBtn.__proto__ || Object.getPrototypeOf(ERPC_PopperBtn)).call(this));
 
-        autoBind(_this14);
+        autoBind(_this15);
 
-        ERPControlBase(_this14);
-        _this14.initState.closeSignal = props.closeSignal;
-        _this14.state = _this14.initState;
-        _this14.popdivRef = React.createRef();
-        _this14.rootRef = React.createRef();
-        return _this14;
+        ERPControlBase(_this15);
+        _this15.initState.closeSignal = props.closeSignal;
+        _this15.state = _this15.initState;
+        _this15.popdivRef = React.createRef();
+        _this15.rootRef = React.createRef();
+        return _this15;
     }
 
     _createClass(ERPC_PopperBtn, [{
@@ -2781,16 +2859,16 @@ function ERPC_GridForm_SelectorClicked(rowkey) {
     store.dispatch(makeAction_setManyStateByPath(needSetState, ''));
 }
 
-var ERPC_GridForm_BtnCol = function (_React$PureComponent11) {
-    _inherits(ERPC_GridForm_BtnCol, _React$PureComponent11);
+var ERPC_GridForm_BtnCol = function (_React$PureComponent12) {
+    _inherits(ERPC_GridForm_BtnCol, _React$PureComponent12);
 
     function ERPC_GridForm_BtnCol(props) {
         _classCallCheck(this, ERPC_GridForm_BtnCol);
 
-        var _this15 = _possibleConstructorReturn(this, (ERPC_GridForm_BtnCol.__proto__ || Object.getPrototypeOf(ERPC_GridForm_BtnCol)).call(this, props));
+        var _this16 = _possibleConstructorReturn(this, (ERPC_GridForm_BtnCol.__proto__ || Object.getPrototypeOf(ERPC_GridForm_BtnCol)).call(this, props));
 
-        autoBind(_this15);
-        return _this15;
+        autoBind(_this16);
+        return _this16;
     }
 
     _createClass(ERPC_GridForm_BtnCol, [{
@@ -2833,7 +2911,7 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent11) {
     }, {
         key: 'render',
         value: function render() {
-            var _this16 = this;
+            var _this17 = this;
 
             if (this.props.rowkey == 'new') {
                 return React.createElement(
@@ -2874,7 +2952,7 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent11) {
                 this.props.form.btns.map(function (btn) {
                     return React.createElement(
                         'button',
-                        { key: btn.key, onClick: _this16.clickHandler, 'd-key': btn.key, className: 'btn btn-sm btn-dark', type: 'button' },
+                        { key: btn.key, onClick: _this17.clickHandler, 'd-key': btn.key, className: 'btn btn-sm btn-dark', type: 'button' },
                         btn.content
                     );
                 })
@@ -2900,16 +2978,16 @@ function ERPC_GridForm_BtnCol_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
-var ERPC_GridSelectableRow = function (_React$PureComponent12) {
-    _inherits(ERPC_GridSelectableRow, _React$PureComponent12);
+var ERPC_GridSelectableRow = function (_React$PureComponent13) {
+    _inherits(ERPC_GridSelectableRow, _React$PureComponent13);
 
     function ERPC_GridSelectableRow(props) {
         _classCallCheck(this, ERPC_GridSelectableRow);
 
-        var _this17 = _possibleConstructorReturn(this, (ERPC_GridSelectableRow.__proto__ || Object.getPrototypeOf(ERPC_GridSelectableRow)).call(this, props));
+        var _this18 = _possibleConstructorReturn(this, (ERPC_GridSelectableRow.__proto__ || Object.getPrototypeOf(ERPC_GridSelectableRow)).call(this, props));
 
-        _this17.clickHandler = _this17.clickHandler.bind(_this17);
-        return _this17;
+        _this18.clickHandler = _this18.clickHandler.bind(_this18);
+        return _this18;
     }
 
     _createClass(ERPC_GridSelectableRow, [{
@@ -3024,12 +3102,19 @@ function ERPC_Accordion_Render() {
 }
 
 function ERPC_Accordion_Rebind() {
+    var _this19 = this;
+
     var self = this;
     if (this.rebindging) {
         this.rebindging = true;
     }
     this.rebindging = true;
     this.rebindBody();
+    if (typeof this.props.onUnCollapse === 'function') {
+        setTimeout(function () {
+            _this19.props.onUnCollapse(_this19.props.fullPath);
+        }, 200);
+    }
 }
 
 function ERPC_Accordion(target) {
@@ -3040,8 +3125,8 @@ function ERPC_Accordion(target) {
     return {};
 }
 
-var CBaseGridFormNavBar = function (_React$PureComponent13) {
-    _inherits(CBaseGridFormNavBar, _React$PureComponent13);
+var CBaseGridFormNavBar = function (_React$PureComponent14) {
+    _inherits(CBaseGridFormNavBar, _React$PureComponent14);
 
     function CBaseGridFormNavBar(props) {
         _classCallCheck(this, CBaseGridFormNavBar);
@@ -3233,22 +3318,22 @@ var EToastType = {
     Error: 'error'
 };
 
-var CToastManger = function (_React$PureComponent14) {
-    _inherits(CToastManger, _React$PureComponent14);
+var CToastManger = function (_React$PureComponent15) {
+    _inherits(CToastManger, _React$PureComponent15);
 
     function CToastManger(props) {
         _classCallCheck(this, CToastManger);
 
-        var _this19 = _possibleConstructorReturn(this, (CToastManger.__proto__ || Object.getPrototypeOf(CToastManger)).call(this, props));
+        var _this21 = _possibleConstructorReturn(this, (CToastManger.__proto__ || Object.getPrototypeOf(CToastManger)).call(this, props));
 
-        autoBind(_this19);
+        autoBind(_this21);
 
-        _this19.state = {
+        _this21.state = {
             msg_arr: []
         };
-        _this19.ticker = null;
-        _this19.msgID = 0;
-        return _this19;
+        _this21.ticker = null;
+        _this21.msgID = 0;
+        return _this21;
     }
 
     _createClass(CToastManger, [{
@@ -3452,18 +3537,18 @@ var MessageBoxItem = function () {
     return MessageBoxItem;
 }();
 
-var CMessageBox = function (_React$PureComponent15) {
-    _inherits(CMessageBox, _React$PureComponent15);
+var CMessageBox = function (_React$PureComponent16) {
+    _inherits(CMessageBox, _React$PureComponent16);
 
     function CMessageBox(props) {
         _classCallCheck(this, CMessageBox);
 
-        var _this20 = _possibleConstructorReturn(this, (CMessageBox.__proto__ || Object.getPrototypeOf(CMessageBox)).call(this, props));
+        var _this22 = _possibleConstructorReturn(this, (CMessageBox.__proto__ || Object.getPrototypeOf(CMessageBox)).call(this, props));
 
-        autoBind(_this20);
+        autoBind(_this22);
 
-        _this20.props.msgItem.changedAct = _this20.msgItemChanedHandler;
-        return _this20;
+        _this22.props.msgItem.changedAct = _this22.msgItemChanedHandler;
+        return _this22;
     }
 
     _createClass(CMessageBox, [{
@@ -3511,7 +3596,7 @@ var CMessageBox = function (_React$PureComponent15) {
     }, {
         key: 'render',
         value: function render() {
-            var _this21 = this;
+            var _this23 = this;
 
             var msgItem = this.props.msgItem;
             var type = msgItem.type;
@@ -3609,7 +3694,7 @@ var CMessageBox = function (_React$PureComponent15) {
                     btnsElem = msgItem.btns.map(function (btn) {
                         return React.createElement(
                             'button',
-                            { onClick: _this21.clickBtnHandler, key: btn.label, 'd-type': btn.key, type: 'button', className: btn.class == null ? 'btn btn-light' : btn.class },
+                            { onClick: _this23.clickBtnHandler, key: btn.label, 'd-type': btn.key, type: 'button', className: btn.class == null ? 'btn btn-light' : btn.class },
                             btn.label
                         );
                     });
@@ -3660,21 +3745,21 @@ var CMessageBox = function (_React$PureComponent15) {
     return CMessageBox;
 }(React.PureComponent);
 
-var CMessageBoxManger = function (_React$PureComponent16) {
-    _inherits(CMessageBoxManger, _React$PureComponent16);
+var CMessageBoxManger = function (_React$PureComponent17) {
+    _inherits(CMessageBoxManger, _React$PureComponent17);
 
     function CMessageBoxManger(props) {
         _classCallCheck(this, CMessageBoxManger);
 
-        var _this22 = _possibleConstructorReturn(this, (CMessageBoxManger.__proto__ || Object.getPrototypeOf(CMessageBoxManger)).call(this, props));
+        var _this24 = _possibleConstructorReturn(this, (CMessageBoxManger.__proto__ || Object.getPrototypeOf(CMessageBoxManger)).call(this, props));
 
-        autoBind(_this22);
+        autoBind(_this24);
 
-        _this22.state = {
+        _this24.state = {
             msg_arr: []
         };
-        _this22.msgID = 0;
-        return _this22;
+        _this24.msgID = 0;
+        return _this24;
     }
 
     _createClass(CMessageBoxManger, [{
@@ -3708,7 +3793,7 @@ var CMessageBoxManger = function (_React$PureComponent16) {
     }, {
         key: 'render',
         value: function render() {
-            var _this23 = this;
+            var _this25 = this;
 
             var visibleMsg_arr = this.state.msg_arr.filter(function (x) {
                 return !x.hidden && x.type != EMessageBoxType.Blank;
@@ -3720,7 +3805,7 @@ var CMessageBoxManger = function (_React$PureComponent16) {
                 'div',
                 { className: 'messageBoxMask' },
                 visibleMsg_arr.map(function (msg, index) {
-                    return React.createElement(CMessageBox, { key: 1, msgItem: msg, manager: _this23 });
+                    return React.createElement(CMessageBox, { key: 1, msgItem: msg, manager: _this25 });
                 })
             );
         }
@@ -3874,29 +3959,29 @@ function AddPageToFrameSet(state, ctlpath, title, pageCode, pageName, stepCode, 
     }
 }
 
-var ERPC_FrameSet = function (_React$PureComponent17) {
-    _inherits(ERPC_FrameSet, _React$PureComponent17);
+var ERPC_FrameSet = function (_React$PureComponent18) {
+    _inherits(ERPC_FrameSet, _React$PureComponent18);
 
     function ERPC_FrameSet(props) {
         _classCallCheck(this, ERPC_FrameSet);
 
-        var _this24 = _possibleConstructorReturn(this, (ERPC_FrameSet.__proto__ || Object.getPrototypeOf(ERPC_FrameSet)).call(this, props));
+        var _this26 = _possibleConstructorReturn(this, (ERPC_FrameSet.__proto__ || Object.getPrototypeOf(ERPC_FrameSet)).call(this, props));
 
-        _this24.headerItemStyle = { minWidth: '6em' };
-        _this24.clickCloseHandler = _this24.clickCloseHandler.bind(_this24);
-        _this24.clickHeaderHandler = _this24.clickHeaderHandler.bind(_this24);
-        return _this24;
+        _this26.headerItemStyle = { minWidth: '6em' };
+        _this26.clickCloseHandler = _this26.clickCloseHandler.bind(_this26);
+        _this26.clickHeaderHandler = _this26.clickHeaderHandler.bind(_this26);
+        return _this26;
     }
 
     _createClass(ERPC_FrameSet, [{
         key: 'clickCloseHandler',
         value: function clickCloseHandler() {
-            var _this25 = this;
+            var _this27 = this;
 
             var newItems_arr = [];
             var pos = 0;
             this.props.items_arr.forEach(function (item, index) {
-                if (item.key != _this25.props.selectedKey) {
+                if (item.key != _this27.props.selectedKey) {
                     newItems_arr.push(item);
                 } else {
                     pos = index;
@@ -3925,7 +4010,7 @@ var ERPC_FrameSet = function (_React$PureComponent17) {
     }, {
         key: 'render',
         value: function render() {
-            var _this26 = this;
+            var _this28 = this;
 
             if (this.props.visible == false) {
                 return null;
@@ -3944,12 +4029,12 @@ var ERPC_FrameSet = function (_React$PureComponent17) {
                     var isSelected = item.key == selectedKey;
                     var btnElem = React.createElement(
                         'button',
-                        { 'd-key': item.key, onClick: _this26.clickHeaderHandler, key: item.key, type: 'button', className: 'btn btn-sm rounded-0 btn-' + (isSelected ? 'light' : 'secondary'), style: _this26.headerItemStyle },
+                        { 'd-key': item.key, onClick: _this28.clickHeaderHandler, key: item.key, type: 'button', className: 'btn btn-sm rounded-0 btn-' + (isSelected ? 'light' : 'secondary'), style: _this28.headerItemStyle },
                         item.title
                     );
                     if (isSelected && item.closeable != false) {
                         selectedItem = item;
-                        return [btnElem, React.createElement('button', { onClick: _this26.clickCloseHandler, key: 'close', type: 'button', className: 'btn btn-sm btn-light fa fa-close text-secondary rounded-0' })];
+                        return [btnElem, React.createElement('button', { onClick: _this28.clickCloseHandler, key: 'close', type: 'button', className: 'btn btn-sm btn-light fa fa-close text-secondary rounded-0' })];
                     }
                     return btnElem;
                 });
@@ -3994,32 +4079,32 @@ function ERPC_FrameSet_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
-var ERPC_TopLevelFrame = function (_React$PureComponent18) {
-    _inherits(ERPC_TopLevelFrame, _React$PureComponent18);
+var ERPC_TopLevelFrame = function (_React$PureComponent19) {
+    _inherits(ERPC_TopLevelFrame, _React$PureComponent19);
 
     function ERPC_TopLevelFrame(props) {
         _classCallCheck(this, ERPC_TopLevelFrame);
 
-        var _this27 = _possibleConstructorReturn(this, (ERPC_TopLevelFrame.__proto__ || Object.getPrototypeOf(ERPC_TopLevelFrame)).call(this, props));
+        var _this29 = _possibleConstructorReturn(this, (ERPC_TopLevelFrame.__proto__ || Object.getPrototypeOf(ERPC_TopLevelFrame)).call(this, props));
 
-        _this27.style = {
+        _this29.style = {
             left: '0px',
             top: '0px',
             zIndex: 10000
         };
-        _this27.state = {
+        _this29.state = {
             srcs_arr: [],
             states_arr: [],
             useSrc: null,
             useState: null
         };
-        _this27.onloadHandler = _this27.onloadHandler.bind(_this27);
-        _this27.onErrorHandler = _this27.onErrorHandler.bind(_this27);
-        _this27.sendMessage = _this27.sendMessage.bind(_this27);
-        _this27.push = _this27.push.bind(_this27);
-        _this27.pop = _this27.pop.bind(_this27);
-        _this27.iframeRef = React.createRef();
-        return _this27;
+        _this29.onloadHandler = _this29.onloadHandler.bind(_this29);
+        _this29.onErrorHandler = _this29.onErrorHandler.bind(_this29);
+        _this29.sendMessage = _this29.sendMessage.bind(_this29);
+        _this29.push = _this29.push.bind(_this29);
+        _this29.pop = _this29.pop.bind(_this29);
+        _this29.iframeRef = React.createRef();
+        return _this29;
     }
 
     _createClass(ERPC_TopLevelFrame, [{
@@ -4131,22 +4216,22 @@ var ERPC_TopLevelFrame = function (_React$PureComponent18) {
     return ERPC_TopLevelFrame;
 }(React.PureComponent);
 
-var ERPC_IFrame = function (_React$PureComponent19) {
-    _inherits(ERPC_IFrame, _React$PureComponent19);
+var ERPC_IFrame = function (_React$PureComponent20) {
+    _inherits(ERPC_IFrame, _React$PureComponent20);
 
     function ERPC_IFrame(props) {
         _classCallCheck(this, ERPC_IFrame);
 
-        var _this28 = _possibleConstructorReturn(this, (ERPC_IFrame.__proto__ || Object.getPrototypeOf(ERPC_IFrame)).call(this, props));
+        var _this30 = _possibleConstructorReturn(this, (ERPC_IFrame.__proto__ || Object.getPrototypeOf(ERPC_IFrame)).call(this, props));
 
-        _this28.onloadHandler = _this28.onloadHandler.bind(_this28);
-        _this28.onErrorHandler = _this28.onErrorHandler.bind(_this28);
-        _this28.sendMessage = _this28.sendMessage.bind(_this28);
-        _this28.trySendMsg = _this28.trySendMsg.bind(_this28);
-        _this28.frameRef = React.createRef();
-        _this28.tryIntval = null;
-        _this28.tryCount = 0;
-        return _this28;
+        _this30.onloadHandler = _this30.onloadHandler.bind(_this30);
+        _this30.onErrorHandler = _this30.onErrorHandler.bind(_this30);
+        _this30.sendMessage = _this30.sendMessage.bind(_this30);
+        _this30.trySendMsg = _this30.trySendMsg.bind(_this30);
+        _this30.frameRef = React.createRef();
+        _this30.tryIntval = null;
+        _this30.tryCount = 0;
+        return _this30;
     }
 
     _createClass(ERPC_IFrame, [{
@@ -4188,7 +4273,7 @@ var ERPC_IFrame = function (_React$PureComponent19) {
     }, {
         key: 'trySendMsg',
         value: function trySendMsg(needDelay) {
-            var _this29 = this;
+            var _this31 = this;
 
             var self = this;
             if (this.props.msg == null) {
@@ -4220,7 +4305,7 @@ var ERPC_IFrame = function (_React$PureComponent19) {
                 this.tryCount = 0;
                 if (needDelay) {
                     setTimeout(function () {
-                        store.dispatch(makeAction_setStateByPath(null, _this29.props.fullPath + '.msg'));
+                        store.dispatch(makeAction_setStateByPath(null, _this31.props.fullPath + '.msg'));
                     }, 20);
                 } else {
                     store.dispatch(makeAction_setStateByPath(null, this.props.fullPath + '.msg'));
