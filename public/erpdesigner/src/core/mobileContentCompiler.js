@@ -5864,9 +5864,11 @@ class MobileContentCompiler extends ContentCompiler {
                         pullFun.scope.getVar(formRowPathVarName, true);
                         if (isUseFormColumn) {
                             pullFun.scope.getVar(nowRecordVarName, true);
+                            pullFun.scope.getVar(nowRowStateVarName, true);
                             needCheckVars_arr.push(nowRecordVarName);
                         }
                         if (isUseFormCtl) {
+                            pullFun.scope.getVar(nowRecordVarName, true);
                             pullFun.scope.getVar(nowRowStateVarName, true);
                             needCheckVars_arr.push(nowRowStateVarName);
                         }
