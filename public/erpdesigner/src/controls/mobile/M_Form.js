@@ -37,7 +37,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('有刷新图标', AttrNames.RefreshIcon, ValueType.Boolean, true),
         new CAttribute('永远可编辑', AttrNames.AwaysEditable, ValueType.Boolean, false),
         new CAttribute('模式', AttrNames.SelectMode, ValueType.String, ESelectMode.None, true, false, SelectModes_arr),
-        new CAttribute('默认选中首项', AttrNames.DefaultSelectFirst, ValueType.Boolean, false),
+        new CAttribute('维持选中行', AttrNames.DefaultSelectFirst, ValueType.Boolean, false),
         new CAttribute('bottomDivID', 'bottomDivID', ValueType.String, '', true, false, null, null, false),
         new CAttribute('editorID', 'editorID', ValueType.String, '', true, false, null, null, false),
         genIsdisplayAttribute(),

@@ -2683,6 +2683,29 @@ function GetFormSelectedProfile(formState, keyColumn) {
     return rlt;
 }
 
+function GetFormRowDataFromKey(formState, rowkey, keyColumn) {
+    var records_arr = formState.records_arr;
+    var rlt = {
+        index: -1,
+        record: null,
+        key: null
+    };
+    if (records_arr == null || records_arr.length == 0) {
+        return rlt;
+    }
+    for (ri = 0; ri < records_arr.length; ++ri) {
+        var record = records_arr[ri];
+        var key = keyColumn == '_default' ? ri : record[keyColumn];
+        if (key == rowkey) {
+            rlt.index = ri;
+            rlt.record = record;
+            rlt.key = rowkey;
+            break;
+        }
+    }
+    return rlt;
+}
+
 function ERPC_GridForm(target) {
     target.rootRef = React.createRef();
     target.rowPerPageChangedHandler = ERPC_GridForm_RowPerPageChangedHandler.bind(target);

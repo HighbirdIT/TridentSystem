@@ -2174,6 +2174,7 @@ class MobileContentCompiler extends ContentCompiler {
         var isListForm = formType == EFormType.List;
         var selectMode = theKernel.getAttribute(AttrNames.SelectMode);
         var rowKeyAttrName = theKernel.id.toLocaleLowerCase() + '_rowkey';
+        var rowIndexAttrName = theKernel.id.toLocaleLowerCase() + '_rowindex';
         var hadRefreshIcon = theKernel.getAttribute(AttrNames.RefreshIcon);
         var awaysEditable = theKernel.getAttribute(AttrNames.AwaysEditable);
         var stableData = theKernel.getAttribute(AttrNames.StableData);
@@ -2462,6 +2463,7 @@ class MobileContentCompiler extends ContentCompiler {
             var listItemTag = new FormatHtmlTag('listitem', 'div', this.clientSide);
             listItemTag.setAttr('key', bigbracketStr(VarNames.RowKey));
             listItemTag.setAttr(rowKeyAttrName, bigbracketStr(VarNames.RowKey));
+            listItemTag.setAttr(rowIndexAttrName, bigbracketStr(VarNames.RowIndex));
             listItemTag.setAttr('className', itemLayoutConfig.getClassName());
             if (hasItemFormStyle) {
                 listItemTag.setAttr('style', bigbracketStr(itemStyleID));
@@ -2712,7 +2714,18 @@ class MobileContentCompiler extends ContentCompiler {
                     if (defaultSelectFirst) {
                         freshFun.pushLine('var nowKey = ' + makeStr_callFun('GetFormSelectedProfile', [stateVarName, singleQuotesStr(keyColumn)]) + '.key;');
                         freshFun.pushLine('if(nowKey == null){', 1);
-                        freshFun.pushLine('if(' + VarNames.Records_arr + '.length > 0){nowKey = ' + VarNames.Records_arr + '[0].' + keyColumn + ';}', -1);
+                        //freshFun.pushLine('if(' + VarNames.Records_arr + '.length > 0){nowKey = ' + VarNames.Records_arr + '[0].' + keyColumn + ';}', -1);
+                        freshFun.pushLine('if(' + VarNames.Records_arr + '.length > 0){', 1);
+                        freshFun.pushLine("var preSelectedRowIndex = " + stateVarName + ".selectedRowIndex;");
+                        freshFun.pushLine("var useRowIndex = 0;");
+                        freshFun.pushLine("if(preSelectedRowIndex == null || preSelectedRowIndex <= 0){useRowIndex=0;}");
+                        freshFun.pushLine("else if(preSelectedRowIndex < " + VarNames.Records_arr + ".length){useRowIndex=preSelectedRowIndex;}");
+                        freshFun.pushLine("else {useRowIndex=" + VarNames.Records_arr + ".length - 1;}");
+                        freshFun.pushLine('nowKey = ' + VarNames.Records_arr + '[useRowIndex].' + keyColumn + ';');
+                        freshFun.pushLine('needSetState.selectedRowIndex = useRowIndex;');
+                        freshFun.subNextIndent();
+                        freshFun.pushLine('}');
+                        freshFun.subNextIndent();
                         freshFun.pushLine('}');
                         freshFun.pushLine('needSetState.' + VarNames.SelectedValue + ' = nowKey;');
                     }
@@ -2984,6 +2997,7 @@ class MobileContentCompiler extends ContentCompiler {
             if (clickSelectable) {
                 var clickRowHandlerFun = formReactClass.getFunction('clickRowHandler', true, ['ev']);
                 clickRowHandlerFun.pushLine("var rowkey = !isNaN(ev) ? ev : GetFromatRowKey(getAttributeByNode(ev.target,'" + rowKeyAttrName + "'));");
+                clickRowHandlerFun.pushLine("var rowIndex = !isNaN(ev) ? ev : GetFromatRowKey(getAttributeByNode(ev.target,'" + rowIndexAttrName + "'));");
                 clickRowHandlerFun.pushLine("var state = store.getState();");
                 clickRowHandlerFun.pushLine("var formState = getStateByPath(state, this.props.fullPath,{});");
                 clickRowHandlerFun.pushLine("var keyvalue = rowkey;");
@@ -3008,10 +3022,16 @@ class MobileContentCompiler extends ContentCompiler {
                         clickRowHandlerFun.pushLine("if(nowRowKey == rowkey){", 1);
                         clickRowHandlerFun.pushLine("var selectedProfile = GetFormSelectedProfile(formState,'" + keyColumn + "');", 1);
                         clickRowHandlerFun.pushLine(makeStr_callFun(OnSelectedChangedBp.name, ['state', 'this.props.fullPath', 'selectedProfile.record', 'selectedProfile.index', 'selectedProfile.key'], ';'));
+                        clickRowHandlerFun.pushLine("return;");
                         clickRowHandlerFun.subNextIndent();
                         clickRowHandlerFun.pushLine('}');
+                        clickRowHandlerFun.subNextIndent();
                     }
-                    clickRowHandlerFun.pushLine("store.dispatch(makeAction_setStateByPath(keyvalue,this.props.fullPath + '." + VarNames.SelectedValue + "'));");
+                    clickRowHandlerFun.pushLine('var needSetState={', 1);
+                    clickRowHandlerFun.pushLine(VarNames.SelectedValue + ':keyvalue,');
+                    clickRowHandlerFun.pushLine('selectedRowIndex:rowIndex,',-1);
+                    clickRowHandlerFun.pushLine('}');
+                    clickRowHandlerFun.pushLine("store.dispatch(makeAction_setManyStateByPath(needSetState, this.props.fullPath));");
                 }
             }
 
