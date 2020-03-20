@@ -26,6 +26,18 @@
   margin: auto;
 }
 
+body{
+  font-size: 0.8rem !important;
+}
+
+.btn{
+  font-size: 0.8rem !important;
+}
+
+.form-control{
+  font-size: 1rem !important;
+}
+
 .width-1{
   width: 1px;
 }
