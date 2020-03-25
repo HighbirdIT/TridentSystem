@@ -595,16 +595,16 @@ var ControlKernelBase = function (_IAttributeable) {
                                 if (meetParents_map[child.editor.id] == null) {
                                     meetParents_map[child.editor.id] = 1;
                                     aidRlt_arr = [];
-                                    child.editor.aidAccessableKernels(targetType, aidRlt_arr);
+                                    child.editor.aidAccessableKernels(targetType, aidRlt_arr, true);
                                 }
                             }
                         }
-                        if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type && child.isPageForm() || child.type == PopperButtonKernel_Type) {
+                        if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type || child.type == PopperButtonKernel_Type) {
                             // 穿透div
                             if (meetParents_map[child.id] == null) {
                                 meetParents_map[child.id] = 1;
                                 aidRlt_arr = [];
-                                child.aidAccessableKernels(targetType, aidRlt_arr);
+                                child.aidAccessableKernels(targetType, aidRlt_arr, true);
                             }
                         }
 
