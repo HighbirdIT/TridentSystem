@@ -52,6 +52,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute(VarNames.SelectedValue, VarNames.SelectedValue, ValueType.Int, 1, false, false, null, null, false),
         new CAttribute(VarNames.SelectedValues_arr, VarNames.SelectedValues_arr, ValueType.Array, 1, false, false, null, null, false),
         new CAttribute(VarNames.SelectedColumns, VarNames.SelectedColumns, ValueType.Array, 1, false, false, null, null, false),
+        new CAttribute('强制获取', 'forceget', ValueType.String, '', true, true, 'getCanuseColumns'),
     ]),
     new CAttributeGroup('操作设置', [
         genScripAttribute('Insert', AttrNames.Event.OnInsert, EJsBluePrintFunGroup.GridRowBtnHandler),
@@ -186,9 +187,21 @@ class M_FormKernel extends ContainerKernelBase {
         }
     }
 
-    aidAccessableKernels(targetType, rlt_arr) {
+    aidAccessableKernels(targetType, rlt_arr, isInChain) {
         var needFilt = targetType != null;
-        this.children.forEach(child => {
+        var needCheck_arr = this.children;
+        if(isInChain){
+            if(this.isListForm()){
+                return;
+            }
+            if(this.isGridForm()){
+                if(this.gridFormBottomDiv){
+                    needCheck_arr = [this.gridFormBottomDiv];
+                }
+            }
+        }
+        
+        needCheck_arr.forEach(child => {
             if (!needFilt || child.type == targetType) {
                 rlt_arr.push(child);
             }
@@ -198,12 +211,12 @@ class M_FormKernel extends ContainerKernelBase {
                 }
                 if(child.editor.type == M_ContainerKernel_Type){
                     // 穿透div
-                    child.editor.aidAccessableKernels(targetType, rlt_arr);
+                    child.editor.aidAccessableKernels(targetType, rlt_arr, true);
                 }
             }
-            if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && !child.isGridForm()) || child.type == PopperButtonKernel_Type) {
+            if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type || child.type == PopperButtonKernel_Type) {
                 // 穿透div
-                child.aidAccessableKernels(targetType, rlt_arr);
+                child.aidAccessableKernels(targetType, rlt_arr, true);
             }
         });
     }
@@ -389,6 +402,19 @@ class M_FormKernel extends ContainerKernelBase {
     autoSetCusDataSource(mustSelectColumns_arr) {
         if (mustSelectColumns_arr == null) {
             mustSelectColumns_arr = [];
+        }
+        var forcegetAttr_arr = this.getAttrArrayList('forceget');
+        if (forcegetAttr_arr.length > 0) {
+            for (var agai in forcegetAttr_arr) {
+                var atrrItem = forcegetAttr_arr[agai];
+                var colName = this[atrrItem.name];
+                if (IsEmptyString(colName)) {
+                    continue;
+                }
+                if(mustSelectColumns_arr.indexOf(colName) == -1){
+                    mustSelectColumns_arr.push(colName);
+                }
+            }
         }
         var useDS = this.getAttribute(AttrNames.DataSource);
         if (useDS && useDS.loaded == false) {

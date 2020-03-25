@@ -6049,15 +6049,23 @@ class MobileContentCompiler extends ContentCompiler {
         }
 
         if (!IsEmptyObject(bpCompileHelper.usePageParam)) {
+            if(belongPageKernel == null){
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '没有关联页面缺使用了获取页面入库参数']);
+                return false;
+            }
             for (var usPageParamName in bpCompileHelper.usePageParam) {
-                pullFun.scope.getVar('pagein_' + usPageParamName, true, makeStr_callFun('getPageEntryParam', [singleQuotesStr(belongPage.id), singleQuotesStr(usPageParamName), compilHelper.usePageParam[usPageParamName]]));
+                pullFun.scope.getVar('pagein_' + usPageParamName, true, makeStr_callFun('getPageEntryParam', [singleQuotesStr(belongPageKernel.id), singleQuotesStr(usPageParamName), bpCompileHelper.usePageParam[usPageParamName]]));
                 needSetParams_arr.push({ bundleName: 'pagein_' + usPageParamName, clientValue: 'pagein_' + usPageParamName });
             }
         }
 
         if (!IsEmptyObject(bpCompileHelper.useUrlVar_map)) {
             for (var varName in bpCompileHelper.useUrlVar_map) {
-                pullFun.scope.getVar(varName, true, makeStr_callFun('getQueryVariable', [singleQuotesStr(varName), compilHelper.useUrlVar_map[varName]]));
+                pullFun.scope.getVar(varName, true, makeStr_callFun('getQueryVariable', [singleQuotesStr(varName), bpCompileHelper.useUrlVar_map[varName]]));
                 var useUrlVarObj = { bundleName: varName, clientValue: varName };
                 needSetParams_arr.push(useUrlVarObj);
             }
