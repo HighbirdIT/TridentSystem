@@ -2364,9 +2364,16 @@ class MobileContentCompiler extends ContentCompiler {
                 titleAlginStr = 'justify-content-end';
                 break;
         }
+        var alignitems = theKernel.getAttribute('alignitems');
+        if(alignitems == 'initial'){
+            alignitems = '';
+        }
+        else{
+            alignitems = " align-items-" + alignitems;
+        }
         if (isPageForm) {
             renderContentBlock.pushLine(VarNames.RetElem + " = (<React.Fragment>", 1);
-            renderContentBlock.pushLine("<div className='d-flex flex-grow-1 flex-shrink-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + (isWrap ? ' flex-wrap' : '') + "'>", 1);
+            renderContentBlock.pushLine("<div className='d-flex flex-grow-1 flex-shrink-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + (isWrap ? ' flex-wrap' : '') + alignitems + "'>", 1);
             childRenderBlock = new FormatFileBlock(theKernel.id + 'child');
             renderContentBlock.pushChild(childRenderBlock);
             renderContentBlock.subNextIndent();
@@ -2498,7 +2505,7 @@ class MobileContentCompiler extends ContentCompiler {
             if (orientation == Orientation_V) {
                 contentDivClassStr += ' flex-column';
             }
-            renderContentFun.retBlock.pushLine("<div className='" + contentDivClassStr + "'>");
+            renderContentFun.retBlock.pushLine("<div className='" + contentDivClassStr + alignitems + "'>");
             renderContentFun.retBlock.addNextIndent();
             renderContentFun.retBlock.pushLine('{' + VarNames.RetElem + '}');
             renderContentFun.retBlock.subNextIndent();
@@ -5345,6 +5352,9 @@ class MobileContentCompiler extends ContentCompiler {
             ctlTag.setAttr('labelelem', bigbracketStr(titleElemStr));
         }
         ctlTag.setAttr('anchor', theKernel.getAttribute('anchor'));
+        if (!theKernel.getAttribute('hideclosebtn')) {
+            ctlTag.setAttr('hideCloseBtn', bigbracketStr('true'));
+        }
 
         renderBlock.pushChild(ctlTag);
 

@@ -15,6 +15,7 @@ const PopperButtonAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('图标类型', AttrNames.IconType, ValueType.String, ''),
         new CAttribute('弹出位置', 'anchor', ValueType.String, 'left', true, false, ['left', 'right', 'top', 'bottom']),
         new CAttribute('面板定制', AttrNames.ModifyContent, ValueType.ModifyContent),
+        new CAttribute('关闭按钮', 'hideclosebtn', ValueType.Boolean, true),
     ]),
     new CAttributeGroup('面板样式', [
         new CAttribute('PopperStyle', 'panel' + AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
