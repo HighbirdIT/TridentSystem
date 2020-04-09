@@ -1,12 +1,9 @@
 import json
 import sys
 import io
-import pymssql
 import requests
 from openpyxl import Workbook
 from openpyxl.styles import Font
-import xlrd
-import xlwt
 import json
 import sys
 import os
