@@ -3872,7 +3872,7 @@ class JSNode_ExportExcel extends JSNode_Base {
         fetchEndBlock.subNextIndent();
         fetchEndBlock.pushLine('}');
         fetchEndBlock.pushLine('var fileUrl=window.location.origin + ' + dataVarName + ';');
-        fetchEndBlock.pushLine(makeStr_callFun('gExcelExported', ['fileUrl', 'fileTitle', this.bluePrint.id + '_msg',this.id + '_callback']));
+        fetchEndBlock.pushLine(makeStr_callFun('gExcelExported', ['fileUrl', 'fileTitle + ".xlsx"', this.bluePrint.id + '_msg',this.id + '_callback']));
         myJSBlock.subNextIndent();
         myJSBlock.pushLine('},false)));');
         if (inreducer) {
