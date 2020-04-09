@@ -400,7 +400,8 @@ var AttrNames = {
 
     Function: {
         GetXMLRowItem: 'getxmlrowitem',
-        GenarateChartData: 'generateChartData'
+        GenarateChartData: 'generateChartData',
+        GetJSONRowItem: 'getJSONrowitem'
     },
 
     LayoutNames: {

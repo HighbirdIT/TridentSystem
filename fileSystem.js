@@ -41,6 +41,13 @@ function guid2() {
     return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
 }
 
+function getUserID(req){
+    if(req.headers['user-agent'] == 'python_fileuploader'){
+        return 0;
+    }
+    return req.session.g_envVar.userid;
+}
+
 fileSystem.process = (req,res,next) => {
     serverhelper.commonProcess(req, res, next, processes_map);
 };
@@ -67,12 +74,13 @@ fileSystem.deleteAttachment = (req,res) => {
 };
 
 fileSystem.applyForTempFile = (req,res) => {
+    var userid = getUserID(req);
     var bundle=req.body.bundle;
     return co(function* () {
         var inparams_arr=[
 			dbhelper.makeSqlparam('文件名称', sqlTypes.NVarChar(100), bundle.name),
             dbhelper.makeSqlparam('文件大小', sqlTypes.Int, bundle.size),
-            dbhelper.makeSqlparam('操作用户', sqlTypes.Int, req.session.g_envVar.userid),
+            dbhelper.makeSqlparam('操作用户', sqlTypes.Int, userid),
             dbhelper.makeSqlparam('文件类型', sqlTypes.NVarChar(100), bundle.type),
             dbhelper.makeSqlparam('电子指纹', sqlTypes.NVarChar(200), bundle.md5),
 		];
@@ -196,6 +204,38 @@ fileSystem.getFileRecord = (req,res) => {
         return rcdRlt.recordset[0];
     });
 };
+
+fileSystem.downloadExcelFile = (req,res) => {
+    var excelid = req.query.excelid;
+    return co(function* () {
+        var rcdRlt = yield dbhelper.asynQueryWithParams("select [请求用户],[文件标题] FROM [base1].[dbo].[T721C表格文件请求] where [记录令牌]=@记录令牌", 
+        [
+            dbhelper.makeSqlparam('记录令牌', sqlTypes.NVarChar(100), excelid),
+        ]);
+        if(rcdRlt.recordset.length == 0){
+            res.setHeader("Content-Type", "text/plain;charset=utf-8");
+            res.end("目标文件未找到");
+            return;
+        }
+        if(rcdRlt.recordset[0]['请求用户'] != req.session.g_envVar.userid){
+            res.setHeader("Content-Type", "text/plain;charset=utf-8");
+            res.end("这个文件不是你的");
+            return;
+        }
+        var excelFilePath = path.join(__dirname,'filedata/excel', excelid + '.xlsx');
+        fs.readFile(excelFilePath, function (error, data) {
+            if(error){
+                res.setHeader("Content-Type", "text/plain;charset=utf-8");
+                res.end("文件读取失败");
+            }else{
+                res.setHeader("Content-Type", "application/vnd.ms-excel");
+                res.setHeader('Content-Disposition', 'attachment;filename="' + encodeURIComponent(rcdRlt.recordset[0]['文件标题']) + '.xlsx"');
+                res.end(data);
+            }
+        });
+    });
+};
+
 
 
 var processes_map={

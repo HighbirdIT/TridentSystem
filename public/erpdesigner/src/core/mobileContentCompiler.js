@@ -6206,6 +6206,28 @@ class MobileContentCompiler extends ContentCompiler {
             clientSide.scope.getVar(theKernel.id + '_xmlconfig', true, JSON.stringify(xmlconfig));
         }
 
+        if (midData.useFormJSON) {
+            var getJsonRowFunName = theKernel.id + '_' + AttrNames.Function.GetJSONRowItem;
+            var getJsonRowBp = project.scriptMaster.getBPByName(getJsonRowFunName);
+            if (getJsonRowBp == null) {
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '有地方使用了此表格的Json数据，却没有设定[获取JSON行]方法']);
+                return false;
+            }
+            var returnVars_arr = getJsonRowBp.returnVars_arr.filter(item => {
+                return item.name != AttrNames.RowText;
+            });
+            var compileRet = this.compileScriptBlueprint(getJsonRowBp);
+            if (compileRet == false) {
+                return false;
+            }
+            var headers_arr = returnVars_arr.map(v=>{return v.name;});
+            clientSide.scope.getVar(theKernel.id + '_jsonHeaders', true, JSON.stringify(headers_arr));
+        }
+
         if (midData.useDS) {
             var mustSelectColumns_arr = [];
             for (colName in midData.useColumns_map) {

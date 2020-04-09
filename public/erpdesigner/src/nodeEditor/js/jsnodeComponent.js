@@ -1383,6 +1383,53 @@ class C_JSNode_OpenReport extends React.PureComponent {
     }
 }
 
+class C_JSNode_ExportExcel extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        C_NodeCom_Base(this);
+
+        this.state = {
+        }
+
+        this.dropdownRef = React.createRef();
+    }
+
+    nodeDataChangedHandler() {
+        var nodeData = this.props.nodedata;
+        var cusObj = nodeData.cusObj;
+        if (cusObj) {
+            this.dropdownRef.current.setValue(cusObj.code);
+        }
+        this.setState({ magicObj: {} });
+    }
+
+    dropdownCtlChangedHandler(code, ddc, cusObj) {
+        var nodeData = this.props.nodedata;
+        nodeData.cusObj = cusObj;
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        var cusObj = nodeData.cusObj;
+        var theProject = nodeData.bluePrint.master.project;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='导出Excel'>
+            <div className='d-flex'>
+                <div className='flex-grow-1 flex-shrink-1'>
+                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={theProject.scriptMaster.getAllCustomObject} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={cusObj ? cusObj.code : -1} />
+                </div>
+            </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} nameMoveable={true} />
+                <div className='d-flex flex-column'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} nameMoveable={true} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} nameMoveable={true} />
+                </div>
+            </div>
+        </C_Node_Frame>
+    }
+}
+
 /*
 class C_JSNode_Control_Api_CallFun extends React.PureComponent {
     constructor(props) {
