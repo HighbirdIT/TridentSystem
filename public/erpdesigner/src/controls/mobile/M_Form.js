@@ -47,6 +47,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('点选模式', AttrNames.ClickSelectable, ValueType.Boolean, false),
         new CAttribute('访问控制', AttrNames.AcessAssert, ValueType.Event),
         genScripAttribute('获取XML行', AttrNames.Function.GetXMLRowItem, EJsBluePrintFunGroup.CtlFun),
+        genScripAttribute('获取JSON行', AttrNames.Function.GetJSONRowItem, EJsBluePrintFunGroup.CtlFun),
         new CAttribute(VarNames.NowRecord, VarNames.NowRecord, ValueType.Object, 1, false, false, null, null, false),
         new CAttribute(VarNames.RecordIndex, VarNames.RecordIndex, ValueType.Int, 1, false, false, null, null, false),
         new CAttribute(VarNames.Records_arr, VarNames.Records_arr, ValueType.Array, 1, false, false, null, null, false),
@@ -116,6 +117,8 @@ class M_FormKernel extends ContainerKernelBase {
         theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnDataSourceChanged);
         this.scriptCreated(null, theBP);
         theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Function.GetXMLRowItem);
+        this.scriptCreated(null, theBP);
+        theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Function.GetJSONRowItem);
         this.scriptCreated(null, theBP);
 
         //this.autoSetCusDataSource();
@@ -320,15 +323,20 @@ class M_FormKernel extends ContainerKernelBase {
         if(scriptBP.name.indexOf(AttrNames.Event.OnDataSourceChanged) != -1){
             scriptBP.setFixParam(['fullPath','records_arr']);
         }
+        var rowTextParam;
         if(scriptBP.name.indexOf(AttrNames.Function.GetXMLRowItem) != -1){
             scriptBP.setFixParam([VarNames.State,this.id + '_rowState',this.id + '_rowpath',this.id + '_' + VarNames.NowRecord]);
-            var rowTextParam = scriptBP.returnVars_arr.find(item=>{return item.name == AttrNames.RowText;});
+            rowTextParam = scriptBP.returnVars_arr.find(item=>{return item.name == AttrNames.RowText;});
             if(rowTextParam == null){
                 rowTextParam = scriptBP.createEmptyVariable(true);
                 rowTextParam.name = AttrNames.RowText;
                 rowTextParam.needEdit = false;
                 scriptBP.returnVars_arr.push(rowTextParam);
             }
+            scriptBP.canCustomReturnValue = true;
+        }
+        if(scriptBP.name.indexOf(AttrNames.Function.GetJSONRowItem) != -1){
+            scriptBP.setFixParam([this.id + '_path',this.id + '_' + VarNames.NowRecord]);
             scriptBP.canCustomReturnValue = true;
         }
         if(scriptBP.name.indexOf(AttrNames.Event.OnDelete) != -1){

@@ -245,6 +245,11 @@ const JSNodeEditorControls_arr =[
         type:'表单访问'
     },
     {
+        label:'获取表单JSON数据',
+        nodeClass:JSNode_GetFormJsonData,
+        type:'表单访问'
+    },
+    {
         label:'遍历结束',
         nodeClass:JSNode_CircleEnd,
         type:'表单访问'
@@ -253,6 +258,11 @@ const JSNodeEditorControls_arr =[
         label:'打开报表',
         nodeClass:JSNode_OpenReport,
         type:'报表控制'
+    },
+    {
+        label:'导出Excel',
+        nodeClass:JSNode_ExportExcel,
+        type:'导出'
     },
     {
         label:'刷新表单',

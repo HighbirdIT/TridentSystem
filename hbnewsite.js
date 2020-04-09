@@ -564,6 +564,16 @@ app.use('/dingcallback', function (req, res, next) {
     return;
 });
 
+app.use('/download', function (req, res, next) {
+    if(req.query.excelid != null){
+        checkLogState(req, res, next, fileSystem.downloadExcelFile);
+    }
+    else{
+        res.json({ err: '缺失参数' });
+        return;
+    }
+});
+
 app.use(function (req, res, next) {
     var path = req.path.toLowerCase(); // 检查 缓存； 如果 它在 那里， 渲染 这个 视图 
     if (autoViews[path]) {

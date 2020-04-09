@@ -374,6 +374,7 @@ const AttrNames={
     Function:{
         GetXMLRowItem:'getxmlrowitem',
         GenarateChartData:'generateChartData',
+        GetJSONRowItem:'getJSONrowitem',
     },
 
     LayoutNames:{

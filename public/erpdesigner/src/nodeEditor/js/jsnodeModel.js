@@ -687,6 +687,7 @@ class JSNode_BluePrint extends EventEmitter {
         var isAttrHookFun = false;
         var isAttrCheckFun = false;
         var isGetXmlRowFun = false;
+        var isGetJsonRowFun = false;
         if (this.group == EJsBluePrintFunGroup.CtlEvent) {
             isOnclickFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnClick;
             isOnchangedFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnChanged;
@@ -700,6 +701,7 @@ class JSNode_BluePrint extends EventEmitter {
         }
         if (ctlKernel) {
             isGetXmlRowFun = this.name == ctlKernel.id + '_' + AttrNames.Function.GetXMLRowItem;
+            isGetJsonRowFun = this.name == ctlKernel.id + '_' + AttrNames.Function.GetJSONRowItem;
             isAttrCheckFun = this.name.indexOf(ctlKernel.id + '_' + AttrNames.AttrChecker) != -1;
         }
         this.isOnclickFun = isOnclickFun;
@@ -711,6 +713,7 @@ class JSNode_BluePrint extends EventEmitter {
         this.isAttrHookFun = isAttrHookFun;
         this.isAttrCheckFun = isAttrCheckFun;
         this.isGetXmlRowFun = isGetXmlRowFun;
+        this.isGetJsonRowFun = isGetJsonRowFun;
 
         if (nomsgbox == null) {
             nomsgbox = !(isOnclickFun || isOnmouseDownFun || this.group == EJsBluePrintFunGroup.GridRowBtnHandler); // 默认只有click和mouseDown才有对话框
@@ -809,7 +812,7 @@ class JSNode_BluePrint extends EventEmitter {
             if (!isNavieFun && (this.group == EJsBluePrintFunGroup.CtlEvent || this.group == EJsBluePrintFunGroup.CtlFun) && ctlKernel.type == UserControlKernel_Type) {
                 hadCallParm = true;
             }
-            if (isGetXmlRowFun) {
+            if (isGetXmlRowFun || isGetJsonRowFun) {
                 hadCallParm = true;
             }
             if (!hadCallParm) {
@@ -917,7 +920,7 @@ class JSNode_BluePrint extends EventEmitter {
                     });
                     validCheckBasePath = '_path';
                 }
-                if (isGetXmlRowFun) {
+                if (isGetXmlRowFun || isGetJsonRowFun) {
                     validCheckBasePath = ctlKernel.id + '_rowpath';
                 }
             }
@@ -997,7 +1000,7 @@ class JSNode_BluePrint extends EventEmitter {
                     formPath = singleQuotesStr(formPath);
                     initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
                 }
-                if (!isGetXmlRowFun) {
+                if (!isGetXmlRowFun && !isGetJsonRowFun) {
                     theFun.scope.getVar(formPathVarName, true, formPath);
                     theFun.scope.getVar(formStateVarName, true, initValue);
                 }
@@ -1013,7 +1016,7 @@ class JSNode_BluePrint extends EventEmitter {
                             if (this.group == EJsBluePrintFunGroup.CtlEvent) {
                                 theFun.scope.getVar(VarNames.RowKey, true, VarNames.RowKeyInfo_map + '.' + formId);
                             }
-                            if (!isGetXmlRowFun) {
+                            if (!isGetXmlRowFun && !isGetJsonRowFun) {
                                 theFun.scope.getVar(formNowRowStateVarName, true, makeStr_callFun('getStateByPath', [formStateVarName, "'row_' + " + VarNames.RowKey, '{}']));
                                 if (isUseFormColumn) {
                                     theFun.scope.getVar(formNowRecordVarName, true, makeStr_callFun('getRecordFromRowKey', [formPathVarName, VarNames.RowKey]));
@@ -1062,7 +1065,7 @@ class JSNode_BluePrint extends EventEmitter {
                         ctlStateVarName = usectlid + '_state';
                         ctlPathVarName = usectlid + '_path';
                         if (useCtlData.kernel.type == UserControlKernel_Type) {
-                            if (isGetXmlRowFun) {
+                            if (isGetXmlRowFun || isGetJsonRowFun) {
                                 initPath = ctlKernel.id + '_rowpath + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath(null, '.', VarNames.RowKeyInfo_map, false, ctlKernel));
                             }
                             else if (this.bluePrint.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
@@ -1360,7 +1363,7 @@ class JSNode_BluePrint extends EventEmitter {
                 if (this.isAttrCheckFun) {
                     infoStatePath = ctlKernel.id + '_path + ' + singleQuotesStr('.' + varObj.kernel.getStatePath('invalidInfo', '.', gridRowKeyVars_map));
                 }
-                else if (isGetXmlRowFun) {
+                else if (isGetXmlRowFun || isGetJsonRowFun) {
                     infoStatePath = ctlKernel.id + '_rowpath + ' + singleQuotesStr('.' + varObj.kernel.getStatePath('invalidInfo', '.', gridRowKeyVars_map, false, ctlKernel));
                 }
                 else if (belongUserControl) {
@@ -1432,7 +1435,7 @@ class JSNode_BluePrint extends EventEmitter {
             }
             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
                 theFun.headBlock.pushLine("if(hadValidErr){", 1);
-                if (this.isGetXmlRowFun) {
+                if (this.isGetXmlRowFun || this.isGetJsonRowFun) {
                     theFun.headBlock.pushLine("callback_final(null, null, {info:gPreconditionInvalidInfo});");
                     theFun.headBlock.pushLine('return null;');
                 }
