@@ -3658,29 +3658,14 @@ class JSNode_ExportExcel extends JSNode_Base {
             this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
             this.addSocket(this.outFlowSocket);
         }
-        if (createHelper) {
-            if (!createHelper.project.loaded) {
-                createHelper.project.on('loaded', this.projLoadedHandler);
-            }
-            else{
-                this.projLoadedHandler();
-            }
-        }
     }
-
-    projLoadedHandler() {
-        var cusObj = this.bluePrint.master.getCusObjByCode(this.cusObj);
-        this.cusObj = cusObj;
-    }
-
     requestSaveAttrs(jsonProf) {
         var rlt = super.requestSaveAttrs();
-        rlt.cusObj = this.cusObj.code;
         return rlt;
     }
 
     restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['cusObj']);
+        assginObjByProperties(this, attrsJson, []);
     }
 
     getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
@@ -3704,9 +3689,6 @@ class JSNode_ExportExcel extends JSNode_Base {
         var blockInServer = theScope && theScope.isServerSide;
         var belongFun = theScope ? theScope.fun : null;
         var nodeThis = this;
-        if (this.checkCompileFlag(this.cusObj == null, '需要选择一个数据对象', helper)) {
-            return false;
-        }
         if (this.checkCompileFlag(this.bluePrint.group == EJsBluePrintFunGroup.ServerScript, '不可在服务端使用', helper)) {
             return false;
         }
@@ -4055,7 +4037,7 @@ JSNodeClassMap[JSNODE_OPENREPORT] = {
 };
 JSNodeClassMap[JSNODE_EXPORTEXCEL] = {
     modelClass: JSNode_ExportExcel,
-    comClass: C_JSNode_ExportExcel,
+    comClass: C_Node_SimpleNode,
 };
 JSNodeClassMap[JSNODE_GETFORMJSONDATA] = {
     modelClass: JSNode_GetFormJsonData,
