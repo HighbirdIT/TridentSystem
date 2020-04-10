@@ -3,7 +3,6 @@ const dbhelper = require('./dbhelper.js');
 const sqlTypes = dbhelper.Types;
 var fs = require('fs');
 var path = require("path");
-var execSync = require('child_process').execSync;
 
 var helper = {};
 
@@ -333,35 +332,5 @@ helper.DateFun={
     Convert_DateZone:Convert_DateZone,
 };
 
-helper.saveExcelJsonData = (name, json, bAutoIndex, bQuotePrefix)=>{
-    var jsonDirPath = path.join(__dirname,'filedata');
-    if (!fs.existsSync(jsonDirPath))
-    {
-        fs.mkdirSync(jsonDirPath);
-    }
-    jsonDirPath = path.join(jsonDirPath,'exceljson');
-    if (!fs.existsSync(jsonDirPath))
-    {
-        fs.mkdirSync(jsonDirPath);
-    }
-    var jsonFilePath = path.join(jsonDirPath, name + '.json');
-    fs.writeFileSync(jsonFilePath, json);
-
-    var excelFilePath = path.join(__dirname,'filedata');
-    if (!fs.existsSync(excelFilePath))
-    {
-        fs.mkdirSync(excelFilePath);
-    }
-    excelFilePath = path.join(excelFilePath,'excel');
-    if (!fs.existsSync(excelFilePath))
-    {
-        fs.mkdirSync(excelFilePath);
-    }
-    var scriptPath = path.join(__dirname,'scripts/python/creatExcelFromJson.py');
-    excelFilePath = path.join(excelFilePath,name + '.xlsx');
-    var result = execSync('python3 -W ignore ' + scriptPath + ' ' + excelFilePath + ' ' + jsonFilePath + ' ' + (bAutoIndex == true ? '1' : '0') + ' ' + (bQuotePrefix == true ? '1' : '0'));
-    var retmsg = result.toString('utf-8');
-    return retmsg == 'OK' ? '/download?excelid=' + name : null;
-};
 
 module.exports = helper;
