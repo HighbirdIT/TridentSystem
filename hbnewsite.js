@@ -566,7 +566,7 @@ app.use('/dingcallback', function (req, res, next) {
 
 app.use('/download', function (req, res, next) {
     if(req.query.excelid != null){
-        checkLogState(req, res, next, fileSystem.downloadExcelFile);
+        fileSystem.downloadExcelFile(req, res);
     }
     else{
         res.json({ err: '缺失参数' });

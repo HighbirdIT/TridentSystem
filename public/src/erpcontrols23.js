@@ -3908,7 +3908,7 @@ function gStartExcelExport(bundle, msgItem, callBack){
         msgItem.setText('文件生成中');
         setTimeout(() => {
             queryFileState();
-        }, 1000);
+        }, 2000);
     },false)));
 }
 

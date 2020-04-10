@@ -3737,117 +3737,25 @@ class JSNode_ExportExcel extends JSNode_Base {
         }
         var addQuetValue = socketComRet.value;
 
-        var cusObj = this.cusObj;
-        // make server side code
-        var theServerSide = helper.serverSide;// ? helper.serverSide : new JSFileMaker();
-        var postBundleVarName = this.bluePrint.id + '_bundle';
-        var serverSideActName = this.bluePrint.id + '_' + this.id;
-        var postVarinitBlock = new FormatFileBlock('postVarInit');
-        var bundleCheckBlock = new FormatFileBlock('bundleCheck');
-
-        var serverFun = null;
-        var serverFunBodyBlock = null;
-        if (theServerSide == null) {
-            theServerSide = new CP_ServerSide({});
-        }
-        if (!blockInServer) {
-            var queryFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
-            serverFun = queryFun;
-            helper.appendOutputItem(queryFun);
-            theServerSide.initProcessFun(queryFun);
-            queryFun.pushLine("if(" + postBundleVarName + "==null){return serverhelper.createErrorRet('缺少参数bundle');}");
-            bundleCheckBlock.pushChild(postVarinitBlock);
-            queryFun.bundleCheckBlock = bundleCheckBlock;
-            queryFun.postVarinitBlock = postVarinitBlock;
-            queryFun.pushChild(bundleCheckBlock);
-            queryFun.scope.getVar(postBundleVarName, true, "req.body." + VarNames.Bundle);
-            serverFunBodyBlock = serverFun.bodyBlock;
-
-            theServerSide.processesMapVarInitVal[queryFun.name] = queryFun.name;
-        }
-        else {
-            serverFun = belongFun;
-            serverFunBodyBlock = belongBlock;
-            serverFunBodyBlock.pushChild(bundleCheckBlock);
-            serverFunBodyBlock = belongBlock;
-            postVarinitBlock = belongFun.postVarinitBlock;
-        }
-
-        var paramVarName = this.id + 'params_arr';
-        serverFun.scope.getVar(paramVarName, true, 'null');
-
-        bundleCheckBlock.pushLine('var title=' + postBundleVarName + '.title;');
-        bundleCheckBlock.pushLine("if(title == null){return serverhelper.createErrorRet('参数[title]传入值错误');}");
-        bundleCheckBlock.pushLine('var data=' + postBundleVarName + '.data;');
-        bundleCheckBlock.pushLine("if(data == null){return serverhelper.createErrorRet('参数[data]传入值错误');}");
-
-        var tryBlock = new JSFile_Try('try');
-        serverFunBodyBlock.pushLine("var 记录令牌 = serverhelper.guid2();");
-        serverFunBodyBlock.pushChild(tryBlock);
-        tryBlock.errorBlock.pushLine("return serverhelper.createErrorRet(eo.message);");
-        var insertRetVarName = 'insertRet';
-        var insertSql = 'INSERT INTO [dbo].[T721C表格文件请求](文件标题,记录令牌,请求用户) values(@title, @记录令牌, @_operator)';
-        var insertParamStr = "dbhelper.makeSqlparam('title', sqlTypes.NVarChar(100), title)," + "dbhelper.makeSqlparam('记录令牌', sqlTypes.NVarChar(50), 记录令牌),dbhelper.makeSqlparam('_operator', sqlTypes.Int, g_envVar.userid)";
-        
-        tryBlock.bodyBlock.pushLine('var excelUrl = serverhelper.saveExcelJsonData(记录令牌, JSON.stringify(data), ' + postBundleVarName + '.bAutoIndex,' + postBundleVarName + '.bQuotePrefix);');
-        tryBlock.bodyBlock.pushLine('if(excelUrl){', 1);
-        tryBlock.bodyBlock.pushLine('var ' + insertRetVarName + " = yield dbhelper.asynGetScalar('" + insertSql + "  select SCOPE_IDENTITY()', [" + insertParamStr + "]);");
-        tryBlock.bodyBlock.pushLine("return excelUrl;");
-        tryBlock.bodyBlock.subNextIndent();
-        tryBlock.bodyBlock.pushLine('}');
-        var serverSuccessBlock = new FormatFileBlock('serverSuccessBlock');
-        serverFunBodyBlock.pushChild(serverSuccessBlock);
-        this.serverFun = serverFun;
-        serverFunBodyBlock.pushLine("return serverhelper.createErrorRet('创建文件失败');");
-
         // makeClient
         helper.compilingFun.hadServerFetch = true;
         this.hadServerFetch = !blockInServer;
         var myJSBlock = new FormatFileBlock(this.id);
-        var initBundleBlock = null;
-        if (serverFun) {
-            if (serverFun.bundleCheckBlock.initBundleBlock) {
-                initBundleBlock = serverFun.bundleCheckBlock.initBundleBlock
-            }
-            else {
-                initBundleBlock = new FormatFileBlock('initbundle');
-                serverFun.bundleCheckBlock.initBundleBlock = initBundleBlock;
-            }
-        }
-        else {
-            initBundleBlock = new FormatFileBlock('initbundle');
-        }
+        belongBlock.pushChild(myJSBlock);
+        var initBundleBlock = new FormatFileBlock('initbundle');
         helper.addInitClientBundleBlock(initBundleBlock);
+        var bundleVarName = this.id + '_bundle';
 
-        /*
-        var useClientVariablesRlt = new UseClientVariableResult();
-        this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
-        useClientVariablesRlt.variables_arr.forEach(varCon => {
-            initBundleBlock.params_map[varCon.name] = varCon.name;
-            if (serverFun) {
-                serverFun.scope.getVar(varCon.name, true);
-                postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
-            }
-        });
-        */
        initBundleBlock.params_map['title'] = 'fileTitle';
        initBundleBlock.params_map['data'] = jsonValue;
        initBundleBlock.params_map['bAutoIndex'] = indexedValue == true;
        initBundleBlock.params_map['bQuotePrefix'] = addQuetValue == true;
-
-        if (!blockInServer) {
-            belongBlock.pushChild(myJSBlock);
-        }
-
-        var bundleVarName = VarNames.Bundle + '_' + this.id;
 
         myJSBlock.pushLine('var fileTitle = ' + titleValue + ';');
         myJSBlock.pushLine("var " + bundleVarName + " = Object.assign({}," + VarNames.BaseBunlde + ",{", 1);
         myJSBlock.pushChild(initBundleBlock);
         myJSBlock.subNextIndent();
         myJSBlock.pushLine('});');
-        var callBack_bk = new FormatFileBlock('callback' + this.id);
-        myJSBlock.pushChild(callBack_bk);
         var inreducer = this.isInReducer(preNodes_arr);
         if (inreducer) {
             myJSBlock.pushLine('setTimeout(() => {', 1);
@@ -3857,24 +3765,17 @@ class JSNode_ExportExcel extends JSNode_Base {
         }
         var dataVarName = this.id + '_ret';
         var errVarName = 'error_' + this.id;
-        myJSBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + serverSideActName + "',}, makeFTD_Callback((state, " + dataVarName + ", " + errVarName + ")=>{", 1);
+        myJSBlock.pushLine("gStartExcelExport(" + bundleVarName + "," + this.bluePrint.id + "_msg, (state, " + dataVarName + ", " + errVarName + ")=>{", 1);
         var fetchEndBlock = new FormatFileBlock('fetchend');
         myJSBlock.pushChild(fetchEndBlock);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('});;');
         if (this.bluePrint.group == EJsBluePrintFunGroup.Custom) {
             fetchEndBlock.pushLine('if(' + errVarName + '){return _callback(null,' + errVarName + ');}');
         }
         else {
             fetchEndBlock.pushLine('if(' + errVarName + '){return callback_final(state, null,' + errVarName + ');}');
         }
-        var callBackBlock =  new FormatFileBlock('callback');
-        fetchEndBlock.pushLine('var ' + this.id + '_callback = ()=>{', 1);
-        fetchEndBlock.pushChild(callBackBlock);
-        fetchEndBlock.subNextIndent();
-        fetchEndBlock.pushLine('}');
-        fetchEndBlock.pushLine('var fileUrl=window.location.origin + ' + dataVarName + ';');
-        fetchEndBlock.pushLine(makeStr_callFun('gExcelExported', ['fileUrl', 'fileTitle + ".xlsx"', this.bluePrint.id + '_msg',this.id + '_callback']));
-        myJSBlock.subNextIndent();
-        myJSBlock.pushLine('},false)));');
         if (inreducer) {
             myJSBlock.subNextIndent();
             myJSBlock.pushLine('}, 50);');
@@ -3889,7 +3790,7 @@ class JSNode_ExportExcel extends JSNode_Base {
 
         var flowLinks_arr = this.bluePrint.linkPool.getLinksBySocket(this.outFlowSocket);
         if (flowLinks_arr.length > 0) {
-            if (this.compileFlowNode(flowLinks_arr[0], helper, usePreNodes_arr, callBackBlock) == false) {
+            if (this.compileFlowNode(flowLinks_arr[0], helper, usePreNodes_arr, fetchEndBlock) == false) {
                 return false;
             }
         }
