@@ -270,6 +270,7 @@ fileSystem.saveExcelJsonData = (name, json, bAutoIndex, bQuotePrefix, recordid)=
         catch(eo){
             serverhelper.InformSysManager(eo.message, 'fileSystem.saveExcelJsonData')
         }
+        fs.unlink(jsonFilePath);
     });
 };
 
