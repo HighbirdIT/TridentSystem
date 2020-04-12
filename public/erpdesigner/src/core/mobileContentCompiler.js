@@ -851,7 +851,12 @@ class MobileContentCompiler extends ContentCompiler {
                                 }
                             );
                         }
-                        var rootPathVar = changedFun.scope.getVar(rootPathVarName, true, makeStr_callFun('getBelongUserCtlPath', ['path']));
+                        
+                        var rootPathInit = makeStr_callFun('getBelongUserCtlPath', ['path']);
+                        if(relyPath.berelyCtl.type == UserControlKernel_Type){
+                            rootPathInit =  makeStr_callFun('getBelongUserCtlPath', ['path', 'null', 'true']);
+                        }
+                        var rootPathVar = changedFun.scope.getVar(rootPathVarName, true, rootPathInit);
                         var rootStateVar = changedFun.scope.getVar(rootStateVarName, true, makeStr_callFun('getStateByPath', [VarNames.State, rootPathVarName, '{}']));
                         if (accordionParents_arr) {
                             accordionCheckStr = '';
