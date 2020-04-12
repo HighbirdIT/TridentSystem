@@ -19,8 +19,8 @@ if len(argv) > 2:
 
     with open(jsonPath, 'r', encoding='utf-8') as f:
         retJson=json.loads(f.read())
-    if not os.path.exists(os.path.basename(filePath)):
-        os.makedirs(os.path.basename(filePath))
+    if not os.path.exists(os.path.dirname(filePath)):
+        os.makedirs(os.path.dirname(filePath))
     wb = Workbook()
     sheet = wb.active
     headers = retJson['headers']
