@@ -36,8 +36,9 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('有滚动条', AttrNames.AutoHeight, ValueType.Boolean, false),
         new CAttribute('有刷新图标', AttrNames.RefreshIcon, ValueType.Boolean, true),
         new CAttribute('永远可编辑', AttrNames.AwaysEditable, ValueType.Boolean, false),
+        new CAttribute('对齐元素', 'alignitems', ValueType.String, 'initial', true, false, ['initial','baseline','center', 'end', 'start', 'stretch']),
         new CAttribute('模式', AttrNames.SelectMode, ValueType.String, ESelectMode.None, true, false, SelectModes_arr),
-        new CAttribute('默认选中首项', AttrNames.DefaultSelectFirst, ValueType.Boolean, false),
+        new CAttribute('维持选中行', AttrNames.DefaultSelectFirst, ValueType.Boolean, false),
         new CAttribute('bottomDivID', 'bottomDivID', ValueType.String, '', true, false, null, null, false),
         new CAttribute('editorID', 'editorID', ValueType.String, '', true, false, null, null, false),
         genIsdisplayAttribute(),
@@ -46,12 +47,14 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('点选模式', AttrNames.ClickSelectable, ValueType.Boolean, false),
         new CAttribute('访问控制', AttrNames.AcessAssert, ValueType.Event),
         genScripAttribute('获取XML行', AttrNames.Function.GetXMLRowItem, EJsBluePrintFunGroup.CtlFun),
+        genScripAttribute('获取JSON行', AttrNames.Function.GetJSONRowItem, EJsBluePrintFunGroup.CtlFun),
         new CAttribute(VarNames.NowRecord, VarNames.NowRecord, ValueType.Object, 1, false, false, null, null, false),
         new CAttribute(VarNames.RecordIndex, VarNames.RecordIndex, ValueType.Int, 1, false, false, null, null, false),
         new CAttribute(VarNames.Records_arr, VarNames.Records_arr, ValueType.Array, 1, false, false, null, null, false),
         new CAttribute(VarNames.SelectedValue, VarNames.SelectedValue, ValueType.Int, 1, false, false, null, null, false),
         new CAttribute(VarNames.SelectedValues_arr, VarNames.SelectedValues_arr, ValueType.Array, 1, false, false, null, null, false),
         new CAttribute(VarNames.SelectedColumns, VarNames.SelectedColumns, ValueType.Array, 1, false, false, null, null, false),
+        new CAttribute('强制获取', 'forceget', ValueType.String, '', true, true, 'getCanuseColumns'),
     ]),
     new CAttributeGroup('操作设置', [
         genScripAttribute('Insert', AttrNames.Event.OnInsert, EJsBluePrintFunGroup.GridRowBtnHandler),
@@ -114,6 +117,8 @@ class M_FormKernel extends ContainerKernelBase {
         theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnDataSourceChanged);
         this.scriptCreated(null, theBP);
         theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Function.GetXMLRowItem);
+        this.scriptCreated(null, theBP);
+        theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Function.GetJSONRowItem);
         this.scriptCreated(null, theBP);
 
         //this.autoSetCusDataSource();
@@ -186,9 +191,21 @@ class M_FormKernel extends ContainerKernelBase {
         }
     }
 
-    aidAccessableKernels(targetType, rlt_arr) {
+    aidAccessableKernels(targetType, rlt_arr, isInChain) {
         var needFilt = targetType != null;
-        this.children.forEach(child => {
+        var needCheck_arr = this.children;
+        if(isInChain){
+            if(this.isListForm()){
+                return;
+            }
+            if(this.isGridForm()){
+                if(this.gridFormBottomDiv){
+                    needCheck_arr = [this.gridFormBottomDiv];
+                }
+            }
+        }
+        
+        needCheck_arr.forEach(child => {
             if (!needFilt || child.type == targetType) {
                 rlt_arr.push(child);
             }
@@ -198,12 +215,12 @@ class M_FormKernel extends ContainerKernelBase {
                 }
                 if(child.editor.type == M_ContainerKernel_Type){
                     // 穿透div
-                    child.editor.aidAccessableKernels(targetType, rlt_arr);
+                    child.editor.aidAccessableKernels(targetType, rlt_arr, true);
                 }
             }
-            if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && !child.isGridForm()) || child.type == PopperButtonKernel_Type) {
+            if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type || child.type == PopperButtonKernel_Type) {
                 // 穿透div
-                child.aidAccessableKernels(targetType, rlt_arr);
+                child.aidAccessableKernels(targetType, rlt_arr, true);
             }
         });
     }
@@ -306,15 +323,20 @@ class M_FormKernel extends ContainerKernelBase {
         if(scriptBP.name.indexOf(AttrNames.Event.OnDataSourceChanged) != -1){
             scriptBP.setFixParam(['fullPath','records_arr']);
         }
+        var rowTextParam;
         if(scriptBP.name.indexOf(AttrNames.Function.GetXMLRowItem) != -1){
             scriptBP.setFixParam([VarNames.State,this.id + '_rowState',this.id + '_rowpath',this.id + '_' + VarNames.NowRecord]);
-            var rowTextParam = scriptBP.returnVars_arr.find(item=>{return item.name == AttrNames.RowText;});
+            rowTextParam = scriptBP.returnVars_arr.find(item=>{return item.name == AttrNames.RowText;});
             if(rowTextParam == null){
                 rowTextParam = scriptBP.createEmptyVariable(true);
                 rowTextParam.name = AttrNames.RowText;
                 rowTextParam.needEdit = false;
                 scriptBP.returnVars_arr.push(rowTextParam);
             }
+            scriptBP.canCustomReturnValue = true;
+        }
+        if(scriptBP.name.indexOf(AttrNames.Function.GetJSONRowItem) != -1){
+            scriptBP.setFixParam([this.id + '_path',this.id + '_' + VarNames.NowRecord]);
             scriptBP.canCustomReturnValue = true;
         }
         if(scriptBP.name.indexOf(AttrNames.Event.OnDelete) != -1){
@@ -389,6 +411,19 @@ class M_FormKernel extends ContainerKernelBase {
     autoSetCusDataSource(mustSelectColumns_arr) {
         if (mustSelectColumns_arr == null) {
             mustSelectColumns_arr = [];
+        }
+        var forcegetAttr_arr = this.getAttrArrayList('forceget');
+        if (forcegetAttr_arr.length > 0) {
+            for (var agai in forcegetAttr_arr) {
+                var atrrItem = forcegetAttr_arr[agai];
+                var colName = this[atrrItem.name];
+                if (IsEmptyString(colName)) {
+                    continue;
+                }
+                if(mustSelectColumns_arr.indexOf(colName) == -1){
+                    mustSelectColumns_arr.push(colName);
+                }
+            }
         }
         var useDS = this.getAttribute(AttrNames.DataSource);
         if (useDS && useDS.loaded == false) {
@@ -613,7 +648,7 @@ class M_Form extends React.PureComponent {
         autoBind(this);
 
         var ctlKernel = this.props.ctlKernel;
-        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Wrap,AttrNames.Orientation, AttrNames.Chidlren, AttrNames.FormType, AttrNames.WidthType, AttrNames.AutoIndexColumn, AttrNames.Title, AttrNames.SelectMode, 'item' + AttrNames.LayoutNames.StyleAttr, 'item' + AttrNames.LayoutNames.APDClass], inintState));
+        var inintState = M_ControlBase(this, LayoutAttrNames_arr.concat([AttrNames.Wrap,AttrNames.Orientation, AttrNames.Chidlren, AttrNames.FormType, AttrNames.WidthType, AttrNames.AutoIndexColumn, AttrNames.Title, AttrNames.SelectMode, 'item' + AttrNames.LayoutNames.StyleAttr, 'item' + AttrNames.LayoutNames.APDClass, AttrNames.AutoHeight], inintState));
         M_ContainerBase(this);
 
         inintState.orientation = ctlKernel.getAttribute(AttrNames.Orientation);
@@ -624,6 +659,7 @@ class M_Form extends React.PureComponent {
         inintState.title = ctlKernel.getAttribute(AttrNames.Title);
         inintState.selectMode = ctlKernel.getAttribute(AttrNames.SelectMode);
         inintState.wrap = ctlKernel.getAttribute(AttrNames.Wrap);
+        inintState.autoHeight = ctlKernel.getAttribute(AttrNames.AutoHeight);
 
         this.state = inintState;
     }
@@ -646,6 +682,7 @@ class M_Form extends React.PureComponent {
             title: ctlKernel.getAttribute(AttrNames.Title),
             selectMode: ctlKernel.getAttribute(AttrNames.SelectMode),
             wrap: ctlKernel.getAttribute(AttrNames.Wrap),
+            autoHeight: ctlKernel.getAttribute(AttrNames.AutoHeight),
         });
     }
 
@@ -777,7 +814,7 @@ class M_Form extends React.PureComponent {
             <div className={outerDivClassStr} style={rootStyle} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
                 {this.renderHandleBar()}
                 <span className='text-light bg-dark'>{title}</span>
-                <div className={'d-flex flex-grow-1 flex-shrink-1' + (this.state.orientation == Orientation_V ? ' flex-column' : '') + (this.state.wrap ? ' flex-wrap' : '')} style={rootStyle}>
+                <div className={'d-flex flex-grow-1 flex-shrink-1' + (this.state.orientation == Orientation_V ? ' flex-column' : '') + (this.state.wrap ? ' flex-wrap' : '') + (this.state.formType == EFormType.Page && this.state.autoHeight ? ' autoScroll' : '')} style={rootStyle}>
                     {contentElem}
                 </div>
             </div>

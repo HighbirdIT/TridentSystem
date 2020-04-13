@@ -15,6 +15,9 @@ const HERPAccordionKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('初始折叠', AttrNames.InitCollapsed, ValueType.Boolean, false),
         new CAttribute('模式', AttrNames.Mode, ValueType.String, AccordionMode.Default, true, false, AccordionModes_arr),
     ]),
+    new CAttributeGroup('事件',[
+        new CAttribute('打开时', AttrNames.Event.OnUnCollapse, ValueType.Event),
+    ]),
 ]);
 
 
@@ -44,12 +47,12 @@ class HERPAccordionKernel extends ContainerKernelBase{
                 }
                 if(child.editor.type == M_ContainerKernel_Type){
                     // 穿透div
-                    child.editor.aidAccessableKernels(targetType, rlt_arr);
+                    child.editor.aidAccessableKernels(targetType, rlt_arr, true);
                 }
             }
-            if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && child.isPageForm()) || child.type == PopperButtonKernel_Type){
+            if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type || child.type == PopperButtonKernel_Type){
                 // 穿透div
-                child.aidAccessableKernels(targetType, rlt_arr);
+                child.aidAccessableKernels(targetType, rlt_arr, true);
             }
         });
     }

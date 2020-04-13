@@ -687,6 +687,7 @@ class JSNode_BluePrint extends EventEmitter {
         var isAttrHookFun = false;
         var isAttrCheckFun = false;
         var isGetXmlRowFun = false;
+        var isGetJsonRowFun = false;
         if (this.group == EJsBluePrintFunGroup.CtlEvent) {
             isOnclickFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnClick;
             isOnchangedFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnChanged;
@@ -700,6 +701,7 @@ class JSNode_BluePrint extends EventEmitter {
         }
         if (ctlKernel) {
             isGetXmlRowFun = this.name == ctlKernel.id + '_' + AttrNames.Function.GetXMLRowItem;
+            isGetJsonRowFun = this.name == ctlKernel.id + '_' + AttrNames.Function.GetJSONRowItem;
             isAttrCheckFun = this.name.indexOf(ctlKernel.id + '_' + AttrNames.AttrChecker) != -1;
         }
         this.isOnclickFun = isOnclickFun;
@@ -711,6 +713,7 @@ class JSNode_BluePrint extends EventEmitter {
         this.isAttrHookFun = isAttrHookFun;
         this.isAttrCheckFun = isAttrCheckFun;
         this.isGetXmlRowFun = isGetXmlRowFun;
+        this.isGetJsonRowFun = isGetJsonRowFun;
 
         if (nomsgbox == null) {
             nomsgbox = !(isOnclickFun || isOnmouseDownFun || this.group == EJsBluePrintFunGroup.GridRowBtnHandler); // 默认只有click和mouseDown才有对话框
@@ -809,7 +812,7 @@ class JSNode_BluePrint extends EventEmitter {
             if (!isNavieFun && (this.group == EJsBluePrintFunGroup.CtlEvent || this.group == EJsBluePrintFunGroup.CtlFun) && ctlKernel.type == UserControlKernel_Type) {
                 hadCallParm = true;
             }
-            if (isGetXmlRowFun) {
+            if (isGetXmlRowFun || isGetJsonRowFun) {
                 hadCallParm = true;
             }
             if (!hadCallParm) {
@@ -917,7 +920,7 @@ class JSNode_BluePrint extends EventEmitter {
                     });
                     validCheckBasePath = '_path';
                 }
-                if (isGetXmlRowFun) {
+                if (isGetXmlRowFun || isGetJsonRowFun) {
                     validCheckBasePath = ctlKernel.id + '_rowpath';
                 }
             }
@@ -997,7 +1000,7 @@ class JSNode_BluePrint extends EventEmitter {
                     formPath = singleQuotesStr(formPath);
                     initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
                 }
-                if (!isGetXmlRowFun) {
+                if (!isGetXmlRowFun && !isGetJsonRowFun) {
                     theFun.scope.getVar(formPathVarName, true, formPath);
                     theFun.scope.getVar(formStateVarName, true, initValue);
                 }
@@ -1013,7 +1016,7 @@ class JSNode_BluePrint extends EventEmitter {
                             if (this.group == EJsBluePrintFunGroup.CtlEvent) {
                                 theFun.scope.getVar(VarNames.RowKey, true, VarNames.RowKeyInfo_map + '.' + formId);
                             }
-                            if (!isGetXmlRowFun) {
+                            if (!isGetXmlRowFun && !isGetJsonRowFun) {
                                 theFun.scope.getVar(formNowRowStateVarName, true, makeStr_callFun('getStateByPath', [formStateVarName, "'row_' + " + VarNames.RowKey, '{}']));
                                 if (isUseFormColumn) {
                                     theFun.scope.getVar(formNowRecordVarName, true, makeStr_callFun('getRecordFromRowKey', [formPathVarName, VarNames.RowKey]));
@@ -1062,7 +1065,7 @@ class JSNode_BluePrint extends EventEmitter {
                         ctlStateVarName = usectlid + '_state';
                         ctlPathVarName = usectlid + '_path';
                         if (useCtlData.kernel.type == UserControlKernel_Type) {
-                            if (isGetXmlRowFun) {
+                            if (isGetXmlRowFun || isGetJsonRowFun) {
                                 initPath = ctlKernel.id + '_rowpath + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath(null, '.', VarNames.RowKeyInfo_map, false, ctlKernel));
                             }
                             else if (this.bluePrint.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
@@ -1229,17 +1232,19 @@ class JSNode_BluePrint extends EventEmitter {
                         }
                         theFun.scope.getVar(useCtlData.kernel.id + '_path', true, initPath);
                     }
-                    if (this.group == EJsBluePrintFunGroup.CtlAttr) {
-                        initValue = "bundle != null && bundle['" + ctlStateVarName + "'] != null ? bundle['" + ctlStateVarName + "'] : " + makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.getStatePath()), '{}');
+                    if (belongUserControl) {
+                        initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useCtlData.kernel.getStatePath()), '{}');
                     }
-                    else {
-                        if (belongUserControl) {
-                            initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useCtlData.kernel.getStatePath()), '{}');
+                    else{
+                        /*if (this.group == EJsBluePrintFunGroup.CtlAttr) {
+                            initValue = "bundle != null && bundle['" + ctlStateVarName + "'] != null ? bundle['" + ctlStateVarName + "'] : " + makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.getStatePath()), '{}');
                         }
-                        else {
-                            initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.getStatePath()), '{}');
-                        }
+                        else {}
+                        */
+
+                        initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.getStatePath()), '{}');
                     }
+                    
 
                     if (useCtlData.kernel.type == UserControlKernel_Type) {
                         pathValue = useCtlData.kernel.getStatePath();
@@ -1255,10 +1260,6 @@ class JSNode_BluePrint extends EventEmitter {
                 }
 
                 if (initValue) {
-                    if (this.group == EJsBluePrintFunGroup.CtlAttr) {
-                        initValue = "bundle != null && bundle['" + ctlStateVarName + "'] != null ? bundle['" + ctlStateVarName + "'] : " + makeStr_getStateByPath(VarNames.State, singleQuotesStr(useCtlData.kernel.getStatePath()), '{}');
-                    }
-
                     theFun.scope.getVar(ctlStateVarName, true, initValue);
                 }
 
@@ -1362,10 +1363,13 @@ class JSNode_BluePrint extends EventEmitter {
                 if (this.isAttrCheckFun) {
                     infoStatePath = ctlKernel.id + '_path + ' + singleQuotesStr('.' + varObj.kernel.getStatePath('invalidInfo', '.', gridRowKeyVars_map));
                 }
-                else if (isGetXmlRowFun) {
+                else if (isGetXmlRowFun || isGetJsonRowFun) {
                     infoStatePath = ctlKernel.id + '_rowpath + ' + singleQuotesStr('.' + varObj.kernel.getStatePath('invalidInfo', '.', gridRowKeyVars_map, false, ctlKernel));
                 }
-                else {
+                else if (belongUserControl) {
+                    infoStatePath = belongUserControl.id + "_path + " + singleQuotesStr('.' + varObj.kernel.getStatePath('invalidInfo', '.', gridRowKeyVars_map));
+                }
+                else {   
                     infoStatePath = singleQuotesStr(varObj.kernel.getStatePath('invalidInfo', '.', gridRowKeyVars_map));
                 }
                 if (this.group == EJsBluePrintFunGroup.CtlValid) {
@@ -1431,7 +1435,7 @@ class JSNode_BluePrint extends EventEmitter {
             }
             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
                 theFun.headBlock.pushLine("if(hadValidErr){", 1);
-                if (this.isGetXmlRowFun) {
+                if (this.isGetXmlRowFun || this.isGetJsonRowFun) {
                     theFun.headBlock.pushLine("callback_final(null, null, {info:gPreconditionInvalidInfo});");
                     theFun.headBlock.pushLine('return null;');
                 }
@@ -4913,10 +4917,19 @@ class JSNode_Query_Sql extends JSNode_Base {
 
         if (nodeJson) {
             if (this.outputScokets_arr.length > 0) {
-                this.outDataSocket = this.outputScokets_arr[0];
-            }
-            if (this.outputScokets_arr.length > 1) {
-                this.outErrorSocket = this.outputScokets_arr[1];
+                this.outputScokets_arr.forEach(socket=>{
+                    switch(socket.name){
+                        case 'outdata':
+                        this.outDataSocket = socket;
+                        break;
+                        case 'outerror':
+                        this.outErrorSocket = socket;
+                        break;
+                        case 'outrecord':
+                        this.outRecordSocket = socket;
+                        break;
+                    }
+                });
             }
         }
         if (this.outDataSocket == null) {
@@ -4927,8 +4940,13 @@ class JSNode_Query_Sql extends JSNode_Base {
             this.outErrorSocket = new NodeSocket('outerror', this, false, { type: ValueType.Object });
             this.addSocket(this.outErrorSocket);
         }
+        if (this.outRecordSocket == null) {
+            this.outRecordSocket = new NodeSocket('outrecord', this, false, { type: ValueType.Object });
+            this.addSocket(this.outRecordSocket);
+        }
         this.outDataSocket.label = '结果';
         this.outErrorSocket.label = '错误';
+        this.outRecordSocket.label = 'record';
 
         if (this.targetEntity != null) {
             var tem_arr = this.targetEntity.split('-');
@@ -5007,7 +5025,7 @@ class JSNode_Query_Sql extends JSNode_Base {
     }
 
     preRemoveSocket(theSocket) {
-        return theSocket != this.outDataSocket && this.outErrorSocket != theSocket;
+        return theSocket != this.outDataSocket && this.outErrorSocket != theSocket && this.outRecordSocket != theSocket;
     }
 
     requestSaveAttrs(jsonProf) {
@@ -5181,7 +5199,7 @@ class JSNode_Query_Sql extends JSNode_Base {
         var targetColumnSockets_arr = [];
         for (i = 0; i < this.outputScokets_arr.length; ++i) {
             var theSocket = this.outputScokets_arr[i];
-            if (theSocket == this.outDataSocket || theSocket == this.outErrorSocket) {
+            if (theSocket == this.outDataSocket || theSocket == this.outErrorSocket || theSocket == this.outRecordSocket) {
                 continue;
             }
             var colName = theSocket.getExtra('colName');
@@ -5277,10 +5295,12 @@ class JSNode_Query_Sql extends JSNode_Base {
             myJSBlock.pushLine(dataVarName + " = " + rcdRltVarName + '.recordset;');
         }
 
+        var nowRowVarName = 'row_' + this.id;
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         selfCompileRet.setSocketOut(this.outDataSocket, dataVarName);
         selfCompileRet.setSocketOut(this.outErrorSocket, errVarName);
+        selfCompileRet.setSocketOut(this.outRecordSocket, nowRowVarName);
         helper.setCompileRetCache(this, selfCompileRet);
 
         targetColumnSockets_arr.forEach(socket => {
@@ -5293,7 +5313,6 @@ class JSNode_Query_Sql extends JSNode_Base {
             myJSBlock.pushChild(serverForachBlock);
             var serverForachBodyBlock = new FormatFileBlock('serverForachBodyBlock');
             var indexVarName = 'index_' + this.id;
-            var nowRowVarName = 'row_' + this.id;
             serverForachBlock.pushLine('var ' + indexVarName + ' = 0;');
             if (isScalar) {
                 serverForachBlock.pushChild(serverForachBodyBlock);
@@ -5361,7 +5380,7 @@ class JSNode_Query_Sql extends JSNode_Base {
         var targetColumnSockets_arr = [];
         for (i = 0; i < this.outputScokets_arr.length; ++i) {
             var theSocket = this.outputScokets_arr[i];
-            if (theSocket == this.outDataSocket || theSocket == this.outErrorSocket) {
+            if (theSocket == this.outDataSocket || theSocket == this.outErrorSocket || theSocket == this.outRecordSocket) {
                 continue;
             }
             var colName = theSocket.getExtra('colName');
@@ -5587,6 +5606,7 @@ class JSNode_Query_Sql extends JSNode_Base {
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         selfCompileRet.setSocketOut(this.outDataSocket, dataVarName);
         selfCompileRet.setSocketOut(this.outErrorSocket, errVarName);
+        selfCompileRet.setSocketOut(this.outRecordSocket, nowRowVarName);
         helper.setCompileRetCache(this, selfCompileRet);
 
         targetColumnSockets_arr.forEach(socket => {
@@ -9109,7 +9129,7 @@ class JSNode_GetPageEntryParam extends JSNode_Base {
         if (belongFun.scope.isServerSide) {
             return;
         }
-        var thePage = this.bluePrint.ctlKernel.searchParentKernel(M_PageKernel_Type, true);
+        var thePage = this.bluePrint.ctlKernel.type == M_PageKernel_Type ? this.bluePrint.ctlKernel : this.bluePrint.ctlKernel.searchParentKernel(M_PageKernel_Type, true);
         var paramName = thePage.getAttribute(this.outSocket.defval);
         result.pushVariable(thePage.id + '_' + paramName, targetSocket);
     }

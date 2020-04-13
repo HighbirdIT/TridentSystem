@@ -31,12 +31,12 @@ class M_ContainerKernel extends ContainerKernelBase {
                 }
                 if(child.editor.type == M_ContainerKernel_Type){
                     // 穿透div
-                    child.editor.aidAccessableKernels(targetType, rlt_arr);
+                    child.editor.aidAccessableKernels(targetType, rlt_arr, true);
                 }
             }
-            if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && child.isPageForm()) || child.type == PopperButtonKernel_Type){
+            if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type || child.type == PopperButtonKernel_Type){
                 // 穿透div
-                child.aidAccessableKernels(targetType, rlt_arr);
+                child.aidAccessableKernels(targetType, rlt_arr, true);
             }
         });
     }

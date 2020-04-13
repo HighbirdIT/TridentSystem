@@ -367,11 +367,14 @@ const AttrNames={
         OnDataSourceChanged:'onDataSourceChanged',
         OnClickCloseBtn:'onClickCloseBtn',
         OnReceiveMsg:'onReceiveMsg',
+        OnCollapse:'onCollapse',
+        OnUnCollapse:'onUnCollapse',
     },
 
     Function:{
         GetXMLRowItem:'getxmlrowitem',
         GenarateChartData:'generateChartData',
+        GetJSONRowItem:'getJSONrowitem',
     },
 
     LayoutNames:{

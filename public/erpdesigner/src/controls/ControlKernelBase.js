@@ -536,6 +536,9 @@ class ControlKernelBase extends IAttributeable {
                 }
             }
         }
+        if(nowKernel.type == Accordion_Type){
+            parent = nowKernel; // 折叠控件可以访问到孩子控件
+        }
         if(parent == null){
             if(this.type == M_PageKernel_Type || this.type == UserControlKernel_Type){
                 parent = this;
@@ -572,16 +575,16 @@ class ControlKernelBase extends IAttributeable {
                             if(meetParents_map[child.editor.id] == null){
                                 meetParents_map[child.editor.id] = 1;
                                 aidRlt_arr = [];
-                                child.editor.aidAccessableKernels(targetType, aidRlt_arr);
+                                child.editor.aidAccessableKernels(targetType, aidRlt_arr, true);
                             }
                         }
                     }
-                    if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && child.isPageForm()) || child.type == PopperButtonKernel_Type){
+                    if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type || child.type == PopperButtonKernel_Type){
                         // 穿透div
                         if(meetParents_map[child.id] == null){
                             meetParents_map[child.id] = 1;
                             aidRlt_arr = [];
-                            child.aidAccessableKernels(targetType, aidRlt_arr);
+                            child.aidAccessableKernels(targetType, aidRlt_arr, true);
                         }
                     }
 

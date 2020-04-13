@@ -148,6 +148,7 @@ dingHelper.aysnLoginfFromRcdID = (logrcdid, req, res) => {
                 wokerTypeCode:firstRow['员工工时状态代码'],
                 departmentCode:firstRow['所属部门名称代码'],
                 systemCode:firstRow['所属系统名称代码'],
+                logrcdid:logrcdid,
             };
             req.session.g_envVar = rlt;
 

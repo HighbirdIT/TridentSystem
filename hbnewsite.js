@@ -59,7 +59,7 @@ var handlebars = require('express3-handlebars').create({
 });
 
 app.set('port', process.env.PORT || 1330);
-//app.set('env', process.env.PORT || 'production');
+app.set('env', process.env.PORT || 'production');
 
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
@@ -562,6 +562,16 @@ app.use('/dingcallback', function (req, res, next) {
         nonce: req.query.nonce,
     });
     return;
+});
+
+app.use('/download', function (req, res, next) {
+    if(req.query.excelid != null){
+        fileSystem.downloadExcelFile(req, res);
+    }
+    else{
+        res.json({ err: '缺失参数' });
+        return;
+    }
 });
 
 app.use(function (req, res, next) {

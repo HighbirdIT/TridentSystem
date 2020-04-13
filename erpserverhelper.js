@@ -1,6 +1,8 @@
 const co = require('co');
 const dbhelper = require('./dbhelper.js');
 const sqlTypes = dbhelper.Types;
+var fs = require('fs');
+var path = require("path");
 
 var helper = {};
 
@@ -117,6 +119,14 @@ helper.InformSysManager = (text, identity)=>{
         dbhelper.makeSqlparam('发送者标识', sqlTypes.NVarChar(1000), identity),
         dbhelper.makeSqlparam('通知内容', sqlTypes.NVarChar(1000), text),
     ]);
+};
+
+function S4() {
+    return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+}
+
+helper.guid2 = ()=>{
+    return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
 };
 
 function checkArrayData(val) {
@@ -321,5 +331,6 @@ helper.DateFun={
     Convert_TimeZone:Convert_TimeZone,
     Convert_DateZone:Convert_DateZone,
 };
+
 
 module.exports = helper;

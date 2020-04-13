@@ -327,6 +327,9 @@ class MobileContentCompiler extends ContentCompiler {
                                 if (sameReactKernel != relyCtlReactParent) {
                                     thirdParam += "+" + singleQuotesStr('.' + relyCtlReactParent.getStatePath('', '.', null, true, sameReactKernel));
                                 }
+                                else if (sameReactKernel.type == M_FormKernel_Type && !sameReactKernel.isPageForm()) {
+                                    thirdParam += ' + ".row_" + rowKeyInfo_map.' + sameReactKernel.id;
+                                }
                                 if (relyPath.approach.delaycall) {
                                     actKey = 'call_' + relyPath.approach.funName;
                                     changedFun.pushLine("if(delayActs." + actKey + " == null){delayActs." + actKey + " = {callfun:" + relyPath.approach.funName + ",params_arr:[" + [VarNames.State, 'null', thirdParam].join(',') + "]};};");
@@ -2171,6 +2174,7 @@ class MobileContentCompiler extends ContentCompiler {
         var isListForm = formType == EFormType.List;
         var selectMode = theKernel.getAttribute(AttrNames.SelectMode);
         var rowKeyAttrName = theKernel.id.toLocaleLowerCase() + '_rowkey';
+        var rowIndexAttrName = theKernel.id.toLocaleLowerCase() + '_rowindex';
         var hadRefreshIcon = theKernel.getAttribute(AttrNames.RefreshIcon);
         var awaysEditable = theKernel.getAttribute(AttrNames.AwaysEditable);
         var stableData = theKernel.getAttribute(AttrNames.StableData);
@@ -2360,9 +2364,16 @@ class MobileContentCompiler extends ContentCompiler {
                 titleAlginStr = 'justify-content-end';
                 break;
         }
+        var alignitems = theKernel.getAttribute('alignitems');
+        if(alignitems == 'initial'){
+            alignitems = '';
+        }
+        else{
+            alignitems = " align-items-" + alignitems;
+        }
         if (isPageForm) {
             renderContentBlock.pushLine(VarNames.RetElem + " = (<React.Fragment>", 1);
-            renderContentBlock.pushLine("<div className='d-flex flex-grow-1 flex-shrink-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + (isWrap ? ' flex-wrap' : '') + "'>", 1);
+            renderContentBlock.pushLine("<div className='d-flex flex-grow-1 flex-shrink-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + (isWrap ? ' flex-wrap' : '') + alignitems + "'>", 1);
             childRenderBlock = new FormatFileBlock(theKernel.id + 'child');
             renderContentBlock.pushChild(childRenderBlock);
             renderContentBlock.subNextIndent();
@@ -2376,7 +2387,7 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentBlock.subNextIndent();
             renderContentBlock.pushLine("</React.Fragment>);");
 
-            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'>", 1);
+            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'" + (hasFormStyle ? " style={" + formStyleID + "}" : '') + ">", 1);
             renderContentFun.retBlock.pushLine("{this.props.title && <div className='bg-dark text-light " + titleAlginStr + " d-flex flex-shrink-0 p-1'><span>{this.props.title}</span></div>}");
             renderContentFun.retBlock.pushLine('{' + VarNames.RetElem + '}');
             renderContentFun.retBlock.subNextIndent();
@@ -2459,6 +2470,7 @@ class MobileContentCompiler extends ContentCompiler {
             var listItemTag = new FormatHtmlTag('listitem', 'div', this.clientSide);
             listItemTag.setAttr('key', bigbracketStr(VarNames.RowKey));
             listItemTag.setAttr(rowKeyAttrName, bigbracketStr(VarNames.RowKey));
+            listItemTag.setAttr(rowIndexAttrName, bigbracketStr(VarNames.RowIndex));
             listItemTag.setAttr('className', itemLayoutConfig.getClassName());
             if (hasItemFormStyle) {
                 listItemTag.setAttr('style', bigbracketStr(itemStyleID));
@@ -2487,13 +2499,13 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentBlock.subNextIndent();
             renderContentBlock.pushLine('});');
 
-            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'>", 1);
+            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'" + (hasFormStyle ? " style={" + formStyleID + "}" : '') + ">", 1);
             renderContentFun.retBlock.pushLine("{this.props.title && <div className='bg-dark text-light " + titleAlginStr + " d-flex flex-shrink-0 p-1'><span>{this.props.title}" + (hadRefreshIcon ? "{this.props.fetching ? null : <i className='btn btn-sm fa fa-refresh' onClick={this.clickFreshHandler} />}" : '') + "</span></div>}");
             var contentDivClassStr = 'd-flex flex-grow-1 flex-shrink-1' + (isWrap ? ' flex-wrap' : '') + (autoHeight ? ' autoScroll ' : '');
             if (orientation == Orientation_V) {
                 contentDivClassStr += ' flex-column';
             }
-            renderContentFun.retBlock.pushLine("<div className='" + contentDivClassStr + "'>");
+            renderContentFun.retBlock.pushLine("<div className='" + contentDivClassStr + alignitems + "'>");
             renderContentFun.retBlock.addNextIndent();
             renderContentFun.retBlock.pushLine('{' + VarNames.RetElem + '}');
             renderContentFun.retBlock.subNextIndent();
@@ -2709,7 +2721,18 @@ class MobileContentCompiler extends ContentCompiler {
                     if (defaultSelectFirst) {
                         freshFun.pushLine('var nowKey = ' + makeStr_callFun('GetFormSelectedProfile', [stateVarName, singleQuotesStr(keyColumn)]) + '.key;');
                         freshFun.pushLine('if(nowKey == null){', 1);
-                        freshFun.pushLine('if(' + VarNames.Records_arr + '.length > 0){nowKey = ' + VarNames.Records_arr + '[0].' + keyColumn + ';}', -1);
+                        //freshFun.pushLine('if(' + VarNames.Records_arr + '.length > 0){nowKey = ' + VarNames.Records_arr + '[0].' + keyColumn + ';}', -1);
+                        freshFun.pushLine('if(' + VarNames.Records_arr + '.length > 0){', 1);
+                        freshFun.pushLine("var preSelectedRowIndex = " + stateVarName + ".selectedRowIndex;");
+                        freshFun.pushLine("var useRowIndex = 0;");
+                        freshFun.pushLine("if(preSelectedRowIndex == null || preSelectedRowIndex <= 0){useRowIndex=0;}");
+                        freshFun.pushLine("else if(preSelectedRowIndex < " + VarNames.Records_arr + ".length){useRowIndex=preSelectedRowIndex;}");
+                        freshFun.pushLine("else {useRowIndex=" + VarNames.Records_arr + ".length - 1;}");
+                        freshFun.pushLine('nowKey = ' + VarNames.Records_arr + '[useRowIndex].' + keyColumn + ';');
+                        freshFun.pushLine('needSetState.selectedRowIndex = useRowIndex;');
+                        freshFun.subNextIndent();
+                        freshFun.pushLine('}');
+                        freshFun.subNextIndent();
                         freshFun.pushLine('}');
                         freshFun.pushLine('needSetState.' + VarNames.SelectedValue + ' = nowKey;');
                     }
@@ -2981,6 +3004,7 @@ class MobileContentCompiler extends ContentCompiler {
             if (clickSelectable) {
                 var clickRowHandlerFun = formReactClass.getFunction('clickRowHandler', true, ['ev']);
                 clickRowHandlerFun.pushLine("var rowkey = !isNaN(ev) ? ev : GetFromatRowKey(getAttributeByNode(ev.target,'" + rowKeyAttrName + "'));");
+                clickRowHandlerFun.pushLine("var rowIndex = !isNaN(ev) ? ev : GetFromatRowKey(getAttributeByNode(ev.target,'" + rowIndexAttrName + "'));");
                 clickRowHandlerFun.pushLine("var state = store.getState();");
                 clickRowHandlerFun.pushLine("var formState = getStateByPath(state, this.props.fullPath,{});");
                 clickRowHandlerFun.pushLine("var keyvalue = rowkey;");
@@ -3005,10 +3029,16 @@ class MobileContentCompiler extends ContentCompiler {
                         clickRowHandlerFun.pushLine("if(nowRowKey == rowkey){", 1);
                         clickRowHandlerFun.pushLine("var selectedProfile = GetFormSelectedProfile(formState,'" + keyColumn + "');", 1);
                         clickRowHandlerFun.pushLine(makeStr_callFun(OnSelectedChangedBp.name, ['state', 'this.props.fullPath', 'selectedProfile.record', 'selectedProfile.index', 'selectedProfile.key'], ';'));
+                        clickRowHandlerFun.pushLine("return;");
                         clickRowHandlerFun.subNextIndent();
                         clickRowHandlerFun.pushLine('}');
+                        clickRowHandlerFun.subNextIndent();
                     }
-                    clickRowHandlerFun.pushLine("store.dispatch(makeAction_setStateByPath(keyvalue,this.props.fullPath + '." + VarNames.SelectedValue + "'));");
+                    clickRowHandlerFun.pushLine('var needSetState={', 1);
+                    clickRowHandlerFun.pushLine(VarNames.SelectedValue + ':keyvalue,');
+                    clickRowHandlerFun.pushLine('selectedRowIndex:rowIndex,',-1);
+                    clickRowHandlerFun.pushLine('}');
+                    clickRowHandlerFun.pushLine("store.dispatch(makeAction_setManyStateByPath(needSetState, this.props.fullPath));");
                 }
             }
 
@@ -4034,6 +4064,15 @@ class MobileContentCompiler extends ContentCompiler {
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'inited'), 'ctlState.inited == true;'));
 
 
+        var onUnCollapseFunName = theKernel.id + '_' + AttrNames.Event.OnUnCollapse;
+        var onUnCollapseBp = project.scriptMaster.getBPByName(onUnCollapseFunName);
+        if (onUnCollapseBp != null) {
+            var compileRet = this.compileScriptBlueprint(onUnCollapseBp, { params: [theKernel.id + '_path'] });
+            if (compileRet == false) {
+                return false;
+            }
+            ctlTag.setAttr(AttrNames.Event.OnUnCollapse, bigbracketStr(onUnCollapseFunName));
+        }
 
         var title = theKernel.getAttribute(AttrNames.Title);
         var titleParseRet = parseObj_CtlPropJsBind(title, project.scriptMaster);
@@ -4154,10 +4193,10 @@ class MobileContentCompiler extends ContentCompiler {
                 navBtnContainerBlk.pushLine("<div className='btn-group flex-grow-0 flex-shrink-0 border-top'>");
                 break;
             case DockType_Left:
-                navBtnContainerBlk.pushLine("<div className='btn-group-vertical flex-grow-0 flex-shrink-0 border-right'>");
+                navBtnContainerBlk.pushLine("<div className='btn-group-vertical flex-grow-0 flex-shrink-0 border-right justify-content-start'>");
                 break;
             case DockType_Right:
-                navBtnContainerBlk.pushLine("<div className='btn-group-vertical flex-grow-0 flex-shrink-0 border-left'>");
+                navBtnContainerBlk.pushLine("<div className='btn-group-vertical flex-grow-0 flex-shrink-0 border-left justify-content-start'>");
                 break;
         }
         navBtnContainerBlk.addNextIndent();
@@ -4168,6 +4207,7 @@ class MobileContentCompiler extends ContentCompiler {
         var selftRenderBlock = controlReactClass.renderFun;
         selftRenderBlock.scope.getVar('childElem', true);
         selftRenderBlock.scope.getVar('self', true, 'this');
+        selftRenderBlock.pushLine('if(this.props.visible == false){return null;}');
         selftRenderBlock.pushChild(itemSwitchBlock);
         selftRenderBlock.pushLine(VarNames.RetElem + " = <div className='" + layoutConfig.getClassName() + "' " + styleStr + ">", 1);
         if (dockType == DockType_Top || dockType == DockType_Left) {
@@ -4183,11 +4223,12 @@ class MobileContentCompiler extends ContentCompiler {
 
         controlReactClass.mapStateFun.scope.getVar('propProfile', true, "getControlPropProfile(ownprops, state)");
         controlReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
+        controlReactClass.mapStateFun.scope.getVar('visible', true, makeStr_DotProp(VarNames.CtlState, 'visible'));
+        controlReactClass.mapStateFun.pushLine('if(visible == null){visible = ownprops.definvisible ? false : true;}');
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullParentPath), makeStr_DotProp('propProfile', VarNames.FullParentPath)));
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullPath), makeStr_DotProp('propProfile', VarNames.FullPath)));
-        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'visible'), makeStr_DotProp(VarNames.CtlState, 'visible != false')));
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'visible'), 'visible'));
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'selectedIndex'), makeStr_DotProp(VarNames.CtlState, 'selectedIndex') + (defaultTabitemID == '0' ? '' : ' ? ' + makeStr_DotProp(VarNames.CtlState, 'selectedIndex') + ' : ' + singleQuotesStr(defaultTabitemID))));
-
         var isGreedMode = theKernel.getAttribute(AttrNames.GreedMode);
         var navBtnClassStr = "'btn rounded-0 " + (isGreedMode ? 'flex-grow-1 flex-shrink-1 ' : '') + "'";
         for (var ci in theKernel.children) {
@@ -4742,6 +4783,9 @@ class MobileContentCompiler extends ContentCompiler {
         if (!theKernel.getAttribute(AttrNames.Growable)) {
             ctlTag.setAttr('growable', '{false}');
         }
+        if (theKernel.getAttribute('poppanelminwidth') > 100) {
+            ctlTag.setAttr('poppanelminwidth', theKernel.getAttribute('poppanelminwidth'));
+        }
         var appandColumns_arr = [];
         var appandColAttrs_arr = theKernel.getAttrArrayList(AttrNames.AppandColumn);
         var canuseColumns = theKernel.getCanuseColumns();
@@ -4775,8 +4819,10 @@ class MobileContentCompiler extends ContentCompiler {
 
         var defaultVal = theKernel.getAttribute(AttrNames.DefaultValue);
         var defaultValParseRet = parseObj_CtlPropJsBind(defaultVal, project.scriptMaster);
+        var defaultCompileRet;
         if (defaultValParseRet.isScript) {
-            if (this.compileScriptAttribute(defaultValParseRet, theKernel, 'value', AttrNames.DefaultValue, { autoSetFetchState: true }) == false) {
+            defaultCompileRet = this.compileScriptAttribute(defaultValParseRet, theKernel, 'value', AttrNames.DefaultValue, { autoSetFetchState: true });
+            if (defaultCompileRet == false) {
                 return false;
             }
         }
@@ -5033,6 +5079,11 @@ class MobileContentCompiler extends ContentCompiler {
                     };
                     setTextStateItem.alterValue = alterValue;
                 }
+            }
+
+            if (defaultCompileRet && belongFormKernel && belongFormKernel.getInsertSetting()) {
+                // 所在gridform有新增行,默认值要绑定到新增行
+                defaultCompileRet.setStateItem.bindMode = ScriptBindMode.OnNewRow;
             }
 
             if (setValueStateItem != null && setTextStateItem == null) {
@@ -5301,6 +5352,9 @@ class MobileContentCompiler extends ContentCompiler {
             ctlTag.setAttr('labelelem', bigbracketStr(titleElemStr));
         }
         ctlTag.setAttr('anchor', theKernel.getAttribute('anchor'));
+        if (!theKernel.getAttribute('hideclosebtn')) {
+            ctlTag.setAttr('hideCloseBtn', bigbracketStr('true'));
+        }
 
         renderBlock.pushChild(ctlTag);
 
@@ -5525,14 +5579,14 @@ class MobileContentCompiler extends ContentCompiler {
         var pureFullParentPath = this.getKernelFullParentPath(theKernel);
         var fullParentPath = pureFullParentPath;
         if (belongUserControl) {
-            if(IsEmptyString(fullParentPath)){
+            if (IsEmptyString(fullParentPath)) {
                 fullParentPath = belongUserControl.id + '_path';
             }
-            else{
+            else {
                 fullParentPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + fullParentPath);
             }
         }
-        else{
+        else {
             fullParentPath = singleQuotesStr(fullParentPath);
         }
         var self = this;
@@ -5540,13 +5594,13 @@ class MobileContentCompiler extends ContentCompiler {
         var autoPull = theKernel.getAttribute(AttrNames.AutoPull);
         var compileCDSRet = this.compileCustomDataSourceAttribute(theKernel, 'records_arr', {
             useCtlProp: (useCtlData, propApiitem, pullFun) => {
-                if(autoPull){
+                if (autoPull) {
                     var useFullParentPath = fullParentPath;
-                    if(useCtlData.kernel.type == UserControlKernel_Type && useCtlData.kernel.isTemplate()){
-                        if(IsEmptyString(pureFullParentPath)){
+                    if (useCtlData.kernel.type == UserControlKernel_Type && useCtlData.kernel.isTemplate()) {
+                        if (IsEmptyString(pureFullParentPath)) {
                             useFullParentPath = 'this.props.fullPath';
                         }
-                        else{
+                        else {
                             useFullParentPath = 'this.props.fullPath + ' + singleQuotesStr('.' + pureFullParentPath);
                         }
                     }
@@ -5557,7 +5611,7 @@ class MobileContentCompiler extends ContentCompiler {
             useFormColumn: (useFormData, pullFun) => {
                 var useFormMidData = this.projectCompiler.getMidData(useFormData.formKernel.id);
                 if (useFormMidData.isPageForm) {
-                    if(autoPull){
+                    if (autoPull) {
                         useFormMidData.bindFun.bindEndBlock.pushLine(makeStr_callFun(pullFun.name, [fullParentPath], ';'));
                     }
                 }
@@ -5611,7 +5665,7 @@ class MobileContentCompiler extends ContentCompiler {
         if (compileRet == false) {
             return false;
         }
-        
+
         var recordsArraychangedFunName = theKernel.id + '_' + VarNames.Records_arr + '_changed';
         var recordsArraychangedFun = clientSide.scope.getFunction(recordsArraychangedFunName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowKeyInfo_map']);
         recordsArraychangedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
@@ -5620,8 +5674,8 @@ class MobileContentCompiler extends ContentCompiler {
         recordsArraychangedFun.scope.getVar('datasets_arr', true, '[]');
         recordsArraychangedFun.scope.getVar('ctlpath', true, "getParentPathByKey(path,'" + theKernel.id + "')");
         recordsArraychangedFun.pushLine(makeStr_callFun(compileRet.name, [VarNames.State, 'newValue', 'labels_arr', 'datasets_arr'], ';'));
-        recordsArraychangedFun.pushLine('datasets_arr.forEach(dataset=>{',1);
-        recordsArraychangedFun.pushLine('if(dataset.backgroundColor.length == 1){dataset.backgroundColor = dataset.backgroundColor[0];}',-1);
+        recordsArraychangedFun.pushLine('datasets_arr.forEach(dataset=>{', 1);
+        recordsArraychangedFun.pushLine('if(dataset.backgroundColor.length == 1){dataset.backgroundColor = dataset.backgroundColor[0];}', -1);
         recordsArraychangedFun.pushLine('});');
         recordsArraychangedFun.pushLine(VarNames.NeedSetState + "[ctlpath+'.data']={labels: labels_arr,datasets: datasets_arr};");
 
@@ -5840,9 +5894,11 @@ class MobileContentCompiler extends ContentCompiler {
                         pullFun.scope.getVar(formRowPathVarName, true);
                         if (isUseFormColumn) {
                             pullFun.scope.getVar(nowRecordVarName, true);
+                            pullFun.scope.getVar(nowRowStateVarName, true);
                             needCheckVars_arr.push(nowRecordVarName);
                         }
                         if (isUseFormCtl) {
+                            pullFun.scope.getVar(nowRecordVarName, true);
                             pullFun.scope.getVar(nowRowStateVarName, true);
                             needCheckVars_arr.push(nowRowStateVarName);
                         }
@@ -6003,15 +6059,23 @@ class MobileContentCompiler extends ContentCompiler {
         }
 
         if (!IsEmptyObject(bpCompileHelper.usePageParam)) {
+            if(belongPageKernel == null){
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '没有关联页面缺使用了获取页面入库参数']);
+                return false;
+            }
             for (var usPageParamName in bpCompileHelper.usePageParam) {
-                pullFun.scope.getVar('pagein_' + usPageParamName, true, makeStr_callFun('getPageEntryParam', [singleQuotesStr(belongPage.id), singleQuotesStr(usPageParamName), compilHelper.usePageParam[usPageParamName]]));
+                pullFun.scope.getVar('pagein_' + usPageParamName, true, makeStr_callFun('getPageEntryParam', [singleQuotesStr(belongPageKernel.id), singleQuotesStr(usPageParamName), bpCompileHelper.usePageParam[usPageParamName]]));
                 needSetParams_arr.push({ bundleName: 'pagein_' + usPageParamName, clientValue: 'pagein_' + usPageParamName });
             }
         }
 
         if (!IsEmptyObject(bpCompileHelper.useUrlVar_map)) {
             for (var varName in bpCompileHelper.useUrlVar_map) {
-                pullFun.scope.getVar(varName, true, makeStr_callFun('getQueryVariable', [singleQuotesStr(varName), compilHelper.useUrlVar_map[varName]]));
+                pullFun.scope.getVar(varName, true, makeStr_callFun('getQueryVariable', [singleQuotesStr(varName), bpCompileHelper.useUrlVar_map[varName]]));
                 var useUrlVarObj = { bundleName: varName, clientValue: varName };
                 needSetParams_arr.push(useUrlVarObj);
             }
@@ -6140,6 +6204,28 @@ class MobileContentCompiler extends ContentCompiler {
                 xmlconfig['col' + (index + 1)] = varData.name;
             });
             clientSide.scope.getVar(theKernel.id + '_xmlconfig', true, JSON.stringify(xmlconfig));
+        }
+
+        if (midData.useFormJSON) {
+            var getJsonRowFunName = theKernel.id + '_' + AttrNames.Function.GetJSONRowItem;
+            var getJsonRowBp = project.scriptMaster.getBPByName(getJsonRowFunName);
+            if (getJsonRowBp == null) {
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '有地方使用了此表格的Json数据，却没有设定[获取JSON行]方法']);
+                return false;
+            }
+            var returnVars_arr = getJsonRowBp.returnVars_arr.filter(item => {
+                return item.name != AttrNames.RowText;
+            });
+            var compileRet = this.compileScriptBlueprint(getJsonRowBp);
+            if (compileRet == false) {
+                return false;
+            }
+            var headers_arr = returnVars_arr.map(v=>{return v.name;});
+            clientSide.scope.getVar(theKernel.id + '_jsonHeaders', true, JSON.stringify(headers_arr));
         }
 
         if (midData.useDS) {
@@ -6465,7 +6551,7 @@ class MobileContentCompiler extends ContentCompiler {
                             varObj.nullable ? varObj.nullable.toString() : 'false',
                             singleQuotesStr(varObj.kernel.id),
                             validErrStateVar.name,
-                            formPathVarName
+                            VarNames.FullParentPath
                         ]) + ";");
                         validKernelBlock.pushLine("validErrState[" + modifyStatePath(infoStatePath, belongUserControl) + "]=validErr;");
                         validKernelBlock.pushLine("if(validErr != null) hadValidErr = true;");

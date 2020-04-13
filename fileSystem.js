@@ -5,6 +5,8 @@ var fs = require('fs');
 var uuid = require('uuid');
 const sqlTypes = dbhelper.Types;
 var path = require("path");
+var execSync = require('child_process').execSync;
+var exec = require('child_process').exec;
 
 const EFileSystemError = {
     WRONGSTART : 1001,
@@ -41,6 +43,13 @@ function guid2() {
     return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
 }
 
+function getUserID(req){
+    if(req.headers['user-agent'] == 'python_fileuploader'){
+        return 0;
+    }
+    return req.session.g_envVar.userid;
+}
+
 fileSystem.process = (req,res,next) => {
     serverhelper.commonProcess(req, res, next, processes_map);
 };
@@ -67,12 +76,13 @@ fileSystem.deleteAttachment = (req,res) => {
 };
 
 fileSystem.applyForTempFile = (req,res) => {
+    var userid = getUserID(req);
     var bundle=req.body.bundle;
     return co(function* () {
         var inparams_arr=[
 			dbhelper.makeSqlparam('文件名称', sqlTypes.NVarChar(100), bundle.name),
             dbhelper.makeSqlparam('文件大小', sqlTypes.Int, bundle.size),
-            dbhelper.makeSqlparam('操作用户', sqlTypes.Int, req.session.g_envVar.userid),
+            dbhelper.makeSqlparam('操作用户', sqlTypes.Int, userid),
             dbhelper.makeSqlparam('文件类型', sqlTypes.NVarChar(100), bundle.type),
             dbhelper.makeSqlparam('电子指纹', sqlTypes.NVarChar(200), bundle.md5),
 		];
@@ -197,12 +207,165 @@ fileSystem.getFileRecord = (req,res) => {
     });
 };
 
+fileSystem.queryExcelFileState = (req,res) => {
+    var bundle=req.body.bundle;
+    if(bundle==null){return serverhelper.createErrorRet('缺少参数bundle');}
+    var fileIdentity = bundle.fileIdentity;
+    if(fileIdentity==null){return serverhelper.createErrorRet('缺少参数fileIdentity');}
+    return co(function* () {
+        var rcdRlt = yield dbhelper.asynQueryWithParams("SELECT [记录令牌],[分享令牌],[生成状态],[状态说明] FROM [base1].[dbo].[T721C表格文件请求] where [记录令牌]=@记录令牌", 
+        [
+            dbhelper.makeSqlparam('记录令牌', sqlTypes.NVarChar(100), fileIdentity),
+        ]);
+        if(rcdRlt.recordset.length == 0){
+            if(bundle==null){return serverhelper.createErrorRet('指定文件未找到');}
+            return ; 
+        }
+        var row = rcdRlt.recordset[0];
+        var rlt = {
+            state:row['生成状态'],
+            stateinfo:row['状态说明'],
+        };
+        if(rlt.state == 1){
+            rlt.url = '/download?excelid=' + fileIdentity + '&shareKey=' + row['分享令牌'];
+        }
+        return rlt;
+    });
+};
+
+fileSystem.saveExcelJsonData = (name, json, bAutoIndex, bQuotePrefix, recordid)=>{
+    var jsonDirPath = path.join(__dirname,'filedata');
+    if (!fs.existsSync(jsonDirPath))
+    {
+        fs.mkdirSync(jsonDirPath);
+    }
+    jsonDirPath = path.join(jsonDirPath,'exceljson');
+    if (!fs.existsSync(jsonDirPath))
+    {
+        fs.mkdirSync(jsonDirPath);
+    }
+    var jsonFilePath = path.join(jsonDirPath, name + '.json');
+    fs.writeFileSync(jsonFilePath, json);
+
+    var excelFilePath = path.join(__dirname,'filedata');
+    if (!fs.existsSync(excelFilePath))
+    {
+        fs.mkdirSync(excelFilePath);
+    }
+    excelFilePath = path.join(excelFilePath,'excel');
+    if (!fs.existsSync(excelFilePath))
+    {
+        fs.mkdirSync(excelFilePath);
+    }
+    var scriptPath = path.join(__dirname,'scripts/python/creatExcelFromJson.py');
+    excelFilePath = path.join(excelFilePath,name + '.xlsx');
+    exec('python3 -W ignore ' + scriptPath + ' ' + excelFilePath + ' ' + jsonFilePath + ' ' + (bAutoIndex == true ? '1' : '0') + ' ' + (bQuotePrefix == true ? '1' : '0'), (error, stdout, stderr)=>{
+        var errmsg = error ? error.message : (stdout != 'OK' ? stdout : null);
+        try{
+            dbhelper.asynExcute('P721E处理结果报告',
+            [dbhelper.makeSqlparam("错误描述", sqlTypes.NVarChar(50), errmsg),
+            dbhelper.makeSqlparam("文件请求代码", sqlTypes.Int, recordid),
+            dbhelper.makeSqlparam("处理步骤", sqlTypes.Int, 1)]);
+        }
+        catch(eo){
+            serverhelper.InformSysManager(eo.message, 'fileSystem.saveExcelJsonData')
+        }
+        fs.unlink(jsonFilePath);
+    });
+};
+
+fileSystem.exportExcelFileFromJson = (req,res) => {
+    var bundle=req.body.bundle;
+	var g_envVar = req.session.g_envVar;
+	return co(function* () {
+		if(bundle==null){return serverhelper.createErrorRet('缺少参数bundle');}
+		var title=bundle.title;
+		if(title == null){return serverhelper.createErrorRet('参数[title]传入值错误');}
+		var jsonData=bundle.data;
+		if(jsonData == null){return serverhelper.createErrorRet('参数[data]传入值错误');}
+		var 记录令牌 = serverhelper.guid2();
+		var 分享令牌 = serverhelper.guid2();
+        try{
+            var 记录代码 = yield dbhelper.asynGetScalar('INSERT INTO [dbo].[T721C表格文件请求](文件标题,记录令牌,请求用户,分享令牌) values(@title, @记录令牌, @_operator,@分享令牌)  select SCOPE_IDENTITY()', 
+            [
+                dbhelper.makeSqlparam('title', sqlTypes.NVarChar(100), title),
+                dbhelper.makeSqlparam('记录令牌', sqlTypes.NVarChar(50), 记录令牌),
+                dbhelper.makeSqlparam('_operator', sqlTypes.Int, g_envVar.userid),
+                dbhelper.makeSqlparam('分享令牌', sqlTypes.NVarChar(50), 分享令牌)
+            ]);
+            fileSystem.saveExcelJsonData(记录令牌, JSON.stringify(jsonData), bundle.bAutoIndex,bundle.bQuotePrefix, 记录代码);
+            return 记录令牌;
+        }
+        catch(eo){
+            return serverhelper.createErrorRet(eo.message);
+        }
+		return serverhelper.createErrorRet('创建文件失败');
+	});
+};
+
+fileSystem.downloadExcelFile = (req,res) => {
+    var excelid = req.query.excelid;
+    var shareKey = req.query.shareKey;
+    var userid = req.session && req.session.g_envVar ? req.session.g_envVar.userid : 0;
+    return co(function* () {
+        var rcdRlt = yield dbhelper.asynQueryWithParams("select [表格文件请求代码],[请求用户],[文件标题],[分享令牌],[分享时间] FROM [base1].[dbo].[T721C表格文件请求] where [记录令牌]=@记录令牌", 
+        [
+            dbhelper.makeSqlparam('记录令牌', sqlTypes.NVarChar(100), excelid),
+        ]);
+        if(rcdRlt.recordset.length == 0){
+            res.setHeader("Content-Type", "text/plain;charset=utf-8");
+            res.end("目标文件未找到");
+            return;
+        }
+        var 下载类型 = '下载';
+        var row = rcdRlt.recordset[0];
+        if(row['请求用户'] != userid){
+            if(shareKey == row['分享令牌']){
+                if(serverhelper.DateFun.getDateDiff('时', row['分享时间'], new Date()) > 12){
+                    res.setHeader("Content-Type", "text/plain;charset=utf-8");
+                    res.end("这个分享链接已失效");
+                    return;
+                }
+                下载类型 = '分享';
+            }
+            else{
+                res.setHeader("Content-Type", "text/plain;charset=utf-8");
+                res.end("这个文件不是你的");
+                return;
+            }
+        }
+        var excelFilePath = path.join(__dirname,'filedata/excel', excelid + '.xlsx');
+        fs.readFile(excelFilePath, function (error, data) {
+            if(error){
+                res.setHeader("Content-Type", "text/plain;charset=utf-8");
+                res.end("文件读取失败");
+            }else{
+                res.setHeader("Content-Type", "application/vnd.ms-excel");
+                res.setHeader('Content-Disposition', 'attachment;filename="' + encodeURIComponent(rcdRlt.recordset[0]['文件标题']) + '.xlsx"');
+                res.end(data);
+            }
+        });
+        try{
+            dbhelper.asynExcute('P721E记录表格下载',
+                [dbhelper.makeSqlparam("表格文件请求代码", sqlTypes.Int, row['表格文件请求代码']),
+                dbhelper.makeSqlparam("下载类型", sqlTypes.NVarChar(), 下载类型),
+                dbhelper.makeSqlparam("下载用户", sqlTypes.Int, userid)]);
+        }
+        catch(eo){
+            
+        }
+    });
+};
+
+
 
 var processes_map={
     applyForTempFile:fileSystem.applyForTempFile,
     uploadBlock:fileSystem.uploadBlock,
     deleteAttachment:fileSystem.deleteAttachment,
     getFileRecord:fileSystem.getFileRecord,
+    exportExcelFileFromJson:fileSystem.exportExcelFileFromJson,
+    queryExcelFileState:fileSystem.queryExcelFileState,
 };
 
 module.exports = fileSystem;
