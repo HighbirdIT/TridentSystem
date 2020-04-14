@@ -1956,6 +1956,7 @@ class JSNode_Return extends JSNode_Base {
             s.valid = false;
         });
 
+        var newSocketArr = [];
         this.bluePrint.returnVars_arr.forEach(varData => {
             var socket = this.getScoketByName(varData.id);
             if (socket) {
@@ -1970,10 +1971,14 @@ class JSNode_Return extends JSNode_Base {
                 this.addSocket(socket);
             }
             socket.inputable = true;
+            newSocketArr.push(socket);
         });
 
         this.inputScokets_arr.filter(s => { return s.valid == false; }).forEach(s => { this.removeSocket(s) });
-
+        this.inputScokets_arr.length = 0;
+        newSocketArr.forEach(s=>{
+            this.inputScokets_arr.push(s);
+        });
         this.fireEvent(Event_SocketNumChanged, 20);
         this.bluePrint.fireChanged();
     }
