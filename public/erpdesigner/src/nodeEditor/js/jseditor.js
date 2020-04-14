@@ -1963,6 +1963,33 @@ class JSDef_Variable_Component extends React.PureComponent{
             );
         }
     }
+    moveUporDown(ev){
+        var target =ev.target
+        var bluePrint = this.props.belongNode.bluePrint;
+        var varData = this.props.varData;
+        var vars_arr = varData.isOutput ? bluePrint.returnVars_arr : bluePrint.vars_arr;
+
+        var nowIndex = vars_arr.indexOf(varData)
+        //vars_arr.del(nowIndex)123
+        var temp = vars_arr[nowIndex];
+        if (target.getAttribute('action') == 'up'){
+            if(nowIndex>0){
+                vars_arr[nowIndex] = vars_arr[nowIndex-1];
+                vars_arr[nowIndex-1] =temp;
+                bluePrint.fireEvent('varChanged')
+            }
+        }else{
+            //vars_arr.add(this.state.Object,nowIndex+1)
+            if(nowIndex < vars_arr.length - 1)
+            {
+                vars_arr[nowIndex] = vars_arr[nowIndex + 1];
+                vars_arr[nowIndex + 1] = temp;
+                bluePrint.fireEvent('varChanged');
+            }
+        }
+        
+        console.log(nowIndex)
+    }
 
     render() {
         var varData = this.props.varData;
@@ -1978,6 +2005,17 @@ class JSDef_Variable_Component extends React.PureComponent{
                         <span className='m-1 badge badge-secondary' >{varData.valType}</span>
                     </div>
                     {varData.isfixed != true && <i className={'fa fa-trash fa-lg'} onClick={this.clickTrashHandler} />}
+
+                    <div className="btn-group " role="group" aria-label="...">
+                        <button type="button" className="btn btn-default flex-grow-1 flex-shrink-1" onClick={this.moveUporDown} action='up'>
+                            <span className='fa fa-arrow-up'></span>
+                        </button>
+                        <button type="button" className="btn btn-default flex-grow-1 flex-shrink-1" onClick={this.moveUporDown} action='down'>
+                            <span className='fa fa-arrow-down'></span>
+                        </button>
+                    </div>
+                        
+                    
                 </div>
             );
         }
