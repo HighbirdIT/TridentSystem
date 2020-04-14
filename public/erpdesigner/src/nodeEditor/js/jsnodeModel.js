@@ -1432,6 +1432,11 @@ class JSNode_BluePrint extends EventEmitter {
                 case EJsBluePrintFunGroup.CtlAttr:
                     stateParam = VarNames.State;
                     break;
+                case EJsBluePrintFunGroup.CtlFun:
+                    if(ctlKernel.type == UserControlKernel_Type){
+                        stateParam = VarNames.State;
+                    }
+                    break;
             }
             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
                 theFun.headBlock.pushLine("if(hadValidErr){", 1);
@@ -4604,6 +4609,12 @@ const gJSDateFuns_arr = [
         inputs: [{ label: '日期', type: ValueType.Date }],
         outputs: [{ label: 'number', type: ValueType.Int }]
     }
+    ,
+    {
+        name: '创建日期',
+        inputs: [{ label: '年', type: ValueType.Int, inputable: true },{ label: '月', type: ValueType.Int, inputable: true },{ label: '日', type: ValueType.Int, inputable: true }],
+        outputs: [{ label: '', type: ValueType.Date }]
+    }
 ];
 
 class JSNode_DateFun extends JSNode_Base {
@@ -4767,8 +4778,11 @@ class JSNode_DateFun extends JSNode_Base {
                 callStr = 'new Date(parseInt(' + socketVal_arr[0] + '))';
                 break;
             case 'Convert_DateZone':
-            callStr = funPreFix + 'Convert_DateZone(' + socketVal_arr[0] + ',' + socketVal_arr[1] + ') ';
+                callStr = funPreFix + 'Convert_DateZone(' + socketVal_arr[0] + ',' + socketVal_arr[1] + ') ';
                 break;
+            case '创建日期':
+                callStr = 'new Date(' + socketVal_arr[0] + ',' + socketVal_arr[1] + ',' + socketVal_arr[2] + ') ';
+                    break;
             default:
                 if (this.checkCompileFlag(true, '不支持的日期方法', helper)) {
                     return false;
