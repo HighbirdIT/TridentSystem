@@ -2993,9 +2993,6 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent12) {
 function ERPC_GridForm_BtnCol_mapstatetoprops(state, ownprops) {
     var rowState = ownprops.form.getRowState(ownprops.rowkey);
     var editing = rowState && rowState.editing && ownprops.form.rowconfirmeditClicked != null;
-    if (editing) {
-        console.log('editing');
-    }
     return {
         editing: editing
     };
@@ -3014,6 +3011,9 @@ var ERPC_GridSelectableRow = function (_React$PureComponent13) {
         var _this18 = _possibleConstructorReturn(this, (ERPC_GridSelectableRow.__proto__ || Object.getPrototypeOf(ERPC_GridSelectableRow)).call(this, props));
 
         _this18.clickHandler = _this18.clickHandler.bind(_this18);
+        _this18.onMouseDown = _this18.onMouseDown.bind(_this18);
+        _this18.onMouseUp = _this18.onMouseUp.bind(_this18);
+        _this18.onMouseOver = _this18.onMouseOver.bind(_this18);
         return _this18;
     }
 
@@ -3021,6 +3021,48 @@ var ERPC_GridSelectableRow = function (_React$PureComponent13) {
         key: 'clickHandler',
         value: function clickHandler(ev) {
             this.props.form.selectorClicked(this.props.rowkey);
+            if (this.timeOutInt) {
+                clearTimeout(this.timeOutInt);
+                this.timeOutInt = null;
+            }
+        }
+    }, {
+        key: 'onMouseDown',
+        value: function onMouseDown(ev) {
+            //console.log('onMouseDown');
+            if (this.timeOutInt) {
+                clearTimeout(this.timeOutInt);
+                this.timeOutInt = null;
+            }
+            var form = this.props.form;
+            var rowkey = this.props.rowkey;
+            this.timeOutInt = setTimeout(function () {
+                form.selectorClicked(rowkey);
+                form.quickSelect = {};
+                form.quickSelect[rowkey] = true;
+            }, 200);
+        }
+    }, {
+        key: 'onMouseUp',
+        value: function onMouseUp(ev) {
+            var form = this.props.form;
+            if (this.timeOutInt) {
+                clearTimeout(this.timeOutInt);
+                this.timeOutInt = null;
+            }
+            form.quickSelect = null;
+            //console.log('onMouseUp');
+        }
+    }, {
+        key: 'onMouseOver',
+        value: function onMouseOver(ev) {
+            //console.log('onMouseOver');
+            var form = this.props.form;
+            var rowkey = this.props.rowkey;
+            if (form.quickSelect && form.quickSelect[rowkey] == null) {
+                form.selectorClicked(rowkey);
+                form.quickSelect[rowkey] = true;
+            }
         }
     }, {
         key: 'render',
@@ -3031,7 +3073,7 @@ var ERPC_GridSelectableRow = function (_React$PureComponent13) {
             if (selectMode == 'multi') {
                 selectElem = React.createElement(
                     'span',
-                    { onClick: this.clickHandler, className: 'fa-stack' },
+                    { onClick: this.clickHandler, onMouseDown: this.onMouseDown, onMouseUp: this.onMouseUp, onMouseEnter: this.onMouseOver, className: 'fa-stack' },
                     React.createElement('i', { className: "fa fa-square-o fa-stack-2x" }),
                     React.createElement('i', { className: 'fa fa-stack-1x ' + (checked ? ' fa-check text-success' : '') })
                 );

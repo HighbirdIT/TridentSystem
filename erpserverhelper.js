@@ -313,6 +313,21 @@ function Convert_DateZone(pDate, zoneDst) {
     return rltDate;
 }
 
+function CreateDate(year, month, day){
+    if(day > 32){
+        day = 31;
+    }
+    var rlt = new Date(year, month - 1, Math.max(day,0));
+    if(day == 32){
+        rlt.setDate(1);
+    }
+    else if(day > 0 && (rlt.getMonth() != month-1 || rlt.getFullYear() != year)){
+        rlt.setDate(1);
+        rlt = new Date(rlt - 86400000);
+    }
+    return rlt;
+}
+
 helper.DateFun={
     getNowDate:GetNowDate,
     checkDate:CheckDate,
@@ -330,6 +345,7 @@ helper.DateFun={
     getweekDay:GetweekDay,
     Convert_TimeZone:Convert_TimeZone,
     Convert_DateZone:Convert_DateZone,
+    createDate:CreateDate,
 };
 
 

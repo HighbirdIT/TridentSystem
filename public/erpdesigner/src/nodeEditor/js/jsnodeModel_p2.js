@@ -2480,6 +2480,9 @@ class JSNode_Array_For extends JSNode_Base {
         if (this.dataSocket == null) {
             this.dataSocket = this.addSocket(new NodeSocket('data', this, false));
         }
+        if(this.manualMode == null){
+            this.manualMode = false;
+        }
         this.inSocket.label = 'array';
         this.dataSocket.label = 'data';
         this.indexSocket.label = 'index';
@@ -2488,6 +2491,16 @@ class JSNode_Array_For extends JSNode_Base {
 
         this.indexSocket.type = ValueType.Int;
         this.dataSocket.type = ValueType.Object;
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.manualMode = this.manualMode;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['manualMode']);
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -3611,6 +3624,9 @@ class JSNode_ExportExcel extends JSNode_Base {
                     case 'addquet':
                         this.addquetSocket = socket;
                         break;
+                    case 'template':
+                        this.tempalteSocket = socket;
+                        break;
                 }
             });
         }
@@ -3619,6 +3635,9 @@ class JSNode_ExportExcel extends JSNode_Base {
         }
         if (this.jsonSocket == null) {
             this.jsonSocket = this.addSocket(new NodeSocket('json', this, true));
+        }
+        if (this.tempalteSocket == null) {
+            this.tempalteSocket = this.addSocket(new NodeSocket('template', this, true));
         }
         if (this.indexedSocket == null) {
             this.indexedSocket = this.addSocket(new NodeSocket('indexed', this, true));
@@ -3630,18 +3649,23 @@ class JSNode_ExportExcel extends JSNode_Base {
         this.jsonSocket.label = 'json数组';
         this.indexedSocket.label = '带序号';
         this.addquetSocket.label = 'addquet';
+        this.tempalteSocket.type = ValueType.String;
         this.titleSocket.type = ValueType.String;
         this.jsonSocket.type = ValueType.Object;
         this.indexedSocket.type = ValueType.Boolean;
         this.addquetSocket.type = ValueType.Boolean;
         this.indexedSocket.hideIcon = true;
         this.addquetSocket.hideIcon = true;
+        this.tempalteSocket.hideIcon = true;
 
         if(this.indexedSocket.defval == null){
             this.indexedSocket.defval = true;
         }
         if(this.addquetSocket.defval == null){
             this.addquetSocket.defval = false;
+        }
+        if(this.tempalteSocket.defval == null){
+            this.tempalteSocket.defval = 0;
         }
 
         if (this.outDataSocket == null) {
@@ -3658,7 +3682,18 @@ class JSNode_ExportExcel extends JSNode_Base {
             this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
             this.addSocket(this.outFlowSocket);
         }
+
+        this.tempalteSocket.set({
+            inputable: true,
+            inputDDC_setting: {
+                textAttrName: 'name',
+                valueAttrName: 'code',
+                options_arr: AllExcelTemplate_arr,
+            },
+            label: '模板',
+        });
     }
+
     requestSaveAttrs(jsonProf) {
         var rlt = super.requestSaveAttrs();
         return rlt;
@@ -3718,6 +3753,11 @@ class JSNode_ExportExcel extends JSNode_Base {
             return false;
         }
         var addQuetValue = socketComRet.value;
+        socketComRet = this.getSocketCompileValue(helper, this.tempalteSocket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var templateValue = socketComRet.value;
 
         // makeClient
         helper.compilingFun.hadServerFetch = true;
@@ -3732,6 +3772,9 @@ class JSNode_ExportExcel extends JSNode_Base {
        initBundleBlock.params_map['data'] = jsonValue;
        initBundleBlock.params_map['bAutoIndex'] = indexedValue == true;
        initBundleBlock.params_map['bQuotePrefix'] = addQuetValue == true;
+       if(templateValue > 0){
+        initBundleBlock.params_map['templateCode'] = templateValue;
+       }
 
         myJSBlock.pushLine('var fileTitle = ' + titleValue + ';');
         myJSBlock.pushLine("var " + bundleVarName + " = Object.assign({}," + VarNames.BaseBunlde + ",{", 1);
@@ -4001,7 +4044,7 @@ JSNodeClassMap[JSNODE_SETTIMEOUT] = {
 };
 JSNodeClassMap[JSNODE_ARRAY_FOR] = {
     modelClass: JSNode_Array_For,
-    comClass: C_Node_SimpleNode,
+    comClass: C_JSNode_Array_For,
 };
 JSNodeClassMap[JSNODE_MSG_SENDTOPARENT] = {
     modelClass: JSNode_Msg_SendToParent,

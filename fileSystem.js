@@ -233,7 +233,7 @@ fileSystem.queryExcelFileState = (req,res) => {
     });
 };
 
-fileSystem.saveExcelJsonData = (name, json, bAutoIndex, bQuotePrefix, recordid)=>{
+fileSystem.saveExcelJsonData = (name, json, bAutoIndex, bQuotePrefix, recordid, templateSetting)=>{
     var jsonDirPath = path.join(__dirname,'filedata');
     if (!fs.existsSync(jsonDirPath))
     {
@@ -259,11 +259,18 @@ fileSystem.saveExcelJsonData = (name, json, bAutoIndex, bQuotePrefix, recordid)=
     }
     var scriptPath = path.join(__dirname,'scripts/python/creatExcelFromJson.py');
     excelFilePath = path.join(excelFilePath,name + '.xlsx');
-    exec('python3 -W ignore ' + scriptPath + ' ' + excelFilePath + ' ' + jsonFilePath + ' ' + (bAutoIndex == true ? '1' : '0') + ' ' + (bQuotePrefix == true ? '1' : '0'), (error, stdout, stderr)=>{
-        var errmsg = error ? error.message : (stdout != 'OK' ? stdout : null);
+    var startPythonCmd;
+    if(templateSetting.templatePath){
+        startPythonCmd = 'python3 -W ignore ' + templateSetting.scriptPath + ' ' + excelFilePath + ' ' + jsonFilePath + ' ' + templateSetting.templatePath;
+    }
+    else{
+        startPythonCmd = 'python3 -W ignore ' + scriptPath + ' ' + excelFilePath + ' ' + jsonFilePath + ' ' + (bAutoIndex == true ? '1' : '0') + ' ' + (bQuotePrefix == true ? '1' : '0');
+    }
+    exec(startPythonCmd, (error, stdout, stderr)=>{
+        var errmsg = error ? error.message : (stdout != 'OK' ? stdout : '');
         try{
             dbhelper.asynExcute('P721E处理结果报告',
-            [dbhelper.makeSqlparam("错误描述", sqlTypes.NVarChar(50), errmsg),
+            [dbhelper.makeSqlparam("错误描述", sqlTypes.NVarChar(500), errmsg.substr(0,500)),
             dbhelper.makeSqlparam("文件请求代码", sqlTypes.Int, recordid),
             dbhelper.makeSqlparam("处理步骤", sqlTypes.Int, 1)]);
         }
@@ -284,7 +291,33 @@ fileSystem.exportExcelFileFromJson = (req,res) => {
 		var jsonData=bundle.data;
 		if(jsonData == null){return serverhelper.createErrorRet('参数[data]传入值错误');}
 		var 记录令牌 = serverhelper.guid2();
-		var 分享令牌 = serverhelper.guid2();
+        var 分享令牌 = serverhelper.guid2();
+        var templateCode = bundle.templateCode;
+        var templateSetting = {};
+        if(templateCode > 0){
+            var tempalteRcdRlt = yield dbhelper.asynQueryWithParams('SELECT 模板标识,脚本名称 FROM [base1].[dbo].[T721C表格模板记录] where [表格模板记录代码]=@id', [
+                dbhelper.makeSqlparam('id', sqlTypes.Int, templateCode)
+            ]);
+            var templateFileExits = false;
+            var scriptFileExits = true;
+            var templateFilePath = '';
+            var scriptPath = '';
+            if(tempalteRcdRlt.recordset.length > 0){
+                var templateRcd = tempalteRcdRlt.recordset[0];
+                templateFilePath = path.join(__dirname,'filedata\\exceltemplate\\' + templateRcd['模板标识']);
+                templateFileExits = fs.existsSync(templateFilePath);
+                scriptPath = path.join(__dirname,'scripts/python/' + templateRcd['脚本名称'] + '.py');
+                scriptFileExits = fs.existsSync(scriptPath);
+            }
+            if(!templateFileExits){
+                return serverhelper.createErrorRet('模板文件不存在');
+            }
+            if(!scriptFileExits){
+                return serverhelper.createErrorRet('脚本文件不存在');
+            }
+            templateSetting.templatePath = templateFilePath;
+            templateSetting.scriptPath = scriptPath;
+        }
         try{
             var 记录代码 = yield dbhelper.asynGetScalar('INSERT INTO [dbo].[T721C表格文件请求](文件标题,记录令牌,请求用户,分享令牌) values(@title, @记录令牌, @_operator,@分享令牌)  select SCOPE_IDENTITY()', 
             [
@@ -293,7 +326,8 @@ fileSystem.exportExcelFileFromJson = (req,res) => {
                 dbhelper.makeSqlparam('_operator', sqlTypes.Int, g_envVar.userid),
                 dbhelper.makeSqlparam('分享令牌', sqlTypes.NVarChar(50), 分享令牌)
             ]);
-            fileSystem.saveExcelJsonData(记录令牌, JSON.stringify(jsonData), bundle.bAutoIndex,bundle.bQuotePrefix, 记录代码);
+            
+            fileSystem.saveExcelJsonData(记录令牌, JSON.stringify(jsonData), bundle.bAutoIndex,bundle.bQuotePrefix, 记录代码, templateSetting);
             return 记录令牌;
         }
         catch(eo){

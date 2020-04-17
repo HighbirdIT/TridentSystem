@@ -2550,9 +2550,6 @@ class ERPC_GridForm_BtnCol extends React.PureComponent {
 function ERPC_GridForm_BtnCol_mapstatetoprops(state, ownprops) {
     var rowState = ownprops.form.getRowState(ownprops.rowkey);
     var editing = rowState && rowState.editing && ownprops.form.rowconfirmeditClicked != null;
-    if (editing) {
-        console.log('editing');
-    }
     return {
         editing: editing,
     };
@@ -2567,16 +2564,55 @@ class ERPC_GridSelectableRow extends React.PureComponent {
     constructor(props) {
         super(props);
         this.clickHandler = this.clickHandler.bind(this);
+        this.onMouseDown = this.onMouseDown.bind(this);
+        this.onMouseUp = this.onMouseUp.bind(this);
+        this.onMouseOver = this.onMouseOver.bind(this);
     }
     clickHandler(ev) {
         this.props.form.selectorClicked(this.props.rowkey);
+        if(this.timeOutInt){
+            clearTimeout(this.timeOutInt);
+            this.timeOutInt = null;
+        }
+    }
+    onMouseDown(ev){
+        //console.log('onMouseDown');
+        if(this.timeOutInt){
+            clearTimeout(this.timeOutInt);
+            this.timeOutInt = null;
+        }
+        var form = this.props.form;
+        var rowkey = this.props.rowkey;
+        this.timeOutInt = setTimeout(() => {
+            form.selectorClicked(rowkey);
+            form.quickSelect = {};
+            form.quickSelect[rowkey] = true;
+        }, 200);
+    }
+    onMouseUp(ev){
+        var form = this.props.form;
+        if(this.timeOutInt){
+            clearTimeout(this.timeOutInt);
+            this.timeOutInt = null;
+        }
+        form.quickSelect = null;
+        //console.log('onMouseUp');
+    }
+    onMouseOver(ev){
+        //console.log('onMouseOver');
+        var form = this.props.form;
+        var rowkey = this.props.rowkey;
+        if(form.quickSelect && form.quickSelect[rowkey] == null){
+            form.selectorClicked(rowkey);
+            form.quickSelect[rowkey] = true;
+        }
     }
     render() {
         var selectMode = this.props.form.props.selectMode;
         var checked = this.props.selected;
         var selectElem = null;
         if (selectMode == 'multi') {
-            selectElem = <span onClick={this.clickHandler} className="fa-stack">
+            selectElem = <span onClick={this.clickHandler} onMouseDown={this.onMouseDown} onMouseUp={this.onMouseUp} onMouseEnter={this.onMouseOver} className="fa-stack">
                 <i className={"fa fa-square-o fa-stack-2x"} />
                 <i className={'fa fa-stack-1x ' + (checked ? ' fa-check text-success' : '')} />
             </span>;

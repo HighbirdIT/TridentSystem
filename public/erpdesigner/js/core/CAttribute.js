@@ -144,6 +144,10 @@ function makeFName_pull(formKernel) {
     return 'pull_' + formKernel.id;
 }
 
+function makeFName_RowBind(formKernel) {
+    return 'rowbind_' + formKernel.id;
+}
+
 function makeStr_callFun(funName, params_arr) {
     var endChar = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
 
@@ -218,6 +222,7 @@ var VarNames = {
     RetProps: 'retProps',
     ReState: 'retState',
     RetDispather: 'retDispather',
+    RowBindInfo: 'bindedRow',
     NowPage: 'nowPage',
     NeedSetState: 'needSetState',
     InvalidBundle: 'invalidbundle',

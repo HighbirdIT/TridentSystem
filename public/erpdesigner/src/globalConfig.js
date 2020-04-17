@@ -59,6 +59,7 @@ var AllPosts_arr = [];
 var ProjectRecords_arr = [];
 var AllFileFlows_arr = [];
 var AllReports_arr = [];
+var AllExcelTemplate_arr = [];
 
 function GetProjectRecords_arr(){
     return ProjectRecords_arr;
