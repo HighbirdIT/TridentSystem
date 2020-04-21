@@ -2784,7 +2784,7 @@ class MobileContentCompiler extends ContentCompiler {
 
                 freshFun.pushLine(makeLine_DeclareVar('newKey_map', '{}', false));
                 freshFun.pushLine(VarNames.Records_arr + '.forEach((rcd,index)=>{',1);
-                freshFun.pushLine('var rowkey=' + (keyColumn == DefaultKeyColumn ? 'i' : 'rcd.' + keyColumn) + ';');
+                freshFun.pushLine('var rowkey=' + (keyColumn == DefaultKeyColumn ? 'index' : 'rcd.' + keyColumn) + ';');
                 freshFun.pushLine('rcd._key = rowkey;');
                 statColumn_arr.forEach(item=>{
                     if(useDS.containColumn(item.valueColumn)){
