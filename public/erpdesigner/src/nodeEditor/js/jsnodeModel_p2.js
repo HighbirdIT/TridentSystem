@@ -34,6 +34,8 @@ const JSNODE_CHART_FRESH = 'chart_fresh';
 const JSNODE_OPENREPORT = 'openreport';
 const JSNODE_EXPORTEXCEL = 'exportexcel';
 
+const JSNODE_FORM_SETSTATVALUE = 'formsetstatvalue';
+const JSNODE_GETOBJECTPROP = 'getobjectprop';
 
 class JSNode_AddPageToFrameSet extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
@@ -3965,6 +3967,215 @@ class JSNode_GetFormJsonData extends JSNode_Base {
     }
 }
 
+class JSNode_Form_SetStatValue extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_FORM_SETSTATVALUE, 'SetStatValue', false, nodeJson);
+        autoBind(this);
+        if(nodeJson){
+            this.callFreshSocket = this.inputScokets_arr.find(s=>{return s.name == 'callfresh';});
+        }
+        if(this.callFreshSocket == null){
+            this.callFreshSocket = this.addSocket(new NodeSocket('callfresh', this, true));
+        }
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+        this.inputScokets_arr.forEach(s=>{
+            s.inputable = false;
+        });
+        this.insocketInitVal = {
+            type: ValueType.String,
+            inputable:false,
+        };
+        this.callFreshSocket.type = ValueType.Boolean;
+        this.callFreshSocket.label = 'call刷新';
+        this.callFreshSocket.hideIcon = true;
+        this.callFreshSocket.inputable = true;
+        if(this.callFreshSocket.defval == null){
+            this.callFreshSocket.defval = true;
+        }
+    }
+
+    preRemoveSocket(socket) {
+        return socket != this.callFreshSocket;
+    }
+
+    statTextChanged(ev){
+        var theSocketID = getAttributeByNode(ev.target, 'd-sid');
+        if (theSocketID == null)
+            return;
+        var theSocket = this.getSocketById(theSocketID);
+        if (theSocket == null)
+            return;
+        theSocket.setExtra('statkey', ev.target.value.trim());
+        theSocket.fireEvent('changed', 10);
+    }
+
+    customSocketRender(socket) {
+        if (socket.isIn == false || socket == this.callFreshSocket) {
+            return null;
+        }
+        var statKey = socket.getExtra('statkey');
+        if(IsEmptyString(statKey)){
+            statKey = '';
+        }
+        return (<span className='d-flex align-items-center'>
+            <input type='text' className='socketInputer' d-sid={socket.id} value={statKey} onChange={this.statTextChanged} />
+        </span>);
+    }
+
+    genInSocket() {
+        var nameI = this.inputScokets_arr.length;
+        while (nameI < 999) {
+            if (this.getScoketByName('in' + nameI, true) == null) {
+                break;
+            }
+            ++nameI;
+        }
+        return new NodeSocket('in' + nameI, this, true, this.insocketInitVal);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var project = this.bluePrint.master.project;
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var ctlKernel = this.bluePrint.ctlKernel;
+
+        var belongFormControl = !ctlKernel ? null : ctlKernel.searchParentKernel(M_FormKernel_Type, true);
+        if (this.checkCompileFlag(!belongFormControl || !belongFormControl.isGridForm(), '必须在Grid表格内才能使用', helper)) {
+            return false;
+        }
+        if (this.checkCompileFlag(!belongFormControl.isKernelInRow(ctlKernel), '必须在Grid表格行内控件才能使用', helper)) {
+            return false;
+        }
+
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+
+        var formHeaders_arr = belongFormControl.getRowLabeledControls().map(ctl=>{
+            return ctl.getAttribute(AttrNames.TextField);
+        });
+        for(var si =0; si < this.inputScokets_arr.length; ++si){
+            var socket = this.inputScokets_arr[si];
+            if(socket == this.callFreshSocket){
+                continue;
+            }
+            var statkey = socket.getExtra('statkey');
+            if (this.checkCompileFlag(IsEmptyString(statkey) || formHeaders_arr.indexOf(statkey) == -1, statkey + '不是有效的统计列', helper)) {
+                return false;
+            }
+            var socketComRet = this.getSocketCompileValue(helper, socket, usePreNodes_arr, belongBlock, false);
+            if (socketComRet.err) {
+                return false;
+            }
+            myJSBlock.pushLine(belongFormControl.id + '_' + VarNames.NowRecord + '.' + statkey + '=' + socketComRet.value + ';');
+        }
+        var inreducer = this.isInReducer(preNodes_arr);
+        if(this.callFreshSocket.defval){
+            myJSBlock.pushLine(makeStr_callFun(makeFName_reCalFormStat(belongFormControl),[inreducer ? VarNames.State : 'null', belongFormControl.id + '_path']));
+        }
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+        if (this.compileOutFlow(helper, usePreNodes_arr, belongBlock) == false) {
+            return false;
+        }
+
+        return selfCompileRet;
+    }
+}
+
+class JSNode_GetObjectProp extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_GETOBJECTPROP, 'Get对象属性', false, nodeJson);
+        autoBind(this);
+
+        if(nodeJson){
+            if(this.inputScokets_arr.length > 0){
+                this.objSocket = this.inputScokets_arr[0];
+            }
+        }
+        if(this.objSocket == null){
+            this.objSocket = this.addSocket(new NodeSocket('obj', this, true));
+        }
+        this.objSocket.label = '对象';
+        this.objSocket.type = ValueType.Object;
+        this.outsocketInitVal = {
+            type: ValueType.Object,
+        };
+    }
+
+    outNameTextChanged(ev){
+        var theSocketID = getAttributeByNode(ev.target, 'd-sid');
+        if (theSocketID == null)
+            return;
+        var theSocket = this.getSocketById(theSocketID);
+        if (theSocket == null)
+            return;
+        theSocket.setExtra('prop', ev.target.value.trim());
+        theSocket.fireEvent('changed', 10);
+    }
+
+    customSocketRender(socket) {
+        if (socket.isIn == true) {
+            return null;
+        }
+        var prop = socket.getExtra('prop');
+        if(prop == null){
+            prop = '';
+        }
+        return (<span className='d-flex align-items-center'>
+            <input type='text' className='socketInputer' d-sid={socket.id} value={prop} onChange={this.outNameTextChanged} />
+        </span>);
+    }
+
+    genOutSocket() {
+        var nameI = this.inputScokets_arr.length;
+        while (nameI < 999) {
+            if (this.getScoketByName('out' + nameI, false) == null) {
+                break;
+            }
+            ++nameI;
+        }
+        return new NodeSocket('out' + nameI, this, false, this.outsocketInitVal);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var project = this.bluePrint.master.project;
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var socketComRet = this.getSocketCompileValue(helper, this.objSocket, usePreNodes_arr, belongBlock, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var socketValue = socketComRet.value;
+        var selfCompileRet = new CompileResult(this);
+        helper.setCompileRetCache(this, selfCompileRet);
+        this.outputScokets_arr.forEach(s=>{
+            var prop = s.getExtra('prop');
+            selfCompileRet.setSocketOut(s, socketValue + '.' + prop);
+        });
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_OP_NOT] = {
     modelClass: JSNode_OP_Not,
     comClass: C_Node_SimpleNode,
@@ -4084,5 +4295,13 @@ JSNodeClassMap[JSNODE_EXPORTEXCEL] = {
 };
 JSNodeClassMap[JSNODE_GETFORMJSONDATA] = {
     modelClass: JSNode_GetFormJsonData,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_FORM_SETSTATVALUE] = {
+    modelClass: JSNode_Form_SetStatValue,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_GETOBJECTPROP] = {
+    modelClass: JSNode_GetObjectProp,
     comClass: C_Node_SimpleNode,
 };

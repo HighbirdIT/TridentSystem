@@ -150,6 +150,11 @@ const JSNodeEditorControls_arr =[
         type:'操纵数据对象'
     },
     {
+        label:'Get对象属性',
+        nodeClass:JSNode_GetObjectProp,
+        type:'操纵对象'
+    },
+    {
         label:'数组-创建',
         nodeClass:JSNode_Array_New,
         type:'操纵数组'
@@ -252,6 +257,11 @@ const JSNodeEditorControls_arr =[
     {
         label:'遍历结束',
         nodeClass:JSNode_CircleEnd,
+        type:'表单访问'
+    },
+    {
+        label:'设置行统计值',
+        nodeClass:JSNode_Form_SetStatValue,
         type:'表单访问'
     },
     {

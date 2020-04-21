@@ -128,6 +128,10 @@ function makeFName_freshForm(formKernel) {
     return 'fresh_' + formKernel.id;
 }
 
+function makeFName_reCalFormStat(formKernel) {
+    return 'reCalStat_' + formKernel.id;
+}
+
 function makeFName_bindForm(formKernel) {
     return 'bind_' + formKernel.id;
 }
@@ -324,6 +328,7 @@ var AttrNames = {
     RecEditeable: 'recEditeable',
     RecDeletable: 'recDeletable',
     NewRowDepend: 'newRowDepend',
+    StatFun: 'statfun',
     SelectMode: 'selectMode',
     EntryParam: 'entryParam',
     ExportParam: 'exportParam',

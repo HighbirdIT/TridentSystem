@@ -14,6 +14,7 @@ const M_LabeledControlKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('占宽', AttrNames.WidthFactor, ValueType.Int, EWidthFactor.Default, true, false, WidthFactors_arr, { text: 'text', value: 'value' }),
         new CAttribute('列宽设置', AttrNames.ColumnWidth, ValueType.Int, 0),
         new CAttribute('新行依赖', AttrNames.NewRowDepend, ValueType.Boolean, false),
+        new CAttribute('统计方法', AttrNames.StatFun, ValueType.String, StatFun_NONE, true, false, StatFun_arr),
         new CAttribute('帮助提示', AttrNames.ToolTip, ValueType.String, '', true, false, null,
             null, true, {
                 scriptable: true,

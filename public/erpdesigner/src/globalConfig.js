@@ -22,6 +22,10 @@ var ButtonType_Normal = 'Normal';
 var ButtonType_ListBtn = 'ListLike';
 var ButtonType_Options_arr = [ButtonType_Normal, ButtonType_ListBtn];
 
+var StatFun_NONE = 'none';
+var StatFun_SUM = 'sum';
+var StatFun_arr = [StatFun_NONE,StatFun_SUM];
+
 const DefaultKeyColumn = '_default';
 
 var EMessageType = {

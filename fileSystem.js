@@ -277,7 +277,9 @@ fileSystem.saveExcelJsonData = (name, json, bAutoIndex, bQuotePrefix, recordid, 
         catch(eo){
             serverhelper.InformSysManager(eo.message, 'fileSystem.saveExcelJsonData')
         }
-        fs.unlink(jsonFilePath);
+        if(errmsg == ''){
+            fs.unlink(jsonFilePath);
+        }
     });
 };
 
@@ -391,6 +393,82 @@ fileSystem.downloadExcelFile = (req,res) => {
     });
 };
 
+fileSystem.queryCastExcelFileState = (req,res) => {
+    var bundle=req.body.bundle;
+    if(bundle==null){return serverhelper.createErrorRet('缺少参数bundle');}
+    var fileIdentity = bundle.fileIdentity;
+    if(fileIdentity==null){return serverhelper.createErrorRet('缺少参数fileIdentity');}
+    return co(function* () {
+        var rcdRlt = yield dbhelper.asynQueryWithParams("SELECT [生成状态],[状态说明] FROM [base1].[dbo].[T721C表格转换请求] where [记录令牌]=@记录令牌", 
+        [
+            dbhelper.makeSqlparam('记录令牌', sqlTypes.NVarChar(100), fileIdentity),
+        ]);
+        if(rcdRlt.recordset.length == 0){
+            if(bundle==null){return serverhelper.createErrorRet('指定文件未找到');}
+            return ; 
+        }
+        var row = rcdRlt.recordset[0];
+        var rlt = {
+            state:row['生成状态'],
+            stateinfo:row['状态说明'],
+        };
+        if(rlt.state == 1){
+            var jsonFilePath = path.join(__dirname,'filedata/tempexcel/' + fileIdentity + '.json');
+            var fileContent = fs.readFileSync(jsonFilePath,{encoding:'utf8'});
+            rlt.json = JSON.parse(fileContent);
+        }
+        return rlt;
+    });
+};
+
+fileSystem.getDataFromExcel = (req,res) => {
+    var bundle=req.body.bundle;
+	var g_envVar = req.session.g_envVar;
+	return co(function* () {
+		if(bundle==null){return serverhelper.createErrorRet('缺少参数bundle');}
+		var excelData=bundle.excelData;
+        if(excelData == null){return serverhelper.createErrorRet('参数[excelData]传入值错误');}
+        var fileName = serverhelper.guid2();
+        try{
+            var 记录代码 = yield dbhelper.asynGetScalar('INSERT INTO [dbo].[T721C表格转换请求](记录令牌,请求用户) values(@记录令牌, @_operator)  select SCOPE_IDENTITY()', 
+            [
+                dbhelper.makeSqlparam('记录令牌', sqlTypes.NVarChar(50), fileName),
+                dbhelper.makeSqlparam('_operator', sqlTypes.Int, g_envVar.userid),
+            ]);
+
+            var targetDirPath = path.join(__dirname,'filedata/tempexcel');
+            if (!fs.existsSync(targetDirPath))
+            {
+                fs.mkdirSync(targetDirPath);
+            }
+            var targetFilePath = path.join(targetDirPath, fileName + '.xlsx');
+            var jsonFilePath = path.join(targetDirPath, fileName + '.json');
+            var dataBuf = new Buffer(excelData, 'hex');
+            fs.writeFile(targetFilePath, dataBuf, (ev)=>{
+                var scriptPath = path.join(__dirname,'scripts/python/castExcelToJson.py');
+                var startPythonCmd = 'python3 -W ignore ' + scriptPath + ' ' + targetFilePath + ' ' + jsonFilePath;
+                exec(startPythonCmd, (error, stdout, stderr)=>{
+                    var errmsg = error ? error.message : (stdout != 'OK' ? stdout : '');
+                    try{
+                        dbhelper.asynExcute('P721E转换结果报告',
+                        [dbhelper.makeSqlparam("错误描述", sqlTypes.NVarChar(500), errmsg.substr(0,500)),
+                        dbhelper.makeSqlparam("转换请求代码", sqlTypes.Int, 记录代码),
+                        dbhelper.makeSqlparam("处理步骤", sqlTypes.Int, 1)]);
+                    }
+                    catch(eo){
+                        serverhelper.InformSysManager(eo.message, 'fileSystem.getDataFromExcel');
+                    }
+                });
+            });
+            return fileName;
+        }
+        catch(eo){
+            return serverhelper.createErrorRet(eo.message);
+        }
+		return serverhelper.createErrorRet('创建文件失败');
+	});
+};
+
 
 
 var processes_map={
@@ -400,6 +478,8 @@ var processes_map={
     getFileRecord:fileSystem.getFileRecord,
     exportExcelFileFromJson:fileSystem.exportExcelFileFromJson,
     queryExcelFileState:fileSystem.queryExcelFileState,
+    getDataFromExcel:fileSystem.getDataFromExcel,
+    queryCastExcelFileState:fileSystem.queryCastExcelFileState,
 };
 
 module.exports = fileSystem;

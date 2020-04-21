@@ -2447,6 +2447,7 @@ class MobileContentCompiler extends ContentCompiler {
                 renderContentFun.pushLine("<div id={this.props.fullPath + 'tableheader'} className='mw-100 hidenOverflow flex-shrink-0 gridFormFixHeaderDiv'>", 1);
                 renderContentFun.pushLine("<table className='table' style={" + headTableStyleID + "}>", 1);
                 headClassInFormTag = new FormatHtmlTag('headClassInFormTag', gridHeadPureRectClass.name, this.clientSide);
+                headClassInFormTag.setAttr('form', '{this}');
                 renderContentFun.pushChild(headClassInFormTag);
                 renderContentFun.subNextIndent();
                 if (gridHeadBodyPureRectClass && !hideHeader) {
@@ -2646,7 +2647,67 @@ class MobileContentCompiler extends ContentCompiler {
             bindFun.scope.getVar(belongUserControl.id + '_path', true, makeStr_callFun('getBelongUserCtlPath', [pathVarName]));
         }
 
+        var statColumn_arr = [];
+
         if (useDS) {
+            if (isGridForm) {
+                theKernel.getRowLabeledControls().forEach(labeledKernel=>{
+                    var statFun = labeledKernel.getAttribute(AttrNames.StatFun);
+                    if(statFun != StatFun_NONE){
+                        var theEditor = labeledKernel.editor;
+                        var valueColumn = null;
+                        var validStat = false;
+                        switch(theEditor.type){
+                            case M_LabelKernel_Type:
+                            case M_TextKernel_Type:
+                                valueColumn = theEditor.getAttribute(AttrNames.TextField);
+                                validStat = true;
+                            break;
+                            case PopperButtonKernel_Type:
+                            case ButtonKernel_Type:
+                                valueColumn = theEditor.getAttribute(AttrNames.Title);
+                                validStat = true;
+                            break;
+                        }
+                        if(validStat){
+                            statColumn_arr.push({
+                                fun:statFun,
+                                kernel:labeledKernel,
+                                key:labeledKernel.getAttribute(AttrNames.TextField),
+                                valueColumn:valueColumn,
+                            });
+                        }
+                    }
+                });
+                if(statColumn_arr.length > 0){
+                    var reCalStatFun = clientSide.scope.getFunction(makeFName_reCalFormStat(theKernel), true, [VarNames.State, pathVarName]);
+                    reCalStatFun.pushLine('var hadStateParam = true;');
+                    reCalStatFun.pushLine('if(state == null){hadStateParam = false;state = store.getState();}');
+                    reCalStatFun.pushLine('var ' + stateVarName + '=' + makeStr_callFun('getStateByPath', [VarNames.State, pathVarName],';'));
+                    var records_arrVarName = theKernel.id + '_' + VarNames.Records_arr;
+                    reCalStatFun.pushLine('var ' + records_arrVarName + '=' + stateVarName + '.' + VarNames.Records_arr + ';');
+                    statColumn_arr.forEach(item=>{
+                        reCalStatFun.pushLine("var stat" + item.key +"=0;");
+                    });
+                    reCalStatFun.pushLine(records_arrVarName + '.forEach(record=>{',1);
+                    statColumn_arr.forEach(item=>{
+                        switch(item.fun){
+                            case StatFun_SUM:
+                            reCalStatFun.pushLine("stat" + item.key +"+=record." + item.key + ";");
+                            break;
+                        }
+                    });
+                    reCalStatFun.subNextIndent();
+                    reCalStatFun.pushLine('});');
+                    reCalStatFun.pushLine('var needSetState={};');
+                    statColumn_arr.forEach(item=>{
+                        reCalStatFun.pushLine("needSetState['row_统计." + item.key + ".text']=stat" + item.key +";");
+                    });
+                    reCalStatFun.pushLine('');
+                    reCalStatFun.pushLine('if(hadStateParam){state=setManyStateByPath(state,'+pathVarName+',needSetState);return state;}');
+                    reCalStatFun.pushLine('store.dispatch(makeAction_setManyStateByPath(needSetState, ' + pathVarName + '));');
+                }
+            }
             var recordsArraychangedFunName = theKernel.id + '_' + VarNames.Records_arr + '_changed';
             var recordsArraychangedFun = clientSide.scope.getFunction(recordsArraychangedFunName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowKeyInfo_map']);
             recordsArraychangedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
@@ -2680,7 +2741,6 @@ class MobileContentCompiler extends ContentCompiler {
                 recordIndexchangedFun.pushLine(makeStr_callFun(makeFName_bindForm(theKernel), [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowKeyInfo_map']));
 
                 if (belongUserControl) {
-
                     belongUserCtlMidData.needSetStateChangedActs_arr.push(
                         {
                             propName: makeStr_DotProp(thisfullpath, VarNames.RecordIndex),
@@ -2714,7 +2774,7 @@ class MobileContentCompiler extends ContentCompiler {
                 freshFun.pushLine('if(oldValue != null){', 1);
                 freshFun.pushLine('var newRowCount = ' + VarNames.Records_arr + '.length;');
                 freshFun.pushLine('oldValue.forEach((x,i)=>{', 1);
-                freshFun.pushLine('var rowkey=' + (keyColumn == DefaultKeyColumn ? 'i' : 'x.' + keyColumn) + ';', 1);
+                freshFun.pushLine('var rowkey=' + (keyColumn == DefaultKeyColumn ? 'i' : 'x.' + keyColumn) + ';');
                 freshFun.pushLine("if(" + stateVarName + ".hasOwnProperty('row_' + rowkey)){", 1);
                 freshFun.pushLine("needSetState['row_' + rowkey + '._isdirty'] = true;", -1);
                 freshFun.pushLine("}", -1);
@@ -2723,7 +2783,20 @@ class MobileContentCompiler extends ContentCompiler {
                 freshFun.pushLine("}");
 
                 freshFun.pushLine(makeLine_DeclareVar('newKey_map', '{}', false));
-                freshFun.pushLine(VarNames.Records_arr + '.forEach((rcd,index)=>{newKey_map[' + (keyColumn == DefaultKeyColumn ? 'index' : 'rcd.' + keyColumn) + ']=rcd;})');
+                freshFun.pushLine(VarNames.Records_arr + '.forEach((rcd,index)=>{',1);
+                freshFun.pushLine('var rowkey=' + (keyColumn == DefaultKeyColumn ? 'i' : 'rcd.' + keyColumn) + ';');
+                freshFun.pushLine('rcd._key = rowkey;');
+                statColumn_arr.forEach(item=>{
+                    if(useDS.containColumn(item.valueColumn)){
+                        freshFun.pushLine('rcd.' + item.key + '=parseFloat(rcd.' + item.valueColumn + ');');
+                    }
+                    else{
+                        freshFun.pushLine('rcd.' + item.key + '=0;');
+                    }
+                });
+                freshFun.pushLine('newKey_map[rowkey]=rcd;');
+                freshFun.subNextIndent();
+                freshFun.pushLine('});');
                 freshFun.pushLine(makeLine_setGDataCache(theKernel.id + '_path + ".KeyToRcd_map"', 'newKey_map', false));
 
                 if (isGridForm) {
@@ -2773,6 +2846,9 @@ class MobileContentCompiler extends ContentCompiler {
                     }
                 }
                 freshFun.pushLine(VarNames.ReState + '=' + makeStr_callFun('setManyStateByPath', [VarNames.ReState, pathVarName, 'needSetState'], ';'), -1);
+                if(statColumn_arr.length > 0){
+                    freshFun.pushLine(makeStr_callFun(makeFName_reCalFormStat(theKernel), [VarNames.ReState, theKernel.id + '_path'], ';'));
+                }
                 freshFun.pushLine(makeStr_callFun(bindFun.name, [VarNames.ReState, 'null', 'null', VarNames.SatePath]) + ';');
 
             }
@@ -3166,7 +3242,12 @@ class MobileContentCompiler extends ContentCompiler {
 
             if (selectMode != ESelectMode.None) {
                 //sumTableWidth += 3.5;
-                gridHeadRowRenderBlock.pushLine("<th scope='col' className='selectorTableHeader'></th>");
+                if(selectMode == ESelectMode.Multi){
+                    gridHeadRowRenderBlock.pushLine("<th scope='col' className='selectorTableHeader'><CGridFormSelectCog form={this.props.form} /></th>");
+                }
+                else{
+                    gridHeadRowRenderBlock.pushLine("<th scope='col' className='selectorTableHeader'></th>");
+                }
                 if (gridHeadBodyRowRenderBlock) {
                     gridHeadBodyRowRenderBlock.pushLine("<td className='selectorTableHeader'></td>");
                 }
@@ -3415,6 +3496,27 @@ class MobileContentCompiler extends ContentCompiler {
             gridBodyPureRectClass.renderFun.pushLine('}', -1);
 
             gridBodyPureRectClass.renderFun.retBlock.clear();
+            var statrowBlk = null;
+            var statTDBlk = null;
+            if(statColumn_arr.length > 0){
+                var statrowBlk = new FormatFileBlock('statrow');
+                gridBodyPureRectClass.renderFun.retBlock.pushChild(statrowBlk);
+                statrowBlk.pushLine('if(trElems_arr.length>1){', 1);
+                statrowBlk.pushLine('trElems_arr.push(', 1);
+                statrowBlk.pushLine("<tr key='统计'>", 1);
+                if (autoIndexColumn) {
+                    statrowBlk.pushLine("<td className='indexTableHeader'></td>");
+                }
+                var statTDBlk = new FormatFileBlock('stattd');
+                statrowBlk.pushChild(statTDBlk);
+                statrowBlk.subNextIndent();
+                statrowBlk.pushLine('</tr>');
+                statrowBlk.subNextIndent();
+                statrowBlk.pushLine(');');
+                statrowBlk.subNextIndent();
+                statrowBlk.pushLine('}');
+            }
+
             callRowBindBlks.endfor = new FormatFileBlock('endfor');
             gridBodyPureRectClass.renderFun.retBlock.pushChild(callRowBindBlks.endfor);
             gridBodyPureRectClass.renderFun.retBlock.pushLine("return (<table className='table table-striped table-hover ' style={" + tableStyleID + "}>", 1);
@@ -3490,8 +3592,12 @@ class MobileContentCompiler extends ContentCompiler {
                 columnProfile = gridColumnsProfile_obj[childKernel.id];
                 var childRederBlock = new FormatFileBlock('child_' + childKernel.id);
                 gridBodyTableRowRenderBlock.pushChild(childRederBlock);
+                var statSetting = statColumn_arr.find(x=>{return x.kernel == childKernel;});
                 if (columnProfile.dynamicVisible) {
                     childRederBlock.pushLine('{this.props.' + columnProfile.id + '_visible == false ? null : (', 1);
+                    if(statTDBlk){
+                        statTDBlk.pushLine('{this.props.' + columnProfile.id + '_visible == false ? null : (', 1);
+                    }
                 }
                 childRederBlock.pushLine("<td style={" + columnProfile.tdStyleID + '}>', 1);
                 if (this.compileKernel(childKernel, childRederBlock, renderFun) == false) {
@@ -3499,9 +3605,20 @@ class MobileContentCompiler extends ContentCompiler {
                 }
                 childRederBlock.subNextIndent();
                 childRederBlock.pushLine('</td>');
+                if(statTDBlk){
+                    statTDBlk.pushLine("<td style={" + columnProfile.tdStyleID + '}>');
+                    if(statSetting){
+                        statTDBlk.pushLine("<VisibleERPC_Label className='erp-control' rowkey='统计' id='" + statSetting.key + "' parentPath={this.props.fullPath} type='float' />");
+                    }
+                    statTDBlk.pushLine('</td>');
+                }
                 if (columnProfile.dynamicVisible) {
                     childRederBlock.subNextIndent();
                     childRederBlock.pushLine(')}');
+                    if(statTDBlk){
+                        statTDBlk.subNextIndent();
+                        statTDBlk.pushLine(')}');
+                    }
                 }
                 if (insertBtnSetting) {
                     if (insertBtnUseFormChild_map[childKernel.id] || childKernel.getAttribute(AttrNames.NewRowDepend)) {

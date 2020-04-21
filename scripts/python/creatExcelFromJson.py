@@ -10,6 +10,7 @@ import os
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 argv = sys.argv
+#argv=['',r'd:\work\TridentSystem\filedata\excel\5fe9f712-301e-24dd-5233-4e0e74a138a7.xlsx',r'd:\work\TridentSystem\filedata\exceljson\5fe9f712-301e-24dd-5233-4e0e74a138a7.json','1','0']
 if len(argv) > 2:
     filePath = str(argv[1])
     jsonPath = str(argv[2])
@@ -41,7 +42,7 @@ if len(argv) > 2:
             cell = sheet.cell(row=rowIndex + 2, column=1, value=rowIndex + 1)
             cell.quotePrefix=1 if addQuet else 0
         for colIndex in range(0, len(headers)):
-            cellValue = rowjson[headers[colIndex]]
+            cellValue = rowjson[headers[colIndex]] if headers[colIndex] in rowjson.keys() else ''
             if cellValue is None:
                 cellValue = ''
             cell = sheet.cell(row=rowIndex + 2, column=colIndex + (2 if autoIndex else 1), value=cellValue)
