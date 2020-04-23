@@ -155,6 +155,16 @@ const JSNodeEditorControls_arr =[
         type:'操纵对象'
     },
     {
+        label:'Set对象属性',
+        nodeClass:JSNode_SetObjectProp,
+        type:'操纵对象'
+    },
+    {
+        label:'克隆对象',
+        nodeClass:JSNode_Object_Clone,
+        type:'操纵对象'
+    },
+    {
         label:'数组-创建',
         nodeClass:JSNode_Array_New,
         type:'操纵数组'

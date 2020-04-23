@@ -114,6 +114,8 @@ function M_ControlBase(target, watchedAttrs) {
     target.clickHandlePaste = M_ControlBase_ClickHandle_Paste.bind(target);
     target.clickHandleEraser = M_ControlBase_ClickHandle_Eraser.bind(target);
     target.clickHandleGoParent = M_ControlBase_ClickHandle_GoParent.bind(target);
+    target.clickHandleMoveUp = M_ControlBase_ClickHandle_MoveUp.bind(target);
+    target.clickHandleMoveDown = M_ControlBase_ClickHandle_MoveDown.bind(target);
 
     target.setSelected = M_ControlBase_setSelected.bind(target);
     target.aAttrChangedBase = M_ControlBase_aAttrChangedBase.bind(target);
@@ -126,6 +128,14 @@ function M_ControlBase(target, watchedAttrs) {
         }
     });
     return layoutState;
+}
+
+function M_ControlBase_ClickHandle_MoveUp() {
+    this.props.ctlKernel.slideInParent(-1);
+}
+
+function M_ControlBase_ClickHandle_MoveDown() {
+    this.props.ctlKernel.slideInParent(1);
 }
 
 function M_ControlBase_ClickHandle_Trash() {
@@ -215,6 +225,16 @@ function M_ControlBase_RenderHandleBar() {
                     'button',
                     { className: 'btn btn-danger', onClick: this.clickHandleTrash },
                     React.createElement('i', { className: 'fa fa-trash' })
+                ),
+                React.createElement(
+                    'button',
+                    { className: 'btn btn-dark', onClick: this.clickHandleMoveUp },
+                    React.createElement('i', { className: 'fa fa-arrow-up' })
+                ),
+                React.createElement(
+                    'button',
+                    { className: 'btn btn-dark', onClick: this.clickHandleMoveDown },
+                    React.createElement('i', { className: 'fa fa-arrow-down' })
                 )
             )
         )

@@ -686,6 +686,14 @@ var ControlKernelBase = function (_IAttributeable) {
             return true;
         }
     }, {
+        key: 'slideInParent',
+        value: function slideInParent(offset) {
+            if (this.parent) {
+                var nowPos = this.parent.children.indexOf(this);
+                this.parent.swapChild(nowPos, nowPos + offset);
+            }
+        }
+    }, {
         key: 'getTextValueFieldValue',
         value: function getTextValueFieldValue() {
             var rlt = {};

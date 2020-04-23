@@ -3205,6 +3205,9 @@ class MobileContentCompiler extends ContentCompiler {
             if (this.compileKernel(theKernel.editor, childRenderBlock, renderBlock) == false) {
                 return false;
             }
+            callRowBindBlks = {};
+            callRowBindBlks.beforeFor = new FormatFileBlock('beforeFor');
+            freshFun.rowInitBlk.pushChild(callRowBindBlks.beforeFor);
             freshFun.rowInitBlk.pushLine("for (var rowIndex = 0; rowIndex < " + VarNames.Records_arr + ".length; ++rowIndex) {", 1);
             freshFun.rowInitBlk.pushLine(makeLine_DeclareVar(VarNames.NowRecord, VarNames.Records_arr + '[rowIndex]', false));
             freshFun.rowInitBlk.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == DefaultKeyColumn ? VarNames.RowIndex : 'GetFromatRowKey(' + VarNames.NowRecord + '.' + keyColumn + ')') + ';');
@@ -3213,11 +3216,15 @@ class MobileContentCompiler extends ContentCompiler {
             //freshFun.rowInitBlk.pushLine('var rowstate=getStateByPath(' + theKernel.id + '_state,"row_" + ' + VarNames.RowKey + ');');
             //freshFun.rowInitBlk.pushLine('if(rowstate == null){',1);
             freshFun.rowInitBlk.pushChild(bindNowRecordBlock);
+            callRowBindBlks.inFor = new FormatFileBlock('inFor');
+            freshFun.rowInitBlk.pushChild(callRowBindBlks.inFor);
             //freshFun.rowInitBlk.subNextIndent();
             //freshFun.rowInitBlk.pushLine('}');
             freshFun.rowInitBlk.subNextIndent();
             freshFun.rowInitBlk.pushLine('}');
             freshFun.rowInitBlk.pushChild(endBindBlock);
+            callRowBindBlks.endfor = new FormatFileBlock('endfor');
+            freshFun.rowInitBlk.pushChild(callRowBindBlks.endfor);
 
         }
 
@@ -6811,36 +6818,61 @@ class MobileContentCompiler extends ContentCompiler {
                 }
 
                 if(midData.rowBindFun){
-                    midData.bindFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.NeedSetState, VarNames.RowBindInfo), '{}'));
-                    midData.callRowBindBlks.beforeFor.pushLine('var bindrows_arr=[];');
-                    midData.callRowBindBlks.beforeFor.pushLine('var rowbindInfo = formProp.' + VarNames.RowBindInfo + ' == null ? {} : formProp.' + VarNames.RowBindInfo + ';');
-                    midData.callRowBindBlks.inFor.pushLine('if(rowbindInfo[rowkey] == null){',1);
-                    midData.callRowBindBlks.inFor.pushLine('bindrows_arr.push(rowkey);');
-                    midData.callRowBindBlks.inFor.pushLine('rowbindInfo[rowkey]=1;');
-                    midData.callRowBindBlks.inFor.subNextIndent();
-                    midData.callRowBindBlks.inFor.pushLine('}');
-                    midData.callRowBindBlks.endfor.pushLine('if(bindrows_arr.length > 0){', 1);
-                    midData.callRowBindBlks.endfor.pushLine('var formPath = formProp.fullPath;');
-                    midData.callRowBindBlks.endfor.pushLine('var rowKeyInfo_map = getRowKeyMapFromPath(formPath);');
-                    midData.callRowBindBlks.endfor.pushLine('setTimeout(() => {',1);
-                    midData.callRowBindBlks.endfor.pushLine('store.dispatch(makeAction_setStateByPath(rowbindInfo,formPath + ' + singleQuotesStr('.' + VarNames.RowBindInfo) + '));');
-                    midData.callRowBindBlks.endfor.pushLine('store.dispatch(makeAction_callFunction(state => {', 1);
-                    midData.callRowBindBlks.endfor.pushLine('var formState = getStateByPath(state, formPath);');
-                    midData.callRowBindBlks.endfor.pushLine('bindrows_arr.forEach(rowKey=>{', 1);
-                    midData.callRowBindBlks.endfor.pushLine(makeStr_callFun(midData.rowBindFun.name,[
-                        'state', 
-                        'formPath+' + singleQuotesStr('.row_') + '+rowKey',
-                        'formState',
-                        'getRecordFromRowKey(formPath,rowKey)',
-                        'rowKeyInfo_map'
-                    ]), -1);
-                    midData.callRowBindBlks.endfor.pushLine('});');
-                    midData.callRowBindBlks.endfor.subNextIndent();
-                    midData.callRowBindBlks.endfor.pushLine('}));');
-                    midData.callRowBindBlks.endfor.subNextIndent();
-                    midData.callRowBindBlks.endfor.pushLine('},200);');
-                    midData.callRowBindBlks.endfor.subNextIndent();
-                    midData.callRowBindBlks.endfor.pushLine('}');
+                    if(theKernel.isListForm()){
+                        midData.callRowBindBlks.endfor.pushLine('if(records_arr.length > 0){', 1);
+                        midData.callRowBindBlks.endfor.pushLine('var formPath = ' + theKernel.id +'_path;');
+                        midData.callRowBindBlks.endfor.pushLine('var rowKeyInfo_map = getRowKeyMapFromPath(formPath);');
+                        midData.callRowBindBlks.endfor.pushLine('setTimeout(() => {',1);
+                        midData.callRowBindBlks.endfor.pushLine('store.dispatch(makeAction_callFunction(state => {', 1);
+                        midData.callRowBindBlks.endfor.pushLine('var formState = getStateByPath(state, formPath);');
+                        midData.callRowBindBlks.endfor.pushLine('records_arr.forEach(rcd=>{', 1);
+                        midData.callRowBindBlks.endfor.pushLine(makeStr_callFun(midData.rowBindFun.name,[
+                            'state', 
+                            'formPath+' + singleQuotesStr('.row_') + '+rcd._key',
+                            'formState',
+                            'rcd',
+                            'rowKeyInfo_map'
+                        ]), -1);
+                        midData.callRowBindBlks.endfor.pushLine('});');
+                        midData.callRowBindBlks.endfor.subNextIndent();
+                        midData.callRowBindBlks.endfor.pushLine('}));');
+                        midData.callRowBindBlks.endfor.subNextIndent();
+                        midData.callRowBindBlks.endfor.pushLine('},200);');
+                        midData.callRowBindBlks.endfor.subNextIndent();
+                        midData.callRowBindBlks.endfor.pushLine('}');
+                    }
+                    else if(theKernel.isGridForm()){
+                        midData.bindFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.NeedSetState, VarNames.RowBindInfo), '{}'));
+                        midData.callRowBindBlks.beforeFor.pushLine('var bindrows_arr=[];');
+                        midData.callRowBindBlks.beforeFor.pushLine('var rowbindInfo = formProp.' + VarNames.RowBindInfo + ' == null ? {} : formProp.' + VarNames.RowBindInfo + ';');
+                        midData.callRowBindBlks.inFor.pushLine('if(rowbindInfo[rowkey] == null){',1);
+                        midData.callRowBindBlks.inFor.pushLine('bindrows_arr.push(rowkey);');
+                        midData.callRowBindBlks.inFor.pushLine('rowbindInfo[rowkey]=1;');
+                        midData.callRowBindBlks.inFor.subNextIndent();
+                        midData.callRowBindBlks.inFor.pushLine('}');
+                        midData.callRowBindBlks.endfor.pushLine('if(bindrows_arr.length > 0){', 1);
+                        midData.callRowBindBlks.endfor.pushLine('var formPath = formProp.fullPath;');
+                        midData.callRowBindBlks.endfor.pushLine('var rowKeyInfo_map = getRowKeyMapFromPath(formPath);');
+                        midData.callRowBindBlks.endfor.pushLine('setTimeout(() => {',1);
+                        midData.callRowBindBlks.endfor.pushLine('store.dispatch(makeAction_setStateByPath(rowbindInfo,formPath + ' + singleQuotesStr('.' + VarNames.RowBindInfo) + '));');
+                        midData.callRowBindBlks.endfor.pushLine('store.dispatch(makeAction_callFunction(state => {', 1);
+                        midData.callRowBindBlks.endfor.pushLine('var formState = getStateByPath(state, formPath);');
+                        midData.callRowBindBlks.endfor.pushLine('bindrows_arr.forEach(rowKey=>{', 1);
+                        midData.callRowBindBlks.endfor.pushLine(makeStr_callFun(midData.rowBindFun.name,[
+                            'state', 
+                            'formPath+' + singleQuotesStr('.row_') + '+rowKey',
+                            'formState',
+                            'getRecordFromRowKey(formPath,rowKey)',
+                            'rowKeyInfo_map'
+                        ]), -1);
+                        midData.callRowBindBlks.endfor.pushLine('});');
+                        midData.callRowBindBlks.endfor.subNextIndent();
+                        midData.callRowBindBlks.endfor.pushLine('}));');
+                        midData.callRowBindBlks.endfor.subNextIndent();
+                        midData.callRowBindBlks.endfor.pushLine('},200);');
+                        midData.callRowBindBlks.endfor.subNextIndent();
+                        midData.callRowBindBlks.endfor.pushLine('}');
+                    }
                 }
 
                 if (hadNeedWatchParam) {

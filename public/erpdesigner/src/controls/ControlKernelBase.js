@@ -658,6 +658,13 @@ class ControlKernelBase extends IAttributeable {
         return true;
     }
 
+    slideInParent(offset){
+        if(this.parent){
+            var nowPos = this.parent.children.indexOf(this);
+            this.parent.swapChild(nowPos, nowPos +offset);
+        }
+    }
+
     getTextValueFieldValue(){
         var rlt = {};
         var textAttr = this.findAttributeByName(AttrNames.TextField);

@@ -463,6 +463,22 @@ var OutlinePanel = function (_React$PureComponent2) {
             this.props.designer.selectKernel(data);
         }
     }, {
+        key: 'clickMoveUpBtnHandler',
+        value: function clickMoveUpBtnHandler(data, outlineItem) {
+            var selectKernel = this.props.designer.getSelectedKernel();
+            if (selectKernel) {
+                selectKernel.slideInParent(-1);
+            }
+        }
+    }, {
+        key: 'clickMoveDownBtnHandler',
+        value: function clickMoveDownBtnHandler(data, outlineItem) {
+            var selectKernel = this.props.designer.getSelectedKernel();
+            if (selectKernel) {
+                selectKernel.slideInParent(1);
+            }
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this4 = this;
@@ -487,6 +503,16 @@ var OutlinePanel = function (_React$PureComponent2) {
                         'div',
                         { className: 'btn btn-dark', onClick: this.clickCopyBtnHandler },
                         React.createElement('i', { className: 'fa fa-copy text-light' })
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'btn btn-dark', onClick: this.clickMoveUpBtnHandler },
+                        React.createElement('i', { className: 'fa fa-arrow-up text-light' })
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'btn btn-dark', onClick: this.clickMoveDownBtnHandler },
+                        React.createElement('i', { className: 'fa fa-arrow-down text-light' })
                     )
                 ),
                 React.createElement(
