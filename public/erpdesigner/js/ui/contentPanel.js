@@ -339,6 +339,14 @@ var ContentPanel = function (_React$PureComponent) {
             }
         }
     }, {
+        key: 'clickReSrotBtn',
+        value: function clickReSrotBtn(ev) {
+            var project = this.props.project;
+            project.sortPCPages();
+            project.sortMBPages();
+            project.sortUC();
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this3 = this;
@@ -391,7 +399,16 @@ var ContentPanel = function (_React$PureComponent) {
                         ),
                         React.createElement(
                             'div',
-                            { className: 'dropdown-menu' },
+                            { className: 'dropdown-menu mh-100 autoScroll' },
+                            React.createElement(
+                                'div',
+                                { className: 'btn-group border' },
+                                React.createElement(
+                                    'button',
+                                    { onClick: this.clickReSrotBtn, className: 'btn btn-sm btn-dark', type: 'button' },
+                                    React.createElement('i', { className: 'fa fa-refresh' })
+                                )
+                            ),
                             (isPC ? project.content_PC.pages : project.content_Mobile.pages).map(function (page) {
                                 return page == editingPage ? null : React.createElement(
                                     'button',

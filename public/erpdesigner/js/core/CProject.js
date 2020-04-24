@@ -119,6 +119,9 @@ var CProject = function (_IAttributeable) {
                 _this.content_PC.pages.push(newPage);
             });
         }
+        _this.sortPCPages();
+        _this.sortMBPages();
+        _this.sortUC();
         _this.loaded = true;
         _this.emit('loaded');
         _this.logManager.log('加载完成');
@@ -126,6 +129,31 @@ var CProject = function (_IAttributeable) {
     }
 
     _createClass(CProject, [{
+        key: 'sortPageFun',
+        value: function sortPageFun(a, b) {
+            return a.title.localeCompare(b.title);
+        }
+    }, {
+        key: 'sortUCFun',
+        value: function sortUCFun(a, b) {
+            return a.name.localeCompare(b.name);
+        }
+    }, {
+        key: 'sortPCPages',
+        value: function sortPCPages() {
+            this.content_PC.pages.sort(this.sortPageFun);
+        }
+    }, {
+        key: 'sortMBPages',
+        value: function sortMBPages() {
+            this.content_Mobile.pages.sort(this.sortPageFun);
+        }
+    }, {
+        key: 'sortUC',
+        value: function sortUC() {
+            this.userControls_arr.sort(this.sortUCFun);
+        }
+    }, {
         key: 'mainPageChanged',
         value: function mainPageChanged(pagekernel) {
             var index = this.content_PC.pages.indexOf(pagekernel);
