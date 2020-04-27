@@ -156,7 +156,7 @@ const FlowNodeEditorControls_arr =[
     },
     {
         label:'赋值运算符',
-        nodeClass:FlowNode_Assignment_Operator,
+        nodeClass:JSNode_Assignment_Operator,
         type:'运算'
     },
 ];

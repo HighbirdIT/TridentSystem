@@ -945,6 +945,7 @@ class SqlNode_Cast extends SqlNode_Base {
                         , "size2已被重置为:" + sizeTwoMax]
                 );
             }
+            sizeStr += ',' + sizeValue;
         }
         if (sizeStr.length > 0) {
             sizeStr += ')';

@@ -21,6 +21,7 @@ const FilePreviewer_Type = 'filepreviewer';
 const PopperButtonKernel_Type = 'popperbutton';
 const FrameSetKernel_Type = 'frameset';
 const IFrameKernel_Type = 'iframe';
+const ChartKernel_Type = 'chart';
 
 const M_LabelKernel_Prefix = 'M_Label';
 const M_PageKernel_Prefix = 'M_Page';
@@ -44,6 +45,7 @@ const FilePreviewer_Prefix = 'filepreviewer';
 const PopperButtonKernel_Prefix = 'popperbutton';
 const FrameSetKernel_Prefix = 'frameset';
 const IFrameKernel_Prefix = 'iframe';
+const ChartKernel_Prefix = 'chart';
 
 function GetControlTypeReadableName(type){
     switch(type){
@@ -93,6 +95,8 @@ function GetControlTypeReadableName(type){
         return '框架集';
         case IFrameKernel_Type:
         return 'i框架';
+        case ChartKernel_Type:
+        return '图表';
     }
     return type;
 }

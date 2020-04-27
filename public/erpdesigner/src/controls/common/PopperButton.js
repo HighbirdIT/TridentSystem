@@ -15,6 +15,7 @@ const PopperButtonAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('图标类型', AttrNames.IconType, ValueType.String, ''),
         new CAttribute('弹出位置', 'anchor', ValueType.String, 'left', true, false, ['left', 'right', 'top', 'bottom']),
         new CAttribute('面板定制', AttrNames.ModifyContent, ValueType.ModifyContent),
+        new CAttribute('关闭按钮', 'hideclosebtn', ValueType.Boolean, true),
     ]),
     new CAttributeGroup('面板样式', [
         new CAttribute('PopperStyle', 'panel' + AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
@@ -59,12 +60,12 @@ class PopperButton extends ContainerKernelBase {
                 }
                 if(child.editor.type == M_ContainerKernel_Type){
                     // 穿透div
-                    child.editor.aidAccessableKernels(targetType, rlt_arr);
+                    child.editor.aidAccessableKernels(targetType, rlt_arr, true);
                 }
             }
-            if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || (child.type == M_FormKernel_Type && child.isPageForm()) || child.type == PopperButtonKernel_Type){
+            if(child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type || child.type == PopperButtonKernel_Type){
                 // 穿透div
-                child.aidAccessableKernels(targetType, rlt_arr);
+                child.aidAccessableKernels(targetType, rlt_arr, true);
             }
         });
     }

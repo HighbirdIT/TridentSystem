@@ -100,6 +100,7 @@ class MobileContentCompiler extends ContentCompiler {
         var clientSide = this.clientSide;
         var project = this.project;
         var logManager = project.logManager;
+        var isDebugMode = project.getAttribute('debugmode');
         this.compileChain = [];
         this.compiledScriptBP_map = {};
         this.ctlRelyOnGraph = new ControlRelyOnGraph(this);
@@ -117,6 +118,9 @@ class MobileContentCompiler extends ContentCompiler {
         clientSide.appClass.mapStateFun.pushChild(unloadedIfBlock);
         unloadedIfBlock.pushLine(makeLine_Assign(VarNames.RetProps + '.fetchState', 'state.ui.fetchState'));
 
+        if (isDebugMode) {
+            clientSide.globalVarBlock.pushLine("gDebugMode = true;");
+        }
         clientSide.scope.getVar(VarNames.PageRouter, true, '[]');
         clientSide.scope.getVar('gPCRenderMode', true, 'false');
         clientSide.pageLoadedReducerFun = clientSide.scope.getFunction('pageLoadedReducer', true, ['state']);
@@ -281,7 +285,7 @@ class MobileContentCompiler extends ContentCompiler {
             var berelyCtl = relyPath.berelyCtl;
             var changedFun;
             var getValueStr = '';
-            if (berelyCtl.parent == null) {
+            if (berelyCtl.parent == null && berelyCtl.type != M_PageKernel_Type) {
                 console.error('这里berelyCtl.parent 不能为空');
             }
             else {
@@ -322,6 +326,9 @@ class MobileContentCompiler extends ContentCompiler {
                                 changedFun.scope.getVar(sameReactKernel.id + '_path', true, sameReactKernelPathInitStr);
                                 if (sameReactKernel != relyCtlReactParent) {
                                     thirdParam += "+" + singleQuotesStr('.' + relyCtlReactParent.getStatePath('', '.', null, true, sameReactKernel));
+                                }
+                                else if (sameReactKernel.type == M_FormKernel_Type && !sameReactKernel.isPageForm()) {
+                                    thirdParam += ' + ".row_" + rowKeyInfo_map.' + sameReactKernel.id;
                                 }
                                 if (relyPath.approach.delaycall) {
                                     actKey = 'call_' + relyPath.approach.funName;
@@ -398,8 +405,19 @@ class MobileContentCompiler extends ContentCompiler {
         var onchangedFunName = theKernel.id + '_' + AttrNames.Event.OnChanged;
         var onchangedBp = this.project.scriptMaster.getBPByName(onchangedFunName);
         if (onchangedBp != null) {
-            if (this.compileScriptBlueprint(onchangedBp, { nomsgbox: true }) == false) {
+            var config = { nomsgbox: true };
+            if (theKernel.type == M_DropdownKernel_Type) {
+                config.params = [VarNames.ParentPath, 'newText', 'newValue', VarNames.NowRecord];
+            }
+            var compileRet = this.compileScriptBlueprint(onchangedBp, config);
+            if (compileRet == false) {
                 return false;
+            }
+            if (theKernel.type == M_DropdownKernel_Type) {
+                var appandColumns_arr = theKernel.getAppandColumns();
+                appandColumns_arr.forEach(x => {
+                    compileRet.scope.getVar(x, true, VarNames.NowRecord + '.' + x);
+                });
             }
             ctlTag.setAttr('onchanged', '{' + onchangedFunName + '}');
         }
@@ -593,7 +611,7 @@ class MobileContentCompiler extends ContentCompiler {
         var createPropChangedFun = (propName) => {
             var changedFunName = propName + 'changed';
             var changedFun = controlReactClass.getFunction(changedFunName);
-            if(changedFun == null){
+            if (changedFun == null) {
                 changedFun = controlReactClass.getFunction(changedFunName, true, ['nowState', VarNames.State, 'calledAct_map']);
                 changedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
                 changedFun.retBlock.pushLine('return ' + VarNames.NeedSetState + ';');
@@ -678,7 +696,7 @@ class MobileContentCompiler extends ContentCompiler {
                     '属性验证器' + cpi + '的属性"' + targetParam + '"找不到']);
                     return false;
                 }
-                if(ctlMidData.propChecker_map[targetParam] != null){
+                if (ctlMidData.propChecker_map[targetParam] != null) {
                     logManager.errorEx([logManager.createBadgeItem(
                         userCtlKernel.getReadableName(),
                         userCtlKernel,
@@ -833,7 +851,12 @@ class MobileContentCompiler extends ContentCompiler {
                                 }
                             );
                         }
-                        var rootPathVar = changedFun.scope.getVar(rootPathVarName, true, makeStr_callFun('getBelongUserCtlPath', ['path']));
+                        
+                        var rootPathInit = makeStr_callFun('getBelongUserCtlPath', ['path']);
+                        if(relyPath.berelyCtl.type == UserControlKernel_Type){
+                            rootPathInit =  makeStr_callFun('getBelongUserCtlPath', ['path', 'null', 'true']);
+                        }
+                        var rootPathVar = changedFun.scope.getVar(rootPathVarName, true, rootPathInit);
                         var rootStateVar = changedFun.scope.getVar(rootStateVarName, true, makeStr_callFun('getStateByPath', [VarNames.State, rootPathVarName, '{}']));
                         if (accordionParents_arr) {
                             accordionCheckStr = '';
@@ -1025,6 +1048,35 @@ class MobileContentCompiler extends ContentCompiler {
         pageReactClass.renderContentFun.pushLine("</div>);");
         pageReactClass.renderContentFun.scope.getVar(VarNames.RetElem, true, 'null');
         pageReactClass.renderContentFun.retBlock.pushLine(makeLine_Return(VarNames.RetElem));
+
+        var funApiAttr_arr = pageKernel.getFunctionApiAttrArray();
+        var attrValue;
+        for (var fai in funApiAttr_arr) {
+            var funApiItem = funApiAttr_arr[fai];
+            attrValue = pageKernel.getAttribute(funApiItem.name);
+            if (IsEmptyString(attrValue)) {
+                logManager.errorEx([logManager.createBadgeItem(
+                    pageKernel.getReadableName(),
+                    pageKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '自订方法没有名称']);
+                return false;
+            }
+            var funBPname = pageKernel.id + '_' + funApiItem.name;
+            var funBp = project.scriptMaster.getBPByName(funBPname);
+            if (funBp == null) {
+                logManager.errorEx([logManager.createBadgeItem(
+                    pageKernel.getReadableName(),
+                    pageKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '自订方法没有实现']);
+                return false;
+            }
+            var funBoComRet = this.compileScriptBlueprint(funBp, null);
+            if (funBoComRet == false) {
+                return false;
+            }
+        }
 
         var activePageFun = clientSide.scope.getFunction(makeFName_activePage(pageKernel), true, ['state']);
         var initPageFun = clientSide.scope.getFunction(makeFName_initPage(pageKernel), true, ['state']);
@@ -1245,6 +1297,9 @@ class MobileContentCompiler extends ContentCompiler {
             case IFrameKernel_Type:
                 rlt = this.compileIFrameKernel(theKernel, renderBlock, renderFun);
                 break;
+            case ChartKernel_Type:
+                rlt = this.compileChartKernel(theKernel, renderBlock, renderFun);
+                break;
             default:
                 logManager.error('不支持的编译kernel type:' + theKernel.type);
         }
@@ -1277,7 +1332,9 @@ class MobileContentCompiler extends ContentCompiler {
             ctlTag.setAttr('defvisible', '{false}');
         }
 
-        this.compileOnMouseDownEvent(theKernel, ctlTag);
+        if (this.compileOnMouseDownEvent(theKernel, ctlTag) == false) {
+            return false;
+        }
 
         renderBlock.pushChild(ctlTag);
         if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
@@ -1664,6 +1721,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         var reactParentKernel = theKernel.getReactParentKernel(true);
         var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
+        var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
         /*
         if(belongFormKernel == null){
             logManager.errorEx([logManager.createBadgeItem(
@@ -1686,8 +1744,18 @@ class MobileContentCompiler extends ContentCompiler {
                     if (config.autoSetFetchState) {
                         scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState.fetching = false;");
                         scriptCompileRet.finalCallBackBody_bk.pushLine("needSetState.fetchingErr = err;");
-
-                        scriptCompileRet.startFtech_bk.pushLine("state = " + makeStr_callFun('setManyStateByPath', [VarNames.State, VarNames.FullParentPath + "+'." + theKernel.id + "'", '{fetching:true,fetchingErr:null}']));
+                        var ctlStatePath = VarNames.FullParentPath + '+' + singleQuotesStr('.' + theKernel.id);
+                        if (belongUserControl) {
+                            var ctlRelpath = theKernel.getStatePath('', '.', null, true, belongUserControl);
+                            if (ctlRelpath.indexOf('.') != -1) {
+                                scriptCompileRet.startFtech_bk.pushLine('var _realstatepath = ' + VarNames.FullParentPath + '.replace(' + belongUserControl.id + '_path' + " + '.','') + " + singleQuotesStr('.' + theKernel.id) + ";");
+                                ctlStatePath = '_realstatepath';
+                            }
+                            else {
+                                ctlStatePath = singleQuotesStr(theKernel.id);
+                            }
+                        }
+                        scriptCompileRet.startFtech_bk.pushLine("state = " + makeStr_callFun('setManyStateByPath', [VarNames.State, ctlStatePath, '{fetching:true,fetchingErr:null}']));
                     }
                 }
                 scriptCompileRet.finalCallBackReturn_bk.pushLine("if(state == null){store.dispatch(makeAction_setManyStateByPath(needSetState, " + VarNames.FullParentPath + "+'." + theKernel.id + "'));return;}");
@@ -2080,6 +2148,17 @@ class MobileContentCompiler extends ContentCompiler {
 
         return labeledCtrlTag;
     }
+    
+    getFormRowBindFun(formKernel){
+        var clientSide = this.clientSide;
+        var rowBindFun = clientSide.scope.getFunction(makeFName_RowBind(formKernel));
+        if(rowBindFun == null){
+            rowBindFun = clientSide.scope.getFunction(makeFName_RowBind(formKernel), true, [VarNames.State, formKernel.id + '_path', formKernel.id + '_state', formKernel.id + '_' + VarNames.NowRecord, VarNames.RowKeyInfo_map]);
+            var kernelMidData = this.projectCompiler.getMidData(formKernel.id);
+            kernelMidData.rowBindFun = rowBindFun;
+        }
+        return rowBindFun;
+    }
 
     compileFormKernel(theKernel, renderBlock, renderFun) {
         var project = this.project;
@@ -2111,6 +2190,7 @@ class MobileContentCompiler extends ContentCompiler {
         var isListForm = formType == EFormType.List;
         var selectMode = theKernel.getAttribute(AttrNames.SelectMode);
         var rowKeyAttrName = theKernel.id.toLocaleLowerCase() + '_rowkey';
+        var rowIndexAttrName = theKernel.id.toLocaleLowerCase() + '_rowindex';
         var hadRefreshIcon = theKernel.getAttribute(AttrNames.RefreshIcon);
         var awaysEditable = theKernel.getAttribute(AttrNames.AwaysEditable);
         var stableData = theKernel.getAttribute(AttrNames.StableData);
@@ -2153,6 +2233,7 @@ class MobileContentCompiler extends ContentCompiler {
         var onDataSourceChangedFunName = theKernel.id + '_' + AttrNames.Event.OnDataSourceChanged;
         var onDataSourceChangedBp = project.scriptMaster.getBPByName(onDataSourceChangedFunName);
         var watchStateName = null;
+        var callRowBindBlks = null;
 
         if (selectMode == ESelectMode.None) {
             if (OnSelectedChangedBp) {
@@ -2190,6 +2271,7 @@ class MobileContentCompiler extends ContentCompiler {
                 }
                 gridHeadPureRectClass = clientSide.getReactClass(theKernel.getReactClassName() + '_THead', true, true);
                 gridBodyPureRectClass = clientSide.getReactClass(theKernel.getReactClassName() + '_TBody', true, true);
+                
                 var tableBodyScrollFun = formReactClass.getFunction('tableBodyScroll', true, ['ev']);
                 formReactClass.constructorFun.pushLine('this.' + tableBodyScrollFun.name + '=' + 'this.' + tableBodyScrollFun.name + '.bind(this);');
                 tableBodyScrollFun.pushLine("document.getElementById(this.props.fullPath + 'tableheader').scrollLeft = ev.target.scrollLeft;");
@@ -2273,7 +2355,7 @@ class MobileContentCompiler extends ContentCompiler {
 
             formReactClass.constructorFun.pushLine('this.clickFreshHandler = this.clickFreshHandler.bind(this);');
             var clickFreshHandlerFun = formReactClass.getFunction('clickFreshHandler', true, ['ev']);
-            clickFreshHandlerFun.pushLine(makeFName_pull(theKernel) + "(null, true, this.props.parentPath);");
+            clickFreshHandlerFun.pushLine(makeFName_pull(theKernel) + "(null, true, this.props.fullParentPath);");
         }
 
         var formStyleID = theKernel.id + '_style';
@@ -2300,9 +2382,16 @@ class MobileContentCompiler extends ContentCompiler {
                 titleAlginStr = 'justify-content-end';
                 break;
         }
+        var alignitems = theKernel.getAttribute('alignitems');
+        if(alignitems == 'initial'){
+            alignitems = '';
+        }
+        else{
+            alignitems = " align-items-" + alignitems;
+        }
         if (isPageForm) {
             renderContentBlock.pushLine(VarNames.RetElem + " = (<React.Fragment>", 1);
-            renderContentBlock.pushLine("<div className='d-flex flex-grow-1 flex-shrink-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + (isWrap ? ' flex-wrap' : '') + "'>", 1);
+            renderContentBlock.pushLine("<div className='d-flex flex-grow-1 flex-shrink-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + (isWrap ? ' flex-wrap' : '') + alignitems + "'>", 1);
             childRenderBlock = new FormatFileBlock(theKernel.id + 'child');
             renderContentBlock.pushChild(childRenderBlock);
             renderContentBlock.subNextIndent();
@@ -2316,7 +2405,7 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentBlock.subNextIndent();
             renderContentBlock.pushLine("</React.Fragment>);");
 
-            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'>", 1);
+            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'" + (hasFormStyle ? " style={" + formStyleID + "}" : '') + ">", 1);
             renderContentFun.retBlock.pushLine("{this.props.title && <div className='bg-dark text-light " + titleAlginStr + " d-flex flex-shrink-0 p-1'><span>{this.props.title}</span></div>}");
             renderContentFun.retBlock.pushLine('{' + VarNames.RetElem + '}');
             renderContentFun.retBlock.subNextIndent();
@@ -2358,6 +2447,7 @@ class MobileContentCompiler extends ContentCompiler {
                 renderContentFun.pushLine("<div id={this.props.fullPath + 'tableheader'} className='mw-100 hidenOverflow flex-shrink-0 gridFormFixHeaderDiv'>", 1);
                 renderContentFun.pushLine("<table className='table' style={" + headTableStyleID + "}>", 1);
                 headClassInFormTag = new FormatHtmlTag('headClassInFormTag', gridHeadPureRectClass.name, this.clientSide);
+                headClassInFormTag.setAttr('form', '{this}');
                 renderContentFun.pushChild(headClassInFormTag);
                 renderContentFun.subNextIndent();
                 if (gridHeadBodyPureRectClass && !hideHeader) {
@@ -2399,6 +2489,7 @@ class MobileContentCompiler extends ContentCompiler {
             var listItemTag = new FormatHtmlTag('listitem', 'div', this.clientSide);
             listItemTag.setAttr('key', bigbracketStr(VarNames.RowKey));
             listItemTag.setAttr(rowKeyAttrName, bigbracketStr(VarNames.RowKey));
+            listItemTag.setAttr(rowIndexAttrName, bigbracketStr(VarNames.RowIndex));
             listItemTag.setAttr('className', itemLayoutConfig.getClassName());
             if (hasItemFormStyle) {
                 listItemTag.setAttr('style', bigbracketStr(itemStyleID));
@@ -2427,13 +2518,13 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentBlock.subNextIndent();
             renderContentBlock.pushLine('});');
 
-            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'>", 1);
+            renderContentFun.retBlock.pushLine("return (<div className='d-flex flex-column " + layoutConfig.getClassName() + "'" + (hasFormStyle ? " style={" + formStyleID + "}" : '') + ">", 1);
             renderContentFun.retBlock.pushLine("{this.props.title && <div className='bg-dark text-light " + titleAlginStr + " d-flex flex-shrink-0 p-1'><span>{this.props.title}" + (hadRefreshIcon ? "{this.props.fetching ? null : <i className='btn btn-sm fa fa-refresh' onClick={this.clickFreshHandler} />}" : '') + "</span></div>}");
             var contentDivClassStr = 'd-flex flex-grow-1 flex-shrink-1' + (isWrap ? ' flex-wrap' : '') + (autoHeight ? ' autoScroll ' : '');
             if (orientation == Orientation_V) {
                 contentDivClassStr += ' flex-column';
             }
-            renderContentFun.retBlock.pushLine("<div className='" + contentDivClassStr + "'>");
+            renderContentFun.retBlock.pushLine("<div className='" + contentDivClassStr + alignitems + "'>");
             renderContentFun.retBlock.addNextIndent();
             renderContentFun.retBlock.pushLine('{' + VarNames.RetElem + '}');
             renderContentFun.retBlock.subNextIndent();
@@ -2495,6 +2586,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         var defVisble = theKernel.getAttribute(AttrNames.DefaultVisible);
         renderBlock.pushChild(formTag);
+        this.modifyControlTag(theKernel, formTag);
 
         formReactClass.mapStateFun.scope.getVar('propProfile', true, "getControlPropProfile(ownprops, state)");
         formReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
@@ -2516,6 +2608,7 @@ class MobileContentCompiler extends ContentCompiler {
             formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.RowPerPage), makeStr_DotProp(VarNames.CtlState, VarNames.RowPerPage)));
         }
         if (isGridForm || isListForm) {
+            formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.RowBindInfo), makeStr_DotProp(VarNames.CtlState, VarNames.RowBindInfo)));
             formTag.setAttr(VarNames.SelectMode, theKernel.getAttribute(AttrNames.SelectMode));
             if (keyColumn != DefaultKeyColumn) {
                 var canUserColumns_arr = theKernel.getCanuseColumns();
@@ -2554,7 +2647,67 @@ class MobileContentCompiler extends ContentCompiler {
             bindFun.scope.getVar(belongUserControl.id + '_path', true, makeStr_callFun('getBelongUserCtlPath', [pathVarName]));
         }
 
+        var statColumn_arr = [];
+
         if (useDS) {
+            if (isGridForm) {
+                theKernel.getRowLabeledControls().forEach(labeledKernel=>{
+                    var statFun = labeledKernel.getAttribute(AttrNames.StatFun);
+                    if(statFun != StatFun_NONE){
+                        var theEditor = labeledKernel.editor;
+                        var valueColumn = null;
+                        var validStat = false;
+                        switch(theEditor.type){
+                            case M_LabelKernel_Type:
+                            case M_TextKernel_Type:
+                                valueColumn = theEditor.getAttribute(AttrNames.TextField);
+                                validStat = true;
+                            break;
+                            case PopperButtonKernel_Type:
+                            case ButtonKernel_Type:
+                                valueColumn = theEditor.getAttribute(AttrNames.Title);
+                                validStat = true;
+                            break;
+                        }
+                        if(validStat){
+                            statColumn_arr.push({
+                                fun:statFun,
+                                kernel:labeledKernel,
+                                key:labeledKernel.getAttribute(AttrNames.TextField),
+                                valueColumn:valueColumn,
+                            });
+                        }
+                    }
+                });
+                if(statColumn_arr.length > 0){
+                    var reCalStatFun = clientSide.scope.getFunction(makeFName_reCalFormStat(theKernel), true, [VarNames.State, pathVarName]);
+                    reCalStatFun.pushLine('var hadStateParam = true;');
+                    reCalStatFun.pushLine('if(state == null){hadStateParam = false;state = store.getState();}');
+                    reCalStatFun.pushLine('var ' + stateVarName + '=' + makeStr_callFun('getStateByPath', [VarNames.State, pathVarName],';'));
+                    var records_arrVarName = theKernel.id + '_' + VarNames.Records_arr;
+                    reCalStatFun.pushLine('var ' + records_arrVarName + '=' + stateVarName + '.' + VarNames.Records_arr + ';');
+                    statColumn_arr.forEach(item=>{
+                        reCalStatFun.pushLine("var stat" + item.key +"=0;");
+                    });
+                    reCalStatFun.pushLine(records_arrVarName + '.forEach(record=>{',1);
+                    statColumn_arr.forEach(item=>{
+                        switch(item.fun){
+                            case StatFun_SUM:
+                            reCalStatFun.pushLine("stat" + item.key +"+=record." + item.key + ";");
+                            break;
+                        }
+                    });
+                    reCalStatFun.subNextIndent();
+                    reCalStatFun.pushLine('});');
+                    reCalStatFun.pushLine('var needSetState={};');
+                    statColumn_arr.forEach(item=>{
+                        reCalStatFun.pushLine("needSetState['row_统计." + item.key + ".text']=stat" + item.key +";");
+                    });
+                    reCalStatFun.pushLine('');
+                    reCalStatFun.pushLine('if(hadStateParam){state=setManyStateByPath(state,'+pathVarName+',needSetState);return state;}');
+                    reCalStatFun.pushLine('store.dispatch(makeAction_setManyStateByPath(needSetState, ' + pathVarName + '));');
+                }
+            }
             var recordsArraychangedFunName = theKernel.id + '_' + VarNames.Records_arr + '_changed';
             var recordsArraychangedFun = clientSide.scope.getFunction(recordsArraychangedFunName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowKeyInfo_map']);
             recordsArraychangedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
@@ -2588,7 +2741,6 @@ class MobileContentCompiler extends ContentCompiler {
                 recordIndexchangedFun.pushLine(makeStr_callFun(makeFName_bindForm(theKernel), [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowKeyInfo_map']));
 
                 if (belongUserControl) {
-
                     belongUserCtlMidData.needSetStateChangedActs_arr.push(
                         {
                             propName: makeStr_DotProp(thisfullpath, VarNames.RecordIndex),
@@ -2622,7 +2774,7 @@ class MobileContentCompiler extends ContentCompiler {
                 freshFun.pushLine('if(oldValue != null){', 1);
                 freshFun.pushLine('var newRowCount = ' + VarNames.Records_arr + '.length;');
                 freshFun.pushLine('oldValue.forEach((x,i)=>{', 1);
-                freshFun.pushLine('var rowkey=' + (keyColumn == DefaultKeyColumn ? 'i' : 'x.' + keyColumn) + ';', 1);
+                freshFun.pushLine('var rowkey=' + (keyColumn == DefaultKeyColumn ? 'i' : 'x.' + keyColumn) + ';');
                 freshFun.pushLine("if(" + stateVarName + ".hasOwnProperty('row_' + rowkey)){", 1);
                 freshFun.pushLine("needSetState['row_' + rowkey + '._isdirty'] = true;", -1);
                 freshFun.pushLine("}", -1);
@@ -2631,7 +2783,20 @@ class MobileContentCompiler extends ContentCompiler {
                 freshFun.pushLine("}");
 
                 freshFun.pushLine(makeLine_DeclareVar('newKey_map', '{}', false));
-                freshFun.pushLine(VarNames.Records_arr + '.forEach((rcd,index)=>{newKey_map[' + (keyColumn == DefaultKeyColumn ? 'index' : 'rcd.' + keyColumn) + ']=rcd;})');
+                freshFun.pushLine(VarNames.Records_arr + '.forEach((rcd,index)=>{',1);
+                freshFun.pushLine('var rowkey=' + (keyColumn == DefaultKeyColumn ? 'index' : 'rcd.' + keyColumn) + ';');
+                freshFun.pushLine('rcd._key = rowkey;');
+                statColumn_arr.forEach(item=>{
+                    if(useDS.containColumn(item.valueColumn)){
+                        freshFun.pushLine('rcd.' + item.key + '=parseFloat(rcd.' + item.valueColumn + ');');
+                    }
+                    else{
+                        freshFun.pushLine('rcd.' + item.key + '=0;');
+                    }
+                });
+                freshFun.pushLine('newKey_map[rowkey]=rcd;');
+                freshFun.subNextIndent();
+                freshFun.pushLine('});');
                 freshFun.pushLine(makeLine_setGDataCache(theKernel.id + '_path + ".KeyToRcd_map"', 'newKey_map', false));
 
                 if (isGridForm) {
@@ -2649,7 +2814,18 @@ class MobileContentCompiler extends ContentCompiler {
                     if (defaultSelectFirst) {
                         freshFun.pushLine('var nowKey = ' + makeStr_callFun('GetFormSelectedProfile', [stateVarName, singleQuotesStr(keyColumn)]) + '.key;');
                         freshFun.pushLine('if(nowKey == null){', 1);
-                        freshFun.pushLine('if(' + VarNames.Records_arr + '.length > 0){nowKey = ' + VarNames.Records_arr + '[0].' + keyColumn + ';}', -1);
+                        //freshFun.pushLine('if(' + VarNames.Records_arr + '.length > 0){nowKey = ' + VarNames.Records_arr + '[0].' + keyColumn + ';}', -1);
+                        freshFun.pushLine('if(' + VarNames.Records_arr + '.length > 0){', 1);
+                        freshFun.pushLine("var preSelectedRowIndex = " + stateVarName + ".selectedRowIndex;");
+                        freshFun.pushLine("var useRowIndex = 0;");
+                        freshFun.pushLine("if(preSelectedRowIndex == null || preSelectedRowIndex <= 0){useRowIndex=0;}");
+                        freshFun.pushLine("else if(preSelectedRowIndex < " + VarNames.Records_arr + ".length){useRowIndex=preSelectedRowIndex;}");
+                        freshFun.pushLine("else {useRowIndex=" + VarNames.Records_arr + ".length - 1;}");
+                        freshFun.pushLine('nowKey = ' + VarNames.Records_arr + '[useRowIndex].' + keyColumn + ';');
+                        freshFun.pushLine('needSetState.selectedRowIndex = useRowIndex;');
+                        freshFun.subNextIndent();
+                        freshFun.pushLine('}');
+                        freshFun.subNextIndent();
                         freshFun.pushLine('}');
                         freshFun.pushLine('needSetState.' + VarNames.SelectedValue + ' = nowKey;');
                     }
@@ -2670,6 +2846,9 @@ class MobileContentCompiler extends ContentCompiler {
                     }
                 }
                 freshFun.pushLine(VarNames.ReState + '=' + makeStr_callFun('setManyStateByPath', [VarNames.ReState, pathVarName, 'needSetState'], ';'), -1);
+                if(statColumn_arr.length > 0){
+                    freshFun.pushLine(makeStr_callFun(makeFName_reCalFormStat(theKernel), [VarNames.ReState, theKernel.id + '_path'], ';'));
+                }
                 freshFun.pushLine(makeStr_callFun(bindFun.name, [VarNames.ReState, 'null', 'null', VarNames.SatePath]) + ';');
 
             }
@@ -2730,6 +2909,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         var pullFun = clientSide.scope.getFunction(makeFName_pull(theKernel), true, [VarNames.ReState, VarNames.HoldSelected, VarNames.FullParentPath]);
         pullFun.scope.getVar(VarNames.HadStateParam, true, VarNames.ReState + '!=null');
+        pullFun.scope.getVar(VarNames.RowKeyInfo_map, true, 'getRowKeyMapFromPath(' + VarNames.FullParentPath + ')');
         if (acessAsserBP) {
             var assertVarName = theKernel.id + '_assert';
             var errTipStatePath = makeStr_AddAll(VarNames.FullParentPath, "+'.", theKernel.id, ".", VarNames.FetchErr, "'");
@@ -2758,7 +2938,15 @@ class MobileContentCompiler extends ContentCompiler {
             else if (belongUserControl != null) {
                 // 在自订控件里
                 var templateReactClass = this.clientSide.getReactClass(belongUserControl.getReactClassName());
-                templateReactClass.initFun.pushLine(makeStr_callFun(bindFun.name, [belongUserControl.id + '_state', 'null', 'null', "ctlFullPath + '." + theKernel.id + "'"]));
+
+                // 延迟调用
+                templateReactClass.initFun.pushLine('setTimeout(() => {', 1);
+                templateReactClass.initFun.pushLine('store.dispatch(makeAction_callFunction(state=>{', 1);
+                templateReactClass.initFun.pushLine(makeStr_callFun(bindFun.name, ['state', 'null', 'null', "ctlFullPath + '." + theKernel.id + "'"]));
+                templateReactClass.initFun.subNextIndent();
+                templateReactClass.initFun.pushLine('}));');
+                templateReactClass.initFun.subNextIndent();
+                templateReactClass.initFun.pushLine('},20);');
             }
             else {
                 var pageInitFun = clientSide.scope.getFunction(makeFName_initPage(belongPage));
@@ -2913,6 +3101,7 @@ class MobileContentCompiler extends ContentCompiler {
             if (clickSelectable) {
                 var clickRowHandlerFun = formReactClass.getFunction('clickRowHandler', true, ['ev']);
                 clickRowHandlerFun.pushLine("var rowkey = !isNaN(ev) ? ev : GetFromatRowKey(getAttributeByNode(ev.target,'" + rowKeyAttrName + "'));");
+                clickRowHandlerFun.pushLine("var rowIndex = !isNaN(ev) ? ev : GetFromatRowKey(getAttributeByNode(ev.target,'" + rowIndexAttrName + "'));");
                 clickRowHandlerFun.pushLine("var state = store.getState();");
                 clickRowHandlerFun.pushLine("var formState = getStateByPath(state, this.props.fullPath,{});");
                 clickRowHandlerFun.pushLine("var keyvalue = rowkey;");
@@ -2937,10 +3126,16 @@ class MobileContentCompiler extends ContentCompiler {
                         clickRowHandlerFun.pushLine("if(nowRowKey == rowkey){", 1);
                         clickRowHandlerFun.pushLine("var selectedProfile = GetFormSelectedProfile(formState,'" + keyColumn + "');", 1);
                         clickRowHandlerFun.pushLine(makeStr_callFun(OnSelectedChangedBp.name, ['state', 'this.props.fullPath', 'selectedProfile.record', 'selectedProfile.index', 'selectedProfile.key'], ';'));
+                        clickRowHandlerFun.pushLine("return;");
                         clickRowHandlerFun.subNextIndent();
                         clickRowHandlerFun.pushLine('}');
+                        clickRowHandlerFun.subNextIndent();
                     }
-                    clickRowHandlerFun.pushLine("store.dispatch(makeAction_setStateByPath(keyvalue,this.props.fullPath + '." + VarNames.SelectedValue + "'));");
+                    clickRowHandlerFun.pushLine('var needSetState={', 1);
+                    clickRowHandlerFun.pushLine(VarNames.SelectedValue + ':keyvalue,');
+                    clickRowHandlerFun.pushLine('selectedRowIndex:rowIndex,',-1);
+                    clickRowHandlerFun.pushLine('}');
+                    clickRowHandlerFun.pushLine("store.dispatch(makeAction_setManyStateByPath(needSetState, this.props.fullPath));");
                 }
             }
 
@@ -3010,6 +3205,9 @@ class MobileContentCompiler extends ContentCompiler {
             if (this.compileKernel(theKernel.editor, childRenderBlock, renderBlock) == false) {
                 return false;
             }
+            callRowBindBlks = {};
+            callRowBindBlks.beforeFor = new FormatFileBlock('beforeFor');
+            freshFun.rowInitBlk.pushChild(callRowBindBlks.beforeFor);
             freshFun.rowInitBlk.pushLine("for (var rowIndex = 0; rowIndex < " + VarNames.Records_arr + ".length; ++rowIndex) {", 1);
             freshFun.rowInitBlk.pushLine(makeLine_DeclareVar(VarNames.NowRecord, VarNames.Records_arr + '[rowIndex]', false));
             freshFun.rowInitBlk.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == DefaultKeyColumn ? VarNames.RowIndex : 'GetFromatRowKey(' + VarNames.NowRecord + '.' + keyColumn + ')') + ';');
@@ -3018,11 +3216,15 @@ class MobileContentCompiler extends ContentCompiler {
             //freshFun.rowInitBlk.pushLine('var rowstate=getStateByPath(' + theKernel.id + '_state,"row_" + ' + VarNames.RowKey + ');');
             //freshFun.rowInitBlk.pushLine('if(rowstate == null){',1);
             freshFun.rowInitBlk.pushChild(bindNowRecordBlock);
+            callRowBindBlks.inFor = new FormatFileBlock('inFor');
+            freshFun.rowInitBlk.pushChild(callRowBindBlks.inFor);
             //freshFun.rowInitBlk.subNextIndent();
             //freshFun.rowInitBlk.pushLine('}');
             freshFun.rowInitBlk.subNextIndent();
             freshFun.rowInitBlk.pushLine('}');
             freshFun.rowInitBlk.pushChild(endBindBlock);
+            callRowBindBlks.endfor = new FormatFileBlock('endfor');
+            freshFun.rowInitBlk.pushChild(callRowBindBlks.endfor);
 
         }
 
@@ -3046,8 +3248,13 @@ class MobileContentCompiler extends ContentCompiler {
 
 
             if (selectMode != ESelectMode.None) {
-                sumTableWidth += 3.5;
-                gridHeadRowRenderBlock.pushLine("<th scope='col' className='selectorTableHeader'></th>");
+                //sumTableWidth += 3.5;
+                if(selectMode == ESelectMode.Multi){
+                    gridHeadRowRenderBlock.pushLine("<th scope='col' className='selectorTableHeader'><CGridFormSelectCog form={this.props.form} /></th>");
+                }
+                else{
+                    gridHeadRowRenderBlock.pushLine("<th scope='col' className='selectorTableHeader'></th>");
+                }
                 if (gridHeadBodyRowRenderBlock) {
                     gridHeadBodyRowRenderBlock.pushLine("<td className='selectorTableHeader'></td>");
                 }
@@ -3055,7 +3262,7 @@ class MobileContentCompiler extends ContentCompiler {
             }
             var autoIndexColumn = theKernel.getAttribute(AttrNames.AutoIndexColumn);
             if (autoIndexColumn) {
-                sumTableWidth += 3;
+                //sumTableWidth += 3;
                 gridHeadRowRenderBlock.pushLine("<th scope='col' className='indexTableHeader'>序号</th>");
                 if (gridHeadBodyRowRenderBlock) {
                     gridHeadBodyRowRenderBlock.pushLine("<td className='indexTableHeader'></td>");
@@ -3117,7 +3324,7 @@ class MobileContentCompiler extends ContentCompiler {
                         columnWidth = 4 * GridHead_PerCharWidth;
                     }
                 }
-                columnWidth = Math.round(10 * columnWidth);
+                columnWidth = columnWidth;
                 sumTableWidth += columnWidth;
                 gridColumnsProfile_obj[childKernel.id] = {
                     id: childKernel.id,
@@ -3148,7 +3355,7 @@ class MobileContentCompiler extends ContentCompiler {
                     if (columnProfile.width != 'auto') {
                         if (gridWidthType == EGridWidthType.Fixed) {
                             headStyleObj = {
-                                width: (columnProfile.width / 10) + 'em',
+                                width: (columnProfile.width) + 'em',
                             };
                         }
                         else {
@@ -3201,7 +3408,7 @@ class MobileContentCompiler extends ContentCompiler {
             if (hadRowButton || insertBtnSetting) {
                 gridHeadRowRenderBlock.pushLine("<th scope='col'></th>");
                 if (gridHeadBodyRowRenderBlock) {
-                    gridHeadBodyRowRenderBlock.pushLine("<td><VisibleERPC_GridForm_BtnCol form={this.props.form} /></td>");
+                    gridHeadBodyRowRenderBlock.pushLine("<td className='gridbtncoltd'><VisibleERPC_GridForm_BtnCol form={this.props.form} /></td>");
                 }
             }
 
@@ -3261,9 +3468,15 @@ class MobileContentCompiler extends ContentCompiler {
             gridBodyPureRectClass.renderFun.scope.getVar(VarNames.StartRowIndex, true, makeStr_DotProp('this.props', VarNames.StartRowIndex));
             gridBodyPureRectClass.renderFun.scope.getVar(VarNames.EndRowIndex, true, makeStr_DotProp('this.props', VarNames.EndRowIndex));
             gridBodyPureRectClass.renderFun.scope.getVar('formProp', true, 'this.props.form.props');
+            callRowBindBlks = {};
+            gridBodyPureRectClass.renderFun.callRowBindBlks = callRowBindBlks;
+            callRowBindBlks.beforeFor = new FormatFileBlock('beforeFor');
+            gridBodyPureRectClass.renderFun.pushChild(callRowBindBlks.beforeFor);
             gridBodyPureRectClass.renderFun.pushLine('for (var rowIndex = startRowIndex; rowIndex <= endRowIndex; ++rowIndex) {', 1);
             gridBodyPureRectClass.renderFun.pushLine('var rowRecord = formProp.records_arr[rowIndex];');
             gridBodyPureRectClass.renderFun.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == DefaultKeyColumn ? 'rowIndex' : 'GetFromatRowKey(rowRecord.' + keyColumn + ')') + ';');
+            callRowBindBlks.inFor = new FormatFileBlock('inFor');
+            gridBodyPureRectClass.renderFun.pushChild(callRowBindBlks.inFor);
             if (selectMode != ESelectMode.None) {
                 if (selectMode == ESelectMode.Single) {
                     gridBodyPureRectClass.renderFun.pushLine("var selected = this.props." + VarNames.SelectedValue + " == " + VarNames.RowKey + ";");
@@ -3290,6 +3503,29 @@ class MobileContentCompiler extends ContentCompiler {
             gridBodyPureRectClass.renderFun.pushLine('}', -1);
 
             gridBodyPureRectClass.renderFun.retBlock.clear();
+            var statrowBlk = null;
+            var statTDBlk = null;
+            if(statColumn_arr.length > 0){
+                var statrowBlk = new FormatFileBlock('statrow');
+                gridBodyPureRectClass.renderFun.retBlock.pushChild(statrowBlk);
+                statrowBlk.pushLine('if(trElems_arr.length>1){', 1);
+                statrowBlk.pushLine('trElems_arr.push(', 1);
+                statrowBlk.pushLine("<tr key='统计'>", 1);
+                if (autoIndexColumn) {
+                    statrowBlk.pushLine("<td className='indexTableHeader'></td>");
+                }
+                var statTDBlk = new FormatFileBlock('stattd');
+                statrowBlk.pushChild(statTDBlk);
+                statrowBlk.subNextIndent();
+                statrowBlk.pushLine('</tr>');
+                statrowBlk.subNextIndent();
+                statrowBlk.pushLine(');');
+                statrowBlk.subNextIndent();
+                statrowBlk.pushLine('}');
+            }
+
+            callRowBindBlks.endfor = new FormatFileBlock('endfor');
+            gridBodyPureRectClass.renderFun.retBlock.pushChild(callRowBindBlks.endfor);
             gridBodyPureRectClass.renderFun.retBlock.pushLine("return (<table className='table table-striped table-hover ' style={" + tableStyleID + "}>", 1);
             if (!hideHeader) {
                 headClassInBodyTag = new FormatHtmlTag('headClassInFormTag', gridHeadPureRectClass.name, this.clientSide);
@@ -3363,8 +3599,12 @@ class MobileContentCompiler extends ContentCompiler {
                 columnProfile = gridColumnsProfile_obj[childKernel.id];
                 var childRederBlock = new FormatFileBlock('child_' + childKernel.id);
                 gridBodyTableRowRenderBlock.pushChild(childRederBlock);
+                var statSetting = statColumn_arr.find(x=>{return x.kernel == childKernel;});
                 if (columnProfile.dynamicVisible) {
                     childRederBlock.pushLine('{this.props.' + columnProfile.id + '_visible == false ? null : (', 1);
+                    if(statTDBlk){
+                        statTDBlk.pushLine('{this.props.' + columnProfile.id + '_visible == false ? null : (', 1);
+                    }
                 }
                 childRederBlock.pushLine("<td style={" + columnProfile.tdStyleID + '}>', 1);
                 if (this.compileKernel(childKernel, childRederBlock, renderFun) == false) {
@@ -3372,9 +3612,20 @@ class MobileContentCompiler extends ContentCompiler {
                 }
                 childRederBlock.subNextIndent();
                 childRederBlock.pushLine('</td>');
+                if(statTDBlk){
+                    statTDBlk.pushLine("<td style={" + columnProfile.tdStyleID + '}>');
+                    if(statSetting){
+                        statTDBlk.pushLine("<VisibleERPC_Label className='erp-control' rowkey='统计' id='" + statSetting.key + "' parentPath={this.props.fullPath} type='float' />");
+                    }
+                    statTDBlk.pushLine('</td>');
+                }
                 if (columnProfile.dynamicVisible) {
                     childRederBlock.subNextIndent();
                     childRederBlock.pushLine(')}');
+                    if(statTDBlk){
+                        statTDBlk.subNextIndent();
+                        statTDBlk.pushLine(')}');
+                    }
                 }
                 if (insertBtnSetting) {
                     if (insertBtnUseFormChild_map[childKernel.id] || childKernel.getAttribute(AttrNames.NewRowDepend)) {
@@ -3415,9 +3666,9 @@ class MobileContentCompiler extends ContentCompiler {
             }
 
             if (hadRowButton || insertBtnSetting) {
-                gridBodyTableRowRenderBlock.pushLine("<td><VisibleERPC_GridForm_BtnCol rowkey={rowkey} form={this.props.form} /></td>");
+                gridBodyTableRowRenderBlock.pushLine("<td className='gridbtncoltd'><VisibleERPC_GridForm_BtnCol rowkey={rowkey} form={this.props.form} /></td>");
                 if (insertBtnSetting) {
-                    gridBodyTableNewRowRenderBlock.pushLine("<td><VisibleERPC_GridForm_BtnCol rowkey={rowkey} form={this.props.form} /></td>");
+                    gridBodyTableNewRowRenderBlock.pushLine("<td className='gridbtncoltd'><VisibleERPC_GridForm_BtnCol rowkey={rowkey} form={this.props.form} /></td>");
                 }
             }
         }
@@ -3691,6 +3942,7 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentFun.pushLine('return null;');
         }
 
+        thisFormMidData.callRowBindBlks = callRowBindBlks;
         bindFun.pushLine(makeLine_Assign(makeStr_DynamicAttr(VarNames.NeedSetState, VarNames.InvalidBundle), 'false'));
         bindFun.retBlock.pushLine(VarNames.ReState + '=' + makeStr_callFun('setManyStateByPath', [VarNames.ReState, pathVarName, VarNames.NeedSetState]) + ';');
         bindFun.retBlock.pushChild(bindEndBlock);
@@ -3785,7 +4037,9 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
 
-        this.compileOnMouseDownEvent(theKernel, ctlTag);
+        if (this.compileOnMouseDownEvent(theKernel, ctlTag) == false) {
+            return false;
+        }
     }
 
     compileButtonKernel(theKernel, renderBlock, renderFun) {
@@ -3964,6 +4218,15 @@ class MobileContentCompiler extends ContentCompiler {
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'inited'), 'ctlState.inited == true;'));
 
 
+        var onUnCollapseFunName = theKernel.id + '_' + AttrNames.Event.OnUnCollapse;
+        var onUnCollapseBp = project.scriptMaster.getBPByName(onUnCollapseFunName);
+        if (onUnCollapseBp != null) {
+            var compileRet = this.compileScriptBlueprint(onUnCollapseBp, { params: [theKernel.id + '_path'] });
+            if (compileRet == false) {
+                return false;
+            }
+            ctlTag.setAttr(AttrNames.Event.OnUnCollapse, bigbracketStr(onUnCollapseFunName));
+        }
 
         var title = theKernel.getAttribute(AttrNames.Title);
         var titleParseRet = parseObj_CtlPropJsBind(title, project.scriptMaster);
@@ -4084,10 +4347,10 @@ class MobileContentCompiler extends ContentCompiler {
                 navBtnContainerBlk.pushLine("<div className='btn-group flex-grow-0 flex-shrink-0 border-top'>");
                 break;
             case DockType_Left:
-                navBtnContainerBlk.pushLine("<div className='btn-group-vertical flex-grow-0 flex-shrink-0 border-right'>");
+                navBtnContainerBlk.pushLine("<div className='btn-group-vertical flex-grow-0 flex-shrink-0 border-right justify-content-start'>");
                 break;
             case DockType_Right:
-                navBtnContainerBlk.pushLine("<div className='btn-group-vertical flex-grow-0 flex-shrink-0 border-left'>");
+                navBtnContainerBlk.pushLine("<div className='btn-group-vertical flex-grow-0 flex-shrink-0 border-left justify-content-start'>");
                 break;
         }
         navBtnContainerBlk.addNextIndent();
@@ -4098,6 +4361,7 @@ class MobileContentCompiler extends ContentCompiler {
         var selftRenderBlock = controlReactClass.renderFun;
         selftRenderBlock.scope.getVar('childElem', true);
         selftRenderBlock.scope.getVar('self', true, 'this');
+        selftRenderBlock.pushLine('if(this.props.visible == false){return null;}');
         selftRenderBlock.pushChild(itemSwitchBlock);
         selftRenderBlock.pushLine(VarNames.RetElem + " = <div className='" + layoutConfig.getClassName() + "' " + styleStr + ">", 1);
         if (dockType == DockType_Top || dockType == DockType_Left) {
@@ -4113,11 +4377,12 @@ class MobileContentCompiler extends ContentCompiler {
 
         controlReactClass.mapStateFun.scope.getVar('propProfile', true, "getControlPropProfile(ownprops, state)");
         controlReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
+        controlReactClass.mapStateFun.scope.getVar('visible', true, makeStr_DotProp(VarNames.CtlState, 'visible'));
+        controlReactClass.mapStateFun.pushLine('if(visible == null){visible = ownprops.definvisible ? false : true;}');
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullParentPath), makeStr_DotProp('propProfile', VarNames.FullParentPath)));
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.FullPath), makeStr_DotProp('propProfile', VarNames.FullPath)));
-        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'visible'), makeStr_DotProp(VarNames.CtlState, 'visible != false')));
+        controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'visible'), 'visible'));
         controlReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'selectedIndex'), makeStr_DotProp(VarNames.CtlState, 'selectedIndex') + (defaultTabitemID == '0' ? '' : ' ? ' + makeStr_DotProp(VarNames.CtlState, 'selectedIndex') + ' : ' + singleQuotesStr(defaultTabitemID))));
-
         var isGreedMode = theKernel.getAttribute(AttrNames.GreedMode);
         var navBtnClassStr = "'btn rounded-0 " + (isGreedMode ? 'flex-grow-1 flex-shrink-1 ' : '') + "'";
         for (var ci in theKernel.children) {
@@ -4672,14 +4937,46 @@ class MobileContentCompiler extends ContentCompiler {
         if (!theKernel.getAttribute(AttrNames.Growable)) {
             ctlTag.setAttr('growable', '{false}');
         }
+        if (theKernel.getAttribute('poppanelminwidth') > 100) {
+            ctlTag.setAttr('poppanelminwidth', theKernel.getAttribute('poppanelminwidth'));
+        }
+        var appandColumns_arr = [];
+        var appandColAttrs_arr = theKernel.getAttrArrayList(AttrNames.AppandColumn);
+        var canuseColumns = theKernel.getCanuseColumns();
+        appandColAttrs_arr.forEach((attr, attrIndex) => {
+            var attrValue = theKernel.getAttribute(attr.name);
+            if (attrValue != null && !IsEmptyString(attrValue.name)) {
+                if (canuseColumns.indexOf(attrValue.name) != -1) {
+                    var funName = theKernel.id + '_' + attr.name;
+                    var jsBP = project.scriptMaster.getBPByName(funName);
+                    appandColumns_arr.push({
+                        name: attrValue.name,
+                        jsBP: jsBP,
+                    });
+                }
+                else {
+                    logManager.errorEx([logManager.createBadgeItem(
+                        theKernel.getReadableName(),
+                        theKernel,
+                        this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '附加数据列' + attrIndex + '不在数据源中']);
+                    return false;
+                }
+            }
+        });
+        if (appandColumns_arr.length > 0) {
+            ctlTag.setAttr('dataCols', singleQuotesStr(appandColumns_arr.map(item => { return item.name; }).join(',')));
+        }
         if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
         if (this.compileValidCheckerAttribute(theKernel) == false) { return false; }
         if (this.compileOnChangedEventBlueprint(theKernel, ctlTag) == false) { return false; }
 
         var defaultVal = theKernel.getAttribute(AttrNames.DefaultValue);
         var defaultValParseRet = parseObj_CtlPropJsBind(defaultVal, project.scriptMaster);
+        var defaultCompileRet;
         if (defaultValParseRet.isScript) {
-            if (this.compileScriptAttribute(defaultValParseRet, theKernel, 'value', AttrNames.DefaultValue, { autoSetFetchState: true }) == false) {
+            defaultCompileRet = this.compileScriptAttribute(defaultValParseRet, theKernel, 'value', AttrNames.DefaultValue, { autoSetFetchState: true });
+            if (defaultCompileRet == false) {
                 return false;
             }
         }
@@ -4817,420 +5114,55 @@ class MobileContentCompiler extends ContentCompiler {
         }
 
         theKernel.autoSetCusDataSource(groupCols_arr);
-        var cusDS_bp = theKernel.getAttribute(AttrNames.CustomDataSource);
-        logManager.log("编译[" + cusDS_bp.name + ']');
-        var bpCompileHelper = new SqlNode_CompileHelper(logManager, null);
-        bpCompileHelper.clickLogBadgeItemHandler = this.projectCompiler.clickSqlCompilerLogBadgeItemHandler;
-        var compileRet = cusDS_bp.compile(bpCompileHelper);
-        if (compileRet == false) {
-            return false;
-        }
-
-        // create pull fun
-        var pullFun = clientSide.scope.getFunction(makeFName_pull(theKernel), true, [VarNames.ParentPath]);
-        ctlTag.setAttr('pullDataSource', '{' + pullFun.name + '}');
+        var autoClearValue = theKernel.getAttribute(AttrNames.AutoClearValue);
+        var stableData = theKernel.getAttribute(AttrNames.StableData);
+        var self = this;
+        var compileCDSRet = this.compileCustomDataSourceAttribute(theKernel, 'options_arr', {
+            useCtlProp: (useCtlData, propApiitem) => {
+                if (autoClearValue) {
+                    self.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'text', useCtlData.kernel, propApiitem.relyStateName, {
+                        value: 'null',
+                    });
+                    self.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'value', useCtlData.kernel, propApiitem.relyStateName, {
+                        value: 'null',
+                    });
+                }
+                if (stableData) {
+                    self.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'options_arr', useCtlData.kernel, propApiitem.relyStateName, {
+                        value: 'null',
+                    });
+                }
+            },
+            useFormColumn: (useFormData) => {
+                if (autoClearValue) {
+                    self.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'text', useFormData.formKernel, useFormData.formKernel.getSelectedValueStateName(), {
+                        value: 'null',
+                    });
+                    self.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'value', useFormData.formKernel, useFormData.formKernel.getSelectedValueStateName(), {
+                        value: 'null',
+                    });
+                }
+                if (stableData) {
+                    self.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'options_arr', useFormData.formKernel, useFormData.formKernel.getSelectedValueStateName(), {
+                        value: 'null',
+                    });
+                }
+            },
+            invalidProcess: (validErrStateVar, checkVarValidStr, validBlock, validKernelBlock) => {
+                var dispatchErrLine = 'store.dispatch(makeAction_setManyStateByPath(' + validErrStateVar.name + ',""));';
+                dispatchErrLine += "SendToast('条件不足', EToastType.Warning);";
+                if (checkVarValidStr.length > 0) {
+                    var checkVarValidIf = new JSFile_IF('checkVar', checkVarValidStr);
+                    validBlock.pushChild(checkVarValidIf);
+                    checkVarValidIf.trueBlock.pushLine(dispatchErrLine);
+                }
+                validBlock.pushChild(validKernelBlock);
+                validKernelBlock.pushLine('if(hadValidErr){' + dispatchErrLine + ' return false;}');
+            }
+        });
+        ctlTag.setAttr('pullDataSource', '{' + compileCDSRet.pullFun.name + '}');
         ctlTag.setAttr('textAttrName', fromTextfield);
         ctlTag.setAttr('valueAttrName', fromValuefield);
-        if (theKernel.parent.type == M_LabeledControlKernel_Type) {
-            ctlTag.setAttr('label', theKernel.parent.getAttribute(AttrNames.TextField));
-        }
-        //clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisfullpath,VarNames.Records_arr))] = freshFun.name + '.bind(window)';
-        pullFun.pushLine('var bundle = {};');
-        pullFun.scope.getVar('useState', true, 'store.getState();');
-        if (belongUserControl) {
-            pullFun.scope.getVar(belongUserControl.id + '_path', true, 'getBelongUserCtlPath(parentPath)');
-            pullFun.scope.getVar(belongUserControl.id + '_state', true, 'getStateByPath(useState,' + belongUserControl.id + '_path,{});');
-        }
-        pullFun.scope.getVar(VarNames.RowKeyInfo_map, true, 'getRowKeyMapFromPath(' + VarNames.ParentPath + ')');
-        var validBlock = new FormatFileBlock('valid');
-        pullFun.pushChild(validBlock);
-        var initbundleBlock = new FormatFileBlock('initbundle');
-        pullFun.pushChild(initbundleBlock);
-        pullFun.initbundleBlock = initbundleBlock;
-        pullFun.pushLine(makeLine_FetchPropValue(makeActStr_pullKernel(theKernel), VarNames.ParentPath, singleQuotesStr(theKernel.id), singleQuotesStr('options_arr'), { bundle: 'bundle' }, false));
-
-        var serverPullFun = serverSide.scope.getFunction(makeActStr_pullKernel(theKernel), true, ['req', 'res']);
-        serverSide.initProcessFun(serverPullFun);
-        serverSide.processesMapVarInitVal[serverPullFun.name] = serverPullFun.name;
-        var bodyCheckblock = new FormatFileBlock('bodyCheckblock');
-        serverPullFun.pushChild(bodyCheckblock);
-        serverPullFun.pushLine("var params_arr = null;");
-        var paramsetblock = new FormatFileBlock('paramset');
-        serverPullFun.pushChild(paramsetblock);
-        serverPullFun.pushLine('var sql = "' + compileRet.sql + '";');
-        serverPullFun.pushLine("if (sql == null || sql.length == 0) {return serverhelper.createErrorRet('生成sql失败');}");
-        serverPullFun.pushLine("var rcdRlt = yield dbhelper.asynQueryWithParams(sql, params_arr);");
-        serverPullFun.pushLine("return rcdRlt.recordset;");
-
-        var autoClearValue = theKernel.getAttribute(AttrNames.AutoClearValue);
-        var needSetParams_arr = [];
-        var needCheckVars_arr = [];
-        var needCheckProps_map = {};
-        var propApiitem;
-        var usectlid;
-        var useCtlData;
-        var propName;
-        var varName;
-        var ctlStateVarName;
-        var ctlParentStateVarName;
-        var initValue;
-        var nullableChecker;
-        var needPostValid;
-        var useStateVarName;
-        var parentLabledCtl;
-        var initPath = '';
-        if (!IsEmptyObject(bpCompileHelper.useGlobalControls_map)) {
-            for (usectlid in bpCompileHelper.useGlobalControls_map) {
-                useCtlData = bpCompileHelper.useGlobalControls_map[usectlid];
-                ctlStateVarName = usectlid + '_state';
-                useStateVarName = 'useState';
-                initPath = singleQuotesStr(useCtlData.kernel.getStatePath());
-                if (belongUserControl) {
-                    useStateVarName = belongUserControl.id + '_state';
-                    initPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath());
-                }
-                if(useCtlData.kernel.type == UserControlKernel_Type){
-                    pullFun.scope.getVar(useCtlData.kernel.id + '_path', true, initPath);
-                }
-                ctlParentStateVarName = null;
-                parentLabledCtl = useCtlData.kernel.getParentLabledCtl();
-                if (parentLabledCtl) {
-                    ctlParentStateVarName = parentLabledCtl.id + '_state';
-                    initValue = makeStr_getStateByPath(useStateVarName, singleQuotesStr(parentLabledCtl.getStatePath()), '{}');
-                    pullFun.scope.getVar(ctlParentStateVarName, true, initValue);
-                }
-
-                initValue = makeStr_getStateByPath(useStateVarName, singleQuotesStr(useCtlData.kernel.getStatePath()), '{}');
-                pullFun.scope.getVar(ctlStateVarName, true, initValue);
-
-                for (propName in useCtlData.useprops_map) {
-                    propApiitem = useCtlData.useprops_map[propName];
-                    varName = usectlid + '_' + propApiitem.stateName;
-                    initValue = ctlStateVarName + '.' + propApiitem.stateName;
-                    if (propApiitem.getInitValueFun) {
-                        initValue = propApiitem.getInitValueFun(ctlStateVarName, useCtlData.kernel, propApiitem);
-                    }
-                    pullFun.scope.getVar(varName, true, initValue);
-                    needSetParams_arr.push({ bundleName: varName, clientValue: varName });
-                    needPostValid = true;
-                    if (propApiitem.needValid) {
-                        if (needCheckProps_map[varName] == null) {
-                            needCheckProps_map[varName] = 1;
-                            nullableChecker = ctlParentStateVarName ? parentLabledCtl : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
-                            needPostValid = (nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : true) != true;
-                            needCheckVars_arr.push({
-                                kernel: useCtlData.kernel,
-                                nullable: nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : null,
-                                visibleStateVar: ctlStateVarName,
-                                ctlStateVar: ctlStateVarName,
-                                valueVar: varName,
-                                propApi: propApiitem
-                            });
-                        }
-                    }
-                    else{
-                        if(useCtlData.kernel.type == UserControlKernel_Type){
-                            var templateKernelMidData = this.projectCompiler.getMidData(useCtlData.kernel.getTemplateKernel().id);
-                            var propChecker = templateKernelMidData.propChecker_map[propApiitem.stateName];
-                            if(propChecker){
-                                if(needCheckProps_map[useCtlData.kernel.id+propChecker] == null){
-                                    needCheckProps_map[useCtlData.kernel.id+propChecker] = 1;
-                                    needCheckVars_arr.push({
-                                        callFun:makeStr_callFun(propChecker, [useStateVarName, usectlid + '_path', 'null']),
-                                    });
-                                }
-                            }
-                        }
-                    }
-
-                    if (autoClearValue) {
-                        this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'text', useCtlData.kernel, propApiitem.relyStateName, {
-                            value: 'null',
-                        });
-                        this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'value', useCtlData.kernel, propApiitem.relyStateName, {
-                            value: 'null',
-                        });
-                    }
-                    if (stableData) {
-                        this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'options_arr', useCtlData.kernel, propApiitem.relyStateName, {
-                            value: 'null',
-                        });
-                    }
-                    initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', varName), ctlStateVarName + '.' + propApiitem.stateName));
-                }
-            }
-        }
-
-        if (!IsEmptyObject(bpCompileHelper.useForm_map)) {
-            for (var formId in bpCompileHelper.useForm_map) {
-                var useFormData = bpCompileHelper.useForm_map[formId];
-                var useFormMidData = this.projectCompiler.getMidData(useFormData.formKernel.id);
-                var isGridForm = useFormData.formKernel.isGridForm();
-                var isListForm = useFormData.formKernel.isListForm();
-                var formSelectMode = useFormData.formKernel.getAttribute(AttrNames.SelectMode);
-                ctlParentStateVarName = null;
-                ctlStateVarName = null;
-
-                var formStateVarName = formId + '_state';
-                var nowRecordVarName = formId + '_' + VarNames.NowRecord + '';
-                var nowRowStateVarName = formId + '_' + VarNames.NowRow + '';
-                var formPathVarName = formId + '_path';
-                var formPath = useFormData.formKernel.getStatePath();
-                var selectedRowsVarName = formId + '_' + VarNames.SelectedRows_arr;
-                var isUseFormCtl = !IsEmptyObject(useFormData.useControls_map);
-                var isUseFormColumn = !IsEmptyObject(useFormData.useColumns_map);
-                var ctlBelongStateVarName = formStateVarName;
-
-                useStateVarName = 'useState';
-                if (belongUserControl) {
-                    formPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + formPath);
-                    useStateVarName = belongUserControl.id + '_state';
-                }
-                else {
-                    formPath = singleQuotesStr(formPath);
-                }
-                pullFun.scope.getVar(formPathVarName, true, formPath);
-                pullFun.scope.getVar(formStateVarName, true, makeStr_getStateByPath(useStateVarName, singleQuotesStr(useFormData.formKernel.getStatePath()), '{}'));
-
-                if (isUseFormCtl || isUseFormColumn) {
-                    var forUseDS = useFormData.formKernel.getAttribute(AttrNames.DataSource);
-                    if (isGridForm || isListForm) {
-                        var inGridRow = useFormData.formKernel.isKernelInRow(theKernel);
-                        ctlBelongStateVarName = nowRowStateVarName;
-                        pullFun.scope.getVar(selectedRowsVarName, true, makeStr_callFun('GetFormSelectedRows', [formStateVarName, singleQuotesStr(useFormData.formKernel.getAttribute(AttrNames.KeyColumn))]));
-                        var validStr = selectedRowsVarName + '==null || ' + selectedRowsVarName + '.length == 0';
-                        if (isUseFormColumn) {
-                            pullFun.scope.getVar(nowRecordVarName, true);
-                            needCheckVars_arr.push(selectedRowsVarName);
-
-                            for (var ucname in useFormData.useColumns_map) {
-                                var useColumnParamObj = { bundleName: ucname + '_' + forUseDS.code };
-                                needSetParams_arr.push(useColumnParamObj);
-                                initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', ucname + '_' + forUseDS.code), nowRecordVarName + '.' + ucname));
-                            }
-                            if (autoClearValue) {
-                                this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'text', useFormData.formKernel, useFormData.formKernel.getSelectedValueStateName(), {
-                                    value: 'null',
-                                });
-                                this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'value', useFormData.formKernel, useFormData.formKernel.getSelectedValueStateName(), {
-                                    value: 'null',
-                                });
-                            }
-                            if (stableData) {
-                                this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'options_arr', useFormData.formKernel, useFormData.formKernel.getSelectedValueStateName(), {
-                                    value: 'null',
-                                });
-                            }
-                        }
-                        if (isUseFormCtl) {
-                            if (inGridRow) {
-                                pullFun.scope.getVar(formId + '_rowpath', true, "getParentPathByKey(parentPath,'" + formId + ".row_' + " + VarNames.RowKeyInfo_map + "." + formId + ")");
-                                pullFun.scope.getVar(nowRowStateVarName, true, makeStr_getStateByPath(useStateVarName, formId + '_rowpath', '{}'));
-                                validStr = nowRowStateVarName + ' == null';
-                            }
-                            else {
-                                logManager.errorEx([logManager.createBadgeItem(
-                                    theKernel.getReadableName(),
-                                    theKernel,
-                                    this.projectCompiler.clickKernelLogBadgeItemHandler),
-                                '无法访问:' + useFormData.formKernel.getReadableName() + '的行控件']);
-                                return false;
-                            }
-                        }
-                        validBlock.pushLine(makeStr_AddAll('if(', validStr, '){hadValidErr=true;}'));
-                        validBlock.pushLine('else{', 1);
-                        if (isUseFormColumn) {
-                            validBlock.pushLine(nowRecordVarName + '=' + makeStr_callFun('getRecordFromRowKey', [formPathVarName, selectedRowsVarName + '[0]'], ';'));
-                        }
-                        if (isUseFormCtl && !inGridRow) {
-                            validBlock.pushLine(makeStr_AddAll(nowRowStateVarName, '=', formStateVarName, "['row_' + ", selectedRowsVarName, '[0]];'));
-                        }
-                        validBlock.subNextIndent();
-                        validBlock.pushLine('}');
-                    }
-                    else {
-                        if (isUseFormColumn) {
-                            initValue = formStateVarName + '.' + VarNames.NowRecord;
-                            pullFun.scope.getVar(nowRecordVarName, true, initValue);
-
-                            for (var ucname in useFormData.useColumns_map) {
-                                var useColumnParamObj = { bundleName: ucname + '_' + forUseDS.code };
-                                needSetParams_arr.push(useColumnParamObj);
-                                initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', ucname + '_' + forUseDS.code), nowRecordVarName + '.' + ucname));
-                            }
-                        }
-                    }
-                }
-
-                for (usectlid in useFormData.useControls_map) {
-                    useCtlData = useFormData.useControls_map[usectlid];
-                    ctlStateVarName = usectlid + '_state';
-                    ctlParentStateVarName = null;
-                    initPath = singleQuotesStr(useCtlData.kernel.getStatePath());
-                    if (belongUserControl) {
-                        initPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath());
-                    }
-                    if(useCtlData.kernel.type == UserControlKernel_Type){
-                        pullFun.scope.getVar(useCtlData.kernel.id + '_path', true, initPath);
-                    }
-
-                    parentLabledCtl = useCtlData.kernel.getParentLabledCtl();
-                    if (parentLabledCtl) {
-                        ctlParentStateVarName = parentLabledCtl.id + '_state';
-                        initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(parentLabledCtl.id), '{}');
-                        pullFun.scope.getVar(ctlParentStateVarName, true, initValue);
-                    }
-                    initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(useCtlData.kernel.id), '{}');
-                    pullFun.scope.getVar(ctlStateVarName, true, initValue);
-
-                    for (propName in useCtlData.useprops_map) {
-                        propApiitem = useCtlData.useprops_map[propName];
-                        varName = useCtlData.kernel.id + '_' + propApiitem.stateName;
-                        initValue = ctlStateVarName + '.' + propApiitem.stateName;
-                        if (propApiitem.getInitValueFun) {
-                            initValue = propApiitem.getInitValueFun(ctlStateVarName, useCtlData.kernel, propApiitem);
-                        }
-                        pullFun.scope.getVar(varName, true, initValue);
-                        needSetParams_arr.push({ bundleName: varName, clientValue: varName });
-                        if (propApiitem.needValid && needCheckProps_map[varName] == null) {
-                            needCheckProps_map[varName] = 1;
-                            nullableChecker = ctlParentStateVarName ? parentLabledCtl : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
-                            needPostValid = (nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : true) != true;
-                            needCheckVars_arr.push({
-                                kernel: useCtlData.kernel,
-                                nullable: nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : null,
-                                visibleStateVar: ctlParentStateVarName == null ? ctlStateVarName : ctlParentStateVarName,
-                                ctlStateVar: ctlStateVarName,
-                                valueVar: varName,
-                                propApi: propApiitem
-                            });
-                        }
-                        else{
-                            if(useCtlData.kernel.type == UserControlKernel_Type){
-                                var templateKernelMidData = this.projectCompiler.getMidData(useCtlData.kernel.getTemplateKernel().id);
-                                var propChecker = templateKernelMidData.propChecker_map[propApiitem.stateName];
-                                if(propChecker){
-                                    if(needCheckProps_map[useCtlData.kernel.id+propChecker] == null){
-                                        needCheckProps_map[useCtlData.kernel.id+propChecker] = 1;
-                                        needCheckVars_arr.push({
-                                            callFun:makeStr_callFun(propChecker, [useStateVarName, usectlid + '_path', 'null']),
-                                        });
-                                    }
-                                }
-                            }
-                        }
-
-                        if (autoClearValue) {
-                            this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'text', useCtlData.kernel, propApiitem.relyStateName, {
-                                value: 'null',
-                            });
-                            this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'value', useCtlData.kernel, propApiitem.relyStateName, {
-                                value: 'null',
-                            });
-                        }
-                        if (stableData) {
-                            this.ctlRelyOnGraph.addRely_setAPOnBPChanged(theKernel, 'options_arr', useCtlData.kernel, propApiitem.relyStateName, {
-                                value: 'null',
-                            });
-                        }
-                        initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', varName), ctlStateVarName + '.' + propApiitem.stateName));
-                    }
-                }
-            }
-        }
-
-        if (needCheckVars_arr.length > 0) {
-            var validErrVar = pullFun.scope.getVar('validErr', true);
-            var hadValidErrVar = pullFun.scope.getVar('hadValidErr', true, 'false');
-            var validErrStateVarInitval = '{}';
-            var validErrStateVar = pullFun.scope.getVar('validErrState', true, validErrStateVarInitval);
-            var checkVarValidStr = '';
-            var validKernelBlock = new FormatFileBlock('validkernel');
-            needCheckVars_arr.forEach(varObj => {
-                if (typeof varObj === 'string') {
-                    checkVarValidStr += (checkVarValidStr.length == 0 ? 'IsEmptyString(' : ' || IsEmptyString(') + varObj + ')';
-                    return;
-                }
-                if(varObj.callFun != null){
-                    validKernelBlock.pushLine('validErr = ' + varObj.callFun + ';');
-                    validKernelBlock.pushLine("if(validErr != null){hadValidErr = true;}");
-                    return;
-                }
-                var valueType = 'string';
-                if (varObj.kernel.hasAttribute(AttrNames.ValueType)) {
-                    valueType = varObj.kernel.getAttribute(AttrNames.ValueType);
-                }
-                var infoStatePath = varObj.kernel.getStatePath('invalidInfo', '.', { mapVarName: VarNames.RowKeyInfo_map });
-                validKernelBlock.pushLine('validErr = ' + makeStr_callFun('BaseIsValueValid', [
-                    'useState',
-                    varObj.visibleStateVar,
-                    varObj.ctlStateVar,
-                    varObj.valueVar,
-                    singleQuotesStr(valueType),
-                    varObj.nullable ? varObj.nullable.toString() : 'false',
-                    singleQuotesStr(varObj.kernel.id),
-                    validErrStateVar.name,
-                    VarNames.ParentPath
-                ]) + ";");
-                validKernelBlock.pushLine("validErrState[" + modifyStatePath(infoStatePath, belongUserControl) + "]=validErr;");
-                validKernelBlock.pushLine("if(validErr != null){hadValidErr = true;}");
-                //checkVarValidStr += (checkVarValidStr.length == 0 ? 'IsEmptyString(' : ' || IsEmptyString(') + varName + ')';
-            });
-            var dispatchErrLine = 'store.dispatch(makeAction_setManyStateByPath(' + validErrStateVar.name + ',""));';
-            dispatchErrLine += "SendToast('条件不足', EToastType.Warning);";
-            if (checkVarValidStr.length > 0) {
-                var checkVarValidIf = new JSFile_IF('checkVar', checkVarValidStr);
-                validBlock.pushChild(checkVarValidIf);
-                checkVarValidIf.trueBlock.pushLine(dispatchErrLine);
-            }
-            validBlock.pushChild(validKernelBlock);
-            validKernelBlock.pushLine('if(hadValidErr){' + dispatchErrLine + ' return false;}');
-        }
-
-        if (!IsEmptyObject(bpCompileHelper.usePageParam)) {
-            for (var usPageParamName in bpCompileHelper.usePageParam) {
-                pullFun.scope.getVar('pagein_' + usPageParamName, true, makeStr_callFun('getPageEntryParam', [singleQuotesStr(belongPageKernel.id), singleQuotesStr(usPageParamName), bpCompileHelper.usePageParam[usPageParamName]]));
-                var usePageParamObj = { bundleName: 'pagein_' + usPageParamName, clientValue: 'pagein_' + usPageParamName };
-                needSetParams_arr.push(usePageParamObj);
-                initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', usePageParamObj.bundleName), usePageParamObj.clientValue));
-            }
-        }
-
-        if (!IsEmptyObject(bpCompileHelper.useUrlVar_map)) {
-            for (var varName in bpCompileHelper.useUrlVar_map) {
-                pullFun.scope.getVar(varName, true, makeStr_callFun('getQueryVariable', [singleQuotesStr(varName), bpCompileHelper.useUrlVar_map[varName]]));
-                var useUrlVarObj = { bundleName: varName, clientValue: varName };
-                needSetParams_arr.push(useUrlVarObj);
-                initbundleBlock.pushLine(makeLine_Assign(makeStr_DotProp('bundle', useUrlVarObj.bundleName), useUrlVarObj.clientValue));
-            }
-        }
-
-        if (needSetParams_arr.length > 0) {
-            bodyCheckblock.pushLine("var bundle=req.body.bundle;");
-            bodyCheckblock.pushLine("if(req.body.bundle == null){" + makeLine_RetServerError('没有提供bundle') + '}');
-            paramsetblock.pushLine("params_arr=[", 1);
-            for (var si in needSetParams_arr) {
-                var useParam = needSetParams_arr[si];
-                var serverValue = ReplaceIfNull(useParam.serverValue, 'bundle.' + useParam.bundleName);
-                paramsetblock.pushLine("dbhelper.makeSqlparam('" + useParam.bundleName + "', sqlTypes.NVarChar(4000), " + serverValue + "),");
-                bodyCheckblock.pushLine("if(req.body.bundle." + useParam.bundleName + " == null){" + makeLine_RetServerError('没有提供' + useParam.bundleName) + '};');
-            }
-        }
-
-        if (!IsEmptyObject(bpCompileHelper.useEnvVars)) {
-            if (paramsetblock.childs_arr.length == 0) {
-                paramsetblock.pushLine("params_arr=[", 1);
-            }
-            //bodyCheckblock.pushLine("if(req.session.g_envVar == null){" + makeLine_RetServerError('登录信息失效，无法使用') + '};');
-            for (var useEnvName in bpCompileHelper.useEnvVars) {
-                paramsetblock.pushLine("dbhelper.makeSqlparam('" + useEnvName + "', sqlTypes.NVarChar(4000), req.session.g_envVar." + useEnvName + "),");
-            }
-        }
-
-        if (paramsetblock.childs_arr.length > 0) {
-            paramsetblock.subNextIndent();
-            paramsetblock.pushLine('];');
-        }
 
         var textFieldParseRet = parseObj_CtlPropJsBind(textField, project.scriptMaster);
         if (textFieldParseRet.isScript) {
@@ -5262,9 +5194,11 @@ class MobileContentCompiler extends ContentCompiler {
                 }
             }
 
+            var belongFormKernel;
+            var formColumns_arr;
             if (reactParentKernel.type == M_FormKernel_Type) {
-                var belongFormKernel = reactParentKernel;
-                var formColumns_arr = belongFormKernel.getCanuseColumns();
+                belongFormKernel = reactParentKernel;
+                formColumns_arr = belongFormKernel.getCanuseColumns();
                 if (formColumns_arr.indexOf(textField) != -1) {
                     parentMidData.useColumns_map[textField] = 1;
                     kernelMidData.columnName = textField;
@@ -5299,6 +5233,11 @@ class MobileContentCompiler extends ContentCompiler {
                     };
                     setTextStateItem.alterValue = alterValue;
                 }
+            }
+
+            if (defaultCompileRet && belongFormKernel && belongFormKernel.getInsertSetting()) {
+                // 所在gridform有新增行,默认值要绑定到新增行
+                defaultCompileRet.setStateItem.bindMode = ScriptBindMode.OnNewRow;
             }
 
             if (setValueStateItem != null && setTextStateItem == null) {
@@ -5338,6 +5277,31 @@ class MobileContentCompiler extends ContentCompiler {
             }
             if (setValueStateItem != null) {
                 kernelMidData.needSetStates_arr.push(setValueStateItem);
+            }
+            if (appandColumns_arr.length > 0) {
+                for (var apci in appandColumns_arr) {
+                    var apc = appandColumns_arr[apci];
+                    if (apc.jsBP) {
+                        if (this.compileScriptAttribute({ jsBp: apc.jsBP }, theKernel, apc.name, apc.name, { autoSetFetchState: true }) == false) {
+                            return false;
+                        }
+                    }
+                    else {
+                        if (belongFormKernel && formColumns_arr.indexOf(apc.name) != -1) {
+                            parentMidData.useColumns_map[apc.name] = 1;
+                            kernelMidData.needSetStates_arr.push({
+                                name: apc.name,
+                                useColumn: { name: apc.name },
+                            });
+                        }
+                        else {
+                            kernelMidData.needSetStates_arr.push({
+                                name: apc.name,
+                                setNull: true,
+                            });
+                        }
+                    }
+                }
             }
         }
     }
@@ -5542,6 +5506,9 @@ class MobileContentCompiler extends ContentCompiler {
             ctlTag.setAttr('labelelem', bigbracketStr(titleElemStr));
         }
         ctlTag.setAttr('anchor', theKernel.getAttribute('anchor'));
+        if (!theKernel.getAttribute('hideclosebtn')) {
+            ctlTag.setAttr('hideCloseBtn', bigbracketStr('true'));
+        }
 
         renderBlock.pushChild(ctlTag);
 
@@ -5700,6 +5667,608 @@ class MobileContentCompiler extends ContentCompiler {
         if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
     }
 
+    compileChartKernel(theKernel, renderBlock, renderFun) {
+        var project = this.project;
+        var layoutConfig = theKernel.getLayoutConfig();
+        var clientSide = this.clientSide;
+
+        var ctlTag = new FormatHtmlTag(theKernel.id, 'VisibleERPC_Chart', this.clientSide);
+        this.modifyControlTag(theKernel, ctlTag);
+        ctlTag.class = layoutConfig.class;
+        ctlTag.style = layoutConfig.style;
+        this.modifyControlTag(theKernel, ctlTag);
+        var chartType = theKernel.getAttribute(AttrNames.ChartType);
+        ctlTag.setAttr('type', chartType);
+        ctlTag.setAttr('hovermode', theKernel.getAttribute('hovermode'));
+        ctlTag.setAttr('intersect', '{' + theKernel.getAttribute('intersect') + '}');
+
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
+
+        var belongPageKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
+        var belongUserControl = null;
+        if (belongPageKernel == null) {
+            belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
+        }
+        var belongUserCtlMidData = belongUserControl ? this.projectCompiler.getMidData(belongUserControl.id) : null;
+
+        var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
+        var reactParentKernel = theKernel.getReactParentKernel(true);
+        var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
+        var parentMidData = this.projectCompiler.getMidData(reactParentKernel.id);
+        var belongFormMidData = belongFormKernel ? this.projectCompiler.getMidData(belongFormKernel.id) : null;
+
+        var chartTitle = theKernel.getAttribute(AttrNames.Title);
+        var titleParseRet = parseObj_CtlPropJsBind(chartTitle, project.scriptMaster);
+        var setTitleStateItem = null;
+        if (titleParseRet.isScript) {
+            if (this.compileScriptAttribute(titleParseRet, theKernel, 'title', AttrNames.Title, { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (!IsEmptyString(titleParseRet.string)) {
+                if (belongFormKernel != null && (!belongFormKernel.isGridForm() || belongFormKernel.isKernelInRow(theKernel))) {
+                    var formColumns_arr = belongFormKernel.getCanuseColumns();
+                    if (formColumns_arr.indexOf(chartTitle) != -1) {
+                        parentMidData.useColumns_map[chartTitle] = 1;
+                        setTitleStateItem = {
+                            name: 'title',
+                            useColumn: { name: chartTitle },
+                        };
+                    }
+                }
+                if (setTitleStateItem == null) {
+                    ctlTag.setAttr('title', chartTitle);
+                }
+            }
+        }
+
+        if (setTitleStateItem) {
+            kernelMidData.needSetStates_arr.push(setTitleStateItem);
+            if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
+                parentMidData.needSetKernels_arr.push(theKernel);
+            }
+        }
+
+        var pureFullParentPath = this.getKernelFullParentPath(theKernel);
+        var fullParentPath = pureFullParentPath;
+        if (belongUserControl) {
+            if (IsEmptyString(fullParentPath)) {
+                fullParentPath = belongUserControl.id + '_path';
+            }
+            else {
+                fullParentPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + fullParentPath);
+            }
+        }
+        else {
+            fullParentPath = singleQuotesStr(fullParentPath);
+        }
+        var self = this;
+        var needCallPullFun = true;
+        var autoPull = theKernel.getAttribute(AttrNames.AutoPull);
+        var compileCDSRet = this.compileCustomDataSourceAttribute(theKernel, 'records_arr', {
+            useCtlProp: (useCtlData, propApiitem, pullFun) => {
+                if (autoPull) {
+                    var useFullParentPath = fullParentPath;
+                    if (useCtlData.kernel.type == UserControlKernel_Type && useCtlData.kernel.isTemplate()) {
+                        if (IsEmptyString(pureFullParentPath)) {
+                            useFullParentPath = 'this.props.fullPath';
+                        }
+                        else {
+                            useFullParentPath = 'this.props.fullPath + ' + singleQuotesStr('.' + pureFullParentPath);
+                        }
+                    }
+                    this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theKernel, pullFun.name, useCtlData.kernel, propApiitem.relyStateName, [useFullParentPath]);
+                }
+                needCallPullFun = false;
+            },
+            useFormColumn: (useFormData, pullFun) => {
+                var useFormMidData = this.projectCompiler.getMidData(useFormData.formKernel.id);
+                if (useFormMidData.isPageForm) {
+                    if (autoPull) {
+                        useFormMidData.bindFun.bindEndBlock.pushLine(makeStr_callFun(pullFun.name, [fullParentPath], ';'));
+                    }
+                }
+                needCallPullFun = false;
+            },
+            invalidProcess: (validErrStateVar, checkVarValidStr, validBlock, validKernelBlock) => {
+                var dispatchErrLine = 'store.dispatch(makeAction_setManyStateByPath(' + validErrStateVar.name + ',""));';
+                if (checkVarValidStr.length > 0) {
+                    var checkVarValidIf = new JSFile_IF('checkVar', checkVarValidStr);
+                    validBlock.pushChild(checkVarValidIf);
+                    checkVarValidIf.trueBlock.pushLine(dispatchErrLine);
+                }
+                validBlock.pushChild(validKernelBlock);
+                validKernelBlock.pushLine('if(hadValidErr){' + dispatchErrLine + ' return false;}');
+            }
+        });
+        var pullFun = compileCDSRet.pullFun;
+        ctlTag.setAttr('pullDataSource', '{' + compileCDSRet.pullFun.name + '}');
+        if (needCallPullFun && autoPull) {
+            if (belongFormMidData != null) {
+                if (belongFormMidData.useDS) {
+                    belongFormMidData.pullFun.beforeRetBlock.pushLine(makeStr_callFun(pullFun.name, [fullParentPath]));
+                }
+                else {
+                    belongFormMidData.bindFun.beforeRetBlock.pushLine(makeStr_callFun(pullFun.name, [fullParentPath]));
+                }
+            }
+            else if (belongUserControl != null) {
+                // 在自订控件里
+                var templateReactClass = this.clientSide.getReactClass(belongUserControl.getReactClassName());
+                templateReactClass.initFun.pushLine(makeStr_callFun(pullFun.name, ['ctlFullPath']));
+            }
+            else {
+                var pageInitFun = clientSide.scope.getFunction(makeFName_initPage(belongPageKernel));
+                var timeoutBlock = pageInitFun.getChild('timeout');
+                timeoutBlock.pushLine(makeStr_callFun(pullFun.name, [fullParentPath]) + ';');
+            }
+        }
+
+        var genDataFunName = theKernel.id + '_' + AttrNames.Function.GenarateChartData;
+        var genDataBp = project.scriptMaster.getBPByName(genDataFunName);
+        if (genDataBp == null) {
+            logManager.errorEx([logManager.createBadgeItem(
+                theKernel.getReadableName(),
+                theKernel,
+                this.projectCompiler.clickKernelLogBadgeItemHandler),
+                '必须设置生成数据方法']);
+            return false;
+        }
+        var compileRet = this.compileScriptBlueprint(genDataBp);
+        if (compileRet == false) {
+            return false;
+        }
+
+        var recordsArraychangedFunName = theKernel.id + '_' + VarNames.Records_arr + '_changed';
+        var recordsArraychangedFun = clientSide.scope.getFunction(recordsArraychangedFunName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowKeyInfo_map']);
+        recordsArraychangedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
+        recordsArraychangedFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''", VarNames.NeedSetState], ';'));
+        recordsArraychangedFun.scope.getVar('labels_arr', true, '[]');
+        recordsArraychangedFun.scope.getVar('datasets_arr', true, '[]');
+        recordsArraychangedFun.scope.getVar('ctlpath', true, "getParentPathByKey(path,'" + theKernel.id + "')");
+        recordsArraychangedFun.pushLine(makeStr_callFun(compileRet.name, [VarNames.State, 'newValue', 'labels_arr', 'datasets_arr'], ';'));
+        recordsArraychangedFun.pushLine('datasets_arr.forEach(dataset=>{', 1);
+        recordsArraychangedFun.pushLine('if(dataset.backgroundColor.length == 1){dataset.backgroundColor = dataset.backgroundColor[0];}', -1);
+        recordsArraychangedFun.pushLine('});');
+        recordsArraychangedFun.pushLine(VarNames.NeedSetState + "[ctlpath+'.data']={labels: labels_arr,datasets: datasets_arr};");
+
+        ctlTag.setAttr('id', theKernel.id);
+        var parentPath = this.getKernelParentPath(theKernel);
+        var parentFullPath = this.getKernelFullParentPath(theKernel);
+        var thisFullPath = makeStr_DotProp(parentFullPath, theKernel.id);
+        if (belongUserControl) {
+            belongUserCtlMidData.needSetStateChangedActs_arr.push(
+                {
+                    propName: makeStr_DotProp(thisFullPath, VarNames.Records_arr),
+                    funName: recordsArraychangedFunName + '.bind(window)',
+                }
+            );
+        }
+        else {
+            clientSide.stateChangedAct[singleQuotesStr(makeStr_DotProp(thisFullPath, VarNames.Records_arr))] = recordsArraychangedFunName + '.bind(window)';
+        }
+        ctlTag.setAttr('parentPath', parentPath);
+        renderBlock.pushChild(ctlTag);
+
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
+    }
+
+    compileCustomDataSourceAttribute(theKernel, optionStateName, config) {
+        var project = this.project;
+        var logManager = project.logManager;
+        var clientSide = this.clientSide;
+        var serverSide = this.serverSide;
+
+        var belongPageKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
+        var belongUserControl = null;
+        if (belongPageKernel == null) {
+            belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
+        }
+
+        var cusDS_bp = theKernel.getAttribute(AttrNames.CustomDataSource);
+        logManager.log("编译[" + cusDS_bp.name + ']');
+        var bpCompileHelper = new SqlNode_CompileHelper(logManager, null);
+        bpCompileHelper.clickLogBadgeItemHandler = this.projectCompiler.clickSqlCompilerLogBadgeItemHandler;
+        var compileRet = cusDS_bp.compile(bpCompileHelper);
+        if (compileRet == false) {
+            return false;
+        }
+
+        // create pull fun
+        var pullFun = clientSide.scope.getFunction(makeFName_pull(theKernel), true, [VarNames.ParentPath]);
+        pullFun.pushLine('var bundle = {};');
+        pullFun.scope.getVar('useState', true, 'store.getState();');
+        if (belongUserControl) {
+            pullFun.scope.getVar(belongUserControl.id + '_path', true, 'getBelongUserCtlPath(parentPath)');
+            pullFun.scope.getVar(belongUserControl.id + '_state', true, 'getStateByPath(useState,' + belongUserControl.id + '_path,{});');
+        }
+        pullFun.scope.getVar(VarNames.RowKeyInfo_map, true, 'getRowKeyMapFromPath(' + VarNames.ParentPath + ')');
+        var validBlock = new FormatFileBlock('valid');
+        pullFun.pushChild(validBlock);
+        var declareVars = {}
+        var initbundleBlock = new FormatFileBlock('initbundle');
+        pullFun.pushChild(initbundleBlock);
+        pullFun.initbundleBlock = initbundleBlock;
+        pullFun.pushLine(makeLine_FetchPropValue(makeActStr_pullKernel(theKernel), VarNames.ParentPath, singleQuotesStr(theKernel.id), singleQuotesStr(optionStateName), { bundle: 'bundle' }, false));
+
+        var serverPullFun = serverSide.scope.getFunction(makeActStr_pullKernel(theKernel), true, ['req', 'res']);
+        serverSide.initProcessFun(serverPullFun);
+        serverSide.processesMapVarInitVal[serverPullFun.name] = serverPullFun.name;
+        var bodyCheckblock = new FormatFileBlock('bodyCheckblock');
+        serverPullFun.pushChild(bodyCheckblock);
+        serverPullFun.pushLine("var params_arr = null;");
+        var paramsetblock = new FormatFileBlock('paramset');
+        serverPullFun.pushChild(paramsetblock);
+        serverPullFun.pushLine('var sql = "' + compileRet.sql + '";');
+        serverPullFun.pushLine("if (sql == null || sql.length == 0) {return serverhelper.createErrorRet('生成sql失败');}");
+        serverPullFun.pushLine("var rcdRlt = yield dbhelper.asynQueryWithParams(sql, params_arr);");
+        serverPullFun.pushLine("return rcdRlt.recordset;");
+
+        var needSetParams_arr = [];
+        var needCheckVars_arr = [];
+        var needCheckProps_map = {};
+        var propApiitem;
+        var usectlid;
+        var useCtlData;
+        var propName;
+        var varName;
+        var ctlStateVarName;
+        var ctlParentStateVarName;
+        var initValue;
+        var nullableChecker;
+        var needPostValid;
+        var useStateVarName = 'useState';
+        var parentLabledCtl;
+        var initPath = '';
+        var bundleParam = null;
+        var hadNeedWatchParam = false;
+        var pullFun = pullFun;
+        var colName;
+        if (!IsEmptyObject(bpCompileHelper.useGlobalControls_map)) {
+            hadNeedWatchParam = true;
+            for (usectlid in bpCompileHelper.useGlobalControls_map) {
+                useCtlData = bpCompileHelper.useGlobalControls_map[usectlid];
+                ctlStateVarName = usectlid + '_state';
+                initPath = singleQuotesStr(useCtlData.kernel.getStatePath());
+                if (useCtlData.kernel.type == UserControlKernel_Type) {
+                    if (belongUserControl) {
+                        initPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath());
+                    }
+                    pullFun.scope.getVar(useCtlData.kernel.id + '_path', true, initPath);
+                }
+                if (belongUserControl) {
+                    initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useCtlData.kernel.getStatePath()), '{}');
+                }
+                else {
+                    initValue = makeStr_getStateByPath(useStateVarName, singleQuotesStr(useCtlData.kernel.getStatePath()), '{}');
+                }
+                pullFun.scope.getVar(ctlStateVarName, true, initValue);
+
+                ctlParentStateVarName = null;
+                parentLabledCtl = useCtlData.kernel.getParentLabledCtl();
+                if (parentLabledCtl) {
+                    ctlParentStateVarName = parentLabledCtl.id + '_state';
+                    initValue = makeStr_getStateByPath(useStateVarName, singleQuotesStr(parentLabledCtl.getStatePath()), '{}');
+                    pullFun.scope.getVar(ctlParentStateVarName, true, initValue);
+                }
+
+                initValue = makeStr_getStateByPath(useStateVarName, singleQuotesStr(useCtlData.kernel.getStatePath()), '{}');
+                pullFun.scope.getVar(ctlStateVarName, true, initValue);
+
+                for (propName in useCtlData.useprops_map) {
+                    propApiitem = useCtlData.useprops_map[propName];
+                    varName = usectlid + '_' + propApiitem.stateName;
+                    initValue = ctlStateVarName + '.' + propApiitem.stateName;
+                    if (propApiitem.getInitValueFun) {
+                        initValue = propApiitem.getInitValueFun(ctlStateVarName, useCtlData.kernel, propApiitem);
+                    }
+                    pullFun.scope.getVar(varName, true, initValue);
+                    needPostValid = true;
+                    if (propApiitem.needValid) {
+                        if (needCheckProps_map[varName] == null) {
+                            needCheckProps_map[varName] = 1;
+                            nullableChecker = ctlParentStateVarName ? parentLabledCtl : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
+                            needPostValid = (nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : true) != true;
+                            needCheckVars_arr.push({
+                                kernel: useCtlData.kernel,
+                                nullable: nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : null,
+                                visibleStateVar: ctlStateVarName,
+                                ctlStateVar: ctlStateVarName,
+                                valueVar: varName,
+                                propApi: propApiitem
+                            });
+                        }
+                    }
+                    else {
+                        if (useCtlData.kernel.type == UserControlKernel_Type) {
+                            if (useCtlData.kernel.isTemplate()) {
+                                needPostValid = false;  // 模板自订控件里面的方法一律不做属性验证
+                            }
+                            else {
+                                var templateKernelMidData = this.projectCompiler.getMidData(useCtlData.kernel.getTemplateKernel().id);
+                                var propChecker = templateKernelMidData.propChecker_map[propApiitem.stateName];
+                                if (propChecker) {
+                                    if (needCheckProps_map[useCtlData.kernel.id + propChecker] == null) {
+                                        needCheckProps_map[useCtlData.kernel.id + propChecker] = 1;
+                                        needCheckVars_arr.push({
+                                            callFun: makeStr_callFun(propChecker, [useStateVarName, usectlid + '_path', 'null']),
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (config.useCtlProp) {
+                        config.useCtlProp(useCtlData, propApiitem, pullFun);
+                    }
+                    needSetParams_arr.push({ bundleName: varName, clientValue: varName, needPostValid: needPostValid });
+                }
+            }
+        }
+
+        if (!IsEmptyObject(bpCompileHelper.useForm_map)) {
+            for (var formId in bpCompileHelper.useForm_map) {
+                var useFormData = bpCompileHelper.useForm_map[formId];
+                var useFormMidData = this.projectCompiler.getMidData(useFormData.formKernel.id);
+                var isGridForm = useFormData.formKernel.isGridForm();
+                var isListForm = useFormData.formKernel.isListForm();
+                var formSelectMode = useFormData.formKernel.getAttribute(AttrNames.SelectMode);
+                ctlParentStateVarName = null;
+                ctlStateVarName = null;
+
+                var formStateVarName = formId + '_state';
+                var nowRecordVarName = formId + '_' + VarNames.NowRecord + '';
+                var nowRowStateVarName = formId + '_' + VarNames.NowRow + '';
+                var formPathVarName = formId + '_path';
+                var formRowPathVarName = formId + '_rowpath';
+                var formPath = useFormData.formKernel.getStatePath();
+                var selectedRowsVarName = formId + '_' + VarNames.SelectedRows_arr;
+                var isUseFormCtl = !IsEmptyObject(useFormData.useControls_map);
+                var isUseFormColumn = !IsEmptyObject(useFormData.useColumns_map);
+                var ctlBelongStateVarName = formStateVarName;
+
+                if (belongUserControl) {
+                    formPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + formPath);
+                    initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
+                }
+                else {
+                    formPath = singleQuotesStr(formPath);
+                    initValue = makeStr_getStateByPath(useStateVarName, singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
+                }
+                pullFun.scope.getVar(formPathVarName, true, formPath);
+                pullFun.scope.getVar(formStateVarName, true, initValue);
+
+                var inGridRow = useFormData.formKernel.isKernelInRow(theKernel);
+                if (isUseFormCtl || isUseFormColumn) {
+                    hadNeedWatchParam = true;
+                    var forUseDS = useFormData.formKernel.getAttribute(AttrNames.DataSource);
+                    if (isGridForm || isListForm) {
+                        ctlBelongStateVarName = nowRowStateVarName;
+                        pullFun.scope.getVar(formRowPathVarName, true);
+                        if (isUseFormColumn) {
+                            pullFun.scope.getVar(nowRecordVarName, true);
+                            pullFun.scope.getVar(nowRowStateVarName, true);
+                            needCheckVars_arr.push(nowRecordVarName);
+                        }
+                        if (isUseFormCtl) {
+                            pullFun.scope.getVar(nowRecordVarName, true);
+                            pullFun.scope.getVar(nowRowStateVarName, true);
+                            needCheckVars_arr.push(nowRowStateVarName);
+                        }
+                        if (inGridRow) {
+                            validBlock.pushLine(makeLine_SetValue(formRowPathVarName, formPathVarName + " + '.row_' + " + VarNames.RowKeyInfo_map + "." + formId));
+                            validBlock.pushLine(makeStr_AddAll(nowRowStateVarName, '=', makeStr_getStateByPath(formStateVarName, "'row_' + " + VarNames.RowKeyInfo_map + "." + formId, '{}'), ';'));
+                            validBlock.pushLine(nowRecordVarName + '=' + makeStr_callFun('getRecordFromRowKey', [formPathVarName, VarNames.RowKeyInfo_map + "." + formId], ';'));
+                        }
+                        else {
+                            pullFun.scope.getVar(selectedRowsVarName, true, makeStr_callFun('GetFormSelectedRows', [formStateVarName, singleQuotesStr(useFormData.formKernel.getAttribute(AttrNames.KeyColumn))]));
+                            validBlock.pushLine(makeStr_AddAll('if(', selectedRowsVarName, '==null || ', selectedRowsVarName, '.length == 0){hadValidErr=true;}'));
+                            validBlock.pushLine('else{', 1);
+                            if (isUseFormColumn) {
+                                validBlock.pushLine(nowRecordVarName + '=' + makeStr_callFun('getRecordFromRowKey', [formPathVarName, selectedRowsVarName + '[0]'], ';'));
+                            }
+                            if (isUseFormCtl) {
+                                validBlock.pushLine(makeLine_SetValue(formRowPathVarName, makeStr_callFun('CombineDotStr', [formPathVarName, selectedRowsVarName + '[0]'])));
+                                validBlock.pushLine(makeStr_AddAll(nowRowStateVarName, '=', formStateVarName, "['row_' + ", selectedRowsVarName, '[0]];'));
+                            }
+                            validBlock.subNextIndent();
+                            validBlock.pushLine('}');
+                        }
+                    }
+                    else {
+                        if (isUseFormColumn) {
+                            initValue = formStateVarName + '.' + VarNames.NowRecord;
+                            pullFun.scope.getVar(nowRecordVarName, true, initValue);
+                            needCheckVars_arr.push(nowRecordVarName);
+                        }
+                    }
+                }
+
+                if (isUseFormColumn) {
+                    for (colName in useFormData.useColumns_map) {
+                        needSetParams_arr.push({ bundleName: colName + '_' + useFormData.useDS.code, clientValue: nowRecordVarName + '.' + colName });
+                        useFormMidData.useColumns_map[colName] = 1;
+                    }
+                    if (!isUseFormCtl) {
+                        if (config.useFormColumn) {
+                            config.useFormColumn(useFormData, pullFun);
+                        }
+                    }
+                }
+
+                var ctlDeclareBlock = new FormatFileBlock('ctlDeclare');
+                validBlock.pushChild(ctlDeclareBlock);
+
+                for (usectlid in useFormData.useControls_map) {
+                    useCtlData = useFormData.useControls_map[usectlid];
+                    if (belongUserControl) {
+                        initPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath());
+                    }
+                    if (useCtlData.kernel.type == UserControlKernel_Type) {
+                        ctlDeclareBlock.pushLine(makeLine_DeclareVar(useCtlData.kernel.id + '_path', formRowPathVarName + singleQuotesStr('.' + useCtlData.kernel.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map }, false, useFormData.formKernel)), false));
+                    }
+
+                    ctlStateVarName = usectlid + '_state';
+                    initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(usectlid), '{}');
+                    ctlDeclareBlock.pushLine(makeLine_DeclareVar(ctlStateVarName, initValue, false));
+                    ctlParentStateVarName = null;
+                    parentLabledCtl = useCtlData.kernel.getParentLabledCtl();
+                    if (parentLabledCtl) {
+                        ctlParentStateVarName = parentLabledCtl.id + '_state';
+                        if (declareVars[ctlParentStateVarName] == null) {
+                            initValue = makeStr_getStateByPath(ctlBelongStateVarName, singleQuotesStr(parentLabledCtl.id), '{}');
+                            ctlDeclareBlock.pushLine(makeLine_DeclareVar(ctlParentStateVarName, initValue, false));
+                            declareVars[ctlParentStateVarName] = 1;
+                        }
+                    }
+
+                    for (propName in useCtlData.useprops_map) {
+                        propApiitem = useCtlData.useprops_map[propName];
+                        varName = useCtlData.kernel.id + '_' + propApiitem.stateName;
+                        if (declareVars[varName] == null) {
+                            initValue = ctlStateVarName + '.' + propApiitem.stateName;
+                            if (propApiitem.getInitValueFun) {
+                                initValue = propApiitem.getInitValueFun(ctlStateVarName, useCtlData.kernel, propApiitem);
+                            }
+                            ctlDeclareBlock.pushLine(makeLine_DeclareVar(varName, initValue, false));
+                            declareVars[varName] = 1;
+                        }
+                        needPostValid = true;
+                        if (propApiitem.needValid && needCheckProps_map[varName] == null) {
+                            needCheckProps_map[varName] = 1;
+                            nullableChecker = ctlParentStateVarName ? parentLabledCtl : (useCtlData.kernel.hasAttribute(AttrNames.Nullable) ? useCtlData.kernel : null);
+                            needPostValid = (nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : true) != true;
+                            needCheckVars_arr.push({
+                                kernel: useCtlData.kernel,
+                                nullable: nullableChecker != null ? nullableChecker.getAttribute(AttrNames.Nullable) : null,
+                                visibleStateVar: ctlParentStateVarName == null ? ctlStateVarName : ctlParentStateVarName,
+                                ctlStateVar: ctlStateVarName,
+                                valueVar: varName,
+                                propApi: propApiitem
+                            });
+                        }
+                        else {
+                            if (useCtlData.kernel.type == UserControlKernel_Type) {
+                                var templateKernelMidData = this.projectCompiler.getMidData(useCtlData.kernel.getTemplateKernel().id);
+                                var propChecker = templateKernelMidData.propChecker_map[propApiitem.stateName];
+                                if (propChecker) {
+                                    if (needCheckProps_map[useCtlData.kernel.id + propChecker] == null) {
+                                        needCheckProps_map[useCtlData.kernel.id + propChecker] = 1;
+                                        needCheckVars_arr.push({
+                                            callFun: makeStr_callFun(propChecker, [useStateVarName, usectlid + '_path', 'null']),
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                        needSetParams_arr.push({ bundleName: varName, clientValue: varName, needPostValid: needPostValid });
+                        if (config.useCtlProp) {
+                            config.useCtlProp(useCtlData, propApiitem, pullFun);
+                        }
+                    }
+                }
+            }
+        }
+        if (needCheckVars_arr.length > 0) {
+            var validErrVar = pullFun.scope.getVar('validErr', true);
+            var hadValidErrVar = pullFun.scope.getVar('hadValidErr', true, 'false');
+            var validErrStateVarInitval = '{}';
+            var validErrStateVar = pullFun.scope.getVar('validErrState', true, validErrStateVarInitval);
+            var checkVarValidStr = '';
+            var validKernelBlock = new FormatFileBlock('validkernel');
+            needCheckVars_arr.forEach(varObj => {
+                if (typeof varObj === 'string') {
+                    checkVarValidStr += (checkVarValidStr.length == 0 ? 'IsEmptyString(' : ' || IsEmptyString(') + varObj + ')';
+                    return;
+                }
+                if (varObj.callFun != null) {
+                    validKernelBlock.pushLine('validErr = ' + varObj.callFun + ';');
+                    validKernelBlock.pushLine("if(validErr != null){hadValidErr = true;}");
+                    return;
+                }
+                var valueType = 'string';
+                if (varObj.kernel.hasAttribute(AttrNames.ValueType)) {
+                    valueType = varObj.kernel.getAttribute(AttrNames.ValueType);
+                }
+                var infoStatePath = varObj.kernel.getStatePath('invalidInfo', '.', { mapVarName: VarNames.RowKeyInfo_map });
+                validKernelBlock.pushLine('validErr = ' + makeStr_callFun('BaseIsValueValid', [
+                    useStateVarName,
+                    varObj.visibleStateVar,
+                    varObj.ctlStateVar,
+                    varObj.valueVar,
+                    singleQuotesStr(valueType),
+                    varObj.nullable ? varObj.nullable.toString() : 'false',
+                    singleQuotesStr(varObj.kernel.id),
+                    validErrStateVar.name,
+                    VarNames.ParentPath
+                ]) + ";");
+                validKernelBlock.pushLine("validErrState[" + modifyStatePath(infoStatePath, belongUserControl) + "]=validErr;");
+                validKernelBlock.pushLine("if(validErr != null){hadValidErr = true;}");
+            });
+
+            if (config.invalidProcess) {
+                config.invalidProcess(validErrStateVar, checkVarValidStr, validBlock, validKernelBlock);
+            }
+        }
+
+        if (!IsEmptyObject(bpCompileHelper.usePageParam)) {
+            if(belongPageKernel == null){
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '没有关联页面缺使用了获取页面入库参数']);
+                return false;
+            }
+            for (var usPageParamName in bpCompileHelper.usePageParam) {
+                pullFun.scope.getVar('pagein_' + usPageParamName, true, makeStr_callFun('getPageEntryParam', [singleQuotesStr(belongPageKernel.id), singleQuotesStr(usPageParamName), bpCompileHelper.usePageParam[usPageParamName]]));
+                needSetParams_arr.push({ bundleName: 'pagein_' + usPageParamName, clientValue: 'pagein_' + usPageParamName });
+            }
+        }
+
+        if (!IsEmptyObject(bpCompileHelper.useUrlVar_map)) {
+            for (var varName in bpCompileHelper.useUrlVar_map) {
+                pullFun.scope.getVar(varName, true, makeStr_callFun('getQueryVariable', [singleQuotesStr(varName), bpCompileHelper.useUrlVar_map[varName]]));
+                var useUrlVarObj = { bundleName: varName, clientValue: varName };
+                needSetParams_arr.push(useUrlVarObj);
+            }
+        }
+
+        if (needSetParams_arr.length > 0) {
+            bodyCheckblock.pushLine("if(req.body.bundle == null){" + makeLine_RetServerError('没有提供bundle') + '}');
+            bodyCheckblock.pushLine("var bundle=req.body.bundle;");
+            paramsetblock.pushLine("params_arr=[", 1);
+            for (var si in needSetParams_arr) {
+                var useParam = needSetParams_arr[si];
+                initbundleBlock.pushLine(makeLine_Assign(VarNames.Bundle + '.' + useParam.bundleName, useParam.clientValue));
+                var serverValue = ReplaceIfNull(useParam.serverValue, 'bundle.' + useParam.bundleName);
+                paramsetblock.pushLine("dbhelper.makeSqlparam('" + useParam.bundleName + "', sqlTypes.NVarChar(4000), " + serverValue + "),");
+                if (useParam.needPostValid != false) {
+                    bodyCheckblock.pushLine("if(bundle." + useParam.bundleName + " == null){" + makeLine_RetServerError('没有提供' + useParam.bundleName) + '};');
+                }
+            }
+        }
+
+        if (!IsEmptyObject(bpCompileHelper.useEnvVars)) {
+            if (paramsetblock.childs_arr.length == 0) {
+                paramsetblock.pushLine("params_arr=[", 1);
+            }
+            for (var useEnvName in bpCompileHelper.useEnvVars) {
+                paramsetblock.pushLine("dbhelper.makeSqlparam('" + useEnvName + "', sqlTypes.NVarChar(4000), req.session.g_envVar." + useEnvName + "),");
+            }
+        }
+
+        if (paramsetblock.childs_arr.length > 0) {
+            paramsetblock.subNextIndent();
+            paramsetblock.pushLine('];');
+        }
+        return {
+            pullFun: pullFun,
+            serverPullFun: serverPullFun,
+        };
+    }
+
     compileEnd() {
         super.compileEnd();
     }
@@ -5743,6 +6312,74 @@ class MobileContentCompiler extends ContentCompiler {
         if (belongUserControl) {
             pullFun.scope.getVar(belongUserControl.id + '_path', true, makeStr_callFun("getBelongUserCtlPath", [VarNames.FullParentPath]));
             pullFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath', [VarNames.State, belongUserControl.id + '_path', '{}']));
+        }
+
+        if (midData.useFormXML || midData.useFormXMLText) {
+            var getXmlRowFunName = theKernel.id + '_' + AttrNames.Function.GetXMLRowItem;
+            var getXmlRowBp = project.scriptMaster.getBPByName(getXmlRowFunName);
+            if (getXmlRowBp == null) {
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '有地方使用了此Grid的XML数据，却没有设定[获取XML行]方法']);
+                return false;
+            }
+            var returnVars_arr = getXmlRowBp.returnVars_arr.filter(item => {
+                return item.name != AttrNames.RowText;
+            });
+            if (midData.useFormXML) {
+                if (returnVars_arr.length == 0) {
+                    logManager.errorEx([logManager.createBadgeItem(
+                        theKernel.getReadableName(),
+                        theKernel,
+                        this.projectCompiler.clickKernelLogBadgeItemHandler),
+                        '[获取XML行]方法必须要有返回值设置']);
+                    return false;
+                }
+            }
+            if (midData.useFormXMLText && returnVars_arr.length == getXmlRowBp.returnVars_arr.length) {
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '有地方使用了此Grid的文本数据，却没在[获取XML行]设定RowText返回']);
+                return false;
+            }
+            var compileRet = this.compileScriptBlueprint(getXmlRowBp);
+            if (compileRet == false) {
+                return false;
+            }
+
+            var xmlconfig = {
+                colcount: returnVars_arr.length
+            };
+            returnVars_arr.forEach((varData, index) => {
+                xmlconfig['col' + (index + 1)] = varData.name;
+            });
+            clientSide.scope.getVar(theKernel.id + '_xmlconfig', true, JSON.stringify(xmlconfig));
+        }
+
+        if (midData.useFormJSON) {
+            var getJsonRowFunName = theKernel.id + '_' + AttrNames.Function.GetJSONRowItem;
+            var getJsonRowBp = project.scriptMaster.getBPByName(getJsonRowFunName);
+            if (getJsonRowBp == null) {
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '有地方使用了此表格的Json数据，却没有设定[获取JSON行]方法']);
+                return false;
+            }
+            var returnVars_arr = getJsonRowBp.returnVars_arr.filter(item => {
+                return item.name != AttrNames.RowText;
+            });
+            var compileRet = this.compileScriptBlueprint(getJsonRowBp);
+            if (compileRet == false) {
+                return false;
+            }
+            var headers_arr = returnVars_arr.map(v=>{return v.name;});
+            clientSide.scope.getVar(theKernel.id + '_jsonHeaders', true, JSON.stringify(headers_arr));
         }
 
         if (midData.useDS) {
@@ -5815,7 +6452,12 @@ class MobileContentCompiler extends ContentCompiler {
                     var formPathVarName = formId + '_path';
                     var formPath = useFormData.formKernel.getStatePath();
 
-                    if (belongUserControl) {
+                    var isUseParentForm = useFormData.formKernel.isKernelInRow(theKernel);
+                    if(isUseParentForm){
+                        formPath = makeStr_callFun('getParentPathByKey', [VarNames.FullParentPath, singleQuotesStr(formId)]);
+                        initValue = makeStr_getStateByPath(VarNames.State, formPathVarName, '{}');
+                    }
+                    else if (belongUserControl) {
                         formPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + formPath);
                         initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
                     }
@@ -5829,25 +6471,43 @@ class MobileContentCompiler extends ContentCompiler {
                     if (isUseFormCtl || isUseFormColumn) {
                         if (isGridForm || isListForm) {
                             ctlBelongStateVarName = nowRowStateVarName;
-                            theFun.scope.getVar(selectedRowsVarName, true, makeStr_callFun('GetFormSelectedRows', [formStateVarName, singleQuotesStr(useFormData.formKernel.getAttribute(AttrNames.KeyColumn))]));
-                            if (isUseFormColumn) {
-                                theFun.scope.getVar(nowRecordVarName, true);
+                            if(isUseParentForm){
+                                if (isUseFormColumn) {
+                                    theFun.scope.getVar(nowRecordVarName, true);
+                                }
+                                if (isUseFormCtl) {
+                                    theFun.scope.getVar(nowRowStateVarName, true);
+                                }
+                                if (isUseFormColumn) {
+                                    validBlock.pushLine(nowRecordVarName + '=' + makeStr_callFun('getRecordFromRowKey', [formPathVarName, VarNames.RowKeyInfo_map + '.' + formId], ';'));
+                                }
+                                if (isUseFormCtl) {
+                                    validBlock.pushLine(makeStr_AddAll(nowRowStateVarName, '=', formStateVarName, "['row_' + ", VarNames.RowKeyInfo_map + '.' + formId, '];'));
+                                }
+                                var theFormRowBindFun = this.getFormRowBindFun(useFormData.formKernel);
+                                theFormRowBindFun.pushLine(makeStr_callFun(pullFun.name, [VarNames.State, 'null', useFormData.formKernel.id + '_path']));
                             }
-                            if (isUseFormCtl) {
-                                theFun.scope.getVar(nowRowStateVarName, true);
-                            }
-                            validBlock.pushLine(makeStr_AddAll('if(', selectedRowsVarName, '==null || ', selectedRowsVarName, '.length == 0){hadValidErr=true;}'));
-                            validBlock.pushLine('else{', 1);
-                            if (isUseFormColumn) {
-                                validBlock.pushLine(nowRecordVarName + '=' + makeStr_callFun('getRecordFromRowKey', [formPathVarName, selectedRowsVarName + '[0]'], ';'));
-                            }
-                            if (isUseFormCtl) {
-                                validBlock.pushLine(makeStr_AddAll(nowRowStateVarName, '=', formStateVarName, "['row_' + ", selectedRowsVarName, '[0]];'));
-                            }
-                            validBlock.subNextIndent();
-                            validBlock.pushLine('}');
-                            if (autoPull) {
-                                this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theKernel, theFun.name, useFormData.formKernel, useFormData.formKernel.getSelectedValueStateName(), callParams_arr);
+                            else{
+                                theFun.scope.getVar(selectedRowsVarName, true, makeStr_callFun('GetFormSelectedRows', [formStateVarName, singleQuotesStr(useFormData.formKernel.getAttribute(AttrNames.KeyColumn))]));
+                                if (isUseFormColumn) {
+                                    theFun.scope.getVar(nowRecordVarName, true);
+                                }
+                                if (isUseFormCtl) {
+                                    theFun.scope.getVar(nowRowStateVarName, true);
+                                }
+                                validBlock.pushLine(makeStr_AddAll('if(', selectedRowsVarName, '==null || ', selectedRowsVarName, '.length == 0){hadValidErr=true;}'));
+                                validBlock.pushLine('else{', 1);
+                                if (isUseFormColumn) {
+                                    validBlock.pushLine(nowRecordVarName + '=' + makeStr_callFun('getRecordFromRowKey', [formPathVarName, selectedRowsVarName + '[0]'], ';'));
+                                }
+                                if (isUseFormCtl) {
+                                    validBlock.pushLine(makeStr_AddAll(nowRowStateVarName, '=', formStateVarName, "['row_' + ", selectedRowsVarName, '[0]];'));
+                                }
+                                validBlock.subNextIndent();
+                                validBlock.pushLine('}');
+                                if (autoPull) {
+                                    this.ctlRelyOnGraph.addRely_CallFunOnBPChanged(theKernel, theFun.name, useFormData.formKernel, useFormData.formKernel.getSelectedValueStateName(), callParams_arr);
+                                }
                             }
                             hadNeedWatchParam = true;
                         }
@@ -5863,11 +6523,11 @@ class MobileContentCompiler extends ContentCompiler {
                         hadNeedWatchParam = true;
                         for (usectlid in useFormData.useControls_map) {
                             useCtlData = useFormData.useControls_map[usectlid];
-                            initPath = singleQuotesStr(useCtlData.kernel.getStatePath());
+                            initPath = singleQuotesStr(useCtlData.kernel.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map }));
                             if (belongUserControl) {
                                 initPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath());
                             }
-                            if(useCtlData.kernel.type == UserControlKernel_Type){
+                            if (useCtlData.kernel.type == UserControlKernel_Type) {
                                 theFun.scope.getVar(useCtlData.kernel.id + '_path', true, initPath);
                             }
                             ctlStateVarName = usectlid + '_state';
@@ -5903,15 +6563,15 @@ class MobileContentCompiler extends ContentCompiler {
                                         propApi: propApiitem
                                     });
                                 }
-                                else{
-                                    if(useCtlData.kernel.type == UserControlKernel_Type){
+                                else {
+                                    if (useCtlData.kernel.type == UserControlKernel_Type) {
                                         var templateKernelMidData = this.projectCompiler.getMidData(useCtlData.kernel.getTemplateKernel().id);
                                         var propChecker = templateKernelMidData.propChecker_map[propApiitem.stateName];
-                                        if(propChecker){
-                                            if(needCheckProps_map[useCtlData.kernel.id+propChecker] == null){
-                                                needCheckProps_map[useCtlData.kernel.id+propChecker] = 1;
+                                        if (propChecker) {
+                                            if (needCheckProps_map[useCtlData.kernel.id + propChecker] == null) {
+                                                needCheckProps_map[useCtlData.kernel.id + propChecker] = 1;
                                                 needCheckVars_arr.push({
-                                                    callFun:makeStr_callFun(propChecker, [VarNames.State, usectlid + '_path']),
+                                                    callFun: makeStr_callFun(propChecker, [VarNames.State, usectlid + '_path']),
                                                 });
                                             }
                                         }
@@ -5944,7 +6604,7 @@ class MobileContentCompiler extends ContentCompiler {
                     hadNeedWatchParam = true;
                     useCtlData = compilHelper.useGlobalControls_map[usectlid];
                     initPath = singleQuotesStr(useCtlData.kernel.getStatePath());
-                    if(useCtlData.kernel.type == UserControlKernel_Type){
+                    if (useCtlData.kernel.type == UserControlKernel_Type) {
                         if (belongUserControl) {
                             initPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + useCtlData.kernel.getStatePath());
                         }
@@ -5992,24 +6652,36 @@ class MobileContentCompiler extends ContentCompiler {
                             }
                         }
                         else {
-                            if(useCtlData.kernel.type == UserControlKernel_Type){
-                                var templateKernelMidData = this.projectCompiler.getMidData(useCtlData.kernel.getTemplateKernel().id);
-                                var propChecker = templateKernelMidData.propChecker_map[propApiitem.stateName];
-                                if(propChecker){
-                                    if(needCheckProps_map[useCtlData.kernel.id+propChecker] == null){
-                                        needCheckProps_map[useCtlData.kernel.id+propChecker] = 1;
-                                        needCheckVars_arr.push({
-                                            callFun:makeStr_callFun(propChecker, [VarNames.State, usectlid + '_path']),
-                                        });
+                            // 模板自订控件里面的方法一律不做属性验证
+                            if (useCtlData.kernel.type == UserControlKernel_Type) {
+                                if (useCtlData.kernel.isTemplate()) {
+                                    needPostValid = false;
+                                }
+                                else {
+                                    var templateKernelMidData = this.projectCompiler.getMidData(useCtlData.kernel.getTemplateKernel().id);
+                                    var propChecker = templateKernelMidData.propChecker_map[propApiitem.stateName];
+                                    if (propChecker) {
+                                        if (needCheckProps_map[useCtlData.kernel.id + propChecker] == null) {
+                                            needCheckProps_map[useCtlData.kernel.id + propChecker] = 1;
+                                            needCheckVars_arr.push({
+                                                callFun: makeStr_callFun(propChecker, [VarNames.State, usectlid + '_path']),
+                                            });
+                                        }
                                     }
                                 }
                             }
                             var tempCallParams_arr = callParams_arr;
                             if (useCtlData.kernel.parent == null) {
-                                // 自订控件
-                                tempCallParams_arr = ['nowState', true, 'this.props.fullPath'];
-                                if (this.getKernelFullParentPath(theKernel).length > 0) {
-                                    tempCallParams_arr[2] += " + '." + this.getKernelFullParentPath(theKernel) + "'";
+                                if (useCtlData.kernel.type == UserControlKernel_Type) {
+                                    // 自订控件
+                                    tempCallParams_arr = ['nowState', true, 'this.props.fullPath'];
+                                    if (this.getKernelFullParentPath(theKernel).length > 0) {
+                                        tempCallParams_arr[2] += " + '." + this.getKernelFullParentPath(theKernel) + "'";
+                                    }
+                                }
+                                else {
+                                    // 页面
+                                    tempCallParams_arr = ['state', true, singleQuotesStr(useCtlData.kernel.id)];
                                 }
                             }
                             if (autoPull) {
@@ -6032,7 +6704,7 @@ class MobileContentCompiler extends ContentCompiler {
                             checkVarValidStr += (checkVarValidStr.length == 0 ? 'IsEmptyString(' : ' || IsEmptyString(') + varObj + ')';
                             return;
                         }
-                        if(varObj.callFun != null){
+                        if (varObj.callFun != null) {
                             validKernelBlock.pushLine('validErr = ' + varObj.callFun + ';');
                             validKernelBlock.pushLine("if(validErr != null){hadValidErr = true;}");
                             return;
@@ -6056,7 +6728,7 @@ class MobileContentCompiler extends ContentCompiler {
                             varObj.nullable ? varObj.nullable.toString() : 'false',
                             singleQuotesStr(varObj.kernel.id),
                             validErrStateVar.name,
-                            formPathVarName
+                            VarNames.FullParentPath
                         ]) + ";");
                         validKernelBlock.pushLine("validErrState[" + modifyStatePath(infoStatePath, belongUserControl) + "]=validErr;");
                         validKernelBlock.pushLine("if(validErr != null) hadValidErr = true;");
@@ -6065,8 +6737,8 @@ class MobileContentCompiler extends ContentCompiler {
 
 
                     validBlock.pushLine('var _invalidstate={};');
-                    validBlock.pushLine('_invalidstate[' + modifyStatePath(theKernel.getStatePath(VarNames.InvalidBundle), belongUserControl) + ']=gPreconditionInvalidInfo;');
-                    validBlock.pushLine('_invalidstate[' + modifyStatePath(theKernel.getStatePath(VarNames.Records_arr), belongUserControl) + ']=[];');
+                    validBlock.pushLine('_invalidstate[' + modifyStatePath(theKernel.getStatePath(VarNames.InvalidBundle,'.', {mapVarName: VarNames.RowKeyInfo_map}), belongUserControl) + ']=gPreconditionInvalidInfo;');
+                    validBlock.pushLine('_invalidstate[' + modifyStatePath(theKernel.getStatePath(VarNames.Records_arr,'.', {mapVarName: VarNames.RowKeyInfo_map}), belongUserControl) + ']=[];');
                     if (theKernel.isPageForm()) {
                         validBlock.pushLine('_invalidstate[' + modifyStatePath(theKernel.getStatePath(VarNames.RecordIndex), belongUserControl) + ']=-1;');
                     }
@@ -6094,6 +6766,21 @@ class MobileContentCompiler extends ContentCompiler {
                     validKernelBlock.pushLine(setErrStateLine, -1);
                     validKernelBlock.pushLine('}');
                     validKernelBlock.pushLine('else{' + dispatchErrLine + ' return;}', -1);
+                    validKernelBlock.subNextIndent();
+                    validKernelBlock.pushLine('}');
+                }
+
+                if (validKernelBlock && !theKernel.isPageForm()) {
+                    validKernelBlock.pushLine('if(' + VarNames.HoldSelected + ' == false){', 1);
+                    validKernelBlock.pushLine('var resetState={};');
+                    if (selectMode == ESelectMode.Single) {
+                        validKernelBlock.pushLine('resetState[' + modifyStatePath(theKernel.getStatePath(VarNames.SelectedValue), belongUserControl) + ']=null;');
+                    }
+                    else if (selectMode == ESelectMode.Multi) {
+                        validKernelBlock.pushLine('resetState[' + modifyStatePath(theKernel.getStatePath(VarNames.SelectedValues_arr), belongUserControl) + ']=[];');
+                    }
+                    validKernelBlock.pushLine('if(' + VarNames.HadStateParam + '){' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''",'resetState']) + ';}');
+                    validKernelBlock.pushLine("else{store.dispatch(makeAction_setManyStateByPath(resetState,''));}", -1);
                     validKernelBlock.subNextIndent();
                     validKernelBlock.pushLine('}');
                 }
@@ -6127,6 +6814,64 @@ class MobileContentCompiler extends ContentCompiler {
                         if (useParam.needPostValid != false) {
                             serverBodyCheckblock.pushLine("if(bundle." + useParam.bundleName + " == null){" + makeLine_RetServerError('没有提供' + useParam.bundleName) + '};');
                         }
+                    }
+                }
+
+                if(midData.rowBindFun){
+                    if(theKernel.isListForm()){
+                        midData.callRowBindBlks.endfor.pushLine('if(records_arr.length > 0){', 1);
+                        midData.callRowBindBlks.endfor.pushLine('var formPath = ' + theKernel.id +'_path;');
+                        midData.callRowBindBlks.endfor.pushLine('var rowKeyInfo_map = getRowKeyMapFromPath(formPath);');
+                        midData.callRowBindBlks.endfor.pushLine('setTimeout(() => {',1);
+                        midData.callRowBindBlks.endfor.pushLine('store.dispatch(makeAction_callFunction(state => {', 1);
+                        midData.callRowBindBlks.endfor.pushLine('var formState = getStateByPath(state, formPath);');
+                        midData.callRowBindBlks.endfor.pushLine('records_arr.forEach(rcd=>{', 1);
+                        midData.callRowBindBlks.endfor.pushLine(makeStr_callFun(midData.rowBindFun.name,[
+                            'state', 
+                            'formPath+' + singleQuotesStr('.row_') + '+rcd._key',
+                            'formState',
+                            'rcd',
+                            'rowKeyInfo_map'
+                        ]), -1);
+                        midData.callRowBindBlks.endfor.pushLine('});');
+                        midData.callRowBindBlks.endfor.subNextIndent();
+                        midData.callRowBindBlks.endfor.pushLine('}));');
+                        midData.callRowBindBlks.endfor.subNextIndent();
+                        midData.callRowBindBlks.endfor.pushLine('},200);');
+                        midData.callRowBindBlks.endfor.subNextIndent();
+                        midData.callRowBindBlks.endfor.pushLine('}');
+                    }
+                    else if(theKernel.isGridForm()){
+                        midData.bindFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.NeedSetState, VarNames.RowBindInfo), '{}'));
+                        midData.callRowBindBlks.beforeFor.pushLine('var bindrows_arr=[];');
+                        midData.callRowBindBlks.beforeFor.pushLine('var rowbindInfo = formProp.' + VarNames.RowBindInfo + ' == null ? {} : formProp.' + VarNames.RowBindInfo + ';');
+                        midData.callRowBindBlks.inFor.pushLine('if(rowbindInfo[rowkey] == null){',1);
+                        midData.callRowBindBlks.inFor.pushLine('bindrows_arr.push(rowkey);');
+                        midData.callRowBindBlks.inFor.pushLine('rowbindInfo[rowkey]=1;');
+                        midData.callRowBindBlks.inFor.subNextIndent();
+                        midData.callRowBindBlks.inFor.pushLine('}');
+                        midData.callRowBindBlks.endfor.pushLine('if(bindrows_arr.length > 0){', 1);
+                        midData.callRowBindBlks.endfor.pushLine('var formPath = formProp.fullPath;');
+                        midData.callRowBindBlks.endfor.pushLine('var rowKeyInfo_map = getRowKeyMapFromPath(formPath);');
+                        midData.callRowBindBlks.endfor.pushLine('setTimeout(() => {',1);
+                        midData.callRowBindBlks.endfor.pushLine('store.dispatch(makeAction_setStateByPath(rowbindInfo,formPath + ' + singleQuotesStr('.' + VarNames.RowBindInfo) + '));');
+                        midData.callRowBindBlks.endfor.pushLine('store.dispatch(makeAction_callFunction(state => {', 1);
+                        midData.callRowBindBlks.endfor.pushLine('var formState = getStateByPath(state, formPath);');
+                        midData.callRowBindBlks.endfor.pushLine('bindrows_arr.forEach(rowKey=>{', 1);
+                        midData.callRowBindBlks.endfor.pushLine(makeStr_callFun(midData.rowBindFun.name,[
+                            'state', 
+                            'formPath+' + singleQuotesStr('.row_') + '+rowKey',
+                            'formState',
+                            'getRecordFromRowKey(formPath,rowKey)',
+                            'rowKeyInfo_map'
+                        ]), -1);
+                        midData.callRowBindBlks.endfor.pushLine('});');
+                        midData.callRowBindBlks.endfor.subNextIndent();
+                        midData.callRowBindBlks.endfor.pushLine('}));');
+                        midData.callRowBindBlks.endfor.subNextIndent();
+                        midData.callRowBindBlks.endfor.pushLine('},200);');
+                        midData.callRowBindBlks.endfor.subNextIndent();
+                        midData.callRowBindBlks.endfor.pushLine('}');
                     }
                 }
 

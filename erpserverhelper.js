@@ -1,6 +1,8 @@
 const co = require('co');
 const dbhelper = require('./dbhelper.js');
 const sqlTypes = dbhelper.Types;
+var fs = require('fs');
+var path = require("path");
 
 var helper = {};
 
@@ -117,6 +119,14 @@ helper.InformSysManager = (text, identity)=>{
         dbhelper.makeSqlparam('发送者标识', sqlTypes.NVarChar(1000), identity),
         dbhelper.makeSqlparam('通知内容', sqlTypes.NVarChar(1000), text),
     ]);
+};
+
+function S4() {
+    return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+}
+
+helper.guid2 = ()=>{
+    return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
 };
 
 function checkArrayData(val) {
@@ -290,6 +300,34 @@ function Convert_TimeZone(time, zoneSrc, zoneDst) {
     return new Date(firsttime.setTime(datetime + 1000 * 60 * 60 * offset));
 }
 
+function Convert_DateZone(pDate, zoneDst) {
+    var rltDate = new Date(pDate);
+    var time = pDate.getTime();
+    var offset = 0;
+    var zoneSrc = Math.floor(rltDate.getTimezoneOffset()/-60);    
+    zoneDst = parseInt(zoneDst);
+    offset = -zoneSrc + zoneDst;
+    if(offset != 0){
+        rltDate.setTime(time + 1000 * 60 * 60 * offset);
+    }
+    return rltDate;
+}
+
+function CreateDate(year, month, day){
+    if(day > 32){
+        day = 31;
+    }
+    var rlt = new Date(year, month - 1, Math.max(day,0));
+    if(day == 32){
+        rlt.setDate(1);
+    }
+    else if(day > 0 && (rlt.getMonth() != month-1 || rlt.getFullYear() != year)){
+        rlt.setDate(1);
+        rlt = new Date(rlt - 86400000);
+    }
+    return rlt;
+}
+
 helper.DateFun={
     getNowDate:GetNowDate,
     checkDate:CheckDate,
@@ -306,6 +344,9 @@ helper.DateFun={
     castDateFromTimePart:CastDateFromTimePart,
     getweekDay:GetweekDay,
     Convert_TimeZone:Convert_TimeZone,
+    Convert_DateZone:Convert_DateZone,
+    createDate:CreateDate,
 };
+
 
 module.exports = helper;

@@ -374,7 +374,7 @@ class C_JSNode_Query_Sql extends React.PureComponent {
             return null;
         }
         var nodeData = this.props.nodedata;
-        if (socket == nodeData.outDataSocket || socket == nodeData.outErrorSocket) {
+        if (socket == nodeData.outDataSocket || socket == nodeData.outErrorSocket || socket == nodeData.outRecordSocket) {
             return null;
         }
         var entity = nodeData.targetEntity;
@@ -717,6 +717,48 @@ class C_JSNode_FreshForm extends React.PureComponent {
     }
 }
 
+class C_JSNode_Array_For extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        this.dropdownRef = React.createRef();
+
+        C_NodeCom_Base(this);
+    }
+
+    clickChecker(ev) {
+        var nodeData = this.props.nodedata;
+        var manualMode = nodeData.manualMode == null ? false : nodeData.manualMode;
+        nodeData.manualMode = !manualMode;
+        this.setState({
+            magicObj: {}
+        });
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        var manualMode = nodeData.manualMode == null ? false : nodeData.manualMode;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={'ArrayFor'} >
+            <div className='flex-grow-1 flex-shrink-1'>
+                <div className='bg-light'>
+                    <span className='fa-stack fa-lg' onClick={this.clickChecker}>
+                        <i className={"fa fa-square-o fa-stack-2x"} />
+                        <i className={'fa fa-stack-1x ' + (manualMode ? ' fa-check text-success' : ' fa-close text-danger')} />
+                    </span>
+                    手动模式
+                </div>
+            </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
+                <div className='d-flex flex-column'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} nameMoveable={true} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} nameMoveable={true} />
+                </div>
+            </div>
+        </C_Node_Frame>
+    }
+}
+
 class C_JSNode_Excute_Pro extends React.PureComponent {
     constructor(props) {
         super(props);
@@ -816,14 +858,14 @@ class C_JSNode_HashFormDataRow extends React.PureComponent {
         C_NodeCom_Base(this);
         var nodeData = this.props.nodedata;
         var theProject = nodeData.bluePrint.master.project;
-        var formKernel = theProject.getControlById(nodeData.formID);
+        var targetKernel = theProject.getControlById(nodeData.formID);
 
         this.state = {
-            formKernel: formKernel,
+            targetKernel: targetKernel,
         }
     }
 
-    formAttrChangedHandler(ev) {
+    targetAttrChangedHandler(ev) {
         if (ev.name == AttrNames.DataSource
             || ev.name == AttrNames.name) {
             this.this.canUseColumns_arr = null;
@@ -831,24 +873,24 @@ class C_JSNode_HashFormDataRow extends React.PureComponent {
         }
     }
 
-    listenForm(formKernel){
-        if (formKernel) {
-            formKernel.on(EATTRCHANGED, this.formAttrChangedHandler);
+    listenTarget(targetKernel){
+        if (targetKernel) {
+            targetKernel.on(EATTRCHANGED, this.targetAttrChangedHandler);
         }
     }
 
-    unlistenForm(formKernel){
-        if (formKernel) {
-            formKernel.off(EATTRCHANGED, this.formAttrChangedHandler);
+    unlistenTarget(targetKernel){
+        if (targetKernel) {
+            targetKernel.off(EATTRCHANGED, this.targetAttrChangedHandler);
         }
     }
 
     cus_componentWillMount() {
-        this.listenForm(this.state.formKernel);
+        this.listenTarget(this.state.targetKernel);
     }
 
     cus_componentWillUnmount() {
-        this.unlistenForm(this.state.formKernel);
+        this.unlistenTarget(this.state.targetKernel);
     }
 
     socketColumnSelectChanged(newVal, ddc) {
@@ -860,10 +902,12 @@ class C_JSNode_HashFormDataRow extends React.PureComponent {
         return this.canUseColumns_arr == null ? [] : this.canUseColumns_arr;
     }
 
-    getFormDS() {
-        var nodeData = this.props.nodedata;
-        var formKernel = nodeData.bluePrint.master.project.getControlById(nodeData.formID);
-        return formKernel == null ? null : formKernel.getAttribute(AttrNames.DataSource);
+    freshCanUseColumns(targetKernel) {
+        if(targetKernel == null){
+            this.canUseColumns_arr = null;
+            return;
+        }
+        this.canUseColumns_arr = targetKernel.getCanuseColumns();
     }
 
     customSocketRender(socket) {
@@ -891,13 +935,10 @@ class C_JSNode_HashFormDataRow extends React.PureComponent {
             return;
         }
         var nodeData = this.props.nodedata;
-        var entity = this.getFormDS();
-        if (entity == null) {
-            return;
-        }
+        var canUseColumns_arr = this.getCanUseColumns();
         var theSocket = nodeData.bluePrint.getSocketById(socketid);
         var bornPos = theSocket.currentComponent.getCenterPos();
-        if (entity.containColumn(colName)) {
+        if (canUseColumns_arr.indexOf(colName) != -1) {
             var newNode = new FlowNode_ColumnVar({
                 keySocketID: socketid,
                 newborn: true,
@@ -907,19 +948,19 @@ class C_JSNode_HashFormDataRow extends React.PureComponent {
         }
     }
 
-    formChangedHandler(newFormID) {
+    targetChangedHandler(newTargetID) {
         var nodeData = this.props.nodedata;
-        nodeData.formID = newFormID;
+        nodeData.formID = newTargetID;
         var theProject = nodeData.bluePrint.master.project;
-        this.setTargetForm(theProject.getControlById(newFormID));
+        this.setTargetForm(theProject.getControlById(newTargetID));
     }
 
-    setTargetForm(formKernel){
+    setTargetForm(targetKernel){
         this.canUseColumns_arr = null;
-        this.unlistenForm(this.state.formKernel);
-        this.listenForm(formKernel);
+        this.unlistenTarget(this.state.targetKernel);
+        this.listenTarget(targetKernel);
         this.setState({
-            formKernel: formKernel,
+            targetKernel: targetKernel,
         });
         var nodeData = this.props.nodedata;
         setTimeout(() => {
@@ -932,26 +973,21 @@ class C_JSNode_HashFormDataRow extends React.PureComponent {
     render() {
         var nodeData = this.props.nodedata;
         var theProject = nodeData.bluePrint.master.project;
-        var targetFormKernel = theProject.getControlById(nodeData.formID);
-        if(targetFormKernel != this.state.formKernel){
+        var targetKernel = theProject.getControlById(nodeData.formID);
+        if(targetKernel != this.state.targetKernel){
             var self = this;
             setTimeout(() => {
-                self.targetFormChange(targetFormKernel);
+                self.setTargetForm(targetKernel);
             }, 50);
         }
         if(this.canUseColumns_arr == null){
-            var formKernel = this.state.formKernel;
-            var formDS = formKernel ? formKernel.getAttribute(AttrNames.DataSource) : null;
-            if (formDS != null) {
-                this.canUseColumns_arr = formDS.columns.map(colItem => {
-                    return colItem.name;
-                });
-            }
+            var targetKernel = this.state.targetKernel;
+            this.freshCanUseColumns(targetKernel);
         }
 
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={nodeData.label} >
             <div className='d-flex flex-column'>
-                <DropDownControl options_arr={theProject.getControlsByType} funparamobj={M_FormKernel_Type} value={formKernel ? formKernel.id : -1} itemChanged={this.formChangedHandler} textAttrName='readableName' valueAttrName='id' />
+                <DropDownControl options_arr={theProject.getControlsByType} funparamobj={[M_FormKernel_Type,ChartKernel_Type]} value={targetKernel ? targetKernel.id : -1} itemChanged={this.targetChangedHandler} textAttrName='readableName' valueAttrName='id' />
                 <div className='d-flex'>
                     <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor}  nameMoveable={true} />
                     <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} customSocketRender={this.customSocketRender} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
@@ -1238,6 +1274,198 @@ class C_JSNode_TraversalForm extends React.PureComponent {
                 <div className='d-flex flex-column'>
                     <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} nameMoveable={true} />
                     <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} customSocketRender={this.customSocketRender} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
+                </div>
+            </div>
+        </C_Node_Frame>
+    }
+}
+
+class C_JSNode_Page_CallFun extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        C_NodeCom_Base(this);
+
+        this.state = {
+        }
+
+        this.dropdownRef = React.createRef();
+    }
+
+    nodeDataChangedHandler() {
+        var nodeData = this.props.nodedata;
+        var script_id = nodeData.script_id;
+        this.dropdownRef.current.setValue(script_id);
+        this.setState({ magicObj: {} });
+    }
+
+    cus_componentWillMount() {
+        this.listenData(this.props.nodedata);
+    }
+
+    cus_componentWillUnmount() {
+        this.unlistenData(this.props.nodedata);
+    }
+
+    listenData(nodeData) {
+        if (nodeData) {
+            nodeData.on('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    unlistenData(nodeData) {
+        if (nodeData) {
+            nodeData.off('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    dropdownCtlChangedHandler(code) {
+        var nodeData = this.props.nodedata;
+        nodeData.script_name = code;
+        nodeData.synSockets();
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        var ctlKernel = nodeData.bluePrint.master.project.getControlById(nodeData.bluePrint.ctlID);
+        var elem = null;
+        if(ctlKernel == null){
+            elem = <span className='text-danger'>没有关联控件</span>;
+        }
+        else{
+            var belongPage = ctlKernel.type == M_PageKernel_Type ? ctlKernel : ctlKernel.searchParentKernel(M_PageKernel_Type, true);
+            if(belongPage == null){
+                elem = <span className='text-danger'>控件必须在页面中才能使用</span>;
+            }
+            else{
+                var script_name = nodeData.script_name;
+                elem = <React.Fragment>
+                    <div className='d-flex'>
+                        <div className='flex-grow-1 flex-shrink-1'>
+                            <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={belongPage.getFunctionApiAttrArray} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='label' valueAttrName='fullname' value={script_name ? script_name : '-1'} />
+                        </div>
+                    </div>
+                    <div className='d-flex'>
+                        <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} nameMoveable={true} />
+                        <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} nameMoveable={true} customSocketRender={this.customSocketRender} />
+                    </div>
+                </React.Fragment>
+            }
+        }
+        
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='Call页面方法'>
+            {elem}
+        </C_Node_Frame>
+    }
+}
+
+class C_JSNode_OpenReport extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        C_NodeCom_Base(this);
+
+        this.state = {
+        }
+
+        this.dropdownRef = React.createRef();
+    }
+
+    nodeDataChangedHandler() {
+        var nodeData = this.props.nodedata;
+        var report = nodeData.report;
+        if (report) {
+            this.dropdownRef.current.setValue(report.code);
+        }
+        this.setState({ magicObj: {} });
+    }
+
+    cus_componentWillMount() {
+        this.listenData(this.props.nodedata);
+    }
+
+    cus_componentWillUnmount() {
+        this.unlistenData(this.props.nodedata);
+    }
+
+    listenData(nodeData) {
+        if (nodeData) {
+            nodeData.on('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    unlistenData(nodeData) {
+        if (nodeData) {
+            nodeData.off('changed', this.nodeDataChangedHandler);
+        }
+    }
+
+    dropdownCtlChangedHandler(code, ddc, selectedReport) {
+        var nodeData = this.props.nodedata;
+        nodeData.setReport(selectedReport);
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        var report = nodeData.report;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='打开报表'>
+            <div className='d-flex'>
+                <div className='flex-grow-1 flex-shrink-1'>
+                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={AllReports_arr} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={report ? report.code : -1} />
+                </div>
+            </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} nameMoveable={true} />
+                <div className='d-flex flex-column'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} nameMoveable={true} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} nameMoveable={true} />
+                </div>
+            </div>
+        </C_Node_Frame>
+    }
+}
+
+class C_JSNode_ExportExcel extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        C_NodeCom_Base(this);
+
+        this.state = {
+        }
+
+        this.dropdownRef = React.createRef();
+    }
+
+    nodeDataChangedHandler() {
+        var nodeData = this.props.nodedata;
+        var cusObj = nodeData.cusObj;
+        if (cusObj) {
+            this.dropdownRef.current.setValue(cusObj.code);
+        }
+        this.setState({ magicObj: {} });
+    }
+
+    dropdownCtlChangedHandler(code, ddc, cusObj) {
+        var nodeData = this.props.nodedata;
+        nodeData.cusObj = cusObj;
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        var cusObj = nodeData.cusObj;
+        var theProject = nodeData.bluePrint.master.project;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} getTitleFun={this.getNodeTitle} editor={this.props.editor} headType='tiny' headText='导出Excel'>
+            <div className='d-flex'>
+                <div className='flex-grow-1 flex-shrink-1'>
+                    <DropDownControl ref={this.dropdownRef} itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={theProject.scriptMaster.getAllCustomObject} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='name' valueAttrName='code' value={cusObj ? cusObj.code : -1} />
+                </div>
+            </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} nameMoveable={true} />
+                <div className='d-flex flex-column'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} nameMoveable={true} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} nameMoveable={true} />
                 </div>
             </div>
         </C_Node_Frame>

@@ -4,6 +4,7 @@ const CProjectAttrsSetting = {
         new CAttributeGroup('基本设置', [
             new CAttribute('页面名称', 'title', ValueType.String, true),
             new CAttribute('真实名称', 'realName', ValueType.String, false),
+            new CAttribute('DEBUG模式', 'debugmode', ValueType.Boolean, false),
         ]),
         new CAttributeGroup('顶层设置', [
             new CAttribute('样式', AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
@@ -117,9 +118,32 @@ class CProject extends IAttributeable {
                 this.content_PC.pages.push(newPage);
             });
         }
+        this.sortPCPages();
+        this.sortMBPages();
+        this.sortUC();
         this.loaded = true;
         this.emit('loaded');
         this.logManager.log('加载完成');
+    }
+
+    sortPageFun(a,b){
+        return a.title.localeCompare(b.title);
+    }
+
+    sortUCFun(a,b){
+        return a.name.localeCompare(b.name);
+    }
+
+    sortPCPages(){
+        this.content_PC.pages.sort(this.sortPageFun);
+    }
+
+    sortMBPages(){
+        this.content_Mobile.pages.sort(this.sortPageFun);
+    }
+
+    sortUC(){
+        this.userControls_arr.sort(this.sortUCFun);
     }
 
     mainPageChanged(pagekernel) {
@@ -334,11 +358,21 @@ class CProject extends IAttributeable {
     }
 
     getControlsByType(theType) {
+        var isArray = Array.isArray(theType);
         var rlt_arr = [];
         for (var id in this.controlId_map) {
             var ctl = this.controlId_map[id];
-            if (ctl && ctl.type == theType) {
-                rlt_arr.push(ctl);
+            if (ctl) {
+                var hit = false;
+                if(isArray){
+                    hit = theType.indexOf(ctl.type) != -1;
+                }
+                else{
+                    hit = ctl.type == theType;
+                }
+                if(hit){
+                    rlt_arr.push(ctl);
+                }
             }
         }
         return rlt_arr;
@@ -587,6 +621,7 @@ class CProject extends IAttributeable {
             controlsID_map: {},
             refControlID_map: {},
             targetControl: null,
+            cusObjects_arr: [],
         };
         var controlJsonProf = new AttrJsonProfile();
         var controlJson = theKernel.getJson(controlJsonProf);
@@ -970,8 +1005,18 @@ class AttrJsonProfile {
         this.useUserControl_map = {};
         this.refControl_map = {};
         this.dictionary = {};
+        this.customObjects_arr = [];
         this.keyIndex = 0;
         this.hadDictionary = hadDictionary == true;
+    }
+
+    addCusObject(cusObj){
+        if(cusObj == null){
+            return;
+        }
+        if(this.customObjects_arr.indexOf(cusObj) == -1){
+            this.customObjects_arr.push(cusObj);
+        }
     }
 
     addDictionnary(value){

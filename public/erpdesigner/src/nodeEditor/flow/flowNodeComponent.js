@@ -231,7 +231,7 @@ class C_FlowNode_QueryKeyRecord extends React.PureComponent {
     }
 }
 
-class C_FlowNode_Assignment_Operator extends React.PureComponent {
+class C_JSNode_Assignment_Operator extends React.PureComponent {
     constructor(props) {
         super(props);
         autoBind(this);
@@ -262,7 +262,7 @@ class C_FlowNode_Assignment_Operator extends React.PureComponent {
         }
         var nodeData = this.props.nodedata;
         return (<div style={this.outDivStyle} f-canmove={1}>
-            <DropDownControl options_arr={['=','+=', '-=', '*=', '/=', '%=']} value={nodeData.operator} itemChanged={this.selectItemChangedHandler} style={this.ddcStyle} />
+            <DropDownControl options_arr={['+=', '-=', '*=', '/=', '%=']} value={nodeData.operator} itemChanged={this.selectItemChangedHandler} style={this.ddcStyle} />
         </div>);
     }
 
@@ -270,8 +270,8 @@ class C_FlowNode_Assignment_Operator extends React.PureComponent {
         var nodeData = this.props.nodedata;
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' cusHeaderFuc={this.cusHeaderFuc} >
             <div className='d-flex'>
-                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
-                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutScoketDynamic() ? nodeData.processOutputSockets : null} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor}  />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} />
             </div>
         </C_Node_Frame>
     }

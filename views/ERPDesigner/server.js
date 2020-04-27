@@ -297,7 +297,33 @@ function getBaseConfigData(req) {
         rlt.posts_arr = yield getAllPost();
         rlt.projects_arr = yield getAllProjectRecord();
         rlt.fileFlows_arr = yield getAllFileFlowRecord();
+        rlt.reports_arr = yield getAllReportRecord();
+        rlt.excelTemplate_arr = yield getAllExcelTemplateRecord();
         return rlt;
+    });
+}
+
+function getAllExcelTemplateRecord(){
+    return co(function* () {
+        var sql = 'SELECT [表格模板记录代码] as code,[模板名称] as name FROM [base1].[dbo].[T721C表格模板记录]';
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
+        return rcdRlt.recordset;
+    });
+}
+
+function getAllReportRecord(){
+    return co(function* () {
+        var sql = 'SELECT [钉钉报表记录代码] as code,[钉钉报表名称] as name FROM [base1].[dbo].[T003C钉钉报表记录] where 终止确认状态=0';
+        var reportRcdRlt = yield dbhelper.asynQueryWithParams(sql);
+        sql = 'SELECT [钉钉报表记录代码] as reportcode,[参数名称] as name,[参数描述] as tip FROM [base1].[dbo].[T003D钉钉报表参数]';
+        var paramsRcdRlt = yield dbhelper.asynQueryWithParams(sql);
+        for(var ri in reportRcdRlt.recordset){
+            var report_row = reportRcdRlt.recordset[ri];
+            report_row.params_arr = paramsRcdRlt.recordset.filter(item=>{
+                return item.reportcode == report_row.code;
+            });
+        }
+        return reportRcdRlt.recordset;
     });
 }
 

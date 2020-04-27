@@ -57,20 +57,23 @@ function GenControlKernelAttrsSetting(cusGroups_arr, includeDefault, includeLayo
 }
 
 function getDSAttrCanuseColumns(dsAttrName, csAttrName) {
-    var useDS = this.getAttribute(dsAttrName);
-    if (useDS == null || !useDS.loaded) {
-        return [];
+    var rlt = [];
+    if (dsAttrName != null) {
+        var useDS = this.getAttribute(dsAttrName);
+        if (useDS == null || !useDS.loaded) {
+            return [];
+        }
+        rlt = useDS.columns.map(function (col) {
+            return col.name;
+        });
     }
-    var rlt = useDS.columns.map(function (col) {
-        return col.name;
-    });
     if (csAttrName != null) {
         var cusDS_bp = this.getAttribute(csAttrName);
         if (cusDS_bp != null) {
-            var retColumnNode = cusDS_bp.finalSelectNode.columnNode;
-            retColumnNode.inputScokets_arr.forEach(function (socket) {
-                var alias = socket.getExtra('alias');
-                if (!IsEmptyString(alias)) rlt.push(alias);
+            cusDS_bp.columns.forEach(function (colItem) {
+                if (rlt.indexOf(colItem.name) == -1) {
+                    rlt.push(colItem.name);
+                }
             });
         }
     }
@@ -176,6 +179,11 @@ var ControlKernelBase = function (_IAttributeable) {
                 if (newValue) {
                     this.listenDS(newValue, attrName);
                 }
+            }
+            var bpname = this.id + '_' + realAtrrName;
+            var jsbp = this.project.scriptMaster.getBPByName(bpname);
+            if (jsbp != null) {
+                this.project.scriptMaster.deleteBP(jsbp);
             }
 
             if (attrItem.name == AttrNames.TextField || attrItem.name == AttrNames.Name) {
@@ -406,6 +414,11 @@ var ControlKernelBase = function (_IAttributeable) {
     }, {
         key: 'searchSameReactParentKernel',
         value: function searchSameReactParentKernel(otherKernel) {
+            if (this.type == M_PageKernel_Type) {
+                return this;
+            } else if (otherKernel.type == M_PageKernel_Type) {
+                return otherKernel;
+            }
             var selfParents_arr = this.getReactParentKernel();
             var otherParents_arr = otherKernel.getReactParentKernel();
             for (var i = 0; i < selfParents_arr.length; ++i) {
@@ -545,6 +558,9 @@ var ControlKernelBase = function (_IAttributeable) {
                     }
                 }
             }
+            if (nowKernel.type == Accordion_Type) {
+                parent = nowKernel; // 折叠控件可以访问到孩子控件
+            }
             if (parent == null) {
                 if (this.type == M_PageKernel_Type || this.type == UserControlKernel_Type) {
                     parent = this;
@@ -579,16 +595,16 @@ var ControlKernelBase = function (_IAttributeable) {
                                 if (meetParents_map[child.editor.id] == null) {
                                     meetParents_map[child.editor.id] = 1;
                                     aidRlt_arr = [];
-                                    child.editor.aidAccessableKernels(targetType, aidRlt_arr);
+                                    child.editor.aidAccessableKernels(targetType, aidRlt_arr, true);
                                 }
                             }
                         }
-                        if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type && child.isPageForm() || child.type == PopperButtonKernel_Type) {
+                        if (child.type == M_ContainerKernel_Type || child.type == Accordion_Type || child.type == M_FormKernel_Type || child.type == PopperButtonKernel_Type) {
                             // 穿透div
                             if (meetParents_map[child.id] == null) {
                                 meetParents_map[child.id] = 1;
                                 aidRlt_arr = [];
-                                child.aidAccessableKernels(targetType, aidRlt_arr);
+                                child.aidAccessableKernels(targetType, aidRlt_arr, true);
                             }
                         }
 
@@ -668,6 +684,14 @@ var ControlKernelBase = function (_IAttributeable) {
         key: 'canAppand',
         value: function canAppand() {
             return true;
+        }
+    }, {
+        key: 'slideInParent',
+        value: function slideInParent(offset) {
+            if (this.parent) {
+                var nowPos = this.parent.children.indexOf(this);
+                this.parent.swapChild(nowPos, nowPos + offset);
+            }
         }
     }, {
         key: 'getTextValueFieldValue',

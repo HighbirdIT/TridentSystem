@@ -386,11 +386,17 @@ class Node_Base extends EventEmitter {
             isIn = '*';
         var rlt = null;
         if (isIn != false) {
-            rlt = this.inputScokets_arr.find(x => { return x.name == name });
+            rlt = this.inputScokets_arr.find(x => { return x.name == name; });
+            if(rlt == null && this.inFlowSockets_arr){
+                rlt = this.inFlowSockets_arr.find(x => { return x.name == name; });
+            }
         }
 
         if (rlt == null && isIn != true) {
-            rlt = this.outputScokets_arr.find(x => { return x.name == name });
+            rlt = this.outputScokets_arr.find(x => { return x.name == name; });
+            if(rlt == null && this.outputScokets_arr){
+                rlt = this.outputScokets_arr.find(x => { return x.name == name; });
+            }
         }
         return rlt;
     }
@@ -732,8 +738,17 @@ class Node_Base extends EventEmitter {
         if (tLinks.length == 0) {
             if(canUseDefval){
                 socketValue = IsEmptyString(theSocket.defval) ? null : theSocket.defval;
-                if (isNaN(socketValue)) {
-                    socketValue = "'" + theSocket.defval + "'";
+                if (socketValue != null && isNaN(socketValue)) {
+                    var needQute = true;
+                    if(socketValue.length >=2){
+                        var lastChar = socketValue[socketValue.length-1];
+                        if(lastChar == socketValue[0] && (lastChar == '"' || lastChar == "'")){
+                            needQute = false;
+                        }
+                    }
+                    if(needQute){
+                        socketValue = "'" + theSocket.defval + "'";
+                    }
                 }
             }
         }

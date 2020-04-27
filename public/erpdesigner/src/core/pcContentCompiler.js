@@ -12,6 +12,7 @@ class PCContentCompiler extends MobileContentCompiler {
         var clientSide = this.clientSide;
         var project = this.project;
         var logManager = project.logManager;
+        var isDebugMode = project.getAttribute('debugmode');
         this.compileChain = [];
         this.compiledScriptBP_map = {};
         this.ctlRelyOnGraph = new ControlRelyOnGraph(this);
@@ -24,6 +25,9 @@ class PCContentCompiler extends MobileContentCompiler {
         clientSide.appClass.renderFun.pushChild(theSwicth);
         var pageElemVar = clientSide.appClass.renderFun.scope.getVar('pageElem', true);
 
+        if(isDebugMode){
+            clientSide.globalVarBlock.pushLine("gDebugMode = true;");
+        }
         clientSide.appClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, 'loaded'), 'state.loaded'));
         var unloadedIfBlock = new JSFile_IF('unloaded', '!state.loaded');
         clientSide.appClass.mapStateFun.pushChild(unloadedIfBlock);
@@ -199,7 +203,7 @@ class PCContentCompiler extends MobileContentCompiler {
             var berelyCtl = relyPath.berelyCtl;
             var changedFun;
             var getValueStr = '';
-            if (berelyCtl.parent == null) {
+            if (berelyCtl.parent == null && berelyCtl.type != M_PageKernel_Type) {
                 console.error('这里berelyCtl.parent 不能为空');
             }
             else {
@@ -240,6 +244,9 @@ class PCContentCompiler extends MobileContentCompiler {
                                 changedFun.scope.getVar(sameReactKernel.id + '_path', true, sameReactKernelPathInitStr);
                                 if (sameReactKernel != relyCtlReactParent) {
                                     thirdParam += "+" + singleQuotesStr('.' + relyCtlReactParent.getStatePath('', '.', null, true, sameReactKernel));
+                                }
+                                else if(sameReactKernel.type == M_FormKernel_Type && !sameReactKernel.isPageForm()){
+                                    thirdParam += '+ ".row_" + rowKeyInfo_map.' + sameReactKernel.id;
                                 }
                                 if(relyPath.approach.delaycall){
                                     actKey = 'call_' + relyPath.approach.funName;

@@ -17,6 +17,7 @@ var debug = require('debug');
 var serverhelper = require('./erpserverhelper.js');
 var cluster = require('cluster');
 
+
 debug.enabled = () => {
     return false;
 };
@@ -561,6 +562,16 @@ app.use('/dingcallback', function (req, res, next) {
         nonce: req.query.nonce,
     });
     return;
+});
+
+app.use('/download', function (req, res, next) {
+    if(req.query.excelid != null){
+        fileSystem.downloadExcelFile(req, res);
+    }
+    else{
+        res.json({ err: '缺失参数' });
+        return;
+    }
 });
 
 app.use(function (req, res, next) {

@@ -401,17 +401,15 @@ var OutlinePanel = function (_React$PureComponent2) {
                         hitKernel.parent.swapChild(hitKernel.parent.getChildIndex(hitKernel), hitKernel.parent.getChildIndex(targetKernel));
                         return;
                     }
-                    if (!this.checkAppandable(targetKernel, hitKernel)) {
-                        return;
-                    }
-
-                    if (hitKernel.children != null) {
-                        if (newPos.y - hitResult.rect.top <= 5) {
-                            if (this.checkAppandable(targetKernel, hitKernel.parent)) {
-                                hitKernel.parent.appandChild(targetKernel, hitKernel.parent.getChildIndex(hitResult.kernel));
+                    if (this.checkAppandable(targetKernel, hitKernel)) {
+                        if (hitKernel.children != null) {
+                            if (newPos.y - hitResult.rect.top <= 5) {
+                                if (this.checkAppandable(targetKernel, hitKernel.parent)) {
+                                    hitKernel.parent.appandChild(targetKernel, hitKernel.parent.getChildIndex(hitResult.kernel));
+                                }
+                            } else {
+                                hitKernel.appandChild(targetKernel);
                             }
-                        } else {
-                            hitKernel.appandChild(targetKernel);
                         }
                     } else if (hitKernel.parent) {
                         if (this.checkAppandable(targetKernel, hitKernel.parent)) {
@@ -465,6 +463,22 @@ var OutlinePanel = function (_React$PureComponent2) {
             this.props.designer.selectKernel(data);
         }
     }, {
+        key: 'clickMoveUpBtnHandler',
+        value: function clickMoveUpBtnHandler(data, outlineItem) {
+            var selectKernel = this.props.designer.getSelectedKernel();
+            if (selectKernel) {
+                selectKernel.slideInParent(-1);
+            }
+        }
+    }, {
+        key: 'clickMoveDownBtnHandler',
+        value: function clickMoveDownBtnHandler(data, outlineItem) {
+            var selectKernel = this.props.designer.getSelectedKernel();
+            if (selectKernel) {
+                selectKernel.slideInParent(1);
+            }
+        }
+    }, {
         key: 'render',
         value: function render() {
             var _this4 = this;
@@ -489,6 +503,16 @@ var OutlinePanel = function (_React$PureComponent2) {
                         'div',
                         { className: 'btn btn-dark', onClick: this.clickCopyBtnHandler },
                         React.createElement('i', { className: 'fa fa-copy text-light' })
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'btn btn-dark', onClick: this.clickMoveUpBtnHandler },
+                        React.createElement('i', { className: 'fa fa-arrow-up text-light' })
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'btn btn-dark', onClick: this.clickMoveDownBtnHandler },
+                        React.createElement('i', { className: 'fa fa-arrow-down text-light' })
                     )
                 ),
                 React.createElement(

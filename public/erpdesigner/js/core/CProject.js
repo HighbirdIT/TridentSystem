@@ -11,7 +11,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var CProjectAttrsSetting = {
-    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('页面名称', 'title', ValueType.String, true), new CAttribute('真实名称', 'realName', ValueType.String, false)]), new CAttributeGroup('顶层设置', [new CAttribute('样式', AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true), new CAttribute('类', AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true)])]
+    groups_arr: [new CAttributeGroup('基本设置', [new CAttribute('页面名称', 'title', ValueType.String, true), new CAttribute('真实名称', 'realName', ValueType.String, false), new CAttribute('DEBUG模式', 'debugmode', ValueType.Boolean, false)]), new CAttributeGroup('顶层设置', [new CAttribute('样式', AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true), new CAttribute('类', AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true)])]
 };
 
 var projNames_project = {};
@@ -119,6 +119,9 @@ var CProject = function (_IAttributeable) {
                 _this.content_PC.pages.push(newPage);
             });
         }
+        _this.sortPCPages();
+        _this.sortMBPages();
+        _this.sortUC();
         _this.loaded = true;
         _this.emit('loaded');
         _this.logManager.log('加载完成');
@@ -126,6 +129,31 @@ var CProject = function (_IAttributeable) {
     }
 
     _createClass(CProject, [{
+        key: 'sortPageFun',
+        value: function sortPageFun(a, b) {
+            return a.title.localeCompare(b.title);
+        }
+    }, {
+        key: 'sortUCFun',
+        value: function sortUCFun(a, b) {
+            return a.name.localeCompare(b.name);
+        }
+    }, {
+        key: 'sortPCPages',
+        value: function sortPCPages() {
+            this.content_PC.pages.sort(this.sortPageFun);
+        }
+    }, {
+        key: 'sortMBPages',
+        value: function sortMBPages() {
+            this.content_Mobile.pages.sort(this.sortPageFun);
+        }
+    }, {
+        key: 'sortUC',
+        value: function sortUC() {
+            this.userControls_arr.sort(this.sortUCFun);
+        }
+    }, {
         key: 'mainPageChanged',
         value: function mainPageChanged(pagekernel) {
             var index = this.content_PC.pages.indexOf(pagekernel);
@@ -356,11 +384,20 @@ var CProject = function (_IAttributeable) {
     }, {
         key: 'getControlsByType',
         value: function getControlsByType(theType) {
+            var isArray = Array.isArray(theType);
             var rlt_arr = [];
             for (var id in this.controlId_map) {
                 var ctl = this.controlId_map[id];
-                if (ctl && ctl.type == theType) {
-                    rlt_arr.push(ctl);
+                if (ctl) {
+                    var hit = false;
+                    if (isArray) {
+                        hit = theType.indexOf(ctl.type) != -1;
+                    } else {
+                        hit = ctl.type == theType;
+                    }
+                    if (hit) {
+                        rlt_arr.push(ctl);
+                    }
                 }
             }
             return rlt_arr;
@@ -634,7 +671,8 @@ var CProject = function (_IAttributeable) {
                 userControls_arr: [],
                 controlsID_map: {},
                 refControlID_map: {},
-                targetControl: null
+                targetControl: null,
+                cusObjects_arr: []
             };
             var controlJsonProf = new AttrJsonProfile();
             var controlJson = theKernel.getJson(controlJsonProf);
@@ -1032,11 +1070,22 @@ var AttrJsonProfile = function () {
         this.useUserControl_map = {};
         this.refControl_map = {};
         this.dictionary = {};
+        this.customObjects_arr = [];
         this.keyIndex = 0;
         this.hadDictionary = hadDictionary == true;
     }
 
     _createClass(AttrJsonProfile, [{
+        key: 'addCusObject',
+        value: function addCusObject(cusObj) {
+            if (cusObj == null) {
+                return;
+            }
+            if (this.customObjects_arr.indexOf(cusObj) == -1) {
+                this.customObjects_arr.push(cusObj);
+            }
+        }
+    }, {
         key: 'addDictionnary',
         value: function addDictionnary(value) {
             if (!this.hadDictionary) {

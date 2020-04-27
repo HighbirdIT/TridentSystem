@@ -382,20 +382,19 @@ class OutlinePanel extends React.PureComponent {
                     hitKernel.parent.swapChild(hitKernel.parent.getChildIndex(hitKernel), hitKernel.parent.getChildIndex(targetKernel));
                     return;
                 }
-                if (!this.checkAppandable(targetKernel, hitKernel)) {
-                    return;
-                }
-
-                if (hitKernel.children != null) {
-                    if (newPos.y - hitResult.rect.top <= 5) {
-                        if (this.checkAppandable(targetKernel, hitKernel.parent)) {
-                            hitKernel.parent.appandChild(targetKernel, hitKernel.parent.getChildIndex(hitResult.kernel));
+                if (this.checkAppandable(targetKernel, hitKernel)) {
+                    if (hitKernel.children != null) {
+                        if (newPos.y - hitResult.rect.top <= 5) {
+                            if (this.checkAppandable(targetKernel, hitKernel.parent)) {
+                                hitKernel.parent.appandChild(targetKernel, hitKernel.parent.getChildIndex(hitResult.kernel));
+                            }
+                        }
+                        else {
+                            hitKernel.appandChild(targetKernel);
                         }
                     }
-                    else {
-                        hitKernel.appandChild(targetKernel);
-                    }
-                } else if (hitKernel.parent) {
+                }
+                else if (hitKernel.parent) {
                     if (this.checkAppandable(targetKernel, hitKernel.parent)) {
                         hitKernel.parent.appandChild(targetKernel, hitKernel.parent.getChildIndex(hitResult.kernel));
                     }
@@ -442,6 +441,20 @@ class OutlinePanel extends React.PureComponent {
         this.props.designer.selectKernel(data);
     }
 
+    clickMoveUpBtnHandler(data, outlineItem) {
+        var selectKernel = this.props.designer.getSelectedKernel();
+        if(selectKernel){
+            selectKernel.slideInParent(-1);
+        }
+    }
+
+    clickMoveDownBtnHandler(data, outlineItem) {
+        var selectKernel = this.props.designer.getSelectedKernel();
+        if(selectKernel){
+            selectKernel.slideInParent(1);
+        }
+    }
+
     render() {
         return (
             <div id="outlineRoot" className="flex-grow-1 flex-shrink-1 bg-light d-flex flex-column mw-100">
@@ -452,6 +465,12 @@ class OutlinePanel extends React.PureComponent {
                     </div>
                     <div className='btn btn-dark' onClick={this.clickCopyBtnHandler}>
                         <i className='fa fa-copy text-light' />
+                    </div>
+                    <div className='btn btn-dark' onClick={this.clickMoveUpBtnHandler}>
+                        <i className='fa fa-arrow-up text-light' />
+                    </div>
+                    <div className='btn btn-dark' onClick={this.clickMoveDownBtnHandler}>
+                        <i className='fa fa-arrow-down text-light' />
                     </div>
                 </div>
                 <div className='flex-grow-1 flex-shrink-1 autoScroll' ref={this.scrollDivRef} >

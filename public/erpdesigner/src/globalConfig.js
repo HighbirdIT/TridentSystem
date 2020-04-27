@@ -22,6 +22,10 @@ var ButtonType_Normal = 'Normal';
 var ButtonType_ListBtn = 'ListLike';
 var ButtonType_Options_arr = [ButtonType_Normal, ButtonType_ListBtn];
 
+var StatFun_NONE = 'none';
+var StatFun_SUM = 'sum';
+var StatFun_arr = [StatFun_NONE,StatFun_SUM];
+
 const DefaultKeyColumn = '_default';
 
 var EMessageType = {
@@ -58,6 +62,8 @@ var PersonEductOptions_arr = [];
 var AllPosts_arr = [];
 var ProjectRecords_arr = [];
 var AllFileFlows_arr = [];
+var AllReports_arr = [];
+var AllExcelTemplate_arr = [];
 
 function GetProjectRecords_arr(){
     return ProjectRecords_arr;
@@ -111,13 +117,16 @@ var SocketType_CtlKernel = 'st_ctlkernel';
 var Math_ABS = 'ABS'; //计算绝对值
 var Math_CEILING = 'CEILING'; //计算大于等于参数的最小整数
 var Math_FLOOR = 'FLOOR'; //计算小于等于参数的最大整数
-var Math_RAND = 'RAND'; //获取随机数
 var Math_ROUND = 'ROUND'; //获取参数制定的长度和精度
+var Math_RAND = 'RAND'; //获取随机小数
 var Math_POWER = 'POWER'; //计算指定表达式的制定幂的值
-var Math_SQUARE = 'SQUARE'; //计算参数的平方值
 var Math_SQRT = 'SQRT'; //计算参数的平方根
-var Math_arr = [Math_ABS, Math_CEILING, Math_FLOOR, Math_RAND, Math_ROUND, Math_POWER, Math_SQUARE, Math_SQRT];
-
+var Math_SIN ='SIN';
+var Math_COS ='COS';
+var Math_TAN ='TAN';
+var Math_SIGN='SING';
+var Math_arr = [Math_ABS, Math_CEILING, Math_FLOOR, Math_ROUND, Math_POWER, Math_SQRT];
+var JSMath_arr = [Math_ABS, Math_CEILING, Math_FLOOR, Math_ROUND, Math_POWER, Math_SQRT,Math_SIN,Math_COS,Math_TAN,Math_SIGN];
 //2018-23-31黄永恒编辑charfunType
 var CharfunType_ASCII = 'ASCII'; //返回字符表达式中最左侧字符的ASCII代码值  select ASCII('a')--97
 var CharfunType_CHAR = 'CHAR'; //将整数ASCII代码转换为字符 select CHAR(97)--a
@@ -357,10 +366,21 @@ var ValueType = {
     ModifyContent:'ModifyContent',
     AttrHook:'attrhook',
     AttrChecker:'attrchecker',
+    NameAndScript:'nameandscrupt',
+    BatchVar:'batchvar',
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
 var JsValueTypes = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time, ValueType.DateMD];
+var JsVarNodeValueTypes = JsValueTypes.concat(ValueType.BatchVar);
+
+const EChartType={
+    Pie:'pie',
+    Line:'line',
+    Bar:'bar',
+    HorizontalBar:'horizontalBar',
+};
+var ChartTypes_arr = [EChartType.Pie, EChartType.Line, EChartType.Bar,EChartType.HorizontalBar];
 
 function TransSVTToJSVT(sqlType) {
     switch (sqlType) {

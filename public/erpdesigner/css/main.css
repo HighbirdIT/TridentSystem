@@ -13,8 +13,8 @@
 .mobilePage{
     min-height: 600px;
     min-width: 450px;
-    max-height: 800px;
-    max-width: 700px;
+    max-height: 1600px;
+    max-width: 2048px;
     margin: auto;
 }
 
@@ -24,6 +24,18 @@
   max-height: 1600px;
   max-width: 2048px;
   margin: auto;
+}
+
+body{
+  font-size: 0.8rem !important;
+}
+
+.btn{
+  font-size: 0.8rem !important;
+}
+
+.form-control{
+  font-size: 1rem !important;
 }
 
 .width-1{
@@ -721,3 +733,5 @@
   border: 2px solid #dee2e6 !important;
   width: 7em;
 }
+
+

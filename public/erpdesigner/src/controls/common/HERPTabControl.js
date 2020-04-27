@@ -13,6 +13,7 @@ function GetTabItems(tabControlKernel){
 const HERPTabControlKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置',[
         genIsdisplayAttribute(),
+        new CAttribute('默认可见', AttrNames.DefaultVisible, ValueType.Boolean, true),
         new CAttribute('selectedItemID','selectedItemID',ValueType.String,'',true,false,null,null,false),
         new CAttribute('贪心模式', AttrNames.GreedMode, ValueType.Boolean, false),
         new CAttribute('默认打开', 'defaultTabitemID', ValueType.String, 0, true, false, [], {text:'name', value:'code',pullDataFun:GetTabItems}),

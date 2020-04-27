@@ -25,6 +25,11 @@ const JSNodeEditorControls_arr =[
         type:'流控制'
     },
     {
+        label:'Call页面方法',
+        nodeClass:JSNode_Page_CallFun,
+        type:'流控制'
+    },
+    {
         label:'SetTimeout',
         nodeClass:JSNode_SetTimeout,
         type:'流控制'
@@ -85,6 +90,16 @@ const JSNodeEditorControls_arr =[
         type:'控件交互'
     },
     {
+        label:'动态添加批量设置',
+        nodeClass:JSNode_Add_Dynamic_Batch_Api,
+        type:'控件交互'
+    },
+    {
+        label:'执行动态批量设置',
+        nodeClass:JSNode_Excute_Dynamic_Batch_Api,
+        type:'控件交互'
+    },
+    {
         label:'Insert',
         nodeClass:JSNODE_Insert_table,
         type:'数据库交互'
@@ -133,6 +148,21 @@ const JSNodeEditorControls_arr =[
         label:'Visit-数据对象',
         nodeClass:JSNode_CusObject_Visit,
         type:'操纵数据对象'
+    },
+    {
+        label:'Get对象属性',
+        nodeClass:JSNode_GetObjectProp,
+        type:'操纵对象'
+    },
+    {
+        label:'Set对象属性',
+        nodeClass:JSNode_SetObjectProp,
+        type:'操纵对象'
+    },
+    {
+        label:'克隆对象',
+        nodeClass:JSNode_Object_Clone,
+        type:'操纵对象'
     },
     {
         label:'数组-创建',
@@ -225,9 +255,34 @@ const JSNodeEditorControls_arr =[
         type:'表单访问'
     },
     {
+        label:'获取表单XML数据',
+        nodeClass:JSNode_GetFormXMLData,
+        type:'表单访问'
+    },
+    {
+        label:'获取表单JSON数据',
+        nodeClass:JSNode_GetFormJsonData,
+        type:'表单访问'
+    },
+    {
         label:'遍历结束',
         nodeClass:JSNode_CircleEnd,
         type:'表单访问'
+    },
+    {
+        label:'设置行统计值',
+        nodeClass:JSNode_Form_SetStatValue,
+        type:'表单访问'
+    },
+    {
+        label:'打开报表',
+        nodeClass:JSNode_OpenReport,
+        type:'报表控制'
+    },
+    {
+        label:'导出Excel',
+        nodeClass:JSNode_ExportExcel,
+        type:'导出'
     },
     {
         label:'刷新表单',
@@ -329,6 +384,21 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_Fun_Call,
         type:'操作函数'
     },
+    {
+        label:'图表-创建Dateset',
+        nodeClass:JSNode_Chart_NewDataset,
+        type:'图表操作'
+    },
+    {
+        label:'图表-创建颜色',
+        nodeClass:JSNode_Chart_GenColor,
+        type:'图表操作'
+    },
+    {
+        label:'图表-刷新',
+        nodeClass:JSNode_Chart_Fresh,
+        type:'图表操作'
+    },
 ];
 
 var gCopyed_JsNodes_data=null;
@@ -345,7 +415,6 @@ function gCreateControlApiItem(apiType, apiName){
 }
 
 const g_controlApi_arr = [];
-
 function gFindPropApiItem(ctltype, attrName){
     var rlt = null;
     var ctlApi = g_controlApi_arr.find(item=>{return item.ctltype == ctltype;});
@@ -634,7 +703,7 @@ class JSNodeEditorLeftPanel extends React.PureComponent{
                 panel2={
                     <div className='d-flex flex-column h-100 w-100'>
                         <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} label='变量' isOutput={false} />
-                        {nowBlueprint.group != EJsBluePrintFunGroup.Custom ? null : <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} label='返回值' isOutput={true} />}
+                        {nowBlueprint.group != EJsBluePrintFunGroup.Custom && !nowBlueprint.canCustomReturnValue ? null : <JSNodeEditorVariables editingNode={this.props.editingNode} editor={this.props.editor} label='返回值' isOutput={true} />}
                         <JSNodeEditorCanUseNodePanel bluePrint={nowBlueprint} onMouseDown={this.props.onMouseDown} editor={this.props.editor} />
                     </div>
                 }
@@ -936,7 +1005,7 @@ class JSNodeEditorVariables extends React.PureComponent{
                     <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn bg-secondary flex-grow-1 flex-shrink-1 text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>{this.props.label}</button>
                     <i className='fa fa-plus fa-lg text-light cursor-pointer' onClick={this.clickAddHandler} style={{width:'30px'}} />
                 </div>
-                <div id={targetID} className="list-group flex-grow-0 flex-shrink-0 collapse show" style={{ overflow: 'auto' }}>
+                <div id={targetID} className="list-group flex-grow-0 flex-shrink-1 collapse show" style={{ overflow: 'auto', minHeight:'100px'}}>
                     <div className='mw-100 d-flex flex-column'>
                         <div className='btn-group-vertical mw-100'>
                             {
@@ -1914,6 +1983,28 @@ class JSDef_Variable_Component extends React.PureComponent{
             );
         }
     }
+    moveUporDown(ev){
+        var target =ev.target
+        var bluePrint = this.props.belongNode.bluePrint;
+        var varData = this.props.varData;
+        var vars_arr = varData.isOutput ? bluePrint.returnVars_arr : bluePrint.vars_arr;
+        var nowIndex = vars_arr.indexOf(varData)
+        var temp = vars_arr[nowIndex];
+        if (target.getAttribute('action') == 'up'){
+            if(nowIndex>0){
+                vars_arr[nowIndex] = vars_arr[nowIndex-1];
+                vars_arr[nowIndex-1] =temp;
+                bluePrint.fireEvent('varChanged')
+            }
+        }else{
+            if(nowIndex < vars_arr.length - 1)
+            {
+                vars_arr[nowIndex] = vars_arr[nowIndex + 1];
+                vars_arr[nowIndex + 1] = temp;
+                bluePrint.fireEvent('varChanged');
+            }
+        }
+    }
 
     render() {
         var varData = this.props.varData;
@@ -1929,6 +2020,8 @@ class JSDef_Variable_Component extends React.PureComponent{
                         <span className='m-1 badge badge-secondary' >{varData.valType}</span>
                     </div>
                     {varData.isfixed != true && <i className={'fa fa-trash fa-lg'} onClick={this.clickTrashHandler} />}
+                    {varData.isOutput && <i className={'fa fa-arrow-up'} onClick={this.moveUporDown} action='up' />}
+                    {varData.isOutput && <i className={'fa fa-arrow-down'} onClick={this.moveUporDown} action='down' />}
                 </div>
             );
         }
@@ -1940,7 +2033,7 @@ class JSDef_Variable_Component extends React.PureComponent{
                 <span className='text-light flex-shrink-0'>默认值</span>
                 <input onChange={this.defaultInputChangedHandler} type='text' value={this.state.default} className='flexinput flex-grow-1 flex-shrink-1' />
             </div>
-            <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={JsValueTypes} textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
+            <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={JsVarNodeValueTypes} textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
             {varData.isOutput ? null : <DropDownControl itemChanged={this.isParamChangedHandler} btnclass='btn-dark' options_arr={ISParam_Options_arr} textAttrName='name' valueAttrName='code' value={this.state.isParam} />}
         </div>);
     }

@@ -9,6 +9,7 @@ const M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('有关闭按钮', AttrNames.AutoCloseBtn, ValueType.Boolean, true),
         new CAttribute('有主页按钮', AttrNames.AutoHomeBtn, ValueType.Boolean, true),
         new CAttribute('关联步骤', AttrNames.RelFlowStep, ValueType.Int, null, true, true, gFlowMaster.getAllSteps, {text:'fullName', value:'code'}),
+        new CAttribute('属性列表', AttrNames.ParamApi, ValueType.String, '', true, true),
     ]),
     new CAttributeGroup('接口设置',[
         new CAttribute('入口参数', AttrNames.EntryParam, ValueType.String, '', true, true),
@@ -18,6 +19,9 @@ const M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('OnLoad', AttrNames.Event.OnLoad, ValueType.Event),
         new CAttribute('点击关闭', AttrNames.Event.OnClickCloseBtn, ValueType.Event),
         new CAttribute('消息处理', AttrNames.Event.OnReceiveMsg, ValueType.Event),
+    ]),
+    new CAttributeGroup('自订方法', [
+        new CAttribute('自订方法', AttrNames.FunctionApi, ValueType.CustomFunction, '', true, true),
     ]),
 ],false);
 
@@ -36,10 +40,14 @@ class M_PageKernel extends ContainerKernelBase {
         autoBind(self);
 
         var funName = this.id + '_' + AttrNames.Event.OnLoad;
-        var eventBP = this.project.scriptMaster.getBPByName(funName);
-        if(eventBP){
-            eventBP.ctlID = this.id;
+        var theBP = this.project.scriptMaster.getBPByName(funName);
+        if(theBP){
+            theBP.ctlID = this.id;
         }
+        this.getAttrArrayList(AttrNames.FunctionApi).forEach(funAtrr=>{
+            theBP = this.project.scriptMaster.getBPByName(this.id + '_' + funAtrr.name);
+            this.scriptCreated(null, theBP);
+        });
     }
 
     getUseFlowSteps(){
@@ -100,8 +108,53 @@ class M_PageKernel extends ContainerKernelBase {
         if(scriptBP.name.indexOf(AttrNames.Event.OnReceiveMsg) != -1){
             scriptBP.setFixParam(['msgtype','data']);
         }
+        if(scriptBP.name.indexOf(AttrNames.FunctionApi) != -1){
+            scriptBP.startIsInReducer = false; 
+        }
+    }
+
+    getFunctionApiAttrArray() {
+        var attrValue;
+        var rlt_arr = [];
+        var funApis_arr = this.getAttrArrayList(AttrNames.FunctionApi);
+        funApis_arr.forEach(attr=>{
+            attrValue = this.getAttribute(attr.name);
+            if(IsEmptyString(attrValue)){
+                return;
+            }
+            rlt_arr.push({
+                label: attrValue,
+                name: attr.name,
+                fullname: this.id + '_' + attr.name,
+            });
+        });
+
+        return rlt_arr;
+    }
+
+    getParamApiAttrArray() {
+        var attrValue;
+        var rlt_arr = [];
+        var paramApis_arr = this.getAttrArrayList(AttrNames.ParamApi);
+        paramApis_arr.forEach(attr=>{
+            attrValue = this.getAttribute(attr.name);
+            if(IsEmptyString(attrValue)){
+                return;
+            }
+            rlt_arr.push({
+                label: attrValue,
+                name: attr.name,
+            });
+        });
+
+        return rlt_arr;
     }
 }
+
+var Page_api = new ControlAPIClass(M_PageKernel_Type);
+g_controlApi_arr.push(Page_api);
+Page_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.ParamApi, M_PageKernelAttrsSetting), AttrNames.ParamApi, false));
+Page_api.pushApi(new ApiItem_propsetter('属性接口'));
 
 class M_Page extends React.PureComponent {
     constructor(props) {
