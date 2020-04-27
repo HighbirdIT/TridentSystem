@@ -6113,16 +6113,20 @@ class JSNode_FreshForm extends JSNode_Base {
         if(this.holdSelected == null){
             this.holdSelected = true;
         }
+        if(this.holdScroll == null){
+            this.holdScroll = true;
+        }
     }
 
     requestSaveAttrs() {
         var rlt = super.requestSaveAttrs();
         rlt.holdSelected = this.holdSelected;
+        rlt.holdScroll = this.holdScroll;
         return rlt;
     }
 
     restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['holdSelected']);
+        assginObjByProperties(this, attrsJson, ['holdSelected','holdScroll']);
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -6188,13 +6192,14 @@ class JSNode_FreshForm extends JSNode_Base {
         var freshFunName = 'fresh_' + socketValue;
 
         var holdSelected = this.holdSelected == true ? 'true' : 'false';
+        var holdScroll = this.holdScroll == true ? 'true' : 'false';
         var myJSBlock = new FormatFileBlock('ret');
         if (formDS != null) {
             freshFunName = makeFName_pull(selectedKernel);
-            myJSBlock.pushLine('setTimeout(() => {' + makeStr_callFun(freshFunName, ['null', holdSelected, parentPath]) + ';},50);');
+            myJSBlock.pushLine('setTimeout(() => {' + makeStr_callFun(freshFunName, ['null', holdSelected, parentPath,holdScroll]) + ';},50);');
         }
         else {
-            myJSBlock.pushLine(makeStr_callFun(freshFunName, ['state', 'null', 'null', parentPath + "+'." + socketValue + "'"]));
+            myJSBlock.pushLine(makeStr_callFun(freshFunName, ['state', 'null', 'null', parentPath + "+'." + socketValue + "'", holdScroll]));
         }
         belongBlock.pushChild(myJSBlock);
 

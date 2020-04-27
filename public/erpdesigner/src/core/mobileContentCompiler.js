@@ -2355,7 +2355,7 @@ class MobileContentCompiler extends ContentCompiler {
 
             formReactClass.constructorFun.pushLine('this.clickFreshHandler = this.clickFreshHandler.bind(this);');
             var clickFreshHandlerFun = formReactClass.getFunction('clickFreshHandler', true, ['ev']);
-            clickFreshHandlerFun.pushLine(makeFName_pull(theKernel) + "(null, true, this.props.fullParentPath);");
+            clickFreshHandlerFun.pushLine(makeFName_pull(theKernel) + "(null, true, this.props.fullParentPath, true);");
         }
 
         var formStyleID = theKernel.id + '_style';
@@ -2391,7 +2391,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
         if (isPageForm) {
             renderContentBlock.pushLine(VarNames.RetElem + " = (<React.Fragment>", 1);
-            renderContentBlock.pushLine("<div className='d-flex flex-grow-1 flex-shrink-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + (isWrap ? ' flex-wrap' : '') + alignitems + "'>", 1);
+            renderContentBlock.pushLine("<div " + (autoHeight ? " id={this.props.fullPath + 'scroller'}" : '') + " className='d-flex flex-grow-1 flex-shrink-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + (isWrap ? ' flex-wrap' : '') + alignitems + "'>", 1);
             childRenderBlock = new FormatFileBlock(theKernel.id + 'child');
             renderContentBlock.pushChild(childRenderBlock);
             renderContentBlock.subNextIndent();
@@ -2455,10 +2455,10 @@ class MobileContentCompiler extends ContentCompiler {
                 }
                 renderContentFun.pushLine("</table>", -1);
                 renderContentFun.pushLine("</div>");
-                renderContentFun.pushLine("<div onScroll={this.tableBodyScroll} className='mw-100 autoScroll'>", 1);
+                renderContentFun.pushLine("<div id={this.props.fullPath + 'scroller'} onScroll={this.tableBodyScroll} className='mw-100 autoScroll'>", 1);
             }
             else {
-                renderContentFun.pushLine("<div className='mw-100 autoScroll'>", 1);
+                renderContentFun.pushLine("<div id={this.props.fullPath + 'scroller'} className='mw-100 autoScroll'>", 1);
             }
             renderContentFun.pushLine("{" + VarNames.RetElem + "}");
             if (insertBtnSetting) {
@@ -2524,7 +2524,7 @@ class MobileContentCompiler extends ContentCompiler {
             if (orientation == Orientation_V) {
                 contentDivClassStr += ' flex-column';
             }
-            renderContentFun.retBlock.pushLine("<div className='" + contentDivClassStr + alignitems + "'>");
+            renderContentFun.retBlock.pushLine("<div" + (autoHeight ? " id={this.props.fullPath + 'scroller'}" : '') + " className='" + contentDivClassStr + alignitems + "'>");
             renderContentFun.retBlock.addNextIndent();
             renderContentFun.retBlock.pushLine('{' + VarNames.RetElem + '}');
             renderContentFun.retBlock.subNextIndent();
@@ -2856,6 +2856,12 @@ class MobileContentCompiler extends ContentCompiler {
         else {
             freshFun.pushLine(makeStr_callFun(bindFun.name, [VarNames.ReState, 'null', 'null', VarNames.SatePath]));
         }
+        freshFun.pushLine('var scrollSetting = gDataCache.get(' + theKernel.id + "_path + 'scrollsetting');");
+        freshFun.pushLine('if(scrollSetting){setTimeout(() => {',1);
+        freshFun.pushLine('var scrollerElem=document.getElementById(' + theKernel.id + '_path' + "+'scroller');");
+        freshFun.pushLine('if(scrollerElem){scrollerElem.scrollTop = scrollSetting.top;scrollerElem.scrollLeft = scrollSetting.left;}');
+        freshFun.subNextIndent();
+        freshFun.pushLine('},200);}');
 
         bindFun.scope.getVar('formState', true, makeStr_getStateByPath(VarNames.ReState, pathVarName, '{}'));
         if (useDS) {
@@ -2907,7 +2913,7 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
 
-        var pullFun = clientSide.scope.getFunction(makeFName_pull(theKernel), true, [VarNames.ReState, VarNames.HoldSelected, VarNames.FullParentPath]);
+        var pullFun = clientSide.scope.getFunction(makeFName_pull(theKernel), true, [VarNames.ReState, VarNames.HoldSelected, VarNames.FullParentPath, VarNames.HoldScroll]);
         pullFun.scope.getVar(VarNames.HadStateParam, true, VarNames.ReState + '!=null');
         pullFun.scope.getVar(VarNames.RowKeyInfo_map, true, 'getRowKeyMapFromPath(' + VarNames.FullParentPath + ')');
         if (acessAsserBP) {
@@ -2954,6 +2960,11 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
         else {
+            if(autoHeight || isGridForm){
+                pullFun.pushLine('var scrollerElem=document.getElementById(fullParentPath+' + singleQuotesStr('.' + theKernel.id + 'scroller') + ');');
+                pullFun.pushLine('if(scrollerElem){gDataCache.set(fullParentPath + ' + singleQuotesStr('.' + theKernel.id + 'scrollsetting') + ',' + VarNames.HoldScroll + ' ? {left:scrollerElem.scrollLeft,top:scrollerElem.scrollTop} : null);}');
+            }
+
             pullFun.retBlock.pushLine(makeLine_Return(VarNames.State));
             pullFun.scope.getVar(VarNames.State, true, makeStr_AddAll(VarNames.HadStateParam, ' ? ', VarNames.ReState, ' : ', 'store.getState()'));
 

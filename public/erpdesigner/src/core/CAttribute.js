@@ -240,6 +240,7 @@ const VarNames={
     SelectedColumns:'selectedColumns',
     BaseBunlde:'baseBundle',
     HoldSelected:'holdSelected',
+    HoldScroll:'holdScroll',
     Userctlpath:'userctlpath',
     OldValue:'oldValue',
     SatePath:'statePath',
