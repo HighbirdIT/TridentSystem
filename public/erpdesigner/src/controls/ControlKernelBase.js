@@ -749,6 +749,14 @@ class ControlLayoutConfig {
     hadClass(name){
         return this.class[name] != null;
     }
+
+    hadStyle(name){
+        return this.class[name] != null;
+    }
+
+    hadSizeSetting(){
+        return this.switch['flex-grow'] != null || this.switch['flex-shrink'] != null  || this.width != null  || this.style.height != null  || this.style.maxWidth != null  || this.style.maxHeight != null;
+    }
 }
 
 class CtlKernelCreationHelper extends EventEmitter {

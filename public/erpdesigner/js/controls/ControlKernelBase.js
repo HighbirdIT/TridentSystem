@@ -791,6 +791,16 @@ var ControlLayoutConfig = function () {
         value: function hadClass(name) {
             return this.class[name] != null;
         }
+    }, {
+        key: 'hadStyle',
+        value: function hadStyle(name) {
+            return this.class[name] != null;
+        }
+    }, {
+        key: 'hadSizeSetting',
+        value: function hadSizeSetting() {
+            return this.switch['flex-grow'] != null || this.switch['flex-shrink'] != null || this.width != null || this.style.height != null || this.style.maxWidth != null || this.style.maxHeight != null;
+        }
     }]);
 
     return ControlLayoutConfig;

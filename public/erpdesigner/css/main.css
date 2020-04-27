@@ -727,6 +727,11 @@ body{
   position: relative;
 }
 
+.filepreviewer[autosize='1']{
+  width: initial;
+  height: initial;
+}
+
 .M_SingleFileUploader{
   text-align: center;
   border-radius: 0.25rem !important;

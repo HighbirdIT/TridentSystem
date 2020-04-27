@@ -5331,9 +5331,17 @@ class MobileContentCompiler extends ContentCompiler {
         ctlTag.setAttr('id', theKernel.id);
         ctlTag.setAttr('parentPath', parentPath);
 
+        if(layoutConfig.hadSizeSetting()){
+            ctlTag.setAttr('fixedsize', singleQuotesStr(0));
+        }
+
         if (theKernel.getAttribute('deletable')) {
             ctlTag.setAttr('canDelte', '{true}');
         }
+        if (theKernel.getAttribute('showtitle') == false) {
+            ctlTag.setAttr('hidetitle', '{true}');
+        }
+
 
         renderBlock.pushChild(ctlTag);
 
