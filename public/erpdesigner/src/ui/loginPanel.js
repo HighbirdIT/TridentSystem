@@ -155,15 +155,19 @@ class LoginPanel extends React.PureComponent {
         var passwordText = this.state.password;
         var info = IsEmptyString(this.state.info) ? '' : '(' + this.state.info + ')';
         return(
-            <FloatPanelbase title='登录' ref={this.panelBaseRef} initShow={true} width={320} height={150} sizeable={false} >
-                <div className='d-flex align-items-center'>
-                    <i className='fa fa-user-circle fa-2x text-light' style={{width:'40px'}}  />
+            <FloatPanelbase title='登录' ref={this.panelBaseRef} initShow={true} width={320} height={130} sizeable={false} >
+                <div className='d-flex align-items-center m-1' >
+                    <span className='d-flex justify-content-center' style={{width:'40px'}}>
+                        <i className='fa fa-user-circle fa-2x text-light' />
+                    </span>
                     <div className='flex-grow-1 flex-shrink-1'>
                         <input type='text' className='w-100' value={this.state.account} onChange={this.accountInputChangeHandler} />
                     </div>
                 </div>
-                <div className='d-flex align-items-center'>
-                    <i className='fa fa-lock fa-2x text-light' style={{width:'40px'}} />
+                <div className='d-flex align-items-center m-1'>
+                    <span className='d-flex justify-content-center' style={{width:'40px'}}>
+                        <i className='fa fa-lock fa-2x text-light' />
+                    </span>
                     <div className='flex-grow-1 flex-shrink-1'>
                         <input type='password' className='w-100' value={passwordText}  onChange={this.passwordInputChangeHandler} />
                     </div>

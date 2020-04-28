@@ -1068,7 +1068,7 @@ class CP_ClientSide extends JSFileMaker{
         this.appClass = this.getReactClass('App', true);
         this.reducers_map = {};
 
-        this.appClass.constructorFun.pushLine("this.renderLoadingTip = baseRenderLoadingTip.bind(this)");
+        this.appClass.constructorFun.pushLine("this.renderLoadingTip = baseRenderLoadingTip.bind(this);");
 
         this.appReducerSettingVar = this.scope.getVar('appReducerSetting', true);
         this.appReducerVar = this.scope.getVar('appReducer', true, 'createReducer(appInitState, Object.assign(baseReducerSetting,appReducerSetting))');
