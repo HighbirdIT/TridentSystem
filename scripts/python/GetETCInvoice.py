@@ -4,45 +4,48 @@ from email.header import decode_header, Header # 解析邮件主题
 from email.utils import parseaddr # 解析发件人详情，名称及地址
 from pdfocr import *
 import fitz
+import sys
+import io
 
 def get_email_content(Email_host,Email_user,Email_password):
-    try:
-        imaplib._MAXLINE = 10000000
-        imapObj = imapclient.IMAPClient(Email_host,ssl=True)
-        imapObj.login(Email_user,Email_password)
-        imapObj.select_folder('INBOX',readonly=False)
-        UIDs = imapObj.search(['UNSEEN'])
-        return UIDs,imapObj
-    except Exception:
-        print("Error:邮箱连接失败！")
+    imaplib._MAXLINE = 10000000
+    imapObj = imapclient.IMAPClient(Email_host,ssl=True)
+    imapObj.login(Email_user,Email_password)
+    imapObj.select_folder('INBOX',readonly=False)
+    UIDs = imapObj.search(['UNSEEN'])
+    return UIDs,imapObj
 
 def get_email_UNSEEN(UIDs,imapObj,Email_Sender, path):
-    strSplit = '\\'
-    try:
-        for UID in UIDs:
+    readUIDs_li = []
+    
+    for UID in UIDs:
+        try:
+            uidDir = path + 'UID' + str(UID) + '\\'
             rawMessages = imapObj.fetch(UID,['BODY[]'])
             message = pyzmail.PyzMessage.factory(rawMessages[UID][b'BODY[]'])
             EmailFrom = message.get_address('from')[1]
             if EmailFrom == Email_Sender:
-                fileListPath = get_attachment_lists(message,path,UID)
+                fileList, errmsg = get_attachment_lists(message,path,UID)
                 file_JOSN = {}
-                for filepath in fileListPath:
-                    strPath = filepath.split(strSplit)
-                    fileImagerPath = strSplit.join(strPath[:len(strPath)-2]) + '\\ETC发票图片\\'
-                    fileJosnPath = strSplit.join(strPath[:len(strPath)-2]) 
-                    if not os.path.exists(fileImagerPath):
-                        os.makedirs(fileImagerPath) 
-                    filesname = file_name(filepath)
-                    for file in filesname:
-                        data = Extractor(file).extract()
-                        invoiceNum = data['发票号码']
-                        file_JOSN[invoiceNum] = data
-                        pdf_image(file,fileImagerPath,5,5,0,invoiceNum)
-                f = open(fileJosnPath + '\\invoice_info.json','w',encoding='utf-8')
-                json.dump(file_JOSN,f, sort_keys=True, indent=4, separators=(',', ': '),ensure_ascii=False)
-                imapObj.set_flags(rawMessages,b'\\Seen',silent=False)# 邮件标记为已读
-    except IOError:
-        print("Error: 没有找到文件或读取文件失败")
+                invoice_li = []
+                file_JOSN['invoices'] = invoice_li
+                if errmsg != None and len(fileList)>0:
+                    for filepath in fileList:
+                        filesname = file_name(filepath)
+                        for theFile in filesname:
+                            data = Extractor(theFile).extract()
+                            invoiceNum = data['发票号码']
+                            invoice_li.append(data)
+                            pdf_image(theFile,uidDir,2,2,0,invoiceNum)
+        except IOError as eo:
+            errmsg = str(eo)
+        file_JOSN['errmsg'] = errmsg if errmsg != None else '无'
+        f = open(uidDir + 'invoice_info.json','w',encoding='utf-8')
+        #print(file_JOSN)
+        json.dump(file_JOSN,f, sort_keys=True, indent=4, separators=(',', ': '),ensure_ascii=False)
+        imapObj.set_flags(rawMessages,b'\\Seen',silent=False)# 邮件标记为已读
+        readUIDs_li.append(UID)
+    return readUIDs_li
 
 def decode_str(s):
     value, charset = decode_header(s)[0]
@@ -61,12 +64,13 @@ def list_file(folder):
    # print(houzhui_num)
     return houzhui_num 
 
-def get_attachment_lists(msg, getpath,UID):
+def get_attachment_lists(msg, getpath, UID):
     attachment_files = []
     attachment_dirs = []
     today = datetime.date.today()
     num = 0
     filenum = 0
+    errMsg = ''
     try:
         for part in msg.walk():
             # 获取附件名称类型
@@ -75,6 +79,7 @@ def get_attachment_lists(msg, getpath,UID):
             contentType = part.get_content_type()
             # 获取编码格式
             mycode = part.get_content_charset()
+            #print(file_name)
             if file_name:
                 h = Header(file_name)
                 # 对附件名称进行解码
@@ -88,7 +93,7 @@ def get_attachment_lists(msg, getpath,UID):
                     # 下载附件
                     data = part.get_payload(decode=True)
                     #创建文件夹
-                    path = getpath+'邮件UID'+str(UID) +'\\' +str(today)+'\\'
+                    path = getpath+'UID'+str(UID) +'\\'
                     if not os.path.exists(path):
                         os.makedirs(path)
                     filenum = list_file(path)
@@ -104,9 +109,9 @@ def get_attachment_lists(msg, getpath,UID):
                     exmpleZip.close()
                     attachment_dirs.append(newpath)
         #print('附件名列表：', attachment_files)
-        return attachment_dirs
-    except Exception:
-        print("Error:邮件附件获取或解码压缩错误！")
+    except Exception as eo:
+        errMsg = str(eo)
+    return attachment_dirs,errMsg
 
 '''
 # 将PDF转化为图片
@@ -131,15 +136,19 @@ def pdf_image(pdfPath,imgPath,zoom_x,zoom_y,rotation_angle,png_Name):
     pdf.close()
 
 if __name__ == '__main__':
-        sender = 'qwe3328015@foxmail.com'  
-        filepath = 'D:\\ETC电子发票\\'
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+        argv = sys.argv
+        #argv=['',r'D:\\ETC电子发票\\']
+
+        sender = 'qwe3328015@foxmail.com'
+        exportDir_path = argv[1]
         Emailhost = "imap.mxhichina.com"
         emailuser = 'etc@highbird.com.cn'
         emailpassword = 'Highbird123'
         try:
             UIDs,imapObj = get_email_content(Emailhost,emailuser,emailpassword)
-            get_email_UNSEEN(UIDs,imapObj,sender,filepath)
+            readedUISs = get_email_UNSEEN(UIDs,imapObj,sender,exportDir_path)
             imapObj.logout()
-            print("执行完成")
-        except  Exception :
-            print("程序出错，执行失败！")
+            print("OK:" + str(readedUISs), end='')
+        except  Exception as e:
+            print("ERROR:" + e, end='')

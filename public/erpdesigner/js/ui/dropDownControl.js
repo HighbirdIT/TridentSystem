@@ -328,7 +328,7 @@ var DropDownControl = function (_React$PureComponent) {
             var _this3 = this;
 
             var filted_arr = this.state.options_arr.filter(function (item) {
-                return _this3.state.keyword.trim().length == 0 || item.text.indexOf(_this3.state.keyword) >= 0;
+                return _this3.state.keyword.trim().length == 0 || item.text && item.text.indexOf(_this3.state.keyword) >= 0;
             });
             var selectedOption = this.state.selectedOption;
             if (this.state.prePropsValue != this.props.value) {

@@ -610,13 +610,19 @@ body{
     flex-direction: column !important;
 }
 
+.fileuploadersingle[fixedsize='0']{
+    width: initial;
+    height: initial;
+}
+
 .fileuploadersingle-content{
     border: dashed #b8c3ce !important;
     border-radius: 0.25rem !important;
     position: relative;
-    width: 6.5em;
-    height: 6.5em;
-    margin: auto;
+    flex-grow: 1;
+    flex-shrink: 1;
+    padding: 0.5em;
+    min-height: 6.5em
 }
 
 .fileuploadersingle-content>div[id='toolbar']{

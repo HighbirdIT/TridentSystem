@@ -278,7 +278,7 @@ class DropDownControl extends React.PureComponent {
 
     render() {
         var filted_arr = this.state.options_arr.filter(item => {
-            return this.state.keyword.trim().length == 0 || item.text.indexOf(this.state.keyword) >= 0;
+            return this.state.keyword.trim().length == 0 || (item.text && item.text.indexOf(this.state.keyword) >= 0);
         });
         var selectedOption = this.state.selectedOption;
         if(this.state.prePropsValue != this.props.value){

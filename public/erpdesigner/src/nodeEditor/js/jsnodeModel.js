@@ -5739,6 +5739,7 @@ class JSNode_CallOnFetchEnd extends JSNode_Base {
             this.addSocket(this.inErrorSocket);
         }
         this.inErrorSocket.label = '错误';
+        this.inErrorSocket.inputable = true;
 
         if (this.bluePrint.group == EJsBluePrintFunGroup.Custom) {
             this.synInSocket();

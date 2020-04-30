@@ -225,14 +225,6 @@ class MainApp extends React.PureComponent{
         return (
         <div className='d-flex flex-column flex-grow-1 flex-shrink-1 h-100'>
             <C_ModelTip ref={modelTipRef} />
-            <div className='d-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader'>
-                海勃ERP
-                <div className='flex-grow-1 flex-shrink-1' />
-                <div className='d-flex flex-shrink-0 align-items-center'>
-                    <i className='fa fa-user-o' />
-                    {this.state.username}
-                </div>
-            </div>
             <div className='d-flex flex-column flex-grow-1 flex-shrink-1'>
                 {this.renderContent()}
             </div>
@@ -240,10 +232,5 @@ class MainApp extends React.PureComponent{
     }
 }
 
-/*
-setTimeout(() => {
-    throw Error('dsf');
-}, 50);
-*/
 
 ReactDOM.render(<MainApp ref={mainAppRef} />, document.getElementById('reactRoot'));

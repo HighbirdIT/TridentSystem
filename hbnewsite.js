@@ -17,6 +17,9 @@ var debug = require('debug');
 var serverhelper = require('./erpserverhelper.js');
 var cluster = require('cluster');
 
+var emailHelper = require('./emailHelper');
+emailHelper.getETCInvoice();
+
 
 debug.enabled = () => {
     return false;

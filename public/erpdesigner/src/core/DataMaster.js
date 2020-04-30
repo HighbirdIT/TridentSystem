@@ -195,6 +195,7 @@ class DBEntity extends EventEmitter{
         else if(json.data.length == 0 || json.data[0] == null){
             console.warn(this.code + '没有在数据库中找到');
             this.synErr = {info:'不存在了' + this.code};
+            this.columns = [];
             return;
         }
         else{

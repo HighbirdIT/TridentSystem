@@ -740,3 +740,7 @@ body{
 }
 
 
+.M_SingleFileUploader[autosize='1']{
+  width: initial;
+  height: initial;
+}

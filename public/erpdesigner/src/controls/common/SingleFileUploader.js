@@ -131,7 +131,7 @@ class CSingleFileUploader extends React.PureComponent {
         var title = titleParserRet.isScript ? (ReplaceIfNull(this.state.name,'') + '{脚本}') : (IsEmptyString(titleParserRet.string) ? '' : '[' +titleParserRet.string + ']');
 
         return (
-           <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+           <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null} autosize={!layoutConfig.hadSizeSetting() ? 1 : 0}>
                 {this.renderHandleBar()}
                 {title}
                 <div className='' style={{width:'7em',height:'7em'}}>

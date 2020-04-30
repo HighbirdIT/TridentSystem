@@ -4162,6 +4162,9 @@ class MobileContentCompiler extends ContentCompiler {
                         thisMidData.visibleStyle = visibleType == EButtonVisibleType.Insert ? VisibleStyle_Insert : VisibleStyle_Update;
                         reactParentMid.needSetKernels_arr.push(theKernel);
                     }
+                    else{
+                        reactParentMid.hadInsertMode = true;
+                    }
                 }
             }
         }
@@ -4762,6 +4765,11 @@ class MobileContentCompiler extends ContentCompiler {
         if (fileFlowItem) {
             ctlTag.setAttr('fileflow', fileFlow);
         }
+        if(layoutConfig.hadSizeSetting()){
+            ctlTag.setAttr('fixedsize', singleQuotesStr(0));
+        }
+        ctlTag.class = layoutConfig.class;
+        ctlTag.style = layoutConfig.style;
         var formColumns_arr = null;
         if (belongFormKernel != null && (belongFormKernel.isPageForm() || belongFormKernel.isKernelInRow(theKernel))) {
             formColumns_arr = belongFormKernel.getCanuseColumns();
