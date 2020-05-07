@@ -1654,9 +1654,6 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
     } else {
         selectOpt = null;
     }
-    if (ownprops.poppanelminwidth > 0) {
-        console.log('ahhaha');
-    }
 
     return {
         value: useValue,
@@ -1806,6 +1803,7 @@ var ERPC_Text = function (_React$PureComponent5) {
                 } else if (this.props.type == 'string' && this.props.linetype != null && this.props.linetype != 'single') {
                     contentElem = React.createElement('textarea', { id: this.props.id, onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 w-100 form-control textarea-' + this.props.linetype + (this.props.align ? ' text-' + this.props.align : ''), value: this.props.value, onBlur: this.endInputHandler });
                 } else {
+                    var useClass = 'flex-grow-1 flex-shrink-1 form-control invalid';
                     var useType = this.props.type;
                     var useChecked = null;
                     switch (this.props.type) {
@@ -1820,6 +1818,9 @@ var ERPC_Text = function (_React$PureComponent5) {
                             useType = 'checkbox';
                             useChecked = parseBoolean(useType);
                             break;
+                        case 'date':
+                            useClass += ' dateTextInput';
+                            break;
                     }
                     var useValue = this.formatInputValue(this.props.value);
                     if (useValue != this.props.value) {
@@ -1829,7 +1830,7 @@ var ERPC_Text = function (_React$PureComponent5) {
                             }, 10);
                         }
                     }
-                    contentElem = React.createElement('input', { id: this.props.id, className: 'flex-grow-1 flex-shrink-1 form-control invalid ' + (this.props.align ? ' text-' + this.props.align : ''), type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged, onBlur: this.endInputHandler });
+                    contentElem = React.createElement('input', { id: this.props.id, className: useClass + (this.props.align ? ' text-' + this.props.align : ''), type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged, onBlur: this.endInputHandler });
                 }
 
                 if (this.props.invalidInfo) {

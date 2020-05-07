@@ -128,6 +128,10 @@ function makeFName_freshForm(formKernel) {
     return 'fresh_' + formKernel.id;
 }
 
+function makeFName_reCalFormStat(formKernel) {
+    return 'reCalStat_' + formKernel.id;
+}
+
 function makeFName_bindForm(formKernel) {
     return 'bind_' + formKernel.id;
 }
@@ -142,6 +146,10 @@ function makeFName_SaveInsertForm(formKernel) {
 
 function makeFName_pull(formKernel) {
     return 'pull_' + formKernel.id;
+}
+
+function makeFName_RowBind(formKernel) {
+    return 'rowbind_' + formKernel.id;
 }
 
 function makeStr_callFun(funName, params_arr) {
@@ -218,6 +226,7 @@ var VarNames = {
     RetProps: 'retProps',
     ReState: 'retState',
     RetDispather: 'retDispather',
+    RowBindInfo: 'bindedRow',
     NowPage: 'nowPage',
     NeedSetState: 'needSetState',
     InvalidBundle: 'invalidbundle',
@@ -319,6 +328,7 @@ var AttrNames = {
     RecEditeable: 'recEditeable',
     RecDeletable: 'recDeletable',
     NewRowDepend: 'newRowDepend',
+    StatFun: 'statfun',
     SelectMode: 'selectMode',
     EntryParam: 'entryParam',
     ExportParam: 'exportParam',

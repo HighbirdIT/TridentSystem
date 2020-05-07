@@ -298,7 +298,16 @@ function getBaseConfigData(req) {
         rlt.projects_arr = yield getAllProjectRecord();
         rlt.fileFlows_arr = yield getAllFileFlowRecord();
         rlt.reports_arr = yield getAllReportRecord();
+        rlt.excelTemplate_arr = yield getAllExcelTemplateRecord();
         return rlt;
+    });
+}
+
+function getAllExcelTemplateRecord(){
+    return co(function* () {
+        var sql = 'SELECT [表格模板记录代码] as code,[模板名称] as name FROM [base1].[dbo].[T721C表格模板记录]';
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
+        return rcdRlt.recordset;
     });
 }
 

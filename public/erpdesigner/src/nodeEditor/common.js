@@ -386,11 +386,17 @@ class Node_Base extends EventEmitter {
             isIn = '*';
         var rlt = null;
         if (isIn != false) {
-            rlt = this.inputScokets_arr.find(x => { return x.name == name });
+            rlt = this.inputScokets_arr.find(x => { return x.name == name; });
+            if(rlt == null && this.inFlowSockets_arr){
+                rlt = this.inFlowSockets_arr.find(x => { return x.name == name; });
+            }
         }
 
         if (rlt == null && isIn != true) {
-            rlt = this.outputScokets_arr.find(x => { return x.name == name });
+            rlt = this.outputScokets_arr.find(x => { return x.name == name; });
+            if(rlt == null && this.outputScokets_arr){
+                rlt = this.outputScokets_arr.find(x => { return x.name == name; });
+            }
         }
         return rlt;
     }

@@ -309,6 +309,13 @@ class ContentPanel extends React.PureComponent {
         }
     }
 
+    clickReSrotBtn(ev){
+        var project = this.props.project;
+        project.sortPCPages();
+        project.sortMBPages();
+        project.sortUC();
+    }
+
     render() {
         var project = this.props.project;
         var isPC = this.state.isPC;
@@ -335,7 +342,10 @@ class ContentPanel extends React.PureComponent {
                         <button type="button" className={"p-0 btn btn-secondary dropdown-toggle"} data-toggle="dropdown">
                             {editingPage ? editingPage.title : (editingControl ? '控件:' + editingControl.name : '暂无页面')}
                         </button>
-                        <div className="dropdown-menu">
+                        <div className="dropdown-menu mh-100 autoScroll">
+                            <div className='btn-group border'>
+                                <button onClick={this.clickReSrotBtn} className='btn btn-sm btn-dark' type='button'><i className='fa fa-refresh' /></button>
+                            </div>
                             {(isPC ? project.content_PC.pages : project.content_Mobile.pages).map(page => {
                                 return page == editingPage ? null : (<button key={page.id} onClick={this.changeEditingPageBtnClickHandler} className="dropdown-item" type="button" pageid={page.id}>{page.title}</button>)
                             })

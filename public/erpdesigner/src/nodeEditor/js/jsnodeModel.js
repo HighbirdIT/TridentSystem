@@ -990,15 +990,15 @@ class JSNode_BluePrint extends EventEmitter {
                 var selectedRowsVarName = formId + '_' + VarNames.SelectedRows_arr;
                 var isUseFormCtl = !IsEmptyObject(useFormData.useControls_map);
                 var isUseFormColumn = !IsEmptyObject(useFormData.useColumns_map);
-                var formPath = useFormData.formKernel.getStatePath();
+                var formPath = useFormData.formKernel.getStatePath(null,'.',{ mapVarName: VarNames.RowKeyInfo_map });
+                initValue = makeStr_getStateByPath(VarNames.State, formPathVarName, '{}');
 
                 if (belongUserControl) {
                     formPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + formPath);
-                    initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
+                    initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useFormData.formKernel.getStatePath(null,'.',{ mapVarName: VarNames.RowKeyInfo_map })), '{}');
                 }
                 else {
                     formPath = singleQuotesStr(formPath);
-                    initValue = makeStr_getStateByPath(VarNames.State, singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
                 }
                 if (!isGetXmlRowFun && !isGetJsonRowFun) {
                     theFun.scope.getVar(formPathVarName, true, formPath);
@@ -4786,7 +4786,7 @@ class JSNode_DateFun extends JSNode_Base {
                 callStr = funPreFix + 'Convert_DateZone(' + socketVal_arr[0] + ',' + socketVal_arr[1] + ') ';
                 break;
             case '创建日期':
-                callStr = 'new Date(' + socketVal_arr[0] + ',' + socketVal_arr[1] + ',' + socketVal_arr[2] + ') ';
+                callStr = funPreFix + 'createDate(' + socketVal_arr[0] + ',' + socketVal_arr[1] + ',' + socketVal_arr[2] + ')';
                     break;
             default:
                 if (this.checkCompileFlag(true, '不支持的日期方法', helper)) {
@@ -6110,6 +6110,9 @@ class JSNode_FreshForm extends JSNode_Base {
             this.addSocket(this.outFlowSocket);
         }
 
+        if(this.holdSelected == null){
+            this.holdSelected = true;
+        }
     }
 
     requestSaveAttrs() {

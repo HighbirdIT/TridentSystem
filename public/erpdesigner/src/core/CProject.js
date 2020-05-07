@@ -118,9 +118,32 @@ class CProject extends IAttributeable {
                 this.content_PC.pages.push(newPage);
             });
         }
+        this.sortPCPages();
+        this.sortMBPages();
+        this.sortUC();
         this.loaded = true;
         this.emit('loaded');
         this.logManager.log('加载完成');
+    }
+
+    sortPageFun(a,b){
+        return a.title.localeCompare(b.title);
+    }
+
+    sortUCFun(a,b){
+        return a.name.localeCompare(b.name);
+    }
+
+    sortPCPages(){
+        this.content_PC.pages.sort(this.sortPageFun);
+    }
+
+    sortMBPages(){
+        this.content_Mobile.pages.sort(this.sortPageFun);
+    }
+
+    sortUC(){
+        this.userControls_arr.sort(this.sortUCFun);
     }
 
     mainPageChanged(pagekernel) {

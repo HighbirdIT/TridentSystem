@@ -22,6 +22,10 @@ var ButtonType_Normal = 'Normal';
 var ButtonType_ListBtn = 'ListLike';
 var ButtonType_Options_arr = [ButtonType_Normal, ButtonType_ListBtn];
 
+var StatFun_NONE = 'none';
+var StatFun_SUM = 'sum';
+var StatFun_arr = [StatFun_NONE, StatFun_SUM];
+
 var DefaultKeyColumn = '_default';
 
 var EMessageType = {
@@ -59,6 +63,7 @@ var AllPosts_arr = [];
 var ProjectRecords_arr = [];
 var AllFileFlows_arr = [];
 var AllReports_arr = [];
+var AllExcelTemplate_arr = [];
 
 function GetProjectRecords_arr() {
     return ProjectRecords_arr;

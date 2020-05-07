@@ -150,6 +150,21 @@ const JSNodeEditorControls_arr =[
         type:'操纵数据对象'
     },
     {
+        label:'Get对象属性',
+        nodeClass:JSNode_GetObjectProp,
+        type:'操纵对象'
+    },
+    {
+        label:'Set对象属性',
+        nodeClass:JSNode_SetObjectProp,
+        type:'操纵对象'
+    },
+    {
+        label:'克隆对象',
+        nodeClass:JSNode_Object_Clone,
+        type:'操纵对象'
+    },
+    {
         label:'数组-创建',
         nodeClass:JSNode_Array_New,
         type:'操纵数组'
@@ -252,6 +267,11 @@ const JSNodeEditorControls_arr =[
     {
         label:'遍历结束',
         nodeClass:JSNode_CircleEnd,
+        type:'表单访问'
+    },
+    {
+        label:'设置行统计值',
+        nodeClass:JSNode_Form_SetStatValue,
         type:'表单访问'
     },
     {
@@ -985,7 +1005,7 @@ class JSNodeEditorVariables extends React.PureComponent{
                     <button type="button" data-toggle="collapse" data-target={"#" + targetID} className='btn bg-secondary flex-grow-1 flex-shrink-1 text-light collapsbtn' style={{borderRadius:'0em',height:'2.5em'}}>{this.props.label}</button>
                     <i className='fa fa-plus fa-lg text-light cursor-pointer' onClick={this.clickAddHandler} style={{width:'30px'}} />
                 </div>
-                <div id={targetID} className="list-group flex-grow-0 flex-shrink-1 collapse show" style={{ overflow: 'auto'}}>
+                <div id={targetID} className="list-group flex-grow-0 flex-shrink-1 collapse show" style={{ overflow: 'auto', minHeight:'100px'}}>
                     <div className='mw-100 d-flex flex-column'>
                         <div className='btn-group-vertical mw-100'>
                             {

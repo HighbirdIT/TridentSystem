@@ -441,6 +441,20 @@ class OutlinePanel extends React.PureComponent {
         this.props.designer.selectKernel(data);
     }
 
+    clickMoveUpBtnHandler(data, outlineItem) {
+        var selectKernel = this.props.designer.getSelectedKernel();
+        if(selectKernel){
+            selectKernel.slideInParent(-1);
+        }
+    }
+
+    clickMoveDownBtnHandler(data, outlineItem) {
+        var selectKernel = this.props.designer.getSelectedKernel();
+        if(selectKernel){
+            selectKernel.slideInParent(1);
+        }
+    }
+
     render() {
         return (
             <div id="outlineRoot" className="flex-grow-1 flex-shrink-1 bg-light d-flex flex-column mw-100">
@@ -451,6 +465,12 @@ class OutlinePanel extends React.PureComponent {
                     </div>
                     <div className='btn btn-dark' onClick={this.clickCopyBtnHandler}>
                         <i className='fa fa-copy text-light' />
+                    </div>
+                    <div className='btn btn-dark' onClick={this.clickMoveUpBtnHandler}>
+                        <i className='fa fa-arrow-up text-light' />
+                    </div>
+                    <div className='btn btn-dark' onClick={this.clickMoveDownBtnHandler}>
+                        <i className='fa fa-arrow-down text-light' />
                     </div>
                 </div>
                 <div className='flex-grow-1 flex-shrink-1 autoScroll' ref={this.scrollDivRef} >

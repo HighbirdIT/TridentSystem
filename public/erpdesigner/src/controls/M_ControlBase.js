@@ -116,6 +116,8 @@ function M_ControlBase(target,watchedAttrs){
     target.clickHandlePaste = M_ControlBase_ClickHandle_Paste.bind(target);
     target.clickHandleEraser = M_ControlBase_ClickHandle_Eraser.bind(target);
     target.clickHandleGoParent = M_ControlBase_ClickHandle_GoParent.bind(target);
+    target.clickHandleMoveUp = M_ControlBase_ClickHandle_MoveUp.bind(target);
+    target.clickHandleMoveDown = M_ControlBase_ClickHandle_MoveDown.bind(target);
     
     target.setSelected = M_ControlBase_setSelected.bind(target);
     target.aAttrChangedBase = M_ControlBase_aAttrChangedBase.bind(target);
@@ -128,6 +130,14 @@ function M_ControlBase(target,watchedAttrs){
         }
     });
     return layoutState;
+}
+
+function M_ControlBase_ClickHandle_MoveUp(){
+    this.props.ctlKernel.slideInParent(-1);
+}
+
+function M_ControlBase_ClickHandle_MoveDown(){
+    this.props.ctlKernel.slideInParent(1);
 }
 
 function M_ControlBase_ClickHandle_Trash(){
@@ -189,6 +199,9 @@ function M_ControlBase_RenderHandleBar(){
                         {gCopiedKernelData && <button className='btn btn-dark' onClick={this.clickHandlePaste}><i className='fa fa-paste' /></button>}
                         {gCopiedKernelData && <button className='btn btn-dark' onClick={this.clickHandleEraser}><i className='fa fa-eraser' /></button>}
                         <button className='btn btn-danger' onClick={this.clickHandleTrash}><i className='fa fa-trash' /></button>
+                        <button className='btn btn-dark' onClick={this.clickHandleMoveUp}><i className='fa fa-arrow-up' /></button>
+                        <button className='btn btn-dark' onClick={this.clickHandleMoveDown}><i className='fa fa-arrow-down' /></button>
+                        
                     </div>
                 </div>
             </div>);
