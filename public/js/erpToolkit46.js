@@ -585,6 +585,7 @@ function fetchJson(useGet, url, sendData, triggerData) {
                         }, MakePath(triggerData.base, triggerData.id)));
                     };
                 }
+                sendData.pageid = triggerData.base.split('.')[0];
             }
     }
     timeout = Math.min(Math.max(30, timeout), 120) * 1000;
@@ -1729,6 +1730,23 @@ function createDate(year, month, day) {
         rlt = new Date(rlt - 86400000);
     }
     return rlt;
+}
+
+function RoundFloat(val, precision) {
+    var t_arr = val.toString().split('.');
+    if (t_arr.length == 1 || t_arr[1].length <= precision) {
+        return val;
+    }
+    var intPart = parseInt(t_arr[0]);
+    var singlePart_int = parseInt(t_arr[1].substr(0, precision));
+    if (t_arr[1][precision] >= 5) {
+        if (precision == 0) {
+            ++intPart;
+        } else {
+            ++singlePart_int;
+        }
+    }
+    return parseFloat(intPart.toString() + '.' + singlePart_int.toString());
 }
 
 var gDingDingIniting = false;

@@ -34,6 +34,9 @@ const UserControlKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('原生事件',[
         new CAttribute('OnMDown', AttrNames.Event.OnMouseDown, ValueType.Event),
     ]),
+    new CAttributeGroup('侦听器',[
+        new CAttribute('属性侦听器', AttrNames.InsAttrHook, ValueType.AttrHook, null, true, true),
+    ]),
 ], true, false);
 
 const gUserControlAttsByType_map = {};
@@ -98,6 +101,10 @@ class UserControlKernel extends ContainerKernelBase {
             else {
                 this.attrsSettingID = parentKernel.project.designeConfig.name + '_' + this.refID;
             }
+            this.getAttrArrayList(AttrNames.InsAttrHook).forEach(insAtrrHook=>{
+                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + insAtrrHook.name);
+                this.scriptCreated(null, theBP);
+            });
         }
         var self = this;
         autoBind(self);
@@ -118,6 +125,9 @@ class UserControlKernel extends ContainerKernelBase {
         }
         else if(scriptBP.name.indexOf(AttrNames.AttrChecker) != -1){
             scriptBP.setFixParam(['comeState', this.id + '_path', VarNames.NeedSetState]);
+        }
+        else if(scriptBP.name.indexOf(AttrNames.InsAttrHook) != -1){
+            scriptBP.setFixParam([this.id + '_path', 'rowKeyInfo_map']);
         }
     }
 

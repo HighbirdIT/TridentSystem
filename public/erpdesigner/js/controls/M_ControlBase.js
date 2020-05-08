@@ -1,6 +1,7 @@
 'use strict';
 
 var gCopiedKernelData = null;
+var gCopiedPageData = null;
 
 function M_ControlBase_componentWillMount() {
     this.listenTarget(this.props.ctlKernel);
@@ -239,6 +240,14 @@ function M_ControlBase_RenderHandleBar() {
             )
         )
     );
+}
+
+function GetCanUsePermissionGroup(theKernel) {
+    var proj = theKernel.project;
+    var rlt = AllPermissionGroups_arr.filter(function (item) {
+        return item.projtitle == proj.title;
+    });
+    return rlt.concat({ name: '无', code: 0 });
 }
 
 function GetKernelCanUseColumns(theKernel) {

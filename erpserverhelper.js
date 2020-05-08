@@ -328,6 +328,80 @@ function CreateDate(year, month, day){
     return rlt;
 }
 
+
+helper.CheckPermission = (req, projid, groups_arr)=>{
+    return co(function* () {
+        var session =  req && req.session ? req.session : null;
+        var g_envVar = session ? session.g_envVar : null;
+        if(g_envVar == null){
+            return false;
+        }
+        if(projid == null){
+            return false;
+        }
+        if(groups_arr == null){
+            groups_arr = [];
+        }
+        var cache = session.permissionCache;
+        if(cache == null){
+            cache = {};
+        }
+        else{
+            var queryData;
+            var nowTime = new Date().toLocaleTimeString();
+            if(groups_arr.length == 0){
+                queryData = cache[projid + '_0'];
+                if(queryData && nowTime < queryData.过期时间){
+                    return queryData.有效授权;
+                }
+            }
+            else{
+                var allhit = true;
+                for(var gi=0;gi<groups_arr.length;++gi){
+                    queryData = cache[projid + '_' + groups_arr[gi]];
+                    if(queryData && nowTime < queryData.过期时间){
+                        if(queryData.有效授权){
+                            return true;
+                        }
+                    }
+                    else{
+                        allhit = false;
+                    }
+                }
+                if(allhit){
+                    return false;
+                }
+            }
+        }
+        var sql = 'select 权限组代码,有效授权,信息 from FT访问权限检查(@登录标识,@方案代码,@权限组)';
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql, [
+            dbhelper.makeSqlparam('登录标识', sqlTypes.NVarChar(100), g_envVar.logrcdid),
+            dbhelper.makeSqlparam('方案代码', sqlTypes.Int, projid),
+            dbhelper.makeSqlparam('权限组', sqlTypes.NVarChar(500), groups_arr.join(',')),
+        ]);
+        var recordset = rcdRlt.recordset;
+        var hadPermissioin = false;
+        recordset.forEach(rcd=>{
+            cache[projid + '_' + rcd.权限组代码] = {
+                有效授权:rcd.有效授权,
+                过期时间:new Date(new Date().getTime() + 1000 * 60 * (rcd.有效授权 ? 60 : 3)).toLocaleTimeString(),  //有效授权缓存60分钟，无效授权缓存3分钟
+            };
+            if(rcd.有效授权){
+                if(rcd.权限组代码 == 0){
+                    if(groups_arr.length == 0){
+                        hadPermissioin = rcd.有效授权;
+                    }
+                }
+                else if(rcd.有效授权){
+                    hadPermissioin = true;
+                }
+            }
+        });
+        session.permissionCache = cache;
+        return hadPermissioin;
+    });
+}
+
 helper.DateFun={
     getNowDate:GetNowDate,
     checkDate:CheckDate,

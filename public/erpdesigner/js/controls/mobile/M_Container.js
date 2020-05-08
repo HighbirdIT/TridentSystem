@@ -35,7 +35,7 @@ var M_ContainerKernel = function (_ContainerKernelBase) {
                     if (!needFilt || child.editor.type == targetType) {
                         rlt_arr.push(child.editor);
                     }
-                    if (child.editor.type == M_ContainerKernel_Type) {
+                    if (child.editor.type == M_ContainerKernel_Type || child.editor.type == PopperButtonKernel_Type) {
                         // 穿透div
                         child.editor.aidAccessableKernels(targetType, rlt_arr, true);
                     }

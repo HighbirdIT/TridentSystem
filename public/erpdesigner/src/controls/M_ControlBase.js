@@ -1,4 +1,5 @@
 var gCopiedKernelData = null;
+var gCopiedPageData = null;
 
 function M_ControlBase_componentWillMount(){
     this.listenTarget(this.props.ctlKernel);
@@ -205,6 +206,14 @@ function M_ControlBase_RenderHandleBar(){
                     </div>
                 </div>
             </div>);
+}
+
+function GetCanUsePermissionGroup(theKernel){
+    var proj = theKernel.project;
+    var rlt = AllPermissionGroups_arr.filter(item=>{
+        return item.projtitle == proj.title;
+    });
+    return rlt.concat({name:'无',code:0});
 }
 
 

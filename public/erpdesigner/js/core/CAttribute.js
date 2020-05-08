@@ -196,6 +196,18 @@ function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr, paramObj) {
     return "store.dispatch(fetchJsonPost(" + url + ", " + JsObjectToString(paramObj) + ", makeFTD_Prop(" + baseStr + "," + idStr + ',' + propStr + ',' + isModel + "), EFetchKey.FetchPropValue));";
 }
 
+function makeLine_FetchFTDCallBack(theKernel, actStr, bundleVarName, dataVarName, errVarName) {
+    var pageid = '';
+    var belongPageKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
+    if (belongPageKernel) {
+        pageid = singleQuotesStr(belongPageKernel.id);
+    } else {
+        var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
+        pageid = belongUserControl.id + "_path.split('.')[0]";
+    }
+    return "store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + actStr + "',pageid:" + pageid + "}, makeFTD_Callback((state, " + dataVarName + ", " + errVarName + ")=>{";
+}
+
 function makeLine_Return(retStr) {
     return 'return ' + retStr + ';';
 }
@@ -324,6 +336,7 @@ var AttrNames = {
     FetchErrAct: 'fetchErrAct',
     MultiSelect: 'multiselect',
     RelFlowStep: 'relflowstep',
+    PermissionGroup: 'permissiongroup',
     GenNavBar: 'gennavbar',
     StableData: 'stableData',
     RecEditeable: 'recEditeable',
@@ -384,6 +397,7 @@ var AttrNames = {
     InvisibleAct: 'invisibleact',
     AwaysEditable: 'awayseditable',
     AttrHook: 'attrhook',
+    InsAttrHook: 'insattr_hook',
     AttrChecker: 'attrchecker',
     RowText: 'rowtext',
     AppandColumn: 'appandColumn',

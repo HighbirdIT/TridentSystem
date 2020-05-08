@@ -22,7 +22,7 @@ class LoginPanel extends React.PureComponent {
 
     logComplete(useData){
         //console.log(useData);
-        LoginUser = new Account(useData)
+        LoginUser = new Account(useData);
 
         this.setState({
             info:'获取基础配置信息',
@@ -42,6 +42,7 @@ class LoginPanel extends React.PureComponent {
             ProjectRecords_arr = respon.json.data.projects_arr;
             AllReports_arr = respon.json.data.reports_arr;
             AllExcelTemplate_arr = [{name:'无',code:0}].concat(respon.json.data.excelTemplate_arr);
+            AllPermissionGroups_arr = respon.json.data.permissionGroups_arr;
 
             while(AllFileFlows_arr.length > 0){
                 AllFileFlows_arr.pop();

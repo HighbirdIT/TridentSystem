@@ -590,7 +590,7 @@ var ControlKernelBase = function (_IAttributeable) {
                                     rlt.push(child.editor);
                                 }
                             }
-                            if (child.editor.type == M_ContainerKernel_Type) {
+                            if (child.editor.type == M_ContainerKernel_Type || child.editor.type == PopperButtonKernel_Type) {
                                 // 穿透div
                                 if (meetParents_map[child.editor.id] == null) {
                                     meetParents_map[child.editor.id] = 1;

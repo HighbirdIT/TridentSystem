@@ -18,6 +18,29 @@ class ProjectResPanel extends React.PureComponent {
         this.reRender();
     }
 
+    clickCopyPageHandler(ev){
+        var project = this.props.project;
+        gCopiedPageData = project.copyKernel(project.getEditingPage());
+    }
+
+    clickClonePageHandler(ev){
+        var project = this.props.project;
+        project.clonePage(project.getEditingPage());
+
+        var self = this;
+        setTimeout(self.reRender, 500);
+    }
+
+    clickPastePageHandler(ev){
+        if(gCopiedPageData == null){
+            return;
+        }
+        var project = this.props.project;
+        project.pasteKernel(gCopiedPageData, null, null);
+
+        setTimeout(this.reRender, 500);
+    }
+
     clickDeletePageHandler(ev){
         var pageID = getAttributeByNode(ev.target,'d-id', true);
         var project = this.props.project;
@@ -53,6 +76,12 @@ class ProjectResPanel extends React.PureComponent {
         if(this.props.project.addUserControl(this.state.nweUserControlName)){
             this.reRender();
         }
+    }
+
+    clickCopyUserControlHandler(ev){
+        var project = this.props.project;
+        var editingControl = project.getEditingControl();
+        project.cloneUserControl(editingControl);
     }
 
     clickControlItem(ev){
@@ -123,6 +152,12 @@ class ProjectResPanel extends React.PureComponent {
                         })
                     }
                     <button className='btn btn-success' onClick={this.clickAddPageHandler} >新增手机页面</button>
+
+                    <div className='btn-group'>
+                        <button className='btn btn-primary fa fa-copy' onClick={this.clickCopyPageHandler} >复制</button>
+                        <button className='btn btn-primary fa fa-paste' onClick={this.clickPastePageHandler} >粘贴</button>
+                        <button className='btn btn-info' onClick={this.clickClonePageHandler} >克隆</button>
+                    </div>
                 </div>
             </React.Fragment>
         }
@@ -136,6 +171,11 @@ class ProjectResPanel extends React.PureComponent {
                         })
                     }
                     <button className='btn btn-success' onClick={this.clickAddPageHandler} >新增电脑页面</button>
+                    <div className='btn-group'>
+                        <button className='btn btn-primary fa fa-copy' onClick={this.clickCopyPageHandler} >复制</button>
+                        <button className='btn btn-primary fa fa-paste' onClick={this.clickPastePageHandler} >粘贴</button>
+                        <button className='btn btn-info' onClick={this.clickClonePageHandler} >克隆</button>
+                    </div>
                 </div>
                 </React.Fragment>
         }
@@ -156,7 +196,8 @@ class ProjectResPanel extends React.PureComponent {
                 </div>
                 <div className='d-flex flex-grow-0 flex-shrink-0'>
                     <input type='text' className='flexinput flex-grow-1 flex-shrink-1' onChange={this.nweUserControlNameChanged} value={this.state.nweUserControlName} />
-                    <button type="button" onClick={this.clickCreateNewUserControlHandler} className='btn flex-grow-0 flex-shrink-0 btn-success' >创建控件</button>
+                    <button type="button" onClick={this.clickCreateNewUserControlHandler} className='btn flex-grow-0 flex-shrink-0 btn-success fa fa-plus' >创建</button>
+                    <button type="button" onClick={this.clickCopyUserControlHandler} className='btn flex-grow-0 flex-shrink-0 btn-info fa fa-copy' >克隆</button>
                 </div>
                 <div className='bg-secondary text-light'>快捷功能</div>
                 <QuickControlSelector project={project} />

@@ -10,6 +10,7 @@ const M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('有主页按钮', AttrNames.AutoHomeBtn, ValueType.Boolean, true),
         new CAttribute('关联步骤', AttrNames.RelFlowStep, ValueType.Int, null, true, true, gFlowMaster.getAllSteps, {text:'fullName', value:'code'}),
         new CAttribute('属性列表', AttrNames.ParamApi, ValueType.String, '', true, true),
+        new CAttribute('权限组', AttrNames.PermissionGroup, ValueType.Int, null, true, true, [], {text:'name', value:'code',pullDataFun:GetCanUsePermissionGroup}),
     ]),
     new CAttributeGroup('接口设置',[
         new CAttribute('入口参数', AttrNames.EntryParam, ValueType.String, '', true, true),

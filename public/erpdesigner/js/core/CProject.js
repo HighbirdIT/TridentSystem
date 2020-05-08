@@ -498,6 +498,17 @@ var CProject = function (_IAttributeable) {
             return newPage;
         }
     }, {
+        key: 'getUnUserPageID',
+        value: function getUnUserPageID() {
+            var useID = null;
+            for (var i = 1; i < 999; ++i) {
+                useID = M_PageKernel_Type + '_' + i;
+                if (this.getPageById(useID) == null) {
+                    return useID;
+                }
+            }
+        }
+    }, {
         key: 'getAllPages',
         value: function getAllPages(isPC) {
             if (isPC == null) {
@@ -675,7 +686,21 @@ var CProject = function (_IAttributeable) {
                 cusObjects_arr: []
             };
             var controlJsonProf = new AttrJsonProfile();
-            var controlJson = theKernel.getJson(controlJsonProf);
+            var controlJson = null;
+            if (theKernel.parent == null) {
+                if (theKernel.type == UserControlKernel_Type) {
+                    controlJsonProf.useUserControl(theKernel);
+                    controlJson = {
+                        type: UserControlKernel_Type
+                    };
+                }
+                if (theKernel.type == M_PageKernel_Type) {
+                    controlJson = theKernel.getJson(controlJsonProf);
+                    controlJson.ispcPage = theKernel.ispcPage;
+                }
+            } else {
+                controlJson = theKernel.getJson(controlJsonProf);
+            }
             var si;
             var ctlid;
             var meetCusDS_map = {};
@@ -801,6 +826,17 @@ var CProject = function (_IAttributeable) {
             var renameContrls_map = {};
             var renameCusDS_map = {};
             var useControlsID_all = {};
+            var isPastePage = false;
+            if (parentKernel == null) {
+                if (copiedData.targetControl.type == UserControlKernel_Type) {
+                    copyFromThisProject = false;
+                } else if (copiedData.targetControl.type == M_PageKernel_Type) {
+                    isPastePage = true;
+                    var newPageid = this.getUnUserPageID();
+                    //renameContrls_map[copiedData.targetControl.id] = newPageid;
+                }
+            }
+
             for (ctlType in copiedData.controlsID_map) {
                 copiedData.controlsID_map[ctlType].forEach(function (ctlID) {
                     useControlsID_all[ctlID] = 1;
@@ -979,15 +1015,19 @@ var CProject = function (_IAttributeable) {
             });
 
             var createdUserCtls_arr = [];
-            if (!copyFromThisProject) {
+            var userCtlCreatioinHelper;
+            var goodUserCtlJson;
+            var newUCtl;
+
+            if (!copyFromThisProject || isPastePage) {
                 copiedData.userControls_arr.forEach(function (userCtlProfile) {
                     var UCJson = userCtlProfile.jsonData;
                     var hadUserControl = _this5.getUserControlByUUID(UCJson.uuid);
                     if (!hadUserControl) {
-                        var userCtlCreatioinHelper = new CtlKernelCreationHelper();
+                        userCtlCreatioinHelper = new CtlKernelCreationHelper();
                         userCtlCreatioinHelper.project = _this5;
-                        var goodUserCtlJson = JSON.parse(replaceIDChangedInJsonString(JSON.stringify(UCJson)));
-                        var newUCtl = new UserControlKernel({ project: _this5 }, null, userCtlCreatioinHelper, goodUserCtlJson);
+                        goodUserCtlJson = JSON.parse(replaceIDChangedInJsonString(JSON.stringify(UCJson)));
+                        newUCtl = new UserControlKernel({ project: _this5 }, null, userCtlCreatioinHelper, goodUserCtlJson);
                         _this5.userControls_arr.push(newUCtl);
                         createdUserCtls_arr.push({
                             ctl: newUCtl,
@@ -1000,6 +1040,18 @@ var CProject = function (_IAttributeable) {
                     p.ctl.__restoreChildren(null, p.json);
                 });
             }
+            if (isPastePage) {
+                userCtlCreatioinHelper = new CtlKernelCreationHelper();
+                userCtlCreatioinHelper.project = this;
+                goodUserCtlJson = JSON.parse(replaceIDChangedInJsonString(JSON.stringify(copiedData.targetControl)));
+                newUCtl = new M_PageKernel(null, this, userCtlCreatioinHelper, goodUserCtlJson);
+                newUCtl.ispcPage = copiedData.targetControl.ispcPage;
+                if (copiedData.targetControl.ispcPage) {
+                    this.content_PC.pages.push(newUCtl);
+                } else {
+                    this.content_Mobile.pages.push(newUCtl);
+                }
+            }
 
             var targetCtlJsonStr = JSON.stringify(copiedData.targetControl);
             var goodTargetCtlJson = JSON.parse(replaceIDChangedInJsonString(targetCtlJsonStr));
@@ -1009,18 +1061,50 @@ var CProject = function (_IAttributeable) {
                 console.warn('type:' + goodTargetCtlJson.type + '未找到配置数据');
                 return;
             }
-            var initData = {};
-            if (targetIndex >= 0) {
-                initData.hintIndexInParent = targetIndex + 1;
-            }
-            var newCtl = new ctlConfig.kernelClass(initData, parentKernel, ctlCreatioinHelper, goodTargetCtlJson);
             var self = this;
-            setTimeout(function () {
-                self.designer.selectKernel(newCtl);
-                if (createdUserCtls_arr.length > 0) {
-                    self.emit('userControlChanged');
+            if (parentKernel) {
+                var initData = {};
+                if (targetIndex >= 0) {
+                    initData.hintIndexInParent = targetIndex + 1;
                 }
-            }, 50);
+                var newCtl = new ctlConfig.kernelClass(initData, parentKernel, ctlCreatioinHelper, goodTargetCtlJson);
+                setTimeout(function () {
+                    self.designer.selectKernel(newCtl);
+                    if (createdUserCtls_arr.length > 0) {
+                        self.emit('userControlChanged');
+                    }
+                }, 50);
+            } else {
+                setTimeout(function () {
+                    if (createdUserCtls_arr.length > 0) {
+                        self.emit('userControlChanged');
+                    }
+                }, 50);
+            }
+        }
+    }, {
+        key: 'cloneUserControl',
+        value: function cloneUserControl(target) {
+            if (target == null || target.type != UserControlKernel_Type) {
+                return;
+            }
+            var copiedData = this.copyKernel(target);
+            var targetItem = copiedData.userControls_arr.find(function (x) {
+                return x.jsonData.id == target.id;
+            });
+            targetItem.jsonData.uuid = guid2();
+            targetItem.jsonData.attr.name += '(复制)';
+            this.pasteKernel(copiedData, null, null);
+        }
+    }, {
+        key: 'clonePage',
+        value: function clonePage(target) {
+            if (target == null || target.type != M_PageKernel_Type) {
+                return;
+            }
+            var copiedData = this.copyKernel(target);
+            copiedData.targetControl.attr.title += '(复制)';
+            this.pasteKernel(copiedData, null, null);
         }
     }]);
 

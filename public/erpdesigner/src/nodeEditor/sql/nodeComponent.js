@@ -993,7 +993,7 @@ class C_SqlNode_CurrentDataRow extends React.PureComponent {
     getFormDS(){
         var nodeData = this.props.nodedata;
         var formKernel = nodeData.bluePrint.master.project.getControlById(nodeData.formID);
-        return formKernel == null ? null : formKernel.getAttribute(AttrNames.DataSource);
+        return formKernel == null ? null : formKernel.getCanuseColumns();
     }
 
     customSocketRender(socket) {
@@ -1005,9 +1005,9 @@ class C_SqlNode_CurrentDataRow extends React.PureComponent {
             return null;
         }
         
-        var entity = this.getFormDS();
+        var columns_arr = this.getFormDS();
         var nowVal = socket.getExtra('colName');
-        return (<span className='d-flex align-items-center'><DropDownControl itemChanged={this.socketColumnSelectChanged} btnclass='btn-dark' options_arr={entity == null ? [] : entity.columns} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} socket={socket} textAttrName='name' />
+        return (<span className='d-flex align-items-center'><DropDownControl itemChanged={this.socketColumnSelectChanged} btnclass='btn-dark' options_arr={columns_arr} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} socket={socket} textAttrName='name' />
             <button onMouseDown={this.mouseDownOutSocketHand} d-colname={nowVal} type='button' className='btn btn-secondary'><i className='fa fa-hand-paper-o' /></button>
         </span>);
     }
@@ -1022,13 +1022,10 @@ class C_SqlNode_CurrentDataRow extends React.PureComponent {
             return;
         }
         var nodeData = this.props.nodedata;
-        var entity = this.getFormDS();
-        if(entity == null){
-            return;
-        }
+        var columns_arr = this.getFormDS();
         var theSocket = nodeData.bluePrint.getSocketById(socketid);
         var bornPos = theSocket.currentComponent.getCenterPos();
-        if(entity.containColumn(colName)){
+        if(columns_arr.indexOf(colName) != -1){
             var newNode = new SqlNode_ColumnVar({
                 keySocketID:socketid,
                 newborn:true,

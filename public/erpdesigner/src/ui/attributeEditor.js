@@ -681,16 +681,24 @@ class AttributeGroup extends React.PureComponent {
 
     render() {
         var self = this;
+        var attrGroup = this.props.attrGroup;
         if (this.state.target != this.props.target) {
+            var newState = {
+                target: this.props.target,
+            };
+            attrGroup.attrs_arr.map(attr => {
+                if (attr.isArray) {
+                    var attrArrayItem_arr = this.props.target.getAttrArrayList(attr.name);
+                    newState[attr.name + 'count'] = attrArrayItem_arr.length;
+                }
+            });
+
             setTimeout(() => {
-                self.setState({
-                    target: this.props.target,
-                });
+                self.setState(newState);
             }, 1);
             return null;
         }
         var projectName = this.props.projectName;
-        var attrGroup = this.props.attrGroup;
         var attrGroupIndex = this.props.attrGroupIndex;
         if (this.state.target[attrGroup.label + '_visible'] == false) {
             return null;
@@ -704,7 +712,7 @@ class AttributeGroup extends React.PureComponent {
                 <div id={"attrGroup" + projectName + attrGroup.label} className={"list-group flex-grow-0 flex-shrink-0 collapse" + (attrGroupIndex >= 0 ? ' show' : '')} >
                     {
                         attrGroup.attrs_arr.map(attr => {
-                            return this.renderAttribute(attr)
+                            return this.renderAttribute(attr);
                         })
                     }
                 </div>

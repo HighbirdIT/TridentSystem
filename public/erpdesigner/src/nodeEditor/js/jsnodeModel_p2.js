@@ -3464,7 +3464,7 @@ class JSNode_OpenReport extends JSNode_Base {
             var queryFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
             serverFun = queryFun;
             helper.appendOutputItem(queryFun);
-            theServerSide.initProcessFun(queryFun);
+            theServerSide.initProcessFun(queryFun, this.bluePrint.ctlKernel, true);
             queryFun.pushLine("if(" + postBundleVarName + "==null){return serverhelper.createErrorRet('缺少参数bundle');}");
             bundleCheckBlock.pushChild(postVarinitBlock);
             queryFun.bundleCheckBlock = bundleCheckBlock;
@@ -3570,7 +3570,7 @@ class JSNode_OpenReport extends JSNode_Base {
         }
         var dataVarName = this.id + '_ret';
         var errVarName = 'error_' + this.id;
-        myJSBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + serverSideActName + "',}, makeFTD_Callback((state, " + dataVarName + ", " + errVarName + ")=>{", 1);
+        myJSBlock.pushLine(makeLine_FetchFTDCallBack(this.bluePrint.ctlKernel, serverSideActName, bundleVarName, dataVarName, errVarName), 1);
         var fetchEndBlock = new FormatFileBlock('fetchend');
         myJSBlock.pushChild(fetchEndBlock);
         if (this.bluePrint.group == EJsBluePrintFunGroup.Custom) {

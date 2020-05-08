@@ -1295,6 +1295,8 @@ class JSNode_Mathfun extends JSNode_Base {
         }
         switch (this.mathType) {
             case Math_ROUND:
+                finalStr = 'RoundFloat(' + socketVal_arr[0] + ',' + socketVal_arr[1] + ')';
+                break;
             case Math_POWER:
                 finalStr += socketVal_arr[0] + ',' + socketVal_arr[1] + ')';
                 break;
