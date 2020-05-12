@@ -10,7 +10,7 @@ var remotePath = [
     "/views/erppage/server/flows/",
 ];
 
-//doCleanWork();
+doCleanWork();
 
 function doCleanWork(){
     //获取当前目录绝对路径，这里resolve()不传入参数

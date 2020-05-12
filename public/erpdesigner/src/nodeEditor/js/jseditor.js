@@ -120,6 +120,11 @@ const JSNodeEditorControls_arr =[
         type:'数据库交互'
     },
     {
+        label:'超长后台操作',
+        nodeClass:JSNODE_LongServerProcess,
+        type:'后台交互'
+    },
+    {
         label:'附件操作',
         nodeClass:JSNode_Attachment_Pro,
         type:'数据库交互'

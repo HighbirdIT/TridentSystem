@@ -22,6 +22,8 @@ const UserControlKernelTempleAttrsSetting = GenControlKernelAttrsSetting([
 
 const UserControlKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置', [
+        new CAttribute('实例Style', 'Ins' + AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
+        new CAttribute('实例Class', 'Ins' + AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true),
         genIsdisplayAttribute(),
         new CAttribute('默认可见', AttrNames.DefaultVisible, ValueType.Boolean, true),
         new CAttribute('临时高度', 'designheight', ValueType.Int, 0),
@@ -341,6 +343,10 @@ class UserControlKernel extends ContainerKernelBase {
         var rlt = super.getLayoutConfig();
         return rlt;
     }
+    
+    getInsLayoutConfig(){
+        return super.getLayoutConfig('Ins' + AttrNames.LayoutNames.APDClass, 'Ins' + AttrNames.LayoutNames.StyleAttr);
+    }
 
     isTemplate() {
         return this.getAttribute('refID') == 'none';
@@ -416,13 +422,15 @@ class CUserControl extends React.PureComponent {
                 AttrNames.Orientation,
                 AttrNames.Chidlren,
                 AttrNames.LayoutNames.APDClass,
-                AttrNames.LayoutNames.StyleAttr,
+                AttrNames.LayoutNames.StyleAttr
             ]);
         }
         else {
             M_ControlBase(this, [
                 AttrNames.Name,
                 'designheight',
+                'Ins' + AttrNames.LayoutNames.APDClass,
+                'Ins' + AttrNames.LayoutNames.StyleAttr,
             ]);
             initState.designheight = ctlKernel.getAttribute('designheight');
         }
@@ -511,6 +519,8 @@ class CUserControl extends React.PureComponent {
             containerClassName += ' flex-column';
         }
         layoutConfig.addClass('d-flex');
+        var insLayoutConfig = ctlKernel.getInsLayoutConfig();
+        layoutConfig.overrideBy(insLayoutConfig);
 
         var designheight = this.state.designheight;
         var containerStyle;

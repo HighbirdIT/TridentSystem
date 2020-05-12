@@ -129,6 +129,23 @@ helper.guid2 = ()=>{
     return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
 };
 
+helper.SaveLongProcessResult = (key, result) => {
+    var fileDirPath = path.join(__dirname,'filedata');
+    if (!fs.existsSync(fileDirPath))
+    {
+        fs.mkdirSync(fileDirPath);
+    }
+    fileDirPath = path.join(fileDirPath,'longprocess');
+    if (!fs.existsSync(fileDirPath))
+    {
+        fs.mkdirSync(fileDirPath);
+    }
+    if(result == null){
+        result = {};
+    }
+    fs.writeFile(path.join(fileDirPath, key + '.json'), JSON.stringify(result));
+};
+
 function checkArrayData(val) {
     if(Array.isArray(val)){
         return val[0];

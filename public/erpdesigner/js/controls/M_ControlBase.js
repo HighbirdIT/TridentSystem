@@ -76,7 +76,7 @@ function M_ControlBase_attrChangedHandler(ev) {
 
 function M_ControlBase_aAttrChangedBase(changedAttrName) {
     var ctlKernel = this.props.ctlKernel;
-    if (AttrNames.LayoutNames[changedAttrName] != null) {
+    if (changedAttrName.indexOf(AttrNames.LayoutNames.APDClass) != -1 || changedAttrName.indexOf(AttrNames.LayoutNames.StyleAttr) != -1) {
         this.forceUpdate();
         return true;
     }

@@ -482,13 +482,17 @@ class MobileContentCompiler extends ContentCompiler {
         var layoutConfig = userCtlKernel.getLayoutConfig();
         layoutConfig.addClass('erp-control');
         var styleID = userCtlKernel.id + '_style';
-        var styleStr = clientSide.addStyleObject(styleID, layoutConfig.style) ? 'style={' + styleID + '}' : '';
+        var styleStr = 'style={this.props.style}';
+        if(clientSide.addStyleObject(styleID, layoutConfig.style)){
+            styleStr = 'style={this.props.style ? this.props.style : ' + styleID + '}';
+        }
         var orientation = userCtlKernel.getAttribute(AttrNames.Orientation);
         if (orientation == Orientation_V) {
             layoutConfig.addClass('flex-column');
         }
 
         var ctlMidData = this.projectCompiler.getMidData(userCtlKernel.id);
+        ctlMidData.layoutConfig = layoutConfig;
         ctlMidData.needSetKernels_arr = [];
         ctlMidData.inst_arr = [];
         ctlMidData.needSetStateChangedActs_arr = [];
@@ -498,14 +502,14 @@ class MobileContentCompiler extends ContentCompiler {
 
         var childRenderBlock = new FormatFileBlock(userCtlKernel.id);
         var renderBlock = controlReactClass.renderFun;
-        var retElemClassName;
+        var retElemClassName = '{(this.props.className ? this.props.className : ';
         if (invisbleAct == EInvisibleAct.Default) {
             layoutConfig.addClass('d-flex');
             renderBlock.pushLine('if(this.props.visible == false){return null;}');
-            retElemClassName = singleQuotesStr(layoutConfig.getClassName());
+            retElemClassName += singleQuotesStr(layoutConfig.getClassName()) + ')}';
         }
         else {
-            retElemClassName = '{' + singleQuotesStr(layoutConfig.getClassName()) + "+(this.props.visible == false ? ' d-none' : ' d-flex')}";
+            retElemClassName += singleQuotesStr(layoutConfig.getClassName()) + ")+(this.props.visible == false ? ' d-none' : ' d-flex')}";
         }
         renderBlock.pushLine('var needFullPath = this.props.onMouseDown != null;');
         renderBlock.pushLine(makeStr_AddAll(VarNames.RetElem, " = <div className=", retElemClassName, " ", styleStr, " userctlpath={this.props.fullPath} ctl-fullpath={needFullPath ? this.props.fullPath : null} onMouseDown={this.props.onMouseDown}", ">"), 1);
@@ -1336,6 +1340,20 @@ class MobileContentCompiler extends ContentCompiler {
             return false;
         }
 
+        var insLayoutConfig = theKernel.getInsLayoutConfig();
+        if(!IsEmptyObject(insLayoutConfig.class) || !IsEmptyObject(insLayoutConfig.style)){
+            var templeteLayoutConfg = templateKernelMidData.layoutConfig.clone();
+            templeteLayoutConfg.overrideBy(insLayoutConfig);
+            if(!IsEmptyObject(insLayoutConfig.style)){
+                var styleID = theKernel.id + '_style';
+                this.clientSide.addStyleObject(styleID, templeteLayoutConfg.style);
+                ctlTag.setAttr('style', bigbracketStr(styleID));
+            }
+            if(!IsEmptyObject(insLayoutConfig.class)){
+                ctlTag.setAttr('className', singleQuotesStr(templeteLayoutConfg.getClassName()));
+            }
+        }
+
         renderBlock.pushChild(ctlTag);
         if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
 
@@ -1353,6 +1371,7 @@ class MobileContentCompiler extends ContentCompiler {
         var attrsSetting = gUserControlAttsByType_map[theKernel.attrsSettingID];
         var paramGroup = attrsSetting.find(group => { return group.label == '属性接口'; });
         var cusParams_arr = [];
+
         paramGroup.attrs_arr.forEach(paramAttribute => {
             var paramValue = theKernel.getAttribute(paramAttribute.name);
             var paramValueParseRet = parseObj_CtlPropJsBind(paramValue, project.scriptMaster);
@@ -2730,6 +2749,7 @@ class MobileContentCompiler extends ContentCompiler {
                         var theEditor = labeledKernel.editor;
                         var valueColumn = null;
                         var validStat = false;
+                        var kernelLabel = labeledKernel.getAttribute(AttrNames.TextField);
                         switch(theEditor.type){
                             case M_LabelKernel_Type:
                             case M_TextKernel_Type:
@@ -2741,12 +2761,18 @@ class MobileContentCompiler extends ContentCompiler {
                                 valueColumn = theEditor.getAttribute(AttrNames.Title);
                                 validStat = true;
                             break;
+                            default:
+                                if(canUseColumns_arr.indexOf(kernelLabel) != -1){
+                                    valueColumn = kernelLabel;
+                                    validStat = true;
+                                }
+                            break;
                         }
                         if(validStat){
                             statColumn_arr.push({
                                 fun:statFun,
                                 kernel:labeledKernel,
-                                key:labeledKernel.getAttribute(AttrNames.TextField),
+                                key:kernelLabel,
                                 valueColumn:valueColumn,
                             });
                         }
@@ -3347,7 +3373,9 @@ class MobileContentCompiler extends ContentCompiler {
 
 
             if (selectMode != ESelectMode.None) {
-                //sumTableWidth += 3.5;
+                if (gridWidthType == EGridWidthType.Fixed) {
+                    sumTableWidth += 3.5;
+                }
                 if(selectMode == ESelectMode.Multi){
                     gridHeadRowRenderBlock.pushLine("<th scope='col' className='selectorTableHeader'><CGridFormSelectCog form={this.props.form} /></th>");
                 }
@@ -3361,7 +3389,9 @@ class MobileContentCompiler extends ContentCompiler {
             }
             var autoIndexColumn = theKernel.getAttribute(AttrNames.AutoIndexColumn);
             if (autoIndexColumn) {
-                //sumTableWidth += 3;
+                if (gridWidthType == EGridWidthType.Fixed) {
+                    sumTableWidth += 3;
+                }
                 gridHeadRowRenderBlock.pushLine("<th scope='col' className='indexTableHeader'>序号</th>");
                 if (gridHeadBodyRowRenderBlock) {
                     gridHeadBodyRowRenderBlock.pushLine("<td className='indexTableHeader'></td>");
@@ -3520,6 +3550,8 @@ class MobileContentCompiler extends ContentCompiler {
             if (gridWidthType == EGridWidthType.Fixed) {
                 gridTableStyle.width = sumTableWidth + 'em';
                 gridHeadTableStyle.width = sumTableWidth + 'em';
+                gridTableStyle.tableLayout = 'fixed';
+                gridHeadTableStyle.tableLayout = 'fixed';
             }
             this.clientSide.addStyleObject(tableStyleID, gridTableStyle);
             this.clientSide.addStyleObject(headTableStyleID, gridHeadTableStyle);
@@ -3610,6 +3642,9 @@ class MobileContentCompiler extends ContentCompiler {
                 statrowBlk.pushLine('if(trElems_arr.length>1){', 1);
                 statrowBlk.pushLine('trElems_arr.push(', 1);
                 statrowBlk.pushLine("<tr key='统计'>", 1);
+                if (selectMode != ESelectMode.None) {
+                    statrowBlk.pushLine("<td className='selectorTableHeader'></td>");
+                }
                 if (autoIndexColumn) {
                     statrowBlk.pushLine("<td className='indexTableHeader'></td>");
                 }

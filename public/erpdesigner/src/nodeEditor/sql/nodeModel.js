@@ -648,7 +648,7 @@ class SqlNode_DBEntity extends SqlNode_Base {
                 }
                 else {
                     if (!needSort) {
-                        needSort = theSocket.index == si;
+                        needSort = theSocket.index != si;
                     }
                 }
             }

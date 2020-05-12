@@ -6530,7 +6530,7 @@ class JSNode_Do_FlowStep extends JSNode_Base {
             }
             var dataVarName = 'data_' + this.id;
             var errVarName = 'error_' + this.id;
-            myJSBlock.pushLine(makeLine_FetchFTDCallBack(this.bluePrint.ctlKernel, serverSideActName, bundleVarName, dataVarName, errVarName), 1);
+            myClientBlock.pushLine(makeLine_FetchFTDCallBack(this.bluePrint.ctlKernel, serverSideActName, bundleVarName, dataVarName, errVarName), 1);
             fetchEndBlock = new FormatFileBlock('fetchend');
             if (this.bluePrint.group == EJsBluePrintFunGroup.Custom) {
                 fetchEndBlock.pushLine('if(' + errVarName + '){return _callback(null,' + errVarName + ');}');
@@ -6563,7 +6563,7 @@ class JSNode_Do_FlowStep extends JSNode_Base {
             selfCompileRet.setSocketOut(this.inFlowSocket, '', myClientBlock);
             fetchEndBlock.pushLine('if(' + errVarName + '){callback_final(state, null,' + errVarName + ');}');
             if (clientFlow_links.length > 0) {
-                if (this.compileFlowNode(clientFlow_links[0], helper, usePreNodes_arr, fetchEndBlock)) {
+                if (this.compileFlowNode(clientFlow_links[0], helper, usePreNodes_arr, fetchEndBlock) == false) {
                     return false;
                 }
             }
@@ -6571,7 +6571,7 @@ class JSNode_Do_FlowStep extends JSNode_Base {
                 fetchEndBlock.pushLine('return callback_final(state, null,' + errVarName + ');');
             }
             if (serverFlow_links.length > 0) {
-                if (this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, tryBlock.bodyBlock)) {
+                if (this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, tryBlock.bodyBlock) == false) {
                     return false;
                 }
             }
