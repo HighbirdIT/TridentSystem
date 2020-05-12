@@ -176,7 +176,7 @@ function makeLine_FetchFTDCallBack(theKernel, actStr, bundleVarName, dataVarName
     }
     else{
         var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
-        pageid = belongUserControl.id + "_path.split('.')[0]";
+        pageid = (belongUserControl == null ? theKernel.id : belongUserControl.id) + "_path.split('.')[0]";
     }
     return "store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + actStr + "',pageid:" + pageid + "}, makeFTD_Callback((state, " + dataVarName + ", " + errVarName + ")=>{";
 }

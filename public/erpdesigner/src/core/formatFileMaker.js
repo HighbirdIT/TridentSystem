@@ -1039,7 +1039,7 @@ class CP_ServerSide extends JSFileMaker{
         theFun.headBlock.pushLine('var g_envVar = req.session.g_envVar;');
         theFun.headBlock.pushLine("return co(function* () {");
         theFun.bodyBlock.addNextIndent();
-        if(bAccessCheck){
+        if(bAccessCheck && theKernel){
             var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
             var belongPage = theKernel.searchParentKernel(M_PageKernel_Type, true);
             var groups_arr;
@@ -1050,7 +1050,7 @@ class CP_ServerSide extends JSFileMaker{
                 theFun.bodyBlock.pushLine('var permissiongroup_arr = [' + groups_arr.join(',') +  '];');
             }
             else if(this.projectCompiler.getMidData){
-                var templateKernelMidData = this.projectCompiler.getMidData(belongUserControl.getTemplateKernel().id);
+                var templateKernelMidData = this.projectCompiler.getMidData(belongUserControl == null ? theKernel.id : belongUserControl.getTemplateKernel().id);
                 if(templateKernelMidData.needCheckAccessFuns_arr == null){
                     templateKernelMidData.needCheckAccessFuns_arr = [];
                 }
