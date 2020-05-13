@@ -199,7 +199,7 @@ function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr, paramObj) {
 function makeLine_FetchFTDCallBack(theKernel, actStr, bundleVarName, dataVarName, errVarName) {
     var pageid = 'unknow';
     if (theKernel) {
-        var belongPageKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
+        var belongPageKernel = theKernel.type == M_PageKernel_Type ? theKernel : theKernel.searchParentKernel(M_PageKernel_Type, true);
         if (belongPageKernel) {
             pageid = singleQuotesStr(belongPageKernel.id);
         } else {

@@ -172,7 +172,7 @@ function makeLine_FetchFTDCallBack(theKernel, actStr, bundleVarName, dataVarName
     var pageid = 'unknow';
     if(theKernel)
     {
-        var belongPageKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
+        var belongPageKernel = theKernel.type == M_PageKernel_Type ? theKernel : theKernel.searchParentKernel(M_PageKernel_Type, true);
         if(belongPageKernel){
             pageid = singleQuotesStr(belongPageKernel.id);
         }
