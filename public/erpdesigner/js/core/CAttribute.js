@@ -198,12 +198,14 @@ function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr, paramObj) {
 
 function makeLine_FetchFTDCallBack(theKernel, actStr, bundleVarName, dataVarName, errVarName) {
     var pageid = '';
-    var belongPageKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
-    if (belongPageKernel) {
-        pageid = singleQuotesStr(belongPageKernel.id);
-    } else {
-        var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
-        pageid = (belongUserControl == null ? theKernel.id : belongUserControl.id) + "_path.split('.')[0]";
+    if (theKernel) {
+        var belongPageKernel = theKernel.searchParentKernel(M_PageKernel_Type, true);
+        if (belongPageKernel) {
+            pageid = singleQuotesStr(belongPageKernel.id);
+        } else {
+            var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
+            pageid = (belongUserControl == null ? theKernel.id : belongUserControl.id) + "_path.split('.')[0]";
+        }
     }
     return "store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + actStr + "',pageid:" + pageid + "}, makeFTD_Callback((state, " + dataVarName + ", " + errVarName + ")=>{";
 }
