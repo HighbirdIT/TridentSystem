@@ -1070,6 +1070,9 @@ class CP_ServerSide extends JSFileMaker{
                         caseBLK.pushLine("permissiongroup_arr=[" + groups_arr.join(',') +  '];');
                     }
                 };
+                if(theKernel.type == M_PageKernel_Type){
+                    theFun.addPageCheck(theKernel);
+                }
             }
             theFun.bodyBlock.pushLine('var bCanAccess = yield serverhelper.CheckPermission(req, ' + (this.projectCompiler.projProfile ? this.projectCompiler.projProfile.code : 'null') +', permissiongroup_arr);');
             theFun.bodyBlock.pushLine("if(!bCanAccess){return serverhelper.createErrorRet('未授权的访问',0,null);}");
