@@ -4399,7 +4399,7 @@ class JSNODE_LongServerProcess extends JSNode_Base {
             theServerSide = new CP_ServerSide({});
         }
 
-        var serverSideActName = this.id;
+        var serverSideActName = this.bluePrint.id + '_' + this.id;
 
         var serverSideFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
         theServerSide.initProcessFun(serverSideFun, this.bluePrint.ctlKernel, true);

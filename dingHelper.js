@@ -56,7 +56,7 @@ dingHelper.doAction = (req, res) => {
                 var logrcd = logProRet.output.logrcdid;
                 var userData = yield dingHelper.aysnLoginfFromRcdID(logrcd, req, res);
                 if (userData == null) {
-                    rlt.errInfo = '快捷登录失败';
+                    rlt.errInfo = '快捷登录失败[' + logRet.userid + ']';
                     rlt.errCode = 1;
                     return rlt;
                 }
