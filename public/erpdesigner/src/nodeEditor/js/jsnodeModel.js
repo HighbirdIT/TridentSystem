@@ -4726,7 +4726,9 @@ class JSNode_DateFun extends JSNode_Base {
             for (nodeI = preNodes_arr.length - 1; nodeI > 0; --nodeI) {
                 var temNode = preNodes_arr[nodeI];
                 if (temNode.inFlowSocket) {
-                    blockInServer = temNode.hadFetchFun;
+                    if(temNode.type != JSNODE_EXPORTEXCEL){
+                        blockInServer = temNode.hadFetchFun;
+                    }
                     break;
                 }
             }
@@ -4844,10 +4846,10 @@ class JSNode_Env_Var extends JSNode_Base {
             var nodeI = 0;
             for (nodeI = preNodes_arr.length - 1; nodeI > 0; --nodeI) {
                 var temNode = preNodes_arr[nodeI];
-                if (temNode.inFlowSocket) {
+                if(temNode.type != JSNODE_EXPORTEXCEL){
                     blockInServer = temNode.hadFetchFun;
-                    break;
                 }
+                break;
             }
         }
 

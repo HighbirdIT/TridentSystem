@@ -965,7 +965,7 @@ class SqlNode_XJoin extends SqlNode_Base {
             return false;
         }
 
-        if (this.joinType != 'cross join') {
+        if (this.joinType != JoinType_Cross) {
             var conditionNodeCompileRet = this.conditionNode.compile(helper, usePreNodes_arr);
             if (conditionNodeCompileRet == false) {
                 return false;
@@ -1006,7 +1006,7 @@ class SqlNode_XJoin extends SqlNode_Base {
         }
 
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, joinString + ' on ' + onString,{InnerTableName:InnerTableName});
+        selfCompileRet.setSocketOut(this.outSocket, joinString + (IsEmptyString(onString) ? '' : ' on ' + onString),{InnerTableName:InnerTableName});
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
