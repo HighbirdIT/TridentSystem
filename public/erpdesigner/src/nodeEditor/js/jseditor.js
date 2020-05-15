@@ -290,6 +290,11 @@ const JSNodeEditorControls_arr =[
         type:'导出'
     },
     {
+        label:'导入Excel',
+        nodeClass:JSNode_ImportExcel,
+        type:'导入'
+    },
+    {
         label:'刷新表单',
         nodeClass:JSNode_FreshForm,
         type:'表单控制'

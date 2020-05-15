@@ -33,6 +33,7 @@ const JSNODE_CHART_FRESH = 'chart_fresh';
 
 const JSNODE_OPENREPORT = 'openreport';
 const JSNODE_EXPORTEXCEL = 'exportexcel';
+const JSNODE_IMPORTEXCEL = 'importexcel';
 
 const JSNODE_FORM_SETSTATVALUE = 'formsetstatvalue';
 const JSNODE_GETOBJECTPROP = 'getobjectprop';
@@ -1262,6 +1263,10 @@ class JSNode_CircleEnd extends JSNode_Base {
         for (var nodeI = preNodes_arr.length - 1; nodeI > 0; --nodeI) {
             var temNode = preNodes_arr[nodeI];
             if (temNode.type == JSNODE_TRAVERSALFORM) {
+                traverNode = temNode;
+                break;
+            }
+            if (temNode.type == JSNODE_ARRAY_FOR && temNode.manualMode) {
                 traverNode = temNode;
                 break;
             }
@@ -2516,6 +2521,7 @@ class JSNode_Array_For extends JSNode_Base {
             return superRet;
         }
 
+        var blockInServer = belongBlock.getScope().isServerSide;
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
@@ -2530,18 +2536,55 @@ class JSNode_Array_For extends JSNode_Base {
             return false;
         }
 
+        var manualMode = this.manualMode;
+
         var myJSBlock = new FormatFileBlock(this.id);
         belongBlock.pushChild(myJSBlock);
         var indexVarName = this.id + '_i';
         var dataVarName = this.id + '_data';
-        myJSBlock.pushLine('var ' + indexVarName + '=0;');
-        myJSBlock.pushLine('var ' + dataVarName + '=null;');
-        myJSBlock.pushLine('for(' + indexVarName + '=0;' + socketValue + '!=null && ' + indexVarName + '<' + socketValue + '.length;++' + indexVarName + '){', 1);
-        myJSBlock.pushLine(dataVarName + '=' + socketValue + '[' + indexVarName + '];');
+        var lenVarName = this.id + '_len';
         var childBlock = new FormatFileBlock('child');
-        myJSBlock.pushChild(childBlock);
-        myJSBlock.subNextIndent();
-        myJSBlock.pushLine('}');
+        var endBlock = myJSBlock;
+        if(manualMode){
+            if (this.checkCompileFlag(blockInServer, '服务端无法使用手动模式', helper)) {
+                return false;
+            }
+            helper.compilingFun.hadServerFetch = true;
+            myJSBlock.pushLine('var ' + indexVarName + '=-1;');
+            myJSBlock.pushLine('var ' + dataVarName + '=null;');
+            myJSBlock.pushLine('var ' + lenVarName + '=' + socketValue + ' ? ' + socketValue + '.length : 0;');
+
+            var endFunName = this.id + '_end';
+            var endBlock = new FormatFileBlock('child');
+            myJSBlock.pushLine('var ' + endFunName + '= ()=>{', 1);
+            myJSBlock.pushChild(endBlock);
+            myJSBlock.subNextIndent();
+            myJSBlock.pushLine('}');
+            var nextFunName = this.id + '_processNext';
+            myJSBlock.pushLine('var ' + nextFunName + '= ()=>{', 1);
+            myJSBlock.pushLine(indexVarName + '++;');
+            myJSBlock.pushLine('if(' + indexVarName + '>=' + lenVarName + '){', 1);
+            myJSBlock.pushLine(endFunName + '();');
+            myJSBlock.pushLine('return;');
+            myJSBlock.subNextIndent();
+            myJSBlock.pushLine('}');
+            myJSBlock.pushLine(this.bluePrint.id + '_msg.setText(' + singleQuotesStr('处理中:') + '+(' + indexVarName + '+1)+' + singleQuotesStr('/') + '+' + lenVarName + ');');
+            myJSBlock.pushLine(dataVarName + '=' + socketValue + '[' + indexVarName + '];');
+            myJSBlock.pushChild(childBlock);
+            myJSBlock.subNextIndent();
+            myJSBlock.pushLine('}');
+
+            myJSBlock.pushLine('setTimeout(' + nextFunName + ', 10);');
+        }
+        else{
+            myJSBlock.pushLine('var ' + indexVarName + '=0;');
+            myJSBlock.pushLine('var ' + dataVarName + '=null;');
+            myJSBlock.pushLine('for(' + indexVarName + '=0;' + socketValue + '!=null && ' + indexVarName + '<' + socketValue + '.length;++' + indexVarName + '){', 1);
+            myJSBlock.pushLine(dataVarName + '=' + socketValue + '[' + indexVarName + '];');
+            myJSBlock.pushChild(childBlock);
+            myJSBlock.subNextIndent();
+            myJSBlock.pushLine('}');
+        }
 
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
@@ -2553,7 +2596,7 @@ class JSNode_Array_For extends JSNode_Base {
             return false;
         }
 
-        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+        if (this.compileOutFlow(helper, usePreNodes_arr, endBlock) == false) {
             return false;
         }
         return selfCompileRet;
@@ -4507,6 +4550,126 @@ class JSNODE_LongServerProcess extends JSNode_Base {
     }
 }
 
+class JSNode_ImportExcel extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_IMPORTEXCEL, '导入Excel', false, nodeJson);
+        this.genCloseure = true;
+        autoBind(this);
+
+        if (nodeJson) {
+            this.outputScokets_arr.forEach(socket => {
+                switch (socket.name) {
+                    case 'goodwork':
+                        this.goodWorkSocket = socket;
+                        break;
+                    case 'records_arr':
+                        this.recordSocket = socket;
+                        break;
+                    case 'headers_arr':
+                        this.headerSocket = socket;
+                        break;
+                }
+            });
+
+            this.inputScokets_arr.forEach(socket => {
+                switch (socket.name) {
+                    case 'title':
+                        this.titleSocket = socket;
+                        break;
+                }
+            });
+        }
+        if (this.titleSocket == null) {
+            this.titleSocket = this.addSocket(new NodeSocket('title', this, true));
+        }
+        this.titleSocket.label = '标题';
+        this.titleSocket.type = ValueType.String;
+
+        if (this.goodWorkSocket == null) {
+            this.goodWorkSocket = this.addSocket(new NodeSocket('goodwork', this, false));
+        }
+        if (this.recordSocket == null) {
+            this.recordSocket = this.addSocket(new NodeSocket('records_arr', this, false));
+        }
+        if (this.headerSocket == null) {
+            this.headerSocket = this.addSocket(new NodeSocket('headers_arr', this, false));
+        }
+
+        this.goodWorkSocket.label = 'goodWork';
+        this.goodWorkSocket.type = ValueType.Boolean;
+        this.recordSocket.label = 'records';
+        this.recordSocket.type = ValueType.Array;
+        this.headerSocket.label = 'headers';
+        this.headerSocket.type = ValueType.Array;
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var theScope = belongBlock.getScope();
+        var blockInServer = theScope && theScope.isServerSide;
+        var belongFun = theScope ? theScope.fun : null;
+        var nodeThis = this;
+        if (this.checkCompileFlag(this.bluePrint.group == EJsBluePrintFunGroup.ServerScript, '不可在服务端使用', helper)) {
+            return false;
+        }
+        if (this.checkCompileFlag(blockInServer, '不可在服务端调用', helper)) {
+            return false;
+        }
+        var params_arr = [];
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var theSocket;
+        var socketComRet = this.getSocketCompileValue(helper, this.titleSocket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var titleValue = socketComRet.value;
+
+        // makeClient
+        this.hadServerFetch = false;
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+
+        var randIDVarName = this.id + '_rand';
+        myJSBlock.pushLine(makeLine_DeclareVar(randIDVarName, 'Math.round(Math.random() * 10000)', false));
+        var callBackName = this.id + '_callback';
+        var callBackBlk = new FormatFileBlock('callback');
+        myJSBlock.pushLine('var ' + callBackName + ' = (' + [this.id + 'goodwork', this.id + 'records', this.id + 'headers'].join(',') + ')=>{', 1);
+        myJSBlock.pushChild(callBackBlk);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine("};");
+        var importerVarName = this.id + '_importer';
+        myJSBlock.pushLine(makeLine_DeclareVar(importerVarName, "<VisibleERPC_ExcelImporter key='excelimport' id={'excelimport_' + " + randIDVarName + "} callback={" + callBackName + "} title={" + titleValue + "} ></VisibleERPC_ExcelImporter>", false));
+        myJSBlock.pushLine("addFixedItem(" + importerVarName + ");");
+
+        callBackBlk.pushLine('removeFixedItem(' + importerVarName + ');');
+        callBackBlk.pushLine('if(!' + this.id + 'goodwork' + '){return;}');
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        selfCompileRet.setSocketOut(this.goodWorkSocket, this.id + 'goodwork');
+        selfCompileRet.setSocketOut(this.recordSocket, this.id + 'records');
+        selfCompileRet.setSocketOut(this.headerSocket, this.id + 'headers');
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, callBackBlk) == false) {
+            return false;
+        }
+        return selfCompileRet;
+    }
+}
+
 
 JSNodeClassMap[JSNODE_OP_NOT] = {
     modelClass: JSNode_OP_Not,
@@ -4647,5 +4810,9 @@ JSNodeClassMap[JSNODE_SETOBJECTPROP] = {
 };
 JSNodeClassMap[JSNODE_LONGSERVERPROCESS] = {
     modelClass: JSNODE_LongServerProcess,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_IMPORTEXCEL] = {
+    modelClass: JSNode_ImportExcel,
     comClass: C_Node_SimpleNode,
 };
