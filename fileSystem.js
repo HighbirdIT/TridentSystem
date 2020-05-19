@@ -265,7 +265,7 @@ fileSystem.saveExcelJsonData = (name, json, bAutoIndex, bQuotePrefix, recordid, 
         var errmsg = error ? error.message : (stdout != 'OK' ? stdout : '');
         try {
             dbhelper.asynExcute('P721E处理结果报告',
-                [dbhelper.makeSqlparam("错误描述", sqlTypes.NVarChar(500), errmsg.substr(0, 500)),
+                [dbhelper.makeSqlparam("错误描述", sqlTypes.NVarChar(2000), errmsg.substr(0, 2000)),
                 dbhelper.makeSqlparam("文件请求代码", sqlTypes.Int, recordid),
                 dbhelper.makeSqlparam("处理步骤", sqlTypes.Int, 1)]);
         }
