@@ -2280,6 +2280,12 @@ class JSNode_Compare extends JSNode_Base {
                 socketVal2 = tValue;
             }
         }
+        if(socketVal1 == "'null'"){
+            socketVal1 = 'null';
+        }
+        if(socketVal2 == "'null'"){
+            socketVal2 = 'null';
+        }
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, socketVal1 + this.operator + socketVal2);
         helper.setCompileRetCache(this, selfCompileRet);
@@ -9162,9 +9168,6 @@ class JSNode_GetPageEntryParam extends JSNode_Base {
     }
 
     getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
-        if (belongFun.scope.isServerSide) {
-            return;
-        }
         var thePage = this.bluePrint.ctlKernel.type == M_PageKernel_Type ? this.bluePrint.ctlKernel : this.bluePrint.ctlKernel.searchParentKernel(M_PageKernel_Type, true);
         var paramName = thePage.getAttribute(this.outSocket.defval);
         result.pushVariable(thePage.id + '_' + paramName, targetSocket);

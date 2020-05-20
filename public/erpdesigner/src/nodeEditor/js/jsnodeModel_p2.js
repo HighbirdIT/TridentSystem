@@ -1781,6 +1781,9 @@ class JSNode_GetFormXMLData extends JSNode_Base {
                     else if (socket.name == 'split') {
                         this.splitSocket = socket;
                     }
+                    else if (socket.name == 'onlySelected') {
+                        this.onlySelectedSocket = socket;
+                    }
                 });
             }
         }
@@ -1815,6 +1818,9 @@ class JSNode_GetFormXMLData extends JSNode_Base {
         if (this.validSocket == null) {
             this.validSocket = this.addSocket(new NodeSocket('valid', this, false));
         }
+        if (this.onlySelectedSocket == null) {
+            this.onlySelectedSocket = this.addSocket(new NodeSocket('onlySelected', this, true));
+        }
 
         this.formSocket.inputable = false;
         this.formSocket.type = SocketType_CtlKernel;
@@ -1830,11 +1836,17 @@ class JSNode_GetFormXMLData extends JSNode_Base {
         this.textarrSocket.label = 'textArr';
         this.countSocket.label = 'count';
         this.validSocket.label = 'isValid';
+        this.onlySelectedSocket.label = '只要选择行';
+        this.onlySelectedSocket.inputable = true;
+        if(this.onlySelectedSocket.defval == null){
+            this.onlySelectedSocket.defval = false;
+        }
 
         this.xmlSocket.type = ValueType.String;
         this.textSocket.type = ValueType.String;
         this.countSocket.type = ValueType.Int;
         this.validSocket.type = ValueType.Boolean;
+        this.onlySelectedSocket.type = ValueType.Boolean;
     }
 
     getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
@@ -1905,6 +1917,12 @@ class JSNode_GetFormXMLData extends JSNode_Base {
             splitChar = "''";
         }
 
+        socketComRet = this.getSocketCompileValue(helper, this.onlySelectedSocket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var onlySelected = socketComRet.value;
+
         var rltVarName = this.id + '_data';
         var myJSBlock = new FormatFileBlock(this.id);
         belongBlock.pushChild(myJSBlock);
@@ -1931,7 +1949,7 @@ class JSNode_GetFormXMLData extends JSNode_Base {
             formMidData.useFormXML = useXmlSocket;
             formMidData.useFormXMLText = useTextSocket;
         }
-        myJSBlock.pushLine(makeLine_DeclareVar(rltVarName, makeStr_callFun('GenFormXmlData', [formStateVarName, selectedKernel.id + '_' + AttrNames.Function.GetXMLRowItem, selectedKernel.id + '_xmlconfig', singleQuotesStr(selectedKernel.getAttribute(AttrNames.KeyColumn)), formPathVarName, splitChar]), false));
+        myJSBlock.pushLine(makeLine_DeclareVar(rltVarName, makeStr_callFun('GenFormXmlData', [formStateVarName, selectedKernel.id + '_' + AttrNames.Function.GetXMLRowItem, selectedKernel.id + '_xmlconfig', singleQuotesStr(selectedKernel.getAttribute(AttrNames.KeyColumn)), formPathVarName, splitChar, onlySelected]), false));
 
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
