@@ -1000,6 +1000,7 @@ class CP_ServerSide extends JSFileMaker{
         this.projectCompiler = projectCompiler;
         this.fileName = projectCompiler.projectName + '_server';
         this.project = projectCompiler.project;
+        this.importModels = {};
 
         this.importBlock.pushLine("const dbhelper = require('../../../../dbhelper.js');");
         this.importBlock.pushLine("const serverhelper = require('../../../../erpserverhelper.js');");
@@ -1019,6 +1020,13 @@ class CP_ServerSide extends JSFileMaker{
         this.processesMapVarInitVal = {
             pageloaded:'pageloaded',
         };
+    }
+
+    appendImport(name, path){
+        if(this.importModels[name] == null){
+            this.importModels[name] = 1;
+            this.importBlock.pushLine("const " + name + " = require('" + path + "');");
+        }
     }
 
     compile(){

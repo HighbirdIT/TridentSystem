@@ -1250,6 +1250,9 @@ class MobileContentCompiler extends ContentCompiler {
             case M_LabelKernel_Type:
                 rlt = this.compileLabelKernel(theKernel, renderBlock, renderFun);
                 break;
+            case M_ImageKernel_Type:
+                rlt = this.compileImageKernel(theKernel, renderBlock, renderFun);
+                break;
             case M_FormKernel_Type:
                 rlt = this.compileFormKernel(theKernel, renderBlock, renderFun);
                 break;
@@ -4176,6 +4179,61 @@ class MobileContentCompiler extends ContentCompiler {
         }
     }
 
+    compileImageKernel(theKernel, renderBlock, renderFun) {
+        var project = this.project;
+        var layoutConfig = theKernel.getLayoutConfig();
+        layoutConfig.addClass('erp-control');
+
+        var ctlTag = new FormatHtmlTag(theKernel.id, 'VisibleERPC_Img', this.clientSide);
+        this.modifyControlTag(theKernel, ctlTag);
+        ctlTag.class = layoutConfig.class;
+        ctlTag.style = layoutConfig.style;
+
+        ctlTag.setAttr('id', theKernel.id);
+        ctlTag.setAttr('parentPath', this.getKernelParentPath(theKernel));
+        renderBlock.pushChild(ctlTag);
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
+
+        var srcField = theKernel.getAttribute('src');
+        var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
+
+        var srcFieldParseRet = parseObj_CtlPropJsBind(srcField, project.scriptMaster);
+        if (srcFieldParseRet.isScript) {
+            if (this.compileScriptAttribute(srcFieldParseRet, theKernel, 'src', 'src', { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            var belongFormKernel = theKernel.searchParentKernel(M_FormKernel_Type, true);
+            if (belongFormKernel != null) {
+                var formMidData = this.projectCompiler.getMidData(belongFormKernel.id);
+                var formColumns_arr = belongFormKernel.getCanuseColumns();
+                if (formMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
+                    formMidData.needSetKernels_arr.push(theKernel);
+                }
+                if (formColumns_arr.indexOf(srcField) != -1) {
+                    formMidData.useColumns_map[srcField] = 1;
+                    kernelMidData.columnName = srcField;
+                    kernelMidData.needSetStates_arr.push(
+                        {
+                            name: 'src',
+                            useColumn: { name: srcField }
+                        }
+                    );
+                } else {
+                    ctlTag.setAttr('src', srcField);
+                }
+            }
+            else {
+                ctlTag.setAttr('src', srcField);
+            }
+        }
+
+        if (this.compileOnMouseDownEvent(theKernel, ctlTag) == false) {
+            return false;
+        }
+    }
+
     compileButtonKernel(theKernel, renderBlock, renderFun) {
         var project = this.project;
         var layoutConfig = theKernel.getLayoutConfig();
@@ -4909,7 +4967,7 @@ class MobileContentCompiler extends ContentCompiler {
         var parentMidData = this.projectCompiler.getMidData(reactParentKernel.id);
 
         var fileFlow = theKernel.getAttribute('fileFlow');
-        var fileFlowItem = AllFileFlows_arr.find(x => { return x.code == fileFlow; });
+        var fileFlowItem = AllFileFlows_arr.find(x => { return x.code > 0 && x.code == fileFlow; });
         if (fileFlowItem) {
             ctlTag.setAttr('fileflow', fileFlow);
         }
@@ -4942,7 +5000,7 @@ class MobileContentCompiler extends ContentCompiler {
                         };
                     }
                 }
-                else {
+                if(setTitleStateItem == null) {
                     ctlTag.setAttr('title', title);
                 }
             }
@@ -5016,22 +5074,57 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
 
-        if (setkeyrecordidStateTiem == null && !keyrecordidParseRet.isScript && setattachmentidStateTiem == null && !attachmentidParseRet.isScript) {
-            logManager.errorEx([logManager.createBadgeItem(
-                theKernel.getReadableName(),
-                theKernel,
-                this.projectCompiler.clickKernelLogBadgeItemHandler),
-                '关联记录代码和附件记录代码必须设置一项']);
-            return false;
+        var fileIdentity = theKernel.getAttribute(AttrNames.FileIdentity);
+        var fileIdentityParseRet = parseObj_CtlPropJsBind(fileIdentity, project.scriptMaster);
+        var setfileIdentityStateItem = null;
+        if (fileIdentityParseRet.isScript) {
+            if (this.compileScriptAttribute(fileIdentityParseRet, theKernel, 'fileIdentity', AttrNames.FileIdentity, { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (!IsEmptyString(fileIdentityParseRet.string)) {
+                if (formColumns_arr) {
+                    if (formColumns_arr.indexOf(fileIdentity) != -1) {
+                        parentMidData.useColumns_map[fileIdentity] = 1;
+                        setfileIdentityStateItem = {
+                            name: 'fileIdentity',
+                            useColumn: { name: fileIdentity },
+                        };
+                    }
+                }
+            }
         }
 
-        if (setattachmentidStateTiem == null && !attachmentidParseRet.isScript && fileFlowItem == null) {
-            logManager.errorEx([logManager.createBadgeItem(
-                theKernel.getReadableName(),
-                theKernel,
-                this.projectCompiler.clickKernelLogBadgeItemHandler),
-                '不设置附件记录代码的情况下必须选择文件流程']);
-            return false;
+        if(fileIdentityParseRet.isScript || setfileIdentityStateItem != null){
+            if(!(setkeyrecordidStateTiem == null && !keyrecordidParseRet.isScript && setattachmentidStateTiem == null && !attachmentidParseRet.isScript)){
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '设置了[文件记录标识]后不可再设置[附件记录代码]或[关联记录代码]']);
+                return false;
+            }
+            ctlTag.setAttr('mode', singleQuotesStr('direct'));
+        }
+        else{
+            if (setkeyrecordidStateTiem == null && !keyrecordidParseRet.isScript && setattachmentidStateTiem == null && !attachmentidParseRet.isScript) {
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '关联记录代码和附件记录代码必须设置一项']);
+                return false;
+            }
+    
+            if (setattachmentidStateTiem == null && !attachmentidParseRet.isScript && fileFlowItem == null) {
+                logManager.errorEx([logManager.createBadgeItem(
+                    theKernel.getReadableName(),
+                    theKernel,
+                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                    '不设置附件记录代码的情况下必须选择文件流程']);
+                return false;
+            }
         }
 
         if (setTitleStateItem) {
@@ -5042,6 +5135,9 @@ class MobileContentCompiler extends ContentCompiler {
         }
         if (setattachmentidStateTiem) {
             kernelMidData.needSetStates_arr.push(setattachmentidStateTiem);
+        }
+        if (setfileIdentityStateItem) {
+            kernelMidData.needSetStates_arr.push(setfileIdentityStateItem);
         }
 
         if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {

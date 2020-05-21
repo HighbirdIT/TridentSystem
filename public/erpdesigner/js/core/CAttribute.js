@@ -383,6 +383,7 @@ var AttrNames = {
     InsertBtnLabel: 'insertbtnlabel',
     KeyRecrodID: 'keyrecordid',
     AttachmentID: 'attachmentid',
+    FileIdentity: 'fileidentity',
     ModifyContent: 'modifycontent',
     ToolTip: 'toolTip',
     Growable: 'growable',

@@ -193,12 +193,22 @@ fileSystem.uploadBlock = (req, res) => {
 fileSystem.getFileRecord = (req, res) => {
     var bundle = req.body.bundle;
     return co(function* () {
-        var rcdRlt = yield dbhelper.asynQueryWithParams("select * from FTB00E查找附件信息(@附件记录代码,@归属流程代码,@关联记录代码)",
+        var rcdRlt = null;
+        if(bundle.fileIdentity && bundle.fileIdentity.length == 36){
+            rcdRlt = yield dbhelper.asynQueryWithParams("select * from [FTB00E文件信息Ex](@文件令牌)",
+            [
+                dbhelper.makeSqlparam('文件令牌', sqlTypes.NVarChar(50), bundle.fileIdentity)
+            ]);
+        }
+        else{
+            rcdRlt = yield dbhelper.asynQueryWithParams("select * from FTB00E查找附件信息(@附件记录代码,@归属流程代码,@关联记录代码)",
             [
                 dbhelper.makeSqlparam('附件记录代码', sqlTypes.Int, bundle.attachmentID == null ? 0 : bundle.attachmentID),
                 dbhelper.makeSqlparam('归属流程代码', sqlTypes.Int, bundle.fileFlow == null ? 0 : bundle.fileFlow),
                 dbhelper.makeSqlparam('关联记录代码', sqlTypes.Int, bundle.relrecordid == null ? 0 : bundle.relrecordid),
             ]);
+        }
+        
         if (rcdRlt.recordset.length == 0) {
             return null;
         }
@@ -397,6 +407,9 @@ fileSystem.queryLongProcessResult = (req, res) => {
         var filePath = path.join(__dirname, 'filedata/longprocess/' + key + '.json');
         if (fs.existsSync(filePath)) {
             var fileContent = fs.readFileSync(filePath, { encoding: 'utf8' });
+            if(fileContent.length == 0){
+                return null;    //文件还未写入完毕
+            }
             return JSON.parse(fileContent);
         }
         return null;

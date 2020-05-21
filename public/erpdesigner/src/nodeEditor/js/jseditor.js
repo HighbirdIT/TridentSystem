@@ -215,6 +215,11 @@ const JSNodeEditorControls_arr =[
         type:'操纵字符串'
     },
     {
+        label:'字符串-Split',
+        nodeClass:JSNode_String_Split,
+        type:'操纵字符串'
+    },
+    {
         label:'ParseInt',
         nodeClass:JSNode_ParseInt,
         type:'转换'

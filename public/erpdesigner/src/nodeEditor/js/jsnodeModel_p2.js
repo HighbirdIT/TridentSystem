@@ -4488,15 +4488,17 @@ class JSNODE_LongServerProcess extends JSNode_Base {
         }
         helper.addInitClientBundleBlock(initBundleBlock);
 
-        var rltVarName = this.id + '_rlt';
+        var dataVarName = 'data_' + this.id;
+        var errVarName = 'error_' + this.id;
+
         var keyVarName = this.id + '_key';
-        myServerBlock.pushLine('var ' + rltVarName + '={};');
+        myServerBlock.pushLine('var ' + dataVarName + '={};');
         myServerBlock.pushLine('var ' + keyVarName + '=serverhelper.guid2();');
         myServerBlock.pushLine('setTimeout(() => {', 1);
         myServerBlock.pushLine('co(function* () {');
         var funBlock = new FormatFileBlock('settimeout');
         myServerBlock.pushChild(funBlock);
-        myServerBlock.pushLine('return ' + rltVarName + ';');
+        myServerBlock.pushLine('return ' + dataVarName + ';');
         myServerBlock.pushLine('}).then(rltData=>{serverhelper.SaveLongProcessResult(' + keyVarName + ', rltData);});');
         myServerBlock.subNextIndent();
         myServerBlock.pushLine('}, 500);');
@@ -4527,8 +4529,6 @@ class JSNODE_LongServerProcess extends JSNode_Base {
         if (this.bluePrint.group != EJsBluePrintFunGroup.Custom) {
             myClientBlock.pushLine("if(fetchTracer[" + VarNames.FetchKey + "] != fetchid) return;");
         }
-        var dataVarName = 'data_' + this.id;
-        var errVarName = 'error_' + this.id;
         myClientBlock.pushLine(makeLine_FetchFTDCallBack(this.bluePrint.ctlKernel, serverSideActName, bundleVarName, this.id + '_key', '_err'), 1);
         myClientBlock.pushLine('gWaitLongProcess(' + this.bluePrint.id + '_msg' + ',' + this.id + '_key, (state,' + dataVarName + ',' + errVarName + ')=>{', 1);
         fetchEndBlock = new FormatFileBlock('fetchend');

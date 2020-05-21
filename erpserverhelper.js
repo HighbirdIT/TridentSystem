@@ -143,7 +143,10 @@ helper.SaveLongProcessResult = (key, result) => {
     if(result == null){
         result = {};
     }
-    fs.writeFile(path.join(fileDirPath, key + '.json'), JSON.stringify(result));
+    var filePath = path.join(fileDirPath, key);
+    fs.writeFile(filePath, JSON.stringify(result), ()=>{
+        fs.rename(filePath, filePath + '.json');
+    });
 };
 
 function checkArrayData(val) {

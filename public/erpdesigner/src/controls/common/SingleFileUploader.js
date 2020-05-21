@@ -31,6 +31,16 @@ const SingleFileUploaderKernelAttrsSetting = GenControlKernelAttrsSetting([
             type:FunType_Client,
             group:EJsBluePrintFunGroup.CtlAttr,
         }),
+        new CAttribute('文件记录标识',AttrNames.FileIdentity,ValueType.String,'', true, false, [], 
+        {
+            pullDataFun:GetKernelCanUseColumns,
+            text:'name',
+            editable:true,
+        }, true, {
+            scriptable:true,
+            type:FunType_Client,
+            group:EJsBluePrintFunGroup.CtlAttr,
+        }),
         genIsdisplayAttribute(),
         genNullableAttribute(),
         genValidCheckerAttribute(),

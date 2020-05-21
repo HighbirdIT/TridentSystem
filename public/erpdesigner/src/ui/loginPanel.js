@@ -47,6 +47,7 @@ class LoginPanel extends React.PureComponent {
             while(AllFileFlows_arr.length > 0){
                 AllFileFlows_arr.pop();
             }
+            AllFileFlows_arr.push({ label: '无', code: 0 });
             respon.json.data.fileFlows_arr.forEach(t=>{
                 AllFileFlows_arr.push(t);
             });

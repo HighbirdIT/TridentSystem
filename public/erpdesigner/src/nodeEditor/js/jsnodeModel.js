@@ -47,6 +47,7 @@ const JSNODE_STRING_LENGTH = 'stringlength';
 const JSNODE_STRING_SUBSTRING = 'stringsubstring';
 const JSNODE_STRING_SUBSTR = 'stringsubstr';
 const JSNODE_STRING_INDEXOF = 'stringindexOf';
+const JSNODE_STRING_SPLIT = 'stringsplit';
 const JSNODE_ISEMPTYSTRING = 'isemptystring';
 const JSNODE_ISEMPTYARRAY = 'isemptyarray';
 
@@ -4031,8 +4032,8 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
             }
 
             useApiItem = Object.assign({}, useApiItem, {
-                stateName: VarNames.SelectedColumns,
-                useAttrName: VarNames.SelectedColumns,
+                stateName: VarNames.SelectedColumns + '_' + colname,
+                useAttrName: VarNames.SelectedColumns + '_' + colname,
                 colname: colname,
                 relyStateName: VarNames.SelectedValues_arr,
             });
@@ -7875,12 +7876,17 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             if (this.checkCompileFlag(batchMode || traversalFromNode, '不支持batch的用法', helper)) {
                 return false;
             }
-            if (selectedKernel.type == MFileUploader_Type && this.funItem.name == 'Reset') {
+            if ((selectedKernel.type == MFileUploader_Type || selectedKernel.type == SingleFileUploader_Type) && this.funItem.name == 'Reset') {
                 var cltPathVar = singleQuotesStr(selectedKernel.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map }));
                 if (belongUserCtl) {
                     cltPathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath(''));
                 }
-                myJSBlock.pushLine("ResetMFileUploader(" + cltPathVar + ");", -1);
+                if(selectedKernel.type == MFileUploader_Type){
+                    myJSBlock.pushLine("ResetMFileUploader(" + cltPathVar + ");", -1);
+                }
+                else{
+                    myJSBlock.pushLine("ResetSFileUploader(" + cltPathVar + ");", -1);
+                }
             }
             else {
                 myJSBlock.pushLine(selectedKernel.id + "_" + this.funItem.name + "();", -1);
@@ -10606,8 +10612,12 @@ class JSNode_String_IndexOf extends JSNode_Base {
         if (this.varSocket == null) {
             this.varSocket = new NodeSocket('invar', this, true);
             this.addSocket(this.varSocket);
+        }
+        if (this.valueSocket == null) {
             this.valueSocket = new NodeSocket('invalue', this, true);
             this.addSocket(this.valueSocket);
+        }
+        if (this.fromSocket == null) {
             this.fromSocket = new NodeSocket('infrom', this, true);
             this.addSocket(this.fromSocket);
         }
@@ -11127,7 +11137,70 @@ class JSNode_HashFormDataRow extends JSNode_Base {
     }
 }
 
+class JSNode_String_Split extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_STRING_SPLIT, 'Split', false, nodeJson);
+        autoBind(this);
 
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.varSocket = this.inputScokets_arr[0];
+                this.charSocket = this.inputScokets_arr[1];
+            }
+        }
+        if (this.varSocket == null) {
+            this.varSocket = new NodeSocket('invar', this, true);
+            this.addSocket(this.varSocket);
+            this.charSocket = new NodeSocket('char', this, true);
+            this.addSocket(this.charSocket);
+        }
+        this.varSocket.label = 'var';
+        this.charSocket.label = '分隔符';
+        this.varSocket.type = ValueType.String;
+        this.varSocket.inputable = false;
+        this.charSocket.inputable = true;
+
+
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.type = ValueType.Int;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketsValues_arr = [];
+        for (var si in this.inputScokets_arr) {
+            var theSocket = this.inputScokets_arr[si];
+            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            var socketValue = socketComRet.value;
+            if (theSocket == this.varSocket) {
+                if (!socketComRet.link.outSocket.isSimpleVal) {
+                    socketValue = '(' + socketValue + ')';
+                }
+            }
+            socketsValues_arr.push(socketValue);
+        }
+
+        var finalStr = socketsValues_arr[0] + '.split(' + socketsValues_arr[1] + ')'
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
 
 
 JSNodeClassMap[JSNODE_VAR_GET] = {
@@ -11349,6 +11422,10 @@ JSNodeClassMap[JSNODE_SETMESSAGEBOXTOLOADING] = {
 };
 JSNodeClassMap[JSNODE_MATH_RANDINT] = {
     modelClass: JSNode_Math_RandInt,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_STRING_SPLIT] = {
+    modelClass: JSNode_String_Split,
     comClass: C_Node_SimpleNode,
 };
 
