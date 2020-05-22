@@ -120,6 +120,11 @@ const JSNodeEditorControls_arr =[
         type:'数据库交互'
     },
     {
+        label:'超长后台操作',
+        nodeClass:JSNODE_LongServerProcess,
+        type:'后台交互'
+    },
+    {
         label:'附件操作',
         nodeClass:JSNode_Attachment_Pro,
         type:'数据库交互'
@@ -210,6 +215,11 @@ const JSNodeEditorControls_arr =[
         type:'操纵字符串'
     },
     {
+        label:'字符串-Split',
+        nodeClass:JSNode_String_Split,
+        type:'操纵字符串'
+    },
+    {
         label:'ParseInt',
         nodeClass:JSNode_ParseInt,
         type:'转换'
@@ -283,6 +293,11 @@ const JSNodeEditorControls_arr =[
         label:'导出Excel',
         nodeClass:JSNode_ExportExcel,
         type:'导出'
+    },
+    {
+        label:'导入Excel',
+        nodeClass:JSNode_ImportExcel,
+        type:'导入'
     },
     {
         label:'刷新表单',

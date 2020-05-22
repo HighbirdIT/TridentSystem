@@ -142,6 +142,21 @@ class ProjectCompiler extends EventEmitter{
             this.setCache(js_blueprint.code + '_fun', jscompileRet);
         }
 
+        var invalidBPs_arr = project.scriptMaster.blueprints_arr.filter(x=>{
+            switch(x.group){
+                case EJsBluePrintFunGroup.CtlAttr:
+                case EJsBluePrintFunGroup.CtlEvent:
+                case EJsBluePrintFunGroup.CtlFun:
+                case EJsBluePrintFunGroup.CtlValid:
+                case EJsBluePrintFunGroup.GridRowBtnHandler:
+                return project.getControlById(x.ctlID) == null;
+            }
+            return false;
+        });
+        invalidBPs_arr.forEach(jsp=>{
+            project.scriptMaster.deleteBP(jsp);
+        });
+
         mobileContentCompiler.compile();
         if(logManager.getCount(LogTag_Error) > 0){
             this.stopCompile(false, "发生错误,项目编译已终止");

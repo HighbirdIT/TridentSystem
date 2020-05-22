@@ -31,6 +31,16 @@ const SingleFileUploaderKernelAttrsSetting = GenControlKernelAttrsSetting([
             type:FunType_Client,
             group:EJsBluePrintFunGroup.CtlAttr,
         }),
+        new CAttribute('文件记录标识',AttrNames.FileIdentity,ValueType.String,'', true, false, [], 
+        {
+            pullDataFun:GetKernelCanUseColumns,
+            text:'name',
+            editable:true,
+        }, true, {
+            scriptable:true,
+            type:FunType_Client,
+            group:EJsBluePrintFunGroup.CtlAttr,
+        }),
         genIsdisplayAttribute(),
         genNullableAttribute(),
         genValidCheckerAttribute(),
@@ -62,7 +72,7 @@ class SingleFileUploaderKernel extends ControlKernelBase {
 
     scriptCreated(attrName, scriptBP) {
         if(scriptBP.name.indexOf(AttrNames.Event.OnUploadComplete) != -1){
-            scriptBP.setFixParam(['fullPath','fileID']);
+            scriptBP.setFixParam(['fullPath','fileID', 'fileIdentity']);
         }
     }
 
@@ -131,7 +141,7 @@ class CSingleFileUploader extends React.PureComponent {
         var title = titleParserRet.isScript ? (ReplaceIfNull(this.state.name,'') + '{脚本}') : (IsEmptyString(titleParserRet.string) ? '' : '[' +titleParserRet.string + ']');
 
         return (
-           <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+           <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null} autosize={!layoutConfig.hadSizeSetting() ? 1 : 0}>
                 {this.renderHandleBar()}
                 {title}
                 <div className='' style={{width:'7em',height:'7em'}}>

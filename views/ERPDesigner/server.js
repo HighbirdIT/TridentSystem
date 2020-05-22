@@ -299,7 +299,17 @@ function getBaseConfigData(req) {
         rlt.fileFlows_arr = yield getAllFileFlowRecord();
         rlt.reports_arr = yield getAllReportRecord();
         rlt.excelTemplate_arr = yield getAllExcelTemplateRecord();
+        rlt.permissionGroups_arr = yield getAllPermissionGroup();
+
         return rlt;
+    });
+}
+
+function getAllPermissionGroup(){
+    return co(function* () {
+        var sql = 'SELECT 方案权限组代码 as code,权限组名称 as name,[T002C系统方案名称].系统方案名称代码 as projcode,[T002C系统方案名称].系统方案名称 projtitle FROM [T002C方案权限组] inner join [T002C系统方案名称] on [T002C方案权限组].[系统方案名称代码] = [T002C系统方案名称].[系统方案名称代码]';
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
+        return rcdRlt.recordset;
     });
 }
 

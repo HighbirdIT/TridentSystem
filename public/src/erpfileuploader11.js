@@ -1455,11 +1455,15 @@ class ERPC_FilePreview extends React.PureComponent {
         if (fileName.length > 15) {
             fileName = '...' + this.props.fileName.substr(-15);
         }
-        return <div className='filepreview'>
+        var divClassName = 'filepreview ' + (this.props.className ? this.props.className : '');
+        return <div className={divClassName} fixedsize={this.props.fixedsize} style={this.props.style}>
             {contetnElem}
-            <div id='name'>
-                {fileName}
-            </div>
+            {
+                this.props.hidetitle ? null :
+                <div id='name'>
+                    {fileName}
+                </div>
+            }
             {!this.props.canDelte ? null : <button onClick={this.clickTrashHandler} id='del' className='btn btn-sm btn-danger'><i className={'fa ' + (this.deleting ? 'fa-circle-o-notch fa-spin' : 'fa-trash')} /></button>}
         </div>
     }

@@ -61,6 +61,21 @@ const SqlNodeEditorControls_arr =[
         nodeClass:SqlNode_GetStepData,
         type:'窗体控制'
     },
+    {
+        label:'year',
+        nodeClass:SqlNode_Year,
+        type:'操作日期'
+    },
+    {
+        label:'month',
+        nodeClass:SqlNode_Month,
+        type:'操作日期'
+    },
+    {
+        label:'day',
+        nodeClass:SqlNode_Day,
+        type:'操作日期'
+    },
 ]; 
 
 var gCopyed_SqlNodes_data = null;

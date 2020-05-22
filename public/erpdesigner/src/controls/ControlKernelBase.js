@@ -570,7 +570,7 @@ class ControlKernelBase extends IAttributeable {
                                 rlt.push(child.editor);
                             }
                         }
-                        if(child.editor.type == M_ContainerKernel_Type){
+                        if(child.editor.type == M_ContainerKernel_Type || child.editor.type == PopperButtonKernel_Type){
                             // 穿透div
                             if(meetParents_map[child.editor.id] == null){
                                 meetParents_map[child.editor.id] = 1;
@@ -704,19 +704,26 @@ class ControlLayoutConfig {
         return true;
     }
 
-    addClass(className, existsProcess) {
-        if (IsEmptyString(className)) {
-            return false;
-        }
-        var t_arr = g_switchClassNameReg.exec(className);
-        if (t_arr != null) {
-            var switchName = className.substr(0, className.length - t_arr[0].length);
-            var switchVal = t_arr[0].substr(1);
-            return this.addSwitchClass(switchName, switchVal, existsProcess);
-        }
-
-        this.class[className] = 1;
-        return true;
+    addClass(value, existsProcess) {
+        var class_arr = value.trim().split(' ');
+        var added = false;
+        class_arr.forEach(className=>{
+            if (IsEmptyString(className)) {
+                return;
+            }
+            var t_arr = g_switchClassNameReg.exec(className);
+            if (t_arr != null) {
+                var switchName = className.substr(0, className.length - t_arr[0].length);
+                var switchVal = t_arr[0].substr(1);
+                if(this.addSwitchClass(switchName, switchVal, existsProcess)){
+                    added = true;
+                }
+                return;
+            }
+            added = true;
+            this.class[className] = 1;
+        });
+        return added;
     }
 
     removeClass(className){
@@ -748,6 +755,27 @@ class ControlLayoutConfig {
 
     hadClass(name){
         return this.class[name] != null;
+    }
+
+    hadStyle(name){
+        return this.class[name] != null;
+    }
+
+    hadSizeSetting(){
+        return this.switch['flex-grow'] != null || this.switch['flex-shrink'] != null  || this.width != null  || this.style.height != null  || this.style.maxWidth != null  || this.style.maxHeight != null;
+    }
+
+    overrideBy(taget){
+        this.style = Object.assign(this.style, taget.style);
+        this.addClass(taget.getClassName(), 'set');
+    }
+
+    clone(){
+        var rlt = new ControlLayoutConfig();
+        rlt.class = Object.assign({}, this.class);
+        rlt.style = Object.assign({}, this.style);
+        rlt.switch = Object.assign({}, this.switch);
+        return rlt;
     }
 }
 

@@ -23,6 +23,9 @@ const SQLNODE_DELETERECORD = 'deleterecord';
 const SQLNODE_COLUMNVAR = 'sqlcolumnvar';
 const SQLNODE_GETPAGE_ENTRYPARAM = 'getpageenterparam';
 const SQLNODE_GETSTEPDATA = 'getstepdata';
+const SQLNODE_YEAR = 'year';
+const SQLNODE_MONTH = 'month';
+const SQLNODE_DAY = 'day';
 
 var SqlNodeClassMap = {};
 // CONSTSQLNODES_ARR output是常量的节点类型
@@ -645,7 +648,7 @@ class SqlNode_DBEntity extends SqlNode_Base {
                 }
                 else {
                     if (!needSort) {
-                        needSort = theSocket.index == si;
+                        needSort = theSocket.index != si;
                     }
                 }
             }
@@ -962,7 +965,7 @@ class SqlNode_XJoin extends SqlNode_Base {
             return false;
         }
 
-        if (this.joinType != 'cross join') {
+        if (this.joinType != JoinType_Cross) {
             var conditionNodeCompileRet = this.conditionNode.compile(helper, usePreNodes_arr);
             if (conditionNodeCompileRet == false) {
                 return false;
@@ -1003,7 +1006,7 @@ class SqlNode_XJoin extends SqlNode_Base {
         }
 
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, joinString + ' on ' + onString,{InnerTableName:InnerTableName});
+        selfCompileRet.setSocketOut(this.outSocket, joinString + (IsEmptyString(onString) ? '' : ' on ' + onString),{InnerTableName:InnerTableName});
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -3775,6 +3778,154 @@ class SqlNode_GetStepData extends SqlNode_Base {
     }
 }
 
+class SqlNode_Year extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, SQLNODE_YEAR, 'year', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+            }
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inSocket);
+        }
+        this.inSocket.label = 'date';
+        this.inSocket.inputable = true;
+
+        this.outSocket.type = ValueType.String;
+        this.outSocket.inputable = false;
+        this.headType = 'tiny';
+    }
+
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketComRet = this.getSocketCompileValue(helper, this.inSocket, usePreNodes_arr, null, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var value = 'year(' + socketComRet.value + ')';
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, value);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+class SqlNode_Month extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, SQLNODE_MONTH, 'month', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+            }
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inSocket);
+        }
+        this.inSocket.label = 'date';
+        this.inSocket.inputable = true;
+
+        this.outSocket.type = ValueType.String;
+        this.outSocket.inputable = false;
+        this.headType = 'tiny';
+    }
+
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketComRet = this.getSocketCompileValue(helper, this.inSocket, usePreNodes_arr, null, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var value = 'month(' + socketComRet.value + ')';
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, value);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+class SqlNode_Day extends SqlNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, SQLNODE_DAY, 'day', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+            }
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inSocket);
+        }
+        this.inSocket.label = 'date';
+        this.inSocket.inputable = true;
+
+        this.outSocket.type = ValueType.String;
+        this.outSocket.inputable = false;
+        this.headType = 'tiny';
+    }
+
+
+    compile(helper, preNodes_arr) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketComRet = this.getSocketCompileValue(helper, this.inSocket, usePreNodes_arr, null, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var value = 'day(' + socketComRet.value + ')';
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, value);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
 
 
 SqlNodeClassMap[SQLNODE_DBENTITY] = {
@@ -3876,5 +4027,17 @@ SqlNodeClassMap[SQLNODE_GETPAGE_ENTRYPARAM] = {
 };
 SqlNodeClassMap[SQLNODE_GETSTEPDATA] = {
     modelClass: SqlNode_GetStepData,
+    comClass: C_Node_SimpleNode,
+};
+SqlNodeClassMap[SQLNODE_YEAR] = {
+    modelClass: SqlNode_Year,
+    comClass: C_Node_SimpleNode,
+};
+SqlNodeClassMap[SQLNODE_MONTH] = {
+    modelClass: SqlNode_Month,
+    comClass: C_Node_SimpleNode,
+};
+SqlNodeClassMap[SQLNODE_DAY] = {
+    modelClass: SqlNode_Day,
     comClass: C_Node_SimpleNode,
 };

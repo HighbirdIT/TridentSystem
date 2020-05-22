@@ -49,8 +49,8 @@ class CProject extends IAttributeable {
             name: genProjectName(),
             editingType: jsonData == null || jsonData.editingType == null ? 'MB' : jsonData.editingType,
             editingPage: {
-                mbid:jsonData == null || jsonData.lastEditingMBPageID == null ? -1 : jsonData.lastEditingMBPageID,
-                pcid:jsonData == null || jsonData.lastEditingPCPageID == null ? -1 : jsonData.lastEditingPCPageID,
+                mbid: jsonData == null || jsonData.lastEditingMBPageID == null ? -1 : jsonData.lastEditingMBPageID,
+                pcid: jsonData == null || jsonData.lastEditingPCPageID == null ? -1 : jsonData.lastEditingPCPageID,
                 id: jsonData == null ? -1 : jsonData.lastEditingPageID
             },
             description: '页面',
@@ -126,23 +126,23 @@ class CProject extends IAttributeable {
         this.logManager.log('加载完成');
     }
 
-    sortPageFun(a,b){
+    sortPageFun(a, b) {
         return a.title.localeCompare(b.title);
     }
 
-    sortUCFun(a,b){
+    sortUCFun(a, b) {
         return a.name.localeCompare(b.name);
     }
 
-    sortPCPages(){
+    sortPCPages() {
         this.content_PC.pages.sort(this.sortPageFun);
     }
 
-    sortMBPages(){
+    sortMBPages() {
         this.content_Mobile.pages.sort(this.sortPageFun);
     }
 
-    sortUC(){
+    sortUC() {
         this.userControls_arr.sort(this.sortUCFun);
     }
 
@@ -166,7 +166,7 @@ class CProject extends IAttributeable {
             }
         }
     }
-    
+
     getLayoutConfig(classAttrName, styleAttrName) {
         var rlt = new ControlLayoutConfig();
         var apdAttrList = this.getAttrArrayList(classAttrName ? classAttrName : AttrNames.LayoutNames.APDClass);
@@ -238,7 +238,7 @@ class CProject extends IAttributeable {
 
     deleteUserControl(userCtlKernel) {
         var index = this.userControls_arr.indexOf(userCtlKernel);
-        if(index == -1){
+        if (index == -1) {
             return;
         }
         var instances_arr = this.getControlsByType(UserControlKernel_Type).filter(p => {
@@ -246,14 +246,14 @@ class CProject extends IAttributeable {
         });
         var hadIntanceSelected = false;
         var selectedKernel = this.designer.getSelectedKernel();
-        instances_arr.forEach(instance=>{
-            if(instance.isAEditor()){
+        instances_arr.forEach(instance => {
+            if (instance.isAEditor()) {
                 instance.parent.setAttribute(AttrNames.EditorType, M_TextKernel_Type);
             }
-            else{
+            else {
                 instance.parent.removeChild(instance);
             }
-            if(!hadIntanceSelected && selectedKernel == instance){
+            if (!hadIntanceSelected && selectedKernel == instance) {
                 hadIntanceSelected = true;
             }
         });
@@ -263,10 +263,10 @@ class CProject extends IAttributeable {
         this.unRegisterControl(userCtlKernel);
         setTimeout(() => {
             self.emit('userControlChanged');
-            if(targetOpened){
+            if (targetOpened) {
                 self.setEditingPageById(-1);
             }
-            if(hadIntanceSelected){
+            if (hadIntanceSelected) {
                 self.designer.selectKernel(null);
             }
         }, 100);
@@ -298,7 +298,7 @@ class CProject extends IAttributeable {
         }
         var ctlType = ctlKernel.type;
         if (IsEmptyString(useID)) {
-            if(ctlType == UserControlKernel_Type){
+            if (ctlType == UserControlKernel_Type) {
                 ctlType = ctlKernel.refID == null ? 'UserControl_T' : 'UserControl';
             }
             for (var i = 0; i < 9999; ++i) {
@@ -308,8 +308,8 @@ class CProject extends IAttributeable {
                 }
             }
         }
-        else{
-            if(ctlType == UserControlKernel_Type){
+        else {
+            if (ctlType == UserControlKernel_Type) {
                 useID = useID[0].toUpperCase() + useID.substring(1, useID.length);
             }
         }
@@ -364,13 +364,13 @@ class CProject extends IAttributeable {
             var ctl = this.controlId_map[id];
             if (ctl) {
                 var hit = false;
-                if(isArray){
+                if (isArray) {
                     hit = theType.indexOf(ctl.type) != -1;
                 }
-                else{
+                else {
                     hit = ctl.type == theType;
                 }
-                if(hit){
+                if (hit) {
                     rlt_arr.push(ctl);
                 }
             }
@@ -379,7 +379,7 @@ class CProject extends IAttributeable {
     }
 
     getUserControlByUUID(uuid) {
-        return this.userControls_arr.find(t=>{
+        return this.userControls_arr.find(t => {
             return t.uuid == uuid;
         });
     }
@@ -401,7 +401,7 @@ class CProject extends IAttributeable {
         this.designeConfig.editingControl.id = -1;
         this.designeConfig.editingPage.id = pageID;
         this.attrChanged('editingPage');
-        if(thePage){
+        if (thePage) {
             this.setEditingType(!thePage.ispcPage ? 'MB' : 'PC');
         }
     }
@@ -443,7 +443,7 @@ class CProject extends IAttributeable {
             var hadItem = null;
             newTitle = (!isPC ? '手机页面_' : 'PC页面_') + i;
             if (isPC) {
-                hadItem = this.content_PC.pages.find(item => { return item.getAttribute('title') == newTitle;    });
+                hadItem = this.content_PC.pages.find(item => { return item.getAttribute('title') == newTitle; });
             }
             else {
                 hadItem = this.content_Mobile.pages.find(item => { return item.getAttribute('title') == newTitle; });
@@ -461,6 +461,16 @@ class CProject extends IAttributeable {
         }
         newPage.ispcPage = isPC;
         return newPage;
+    }
+
+    getUnUserPageID() {
+        var useID = null;
+        for (var i = 1; i < 999; ++i) {
+            useID = M_PageKernel_Type + '_' + i;
+            if (this.getPageById(useID) == null) {
+                return useID;
+            }
+        }
     }
 
     getAllPages(isPC) {
@@ -511,30 +521,30 @@ class CProject extends IAttributeable {
     setEditingType(newValue) {
         var nowValue = this.designeConfig.editingType;
         var editingPage = this.getEditingPage();
-        if(newValue == nowValue){
+        if (newValue == nowValue) {
             return;
         }
-        if(nowValue == 'PC'){
-            if(editingPage){
+        if (nowValue == 'PC') {
+            if (editingPage) {
                 this.designeConfig.editingPage.pcid = editingPage.id;
             }
         }
-        else{
-            if(editingPage){
+        else {
+            if (editingPage) {
                 this.designeConfig.editingPage.mbid = editingPage.id;
             }
         }
         this.designeConfig.editingType = newValue == 'PC' ? 'PC' : 'MB';
         var restorePage = null;
-        if(newValue == 'PC'){
+        if (newValue == 'PC') {
             restorePage = this.getPageById(this.designeConfig.editingPage.pcid);
-            if(restorePage && !restorePage.ispcPage){
+            if (restorePage && !restorePage.ispcPage) {
                 restorePage = null;
             }
         }
-        else{
+        else {
             restorePage = this.getPageById(this.designeConfig.editingPage.mbid);
-            if(restorePage && restorePage.ispcPage){
+            if (restorePage && restorePage.ispcPage) {
                 restorePage = null;
             }
         }
@@ -547,7 +557,7 @@ class CProject extends IAttributeable {
         return true;
     }
 
-    getNowEditingType(){
+    getNowEditingType() {
         return this.designeConfig.editingType;
     }
 
@@ -624,7 +634,22 @@ class CProject extends IAttributeable {
             cusObjects_arr: [],
         };
         var controlJsonProf = new AttrJsonProfile();
-        var controlJson = theKernel.getJson(controlJsonProf);
+        var controlJson = null;
+        if (theKernel.parent == null) {
+            if (theKernel.type == UserControlKernel_Type) {
+                controlJsonProf.useUserControl(theKernel);
+                controlJson = {
+                    type: UserControlKernel_Type,
+                };
+            }
+            if (theKernel.type == M_PageKernel_Type) {
+                controlJson = theKernel.getJson(controlJsonProf);
+                controlJson.ispcPage = theKernel.ispcPage;
+            }
+        }
+        else {
+            controlJson = theKernel.getJson(controlJsonProf);
+        }
         var si;
         var ctlid;
         var meetCusDS_map = {};
@@ -642,7 +667,7 @@ class CProject extends IAttributeable {
                     copyCusDS(entity, cusDS_arr, refControl_map);
                 }
             });
-            if(refControl_map){
+            if (refControl_map) {
                 for (var rcid in cusDSJsonProf.refControl_map) {
                     refControl_map[rcid] = cusDSJsonProf.refControl_map[rcid].type;
                 }
@@ -667,7 +692,7 @@ class CProject extends IAttributeable {
                     copyCusDS(entity, cusDS_arr, refControl_map);
                 }
             });
-            if(refControl_map){
+            if (refControl_map) {
                 for (var rcid in scriptJsonProf.refControl_map) {
                     refControl_map[rcid] = scriptJsonProf.refControl_map[rcid].type;
                 }
@@ -692,10 +717,10 @@ class CProject extends IAttributeable {
                 return;
             }
             var userCtlProfile = {
-                controlsID_map:{},
-                scripts_arr:[],
-                cusDS_arr:[],
-                refControlID_map:{}
+                controlsID_map: {},
+                scripts_arr: [],
+                cusDS_arr: [],
+                refControlID_map: {}
             };
             meetUserControl_map[UCKernel.id] = 1;
             var UCJsonProf = new AttrJsonProfile();
@@ -747,12 +772,24 @@ class CProject extends IAttributeable {
         var renameContrls_map = {};
         var renameCusDS_map = {};
         var useControlsID_all = {};
+        var isPastePage = false;
+        if (parentKernel == null) {
+            if (copiedData.targetControl.type == UserControlKernel_Type) {
+                copyFromThisProject = false;
+            }
+            else if (copiedData.targetControl.type == M_PageKernel_Type) {
+                isPastePage = true;
+                var newPageid = this.getUnUserPageID();
+                //renameContrls_map[copiedData.targetControl.id] = newPageid;
+            }
+        }
+
         for (ctlType in copiedData.controlsID_map) {
             copiedData.controlsID_map[ctlType].forEach(ctlID => {
                 useControlsID_all[ctlID] = 1;
             });
         }
-        copiedData.userControls_arr.forEach(UCJson=>{
+        copiedData.userControls_arr.forEach(UCJson => {
             useControlsID_all[UCJson.id] = 1;
         });
         for (var rcid in copiedData.refControlID_map) {
@@ -781,7 +818,7 @@ class CProject extends IAttributeable {
         var replaceIDChangedInJsonString = (pJsonStr) => {
             for (oldID in renameContrls_map) {
                 pJsonStr = pJsonStr.replace(new RegExp(doubleQuotesStr(oldID), 'g'), doubleQuotesStr(renameContrls_map[oldID]));
-                if(renameContrls_map[oldID].length > 0){
+                if (renameContrls_map[oldID].length > 0) {
                     pJsonStr = pJsonStr.replace(new RegExp(oldID + '_', 'g'), renameContrls_map[oldID] + '_');
                 }
             }
@@ -794,12 +831,12 @@ class CProject extends IAttributeable {
         var needPasteCusDS_arr = copiedData.cusDS_arr.concat();
         var needPasteScripts_arr = copiedData.scripts_arr.concat();
 
-        if(!copyFromThisProject){
-            copiedData.userControls_arr.forEach(userCtlProfile=>{
+        if (!copyFromThisProject) {
+            copiedData.userControls_arr.forEach(userCtlProfile => {
                 var UCJson = userCtlProfile.jsonData;
                 var hadUserControl = this.getUserControlByUUID(UCJson.uuid);
-                if(hadUserControl){
-                    if(hadUserControl.id != UCJson.id){
+                if (hadUserControl) {
+                    if (hadUserControl.id != UCJson.id) {
                         renameContrls_map[UCJson.id] = hadUserControl.id;
                     }
                     return;
@@ -841,7 +878,7 @@ class CProject extends IAttributeable {
         }
 
         var aidEntityCode_map = {};
-        this.dataMaster.BP_sql_arr.forEach(bp=>{
+        this.dataMaster.BP_sql_arr.forEach(bp => {
             aidEntityCode_map[bp.code] = 1;
         });
         if (!copyFromThisProject) {
@@ -927,19 +964,23 @@ class CProject extends IAttributeable {
         });
 
         var createdUserCtls_arr = [];
-        if(!copyFromThisProject){
-            copiedData.userControls_arr.forEach(userCtlProfile=>{
+        var userCtlCreatioinHelper;
+        var goodUserCtlJson;
+        var newUCtl
+        
+        if (!copyFromThisProject || isPastePage) {
+            copiedData.userControls_arr.forEach(userCtlProfile => {
                 var UCJson = userCtlProfile.jsonData;
                 var hadUserControl = this.getUserControlByUUID(UCJson.uuid);
-                if(!hadUserControl){
-                    var userCtlCreatioinHelper = new CtlKernelCreationHelper();
+                if (!hadUserControl) {
+                    userCtlCreatioinHelper = new CtlKernelCreationHelper();
                     userCtlCreatioinHelper.project = this;
-                    var goodUserCtlJson = JSON.parse(replaceIDChangedInJsonString(JSON.stringify(UCJson)));
-                    var newUCtl = new UserControlKernel({ project: this }, null, userCtlCreatioinHelper, goodUserCtlJson);
+                    goodUserCtlJson = JSON.parse(replaceIDChangedInJsonString(JSON.stringify(UCJson)));
+                    newUCtl = new UserControlKernel({ project: this }, null, userCtlCreatioinHelper, goodUserCtlJson);
                     this.userControls_arr.push(newUCtl);
                     createdUserCtls_arr.push({
-                        ctl:newUCtl,
-                        json:goodUserCtlJson,
+                        ctl: newUCtl,
+                        json: goodUserCtlJson,
                     });
                 }
             });
@@ -947,6 +988,19 @@ class CProject extends IAttributeable {
             createdUserCtls_arr.forEach(p => {
                 p.ctl.__restoreChildren(null, p.json);
             });
+        }
+        if (isPastePage) {
+            userCtlCreatioinHelper = new CtlKernelCreationHelper();
+            userCtlCreatioinHelper.project = this;
+            goodUserCtlJson = JSON.parse(replaceIDChangedInJsonString(JSON.stringify(copiedData.targetControl)));
+            newUCtl = new M_PageKernel(null, this, userCtlCreatioinHelper, goodUserCtlJson);
+            newUCtl.ispcPage = copiedData.targetControl.ispcPage;
+            if (copiedData.targetControl.ispcPage) {
+                this.content_PC.pages.push(newUCtl);
+            }
+            else {
+                this.content_Mobile.pages.push(newUCtl);
+            }
         }
 
         var targetCtlJsonStr = JSON.stringify(copiedData.targetControl);
@@ -957,40 +1011,71 @@ class CProject extends IAttributeable {
             console.warn('type:' + goodTargetCtlJson.type + '未找到配置数据');
             return;
         }
-        var initData = {};
-        if (targetIndex >= 0) {
-            initData.hintIndexInParent = targetIndex + 1;
-        }
-        var newCtl = new ctlConfig.kernelClass(initData, parentKernel, ctlCreatioinHelper, goodTargetCtlJson);
         var self = this;
-        setTimeout(() => {
-            self.designer.selectKernel(newCtl);
-            if(createdUserCtls_arr.length > 0){
-                self.emit('userControlChanged');
+        if (parentKernel) {
+            var initData = {};
+            if (targetIndex >= 0) {
+                initData.hintIndexInParent = targetIndex + 1;
             }
-        }, 50);
+            var newCtl = new ctlConfig.kernelClass(initData, parentKernel, ctlCreatioinHelper, goodTargetCtlJson);
+            setTimeout(() => {
+                self.designer.selectKernel(newCtl);
+                if (createdUserCtls_arr.length > 0) {
+                    self.emit('userControlChanged');
+                }
+            }, 50);
+        }
+        else {
+            setTimeout(() => {
+                if (createdUserCtls_arr.length > 0) {
+                    self.emit('userControlChanged');
+                }
+            }, 50);
+        }
+    }
+
+    cloneUserControl(target) {
+        if (target == null || target.type != UserControlKernel_Type) {
+            return;
+        }
+        var copiedData = this.copyKernel(target);
+        var targetItem = copiedData.userControls_arr.find(x => {
+            return x.jsonData.id == target.id;
+        });
+        targetItem.jsonData.uuid = guid2();
+        targetItem.jsonData.attr.name += '(复制)';
+        this.pasteKernel(copiedData, null, null);
+    }
+
+    clonePage(target) {
+        if (target == null || target.type != M_PageKernel_Type) {
+            return;
+        }
+        var copiedData = this.copyKernel(target);
+        copiedData.targetControl.attr.title += '(复制)';
+        this.pasteKernel(copiedData, null, null);
     }
 }
 
-class RestoreHelper{
+class RestoreHelper {
     constructor(dictionary) {
         this.dictionary = dictionary;
     }
 
-    queryDictionnary(key){
-        if(this.dictionary == null || typeof key != 'string' || key[0] != '$' || this.dictionary[key] == null){
+    queryDictionnary(key) {
+        if (this.dictionary == null || typeof key != 'string' || key[0] != '$' || this.dictionary[key] == null) {
             return key;
         }
         return this.dictionary[key];
     }
 
-    trasnlateJson(targetJson){
-        if(this.dictionary == null){
+    trasnlateJson(targetJson) {
+        if (this.dictionary == null) {
             return;
         }
-        for(var name in targetJson){
+        for (var name in targetJson) {
             var value = targetJson[name];
-            if(typeof value == 'string'){
+            if (typeof value == 'string') {
                 targetJson[name] = this.queryDictionnary(value);
             }
         }
@@ -1010,27 +1095,27 @@ class AttrJsonProfile {
         this.hadDictionary = hadDictionary == true;
     }
 
-    addCusObject(cusObj){
-        if(cusObj == null){
+    addCusObject(cusObj) {
+        if (cusObj == null) {
             return;
         }
-        if(this.customObjects_arr.indexOf(cusObj) == -1){
+        if (this.customObjects_arr.indexOf(cusObj) == -1) {
             this.customObjects_arr.push(cusObj);
         }
     }
 
-    addDictionnary(value){
-        if(!this.hadDictionary){
+    addDictionnary(value) {
+        if (!this.hadDictionary) {
             return value;
         }
-        if(typeof value != 'string' || value.length < 2){
+        if (typeof value != 'string' || value.length < 2) {
             return value;
         }
-        if(this.dictionary[value]){
+        if (this.dictionary[value]) {
             return this.dictionary[value];
         }
         var newKey = '$' + this.keyIndex.toString(16).toLocaleLowerCase();
-        if(newKey.length >= value.length){
+        if (newKey.length >= value.length) {
             return value;
         }
         this.dictionary[value] = newKey;
@@ -1038,10 +1123,10 @@ class AttrJsonProfile {
         return newKey;
     }
 
-    getDictionaryObj(){
+    getDictionaryObj() {
         var rlt = {};
-        if(this.hadDictionary){
-            for(var key in this.dictionary){
+        if (this.hadDictionary) {
+            for (var key in this.dictionary) {
                 rlt[this.dictionary[key]] = key;
             }
         }

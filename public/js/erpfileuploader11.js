@@ -1774,11 +1774,12 @@ var ERPC_FilePreview = function (_React$PureComponent4) {
             if (fileName.length > 15) {
                 fileName = '...' + this.props.fileName.substr(-15);
             }
+            var divClassName = 'filepreview ' + (this.props.className ? this.props.className : '');
             return React.createElement(
                 'div',
-                { className: 'filepreview' },
+                { className: divClassName, fixedsize: this.props.fixedsize, style: this.props.style },
                 contetnElem,
-                React.createElement(
+                this.props.hidetitle ? null : React.createElement(
                     'div',
                     { id: 'name' },
                     fileName

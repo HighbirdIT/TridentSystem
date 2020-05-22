@@ -1,5 +1,6 @@
 const M_AllKernel_Type = 'M_All';
 const M_LabelKernel_Type = 'M_Label';
+const M_ImageKernel_Type = 'M_Iamge';
 const M_PageKernel_Type = 'M_Page';
 const M_ContainerKernel_Type = 'M_Div';
 const M_LabeledControlKernel_Type = 'M_LC';
@@ -46,6 +47,7 @@ const PopperButtonKernel_Prefix = 'popperbutton';
 const FrameSetKernel_Prefix = 'frameset';
 const IFrameKernel_Prefix = 'iframe';
 const ChartKernel_Prefix = 'chart';
+const M_ImageKernel_Prefix = 'M_Img';
 
 function GetControlTypeReadableName(type){
     switch(type){
@@ -97,6 +99,8 @@ function GetControlTypeReadableName(type){
         return 'i框架';
         case ChartKernel_Type:
         return '图表';
+        case M_ImageKernel_Type:
+        return '图像';
     }
     return type;
 }

@@ -22,7 +22,7 @@ class LoginPanel extends React.PureComponent {
 
     logComplete(useData){
         //console.log(useData);
-        LoginUser = new Account(useData)
+        LoginUser = new Account(useData);
 
         this.setState({
             info:'获取基础配置信息',
@@ -42,10 +42,12 @@ class LoginPanel extends React.PureComponent {
             ProjectRecords_arr = respon.json.data.projects_arr;
             AllReports_arr = respon.json.data.reports_arr;
             AllExcelTemplate_arr = [{name:'无',code:0}].concat(respon.json.data.excelTemplate_arr);
+            AllPermissionGroups_arr = respon.json.data.permissionGroups_arr;
 
             while(AllFileFlows_arr.length > 0){
                 AllFileFlows_arr.pop();
             }
+            AllFileFlows_arr.push({ label: '无', code: 0 });
             respon.json.data.fileFlows_arr.forEach(t=>{
                 AllFileFlows_arr.push(t);
             });
@@ -155,15 +157,19 @@ class LoginPanel extends React.PureComponent {
         var passwordText = this.state.password;
         var info = IsEmptyString(this.state.info) ? '' : '(' + this.state.info + ')';
         return(
-            <FloatPanelbase title='登录' ref={this.panelBaseRef} initShow={true} width={320} height={150} sizeable={false} >
-                <div className='d-flex align-items-center'>
-                    <i className='fa fa-user-circle fa-2x text-light' style={{width:'40px'}}  />
+            <FloatPanelbase title='登录' ref={this.panelBaseRef} initShow={true} width={320} height={130} sizeable={false} >
+                <div className='d-flex align-items-center m-1' >
+                    <span className='d-flex justify-content-center' style={{width:'40px'}}>
+                        <i className='fa fa-user-circle fa-2x text-light' />
+                    </span>
                     <div className='flex-grow-1 flex-shrink-1'>
                         <input type='text' className='w-100' value={this.state.account} onChange={this.accountInputChangeHandler} />
                     </div>
                 </div>
-                <div className='d-flex align-items-center'>
-                    <i className='fa fa-lock fa-2x text-light' style={{width:'40px'}} />
+                <div className='d-flex align-items-center m-1'>
+                    <span className='d-flex justify-content-center' style={{width:'40px'}}>
+                        <i className='fa fa-lock fa-2x text-light' />
+                    </span>
                     <div className='flex-grow-1 flex-shrink-1'>
                         <input type='password' className='w-100' value={passwordText}  onChange={this.passwordInputChangeHandler} />
                     </div>

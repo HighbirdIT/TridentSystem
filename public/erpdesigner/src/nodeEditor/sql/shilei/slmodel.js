@@ -571,7 +571,8 @@ class SqlNode_XApply extends SqlNode_Base {
         parmetervals.forEach((x, i) => {
             entityString += (i == 0 ? '' : ',') + x;
         });
-        entityString += ' )';
+        entityString += ' )' + (IsEmptyString(this.title) ? '' : ' as [' + this.title + ']');
+
         var applyString = socketOuts_arr[0].strContent + clampStr(this.xapplyType, ' ', ' ') + entityString;
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, applyString);

@@ -590,7 +590,7 @@ var ControlKernelBase = function (_IAttributeable) {
                                     rlt.push(child.editor);
                                 }
                             }
-                            if (child.editor.type == M_ContainerKernel_Type) {
+                            if (child.editor.type == M_ContainerKernel_Type || child.editor.type == PopperButtonKernel_Type) {
                                 // 穿透div
                                 if (meetParents_map[child.editor.id] == null) {
                                     meetParents_map[child.editor.id] = 1;
@@ -742,19 +742,28 @@ var ControlLayoutConfig = function () {
         }
     }, {
         key: 'addClass',
-        value: function addClass(className, existsProcess) {
-            if (IsEmptyString(className)) {
-                return false;
-            }
-            var t_arr = g_switchClassNameReg.exec(className);
-            if (t_arr != null) {
-                var switchName = className.substr(0, className.length - t_arr[0].length);
-                var switchVal = t_arr[0].substr(1);
-                return this.addSwitchClass(switchName, switchVal, existsProcess);
-            }
+        value: function addClass(value, existsProcess) {
+            var _this4 = this;
 
-            this.class[className] = 1;
-            return true;
+            var class_arr = value.trim().split(' ');
+            var added = false;
+            class_arr.forEach(function (className) {
+                if (IsEmptyString(className)) {
+                    return;
+                }
+                var t_arr = g_switchClassNameReg.exec(className);
+                if (t_arr != null) {
+                    var switchName = className.substr(0, className.length - t_arr[0].length);
+                    var switchVal = t_arr[0].substr(1);
+                    if (_this4.addSwitchClass(switchName, switchVal, existsProcess)) {
+                        added = true;
+                    }
+                    return;
+                }
+                added = true;
+                _this4.class[className] = 1;
+            });
+            return added;
         }
     }, {
         key: 'removeClass',
@@ -791,6 +800,31 @@ var ControlLayoutConfig = function () {
         value: function hadClass(name) {
             return this.class[name] != null;
         }
+    }, {
+        key: 'hadStyle',
+        value: function hadStyle(name) {
+            return this.class[name] != null;
+        }
+    }, {
+        key: 'hadSizeSetting',
+        value: function hadSizeSetting() {
+            return this.switch['flex-grow'] != null || this.switch['flex-shrink'] != null || this.width != null || this.style.height != null || this.style.maxWidth != null || this.style.maxHeight != null;
+        }
+    }, {
+        key: 'overrideBy',
+        value: function overrideBy(taget) {
+            this.style = Object.assign(this.style, taget.style);
+            this.addClass(taget.getClassName(), 'set');
+        }
+    }, {
+        key: 'clone',
+        value: function clone() {
+            var rlt = new ControlLayoutConfig();
+            rlt.class = Object.assign({}, this.class);
+            rlt.style = Object.assign({}, this.style);
+            rlt.switch = Object.assign({}, this.switch);
+            return rlt;
+        }
     }]);
 
     return ControlLayoutConfig;
@@ -802,13 +836,13 @@ var CtlKernelCreationHelper = function (_EventEmitter) {
     function CtlKernelCreationHelper() {
         _classCallCheck(this, CtlKernelCreationHelper);
 
-        var _this4 = _possibleConstructorReturn(this, (CtlKernelCreationHelper.__proto__ || Object.getPrototypeOf(CtlKernelCreationHelper)).call(this));
+        var _this5 = _possibleConstructorReturn(this, (CtlKernelCreationHelper.__proto__ || Object.getPrototypeOf(CtlKernelCreationHelper)).call(this));
 
-        EnhanceEventEmiter(_this4);
-        _this4.orginID_map = {};
-        _this4.newID_map = {};
-        _this4.idTracer = {};
-        return _this4;
+        EnhanceEventEmiter(_this5);
+        _this5.orginID_map = {};
+        _this5.newID_map = {};
+        _this5.idTracer = {};
+        return _this5;
     }
 
     _createClass(CtlKernelCreationHelper, [{

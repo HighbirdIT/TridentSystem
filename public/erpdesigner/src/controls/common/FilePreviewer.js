@@ -6,6 +6,7 @@ const FilePreviewer_TypeAttrsSetting = GenControlKernelAttrsSetting([
         genColumnFieldAttribute('文件路径', 'filePath', ''),
         genColumnFieldAttribute('文件名称', 'fileName', ''),
         new CAttribute('可否删除', 'deletable', ValueType.Boolean, false),
+        new CAttribute('显示名称', 'showtitle', ValueType.Boolean, true),
     ]),
 ]);
 
@@ -62,9 +63,8 @@ class CFilepreviewer extends React.PureComponent {
         }
         layoutConfig.addClass('filepreviewer');
         layoutConfig.addClass('hb-control');
-
         return (
-           <div className={layoutConfig.getClassName()} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null}>
+           <div className={layoutConfig.getClassName()} style={layoutConfig.style} onClick={this.props.onClick} ctlid={this.props.ctlKernel.id} ref={this.rootElemRef} ctlselected={this.state.selected ? '1' : null} autosize={layoutConfig.hadSizeSetting() ? 1 : 0}>
                 {this.renderHandleBar()}
                 <div>文件预览器</div>
             </div>

@@ -22,6 +22,8 @@ const UserControlKernelTempleAttrsSetting = GenControlKernelAttrsSetting([
 
 const UserControlKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置', [
+        new CAttribute('实例Style', 'Ins' + AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
+        new CAttribute('实例Class', 'Ins' + AttrNames.LayoutNames.APDClass, ValueType.String, '', true, true),
         genIsdisplayAttribute(),
         new CAttribute('默认可见', AttrNames.DefaultVisible, ValueType.Boolean, true),
         new CAttribute('临时高度', 'designheight', ValueType.Int, 0),
@@ -33,6 +35,9 @@ const UserControlKernelAttrsSetting = GenControlKernelAttrsSetting([
     ]),
     new CAttributeGroup('原生事件',[
         new CAttribute('OnMDown', AttrNames.Event.OnMouseDown, ValueType.Event),
+    ]),
+    new CAttributeGroup('侦听器',[
+        new CAttribute('属性侦听器', AttrNames.InsAttrHook, ValueType.AttrHook, null, true, true),
     ]),
 ], true, false);
 
@@ -98,6 +103,10 @@ class UserControlKernel extends ContainerKernelBase {
             else {
                 this.attrsSettingID = parentKernel.project.designeConfig.name + '_' + this.refID;
             }
+            this.getAttrArrayList(AttrNames.InsAttrHook).forEach(insAtrrHook=>{
+                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + insAtrrHook.name);
+                this.scriptCreated(null, theBP);
+            });
         }
         var self = this;
         autoBind(self);
@@ -118,6 +127,9 @@ class UserControlKernel extends ContainerKernelBase {
         }
         else if(scriptBP.name.indexOf(AttrNames.AttrChecker) != -1){
             scriptBP.setFixParam(['comeState', this.id + '_path', VarNames.NeedSetState]);
+        }
+        else if(scriptBP.name.indexOf(AttrNames.InsAttrHook) != -1){
+            scriptBP.setFixParam([this.id + '_path', 'rowKeyInfo_map']);
         }
     }
 
@@ -202,6 +214,7 @@ class UserControlKernel extends ContainerKernelBase {
     }
 
     __attributeChanged(attrName, oldValue, value, realAtrrName, indexInArray) {
+        super.__attributeChanged(attrName, oldValue, value, realAtrrName, indexInArray);
         if (attrName == AttrNames.ParamApi || attrName == AttrNames.EventApi) {
             this.synControlAttrs();
         }
@@ -331,6 +344,10 @@ class UserControlKernel extends ContainerKernelBase {
         var rlt = super.getLayoutConfig();
         return rlt;
     }
+    
+    getInsLayoutConfig(){
+        return super.getLayoutConfig('Ins' + AttrNames.LayoutNames.APDClass, 'Ins' + AttrNames.LayoutNames.StyleAttr);
+    }
 
     isTemplate() {
         return this.getAttribute('refID') == 'none';
@@ -366,7 +383,8 @@ class UserControlKernel extends ContainerKernelBase {
         if(template == this){
             return this.id;
         }
-        return this.id + '[' + template.getAttribute(AttrNames.Name) + ']';
+        var insName = this.getAttribute(AttrNames.Name);
+        return this.id + '[' + (IsEmptyString(insName) ? template.getAttribute(AttrNames.Name) : insName) + ']';
     }
 }
 
@@ -406,13 +424,15 @@ class CUserControl extends React.PureComponent {
                 AttrNames.Orientation,
                 AttrNames.Chidlren,
                 AttrNames.LayoutNames.APDClass,
-                AttrNames.LayoutNames.StyleAttr,
+                AttrNames.LayoutNames.StyleAttr
             ]);
         }
         else {
             M_ControlBase(this, [
                 AttrNames.Name,
                 'designheight',
+                'Ins' + AttrNames.LayoutNames.APDClass,
+                'Ins' + AttrNames.LayoutNames.StyleAttr,
             ]);
             initState.designheight = ctlKernel.getAttribute('designheight');
         }
@@ -501,6 +521,8 @@ class CUserControl extends React.PureComponent {
             containerClassName += ' flex-column';
         }
         layoutConfig.addClass('d-flex');
+        var insLayoutConfig = ctlKernel.getInsLayoutConfig();
+        layoutConfig.overrideBy(insLayoutConfig);
 
         var designheight = this.state.designheight;
         var containerStyle;

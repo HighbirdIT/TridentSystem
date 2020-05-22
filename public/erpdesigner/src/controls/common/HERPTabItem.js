@@ -4,6 +4,7 @@ const HERPTabItemKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_H, true, false, Orientation_Options_arr),
         new CAttribute('图标类型', AttrNames.IconType, ValueType.String, ''),
         new CAttribute('有滚动条', AttrNames.AutoHeight, ValueType.Boolean, true),
+        new CAttribute('不可见处理', AttrNames.InvisibleAct, ValueType.String, EInvisibleAct.Default, true, false, EInvisibleActs_arr),
     ]),
 ]);
 

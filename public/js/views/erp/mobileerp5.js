@@ -306,18 +306,6 @@ var MainApp = function (_React$PureComponent3) {
                 React.createElement(C_ModelTip, { ref: modelTipRef }),
                 React.createElement(
                     'div',
-                    { className: 'd-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader' },
-                    '\u6D77\u52C3ERP',
-                    React.createElement('div', { className: 'flex-grow-1 flex-shrink-1' }),
-                    React.createElement(
-                        'div',
-                        { className: 'd-flex flex-shrink-0 align-items-center' },
-                        React.createElement('i', { className: 'fa fa-user-o' }),
-                        this.state.username
-                    )
-                ),
-                React.createElement(
-                    'div',
                     { className: 'd-flex flex-column flex-grow-1 flex-shrink-1' },
                     this.renderContent()
                 )
@@ -327,11 +315,5 @@ var MainApp = function (_React$PureComponent3) {
 
     return MainApp;
 }(React.PureComponent);
-
-/*
-setTimeout(() => {
-    throw Error('dsf');
-}, 50);
-*/
 
 ReactDOM.render(React.createElement(MainApp, { ref: mainAppRef }), document.getElementById('reactRoot'));

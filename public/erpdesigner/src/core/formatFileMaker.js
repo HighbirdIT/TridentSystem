@@ -562,9 +562,9 @@ class JSFile_Switch extends FormatFileBlock{
         return rlt;
     }
 
-    getCaseBlock(caseVal){
+    getCaseBlock(caseVal, autoCreate = true){
         var rlt = this.caseBloks_map[caseVal];
-        if(rlt == null){
+        if(rlt == null && autoCreate){
             rlt = new FormatFileBlock(caseVal);
             this.caseBloks_map[caseVal] = rlt;
             rlt.parent = this;
@@ -574,7 +574,7 @@ class JSFile_Switch extends FormatFileBlock{
 
     getString(prefixStr, indentChar, newLineChar){
         var indentString = this.getIndentString(indentChar);
-        var rlt = prefixStr + 'switch(' + this.flagName + '){' + newLineChar;
+        var rlt = prefixStr + indentChar + 'switch(' + this.flagName + '){' + newLineChar;
 
         for(var si in this.caseBloks_map){
             rlt += prefixStr + indentChar + 'case ' + si + ':{' + newLineChar;
@@ -588,7 +588,7 @@ class JSFile_Switch extends FormatFileBlock{
             rlt += this.defaultBlock.getString(prefixStr + indentChar, indentChar, newLineChar);
             rlt += prefixStr + indentChar + 'break;}' + newLineChar;
         }
-        rlt += prefixStr + '}';
+        rlt += prefixStr + indentChar + '}';
 
         return rlt;
     }
@@ -1000,6 +1000,7 @@ class CP_ServerSide extends JSFileMaker{
         this.projectCompiler = projectCompiler;
         this.fileName = projectCompiler.projectName + '_server';
         this.project = projectCompiler.project;
+        this.importModels = {};
 
         this.importBlock.pushLine("const dbhelper = require('../../../../dbhelper.js');");
         this.importBlock.pushLine("const serverhelper = require('../../../../erpserverhelper.js');");
@@ -1013,11 +1014,19 @@ class CP_ServerSide extends JSFileMaker{
         this.processFun.pushLine('serverhelper.commonProcess(req, res, next, processes_map);');
         this.pageLoadedFun = this.scope.getFunction('pageloaded', true, ['req', 'res'], 'cofun');
         this.pageLoadedFun.pushLine('var rlt = {};');
+        this.permissionCheckFun = this.scope.getFunction('pagePermissionCheck', true, ['req', 'res', 'next']);
 
         this.processesMapVar = this.scope.getVar('processes_map', true);
         this.processesMapVarInitVal = {
             pageloaded:'pageloaded',
         };
+    }
+
+    appendImport(name, path){
+        if(this.importModels[name] == null){
+            this.importModels[name] = 1;
+            this.importBlock.pushLine("const " + name + " = require('" + path + "');");
+        }
     }
 
     compile(){
@@ -1031,13 +1040,51 @@ class CP_ServerSide extends JSFileMaker{
         this.pageLoadedFun.pushLine('return rlt;');
     }
 
-    initProcessFun(theFun){
+    initProcessFun(theFun, theKernel, bAccessCheck){
         if(theFun.inited){
             return;
         }
         theFun.headBlock.pushLine('var g_envVar = req.session.g_envVar;');
         theFun.headBlock.pushLine("return co(function* () {");
         theFun.bodyBlock.addNextIndent();
+        if(bAccessCheck && theKernel){
+            var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
+            var belongPage = theKernel.searchParentKernel(M_PageKernel_Type, true);
+            var groups_arr;
+            if(belongPage){
+                groups_arr = belongPage.getAttrArrayList(AttrNames.PermissionGroup).map(attr=>{
+                    return belongPage.getAttribute(attr.name);
+                });
+                theFun.bodyBlock.pushLine('var permissiongroup_arr = [' + groups_arr.join(',') +  '];');
+            }
+            else if(this.projectCompiler.getMidData){
+                var templateKernelMidData = this.projectCompiler.getMidData(belongUserControl == null ? theKernel.id : belongUserControl.getTemplateKernel().id);
+                if(templateKernelMidData.needCheckAccessFuns_arr == null){
+                    templateKernelMidData.needCheckAccessFuns_arr = [];
+                }
+                templateKernelMidData.needCheckAccessFuns_arr.push(theFun);
+
+                theFun.bodyBlock.pushLine('var permissiongroup_arr=[];');
+                var pageSwitch = new JSFile_Switch('switch', 'req.body.pageid');
+                pageSwitch.defaultBlock.pushLine("return serverhelper.createErrorRet('错误的访问来源',0,null)");
+                theFun.bodyBlock.pushChild(pageSwitch);
+                theFun.addPageCheck = (page)=>{
+                    groups_arr = page.getAttrArrayList(AttrNames.PermissionGroup).map(attr=>{
+                        return page.getAttribute(attr.name);
+                    });
+                    var caseBLK = pageSwitch.getCaseBlock(singleQuotesStr(page.id), false);
+                    if(caseBLK == null){
+                        caseBLK = pageSwitch.getCaseBlock(singleQuotesStr(page.id), true);
+                        caseBLK.pushLine("permissiongroup_arr=[" + groups_arr.join(',') +  '];');
+                    }
+                };
+                if(theKernel.type == M_PageKernel_Type){
+                    theFun.addPageCheck(theKernel);
+                }
+            }
+            theFun.bodyBlock.pushLine('var bCanAccess = yield serverhelper.CheckPermission(req, ' + (this.projectCompiler.projProfile ? this.projectCompiler.projProfile.code : 'null') +', permissiongroup_arr);');
+            theFun.bodyBlock.pushLine("if(!bCanAccess){return serverhelper.createErrorRet('未授权的访问',0,null);}");
+        }
         theFun.retBlock.pushLine("});");
         theFun.inited = true;
         theFun.scope.isServerSide = true;
@@ -1068,7 +1115,7 @@ class CP_ClientSide extends JSFileMaker{
         this.appClass = this.getReactClass('App', true);
         this.reducers_map = {};
 
-        this.appClass.constructorFun.pushLine("this.renderLoadingTip = baseRenderLoadingTip.bind(this)");
+        this.appClass.constructorFun.pushLine("this.renderLoadingTip = baseRenderLoadingTip.bind(this);");
 
         this.appReducerSettingVar = this.scope.getVar('appReducerSetting', true);
         this.appReducerVar = this.scope.getVar('appReducer', true, 'createReducer(appInitState, Object.assign(baseReducerSetting,appReducerSetting))');

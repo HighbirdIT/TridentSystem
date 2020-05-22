@@ -848,16 +848,24 @@ var AttributeGroup = function (_React$PureComponent2) {
             var _this4 = this;
 
             var self = this;
+            var attrGroup = this.props.attrGroup;
             if (this.state.target != this.props.target) {
+                var newState = {
+                    target: this.props.target
+                };
+                attrGroup.attrs_arr.map(function (attr) {
+                    if (attr.isArray) {
+                        var attrArrayItem_arr = _this4.props.target.getAttrArrayList(attr.name);
+                        newState[attr.name + 'count'] = attrArrayItem_arr.length;
+                    }
+                });
+
                 setTimeout(function () {
-                    self.setState({
-                        target: _this4.props.target
-                    });
+                    self.setState(newState);
                 }, 1);
                 return null;
             }
             var projectName = this.props.projectName;
-            var attrGroup = this.props.attrGroup;
             var attrGroupIndex = this.props.attrGroupIndex;
             if (this.state.target[attrGroup.label + '_visible'] == false) {
                 return null;

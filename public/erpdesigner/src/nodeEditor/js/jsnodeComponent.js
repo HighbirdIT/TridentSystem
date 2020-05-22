@@ -135,7 +135,7 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
     getFormDS() {
         var nodeData = this.props.nodedata;
         var formKernel = nodeData.bluePrint.master.project.getControlById(nodeData.formID);
-        return formKernel == null ? null : formKernel.getAttribute(AttrNames.DataSource);
+        return formKernel == null ? null : formKernel.getCanuseColumns();
     }
 
     customSocketRender(socket) {
@@ -147,9 +147,9 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
             return null;
         }
 
-        var entity = this.getFormDS();
+        var columns_arr = this.getFormDS();
         var nowVal = socket.getExtra('colName');
-        return (<span className='d-flex align-items-center'><DropDownControl itemChanged={this.socketColumnSelectChanged} btnclass='btn-dark' options_arr={entity == null ? [] : entity.columns} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} socket={socket} textAttrName='name' />
+        return (<span className='d-flex align-items-center'><DropDownControl itemChanged={this.socketColumnSelectChanged} btnclass='btn-dark' options_arr={columns_arr == null ? [] : columns_arr} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} socket={socket} textAttrName='name' />
             <button onMouseDown={this.mouseDownOutSocketHand} d-colname={nowVal} type='button' className='btn btn-secondary'><i className='fa fa-hand-paper-o' /></button>
         </span>);
     }
@@ -164,13 +164,10 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
             return;
         }
         var nodeData = this.props.nodedata;
-        var entity = this.getFormDS();
-        if (entity == null) {
-            return;
-        }
+        var columns_arr = this.getFormDS();
         var theSocket = nodeData.bluePrint.getSocketById(socketid);
         var bornPos = theSocket.currentComponent.getCenterPos();
-        if (entity.containColumn(colName)) {
+        if (columns_arr.indexOf(colName) != -1) {
             var newNode = new FlowNode_ColumnVar({
                 keySocketID: socketid,
                 newborn: true,
@@ -695,9 +692,19 @@ class C_JSNode_FreshForm extends React.PureComponent {
         });
     }
 
+    clickHoldScrollChecker(ev) {
+        var nodeData = this.props.nodedata;
+        var holdScroll = nodeData.holdScroll == null ? false : nodeData.holdScroll;
+        nodeData.holdScroll = !holdScroll;
+        this.setState({
+            magicObj: {}
+        });
+    }
+
     render() {
         var nodeData = this.props.nodedata;
         var holdSelected = nodeData.holdSelected == null ? false : nodeData.holdSelected;
+        var holdScroll = nodeData.holdScroll == null ? false : nodeData.holdScroll;
         var theProject = nodeData.bluePrint.master.project;
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={'刷新表单'} >
             <div className='flex-grow-1 flex-shrink-1'>
@@ -707,6 +714,13 @@ class C_JSNode_FreshForm extends React.PureComponent {
                         <i className={'fa fa-stack-1x ' + (holdSelected ? ' fa-check text-success' : ' fa-close text-danger')} />
                     </span>
                     保持选中值
+                </div>
+                <div className='bg-light'>
+                    <span className='fa-stack fa-lg' onClick={this.clickHoldScrollChecker}>
+                        <i className={"fa fa-square-o fa-stack-2x"} />
+                        <i className={'fa fa-stack-1x ' + (holdScroll ? ' fa-check text-success' : ' fa-close text-danger')} />
+                    </span>
+                    保持滚动条
                 </div>
             </div>
             <div className='d-flex'>

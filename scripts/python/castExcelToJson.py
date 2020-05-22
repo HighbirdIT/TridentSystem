@@ -7,7 +7,7 @@ import sys
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 argv = sys.argv
-#argv=['',r'D:\work\TridentSystem\filedata\tempexcel\4b2dafcc-6656-ad51-baf5-82f430474c89.xlsx',r'D:\work\TridentSystem\filedata\tempexcel\4b2dafcc-6656-ad51-baf5-82f430474c89.json']
+#argv=['',r'D:\work\TridentSystem\public\filehouse\2020_5\EB5D6D85-430D-404F-8836-9FF3D1FCE0EC.xlsx',r'D:\work\TridentSystem\filedata\longprocess\0a90161c-2af0-1935-5e96-af63888ff7b2_t.json']
 filepath = argv[1]
 jsonPath = argv[2]
 
@@ -25,7 +25,7 @@ for column in table:
         if len(rows_arr) <= rowi:
             rows_arr.append({})
         row=rows_arr[rowi]
-        row[column]=str(table[column][rowi])
+        row[column]=str(table[column][rowi] if str(table[column][rowi]) != 'nan' else '')
     headers_arr.append(column)
 rlt_json['headers'] = headers_arr
 rlt_json['rows'] = rows_arr

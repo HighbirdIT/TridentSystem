@@ -574,6 +574,11 @@ body{
     cursor: pointer;
 }
 
+.filepreview[fixedsize='0']{
+    width: initial;
+    height: initial;
+}
+
 .filepreview>i{
     font-size: 6.5em;
     position: absolute;

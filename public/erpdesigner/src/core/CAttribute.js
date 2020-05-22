@@ -168,6 +168,22 @@ function makeLine_FetchPropValue(actStr, baseStr, idStr, propStr, paramObj, isMo
     return "store.dispatch(fetchJsonPost(" + url + ", " + JsObjectToString(paramObj) + ", makeFTD_Prop(" + baseStr + "," + idStr + ',' + propStr + ',' + isModel + "), EFetchKey.FetchPropValue));";
 }
 
+function makeLine_FetchFTDCallBack(theKernel, actStr, bundleVarName, dataVarName, errVarName){
+    var pageid = 'unknow';
+    if(theKernel)
+    {
+        var belongPageKernel = theKernel.type == M_PageKernel_Type ? theKernel : theKernel.searchParentKernel(M_PageKernel_Type, true);
+        if(belongPageKernel){
+            pageid = singleQuotesStr(belongPageKernel.id);
+        }
+        else{
+            var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
+            pageid = (belongUserControl == null ? theKernel.id : belongUserControl.id) + "_path.split('.')[0]";
+        }
+    }
+    return "store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + actStr + "',pageid:" + pageid + "}, makeFTD_Callback((state, " + dataVarName + ", " + errVarName + ")=>{";
+}
+
 function makeLine_Return(retStr){
     return 'return ' + retStr + ';';
 }
@@ -240,6 +256,7 @@ const VarNames={
     SelectedColumns:'selectedColumns',
     BaseBunlde:'baseBundle',
     HoldSelected:'holdSelected',
+    HoldScroll:'holdScroll',
     Userctlpath:'userctlpath',
     OldValue:'oldValue',
     SatePath:'statePath',
@@ -297,6 +314,7 @@ const AttrNames={
     FetchErrAct:'fetchErrAct',
     MultiSelect:'multiselect',
     RelFlowStep:'relflowstep',
+    PermissionGroup:'permissiongroup',
     GenNavBar:'gennavbar',
     StableData:'stableData',
     RecEditeable:'recEditeable',
@@ -341,6 +359,7 @@ const AttrNames={
     InsertBtnLabel:'insertbtnlabel',
     KeyRecrodID:'keyrecordid',
     AttachmentID:'attachmentid',
+    FileIdentity:'fileidentity',
     ModifyContent:'modifycontent',
     ToolTip:'toolTip',
     Growable:'growable',
@@ -357,6 +376,7 @@ const AttrNames={
     InvisibleAct: 'invisibleact',
     AwaysEditable: 'awayseditable',
     AttrHook: 'attrhook',
+    InsAttrHook: 'insattr_hook',
     AttrChecker: 'attrchecker',
     RowText: 'rowtext',
     AppandColumn:'appandColumn',

@@ -47,6 +47,7 @@ const JSNODE_STRING_LENGTH = 'stringlength';
 const JSNODE_STRING_SUBSTRING = 'stringsubstring';
 const JSNODE_STRING_SUBSTR = 'stringsubstr';
 const JSNODE_STRING_INDEXOF = 'stringindexOf';
+const JSNODE_STRING_SPLIT = 'stringsplit';
 const JSNODE_ISEMPTYSTRING = 'isemptystring';
 const JSNODE_ISEMPTYARRAY = 'isemptyarray';
 
@@ -623,11 +624,8 @@ class JSNode_BluePrint extends EventEmitter {
             theJson.nodes_arr = nodeJson_arr;
         }
         theJson.links_arr = this.linkPool.getJson(jsonProf);
-
-
         return theJson;
     }
-
 
     compile(compilHelper) {
         var ctlKernel = this.master.project.getControlById(this.ctlID);
@@ -688,6 +686,7 @@ class JSNode_BluePrint extends EventEmitter {
         var isAttrCheckFun = false;
         var isGetXmlRowFun = false;
         var isGetJsonRowFun = false;
+        var isInsAttrHookFun = false;
         if (this.group == EJsBluePrintFunGroup.CtlEvent) {
             isOnclickFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnClick;
             isOnchangedFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnChanged;
@@ -698,6 +697,7 @@ class JSNode_BluePrint extends EventEmitter {
 
             isUserControlInitFun = ctlKernel.type == UserControlKernel_Type && this.name == ctlKernel.id + '_' + AttrNames.Event.OnInit;
             isAttrHookFun = this.name.indexOf(ctlKernel.id + '_' + AttrNames.AttrHook) != -1;
+            isInsAttrHookFun = this.name.indexOf(ctlKernel.id + '_' + AttrNames.InsAttrHook) != -1;
         }
         if (ctlKernel) {
             isGetXmlRowFun = this.name == ctlKernel.id + '_' + AttrNames.Function.GetXMLRowItem;
@@ -714,6 +714,7 @@ class JSNode_BluePrint extends EventEmitter {
         this.isAttrCheckFun = isAttrCheckFun;
         this.isGetXmlRowFun = isGetXmlRowFun;
         this.isGetJsonRowFun = isGetJsonRowFun;
+        this.isInsAttrHookFun = isInsAttrHookFun;
 
         if (nomsgbox == null) {
             nomsgbox = !(isOnclickFun || isOnmouseDownFun || this.group == EJsBluePrintFunGroup.GridRowBtnHandler); // 默认只有click和mouseDown才有对话框
@@ -849,7 +850,7 @@ class JSNode_BluePrint extends EventEmitter {
                         theFun.scope.getVar(ctlKernel.id + '_path', true, 'fullPath');
                     }
                 }
-                else if (ctlKernel.type == MFileUploader_Type) {
+                else if (ctlKernel.type == MFileUploader_Type || ctlKernel.type == SingleFileUploader_Type) {
                     if (
                         this.name == ctlKernel.id + '_' + AttrNames.Event.OnUploadComplete
                     ) {
@@ -867,11 +868,14 @@ class JSNode_BluePrint extends EventEmitter {
                     }
                 }
                 else if (ctlKernel.type == UserControlKernel_Type) {
-                    if (!isNavieFun && !isUserControlInitFun && !isAttrHookFun && !isAttrCheckFun) {
+                    if (!isNavieFun && !isUserControlInitFun && !isAttrHookFun && !isAttrCheckFun && !isInsAttrHookFun) {
                         theFun.scope.getVar(ctlKernel.id + '_path', true, "getBelongUserCtlPath(_path)");
                         orginParams_arr.forEach(p => {
                             theFun.scope.getVar(p, true, "_params." + p);
                         });
+                    }
+                    if(isInsAttrHookFun){
+                        theFun.scope.getVar(VarNames.State, true, 'store.getState()');
                     }
                     if (isUserControlInitFun) {
                         theFun.scope.getVar(ctlKernel.id + '_state', true, VarNames.State);
@@ -2277,6 +2281,12 @@ class JSNode_Compare extends JSNode_Base {
                 socketVal2 = tValue;
             }
         }
+        if(socketVal1 == "'null'"){
+            socketVal1 = 'null';
+        }
+        if(socketVal2 == "'null'"){
+            socketVal2 = 'null';
+        }
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, socketVal1 + this.operator + socketVal2);
         helper.setCompileRetCache(this, selfCompileRet);
@@ -2879,11 +2889,11 @@ class JSNode_CurrentDataRow extends JSNode_Base {
             belongBlock.pushChild(clientForEachBlock);
             selfCompileRet.setSocketOut(this.inFlowSocket, '', clientForEachBlock);
         }
+        var canUserColumns_arr = formKernel.getCanuseColumns();
         for (var si in this.outputScokets_arr) {
             var outSocket = this.outputScokets_arr[si];
             var colName = outSocket.getExtra('colName');
-            var columnItem = theDS.columns.find(x => { return x.name == colName; });
-            if (columnItem == null) {
+            if (canUserColumns_arr.indexOf(colName) == -1) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
                     thisNodeTitle,
                     nodeThis,
@@ -3526,7 +3536,7 @@ class JSNODE_Insert_table extends JSNode_Base {
         if (!blockInServer) {
             serverClickFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
             serverFun = serverClickFun;
-            theServerSide.initProcessFun(serverClickFun);
+            theServerSide.initProcessFun(serverClickFun, this.bluePrint.ctlKernel, true);
             helper.appendOutputItem(serverClickFun);
 
             postCheckBlock.pushChild(postVarinitBlock);
@@ -3740,7 +3750,7 @@ class JSNODE_Insert_table extends JSNode_Base {
         if (inreducer) {
             myJSBlock.pushLine('setTimeout(() => {', 1);
         }
-        myJSBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + (serverClickFun ? serverClickFun.name : 'unknown') + "',}, makeFTD_Callback((state, " + dataVarName + ", " + errorVarName + ")=>{", 1);
+        myJSBlock.pushLine(makeLine_FetchFTDCallBack(this.bluePrint.ctlKernel, serverClickFun ? serverClickFun.name : 'unknown', bundleVarName, dataVarName, errorVarName), 1);
         var fetchEndBlock = new FormatFileBlock('fetchend');
         myJSBlock.pushChild(fetchEndBlock);
         var errCheckIf = new JSFile_IF('checkerr', errorVarName + ' == null');
@@ -4022,8 +4032,8 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
             }
 
             useApiItem = Object.assign({}, useApiItem, {
-                stateName: VarNames.SelectedColumns,
-                useAttrName: VarNames.SelectedColumns,
+                stateName: VarNames.SelectedColumns + '_' + colname,
+                useAttrName: VarNames.SelectedColumns + '_' + colname,
                 colname: colname,
                 relyStateName: VarNames.SelectedValues_arr,
             });
@@ -4327,7 +4337,7 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
             else {
                 setPropName = this.apiItem.stateName;
             }
-            if (!this.isDropdownReset) {
+            if (this.isDropdownReset) {
                 selectedKernel.getAppandColumns().concat(['text', 'value']).forEach(stateName => {
                     myJSBlock.pushLine(traversalFromNode.id + '_' + VarNames.NeedSetState + "[" + traversalFromNode.id + '_rowpath + ' + singleQuotesStr('.' + selectedKernel.getStatePath(stateName, '.', null, false, traversalFromNode.formKernel)) + "]=null;", -1);
                 });
@@ -4723,7 +4733,9 @@ class JSNode_DateFun extends JSNode_Base {
             for (nodeI = preNodes_arr.length - 1; nodeI > 0; --nodeI) {
                 var temNode = preNodes_arr[nodeI];
                 if (temNode.inFlowSocket) {
-                    blockInServer = temNode.hadFetchFun;
+                    if(temNode.type != JSNODE_EXPORTEXCEL){
+                        blockInServer = temNode.hadFetchFun;
+                    }
                     break;
                 }
             }
@@ -4841,10 +4853,10 @@ class JSNode_Env_Var extends JSNode_Base {
             var nodeI = 0;
             for (nodeI = preNodes_arr.length - 1; nodeI > 0; --nodeI) {
                 var temNode = preNodes_arr[nodeI];
-                if (temNode.inFlowSocket) {
+                if(temNode.type != JSNODE_EXPORTEXCEL){
                     blockInServer = temNode.hadFetchFun;
-                    break;
                 }
+                break;
             }
         }
 
@@ -5437,7 +5449,7 @@ class JSNode_Query_Sql extends JSNode_Base {
             var queryFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
             serverFun = queryFun;
             helper.appendOutputItem(queryFun);
-            theServerSide.initProcessFun(queryFun);
+            theServerSide.initProcessFun(queryFun, this.bluePrint.ctlKernel, true);
             queryFun.pushLine("if(" + postBundleVarName + "==null){return serverhelper.createErrorRet('缺少参数bundle');}");
             bundleCheckBlock.pushChild(postVarinitBlock);
             queryFun.bundleCheckBlock = bundleCheckBlock;
@@ -5602,7 +5614,7 @@ class JSNode_Query_Sql extends JSNode_Base {
         if (this.bluePrint.group != EJsBluePrintFunGroup.Custom) {
             myJSBlock.pushLine("if(fetchTracer[" + VarNames.FetchKey + "] != fetchid) return;");
         }
-        myJSBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + serverSideActName + "',}, makeFTD_Callback((state, " + dataVarName + ", " + errVarName + ")=>{", 1);
+        myJSBlock.pushLine(makeLine_FetchFTDCallBack(this.bluePrint.ctlKernel, serverSideActName, bundleVarName, dataVarName, errVarName), 1);
         var fetchEndBlock = new FormatFileBlock('fetchend');
         myJSBlock.pushChild(fetchEndBlock);
         if (this.bluePrint.group == EJsBluePrintFunGroup.Custom) {
@@ -5739,6 +5751,10 @@ class JSNode_CallOnFetchEnd extends JSNode_Base {
             this.addSocket(this.inErrorSocket);
         }
         this.inErrorSocket.label = '错误';
+        this.inErrorSocket.inputable = true;
+        if(this.inDataSocket){
+            this.inDataSocket.inputable = true;
+        }
 
         if (this.bluePrint.group == EJsBluePrintFunGroup.Custom) {
             this.synInSocket();
@@ -6113,16 +6129,20 @@ class JSNode_FreshForm extends JSNode_Base {
         if(this.holdSelected == null){
             this.holdSelected = true;
         }
+        if(this.holdScroll == null){
+            this.holdScroll = true;
+        }
     }
 
     requestSaveAttrs() {
         var rlt = super.requestSaveAttrs();
         rlt.holdSelected = this.holdSelected;
+        rlt.holdScroll = this.holdScroll;
         return rlt;
     }
 
     restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['holdSelected']);
+        assginObjByProperties(this, attrsJson, ['holdSelected','holdScroll']);
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -6188,13 +6208,14 @@ class JSNode_FreshForm extends JSNode_Base {
         var freshFunName = 'fresh_' + socketValue;
 
         var holdSelected = this.holdSelected == true ? 'true' : 'false';
+        var holdScroll = this.holdScroll == true ? 'true' : 'false';
         var myJSBlock = new FormatFileBlock('ret');
         if (formDS != null) {
             freshFunName = makeFName_pull(selectedKernel);
-            myJSBlock.pushLine('setTimeout(() => {' + makeStr_callFun(freshFunName, ['null', holdSelected, parentPath]) + ';},50);');
+            myJSBlock.pushLine('setTimeout(() => {' + makeStr_callFun(freshFunName, ['null', holdSelected, parentPath,holdScroll]) + ';},50);');
         }
         else {
-            myJSBlock.pushLine(makeStr_callFun(freshFunName, ['state', 'null', 'null', parentPath + "+'." + socketValue + "'"]));
+            myJSBlock.pushLine(makeStr_callFun(freshFunName, ['state', 'null', 'null', parentPath + "+'." + socketValue + "'", holdScroll]));
         }
         belongBlock.pushChild(myJSBlock);
 
@@ -6425,7 +6446,7 @@ class JSNode_Do_FlowStep extends JSNode_Base {
 
         if (!blockInServer) {
             var serverSideFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
-            theServerSide.initProcessFun(serverSideFun);
+            theServerSide.initProcessFun(serverSideFun, this.bluePrint.ctlKernel, true);
             helper.appendOutputItem(serverSideFun);
 
             serverSideFun.scope.getVar(postBundleVarName, true, "req.body." + VarNames.Bundle);
@@ -6520,7 +6541,7 @@ class JSNode_Do_FlowStep extends JSNode_Base {
             }
             var dataVarName = 'data_' + this.id;
             var errVarName = 'error_' + this.id;
-            myClientBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + serverSideActName + "',}, makeFTD_Callback((state, " + dataVarName + ", " + errVarName + ")=>{", 1);
+            myClientBlock.pushLine(makeLine_FetchFTDCallBack(this.bluePrint.ctlKernel, serverSideActName, bundleVarName, dataVarName, errVarName), 1);
             fetchEndBlock = new FormatFileBlock('fetchend');
             if (this.bluePrint.group == EJsBluePrintFunGroup.Custom) {
                 fetchEndBlock.pushLine('if(' + errVarName + '){return _callback(null,' + errVarName + ');}');
@@ -6553,7 +6574,7 @@ class JSNode_Do_FlowStep extends JSNode_Base {
             selfCompileRet.setSocketOut(this.inFlowSocket, '', myClientBlock);
             fetchEndBlock.pushLine('if(' + errVarName + '){callback_final(state, null,' + errVarName + ');}');
             if (clientFlow_links.length > 0) {
-                if (this.compileFlowNode(clientFlow_links[0], helper, usePreNodes_arr, fetchEndBlock)) {
+                if (this.compileFlowNode(clientFlow_links[0], helper, usePreNodes_arr, fetchEndBlock) == false) {
                     return false;
                 }
             }
@@ -6561,7 +6582,7 @@ class JSNode_Do_FlowStep extends JSNode_Base {
                 fetchEndBlock.pushLine('return callback_final(state, null,' + errVarName + ');');
             }
             if (serverFlow_links.length > 0) {
-                if (this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, tryBlock.bodyBlock)) {
+                if (this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, tryBlock.bodyBlock) == false) {
                     return false;
                 }
             }
@@ -7061,7 +7082,7 @@ class JSNODE_Update_table extends JSNode_Base {
         if (!blockInServer) {
             serverClickFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
             serverFun = serverClickFun;
-            theServerSide.initProcessFun(serverClickFun);
+            theServerSide.initProcessFun(serverClickFun, this.bluePrint.ctlKernel, true);
             helper.appendOutputItem(serverClickFun);
 
             serverClickFun.bundleCheckBlock = postCheckBlock;
@@ -7227,7 +7248,7 @@ class JSNODE_Update_table extends JSNode_Base {
             var callBack_bk = new FormatFileBlock('callback' + this.id);
             myJSBlock.pushChild(callBack_bk);
             //myJSBlock.pushLine('setTimeout(() => {', 1);
-            myJSBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + (serverFun ? serverFun.name : 'unknown') + "',}, makeFTD_Callback((state, " + dataVarName + ", " + errorVarName + ")=>{", 1);
+            myJSBlock.pushLine(makeLine_FetchFTDCallBack(this.bluePrint.ctlKernel, serverFun ? serverFun.name : 'unknown', bundleVarName, dataVarName, errorVarName), 1);
             var fetchEndBlock = new FormatFileBlock('fetchend');
             myJSBlock.pushChild(fetchEndBlock);
             errCheckIf = new JSFile_IF('checkerr', errorVarName + ' == null');
@@ -7855,12 +7876,17 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             if (this.checkCompileFlag(batchMode || traversalFromNode, '不支持batch的用法', helper)) {
                 return false;
             }
-            if (selectedKernel.type == MFileUploader_Type && this.funItem.name == 'Reset') {
+            if ((selectedKernel.type == MFileUploader_Type || selectedKernel.type == SingleFileUploader_Type) && this.funItem.name == 'Reset') {
                 var cltPathVar = singleQuotesStr(selectedKernel.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map }));
                 if (belongUserCtl) {
                     cltPathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath(''));
                 }
-                myJSBlock.pushLine("ResetMFileUploader(" + cltPathVar + ");", -1);
+                if(selectedKernel.type == MFileUploader_Type){
+                    myJSBlock.pushLine("ResetMFileUploader(" + cltPathVar + ");", -1);
+                }
+                else{
+                    myJSBlock.pushLine("ResetSFileUploader(" + cltPathVar + ");", -1);
+                }
             }
             else {
                 myJSBlock.pushLine(selectedKernel.id + "_" + this.funItem.name + "();", -1);
@@ -8361,7 +8387,7 @@ class JSNODE_Delete_Table extends JSNode_Base {
         var paramVarName = this.id + 'params_arr';
         if (!blockInServer) {
             serverClickFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
-            theServerSide.initProcessFun(serverClickFun);
+            theServerSide.initProcessFun(serverClickFun, this.bluePrint.ctlKernel, true);
             serverFunBodyBlock = serverClickFun.bodyBlock;
             helper.appendOutputItem(serverClickFun);
             serverClickFun.scope.getVar(postBundleVarName, true, "req.body." + VarNames.Bundle);
@@ -8462,7 +8488,7 @@ class JSNODE_Delete_Table extends JSNode_Base {
         if (inreducer) {
             myJSBlock.pushLine('setTimeout(() => {', 1);
         }
-        myJSBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + (serverClickFun ? serverClickFun.name : 'unknown') + "',}, makeFTD_Callback((state, " + dataVarName + ", " + errorVarName + ")=>{", 1);
+        myJSBlock.pushLine(makeLine_FetchFTDCallBack(this.bluePrint.ctlKernel, serverClickFun ? serverClickFun.name : 'unknown', bundleVarName, dataVarName, errorVarName), 1);
         var fetchEndBlock = new FormatFileBlock('fetchend');
         myJSBlock.pushChild(fetchEndBlock);
         var errCheckIf = new JSFile_IF('checkerr', errorVarName + ' == null');
@@ -9148,9 +9174,6 @@ class JSNode_GetPageEntryParam extends JSNode_Base {
     }
 
     getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
-        if (belongFun.scope.isServerSide) {
-            return;
-        }
         var thePage = this.bluePrint.ctlKernel.type == M_PageKernel_Type ? this.bluePrint.ctlKernel : this.bluePrint.ctlKernel.searchParentKernel(M_PageKernel_Type, true);
         var paramName = thePage.getAttribute(this.outSocket.defval);
         result.pushVariable(thePage.id + '_' + paramName, targetSocket);
@@ -9937,7 +9960,7 @@ class JSNode_Excute_Pro extends JSNode_Base {
             var queryFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
             serverFun = queryFun;
             helper.appendOutputItem(queryFun);
-            theServerSide.initProcessFun(queryFun);
+            theServerSide.initProcessFun(queryFun, this.bluePrint.ctlKernel, true);
             queryFun.pushLine("if(" + postBundleVarName + "==null){return serverhelper.createErrorRet('缺少参数bundle');}");
             bundleCheckBlock.pushChild(postVarinitBlock);
             queryFun.bundleCheckBlock = bundleCheckBlock;
@@ -10057,7 +10080,7 @@ class JSNode_Excute_Pro extends JSNode_Base {
         }
         var dataVarName = this.id + '_ret';
         var errVarName = 'error_' + this.id;
-        myJSBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + serverSideActName + "',}, makeFTD_Callback((state, " + dataVarName + ", " + errVarName + ")=>{", 1);
+        myJSBlock.pushLine(makeLine_FetchFTDCallBack(this.bluePrint.ctlKernel, serverSideActName, bundleVarName, dataVarName, errVarName), 1);
         var fetchEndBlock = new FormatFileBlock('fetchend');
         myJSBlock.pushChild(fetchEndBlock);
         if (this.bluePrint.group == EJsBluePrintFunGroup.Custom) {
@@ -10252,7 +10275,7 @@ class JSNode_Attachment_Pro extends JSNode_Base {
             var queryFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
             serverFun = queryFun;
             helper.appendOutputItem(queryFun);
-            theServerSide.initProcessFun(queryFun);
+            theServerSide.initProcessFun(queryFun, this.bluePrint.ctlKernel, true);
             queryFun.pushLine("if(" + postBundleVarName + "==null){return serverhelper.createErrorRet('缺少参数bundle');}");
             bundleCheckBlock.pushChild(postVarinitBlock);
             queryFun.bundleCheckBlock = bundleCheckBlock;
@@ -10344,7 +10367,7 @@ class JSNode_Attachment_Pro extends JSNode_Base {
         }
         var dataVarName = this.id + '_ret';
         var errVarName = 'error_' + this.id;
-        myJSBlock.pushLine("store.dispatch(fetchJsonPost(appServerUrl, {bundle:" + bundleVarName + ",action:'" + serverSideActName + "',}, makeFTD_Callback((state, " + dataVarName + ", " + errVarName + ")=>{", 1);
+        myJSBlock.pushLine(makeLine_FetchFTDCallBack(this.bluePrint.ctlKernel, serverSideActName, bundleVarName, dataVarName, errVarName), 1);
         var fetchEndBlock = new FormatFileBlock('fetchend');
         myJSBlock.pushChild(fetchEndBlock);
         if (this.bluePrint.group == EJsBluePrintFunGroup.Custom) {
@@ -10589,8 +10612,12 @@ class JSNode_String_IndexOf extends JSNode_Base {
         if (this.varSocket == null) {
             this.varSocket = new NodeSocket('invar', this, true);
             this.addSocket(this.varSocket);
+        }
+        if (this.valueSocket == null) {
             this.valueSocket = new NodeSocket('invalue', this, true);
             this.addSocket(this.valueSocket);
+        }
+        if (this.fromSocket == null) {
             this.fromSocket = new NodeSocket('infrom', this, true);
             this.addSocket(this.fromSocket);
         }
@@ -11110,7 +11137,70 @@ class JSNode_HashFormDataRow extends JSNode_Base {
     }
 }
 
+class JSNode_String_Split extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_STRING_SPLIT, 'Split', false, nodeJson);
+        autoBind(this);
 
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.varSocket = this.inputScokets_arr[0];
+                this.charSocket = this.inputScokets_arr[1];
+            }
+        }
+        if (this.varSocket == null) {
+            this.varSocket = new NodeSocket('invar', this, true);
+            this.addSocket(this.varSocket);
+            this.charSocket = new NodeSocket('char', this, true);
+            this.addSocket(this.charSocket);
+        }
+        this.varSocket.label = 'var';
+        this.charSocket.label = '分隔符';
+        this.varSocket.type = ValueType.String;
+        this.varSocket.inputable = false;
+        this.charSocket.inputable = true;
+
+
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.type = ValueType.Int;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketsValues_arr = [];
+        for (var si in this.inputScokets_arr) {
+            var theSocket = this.inputScokets_arr[si];
+            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            var socketValue = socketComRet.value;
+            if (theSocket == this.varSocket) {
+                if (!socketComRet.link.outSocket.isSimpleVal) {
+                    socketValue = '(' + socketValue + ')';
+                }
+            }
+            socketsValues_arr.push(socketValue);
+        }
+
+        var finalStr = socketsValues_arr[0] + '.split(' + socketsValues_arr[1] + ')'
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
 
 
 JSNodeClassMap[JSNODE_VAR_GET] = {
@@ -11332,6 +11422,10 @@ JSNodeClassMap[JSNODE_SETMESSAGEBOXTOLOADING] = {
 };
 JSNodeClassMap[JSNODE_MATH_RANDINT] = {
     modelClass: JSNode_Math_RandInt,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_STRING_SPLIT] = {
+    modelClass: JSNode_String_Split,
     comClass: C_Node_SimpleNode,
 };
 
