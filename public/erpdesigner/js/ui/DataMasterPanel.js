@@ -639,7 +639,7 @@ var SqlBPEditPanel = function (_React$PureComponent6) {
                         React.createElement(
                             'div',
                             { className: 'flex-grow-1 flex-shrink-1 text-info' },
-                            this.state.errinfo
+                            this.state.errinfo5
                         )
                     ),
                     React.createElement(
@@ -857,6 +857,12 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
                                 'button',
                                 { type: 'button', onClick: this.clickEditBtnHandler, className: 'btn' },
                                 React.createElement('i', { className: 'fa fa-edit' })
+                            ),
+                            React.createElement(
+                                'button',
+                                { type: 'button', onClick: this.clickEditBtnHandler, className: 'btn' },
+                                React.createElement('i', { className: 'bi bi-subtract' }),
+                                'copy'
                             )
                         )
                     ),

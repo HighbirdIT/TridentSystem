@@ -495,7 +495,7 @@ class SqlBPEditPanel extends React.PureComponent {
                     <NameInputRow label='类型' type='select' rootClass='m-1' nameWidth={nameWidth} options_arr={['表值', '标量值', 'delete']} default={type} ref={this.typeRef} />
                     <div className='flex-grow-1 flex-shrink-1 text-info'>
                         {
-                            this.state.errinfo
+                            this.state.errinfo5
                         }
                     </div>
                 </div>
@@ -649,6 +649,7 @@ class SqlBPItemPanel extends React.PureComponent {
                                 <button type='button' onClick={this.clickTrashBtnHandler} className='btn'><i className='fa fa-trash text-danger' /></button>
                                 <button type='button' onClick={this.clickAddBtnhandler} className='btn btn-success flex-grow-1'><i className='fa fa-plus' /></button>
                                 <button type='button' onClick={this.clickEditBtnHandler} className='btn'><i className='fa fa-edit' /></button>
+                                <button type='button' onClick={this.clickEditBtnHandler} className='btn'><i className='bi bi-subtract' />copy</button>
                             </div>
                         </div>
                     }
