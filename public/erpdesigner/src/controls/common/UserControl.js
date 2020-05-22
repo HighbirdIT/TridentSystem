@@ -214,6 +214,7 @@ class UserControlKernel extends ContainerKernelBase {
     }
 
     __attributeChanged(attrName, oldValue, value, realAtrrName, indexInArray) {
+        super.__attributeChanged(attrName, oldValue, value, realAtrrName, indexInArray);
         if (attrName == AttrNames.ParamApi || attrName == AttrNames.EventApi) {
             this.synControlAttrs();
         }
@@ -382,7 +383,8 @@ class UserControlKernel extends ContainerKernelBase {
         if(template == this){
             return this.id;
         }
-        return this.id + '[' + template.getAttribute(AttrNames.Name) + ']';
+        var insName = this.getAttribute(AttrNames.Name);
+        return this.id + '[' + (IsEmptyString(insName) ? template.getAttribute(AttrNames.Name) : insName) + ']';
     }
 }
 

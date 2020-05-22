@@ -72,7 +72,7 @@ class SingleFileUploaderKernel extends ControlKernelBase {
 
     scriptCreated(attrName, scriptBP) {
         if(scriptBP.name.indexOf(AttrNames.Event.OnUploadComplete) != -1){
-            scriptBP.setFixParam(['fullPath','fileID']);
+            scriptBP.setFixParam(['fullPath','fileID', 'fileIdentity']);
         }
     }
 

@@ -850,7 +850,7 @@ class JSNode_BluePrint extends EventEmitter {
                         theFun.scope.getVar(ctlKernel.id + '_path', true, 'fullPath');
                     }
                 }
-                else if (ctlKernel.type == MFileUploader_Type) {
+                else if (ctlKernel.type == MFileUploader_Type || ctlKernel.type == SingleFileUploader_Type) {
                     if (
                         this.name == ctlKernel.id + '_' + AttrNames.Event.OnUploadComplete
                     ) {

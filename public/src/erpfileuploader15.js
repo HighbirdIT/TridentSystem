@@ -954,7 +954,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
 
         var className = 'fileuploadersingle ' + (this.props.className ? this.props.className : '');
         return <div className={className} style={this.props.style} fixedsize={this.props.fixedsize}>
-            <input onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' accept="image/*" />
+            <input onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' accept="*/*,image/*" />
             <span id='title' className='flex-grow-0 flex-shrink-0 wb-all'>
                 {this.props.title}
             </span>

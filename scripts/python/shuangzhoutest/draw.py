@@ -11,12 +11,11 @@ class Draw_img:
 
     def __init__(self, data_frame):
         self.data_frame = data_frame
-        self.figure, self.ax = plt.subplots(figsize=self.figsize, ncols=2, nrows=1)
+        self.picName = 'unname'
 
 
     def draw(self, Ext, Eyt, Vx, Vy, E):
-
-        print(self.figure)
+        self.figure, self.ax = plt.subplots(figsize=self.figsize, ncols=2, nrows=1)
         # 刻画fx，fy
         ex = np.array(self.data_frame['ex'])
         fx = np.array(self.data_frame['Nx'])
@@ -60,3 +59,24 @@ class Draw_img:
         # plt.xticks(np.arange(-0.01, 0.04, 0.01))
         # print(self.start_index, '这是起始')
         plt.savefig(self.picName)
+
+    def draw2(self):
+            self.figure, self.ax = plt.subplots(figsize=self.figsize, ncols=1, nrows=1)
+            # 刻画fx，fy
+            ex = np.array(self.data_frame['Sx'])
+            fx = np.array(self.data_frame['Fx'])
+            ey = np.array(self.data_frame['Sy'])
+            fy = np.array(self.data_frame['Fy'])
+
+            # 设置子图的基本元素
+            #plt.set_title('JX')  # 设置图体，plt.title
+            #plt.set_xlabel("strain(%)")  # 设置x轴名称,plt.xlabel
+            #plt.set_ylabel("stress kN/m")  # 设置y轴名称,plt.ylabel
+            #plt.set_xlim(-0.01, 0.04, 0.01)  # 设置横轴范围，会覆盖上面的横坐标,plt.xlim
+            #plt.set_ylim(-4, 14, 2)  # 设置纵轴范围，会覆盖上面的纵坐标,plt.ylim
+            plt.grid()
+            plot1 = plt.plot(ex, fx, linestyle='-', color='b', label='Warp')  # 点图：marker图标
+            plot1 = plt.plot(ey, fy, linestyle='-', color='y', label='Fill')  # 点图：marker图标
+            plt.legend(loc='upper left')
+
+            plt.savefig(self.picName)
