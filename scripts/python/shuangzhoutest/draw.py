@@ -77,17 +77,16 @@ class Draw_img:
 
     def draw2(self):
         print('draw2')
-        self.figure, self.ax = plt.subplots(figsize=self.figsize, ncols=1, nrows=1)
         # 刻画fx，fy
-        ex = np.array(self.data_frame['Sx'])
-        fx = np.array(self.data_frame['Fx'])
-        ey = np.array(self.data_frame['Sy'])
-        fy = np.array(self.data_frame['Fy'])
+        ex = np.array(self.data_frame['ex'])
+        fx = np.array(self.data_frame['Nx'])
+        ey = np.array(self.data_frame['ey'])
+        fy = np.array(self.data_frame['Ny'])
         
         plt.xlabel("strain(%)")  # 设置x轴名称,plt.xlabel
         plt.ylabel("stress kN/m")  # 设置y轴名称,plt.ylabel
-        plt.xticks(-0.01, 0.06, 0.01)  # 设置横轴范围，会覆盖上面的横坐标,plt.xlim
-        plt.yticks(-4, 32, 2)  # 设置纵轴范围，会覆盖上面的纵坐标,plt.ylim
+        plt.yticks(range(-4, 32, 2))
+        plt.xticks(np.arange(-0.01, 0.06, 0.01))
         plt.grid()
         plot1 = plt.plot(ex, fx, linestyle='-', color='b', label='Warp')  # 点图：marker图标
         plot1 = plt.plot(ey, fy, linestyle='-', color='y', label='Fill')  # 点图：marker图标
