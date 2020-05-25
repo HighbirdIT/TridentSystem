@@ -20,7 +20,7 @@ def walkFile(config, drawdata_li):
     start_index = int(config['起始数据项'])
     force_range = (int(config['最小应力']), int(config['最大应力']))
     force_dir = config['参考方向']
-    deviation_bool = config['偏移原点'] == 1
+    deviation_bool = config['偏移原点'] == '1'
     width = int(config['试样宽度'])  # 试样宽度
     gauge_length = int(config['测试标距'])  # 测试标距
     

@@ -115,7 +115,9 @@ class Step_two:
             sy = (value - self.standard_item_sy) / \
                     (self.gauge_length + self.sy_series[self.first_index] - self.sy_series[0])
             ey.append(sy)
-        return pd.DataFrame({'Nx': Nx, 'Ny': Ny, 'ex': ex, 'ey': ey})
+        dfdata = pd.DataFrame({'Nx': Nx, 'Ny': Ny, 'ex': ex, 'ey': ey})
+        dfdata = dfdata[(dfdata['Nx'] > self.force_range[0]) & (dfdata['Nx'] < self.force_range[1])]
+        return dfdata
 
     @staticmethod
     def check_area(index, area_list):
