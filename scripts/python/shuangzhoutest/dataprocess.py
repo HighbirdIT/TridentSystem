@@ -6,25 +6,25 @@ class Data_processed:
     原始文件筛选类
     """
 
-    def __init__(self, original_data, start_index, force_range, force_dir):
+    def __init__(self, original_data, start_index, force_dir):
         self.original_data = original_data.read_file()
         self.start_index = start_index
-        self.force_range = force_range
+        # self.force_range = force_range
         self.force_dir = force_dir
         self.series_arr = []
-        self.__process()
+        # self.__process()
 
-    def __process(self):
-        # 传入应力的最大最小范围进行过滤
-        self.original_data = self.original_data[(self.original_data[self.force_dir] > self.force_range[0]) & (
-                self.original_data[self.force_dir] < self.force_range[1])]
-        # 先找 应力x，y 然后从起始值开始
-        # if self.force_dir == 'Fx':
-        #     self.series_arr = self.original_data.loc[self.start_index:, 'Fx']
-        # elif self.force_dir == 'Fy':
-        #     self.series_arr = self.original_data.loc[self.start_index:, 'Fy']
-        # print(self.series_arr)
-        return self.original_data
+    # def __process(self):
+    #     # 传入应力的最大最小范围进行过滤
+    #     self.original_data = self.original_data[(self.original_data[self.force_dir] > self.force_range[0]) & (
+    #             self.original_data[self.force_dir] < self.force_range[1])]
+    #     # 先找 应力x，y 然后从起始值开始
+    #     # if self.force_dir == 'Fx':
+    #     #     self.series_arr = self.original_data.loc[self.start_index:, 'Fx']
+    #     # elif self.force_dir == 'Fy':
+    #     #     self.series_arr = self.original_data.loc[self.start_index:, 'Fy']
+    #     # print(self.series_arr)
+    #     return self.original_data
 
     def calculate_data(self):
         # 先找 应力x，y 然后从起始值开始
