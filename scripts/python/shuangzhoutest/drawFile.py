@@ -13,6 +13,9 @@ if __name__ == '__main__':
 
     lf = loadfile.Load_file(filePath)
     filedata = lf.read_file()
+    step = step2.Step_two(deviation_bool, area, force_range,original_data, width, gauge_length)
+    step.standard_item_identity()
+    drawdata = step.process_2()
     drawpic = draw.Draw_img(filedata)
     rnd=int(random.random() * 1000)
     drawpic.picName = os.path.dirname(__file__) + '/output/' + str(rnd) + '.png'

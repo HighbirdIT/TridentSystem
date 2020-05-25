@@ -10,8 +10,9 @@ class Step_two:
     这个类就行第二步，进行4列数据的计算
     """
 
-    def __init__(self, deviation_bool, area, original_data=None, width=160, gauge_length=40):
+    def __init__(self, deviation_bool, area,force_range, original_data=None, width=160, gauge_length=40):
         self.original_data = original_data
+        self.calculate_data = original_data
         self.area = area
         self.deviation_bool = deviation_bool  # 偏移原点
         self.width = width  # 试样宽度
@@ -24,6 +25,8 @@ class Step_two:
         self.standard_item_ny = None  # y轴 基准项
         self.standard_item_sx = None  # x轴 基准项
         self.standard_item_sy = None  # y轴 基准项
+
+    
 
     def __carve_up(self):
         """
@@ -40,7 +43,10 @@ class Step_two:
 
     def standard_item_identity(self):
         self.__carve_up()
-        self.first_index = self.area[0][0]
+        try:
+            self.first_index = self.area[0][0]
+        except Excetion as err:
+            print(err)
         if not self.deviation_bool:
             # 【基准项】=【初始项】数据的第0个
             self.standard_item_nx = self.fx_series[0]
@@ -64,7 +70,7 @@ class Step_two:
         ey = []
 
         for index, value in self.fx_series.items():
-            if self.check_area(index, self.area):
+            if self.check_area(index, self.area) and self.check_force(value,self.force_range):
                 nx = (value - self.standard_item_nx) / self.width
                 Nx.append(nx)
                 # print(index, value,self.standard_item_nx,'这',self.width)
@@ -115,6 +121,15 @@ class Step_two:
             end_i = area[1]
             if start_i <= index <= end_i:
                 return True
+
+    @staticmethod
+    def check_force(value,force_range):
+        for force in force_range:
+            min_force = force_range[0]
+            max_force = force_range[1]
+            if min_force <= value <= max_force:
+                return True
+
 
     def write_text(self):
         data = self.process()
