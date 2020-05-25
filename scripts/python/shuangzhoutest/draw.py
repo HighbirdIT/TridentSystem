@@ -85,11 +85,11 @@ class Draw_img:
         
         plt.xlabel("strain(%)")  # 设置x轴名称,plt.xlabel
         plt.ylabel("stress kN/m")  # 设置y轴名称,plt.ylabel
+        plot1 = plt.plot(ex, fx, linestyle='-', color='b', label='Warp')  # 点图：marker图标
+        plot1 = plt.plot(ey, fy, linestyle='-', color='y', label='Fill')  # 点图：marker图标
         plt.yticks(range(-4, 32, 2))
         plt.xticks(np.arange(-0.01, 0.06, 0.01))
         plt.grid()
-        plot1 = plt.plot(ex, fx, linestyle='-', color='b', label='Warp')  # 点图：marker图标
-        plot1 = plt.plot(ey, fy, linestyle='-', color='y', label='Fill')  # 点图：marker图标
         plt.legend(loc='upper left')
 
         plt.savefig(self.picName)
