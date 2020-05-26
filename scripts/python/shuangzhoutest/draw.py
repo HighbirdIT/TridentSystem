@@ -35,10 +35,12 @@ class Draw_img:
         fx = np.array(self.data_frame['Nx'])
         ey = np.array(self.data_frame['ey'])
         fy = np.array(self.data_frame['Ny'])
-        ex_max = (int(max(ex) * 100) + 1) / 100
-        ex_min = (int(min(ex) * 100) - 1) / 100
-        ey_max = (int(max(ey) * 100) + 1) / 100
-        ey_min = (int(min(ey) * 100) - 1) / 100
+        
+        ex_max = 0.06 if len(ex) == 0 else (int(max(ex) * 100) + 1) / 100
+        ex_min = -0.01 if len(ex) == 0 else (int(min(ex) * 100) - 1) / 100
+        ey_max = 0.06 if len(ey) == 0 else (int(max(ey) * 100) + 1) / 100
+        ey_min = -0.01 if len(ey) == 0 else (int(min(ey) * 100) - 1) / 100
+
         if ex_max<= 0.05:
             ex_max =0.05
         if ex_min >= -0.01:
@@ -49,9 +51,9 @@ class Draw_img:
         ax1.set_title('JX')  # 设置图体，plt.title
         ax1.set_xlabel("strain(%)")  # 设置x轴名称,plt.xlabel
         ax1.set_ylabel("stress kN/m")  # 设置y轴名称,plt.ylabel
-        plot1 = ax1.plot(ex, fx, linestyle='-', color='g', label='legend1')  # 点图：marker图标
+        plot1 = ax1.plot(ex, fx, linestyle='-', color='g', label='original')  # 点图：marker图标
         plot2 = ax1.plot(Nx / Ext - Ny / Eyt * Vy, Nx, linestyle='-', alpha=0.5, color='r',
-                         label='legend2')  # 线图：linestyle线性，alpha透明度，color颜色，label图例文本
+                         label='experiment')  # 线图：linestyle线性，alpha透明度，color颜色，label图例文本
         ax1.set_xlim(ex_min, ex_max, 0.01)  # 设置横轴范围，会覆盖上面的横坐标,plt.xlim
         ax1.set_ylim(0, 31,auto=False)  # 设置纵轴范围，会覆盖上面的纵坐标,plt.ylim
         ax1.grid()
@@ -61,9 +63,9 @@ class Draw_img:
         ax2.set_title('WX')  # 设置图体，plt.title
         ax2.set_xlabel("strain(%)")  # 设置x轴名称,plt.xlabel
         ax2.set_ylabel("stress kN/m")  # 设置y轴名称,plt.ylabel
-        plot1 = ax2.plot(ey, fy, linestyle='-', color='g', label='legend1')  # 点图：marker图标
+        plot1 = ax2.plot(ey, fy, linestyle='-', color='g', label='original')  # 点图：marker图标
         plot2 = ax2.plot(Ny / Eyt - Nx / Ext * Vx, Ny, linestyle='-', alpha=0.5, color='r',
-                         label='legend2')  # 线图：linestyle线性，alpha透明度，color颜色，label图例文本
+                         label='experiment')  # 线图：linestyle线性，alpha透明度，color颜色，label图例文本
         ax2.set_xlim(ey_min,ey_max, 0.01)  # 设置横轴范围，会覆盖上面的横坐标,plt.xlim
         ax2.set_ylim(0, 31, 1)  # 设置纵轴范围，会覆盖上面的纵坐标,plt.ylim
         ax2.grid()
@@ -87,10 +89,10 @@ class Draw_img:
         fx = np.array(self.data_frame['Nx'])
         ey = np.array(self.data_frame['ey'])
         fy = np.array(self.data_frame['Ny'])
-        ex_max = (int(max(ex) * 100) + 1) / 100
-        ex_min = (int(min(ex) * 100) - 1) / 100
-        ey_max = (int(max(ey) * 100) + 1) / 100
-        ey_min = (int(min(ey) * 100) - 1) / 100
+        ex_max = 0.06 if len(ex) == 0 else (int(max(ex) * 100) + 1) / 100
+        ex_min = -0.01 if len(ex) == 0 else (int(min(ex) * 100) - 1) / 100
+        ey_max = 0.06 if len(ey) == 0 else (int(max(ey) * 100) + 1) / 100
+        ey_min = -0.01 if len(ey) == 0 else (int(min(ey) * 100) - 1) / 100
         max_x = ex_max
         min_x = ex_min
         if ex_max < ey_max:
