@@ -545,6 +545,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
             attachmentID: this.props.defattachmentID,
             fileFlow: this.props.fileflow,
             relrecordid: this.props.relrecordid,
+            fileIdentity: this.props.fileIdentity,
         };
         var self = this;
         store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: bundle, action: 'getFileRecord' },
@@ -560,7 +561,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                     url: data ? data.文件路径 : null,
                 };
                 setTimeout(() => {
-                    if (self.props.defattachmentID == bundle.attachmentID && self.props.fileflow == bundle.fileFlow && self.props.relrecordid == bundle.relrecordid) {
+                    if (self.props.defattachmentID == bundle.attachmentID && self.props.fileflow == bundle.fileFlow && self.props.relrecordid == bundle.relrecordid && self.props.fileIdentity == bundle.fileIdentity) {
                         var needSetState = {
                             fileID: fileRecord.fileID,
                             attachmentID: fileRecord.attachmentID,
@@ -574,7 +575,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                         }
                         store.dispatch(makeAction_setManyStateByPath(needSetState, self.props.fullPath));
 
-                        if(!this.unmounted){
+                        if (!this.unmounted) {
                             self.setState({
                                 loading: false,
                                 fileRecord: fileRecord,
@@ -584,7 +585,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                     else {
                         // 信息发生了更改，重新获取
                         console.log('信息发生了更改，重新获取');
-                        if(!this.unmounted){
+                        if (!this.unmounted) {
                             self.setState({
                                 loading: false,
                             });
@@ -601,7 +602,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
 
     uploaderJobDone(uploader) {
         if (this.props.onuploadcomplete) {
-            this.props.onuploadcomplete(this.props.fullPath, uploader.fileProfile.code);
+            this.props.onuploadcomplete(this.props.fullPath, uploader.fileProfile.code, uploader.fileProfile.identity);
         }
         store.dispatch(makeAction_setManyStateByPath({
             invalidInfo: null,
@@ -610,12 +611,13 @@ class ERPC_SingleFileUploader extends React.PureComponent {
         }, this.props.fullPath));
     }
 
-    startUploadFile(theFile){
+    startUploadFile(theFile) {
         this.uploader.fileFlow = this.props.fileflow;
         this.uploader.relrecordid = this.props.relrecordid;
         this.uploader.definfo = {
-            defattachmentID:this.props.defattachmentID,
-            relrecordid:this.props.relrecordid,
+            defattachmentID: this.props.defattachmentID,
+            relrecordid: this.props.relrecordid,
+            fileIdentity: this.props.fileIdentity,
         };
         this.uploader.uploadFile(theFile, this.uploaderJobDone);
     }
@@ -772,15 +774,16 @@ class ERPC_SingleFileUploader extends React.PureComponent {
         var childElem = null;
         var self = this;
         var relrecordid = this.props.relrecordid;
-        if(relrecordid == 0 || isNaN(relrecordid)){
+        if (relrecordid == 0 || isNaN(relrecordid)) {
             relrecordid = null;
         }
-        if(fileUploader.state != EFileUploaderState.WAITFILE){
+        if (fileUploader.state != EFileUploaderState.WAITFILE) {
             var nowdefinfo = {
-                defattachmentID:this.props.defattachmentID,
-                relrecordid:this.props.relrecordid,
+                defattachmentID: this.props.defattachmentID,
+                relrecordid: this.props.relrecordid,
+                fileIdentity: this.props.fileIdentity,
             };
-            if(!ObjIsEqual(nowdefinfo,fileUploader.definfo)){
+            if (!ObjIsEqual(nowdefinfo, fileUploader.definfo)) {
                 setTimeout(() => {
                     fileUploader.reset();
                 }, 20);
@@ -795,10 +798,46 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                         <span className='centerelem position-absolute text-nowrap bg-white'><i className='fa fa-circle-o-notch fa-spin' />获取中</span>
                     </div>;
                 }
+                else if (this.props.mode == 'direct') {
+                    if (this.props.fileIdentity != null && this.props.fileIdentity.length == 36) {
+                        if (fileRecord == null) {
+                            setTimeout(() => {
+                                if (this.unmounted) {
+                                    return;
+                                }
+                                self.setState({
+                                    loading: true,
+                                });
+                                self.synRecordInfo();
+                            }, 20);
+                            contentElem = <div className='w-100 h-100'>
+                                <span className='centerelem position-absolute text-nowrap bg-white'><i className='fa fa-circle-o-notch fa-spin' />获取中</span>
+                            </div>;
+                        }
+                        else {
+                            if (fileRecord.fileName == null) {
+                                invalidInfoElem = <span className='bg-danger text-white'><i className='fa fa-warning' />文件不存在</span>
+                            }
+                            else {
+                                fileName = fileRecord.fileName;
+                                fileSize = fileRecord.size;
+                                var aidData = getRenderAidDataFromFileType(fileRecord.type);
+                                if (aidData.fileType == 'image') {
+                                    iconElem = <img className='w-100 h-100 centerelem position-absolute cursor_hand' src={fileRecord.url} onClick={this.wantChangeFile} />
+                                }
+                                else {
+                                    iconElem = <i className={'fa fa-5x centerelem position-absolute cursor_hand ' + aidData.fileIconType} onClick={this.wantChangeFile} />;
+                                }
+                                preViewBtn = <button onClick={this.clickPreviewHandler} type='button' className='btn btn-sm btn-primary'><i className={'fa fa-' + (aidData.canPreview ? 'eye' : 'download')} /></button>;
+                                contentElem = <span />
+                            }
+                        }
+                    }
+                }
                 else if ((this.props.defattachmentID > 0 || relrecordid != null) && (fileRecord == null || !fileRecord.abandon)) {
                     if (fileRecord == null || (this.props.defattachmentID > 0 && fileRecord.attachmentID != this.props.defattachmentID) || (relrecordid != null && fileRecord.relrecordid != this.props.relrecordid)) {
                         setTimeout(() => {
-                            if(this.unmounted){
+                            if (this.unmounted) {
                                 return;
                             }
                             self.setState({
@@ -832,7 +871,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                     }
                 }
                 if (contentElem == null) {
-                    if (!(relrecordid != null && this.props.fileflow > 0)) {
+                    if (this.props.mode != 'direct' && !(relrecordid != null && this.props.fileflow > 0)) {
                         contentElem = <div className='w-100 h-100'>
                             <span className='centerelem position-absolute pointerevent-none' >
                                 <div className='text-danger text-nowrap'><i className='fa fa-warning' />需要FR</div>
@@ -840,7 +879,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                         </div>;
                     }
                     else {
-                        contentElem = <div className='w-100 h-100 cursor_hand' onClick={this.clickPlusHandler} onDragEnter={this.dragenter} onDragLeave={this.dragleave} onDrop={this.drop} onDragOver={this.dragOver}>
+                        contentElem = <div className='flex-grow-1 flex-shrink-1 cursor_hand' onClick={this.clickPlusHandler} onDragEnter={this.dragenter} onDragLeave={this.dragleave} onDrop={this.drop} onDragOver={this.dragOver}>
                             <span className='centerelem position-absolute pointerevent-none' >
                                 <div className='text-nowrap'><i className='fa fa-mouse-pointer' />上传文件</div>
                                 {isMobile ? null : <div className='text-nowrap'><i className='fa fa-hand-rock-o' />拖拽文件</div>}
@@ -913,21 +952,22 @@ class ERPC_SingleFileUploader extends React.PureComponent {
             }
         }
 
-        return <div className='fileuploadersingle'>
-            <input onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' accept="image/*" />
+        var className = 'fileuploadersingle ' + (this.props.className ? this.props.className : '');
+        return <div className={className} style={this.props.style} fixedsize={this.props.fixedsize}>
+            <input onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' accept="*/*,image/*" />
             <span id='title' className='flex-grow-0 flex-shrink-0 wb-all'>
                 {this.props.title}
             </span>
             <div id='content' className='fileuploadersingle-content' dragstate={this.state.dragstate}>
                 {iconElem}
                 {contentElem}
-                {invalidInfoElem}
                 <div id='toolbar' className='btn-group'>
                     {preViewBtn}
                     {canDelete ? <button onClick={this.clickTrashHandler} type='button' className='btn btn-sm btn-danger'><i className='fa fa-trash' /></button> : null}
                 </div>
             </div>
             <div id='name'>
+                {invalidInfoElem}
                 {fileName}
             </div>
         </div>
@@ -950,6 +990,7 @@ function ERPC_SingleFileUploader_mapstatetoprops(state, ownprops) {
         fileID: ctlState.fileID,
         defattachmentID: ctlState.defattachmentID,
         relrecordid: ctlState.relrecordid,
+        fileIdentity: ctlState.fileIdentity,
     };
 }
 
@@ -1128,7 +1169,7 @@ class ERPC_MultiFileUploader extends React.PureComponent {
 
     uploaderJobDone(uploader) {
         if (this.props.onuploadcomplete) {
-            this.props.onuploadcomplete(this.props.fullPath, uploader.fileProfile.code);
+            this.props.onuploadcomplete(this.props.fullPath, uploader.fileProfile.code, uploader.fileProfile.identity);
         }
     }
 
@@ -1460,9 +1501,9 @@ class ERPC_FilePreview extends React.PureComponent {
             {contetnElem}
             {
                 this.props.hidetitle ? null :
-                <div id='name'>
-                    {fileName}
-                </div>
+                    <div id='name'>
+                        {fileName}
+                    </div>
             }
             {!this.props.canDelte ? null : <button onClick={this.clickTrashHandler} id='del' className='btn btn-sm btn-danger'><i className={'fa ' + (this.deleting ? 'fa-circle-o-notch fa-spin' : 'fa-trash')} /></button>}
         </div>
@@ -1491,12 +1532,447 @@ function ERPC_FilePreview_dispatchtorprops(dispatch, ownprops) {
     };
 }
 
+var ERP_Form_ShowData_RowHeight = 50;
+class ERP_Form_ShowData extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        ERPC_GridForm(this);
+        this.tableBodyScroll = this.tableBodyScroll.bind(this);
+        this.headtableStyle = { "marginBottom": "0px", width: '40em', "tableLayout": "fixed" };
+        this.state={
+            percent:0,
+        };
+    }
+    render() {
+        var percent = this.state.percent;
+        var totalHeight = this.props.records_arr.length * ERP_Form_ShowData_RowHeight;
+        var needShowHeight = Math.round((1.0 - percent) * totalHeight);
+        var topBlankHeight = totalHeight - needShowHeight;
+        var baseIndex = Math.floor(1.0 * topBlankHeight / ERP_Form_ShowData_RowHeight);
+        var startIndex = baseIndex - 30;
+        if(startIndex < 0){
+            startIndex = 0;
+        }
+        var endIndex = baseIndex + 29;
+        if(endIndex > this.props.records_arr.length){
+            endIndex = this.props.records_arr.length;
+        }
+        this.startIndex = startIndex;
+        return (
+            <div ref={this.rootRef} className='flex-grow-1 flex-shrink-1 d-flex erp-form flex-column ' >
+                {this.props.title && <div className='bg-dark text-light justify-content-start d-flex flex-shrink-0 p-1'><span>{this.props.title}{this.props.records_arr && this.props.records_arr.length > 0 ? '[' + this.props.records_arr.length + '条]' : null}</span></div>}
+                <div id={this.props.fullPath + 'tableheader'} className='mw-100 hidenOverflow flex-shrink-0 gridFormFixHeaderDiv'>
+                    <table className='table' style={this.headtableStyle}>
+                        <ERP_Form_ShowData_THead headers={this.props.headers} />
+                    </table>
+                </div>
+                <div id={this.props.fullPath + 'scroller'} onScroll={this.tableBodyScroll} className='mw-100 autoScroll'>
+                    <ERP_Form_TBody  fullPath={this.props.fullPath} form={this} headers={this.props.headers} records_arr={this.props.records_arr} startIndex={startIndex} endIndex={endIndex} />
+                </div>
+            </div>);
+    }
+    tableBodyScroll(ev) {
+        if(this.memScrollTop){
+            document.getElementById(this.props.fullPath + 'scroller').scrollTop = this.memScrollTop;
+            this.memScrollTop = null;
+            return;
+        }
+        document.getElementById(this.props.fullPath + 'tableheader').scrollLeft = ev.target.scrollLeft;
+
+        var scrollPercent = ev.target.scrollTop / ev.target.scrollHeight;
+        var changeSize = Math.abs(scrollPercent - this.state.percent) * ev.target.scrollHeight; 
+        if(changeSize > ERP_Form_ShowData_RowHeight * 3){
+            this.memScrollTop = ev.target.scrollTop;
+            console.log('fresh');
+            this.setState({
+                percent:scrollPercent,
+            });
+        }
+    }
+}
+
+class ERP_Form_ShowData_THead extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        this.headstyle0 = { "width": "10em", "maxWidth": "10em", "minWidth": "10em", "whiteSpace": "nowrap", "overflow": "hidden" };
+    }
+    render() {
+        var retElem = null;
+        var ths_arr = this.props.headers.map((item, index) => {
+            return <th key={'col' + index} style={this.headstyle0}>
+                {item}
+            </th>
+        });
+
+        return (<thead className="thead-light"><tr>
+            <th scope='col' className='indexTableHeader'>序号</th>
+            {ths_arr}
+        </tr></thead>);
+    }
+}
+
+class ERP_Form_TBody extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        this.tdStyle = { "width": "10em", "verticalAlign": "middle","height":'' + ERP_Form_ShowData_RowHeight + 'px',"overflow":'hidden',"whiteSpace":'nowrap' };
+        this.tableStyle = { "marginTop": "-50px", width: '40em', "tableLayout": "fixed" };
+    }
+    render() {
+        var trElems_arr = [];
+        var formProp = this.props.form.props;
+        var records_arr = this.props.records_arr;
+        var headers = this.props.headers;
+        trElems_arr.push(<tr style={{'height':(this.props.startIndex * ERP_Form_ShowData_RowHeight) + 'px'}} key='extra_row_top' id='extra_row_top' />);
+        for (var rowIndex = this.props.startIndex; rowIndex < this.props.endIndex; ++rowIndex) {
+            var rowRecord = records_arr[rowIndex];
+            var rowkey = rowIndex;
+            trElems_arr.push(
+                <tr rowkey={rowkey} key={rowIndex - this.props.startIndex}>
+                    <td className='indexTableHeader'>{rowIndex + 1}</td>
+                    {
+                        headers.map((item, index) => {
+                            return <td key={'col' + index} style={this.tdStyle}>
+                                <span >{rowRecord[item]}</span>
+                            </td>
+                        })
+                    }
+                </tr>);
+        }
+        trElems_arr.push(<tr style={{'height':((records_arr.length - this.props.endIndex) * ERP_Form_ShowData_RowHeight) + 'px'}} key='extra_row_bottom' id='extra_row_bottom' />);
+        return (<table className='table table-striped table-hover ' style={this.tableStyle}>
+            <ERP_Form_ShowData_THead form={this.props.form} headers={this.props.headers} />
+            <tbody>{trElems_arr}</tbody>
+        </table>);
+    }
+
+}
+
+class ERPC_ExcelImporter extends React.PureComponent {
+    constructor(props) {
+        super();
+
+        this.state = {
+            f_name: '未选择文件',
+        };
+        autoBind(this);
+        this.fileTagRef = React.createRef();
+        this.btnTagRef = React.createRef();
+    }
+
+    componentWillMount() {
+        var self = this;
+        document.addEventListener('paste', this.pasteLinstener);
+        setTimeout(() => {
+            if (self.btnTagRef.current) {
+                //self.btnTagRef.current.click();
+            }
+        }, 500);
+    }
+
+    componentWillUnmount() {
+        document.removeEventListener('paste', this.pasteLinstener)
+    }
+
+    pasteLinstener(ev) {
+        var ttext = ev.clipboardData.getData('text/plain');
+        this.importFromText(ttext);
+    }
+
+    fileSelectedHandler(ev) {
+        if (ev.target.files.length > 1) {
+            SendToast('只能选一个文件');
+            return;
+        }
+        var theFile = ev.target.files[0];
+        var uploader = new FileUploader();
+        this.setState({
+            f_name: theFile.name,
+            theFile: theFile,
+            uploader: uploader,
+        });
+
+        uploader.uploadFile(theFile, this.uploaderJobDone);
+    }
+
+    uploaderJobDone(uploader) {
+        this.setState({
+            f_identity: uploader.fileProfile.identity,
+            reading: true,
+        });
+        var self = this;
+        var processKey = null;
+        var queryProcess = (state, ret_data, ret_err) => {
+            if (ret_data != null || ret_err != null) {
+                if (ret_data) {
+                    if (ret_data.rows == null || ret_data.rows.length == 0) {
+                        ret_data = null;
+                        ret_err = { info: '这是个空白的Excel文档' };
+                    }
+                }
+                self.setState({
+                    error: ret_err,
+                    data: ret_data,
+                    reading: false,
+                });
+                return;
+            }
+            setTimeout(() => {
+                store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: { key: processKey }, action: 'queryLongProcessResult', }, makeFTD_Callback(queryProcess)));
+            }, 1000);
+        };
+
+        store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: { fileIdentity: uploader.fileProfile.identity }, action: 'readExcelContent' },
+            makeFTD_Callback((state, key, error) => {
+                if (error) {
+                    setTimeout(() => {
+                        self.setState({
+                            error: error,
+                            reading: false,
+                        });
+                    }, 200);
+                    return;
+                }
+                processKey = key;
+                queryProcess(null, null, null);
+            }, false)));
+    }
+
+    plusClickHandler(ev) {
+        if (this.fileTagRef.current) {
+            this.fileTagRef.current.click();
+        }
+    }
+
+    cancelClickHandler(ev) {
+        this.props.callback(false);
+    }
+
+    confirmClickHandler(ev) {
+        this.props.callback(true, this.state.data.rows, this.state.data.headers);
+    }
+
+    importFromClipboard(ev) {
+        if (window.clipboardData == null) {
+            SendToast('请直接用"ctl + v"快捷键来黏贴数据', EToastType.Info, EToastTime.Small);
+            return;
+        }
+        var clipText = window.clipboardData.getData("text");
+        this.importFromText(clipText);
+    }
+
+    clearData() {
+        var nowData = this.state.data;
+        this.setState({
+            error: null,
+            data: null,
+        });
+    }
+
+    importFromText(text) {
+        if (this.state.reading) {
+            return;
+        }
+        var self = this;
+        var nowData = this.state.data;
+        text = text.replace(/\n\r/g, '\n');
+        text = text.replace(/\r/g, '');
+        var data = {};
+        let rows_arr = text.split("\n").map(x => { return x.trim(); }).filter(x => { return x.length > 0 });
+        var hreaders_arr = [];
+        var items_arr = [];
+        if (rows_arr.length == 0) {
+            SendToast('数据无效', EToastType.Error, EToastTime.Small);
+            return;
+        }
+
+        if (nowData) {
+            hreaders_arr = nowData.headers;
+            if (rows_arr[0].split("\t").length != hreaders_arr.length) {
+                SendToast('追加数据列数必须和现有的相同', EToastType.Error, EToastTime.Small);
+                return;
+            }
+        }
+
+        self.setState({
+            reading: true,
+        });
+        var row_i = -1;
+        var processEndFun = () => {
+            var rlt = {
+                rows: items_arr,
+                headers: hreaders_arr
+            }
+            var newData = nowData;
+            if (items_arr.length > 0) {
+                if (nowData) {
+                    newData = {
+                        rows: nowData.rows.concat(items_arr),
+                        headers: nowData.headers
+                    };
+                    SendToast(items_arr.length + '条数据已追加', EToastType.Info, EToastTime.Small);
+                }
+                else {
+                    newData = rlt
+                    SendToast(items_arr.length + '条数据已导入', EToastType.Info, EToastTime.Small);
+                }
+                self.setState({
+                    error: null,
+                    data: newData,
+                    reading: false,
+                });
+            }
+            else {
+                if (nowData) {
+                    SendToast(items_arr.length + '条数据被追加', EToastType.Info, EToastTime.Small);
+                }
+                else {
+                    newData = rlt
+                    SendToast(items_arr.length + '条数据被导入', EToastType.Info, EToastTime.Small);
+                }
+                self.setState({
+                    reading: false,
+                    readingInfo: null,
+                });
+            }
+        }
+        var startTime = new Date().getTime();
+        var processFun = () => {
+            ++row_i;
+            if (row_i >= rows_arr.length) {
+                processEndFun();
+                return;
+            }
+            self.setState({
+                readingInfo: '进度:' + (row_i) + '/' + rows_arr.length,
+            });
+            var rowStr = rows_arr[row_i];
+            let cols_arr = rowStr.split("\t");
+            if (row_i == 0) {
+                if (nowData) {
+                    var allHit = true;
+                    for (var i = 0; i < nowData.headers.length; ++i) {
+                        if (cols_arr.indexOf(nowData.headers[i]) == -1) {
+                            allHit = false;
+                            break;;
+                        }
+                    }
+                    if (allHit) {
+                        cols_arr = null;
+                    }
+                }
+                else {
+                    hreaders_arr = cols_arr;
+                    cols_arr = null;;
+                }
+            }
+            if (cols_arr) {
+                if (cols_arr.length == hreaders_arr.length) {
+                    var item = {};
+                    hreaders_arr.forEach((header, header_i) => {
+                        item[header] = cols_arr[header_i];
+                    });
+                    items_arr.push(item);
+                }
+            }
+            var nowTime = new Date().getTime();
+            if((nowTime - startTime) > 3000){
+                startTime = new Date().getTime();
+                setTimeout(processFun, 100);
+            }
+            else{
+                processFun();
+            }
+        }
+        setTimeout(processFun, 100);
+    }
+
+    renderData() {
+        var data = this.state.data;
+        var bottomElem = null;
+        if (this.state.reading) {
+            bottomElem = <span><i className='fa fa-circle-o-notch fa-spin border' />{this.state.readingInfo ? this.state.readingInfo : '正在解析'}</span>
+        }
+        else {
+            bottomElem = <React.Fragment>
+                <button type='button' className='btn btn-primary' onClick={this.confirmClickHandler}>确认上传</button>
+                <button type='button' className='btn btn-primary ml-1' onClick={this.importFromClipboard}>从剪贴板追加</button>
+                <button type='button' className='btn btn-danger ml-1' onClick={this.cancelClickHandler}>取消上传</button>
+                <button type='button' className='btn btn-danger ml-1' onClick={this.clearData}>清空数据</button>
+            </React.Fragment>
+        }
+        return <div className='w-100 h-100 d-flex p-3 flex-column align-items-center justify-content-center'>
+            <div className='bg-light border d-flex flex-column p-1 rounded' style={{ maxWidth: '95%', maxHeight: '95%' }}>
+                <ERP_Form_ShowData id='dataform' parentPath='excelimporter' fullPath='excelimporter' pagebreak={false} selectMode='none' headers={data.headers} records_arr={data.rows} title={this.state.f_name} ></ERP_Form_ShowData>
+                <div className='d-flex justify-content-center flex-grow-0 flex-shrink-0 border-top p-1'>
+                    {bottomElem}
+                </div>
+            </div>
+        </div>;
+    }
+
+    render() {
+        if (this.state.data) {
+            return this.renderData();
+        }
+        var uploaderElem = null;
+        var uploader = this.state.uploader;
+        var selectorElem = null;
+        if (this.state.uploader) {
+            uploaderElem = <div d-fkey={uploader.file.name + uploader.file.size} className='flex-grow-0 flex-shrink-0'>
+                <CFileUploaderBar uploader={uploader} />
+            </div>
+        }
+        else {
+            selectorElem = <div className='d-flex align-items-center border p-1' >
+                <span className='flex-grow-1 flex-shrink-1 hidenOverflow mr-1'>{this.state.f_name}</span>
+                <div className='btn-group flex-grow-0 flex-shrink-0'>
+                    <button ref={this.btnTagRef} className={'btn btn-sm btn-primary' + (uploader ? ' d-none' : '')} onClick={this.plusClickHandler}>选择文件</button>
+                    <button className={'btn btn-sm btn-danger' + (uploader ? ' d-none' : '')} onClick={this.cancelClickHandler}>取消上传</button>
+                    <button type='button' className='btn btn-primary btn-sm' onClick={this.importFromClipboard}>从剪贴板导入</button>
+                </div>
+            </div>
+        }
+        return <div className='card excelimporter'>
+            <input id={this.props.id + '_file'} onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" />
+            <div className='card-body'>
+                <div className='card-title'><h5>{this.props.title}</h5></div>
+                {selectorElem}
+                {uploaderElem}
+                {this.state.reading ? <span><i className='fa fa-circle-o-notch fa-spin' />{this.state.readingInfo ? this.state.readingInfo : '正在解析Excel内容'}</span> : null}
+                {this.state.error ? <div className='d-flex flex-column flex-grow-1 flex-shrink-1'>
+                    <span className='text-danger flex-grow-1 flex-shrink-1'><i className='fa fa-warning' />{this.state.error.info}</span>
+                    <span className='d-flex justify-content-center flex-grow-0 flex-shrink-0'>
+                        <button className='btn btn-sm btn-danger' onClick={this.cancelClickHandler}>取消操作</button>
+                    </span>
+                </div> : null}
+            </div>
+        </div>
+    }
+}
+
+function ERPC_ExcelImporter_mapstatetoprops(state, ownprops) {
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+
+    return {
+        title: IsEmptyString(ownprops.title) ? '上传Excel' : ownprops.title,
+    };
+}
+
+function ERPC_ExcelImporter_dispatchtorprops(dispatch, ownprops) {
+    return {
+    };
+}
+
 var VisibleERPC_MultiFileUploader = null;
 var VisibleERPC_FilePreview = null;
 var VisibleERPC_SingleFileUploader = null;
+var VisibleERPC_ExcelImporter = null;
+var VisibleERP_Form_ShowData = null;
 
 gNeedCallOnErpControlInit_arr.push(() => {
     VisibleERPC_MultiFileUploader = ReactRedux.connect(ERPC_MultiFileUploader_mapstatetoprops, ERPC_MultiFileUploader_dispatchtorprops)(ERPC_MultiFileUploader);
     VisibleERPC_FilePreview = ReactRedux.connect(ERPC_FilePreview_mapstatetoprops, ERPC_FilePreview_dispatchtorprops)(ERPC_FilePreview);
     VisibleERPC_SingleFileUploader = ReactRedux.connect(ERPC_SingleFileUploader_mapstatetoprops, ERPC_SingleFileUploader_dispatchtorprops)(ERPC_SingleFileUploader);
+    VisibleERPC_ExcelImporter = ReactRedux.connect(ERPC_ExcelImporter_mapstatetoprops, ERPC_ExcelImporter_dispatchtorprops)(ERPC_ExcelImporter);
 });

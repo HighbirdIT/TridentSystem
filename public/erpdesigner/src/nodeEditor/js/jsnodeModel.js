@@ -3682,8 +3682,8 @@ class JSNODE_Insert_table extends JSNode_Base {
                     }
                     else {
                         postCheckBlock.pushLine("if(!serverhelper.IsEmptyString(" + colValueVarName + ')){', 1);
-                        postCheckBlock.pushLine(insertParVarName + "+= ',[" + columnProfile.name + "]';");
-                        postCheckBlock.pushLine(valueParVarName + "+= ',@" + colValueVarName + "';");
+                        postCheckBlock.pushLine(insertParVarName + "+= (" + insertParVarName + "[" + insertParVarName + ".length-1] == '(' ? '' : ',') + '[" + columnProfile.name + "]';");
+                        postCheckBlock.pushLine(valueParVarName + "+= (" + valueParVarName + "[" + valueParVarName + ".length-1] == '(' ? '' : ',') + '@" + colValueVarName + "';");
                         postCheckBlock.subNextIndent();
                         postCheckBlock.pushLine('}');
                     }

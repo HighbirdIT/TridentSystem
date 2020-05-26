@@ -2486,6 +2486,9 @@ class JSNode_Array_For extends JSNode_Base {
                     else if (socket.name == 'data') {
                         this.dataSocket = socket;
                     }
+                    else if (socket.name == 'len') {
+                        this.lenSocket = socket;
+                    }
                 });
             }
             if (this.inputScokets_arr.length > 0) {
@@ -2510,17 +2513,22 @@ class JSNode_Array_For extends JSNode_Base {
         if (this.dataSocket == null) {
             this.dataSocket = this.addSocket(new NodeSocket('data', this, false));
         }
+        if (this.lenSocket == null) {
+            this.lenSocket = this.addSocket(new NodeSocket('len', this, false));
+        }
         if (this.manualMode == null) {
             this.manualMode = false;
         }
         this.inSocket.label = 'array';
         this.dataSocket.label = 'data';
         this.indexSocket.label = 'index';
+        this.lenSocket.label = 'length';
         this.inSocket.type = ValueType.Array;
         this.inSocket.inputable = false;
 
         this.indexSocket.type = ValueType.Int;
         this.dataSocket.type = ValueType.Object;
+        this.lenSocket.type = ValueType.Int;
     }
 
     requestSaveAttrs() {
@@ -2531,6 +2539,10 @@ class JSNode_Array_For extends JSNode_Base {
 
     restorFromAttrs(attrsJson) {
         assginObjByProperties(this, attrsJson, ['manualMode']);
+    }
+
+    getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
+        result.pushVariable(this.id + '_' + targetSocket.name, targetSocket);
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -2558,7 +2570,7 @@ class JSNode_Array_For extends JSNode_Base {
 
         var myJSBlock = new FormatFileBlock(this.id);
         belongBlock.pushChild(myJSBlock);
-        var indexVarName = this.id + '_i';
+        var indexVarName = this.id + '_index';
         var dataVarName = this.id + '_data';
         var lenVarName = this.id + '_len';
         var childBlock = new FormatFileBlock('child');
@@ -2608,6 +2620,7 @@ class JSNode_Array_For extends JSNode_Base {
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         selfCompileRet.setSocketOut(this.dataSocket, dataVarName);
         selfCompileRet.setSocketOut(this.indexSocket, indexVarName);
+        selfCompileRet.setSocketOut(this.lenSocket, lenVarName);
         helper.setCompileRetCache(this, selfCompileRet);
 
         if (this.compileFlowNode(bodyFlowLinks_arr[0], helper, usePreNodes_arr, childBlock) == false) {
