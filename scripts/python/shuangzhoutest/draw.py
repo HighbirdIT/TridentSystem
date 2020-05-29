@@ -45,6 +45,10 @@ class Draw_img:
             ex_max =0.05
         if ex_min >= -0.01:
             ex_min =-0.01
+        if ey_max <= 0.05:
+            ex_max =0.05
+        if ey_min >=0.01:
+            ey_min =0.01
         ax1 = self.ax[0]
 
         # 设置子图的基本元素
@@ -54,9 +58,19 @@ class Draw_img:
         plot1 = ax1.plot(ex, fx, linestyle='-', color='g', label='original')  # 点图：marker图标
         plot2 = ax1.plot(Nx / Ext - Ny / Eyt * Vy, Nx, linestyle='-', alpha=0.5, color='r',
                          label='experiment')  # 线图：linestyle线性，alpha透明度，color颜色，label图例文本
-        ax1.set_xlim(ex_min, ex_max, 0.01)  # 设置横轴范围，会覆盖上面的横坐标,plt.xlim
-        ax1.set_ylim(0, 31,auto=False)  # 设置纵轴范围，会覆盖上面的纵坐标,plt.ylim
-        ax1.grid()
+        ax1.set_xlim(ex_min, ex_max)  # 设置横轴范围，会覆盖上面的横坐标,plt.xlim
+        ax1.set_ylim(0, 31)  # 设置纵轴范围，会覆盖上面的纵坐标,plt.ylim
+        
+        xmaloc = plt.MultipleLocator(0.01)
+        xmiloc = plt.MultipleLocator(0.005)
+        
+        ymaloc = plt.MultipleLocator(2)
+        ymiloc = plt.MultipleLocator(1)
+        ax1.xaxis.set_major_locator(xmaloc)
+        ax1.xaxis.set_minor_locator(xmiloc)
+        ax1.yaxis.set_major_locator(ymaloc)
+        ax1.yaxis.set_minor_locator(ymiloc)
+        ax1.grid(which='both', axis='both', color='darkgray', linestyle='--', linewidth=0.75)
         ax1.legend(loc='upper left')
 
         ax2 = self.ax[1]
@@ -66,9 +80,19 @@ class Draw_img:
         plot1 = ax2.plot(ey, fy, linestyle='-', color='g', label='original')  # 点图：marker图标
         plot2 = ax2.plot(Ny / Eyt - Nx / Ext * Vx, Ny, linestyle='-', alpha=0.5, color='r',
                          label='experiment')  # 线图：linestyle线性，alpha透明度，color颜色，label图例文本
-        ax2.set_xlim(ey_min,ey_max, 0.01)  # 设置横轴范围，会覆盖上面的横坐标,plt.xlim
-        ax2.set_ylim(0, 31, 1)  # 设置纵轴范围，会覆盖上面的纵坐标,plt.ylim
-        ax2.grid()
+        ax2.set_xlim(ey_min,ey_max)  # 设置横轴范围，会覆盖上面的横坐标,plt.xlim
+        ax2.set_ylim(0, 31)  # 设置纵轴范围，会覆盖上面的纵坐标,plt.ylim
+        xmaloc = plt.MultipleLocator(0.01)
+        xmiloc = plt.MultipleLocator(0.005)
+
+        ymaloc = plt.MultipleLocator(2)
+        ymiloc = plt.MultipleLocator(1)
+        ax2.xaxis.set_major_locator(xmaloc)
+        ax2.xaxis.set_minor_locator(xmiloc)
+        ax2.yaxis.set_major_locator(ymaloc)
+        ax2.yaxis.set_minor_locator(ymiloc)
+        ax2.grid(which='both', axis='both', color='darkgray', linestyle='--', linewidth=0.75)
+
         ax2.legend(loc='upper left')
 
         # plt.plot(ey, fy)
