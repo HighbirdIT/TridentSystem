@@ -26,6 +26,7 @@ const M_DropdownKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('历史Key', AttrNames.HisKey, ValueType.String, '', true, false),
         new CAttribute('Growable', AttrNames.Growable, ValueType.Boolean, true),
         new CAttribute(AttrNames.ColumnName, AttrNames.ColumnName, ValueType.String, null, false, false, null, null, false),
+        new CAttribute(AttrNames.ValuesArray, AttrNames.ValuesArray, ValueType.String, null, false, false, null, null, false),
     ]),
     new CAttributeGroup('事件', [
         new CAttribute('OnChanged', AttrNames.Event.OnChanged, ValueType.Event),
@@ -293,8 +294,6 @@ class M_DropdownKernel extends ControlKernelBase {
             }
         }
 
-
-
         switch (attrItem.name) {
             case AttrNames.DataSource:
             case AttrNames.FromTextField:
@@ -309,6 +308,7 @@ class M_DropdownKernel extends ControlKernelBase {
 var M_DropdownKernel_api = new ControlAPIClass(M_DropdownKernel_Type);
 M_DropdownKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.TextField, M_DropdownKernelAttrsSetting), 'text', true));
 M_DropdownKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.ValueField, M_DropdownKernelAttrsSetting), 'value', true));
+M_DropdownKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.ValuesArray, M_DropdownKernelAttrsSetting), 'values_arr', true));
 M_DropdownKernel_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(AttrNames.ColumnName, M_DropdownKernelAttrsSetting), AttrNames.ColumnName, true));
 M_DropdownKernel_api.pushApi(new ApiItem_propsetter('value'));
 M_DropdownKernel_api.pushApi(new ApiItem_propsetter('text'));

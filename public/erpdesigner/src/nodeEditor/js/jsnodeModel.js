@@ -4338,7 +4338,7 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
                 setPropName = this.apiItem.stateName;
             }
             if (this.isDropdownReset) {
-                selectedKernel.getAppandColumns().concat(['text', 'value']).forEach(stateName => {
+                selectedKernel.getAppandColumns().concat(['text', 'value', 'values_arr']).forEach(stateName => {
                     myJSBlock.pushLine(traversalFromNode.id + '_' + VarNames.NeedSetState + "[" + traversalFromNode.id + '_rowpath + ' + singleQuotesStr('.' + selectedKernel.getStatePath(stateName, '.', null, false, traversalFromNode.formKernel)) + "]=null;", -1);
                 });
             }

@@ -98,14 +98,21 @@ class JSNODE_EX_LF_ShuangZhouTestCal extends JSNode_Base {
                     case '最大应力':
                         this.最大应力Socket = socket;
                         break;
-                    case '参考方向':
-                        this.参考方向Socket = socket;
+                    case 'Area':
+                        this.AreaSocket = socket;
                         break;
                     case '偏移原点':
                         this.偏移原点Socket = socket;
                         break;
+                    case '参考方向':
+                        this.参考方向Socket = socket;
+                        break;
                 }
             });
+        }
+        if(this.参考方向Socket != null) {
+            this.removeSocket(this.参考方向Socket);
+            this.参考方向Socket = null;
         }
         if (this.filesSocket == null) {
             this.filesSocket = new NodeSocket('files', this, true);
@@ -139,9 +146,9 @@ class JSNODE_EX_LF_ShuangZhouTestCal extends JSNode_Base {
             this.最大应力Socket = new NodeSocket('最大应力', this, true);
             this.addSocket(this.最大应力Socket);
         }
-        if (this.参考方向Socket == null) {
-            this.参考方向Socket = new NodeSocket('参考方向', this, true);
-            this.addSocket(this.参考方向Socket);
+        if (this.AreaSocket == null) {
+            this.AreaSocket = new NodeSocket('Area', this, true);
+            this.addSocket(this.AreaSocket);
         }
         if (this.偏移原点Socket == null) {
             this.偏移原点Socket = new NodeSocket('偏移原点', this, true);
@@ -156,7 +163,7 @@ class JSNODE_EX_LF_ShuangZhouTestCal extends JSNode_Base {
         this.测试标距Socket.type = ValueType.Int;
         this.最大应力Socket.type = ValueType.Int;
         this.最小应力Socket.type = ValueType.Int;
-        this.参考方向Socket.type = ValueType.String;
+        this.AreaSocket.type = ValueType.String;
         this.偏移原点Socket.type = ValueType.Boolean;
 
         this.起始数据项Socket.label = '起始数据项';
@@ -164,7 +171,7 @@ class JSNODE_EX_LF_ShuangZhouTestCal extends JSNode_Base {
         this.测试标距Socket.label = '测试标距';
         this.最小应力Socket.label = '最小应力';
         this.最大应力Socket.label = '最大应力';
-        this.参考方向Socket.label = '参考方向';
+        this.AreaSocket.label = 'Area';
         this.偏移原点Socket.label = '偏移原点';
         this.filesSocket.label = '数据文件';
         this.namesSocket.label = '数据文件名称';

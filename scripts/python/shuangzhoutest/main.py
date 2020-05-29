@@ -16,10 +16,11 @@ def walkFile(config, drawdata_li):
     path_li = config['files']
     name_li = config['names']
     datafile_li = config['calfiles']
+    area = config['Area']
+    #area = '012'
 
     start_index = int(config['起始数据项'])
     force_range = (int(config['最小应力']), int(config['最大应力']))
-    force_dir = config['参考方向']
     deviation_bool = config['偏移原点'] == '1'
     width = int(config['试样宽度'])  # 试样宽度
     gauge_length = int(config['测试标距'])  # 测试标距
@@ -41,12 +42,18 @@ def walkFile(config, drawdata_li):
         obj_text = loadfile.Load_file(filePath)
         #print('obj_text')
         #print(obj_text.read_file())
-        process_data = dataprocess.Data_processed(obj_text, start_index, force_dir)
+        process_data = dataprocess.Data_processed(obj_text, start_index, fileName)
         calculate_data = process_data.calculate_data()
+        err_standard = process_data.check_standard()
+        if not err_standard:
+            print ('cuowu ')
         list_area = dataprocess.identify_peak(calculate_data)
-        area = list_area
+        temp =[]
+        for i in area:
+            area_value = list_area[int(i)]
+            temp.append(area_value)
         original_data = obj_text.read_file()
-        step = step2.Step_two(deviation_bool, area, force_range,original_data, width, gauge_length)
+        step = step2.Step_two(deviation_bool, temp, force_range,original_data, width, gauge_length)
         step.standard_item_identity()
         result = step.process()
         drawdata = step.process_2()

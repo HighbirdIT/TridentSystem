@@ -6,11 +6,10 @@ class Data_processed:
     原始文件筛选类
     """
 
-    def __init__(self, original_data, start_index, force_dir):
+    def __init__(self, original_data, start_index, filename):
         self.original_data = original_data.read_file()
         self.start_index = start_index
-        # self.force_range = force_range
-        self.force_dir = force_dir
+        self.filename = filename
         self.series_arr = []
         # self.__process()
 
@@ -28,12 +27,29 @@ class Data_processed:
 
     def calculate_data(self):
         # 先找 应力x，y 然后从起始值开始
-        if self.force_dir == 'Fx':
-            self.series_arr = self.original_data.loc[self.start_index:, 'Fx']
-        elif self.force_dir == 'Fy':
+        if self.filename == '(4)1:2' or self.filename == '(8)0:1':
             self.series_arr = self.original_data.loc[self.start_index:, 'Fy']
+        else:
+            self.series_arr = self.original_data.loc[self.start_index:, 'Fx']
         # print(self.series_arr)
         return self.series_arr
+
+    def check_standard(self):
+        fx_arr = self.original_data.loc[self.start_index:, 'Fx']
+        fy_arr = self.original_data.loc[self.start_index:, 'Fy']
+        fx_max = max(fx_arr)
+        fy_max = max(fy_arr)
+        difference = 0
+        print('max:', fx_max,fy_max)
+        if self.filename == '(2)2:1':
+            difference = fx_max- 2*fy_max if (fx_max - 2*fy_max) > 0 else 2*fy_max - fx_max
+        elif self.filename == '(4)1:2':
+            difference = 2*fx_max - fy_max if (2*fx_max - fy_max) > 0 else fy_max - 2*fx_max
+        elif self.filename != '(6)1:0' and self.filename != '(8)0:1':
+            difference = (fx_max - fy_max) if (fx_max - fy_max) > 0 else fy_max - fx_max
+        print('计算的结果：',float(difference) / fx_max)
+        if float(difference) / fx_max <= 0.3:
+            return True
 
     def draw_data(self):
         return self.original_data[['Fx', 'Fy']].loc[self.start_index:]

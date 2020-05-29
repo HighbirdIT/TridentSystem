@@ -405,6 +405,7 @@ var AttrNames = {
     RowText: 'rowtext',
     AppandColumn: 'appandColumn',
     ColumnName: 'columnname',
+    ValuesArray: 'valuesarray',
     ChartType: 'charttype',
 
     Event: {
