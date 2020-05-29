@@ -24,6 +24,7 @@ def walkFile(config, drawdata_li):
     deviation_bool = config['偏移原点'] == '1'
     width = int(config['试样宽度'])  # 试样宽度
     gauge_length = int(config['测试标距'])  # 测试标距
+    errorInfo = ''
     
     for fi in range(0, len(path_li)):
         # root 表示当前正在访问的文件夹路径
@@ -46,7 +47,7 @@ def walkFile(config, drawdata_li):
         calculate_data = process_data.calculate_data()
         err_standard = process_data.check_standard()
         if not err_standard:
-            print ('cuowu ')
+            errorInfo += fileName + '文件比例错误;'
         list_area = dataprocess.identify_peak(calculate_data)
         temp =[]
         for i in area:
@@ -70,7 +71,10 @@ def walkFile(config, drawdata_li):
         final_dict['a12'] += coefficient.a12  # 残差方程E12二次项系数
         final_dict['b12'] += coefficient.b12  # 残差方程E12的交叉乘积项系数
         final_dict['a'] += coefficient.a  # 残差方程E11 * E12和E12 * E22乘积项系数
-    return final_dict
+    return {
+        'final_dict':final_dict,
+        'errinfo':errorInfo
+    }
 
 
 def get_result(final_dict):
@@ -106,8 +110,10 @@ if __name__ == '__main__':
     #print(config)
     drawData_li = []
     midResult = walkFile(config,drawData_li)
-    print('middata:' + str(midResult))
-    result = get_result(midResult)
+    final_dict = midResult['final_dict']
+    print('errinfo:{' + midResult['errinfo'] + '}')
+    print('middata:' + str(final_dict))
+    result = get_result(final_dict)
     print('result:'+str(result))
     print(result)
     rnd=int(random.random() * 1000)
