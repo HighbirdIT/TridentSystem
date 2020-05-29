@@ -3682,8 +3682,8 @@ class JSNODE_Insert_table extends JSNode_Base {
                     }
                     else {
                         postCheckBlock.pushLine("if(!serverhelper.IsEmptyString(" + colValueVarName + ')){', 1);
-                        postCheckBlock.pushLine(insertParVarName + "+= ',[" + columnProfile.name + "]';");
-                        postCheckBlock.pushLine(valueParVarName + "+= ',@" + colValueVarName + "';");
+                        postCheckBlock.pushLine(insertParVarName + "+= (" + insertParVarName + "[" + insertParVarName + ".length-1] == '(' ? '' : ',') + '[" + columnProfile.name + "]';");
+                        postCheckBlock.pushLine(valueParVarName + "+= (" + valueParVarName + "[" + valueParVarName + ".length-1] == '(' ? '' : ',') + '@" + colValueVarName + "';");
                         postCheckBlock.subNextIndent();
                         postCheckBlock.pushLine('}');
                     }
@@ -4338,7 +4338,7 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
                 setPropName = this.apiItem.stateName;
             }
             if (this.isDropdownReset) {
-                selectedKernel.getAppandColumns().concat(['text', 'value']).forEach(stateName => {
+                selectedKernel.getAppandColumns().concat(['text', 'value', 'values_arr']).forEach(stateName => {
                     myJSBlock.pushLine(traversalFromNode.id + '_' + VarNames.NeedSetState + "[" + traversalFromNode.id + '_rowpath + ' + singleQuotesStr('.' + selectedKernel.getStatePath(stateName, '.', null, false, traversalFromNode.formKernel)) + "]=null;", -1);
                 });
             }

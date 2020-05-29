@@ -1142,16 +1142,17 @@ var ERPC_DropDown = function (_React$PureComponent4) {
         value: function selectItem(theOptionItem, autoClose) {
             var value = null;
             var text = null;
+            var values_arr = [];
             var multiselect = this.props.multiselect;
             if (theOptionItem == '*' || theOptionItem == this.props.starval) {
                 value = this.props.starval;
                 text = '*';
+                values_arr.push('*');
             } else {
                 if (multiselect) {
                     if (!Array.isArray(theOptionItem)) {
                         console.error("multiselect's selectItem theOptionItem must array!");
                     }
-                    var values_arr = [];
                     theOptionItem.forEach(function (item) {
                         values_arr.push(item.value);
                         //value = (value == null ? '' : value + ',') + item.value;
@@ -1162,6 +1163,7 @@ var ERPC_DropDown = function (_React$PureComponent4) {
                     if (theOptionItem) {
                         value = theOptionItem.value.toString();
                         text = theOptionItem.text;
+                        values_arr.push(value);
                     }
                     if (this.props.recentCookieKey && this.recentValues_arr) {
                         var index = this.recentValues_arr.indexOf(value);
@@ -1183,15 +1185,16 @@ var ERPC_DropDown = function (_React$PureComponent4) {
                 this.dropDownClosed();
             }
 
-            this.confirmChanged(text, value, theOptionItem);
+            this.confirmChanged(text, value, theOptionItem, values_arr);
         }
     }, {
         key: 'confirmChanged',
-        value: function confirmChanged(text, value, theOptionItem) {
+        value: function confirmChanged(text, value, theOptionItem, values_arr) {
             var invalidInfo = BaseIsValueValid(null, null, null, value == null || text == null ? null : value, this.props.type, this.props.nullable, this.props.id, null, this.props.fullPath);
             var changedObj = {
                 value: value,
                 text: text,
+                values_arr: values_arr,
                 invalidInfo: invalidInfo,
                 selectOpt: theOptionItem
             };
@@ -1252,7 +1255,7 @@ var ERPC_DropDown = function (_React$PureComponent4) {
     }, {
         key: 'editableInputBlurhandler',
         value: function editableInputBlurhandler(ev) {
-            this.confirmChanged(this.state.inputingValue, this.state.inputingValue);
+            this.confirmChanged(this.state.inputingValue, this.state.inputingValue, null, [this.state.inputingValue]);
             this.setState({
                 focused: false
             });
@@ -1654,13 +1657,11 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
     } else {
         selectOpt = null;
     }
-    if (ownprops.poppanelminwidth > 0) {
-        console.log('ahhaha');
-    }
 
     return {
         value: useValue,
         text: ctlState.text,
+        values_arr: ctlState.values_arr,
         fetching: ctlState.fetching,
         fetchingErr: ctlState.fetchingErr,
         optionsData: optionsDataSelector(state, ownprops),
@@ -1806,6 +1807,7 @@ var ERPC_Text = function (_React$PureComponent5) {
                 } else if (this.props.type == 'string' && this.props.linetype != null && this.props.linetype != 'single') {
                     contentElem = React.createElement('textarea', { id: this.props.id, onChange: this.inputChanged, className: 'flex-grow-1 flex-shrink-1 w-100 form-control textarea-' + this.props.linetype + (this.props.align ? ' text-' + this.props.align : ''), value: this.props.value, onBlur: this.endInputHandler });
                 } else {
+                    var useClass = 'flex-grow-1 flex-shrink-1 form-control invalid';
                     var useType = this.props.type;
                     var useChecked = null;
                     switch (this.props.type) {
@@ -1820,6 +1822,9 @@ var ERPC_Text = function (_React$PureComponent5) {
                             useType = 'checkbox';
                             useChecked = parseBoolean(useType);
                             break;
+                        case 'date':
+                            useClass += ' dateTextInput';
+                            break;
                     }
                     var useValue = this.formatInputValue(this.props.value);
                     if (useValue != this.props.value) {
@@ -1829,7 +1834,7 @@ var ERPC_Text = function (_React$PureComponent5) {
                             }, 10);
                         }
                     }
-                    contentElem = React.createElement('input', { id: this.props.id, className: 'flex-grow-1 flex-shrink-1 form-control invalid ' + (this.props.align ? ' text-' + this.props.align : ''), type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged, onBlur: this.endInputHandler });
+                    contentElem = React.createElement('input', { id: this.props.id, className: useClass + (this.props.align ? ' text-' + this.props.align : ''), type: useType, value: useValue, checked: useChecked, onChange: this.inputChanged, onBlur: this.endInputHandler });
                 }
 
                 if (this.props.invalidInfo) {
@@ -2117,19 +2122,104 @@ function ERPC_Label_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
-var ERPC_CheckBox = function (_React$PureComponent9) {
-    _inherits(ERPC_CheckBox, _React$PureComponent9);
+var ERPC_Img = function (_React$PureComponent9) {
+    _inherits(ERPC_Img, _React$PureComponent9);
 
-    function ERPC_CheckBox(props) {
-        _classCallCheck(this, ERPC_CheckBox);
+    function ERPC_Img(props) {
+        _classCallCheck(this, ERPC_Img);
 
-        var _this13 = _possibleConstructorReturn(this, (ERPC_CheckBox.__proto__ || Object.getPrototypeOf(ERPC_CheckBox)).call(this));
+        var _this13 = _possibleConstructorReturn(this, (ERPC_Img.__proto__ || Object.getPrototypeOf(ERPC_Img)).call(this));
 
         autoBind(_this13);
 
         ERPControlBase(_this13);
         _this13.state = _this13.initState;
         return _this13;
+    }
+
+    _createClass(ERPC_Img, [{
+        key: 'render',
+        value: function render() {
+            if (this.props.visible == false) {
+                return null;
+            }
+            var rootDivClassName = 'erpc_img ' + (this.props.className == null ? '' : this.props.className);
+            var contentElem = null;
+            var tileLen = 0;
+            if (this.props.fetching) {
+                rootDivClassName += 'p-1';
+                contentElem = React.createElement(
+                    'span',
+                    null,
+                    React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw' }),
+                    '\u901A\u8BAF\u4E2D'
+                );
+            } else if (this.props.fetchingErr) {
+                var errInfo = this.props.fetchingErr.info;
+                if (errInfo == gPreconditionInvalidInfo) {
+                    errInfo = '';
+                }
+                rootDivClassName += 'p-1 text-danger';
+                contentElem = React.createElement(
+                    'span',
+                    { className: 'flex-grow-1 flex-shrink-1' },
+                    React.createElement('i', { className: 'fa fa-warning' }),
+                    errInfo
+                );
+            }
+
+            if (contentElem) {
+                return React.createElement(
+                    'span',
+                    { className: rootDivClassName, style: this.props.style, onMouseDown: this.props.onMouseDown },
+                    contentElem
+                );
+            }
+
+            var needCtlPath = false;
+            if (this.props.onMouseDown != null) {
+                needCtlPath = true;
+            }
+
+            return React.createElement('img', { className: rootDivClassName, style: this.props.style, src: this.props.src, onMouseDown: this.props.onMouseDown, 'ctl-fullpath': needCtlPath ? this.props.fullPath : null });
+        }
+    }]);
+
+    return ERPC_Img;
+}(React.PureComponent);
+
+function ERPC_Img_mapstatetoprops(state, ownprops) {
+    var _ref2;
+
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    var rowState = propProfile.rowState;
+    var useSrc = ctlState.src != null ? ctlState.src : ownprops.src ? ownprops.src : '';
+
+    return _ref2 = {
+        src: useSrc,
+        visible: ctlState.visible,
+        fetching: ctlState.fetching
+    }, _defineProperty(_ref2, 'visible', ctlState.visible == false || ownprops.definvisible ? false : true), _defineProperty(_ref2, 'fetchingErr', ctlState.fetchingErr), _defineProperty(_ref2, 'fullParentPath', propProfile.fullParentPath), _defineProperty(_ref2, 'fullPath', propProfile.fullPath), _ref2;
+}
+
+function ERPC_Img_dispatchtorprops(dispatch, ownprops) {
+    return {};
+}
+
+var ERPC_CheckBox = function (_React$PureComponent10) {
+    _inherits(ERPC_CheckBox, _React$PureComponent10);
+
+    function ERPC_CheckBox(props) {
+        _classCallCheck(this, ERPC_CheckBox);
+
+        var _this14 = _possibleConstructorReturn(this, (ERPC_CheckBox.__proto__ || Object.getPrototypeOf(ERPC_CheckBox)).call(this));
+
+        autoBind(_this14);
+
+        ERPControlBase(_this14);
+        _this14.state = _this14.initState;
+        return _this14;
     }
 
     _createClass(ERPC_CheckBox, [{
@@ -2197,19 +2287,19 @@ function ERPC_CheckBox_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
-var ERPC_Button = function (_React$PureComponent10) {
-    _inherits(ERPC_Button, _React$PureComponent10);
+var ERPC_Button = function (_React$PureComponent11) {
+    _inherits(ERPC_Button, _React$PureComponent11);
 
     function ERPC_Button(props) {
         _classCallCheck(this, ERPC_Button);
 
-        var _this14 = _possibleConstructorReturn(this, (ERPC_Button.__proto__ || Object.getPrototypeOf(ERPC_Button)).call(this));
+        var _this15 = _possibleConstructorReturn(this, (ERPC_Button.__proto__ || Object.getPrototypeOf(ERPC_Button)).call(this));
 
-        autoBind(_this14);
+        autoBind(_this15);
 
-        ERPControlBase(_this14);
-        _this14.state = _this14.initState;
-        return _this14;
+        ERPControlBase(_this15);
+        _this15.state = _this15.initState;
+        return _this15;
     }
 
     _createClass(ERPC_Button, [{
@@ -2300,25 +2390,39 @@ function ClosePopperBtn(fullPath, needSetState) {
     }
 }
 
-var ERPC_PopperBtn = function (_React$PureComponent11) {
-    _inherits(ERPC_PopperBtn, _React$PureComponent11);
+var ERPC_PopperBtn = function (_React$PureComponent12) {
+    _inherits(ERPC_PopperBtn, _React$PureComponent12);
 
     function ERPC_PopperBtn(props) {
         _classCallCheck(this, ERPC_PopperBtn);
 
-        var _this15 = _possibleConstructorReturn(this, (ERPC_PopperBtn.__proto__ || Object.getPrototypeOf(ERPC_PopperBtn)).call(this));
+        var _this16 = _possibleConstructorReturn(this, (ERPC_PopperBtn.__proto__ || Object.getPrototypeOf(ERPC_PopperBtn)).call(this));
 
-        autoBind(_this15);
+        autoBind(_this16);
 
-        ERPControlBase(_this15);
-        _this15.initState.closeSignal = props.closeSignal;
-        _this15.state = _this15.initState;
-        _this15.popdivRef = React.createRef();
-        _this15.rootRef = React.createRef();
-        return _this15;
+        ERPControlBase(_this16);
+        _this16.initState.closeSignal = props.closeSignal;
+        _this16.state = _this16.initState;
+        _this16.popdivRef = React.createRef();
+        _this16.rootRef = React.createRef();
+        return _this16;
     }
 
     _createClass(ERPC_PopperBtn, [{
+        key: 'close',
+        value: function close() {
+            if (this.popdivRef.current == null) {
+                return;
+            }
+            if (this.state.popper) {
+                this.state.popper.destroy();
+                this.setState({
+                    popper: null
+                });
+                return;
+            }
+        }
+    }, {
         key: 'clickHandler',
         value: function clickHandler(ev) {
             if (this.popdivRef.current == null) {
@@ -2471,6 +2575,7 @@ var VisibleERPC_Button = null;
 var VisibleERPC_PopperBtn = null;
 var VisibleERPC_FrameSet = null;
 var VisibleERPC_IFrame = null;
+var VisibleERPC_Img = null;
 var gNeedCallOnErpControlInit_arr = [];
 
 function ErpControlInit() {
@@ -2484,6 +2589,7 @@ function ErpControlInit() {
     VisibleERPC_PopperBtn = ReactRedux.connect(ERPC_PopperBtn_mapstatetoprops, EERPC_PopperBtn_dispatchtorprops)(ERPC_PopperBtn);
     VisibleERPC_FrameSet = ReactRedux.connect(ERPC_FrameSet_mapstatetoprops, ERPC_FrameSet_dispatchtorprops)(ERPC_FrameSet);
     VisibleERPC_IFrame = ReactRedux.connect(ERPC_IFrame_mapstatetoprops, ERPC_IFrame_dispatchtorprops)(ERPC_IFrame);
+    VisibleERPC_Img = ReactRedux.connect(ERPC_Img_mapstatetoprops, ERPC_Img_dispatchtorprops)(ERPC_Img);
 
     gNeedCallOnErpControlInit_arr.forEach(function (elem) {
         if (typeof elem == 'function') {
@@ -2730,6 +2836,31 @@ function ERPC_GridForm(target) {
     target.cancelInsert = ERPC_GridForm_CancelInsert.bind(target);
     target.confrimInsert = ERPC_GridForm_ConfirmInsert.bind(target);
     target.selectorClicked = ERPC_GridForm_SelectorClicked.bind(target);
+    target.selectAll = ERPC_GridForm_SelectAll.bind(target);
+    target.unSelectAll = ERPC_GridForm_UnSelectAll.bind(target);
+    target.antiSelect = ERPC_GridForm_AntiSelect.bind(target);
+}
+
+function ERPC_GridForm_SelectAll() {
+    store.dispatch(makeAction_setStateByPath(this.props.records_arr.map(function (r) {
+        return r._key;
+    }), this.props.fullPath + '.selectedValues_arr'));
+}
+
+function ERPC_GridForm_UnSelectAll() {
+    store.dispatch(makeAction_setStateByPath([], this.props.fullPath + '.selectedValues_arr'));
+}
+
+function ERPC_GridForm_AntiSelect() {
+    var _this17 = this;
+
+    var newValues_arr = [];
+    this.props.records_arr.forEach(function (r) {
+        if (_this17.props.selectedValues_arr.indexOf(r._key) == -1) {
+            newValues_arr.push(r._key);
+        }
+    });
+    store.dispatch(makeAction_setStateByPath(newValues_arr, this.props.fullPath + '.selectedValues_arr'));
 }
 
 function ERPC_GridForm_RowPerPageChangedHandler(ev) {
@@ -2886,16 +3017,16 @@ function ERPC_GridForm_SelectorClicked(rowkey) {
     store.dispatch(makeAction_setManyStateByPath(needSetState, ''));
 }
 
-var ERPC_GridForm_BtnCol = function (_React$PureComponent12) {
-    _inherits(ERPC_GridForm_BtnCol, _React$PureComponent12);
+var ERPC_GridForm_BtnCol = function (_React$PureComponent13) {
+    _inherits(ERPC_GridForm_BtnCol, _React$PureComponent13);
 
     function ERPC_GridForm_BtnCol(props) {
         _classCallCheck(this, ERPC_GridForm_BtnCol);
 
-        var _this16 = _possibleConstructorReturn(this, (ERPC_GridForm_BtnCol.__proto__ || Object.getPrototypeOf(ERPC_GridForm_BtnCol)).call(this, props));
+        var _this18 = _possibleConstructorReturn(this, (ERPC_GridForm_BtnCol.__proto__ || Object.getPrototypeOf(ERPC_GridForm_BtnCol)).call(this, props));
 
-        autoBind(_this16);
-        return _this16;
+        autoBind(_this18);
+        return _this18;
     }
 
     _createClass(ERPC_GridForm_BtnCol, [{
@@ -2938,7 +3069,7 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent12) {
     }, {
         key: 'render',
         value: function render() {
-            var _this17 = this;
+            var _this19 = this;
 
             if (this.props.rowkey == 'new') {
                 return React.createElement(
@@ -2979,7 +3110,7 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent12) {
                 this.props.form.btns.map(function (btn) {
                     return React.createElement(
                         'button',
-                        { key: btn.key, onClick: _this17.clickHandler, 'd-key': btn.key, className: 'btn btn-sm btn-dark', type: 'button' },
+                        { key: btn.key, onClick: _this19.clickHandler, 'd-key': btn.key, className: 'btn btn-sm btn-dark', type: 'button' },
                         btn.content
                     );
                 })
@@ -2993,9 +3124,6 @@ var ERPC_GridForm_BtnCol = function (_React$PureComponent12) {
 function ERPC_GridForm_BtnCol_mapstatetoprops(state, ownprops) {
     var rowState = ownprops.form.getRowState(ownprops.rowkey);
     var editing = rowState && rowState.editing && ownprops.form.rowconfirmeditClicked != null;
-    if (editing) {
-        console.log('editing');
-    }
     return {
         editing: editing
     };
@@ -3005,22 +3133,67 @@ function ERPC_GridForm_BtnCol_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
-var ERPC_GridSelectableRow = function (_React$PureComponent13) {
-    _inherits(ERPC_GridSelectableRow, _React$PureComponent13);
+var ERPC_GridSelectableRow = function (_React$PureComponent14) {
+    _inherits(ERPC_GridSelectableRow, _React$PureComponent14);
 
     function ERPC_GridSelectableRow(props) {
         _classCallCheck(this, ERPC_GridSelectableRow);
 
-        var _this18 = _possibleConstructorReturn(this, (ERPC_GridSelectableRow.__proto__ || Object.getPrototypeOf(ERPC_GridSelectableRow)).call(this, props));
+        var _this20 = _possibleConstructorReturn(this, (ERPC_GridSelectableRow.__proto__ || Object.getPrototypeOf(ERPC_GridSelectableRow)).call(this, props));
 
-        _this18.clickHandler = _this18.clickHandler.bind(_this18);
-        return _this18;
+        _this20.clickHandler = _this20.clickHandler.bind(_this20);
+        _this20.onMouseDown = _this20.onMouseDown.bind(_this20);
+        _this20.onMouseUp = _this20.onMouseUp.bind(_this20);
+        _this20.onMouseOver = _this20.onMouseOver.bind(_this20);
+        return _this20;
     }
 
     _createClass(ERPC_GridSelectableRow, [{
         key: 'clickHandler',
         value: function clickHandler(ev) {
             this.props.form.selectorClicked(this.props.rowkey);
+            if (this.timeOutInt) {
+                clearTimeout(this.timeOutInt);
+                this.timeOutInt = null;
+            }
+        }
+    }, {
+        key: 'onMouseDown',
+        value: function onMouseDown(ev) {
+            //console.log('onMouseDown');
+            if (this.timeOutInt) {
+                clearTimeout(this.timeOutInt);
+                this.timeOutInt = null;
+            }
+            var form = this.props.form;
+            var rowkey = this.props.rowkey;
+            this.timeOutInt = setTimeout(function () {
+                form.selectorClicked(rowkey);
+                form.quickSelect = {};
+                form.quickSelect[rowkey] = true;
+            }, 200);
+        }
+    }, {
+        key: 'onMouseUp',
+        value: function onMouseUp(ev) {
+            var form = this.props.form;
+            if (this.timeOutInt) {
+                clearTimeout(this.timeOutInt);
+                this.timeOutInt = null;
+            }
+            form.quickSelect = null;
+            //console.log('onMouseUp');
+        }
+    }, {
+        key: 'onMouseOver',
+        value: function onMouseOver(ev) {
+            //console.log('onMouseOver');
+            var form = this.props.form;
+            var rowkey = this.props.rowkey;
+            if (form.quickSelect && form.quickSelect[rowkey] == null) {
+                form.selectorClicked(rowkey);
+                form.quickSelect[rowkey] = true;
+            }
         }
     }, {
         key: 'render',
@@ -3031,7 +3204,7 @@ var ERPC_GridSelectableRow = function (_React$PureComponent13) {
             if (selectMode == 'multi') {
                 selectElem = React.createElement(
                     'span',
-                    { onClick: this.clickHandler, className: 'fa-stack' },
+                    { onClick: this.clickHandler, onMouseDown: this.onMouseDown, onMouseUp: this.onMouseUp, onMouseEnter: this.onMouseOver, className: 'fa-stack' },
                     React.createElement('i', { className: "fa fa-square-o fa-stack-2x" }),
                     React.createElement('i', { className: 'fa fa-stack-1x ' + (checked ? ' fa-check text-success' : '') })
                 );
@@ -3129,7 +3302,7 @@ function ERPC_Accordion_Render() {
 }
 
 function ERPC_Accordion_Rebind() {
-    var _this19 = this;
+    var _this21 = this;
 
     var self = this;
     if (this.rebindging) {
@@ -3139,7 +3312,7 @@ function ERPC_Accordion_Rebind() {
     this.rebindBody();
     if (typeof this.props.onUnCollapse === 'function') {
         setTimeout(function () {
-            _this19.props.onUnCollapse(_this19.props.fullPath);
+            _this21.props.onUnCollapse(_this21.props.fullPath);
         }, 200);
     }
 }
@@ -3152,8 +3325,8 @@ function ERPC_Accordion(target) {
     return {};
 }
 
-var CBaseGridFormNavBar = function (_React$PureComponent14) {
-    _inherits(CBaseGridFormNavBar, _React$PureComponent14);
+var CBaseGridFormNavBar = function (_React$PureComponent15) {
+    _inherits(CBaseGridFormNavBar, _React$PureComponent15);
 
     function CBaseGridFormNavBar(props) {
         _classCallCheck(this, CBaseGridFormNavBar);
@@ -3255,7 +3428,7 @@ function BaseIsValueValid(nowState, visibleBelongState, ctlState, value, valueTy
             }
         } else if (ctlState.uploader) {
             if (ctlState.uploader.state == EFileUploaderState.WAITFILE) {
-                if (isNaN(ctlState.fileID) || isNaN(ctlState.attachmentID)) {
+                if (isNaN(ctlState.fileID)) {
                     if (nullable != true) {
                         return '请上传文件';
                     }
@@ -3345,22 +3518,22 @@ var EToastType = {
     Error: 'error'
 };
 
-var CToastManger = function (_React$PureComponent15) {
-    _inherits(CToastManger, _React$PureComponent15);
+var CToastManger = function (_React$PureComponent16) {
+    _inherits(CToastManger, _React$PureComponent16);
 
     function CToastManger(props) {
         _classCallCheck(this, CToastManger);
 
-        var _this21 = _possibleConstructorReturn(this, (CToastManger.__proto__ || Object.getPrototypeOf(CToastManger)).call(this, props));
+        var _this23 = _possibleConstructorReturn(this, (CToastManger.__proto__ || Object.getPrototypeOf(CToastManger)).call(this, props));
 
-        autoBind(_this21);
+        autoBind(_this23);
 
-        _this21.state = {
+        _this23.state = {
             msg_arr: []
         };
-        _this21.ticker = null;
-        _this21.msgID = 0;
-        return _this21;
+        _this23.ticker = null;
+        _this23.msgID = 0;
+        return _this23;
     }
 
     _createClass(CToastManger, [{
@@ -3577,18 +3750,18 @@ var MessageBoxItem = function () {
     return MessageBoxItem;
 }();
 
-var CMessageBox = function (_React$PureComponent16) {
-    _inherits(CMessageBox, _React$PureComponent16);
+var CMessageBox = function (_React$PureComponent17) {
+    _inherits(CMessageBox, _React$PureComponent17);
 
     function CMessageBox(props) {
         _classCallCheck(this, CMessageBox);
 
-        var _this22 = _possibleConstructorReturn(this, (CMessageBox.__proto__ || Object.getPrototypeOf(CMessageBox)).call(this, props));
+        var _this24 = _possibleConstructorReturn(this, (CMessageBox.__proto__ || Object.getPrototypeOf(CMessageBox)).call(this, props));
 
-        autoBind(_this22);
+        autoBind(_this24);
 
-        _this22.props.msgItem.changedAct = _this22.msgItemChanedHandler;
-        return _this22;
+        _this24.props.msgItem.changedAct = _this24.msgItemChanedHandler;
+        return _this24;
     }
 
     _createClass(CMessageBox, [{
@@ -3636,7 +3809,7 @@ var CMessageBox = function (_React$PureComponent16) {
     }, {
         key: 'render',
         value: function render() {
-            var _this23 = this;
+            var _this25 = this;
 
             var msgItem = this.props.msgItem;
             var type = msgItem.type;
@@ -3747,7 +3920,7 @@ var CMessageBox = function (_React$PureComponent16) {
                     btnsElem = msgItem.btns.map(function (btn) {
                         return React.createElement(
                             'button',
-                            { onClick: _this23.clickBtnHandler, key: btn.label, 'd-type': btn.key, type: 'button', className: btn.class == null ? 'btn btn-light' : btn.class },
+                            { onClick: _this25.clickBtnHandler, key: btn.label, 'd-type': btn.key, type: 'button', className: btn.class == null ? 'btn btn-light' : btn.class },
                             btn.label
                         );
                     });
@@ -3800,21 +3973,21 @@ var CMessageBox = function (_React$PureComponent16) {
     return CMessageBox;
 }(React.PureComponent);
 
-var CMessageBoxManger = function (_React$PureComponent17) {
-    _inherits(CMessageBoxManger, _React$PureComponent17);
+var CMessageBoxManger = function (_React$PureComponent18) {
+    _inherits(CMessageBoxManger, _React$PureComponent18);
 
     function CMessageBoxManger(props) {
         _classCallCheck(this, CMessageBoxManger);
 
-        var _this24 = _possibleConstructorReturn(this, (CMessageBoxManger.__proto__ || Object.getPrototypeOf(CMessageBoxManger)).call(this, props));
+        var _this26 = _possibleConstructorReturn(this, (CMessageBoxManger.__proto__ || Object.getPrototypeOf(CMessageBoxManger)).call(this, props));
 
-        autoBind(_this24);
+        autoBind(_this26);
 
-        _this24.state = {
+        _this26.state = {
             msg_arr: []
         };
-        _this24.msgID = 0;
-        return _this24;
+        _this26.msgID = 0;
+        return _this26;
     }
 
     _createClass(CMessageBoxManger, [{
@@ -3848,7 +4021,7 @@ var CMessageBoxManger = function (_React$PureComponent17) {
     }, {
         key: 'render',
         value: function render() {
-            var _this25 = this;
+            var _this27 = this;
 
             var visibleMsg_arr = this.state.msg_arr.filter(function (x) {
                 return !x.hidden && x.type != EMessageBoxType.Blank;
@@ -3860,7 +4033,7 @@ var CMessageBoxManger = function (_React$PureComponent17) {
                 'div',
                 { className: 'messageBoxMask' },
                 visibleMsg_arr.map(function (msg, index) {
-                    return React.createElement(CMessageBox, { key: 1, msgItem: msg, manager: _this25 });
+                    return React.createElement(CMessageBox, { key: 1, msgItem: msg, manager: _this27 });
                 })
             );
         }
@@ -4014,29 +4187,29 @@ function AddPageToFrameSet(state, ctlpath, title, pageCode, pageName, stepCode, 
     }
 }
 
-var ERPC_FrameSet = function (_React$PureComponent18) {
-    _inherits(ERPC_FrameSet, _React$PureComponent18);
+var ERPC_FrameSet = function (_React$PureComponent19) {
+    _inherits(ERPC_FrameSet, _React$PureComponent19);
 
     function ERPC_FrameSet(props) {
         _classCallCheck(this, ERPC_FrameSet);
 
-        var _this26 = _possibleConstructorReturn(this, (ERPC_FrameSet.__proto__ || Object.getPrototypeOf(ERPC_FrameSet)).call(this, props));
+        var _this28 = _possibleConstructorReturn(this, (ERPC_FrameSet.__proto__ || Object.getPrototypeOf(ERPC_FrameSet)).call(this, props));
 
-        _this26.headerItemStyle = { minWidth: '6em' };
-        _this26.clickCloseHandler = _this26.clickCloseHandler.bind(_this26);
-        _this26.clickHeaderHandler = _this26.clickHeaderHandler.bind(_this26);
-        return _this26;
+        _this28.headerItemStyle = { minWidth: '6em' };
+        _this28.clickCloseHandler = _this28.clickCloseHandler.bind(_this28);
+        _this28.clickHeaderHandler = _this28.clickHeaderHandler.bind(_this28);
+        return _this28;
     }
 
     _createClass(ERPC_FrameSet, [{
         key: 'clickCloseHandler',
         value: function clickCloseHandler() {
-            var _this27 = this;
+            var _this29 = this;
 
             var newItems_arr = [];
             var pos = 0;
             this.props.items_arr.forEach(function (item, index) {
-                if (item.key != _this27.props.selectedKey) {
+                if (item.key != _this29.props.selectedKey) {
                     newItems_arr.push(item);
                 } else {
                     pos = index;
@@ -4065,7 +4238,7 @@ var ERPC_FrameSet = function (_React$PureComponent18) {
     }, {
         key: 'render',
         value: function render() {
-            var _this28 = this;
+            var _this30 = this;
 
             if (this.props.visible == false) {
                 return null;
@@ -4084,12 +4257,12 @@ var ERPC_FrameSet = function (_React$PureComponent18) {
                     var isSelected = item.key == selectedKey;
                     var btnElem = React.createElement(
                         'button',
-                        { 'd-key': item.key, onClick: _this28.clickHeaderHandler, key: item.key, type: 'button', className: 'btn btn-sm rounded-0 btn-' + (isSelected ? 'light' : 'secondary'), style: _this28.headerItemStyle },
+                        { 'd-key': item.key, onClick: _this30.clickHeaderHandler, key: item.key, type: 'button', className: 'btn btn-sm rounded-0 btn-' + (isSelected ? 'light' : 'secondary'), style: _this30.headerItemStyle },
                         item.title
                     );
                     if (isSelected && item.closeable != false) {
                         selectedItem = item;
-                        return [btnElem, React.createElement('button', { onClick: _this28.clickCloseHandler, key: 'close', type: 'button', className: 'btn btn-sm btn-light fa fa-close text-secondary rounded-0' })];
+                        return [btnElem, React.createElement('button', { onClick: _this30.clickCloseHandler, key: 'close', type: 'button', className: 'btn btn-sm btn-light fa fa-close text-secondary rounded-0' })];
                     }
                     return btnElem;
                 });
@@ -4134,32 +4307,32 @@ function ERPC_FrameSet_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
-var ERPC_TopLevelFrame = function (_React$PureComponent19) {
-    _inherits(ERPC_TopLevelFrame, _React$PureComponent19);
+var ERPC_TopLevelFrame = function (_React$PureComponent20) {
+    _inherits(ERPC_TopLevelFrame, _React$PureComponent20);
 
     function ERPC_TopLevelFrame(props) {
         _classCallCheck(this, ERPC_TopLevelFrame);
 
-        var _this29 = _possibleConstructorReturn(this, (ERPC_TopLevelFrame.__proto__ || Object.getPrototypeOf(ERPC_TopLevelFrame)).call(this, props));
+        var _this31 = _possibleConstructorReturn(this, (ERPC_TopLevelFrame.__proto__ || Object.getPrototypeOf(ERPC_TopLevelFrame)).call(this, props));
 
-        _this29.style = {
+        _this31.style = {
             left: '0px',
             top: '0px',
             zIndex: 10000
         };
-        _this29.state = {
+        _this31.state = {
             srcs_arr: [],
             states_arr: [],
             useSrc: null,
             useState: null
         };
-        _this29.onloadHandler = _this29.onloadHandler.bind(_this29);
-        _this29.onErrorHandler = _this29.onErrorHandler.bind(_this29);
-        _this29.sendMessage = _this29.sendMessage.bind(_this29);
-        _this29.push = _this29.push.bind(_this29);
-        _this29.pop = _this29.pop.bind(_this29);
-        _this29.iframeRef = React.createRef();
-        return _this29;
+        _this31.onloadHandler = _this31.onloadHandler.bind(_this31);
+        _this31.onErrorHandler = _this31.onErrorHandler.bind(_this31);
+        _this31.sendMessage = _this31.sendMessage.bind(_this31);
+        _this31.push = _this31.push.bind(_this31);
+        _this31.pop = _this31.pop.bind(_this31);
+        _this31.iframeRef = React.createRef();
+        return _this31;
     }
 
     _createClass(ERPC_TopLevelFrame, [{
@@ -4271,22 +4444,22 @@ var ERPC_TopLevelFrame = function (_React$PureComponent19) {
     return ERPC_TopLevelFrame;
 }(React.PureComponent);
 
-var ERPC_IFrame = function (_React$PureComponent20) {
-    _inherits(ERPC_IFrame, _React$PureComponent20);
+var ERPC_IFrame = function (_React$PureComponent21) {
+    _inherits(ERPC_IFrame, _React$PureComponent21);
 
     function ERPC_IFrame(props) {
         _classCallCheck(this, ERPC_IFrame);
 
-        var _this30 = _possibleConstructorReturn(this, (ERPC_IFrame.__proto__ || Object.getPrototypeOf(ERPC_IFrame)).call(this, props));
+        var _this32 = _possibleConstructorReturn(this, (ERPC_IFrame.__proto__ || Object.getPrototypeOf(ERPC_IFrame)).call(this, props));
 
-        _this30.onloadHandler = _this30.onloadHandler.bind(_this30);
-        _this30.onErrorHandler = _this30.onErrorHandler.bind(_this30);
-        _this30.sendMessage = _this30.sendMessage.bind(_this30);
-        _this30.trySendMsg = _this30.trySendMsg.bind(_this30);
-        _this30.frameRef = React.createRef();
-        _this30.tryIntval = null;
-        _this30.tryCount = 0;
-        return _this30;
+        _this32.onloadHandler = _this32.onloadHandler.bind(_this32);
+        _this32.onErrorHandler = _this32.onErrorHandler.bind(_this32);
+        _this32.sendMessage = _this32.sendMessage.bind(_this32);
+        _this32.trySendMsg = _this32.trySendMsg.bind(_this32);
+        _this32.frameRef = React.createRef();
+        _this32.tryIntval = null;
+        _this32.tryCount = 0;
+        return _this32;
     }
 
     _createClass(ERPC_IFrame, [{
@@ -4328,7 +4501,7 @@ var ERPC_IFrame = function (_React$PureComponent20) {
     }, {
         key: 'trySendMsg',
         value: function trySendMsg(needDelay) {
-            var _this31 = this;
+            var _this33 = this;
 
             var self = this;
             if (this.props.msg == null) {
@@ -4360,7 +4533,7 @@ var ERPC_IFrame = function (_React$PureComponent20) {
                 this.tryCount = 0;
                 if (needDelay) {
                     setTimeout(function () {
-                        store.dispatch(makeAction_setStateByPath(null, _this31.props.fullPath + '.msg'));
+                        store.dispatch(makeAction_setStateByPath(null, _this33.props.fullPath + '.msg'));
                     }, 20);
                 } else {
                     store.dispatch(makeAction_setStateByPath(null, this.props.fullPath + '.msg'));
@@ -4410,6 +4583,79 @@ function ERPC_IFrame_mapstatetoprops(state, ownprops) {
 function ERPC_IFrame_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
+
+var CGridFormSelectCog = function (_React$PureComponent22) {
+    _inherits(CGridFormSelectCog, _React$PureComponent22);
+
+    function CGridFormSelectCog(props) {
+        _classCallCheck(this, CGridFormSelectCog);
+
+        var _this34 = _possibleConstructorReturn(this, (CGridFormSelectCog.__proto__ || Object.getPrototypeOf(CGridFormSelectCog)).call(this, props));
+
+        _this34.clickSelectAll = _this34.clickSelectAll.bind(_this34);
+        _this34.clickUnSelectAll = _this34.clickUnSelectAll.bind(_this34);
+        _this34.clickAntiSelect = _this34.clickAntiSelect.bind(_this34);
+        _this34.divStyle = {
+            width: '5em'
+        };
+        _this34.popperBtnRef = React.createRef();
+        return _this34;
+    }
+
+    _createClass(CGridFormSelectCog, [{
+        key: 'clickSelectAll',
+        value: function clickSelectAll() {
+            this.props.form.selectAll();
+            if (this.popperBtnRef.current) {
+                this.popperBtnRef.current.close();
+            }
+        }
+    }, {
+        key: 'clickUnSelectAll',
+        value: function clickUnSelectAll() {
+            this.props.form.unSelectAll();
+            if (this.popperBtnRef.current) {
+                this.popperBtnRef.current.close();
+            }
+        }
+    }, {
+        key: 'clickAntiSelect',
+        value: function clickAntiSelect() {
+            this.props.form.antiSelect();
+            if (this.popperBtnRef.current) {
+                this.popperBtnRef.current.close();
+            }
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            if (this.props.form == null) {
+                return null;
+            }
+            return React.createElement(
+                ERPC_PopperBtn,
+                { ref: this.popperBtnRef, className: 'btn btn-sm fa fa-cog', popperclassname: 'd-flex flex-column bg-light btn-group btn-group-vertical', hideCloseBtn: true, anchor: 'bottom' },
+                React.createElement(
+                    'button',
+                    { type: 'button', className: 'btn btn-light', onClick: this.clickSelectAll },
+                    '\u5168\u9009'
+                ),
+                React.createElement(
+                    'button',
+                    { type: 'button', className: 'btn btn-light', onClick: this.clickUnSelectAll },
+                    '\u5168\u4E0D\u9009'
+                ),
+                React.createElement(
+                    'button',
+                    { type: 'button', className: 'btn btn-light', onClick: this.clickAntiSelect },
+                    '\u53CD\u9009'
+                )
+            );
+        }
+    }]);
+
+    return CGridFormSelectCog;
+}(React.PureComponent);
 
 var ERPXMLToolKit = {
     createDocFromString: function createDocFromString(xmlString) {
@@ -4515,6 +4761,7 @@ function GetFromatRowKey(rowkey) {
 
 function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath) {
     var splitChar = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : '';
+    var onlySelected = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : false;
 
     var state = store.getState();
     var records_arr = formState.records_arr;
@@ -4546,9 +4793,13 @@ function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath
     var itemStrs_arr = [];
     var rowText_arr = [];
     var count = 0;
+    var selectedValues_arr = formState.selectedValues_arr;
     for (var ri = 0; ri < records_arr.length; ++ri) {
         var record = records_arr[ri];
         var rowKey = keyColumn == '_default' ? ri : record[keyColumn];
+        if (onlySelected && selectedValues_arr && selectedValues_arr.indexOf(rowKey) == -1) {
+            continue;
+        }
         var rowState = formState['row_' + rowKey];
         if (rowState == null || rowState._isdirty) {
             return rlt;
@@ -4605,16 +4856,16 @@ function GenFormJSONData(formState, getRowItemFun, formPath, headers) {
     return rlt;
 }
 
-var Component_FileDownLoadIcon = function (_React$PureComponent21) {
-    _inherits(Component_FileDownLoadIcon, _React$PureComponent21);
+var Component_FileDownLoadIcon = function (_React$PureComponent23) {
+    _inherits(Component_FileDownLoadIcon, _React$PureComponent23);
 
     function Component_FileDownLoadIcon(props) {
         _classCallCheck(this, Component_FileDownLoadIcon);
 
-        var _this32 = _possibleConstructorReturn(this, (Component_FileDownLoadIcon.__proto__ || Object.getPrototypeOf(Component_FileDownLoadIcon)).call(this, props));
+        var _this35 = _possibleConstructorReturn(this, (Component_FileDownLoadIcon.__proto__ || Object.getPrototypeOf(Component_FileDownLoadIcon)).call(this, props));
 
-        _this32.style = {};
-        return _this32;
+        _this35.style = {};
+        return _this35;
     }
 
     _createClass(Component_FileDownLoadIcon, [{
@@ -4669,13 +4920,13 @@ function gStartExcelExport(bundle, msgItem, callBack) {
                 callBack(state, null, { info: ret_data.stateinfo });
             } else if (ret_data.state == 1) {
                 var fileUrl = window.location.origin + ret_data.url;
-                gExcelExported(fileUrl, bundle.title, msgItem, callBack, fileIdentity);
+                gExcelExported(fileUrl, bundle.title + '.xlsx', msgItem, callBack, fileIdentity);
             }
         };
         msgItem.setText('文件生成中');
         setTimeout(function () {
             queryFileState();
-        }, 1000);
+        }, 2000);
     }, false)));
 }
 
@@ -4722,4 +4973,20 @@ function gExcelExported(fileUrl, fileName, msgItem, callBack, fileIdentity) {
             callBack(null, fileIdentity, null);
         }
     });
+}
+
+function gWaitLongProcess(msgItem, key, callBack) {
+    var queryProcess = function queryProcess(state, ret_data, ret_err) {
+        if (ret_data != null || ret_err != null) {
+            callBack(state, ret_data, ret_err);
+            return;
+        }
+        setTimeout(function () {
+            store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: { key: key }, action: 'queryLongProcessResult' }, makeFTD_Callback(queryProcess)));
+        }, 1000);
+    };
+    msgItem.setText('正在等待一个耗时的后台操作');
+    setTimeout(function () {
+        queryProcess();
+    }, 2000);
 }
