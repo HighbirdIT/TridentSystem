@@ -31,7 +31,13 @@ class Draw_img:
             elif self.file_name == 4:
                 Nx = y_arr2
                 Ny = y_arr1
-            elif self.file_name != 6 and self.file_name != 8:
+            elif self.file_name == 6:
+                Nx = y_arr1
+                Ny = np.array([0] * len(Nx))
+            elif self.file_name == 8:
+                Ny = y_arr1
+                Nx = np.array([0] * len(Ny))
+            else:
                 Nx = y_arr1
                 Ny = y_arr1
         # 刻画fx，fy
