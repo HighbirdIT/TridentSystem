@@ -9,25 +9,29 @@ class Draw_img:
     """
     figsize = 10, 7
 
-    def __init__(self, data_frame, force_range=(2, 30), file_name='(1)1:1'):
+    def __init__(self, data_frame, force_range=(2, 30), file_name=1):
         self.force_range = force_range
         self.data_frame = data_frame
         self.picName = 'unname'
         self.file_name = file_name
 
     def draw(self, Ext, Eyt, Vx, Vy, E):
-        print('draw')
+        print('draw',self.file_name)
         self.figure, self.ax = plt.subplots(figsize=self.figsize, ncols=2, nrows=1)
         if self.force_range is not None:
             y_arr1 = np.array(np.arange(float(self.force_range[0]), float(self.force_range[1]), 1))
-            y_arr2 = np.array(np.arange(float(self.force_range[0]) / 2, float(self.force_range[1]), 1) / 2)
-            if self.file_name == '(2)2:1':
+            y_arr2 = np.array(np.arange(float(self.force_range[0]) / 2, float(self.force_range[1])/2, 0.5))
+            if len(y_arr1) != len(y_arr2):
+                print('长度不一致',)
+
+            if self.file_name == 2:
+                print('2:1 的文件')
                 Nx = y_arr1
                 Ny = y_arr2
-            elif self.file_name == '(4)1:2':
+            elif self.file_name == 4:
                 Nx = y_arr2
                 Ny = y_arr1
-            elif self.file_name != '(6)1:0' and self.file_name != '(8)0:1':
+            elif self.file_name != 6 and self.file_name != 8:
                 Nx = y_arr1
                 Ny = y_arr1
         # 刻画fx，fy
@@ -43,10 +47,10 @@ class Draw_img:
             ex_max = 0.05
         if ex_min >= -0.01:
             ex_min = -0.01
-        if ey_max <= 0.05:
-            ey_max = 0.05
+        if ey_max <= 0.04:
+            ey_max = 0.04
         if ey_min >= -0.01:
-            ey_min =0.01
+            ey_min = -0.01
 
         ax1 = self.ax[0]
 
@@ -58,11 +62,11 @@ class Draw_img:
         plot2 = ax1.plot(Nx / Ext - Ny / Eyt * Vy, Nx, linestyle='-', alpha=0.5, color='r',
                          label='experiment')  # 线图：linestyle线性，alpha透明度，color颜色，label图例文本
         ax1.set_xlim(ex_min, ex_max)  # 设置横轴范围，会覆盖上面的横坐标,plt.xlim
-        ax1.set_ylim(0, 31)  # 设置纵轴范围，会覆盖上面的纵坐标,plt.ylim
-        
+        ax1.set_ylim(-2, max(Nx)+2)  # 设置纵轴范围，会覆盖上面的纵坐标,plt.ylim
+
         xmaloc = plt.MultipleLocator(0.01)
         xmiloc = plt.MultipleLocator(0.005)
-        
+
         ymaloc = plt.MultipleLocator(2)
         ymiloc = plt.MultipleLocator(1)
         ax1.xaxis.set_major_locator(xmaloc)
@@ -79,8 +83,9 @@ class Draw_img:
         plot1 = ax2.plot(ey, fy, linestyle='-', color='g', label='original')  # 点图：marker图标
         plot2 = ax2.plot(Ny / Eyt - Nx / Ext * Vx, Ny, linestyle='-', alpha=0.5, color='r',
                          label='experiment')  # 线图：linestyle线性，alpha透明度，color颜色，label图例文本
-        ax2.set_xlim(ey_min,ey_max)  # 设置横轴范围，会覆盖上面的横坐标,plt.xlim
-        ax2.set_ylim(0, 31)  # 设置纵轴范围，会覆盖上面的纵坐标,plt.ylim
+        ax2.set_xlim(ey_min, ey_max)  # 设置横轴范围，会覆盖上面的横坐标,plt.xlim
+        ax2.set_ylim(-2, max(Ny)+2)  # 设置纵轴范围，会覆盖上面的纵坐标,plt.ylim
+
         xmaloc = plt.MultipleLocator(0.01)
         xmiloc = plt.MultipleLocator(0.005)
 
@@ -112,10 +117,10 @@ class Draw_img:
         fx = np.array(self.data_frame['Nx'])
         ey = np.array(self.data_frame['ey'])
         fy = np.array(self.data_frame['Ny'])
-        ex_max = (int(max(ex) * 100) + 1) / 100
-        ex_min = (int(min(ex) * 100) - 1) / 100
-        ey_max = (int(max(ey) * 100) + 1) / 100
-        ey_min = (int(min(ey) * 100) - 1) / 100
+        ex_max = 0.06 if len(ex) == 0 else (int(max(ex) * 100) + 1) / 100
+        ex_min = -0.01 if len(ex) == 0 else (int(min(ex) * 100) - 1) / 100
+        ey_max = 0.06 if len(ey) == 0 else (int(max(ey) * 100) + 1) / 100
+        ey_min = -0.01 if len(ey) == 0 else (int(min(ey) * 100) - 1) / 100
         max_x = ex_max
         min_x = ex_min
         if ex_max < ey_max:
