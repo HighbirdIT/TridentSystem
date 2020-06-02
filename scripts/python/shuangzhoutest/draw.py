@@ -37,8 +37,8 @@ class Draw_img:
         fy = np.array(self.data_frame['Ny'])
         ex_max = 0.06 if len(ex) == 0 else (int(max(ex) * 100) + 1) / 100
         ex_min = -0.01 if len(ex) == 0 else (int(min(ex) * 100) - 1) / 100
-        ey_max = 0.06 if len(ey) else (int(max(ey) * 100) + 1) / 100
-        ey_min = -0.01 if len(ey) else (int(min(ey) * 100) - 1) / 100
+        ey_max = 0.06 if len(ey) == 0 else (int(max(ey) * 100) + 1) / 100
+        ey_min = -0.01 if len(ey) == 0 else (int(min(ey) * 100) - 1) / 100
         if ex_max <= 0.05:
             ex_max = 0.05
         if ex_min >= -0.01:

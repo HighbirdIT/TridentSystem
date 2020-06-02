@@ -11168,7 +11168,7 @@ class JSNode_String_Split extends JSNode_Base {
             this.outSocket = new NodeSocket('out', this, false);
             this.addSocket(this.outSocket);
         }
-        this.outSocket.type = ValueType.Int;
+        this.outSocket.type = ValueType.Array;
     }
 
     compile(helper, preNodes_arr, belongBlock) {
