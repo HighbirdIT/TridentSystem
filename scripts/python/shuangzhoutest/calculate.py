@@ -55,7 +55,7 @@ class Calculate:
             self.a11 = sum(map(lambda x: pow(x, 2), self.Nx))
             self.b11 = sum(-2 * self.Nx * self.ex)
 
-    def load_coefficient(self, file):
+    def temp_coefficient(self, file):
         self.__process()
         tem_list = {'a11': self.a11, 'b11': self.b11, 'a22': self.a22, 'b22': self.b22
             , 'a12': self.a12, 'b12': self.b12, 'a': self.a}
