@@ -16,10 +16,10 @@ var developconfig = require('./developconfig');
 var debug = require('debug');
 var serverhelper = require('./erpserverhelper.js');
 var cluster = require('cluster');
+//var QRCode = require('qrcode')
 
 var emailHelper = require('./emailHelper');
 emailHelper.getETCInvoice();
-
 
 debug.enabled = () => {
     return false;
@@ -447,6 +447,56 @@ app.use('/erppage/login', function (req, res, next) {
         res.status(404);
         return res.render('404');
     }
+});
+
+app.use('/erppage/QRlogin', function (req, res, next) {
+    res.locals.isProduction = app.get('env') == 'production';
+    var jsFilePath = '/js/views/erp/QRCodeLogin.js';
+    if (fs.existsSync(__dirname + '/public' + jsFilePath)) {
+        res.locals.clientJs = jsFilePath;
+        res.locals.title = '扫码登录';
+        res.locals.g_envVar = req.session.g_envVar == null ? '{}' : JSON.stringify(req.session.g_envVar);
+        return res.render('erppage/client', { layout: 'erppagetype_MA' });
+    }
+    else {
+        res.status(404);
+        return res.render('404');
+    }
+});
+
+app.use('/server/queryqrloginstate', function (req, res, next) {
+    var id = req.query.id;
+    res.writeHead(200,{
+        "Content-Type":"text/plain;charset=utf-8"
+    });
+    if(id == null || id.length == 0){
+        res.write('0');
+        res.end();
+    }
+    else{
+        dbhelper.asynGetScalar('SELECT dbo.FB员工登记姓名([登录用户代码]) as 姓名 FROM [base1].[dbo].[T124C外部快捷登录] where [登录令牌] = @id and datediff(minute, [登录时间], getdate()) < 30', [dbhelper.makeSqlparam('id', sqlTypes.NVarChar(50), id)])
+        .then(qName=>{
+            res.write(qName ? '1' + qName : '0');
+            res.end();
+        });
+    }
+    return;
+});
+
+app.use('/makeqrcode', function (req, res, next) {
+    var text = req.query.text;
+    if(text == null || text.length == 0){
+        res.write('需要参数');
+        res.end();
+    }
+    else{
+        text = text.replace(/\|and\|/g, '&');
+        QRCode.toDataURL(text, function (err, url) {
+            res.write(url);
+            res.end();
+        });
+    }
+    return;
 });
 
 app.use('/videoplayer', function (req, res, next) {
