@@ -63,7 +63,7 @@ def walkFile(config, drawdata_li):
             print('pass ' + fileName)
             continue
         coefficient = calculate.Calculate(result, proportion_relationship, index)
-        # coefficient.load_coefficient('result1')
+        coefficient.temp_coefficient('result1')
         final_dict['a11'] += coefficient.a11
         final_dict['b11'] += coefficient.b11  # 残差方程E11一次项系数
         final_dict['a22'] += coefficient.a22  # 残差方程E22二次项系数
