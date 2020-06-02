@@ -35,20 +35,15 @@ class Draw_img:
         fx = np.array(self.data_frame['Nx'])
         ey = np.array(self.data_frame['ey'])
         fy = np.array(self.data_frame['Ny'])
-        
         ex_max = 0.06 if len(ex) == 0 else (int(max(ex) * 100) + 1) / 100
         ex_min = -0.01 if len(ex) == 0 else (int(min(ex) * 100) - 1) / 100
         ey_max = 0.06 if len(ey) == 0 else (int(max(ey) * 100) + 1) / 100
         ey_min = -0.01 if len(ey) == 0 else (int(min(ey) * 100) - 1) / 100
-
-        if ex_max<= 0.05:
-            ex_max =0.05
+        if ex_max <= 0.05:
+            ex_max = 0.05
         if ex_min >= -0.01:
-            ex_min =-0.01
-        if ey_max <= 0.05:
-            ex_max =0.05
-        if ey_min >=0.01:
-            ey_min =0.01
+            ex_min = -0.01
+
         ax1 = self.ax[0]
 
         # 设置子图的基本元素
@@ -113,10 +108,10 @@ class Draw_img:
         fx = np.array(self.data_frame['Nx'])
         ey = np.array(self.data_frame['ey'])
         fy = np.array(self.data_frame['Ny'])
-        ex_max = 0.06 if len(ex) == 0 else (int(max(ex) * 100) + 1) / 100
-        ex_min = -0.01 if len(ex) == 0 else (int(min(ex) * 100) - 1) / 100
-        ey_max = 0.06 if len(ey) == 0 else (int(max(ey) * 100) + 1) / 100
-        ey_min = -0.01 if len(ey) == 0 else (int(min(ey) * 100) - 1) / 100
+        ex_max = (int(max(ex) * 100) + 1) / 100
+        ex_min = (int(min(ex) * 100) - 1) / 100
+        ey_max = (int(max(ey) * 100) + 1) / 100
+        ey_min = (int(min(ey) * 100) - 1) / 100
         max_x = ex_max
         min_x = ex_min
         if ex_max < ey_max:
@@ -124,7 +119,7 @@ class Draw_img:
         if ex_min > ey_min:
             min_x = ey_min
 
-        print('min',min_x,'max',max_x)
+        print('min', min_x, 'max', max_x)
 
         plt.xlabel("strain(%)")  # 设置x轴名称,plt.xlabel
         plt.ylabel("stress kN/m")  # 设置y轴名称,plt.ylabel
@@ -132,7 +127,7 @@ class Draw_img:
         plot1 = plt.plot(ey, fy, linestyle='-', color='y', label='Fill')  # 点图：marker图标
         plt.yticks(range(-4, 32, 2))
         plt.xticks(np.arange(min_x, max_x, 0.01))
-        plt.grid(linestyle ='--')
+        plt.grid(linestyle='--')
         plt.legend(loc='upper left')
 
         plt.savefig(self.picName)
