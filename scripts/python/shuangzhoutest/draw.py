@@ -43,6 +43,10 @@ class Draw_img:
             ex_max = 0.05
         if ex_min >= -0.01:
             ex_min = -0.01
+        if ey_max <= 0.05:
+            ey_max = 0.05
+        if ey_min >= -0.01:
+            ey_min =0.01
 
         ax1 = self.ax[0]
 
@@ -119,7 +123,7 @@ class Draw_img:
         if ex_min > ey_min:
             min_x = ey_min
 
-        print('min', min_x, 'max', max_x)
+        # print('min', min_x, 'max', max_x)
 
         plt.xlabel("strain(%)")  # 设置x轴名称,plt.xlabel
         plt.ylabel("stress kN/m")  # 设置y轴名称,plt.ylabel
