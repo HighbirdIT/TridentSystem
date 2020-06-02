@@ -16,7 +16,7 @@ var developconfig = require('./developconfig');
 var debug = require('debug');
 var serverhelper = require('./erpserverhelper.js');
 var cluster = require('cluster');
-//var QRCode = require('qrcode')
+var QRCode = require('qrcode')
 
 var emailHelper = require('./emailHelper');
 emailHelper.getETCInvoice();
