@@ -26,3 +26,4 @@ scripts/python/shuangzhoutest/__pycache__
 # such as .DS_Store(OSX), *.bak, etc.
 public/js/views/erp/pages/TESTZZMCS_mb_326.js
 text
+package-lock.json

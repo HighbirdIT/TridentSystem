@@ -43,10 +43,10 @@ class Draw_img:
             ex_max = 0.05
         if ex_min >= -0.01:
             ex_min = -0.01
-        if ey_max <= 0.05:
-            ey_max = 0.05
+        if ey_max <= 0.04:
+            ey_max = 0.04
         if ey_min >= -0.01:
-            ey_min =0.01
+            ey_min =-0.01
 
         ax1 = self.ax[0]
 
@@ -112,10 +112,10 @@ class Draw_img:
         fx = np.array(self.data_frame['Nx'])
         ey = np.array(self.data_frame['ey'])
         fy = np.array(self.data_frame['Ny'])
-        ex_max = (int(max(ex) * 100) + 1) / 100
-        ex_min = (int(min(ex) * 100) - 1) / 100
-        ey_max = (int(max(ey) * 100) + 1) / 100
-        ey_min = (int(min(ey) * 100) - 1) / 100
+        ex_max = 0.06 if len(ex) == 0 else (int(max(ex) * 100) + 1) / 100
+        ex_min = -0.01 if len(ex) == 0 else (int(min(ex) * 100) - 1) / 100
+        ey_max = 0.06 if len(ey) == 0 else (int(max(ey) * 100) + 1) / 100
+        ey_min = -0.01 if len(ey) == 0 else (int(min(ey) * 100) - 1) / 100
         max_x = ex_max
         min_x = ex_min
         if ex_max < ey_max:

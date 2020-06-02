@@ -10,10 +10,11 @@ class Step_two:
     这个类就行第二步，进行4列数据的计算
     """
 
-    def __init__(self, deviation_bool, area,force_range, original_data=None, width=160, gauge_length=40):
+    def __init__(self, deviation_bool, area,force_range, original_data=None,file_index=1, width=160, gauge_length=40):
         self.original_data = original_data
         self.calculate_data = original_data
         self.area = area
+        self.file_index = file_index
         self.deviation_bool = deviation_bool  # 偏移原点
         self.width = width  # 试样宽度
         self.gauge_length = gauge_length  # 测试标距
@@ -90,7 +91,12 @@ class Step_two:
                 ey.append(sy)
         
         dfdata = pd.DataFrame({'Nx': Nx, 'Ny': Ny, 'ex': ex, 'ey': ey})
-        dfdata = dfdata[(dfdata['Nx'] > self.force_range[0]) & (dfdata['Nx'] < self.force_range[1])]
+        if self.file_index == 4 or self.file_index == 8:
+            fdir = 'Ny'
+        else:
+            fdir = 'Nx'
+        dfdata = dfdata[(dfdata[fdir] > self.force_range[0]) & (dfdata[fdir] < self.force_range[1])]
+        
         return dfdata
 
     def process_2(self):
@@ -116,7 +122,12 @@ class Step_two:
                     (self.gauge_length + self.sy_series[self.first_index] - self.sy_series[0])
             ey.append(sy)
         dfdata = pd.DataFrame({'Nx': Nx, 'Ny': Ny, 'ex': ex, 'ey': ey})
-        dfdata = dfdata[(dfdata['Nx'] > self.force_range[0]) & (dfdata['Nx'] < self.force_range[1])]
+        if self.file_index == 4 or self.file_index == 8:
+            fdir = 'Ny'
+        else:
+            fdir = 'Nx'
+        dfdata = dfdata[(dfdata[fdir] > self.force_range[0]) & (dfdata[fdir] < self.force_range[1])]
+
         return dfdata
 
     @staticmethod

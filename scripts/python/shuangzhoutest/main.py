@@ -54,16 +54,16 @@ def walkFile(config, drawdata_li):
             area_value = list_area[int(i)]
             temp.append(area_value)
         original_data = obj_text.read_file()
-        step = step2.Step_two(deviation_bool, temp, force_range,original_data, width, gauge_length)
+        step = step2.Step_two(deviation_bool, temp, force_range,original_data,index, width, gauge_length)
         step.standard_item_identity()
         result = step.process()
         drawdata = step.process_2()
-        drawdata_li.append({'frame':drawdata, 'i':index})        
+        drawdata_li.append({'frame':drawdata, 'i':index,'force_range': force_range})        
         if fileName not in datafile_li:
             print('pass ' + fileName)
             continue
-        coefficient = calculate.Calculate(result, proportion_relationship, 'text1')
-        coefficient.load_coefficient('result1')
+        coefficient = calculate.Calculate(result, proportion_relationship, index)
+        # coefficient.load_coefficient('result1')
         final_dict['a11'] += coefficient.a11
         final_dict['b11'] += coefficient.b11  # 残差方程E11一次项系数
         final_dict['a22'] += coefficient.a22  # 残差方程E22二次项系数
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     rnd=int(random.random() * 1000)
     picresult={}
     for drawData in drawData_li:
-        drawpic = draw.Draw_img(drawData['frame'])
+        drawpic = draw.Draw_img(drawData['frame'],drawData['force_range'],drawData['i'])
         drawpic.picName = os.path.dirname(__file__) + '/output/' + str(rnd) + '_' + str(drawData['i']) + '.png'
         picresult['pic' + str(drawData['i'])] = str(rnd) + '_' + str(drawData['i']) + '.png'
         drawpic.draw(result['Ext'], result['Eyt'], result['Vx'], result['Vy'], result['E'])

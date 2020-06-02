@@ -5,7 +5,7 @@ const sqlTypes = dbhelper.Types;
 //const sharp = require('sharp');
 const fs = require('fs');
 const forge = require('node-forge');
-var MD5 = require('md5.js');
+var md5 = require('md5');
 var dingHelper = require('../../../dingHelper');
 
 var rsa = forge.pki.rsa;
@@ -59,7 +59,7 @@ function userLogin(req, res) {
         sql = "select 随机标识令牌,钉钉标识 from T122C用户登录名称 where 员工登记姓名代码=" + accountRow.员工登记姓名代码;
         queryRet = yield dbhelper.asynQueryWithParams(sql);
         var logAccountRow = queryRet.recordset[0];
-        var theMd5 = new MD5().update(logAccountRow.随机标识令牌 + realPassword).digest('hex');
+        var theMd5 = md5(logAccountRow.随机标识令牌 + realPassword);
         if (theMd5.toUpperCase() != accountRow.用户登录密码.toUpperCase()) {
             return { err: { info: '密码错误' } };
         }
