@@ -65,7 +65,7 @@ class Calculate:
 
 
 class GetResult:
-    def __init__(self, a11, b11, a22, b22, a12, b12, a):
+    def __init__(self, a11, b11, a22, b22, a12, b12, a,file_name):
         self.a11 = a11  # 残差方程E11二次项系数
         self.b11 = b11  # 残差方程E11一次项系数
         self.a22 = a22  # 残差方程E22二次项系数
@@ -74,19 +74,26 @@ class GetResult:
         self.b12 = b12  # 残差方程E12的交叉乘积项系数
         self.a = a  # 残差方程E11 * E12和E12 * E22乘积项系数
         self.c = 0  # 残差方程常数项
-
+        self.file_name=file_name
     def solving_equations(self):
-        arry_A = np.array([[float(2 * self.a11), 0, float(self.a)],
-                         [0, float(2 * self.a22), float(self.a)],
-                         [float(self.a), float(self.a), float(2 * self.a12)]])
-        print(arry_A)
-        arry_b = np.array([
-            float(-self.b11),
-            float(-self.b22),
-            float(-self.b12)
-        ])
-        print(arry_b)
+        if self.file_name =='(6)1:0' :
+            re = self.b11/self.a11
+            return [re,0,0]
+        elif self.filename == '(8)0:1':
+            re = self.b22/self.a22
+            return [0,re,0]
+        else:
+            arry_A = np.array([[float(2 * self.a11), 0, float(self.a)],
+                            [0, float(2 * self.a22), float(self.a)],
+                            [float(self.a), float(self.a), float(2 * self.a12)]])
+            print(arry_A)
+            arry_b = np.array([
+                float(-self.b11),
+                float(-self.b22),
+                float(-self.b12)
+            ])
+            print(arry_b)
 
-        arr_x = np.linalg.solve(arry_A, arry_b)
-        print(arr_x, '--')
-        return arr_x
+            arr_x = np.linalg.solve(arry_A, arry_b)
+            print(arr_x, '--')
+            return arr_x
