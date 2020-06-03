@@ -50,6 +50,7 @@ def walkFile(config, drawdata_li):
         if not err_standard:
             errorInfo += fileName + '文件比例错误;'
         list_area = dataprocess.identify_peak(calculate_data)
+        print('list_area:', list_area)
         temp =[]
         for i in area:
             area_value = list_area[int(i)]
@@ -108,7 +109,7 @@ def get_result(final_dict, fileName):
 if __name__ == '__main__':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     argv = sys.argv
-    #argv=['',r'{"files":["d:\\work\\TridentSystem\\public\\filehouse\\2020_5\\16D24B14-9039-4CA0-8D1B-7570D772FE2C.txt","d:\\work\\TridentSystem\\public\\filehouse\\2020_5\\3FB417D9-C076-4393-9EEE-563971B787E7.txt","d:\\work\\TridentSystem\\public\\filehouse\\2020_5\\62850C94-E0D1-4C92-AE86-44D21797B603.txt","d:\\work\\TridentSystem\\public\\filehouse\\2020_5\\43BF1844-426E-41CE-A755-DB32A9F02038.txt","d:\\work\\TridentSystem\\public\\filehouse\\2020_5\\A0944416-ED45-4CBC-86DF-ADC167D0C3E9.txt","d:\\work\\TridentSystem\\public\\filehouse\\2020_5\\FA8C826E-2DD8-4181-B36E-311D4E398219.txt","d:\\work\\TridentSystem\\public\\filehouse\\2020_5\\77AE1DE9-54AB-4DD1-855F-DD6F994D1DC4.txt","d:\\work\\TridentSystem\\public\\filehouse\\2020_5\\55AF9449-07AA-452A-A07E-73E6CC803C74.txt"],"names":["(1)1:1","(2)2:1","(3)1:1","(4)1:2","(5)1:1","(6)1:0","(7)1:1","(8)0:1"],"calfiles":["(3)1:1","(5)1:1"],"起始数据项":"149","试样宽度":"160","测试标距":"40","最小应力":"0","最大应力":"6000","参考方向":"Fx","偏移原点":"1"}']
+    #argv=['',r'{"files":["d:/work/TridentSystem/public/filehouse/2020_6/7EEBE5AC-3DCF-4F9F-8F42-A2512FCAACE4.txt","d:/work/TridentSystem/public/filehouse/2020_6/50100CB7-28D5-42D0-B235-237C1C80B746.txt","d:/work/TridentSystem/public/filehouse/2020_6/CAD62C08-E78E-4CFB-B5AC-D63CA462F1A9.txt","d:/work/TridentSystem/public/filehouse/2020_6/1CFA59C6-8C52-4A22-AF86-60DD11B30056.txt","d:/work/TridentSystem/public/filehouse/2020_6/BE42A7DB-3A47-4332-8C6E-371744052AF5.txt","d:/work/TridentSystem/public/filehouse/2020_6/1A867FD8-04E0-4A6C-AA52-07CD05EBD5A7.txt","d:/work/TridentSystem/public/filehouse/2020_6/415BE556-3EAA-4D46-B083-2037CEB9D742.txt","d:/work/TridentSystem/public/filehouse/2020_6/2A8985B6-AC43-4EAC-B184-F0A9FF1CA535.txt"],"names":["(1)1:1","(2)2:1","(3)1:1","(4)1:2","(5)1:1","(6)1:0","(7)1:1","(8)0:1"],"calfiles":["(1)1:1","(2)2:1","(3)1:1","(4)1:2","(5)1:1","(6)1:0","(7)1:1","(8)0:1"],"起始数据项":"149","试样宽度":"160","测试标距":"40","最小应力":"2","最大应力":"30","偏移原点":"1","Area":"0"}']
     constr = argv[1]
     constr = constr.replace("'",'"')
     #print(constr)
