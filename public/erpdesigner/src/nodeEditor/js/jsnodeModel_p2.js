@@ -43,6 +43,8 @@ const JSNODE_OBJECT_CLONE = 'objectclone';
 
 const JSNODE_LONGSERVERPROCESS = 'longserverprocess';
 
+const SpecialCharReg = /[\(\)\[\]\.]/;
+
 class JSNode_AddPageToFrameSet extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_ADDPAGETOFRAMESET, '添加页面到框架集', false, nodeJson);
@@ -4249,7 +4251,7 @@ class JSNode_GetObjectProp extends JSNode_Base {
         helper.setCompileRetCache(this, selfCompileRet);
         this.outputScokets_arr.forEach(s => {
             var prop = s.getExtra('prop');
-            selfCompileRet.setSocketOut(s, socketValue + '.' + prop);
+            selfCompileRet.setSocketOut(s, socketValue + (SpecialCharReg.test(prop) ? midbracketStr(singleQuotesStr(prop)) : '.' + prop));
         });
         return selfCompileRet;
     }

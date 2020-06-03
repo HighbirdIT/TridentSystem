@@ -25,6 +25,7 @@ def walkFile(config, drawdata_li):
     width = int(config['试样宽度'])  # 试样宽度
     gauge_length = int(config['测试标距'])  # 测试标距
     errorInfo = ''
+    independent_list = []
     
     for fi in range(0, len(path_li)):
         # root 表示当前正在访问的文件夹路径
@@ -71,13 +72,19 @@ def walkFile(config, drawdata_li):
         final_dict['a12'] += coefficient.a12  # 残差方程E12二次项系数
         final_dict['b12'] += coefficient.b12  # 残差方程E12的交叉乘积项系数
         final_dict['a'] += coefficient.a  # 残差方程E11 * E12和E12 * E22乘积项系数
+
+        independent_dict = {'a11': coefficient.a11, 'b11': coefficient.b11
+            , 'a22': coefficient.a22, 'b22': coefficient.b22
+            , 'a12': coefficient.a12, 'b12': coefficient.b12, 'a': coefficient.a,'filename':fileName}
+        independent_list.append(independent_dict)
     return {
         'final_dict':final_dict,
-        'errinfo':errorInfo
+        'errinfo':errorInfo,
+        'independent_coefficient': independent_list
     }
 
 
-def get_result(final_dict):
+def get_result(final_dict, fileName):
     a11 = final_dict['a11']
     b11 = final_dict['b11']
     a22 = final_dict['a22']
@@ -86,16 +93,15 @@ def get_result(final_dict):
     b12 = final_dict['b12']
     a = final_dict['a']
     final = calculate.GetResult(a11, b11, a22, b22, a12, b12, a)
-    e_tup = final.solving_equations()
-    e_tup.tolist()
+    e_tup = final.solving_equations(fileName)
     E11 = e_tup[0]
     E22 = e_tup[1]
     E12 = e_tup[2]
-    Ext = 1 / E11
-    Eyt = 1 / E22
-    Vx = -E12 / E11
-    Vy = -E12 / E22
-    E = Vy - Vx / Ext * Eyt
+    Ext = 1 / E11 if E11!=0 else 0
+    Eyt = 1 / E22 if E22!=0 else 0
+    Vx = -E12 / E11 if E11!=0 else 0
+    Vy = -E12 / E22 if E22!=0 else 0
+    E = Vy - Vx / Ext * Eyt if Ext * Eyt!=0 else 0
     return {'E11':E11,'E22':E22,'E12':E12,'Ext':Ext,'Eyt':Eyt,'Vx':Vx,'Vy':Vy,'E':E}
 
 
@@ -113,9 +119,15 @@ if __name__ == '__main__':
     final_dict = midResult['final_dict']
     print('errinfo:{' + midResult['errinfo'] + '}')
     print('middata:' + str(final_dict))
-    result = get_result(final_dict)
+    result = get_result(final_dict, '(1)1:1')
     print('result:'+str(result))
-    print(result)
+    independentResult_li = []
+    for coefficient_dict in midResult['independent_coefficient']:
+        independent_result = get_result(coefficient_dict, coefficient_dict['filename'])
+        independent_result['file'] = coefficient_dict['filename']
+        independentResult_li.append(independent_result)
+        #print('每次单独的',independent_result,coefficient_dict['filename'])
+    print('independentResult_li:' + json.dumps(independentResult_li, ensure_ascii=False))
     rnd=int(random.random() * 1000)
     picresult={}
     for drawData in drawData_li:
