@@ -75,18 +75,25 @@ class GetResult:
         self.a = a  # 残差方程E11 * E12和E12 * E22乘积项系数
         self.c = 0  # 残差方程常数项
 
-    def solving_equations(self):
-        arry_A = np.array([[float(2 * self.a11), 0, float(self.a)],
-                         [0, float(2 * self.a22), float(self.a)],
-                         [float(self.a), float(self.a), float(2 * self.a12)]])
-        print(arry_A)
-        arry_b = np.array([
-            float(-self.b11),
-            float(-self.b22),
-            float(-self.b12)
-        ])
-        print(arry_b)
+    def solving_equations(self, file_name='(1)1:1'):
+        if file_name =='(6)1:0' :
+            re = self.b11/self.a11
+            return [re,0,0]
+        elif file_name == '(8)0:1':
+            re = self.b22/self.a22
+            return [0,re,0]
+        else:
+            arry_A = np.array([[float(2 * self.a11), 0, float(self.a)],
+                            [0, float(2 * self.a22), float(self.a)],
+                            [float(self.a), float(self.a), float(2 * self.a12)]])
+            print(arry_A)
+            arry_b = np.array([
+                float(-self.b11),
+                float(-self.b22),
+                float(-self.b12)
+            ])
+            print(arry_b)
 
-        arr_x = np.linalg.solve(arry_A, arry_b)
-        print(arr_x, '--')
-        return arr_x
+            arr_x = np.linalg.solve(arry_A, arry_b)
+            print(arr_x, '--')
+            return arr_x.tolist()

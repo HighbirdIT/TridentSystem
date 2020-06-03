@@ -44,6 +44,9 @@ class JSNODE_EX_LF_ShuangZhouTestCal extends JSNode_Base {
                     case 'result':
                         this.resultSocket = socket;
                         break;
+                    case 'fileResult_arr':
+                        this.fileRltSocket = socket;
+                        break;
                     case 'errinfo':
                         this.errinfoSocket = socket;
                         break;
@@ -192,6 +195,10 @@ class JSNODE_EX_LF_ShuangZhouTestCal extends JSNode_Base {
             this.errinfoSocket = new NodeSocket('errinfo', this, false);
             this.addSocket(this.errinfoSocket);
         }
+        if (this.fileRltSocket == null) {
+            this.fileRltSocket = new NodeSocket('fileResult_arr', this, false);
+            this.addSocket(this.fileRltSocket);
+        }
         if (this.pic1Socket == null) {
             this.pic1Socket = new NodeSocket('pic1', this, false);
             this.addSocket(this.pic1Socket);
@@ -236,6 +243,7 @@ class JSNODE_EX_LF_ShuangZhouTestCal extends JSNode_Base {
         this.pic6Socket.type = ValueType.String;
         this.pic7Socket.type = ValueType.String;
         this.pic8Socket.type = ValueType.String;
+        this.fileRltSocket.type = ValueType.Array;
         this.middataSocket.label = '中间数据';
         this.resultSocket.label = '计算结果';
         this.pic1Socket.label = 'pic1';
@@ -247,6 +255,7 @@ class JSNODE_EX_LF_ShuangZhouTestCal extends JSNode_Base {
         this.pic7Socket.label = 'pic7';
         this.pic8Socket.label = 'pic8';
         this.errinfoSocket.label = '错误信息';
+        this.fileRltSocket.label = '每个文件结果';
     }
 
     compile(helper, preNodes_arr, belongBlock) {

@@ -33,6 +33,10 @@ function cal_shuangzhoutest(_config) {
         if (tpos != 1) {
             rlt.result = result.substring(result.indexOf('{', tpos) + 1, result.indexOf('}', tpos)).replace(/:/g, '=').replace(/'/g, '');
         }
+        tpos = result.indexOf('independentResult_li:');
+        if (tpos != 1) {
+            rlt.fileResult_arr = JSON.parse(result.substring(result.indexOf('[', tpos), result.indexOf(']', tpos) + 1));
+        }
         tpos = result.indexOf('errinfo:');
         if (tpos != 1) {
             rlt.errinfo = result.substring(result.indexOf('{', tpos) + 1, result.indexOf('}', tpos));
