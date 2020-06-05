@@ -45,7 +45,7 @@ class Step_two:
     def standard_item_identity(self):
         self.__carve_up()
         try:
-            self.first_index = self.area[0][0]
+            self.first_index = min(self.area)[0]
         except Exception as err:
             print(err)
         if not self.deviation_bool:
@@ -95,7 +95,7 @@ class Step_two:
             fdir = 'Ny'
         else:
             fdir = 'Nx'
-        dfdata = dfdata[(dfdata[fdir] > self.force_range[0]) & (dfdata[fdir] < self.force_range[1])]
+        dfdata = dfdata[(dfdata[fdir] >= self.force_range[0]) & (dfdata[fdir] <= self.force_range[1])]
         
         return dfdata
 
@@ -126,7 +126,7 @@ class Step_two:
             fdir = 'Ny'
         else:
             fdir = 'Nx'
-        dfdata = dfdata[(dfdata[fdir] > self.force_range[0]) & (dfdata[fdir] < self.force_range[1])]
+        dfdata = dfdata[(dfdata[fdir] >= self.force_range[0]) & (dfdata[fdir] <= self.force_range[1])]
 
         return dfdata
 

@@ -19,8 +19,8 @@ class Draw_img:
         print('draw',self.file_name)
         self.figure, self.ax = plt.subplots(figsize=self.figsize, ncols=2, nrows=1)
         if self.force_range is not None:
-            y_arr1 = np.array(np.arange(float(self.force_range[0]), float(self.force_range[1]), 1))
-            y_arr2 = np.array(np.arange(float(self.force_range[0]) / 2, float(self.force_range[1])/2, 0.5))
+            y_arr1 = np.array(np.arange(float(self.force_range[0]), float(self.force_range[1]+1), 1))
+            y_arr2 = np.array(np.arange(float(self.force_range[0]) / 2, float(self.force_range[1]+1)/2, 0.5))
             if len(y_arr1) != len(y_arr2):
                 print('长度不一致',)
 
@@ -60,13 +60,23 @@ class Draw_img:
 
         ax1 = self.ax[0]
 
+        start_point_1 = ((Nx[0] / Ext - Ny[0] / Eyt * Vy), Nx[0])
+        end_point_1 = ((Nx[-1] / Ext - Ny[-1] / Eyt * Vy), Nx[-1])
+
+        k = (end_point_1[1] - start_point_1[1]) / (end_point_1[0] - start_point_1[0])
+
+        original_s_point_1 = (ex[0], fx[0])
+        b = original_s_point_1[1] - k * original_s_point_1[0]
+
         # 设置子图的基本元素
         ax1.set_title('JX')  # 设置图体，plt.title
         ax1.set_xlabel("strain(%)")  # 设置x轴名称,plt.xlabel
         ax1.set_ylabel("stress kN/m")  # 设置y轴名称,plt.ylabel
         plot1 = ax1.plot(ex, fx, linestyle='-', color='g', label='original')  # 点图：marker图标
-        plot2 = ax1.plot(Nx / Ext - Ny / Eyt * Vy, Nx, linestyle='-', alpha=0.5, color='r',
+        plot2 = ax1.plot(Nx / Ext - Ny / Eyt * Vy, Nx, linestyle='-', alpha=0.3, color='grey',
                          label='experiment')  # 线图：linestyle线性，alpha透明度，color颜色，label图例文本
+        plot3 = ax1.plot((Nx - b) / k, Nx, linestyle='-', alpha=0.5, color='r',
+                         label='experiment')
         ax1.set_xlim(ex_min, ex_max)  # 设置横轴范围，会覆盖上面的横坐标,plt.xlim
         ax1.set_ylim(-2, max(Nx)+2)  # 设置纵轴范围，会覆盖上面的纵坐标,plt.ylim
 
@@ -83,12 +93,20 @@ class Draw_img:
         ax1.legend(loc='upper left')
 
         ax2 = self.ax[1]
+        start_point_2 = (Ny[0] / Eyt - Nx[0] / Ext * Vx, Ny[0])
+        end_point_2 = (Ny[-1] / Eyt - Nx[-1] / Ext * Vx, Ny[-1])
+        k = (end_point_2[1] - start_point_2[1]) / (end_point_2[0] - start_point_2[0])
+        original_s_point_2 = (ey[0], fy[0])
+        b = original_s_point_2[1] - k * original_s_point_2[0]
+
         ax2.set_title('WX')  # 设置图体，plt.title
         ax2.set_xlabel("strain(%)")  # 设置x轴名称,plt.xlabel
         ax2.set_ylabel("stress kN/m")  # 设置y轴名称,plt.ylabel
         plot1 = ax2.plot(ey, fy, linestyle='-', color='g', label='original')  # 点图：marker图标
-        plot2 = ax2.plot(Ny / Eyt - Nx / Ext * Vx, Ny, linestyle='-', alpha=0.5, color='r',
+        plot2 = ax2.plot(Ny / Eyt - Nx / Ext * Vx, Ny, linestyle='-', alpha=0.3, color='grey',
                          label='experiment')  # 线图：linestyle线性，alpha透明度，color颜色，label图例文本
+        plot3 = ax2.plot((Ny-b)/k, Ny, linestyle='-', alpha=0.5, color='r',
+                         label='experiment')
         ax2.set_xlim(ey_min, ey_max)  # 设置横轴范围，会覆盖上面的横坐标,plt.xlim
         ax2.set_ylim(-2, max(Ny)+2)  # 设置纵轴范围，会覆盖上面的纵坐标,plt.ylim
 

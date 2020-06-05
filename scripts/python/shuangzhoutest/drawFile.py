@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
     lf = loadfile.Load_file(filePath)
     filedata = lf.read_file()
-    step = step2.Step_two(False, [[149,600]], (0,6000), filedata, 160, 40)
+    step = step2.Step_two(True, [[149,600]], (0,6000), filedata, 160, 40)
     step.standard_item_identity()
     drawdata = step.process_2()
     drawpic = draw.Draw_img(drawdata)
