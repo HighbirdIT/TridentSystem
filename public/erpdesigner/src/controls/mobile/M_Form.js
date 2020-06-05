@@ -65,6 +65,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('数据源变更', AttrNames.Event.OnDataSourceChanged, ValueType.Event),
         new CAttribute('数据行变更', AttrNames.Event.OnRowChanged, ValueType.Event),
         new CAttribute('选择行变更', AttrNames.Event.OnSelectedChanged, ValueType.Event),
+        new CAttribute('行绑定', AttrNames.Event.OnRowBind, ValueType.Event),
     ]),
     new CAttributeGroup('List设置', [
         new CAttribute('ItemStyle', 'item' + AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
@@ -145,6 +146,9 @@ class M_FormKernel extends ContainerKernelBase {
             gridFormBottomDiv.isfixed = true;
         }
 
+        theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnRowBind);
+        this.scriptCreated(null, theBP);
+
         var nowft = this.getAttribute(AttrNames.FormType);
         this[AttrNames.ListFormContent + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.PageBreak + '_visible'] = nowft == EFormType.Grid;
@@ -165,6 +169,7 @@ class M_FormKernel extends ContainerKernelBase {
 
         this[AttrNames.Event.OnSelectedChanged + '_visible'] = nowft == EFormType.List || nowft == EFormType.Grid;
         this[AttrNames.Event.OnRowChanged + '_visible'] = nowft == EFormType.Page;
+        this[AttrNames.Event.OnRowBind + '_visible'] = nowft != EFormType.Page;
         this[AttrNames.Event.OnDelete + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.Event.OnUpdate + '_visible'] = nowft == EFormType.Grid;
         this[AttrNames.Event.OnInsert + '_visible'] = nowft == EFormType.Grid;
@@ -300,6 +305,11 @@ class M_FormKernel extends ContainerKernelBase {
         gridFormBottomDiv.setAttribute(AttrNames.LayoutNames.StyleAttr, { name: AttrNames.StyleAttrNames.FlexShrink, value: false }, 1);
         this.setAttribute('bottomDivID', gridFormBottomDiv.id);
         gridFormBottomDiv.isfixed = true;
+
+        var theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnRowBind);
+        if(theBP){
+            theBP.scopeCtlID = this.gridFormBottomDiv.id;
+        }
     }
 
     scriptCreated(attrName, scriptBP) {
@@ -320,6 +330,12 @@ class M_FormKernel extends ContainerKernelBase {
         if(scriptBP.name.indexOf(AttrNames.Event.OnRowChanged) != -1){
             scriptBP.setFixParam(['fullPath','rowIndex','record']);
         }
+        if(scriptBP.name.indexOf(AttrNames.Event.OnRowBind) != -1){
+            scriptBP.setFixParam([VarNames.State, this.id + '_path', this.id + '_state', this.id + '_rowpath', this.id + '_rowstate', this.id + '_' + VarNames.NowRecord]);
+            if(this.gridFormBottomDiv){
+                scriptBP.scopeCtlID = this.gridFormBottomDiv.id;
+            }
+        }
         if(scriptBP.name.indexOf(AttrNames.Event.OnDataSourceChanged) != -1){
             scriptBP.setFixParam(['fullPath','records_arr']);
         }
@@ -331,7 +347,6 @@ class M_FormKernel extends ContainerKernelBase {
                 rowTextParam = scriptBP.createEmptyVariable(true);
                 rowTextParam.name = AttrNames.RowText;
                 rowTextParam.needEdit = false;
-                scriptBP.returnVars_arr.push(rowTextParam);
             }
             scriptBP.canCustomReturnValue = true;
         }
@@ -546,6 +561,7 @@ class M_FormKernel extends ContainerKernelBase {
                 
                 this.findAttributeByName(AttrNames.Event.OnSelectedChanged).setVisible(this, isGridForm || isListForm);
                 this.findAttributeByName(AttrNames.Event.OnRowChanged).setVisible(this, isPageForm);
+                this.findAttributeByName(AttrNames.Event.OnRowBind).setVisible(this, isGridForm || isListForm);
                 this.findAttributeByName(AttrNames.Event.OnDelete).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.Event.OnUpdate).setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.Event.OnInsert).setVisible(this, isGridForm);

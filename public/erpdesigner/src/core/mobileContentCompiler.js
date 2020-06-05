@@ -2248,7 +2248,7 @@ class MobileContentCompiler extends ContentCompiler {
         var clientSide = this.clientSide;
         var rowBindFun = clientSide.scope.getFunction(makeFName_RowBind(formKernel));
         if(rowBindFun == null){
-            rowBindFun = clientSide.scope.getFunction(makeFName_RowBind(formKernel), true, [VarNames.State, formKernel.id + '_path', formKernel.id + '_state', formKernel.id + '_' + VarNames.NowRecord, VarNames.RowKeyInfo_map]);
+            rowBindFun = clientSide.scope.getFunction(makeFName_RowBind(formKernel), true, [VarNames.State, formKernel.id + '_path', formKernel.id + '_state',formKernel.id + '_rowpath', formKernel.id + '_rowstate', formKernel.id + '_' + VarNames.NowRecord]);
             var kernelMidData = this.projectCompiler.getMidData(formKernel.id);
             kernelMidData.rowBindFun = rowBindFun;
         }
@@ -3077,6 +3077,18 @@ class MobileContentCompiler extends ContentCompiler {
                 pullFun.scope.getVar('formState', true, makeStr_callFun('getStateByPath', [VarNames.State, 'fullParentPath + ' + singleQuotesStr('.' + theKernel.id), '{}']));
                 pullFun.pushLine('if(formState.' + VarNames.Records_arr + ' != null && ' + 'formState.' + VarNames.Records_arr + '.length > 0){return ' + VarNames.State + ';}');
             }
+
+            if(isListForm || isGridForm){
+                var rowBindFunName = makeFName_RowBind(theKernel);
+                var rowBindBp = project.scriptMaster.getBPByName(rowBindFunName);
+                if(rowBindBp){
+                    var rowBindBpCompileRet = this.compileScriptBlueprint(rowBindBp);
+                    if (rowBindBpCompileRet == false) {
+                        return false;
+                    }
+                    thisFormMidData.rowBindFun = rowBindBpCompileRet;
+                }
+            }
         }
 
         var belongAccordionKernel = null;
@@ -3475,9 +3487,11 @@ class MobileContentCompiler extends ContentCompiler {
             var thTag;
             for (var gi in gridColumnsProfile_obj) {
                 columnProfile = gridColumnsProfile_obj[gi];
+                /*
                 if (hadDynamicColumn) {
                     columnProfile.width = 'auto';
                 }
+                */
                 var headStyleObj = gridHeadStyles_map[columnProfile.width];
                 var tdStyleObj = gridHeadStyles_map[columnProfile.width + 'td'];
                 if (headStyleObj == null) {
@@ -3784,14 +3798,14 @@ class MobileContentCompiler extends ContentCompiler {
                 if (dynamicCol.visible || dynamicCol.label) {
                     thTag.clear();
                 }
-                if (dynamicCol.visible) {
+                if (dynamicCol.visible && !hideHeader) {
                     freshFun.setColumnNameBlock.pushLine(VarNames.NeedSetState + '.' + ci + '_visible = ' + dynamicCol.visible);
                     formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, ci + '_visible'), VarNames.CtlState + '.' + ci + '_visible'));
                     headClassInBodyTag.setAttr(ci + '_visible', '{this.props.' + ci + '_visible}');
                     headClassInFormTag.setAttr(ci + '_visible', '{this.props.' + ci + '_visible}');
                     gridBodyTag.setAttr(ci + '_visible', '{this.props.' + ci + '_visible}');
                 }
-                if (dynamicCol.label) {
+                if (dynamicCol.label && !hideHeader) {
                     thTag.pushLine('{this.props.' + ci + '_label}');
                     freshFun.setColumnNameBlock.pushLine(VarNames.NeedSetState + '.' + ci + '_label = ' + dynamicCol.label);
                     formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, ci + '_label'), VarNames.CtlState + '.' + ci + '_label'));
@@ -5780,6 +5794,7 @@ class MobileContentCompiler extends ContentCompiler {
         if (!theKernel.getAttribute('hideclosebtn')) {
             ctlTag.setAttr('hideCloseBtn', bigbracketStr('true'));
         }
+        ctlTag.setAttr('strategy', theKernel.getAttribute('strategy'));
 
         renderBlock.pushChild(ctlTag);
 
@@ -7092,17 +7107,19 @@ class MobileContentCompiler extends ContentCompiler {
                     if(theKernel.isListForm()){
                         midData.callRowBindBlks.endfor.pushLine('if(records_arr.length > 0){', 1);
                         midData.callRowBindBlks.endfor.pushLine('var formPath = ' + theKernel.id +'_path;');
-                        midData.callRowBindBlks.endfor.pushLine('var rowKeyInfo_map = getRowKeyMapFromPath(formPath);');
                         midData.callRowBindBlks.endfor.pushLine('setTimeout(() => {',1);
                         midData.callRowBindBlks.endfor.pushLine('store.dispatch(makeAction_callFunction(state => {', 1);
-                        midData.callRowBindBlks.endfor.pushLine('var formState = getStateByPath(state, formPath);');
+                        midData.callRowBindBlks.endfor.pushLine("var forState = getStateByPath(state, formPath);");
                         midData.callRowBindBlks.endfor.pushLine('records_arr.forEach(rcd=>{', 1);
+                        midData.callRowBindBlks.endfor.pushLine("var rowPath = formPath + '.row_' +rcd._key;");
+                        midData.callRowBindBlks.endfor.pushLine("var rowState = getStateByPath(state, rowPath);");
                         midData.callRowBindBlks.endfor.pushLine(makeStr_callFun(midData.rowBindFun.name,[
                             'state', 
-                            'formPath+' + singleQuotesStr('.row_') + '+rcd._key',
-                            'formState',
+                            'formPath',
+                            'forState',
+                            'rowPath',
+                            'rowState',
                             'rcd',
-                            'rowKeyInfo_map'
                         ]), -1);
                         midData.callRowBindBlks.endfor.pushLine('});');
                         midData.callRowBindBlks.endfor.subNextIndent();
@@ -7129,12 +7146,15 @@ class MobileContentCompiler extends ContentCompiler {
                         midData.callRowBindBlks.endfor.pushLine('store.dispatch(makeAction_callFunction(state => {', 1);
                         midData.callRowBindBlks.endfor.pushLine('var formState = getStateByPath(state, formPath);');
                         midData.callRowBindBlks.endfor.pushLine('bindrows_arr.forEach(rowKey=>{', 1);
+                        midData.callRowBindBlks.endfor.pushLine("var rowPath = formPath + '.row_' + rowKey;");
+                        midData.callRowBindBlks.endfor.pushLine("var rowState = getStateByPath(state, rowPath);");
                         midData.callRowBindBlks.endfor.pushLine(makeStr_callFun(midData.rowBindFun.name,[
                             'state', 
-                            'formPath+' + singleQuotesStr('.row_') + '+rowKey',
-                            'formState',
+                            'formPath',
+                            'forState',
+                            'rowPath',
+                            'rowState',
                             'getRecordFromRowKey(formPath,rowKey)',
-                            'rowKeyInfo_map'
                         ]), -1);
                         midData.callRowBindBlks.endfor.pushLine('});');
                         midData.callRowBindBlks.endfor.subNextIndent();
