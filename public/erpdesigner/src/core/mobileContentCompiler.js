@@ -5265,9 +5265,7 @@ class MobileContentCompiler extends ContentCompiler {
             }
             else {
                 if (defaultValParseRet.string == '*' && !starSelectable) {
-                    if (!ismultiselect) {
-                        starSelectable = true;  // 给了个*默认值，自动开启可选*
-                    }
+                    starSelectable = true;  // 给了个*默认值，自动开启可选*
                 }
             }
         }
@@ -6771,7 +6769,7 @@ class MobileContentCompiler extends ContentCompiler {
                                     validBlock.pushLine(makeStr_AddAll(nowRowStateVarName, '=', formStateVarName, "['row_' + ", VarNames.RowKeyInfo_map + '.' + formId, '];'));
                                 }
                                 var theFormRowBindFun = this.getFormRowBindFun(useFormData.formKernel);
-                                theFormRowBindFun.pushLine(makeStr_callFun(pullFun.name, [VarNames.State, 'null', useFormData.formKernel.id + '_path']));
+                                theFormRowBindFun.pushLine(makeStr_callFun(pullFun.name, [VarNames.State, 'null', useFormData.formKernel.id + '_rowpath']));
                             }
                             else{
                                 theFun.scope.getVar(selectedRowsVarName, true, makeStr_callFun('GetFormSelectedRows', [formStateVarName, singleQuotesStr(useFormData.formKernel.getAttribute(AttrNames.KeyColumn))]));
@@ -7109,14 +7107,14 @@ class MobileContentCompiler extends ContentCompiler {
                         midData.callRowBindBlks.endfor.pushLine('var formPath = ' + theKernel.id +'_path;');
                         midData.callRowBindBlks.endfor.pushLine('setTimeout(() => {',1);
                         midData.callRowBindBlks.endfor.pushLine('store.dispatch(makeAction_callFunction(state => {', 1);
-                        midData.callRowBindBlks.endfor.pushLine("var forState = getStateByPath(state, formPath);");
+                        midData.callRowBindBlks.endfor.pushLine("var formState = getStateByPath(state, formPath);");
                         midData.callRowBindBlks.endfor.pushLine('records_arr.forEach(rcd=>{', 1);
                         midData.callRowBindBlks.endfor.pushLine("var rowPath = formPath + '.row_' +rcd._key;");
                         midData.callRowBindBlks.endfor.pushLine("var rowState = getStateByPath(state, rowPath);");
                         midData.callRowBindBlks.endfor.pushLine(makeStr_callFun(midData.rowBindFun.name,[
                             'state', 
                             'formPath',
-                            'forState',
+                            'formState',
                             'rowPath',
                             'rowState',
                             'rcd',
@@ -7151,7 +7149,7 @@ class MobileContentCompiler extends ContentCompiler {
                         midData.callRowBindBlks.endfor.pushLine(makeStr_callFun(midData.rowBindFun.name,[
                             'state', 
                             'formPath',
-                            'forState',
+                            'formState',
                             'rowPath',
                             'rowState',
                             'getRecordFromRowKey(formPath,rowKey)',
