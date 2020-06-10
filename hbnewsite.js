@@ -499,6 +499,20 @@ app.use('/makeqrcode', function (req, res, next) {
     return;
 });
 
+app.use('/makeqrcode2', function (req, res, next) {
+    var text = req.body ? req.body.text : null;
+    if(text == null || text.length == 0){
+        return res.json(serverhelper.createErrorRet('需要参数'));
+    }
+    else{
+        text = text.replace(/\|and\|/g, '&');
+        QRCode.toDataURL(text, function (err, url) {
+            return res.json({data:url});
+        });
+    }
+    return;
+});
+
 app.use('/videoplayer', function (req, res, next) {
     return res.render('empty', { layout: 'videoPlayer' });
 });

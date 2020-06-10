@@ -729,3 +729,12 @@ body{
     top: 50%;
     transform:translate(-50%,-50%);
 }
+
+.qrcodebtn:hover{
+    color:green;
+}
+
+
+.qrcodebtn{
+    color:black;
+}

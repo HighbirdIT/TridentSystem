@@ -452,8 +452,52 @@ fileSystem.readExcelContent = (req, res) => {
             }
         });
 
-
         return process_key;
+    });
+};
+
+fileSystem.queryQRCodeFiles = (req, res) => {
+    return co(function* () {
+        var bundle = req.body.bundle;
+        if (bundle == null) { return serverhelper.createErrorRet('缺少参数bundle'); }
+        var key = bundle.key;
+        if (key == null) { return serverhelper.createErrorRet('缺少参数key'); }
+
+        var sql = "SELECT T文件信息.* FROM [TB00D扫码上传记录] cross apply FTB00E文件信息(文件代码) as T文件信息 where [扫码令牌]=@令牌";
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('令牌', sqlTypes.NVarChar(50), key)]);
+        return rcdRlt.recordset.length > 0 ? rcdRlt.recordset : null;
+    });
+};
+
+fileSystem.makeAttachment = (req, res) => {
+    var userid = getUserID(req);
+    return co(function* () {
+        var bundle = req.body.bundle;
+        if (bundle == null) { return serverhelper.createErrorRet('缺少参数bundle'); }
+        var fileFlow = bundle.fileFlow;
+        if (fileFlow == null) { return serverhelper.createErrorRet('缺少参数fileFlow'); }
+        var relrecordid = bundle.relrecordid;
+        if (relrecordid == null) { return serverhelper.createErrorRet('缺少参数relrecordid'); }
+        var fileid = bundle.fileid;
+        if (fileid == null) { return serverhelper.createErrorRet('缺少参数fileid'); }
+
+        var inparams_arr = [
+            dbhelper.makeSqlparam('操作种类', sqlTypes.NVarChar(100), 'add'),
+            dbhelper.makeSqlparam('归属流程代码', sqlTypes.Int, fileFlow),
+            dbhelper.makeSqlparam('关联记录代码', sqlTypes.Int, relrecordid),
+            dbhelper.makeSqlparam('数据', sqlTypes.NVarChar(2000), fileid),
+            dbhelper.makeSqlparam('操作用户', sqlTypes.NVarChar(200), userid),
+        ];
+        var ret;
+        try {
+            ret = yield dbhelper.asynExcute('PB00E操作附件', inparams_arr);
+        }
+        catch (eo) {
+            return serverhelper.createErrorRet(eo.message);
+        }
+        return {
+            attachmentID:ret.returnValue,
+        };
     });
 };
 
@@ -466,6 +510,8 @@ var processes_map = {
     queryExcelFileState: fileSystem.queryExcelFileState,
     queryLongProcessResult: fileSystem.queryLongProcessResult,
     readExcelContent: fileSystem.readExcelContent,
+    queryQRCodeFiles: fileSystem.queryQRCodeFiles,
+    makeAttachment: fileSystem.makeAttachment,
 };
 
 module.exports = fileSystem;
