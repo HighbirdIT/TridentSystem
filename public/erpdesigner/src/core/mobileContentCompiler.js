@@ -2362,6 +2362,7 @@ class MobileContentCompiler extends ContentCompiler {
             case EFormType.Grid:
                 insertBtnSetting = theKernel.getInsertSetting();
                 formReactClass.constructorFun.pushLine('ERPC_GridForm(this);');
+                formReactClass.constructorFun.pushLine('gCreatFormSetting(this);');
                 if (clickSelectable) {
                     formReactClass.constructorFun.pushLine('this.clickRowHandler = this.clickRowHandler.bind(this);');
                 }
@@ -2509,6 +2510,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else if (isGridForm) {
             gridBodyTag = new FormatHtmlTag('bodytag', gridBodyPureRectClass.name, this.clientSide);
+            gridBodyTag.setAttr('dataversion', '{setting.dataversion}');
             gridBodyTag.setAttr('startRowIndex', '{this.props.startRowIndex}');
             gridBodyTag.setAttr('endRowIndex', '{this.props.endRowIndex}');
             gridBodyTag.setAttr('fullPath', '{this.props.fullPath}');
@@ -2528,6 +2530,7 @@ class MobileContentCompiler extends ContentCompiler {
                     gridBodyTag.setAttr(VarNames.SelectedValues_arr, bigbracketStr('this.props.' + VarNames.SelectedValues_arr));
                     break;
             }
+            renderContentBlock.pushLine("var setting = gGetFormSetting(this.props.fullPath);");
             renderContentBlock.pushLine(VarNames.RetElem + " = (", 1);
             renderContentBlock.pushChild(gridBodyTag);
             renderContentBlock.subNextIndent();
@@ -2813,6 +2816,9 @@ class MobileContentCompiler extends ContentCompiler {
             var recordsArraychangedFunName = theKernel.id + '_' + VarNames.Records_arr + '_changed';
             var recordsArraychangedFun = clientSide.scope.getFunction(recordsArraychangedFunName, true, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowKeyInfo_map']);
             recordsArraychangedFun.scope.getVar(VarNames.NeedSetState, true, '{}');
+            recordsArraychangedFun.initBlk = new FormatFileBlock('inint');
+            recordsArraychangedFun.pushChild(recordsArraychangedFun.initBlk);
+            kernelMidData.recordsArraychangedFun = recordsArraychangedFun;
             recordsArraychangedFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''", VarNames.NeedSetState], ';'));
             recordsArraychangedFun.pushLine(makeStr_callFun(freshFun.name, [VarNames.State, 'newValue', 'oldValue', 'path', 'visited', 'delayActs', 'rowKeyInfo_map']));
 
@@ -3374,6 +3380,7 @@ class MobileContentCompiler extends ContentCompiler {
         if (isGridForm) {
             var sumTableWidth = 0;
             var gridWidthType = theKernel.getAttribute(AttrNames.WidthType);
+            gridHeadPureRectClass.renderFun.pushLine('var simpleMode = this.props.simpleMode;');
             gridHeadPureRectClass.renderFun.pushLine('return (<thead className="thead-light"><tr>', 1);
             var gridHeadRowRenderBlock = new FormatFileBlock('tr');
             gridHeadPureRectClass.renderFun.pushChild(gridHeadRowRenderBlock, -1);
@@ -3413,6 +3420,7 @@ class MobileContentCompiler extends ContentCompiler {
                 }
             }
 
+            var hadAdvanceHeader = false;
             var hadDynamicColumn = false;
             for (ci in theKernel.children) {
                 childKernel = theKernel.children[ci];
@@ -3432,6 +3440,8 @@ class MobileContentCompiler extends ContentCompiler {
                     return false;
                 }
 
+                var sortable = hideHeader ? false : childKernel.getAttribute(AttrNames.Sortable);
+                var filtable = hideHeader ? false : childKernel.getAttribute(AttrNames.Filtable);
                 var columnWidth = parseFloat(childKernel.getAttribute(AttrNames.ColumnWidth));
                 var textField = childKernel.getAttribute(AttrNames.TextField);
                 var textFieldParseRet = parseObj_CtlPropJsBind(textField, project.scriptMaster);
@@ -3452,6 +3462,34 @@ class MobileContentCompiler extends ContentCompiler {
                 }
                 else if (!IsEmptyString(isdisplayParseRet.string)) {
                     dynamicVisible = true;
+                }
+
+                var useColValueField = '';
+                if(sortable || filtable){
+                    hadAdvanceHeader = true;
+                    useColValueField = headTextValue;
+                    if(canUseColumns_arr.indexOf(useColValueField) == -1){
+                        switch(childKernel.editor.type){
+                            case M_TextKernel_Type:
+                            case M_LabelKernel_Type:
+                                useColValueField = childKernel.editor.getAttribute(AttrNames.TextField);
+                                break;
+                            case M_DropdownKernel_Type:
+                                useColValueField = childKernel.editor.getAttribute(AttrNames.ValueField);
+                                useColValueField = IsEmptyString(useColValueField) ? childKernel.editor.getAttribute(AttrNames.TextField) : '';
+                        }
+                        if(canUseColumns_arr.indexOf(useColValueField) == -1){
+                            useColValueField = childKernel.getAttribute(AttrNames.ColumnValueField);
+                            if(canUseColumns_arr.indexOf(useColValueField) == -1){
+                                logManager.errorEx([logManager.createBadgeItem(
+                                    theKernel.getReadableName(),
+                                    theKernel,
+                                    this.projectCompiler.clickKernelLogBadgeItemHandler),
+                                '列' + headTextValue + '找不到合适的值字段']);
+                                return false;
+                            }
+                        }
+                    }
                 }
 
                 if (isNaN(columnWidth)) {
@@ -3478,7 +3516,28 @@ class MobileContentCompiler extends ContentCompiler {
                     index: gridColumnCount++,
                     dynamicLabel: dynamicLabel,
                     dynamicVisible: dynamicVisible,
+                    sortable:sortable,
+                    filtable:filtable,
+                    colValueField:useColValueField,
                 };
+            }
+            kernelMidData.hadAdvanceHeader = hadAdvanceHeader;
+            if(hadAdvanceHeader){
+                var recordsArraychangedFunInitBlk = kernelMidData.recordsArraychangedFun.initBlk;
+                recordsArraychangedFunInitBlk.pushLine("var formpath = getParentPathByKey(path,'" + theKernel.id + "');");
+                recordsArraychangedFunInitBlk.pushLine("var setting = gGetFormSetting(formpath);");
+                recordsArraychangedFunInitBlk.pushLine("if(setting.records_arr == null){", 1);
+                recordsArraychangedFunInitBlk.pushLine("if(setting.setRecords(newValue)){", 1);
+                recordsArraychangedFunInitBlk.pushLine("setting.useOldValue = oldValue;");
+                recordsArraychangedFunInitBlk.pushLine("return state;", -1);
+                recordsArraychangedFunInitBlk.pushLine("}", -1);
+                recordsArraychangedFunInitBlk.pushLine("} else{", 1);
+                recordsArraychangedFunInitBlk.pushLine("oldValue = setting.useOldValue ? setting.useOldValue : null;");
+                recordsArraychangedFunInitBlk.pushLine("setting.useOldValue = null;", -1);
+                recordsArraychangedFunInitBlk.pushLine("}");
+                recordsArraychangedFunInitBlk.pushLine("");
+
+                pullFun.pushLine("gGetFormSetting(fullParentPath + '." + theKernel.id + "').setRecords(null);");
             }
             var gridHeadStyles_map = {};
             var gridHeadStyleCount = 0;
@@ -3492,6 +3551,7 @@ class MobileContentCompiler extends ContentCompiler {
                     columnProfile.width = 'auto';
                 }
                 */
+                var isAdvanceCol = columnProfile.sortable || columnProfile.filtable;
                 var headStyleObj = gridHeadStyles_map[columnProfile.width];
                 var tdStyleObj = gridHeadStyles_map[columnProfile.width + 'td'];
                 if (headStyleObj == null) {
@@ -3537,7 +3597,12 @@ class MobileContentCompiler extends ContentCompiler {
                 headThTag_map[gi] = thTag;
                 thTag.setAttr('style', '{' + headStyleObj.id + '}');
                 if (!columnProfile.dynamicLabel) {
-                    thTag.pushLine(columnProfile.label);
+                    if(isAdvanceCol){
+                        thTag.pushLine("{simpleMode ? '" + columnProfile.label + "' : <ERPC_AdvanceFormHeader canFilt={" + (columnProfile.filtable ? 'true' : 'false') + "} title='" + columnProfile.label + "' colkey='" + columnProfile.colValueField + "' form={this.props.form} />}");
+                    }
+                    else{
+                        thTag.pushLine(columnProfile.label);
+                    }
                 }
                 if (columnProfile.dynamicVisible) {
                     gridHeadRowRenderBlock.pushLine('{this.props.' + columnProfile.id + '_visible == false ? null : (', 1);
@@ -3680,6 +3745,7 @@ class MobileContentCompiler extends ContentCompiler {
             gridBodyPureRectClass.renderFun.retBlock.pushLine("return (<table className='table table-striped table-hover ' style={" + tableStyleID + "}>", 1);
             if (!hideHeader) {
                 headClassInBodyTag = new FormatHtmlTag('headClassInFormTag', gridHeadPureRectClass.name, this.clientSide);
+                headClassInBodyTag.setAttr('simpleMode', '{true}');
                 gridBodyPureRectClass.renderFun.retBlock.pushChild(headClassInBodyTag);
             }
             gridBodyPureRectClass.renderFun.retBlock.pushLine('<tbody>{trElems_arr}</tbody>', -1);

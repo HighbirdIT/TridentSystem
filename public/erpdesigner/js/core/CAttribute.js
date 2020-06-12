@@ -407,6 +407,9 @@ var AttrNames = {
     ColumnName: 'columnname',
     ValuesArray: 'valuesarray',
     ChartType: 'charttype',
+    Sortable: 'sortable',
+    Filtable: 'filtable',
+    ColumnValueField: 'columnvaluefield',
 
     Event: {
         OnClick: 'onclick',
