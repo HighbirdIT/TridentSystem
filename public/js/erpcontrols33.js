@@ -5530,8 +5530,8 @@ var ERPC_AdvanceFormHeader = function (_React$PureComponent24) {
                 React.Fragment,
                 null,
                 React.createElement(
-                    'button',
-                    { ref: this.rootRef, className: 'btn btn-sam btn-link', onClick: this.clickHeaderHandler },
+                    'div',
+                    { ref: this.rootRef, className: 'btn btn-sam btn-link p-0', onClick: this.clickHeaderHandler },
                     this.props.title,
                     this.state.sortType == null ? null : React.createElement('i', { className: "fa fa-long-arrow-" + (this.state.sortType == 'asc' ? 'up' : 'down') }),
                     filter && !filter.bAll ? React.createElement(

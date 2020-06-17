@@ -4627,11 +4627,11 @@ class ERPC_AdvanceFormHeader extends React.PureComponent {
             </React.Fragment>
         }
         return <React.Fragment>
-            <button ref={this.rootRef} className="btn btn-sam btn-link" onClick={this.clickHeaderHandler}>
+            <div ref={this.rootRef} className="btn btn-sam btn-link p-0" onClick={this.clickHeaderHandler}>
                 {this.props.title}
                 {this.state.sortType == null ? null : <i className={"fa fa-long-arrow-" + (this.state.sortType == 'asc' ? 'up' : 'down')} />}
                 {filter && !filter.bAll ? <span className="fa fa-filter">{filter.index}</span> : null}
-            </button>
+            </div>
 			<div ref={this.popRef} className={'bg-light shadow flex-column p-1 border rounded d-' + (this.state.popper ? 'flex' : 'none')} style={{width:'200px', zIndex: 5000}}>
                 <div className='btn-group border m-1'>
                     <button d-type='asc' className={'btn flex-grow-1 flex-shrink-1 text-right btn-' + (this.state.sortType == 'asc' ? 'primary' : 'light')} onClick={this.clickSortBtn} >升序排列</button>
