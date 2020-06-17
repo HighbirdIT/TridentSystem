@@ -5362,7 +5362,7 @@ var ERPC_AdvanceFormHeader = function (_React$PureComponent24) {
             }
             var formSetting = gGetFormSetting(this.props.form.props.fullPath);
             var records_arr = formSetting.records_arr;
-            if (records_arr && records_arr.length <= 1) {
+            if (!records_arr || records_arr.length == 0) {
                 return; // no data
             }
             var popper = Popper.createPopper(this.rootRef.current, this.popRef.current, {

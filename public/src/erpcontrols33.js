@@ -4500,7 +4500,7 @@ class ERPC_AdvanceFormHeader extends React.PureComponent {
         }
         var formSetting = gGetFormSetting(this.props.form.props.fullPath);
 		var records_arr = formSetting.records_arr;
-		if(records_arr && records_arr.length <= 1){
+		if(!records_arr || records_arr.length == 0){
 			return;	// no data
 		}
 		var popper = Popper.createPopper(this.rootRef.current, this.popRef.current, {
