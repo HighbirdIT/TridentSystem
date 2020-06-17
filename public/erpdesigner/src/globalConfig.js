@@ -372,7 +372,7 @@ var ValueType = {
 };
 
 var VarInputableTypes_arr = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time];
-var JsValueTypes = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time, ValueType.DateMD];
+var JsValueTypes = [ValueType.String, ValueType.Int, ValueType.Boolean, ValueType.Float, ValueType.Date, ValueType.Time, ValueType.DateMD, ValueType.Object, ValueType.Array];
 var JsVarNodeValueTypes = JsValueTypes.concat(ValueType.BatchVar);
 
 const EChartType={

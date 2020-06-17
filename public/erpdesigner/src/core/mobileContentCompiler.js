@@ -3521,18 +3521,19 @@ class MobileContentCompiler extends ContentCompiler {
                     colValueField:useColValueField,
                 };
             }
+            
             kernelMidData.hadAdvanceHeader = hadAdvanceHeader;
             if(hadAdvanceHeader){
                 var recordsArraychangedFunInitBlk = kernelMidData.recordsArraychangedFun.initBlk;
                 recordsArraychangedFunInitBlk.pushLine("var formpath = getParentPathByKey(path,'" + theKernel.id + "');");
                 recordsArraychangedFunInitBlk.pushLine("var setting = gGetFormSetting(formpath);");
-                recordsArraychangedFunInitBlk.pushLine("if(setting.records_arr == null){", 1);
+                recordsArraychangedFunInitBlk.pushLine("if(setting.records_arr == null || !newValue.fromReProcess){", 1);
                 recordsArraychangedFunInitBlk.pushLine("if(setting.setRecords(newValue)){", 1);
                 recordsArraychangedFunInitBlk.pushLine("setting.useOldValue = oldValue;");
                 recordsArraychangedFunInitBlk.pushLine("return state;", -1);
                 recordsArraychangedFunInitBlk.pushLine("}", -1);
                 recordsArraychangedFunInitBlk.pushLine("} else{", 1);
-                recordsArraychangedFunInitBlk.pushLine("oldValue = setting.useOldValue ? setting.useOldValue : null;");
+                recordsArraychangedFunInitBlk.pushLine("oldValue = setting.useOldValue ? setting.useOldValue : oldValue;");
                 recordsArraychangedFunInitBlk.pushLine("setting.useOldValue = null;", -1);
                 recordsArraychangedFunInitBlk.pushLine("}");
                 recordsArraychangedFunInitBlk.pushLine("");

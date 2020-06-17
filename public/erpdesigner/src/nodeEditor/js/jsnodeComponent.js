@@ -1200,6 +1200,40 @@ class C_JSNode_CusObject_Visit extends React.PureComponent {
     }
 }
 
+class C_JSNode_CusObject_Modify extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+
+        C_NodeCom_Base(this);
+    }
+
+    dropdownCtlChangedHandler(code,ddc,cusobj) {
+        var nodeData = this.props.nodedata;
+        nodeData.setCusObj(cusobj);
+    }
+
+    cusHeaderFuc() {
+        var nodeData = this.props.nodedata;
+        var theProject = nodeData.bluePrint.master.project;
+        return <div f-canmove={1} className='d-flex flex-column'>
+                <span f-canmove={1}>修改数据对象</span>
+                <DropDownControl itemChanged={this.dropdownCtlChangedHandler} btnclass='btn-dark' options_arr={theProject.scriptMaster.getAllCustomObject} rootclass='flex-grow-1 flex-shrink-1' value={nodeData.cusObj} textAttrName='name' valueAttrName='code' />
+            </div>
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' cusHeaderFuc={this.cusHeaderFuc} >
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} nameMoveable={true} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} customSocketRender={this.customSocketRender} />
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} nameMoveable={true} customSocketRender={this.customSocketRender} />
+            </div>
+        </C_Node_Frame>
+    }
+}
+
+
 class C_JSNode_TraversalForm extends React.PureComponent {
     constructor(props) {
         super(props);

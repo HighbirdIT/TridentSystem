@@ -173,7 +173,7 @@ class AttributeEditor extends React.PureComponent {
 
     UCENameChanged(ev) {
         var nowVal = this.state.value;
-        var newName = ev.target.value.trim();
+        var newName = ev.target.value;//.trim();
         if(newName != nowVal.name){
             nowVal.name = newName;
             this.doSetAttribute(nowVal);
@@ -182,7 +182,7 @@ class AttributeEditor extends React.PureComponent {
 
     UCEParamsChanged(ev) {
         var nowVal = this.state.value;
-        var newParams = ev.target.value.trim();
+        var newParams = ev.target.value;//.trim();
         if(newParams != nowVal.params){
             nowVal.params = newParams;
             this.doSetAttribute(nowVal);
@@ -211,7 +211,7 @@ class AttributeEditor extends React.PureComponent {
 
     NAS_nameChanged(ev) {
         var nowVal = this.state.value;
-        var newName = ev.target.value.trim();
+        var newName = ev.target.value;//.trim();
         if(newName != nowVal.name){
             nowVal.name = newName;
             this.doSetAttribute(nowVal);
@@ -256,7 +256,7 @@ class AttributeEditor extends React.PureComponent {
 
     UCAttrHookParamChanged(ev) {
         var nowVal = this.state.value;
-        nowVal.params = ev.target.value.trim();
+        nowVal.params = ev.target.value;//.trim();
         this.doSetAttribute(nowVal);
     }
     
@@ -287,7 +287,7 @@ class AttributeEditor extends React.PureComponent {
     }
 
     CusFunNameChanged(ev) {
-        this.doSetAttribute(ev.target.value.trim());
+        this.doSetAttribute(ev.target.value);
     }
 
     renderCustomFunctonAttrEditor(nowVal, theAttr, attrName) {

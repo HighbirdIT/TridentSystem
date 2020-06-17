@@ -207,7 +207,7 @@ var AttributeEditor = function (_React$PureComponent) {
         key: 'UCENameChanged',
         value: function UCENameChanged(ev) {
             var nowVal = this.state.value;
-            var newName = ev.target.value.trim();
+            var newName = ev.target.value; //.trim();
             if (newName != nowVal.name) {
                 nowVal.name = newName;
                 this.doSetAttribute(nowVal);
@@ -217,7 +217,7 @@ var AttributeEditor = function (_React$PureComponent) {
         key: 'UCEParamsChanged',
         value: function UCEParamsChanged(ev) {
             var nowVal = this.state.value;
-            var newParams = ev.target.value.trim();
+            var newParams = ev.target.value; //.trim();
             if (newParams != nowVal.params) {
                 nowVal.params = newParams;
                 this.doSetAttribute(nowVal);
@@ -265,7 +265,7 @@ var AttributeEditor = function (_React$PureComponent) {
         key: 'NAS_nameChanged',
         value: function NAS_nameChanged(ev) {
             var nowVal = this.state.value;
-            var newName = ev.target.value.trim();
+            var newName = ev.target.value; //.trim();
             if (newName != nowVal.name) {
                 nowVal.name = newName;
                 this.doSetAttribute(nowVal);
@@ -320,7 +320,7 @@ var AttributeEditor = function (_React$PureComponent) {
         key: 'UCAttrHookParamChanged',
         value: function UCAttrHookParamChanged(ev) {
             var nowVal = this.state.value;
-            nowVal.params = ev.target.value.trim();
+            nowVal.params = ev.target.value; //.trim();
             this.doSetAttribute(nowVal);
         }
     }, {
@@ -364,7 +364,7 @@ var AttributeEditor = function (_React$PureComponent) {
     }, {
         key: 'CusFunNameChanged',
         value: function CusFunNameChanged(ev) {
-            this.doSetAttribute(ev.target.value.trim());
+            this.doSetAttribute(ev.target.value);
         }
     }, {
         key: 'renderCustomFunctonAttrEditor',

@@ -155,6 +155,11 @@ const JSNodeEditorControls_arr =[
         type:'操纵数据对象'
     },
     {
+        label:'Modify-数据对象',
+        nodeClass:JSNode_CusObject_Modify,
+        type:'操纵数据对象'
+    },
+    {
         label:'Get对象属性',
         nodeClass:JSNode_GetObjectProp,
         type:'操纵对象'

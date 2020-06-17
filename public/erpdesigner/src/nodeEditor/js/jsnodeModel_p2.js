@@ -2,6 +2,7 @@ const JSNODE_OP_NOT = 'opnot';
 const JSNODE_ADDPAGETOFRAMESET = 'addpagetoframeset';
 const JSNODE_CUSOBJECT_NEW = 'cusobjectnew';
 const JSNODE_CUSOBJECT_VISIT = 'cusobjectvisit';
+const JSNODE_CUSOBJECT_MODIFY = 'cusobjectmodify';
 const JSNODE_FUN_CREATE = 'createlocalfun';
 const JSNODE_FUN_CALL = 'callfun';
 const JSNODE_IFRAME_SENDMSG = 'iframesendmsg';
@@ -488,6 +489,148 @@ class JSNode_CusObject_Visit extends JSNode_Base {
             selfCompileRet.setSocketOut(theSocket, inSocketValue + '.' + theSocket.label);
         }
         helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+
+class JSNode_CusObject_Modify extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_CUSOBJECT_MODIFY, '修改数据对象', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+        this.insocketInitVal = {
+            type: ValueType.Object,
+            inputable: false,
+        };
+        if (createHelper) {
+            var cusObj = createHelper.project.scriptMaster.getCusObjByCode(this.code);
+        }
+
+        if (this.inputScokets_arr.length > 0) {
+            this.objSocket = this.inputScokets_arr.find(s=>{return s.name == 'obj';});
+
+        }
+        if (this.objSocket == null) {
+            this.objSocket = this.addSocket(new NodeSocket('obj', this, true));
+        }
+        this.objSocket.label = 'target';
+
+        this.setCusObj(cusObj);
+    }
+
+    preRemoveSocket(socket) {
+        return socket != this.objSocket;
+    }
+
+    setCusObj(cusObj) {
+        this.code = cusObj ? cusObj.code : null;
+        this.cusObj = cusObj;
+    }
+
+    getJson(jsonProf) {
+        var theJson = super.getJson(jsonProf);
+        if (jsonProf) {
+            jsonProf.addCusObject(this.cusObj);
+        }
+        return theJson;
+    }
+
+    requestSaveAttrs() {
+        var rlt = super.requestSaveAttrs();
+        rlt.code = this.code;
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, ['code']);
+    }
+
+    propChangedHandler(value, dropdown){
+        var theSocketID = getAttributeByNode(dropdown.rootDivRef.current, 'd-socketid');
+        if (theSocketID == null)
+            return;
+        var theSocket = this.getSocketById(theSocketID);
+        if (theSocket == null)
+            return;
+        theSocket.setExtra('prop', value);
+    }
+
+    customSocketRender(socket){
+        if (!socket.isIn || socket == this.objSocket) {
+            return null;
+        }
+        var options_arr = [];
+        if(this.cusObj){
+            options_arr = this.cusObj.dataMembers_arr.concat();
+        }
+        var nowVal = socket.getExtra('prop');
+        return <DropDownControl itemChanged={this.propChangedHandler} btnclass='btn-dark' options_arr={options_arr} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} />;
+    }
+
+    genInSocket() {
+        var nameI = this.inputScokets_arr.length;
+        while (nameI < 999) {
+            if (this.getScoketByName('in' + nameI, true) == null) {
+                break;
+            }
+            ++nameI;
+        }
+        return new NodeSocket('in' + nameI, this, true, this.insocketInitVal);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var cusObj = this.bluePrint.master.getCusObjByCode(this.code);
+        if (this.checkCompileFlag(cusObj == null, '需要选择对象类型', helper)) {
+            return false;
+        }
+        var socketComRet = this.getSocketCompileValue(helper, this.objSocket, usePreNodes_arr, belongBlock, false, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var selfCompileRet = new CompileResult(this);
+        var objSocketValue = socketComRet.value;
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+            var theSocket = this.inputScokets_arr[i];
+            if(theSocket == this.objSocket){
+                continue;
+            }
+            socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, false, false);
+            if (socketComRet.err) {
+                return false;
+            }
+            var prop = theSocket.getExtra('prop');
+            if (this.checkCompileFlag(cusObj.dataMembers_arr.indexOf(prop) == -1, prop + '属性名称无效', helper)) {
+                return false;
+            }
+            myJSBlock.pushLine(objSocketValue + '.' + prop + '=' + socketComRet.value + ';');
+        }
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
         return selfCompileRet;
     }
 }
@@ -4719,6 +4862,10 @@ JSNodeClassMap[JSNODE_CUSOBJECT_NEW] = {
 JSNodeClassMap[JSNODE_CUSOBJECT_VISIT] = {
     modelClass: JSNode_CusObject_Visit,
     comClass: C_JSNode_CusObject_Visit,
+};
+JSNodeClassMap[JSNODE_CUSOBJECT_MODIFY] = {
+    modelClass: JSNode_CusObject_Modify,
+    comClass: C_JSNode_CusObject_Modify,
 };
 JSNodeClassMap[JSNODE_FUN_CREATE] = {
     modelClass: JSNode_Fun_Create,

@@ -199,7 +199,7 @@ class DropDownControl extends React.PureComponent {
             return;
         }
         this.setState({
-            value:ev.target.value.trim(),
+            value:ev.target.value,
         });
     }
 

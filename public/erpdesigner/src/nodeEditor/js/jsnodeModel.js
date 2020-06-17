@@ -7860,8 +7860,9 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
                 if (belongUserCtl && belongUserCtl == topmostParent) {
                     // 控件内部的调用
                     if (batchMode) {
-                        var relPath = selectedKernel.getStatePath('', '.', null, true, topmostParent);
-                        pathVar = singleQuotesStr((relPath.length > 0 ? relPath + '.' : '') + "fun_" + funAttrValue.name);
+                        //var relPath = selectedKernel.getStatePath('', '.', null, true, topmostParent);
+                        //pathVar = singleQuotesStr((relPath.length > 0 ? relPath + '.' : '') + "fun_" + funAttrValue.name);
+                        pathVar = singleQuotesStr("fun_" + funAttrValue.name);
                     }
                 }
                 else if (this.isUserControlFunction) {
@@ -7923,7 +7924,7 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
 
-        if (!batchMode) {
+        if (!(batchMode && batchNode)) {
             if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
                 return false;
             }
