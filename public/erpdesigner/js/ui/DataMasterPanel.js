@@ -9,6 +9,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var ISParam_Options_arr = [{ name: '参数', code: '1' }, { name: '变量', code: '0' }];
+var gCopiedCustomEntity = null;
 
 var __SynAction_count = 0;
 
@@ -715,6 +716,40 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
             }
         }
     }, {
+        key: 'clickCopyBtnHandler',
+        value: function clickCopyBtnHandler(ev) {
+            if (this.state.selectedItem) {
+                var cusDSJsonProf = new AttrJsonProfile();
+                var dsJson = this.state.selectedItem.getJson(cusDSJsonProf);
+                gCopiedCustomEntity = dsJson;
+                this.sqlbpEditorRef.current.bluePrintRef.current.logManager.log('已复制蓝图');
+            }
+        }
+    }, {
+        key: 'clickPasteBtnHandler',
+        value: function clickPasteBtnHandler(ev) {
+            if (gCopiedCustomEntity) {
+                var useJson = JSON.parse(JSON.stringify(gCopiedCustomEntity));
+                var dataMaster = this.props.project.dataMaster;
+                var ti = 0;
+                var useName;
+                while (ti < 999) {
+                    useName = useJson.name + (ti == 0 ? '' : '(' + ti + ')');
+                    if (dataMaster.getSqlBPByName(useName) == null) {
+                        break;
+                    }
+                    ++ti;
+                }
+                useJson.name = useName;
+                useJson.uuid = null;
+                var sqlBPCreationHelper = new NodeCreationHelper();
+                sqlBPCreationHelper.project = dataMaster.project;
+                var newbp = new SqlNode_BluePrint({ master: dataMaster }, useJson, sqlBPCreationHelper);
+                dataMaster.addSqlBP(newbp);
+                this.setState({ selectedItem: newbp });
+            }
+        }
+    }, {
         key: 'deleteTipCallback',
         value: function deleteTipCallback(key, target) {
             if (key == 'ok') {
@@ -857,6 +892,16 @@ var SqlBPItemPanel = function (_React$PureComponent7) {
                                 'button',
                                 { type: 'button', onClick: this.clickEditBtnHandler, className: 'btn' },
                                 React.createElement('i', { className: 'fa fa-edit' })
+                            ),
+                            React.createElement(
+                                'button',
+                                { type: 'button', onClick: this.clickCopyBtnHandler, className: 'btn' },
+                                React.createElement('i', { className: 'fa fa-copy' })
+                            ),
+                            React.createElement(
+                                'button',
+                                { type: 'button', onClick: this.clickPasteBtnHandler, className: 'btn' },
+                                React.createElement('i', { className: 'fa fa-paste' })
                             )
                         )
                     ),

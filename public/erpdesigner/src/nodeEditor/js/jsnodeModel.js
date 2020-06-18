@@ -255,6 +255,10 @@ class JSNode_BluePrint extends EventEmitter {
         EnhanceEventEmiter(this);
         NodeEditor(this);
 
+        this.reCreate(initData, bluePrintJson, createHelper);
+    }
+
+    reCreate(initData, bluePrintJson, createHelper){
         this.nodes_arr = [];
         this.vars_arr = [];
         this.returnVars_arr = [];
@@ -4873,8 +4877,9 @@ class JSNode_Env_Var extends JSNode_Base {
             var nodeI = 0;
             for (nodeI = preNodes_arr.length - 1; nodeI > 0; --nodeI) {
                 var temNode = preNodes_arr[nodeI];
-                if(temNode.type != JSNODE_EXPORTEXCEL){
+                if (temNode.inFlowSocket) {
                     blockInServer = temNode.hadFetchFun;
+                    break;
                 }
                 break;
             }

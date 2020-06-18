@@ -38,6 +38,10 @@ class SqlNode_BluePrint extends EventEmitter {
         EnhanceEventEmiter(this);
         NodeEditor(this);
 
+        this.reCreate(initData, bluePrintJson, createHelper);
+    }
+
+    reCreate(initData, bluePrintJson, createHelper){
         this.nodes_arr = [];
         this.vars_arr = [];
         this.links_arr = [];
@@ -80,22 +84,12 @@ class SqlNode_BluePrint extends EventEmitter {
             this.group = 'custom';
         }
 
-        /*
-        this.nodes_arr = this.nodes_arr.map((nodeData,i)=>{
-            if(nodeData.type == SQLNODE_DBENTITY){
-                return new SqlNode_DBEntity(nodeData, self, createHelper);
-            }
-            else{
-                console.log('不支持的sql节点:' + nodeData.type);
-                console.warn(nodeData);
-            }
-        });
-        */
         this.returnSelectNode(createHelper);
         this.finalSelectNode.isConstNode = true;
         this.genColumns();
         createHelper.fireEvent('complete', createHelper);
     }
+
     requestSaveAttrs() {
         var rlt = super.requestSaveAttrs();
         rlt.inSocket.type = this.finalSelectNode.inSocket.type;

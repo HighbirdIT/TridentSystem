@@ -1,4 +1,5 @@
 var gCopiedCustomObjectData = null;
+var gCopiedCustomScriptData = null;
 
 class ScriptMasterPanel extends React.PureComponent {
     constructor(props) {
@@ -250,6 +251,42 @@ class JSBPItemPanel extends React.PureComponent {
         }
     }
 
+    clickCopyBtnHandler(ev){
+        if (this.state.selectedItem) {
+            var scriptJsonProf = new AttrJsonProfile();
+            var scriptJson = this.state.selectedItem.getJson(scriptJsonProf);
+            gCopiedCustomScriptData = scriptJson;
+            if(this.bpEditorRef.current){
+                this.bpEditorRef.current.logManager.log('已复制蓝图');
+            }
+        }
+    }
+
+    clickPasteBtnHandler(ev){
+        if(gCopiedCustomScriptData){
+            var useJson = JSON.parse(JSON.stringify(gCopiedCustomScriptData));
+            var scriptMaster = this.props.project.scriptMaster;
+            var ti=0;
+            var useName;
+            while(ti<999){
+                useName = useJson.name + (ti == 0 ? '' : '(' + ti + ')');
+                if(scriptMaster.getBPByName(useName) == null){
+                    break;  
+                }
+                ++ti;
+            }
+            useJson.name = useName;
+            if(scriptMaster.getBPByUUID(useJson.uuid) != null){
+                useJson.uuid = null;
+            }
+            var creationHelper = new NodeCreationHelper(); 
+            creationHelper.project = this.props.project;
+            var newbp = new JSNode_BluePrint(null, useJson, creationHelper);
+            scriptMaster.addBP(newbp);
+            this.setState({ selectedItem: newbp });
+        }
+    }
+
     newItemCompleteHandler(newDBE){
         this.setState({
             creating:false,
@@ -315,6 +352,8 @@ class JSBPItemPanel extends React.PureComponent {
                         <div className='flex-shrink-0 btn-group'>
                             <button type='button' onClick={this.clickAddBtnhandler} className='btn btn-success flex-grow-1'><i className='fa fa-plus' /></button>
                             <button type='button' onClick={this.clickEditBtnHandler} className='btn'><i className='fa fa-edit' /></button>
+                            <button type='button' onClick={this.clickCopyBtnHandler} className='btn'><i className='fa fa-copy' /></button>
+                            <button type='button' onClick={this.clickPasteBtnHandler} className='btn'><i className='fa fa-paste' /></button>
                         </div>
                     </div>
                 }
