@@ -818,7 +818,9 @@ class JSNode_GetDay extends JSNode_Base {
             for (nodeI = preNodes_arr.length - 1; nodeI > 0; --nodeI) {
                 var temNode = preNodes_arr[nodeI];
                 if (temNode.inFlowSocket) {
-                    blockInServer = temNode.hadFetchFun;
+                    if(temNode.type != JSNODE_EXPORTEXCEL){
+                        blockInServer = temNode.hadFetchFun;
+                    }
                     break;
                 }
             }
