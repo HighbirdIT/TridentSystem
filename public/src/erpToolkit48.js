@@ -1382,6 +1382,9 @@ function FormatStringValue(val, type, precision) {
     var rlt = val;
     switch (type) {
         case 'int':
+            if(Math.abs(val) < 0.00001){
+                return 0;
+            }
             rlt = parseInt(val);
             if (isNaN(rlt)) {
                 rlt = '';
@@ -1391,6 +1394,9 @@ function FormatStringValue(val, type, precision) {
             rlt = parseBoolean(val) ? true : false;
             break;
         case 'float':
+            if(Math.abs(val) < 0.00001){
+                return 0;
+            }
             precision = precision == null ? 2 : parseInt(precision);
             var divisor = Math.pow(10, precision);
             rlt = Math.round(val * divisor) / divisor;
