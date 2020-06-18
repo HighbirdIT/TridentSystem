@@ -44,6 +44,8 @@ const JSNODE_OBJECT_CLONE = 'objectclone';
 
 const JSNODE_LONGSERVERPROCESS = 'longserverprocess';
 
+const JSNODE_HASHDATASOURCE_ROW = 'hashdatasourcerow';
+
 const SpecialCharReg = /[\(\)\[\]\.]/;
 
 class JSNode_AddPageToFrameSet extends JSNode_Base {
@@ -1098,7 +1100,7 @@ class JSNode_TraversalForm extends JSNode_Base {
     }
 
     compile(helper, preNodes_arr, belongBlock) {
-        var superRet = super.compile(helper, preNodes_arr, blockInServer);
+        var superRet = super.compile(helper, preNodes_arr);
         if (superRet == false || superRet != null) {
             return superRet;
         }
@@ -4846,6 +4848,185 @@ class JSNode_ImportExcel extends JSNode_Base {
     }
 }
 
+class JSNode_HashDataSourceRow extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_HASHDATASOURCE_ROW, '散列数据源数据', false, nodeJson);
+        autoBind(this);
+        if (this.outFlowSockets_arr == null) {
+            this.outFlowSockets_arr = [];
+        }
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+        if (this.inputScokets_arr.length > 0) {
+            this.dsSocket = this.inputScokets_arr.find(s=>{return s.name=='ds';});
+            this.dataSocket = this.inputScokets_arr.find(s=>{return s.name=='data';});
+        }
+
+        if (this.dsSocket == null) {
+            this.dsSocket = new NodeSocket('ds', this, true);
+            this.addSocket(this.dsSocket);
+        }
+
+        var project = createHelper ? createHelper.project : this.bluePrint.master.project;
+        
+        this.dsSocket.set({
+            inputable: true,
+            hideIcon: true,
+            inputDDC_setting: {
+                textAttrName: 'name',
+                valueAttrName: 'code',
+                options_arr: project.dataMaster.getAllEntities,
+            },
+            label: '数据源',
+        });
+
+        if (this.dataSocket == null) {
+            this.dataSocket = new NodeSocket('data', this, true);
+            this.addSocket(this.dataSocket);
+        }
+        this.dataSocket.inputable = false;
+        this.dataSocket.label = '数据对象';
+    }
+
+    mouseDownOutSocketHand(ev) {
+        var socketid = getAttributeByNode(ev.target, 'd-sid', true, 10);
+        if (socketid == null) {
+            return;
+        }
+        var theSocket = this.sockets_map[socketid];
+        var bornPos = theSocket.currentComponent.getCenterPos();
+        var newNode = new FlowNode_ColumnVar({
+            keySocketID: socketid,
+            newborn: true,
+            left: bornPos.x,
+            top: bornPos.y,
+        }, this.parent);
+    }
+
+    columnDDCChanged(value, ddc) {
+        var theSocket = ddc.props.socket;
+        if (theSocket == null)
+            return;
+        theSocket.setExtra('colName', value);
+        theSocket.fireEvent('changed', 10);
+    }
+
+    customSocketRender(socket) {
+        if (socket.isIn == true) {
+            return null;
+        }
+        var useEntity = this.getUseEntity();
+        var options_arr = useEntity.columns.map(x=>{return x.name;});
+        var nowVal = socket.getExtra('colName');
+        return (<span d-sid={socket.id} className='d-flex align-items-center'>
+                    <DropDownControl socket={socket} itemChanged={this.columnDDCChanged} btnclass='btn-dark' options_arr={options_arr} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} />
+                    <button onMouseDown={this.mouseDownOutSocketHand} type='button' className='btn btn-secondary'><i className='fa fa-hand-paper-o' /></button>
+                </span>);
+    }
+
+    getUseEntity(){
+        return this.bluePrint.master.project.dataMaster.getDataSourceByCode(this.dsSocket.defval);
+    }
+
+    requestSaveAttrs(jsonProf) {
+        var rlt = super.requestSaveAttrs();
+        var useEntity = this.getUseEntity();
+        if (useEntity != null) {
+            jsonProf.useEntity(useEntity);
+        }
+        return rlt;
+    }
+
+    genOutSocket() {
+        var useEntity = this.getUseEntity();
+        if (useEntity == null) {
+            return null;
+        }
+        var canUseColumns_arr = useEntity.columns.map(x=>{return x.name;});
+        if (canUseColumns_arr == null) {
+            return null;
+        }
+        var hadColumns_arr = [];
+        for (var si in this.outputScokets_arr) {
+            var outSocket = this.outputScokets_arr[si];
+            var columnName = outSocket.getExtra('colName');
+            if (columnName != null) {
+                hadColumns_arr.push(columnName);
+            }
+        }
+        var emptyCol = canUseColumns_arr.find(colName => {
+            return hadColumns_arr.indexOf(colName) == -1
+        });
+        if (emptyCol == null) {
+            return null;
+        }
+        var newSocket = new NodeSocket(this.getUseableOutSocketName('col'), this, false, { type: ValueType.String });
+        newSocket.setExtra('colName', emptyCol);
+        return newSocket;
+    }
+
+    getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
+        result.pushVariable(this.id + '_data', targetSocket);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var useEntity = this.getUseEntity();
+        if (this.checkCompileFlag(useEntity == null, '请选择数据源', helper)) {
+            return false;
+        }
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var canUseColumns_arr = useEntity.columns.map(x=>{return x.name;});
+
+        var nowRowVarName = this.id + '_data';
+        var inSocketComRet = this.getSocketCompileValue(helper, this.dataSocket, usePreNodes_arr, belongBlock, true, false);
+        if (inSocketComRet.err) {
+            return false;
+        }
+        var myJSBlock = new FormatFileBlock('');
+        belongBlock.pushChild(myJSBlock);
+        myJSBlock.pushLine('var ' + nowRowVarName + '=' + inSocketComRet.value + ';');
+
+        var selfCompileRet = new CompileResult(this);
+        helper.setCompileRetCache(this, selfCompileRet);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+
+        for (var si in this.outputScokets_arr) {
+            var outSocket = this.outputScokets_arr[si];
+            var colName = outSocket.getExtra('colName');
+            var columnItem = canUseColumns_arr.find(x => { return x == colName; });
+            if (columnItem == null) {
+                helper.logManager.errorEx([helper.logManager.createBadgeItem(
+                    thisNodeTitle,
+                    nodeThis,
+                    helper.clickLogBadgeItemHandler),
+                '第' + (si + 1) + '个输出接口列名无效！']);
+                return false;
+            }
+            selfCompileRet.setSocketOut(outSocket, nowRowVarName + '.' + colName);
+        }
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
+        return selfCompileRet;
+    }
+}
+
 
 JSNodeClassMap[JSNODE_OP_NOT] = {
     modelClass: JSNode_OP_Not,
@@ -4994,5 +5175,9 @@ JSNodeClassMap[JSNODE_LONGSERVERPROCESS] = {
 };
 JSNodeClassMap[JSNODE_IMPORTEXCEL] = {
     modelClass: JSNode_ImportExcel,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_HASHDATASOURCE_ROW] = {
+    modelClass: JSNode_HashDataSourceRow,
     comClass: C_Node_SimpleNode,
 };

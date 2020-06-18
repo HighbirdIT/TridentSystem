@@ -265,6 +265,11 @@ const JSNodeEditorControls_arr =[
         type:'表单访问'
     },
     {
+        label:'散列数据源单行数据',
+        nodeClass:JSNode_HashDataSourceRow,
+        type:'操纵对象'
+    },
+    {
         label:'遍历表单行',
         nodeClass:JSNode_TraversalForm,
         type:'表单访问'
