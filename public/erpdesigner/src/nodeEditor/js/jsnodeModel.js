@@ -681,6 +681,11 @@ class JSNode_BluePrint extends EventEmitter {
                 theFun.scope.getVar(varData.name, true, varData.default);
             }
         });
+        if(paramVars_arr.length > 0 && paramVars_arr[0].index != null){
+            paramVars_arr.sort((a,b)=>{
+                return a.index < b.index ? -1 : (a.index > b.index ? 1 : 0);
+            })
+        }
 
         var isOnclickFun = false;
         var isOnchangedFun = false;
@@ -1018,6 +1023,18 @@ class JSNode_BluePrint extends EventEmitter {
                 var selectedRowsVarName = formId + '_' + VarNames.SelectedRows_arr;
                 var isUseFormCtl = !IsEmptyObject(useFormData.useControls_map);
                 var isUseFormColumn = !IsEmptyObject(useFormData.useColumns_map);
+                if(isUseFormColumn){
+                    if(compilHelper.projectCompiler){
+                        var formMidData = compilHelper.projectCompiler.getMidData(formId);
+                        for (var cname in useFormData.useColumns_map) {
+                            formMidData.useColumns_map[cname] = 1;
+                        }
+                    }
+                    if(!(useFormData.useContextRow || useFormData.useSelectedRow)){
+                        useFormData.useColumns_map = {};
+                        isUseFormColumn = false;
+                    }
+                }
                 var formPath = useFormData.formKernel.getStatePath(null,'.',{ mapVarName: VarNames.RowKeyInfo_map });
                 initValue = makeStr_getStateByPath(VarNames.State, formPathVarName, '{}');
 
