@@ -428,7 +428,8 @@ var AttrNames = {
         OnReceiveMsg: 'onReceiveMsg',
         OnCollapse: 'onCollapse',
         OnUnCollapse: 'onUnCollapse',
-        OnRowBind: 'onRowBind'
+        OnRowBind: 'onRowBind',
+        OnClickRefresh: 'onclickrefresh'
     },
 
     Function: {

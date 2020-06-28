@@ -279,6 +279,12 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
 
+        var sendMessageFun = clientSide.scope.getFunction("sendMessage", true, ['type', 'data']);
+        sendMessageFun.pushLine("gPageReceiveMsgHandlers_arr.forEach(handler=>{", 1);
+        sendMessageFun.pushLine("handler(type,data);", -1);
+        sendMessageFun.pushLine("});");
+
+
         // gen relyon code
         for (var pid in this.ctlRelyOnGraph.allpath_map) {
             var relyPath = this.ctlRelyOnGraph.allpath_map[pid];
@@ -2453,7 +2459,21 @@ class MobileContentCompiler extends ContentCompiler {
 
             formReactClass.constructorFun.pushLine('this.clickFreshHandler = this.clickFreshHandler.bind(this);');
             var clickFreshHandlerFun = formReactClass.getFunction('clickFreshHandler', true, ['ev']);
-            clickFreshHandlerFun.pushLine(makeFName_pull(theKernel) + "(null, true, this.props.fullParentPath, true);");
+            var cusRefreshFunName = theKernel.id + '_' + AttrNames.Event.OnClickRefresh;
+            var cusRefreshBP = this.project.scriptMaster.getBPByName(cusRefreshFunName);
+            if (cusRefreshBP) {
+                var cusRefreshCompileRet = this.compileScriptBlueprint(cusRefreshBP);
+                if (cusRefreshCompileRet == false) {
+                    return false;
+                }
+                clickFreshHandlerFun.pushLine('var scrollerElem=document.getElementById(this.props.fullParentPath+' + singleQuotesStr('.' + theKernel.id + 'scroller') + ');');
+                clickFreshHandlerFun.pushLine('if(scrollerElem){gDataCache.set(this.props.fullParentPath + ' + singleQuotesStr('.' + theKernel.id + 'scrollsetting') + ',{left:scrollerElem.scrollLeft,top:scrollerElem.scrollTop});}');
+                clickFreshHandlerFun.pushLine("var needSetState={fetching:true,fetchingErr:null};");
+                clickFreshHandlerFun.pushLine("store.dispatch(makeAction_setManyStateByPath(needSetState, this.props.fullPath));");
+                clickFreshHandlerFun.pushLine(cusRefreshFunName +  "(this.props.fullParentPath);");
+            }else{
+                clickFreshHandlerFun.pushLine(makeFName_pull(theKernel) + "(null, true, this.props.fullParentPath, true);");
+            }
         }
 
         var formStyleID = theKernel.id + '_style';

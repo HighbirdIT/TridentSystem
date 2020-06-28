@@ -197,6 +197,11 @@ class PCContentCompiler extends MobileContentCompiler {
             }
         }
 
+        var sendMessageFun = clientSide.scope.getFunction("sendMessage", true, ['type', 'data']);
+        sendMessageFun.pushLine("gPageReceiveMsgHandlers_arr.forEach(handler=>{", 1);
+        sendMessageFun.pushLine("handler(type,data);", -1);
+        sendMessageFun.pushLine("});");
+
         // gen relyon code
         for (var pid in this.ctlRelyOnGraph.allpath_map) {
             var relyPath = this.ctlRelyOnGraph.allpath_map[pid];

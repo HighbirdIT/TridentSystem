@@ -66,6 +66,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('数据行变更', AttrNames.Event.OnRowChanged, ValueType.Event),
         new CAttribute('选择行变更', AttrNames.Event.OnSelectedChanged, ValueType.Event),
         new CAttribute('行绑定', AttrNames.Event.OnRowBind, ValueType.Event),
+        new CAttribute('点击刷新时', AttrNames.Event.OnClickRefresh, ValueType.Event),
     ]),
     new CAttributeGroup('List设置', [
         new CAttribute('ItemStyle', 'item' + AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
@@ -120,6 +121,8 @@ class M_FormKernel extends ContainerKernelBase {
         theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Function.GetXMLRowItem);
         this.scriptCreated(null, theBP);
         theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Function.GetJSONRowItem);
+        this.scriptCreated(null, theBP);
+        theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnClickRefresh);
         this.scriptCreated(null, theBP);
 
         //this.autoSetCusDataSource();
@@ -356,6 +359,9 @@ class M_FormKernel extends ContainerKernelBase {
         }
         if(scriptBP.name.indexOf(AttrNames.Event.OnDelete) != -1){
             scriptBP.setFixParam([VarNames.RowKey, 'callBack']);
+        }
+        if(scriptBP.name.indexOf(AttrNames.Event.OnClickRefresh) != -1){
+            scriptBP.setFixParam([this.id + '_path']);
         }
     }
 
@@ -637,7 +643,8 @@ MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.SelectedV
 MForm_api.pushApi(new ApiItem_propsetter(VarNames.SelectedValues_arr));
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.SelectedColumns, M_FormKernelAttrsSetting), VarNames.SelectedColumns, true,(ctlStateVarName, ctlKernel, propApiitem)=>{
     return makeStr_AddAll(ctlStateVarName,'==null ? "" : ', makeStr_callFun('GetFormSelectedColumns',[ctlStateVarName,singleQuotesStr(ctlKernel.getAttribute(AttrNames.KeyColumn)), singleQuotesStr(propApiitem.colname)]) + '.join(",")');
-})); 
+}));
+MForm_api.pushApi(new ApiItem_propsetter(VarNames.Fetching)); 
 /*
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.FormXML, M_FormKernelAttrsSetting), VarNames.FormXML, true,(ctlStateVarName, ctlKernel, propApiitem)=>{
     return ctlKernel.id + '_xmldata.xml';
