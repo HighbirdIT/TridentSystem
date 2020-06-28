@@ -1721,6 +1721,7 @@ class C_JSNode_Editor extends React.PureComponent{
     }
 
     clickExportBtnHandler(ev){
+        /*
         console.log("Start export");
         var editingNode = this.state.editingNode;
         var ajp = new AttrJsonProfile();
@@ -1728,10 +1729,17 @@ class C_JSNode_Editor extends React.PureComponent{
         //json.dictionary = ajp.dictionary;
         var text = JSON.stringify(json);
         console.log(text);
+        */
+        if(this.props.bluePrint){
+            var scriptJsonProf = new AttrJsonProfile();
+            var scriptJson = this.props.bluePrint.getJson(scriptJsonProf);
+            gCopiedCustomScriptData = scriptJson;
+            this.logManager.log('已复制蓝图');
+        }
     }
 
     clickImportBtnHandler(ev){
-        if(gCopiedCustomScriptData){
+        if(this.props.bluePrint && gCopiedCustomScriptData){
             gTipWindow.popAlert(makeAlertData('警告', '确定要用"' + gCopiedCustomScriptData.name + '"来替换此蓝图吗?', this.importTipCallback, [TipBtnOK, TipBtnNo]));
         }
     }

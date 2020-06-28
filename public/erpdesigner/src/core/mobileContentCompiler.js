@@ -1375,7 +1375,8 @@ class MobileContentCompiler extends ContentCompiler {
         var paramGroup = attrsSetting.find(group => { return group.label == '属性接口'; });
         var cusParams_arr = [];
 
-        paramGroup.attrs_arr.forEach(paramAttribute => {
+        for(var attr_i in paramGroup.attrs_arr){
+            var paramAttribute = paramGroup.attrs_arr[attr_i];
             var paramValue = theKernel.getAttribute(paramAttribute.name);
             var paramValueParseRet = parseObj_CtlPropJsBind(paramValue, project.scriptMaster);
             cusParams_arr.push(paramAttribute.label);
@@ -1415,7 +1416,7 @@ class MobileContentCompiler extends ContentCompiler {
                 }
                 kernelMidData.needSetStates_arr.push(setValueStateItem);
             }
-        });
+        }
 
         var belongUserControlMidData = null;
         if (belongUserControl) {
