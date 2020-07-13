@@ -1526,6 +1526,14 @@ function getParentPathByKey(orginPath, key) {
     return orginPath.substring(0, index) + key;
 }
 
+function getPathRoot(orginPath) {
+    var index = orginPath.indexOf('.');
+    if (index == -1) {
+        return orginPath;
+    }
+    return orginPath.substring(0, index);
+}
+
 function getBelongUserCtlPath(orginPath, fromId, skipfirst) {
     var lastDostPos = fromId ? orginPath.lastIndexOf(fromId) - fromId.length : orginPath.length;
     var index = orginPath.lastIndexOf('.UserControl', lastDostPos);

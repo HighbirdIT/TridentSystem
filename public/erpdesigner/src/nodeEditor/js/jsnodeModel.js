@@ -8973,6 +8973,73 @@ class JSNode_PopPage extends JSNode_Base {
             this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
             this.addSocket(this.outFlowSocket);
         }
+
+        for (var si = 0; si < this.inputScokets_arr.length; ++si) {
+            var theSocket = this.inputScokets_arr[si];
+            switch (theSocket.name) {
+                case 'popPos':
+                    this.popPosSocket = theSocket;
+                    break;
+                case 'popWidth':
+                    this.popWidthSocket = theSocket;
+                    break;
+                case 'popHeight':
+                    this.popHeightSocket = theSocket;
+                    break;
+                case 'popMaxWidth':
+                    this.popMaxWidthSocket = theSocket;
+                    break;
+                case 'popMaxHeight':
+                    this.popMaxHeightSocket = theSocket;
+                    break;
+            }
+        }
+
+        if (this.popPosSocket == null) {
+            this.popPosSocket = new NodeSocket('popPos', this, true, { type: ValueType.String });
+            this.addSocket(this.popPosSocket);
+        }
+        this.popPosSocket.inputDDC_setting = {options_arr: ['默认', '左侧', '右侧', '上侧', '下侧'] },
+        this.popPosSocket.label = '位置';
+        this.popPosSocket.inputable = true;
+        this.popPosSocket.hideIcon = true;
+        if(this.popPosSocket.defval == null){
+            this.popPosSocket.defval = '默认';
+        }
+
+        if (this.popWidthSocket == null) {
+            this.popWidthSocket = new NodeSocket('popWidth', this, true, { type: ValueType.String });
+            this.addSocket(this.popWidthSocket);
+        }
+        this.popWidthSocket.label = '宽度';
+        this.popWidthSocket.inputable = true;
+        this.popWidthSocket.hideIcon = true;
+
+        if (this.popHeightSocket == null) {
+            this.popHeightSocket = new NodeSocket('popHeight', this, true, { type: ValueType.String });
+            this.addSocket(this.popHeightSocket);
+        }
+        this.popHeightSocket.label = '高度';
+        this.popHeightSocket.inputable = true;
+        this.popHeightSocket.hideIcon = true;
+        /*
+        if (this.popMaxWidthSocket == null) {
+            this.popMaxWidthSocket = new NodeSocket('popMaxWidth', this, true, { type: ValueType.String });
+            this.addSocket(this.popMaxWidthSocket);
+        }
+        this.popMaxWidthSocket.label = '最大宽度';
+        this.popMaxWidthSocket.inputable = true;
+        this.popMaxWidthSocket.hideIcon = true;
+
+        if (this.popMaxHeightSocket == null) {
+            this.popMaxHeightSocket = new NodeSocket('popMaxHeight', this, true, { type: ValueType.String });
+            this.addSocket(this.popMaxHeightSocket);
+        }
+        this.popMaxHeightSocket.label = '最大高度';
+        this.popMaxHeightSocket.inputable = true;
+        this.popMaxHeightSocket.hideIcon = true;
+        */
+
         if (createHelper) {
             if (!IsEmptyString(this.pageCode)) {
                 if (!createHelper.project.loaded) {
@@ -8985,6 +9052,10 @@ class JSNode_PopPage extends JSNode_Base {
         }
     }
 
+    preRemoveSocket(theSocket) {
+        return !theSocket.isIn || theSocket.hideIcon == false;
+    }
+
     projLoadedHandler() {
         var project = this.bluePrint.master.project;
         var targetPage = project.getPageById(this.pageCode);
@@ -8993,24 +9064,32 @@ class JSNode_PopPage extends JSNode_Base {
 
     pageChangedHandler() {
         if (this.targetPage == null) {
+            this.inputScokets_arr.concat().forEach(socket=>{
+                this.removeSocket(socket);
+            });
+            /*
             while (this.inputScokets_arr.length > 0) {
                 this.removeSocket(this.inputScokets_arr[this.inputScokets_arr.length - 1]);
             }
+            */
             while (this.outputScokets_arr.length > 0) {
                 this.removeSocket(this.outputScokets_arr[this.outputScokets_arr.length - 1]);
             }
             return;
         }
+        this.inputScokets_arr.forEach(socket=>{
+            if(!socket.hideIcon){
+                socket.isvalid = false;
+            }
+        });
         var pageEntryAttrs_arr = this.targetPage.getAttrArrayList(AttrNames.EntryParam);
         pageEntryAttrs_arr.forEach((attrItem, index) => {
-            var inSocket = null;
-            if (index >= this.inputScokets_arr.length) {
+            var inSocket = this.getScoketByName(attrItem.name);
+            if (inSocket == null) {
                 inSocket = new NodeSocket(attrItem.name, this, true);
                 this.addSocket(inSocket);
             }
-            else {
-                inSocket = this.inputScokets_arr[index];
-            }
+            inSocket.isvalid = true;
             var paramLabel = this.targetPage.getAttribute(attrItem.name);
             if (paramLabel != inSocket.label) {
                 inSocket.label = paramLabel;
@@ -9018,9 +9097,9 @@ class JSNode_PopPage extends JSNode_Base {
             }
             inSocket.inputable = false;
         });
-        while (this.inputScokets_arr.length > pageEntryAttrs_arr.length) {
-            this.removeSocket(this.inputScokets_arr[this.inputScokets_arr.length - 1]);
-        }
+        this.inputScokets_arr.filter(s=>{return !s.isvalid;}).forEach(socket=>{
+            this.removeSocket(socket);
+        });
 
         var pageExportAttrs_arr = this.targetPage.getAttrArrayList(AttrNames.ExportParam);
         pageExportAttrs_arr.forEach((attrItem, index) => {
@@ -9125,9 +9204,13 @@ class JSNode_PopPage extends JSNode_Base {
         var socketValues_arr = [];
         var i;
         var theSocket;
+        var socketComRet;
         for (i = 0; i < this.inputScokets_arr.length; ++i) {
             theSocket = this.inputScokets_arr[i];
-            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, myJSBlock, true);
+            if(theSocket.hideIcon){
+                continue;
+            }
+            socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, myJSBlock, true);
             if (socketComRet.err) {
                 return false;
             }
@@ -9139,14 +9222,104 @@ class JSNode_PopPage extends JSNode_Base {
         myJSBlock.pushLine('};');
         myJSBlock.pushLine(makeLine_setGDataCache(thePage.id + AttrNames.EntryParam, entryParamName));
         var inreducer = this.isInReducer(preNodes_arr);
-        myJSBlock.pushLine(makeStr_callFun(makeFName_initPage(thePage), inreducer ? [VarNames.State] : null, ';'));
-        if (inreducer) {
-            myJSBlock.pushLine('setTimeout(() => {', 1);
+
+        var popPos = this.popPosSocket.defval;
+        if(popPos == '默认'){
+            myJSBlock.pushLine(makeStr_callFun(makeFName_initPage(thePage), inreducer ? [VarNames.State] : null, ';'));
+            if (inreducer) {
+                myJSBlock.pushLine('setTimeout(() => {', 1);
+            }
+            myJSBlock.pushLine(makeStr_AddAll('popPage(', singleQuotesStr(thePage.id), ',<', thePage.getReactClassName(true), " key='", thePage.id, "' />);"));
+            if (inreducer) {
+                myJSBlock.subNextIndent();
+                myJSBlock.pushLine('}, 50);');
+            }
         }
-        myJSBlock.pushLine(makeStr_AddAll('popPage(', singleQuotesStr(thePage.id), ',<', thePage.getReactClassName(true), " key='", thePage.id, "' />);"));
-        if (inreducer) {
-            myJSBlock.subNextIndent();
-            myJSBlock.pushLine('}, 50);');
+        else{
+            var ctlKernel = this.bluePrint.ctlKernel;
+            var belongPage = ctlKernel.type == M_PageKernel_Type ? ctlKernel : ctlKernel.searchParentKernel(M_PageKernel_Type, true);
+            if(belongPage == null){
+                var belongUserControl = ctlKernel.type == UserControlKernel_Type ? ctlKernel : ctlKernel.searchParentKernel(UserControlKernel_Type, true);
+                if (this.checkCompileFlag(belongUserControl == null, '此处无法使用', helper)) {
+                    return false;
+                }
+                myJSBlock.pushLine('var ' + this.id + '_pageID=getPathRoot(' + belongUserControl.id + "_path);");
+            }
+            else{
+                myJSBlock.pushLine('var ' + this.id + '_pageID=' + singleQuotesStr(belongPage.id) + ';');
+            }
+            myJSBlock.pushLine(makeStr_callFun(makeFName_initPage(thePage), inreducer ? [VarNames.State, this.id + '_pageID'] : ['null', this.id + '_pageID'], ';'));
+            var popType = 'r';
+            switch(popPos){
+                case '左侧':
+                    popType = 'l';
+                    break;
+                case '右侧':
+                    popType = 'r';
+                    break;
+                case '上侧':
+                    popType = 't';
+                    break;
+                case '下侧':
+                    popType = 'b';
+                    break;
+                default:
+                    if (this.checkCompileFlag(true, '无效的弹出位置' + popType, helper)) {
+                        return false;
+                    }
+                    break;
+            }
+            var foundElemVarName = this.id + '_foundElem';
+            var pageStateVarName = this.id + '_pageState';
+            var newPageVarName = this.id + '_newPage';
+            myJSBlock.pushLine('var ' + pageStateVarName + '=getStateByPath(state,' + this.id + '_pageID' + ',{});');
+            myJSBlock.pushLine('var ' + foundElemVarName + '=' + pageStateVarName + '.sidepages_arr ? ' + pageStateVarName + ".sidepages_arr.find(x => { return x.key == '"+this.pageCode+"'; }) : null;");
+            myJSBlock.pushLine('if ('+foundElemVarName+' != null) {return;}');
+            myJSBlock.pushLine('var ' + newPageVarName + '={',1);
+            myJSBlock.pushLine('key:' + singleQuotesStr(this.pageCode) + ',');
+            var elemTag = '<' + thePage.getReactClassName(true) + ' popInSide={true} />';
+            myJSBlock.pushLine('elem:' + elemTag + ',');
+            var popWidth = this.popWidthSocket.defval;
+            if(!IsEmptyString(popWidth)){
+                if(!isNaN(popWidth)){
+                    popWidth += 'px';
+                }
+                myJSBlock.pushLine('width:' + singleQuotesStr(popWidth) + ',');
+            }
+            var popHeight = this.popHeightSocket.defval;
+            if(!IsEmptyString(popHeight)){
+                if(!isNaN(popHeight)){
+                    popHeight += 'px';
+                }
+                myJSBlock.pushLine('height:' + singleQuotesStr(popHeight) + ',');
+            }
+            /*
+            var popMaxWidth = this.popMaxWidthSocket.defval;
+            if(!IsEmptyString(popMaxWidth)){
+                if(!isNaN(popMaxWidth)){
+                    popMaxWidth += 'px';
+                }
+                myJSBlock.pushLine('maxWidth:' + singleQuotesStr(popMaxWidth) + ',',-1);
+            }
+            var popMaxHeight = this.popMaxHeightSocket.defval;
+            if(!IsEmptyString(popMaxHeight)){
+                if(!isNaN(popMaxHeight)){
+                    popMaxHeight += 'px';
+                }
+                myJSBlock.pushLine('maxHeight:' + singleQuotesStr(popMaxHeight) + ',',-1);
+            }
+            */
+            myJSBlock.pushLine('type:' + singleQuotesStr(popType) + ',',-1);
+            myJSBlock.pushLine('};');
+            myJSBlock.pushLine("var newarr = "+pageStateVarName+".sidepages_arr ? "+pageStateVarName+".sidepages_arr.concat("+newPageVarName+") : ["+newPageVarName+"];");
+            if (inreducer) {
+                myJSBlock.pushLine('setTimeout(() => {', 1);
+            }
+            myJSBlock.pushLine("store.dispatch(makeAction_setStateByPath(newarr, " + (this.id + '_pageID+') + "'.sidepages_arr'));");
+            if (inreducer) {
+                myJSBlock.subNextIndent();
+                myJSBlock.pushLine('}, 50);');
+            }
         }
 
         var selfCompileRet = new CompileResult(this);
@@ -9489,7 +9662,7 @@ class JSNode_ClosePage extends JSNode_Base {
         myJSBlock.subNextIndent();
         myJSBlock.pushLine('};');
         var callBackName = this.id + '_callback';
-        myJSBlock.pushLine('closePage(' + singleQuotesStr(thePage.id) + ');');
+        myJSBlock.pushLine('closePage2(' + singleQuotesStr(thePage.id) + ', state);');
         myJSBlock.pushLine('var ' + callBackName + ' = ' + makeStr_callFun('getPageEntryParam', [singleQuotesStr(thePage.id), singleQuotesStr('callBack')], ';'));
         myJSBlock.pushLine('if(' + callBackName + '){setTimeout(()=>{' + callBackName + '(' + exportParamName + ');},20);}');
         var selfCompileRet = new CompileResult(this);
