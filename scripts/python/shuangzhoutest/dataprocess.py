@@ -1,4 +1,6 @@
 import loadfile
+from matplotlib import pyplot as plt
+import numpy as np
 
 
 class Data_processed:
@@ -31,7 +33,9 @@ class Data_processed:
             self.series_arr = self.original_data.loc[self.start_index:, 'Fy']
         else:
             self.series_arr = self.original_data.loc[self.start_index:, 'Fx']
-        # print(self.series_arr)
+        print(self.series_arr)
+        # plt.plot(self.series_arr)
+        # plt.show()
         return self.series_arr
 
     def check_standard(self):
@@ -39,15 +43,15 @@ class Data_processed:
         fy_arr = self.original_data.loc[self.start_index:, 'Fy']
         fx_max = max(fx_arr)
         fy_max = max(fy_arr)
+        print('max:', fx_max, fy_max)
         difference = 0
-        print('max:', fx_max,fy_max)
         if self.filename == '(2)2:1':
-            difference = fx_max- 2*fy_max if (fx_max - 2*fy_max) > 0 else 2*fy_max - fx_max
+            difference = fx_max - 2 * fy_max if (fx_max - 2 * fy_max) > 0 else 2 * fy_max - fx_max
         elif self.filename == '(4)1:2':
-            difference = 2*fx_max - fy_max if (2*fx_max - fy_max) > 0 else fy_max - 2*fx_max
+            difference = 2 * fx_max - fy_max if (2 * fx_max - fy_max) > 0 else fy_max - 2 * fx_max
         elif self.filename != '(6)1:0' and self.filename != '(8)0:1':
             difference = (fx_max - fy_max) if (fx_max - fy_max) > 0 else fy_max - fx_max
-        print('计算的结果：',float(difference) / fx_max)
+        print('计算的结果：', float(difference) / fx_max)
         if float(difference) / fx_max <= 0.3:
             return True
 
@@ -56,6 +60,7 @@ class Data_processed:
 
     def original_data(self):
         return self.original_data
+
 
 def identify_peak(data_series):
     """
@@ -84,7 +89,7 @@ def identify_peak(data_series):
             up = data_list[i - 1][1]
             if value > up:
                 #     对最后一个值的判断
-                if check_peak((index,value),data_series):
+                if check_peak((index, value), data_series):
                     peak_region.append(index)
                 else:
                     continue
@@ -97,7 +102,7 @@ def identify_peak(data_series):
                     peak_region.append(index)
                 else:
                     continue
-    #print(peak_region)
+    # print(peak_region)
     list_area = []
     for i in range(len(peak_region)):
         # python 字典在3.6之前无序
@@ -118,7 +123,13 @@ def check_peak(tup_peak, target_obj, area=150):
     """
     area_start = tup_peak[0] - area
     area_end = tup_peak[0] + area
+    # if tup_peak[0] in [149, 451, 750, 1051, 1350, 1650]:
+    #     print(tup_peak)
     max_num = max(target_obj.loc[area_start:area_end])
+    # global list_
+    # if tup_peak[0] == 1054:
+    #     list_ = target_obj.loc[900:1200]
+    #     print(list_)
     min_num = min(target_obj.loc[area_start:area_end])
     if tup_peak[1] == max_num:
         return True
@@ -128,7 +139,8 @@ def check_peak(tup_peak, target_obj, area=150):
 
 
 if __name__ == '__main__':
-    filepath = '/Users/mac/Desktop/膜材弹性常数计算说明/originalFiles/20200106145149 01447605A08-第一步.txt'
+    filepath = 'originalFiles/sourcefile/20200703202854 法拉利1100.txt'
     obj_text = loadfile.Load_file(filepath)
-    process_data = Data_processed(obj_text, 150, (0, 5000), 'Fx')
-    print(process_data.draw_data())
+    process = Data_processed(obj_text, 149, '(7)1:1')
+    data = process.calculate_data()
+    print(identify_peak(data))

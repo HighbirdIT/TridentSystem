@@ -26,34 +26,38 @@ class Calculate:
         if self.proportion_relationship == 0:  # 1:1,2:1,1:2
             # print(self.Nx)
             self.a11 = sum(map(lambda x: pow(x, 2), self.Nx))
-            print(self.a11)
+            print(self.a11, 'a11')
 
             self.b11 = sum(-2 * self.Nx * self.ex)
             print(self.b11, 'b11')
 
             self.a22 = sum(map(lambda y: pow(y, 2), self.Ny))
-            print(self.a22)
+            print(self.a22, 'a22')
 
             self.b22 = sum(-2 * self.Ny * self.ey)
             print(self.b22, 'b22')
 
             self.a12 = sum(self.Nx ** 2 + self.Ny ** 2)
-            print(self.a12)
+            print(self.a12, 'a12')
 
             self.b12 = sum(self.Nx * self.ey + self.Ny * self.ex) * -2
-            print('b12', self.b12)
+            print(self.b12, 'b12')
+
             self.a = 2 * sum(self.Nx * self.Ny)
-            print(self.a)
+            print(self.a, 'a')
 
             self.c = sum(self.ey ** 2 + self.ex ** 2)
             print(self.c)
         if self.proportion_relationship == 1:  # Using data of tensile direction on warp only, for 0:1
             self.a22 = sum(map(lambda y: pow(y, 2), self.Ny))
+            print(self.a22, 'a22')
             self.b22 = sum(-2 * self.Ny * self.ey)
-
+            print(self.b22, 'b22')
         if self.proportion_relationship == 2:  # Using data of tensile direction on fill only, for 1:0
             self.a11 = sum(map(lambda x: pow(x, 2), self.Nx))
             self.b11 = sum(-2 * self.Nx * self.ex)
+            print(self.a11, 'a11')
+            print(self.b11, 'b11')
 
     def temp_coefficient(self, file):
         self.__process()
@@ -61,11 +65,11 @@ class Calculate:
             , 'a12': self.a12, 'b12': self.b12, 'a': self.a}
         # self.coefficient_dict[self.file] = tem_list
         df = pd.DataFrame(tem_list, index=[0])
-        #df.to_excel(r'originalFiles/%s.xls' % file, index=True, encoding='utf_8_sig')
+        # df.to_excel(r'originalFiles/%s.xls' % file, index=True, encoding='utf_8_sig')
 
 
 class GetResult:
-    def __init__(self, a11, b11, a22, b22, a12, b12, a,file_name):
+    def __init__(self, a11, b11, a22, b22, a12, b12, a):
         self.a11 = a11  # 残差方程E11二次项系数
         self.b11 = b11  # 残差方程E11一次项系数
         self.a22 = a22  # 残差方程E22二次项系数
@@ -76,16 +80,22 @@ class GetResult:
         self.c = 0  # 残差方程常数项
 
     def solving_equations(self, file_name='(1)1:1'):
-        if file_name =='(6)1:0' :
-            re = self.b11/self.a11
-            return [re,0,0]
+        if file_name == '(6)1:0':
+            try:
+                re = self.b11 / self.a11
+            except Exception as e:
+                return [0, 0, 0]
+            return [re, 0, 0]
         elif file_name == '(8)0:1':
-            re = self.b22/self.a22
-            return [0,re,0]
+            try:
+                re = self.b22 / self.a22
+            except Exception as e:
+                return [0, 0, 0]
+            return [0, re, 0]
         else:
             arry_A = np.array([[float(2 * self.a11), 0, float(self.a)],
-                            [0, float(2 * self.a22), float(self.a)],
-                            [float(self.a), float(self.a), float(2 * self.a12)]])
+                               [0, float(2 * self.a22), float(self.a)],
+                               [float(self.a), float(self.a), float(2 * self.a12)]])
             print(arry_A)
             arry_b = np.array([
                 float(-self.b11),
