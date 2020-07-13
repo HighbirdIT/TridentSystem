@@ -255,6 +255,10 @@ class JSNode_BluePrint extends EventEmitter {
         EnhanceEventEmiter(this);
         NodeEditor(this);
 
+        this.reCreate(initData, bluePrintJson, createHelper);
+    }
+
+    reCreate(initData, bluePrintJson, createHelper){
         this.nodes_arr = [];
         this.vars_arr = [];
         this.returnVars_arr = [];
@@ -629,6 +633,7 @@ class JSNode_BluePrint extends EventEmitter {
 
     compile(compilHelper) {
         var ctlKernel = this.master.project.getControlById(this.ctlID);
+        var scopeCtlKernel = this.scopeCtlID ? this.master.project.getControlById(this.scopeCtlID) : ctlKernel;
         if (this.group == EJsBluePrintFunGroup.CtlAttr || this.group == EJsBluePrintFunGroup.CtlEvent || this.group == EJsBluePrintFunGroup.CtlValid || this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
             if (ctlKernel == null) {
                 compilHelper.logManager.error('蓝图关联控件' + this.ctlID + '无法找到');
@@ -640,6 +645,7 @@ class JSNode_BluePrint extends EventEmitter {
             }
         }
         this.ctlKernel = ctlKernel;
+        this.scopeCtlKernel = scopeCtlKernel;
         var haveDoneTip = true;
         var muteMode = false;
         var funName = this.name.replace('#', '_');
@@ -675,6 +681,11 @@ class JSNode_BluePrint extends EventEmitter {
                 theFun.scope.getVar(varData.name, true, varData.default);
             }
         });
+        if(paramVars_arr.length > 0 && paramVars_arr[0].index != null){
+            paramVars_arr.sort((a,b)=>{
+                return a.index < b.index ? -1 : (a.index > b.index ? 1 : 0);
+            })
+        }
 
         var isOnclickFun = false;
         var isOnchangedFun = false;
@@ -685,6 +696,7 @@ class JSNode_BluePrint extends EventEmitter {
         var isAttrHookFun = false;
         var isAttrCheckFun = false;
         var isGetXmlRowFun = false;
+        var isRowBindFun = false;
         var isGetJsonRowFun = false;
         var isInsAttrHookFun = false;
         if (this.group == EJsBluePrintFunGroup.CtlEvent) {
@@ -692,6 +704,7 @@ class JSNode_BluePrint extends EventEmitter {
             isOnchangedFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnChanged;
             isOnloadFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnLoad;
             isOnmouseDownFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnMouseDown;
+            isRowBindFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnRowBind;
 
             isNavieFun = isOnclickFun || isOnchangedFun || isOnloadFun || isOnmouseDownFun;
 
@@ -713,6 +726,7 @@ class JSNode_BluePrint extends EventEmitter {
         this.isAttrHookFun = isAttrHookFun;
         this.isAttrCheckFun = isAttrCheckFun;
         this.isGetXmlRowFun = isGetXmlRowFun;
+        this.isRowBindFun = isRowBindFun;
         this.isGetJsonRowFun = isGetJsonRowFun;
         this.isInsAttrHookFun = isInsAttrHookFun;
 
@@ -786,6 +800,15 @@ class JSNode_BluePrint extends EventEmitter {
                     theFun.scope.getVar(pageID + '_' + pageParam.name, true, makeStr_callFun('getPageEntryParam', [singleQuotesStr(pageID), singleQuotesStr(pageParam.name), pageParam.defVal]));
                 });
             }
+        }
+
+        if(isRowBindFun){
+            theFun.scope.getVar(VarNames.RowKeyInfo_map, true, 'getRowKeyMapFromPath(' + ctlKernel.id + '_rowpath' + ')');
+            theFun.scope.getVar(ctlKernel.id + '_state', true, ctlKernel.id + '_state');
+            theFun.scope.getVar(ctlKernel.id + '_path', true, ctlKernel.id + '_path');
+            theFun.scope.getVar(ctlKernel.id + '_' + VarNames.NowRecord, true, ctlKernel.id + '_' +  VarNames.NowRecord);
+            theFun.scope.getVar(ctlKernel.id + '_' +  VarNames.RowState, true, ctlKernel.id + '_' +  VarNames.RowState);
+            theFun.scope.getVar(ctlKernel.id + '_rowpath', true, ctlKernel.id + '_rowpath');
         }
 
         var ctlIsUserControl = ctlKernel ? ctlKernel.type == UserControlKernel_Type : false;
@@ -913,6 +936,10 @@ class JSNode_BluePrint extends EventEmitter {
                         theFun.scope.getVar(VarNames.RowKeyInfo_map, true, "getRowKeyMapFromPath(" + ctlKernel.id + "_path)");
                     }
                 }
+
+                if (ctlKernel.type == UserControlKernel_Type) {
+                    fetchKeyVarValue = ctlKernel.id + '_path + ' + singleQuotesStr('_' + funName);
+                }
             }
             if (this.group == EJsBluePrintFunGroup.CtlFun) {
                 if (ctlKernel.type == UserControlKernel_Type) {
@@ -923,10 +950,12 @@ class JSNode_BluePrint extends EventEmitter {
                         theFun.scope.getVar(p, true, "_params." + p);
                     });
                     validCheckBasePath = '_path';
+                    fetchKeyVarValue = ctlKernel.id + '_path + ' + singleQuotesStr('_' + funName);
                 }
                 if (isGetXmlRowFun || isGetJsonRowFun) {
                     validCheckBasePath = ctlKernel.id + '_rowpath';
                 }
+                
             }
             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
                 fetchKeyVarValue = VarNames.FullParentPath + '+' + singleQuotesStr('.' + funName);
@@ -994,6 +1023,18 @@ class JSNode_BluePrint extends EventEmitter {
                 var selectedRowsVarName = formId + '_' + VarNames.SelectedRows_arr;
                 var isUseFormCtl = !IsEmptyObject(useFormData.useControls_map);
                 var isUseFormColumn = !IsEmptyObject(useFormData.useColumns_map);
+                if(isUseFormColumn){
+                    if(compilHelper.projectCompiler){
+                        var formMidData = compilHelper.projectCompiler.getMidData(formId);
+                        for (var cname in useFormData.useColumns_map) {
+                            formMidData.useColumns_map[cname] = 1;
+                        }
+                    }
+                    if(!(useFormData.useContextRow || useFormData.useSelectedRow)){
+                        useFormData.useColumns_map = {};
+                        isUseFormColumn = false;
+                    }
+                }
                 var formPath = useFormData.formKernel.getStatePath(null,'.',{ mapVarName: VarNames.RowKeyInfo_map });
                 initValue = makeStr_getStateByPath(VarNames.State, formPathVarName, '{}');
 
@@ -1004,7 +1045,7 @@ class JSNode_BluePrint extends EventEmitter {
                 else {
                     formPath = singleQuotesStr(formPath);
                 }
-                if (!isGetXmlRowFun && !isGetJsonRowFun) {
+                if (formId != ctlKernel.id || !(isGetXmlRowFun || isGetJsonRowFun || isRowBindFun)) {
                     theFun.scope.getVar(formPathVarName, true, formPath);
                     theFun.scope.getVar(formStateVarName, true, initValue);
                 }
@@ -3992,7 +4033,7 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
         if (this.checkCompileFlag(selectedKernel == null, '需要选择控件', helper)) {
             return false;
         }
-        var relCtlKernel = this.bluePrint.ctlKernel;
+        var relCtlKernel = this.bluePrint.scopeCtlKernel;
         if (traversalFromNode == null) {
             if (this.bluePrint.isGetXmlRowFun) {
                 if (this.checkCompileFlag(!relCtlKernel.isKernelInRow(selectedKernel), '指定的控件不在行控件中', helper)) {
@@ -4295,7 +4336,7 @@ class JSNode_Control_Api_PropSetter extends JSNode_Base {
         if (this.checkCompileFlag(selectedKernel == null, '需要选择控件', helper)) {
             return false;
         }
-        var relCtlKernel = this.bluePrint.ctlKernel;
+        var relCtlKernel = this.bluePrint.scopeCtlKernel;
         if (traversalFromNode == null) {
             var canAccessCtls_arr = relCtlKernel.getAccessableKernels(this.ctltype);
             if (this.checkCompileFlag(canAccessCtls_arr.indexOf(selectedKernel) == -1, '指定的控件不可访问', helper)) {
@@ -4853,10 +4894,12 @@ class JSNode_Env_Var extends JSNode_Base {
             var nodeI = 0;
             for (nodeI = preNodes_arr.length - 1; nodeI > 0; --nodeI) {
                 var temNode = preNodes_arr[nodeI];
-                if(temNode.type != JSNODE_EXPORTEXCEL){
-                    blockInServer = temNode.hadFetchFun;
+                if (temNode.inFlowSocket) {
+                    if(temNode.type != JSNODE_EXPORTEXCEL){
+                        blockInServer = temNode.hadFetchFun;
+                    }
+                    break;
                 }
-                break;
             }
         }
 
@@ -7788,7 +7831,7 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
             }
             this.synUCEParams();
         }
-        var relCtlKernel = this.bluePrint.ctlKernel;
+        var relCtlKernel = this.bluePrint.scopeCtlKernel;
         if (traversalFromNode == null) {
             var canAccessCtls_arr = relCtlKernel.getAccessableKernels(this.ctltype);
             if (this.checkCompileFlag(canAccessCtls_arr.indexOf(selectedKernel) == -1, '指定的控件不可访问', helper)) {
@@ -7840,8 +7883,9 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
                 if (belongUserCtl && belongUserCtl == topmostParent) {
                     // 控件内部的调用
                     if (batchMode) {
-                        var relPath = selectedKernel.getStatePath('', '.', null, true, topmostParent);
-                        pathVar = singleQuotesStr((relPath.length > 0 ? relPath + '.' : '') + "fun_" + funAttrValue.name);
+                        //var relPath = selectedKernel.getStatePath('', '.', null, true, topmostParent);
+                        //pathVar = singleQuotesStr((relPath.length > 0 ? relPath + '.' : '') + "fun_" + funAttrValue.name);
+                        pathVar = singleQuotesStr("fun_" + funAttrValue.name);
                     }
                 }
                 else if (this.isUserControlFunction) {
@@ -7903,7 +7947,7 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
 
-        if (!batchMode) {
+        if (!(batchMode && batchNode)) {
             if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
                 return false;
             }

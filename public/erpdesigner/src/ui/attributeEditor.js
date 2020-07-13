@@ -150,8 +150,10 @@ class AttributeEditor extends React.PureComponent {
         }
         var nowVal = this.state.value;
 
-        nowVal.value = inputVal;
-        this.doSetAttribute(nowVal);
+        if(nowVal.value != inputVal){
+            nowVal.value = inputVal;
+            this.doSetAttribute(nowVal);
+        }
     }
 
     styleNameDDCChanged(newName) {
@@ -171,14 +173,20 @@ class AttributeEditor extends React.PureComponent {
 
     UCENameChanged(ev) {
         var nowVal = this.state.value;
-        nowVal.name = ev.target.value.trim();
-        this.doSetAttribute(nowVal);
+        var newName = ev.target.value;//.trim();
+        if(newName != nowVal.name){
+            nowVal.name = newName;
+            this.doSetAttribute(nowVal);
+        }
     }
 
     UCEParamsChanged(ev) {
         var nowVal = this.state.value;
-        nowVal.params = ev.target.value.trim();
-        this.doSetAttribute(nowVal);
+        var newParams = ev.target.value;//.trim();
+        if(newParams != nowVal.params){
+            nowVal.params = newParams;
+            this.doSetAttribute(nowVal);
+        }
     }
 
     renderUserControlEventAttrEditor(nowVal, theAttr, attrName, inputID) {
@@ -203,8 +211,11 @@ class AttributeEditor extends React.PureComponent {
 
     NAS_nameChanged(ev) {
         var nowVal = this.state.value;
-        nowVal.name = ev.target.value.trim();
-        this.doSetAttribute(nowVal);
+        var newName = ev.target.value;//.trim();
+        if(newName != nowVal.name){
+            nowVal.name = newName;
+            this.doSetAttribute(nowVal);
+        }
     }
 
     NAS_nameddcChanged(newVal) {
@@ -245,7 +256,7 @@ class AttributeEditor extends React.PureComponent {
 
     UCAttrHookParamChanged(ev) {
         var nowVal = this.state.value;
-        nowVal.params = ev.target.value.trim();
+        nowVal.params = ev.target.value;//.trim();
         this.doSetAttribute(nowVal);
     }
     
@@ -276,7 +287,7 @@ class AttributeEditor extends React.PureComponent {
     }
 
     CusFunNameChanged(ev) {
-        this.doSetAttribute(ev.target.value.trim());
+        this.doSetAttribute(ev.target.value);
     }
 
     renderCustomFunctonAttrEditor(nowVal, theAttr, attrName) {

@@ -15,6 +15,13 @@ const M_LabeledControlKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('列宽设置', AttrNames.ColumnWidth, ValueType.Int, 0),
         new CAttribute('新行依赖', AttrNames.NewRowDepend, ValueType.Boolean, false),
         new CAttribute('统计方法', AttrNames.StatFun, ValueType.String, StatFun_NONE, true, false, StatFun_arr),
+        new CAttribute('可排序', AttrNames.Sortable, ValueType.Boolean, false),
+        new CAttribute('可筛选', AttrNames.Filtable, ValueType.Boolean, false),
+        new CAttribute('列值字段', AttrNames.ColumnValueField, ValueType.String, '', true, false, [],{
+            pullDataFun:GetKernelCanUseColumns,
+            text:'name',
+            editable:false,
+        }),
         new CAttribute('帮助提示', AttrNames.ToolTip, ValueType.String, '', true, false, null,
             null, true, {
                 scriptable: true,

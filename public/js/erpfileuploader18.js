@@ -559,10 +559,13 @@ var ERPC_QRCodeUploader = function (_React$PureComponent) {
                     if (self.unmounted) {
                         return;
                     }
-                    store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: { fileFlow: fileFlow,
+                    store.dispatch(fetchJsonPost(fileSystemUrl, {
+                        bundle: {
+                            fileFlow: fileFlow,
                             relrecordid: relrecordid,
                             fileid: fileRecord.文件上传记录代码
-                        }, action: 'makeAttachment' }, makeFTD_Callback(makeAttachmentProcess)));
+                        }, action: 'makeAttachment'
+                    }, makeFTD_Callback(makeAttachmentProcess)));
                 }, 200);
             };
             var queryProcess = function queryProcess(state, ret_data, ret_err) {
@@ -698,40 +701,46 @@ var ERPC_QRCodeUploader = function (_React$PureComponent) {
             }
             return React.createElement(
                 'div',
-                { className: 'position-absolute centerelem d-flex bg-light flex-column', style: this.style },
+                { className: 'd-fixed w-100 h-100 fixedBackGround' },
                 React.createElement(
                     'div',
-                    { className: 'd-flex bg-primary p-1 ' },
+                    { className: 'position-absolute centerelem d-flex bg-light flex-column', style: this.style },
                     React.createElement(
-                        'h5',
-                        { className: 'text-light flex-grow-1 flex-shrink-1' },
-                        '\u626B\u7801\u4E0A\u4F20\u6587\u4EF6'
-                    ),
-                    React.createElement(
-                        'button',
-                        { onClick: this.clickCloseHandler, type: 'button', className: 'btn btn-sm btn-danger' },
-                        React.createElement('i', { className: 'fa fa-close' })
-                    )
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'd-flex p-1 flex-column' },
-                    React.createElement(
-                        'span',
-                        null,
-                        '\u8BF7\u7528\u9489\u9489\u626B\u7801'
+                        'div',
+                        { className: 'd-flex bg-primary p-1 ' },
+                        React.createElement(
+                            'h5',
+                            { className: 'text-light flex-grow-1 flex-shrink-1' },
+                            '\u626B\u7801\u4E0A\u4F20',
+                            this.props.multiMode ? '多个' : '单个',
+                            '\u6587\u4EF6'
+                        ),
+                        React.createElement(
+                            'button',
+                            { onClick: this.clickCloseHandler, type: 'button', className: 'btn btn-sm btn-danger' },
+                            React.createElement('i', { className: 'fa fa-close' })
+                        )
                     ),
                     React.createElement(
                         'div',
-                        { className: 'd-flex justify-content-center' },
-                        qrImg
-                    ),
-                    React.createElement(
-                        'span',
-                        null,
-                        this.state.info
-                    ),
-                    fileListElem
+                        { className: 'd-flex p-1 flex-column' },
+                        React.createElement(
+                            'span',
+                            null,
+                            '\u8BF7\u7528\u9489\u9489\u626B\u7801'
+                        ),
+                        React.createElement(
+                            'div',
+                            { className: 'd-flex justify-content-center' },
+                            qrImg
+                        ),
+                        React.createElement(
+                            'span',
+                            null,
+                            this.state.info
+                        ),
+                        fileListElem
+                    )
                 )
             );
         }

@@ -201,7 +201,7 @@ class C_Node_Socket extends React.PureComponent {
                             case ESqlBluePrintGroup.ControlCustom:
                             case EJsBluePrintFunGroup.CtlValid:
                             case EJsBluePrintFunGroup.GridRowBtnHandler:
-                                var ctlKernel = bluePrint.master.project.getControlById(bluePrint.ctlID);
+                                var ctlKernel = bluePrint.master.project.getControlById(bluePrint.scopeCtlID ? bluePrint.scopeCtlID : bluePrint.ctlID);
                                 if (ctlKernel != null) {
                                     nowCtlId = socket.getExtra('ctlid');
                                     if (nowCtlId == null) {

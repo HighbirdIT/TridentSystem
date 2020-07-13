@@ -14,36 +14,83 @@ sql.direction = {
     Return: "return"
 };
 
-sql.makeSqlparam = (name,type,value)=>{
-    return value != null ? {name:name, 'value':value, type:type} : {name:name, type:type};
+var restoreDefaults = function () {
+    conf;
+};
+const advancerConPool = new mssql.ConnectionPool(sqlconfig.advancerUser);
+
+advancerConPool.on('error', err => {
+    if (err) {
+        throw err;
+    }
+});
+
+advancerConPool.connect(err => {
+    if (err) {
+        console.error(err);
+    }
+    console.log('sql server connected');
+});
+
+function makePoolConnected(thePool) {
+    return new Promise(function(reslove) {
+        if (thePool.connecting) {
+            var checker = () => {
+                if (!thePool.connecting) {
+                    reslove();
+                }
+                else
+                    setTimeout(checker, 500);
+            }
+            setTimeout(checker, 500);
+        }
+        else if (!thePool.connected) {
+            thePool.connect(err => {
+                reslove(err);
+            });
+        }
+        else {
+            reslove();
+        }
+    });
+}
+
+sql.makeSqlparam = (name, type, value) => {
+    return value != null ? { name: name, 'value': value, type: type } : { name: name, type: type };
 };
 
 sql.queryWithParams = function (sqltext, params, func) {
-    try {
-        var connection = new mssql.Connection(sqlconfig.advancerUser, function (err) {
-            if (err)
-                func(err);
-            else {
-                var request = new mssql.Request(connection);
-                request.multiple = true;
-
-                if (params) {
-                    for (var index in params) {
-                        request.input(index, params[index].sqlType, params[index].inputValue);
-                    }
-                }
-
-                request.query(sqltext).then(function (recordset) {
-                    func(recordset);
-                }).catch(function (err) {
-                    console.log(err);
-                });
+    makePoolConnected(advancerConPool).then(err=>{
+        try {
+            if(err){
+                throw err;
             }
-        });
-        connection.on("error", func);
-    } catch (e) {
-        func(e);
-    }
+            if (!advancerConPool.connected) {
+                throw new Error('无法链接到数据库');
+            }
+            var ps = new mssql.PreparedStatement(advancerConPool);
+            var useParams = {};
+            if (params != null) {
+                for (var index in params) {
+                    ps.input(params[index].name, params[index].type);
+                    useParams[params[index].name] = params[index].value;
+                }
+            }
+            ps.prepare(sqltext, err => {
+                if (err)
+                    func(err);
+                ps.execute(useParams, (err, recordset) => {
+                    func(recordset);
+                    ps.unprepare(err => {
+                        if (err)
+                            console.log(err);
+                    });
+                });
+            });
+        } catch (e) {
+            func(e);
+        }
+    });
 };
 
 sql.query = function (sqltext, func) {
@@ -54,88 +101,100 @@ sql.asynQuery = function (sqltext) {
     return sql.asynQueryWithParams(sqltext, null);
 };
 
-sql.asynGetScalar = function (sqltext,params) {
-    return sql.asynQueryWithParams(sqltext, params, {scalar:true});
+sql.asynGetScalar = function (sqltext, params) {
+    return sql.asynQueryWithParams(sqltext, params, { scalar: true });
 };
 
-sql.asynQueryWithParams = function (sqltext, params, config) {
-    if(config == null){
+sql.asynQueryWithParams = function (sqltext, inparams, config) {
+    if (config == null) {
         config = {};
     }
-    var rlt =  co(function* () {
-            var thePool = yield new Promise((rs,re)=>{
-                var usePool = new mssql.ConnectionPool(sqlconfig.advancerUser,err=>{
-                    if(err != null){
-                        rs({err:err});
-                    }
-                    rs(usePool);
-                });
-            }).catch(err=>{
-                console.log(err);
+    var rlt = co(function* () {
+        var poolErr = yield makePoolConnected(advancerConPool);
+        if(poolErr){
+            throw poolErr;
+        }
+        if (!advancerConPool.connected) {
+            throw new Error('无法链接到数据库');
+        }
+        /*
+        var ps = new mssql.PreparedStatement(advancerConPool);
+        var useParams = {};
+        if (inparams != null) {
+            inparams.forEach(param => {
+                ps.input(param.name, param.type);
+                useParams[param.name] = param.value;
             });
-            if(thePool.err != null){
-                throw new Error(thePool.err.originalError.message);
-            }
-            var request = thePool.request();
-            request.multiple = config.scalar == null || config.scalar == false;
-    
-            if (params) {
-                params.forEach(param => {
-                    request.input(param.name, param.type, param.value);
-                });
-            }
-            var data = yield request.query(sqltext);
-            //console.log('data loaded');
-            
-            if(config.scalar){
-                if(data.recordset == null || data.recordset.length == 0)
-                    return null;
-                for(var colName in data.recordset[0]){
-                    return data.recordset[0][colName];
+        }
+        var data = yield new Promise((rs, re) => {
+            ps.prepare(sqltext, err => {
+                if (err){
+                    rs(err);
                 }
-            }
-            
-            return data;
-        })
-        .catch(err=>{
-            throw err;
+                ps.execute(useParams, (err, recordset) => {
+                    ps.unprepare();
+                    if(err){
+                        rs(err);
+                    }
+                    rs(recordset);
+                });
+            });
         });
+        if(data instanceof Error){
+            throw data;
+        }
+        */
+        var request = advancerConPool.request();
+        request.multiple = config.scalar == null || config.scalar == false;
+        if (inparams) {
+            inparams.forEach(param => {
+                request.input(param.name, param.type, param.value);
+            });
+        }
+        var data = yield request.query(sqltext);
+
+        if (config.scalar) {
+            if (data.recordset == null || data.recordset.length == 0)
+                return null;
+            for (var colName in data.recordset[0]) {
+                return data.recordset[0][colName];
+            }
+        }
+
+        return data;
+    }).catch(err => {
+        throw err;
+    });
     return rlt;
 };
 
 sql.asynExcute = function (excutableName, inputParams, outputParams) {
-    var rlt =  co(function* () {
-            var thePool = yield new Promise((rs,re)=>{
-                var usePool = new mssql.ConnectionPool(sqlconfig.advancerUser,err=>{
-                    if(err != null){
-                        rs({err:err});
-                    }
-                    rs(usePool);
-                });
-            }).catch(err=>{
-                console.log(err);
+    var rlt = co(function* () {
+        var poolErr = yield makePoolConnected(advancerConPool);
+        if(poolErr){
+            throw poolErr;
+        }
+        if (!advancerConPool.connected) {
+            throw new Error('无法链接到数据库');
+        }
+        var request = advancerConPool.request();
+        request.multiple = true;
+
+        if (inputParams) {
+            inputParams.forEach(param => {
+                request.input(param.name, param.type, param.value);
             });
-            if(thePool.err != null){
-                throw new Error(thePool.err.originalError.message);
-            }
-            var request = thePool.request();
-            request.multiple = true;
-    
-            if (inputParams) {
-                inputParams.forEach(param => {
-                    request.input(param.name, param.type, param.value);
-                });
-            }
-            if (outputParams) {
-                outputParams.forEach(param => {
-                    request.output(param.name, param.type);
-                });
-            }
-            var data = yield request.execute(excutableName);
-            //console.log('data loaded');
-            return data;
-        })
-        .catch(err=>{
+        }
+        if (outputParams) {
+            outputParams.forEach(param => {
+                request.output(param.name, param.type);
+            });
+        }
+        var data = yield request.execute(excutableName);
+        //console.log('data loaded');
+        return data;
+    })
+        .catch(err => {
             throw err;
         });
     return rlt;

@@ -1671,21 +1671,57 @@ function createDate(year, month, day){
 }
 
 function RoundFloat(val, precision){
-    var t_arr = val.toString().split('.');
+    var valStr = val.toString();
+    var t_arr;
+    var intPart;
+    if(valStr.indexOf('e') != -1){
+        t_arr = valStr.split('e');
+        var numStr = t_arr[0];
+        var dotPos = numStr.indexOf('.');
+        var hadDotPos = true;
+        if(dotPos == -1){
+            dotPos = numStr.length;
+            hadDotPos = false;
+        }
+        var eNum = parseInt(t_arr[1]);
+        var newDotPos = dotPos + eNum;
+
+        if(newDotPos <= 0){
+            t_arr[1] = numStr.padStart(numStr.length - newDotPos, '0');
+            t_arr[0] = '0';
+            t_arr[1] = t_arr[1].replace('.','');
+        }
+        else{
+            if(dotPos == numStr.length){
+                numStr = numStr.padEnd(newDotPos, '0');
+                return parseFloat(numStr);
+            }
+            numStr = numStr.padEnd(newDotPos, '0');
+            t_arr[0] = numStr.substring(0, newDotPos + 1).replace('.','');
+            t_arr[1] = numStr.substring(newDotPos + 1, numStr.length).replace('.','');
+        }
+    }
+    else{
+        t_arr = valStr.split('.');
+    }
     if(t_arr.length==1 || t_arr[1].length <= precision){
         return val;
     }
-    var intPart = parseInt(t_arr[0]);
-    var singlePart_int = parseInt(t_arr[1].substr(0,precision));
-    if(t_arr[1][precision] >= 5){
+    intPart = parseInt(t_arr[0]);
+    if(precision < t_arr[1].length && t_arr[1][precision] >= 5){
         if(precision == 0){
             ++intPart;
         }
         else{
-            ++singlePart_int;
+            var oldV = parseInt(t_arr[1].substring(0, precision));
+            var newV = oldV + 1;
+            if(newV.toString().length > oldV.toString().length){
+                return parseFloat(intPart + (intPart > 0 ? 1 : -1));
+            }
+            return parseFloat(intPart.toString() + '.' + newV);
         }
     }
-    return parseFloat(intPart.toString() + '.' + singlePart_int.toString());
+    return parseFloat(intPart.toString() + '.' + t_arr[1].substr(0,precision));
 }
 
 var gDingDingIniting = false;

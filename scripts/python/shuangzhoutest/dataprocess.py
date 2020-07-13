@@ -57,7 +57,6 @@ class Data_processed:
     def original_data(self):
         return self.original_data
 
-
 def identify_peak(data_series):
     """
     寻找峰值 根据 x，y方向寻找峰值
@@ -70,7 +69,9 @@ def identify_peak(data_series):
     for i in range(len(data_list)):
         # for index, value in list(data_series.items()):
         index = data_list[i][0]
+        # print(index,'index')
         value = data_list[i][1]
+        # print(index, value)
         if index == data_series.index[0]:
             # 对起始数值是否为 低谷判断
             next = data_list[i + 1][1]
@@ -80,7 +81,13 @@ def identify_peak(data_series):
                 else:
                     continue
         elif index == data_series.index[-1]:
-            continue
+            up = data_list[i - 1][1]
+            if value > up:
+                #     对最后一个值的判断
+                if check_peak((index,value),data_series):
+                    peak_region.append(index)
+                else:
+                    continue
         else:
             up = data_list[i - 1][1]
             next = data_list[i + 1][1]
@@ -90,7 +97,7 @@ def identify_peak(data_series):
                     peak_region.append(index)
                 else:
                     continue
-    # print(peak_region)
+    #print(peak_region)
     list_area = []
     for i in range(len(peak_region)):
         # python 字典在3.6之前无序

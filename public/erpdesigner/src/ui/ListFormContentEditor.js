@@ -202,7 +202,7 @@ class CListFormContentEditor extends React.PureComponent {
             <div className='d-flex bg-dark flex-grow-0 flex-shrink-0 flex-column h-100 autoScroll' style={{ width: '30em' }} ref={this.controlListRef}>
                 {
                     controls_arr && controls_arr.map(control => {
-                        return (<div key={control.id} className='list-group-item p-0 d-flex align-items-center' ctlid={control.id}>
+                        return (<div key={control.id} className='list-group-item flex-grow-0 flex-shrink-0 p-0 d-flex align-items-center' ctlid={control.id}>
                             <button onMouseDown={this.mouseDownDragIconHandler} type='btn' className='btn-light'><i className='fa fa-arrows-v' /></button>
                             <div className='flex-grow-1 flex-shrink-1'>
                                 {control.renderSelf(this.clickControlHandler)}

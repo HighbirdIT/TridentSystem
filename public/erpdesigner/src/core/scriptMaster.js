@@ -110,6 +110,10 @@ class ScriptMaster extends EventEmitter{
         return this.blueprints_arr.find(item=>{return item.code == code;});
     }
 
+    getBPByUUID(uuid){
+        return this.blueprints_arr.find(item=>{return item.uuid == uuid});
+    }
+
     createBP(name, type, group){
         var newItem = new JSNode_BluePrint({name:name,type:type,master:this,group:group});
         this.addBP(newItem);

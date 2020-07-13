@@ -1,28 +1,17 @@
-'use strict';
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-var PAGE_LOADED = 'PAGE_LOADED';
+const PAGE_LOADED = 'PAGE_LOADED';
 
 var fetchTracer = {};
 
-function makeActionCreator(type) {
-    for (var _len = arguments.length, argNames = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-        argNames[_key - 1] = arguments[_key];
-    }
-
-    return function () {
-        for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-            args[_key2] = arguments[_key2];
-        }
-
-        var action = { type: type };
-        argNames.forEach(function (arg, index) {
-            action[argNames[index]] = args[index];
+function makeActionCreator(type, ...argNames) {
+    return function (...args) {
+        let action = { type };
+        argNames.forEach((arg, index) => {
+            action[argNames[index]] = args[index]
         });
         return action;
-    };
+    }
 }
+
 
 function updateObject(oldObject, newValues) {
     if (oldObject == null) {
@@ -32,11 +21,11 @@ function updateObject(oldObject, newValues) {
 }
 
 function updateItemInArray(array, itemId, updateItemCallback) {
-    var updatedItems = array.map(function (item) {
+    const updatedItems = array.map(item => {
         if (item.id !== itemId) {
             return item;
         }
-        var updatedItem = updateItemCallback(item);
+        const updatedItem = updateItemCallback(item);
         return updatedItem;
     });
 
@@ -44,27 +33,25 @@ function updateItemInArray(array, itemId, updateItemCallback) {
 }
 
 function createReducer(initialState, handlers) {
-    return function reducer() {
-        var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : initialState;
-        var action = arguments[1];
-
+    return function reducer(state = initialState, action) {
         if (handlers.hasOwnProperty(action.type)) {
             return handlers[action.type](state, action);
         } else {
             return state;
         }
-    };
+    }
 }
 
+
 // post functions
-var AT_FETCHBEGIN = 'AT_FETCHBEGIN';
-var AT_FETCHEND = 'AT_FETCHEND';
-var AT_SETSTATEBYPATH = 'AT_SETSTATEBYPATH';
-var AT_SETMANYSTATEBYPATH = 'AT_SETMANYSTATEBYPATH';
-var AT_GOTOPAGE = 'AT_GOTOPAGE';
-var AT_PAGELOADED = 'AT_PAGELOADED';
-var AT_SETROOTSTATE = 'AT_SETROOTSTATE';
-var AT_CALLFUNCTION = 'AT_CALLFUNCTION';
+const AT_FETCHBEGIN = 'AT_FETCHBEGIN';
+const AT_FETCHEND = 'AT_FETCHEND';
+const AT_SETSTATEBYPATH = 'AT_SETSTATEBYPATH';
+const AT_SETMANYSTATEBYPATH = 'AT_SETMANYSTATEBYPATH';
+const AT_GOTOPAGE = 'AT_GOTOPAGE';
+const AT_PAGELOADED = 'AT_PAGELOADED';
+const AT_SETROOTSTATE = 'AT_SETROOTSTATE';
+const AT_CALLFUNCTION = 'AT_CALLFUNCTION';
 
 function makeAction_fetchbegin(key, fetchData) {
     return {
@@ -94,13 +81,15 @@ function makeAction_fetchError(key, err, fetchData) {
     };
 }
 
-function delayAction() {}
+function delayAction() {
 
-var makeAction_setStateByPath = makeActionCreator(AT_SETSTATEBYPATH, 'value', 'path');
-var makeAction_setManyStateByPath = makeActionCreator(AT_SETMANYSTATEBYPATH, 'value', 'path');
-var makeAction_gotoPage = makeActionCreator(AT_GOTOPAGE, 'pageName');
-var makeAction_setRootState = makeActionCreator(AT_SETROOTSTATE, 'value');
-var makeAction_callFunction = makeActionCreator(AT_CALLFUNCTION, 'fun');
+}
+
+const makeAction_setStateByPath = makeActionCreator(AT_SETSTATEBYPATH, 'value', 'path');
+const makeAction_setManyStateByPath = makeActionCreator(AT_SETMANYSTATEBYPATH, 'value', 'path');
+const makeAction_gotoPage = makeActionCreator(AT_GOTOPAGE, 'pageName');
+const makeAction_setRootState = makeActionCreator(AT_SETROOTSTATE, 'value');
+const makeAction_callFunction = makeActionCreator(AT_CALLFUNCTION, 'fun');
 
 function setStateByPathHandler(state, action) {
     return setStateByPath(state, action.path, action.value);
@@ -116,7 +105,7 @@ function setRootStateHandler(state, action) {
 
 function callFunctionHandler(state, action) {
     var retState = Object.assign({}, state);
-    if (typeof action.fun == 'function') {
+    if(typeof action.fun == 'function'){
         action.fun(state);
     }
     return retState;
@@ -171,8 +160,8 @@ var gDateReg = /\d+[-/]\d+[-/]\d+/;
 var gTimeReg = /\d+:\d+:\d+/;
 var gShortTimeReg = /\d+:\d+/;
 
-var gNumCommaReg_float = /(\d)(?=(\d{3})+\.)/g;
-var gNumCommaReg_int = /(\d)(?=(\d{3})+$)/g;
+const gNumCommaReg_float = /(\d)(?=(\d{3})+\.)/g;
+const gNumCommaReg_int = /(\d)(?=(\d{3})+$)/g;
 
 function formatMoneyByComma(num) {
     var reg = num.toString().indexOf('.') > -1 ? gNumCommaReg_float : gNumCommaReg_int;
@@ -191,7 +180,8 @@ function castDate(val) {
             }
             if (timeRegRlt != null) {
                 dateStr += ' ' + timeRegRlt[0];
-            } else {
+            }
+            else {
                 dateStr += ' 00:00';
             }
             var rlt = new Date(dateStr);
@@ -249,43 +239,35 @@ function getDateDiff(type, dateA, dateB) {
 }
 
 // commonreducer
-var logger = function logger(store) {
-    return function (next) {
-        return function (action) {
-            if (gDebugMode != false) {
-                console.log('dispatching', action);
-            }
-            var result = next(action);
-            if (gDebugMode != false) {
-                console.log('next state', store.getState());
-            }
-            return result;
-        };
-    };
-};
+const logger = store => next => action => {
+    if (gDebugMode != false) {
+        console.log('dispatching', action);
+    }
+    let result = next(action);
+    if (gDebugMode != false) {
+        console.log('next state', store.getState());
+    }
+    return result;
+}
 
-var crashReporter = function crashReporter(store) {
-    return function (next) {
-        return function (action) {
-            //console.log('crashReporter start');
-            var rlt = null;
-            try {
-                rlt = next(action);
-            } catch (err) {
-                console.error('Caught an exception!', err);
-                Raven.captureException(err, {
-                    extra: {
-                        action: action,
-                        state: store.getState()
-                    }
-                });
-                throw err;
+const crashReporter = store => next => action => {
+    //console.log('crashReporter start');
+    let rlt = null;
+    try {
+        rlt = next(action);
+    } catch (err) {
+        console.error('Caught an exception!', err);
+        Raven.captureException(err, {
+            extra: {
+                action,
+                state: store.getState()
             }
-            //console.log('crashReporter end');
-            return rlt;
-        };
-    };
-};
+        })
+        throw err;
+    }
+    //console.log('crashReporter end');
+    return rlt;
+}
 
 //const timeoutScheduler = store => next => action => {
 function createThunkMiddleware(extraArgument) {
@@ -306,10 +288,8 @@ function createThunkMiddleware(extraArgument) {
 
 function autoBind(self, options) {
     options = Object.assign({}, options);
-    var filter = function filter(key) {
-        var match = function match(pattern) {
-            return typeof pattern === 'string' ? key === pattern : pattern.test(key);
-        };
+    const filter = key => {
+        const match = pattern => typeof pattern === 'string' ? key === pattern : pattern.test(key);
         if (options.include) {
             return options.include.some(match);
         }
@@ -319,32 +299,11 @@ function autoBind(self, options) {
         return true;
     };
 
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
+    for (const key of Object.getOwnPropertyNames(self.constructor.prototype)) {
+        const val = self[key];
 
-    try {
-        for (var _iterator = Object.getOwnPropertyNames(self.constructor.prototype)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            var key = _step.value;
-
-            var val = self[key];
-
-            if (key !== 'constructor' && typeof val === 'function' && filter(key)) {
-                self[key] = val.bind(self);
-            }
-        }
-    } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion && _iterator.return) {
-                _iterator.return();
-            }
-        } finally {
-            if (_didIteratorError) {
-                throw _iteratorError;
-            }
+        if (key !== 'constructor' && typeof val === 'function' && filter(key)) {
+            self[key] = val.bind(self);
         }
     }
 
@@ -352,13 +311,14 @@ function autoBind(self, options) {
 }
 
 function assginObjByProperties(dstObj, srcObj, pros_arr) {
-    pros_arr.forEach(function (pName) {
+    pros_arr.forEach(pName => {
         dstObj[pName] = srcObj[pName];
     });
 }
 
 function getAttributeByNode(targetNode, attrName, upserach, maxDeep) {
-    if (upserach == null) upserach = true;
+    if (upserach == null)
+        upserach = true;
     var tNode = targetNode;
     var count = 0;
     do {
@@ -403,8 +363,10 @@ function isNodeHasParent(targetNode, parentNode) {
 
 function extractPropsFromObj(obj, props_arr) {
     var rlt = {};
-    props_arr.forEach(function (prop) {
-        if (obj && obj[prop.name] != null) rlt[prop.name] = obj[prop.name];else {
+    props_arr.forEach(prop => {
+        if (obj && obj[prop.name] != null)
+            rlt[prop.name] = obj[prop.name];
+        else {
             rlt[prop.name] = typeof prop.default == 'function' ? prop.default() : prop.default;
         }
     });
@@ -429,7 +391,8 @@ function EV_AllowEvent(et) {
     var nowVal = this.suspressEvents[et];
     if (nowVal > 0) {
         this.suspressEvents[et] = nowVal - 1;
-    } else {
+    }
+    else {
         console.warn('allowEvent执行时count等于' + nowVal);
     }
 }
@@ -444,15 +407,17 @@ function EV_FireEvent(et, delay, arg) {
     }
     if (delay < 0) {
         delay = 0;
-    } else if (delay > 500) {
+    }
+    else if (delay > 500) {
         console.warn('长达' + delay + '毫秒的延迟fire' + et);
     }
     var self = this;
     if (delay > 0) {
-        setTimeout(function () {
+        setTimeout(() => {
             self.emit(et, arg == null ? self : arg);
         }, delay);
-    } else {
+    }
+    else {
         self.emit(et, arg == null ? self : arg);
     }
 }
@@ -480,16 +445,16 @@ function IsEmptyArray(val) {
     return val == null || val.length == 0;
 }
 
-var ErrType = {
+const ErrType = {
     UNKNOWN: 'UNKNOWN',
     TIMEOUT: 'TIMEOUT',
     SERVERSIDE: 'SERVERSIDE',
-    NORESPONSE: 'NORESPONSE'
+    NORESPONSE: 'NORESPONSE',
 };
 
-var EFetchKey = {
-    FetchPropValue: 'fetchPropValue'
-};
+const EFetchKey = {
+    FetchPropValue: 'fetchPropValue',
+}
 
 function createError(info, type, code, data) {
     return {
@@ -501,28 +466,24 @@ function createError(info, type, code, data) {
     };
 }
 
-function makeFTD_Prop(basePath, id, propName) {
-    var isModel = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-
+function makeFTD_Prop(basePath, id, propName, isModel = true) {
     return {
         base: basePath,
         id: id,
         propName: propName,
-        isModel: isModel
+        isModel: isModel,
     };
 }
 
-function makeFTD_Callback(callBack) {
-    var isModel = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
+function makeFTD_Callback(callBack, isModel = true) {
     return {
         callBack: callBack,
-        isModel: isModel
+        isModel: isModel,
     };
 }
-var gFetchingProp = {};
-var gFetchingQueue = [];
-var gMaxFetchingCount = 5;
+const gFetchingProp = {};
+const gFetchingQueue = [];
+const gMaxFetchingCount = 5;
 
 function hookPropFetch(ftpProp, bundle, autoAdd) {
     var key = ftpProp.id + '_' + ftpProp.propName;
@@ -531,8 +492,9 @@ function hookPropFetch(ftpProp, bundle, autoAdd) {
             return false;
         }
         gFetchingProp[key] = [];
-    } else if (gFetchingProp[key].length > 0) {
-        var hited = gFetchingProp[key].find(function (x) {
+    }
+    else if (gFetchingProp[key].length > 0) {
+        var hited = gFetchingProp[key].find(x => {
             return ObjIsEqual(x.bundle, bundle);
         });
         if (hited) {
@@ -549,29 +511,17 @@ function hookPropFetch(ftpProp, bundle, autoAdd) {
     return false;
 }
 
-function fetchJsonPost(url, sendData, triggerData) {
-    var key = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-    var tip = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '加载中';
-    var timeout = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 2;
-
+function fetchJsonPost(url, sendData, triggerData, key = '', tip = '加载中', timeout = 2) {
     return fetchJson(false, url, sendData, triggerData, key, tip, timeout);
 }
 
-function fetchJsonGet(url, sendData, triggerData) {
-    var key = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-    var tip = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '加载中';
-    var timeout = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 2;
-
+function fetchJsonGet(url, sendData, triggerData, key = '', tip = '加载中', timeout = 2) {
     return fetchJson(true, url, sendData, triggerData, key, tip, timeout);
 }
 
 var gFetchingCount = 0;
 
-function fetchJson(useGet, url, sendData, triggerData) {
-    var key = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
-    var tip = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : '加载中';
-    var timeout = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 2;
-
+function fetchJson(useGet, url, sendData, triggerData, key = '', tip = '加载中', timeout = 2) {
     switch (key) {
         case EFetchKey.FetchPropValue:
             {
@@ -581,9 +531,9 @@ function fetchJson(useGet, url, sendData, triggerData) {
                         dispatch(makeAction_setManyStateByPath({
                             fetching: true,
                             fetchingpropname: triggerData.propName,
-                            fetchingErr: null
+                            fetchingErr: null,
                         }, MakePath(triggerData.base, triggerData.id)));
-                    };
+                    }
                 }
                 sendData.pageid = triggerData.base.split('.')[0];
             }
@@ -596,7 +546,7 @@ function fetchJson(useGet, url, sendData, triggerData) {
         sendData: sendData,
         key: key,
         tip: tip,
-        timeout: timeout
+        timeout: timeout,
     };
     gFetchingQueue.push(thisFetch);
     if (gFetchingCount > gMaxFetchingCount) {
@@ -605,12 +555,13 @@ function fetchJson(useGet, url, sendData, triggerData) {
                 dispatch(makeAction_setManyStateByPath({
                     fetching: true,
                     fetchingpropname: triggerData.propName,
-                    fetchingErr: null
+                    fetchingErr: null,
                 }, MakePath(triggerData.base, triggerData.id)));
-            };
+            }
         }
         // enqueue
-        return function (dispatch) {};
+        return function (dispatch) {
+        };
     }
 
     return _doFetching;
@@ -645,8 +596,8 @@ function _doFetching(dispatch) {
         headers: {
             "Content-Type": "application/json"
         },
-        credentials: "include"
-    };
+        credentials: "include",
+    }
     var dispatched = false;
     if (useGet) {
         if (sendData != null) {
@@ -658,45 +609,50 @@ function _doFetching(dispatch) {
                 url += '?' + str;
             }
         }
-    } else {
+    }
+    else {
         fetchParam.body = JSON.stringify(sendData);
     }
 
     dispatch(makeAction_fetchbegin(key, thisFetch));
-    var timeoutHandler = setTimeout(function () {
+    var timeoutHandler = setTimeout(() => {
         dispatched = true;
         var errObj = createError('啊哦，服务器没响应了', ErrType.TIMEOUT);
         dispatch(makeAction_fetchError(key, errObj, thisFetch));
     }, timeout);
     var startTime = new Date().getTime();
-    return fetch(url, fetchParam).then(function (response) {
-        if (dispatched) {
-            console.log('response at dispatched');
-            _doNextFetching(dispatch);
-            return null;
-        }
-        clearTimeout(timeoutHandler);
-        if (response.ok) {
-            return response.json();
-        } else {
-            var errObj = createError(response.statusText, ErrType.NORESPONSE);
+    return fetch(url, fetchParam).then(
+        response => {
+            if (dispatched) {
+                console.log('response at dispatched');
+                _doNextFetching(dispatch);
+                return null;
+            }
+            clearTimeout(timeoutHandler);
+            if (response.ok) {
+                return response.json();
+            }
+            else {
+                var errObj = createError(response.statusText, ErrType.NORESPONSE);
+                dispatch(makeAction_fetchError(key, errObj, thisFetch));
+                _doNextFetching(dispatch);
+                return null;
+            }
+        },
+        error => {
+            clearTimeout(timeoutHandler);
+            if (dispatched) {
+                console.log('response at dispatched');
+                _doNextFetching(dispatch);
+                return null;
+            }
+            console.warn('An error occurred.', error);
+            var errObj = createError(error.toString(), ErrType.NORESPONSE);
+            thisFetch.errObj = errObj;
             dispatch(makeAction_fetchError(key, errObj, thisFetch));
             _doNextFetching(dispatch);
-            return null;
         }
-    }, function (error) {
-        clearTimeout(timeoutHandler);
-        if (dispatched) {
-            console.log('response at dispatched');
-            _doNextFetching(dispatch);
-            return null;
-        }
-        console.warn('An error occurred.', error);
-        var errObj = createError(error.toString(), ErrType.NORESPONSE);
-        thisFetch.errObj = errObj;
-        dispatch(makeAction_fetchError(key, errObj, thisFetch));
-        _doNextFetching(dispatch);
-    }).then(function (json) {
+    ).then(json => {
         if (thisFetch.errObj) {
             // 已经处理郭error
             return;
@@ -710,9 +666,11 @@ function _doFetching(dispatch) {
         }
         if (json == null) {
             dispatch(makeAction_fetchError(key, createError('"' + url + '"没有响应', ErrType.SERVERSIDE), thisFetch));
-        } else if (json.err != null) {
+        }
+        else if (json.err != null) {
             dispatch(makeAction_fetchError(key, createError(json.err.info, ErrType.SERVERSIDE, json.err.code, json.err.data), thisFetch));
-        } else {
+        }
+        else {
             //setTimeout(() => {
             dispatch(makeAction_fetchend(key, json, thisFetch));
             //}, 2000);
@@ -725,15 +683,15 @@ function nativeFetchJson(useGet, url, sendData) {
     var thisFetch = {
         useGet: useGet,
         url: url,
-        sendData: sendData
+        sendData: sendData,
     };
     var fetchParam = {
         method: useGet ? "GET" : "POST",
         headers: {
             "Content-Type": "application/json"
         },
-        credentials: "include"
-    };
+        credentials: "include",
+    }
     if (useGet) {
         if (sendData != null) {
             var str = '';
@@ -744,21 +702,26 @@ function nativeFetchJson(useGet, url, sendData) {
                 url += '?' + str;
             }
         }
-    } else {
+    }
+    else {
         fetchParam.body = JSON.stringify(sendData);
     }
 
-    return fetch(url, fetchParam).then(function (response) {
-        if (response.ok) {
-            return response.json();
-        } else {
-            var errObj = createError(response.statusText, ErrType.NORESPONSE);
+    return fetch(url, fetchParam).then(
+        response => {
+            if (response.ok) {
+                return response.json();
+            }
+            else {
+                var errObj = createError(response.statusText, ErrType.NORESPONSE);
+                return { err: errObj };
+            }
+        },
+        error => {
+            var errObj = createError(error.toString(), ErrType.NORESPONSE);
             return { err: errObj };
         }
-    }, function (error) {
-        var errObj = createError(error.toString(), ErrType.NORESPONSE);
-        return { err: errObj };
-    }).then(function (json) {
+    ).then(json => {
         return json;
     });
 }
@@ -773,7 +736,7 @@ function getNumberFromCookies(identity, defaultVal) {
 }
 
 function getStateByPath(state, path, def) {
-    if (path == '') {
+    if(path == ''){
         return state;
     }
     if (state == null) {
@@ -817,7 +780,8 @@ function setStateByPath(state, path, value, visited) {
                 newStateName = preStateName;
                 newStateValue = {};
                 newStateValue[name] = value;
-            } else {
+            }
+            else {
                 nowState[name] = value;
             }
             break;
@@ -829,11 +793,13 @@ function setStateByPath(state, path, value, visited) {
                 nowState = {};
                 newStateValue = {};
                 newStateValue[name] = nowState;
-            } else {
+            }
+            else {
                 nowState[name] = {};
                 nowState = nowState[name];
             }
-        } else {
+        }
+        else {
             preState = nowState;
             preStateName = name;
             nowState = nowState[name];
@@ -842,17 +808,18 @@ function setStateByPath(state, path, value, visited) {
     var retState = null;
     if (preStateName == null) {
         retState = Object.assign({}, state, newStateValue);
-    } else {
+    }
+    else {
         newStateParent[newStateName] = updateObject(newStateParent[newStateName], newStateValue);
         retState = state;
     }
     var delayActs = {};
     retState = aStateChanged(retState, path, value, oldValue, visited == null ? {} : visited, delayActs);
     if (!IsEmptyObject(delayActs)) {
-        setTimeout(function () {
+        setTimeout(() => {
             for (var acti in delayActs) {
                 var theAct = delayActs[acti];
-                if (typeof theAct.callfun === 'function') {
+                if (typeof (theAct.callfun) === 'function') {
                     theAct.callfun.apply(theAct.thisParam ? theAct.thisParam : window, theAct.params_arr);
                 }
             }
@@ -914,19 +881,22 @@ function setManyStateByPath(state, path, valuesObj, visited) {
             name = t_arr[i];
             if (i >= len - 1) {
                 if (value != nowState[name]) {
-                    changed_arr.push({
-                        path: valueParentPath + '.' + name,
-                        name: name,
-                        oldValue: nowState[name],
-                        newValue: value,
-                        state: nowState,
-                        preState: aidPreState,
-                        preStateName: aidPreStateName,
-                        preStatePath: aidPreStatePath,
-                        parentPath: valueParentPath
-                    });
+                    changed_arr.push(
+                        {
+                            path: valueParentPath + '.' + name,
+                            name: name,
+                            oldValue: nowState[name],
+                            newValue: value,
+                            state: nowState,
+                            preState: aidPreState,
+                            preStateName: aidPreStateName,
+                            preStatePath: aidPreStatePath,
+                            parentPath: valueParentPath,
+                        }
+                    );
                 }
-            } else {
+            }
+            else {
                 aidPreStatePath = valueParentPath;
                 valueParentPath += (valueParentPath.length == 0 ? '' : '.') + name;
                 if (nowState[name] == null) {
@@ -963,7 +933,7 @@ function setManyStateByPath(state, path, valuesObj, visited) {
             changeState_map[changedInfo.parentPath] = newState;
             changedInfo.state = newState;
             var newPreState = newState_map[changedInfo.preStatePath];
-            if (newPreState) {
+            if(newPreState){
                 changedInfo.preState = newPreState;
             }
             newState_map[changedInfo.parentPath] = newState;
@@ -992,14 +962,15 @@ function setManyStateByPath(state, path, valuesObj, visited) {
     var delayActs = {};
     for (i in changed_arr) {
         var changedInfo = changed_arr[i];
-        if (changedInfo.changed == false) continue;
+        if (changedInfo.changed == false)
+            continue;
         retState = aStateChanged(retState, changedInfo.path, changedInfo.newValue, changedInfo.oldValue, visited, delayActs);
     }
     if (!IsEmptyObject(delayActs)) {
-        setTimeout(function () {
+        setTimeout(() => {
             for (var acti in delayActs) {
                 var theAct = delayActs[acti];
-                if (typeof theAct.callfun === 'function') {
+                if (typeof (theAct.callfun) === 'function') {
                     theAct.callfun.apply(theAct.thisParam ? theAct.thisParam : window, theAct.params_arr);
                 }
             }
@@ -1008,10 +979,7 @@ function setManyStateByPath(state, path, valuesObj, visited) {
     return retState == state ? Object.assign({}, retState) : retState;
 }
 
-function aStateChanged(state, path, newValue, oldValue) {
-    var visited = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
-    var delayActs = arguments[5];
-
+function aStateChanged(state, path, newValue, oldValue, visited = {}, delayActs) {
     if (visited[path] != null) {
         console.error('aStateChanged回路访问:' + path);
     }
@@ -1039,7 +1007,8 @@ function aStateChanged(state, path, newValue, oldValue) {
 function MakePath() {
     var rlt = '';
     for (var i = 0; i < arguments.length; ++i) {
-        if (arguments[i] == null || arguments[i].length == 0) continue;
+        if (arguments[i] == null || arguments[i].length == 0)
+            continue;
         rlt += (rlt.length == 0 ? '' : '.') + arguments[i];
     }
     return rlt;
@@ -1071,7 +1040,7 @@ function fetchBeginHandler(state, action) {
             retState = setManyStateByPath(retState, propPath, {
                 fetching: true,
                 fetchingpropname: triggerData.propName,
-                fetchingErr: null
+                fetchingErr: null,
             });
         }
     }
@@ -1109,14 +1078,15 @@ function fetchEndHandler(state, action) {
             var newFetchState = Object.assign({}, retState.ui.fetchState);
             newFetchState.err = action.err;
             retState.ui.fetchState = newFetchState;
-        } else {
+        }
+        else {
             if (triggerData) {
                 if (triggerData.base != null && triggerData.id != null) {
                     var propPath = MakePath(triggerData.base, triggerData.id);
                     if (!discardResult) {
                         retState = setManyStateByPath(retState, propPath, {
                             fetching: false,
-                            fetchingErr: action.err
+                            fetchingErr: action.err,
                         });
                     }
                 }
@@ -1130,16 +1100,17 @@ function fetchEndHandler(state, action) {
                         retState = callbackret;
                     }
                 }
-            } else if (action.key == EFetchKey.FetchPropValue) {
+            }
+            else if (action.key == EFetchKey.FetchPropValue) {
                 var ftpProp = triggerData;
                 var ftpKey = ftpProp.id + '_' + ftpProp.propName;
                 needSetState = {};
                 var fetching_arr = gFetchingProp[ftpKey];
-                var hited = fetching_arr.find(function (x) {
+                var hited = fetching_arr.find(x => {
                     return ObjIsEqual(x.bundle, action.fetchData.sendData.bundle);
                 });
                 if (!discardResult) {
-                    hited.queues_arr.forEach(function (x) {
+                    hited.queues_arr.forEach(x => {
                         needSetState[MakePath(x.base, x.id, 'fetching')] = false;
                         needSetState[MakePath(x.base, x.id, 'fetchingErr')] = action.err;
                     });
@@ -1167,7 +1138,7 @@ function fetchEndHandler(state, action) {
     switch (action.key) {
         case 'pageloaded':
             if (!gDingDingIniting) {
-                setTimeout(function () {
+                setTimeout(() => {
                     store.dispatch({ type: AT_PAGELOADED });
                 }, 50);
             }
@@ -1178,11 +1149,11 @@ function fetchEndHandler(state, action) {
                 var ftpKey = ftpProp.id + '_' + ftpProp.propName;
                 needSetState = {};
                 var fetching_arr = gFetchingProp[ftpKey];
-                var hited = fetching_arr.find(function (x) {
+                var hited = fetching_arr.find(x => {
                     return ObjIsEqual(x.bundle, action.fetchData.sendData.bundle);
                 });
                 needSetState[MakePath(triggerData.base, triggerData.id, triggerData.propName)] = action.json.data;
-                hited.queues_arr.forEach(function (x) {
+                hited.queues_arr.forEach(x => {
                     needSetState[MakePath(x.base, x.id, x.propName)] = action.json.data;
                     needSetState[MakePath(x.base, x.id, 'fetching')] = false;
                     needSetState[MakePath(x.base, x.id, 'fetchingErr')] = null;
@@ -1202,13 +1173,14 @@ function fetchEndHandler(state, action) {
     return retState == state ? Object.assign({}, retState) : retState;
 }
 
+
 var baseReducerSetting = {
     AT_FETCHBEGIN: fetchBeginHandler,
     AT_FETCHEND: fetchEndHandler,
     AT_SETSTATEBYPATH: setStateByPathHandler,
     AT_SETMANYSTATEBYPATH: setManyStateByPathHandler,
     AT_SETROOTSTATE: setRootStateHandler,
-    AT_CALLFUNCTION: callFunctionHandler
+    AT_CALLFUNCTION: callFunctionHandler,
 };
 
 function baseRenderLoadingTip() {
@@ -1218,101 +1190,59 @@ function baseRenderLoadingTip() {
     var fetchState = this.props.fetchState;
     var tipElem = null;
     if (fetchState.err == null) {
-        tipElem = React.createElement(
-            'div',
-            { className: 'd-flex align-items-center' },
-            React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw fa-3x' }),
-            fetchState.tip
-        );
-    } else {
-        tipElem = React.createElement(
-            React.Fragment,
-            null,
-            React.createElement(
-                'div',
-                { className: 'bg-danger text-light d-flex d-flex align-items-center' },
-                React.createElement('i', { className: 'fa fa-warning fa-2x' }),
-                React.createElement(
-                    'h3',
-                    null,
-                    '\u9519\u8BEF'
-                )
-            ),
-            React.createElement('div', { className: 'dropdown-divider' }),
-            React.createElement(
-                'div',
-                { className: 'd-flex align-items-center' },
-                fetchState.err.info
-            ),
-            React.createElement(
-                'button',
-                { onClick: this.props.clickLoadingErrorBtn, type: 'button', className: 'btn btn-danger' },
-                '\u77E5\u9053\u4E86'
-            )
-        );
+        tipElem = (<div className='d-flex align-items-center'>
+            <i className='fa fa-spinner fa-pulse fa-fw fa-3x' />
+            {fetchState.tip}
+        </div>)
     }
-    return React.createElement(
-        'div',
-        { className: 'loadingTipBG' },
-        React.createElement(
-            'div',
-            { className: 'loadingTip bg-light rounded d-flex flex-column' },
-            tipElem
-        )
+    else {
+        tipElem = (<React.Fragment>
+            <div className='bg-danger text-light d-flex d-flex align-items-center'><i className='fa fa-warning fa-2x' /><h3>错误</h3></div>
+            <div className='dropdown-divider' />
+            <div className='d-flex align-items-center'>
+                {fetchState.err.info}
+            </div>
+            <button onClick={this.props.clickLoadingErrorBtn} type='button' className='btn btn-danger'>知道了</button>
+        </React.Fragment>);
+    }
+    return (<div className='loadingTipBG'>
+        <div className='loadingTip bg-light rounded d-flex flex-column'>
+            {tipElem}
+        </div>
+    </div>);
+}
+
+function renderFetcingTipDiv(tipstr = '数据加载中') {
+    return (
+        <div className='w-100 h-100 flex-grow-1 d-flex align-items-center'>
+            <div className='m-auto d-flex align-items-center border rounded'>
+                <i className='fa fa-spinner fa-pulse fa-fw fa-2x' />
+                <div className='text-nowrap'>{tipstr}</div>
+            </div>
+        </div>
     );
 }
 
-function renderFetcingTipDiv() {
-    var tipstr = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '数据加载中';
-
-    return React.createElement(
-        'div',
-        { className: 'w-100 h-100 flex-grow-1 d-flex align-items-center' },
-        React.createElement(
-            'div',
-            { className: 'm-auto d-flex align-items-center border rounded' },
-            React.createElement('i', { className: 'fa fa-spinner fa-pulse fa-fw fa-2x' }),
-            React.createElement(
-                'div',
-                { className: 'text-nowrap' },
-                tipstr
-            )
-        )
-    );
-}
 
 function renderFetcingErrDiv(errInfo) {
-    return React.createElement(
-        'div',
-        { className: 'w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch' },
-        React.createElement(
-            'div',
-            { className: 'm-auto d-flex align-items-center border rounded text-danger flex-shrink-0 mw-100' },
-            React.createElement('i', { className: 'fa fa-warning fa-fw fa-2x' }),
-            React.createElement(
-                'div',
-                { className: 'text' },
-                '\u51FA\u9519\u4E86:',
-                errInfo
-            )
-        )
+    return (
+        <div className='w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch'>
+            <div className='m-auto d-flex align-items-center border rounded text-danger flex-shrink-0 mw-100'>
+                <i className='fa fa-warning fa-fw fa-2x' />
+                <div className='text'>出错了:{errInfo}</div>
+            </div>
+        </div>
     );
 }
 
 function renderInvalidBundleDiv() {
-    return React.createElement(
-        'div',
-        { className: 'w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch' },
-        React.createElement(
-            'div',
-            { className: 'm-auto d-flex align-items-center border rounded flex-shrink-0 mw-100' },
-            React.createElement('i', { className: 'fa fa-warning fa-fw fa-2x' }),
-            React.createElement(
-                'div',
-                { className: 'text' },
-                '\u524D\u7F6E\u6761\u4EF6\u4E0D\u8DB3'
-            )
-        )
+    return (
+        <div className='w-100 h-100 flex-grow-1 d-flex align-items-center autoScroll_Touch'>
+            <div className='m-auto d-flex align-items-center border rounded flex-shrink-0 mw-100'>
+                <i className='fa fa-warning fa-fw fa-2x' />
+                <div className='text'>前置条件不足</div>
+            </div>
+        </div>
     );
 }
 
@@ -1329,18 +1259,14 @@ function getFormatDateString(date) {
     return y + (m < 10 ? '-0' : '-') + m + (d < 10 ? '-0' : '-') + d;
 }
 
-function getFormatTimeString(date) {
-    var hadSec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
+function getFormatTimeString(date, hadSec = true) {
     var h = date.getHours();
     var m = date.getMinutes();
     var s = date.getSeconds();
     return (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m + (hadSec ? (s < 10 ? ':0' : ':') + s : '');
 }
 
-function getFormatDateTimeString(date) {
-    var hadSec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
+function getFormatDateTimeString(date, hadSec = true) {
     var y = date.getFullYear();
     var month = date.getMonth() + 1;
     var d = date.getDate();
@@ -1351,9 +1277,7 @@ function getFormatDateTimeString(date) {
     return y + (month < 10 ? '-0' : '-') + month + (d < 10 ? '-0' : '-') + d + ' ' + (h < 10 ? '0' : '') + h + (m < 10 ? ':0' : ':') + m + (hadSec ? (s < 10 ? ':0' : ':') + s : '');
 }
 
-function getFullFormatDateString(date) {
-    var hadSec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
+function getFullFormatDateString(date, hadSec = true) {
     var y = date.getFullYear();
     var m = date.getMonth() + 1;
     var d = date.getDate();
@@ -1370,11 +1294,13 @@ function simpleFreshFormFun(retState, records_arr, formFullID, directBindFun) {
     var needSetState = {};
     if (records_arr == null || records_arr.length == 0) {
         needSetState.recordIndex = -1;
-    } else {
+    }
+    else {
         var useIndex = formState.recordIndex == null ? 0 : parseInt(formState.recordIndex);
         if (useIndex >= records_arr.length) {
             useIndex = records_arr.length - 1;
-        } else if (useIndex <= -1) {
+        }
+        else if (useIndex <= -1) {
             useIndex = 0;
         }
         needSetState.recordIndex = useIndex;
@@ -1394,11 +1320,13 @@ function simpleFreshFormFun2(retState, records_arr, formFullID, rowChangedFun, v
     var useIndex = -1;
     if (records_arr == null || records_arr.length == 0) {
         needSetState.recordIndex = -1;
-    } else {
+    }
+    else {
         useIndex = formState.recordIndex == null ? 0 : parseInt(formState.recordIndex);
         if (useIndex >= records_arr.length) {
             useIndex = records_arr.length - 1;
-        } else if (useIndex <= -1) {
+        }
+        else if (useIndex <= -1) {
             useIndex = 0;
         }
         needSetState.recordIndex = useIndex;
@@ -1454,6 +1382,9 @@ function FormatStringValue(val, type, precision) {
     var rlt = val;
     switch (type) {
         case 'int':
+            if(Math.abs(val) < 0.00001){
+                return 0;
+            }
             rlt = parseInt(val);
             if (isNaN(rlt)) {
                 rlt = '';
@@ -1463,6 +1394,9 @@ function FormatStringValue(val, type, precision) {
             rlt = parseBoolean(val) ? true : false;
             break;
         case 'float':
+            if(Math.abs(val) < 0.00001){
+                return 0;
+            }
             precision = precision == null ? 2 : parseInt(precision);
             var divisor = Math.pow(10, precision);
             rlt = Math.round(val * divisor) / divisor;
@@ -1474,18 +1408,21 @@ function FormatStringValue(val, type, precision) {
         case 'datetime':
             if (!checkDate(val)) {
                 rlt = '';
-            } else if (val.length > 10) {
-                var theDate = new Date(val);
+            }
+            else if (val.length > 10) {
+                var theDate = new Date(val)
                 rlt = getFormatDateString(theDate) + (type == 'datetime' ? ' ' + getFormatTimeString(theDate) : '');
             }
             break;
         case 'dateMD':
             if (typeof val == 'string' && val.length == 5) {
                 rlt = val;
-            } else if (!checkDate(val)) {
+            }
+            else if (!checkDate(val)) {
                 rlt = '';
-            } else if (val.length > 10) {
-                var theDate = new Date(val);
+            }
+            else if (val.length > 10) {
+                var theDate = new Date(val)
                 rlt = getFormatDateString_MD(theDate);
             }
             break;
@@ -1493,7 +1430,8 @@ function FormatStringValue(val, type, precision) {
             if (val && val.length > 8 && checkDate(val)) {
                 var regRlt = gTimeReg.exec(val);
                 return regRlt[0];
-            } else if (!checkTime(val)) {
+            }
+            else if (!checkTime(val)) {
                 rlt = '';
             }
             break;
@@ -1505,7 +1443,7 @@ function plainClone(obj) {
     var rlt = {};
     for (var s in obj) {
         var v = obj[s];
-        switch (typeof v === 'undefined' ? 'undefined' : _typeof(v)) {
+        switch (typeof v) {
             case 'boolean':
             case 'number':
             case 'string':
@@ -1559,15 +1497,16 @@ function getRowKeyMapFromPath(path) {
             newPatchs_arr.push(patch);
         }
         rowKeyInfo_map.newPath = newPatchs_arr.join('.');
-    } else {
+    }
+    else {
         rowKeyInfo_map.newPath = path;
     }
     return rowKeyInfo_map;
 }
 
-function getRecordFromRowKey(formPath, rowkey) {
+function getRecordFromRowKey(formPath, rowkey){
     var mapCache = gDataCache.get(formPath + ".KeyToRcd_map");
-    if (mapCache == null) {
+    if(mapCache == null){
         return null;
     }
     return mapCache[rowkey];
@@ -1590,7 +1529,7 @@ function getParentPathByKey(orginPath, key) {
 function getBelongUserCtlPath(orginPath, fromId, skipfirst) {
     var lastDostPos = fromId ? orginPath.lastIndexOf(fromId) - fromId.length : orginPath.length;
     var index = orginPath.lastIndexOf('.UserControl', lastDostPos);
-    if (index > 0 && skipfirst) {
+    if(index > 0 && skipfirst){
         index = orginPath.lastIndexOf('.UserControl', index - 1);
     }
     if (index == -1) {
@@ -1600,7 +1539,7 @@ function getBelongUserCtlPath(orginPath, fromId, skipfirst) {
     if (endPos == -1) {
         endPos = orginPath.length;
     }
-
+    
     return orginPath.substring(0, endPos);
 }
 
@@ -1619,26 +1558,27 @@ function getBelongUserCtlProfile(orginPath) {
         parentPath: orginPath.substring(0, endPos),
         ctlID: ctlID,
         classID: classID,
-        statePath: classID + orginPath.substr(endPos)
+        statePath: classID + orginPath.substr(endPos),
     };
 }
 
 function CombineDotStr() {
     var rlt = '';
     for (var i = 0; i < arguments.length; ++i) {
-        if (arguments[i] == null || arguments[i].length == 0) continue;
+        if (arguments[i] == null || arguments[i].length == 0)
+            continue;
         rlt += (rlt.length == 0 ? '' : '.') + arguments[i];
     }
     return rlt;
 }
 
 // getday
-var gWeekDayName_arr = ["日", "一", "二", "三", "四", "五", "六"];
+const gWeekDayName_arr = ["日", "一", "二", "三", "四", "五", "六"];
 function getweekDay(date) {
     if (typeof date === 'string') {
         date = castDate(date);
     }
-    return "星期" + gWeekDayName_arr[date.getDay()];
+    return "星期" + gWeekDayName_arr[date.getDay()]
 }
 
 //格式化数字加逗号
@@ -1650,22 +1590,21 @@ function addComma(num) {
 //数字转中文
 function NumToChinese(n) {
     for (i = n.length - 1; i >= 0; i--) {
-        n = n.replace(",", ""); //替换Num中的“,” 替换Num中的空格
-        n = n.replace(" ", "");
+        n = n.replace(",", "")//替换Num中的“,” 替换Num中的空格
+        n = n.replace(" ", "")
     }
 
     if (isNaN(n)) {
         return "请检查输入金额是否正确";
     }
     if (!/^(0|[1-9]\d*)(\.\d+)?$/.test(n)) {
-        return "数据非法"; //判断数据是否大于0
+        return "数据非法";  //判断数据是否大于0
     }
 
-    var unit = "千百拾亿千百拾万千百拾元角分",
-        str = "";
+    var unit = "千百拾亿千百拾万千百拾元角分", str = "";
     n += "00";
 
-    var indexpoint = n.indexOf('.'); // 如果是小数，截取小数点前面的位数
+    var indexpoint = n.indexOf('.');  // 如果是小数，截取小数点前面的位数
     if (indexpoint > 12) {
         return '数据过大';
     }
@@ -1674,14 +1613,17 @@ function NumToChinese(n) {
     }
     if (indexpoint >= 0) {
 
-        n = n.substring(0, indexpoint) + n.substr(indexpoint + 1, 2); // 若为小数，截取需要使用的unit单位
+        n = n.substring(0, indexpoint) + n.substr(indexpoint + 1, 2);   // 若为小数，截取需要使用的unit单位
     }
 
-    unit = unit.substr(unit.length - n.length); // 若为整数，截取需要使用的unit单位
+    unit = unit.substr(unit.length - n.length);  // 若为整数，截取需要使用的unit单位
     for (var i = 0; i < n.length; i++) {
-        str += "零壹贰叁肆伍陆柒捌玖".charAt(n.charAt(i)) + unit.charAt(i); //遍历转化为大写的数字
+        str += "零壹贰叁肆伍陆柒捌玖".charAt(n.charAt(i)) + unit.charAt(i);  //遍历转化为大写的数字
     }
-    var result = str.replace(/零(千|百|拾|角)/g, "零").replace(/(零)+/g, "零").replace(/零(万|亿|元)/g, "$1").replace(/(亿)万|壹(拾)/g, "$1$2").replace(/^元零?|零分/g, "").replace(/元$/g, "元整"); // 替换掉数字里面的零字符，得到结果
+    var result = str.replace(/零(千|百|拾|角)/g, "零").
+        replace(/(零)+/g, "零").replace(/零(万|亿|元)/g, "$1").
+        replace(/(亿)万|壹(拾)/g, "$1$2").replace(/^元零?|零分/g, "").
+        replace(/元$/g, "元整"); // 替换掉数字里面的零字符，得到结果
     return result;
 }
 
@@ -1690,7 +1632,8 @@ function Convert_TimeZone(pTime, zoneSrc, zoneDst) {
     if (typeof pTime === 'string') {
         pTime = castDateFromTimePart(pTime);
         rltDate = pTime;
-    } else {
+    }
+    else{
         rltDate = new Date(pTime);
     }
     var time = pTime.getTime();
@@ -1698,7 +1641,7 @@ function Convert_TimeZone(pTime, zoneSrc, zoneDst) {
     zoneSrc = parseInt(zoneSrc);
     zoneDst = parseInt(zoneDst);
     offset = -zoneSrc + zoneDst;
-    if (offset != 0) {
+    if(offset != 0){
         rltDate.setTime(time + 1000 * 60 * 60 * offset);
     }
     return rltDate;
@@ -1708,86 +1651,90 @@ function Convert_DateZone(pDate, zoneDst) {
     var rltDate = new Date(pDate);
     var time = pDate.getTime();
     var offset = 0;
-    var zoneSrc = Math.floor(rltDate.getTimezoneOffset() / -60);
+    var zoneSrc = Math.floor(rltDate.getTimezoneOffset()/-60);    
     zoneDst = parseInt(zoneDst);
     offset = -zoneSrc + zoneDst;
-    if (offset != 0) {
+    if(offset != 0){
         rltDate.setTime(time + 1000 * 60 * 60 * offset);
     }
     return rltDate;
 }
 
-function createDate(year, month, day) {
-    if (day > 32) {
+function createDate(year, month, day){
+    if(day > 32){
         day = 31;
     }
     month = parseInt(month);
-    var rlt = new Date(year, month - 1, Math.max(day, 0));
-    if (day == 32) {
+    var rlt = new Date(year, month - 1, Math.max(day,0));
+    if(day == 32){
         rlt.setDate(1);
-    } else if (day > 0 && (rlt.getMonth() != month - 1 || rlt.getFullYear() != year)) {
+    }
+    else if(day > 0 && (rlt.getMonth() != month-1 || rlt.getFullYear() != year)){
         rlt.setDate(1);
         rlt = new Date(rlt - 86400000);
     }
     return rlt;
 }
 
-function RoundFloat(val, precision) {
+function RoundFloat(val, precision){
     var valStr = val.toString();
     var t_arr;
     var intPart;
-    if (valStr.indexOf('e') != -1) {
+    if(valStr.indexOf('e') != -1){
         t_arr = valStr.split('e');
         var numStr = t_arr[0];
         var dotPos = numStr.indexOf('.');
         var hadDotPos = true;
-        if (dotPos == -1) {
+        if(dotPos == -1){
             dotPos = numStr.length;
             hadDotPos = false;
         }
         var eNum = parseInt(t_arr[1]);
         var newDotPos = dotPos + eNum;
 
-        if (newDotPos <= 0) {
+        if(newDotPos <= 0){
             t_arr[1] = numStr.padStart(numStr.length - newDotPos, '0');
             t_arr[0] = '0';
-            t_arr[1] = t_arr[1].replace('.', '');
-        } else {
-            if (dotPos == numStr.length) {
+            t_arr[1] = t_arr[1].replace('.','');
+        }
+        else{
+            if(dotPos == numStr.length){
                 numStr = numStr.padEnd(newDotPos, '0');
                 return parseFloat(numStr);
             }
             numStr = numStr.padEnd(newDotPos, '0');
-            t_arr[0] = numStr.substring(0, newDotPos + 1).replace('.', '');
-            t_arr[1] = numStr.substring(newDotPos + 1, numStr.length).replace('.', '');
+            t_arr[0] = numStr.substring(0, newDotPos + 1).replace('.','');
+            t_arr[1] = numStr.substring(newDotPos + 1, numStr.length).replace('.','');
         }
-    } else {
+    }
+    else{
         t_arr = valStr.split('.');
     }
-    if (t_arr.length == 1 || t_arr[1].length <= precision) {
+    if(t_arr.length==1 || t_arr[1].length <= precision){
         return val;
     }
     intPart = parseInt(t_arr[0]);
-    if (precision < t_arr[1].length && t_arr[1][precision] >= 5) {
-        if (precision == 0) {
+    if(precision < t_arr[1].length && t_arr[1][precision] >= 5){
+        if(precision == 0){
             ++intPart;
-        } else {
+        }
+        else{
             var oldV = parseInt(t_arr[1].substring(0, precision));
             var newV = oldV + 1;
-            if (newV.toString().length > oldV.toString().length) {
+            if(newV.toString().length > oldV.toString().length){
                 return parseFloat(intPart + (intPart > 0 ? 1 : -1));
             }
             return parseFloat(intPart.toString() + '.' + newV);
         }
     }
-    return parseFloat(intPart.toString() + '.' + t_arr[1].substr(0, precision));
+    return parseFloat(intPart.toString() + '.' + t_arr[1].substr(0,precision));
 }
 
 var gDingDingIniting = false;
 var gInitDingCallBack = null;
 
-function ActiveDing() {
-    if (gInitDingCallBack == null) {
+function ActiveDing(){
+    if(gInitDingCallBack == null){
         return;
     }
     DebugApp('DingDing Actived');
@@ -1801,30 +1748,33 @@ function ActiveDing() {
 
 function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
     DebugApp('InitDingDing satrt');
-    var tjson = { isMobile: isMobile, dingdingKit: dingdingKit };
+    var tjson = {isMobile:isMobile,dingdingKit:dingdingKit};
     DebugApp(JSON.stringify(tjson));
-    tjson = { gPageInFrame: gPageInFrame, gWeakParentFrame: gWeakParentFrame ? 'true' : 'false', dingdingKit: dingdingKit, isInDingTalk: isInDingTalk };
+    tjson = {gPageInFrame:gPageInFrame,gWeakParentFrame:(gWeakParentFrame ? 'true' : 'false'),dingdingKit:dingdingKit,isInDingTalk:isInDingTalk};
     DebugApp(JSON.stringify(tjson));
-    if (gParentDingKit == null) {
+    if(gParentDingKit == null){
         // detect parent
-        if (window.parent) {
+        if(window.parent){
             DebugApp('Had window parent');
-            if (window.parent.dingdingKit) {
+            if(window.parent.dingdingKit){
                 DebugApp('Window parent have dingdingKit');
-                if (window.parent.FrameLoaded) {
+                if(window.parent.FrameLoaded){
                     window.parent.FrameLoaded(window, DebugApp);
-                } else {
+                }
+                else{
                     DebugApp('no FrameLoaded wait active');
                 }
-                if (gParentDingKit == null) {
+                if(gParentDingKit == null){
                     gInitDingCallBack = callBack;
                     DebugApp('wait parent active');
                     return;
                 }
-            } else {
+            }
+            else{
                 DebugApp('Window parent have not dingdingKit');
             }
-        } else {
+        }
+        else{
             DebugApp('No window parent');
         }
     }
@@ -1840,7 +1790,16 @@ function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
     if (isMobile) {
         dingdingKit = dd;
         isInDingTalk = dd.env.platform != 'notInDingTalk';
-        var jsapiArr = ['runtime.info', 'device.notification.prompt', 'device.notification.confirm', 'device.notification.alert', 'device.notification.toast', 'biz.navigation.close', 'biz.ding.post', 'biz.navigation.setRight', 'biz.navigation.setTitle'];
+        var jsapiArr = [
+            'runtime.info',
+            'device.notification.prompt',
+            'device.notification.confirm',
+            'device.notification.alert',
+            'device.notification.toast',
+            'biz.navigation.close',
+            'biz.ding.post',
+            'biz.navigation.setRight',
+            'biz.navigation.setTitle'];
         if (mobileAppendApi_arr) {
             jsapiArr = jsapiArr.concat(mobileAppendApi_arr);
         }
@@ -1853,10 +1812,17 @@ function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
             signature: pSignature,
             jsApiList: jsapiArr
         });
-    } else {
+    }
+    else {
         dingdingKit = DingTalkPC;
         isInDingTalk = dingdingKit.ua.isInDingTalk;
-        var jsapiArr = ['device.notification.alert', 'device.notification.confirm', 'device.notification.toast', 'biz.navigation.close', 'runtime.permission.requestAuthCode', 'biz.ding.post'];
+        var jsapiArr = [
+            'device.notification.alert',
+            'device.notification.confirm',
+            'device.notification.toast',
+            'biz.navigation.close',
+            'runtime.permission.requestAuthCode',
+            'biz.ding.post'];
         if (pcAppendApi_arr) {
             jsapiArr = jsapiArr.concat(pcAppendApi_arr);
         }
@@ -1869,7 +1835,7 @@ function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
             jsApiList: jsapiArr
         });
     }
-    tjson = { isMobile: isMobile, dingdingKit: dingdingKit, isInDingTalk: isInDingTalk, isProduction: isProduction };
+    tjson = {isMobile:isMobile,dingdingKit:dingdingKit,isInDingTalk:isInDingTalk,isProduction:isProduction};
     DebugApp(JSON.stringify(tjson));
     if (!isProduction || !isInDingTalk) {
         callBack();
@@ -1877,11 +1843,11 @@ function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
         return;
     }
     gDingDingIniting = true;
-    dingdingKit.error(function (err) {
+    dingdingKit.error(err => {
         alert('出错了:' + JSON.stringify(err));
     });
     DebugApp('wait dingdingKit.ready');
-    dingdingKit.ready(function () {
+    dingdingKit.ready(() => {
         DebugApp('dingdingKit.ready called');
         store.dispatch({ type: AT_PAGELOADED });
         callBack();
@@ -1891,9 +1857,9 @@ function InitDingDing(callBack, mobileAppendApi_arr, pcAppendApi_arr) {
 
 function pickLocation(successAct, failAct) {
     if (failAct == null) {
-        failAct = function failAct(err) {
+        failAct = function (err) {
             myApp.alert(JSON.stringify(err), "获取位置失败");
-        };
+        }
     }
 
     if (!isMobile) {
@@ -1926,18 +1892,18 @@ function gGetNowLocation(successAct, failAct) {
 function DynamicLoadJs(url, callback) {
     var script = document.createElement('script');
     script.type = "text/javascript";
-    if (typeof callback != "undefined") {
+    if (typeof (callback) != "undefined") {
         if (script.readyState) {
             script.onreadystatechange = function () {
                 if (script.readyState == "loaded" || script.readyState == "complete") {
                     script.onreadystatechange = null;
                     callback();
                 }
-            };
+            }
         } else {
             script.onload = function () {
                 callback();
-            };
+            }
         }
     }
     script.src = url;
@@ -1952,12 +1918,12 @@ function Regeocoder(lat, lon, callBack) {
         gAMapCallBacks_arr.push({
             lat: lat,
             lon: lon,
-            callBack: callBack
+            callBack: callBack,
         });
         if (gAMapCallBacks_arr.length == 1) {
-            DynamicLoadJs('http://webapi.amap.com/maps?v=1.4.3&key=1ca423f502c4a4d054c8d0572847a623&plugin=AMap.Geocoder', function () {
+            DynamicLoadJs('http://webapi.amap.com/maps?v=1.4.3&key=1ca423f502c4a4d054c8d0572847a623&plugin=AMap.Geocoder', () => {
                 AMapJsLoaded = true;
-                gAMapCallBacks_arr.forEach(function (p) {
+                gAMapCallBacks_arr.forEach(p => {
                     __regeocoder(p.lat, p.lon, p.callBack);
                 });
             });
@@ -1977,7 +1943,8 @@ function __regeocoder(lat, lon, callBack) {
     geocoder.getAddress([lon, lat], function (status, result) {
         if (status === 'complete' && result.info === 'OK') {
             callBack(result);
-        } else {
+        }
+        else {
             callBack(null);
         }
     });

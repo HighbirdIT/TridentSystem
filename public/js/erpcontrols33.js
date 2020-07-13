@@ -4991,3 +4991,582 @@ function gWaitLongProcess(msgItem, key, callBack) {
         queryProcess();
     }, 2000);
 }
+
+var FormColumnFilter = function () {
+    function FormColumnFilter(name, setting) {
+        _classCallCheck(this, FormColumnFilter);
+
+        this.name = name;
+        this.setting = setting;
+        this.bAll = true;
+        this.selectedValues = {};
+    }
+
+    _createClass(FormColumnFilter, [{
+        key: 'getValues',
+        value: function getValues(useCache) {
+            return this.setting.getColumnValues(this, useCache);
+        }
+    }, {
+        key: 'selectAll',
+        value: function selectAll() {
+            this.bAll = true;
+            this.setting.filterChanged(this);
+        }
+    }, {
+        key: 'unSelectAll',
+        value: function unSelectAll() {
+            this.bAll = false;
+            this.selectedValues = {};
+            this.setting.filterChanged(this);
+        }
+    }, {
+        key: 'toggleSelect',
+        value: function toggleSelect(value) {
+            var _this36 = this;
+
+            var values_arr = this.getValues();
+            if (this.bAll) {
+                /*
+                this.selectedValues = {};
+                values_arr.forEach(x=>{
+                    this.selectedValues[x] = true;
+                });
+                */
+                this.selectedValues = {};
+                this.bAll = false;
+            }
+            this.selectedValues[value] = !this.selectedValues[value];
+            if (this.selectedValues[value]) {
+                if (values_arr.find(function (x) {
+                    return !_this36.selectedValues[x];
+                }) == null) {
+                    this.bAll = true;
+                }
+            }
+            this.setting.filterChanged(this);
+        }
+    }, {
+        key: 'confirm',
+        value: function confirm() {
+            this.setting.confirmFilter(this);
+        }
+    }]);
+
+    return FormColumnFilter;
+}();
+
+var ERPCFormSetting = function () {
+    function ERPCFormSetting(formPath) {
+        _classCallCheck(this, ERPCFormSetting);
+
+        this.formPath = formPath;
+        this.records_arr = null;
+        this.dataversion = 0;
+        this.sort = {
+            colkey: null,
+            header: null,
+            type: null
+        };
+        this.filters_arr = [];
+        this.filters_map = {};
+        this.sortFun = this.sortFun.bind(this);
+    }
+
+    _createClass(ERPCFormSetting, [{
+        key: 'getFilter',
+        value: function getFilter(colkey) {
+            var rlt = this.filters_map[colkey];
+            if (rlt == null) {
+                rlt = new FormColumnFilter(colkey, this);
+                this.filters_map[colkey] = rlt;
+            }
+            return rlt;
+        }
+    }, {
+        key: 'confirmFilter',
+        value: function confirmFilter(filter) {
+            if (filter.bAll) {
+                var filters_arr = this.filters_arr;
+                var pos = filters_arr.indexOf(filter);
+                if (pos != -1) {
+                    filters_arr.splice(pos, 1);
+                    for (var fi = pos; fi < filters_arr.length; ++fi) {
+                        var tFilter = filters_arr[fi];
+                        tFilter.index = fi + 1;
+                        if (tFilter.header) {
+                            tFilter.header.reRender();
+                        }
+                    }
+                }
+            }
+        }
+    }, {
+        key: 'filterChanged',
+        value: function filterChanged(filter) {
+            var filters_arr = this.filters_arr;
+            var pos = filters_arr.indexOf(filter);
+            var needFresh = false;
+            if (pos != -1) {
+                for (var fi = pos + 1; fi < filters_arr.length; ++fi) {
+                    var tFilter = filters_arr[fi];
+                    this.valuesCache[tFilter.name] = null;
+                }
+            }
+
+            if (filter.bAll) {
+                if (pos != -1) {
+                    needFresh = true;
+                }
+            } else {
+                needFresh = true;
+                if (pos == -1) {
+                    filters_arr.push(filter);
+                    filter.index = filters_arr.length;
+                }
+            }
+            if (needFresh) {
+                this.reProcess();
+            }
+        }
+    }, {
+        key: 'valueSortFun',
+        value: function valueSortFun(a, b) {
+            if (a.localeCompare && b.localeCompare) {
+                return a.localeCompare(b);
+            }
+            return a < b ? -1 : a > b ? 1 : 0;
+        }
+    }, {
+        key: 'getColumnValues',
+        value: function getColumnValues(filter, useCache) {
+            var colkey = filter.name;
+            if (useCache != false && this.valuesCache && this.valuesCache[colkey]) {
+                return this.valuesCache[colkey].rlt_arr;
+            }
+            var index = this.filters_arr.indexOf(filter);
+            var useFilters_arr = index == -1 ? this.filters_arr : this.filters_arr.slice(0, index);
+            var aid_map = {};
+            var rlt_arr = [];
+            if (this.records_arr) {
+                this.records_arr.forEach(function (rcd) {
+                    for (var fi in useFilters_arr) {
+                        var tFilter = useFilters_arr[fi];
+                        if (!tFilter.bAll && !tFilter.selectedValues[rcd[tFilter.name]]) {
+                            return;
+                        }
+                    }
+
+                    var cv = rcd[colkey].toString();
+                    if (aid_map[cv] == null) {
+                        aid_map[cv] = true;
+                        rlt_arr.push(cv);
+                    }
+                });
+            }
+            if (this.valuesCache == null) {
+                this.valuesCache = {};
+            }
+            rlt_arr.sort(this.valueSortFun);
+            this.valuesCache[colkey] = {
+                aid_map: aid_map,
+                rlt_arr: rlt_arr
+            };
+            return rlt_arr;
+        }
+    }, {
+        key: 'setSort',
+        value: function setSort(colkey, header, type) {
+            var bForceFresh = false;
+            if (this.sort.header) {
+                if (this.sort.header != header) {
+                    this.sort.header.setState({
+                        sortType: null
+                    });
+                } else if (this.sort.header == header && this.sort.type == type) {
+                    colkey = null;
+                    bForceFresh = true;
+                    type = null;
+                }
+            }
+            this.sort.colkey = colkey;
+            this.sort.type = type;
+            if (header) {
+                header.setState({
+                    sortType: type
+                });
+                if (colkey == null) {
+                    header = null;
+                }
+            }
+            this.sort.header = header;
+            if (bForceFresh || this.isValid()) {
+                this.reProcess();
+            }
+        }
+    }, {
+        key: 'isValid',
+        value: function isValid() {
+            return this.records_arr && this.records_arr.length > 0 && (this.sort.colkey || this.filters_arr.length > 0);
+        }
+    }, {
+        key: 'setRecords',
+        value: function setRecords(records_arr) {
+            this.records_arr = records_arr;
+            this.valuesCache = {};
+            if (records_arr == null) {
+                if (this.lastClickHeader) {
+                    this.lastClickHeader.closePopper(true);
+                }
+                return false;
+            }
+
+            if (this.isValid()) {
+                this.reProcess();
+                return true;
+            }
+            return false;
+        }
+    }, {
+        key: 'sortFun',
+        value: function sortFun(a, b) {
+            var akey = a[this.sort.colkey];
+            var bkey = b[this.sort.colkey];
+            if (akey.localeCompare && bkey.localeCompare) {
+                return akey.localeCompare(bkey) * (this.sort.type == 'asc' ? 1 : -1);
+            }
+
+            if (akey == bkey) {
+                return 0;
+            }
+            if (this.sort.type == 'asc') {
+                if (akey < bkey) {
+                    return -1;
+                }
+                return 1;
+            } else {
+                if (akey < bkey) {
+                    return 1;
+                }
+                return -1;
+            }
+        }
+    }, {
+        key: 'reProcess',
+        value: function reProcess() {
+            var _this37 = this;
+
+            var rlt_arr = this.records_arr.concat();
+            if (this.filters_arr.length > 0) {
+                var filters_arr = this.filters_arr;
+                rlt_arr = rlt_arr.filter(function (rcd) {
+                    for (var fi in filters_arr) {
+                        var filter = filters_arr[fi];
+                        if (!filter.bAll && !filter.selectedValues[rcd[filter.name]]) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+            }
+            if (this.sort.colkey) {
+                rlt_arr.sort(this.sortFun);
+            }
+            rlt_arr.fromReProcess = true;
+            setTimeout(function () {
+                ++_this37.dataversion;
+                store.dispatch(makeAction_setStateByPath(rlt_arr, _this37.formPath + '.records_arr'));
+            }, 200);
+        }
+    }]);
+
+    return ERPCFormSetting;
+}();
+
+function gGetFormSetting(formPath) {
+    var setting = gDataCache.get(formPath + '_setting');
+    if (setting == null) {
+        setting = new ERPCFormSetting(formPath);
+        gDataCache.set(formPath + '_setting', setting);
+    }
+    return setting;
+}
+
+function gCreatFormSetting(form) {
+    var setting = gGetFormSetting(form.props.fullPath);
+    setting.form = form;
+    return setting;
+}
+
+var ERPC_AdvanceFormHeader = function (_React$PureComponent24) {
+    _inherits(ERPC_AdvanceFormHeader, _React$PureComponent24);
+
+    function ERPC_AdvanceFormHeader(props) {
+        _classCallCheck(this, ERPC_AdvanceFormHeader);
+
+        var _this38 = _possibleConstructorReturn(this, (ERPC_AdvanceFormHeader.__proto__ || Object.getPrototypeOf(ERPC_AdvanceFormHeader)).call(this, props));
+
+        _this38.state = {};
+        _this38.rootRef = React.createRef();
+        _this38.popRef = React.createRef();
+        _this38.valueDivRef = React.createRef();
+        _this38.clickHeaderHandler = _this38.clickHeaderHandler.bind(_this38);
+        _this38.clickSortBtn = _this38.clickSortBtn.bind(_this38);
+        _this38.clickSelectAll = _this38.clickSelectAll.bind(_this38);
+        _this38.clickUnselectAll = _this38.clickUnselectAll.bind(_this38);
+        _this38.reRender = _this38.reRender.bind(_this38);
+        _this38.clickFilterElem = _this38.clickFilterElem.bind(_this38);
+        _this38.closePopper = _this38.closePopper.bind(_this38);
+        _this38.valueDivScrollHandler = _this38.valueDivScrollHandler.bind(_this38);
+        _this38.keyInputChanged = _this38.keyInputChanged.bind(_this38);
+        return _this38;
+    }
+
+    _createClass(ERPC_AdvanceFormHeader, [{
+        key: 'closePopper',
+        value: function closePopper(autoSetState) {
+            if (this.state.popper) {
+                this.state.popper.destroy();
+                if (autoSetState != false) {
+                    this.setState({
+                        popper: null
+                    });
+                    var filter = this.state.filter;
+                    if (filter) {
+                        setTimeout(function () {
+                            filter.confirm();
+                        }, 200);
+                    }
+                }
+            }
+        }
+    }, {
+        key: 'componentWillUnmount',
+        value: function componentWillUnmount() {
+            this.closePopper(false);
+            var formSetting = gGetFormSetting(this.props.form.props.fullPath);
+            if (formSetting.sort.header == this) {
+                formSetting.sort.header = null;
+                formSetting.sort.colkey = null;
+            }
+            var filter = formSetting.getFilter(this.props.colkey);
+            filter.header = null;
+            this.unmounted = true;
+        }
+    }, {
+        key: 'clickHeaderHandler',
+        value: function clickHeaderHandler(ev) {
+            if (this.state.popper) {
+                this.closePopper(true);
+                return;
+            }
+            var formSetting = gGetFormSetting(this.props.form.props.fullPath);
+            var records_arr = formSetting.records_arr;
+            if (!records_arr || records_arr.length == 0) {
+                return; // no data
+            }
+            var popper = Popper.createPopper(this.rootRef.current, this.popRef.current, {
+                placement: 'bottom',
+                strategy: 'absolute'
+            });
+
+            var filter = formSetting.getFilter(this.props.colkey);
+            filter.header = this;
+            this.values_arr = filter.getValues(false);
+            this.setState({
+                popper: popper,
+                filter: filter,
+                maxCount: 20,
+                keyword: ''
+            });
+            if (formSetting.lastClickHeader) {
+                formSetting.lastClickHeader.closePopper(true);
+            }
+            formSetting.lastClickHeader = this;
+        }
+    }, {
+        key: 'clickSortBtn',
+        value: function clickSortBtn(ev) {
+            var type = getAttributeByNode(ev.target, 'd-type', true, 5);
+            if (type == null) {
+                console.warn('no type');
+                return;
+            }
+            var formSetting = gGetFormSetting(this.props.form.props.fullPath);
+            formSetting.setSort(this.props.colkey, this, type);
+            this.closePopper(true);
+        }
+    }, {
+        key: 'clickSelectAll',
+        value: function clickSelectAll(ev) {
+            var filter = this.state.filter;
+            if (filter && filter.bAll == false) {
+                filter.selectAll();
+                this.reRender();
+            }
+        }
+    }, {
+        key: 'clickUnselectAll',
+        value: function clickUnselectAll(ev) {
+            var filter = this.state.filter;
+            if (filter) {
+                filter.unSelectAll();
+                this.reRender();
+            }
+        }
+    }, {
+        key: 'clickFilterElem',
+        value: function clickFilterElem(ev) {
+            var key = getAttributeByNode(ev.target, 'd-key', true, 5);
+            if (key == null) {
+                console.warn('no key');
+                return;
+            }
+            var filter = this.state.filter;
+            if (filter) {
+                filter.toggleSelect(key);
+                this.reRender();
+            }
+        }
+    }, {
+        key: 'reRender',
+        value: function reRender() {
+            if (this.unmounted) {
+                return;
+            }
+            this.setState({
+                magicObj: {}
+            });
+        }
+    }, {
+        key: 'valueDivScrollHandler',
+        value: function valueDivScrollHandler(ev) {
+            if (this.valueDivRef.current) {
+                var valueDiv = this.valueDivRef.current;
+                var height = $(valueDiv).height();
+                if ((valueDiv.scrollTop + height) / valueDiv.scrollHeight > 0.95) {
+                    this.setState({
+                        maxCount: this.state.maxCount + 20
+                    });
+                }
+            }
+        }
+    }, {
+        key: 'keyInputChanged',
+        value: function keyInputChanged(ev) {
+            this.setState({
+                keyword: ev.target.value
+            });
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var _this39 = this;
+
+            var filterElem;
+            var filter = this.state.filter;
+            if (this.props.canFilt && filter) {
+                var values_arr = this.values_arr;
+                var keyword = this.state.keyword.trim();
+                var filtedValues_arr = values_arr;
+                if (!IsEmptyString(keyword)) {
+                    filtedValues_arr = values_arr.filter(function (x) {
+                        return x.indexOf(keyword) != -1;
+                    });
+                }
+                this.filtedValues_arr = filtedValues_arr;
+                filterElem = React.createElement(
+                    React.Fragment,
+                    null,
+                    React.createElement(
+                        'span',
+                        { className: 'shadow border-top btn-group align-items-center p-1' },
+                        '\u7B5B\u9009',
+                        React.createElement(
+                            'button',
+                            { onClick: this.clickSelectAll, className: 'btn btn-sm btn-dark' },
+                            '\u5168\u9009'
+                        ),
+                        React.createElement(
+                            'button',
+                            { onClick: this.clickUnselectAll, className: 'btn btn-sm btn-dark' },
+                            '\u5168\u4E0D\u9009'
+                        )
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'flex-shrink-0 flex-grow-0 input-group flex-nowrap' },
+                        React.createElement(
+                            'div',
+                            { className: 'input-group-prepend' },
+                            React.createElement(
+                                'span',
+                                { className: 'text-primary input-group-text p-1' },
+                                React.createElement('i', { className: 'fa fa-search' })
+                            )
+                        ),
+                        React.createElement('input', { className: 'form-control', type: 'text', value: keyword, onChange: this.keyInputChanged })
+                    ),
+                    React.createElement(
+                        'div',
+                        { ref: this.valueDivRef, onScroll: filtedValues_arr.length > this.state.maxCount ? this.valueDivScrollHandler : null, className: 'list-group autoScroll border rounded', style: { maxHeight: '400px' } },
+                        filtedValues_arr.slice(0, this.state.maxCount).map(function (x, i) {
+                            return React.createElement(
+                                'div',
+                                { 'd-key': x, onClick: _this39.clickFilterElem, className: 'list-group-item flex-grow-0 flex-shrink-0 cursor_hand p-2 d-flex', key: i },
+                                React.createElement(
+                                    'span',
+                                    { className: 'fa-stack fa-lg' },
+                                    React.createElement('i', { className: 'fa fa-square-o fa-stack-2x' }),
+                                    filter.bAll || filter.selectedValues[x] ? React.createElement('i', { className: 'fa fa-stack-1x fa-check text-' + (filter.bAll ? 'warning' : 'success') }) : null
+                                ),
+                                x
+                            );
+                        })
+                    )
+                );
+            }
+            return React.createElement(
+                React.Fragment,
+                null,
+                React.createElement(
+                    'div',
+                    { ref: this.rootRef, className: 'btn btn-sam btn-link p-0', onClick: this.clickHeaderHandler },
+                    this.props.title,
+                    this.state.sortType == null ? null : React.createElement('i', { className: "fa fa-long-arrow-" + (this.state.sortType == 'asc' ? 'up' : 'down') }),
+                    filter && !filter.bAll ? React.createElement(
+                        'span',
+                        { className: 'fa fa-filter' },
+                        filter.index
+                    ) : null
+                ),
+                React.createElement(
+                    'div',
+                    { ref: this.popRef, className: 'bg-light shadow flex-column p-1 border rounded d-' + (this.state.popper ? 'flex' : 'none'), style: { width: '200px', zIndex: 5000 } },
+                    React.createElement(
+                        'div',
+                        { className: 'btn-group border m-1' },
+                        React.createElement(
+                            'button',
+                            { 'd-type': 'asc', className: 'btn flex-grow-1 flex-shrink-1 text-right btn-' + (this.state.sortType == 'asc' ? 'primary' : 'light'), onClick: this.clickSortBtn },
+                            '\u5347\u5E8F\u6392\u5217'
+                        ),
+                        React.createElement(
+                            'button',
+                            { 'd-type': 'desc', className: 'btn flex-grow-1 flex-shrink-1 text-right btn-' + (this.state.sortType == 'desc' ? 'primary' : 'light'), onClick: this.clickSortBtn },
+                            '\u964D\u5E8F\u6392\u5217'
+                        )
+                    ),
+                    filterElem,
+                    React.createElement(
+                        'button',
+                        { className: 'btn btn-sm btn-danger', onClick: this.closePopper },
+                        '\u5173\u95ED'
+                    )
+                )
+            );
+        }
+    }]);
+
+    return ERPC_AdvanceFormHeader;
+}(React.PureComponent);

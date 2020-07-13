@@ -129,7 +129,7 @@ function makeFName_pull(formKernel){
 }
 
 function makeFName_RowBind(formKernel){
-    return 'rowbind_' + formKernel.id;
+    return formKernel.id + '_' +  AttrNames.Event.OnRowBind;
 }
 
 function makeStr_callFun(funName, params_arr, endChar = ''){
@@ -383,6 +383,9 @@ const AttrNames={
     ColumnName:'columnname',
     ValuesArray:'valuesarray',
     ChartType:'charttype',
+    Sortable:'sortable',
+    Filtable:'filtable',
+    ColumnValueField:'columnvaluefield',
 
     Event:{
         OnClick:'onclick',
@@ -401,6 +404,8 @@ const AttrNames={
         OnReceiveMsg:'onReceiveMsg',
         OnCollapse:'onCollapse',
         OnUnCollapse:'onUnCollapse',
+        OnRowBind:'onRowBind',
+        OnClickRefresh:'onclickrefresh',
     },
 
     Function:{

@@ -155,6 +155,11 @@ const JSNodeEditorControls_arr =[
         type:'操纵数据对象'
     },
     {
+        label:'Modify-数据对象',
+        nodeClass:JSNode_CusObject_Modify,
+        type:'操纵数据对象'
+    },
+    {
         label:'Get对象属性',
         nodeClass:JSNode_GetObjectProp,
         type:'操纵对象'
@@ -258,6 +263,11 @@ const JSNodeEditorControls_arr =[
         label:'散列表单行数据',
         nodeClass:JSNode_HashFormDataRow,
         type:'表单访问'
+    },
+    {
+        label:'散列数据源单行数据',
+        nodeClass:JSNode_HashDataSourceRow,
+        type:'操纵对象'
     },
     {
         label:'遍历表单行',
@@ -1711,6 +1721,7 @@ class C_JSNode_Editor extends React.PureComponent{
     }
 
     clickExportBtnHandler(ev){
+        /*
         console.log("Start export");
         var editingNode = this.state.editingNode;
         var ajp = new AttrJsonProfile();
@@ -1718,6 +1729,38 @@ class C_JSNode_Editor extends React.PureComponent{
         //json.dictionary = ajp.dictionary;
         var text = JSON.stringify(json);
         console.log(text);
+        */
+        if(this.props.bluePrint){
+            var scriptJsonProf = new AttrJsonProfile();
+            var scriptJson = this.props.bluePrint.getJson(scriptJsonProf);
+            gCopiedCustomScriptData = scriptJson;
+            this.logManager.log('已复制蓝图');
+        }
+    }
+
+    clickImportBtnHandler(ev){
+        if(this.props.bluePrint && gCopiedCustomScriptData){
+            gTipWindow.popAlert(makeAlertData('警告', '确定要用"' + gCopiedCustomScriptData.name + '"来替换此蓝图吗?', this.importTipCallback, [TipBtnOK, TipBtnNo]));
+        }
+    }
+
+    importTipCallback(key){
+        if (key == 'ok') {
+            var editingNode = this.state.editingNode;
+            var useJson = JSON.parse(JSON.stringify(gCopiedCustomScriptData));
+            useJson.code = editingNode.code;
+            useJson.name = editingNode.name;
+            useJson.group = editingNode.group;
+            useJson.uuid = editingNode.uuid;
+            useJson.ctlID = editingNode.ctlID;
+            var creationHelper = new NodeCreationHelper(); 
+            creationHelper.project = this.props.bluePrint.master.project;
+            editingNode.reCreate({}, useJson, creationHelper);
+            var self = this;
+            setTimeout(() => {
+                self.setState({magicObj: {}});
+            }, 1000)
+        }
     }
 
     render(){
@@ -1781,6 +1824,7 @@ class C_JSNode_Editor extends React.PureComponent{
                                     <div className='btn-group flex-grow-0 flex-shrink-0'>
                                         <button type='button' onClick={this.clickCompileBtnHandler} className='btn btn-dark' >编译</button>
                                         <button type='button' onClick={this.clickExportBtnHandler} className='btn btn-dark' >导出</button>
+                                        <button type='button' onClick={this.clickImportBtnHandler} className='btn btn-dark' >导入</button>
                                         <button type='button' onClick={this.clickBigBtnHandler} className='btn btn-dark' ><i className='fa fa-search-plus' /></button>
                                         <button type='button' onClick={this.clickSmallBtnHandler} className='btn btn-dark' ><i className='fa fa-search-minus' /></button>
                                         <QuickKeyWordSynBar />

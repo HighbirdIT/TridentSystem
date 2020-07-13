@@ -8,6 +8,7 @@ const JSNODE_ARRAY_POP = 'array_pop';
 const JSNODE_ARRAY_JOIN = 'array_join';
 const JSNODE_ARRAY_SLICE = 'array_slice';
 const JSNODE_ARRAY_GET = 'array_get';
+const JSNODE_ARRAY_REVERSE = 'array_reverse';
 const JSNODE_GETDAY = 'getDay';
 const JSNODE_FORMATNUM = 'formatnum';
 const JSNODE_CAPITALNUM = 'capitalnum';
@@ -221,7 +222,7 @@ class JSNode_Array_Concat extends JSNode_Base {
 
 class JSNode_Array_Get extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, JSNODE_ARRAY_GET, '数据-Get', false, nodeJson);
+        super(initData, parentNode, createHelper, JSNODE_ARRAY_GET, '数组-Get', false, nodeJson);
         autoBind(this);
 
         if (nodeJson) {
@@ -283,6 +284,66 @@ class JSNode_Array_Get extends JSNode_Base {
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, arrValue + '[' + dataValue + ']');
         helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+class JSNode_Array_Reverse extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_ARRAY_REVERSE, '数组-Reverse', false, nodeJson);
+        autoBind(this);
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+        if (this.inputScokets_arr.length > 0) {
+            this.inputScokets_arr.forEach(socket => {
+                if (socket.name == 'arr') {
+                    this.arrSocket = socket;
+                }
+            });
+        }
+        if (this.arrSocket == null) {
+            this.arrSocket = this.addSocket(new NodeSocket('arr', this, true));
+        }
+        this.arrSocket.type = ValueType.Array;
+        this.arrSocket.inputable = false;
+        this.arrSocket.label = 'array';
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var socketComRet = this.getSocketCompileValue(helper, this.arrSocket, usePreNodes_arr, belongBlock, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var arrValue = socketComRet.value;
+
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+        var selfCompileRet = new CompileResult(this);
+        myJSBlock.pushLine(arrValue + '.reverse();');
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
+            return false;
+        }
         return selfCompileRet;
     }
 }
@@ -757,7 +818,9 @@ class JSNode_GetDay extends JSNode_Base {
             for (nodeI = preNodes_arr.length - 1; nodeI > 0; --nodeI) {
                 var temNode = preNodes_arr[nodeI];
                 if (temNode.inFlowSocket) {
-                    blockInServer = temNode.hadFetchFun;
+                    if(temNode.type != JSNODE_EXPORTEXCEL){
+                        blockInServer = temNode.hadFetchFun;
+                    }
                     break;
                 }
             }
@@ -1532,6 +1595,10 @@ JSNodeClassMap[JSNODE_ARRAY_UNSHIFT] = {
     modelClass: JSNode_Array_Unshift,
     comClass: C_Node_SimpleNode,
 };
+JSNodeClassMap[JSNODE_ARRAY_REVERSE] = {
+    modelClass: JSNode_Array_Reverse,
+    comClass: C_Node_SimpleNode,
+};
 /*
 JSNodeEditorControls_arr.push(
     {
@@ -1592,6 +1659,12 @@ JSNodeEditorControls_arr.push(
     {
         label: '数组-Slice',
         nodeClass: JSNode_Array_Slice,
+        type: '数组操控'
+    });
+JSNodeEditorControls_arr.push(
+    {
+        label: '数组-Reverse',
+        nodeClass: JSNode_Array_Reverse,
         type: '数组操控'
     });
 

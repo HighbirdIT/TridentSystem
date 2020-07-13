@@ -36,6 +36,8 @@ class ProjectResPanel extends React.PureComponent {
             return;
         }
         var project = this.props.project;
+        gCopiedPageData.targetControl.ispcPage = project.getNowEditingType() == 'PC';
+        var project = this.props.project;
         project.pasteKernel(gCopiedPageData, null, null);
 
         setTimeout(this.reRender, 500);

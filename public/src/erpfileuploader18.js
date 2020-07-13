@@ -501,59 +501,62 @@ class ERPC_QRCodeUploader extends React.PureComponent {
     constructor(props) {
         super();
         autoBind(this);
-        this.style={
-            width:'400px',
+        this.style = {
+            width: '400px',
         };
         this.state = {
-            info:''
+            info: ''
         }
     }
 
-    watchingSingleMode(uuid){
+    watchingSingleMode(uuid) {
         var self = this;
         var fileFlow = this.props.fileFlow ? parseInt(this.props.fileFlow) : null;
         var relrecordid = this.props.relrecordid ? parseInt(this.props.relrecordid) : null;
         var fileRecord;
         var makeAttachmentProcess = (state, ret_data, ret_err) => {
-            if(self.unmounted){
+            if (self.unmounted) {
                 return;
             }
-            if(ret_data != null) {
+            if (ret_data != null) {
                 fileRecord.attachmentID = ret_data.attachmentID;
-                if(self.props.onUploaded){
+                if (self.props.onUploaded) {
                     self.props.onUploaded(fileRecord);
                 }
                 return;
             }
             setTimeout(() => {
-                if(self.unmounted){
+                if (self.unmounted) {
                     return;
                 }
-                store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: { fileFlow: fileFlow, 
-                    relrecordid: relrecordid,
-                    fileid: fileRecord.文件上传记录代码, 
-                }, action: 'makeAttachment', }, makeFTD_Callback(makeAttachmentProcess)));
+                store.dispatch(fetchJsonPost(fileSystemUrl, {
+                    bundle: {
+                        fileFlow: fileFlow,
+                        relrecordid: relrecordid,
+                        fileid: fileRecord.文件上传记录代码,
+                    }, action: 'makeAttachment',
+                }, makeFTD_Callback(makeAttachmentProcess)));
             }, 200);
         }
         var queryProcess = (state, ret_data, ret_err) => {
-            if(self.unmounted){
+            if (self.unmounted) {
                 return;
             }
             if (ret_data != null) {
                 fileRecord = ret_data[0];
-                if(fileFlow > 0 && relrecordid > 0){
+                if (fileFlow > 0 && relrecordid > 0) {
                     self.setState({
-                        info:'正在生成附件记录'
+                        info: '正在生成附件记录'
                     });
                     makeAttachmentProcess();
                 }
-                else if(self.props.onUploaded){
+                else if (self.props.onUploaded) {
                     self.props.onUploaded(fileRecord);
                 }
                 return;
             }
             setTimeout(() => {
-                if(this.unmounted){
+                if (this.unmounted) {
                     return;
                 }
                 store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: { key: uuid }, action: 'queryQRCodeFiles', }, makeFTD_Callback(queryProcess)));
@@ -562,18 +565,18 @@ class ERPC_QRCodeUploader extends React.PureComponent {
         queryProcess();
     }
 
-    watchingMultiMode(uuid){
+    watchingMultiMode(uuid) {
         var self = this;
         var processFile_map = {};
         var queryProcess = (state, ret_data, ret_err) => {
-            if(self.unmounted){
+            if (self.unmounted) {
                 return;
             }
             var addedFiles_arr = [];
             if (ret_data != null) {
                 ret_data.forEach(
-                    fileRecord=>{
-                        if(processFile_map[fileRecord.文件上传记录代码]){
+                    fileRecord => {
+                        if (processFile_map[fileRecord.文件上传记录代码]) {
                             return;
                         }
                         processFile_map[fileRecord.文件上传记录代码] = true;
@@ -581,16 +584,16 @@ class ERPC_QRCodeUploader extends React.PureComponent {
                     }
                 );
             }
-            if(addedFiles_arr.length > 0){
-                if(self.props.onUploaded){
+            if (addedFiles_arr.length > 0) {
+                if (self.props.onUploaded) {
                     self.props.onUploaded(addedFiles_arr);
                 }
                 self.setState({
-                    files_arr:ret_data,
+                    files_arr: ret_data,
                 });
             }
             setTimeout(() => {
-                if(this.unmounted){
+                if (this.unmounted) {
                     return;
                 }
                 store.dispatch(fetchJsonPost(fileSystemUrl, { bundle: { key: uuid }, action: 'queryQRCodeFiles', }, makeFTD_Callback(queryProcess)));
@@ -605,52 +608,53 @@ class ERPC_QRCodeUploader extends React.PureComponent {
         var self = this;
         this.uuid = uuid;
 
-        store.dispatch(fetchJsonPost('/makeqrcode2', {text: window.location.origin + '/erppage/mb/SMSCWJ?flowStep='+(multiMode ? 219 : 218)+'&stepData'+(multiMode ? 219 : 218)+'=' + uuid}, makeFTD_Callback((state, imgUrl)=>{
+        store.dispatch(fetchJsonPost('/makeqrcode2', { text: window.location.origin + '/erppage/mb/SMSCWJ?flowStep=' + (multiMode ? 219 : 218) + '&stepData' + (multiMode ? 219 : 218) + '=' + uuid }, makeFTD_Callback((state, imgUrl) => {
             self.setState({
-                imgUrl:imgUrl
+                imgUrl: imgUrl
             });
-            if(!multiMode){
+            if (!multiMode) {
                 self.watchingSingleMode(uuid);
             }
-            else{
+            else {
                 self.watchingMultiMode(uuid);
             }
         })));
     }
 
-    componentWillUnmount(){
+    componentWillUnmount() {
         this.unmounted = true;
     }
 
-    clickCloseHandler(ev){
-        if(this.props.onClose){
+    clickCloseHandler(ev) {
+        if (this.props.onClose) {
             this.props.onClose();
         }
     }
 
     render() {
         var qrImg = null;
-        if(this.state.imgUrl){
+        if (this.state.imgUrl) {
             qrImg = <img src={this.state.imgUrl} />
         }
-        else{
+        else {
             qrImg = <span>二维码加载中<i className='fa fa-spinner fa-spin' /></span>
         }
         var fileListElem = null;
-        if(this.state.files_arr){
+        if (this.state.files_arr) {
             fileListElem = <React.Fragment>
-            <span>{'已上传' + this.state.files_arr.length + '个文件'}</span>
-            <div className='list-group flex-grow-0 flex-shrink-0 autoScroll' style={{maxHeight:'300px'}}>
-                {this.state.files_arr.map(x=>{
-                    return <div className='list-group-item' key={x.文件上传记录代码} >{x.文件名称}</div>
-                })}
-            </div>
+                <span>{'已上传' + this.state.files_arr.length + '个文件'}</span>
+                <div className='list-group flex-grow-0 flex-shrink-0 autoScroll' style={{ maxHeight: '300px' }}>
+                    {this.state.files_arr.map(x => {
+                        return <div className='list-group-item' key={x.文件上传记录代码} >{x.文件名称}</div>
+                    })}
+                </div>
             </React.Fragment>
         }
-        return <div className="position-absolute centerelem d-flex bg-light flex-column" style={this.style}>
+        return <div className='d-fixed w-100 h-100 fixedBackGround'>
+            <div className="position-absolute centerelem d-flex bg-light flex-column" style={this.style}>
                 <div className="d-flex bg-primary p-1 ">
-                    <h5 className="text-light flex-grow-1 flex-shrink-1">扫码上传文件</h5>
-                    <button onClick={this.clickCloseHandler} type="button" className="btn btn-sm btn-danger"><i className="fa fa-close"/></button>
+                    <h5 className="text-light flex-grow-1 flex-shrink-1">扫码上传{this.props.multiMode ? '多个' : '单个'}文件</h5>
+                    <button onClick={this.clickCloseHandler} type="button" className="btn btn-sm btn-danger"><i className="fa fa-close" /></button>
                 </div>
                 <div className='d-flex p-1 flex-column'>
                     <span >请用钉钉扫码</span>
@@ -661,6 +665,7 @@ class ERPC_QRCodeUploader extends React.PureComponent {
                     {fileListElem}
                 </div>
             </div>
+        </div>
     }
 }
 
@@ -803,20 +808,20 @@ class ERPC_SingleFileUploader extends React.PureComponent {
         }
     }
 
-    clickQRCodehandler(ev){
+    clickQRCodehandler(ev) {
         var qrUploader;
         var self = this;
-        var clickCloseAct = ()=>{
+        var clickCloseAct = () => {
             removeFixedItem(qrUploader);
         };
-        var uploaded=(fileRecord)=>{
+        var uploaded = (fileRecord) => {
             var fileUploader = self.uploader;
             fileUploader.fileProfile = {
                 name: fileRecord.文件名称,
                 size: fileRecord.文件大小,
                 type: fileRecord.文件类型,
                 code: fileRecord.文件上传记录代码,
-                attachmentID:fileRecord.attachmentID,
+                attachmentID: fileRecord.attachmentID,
             };
             fileUploader.fileFlow = self.props.fileflow;
             fileUploader.relrecordid = self.props.relrecordid;
@@ -1086,7 +1091,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                                 {isMobile ? null : <div className='text-nowrap'><i className='fa fa-hand-rock-o' />拖拽文件</div>}
                             </span>
                         </div>;
-                        if(!isMobile){
+                        if (!isMobile) {
                             qrCodeBtn = <div className='text-nowrap cursor_hand qrcodebtn' onClick={this.clickQRCodehandler}><i className='fa fa-qrcode' />扫码上传</div>
                         }
                     }
@@ -1145,7 +1150,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                     iconElem = <i className={'fa fa-5x centerelem position-absolute ' + aidData.fileIconType} />;
                 }
                 preViewBtn = <button onClick={this.clickPreviewHandler} type='button' className='btn btn-sm btn-primary'><i className={'fa fa-' + (aidData.canPreview ? 'eye' : 'download')} /></button>;
-                if(fileUploader.base64Data == null && fileUploader.previewUrl && fileUploader.fileProfile.type.indexOf('image/') != -1 ) {
+                if (fileUploader.base64Data == null && fileUploader.previewUrl && fileUploader.fileProfile.type.indexOf('image/') != -1) {
                     iconElem = <img className='border w-100 h-100 centerelem position-absolute' src={fileUploader.previewUrl} />;
                 }
                 break;
@@ -1340,7 +1345,7 @@ class CFileUploaderBar extends React.PureComponent {
             if (fileUploader.base64Data) {
                 iconElem = <img className='border' style={{ width: '3em', height: '3em' }} src={fileUploader.base64Data} />
             }
-            else if(fileUploader.previewUrl && fileUploader.fileProfile.type.indexOf('image/') != -1){
+            else if (fileUploader.previewUrl && fileUploader.fileProfile.type.indexOf('image/') != -1) {
                 iconElem = <img className='border' style={{ width: '3em', height: '3em' }} src={fileUploader.previewUrl} />
             }
             else {
@@ -1422,17 +1427,17 @@ class ERPC_MultiFileUploader extends React.PureComponent {
         }, this.props.fullPath));
     }
 
-    clickQRCodehandler(ev){
+    clickQRCodehandler(ev) {
         var qrUploader;
         var self = this;
-        var clickCloseAct = ()=>{
+        var clickCloseAct = () => {
             removeFixedItem(qrUploader);
         };
         var uploaders = this.props.uploaders;
         var newuploaders = uploaders ? uploaders.concat() : [];
-        var uploaded=(files_arr)=>{
+        var uploaded = (files_arr) => {
             newuploaders = newuploaders.concat();
-            files_arr.forEach(fileRecord=>{
+            files_arr.forEach(fileRecord => {
                 var fileUploader = new FileUploader();
                 fileUploader.state = EFileUploaderState.COMPLETE;
                 fileUploader.previewUrl = fileRecord.文件路径;
@@ -1455,7 +1460,7 @@ class ERPC_MultiFileUploader extends React.PureComponent {
                     invalidInfo: null,
                 }, this.props.fullPath));
 
-                files_arr.forEach(fileRecord=>{
+                files_arr.forEach(fileRecord => {
                     self.uploaderJobDone(fileRecord.fileUploader);
                 });
             }, 200);
@@ -1793,8 +1798,8 @@ class ERP_Form_ShowData extends React.PureComponent {
         ERPC_GridForm(this);
         this.tableBodyScroll = this.tableBodyScroll.bind(this);
         this.headtableStyle = { "marginBottom": "0px", width: '40em', "tableLayout": "fixed" };
-        this.state={
-            percent:0,
+        this.state = {
+            percent: 0,
         };
     }
     render() {
@@ -1804,11 +1809,11 @@ class ERP_Form_ShowData extends React.PureComponent {
         var topBlankHeight = totalHeight - needShowHeight;
         var baseIndex = Math.floor(1.0 * topBlankHeight / ERP_Form_ShowData_RowHeight);
         var startIndex = baseIndex - 30;
-        if(startIndex < 0){
+        if (startIndex < 0) {
             startIndex = 0;
         }
         var endIndex = baseIndex + 29;
-        if(endIndex > this.props.records_arr.length){
+        if (endIndex > this.props.records_arr.length) {
             endIndex = this.props.records_arr.length;
         }
         this.startIndex = startIndex;
@@ -1821,12 +1826,12 @@ class ERP_Form_ShowData extends React.PureComponent {
                     </table>
                 </div>
                 <div id={this.props.fullPath + 'scroller'} onScroll={this.tableBodyScroll} className='mw-100 autoScroll'>
-                    <ERP_Form_TBody  fullPath={this.props.fullPath} form={this} headers={this.props.headers} records_arr={this.props.records_arr} startIndex={startIndex} endIndex={endIndex} />
+                    <ERP_Form_TBody fullPath={this.props.fullPath} form={this} headers={this.props.headers} records_arr={this.props.records_arr} startIndex={startIndex} endIndex={endIndex} />
                 </div>
             </div>);
     }
     tableBodyScroll(ev) {
-        if(this.memScrollTop){
+        if (this.memScrollTop) {
             document.getElementById(this.props.fullPath + 'scroller').scrollTop = this.memScrollTop;
             this.memScrollTop = null;
             return;
@@ -1834,12 +1839,12 @@ class ERP_Form_ShowData extends React.PureComponent {
         document.getElementById(this.props.fullPath + 'tableheader').scrollLeft = ev.target.scrollLeft;
 
         var scrollPercent = ev.target.scrollTop / ev.target.scrollHeight;
-        var changeSize = Math.abs(scrollPercent - this.state.percent) * ev.target.scrollHeight; 
-        if(changeSize > ERP_Form_ShowData_RowHeight * 3){
+        var changeSize = Math.abs(scrollPercent - this.state.percent) * ev.target.scrollHeight;
+        if (changeSize > ERP_Form_ShowData_RowHeight * 3) {
             this.memScrollTop = ev.target.scrollTop;
             console.log('fresh');
             this.setState({
-                percent:scrollPercent,
+                percent: scrollPercent,
             });
         }
     }
@@ -1868,7 +1873,7 @@ class ERP_Form_ShowData_THead extends React.PureComponent {
 class ERP_Form_TBody extends React.PureComponent {
     constructor(props) {
         super(props);
-        this.tdStyle = { "width": "10em", "verticalAlign": "middle","height":'' + ERP_Form_ShowData_RowHeight + 'px',"overflow":'hidden',"whiteSpace":'nowrap' };
+        this.tdStyle = { "width": "10em", "verticalAlign": "middle", "height": '' + ERP_Form_ShowData_RowHeight + 'px', "overflow": 'hidden', "whiteSpace": 'nowrap' };
         this.tableStyle = { "marginTop": "-50px", width: '40em', "tableLayout": "fixed" };
     }
     render() {
@@ -1876,7 +1881,7 @@ class ERP_Form_TBody extends React.PureComponent {
         var formProp = this.props.form.props;
         var records_arr = this.props.records_arr;
         var headers = this.props.headers;
-        trElems_arr.push(<tr style={{'height':(this.props.startIndex * ERP_Form_ShowData_RowHeight) + 'px'}} key='extra_row_top' id='extra_row_top' />);
+        trElems_arr.push(<tr style={{ 'height': (this.props.startIndex * ERP_Form_ShowData_RowHeight) + 'px' }} key='extra_row_top' id='extra_row_top' />);
         for (var rowIndex = this.props.startIndex; rowIndex < this.props.endIndex; ++rowIndex) {
             var rowRecord = records_arr[rowIndex];
             var rowkey = rowIndex;
@@ -1892,7 +1897,7 @@ class ERP_Form_TBody extends React.PureComponent {
                     }
                 </tr>);
         }
-        trElems_arr.push(<tr style={{'height':((records_arr.length - this.props.endIndex) * ERP_Form_ShowData_RowHeight) + 'px'}} key='extra_row_bottom' id='extra_row_bottom' />);
+        trElems_arr.push(<tr style={{ 'height': ((records_arr.length - this.props.endIndex) * ERP_Form_ShowData_RowHeight) + 'px' }} key='extra_row_bottom' id='extra_row_bottom' />);
         return (<table className='table table-striped table-hover ' style={this.tableStyle}>
             <ERP_Form_ShowData_THead form={this.props.form} headers={this.props.headers} />
             <tbody>{trElems_arr}</tbody>
@@ -2100,7 +2105,7 @@ class ERPC_ExcelImporter extends React.PureComponent {
                 readingInfo: '进度:' + (row_i) + '/' + rows_arr.length,
             });
             var rowStr = rows_arr[row_i];
-            let cols_arr = rowStr.split("\t").map(x=>{return x.trim();});
+            let cols_arr = rowStr.split("\t").map(x => { return x.trim(); });
             if (row_i == 0) {
                 if (nowData) {
                     var allHit = true;
@@ -2129,11 +2134,11 @@ class ERPC_ExcelImporter extends React.PureComponent {
                 }
             }
             var nowTime = new Date().getTime();
-            if((nowTime - startTime) > 3000){
+            if ((nowTime - startTime) > 3000) {
                 startTime = new Date().getTime();
                 setTimeout(processFun, 100);
             }
-            else{
+            else {
                 processFun();
             }
         }

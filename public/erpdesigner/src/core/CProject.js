@@ -1053,6 +1053,7 @@ class CProject extends IAttributeable {
         }
         var copiedData = this.copyKernel(target);
         copiedData.targetControl.attr.title += '(复制)';
+        copiedData.targetControl.attr[AttrNames.IsMain] = false;
         this.pasteKernel(copiedData, null, null);
     }
 }
