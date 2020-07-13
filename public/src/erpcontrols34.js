@@ -4618,11 +4618,11 @@ class ERPC_AdvanceFormHeader extends React.PureComponent {
                 <div ref={this.valueDivRef} onScroll={filtedValues_arr.length > this.state.maxCount ? this.valueDivScrollHandler : null} className='list-group autoScroll border rounded' style={{maxHeight:'400px'}}>
                     {filtedValues_arr.slice(0,this.state.maxCount).map((x,i)=>{
                         return <div d-key={x} onClick={this.clickFilterElem} className='list-group-item flex-grow-0 flex-shrink-0 cursor_hand p-2 d-flex' key={i}>
-                                <span className="fa-stack fa-lg">
+                                <span className="fa-stack fa-lg flex-shrink-0">
                                     <i className="fa fa-square-o fa-stack-2x" />
                                     {filter.bAll || filter.selectedValues[x] ? <i className={'fa fa-stack-1x fa-check text-' + (filter.bAll ? 'warning' : 'success')} /> : null}
                                 </span>
-                                {x}
+                                <span className='flex-shrink-0'>{x}</span>
                             </div>
                     })}
                 </div>

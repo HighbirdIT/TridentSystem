@@ -5518,11 +5518,15 @@ var ERPC_AdvanceFormHeader = function (_React$PureComponent24) {
                                 { 'd-key': x, onClick: _this39.clickFilterElem, className: 'list-group-item flex-grow-0 flex-shrink-0 cursor_hand p-2 d-flex', key: i },
                                 React.createElement(
                                     'span',
-                                    { className: 'fa-stack fa-lg' },
+                                    { className: 'fa-stack fa-lg flex-shrink-0' },
                                     React.createElement('i', { className: 'fa fa-square-o fa-stack-2x' }),
                                     filter.bAll || filter.selectedValues[x] ? React.createElement('i', { className: 'fa fa-stack-1x fa-check text-' + (filter.bAll ? 'warning' : 'success') }) : null
                                 ),
-                                x
+                                React.createElement(
+                                    'span',
+                                    { className: 'flex-shrink-0' },
+                                    x
+                                )
                             );
                         })
                     )

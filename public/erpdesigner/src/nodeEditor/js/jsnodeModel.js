@@ -2883,6 +2883,10 @@ class JSNode_CurrentDataRow extends JSNode_Base {
                 if (realParent.type == M_LabeledControlKernel_Type) {
                     realParent = realParent.parent;
                 }
+                if(this.bluePrint.ctlKernel == formKernel){
+                    belongFormKernel = formKernel;
+                    realParent = formKernel;
+                }
                 var isSameForm = formKernel == belongFormKernel;
                 if (this.checkCompileFlag(!isSameForm || realParent != belongFormKernel, '此处无法使用目标Form的本属性', helper)) {
                     return false;

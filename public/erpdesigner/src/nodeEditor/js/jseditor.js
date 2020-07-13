@@ -1031,7 +1031,7 @@ class JSNodeEditorVariables extends React.PureComponent{
                     <i className='fa fa-plus fa-lg text-light cursor-pointer' onClick={this.clickAddHandler} style={{width:'30px'}} />
                 </div>
                 <div id={targetID} className="list-group flex-grow-0 flex-shrink-1 collapse show" style={{ overflow: 'auto', minHeight:'100px'}}>
-                    <div className='mw-100 d-flex flex-column'>
+                    <div className='mw-100 d-flex flex-column flex-shrink-0'>
                         <div className='btn-group-vertical mw-100'>
                             {
                                 vars_arr.map(varData=>{
@@ -2049,19 +2049,42 @@ class JSDef_Variable_Component extends React.PureComponent{
         var vars_arr = varData.isOutput ? bluePrint.returnVars_arr : bluePrint.vars_arr;
         var nowIndex = vars_arr.indexOf(varData)
         var temp = vars_arr[nowIndex];
-        if (target.getAttribute('action') == 'up'){
-            if(nowIndex>0){
-                vars_arr[nowIndex] = vars_arr[nowIndex-1];
-                vars_arr[nowIndex-1] =temp;
-                bluePrint.fireEvent('varChanged')
-            }
-        }else{
-            if(nowIndex < vars_arr.length - 1)
-            {
-                vars_arr[nowIndex] = vars_arr[nowIndex + 1];
-                vars_arr[nowIndex + 1] = temp;
-                bluePrint.fireEvent('varChanged');
-            }
+        switch(target.getAttribute('action')){
+            case 'up':
+                if(nowIndex>0){
+                    vars_arr[nowIndex] = vars_arr[nowIndex-1];
+                    vars_arr[nowIndex-1] =temp;
+                    bluePrint.fireEvent('varChanged')
+                }
+                break;
+            case 'down':
+                if(nowIndex < vars_arr.length - 1)
+                {
+                    vars_arr[nowIndex] = vars_arr[nowIndex + 1];
+                    vars_arr[nowIndex + 1] = temp;
+                    bluePrint.fireEvent('varChanged');
+                }
+                break;
+            case 'totop':
+                if(nowIndex != 0)
+                {
+                    for(;nowIndex > 0; --nowIndex){
+                        vars_arr[nowIndex] = vars_arr[nowIndex - 1];
+                    }
+                    vars_arr[0] = varData;
+                    bluePrint.fireEvent('varChanged');
+                }
+                break;
+            case 'tobottom':
+                if(nowIndex != vars_arr.length - 1)
+                {
+                    for(;nowIndex < vars_arr.length - 1; ++nowIndex){
+                        vars_arr[nowIndex] = vars_arr[nowIndex + 1];
+                    }
+                    vars_arr[vars_arr.length - 1] = varData;
+                    bluePrint.fireEvent('varChanged');
+                }
+                break;
         }
     }
 
@@ -2081,6 +2104,8 @@ class JSDef_Variable_Component extends React.PureComponent{
                     {varData.isfixed != true && <i className={'fa fa-trash fa-lg'} onClick={this.clickTrashHandler} />}
                     {varData.isOutput && <i className={'fa fa-arrow-up'} onClick={this.moveUporDown} action='up' />}
                     {varData.isOutput && <i className={'fa fa-arrow-down'} onClick={this.moveUporDown} action='down' />}
+                    {varData.isOutput && <i className={'fa fa-fast-backward fa-rotate-90'} onClick={this.moveUporDown} action='totop' />}
+                    {varData.isOutput && <i className={'fa fa-fast-backward fa-rotate-270'} onClick={this.moveUporDown} action='tobottom' />}
                 </div>
             );
         }

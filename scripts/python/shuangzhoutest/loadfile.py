@@ -16,7 +16,7 @@ class Load_file:
         :return: 一个包含所有数据 dataframe 对象
         """
         dict_text = {'Fx': [], 'Sx': [], 'Fy': [], 'Sy': []}
-        size = os.path.getsize(self.path)
+        self.size = os.path.getsize(self.path)
         fr = open(self.path, 'r')
         n = 0
         for i in fr.readlines():
@@ -45,7 +45,8 @@ class Load_file:
             obj['Sy'].append(float(line[9:10][0]))
         return obj
 
+
 if __name__ == '__main__':
-    filepath = 'C:/Users/Administrator/Documents/sourcefile/1-20202511092311.txt'
+    filepath = '/Users/mac/Desktop/膜材弹性常数计算说明/originalFiles/20200106145149 01447605A08-第一步.txt'
     obj_text = Load_file(filepath)
     print(obj_text.read_file())

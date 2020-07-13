@@ -10,7 +10,8 @@ class Step_two:
     这个类就行第二步，进行4列数据的计算
     """
 
-    def __init__(self, deviation_bool, area,force_range, original_data=None,file_index=1, width=160, gauge_length=40):
+    def __init__(self, deviation_bool, area, force_range, original_data=None, file_index=1, width=160,
+                 gauge_length=40):
         self.original_data = original_data
         self.calculate_data = original_data
         self.area = area
@@ -26,8 +27,9 @@ class Step_two:
         self.standard_item_ny = None  # y轴 基准项
         self.standard_item_sx = None  # x轴 基准项
         self.standard_item_sy = None  # y轴 基准项
-        self.force_range = force_range
-    
+        self.force_range = force_range  # 应力范围
+        self.line_first_index = min(area)[0]
+        self.line_point = {'nx': 0, 'ny': 0, 'ex': 0, 'ey': 0, 'ex1': 0, 'ey1': 0}
 
     def __carve_up(self):
         """
@@ -69,12 +71,14 @@ class Step_two:
         Ny = []
         ex = []
         ey = []
+        ex1 = []
+        ey1 = []
 
         for index, value in self.fx_series.items():
             if self.check_area(index, self.area):
                 nx = (value - self.standard_item_nx) / self.width
                 Nx.append(nx)
-                # print(index, value,self.standard_item_nx,'这',self.width)
+                # print(index, value,self.standard_item_nx,'这',self.width,nx)
         for index, value in self.fy_series.items():
             if self.check_area(index, self.area):
                 ny = (value - self.standard_item_ny) / self.width
@@ -89,14 +93,30 @@ class Step_two:
                 sy = (value - self.standard_item_sy) / \
                      (self.gauge_length + self.sy_series[self.first_index] - self.sy_series[0])
                 ey.append(sy)
-        
+
+        if self.file_index == 4 or self.file_index == 8:
+            ex1 = ex
+            for i in range(len(Ny)):
+                if len(Nx) != len(ex) or not len(ex) or not len(Nx):
+                    print('新算法数组内为空 ，数值不对')
+                else:
+                    sy1 = ey[i] + (Ny[i] - 2) / 1300
+                    ey1.append(sy1)
+        else:
+            ey1 = ey
+            for i in range(len(Nx)):
+                if len(Nx) != len(ex) or not len(ex) or not len(Nx):
+                    print('新算法数组内为空 ，数值不对')
+                else:
+                    sx1 = ex[i] + (Nx[i] - 2) / 1800
+                    ex1.append(sx1)
+
         dfdata = pd.DataFrame({'Nx': Nx, 'Ny': Ny, 'ex': ex, 'ey': ey})
         if self.file_index == 4 or self.file_index == 8:
             fdir = 'Ny'
         else:
             fdir = 'Nx'
         dfdata = dfdata[(dfdata[fdir] >= self.force_range[0]) & (dfdata[fdir] <= self.force_range[1])]
-        
         return dfdata
 
     def process_2(self):
@@ -105,22 +125,54 @@ class Step_two:
         Ny = []
         ex = []
         ey = []
+        ex1 = []
+        ey1 = []
 
         for index, value in self.fx_series.items():
             nx = (value - self.standard_item_nx) / self.width
             Nx.append(nx)
-            # print(index, value,self.standard_item_nx,'这',self.width)
+            if index == self.line_first_index:
+                self.line_point['nx'] = nx
+                print(index, nx, '这个是起始点的坐标nx')
         for index, value in self.fy_series.items():
             ny = (value - self.standard_item_ny) / self.width
             Ny.append(ny)
+            if index == self.line_first_index:
+                self.line_point['ny'] = ny
         for index, value in self.sx_series.items():
             sx = (value - self.standard_item_sx) / \
-                (self.gauge_length + self.sx_series[self.first_index] - self.sx_series[0])
+                 (self.gauge_length + self.sx_series[self.first_index] - self.sx_series[0])
             ex.append(sx)
+            if index == self.line_first_index:
+                self.line_point['ex'] = sx
         for index, value in self.sy_series.items():
             sy = (value - self.standard_item_sy) / \
-                    (self.gauge_length + self.sy_series[self.first_index] - self.sy_series[0])
+                 (self.gauge_length + self.sy_series[self.first_index] - self.sy_series[0])
             ey.append(sy)
+            if index == self.line_first_index:
+                self.line_point['ey'] = sy
+
+        if self.file_index == 4 or self.file_index == 8:
+            ex1 = ex
+            self.line_point['ex1'] = self.line_point['ex']
+            for i in range(len(Ny)):
+                if len(Nx) != len(ex) or not len(ex) or not len(Nx):
+                    print('新算法数组内为空 ，数值不对')
+                else:
+                    sy1 = ey[i] + (Ny[i] - 2) / 1300
+                    ey1.append(sy1)
+                    self.line_point['ey1'] = self.line_point['ey'] + (self.line_point['ny'] - 2) / 1300
+        else:
+            ey1 = ey
+            self.line_point['ey1'] = self.line_point['ey']
+            for i in range(len(Nx)):
+                if len(Nx) != len(ex) or not len(ex) or not len(Nx):
+                    print('新算法数组内为空 ，数值不对')
+                else:
+                    sx1 = ex[i] + (Nx[i] - 2) / 1800
+                    ex1.append(sx1)
+                    self.line_point['ex1'] = self.line_point['ex'] + (self.line_point['nx'] - 2) / 1800
+
         dfdata = pd.DataFrame({'Nx': Nx, 'Ny': Ny, 'ex': ex, 'ey': ey})
         if self.file_index == 4 or self.file_index == 8:
             fdir = 'Ny'
@@ -129,6 +181,64 @@ class Step_two:
         dfdata = dfdata[(dfdata[fdir] >= self.force_range[0]) & (dfdata[fdir] <= self.force_range[1])]
 
         return dfdata
+
+    # def process_3(self):
+    #     self.standard_item_identity()
+    #     Nx = []
+    #     Ny = []
+    #     ex = []
+    #     ey = []
+    #     ex1 = []
+    #     ey1 = []
+    #     for index, value in self.fx_series.items():
+    #         nx = value / 160
+    #         Nx.append(nx)
+    #         if index == self.line_first_index:
+    #             self.line_point['nx'] = nx
+    #     for index, value in self.fy_series.items():
+    #         ny = value / 160
+    #         Ny.append(ny)
+    #         if index == self.line_first_index:
+    #             self.line_point['ny'] = ny
+    #     for index, value in self.sx_series.items():
+    #         sx = (value - self.sx_series[0]) / 40
+    #         ex.append(sx)
+    #         if index == self.line_first_index:
+    #             self.line_point['ex'] = sx
+    #     for index, value in self.sy_series.items():
+    #         sy = (value - self.sy_series[0]) / 40
+    #         ey.append(sy)
+    #         if index == self.line_first_index:
+    #             self.line_point['ey'] = sy
+    # 
+    #     #     1;2,0;1
+    #     if self.file_index == 4 or self.file_index == 8:
+    #         ex1 = ex
+    #         self.line_point['ex1'] = self.line_point['ex']
+    #         for i in range(len(Ny)):
+    #             if len(Nx) != len(ex) or not len(ex) or not len(Nx):
+    #                 print('新算法数组内为空 ，数值不对')
+    #             else:
+    #                 sy1 = ey[i] + (Ny[i] - 2) / 1300
+    #                 ey1.append(sy1)
+    #     else:
+    #         ey1 = ey
+    #         self.line_point['ey1'] = self.line_point['ey']
+    #         for i in range(len(Nx)):
+    #             if len(Nx) != len(ex) or not len(ex) or not len(Nx):
+    #                 print('新算法数组内为空 ，数值不对')
+    #             else:
+    #                 sx1 = ex[i] + (Nx[i] - 2) / 1800
+    #                 ex1.append(sx1)
+    # 
+    #     dfdata = pd.DataFrame({'Nx': Nx, 'Ny': Ny, 'ex': ex1, 'ey': ey1})
+    #     if self.file_index == 4 or self.file_index == 8:
+    #         fdir = 'Ny'
+    #     else:
+    #         fdir = 'Nx'
+    #     dfdata = dfdata[(dfdata[fdir] >= self.force_range[0]) & (dfdata[fdir] <= self.force_range[1])]
+    # 
+    #     return dfdata
 
     @staticmethod
     def check_area(index, area_list):
@@ -139,17 +249,10 @@ class Step_two:
                 return True
 
     @staticmethod
-    def check_force(value,force_range):
-        for force in force_range:
-            min_force = force_range[0]
-            max_force = force_range[1]
-            if min_force <= value <= max_force:
-                return True
-
-
-    def write_text(self):
-        data = self.process()
-        #data.to_excel(r'originalFiles/result.xls', index=True, encoding='utf_8_sig')
+    def write_text(data):
+        pass
+        # ,Nx,Ny,ex,ey
+        # data.to_csv(r'originalFiles/test2.csv', mode='a', encoding='utf_8_sig', header=False, index=False)
 
     # def get_final(self):
     #     result = self.process()

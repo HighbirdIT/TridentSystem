@@ -1044,9 +1044,14 @@ class MobileContentCompiler extends ContentCompiler {
         if (pageOrientation == Orientation_V) {
             pageLayoutConfig.addClass('flex-column');
         }
-        pageLayoutConfig.addClass('fixPageContent');
         if (hadScroll) {
             pageLayoutConfig.addClass('autoScroll_Touch');
+        }
+        if(hideTitle){
+            pageLayoutConfig.addClass('fixPageContent_notitle');
+        }
+        else{
+            pageLayoutConfig.addClass('fixPageContent');
         }
 
         pageReactClass.renderContentFun = pageReactClass.getFunction('renderContent', true);
@@ -3883,6 +3888,8 @@ class MobileContentCompiler extends ContentCompiler {
             for (ci in thisFormMidData.dynamicColumn_map) {
                 var dynamicCol = thisFormMidData.dynamicColumn_map[ci];
                 thTag = headThTag_map[ci];
+                columnProfile = gridColumnsProfile_obj[ci];
+                
                 if (dynamicCol.visible || dynamicCol.label) {
                     thTag.clear();
                 }
@@ -3894,7 +3901,12 @@ class MobileContentCompiler extends ContentCompiler {
                     gridBodyTag.setAttr(ci + '_visible', '{this.props.' + ci + '_visible}');
                 }
                 if (dynamicCol.label && !hideHeader) {
-                    thTag.pushLine('{this.props.' + ci + '_label}');
+                    if(columnProfile.sortable || columnProfile.filtable){
+                        thTag.pushLine("{simpleMode ? " + ('this.props.' + ci + '_label') + " : <ERPC_AdvanceFormHeader canFilt={" + (columnProfile.filtable ? 'true' : 'false') + "} title={" + ('this.props.' + ci + '_label') + "} colkey='" + columnProfile.colValueField + "' form={this.props.form} />}");
+                    }
+                    else{
+                        thTag.pushLine('{this.props.' + ci + '_label}');
+                    }
                     freshFun.setColumnNameBlock.pushLine(VarNames.NeedSetState + '.' + ci + '_label = ' + dynamicCol.label);
                     formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, ci + '_label'), VarNames.CtlState + '.' + ci + '_label'));
                     headClassInBodyTag.setAttr(ci + '_label', '{this.props.' + ci + '_label}');
