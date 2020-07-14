@@ -9277,8 +9277,15 @@ class JSNode_PopPage extends JSNode_Base {
             myJSBlock.pushLine('if ('+foundElemVarName+' != null) {return;}');
             myJSBlock.pushLine('var ' + newPageVarName + '={',1);
             myJSBlock.pushLine('key:' + singleQuotesStr(this.pageCode) + ',');
+
+            var onClickCloseFunName = thePage.id + '_' + AttrNames.Event.OnClickCloseBtn;
+            var onClickCloseBp = theProject.scriptMaster.getBPByName(onClickCloseFunName);
+
             var elemTag = '<' + thePage.getReactClassName(true) + ' popInSide={true} />';
             myJSBlock.pushLine('elem:' + elemTag + ',');
+            if(onClickCloseBp){
+                myJSBlock.pushLine('onClose:' + onClickCloseFunName + ',');
+            }
             var popWidth = this.popWidthSocket.defval;
             if(!IsEmptyString(popWidth)){
                 if(!isNaN(popWidth)){
