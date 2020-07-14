@@ -862,6 +862,8 @@ class JSFile_ReactClass extends JSFile_Class{
         this.mapStateFun.retBlock.pushLine('return ' + VarNames.RetProps + ';');
         this.mapDispathFun.scope.getVar('retDispath', true, '{}');
         this.mapDispathFun.retBlock.pushLine('return retDispath;');
+
+        this.mapedState = {};
     }
 
     getString(prefixStr, indentChar, newLineChar){
@@ -870,6 +872,13 @@ class JSFile_ReactClass extends JSFile_Class{
         var rlt = classStr + visibleComFunStr;
         rlt += prefixStr + 'const Visible' + this.name + ' = ReactRedux.connect(' + this.mapStateFun.name + ', ' + this.mapDispathFun.name + ')(' + this.name + ');' + newLineChar;
         return rlt;
+    }
+
+    addMapState(name, value){
+        if(this.mapedState[name] == null){
+            this.mapedState[name] = value;
+            this.mapStateFun.pushLine(VarNames.RetProps + "['" + name + "']=" + value + ';');
+        }
     }
 }
 

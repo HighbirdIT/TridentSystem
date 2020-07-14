@@ -951,6 +951,8 @@ class MobileContentCompiler extends ContentCompiler {
         var pageTitle = pageKernel.getAttribute(AttrNames.Title);
         var hideTitle = pageKernel.getAttribute(AttrNames.HideTitle);
 
+        pageReactClass.constructorFun.pushLine('this.id=' + singleQuotesStr(pageKernel.id) + ';');
+        pageReactClass.constructorFun.pushLine('ERPC_Page(this);');
         pageReactClass.renderHeadButtonFun.headBlock.pushLine('var rlt_arr=[];');
         pageReactClass.renderHeadButtonFun.retBlock.pushLine('return rlt_arr;');
         //pageReactClass.renderFootFun = pageReactClass.getFunction('renderFoot', true);
@@ -991,8 +993,8 @@ class MobileContentCompiler extends ContentCompiler {
                 pageReactClass.renderHeaderFun.pushLine("</div>);");
             }
 
-            pageReactClass.constructorFun.pushLine('this.close = this.close.bind(this);');
-            var closeFun = pageReactClass.getFunction('close', true, ['exportParam']);
+            //pageReactClass.constructorFun.pushLine('this.close = this.close.bind(this);');
+            //var closeFun = pageReactClass.getFunction('close', true, ['exportParam']);
 
             var onClickCloseFunName = pageKernel.id + '_' + AttrNames.Event.OnClickCloseBtn;
             var onClickCloseBp = project.scriptMaster.getBPByName(onClickCloseFunName);
@@ -1001,14 +1003,17 @@ class MobileContentCompiler extends ContentCompiler {
                 if (compileRet == false) {
                     return false;
                 }
-                closeFun.pushLine(onClickCloseFunName + '();');
+                //closeFun.pushLine(onClickCloseFunName + '();');
+                pageReactClass.constructorFun.pushLine('this.clickCloseFun = ' + onClickCloseFunName + ';');
             }
+            /*
             else {
                 closeFun.pushLine('exportParam = exportParam == null ? {} : exportParam;');
                 closeFun.pushLine('closePage(' + singleQuotesStr(pageKernel.id) + ');');
                 closeFun.pushLine('var callBack = ' + makeStr_callFun('getPageEntryParam', [singleQuotesStr(pageKernel.id), singleQuotesStr('callBack')], ';'));
                 closeFun.pushLine('if(callBack){callBack(exportParam);}');
             }
+            */
         }
         /*
         pageReactClass.renderFootFun.pushLine("return (<div className='flex-grow-0 flex-shrink-0 bg-primary text-light pageFooter'>", 1);
@@ -1020,7 +1025,7 @@ class MobileContentCompiler extends ContentCompiler {
         if (isPopable) {
             var styleID = pageKernel.id + '_style';
             var styleStr = clientSide.addStyleObject(styleID, pageLayoutConfig.style) ? 'style={' + styleID + '}' : '';
-            pageReactClass.renderFun.pushLine("<div className='d-flex flex-column popPage bg-light' " + styleStr + ">", 1);
+            pageReactClass.renderFun.pushLine("<div className={'d-flex flex-column bg-light ' + (this.props.popInSide ? 'popPageChild' : 'popPage')} " + styleStr + ">", 1);
         }
         else {
             pageReactClass.renderFun.pushLine("<div className='d-flex flex-column flex-grow-1 flex-shrink-1 h-100'>", 1);
@@ -1044,9 +1049,14 @@ class MobileContentCompiler extends ContentCompiler {
         if (pageOrientation == Orientation_V) {
             pageLayoutConfig.addClass('flex-column');
         }
-        pageLayoutConfig.addClass('fixPageContent');
         if (hadScroll) {
             pageLayoutConfig.addClass('autoScroll_Touch');
+        }
+        if(hideTitle){
+            pageLayoutConfig.addClass('fixPageContent_notitle');
+        }
+        else{
+            pageLayoutConfig.addClass('fixPageContent');
         }
 
         pageReactClass.renderContentFun = pageReactClass.getFunction('renderContent', true);
@@ -1089,12 +1099,12 @@ class MobileContentCompiler extends ContentCompiler {
         }
 
         var activePageFun = clientSide.scope.getFunction(makeFName_activePage(pageKernel), true, ['state']);
-        var initPageFun = clientSide.scope.getFunction(makeFName_initPage(pageKernel), true, ['state']);
+        var initPageFun = clientSide.scope.getFunction(makeFName_initPage(pageKernel), true, ['state', 'parentPageID']);
         var pageLoadBlock = new FormatFileBlock('onLoad');
         var controlInitBlock = new FormatFileBlock('ctlinit');
         var userControlInitBlock = new FormatFileBlock('userctlinit');
         var activeTimeoutBlock = new FormatFileBlock('timeout');
-        initPageFun.scope.getVar(VarNames.NeedSetState, true, '{}');
+        initPageFun.scope.getVar(VarNames.NeedSetState, true, '{parentPageID:parentPageID}');
         initPageFun.scope.getVar(VarNames.FullParentPath, true, singleQuotesStr(pageKernel.id));
         initPageFun.pushLine('var hadState = state != null;');
         initPageFun.pushLine('if(!hadState){state = store.getState();}');
@@ -1105,6 +1115,8 @@ class MobileContentCompiler extends ContentCompiler {
         initPageFun.pushChild(activeTimeoutBlock);
         initPageFun.subNextIndent();
         initPageFun.pushLine('}, 50);');
+        initPageFun.pushLine(VarNames.NeedSetState + "[" + singleQuotesStr(pageKernel.id + '.parentPageID') + "]=parentPageID;");
+        initPageFun.pushLine(VarNames.NeedSetState + "[" + singleQuotesStr(pageKernel.id + '._magicobj') + "]={};");
         initPageFun.pushLine('if(hadState){', 1);
         initPageFun.pushLine("state = setManyStateByPath(state,''," + VarNames.NeedSetState + ");", -1);
         initPageFun.pushLine('}else{', 1);
@@ -1193,6 +1205,11 @@ class MobileContentCompiler extends ContentCompiler {
             }
             controlInitBlock.pushLine('state = ' + makeStr_callFun('setManyStateByPath', [VarNames.State, "''", VarNames.NeedSetState], ';'));
         }
+
+        pageReactClass.mapStateFun.pushLine("var pageState = getStateByPath(state, '" + pageKernel.id + "', {});");
+        pageReactClass.addMapState('sidepages_arr', 'pageState.sidepages_arr');
+        pageReactClass.addMapState('parentPageID', 'pageState.parentPageID');
+        pageRenderBlock.pushLine('{this.renderSidePage()}');
     }
 
     getKernelParentPath(theKernel) {
@@ -3883,6 +3900,8 @@ class MobileContentCompiler extends ContentCompiler {
             for (ci in thisFormMidData.dynamicColumn_map) {
                 var dynamicCol = thisFormMidData.dynamicColumn_map[ci];
                 thTag = headThTag_map[ci];
+                columnProfile = gridColumnsProfile_obj[ci];
+                
                 if (dynamicCol.visible || dynamicCol.label) {
                     thTag.clear();
                 }
@@ -3894,7 +3913,12 @@ class MobileContentCompiler extends ContentCompiler {
                     gridBodyTag.setAttr(ci + '_visible', '{this.props.' + ci + '_visible}');
                 }
                 if (dynamicCol.label && !hideHeader) {
-                    thTag.pushLine('{this.props.' + ci + '_label}');
+                    if(columnProfile.sortable || columnProfile.filtable){
+                        thTag.pushLine("{simpleMode ? " + ('this.props.' + ci + '_label') + " : <ERPC_AdvanceFormHeader canFilt={" + (columnProfile.filtable ? 'true' : 'false') + "} title={" + ('this.props.' + ci + '_label') + "} colkey='" + columnProfile.colValueField + "' form={this.props.form} />}");
+                    }
+                    else{
+                        thTag.pushLine('{this.props.' + ci + '_label}');
+                    }
                     freshFun.setColumnNameBlock.pushLine(VarNames.NeedSetState + '.' + ci + '_label = ' + dynamicCol.label);
                     formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, ci + '_label'), VarNames.CtlState + '.' + ci + '_label'));
                     headClassInBodyTag.setAttr(ci + '_label', '{this.props.' + ci + '_label}');

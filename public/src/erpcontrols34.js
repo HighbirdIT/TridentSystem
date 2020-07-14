@@ -283,6 +283,22 @@ function closePage(pid) {
     }
 }
 
+function closePage2(pid, state) {
+    var pageState = getStateByPath(state, pid, {});
+	if(pageState.parentPageID){
+		var parentPageState = getStateByPath(state, pageState.parentPageID);
+        if(parentPageState){
+            var newArr = parentPageState.sidepages_arr.filter(x=>{return x.key!=pid;});
+            setTimeout(()=>{
+                store.dispatch(makeAction_setStateByPath(newArr, pageState.parentPageID+'.sidepages_arr'));
+            },50);
+        }
+	}
+	else{
+		closePage('M_Page_0');
+	}
+}
+
 class C_ReportPanel extends React.PureComponent {
     constructor(props) {
         super(props);
@@ -998,7 +1014,7 @@ class ERPC_DropDown extends React.PureComponent {
         this.confirmChanged(text, value, theOptionItem, values_arr);
     }
 
-    
+
     confirmChanged(text, value, theOptionItem, values_arr) {
         var invalidInfo = BaseIsValueValid(null, null, null, value == null || text == null ? null : value, this.props.type, this.props.nullable, this.props.id, null, this.props.fullPath);
         var changedObj = {
@@ -1730,7 +1746,7 @@ class ERPC_Form extends React.PureComponent {
     render() {
         return (
             <div className={this.props.className} style={this.props.style}>\
-            {this.props.children}
+                {this.props.children}
             </div>);
     }
 }
@@ -1842,7 +1858,7 @@ class ERPC_Img extends React.PureComponent {
             contentElem = <span className='flex-grow-1 flex-shrink-1'><i className='fa fa-warning' />{errInfo}</span>;
         }
 
-        if(contentElem){
+        if (contentElem) {
             return (<span className={rootDivClassName} style={this.props.style} onMouseDown={this.props.onMouseDown} >{contentElem}</span>);
         }
 
@@ -2055,7 +2071,7 @@ class ERPC_PopperBtn extends React.PureComponent {
         }
         var popper = Popper.createPopper(this.rootRef.current, this.popdivRef.current, {
             placement: this.props.anchor,
-            strategy:(this.props.strategy ? this.props.strategy : 'absolute'),
+            strategy: (this.props.strategy ? this.props.strategy : 'absolute'),
         });
         this.setState({
             popper: popper,
@@ -2289,23 +2305,88 @@ function ERPC_PageForm_renderNavigater() {
     );
 }
 
-function SmartSetScrollTop(theElem) {
-    if (theElem == null) {
+function ERPC_Page(target) {
+    target.renderSidePage = ERPC_Page_RenderSidePage.bind(target);
+    target.close = ERPC_Page_Close.bind(target);
+    target.removeSidePage = ERPC_Page_RemoveSidePage.bind(target);
+    target.clickSidePageBar = ERPC_Page_ClickSidePageBar.bind(target);
+}
+
+function ERPC_Page_RenderSidePage() {
+    var sidepages_arr = this.props.sidepages_arr;
+    if (sidepages_arr && sidepages_arr.length > 0) {
+        return sidepages_arr.map(sidePage => {
+            if (sidePage.style == null) {
+                sidePage.style = {};
+                switch (sidePage.type) {
+                    case 'l':
+                    case 'r':
+                        sidePage.style.width = sidePage.width;
+                        break;
+                    case 't':
+                    case 'b':
+                        sidePage.style.height = sidePage.height;
+                        break;
+                }
+            }
+            var iconType = '';
+            switch (sidePage.type) {
+                case 'l':
+                    iconType = 'fa-angle-double-left';
+                    break;
+                case 'r':
+                    iconType = 'fa-angle-double-right';
+                    break;
+                case 't':
+                    iconType = 'fa-angle-double-up';
+                    break;
+                case 'b':
+                    iconType = 'fa-angle-double-down';
+                    break;
+            }
+
+            return <div key={sidePage.key} className='poppage_side bg-light' type={sidePage.type} style={sidePage.style} >
+                {sidePage.elem}
+                <div className='bg-primary border-dark closeSideBar' pkey={sidePage.key} type={sidePage.type} onClick={this.clickSidePageBar} ><i className={'fa text-light ' + iconType} /></div>
+            </div>
+        });
+    }
+}
+
+function ERPC_Page_Close(exportParam) {
+    if(this.clickCloseFun != null) {
+        this.clickCloseFun();
         return;
     }
-    var offsetTop = 0;
-    while (theElem.parentElement) {
-        var parent = theElem.parentElement;
-        if (parent.scrollTop > 0) {
-            if (theElem.offsetTop < parent.scrollTop) {
-                parent.scrollTop = offsetTop - 40;
-                offsetTop = 0;
-            }
+    exportParam = exportParam == null ? {} : exportParam;
+    if(this.props.popInSide){
+        var nowState = store.getState();
+        var parentPageState = getStateByPath(nowState, this.props.parentPageID);
+        if(parentPageState){
+            var newArr = parentPageState.sidepages_arr.filter(x=>{return x.key!=this.id;});
+            store.dispatch(makeAction_setStateByPath(newArr, this.props.parentPageID+'.sidepages_arr'));
         }
-        offsetTop += theElem.offsetTop;
-        theElem = parent;
-        parent = parent.parentElement;
     }
+    else{
+        closePage(this.id);
+    }
+    var callBack = getPageEntryParam(this.id,'callBack');
+    if(callBack){callBack(exportParam);}
+}
+
+function ERPC_Page_RemoveSidePage(pageKey) {
+    var nowState = store.getState();
+    var ppPageState = getStateByPath(nowState, this.id);
+    var pageElem = ppPageState.sidepages_arr.find(x=>{return x.key==pageKey;});
+    var newArr = ppPageState.sidepages_arr.filter(x=>{return x!=pageElem;});
+    store.dispatch(makeAction_setStateByPath(newArr, this.id+'.sidepages_arr'));
+    var callBack = getPageEntryParam(pageKey,'callBack');
+    if(callBack){callBack({});}
+}
+
+function ERPC_Page_ClickSidePageBar(ev) {
+    var pKey = getAttributeByNode(ev.target, 'pkey', true, 3);
+    this.removeSidePage(pKey);
 }
 
 function GetFormSelectedRows(formState, keyColumn) {
@@ -3533,7 +3614,7 @@ class ERPC_FrameSet extends React.PureComponent {
                 var btnElem = <button d-key={item.key} onClick={this.clickHeaderHandler} key={item.key} type='button' className={'btn btn-sm rounded-0 btn-' + (isSelected ? 'light' : 'secondary')} style={this.headerItemStyle}>{item.title}</button>;
                 if (isSelected) {
                     selectedItem = item;
-                    if(item.closeable != false){
+                    if (item.closeable != false) {
                         return [btnElem,
                             <button onClick={this.clickCloseHandler} key='close' type='button' className='btn btn-sm btn-light fa fa-close text-secondary rounded-0' ></button>
                         ];
@@ -3995,7 +4076,7 @@ function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath
     for (var ri = 0; ri < records_arr.length; ++ri) {
         var record = records_arr[ri];
         var rowKey = keyColumn == '_default' ? ri : record[keyColumn];
-        if(onlySelected && selectedValues_arr && selectedValues_arr.indexOf(rowKey) == -1){
+        if (onlySelected && selectedValues_arr && selectedValues_arr.indexOf(rowKey) == -1) {
             continue;
         }
         var rowState = formState['row_' + rowKey];
@@ -4174,89 +4255,89 @@ function gWaitLongProcess(msgItem, key, callBack) {
     }, 2000);
 }
 
-class FormColumnFilter{
-    constructor(name, setting){
+class FormColumnFilter {
+    constructor(name, setting) {
         this.name = name;
         this.setting = setting;
         this.bAll = true;
         this.selectedValues = {};
     }
 
-    getValues(useCache){
+    getValues(useCache) {
         return this.setting.getColumnValues(this, useCache);
     }
 
-    selectAll(){
+    selectAll() {
         this.bAll = true;
         this.setting.filterChanged(this);
     }
 
-    unSelectAll(){
+    unSelectAll() {
         this.bAll = false;
         this.selectedValues = {};
         this.setting.filterChanged(this);
     }
 
-    toggleSelect(value){
+    toggleSelect(value) {
         var values_arr = this.getValues();
-        if(this.bAll){
+        if (this.bAll) {
             /*
             this.selectedValues = {};
             values_arr.forEach(x=>{
                 this.selectedValues[x] = true;
             });
             */
-           this.selectedValues = {};
+            this.selectedValues = {};
             this.bAll = false;
         }
         this.selectedValues[value] = !this.selectedValues[value];
-        if(this.selectedValues[value]){
-            if(values_arr.find(x=>{return !this.selectedValues[x];}) == null){
+        if (this.selectedValues[value]) {
+            if (values_arr.find(x => { return !this.selectedValues[x]; }) == null) {
                 this.bAll = true;
             }
         }
         this.setting.filterChanged(this);
     }
 
-    confirm(){
+    confirm() {
         this.setting.confirmFilter(this);
     }
 }
 
-class ERPCFormSetting{
-    constructor(formPath){
+class ERPCFormSetting {
+    constructor(formPath) {
         this.formPath = formPath;
         this.records_arr = null;
         this.dataversion = 0;
-        this.sort={
-            colkey:null,
-            header:null,
-            type:null,
+        this.sort = {
+            colkey: null,
+            header: null,
+            type: null,
         };
-        this.filters_arr=[];
-        this.filters_map={};
+        this.filters_arr = [];
+        this.filters_map = {};
         this.sortFun = this.sortFun.bind(this);
     }
-    
-    getFilter(colkey){
+
+    getFilter(colkey) {
         var rlt = this.filters_map[colkey];
-        if(rlt == null){
+        if (rlt == null) {
             rlt = new FormColumnFilter(colkey, this);
             this.filters_map[colkey] = rlt;
         }
         return rlt;
     }
 
-    confirmFilter(filter){
-        if(filter.bAll){
+    confirmFilter(filter) {
+        if (filter.bAll) {
             var filters_arr = this.filters_arr;
             var pos = filters_arr.indexOf(filter);
-            if(pos != -1){
-                filters_arr.splice(pos,1);
-                for(var fi=pos; fi < filters_arr.length; ++fi){
+            if (pos != -1) {
+                filters_arr.splice(pos, 1);
+                for (var fi = pos; fi < filters_arr.length; ++fi) {
                     var tFilter = filters_arr[fi];
                     tFilter.index = fi + 1;
-                    if(tFilter.header){
+                    if (tFilter.header) {
                         tFilter.header.reRender();
                     }
                 }
@@ -4264,85 +4345,85 @@ class ERPCFormSetting{
         }
     }
 
-    filterChanged(filter){
+    filterChanged(filter) {
         var filters_arr = this.filters_arr;
         var pos = filters_arr.indexOf(filter);
         var needFresh = false;
-        if(pos != -1){
-            for(var fi=pos + 1; fi < filters_arr.length; ++fi){
+        if (pos != -1) {
+            for (var fi = pos + 1; fi < filters_arr.length; ++fi) {
                 var tFilter = filters_arr[fi];
                 this.valuesCache[tFilter.name] = null;
             }
         }
-        
-        if(filter.bAll){
-            if(pos != -1){
+
+        if (filter.bAll) {
+            if (pos != -1) {
                 needFresh = true;
             }
-        }else{
+        } else {
             needFresh = true;
-            if(pos == -1){
+            if (pos == -1) {
                 filters_arr.push(filter);
                 filter.index = filters_arr.length;
             }
         }
-        if(needFresh){
+        if (needFresh) {
             this.reProcess();
         }
     }
 
-    valueSortFun(a,b){
-        if(a.localeCompare && b.localeCompare){
+    valueSortFun(a, b) {
+        if (a.localeCompare && b.localeCompare) {
             return a.localeCompare(b);
         }
         return a < b ? -1 : (a > b ? 1 : 0);
     }
 
-    getColumnValues(filter, useCache){
+    getColumnValues(filter, useCache) {
         var colkey = filter.name;
-        if(useCache != false && this.valuesCache && this.valuesCache[colkey]){
+        if (useCache != false && this.valuesCache && this.valuesCache[colkey]) {
             return this.valuesCache[colkey].rlt_arr;
         }
         var index = this.filters_arr.indexOf(filter);
         var useFilters_arr = index == -1 ? this.filters_arr : this.filters_arr.slice(0, index);
         var aid_map = {};
         var rlt_arr = [];
-        if(this.records_arr){
-            this.records_arr.forEach(rcd=>{
-                for(var fi in useFilters_arr){
+        if (this.records_arr) {
+            this.records_arr.forEach(rcd => {
+                for (var fi in useFilters_arr) {
                     var tFilter = useFilters_arr[fi];
-                    if(!tFilter.bAll && !tFilter.selectedValues[rcd[tFilter.name]]){
+                    if (!tFilter.bAll && !tFilter.selectedValues[rcd[tFilter.name]]) {
                         return;
                     }
                 }
-                
+
                 var cv = rcd[colkey].toString();
-                if(aid_map[cv] == null){
+                if (aid_map[cv] == null) {
                     aid_map[cv] = true;
                     rlt_arr.push(cv);
                 }
             });
         }
-        if(this.valuesCache == null){
+        if (this.valuesCache == null) {
             this.valuesCache = {};
         }
         rlt_arr.sort(this.valueSortFun);
         this.valuesCache[colkey] = {
-            aid_map:aid_map,
-            rlt_arr:rlt_arr,
+            aid_map: aid_map,
+            rlt_arr: rlt_arr,
         };
         return rlt_arr;
     }
 
-    setSort(colkey, header, type){
+    setSort(colkey, header, type) {
         var bForceFresh = false;
-        if(this.sort.header){
-            if(this.sort.header != header){
+        if (this.sort.header) {
+            if (this.sort.header != header) {
                 this.sort.header.setState({
-                    sortType:null,
+                    sortType: null,
                 });
             }
-            else if(this.sort.header == header && this.sort.type == type){
+            else if (this.sort.header == header && this.sort.type == type) {
                 colkey = null;
                 bForceFresh = true;
                 type = null;
@@ -4350,100 +4431,100 @@ class ERPCFormSetting{
         }
         this.sort.colkey = colkey;
         this.sort.type = type;
-        if(header){
+        if (header) {
             header.setState({
-                sortType:type,
+                sortType: type,
             });
-            if(colkey == null){
+            if (colkey == null) {
                 header = null;
             }
         }
         this.sort.header = header;
-        if(bForceFresh || this.isValid()){
+        if (bForceFresh || this.isValid()) {
             this.reProcess();
         }
     }
 
-    isValid(){
+    isValid() {
         return this.records_arr && this.records_arr.length > 0 && (this.sort.colkey || this.filters_arr.length > 0);
     }
 
-    setRecords(records_arr){
+    setRecords(records_arr) {
         this.records_arr = records_arr;
         this.valuesCache = {};
-        if(records_arr == null){
-            if(this.lastClickHeader){
+        if (records_arr == null) {
+            if (this.lastClickHeader) {
                 this.lastClickHeader.closePopper(true);
             }
             return false;
         }
 
-        if(this.isValid()){
+        if (this.isValid()) {
             this.reProcess();
             return true;
-        }  
+        }
         return false;
     }
 
-    sortFun(a, b){
+    sortFun(a, b) {
         var akey = a[this.sort.colkey];
         var bkey = b[this.sort.colkey];
-        if(akey.localeCompare && bkey.localeCompare){
+        if (akey.localeCompare && bkey.localeCompare) {
             return akey.localeCompare(bkey) * (this.sort.type == 'asc' ? 1 : -1);
         }
-        
-        if(akey == bkey){
+
+        if (akey == bkey) {
             return 0;
         }
-        if(this.sort.type == 'asc'){
-            if(akey < bkey){
+        if (this.sort.type == 'asc') {
+            if (akey < bkey) {
                 return -1;
             }
             return 1;
         }
-        else{
-            if(akey < bkey){
+        else {
+            if (akey < bkey) {
                 return 1;
             }
             return -1;
         }
     }
 
-    reProcess(){
+    reProcess() {
         var rlt_arr = this.records_arr.concat();
-        if(this.filters_arr.length > 0){
+        if (this.filters_arr.length > 0) {
             var filters_arr = this.filters_arr;
-            rlt_arr = rlt_arr.filter(rcd=>{
-                for(var fi in filters_arr){
+            rlt_arr = rlt_arr.filter(rcd => {
+                for (var fi in filters_arr) {
                     var filter = filters_arr[fi];
-                    if(!filter.bAll && !filter.selectedValues[rcd[filter.name]]){
+                    if (!filter.bAll && !filter.selectedValues[rcd[filter.name]]) {
                         return false;
                     }
                 }
                 return true;
             });
         }
-        if(this.sort.colkey){
+        if (this.sort.colkey) {
             rlt_arr.sort(this.sortFun);
         }
         rlt_arr.fromReProcess = true;
-        setTimeout(()=>{
+        setTimeout(() => {
             ++this.dataversion;
-            store.dispatch(makeAction_setStateByPath(rlt_arr,this.formPath + '.records_arr'));
-        },200);
+            store.dispatch(makeAction_setStateByPath(rlt_arr, this.formPath + '.records_arr'));
+        }, 200);
     }
 }
 
-function gGetFormSetting(formPath){
+function gGetFormSetting(formPath) {
     var setting = gDataCache.get(formPath + '_setting');
-    if(setting == null){
+    if (setting == null) {
         setting = new ERPCFormSetting(formPath);
         gDataCache.set(formPath + '_setting', setting);
     }
     return setting;
 }
 
-function gCreatFormSetting(form){
+function gCreatFormSetting(form) {
     var setting = gGetFormSetting(form.props.fullPath);
     setting.form = form;
     return setting;
@@ -4452,7 +4533,7 @@ function gCreatFormSetting(form){
 class ERPC_AdvanceFormHeader extends React.PureComponent {
     constructor(props) {
         super(props);
-        this.state={
+        this.state = {
         }
         this.rootRef = React.createRef();
         this.popRef = React.createRef();
@@ -4468,16 +4549,16 @@ class ERPC_AdvanceFormHeader extends React.PureComponent {
         this.keyInputChanged = this.keyInputChanged.bind(this);
     }
 
-    closePopper(autoSetState){
-        if(this.state.popper){
+    closePopper(autoSetState) {
+        if (this.state.popper) {
             this.state.popper.destroy();
-            if(autoSetState != false){
+            if (autoSetState != false) {
                 this.setState({
                     popper: null,
                 });
                 var filter = this.state.filter;
-                if(filter){
-                    setTimeout(()=>{filter.confirm()}, 200);
+                if (filter) {
+                    setTimeout(() => { filter.confirm() }, 200);
                 }
             }
         }
@@ -4486,7 +4567,7 @@ class ERPC_AdvanceFormHeader extends React.PureComponent {
     componentWillUnmount() {
         this.closePopper(false);
         var formSetting = gGetFormSetting(this.props.form.props.fullPath);
-        if(formSetting.sort.header == this){
+        if (formSetting.sort.header == this) {
             formSetting.sort.header = null;
             formSetting.sort.colkey = null;
         }
@@ -4495,37 +4576,37 @@ class ERPC_AdvanceFormHeader extends React.PureComponent {
         this.unmounted = true;
     }
 
-    clickHeaderHandler(ev){
-        if(this.state.popper){
+    clickHeaderHandler(ev) {
+        if (this.state.popper) {
             this.closePopper(true);
             return;
         }
         var formSetting = gGetFormSetting(this.props.form.props.fullPath);
-		var records_arr = formSetting.records_arr;
-		if(!records_arr || records_arr.length == 0){
-			return;	// no data
-		}
-		var popper = Popper.createPopper(this.rootRef.current, this.popRef.current, {
+        var records_arr = formSetting.records_arr;
+        if (!records_arr || records_arr.length == 0) {
+            return;	// no data
+        }
+        var popper = Popper.createPopper(this.rootRef.current, this.popRef.current, {
             placement: 'bottom',
-            strategy:'absolute',
+            strategy: 'absolute',
         });
 
         var filter = formSetting.getFilter(this.props.colkey);
         filter.header = this;
         this.values_arr = filter.getValues(false);
         this.setState({
-            popper:popper,
-            filter:filter,
-            maxCount:20,
-            keyword:'',
+            popper: popper,
+            filter: filter,
+            maxCount: 20,
+            keyword: '',
         });
-        if(formSetting.lastClickHeader){
+        if (formSetting.lastClickHeader) {
             formSetting.lastClickHeader.closePopper(true);
         }
         formSetting.lastClickHeader = this;
     }
-    
-    clickSortBtn(ev){
+
+    clickSortBtn(ev) {
         var type = getAttributeByNode(ev.target, 'd-type', true, 5);
         if (type == null) {
             console.warn('no type');
@@ -4536,37 +4617,37 @@ class ERPC_AdvanceFormHeader extends React.PureComponent {
         this.closePopper(true);
     }
 
-    clickSelectAll(ev){
+    clickSelectAll(ev) {
         var filter = this.state.filter;
-        if(filter && filter.bAll == false){
+        if (filter && filter.bAll == false) {
             filter.selectAll();
             this.reRender();
         }
     }
 
-    clickUnselectAll(ev){
+    clickUnselectAll(ev) {
         var filter = this.state.filter;
-        if(filter){
+        if (filter) {
             filter.unSelectAll();
             this.reRender();
         }
     }
 
-    clickFilterElem(ev){
+    clickFilterElem(ev) {
         var key = getAttributeByNode(ev.target, 'd-key', true, 5);
         if (key == null) {
             console.warn('no key');
             return;
         }
         var filter = this.state.filter;
-        if(filter){
+        if (filter) {
             filter.toggleSelect(key);
             this.reRender();
         }
     }
 
-    reRender(){
-        if(this.unmounted){
+    reRender() {
+        if (this.unmounted) {
             return;
         }
         this.setState({
@@ -4586,7 +4667,7 @@ class ERPC_AdvanceFormHeader extends React.PureComponent {
         }
     }
 
-    keyInputChanged(ev){
+    keyInputChanged(ev) {
         this.setState({
             keyword: ev.target.value,
         });
@@ -4595,12 +4676,12 @@ class ERPC_AdvanceFormHeader extends React.PureComponent {
     render() {
         var filterElem;
         var filter = this.state.filter;
-        if(this.props.canFilt && filter){
+        if (this.props.canFilt && filter) {
             var values_arr = this.values_arr;
             var keyword = this.state.keyword.trim();
             var filtedValues_arr = values_arr;
-            if(!IsEmptyString(keyword)){
-                filtedValues_arr = values_arr.filter(x=>{return x.indexOf(keyword) != -1;});
+            if (!IsEmptyString(keyword)) {
+                filtedValues_arr = values_arr.filter(x => { return x.indexOf(keyword) != -1; });
             }
             this.filtedValues_arr = filtedValues_arr;
             filterElem = <React.Fragment>
@@ -4615,15 +4696,15 @@ class ERPC_AdvanceFormHeader extends React.PureComponent {
                     <input className='form-control' type='text' value={keyword} onChange={this.keyInputChanged} />
                 </div>
 
-                <div ref={this.valueDivRef} onScroll={filtedValues_arr.length > this.state.maxCount ? this.valueDivScrollHandler : null} className='list-group autoScroll border rounded' style={{maxHeight:'400px'}}>
-                    {filtedValues_arr.slice(0,this.state.maxCount).map((x,i)=>{
+                <div ref={this.valueDivRef} onScroll={filtedValues_arr.length > this.state.maxCount ? this.valueDivScrollHandler : null} className='list-group autoScroll border rounded' style={{ maxHeight: '400px' }}>
+                    {filtedValues_arr.slice(0, this.state.maxCount).map((x, i) => {
                         return <div d-key={x} onClick={this.clickFilterElem} className='list-group-item flex-grow-0 flex-shrink-0 cursor_hand p-2 d-flex' key={i}>
-                                <span className="fa-stack fa-lg">
-                                    <i className="fa fa-square-o fa-stack-2x" />
-                                    {filter.bAll || filter.selectedValues[x] ? <i className={'fa fa-stack-1x fa-check text-' + (filter.bAll ? 'warning' : 'success')} /> : null}
-                                </span>
-                                {x}
-                            </div>
+                            <span className="fa-stack fa-lg flex-shrink-0">
+                                <i className="fa fa-square-o fa-stack-2x" />
+                                {filter.bAll || filter.selectedValues[x] ? <i className={'fa fa-stack-1x fa-check text-' + (filter.bAll ? 'warning' : 'success')} /> : null}
+                            </span>
+                            <span className='flex-shrink-0'>{x}</span>
+                        </div>
                     })}
                 </div>
             </React.Fragment>
@@ -4634,14 +4715,14 @@ class ERPC_AdvanceFormHeader extends React.PureComponent {
                 {this.state.sortType == null ? null : <i className={"fa fa-long-arrow-" + (this.state.sortType == 'asc' ? 'up' : 'down')} />}
                 {filter && !filter.bAll ? <span className="fa fa-filter">{filter.index}</span> : null}
             </div>
-			<div ref={this.popRef} className={'bg-light shadow flex-column p-1 border rounded d-' + (this.state.popper ? 'flex' : 'none')} style={{width:'200px', zIndex: 5000}}>
+            <div ref={this.popRef} className={'bg-light shadow flex-column p-1 border rounded d-' + (this.state.popper ? 'flex' : 'none')} style={{ width: '200px', zIndex: 5000 }}>
                 <div className='btn-group border m-1'>
                     <button d-type='asc' className={'btn flex-grow-1 flex-shrink-1 text-right btn-' + (this.state.sortType == 'asc' ? 'primary' : 'light')} onClick={this.clickSortBtn} >升序排列</button>
                     <button d-type='desc' className={'btn flex-grow-1 flex-shrink-1 text-right btn-' + (this.state.sortType == 'desc' ? 'primary' : 'light')} onClick={this.clickSortBtn} >降序排列</button>
                 </div>
                 {filterElem}
                 <button className='btn btn-sm btn-danger' onClick={this.closePopper}>关闭</button>
-			</div>
+            </div>
         </React.Fragment>
     }
 }
