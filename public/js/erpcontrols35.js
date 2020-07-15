@@ -339,7 +339,7 @@ function closePage2(pid, state) {
             }, 50);
         }
     } else {
-        closePage('M_Page_0');
+        closePage(pid);
     }
 }
 

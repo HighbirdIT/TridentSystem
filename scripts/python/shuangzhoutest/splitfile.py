@@ -1,4 +1,9 @@
 import loadfile
+import random
+import json
+import os
+import io
+import sys
 
 
 class CarveUp:
@@ -155,36 +160,39 @@ class CarveUp:
         return list
 
     def create_file(self):
-        with open('output/(1)1:1.text', 'w') as fw:
-            for data in self.data_list_1:
+        rootdir = os.path.dirname(__file__)
+        print ("rootdir:" + rootdir)
+        if not os.path.exists(rootdir + '/output'):
+            os.mkdir(rootdir + '/output')
+        os.chdir(rootdir)
+        rndIndex = random.randint(1000,9000)
+        filesinfo = {}
+        self.save_file(str(rndIndex) + '@(1)1_1', self.data_list_1, 1, filesinfo);
+        self.save_file(str(rndIndex) + '@(2)2_1', self.data_list_2, 2, filesinfo);
+        self.save_file(str(rndIndex) + '@(3)1_1', self.data_list_3, 3, filesinfo);
+        self.save_file(str(rndIndex) + '@(4)1_2', self.data_list_4, 4, filesinfo);
+        self.save_file(str(rndIndex) + '@(5)1_1', self.data_list_5, 5, filesinfo);
+        self.save_file(str(rndIndex) + '@(6)1_0', self.data_list_6, 6, filesinfo);
+        self.save_file(str(rndIndex) + '@(7)1_1', self.data_list_7, 7, filesinfo);
+        self.save_file(str(rndIndex) + '@(8)0_1', self.data_list_8, 8, filesinfo);
+        print('files:' + json.dumps(filesinfo, ensure_ascii=False))
+        return
+                
+    def save_file(self, name, data_list, index, filesinfo):
+        filesinfo[str(index)] = 'output/' + name + '.txt'
+        with open('output/' + name + '.txt', 'w') as fw:
+            for data in data_list:
                 fw.write(data)
-
-        with open('output/(2)2:1.text', 'w') as fw:
-            for data in self.data_list_2:
-                fw.write(data)
-
-        with open('output/(3)1:1.text', 'w') as fw:
-            for data in self.data_list_3:
-                fw.write(data)
-        with open('output/(4)1:2.text', 'w') as fw:
-            for data in self.data_list_4:
-                fw.write(data)
-        with open('output/(5)1:1.text', 'w') as fw:
-            for data in self.data_list_5:
-                fw.write(data)
-        with open('output/(6)1:0.text', 'w') as fw:
-            for data in self.data_list_6:
-                fw.write(data)
-        with open('output/(7)1:1.text', 'w') as fw:
-            for data in self.data_list_7:
-                fw.write(data)
-        with open('output/(8)0:1.text', 'w') as fw:
-            for data in self.data_list_8:
-                fw.write(data)
+        return
+        
 
 
 if __name__ == '__main__':
-    filepath = 'originalFiles/sourcefile/20200703202854 法拉利1100.txt'
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    argv = sys.argv
+    filepath = argv[1]
+    
+    #filepath = 'C:/Users/Administrator/Documents/nnn/20200703202854 法拉利1100.txt'
     obj_text = loadfile.Load_file(filepath).read_file()
     deal_file = CarveUp(obj_text)
     deal_file.prepare_file(filepath)

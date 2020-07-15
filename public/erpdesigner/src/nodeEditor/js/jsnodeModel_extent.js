@@ -1,5 +1,6 @@
 const JSNODE_EX_LF_SHUANGZHOUTESTCAL = 'liufengshuangzhoutestcal';
 const JSNODE_EX_LF_SHUANGZHOUTESTDRAWFILE = 'liufengshuangzhoutestdrawfile';
+const JSNODE_EX_LF_SHUANGZHOUTESTSPLITFILE = 'liufengshuangzhoutestsplitfile';
 
 class JSNODE_EX_LF_ShuangZhouTestCal extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
@@ -694,6 +695,248 @@ class JSNODE_EX_LF_ShuangZhouTestDrawFile extends JSNode_Base {
     }
 }
 
+class JSNODE_EX_LF_ShuangZhouTestSplitFile extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_EX_LF_SHUANGZHOUTESTSPLITFILE, '双轴拉伸试验_拆分数据文件', false, nodeJson);
+        autoBind(this);
+        this.hadFetchFun = true;
+        this.genCloseure = true;
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0) {
+            this.outFlowSockets_arr = [];
+            this.serverFlowSocket = new NodeFlowSocket('server', this, false);
+            this.addSocket(this.serverFlowSocket);
+            this.clientFlowSocket = new NodeFlowSocket('client', this, false);
+            this.addSocket(this.clientFlowSocket);
+        }
+        else {
+            for (var si in this.outFlowSockets_arr) {
+                switch (this.outFlowSockets_arr[si].name) {
+                    case 'server':
+                        this.serverFlowSocket = this.outFlowSockets_arr[si];
+                        break;
+                    case 'client':
+                        this.clientFlowSocket = this.outFlowSockets_arr[si];
+                        break;
+                }
+            }
+        }
+        this.serverFlowSocket.label = 'server';
+        this.clientFlowSocket.label = 'client';
+
+        if (this.outputScokets_arr.length > 0) {
+            this.outputScokets_arr.forEach(socket => {
+                switch (socket.name) {
+                    case 'outPut': this.outSocket1 = socket; break;
+                }
+            });
+        }
+        if (this.inputScokets_arr.length > 0) {
+            this.inputScokets_arr.forEach(socket => {
+                switch (socket.name) {
+                    case 'fileid':
+                        this.fileidSocket = socket;
+                        break;
+                }
+            });
+        }
+        if (this.fileidSocket == null) {
+            this.fileidSocket = new NodeSocket('fileid', this, true);
+            this.addSocket(this.fileidSocket);
+        }
+
+        this.fileidSocket.type = ValueType.Int;
+        this.fileidSocket.label = '文件代码';
+
+        if (this.outSocket1 == null) {this.outSocket1 = this.addSocket(new NodeSocket('outPut', this, false));}
+        this.outSocket1.type = ValueType.Object;
+        this.outSocket1.label = 'outPut';
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        if (this.checkCompileFlag(this.bluePrint.group == EJsBluePrintFunGroup.ServerScript, '此节点的暂不支持在服务端被使用', helper)) {
+            return false;
+        }
+
+        var theScope = belongBlock.getScope();
+        var blockInServer = theScope && theScope.isServerSide;
+        var belongFun = theScope ? theScope.fun : null;
+        var theServerSide = helper.serverSide;
+
+        var inputSocketsVal = {};
+        if (this.inputScokets_arr.length > 0) {
+            for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+                var theSocket = this.inputScokets_arr[i];
+                var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
+                if (socketComRet.err) {
+                    return false;
+                }
+                inputSocketsVal[theSocket.name] = socketComRet.value;
+            }
+        }
+        var myServerBlock = new FormatFileBlock('serverblock');
+        var postBundleVarName = this.bluePrint.id + '_bundle';
+
+        var serverFun = null;
+        var serverFunBodyBlock = null;
+        var postCheckBlock = new FormatFileBlock('postCheckBlock');
+        var postVarinitBlock = new FormatFileBlock('postVarInit');
+
+        if (theServerSide == null) {
+            theServerSide = new CP_ServerSide({});
+        }
+        else {
+            theServerSide.appendImport('extend_liufeng', '../../../../extend_liufeng.js');
+        }
+
+        var serverSideActName = this.bluePrint.id + '_' + this.id;
+        if (!blockInServer) {
+            var serverSideFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
+            theServerSide.initProcessFun(serverSideFun, this.bluePrint.ctlKernel, true);
+            helper.appendOutputItem(serverSideFun);
+
+            serverSideFun.scope.getVar(postBundleVarName, true, "req.body." + VarNames.Bundle);
+            serverSideFun.pushLine("if(" + postBundleVarName + "==null){return serverhelper.createErrorRet('缺少参数bundle');}");
+            postCheckBlock.pushChild(postVarinitBlock);
+            serverSideFun.bundleCheckBlock = postCheckBlock;
+            serverSideFun.postVarinitBlock = postVarinitBlock;
+            theServerSide.processesMapVarInitVal[serverSideFun.name] = serverSideFun.name;
+            serverFun = serverSideFun;
+            serverFunBodyBlock = serverSideFun.bodyBlock;
+        }
+        else {
+            // 已处于服务端
+            serverFun = belongFun;
+            serverFunBodyBlock = belongBlock;
+            postVarinitBlock = belongFun.postVarinitBlock;
+        }
+        this.serverFun = serverFun;
+        serverFunBodyBlock.pushChild(postCheckBlock);
+        serverFunBodyBlock.pushChild(myServerBlock);
+        var initBundleBlock = null;
+        if (serverFun.bundleCheckBlock.initBundleBlock) {
+            initBundleBlock = serverFun.bundleCheckBlock.initBundleBlock;
+        }
+        else {
+            initBundleBlock = new FormatFileBlock('initbundle');
+            serverFun.bundleCheckBlock.initBundleBlock = initBundleBlock;
+        }
+        helper.addInitClientBundleBlock(initBundleBlock);
+
+        var useClientVariablesRlt = new UseClientVariableResult();
+        this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
+        useClientVariablesRlt.variables_arr.forEach(varCon => {
+            initBundleBlock.params_map[varCon.name] = varCon.name;
+            if (serverFun) {
+                serverFun.scope.getVar(varCon.name, true);
+                postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
+            }
+        });
+
+        this.inputScokets_arr.forEach(socket => {
+            postCheckBlock.pushLine('var ' + this.id + '_' + socket.name + '=' + inputSocketsVal[socket.name] + ';');
+            postCheckBlock.pushLine("if(" + this.id + '_' + socket.name + ' == null' + '){return serverhelper.createErrorRet("缺少参数[' + socket.name + ']");}');
+        });
+
+        var dataVarName = 'data_' + this.id;
+        var errVarName = 'error_' + this.id;
+
+        myServerBlock.pushLine('var ' + dataVarName + " = yield extend_liufeng.split_suangzhoudatafile(" + this.id + "_fileid);");
+        myServerBlock.pushLine('if(' + dataVarName + '.err){return serverhelper.createErrorRet(' + dataVarName + '.err);}');
+
+        var myClientBlock = new FormatFileBlock('client');
+        var fetchEndBlock = null;
+
+        var serverFlow_links = this.bluePrint.linkPool.getLinksBySocket(this.serverFlowSocket);
+        var clientFlow_links = this.bluePrint.linkPool.getLinksBySocket(this.clientFlowSocket);
+        if (blockInServer) {
+            if (this.checkCompileFlag(clientFlow_links.length > 0, '此节点的client流无法被执行到', helper)) {
+                return false;
+            }
+        }
+        else {
+            helper.compilingFun.hadServerFetch = true;
+            this.hadServerFetch = !blockInServer;
+            belongBlock.pushChild(myClientBlock);
+
+            var bundleVarName = VarNames.Bundle + '_' + this.id;
+            myClientBlock.pushLine("var " + bundleVarName + " = Object.assign({}," + VarNames.BaseBunlde + ",{", 1);
+            myClientBlock.pushChild(initBundleBlock);
+            myClientBlock.subNextIndent();
+            myClientBlock.pushLine('});');
+
+            var callBack_bk = new FormatFileBlock('callback' + this.id);
+            myClientBlock.pushChild(callBack_bk);
+            var inreducer = this.isInReducer(preNodes_arr);
+            if (inreducer) {
+                myClientBlock.pushLine('setTimeout(() => {', 1);
+            }
+            if (this.bluePrint.group != EJsBluePrintFunGroup.Custom) {
+                myClientBlock.pushLine("if(fetchTracer[" + VarNames.FetchKey + "] != fetchid) return;");
+            }
+            myClientBlock.pushLine(makeLine_FetchFTDCallBack(this.bluePrint.ctlKernel, serverSideActName, bundleVarName, dataVarName, errVarName), 1);
+            fetchEndBlock = new FormatFileBlock('fetchend');
+            if (this.bluePrint.group == EJsBluePrintFunGroup.Custom) {
+                fetchEndBlock.pushLine('if(' + errVarName + '){return _callback(null,' + errVarName + ');}');
+            }
+            else {
+                fetchEndBlock.pushLine('if(' + errVarName + '){return callback_final(state, null,' + errVarName + ');}');
+            }
+            myClientBlock.pushChild(fetchEndBlock);
+            myClientBlock.subNextIndent();
+            myClientBlock.pushLine('},false)));');
+            myClientBlock.subNextIndent();
+            if (inreducer) {
+                myClientBlock.pushLine('}, 50);');
+            }
+        }
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket1, dataVarName);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (blockInServer) {
+            selfCompileRet.setSocketOut(this.inFlowSocket, '', myServerBlock);
+            if (serverFlow_links.length > 0) {
+                if (this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, myServerBlock) == false) {
+                    return false;
+                }
+            }
+        }
+        else {
+            selfCompileRet.setSocketOut(this.inFlowSocket, '', myClientBlock);
+            fetchEndBlock.pushLine('if(' + errVarName + '){callback_final(state, null,' + errVarName + ');}');
+            if (clientFlow_links.length > 0) {
+                if (this.compileFlowNode(clientFlow_links[0], helper, usePreNodes_arr, fetchEndBlock) == false) {
+                    return false;
+                }
+            }
+
+            if (serverFlow_links.length > 0) {
+                if (this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, tryBlock.bodyBlock) == false) {
+                    return false;
+                }
+            }
+            else {
+                myServerBlock.pushLine('return ' + dataVarName + ';');
+            }
+        }
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_EX_LF_SHUANGZHOUTESTCAL] = {
     modelClass: JSNODE_EX_LF_ShuangZhouTestCal,
     comClass: C_Node_SimpleNode,
@@ -701,6 +944,11 @@ JSNodeClassMap[JSNODE_EX_LF_SHUANGZHOUTESTCAL] = {
 
 JSNodeClassMap[JSNODE_EX_LF_SHUANGZHOUTESTDRAWFILE] = {
     modelClass: JSNODE_EX_LF_ShuangZhouTestDrawFile,
+    comClass: C_Node_SimpleNode,
+};
+
+JSNodeClassMap[JSNODE_EX_LF_SHUANGZHOUTESTSPLITFILE] = {
+    modelClass: JSNODE_EX_LF_ShuangZhouTestSplitFile,
     comClass: C_Node_SimpleNode,
 };
 
@@ -717,3 +965,10 @@ JSNodeEditorControls_arr.push(
         nodeClass: JSNODE_EX_LF_ShuangZhouTestDrawFile,
         type: '扩展'
     });
+    JSNodeEditorControls_arr.push(
+        {
+            label: '双轴拉伸绘制拆分文件',
+            nodeClass: JSNODE_EX_LF_ShuangZhouTestSplitFile,
+            type: '扩展'
+        });
+    

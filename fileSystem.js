@@ -18,7 +18,9 @@ const EFileSystemError = {
 
 const gFileHouseRootPath = 'public/filehouse/';
 
-var fileSystem = {};
+var fileSystem = {
+    FileHouseRootPath: gFileHouseRootPath
+};
 var fileLocker = {};
 
 function lockFile(fileName) {

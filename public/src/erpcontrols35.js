@@ -295,7 +295,7 @@ function closePage2(pid, state) {
         }
 	}
 	else{
-		closePage('M_Page_0');
+		closePage(pid);
 	}
 }
 
