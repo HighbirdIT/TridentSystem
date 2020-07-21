@@ -5577,7 +5577,7 @@ class MobileContentCompiler extends ContentCompiler {
             if (!defaultValParseRet.isScript) {
                 hadDefaultStr = !IsEmptyString(defaultValParseRet.string);
                 if (hadDefaultStr) {
-                    alterValue = defaultValParseRet.string;
+                    alterValue = singleQuotesStr(defaultValParseRet.string);
                 }
             }
 
