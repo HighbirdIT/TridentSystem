@@ -129,13 +129,13 @@ class Step_two:
         ey1 = []
 
         for index, value in self.fx_series.items():
-            nx = (value - self.nx_series[0]) / self.width
+            nx = (value - self.fx_series[0]) / self.width
             Nx.append(nx)
             if index == self.line_first_index:
                 self.line_point['nx'] = nx
                 print(index, nx, '这个是起始点的坐标nx')
         for index, value in self.fy_series.items():
-            ny = (value - self.ny_series[0]) / self.width
+            ny = (value - self.fy_series[0]) / self.width
             Ny.append(ny)
             if index == self.line_first_index:
                 self.line_point['ny'] = ny
