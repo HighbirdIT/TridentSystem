@@ -2877,7 +2877,7 @@ class JSNode_CurrentDataRow extends JSNode_Base {
             if (this.rowSource == EFormRowSource.Context) {
                 var belongFormKernel = this.bluePrint.ctlKernel.searchParentKernel(M_FormKernel_Type, true);
                 var realParent = this.bluePrint.ctlKernel.parent;
-                while (realParent.type == M_LabeledControlKernel_Type || realParent.type == M_ContainerKernel_Type) {
+                while (realParent.type == M_LabeledControlKernel_Type || realParent.type == M_ContainerKernel_Type || realParent.type == PopperButtonKernel_Type) {
                     realParent = realParent.parent;
                 }
                 if (realParent.type == M_LabeledControlKernel_Type) {
@@ -3464,7 +3464,7 @@ class JSNODE_Insert_table extends JSNode_Base {
 
         var relKernel = this.bluePrint.ctlKernel;
         if (this.bluePrint.group != EJsBluePrintFunGroup.Custom) {
-            if (this.checkCompileFlag(relKernel == null || (relKernel.type != ButtonKernel_Type && relKernel.type != EmptyKernel_Type), '这个脚本蓝图必须关联到一个按钮控件中', helper)) {
+            if (this.checkCompileFlag(relKernel == null || (relKernel.type != ButtonKernel_Type && relKernel.type != EmptyKernel_Type && relKernel.type != SingleFileUploader_Type && relKernel.type != MFileUploader_Type), '这个脚本蓝图必须关联到一个按钮控件中', helper)) {
                 return false;
             }
         }
@@ -7000,7 +7000,7 @@ class JSNODE_Update_table extends JSNode_Base {
 
         var relKernel = this.bluePrint.ctlKernel;
         if (this.bluePrint.group != EJsBluePrintFunGroup.Custom) {
-            if (this.checkCompileFlag(relKernel == null || (relKernel.type != ButtonKernel_Type && relKernel.type != EmptyKernel_Type), '这个脚本蓝图必须关联到一个按钮控件中', helper)) {
+            if (this.checkCompileFlag(relKernel == null || (relKernel.type != ButtonKernel_Type && relKernel.type != EmptyKernel_Type && relKernel.type != SingleFileUploader_Type && relKernel.type != MFileUploader_Type), '这个脚本蓝图必须关联到一个按钮控件中', helper)) {
                 return false;
             }
         }
@@ -8369,7 +8369,7 @@ class JSNODE_Delete_Table extends JSNode_Base {
 
         var relKernel = this.bluePrint.ctlKernel;
         if (this.bluePrint.group != EJsBluePrintFunGroup.Custom) {
-            if (this.checkCompileFlag(relKernel == null || (relKernel.type != ButtonKernel_Type && relKernel.type != EmptyKernel_Type), '这个脚本蓝图必须关联到一个按钮控件中', helper)) {
+            if (this.checkCompileFlag(relKernel == null || (relKernel.type != ButtonKernel_Type && relKernel.type != EmptyKernel_Type && relKernel.type != SingleFileUploader_Type && relKernel.type != MFileUploader_Type), '这个脚本蓝图必须关联到一个按钮控件中', helper)) {
                 return false;
             }
         }
