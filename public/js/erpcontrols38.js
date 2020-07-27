@@ -1296,14 +1296,15 @@ var ERPC_DropDown = function (_React$PureComponent4) {
                     var pos = $ * theTransFrom.indexOf('translate');
                     if (pos != -1) {
                         hadTranslate = true;
-                        var pos1 = theTransFrom.indexOf('(', pos);
-                        var pos2 = theTransFrom.indexOf(')', pos1);
-                        var translateStr = theTransFrom.substring(pos1 + 1, pos2);
+                        //var pos1 = theTransFrom.indexOf('(', pos);
+                        //var pos2 = theTransFrom.indexOf(')', pos1);
+                        //var translateStr = theTransFrom.substring(pos1 + 1, pos2);
                         //var translate_arr = translateStr.split(',');
                         //translateX += parseFloat(reg.exec(translate_arr[0])[0]);
                         //translateY += parseFloat(reg.exec(translate_arr[1])[0]);
                     }
                 }
+
                 if (!bFoundFffsetParent) {
                     var elemPosition = $_temElem.css('position');
                     if (offsetParent && elemPosition != usePosition) {
