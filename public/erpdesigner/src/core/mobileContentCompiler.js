@@ -6007,6 +6007,10 @@ class MobileContentCompiler extends ContentCompiler {
         if (!IsEmptyString(flowCode)) {
             ctlTag.setAttr('flowCode', flowCode);
         }
+        var pageType = theKernel.getAttribute('pageType');
+        if (!IsEmptyString(pageType)) {
+            ctlTag.setAttr('pageType', pageType);
+        }
 
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
         var reactParentKernel = theKernel.getReactParentKernel(true);

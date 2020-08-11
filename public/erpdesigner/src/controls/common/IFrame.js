@@ -17,6 +17,7 @@ const IFrameAttrsSetting = GenControlKernelAttrsSetting([
             type:FunType_Client,
             group:EJsBluePrintFunGroup.CtlAttr,
         }),
+        new CAttribute('页面类型', 'pageType', ValueType.String, 'auto', true, false, ['auto','pc','mb']),
     ]),
     new CAttributeGroup('事件', [
         new CAttribute('消息处理', AttrNames.Event.OnReceiveMsg, ValueType.Event),
