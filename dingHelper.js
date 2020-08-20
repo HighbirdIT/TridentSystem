@@ -296,6 +296,83 @@ function activeCorp(tem_authCode, auth_corpid){
     });
 }
 
+dingHelper.createChat = (name, owner, useridlist)=>{
+    return co(function* () {
+        var accessToken = yield getAppAccessToken();
+        if(accessToken == null){
+            return;
+        }
+        //accessToken = '0bc5b543b97d31f98ba0d9f03c71cc40';
+        var creatChatRet = yield fetch("https://oapi.dingtalk.com/chat/create?access_token=" + accessToken, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body:JSON.stringify({name: name, owner:owner, useridlist:useridlist}),
+        }).then(
+            response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                else {
+                    return { errInfo: 'no response' };
+                }
+            }
+        ).then(
+            json => {
+                return json;
+            }
+        );
+
+        console.log(JSON.stringify(creatChatRet));
+        if(creatChatRet.errcode != 0){
+            return { errInfo: creatChatRet.errmsg };
+        }
+        return {
+            chatid:creatChatRet.chatid
+        };
+    });
+}
+
+dingHelper.sendMsgToChat = (charid, msgjson)=>{
+    return co(function* () {
+        var accessToken = yield getAppAccessToken();
+        if(accessToken == null){
+            return;
+        }
+        //accessToken = '0bc5b543b97d31f98ba0d9f03c71cc40';
+        var sendChatRet = yield fetch("https://oapi.dingtalk.com/chat/send?access_token=" + accessToken, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body:JSON.stringify({
+                chatid:charid,
+                msg:msgjson
+            }),
+        }).then(
+            response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                else {
+                    return { errInfo: 'no response' };
+                }
+            }
+        ).then(
+            json => {
+                return json;
+            }
+        );
+        if(sendChatRet.errcode != 0){
+            return { errInfo: sendChatRet.errmsg };
+        }
+        return {
+            messageId:sendChatRet.messageId
+        };
+    });
+}
+
 var appTicket = null;
 var appAccessToken = null;
 var appAccessToken_expiretime = 0;

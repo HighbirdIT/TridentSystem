@@ -1998,8 +1998,8 @@ class JSNode_GetFormXMLData extends JSNode_Base {
 
     getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
         var compileRet = helper.getCompileRetCache(this);
-        var socketValue = compileRet.getSocketOut(targetSocket).strContent;
-        result.pushVariable(socketValue, targetSocket);
+        //var socketValue = compileRet.getSocketOut(targetSocket).strContent;
+        result.pushVariable(this.id + '_data', targetSocket);
     }
 
     compile(helper, preNodes_arr, belongBlock) {
