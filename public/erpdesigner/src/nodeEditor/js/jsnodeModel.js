@@ -7892,6 +7892,9 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
                         if(belongUserCtl == selectedKernel){
                             pathVar = singleQuotesStr("fun_" + funAttrValue.name);
                         }
+                        else{
+                            pathVar = singleQuotesStr(selectedKernel.id + ".fun_" + funAttrValue.name);
+                        }
                     }
                 }
                 else if (this.isUserControlFunction) {
