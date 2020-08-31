@@ -7889,7 +7889,9 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
                     if (batchMode) {
                         //var relPath = selectedKernel.getStatePath('', '.', null, true, topmostParent);
                         //pathVar = singleQuotesStr((relPath.length > 0 ? relPath + '.' : '') + "fun_" + funAttrValue.name);
-                        pathVar = singleQuotesStr("fun_" + funAttrValue.name);
+                        if(belongUserCtl == selectedKernel){
+                            pathVar = singleQuotesStr("fun_" + funAttrValue.name);
+                        }
                     }
                 }
                 else if (this.isUserControlFunction) {
