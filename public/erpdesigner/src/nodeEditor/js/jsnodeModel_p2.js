@@ -46,6 +46,8 @@ const JSNODE_LONGSERVERPROCESS = 'longserverprocess';
 
 const JSNODE_HASHDATASOURCE_ROW = 'hashdatasourcerow';
 
+const JSNODE_XML_EXTRACTCOLUMN = 'xmlextractcolumn';
+
 const SpecialCharReg = /[\(\)\[\]\.]/;
 
 class JSNode_AddPageToFrameSet extends JSNode_Base {
@@ -5027,6 +5029,69 @@ class JSNode_HashDataSourceRow extends JSNode_Base {
     }
 }
 
+class JSNode_Xml_ExtractColumn extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_XML_EXTRACTCOLUMN, '抽取XML列', false, nodeJson);
+        autoBind(this);
+
+        if (this.inputScokets_arr.length > 0) {
+            this.xmlStrSocket = this.inputScokets_arr.find(s=>{return s.name=='xmlstr';});
+            this.indexSocket = this.inputScokets_arr.find(s=>{return s.name=='index';});
+        }
+
+        if (this.outputScokets_arr.length > 0) {
+            this.arraySocket = this.outputScokets_arr[0];
+        }
+
+        if (this.xmlStrSocket == null) {
+            this.xmlStrSocket = new NodeSocket('xmlstr', this, true);
+            this.addSocket(this.xmlStrSocket);
+        }
+        if (this.indexSocket == null) {
+            this.indexSocket = new NodeSocket('index', this, true);
+            this.addSocket(this.indexSocket);
+        }
+        if (this.arraySocket == null) {
+            this.arraySocket = new NodeSocket('oarr', this, false);
+            this.addSocket(this.arraySocket);
+        }
+        this.xmlStrSocket.inputable = false;
+        this.xmlStrSocket.label = 'xml';
+        this.xmlStrSocket.type = ValueType.String;
+        this.indexSocket.inputable = true;
+        this.indexSocket.label = 'col';
+        this.indexSocket.type = ValueType.Int;
+        this.arraySocket.label = 'array';
+        this.arraySocket.type = ValueType.Array;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var inSocketComRet = this.getSocketCompileValue(helper, this.xmlStrSocket, usePreNodes_arr, belongBlock, true, false);
+        if (inSocketComRet.err) {
+            return false;
+        }
+        var xmlStr = inSocketComRet.value;
+        inSocketComRet = this.getSocketCompileValue(helper, this.indexSocket, usePreNodes_arr, belongBlock, true, false);
+        if (inSocketComRet.err) {
+            return false;
+        }
+        var col = inSocketComRet.value;
+
+        var selfCompileRet = new CompileResult(this);
+        helper.setCompileRetCache(this, selfCompileRet);
+        selfCompileRet.setSocketOut(this.arraySocket, "ERPXMLToolKit.extractColumn(" + xmlStr + "," + col + ")");
+        return selfCompileRet;
+    }
+}
 
 JSNodeClassMap[JSNODE_OP_NOT] = {
     modelClass: JSNode_OP_Not,
@@ -5179,5 +5244,9 @@ JSNodeClassMap[JSNODE_IMPORTEXCEL] = {
 };
 JSNodeClassMap[JSNODE_HASHDATASOURCE_ROW] = {
     modelClass: JSNode_HashDataSourceRow,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_XML_EXTRACTCOLUMN] = {
+    modelClass: JSNode_Xml_ExtractColumn,
     comClass: C_Node_SimpleNode,
 };

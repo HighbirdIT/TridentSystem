@@ -4096,10 +4096,15 @@ const ERPXMLToolKit = {
 
     extractColumn: (xmldoc, colIndex) => {
         var rlt = [];
-        if (typeof xmldoc === 'string' && xmldoc[0] == '<') {
-            xmldoc = ERPXMLToolKit.createDocFromString(xmldoc);
+        if (typeof xmldoc === 'string') {
+            if(xmldoc.length == 0){
+                return rlt;
+            }
+            if(xmldoc[0] == '<'){
+                xmldoc = ERPXMLToolKit.createDocFromString(xmldoc);
+            }
         }
-        if (xmldoc == null || xmldoc.childNodes.length == 0) {
+        if (xmldoc == null || xmldoc.childNodes == null || xmldoc.childNodes.length == 0) {
             return rlt;
         }
         var rootNode = xmldoc.childNodes[0];
@@ -4109,7 +4114,12 @@ const ERPXMLToolKit = {
             }
             var val = node.attributes['f' + colIndex];
             if (val != null) {
-                rlt.push(val.value);
+                if(!isNaN(val.value)){
+                    rlt.push(parseFloat(val.value));
+                }
+                else{
+                    rlt.push(val.value);
+                }
             }
             //console.log(val.value);
         });

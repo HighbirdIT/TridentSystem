@@ -117,15 +117,27 @@ var AttributePanel = function (_React$PureComponent) {
             });
         }
     }, {
+        key: 'gotoUserControlTemplate',
+        value: function gotoUserControlTemplate() {
+            var target = this.state.target;
+            if (this.props.project && target.refID) {
+                this.props.project.setEditingControlById(target.refID);
+            }
+        }
+    }, {
         key: 'render',
         value: function render() {
             var target = this.state.target;
             var title = '';
+            var ctlBtn = null;
             if (target) {
                 if (target.getReadableName) {
                     title = target.getReadableName();
                 } else {
                     title = target.description + (target.id ? '[' + target.id + ']' : '') + (target.name ? '(' + target.name + ')' : '');
+                }
+                if (target.type && target.type == UserControlKernel_Type && !target.isTemplate()) {
+                    ctlBtn = React.createElement('span', { type: 'button', className: 'btn btn-sm btn-dark fa fa-share ml-1', onClick: this.gotoUserControlTemplate });
                 }
             }
             return React.createElement(
@@ -134,7 +146,8 @@ var AttributePanel = function (_React$PureComponent) {
                 React.createElement(
                     'button',
                     { type: 'button', className: 'mw-100 btn flex-grow-0 flex-shrink-0 bg-secondary text-light', style: { borderRadius: '0em', height: '2.5em', overflow: 'hidden' } },
-                    title
+                    title,
+                    ctlBtn
                 ),
                 React.createElement(
                     'div',

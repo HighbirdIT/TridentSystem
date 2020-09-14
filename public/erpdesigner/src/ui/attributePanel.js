@@ -89,9 +89,18 @@ class AttributePanel extends React.PureComponent {
         );
     }
 
+    gotoUserControlTemplate(){
+        var target = this.state.target;
+        if(this.props.project && target.refID)
+        {
+            this.props.project.setEditingControlById(target.refID);
+        }
+    }
+
     render() {
         var target = this.state.target;
         var title = '';
+        var ctlBtn = null;
         if(target){
             if(target.getReadableName){
                 title = target.getReadableName()
@@ -99,10 +108,13 @@ class AttributePanel extends React.PureComponent {
             else{
                 title = target.description + (target.id ? '[' + target.id + ']' : '') + (target.name ? '(' + target.name + ')' : '');
             }
+            if(target.type && target.type == UserControlKernel_Type && !target.isTemplate()){
+                ctlBtn = <span type="button" className='btn btn-sm btn-dark fa fa-share ml-1' onClick={this.gotoUserControlTemplate}></span>;
+            }
         }
         return (
             <div className='d-flex flex-grow-1 flex-shrink-1 flex-column minh-0' style={this.props.nofixwidth ? null : {width:'300px'}}>
-                <button type="button" className='mw-100 btn flex-grow-0 flex-shrink-0 bg-secondary text-light' style={{borderRadius:'0em',height:'2.5em',overflow:'hidden'}}>{title}</button>
+                <button type="button" className='mw-100 btn flex-grow-0 flex-shrink-0 bg-secondary text-light' style={{borderRadius:'0em',height:'2.5em',overflow:'hidden'}}>{title}{ctlBtn}</button>
                 <div className='flex-grow-1 flex-shrink-1 bg-secondary d-flex flex-column autoScroll'>
                     {
                         this.renderAttribute(target)

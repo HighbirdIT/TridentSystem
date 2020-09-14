@@ -933,3 +933,7 @@ body{
 .invisible-scrollbar::-webkit-scrollbar {
     display: none;
 }
+
+.whitSpaceNormal{
+    white-space: normal;
+}

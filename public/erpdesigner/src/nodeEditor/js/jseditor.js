@@ -424,6 +424,11 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_Chart_Fresh,
         type:'图表操作'
     },
+    {
+        label:'XML-抽取某列',
+        nodeClass:JSNode_Xml_ExtractColumn,
+        type:'XML操作'
+    },
 ];
 
 var gCopyed_JsNodes_data=null;
