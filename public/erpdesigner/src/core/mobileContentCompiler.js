@@ -950,6 +950,10 @@ class MobileContentCompiler extends ContentCompiler {
         pageReactClass.renderHeadButtonFun = pageReactClass.getFunction('renderHeadButton', true);
         var pageTitle = pageKernel.getAttribute(AttrNames.Title);
         var hideTitle = pageKernel.getAttribute(AttrNames.HideTitle);
+        var bBlankTitle = pageKernel.getAttribute('blanktitle');
+        if(bBlankTitle){
+            pageTitle = "";
+        }
 
         pageReactClass.constructorFun.pushLine('this.id=' + singleQuotesStr(pageKernel.id) + ';');
         pageReactClass.constructorFun.pushLine('ERPC_Page(this);');
