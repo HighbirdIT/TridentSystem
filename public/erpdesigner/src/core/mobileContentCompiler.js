@@ -3775,7 +3775,7 @@ class MobileContentCompiler extends ContentCompiler {
                     colValueField:useColValueField,
                 };
             }
-            if(insertBtnSetting){
+            if(insertBtnSetting && gridWidthType == EGridWidthType.Fixed){
                 sumTableWidth += 8;
                 rightTableWidth += 8;
             }
