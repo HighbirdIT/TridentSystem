@@ -429,6 +429,11 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_Xml_ExtractColumn,
         type:'XML操作'
     },
+    {
+        label:'Log',
+        nodeClass:JSNode_Debug_Log,
+        type:'DEBUG'
+    },
 ];
 
 var gCopyed_JsNodes_data=null;

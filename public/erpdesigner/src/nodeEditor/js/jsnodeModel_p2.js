@@ -48,6 +48,8 @@ const JSNODE_HASHDATASOURCE_ROW = 'hashdatasourcerow';
 
 const JSNODE_XML_EXTRACTCOLUMN = 'xmlextractcolumn';
 
+const JSNODE_DEBUG_LOG = 'debuglog';
+
 const SpecialCharReg = /[\(\)\[\]\.]/;
 
 class JSNode_AddPageToFrameSet extends JSNode_Base {
@@ -5093,6 +5095,65 @@ class JSNode_Xml_ExtractColumn extends JSNode_Base {
     }
 }
 
+
+class JSNode_Debug_Log extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_DEBUG_LOG, 'Log', false, nodeJson);
+        autoBind(this);
+
+        if (this.inputScokets_arr.length > 0) {
+            this.inScoket = this.inputScokets_arr[0];
+        }
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+        if (this.inScoket == null) {
+            this.inScoket = new NodeSocket('value', this, false);
+            this.addSocket(this.inScoket);
+        }
+        this.inScoket.inputable = true;
+        this.inScoket.label = 'value';
+        this.inScoket.type = ValueType.Object;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var inSocketComRet = this.getSocketCompileValue(helper, this.inScoket, usePreNodes_arr, belongBlock, true, false);
+        if (inSocketComRet.err) {
+            return false;
+        }
+
+        this.hadServerFetch = false;
+        var myJSBlock = new FormatFileBlock(this.id);
+        belongBlock.pushChild(myJSBlock);
+        myJSBlock.pushLine("console.log(" + inSocketComRet.value + ");");
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, belongBlock) == false) {
+            return false;
+        }
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_OP_NOT] = {
     modelClass: JSNode_OP_Not,
     comClass: C_Node_SimpleNode,
@@ -5250,3 +5311,8 @@ JSNodeClassMap[JSNODE_XML_EXTRACTCOLUMN] = {
     modelClass: JSNode_Xml_ExtractColumn,
     comClass: C_Node_SimpleNode,
 };
+JSNodeClassMap[JSNODE_DEBUG_LOG] = {
+    modelClass: JSNode_Debug_Log,
+    comClass: C_Node_SimpleNode,
+};
+
