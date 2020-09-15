@@ -7412,7 +7412,8 @@ class MobileContentCompiler extends ContentCompiler {
                                 }
                                 else {
                                     // 页面
-                                    tempCallParams_arr = ['state', true, singleQuotesStr(useCtlData.kernel.id)];
+                                    //tempCallParams_arr = ['state', true, singleQuotesStr(useCtlData.kernel.id)];
+                                    tempCallParams_arr = ['state', true, singleQuotesStr(this.getKernelFullParentPath(theKernel))];
                                 }
                             }
                             if (autoPull) {
