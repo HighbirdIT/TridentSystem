@@ -5115,7 +5115,7 @@ class JSNode_Debug_Log extends JSNode_Base {
         }
 
         if (this.inScoket == null) {
-            this.inScoket = new NodeSocket('value', this, false);
+            this.inScoket = new NodeSocket('value', this, true);
             this.addSocket(this.inScoket);
         }
         this.inScoket.inputable = true;
