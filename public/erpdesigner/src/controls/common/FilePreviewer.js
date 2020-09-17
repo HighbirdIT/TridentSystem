@@ -7,6 +7,7 @@ const FilePreviewer_TypeAttrsSetting = GenControlKernelAttrsSetting([
         genColumnFieldAttribute('文件名称', 'fileName', ''),
         new CAttribute('可否删除', 'deletable', ValueType.Boolean, false),
         new CAttribute('显示名称', 'showtitle', ValueType.Boolean, true),
+        new CAttribute('图标尺寸', 'iconSize', ValueType.String, ''),
     ]),
 ]);
 

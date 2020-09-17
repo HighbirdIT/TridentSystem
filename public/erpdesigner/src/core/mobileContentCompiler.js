@@ -6048,6 +6048,10 @@ class MobileContentCompiler extends ContentCompiler {
         if (theKernel.getAttribute('showtitle') == false) {
             ctlTag.setAttr('hidetitle', '{true}');
         }
+        var iconSize = theKernel.getAttribute('iconSize');
+        if (!IsEmptyString(iconSize)) {
+            ctlTag.setAttr('iconSize', iconSize);
+        }
 
 
         renderBlock.pushChild(ctlTag);

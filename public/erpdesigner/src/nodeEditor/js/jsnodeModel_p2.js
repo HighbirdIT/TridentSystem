@@ -50,6 +50,14 @@ const JSNODE_XML_EXTRACTCOLUMN = 'xmlextractcolumn';
 
 const JSNODE_DEBUG_LOG = 'debuglog';
 
+const JSNODE_STRING_LENGTH = 'stringlength';
+const JSNODE_STRING_SUBSTRING = 'stringsubstring';
+const JSNODE_STRING_SUBSTR = 'stringsubstr';
+const JSNODE_STRING_INDEXOF = 'stringindexOf';
+const JSNODE_STRING_SPLIT = 'stringsplit';
+const JSNODE_ISEMPTYSTRING = 'isemptystring';
+const JSNODE_ISEMPTYARRAY = 'isemptyarray';
+
 const SpecialCharReg = /[\(\)\[\]\.]/;
 
 class JSNode_AddPageToFrameSet extends JSNode_Base {
@@ -5154,6 +5162,371 @@ class JSNode_Debug_Log extends JSNode_Base {
     }
 }
 
+
+class JSNode_String_Length extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_STRING_LENGTH, '字符串-Len', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+            }
+        }
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inSocket);
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.inSocket.type = ValueType.String;
+        this.inSocket.inputable = false;
+        this.outSocket.type = ValueType.Int;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var theSocket = this.inSocket;
+        var socketValue = null;
+        var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var socketValue = socketComRet.value;
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, socketValue + '.length');
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+class JSNode_String_Substring extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_STRING_SUBSTRING, '字符串-Substring', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.varSocket = this.inputScokets_arr[0];
+                this.startSocket = this.inputScokets_arr[1];
+                this.endSocket = this.inputScokets_arr[2];
+            }
+        }
+        if (this.varSocket == null) {
+            this.varSocket = new NodeSocket('invar', this, true);
+            this.addSocket(this.varSocket);
+            this.startSocket = new NodeSocket('instart', this, true);
+            this.addSocket(this.startSocket);
+            this.endSocket = new NodeSocket('inend', this, true);
+            this.addSocket(this.endSocket);
+        }
+        this.varSocket.label = 'var';
+        this.startSocket.label = 'start';
+        this.endSocket.label = 'end';
+        this.varSocket.type = ValueType.String;
+        this.varSocket.inputable = false;
+        this.startSocket.type = ValueType.Int;
+        this.endSocket.type = ValueType.Int;
+
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.type = ValueType.String;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketsValues_arr = [];
+        for (var si in this.inputScokets_arr) {
+            var theSocket = this.inputScokets_arr[si];
+            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            var socketValue = socketComRet.value;
+            if (theSocket == this.varSocket) {
+                if (!socketComRet.link.outSocket.isSimpleVal) {
+                    socketValue = '(' + socketValue + ')';
+                }
+            }
+            socketsValues_arr.push(socketValue);
+        }
+
+        var finalStr = socketsValues_arr[0] + '.substring(' + socketsValues_arr[1] + ',' + socketsValues_arr[2] + ')'
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+class JSNode_String_Substr extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_STRING_SUBSTR, '字符串-Substr', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.varSocket = this.inputScokets_arr[0];
+                this.startSocket = this.inputScokets_arr[1];
+                this.endSocket = this.inputScokets_arr[2];
+            }
+        }
+        if (this.varSocket == null) {
+            this.varSocket = new NodeSocket('invar', this, true);
+            this.addSocket(this.varSocket);
+            this.startSocket = new NodeSocket('instart', this, true);
+            this.addSocket(this.startSocket);
+            this.endSocket = new NodeSocket('inlen', this, true);
+            this.addSocket(this.endSocket);
+        }
+        this.varSocket.label = 'var';
+        this.startSocket.label = 'start';
+        this.endSocket.label = 'len';
+        this.varSocket.type = ValueType.String;
+        this.varSocket.inputable = false;
+        this.startSocket.type = ValueType.Int;
+        this.endSocket.type = ValueType.Int;
+
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.type = ValueType.String;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketsValues_arr = [];
+        for (var si in this.inputScokets_arr) {
+            var theSocket = this.inputScokets_arr[si];
+            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            var socketValue = socketComRet.value;
+            if (theSocket == this.varSocket) {
+                if (!socketComRet.link.outSocket.isSimpleVal) {
+                    socketValue = '(' + socketValue + ')';
+                }
+            }
+            socketsValues_arr.push(socketValue);
+        }
+
+        var finalStr = socketsValues_arr[0] + '.substr(' + socketsValues_arr[1] + ',' + socketsValues_arr[2] + ')'
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+class JSNode_String_IndexOf extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_STRING_INDEXOF, 'IndexOf', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.varSocket = this.inputScokets_arr[0];
+                this.valueSocket = this.inputScokets_arr[1];
+                this.fromSocket = this.inputScokets_arr[2];
+            }
+        }
+        if (this.varSocket == null) {
+            this.varSocket = new NodeSocket('invar', this, true);
+            this.addSocket(this.varSocket);
+        }
+        if (this.valueSocket == null) {
+            this.valueSocket = new NodeSocket('invalue', this, true);
+            this.addSocket(this.valueSocket);
+        }
+        if (this.fromSocket == null) {
+            this.fromSocket = new NodeSocket('infrom', this, true);
+            this.addSocket(this.fromSocket);
+        }
+        this.varSocket.label = 'var';
+        this.valueSocket.label = 'searchvalue';
+        this.fromSocket.label = 'fromindex';
+        this.varSocket.type = ValueType.String;
+        this.valueSocket.type = ValueType.String;
+        this.fromSocket.type = ValueType.Int;
+        this.varSocket.inputable = false;
+        this.valueSocket.inputable = true;
+        this.fromSocket.inputable = true;
+
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.outSocket.type = ValueType.Int;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketsValues_arr = [];
+        for (var si in this.inputScokets_arr) {
+            var theSocket = this.inputScokets_arr[si];
+            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            var socketValue = socketComRet.value;
+            if (theSocket == this.varSocket) {
+                if (!socketComRet.link.outSocket.isSimpleVal) {
+                    socketValue = '(' + socketValue + ')';
+                }
+            }
+            socketsValues_arr.push(socketValue);
+        }
+
+        var finalStr = socketsValues_arr[0] + '.indexOf(' + socketsValues_arr[1] + ',' + socketsValues_arr[2] + ')'
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, finalStr);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+class JSNode_IsEmptyString extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_ISEMPTYSTRING, 'IsEmptySting', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+            }
+        }
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inSocket);
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.inSocket.type = ValueType.String;
+        this.inSocket.inputable = false;
+        this.outSocket.type = ValueType.Boolean;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var theScope = belongBlock && belongBlock.getScope();
+        var blockInServer = theScope && theScope.isServerSide;
+        var theSocket = this.inSocket;
+        var socketValue = null;
+        var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var socketValue = socketComRet.value;
+
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, (blockInServer ? 'serverhelper.' : '') + 'IsEmptyString(' + socketValue + ')');
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+class JSNode_IsEmptyArray extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_ISEMPTYARRAY, 'IsEmptyArray', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+            }
+        }
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inSocket);
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.inSocket.type = ValueType.Array;
+        this.inSocket.inputable = false;
+        this.outSocket.type = ValueType.Boolean;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var theScope = belongBlock && belongBlock.getScope();
+        var blockInServer = theScope && theScope.isServerSide;
+        var nodeThis = this;
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var theSocket = this.inSocket;
+        var socketValue = null;
+        var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var socketValue = socketComRet.value;
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, (blockInServer ? 'serverhelper.' : '') + 'IsEmptyArray(' + socketValue + ')');
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_OP_NOT] = {
     modelClass: JSNode_OP_Not,
     comClass: C_Node_SimpleNode,
@@ -5316,3 +5689,27 @@ JSNodeClassMap[JSNODE_DEBUG_LOG] = {
     comClass: C_Node_SimpleNode,
 };
 
+JSNodeClassMap[JSNODE_STRING_LENGTH] = {
+    modelClass: JSNode_String_Length,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_STRING_SUBSTRING] = {
+    modelClass: JSNode_String_Substring,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_STRING_SUBSTR] = {
+    modelClass: JSNode_String_Substr,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_STRING_INDEXOF] = {
+    modelClass: JSNode_String_IndexOf,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_ISEMPTYSTRING] = {
+    modelClass: JSNode_IsEmptyString,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_ISEMPTYARRAY] = {
+    modelClass: JSNode_IsEmptyArray,
+    comClass: C_Node_SimpleNode,
+};
