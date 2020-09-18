@@ -129,24 +129,24 @@ class Step_two:
         ey1 = []
 
         for index, value in self.fx_series.items():
-            nx = (value - self.standard_item_nx) / self.width
+            nx = (value - self.fx_series[0]) / self.width
             Nx.append(nx)
             if index == self.line_first_index:
                 self.line_point['nx'] = nx
                 print(index, nx, '这个是起始点的坐标nx')
         for index, value in self.fy_series.items():
-            ny = (value - self.standard_item_ny) / self.width
+            ny = (value - self.fy_series[0]) / self.width
             Ny.append(ny)
             if index == self.line_first_index:
                 self.line_point['ny'] = ny
         for index, value in self.sx_series.items():
-            sx = (value - self.standard_item_sx) / \
+            sx = (value - self.sx_series[0]) / \
                  (self.gauge_length + self.sx_series[self.first_index] - self.sx_series[0])
             ex.append(sx)
             if index == self.line_first_index:
                 self.line_point['ex'] = sx
         for index, value in self.sy_series.items():
-            sy = (value - self.standard_item_sy) / \
+            sy = (value - self.sy_series[0]) / \
                  (self.gauge_length + self.sy_series[self.first_index] - self.sy_series[0])
             ey.append(sy)
             if index == self.line_first_index:

@@ -45,6 +45,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('默认可见', AttrNames.DefaultVisible, ValueType.Boolean, true),
         new CAttribute('NoRender', AttrNames.NoRender, ValueType.Boolean, false),
         new CAttribute('点选模式', AttrNames.ClickSelectable, ValueType.Boolean, false),
+        new CAttribute('隐藏选择器', 'hideSelector', ValueType.Boolean, false),
         new CAttribute('访问控制', AttrNames.AcessAssert, ValueType.Event),
         genScripAttribute('获取XML行', AttrNames.Function.GetXMLRowItem, EJsBluePrintFunGroup.CtlFun),
         genScripAttribute('获取JSON行', AttrNames.Function.GetJSONRowItem, EJsBluePrintFunGroup.CtlFun),
@@ -54,6 +55,8 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute(VarNames.SelectedValue, VarNames.SelectedValue, ValueType.Int, 1, false, false, null, null, false),
         new CAttribute(VarNames.SelectedValues_arr, VarNames.SelectedValues_arr, ValueType.Array, 1, false, false, null, null, false),
         new CAttribute(VarNames.SelectedColumns, VarNames.SelectedColumns, ValueType.Array, 1, false, false, null, null, false),
+        new CAttribute('固定行高', 'fixedHeight', ValueType.Int, 0),
+        new CAttribute('分割列号', 'splitColIndex', ValueType.Int, 0),
         new CAttribute('强制获取', 'forceget', ValueType.String, '', true, true, 'getCanuseColumns'),
     ]),
     new CAttributeGroup('操作设置', [
@@ -166,6 +169,7 @@ class M_FormKernel extends ContainerKernelBase {
         this[AttrNames.NoRender + '_visible'] = nowft == EFormType.Page;
         this[AttrNames.Wrap + '_visible'] = nowft == EFormType.List || nowft == EFormType.Page;
         this[AttrNames.ClickSelectable + '_visible'] = nowft == EFormType.List || nowft == EFormType.Grid;
+        this['hideSelector_visible'] = nowft == EFormType.Grid;
         this[AttrNames.AwaysEditable + '_visible'] = nowft == EFormType.Grid;
         
         this.findAttrGroupByName('List设置').setVisible(this, nowft == EFormType.List);
@@ -562,7 +566,8 @@ class M_FormKernel extends ContainerKernelBase {
                 this.findAttributeByName(AttrNames.EditorType).setVisible(this, isListForm);
                 this.findAttributeByName(AttrNames.NoRender).setVisible(this, isPageForm);
                 this.findAttributeByName(AttrNames.Wrap).setVisible(this, isListForm || isPageForm);
-                this.findAttributeByName(AttrNames.ClickSelectable).setVisible(this, isListForm || isPageForm);
+                this.findAttributeByName(AttrNames.ClickSelectable).setVisible(this, !isPageForm);
+                this.findAttributeByName('hideSelector').setVisible(this, isGridForm);
                 this.findAttributeByName(AttrNames.AwaysEditable).setVisible(this, isGridForm);
                 
                 this.findAttributeByName(AttrNames.Event.OnSelectedChanged).setVisible(this, isGridForm || isListForm);
@@ -593,7 +598,7 @@ class M_FormKernel extends ContainerKernelBase {
                 console.log('Names.Event.OnUpd');
                 break;
             case AttrNames.SelectMode:
-                this.findAttributeByName(AttrNames.KeyColumn).setVisible(this, newValue != ESelectMode.None && (this.isGridForm() || this.isListForm()));
+                //this.findAttributeByName(AttrNames.KeyColumn).setVisible(this, newValue != ESelectMode.None && (this.isGridForm() || this.isListForm()));
                 this.findAttributeByName(AttrNames.DefaultSelectFirst).setVisible(this, keyColumnVisible);
                 var theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnSelectedChanged);
                 this.scriptCreated(null, theBP);

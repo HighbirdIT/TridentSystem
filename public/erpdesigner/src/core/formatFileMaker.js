@@ -1015,7 +1015,7 @@ class CP_ServerSide extends JSFileMaker{
         this.importBlock.pushLine("const serverhelper = require('../../../../erpserverhelper.js');");
         this.importBlock.pushLine("const co = require('co');");
         this.importBlock.pushLine("const sqlTypes = dbhelper.Types;");
-        this.importBlock.pushLine("const sharp = require('sharp');");
+        //this.importBlock.pushLine("const sharp = require('sharp');");
         this.importBlock.pushLine("const fs = require('fs');");
         this.importBlock.pushLine("const forge = require('node-forge');");
 

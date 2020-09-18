@@ -950,6 +950,10 @@ class MobileContentCompiler extends ContentCompiler {
         pageReactClass.renderHeadButtonFun = pageReactClass.getFunction('renderHeadButton', true);
         var pageTitle = pageKernel.getAttribute(AttrNames.Title);
         var hideTitle = pageKernel.getAttribute(AttrNames.HideTitle);
+        var bBlankTitle = pageKernel.getAttribute('blanktitle');
+        if(bBlankTitle){
+            pageTitle = "";
+        }
 
         pageReactClass.constructorFun.pushLine('this.id=' + singleQuotesStr(pageKernel.id) + ';');
         pageReactClass.constructorFun.pushLine('ERPC_Page(this);');
@@ -2291,10 +2295,13 @@ class MobileContentCompiler extends ContentCompiler {
         layoutConfig.addClass('flex-grow-0');
         layoutConfig.addClass('flex-shrink-0');
         layoutConfig.addClass('erp-form');
+        layoutConfig.addClass('flexHelper');
         var orientation = theKernel.getAttribute(AttrNames.Orientation);
         if (orientation == Orientation_V) {
             layoutConfig.addClass('flex-column');
         }
+        var splitColIndex = theKernel.getAttribute('splitColIndex');
+        var fixedRowHeight = theKernel.getAttribute('fixedHeight');
 
         var reactParentKernel = theKernel.getReactParentKernel(true);
         var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
@@ -2315,6 +2322,7 @@ class MobileContentCompiler extends ContentCompiler {
         var stableData = theKernel.getAttribute(AttrNames.StableData);
         var autoPull = theKernel.getAttribute(AttrNames.AutoPull);
         var isWrap = theKernel.getAttribute(AttrNames.Wrap);
+        var hideSelector = theKernel.getAttribute('hideSelector');
 
         var thisfullpath = makeStr_DotProp(fullParentPath, theKernel.id);
         var pathVarName = theKernel.id + '_path';
@@ -2339,6 +2347,13 @@ class MobileContentCompiler extends ContentCompiler {
         var gridHeadPureRectClass = null;
         var gridHeadBodyPureRectClass = null;
         var gridBodyPureRectClass = null;
+
+        var leftGridHeadPureRectClass = null;
+        var rightGridHeadPureRectClass = null;
+        var leftGridHeadBodyPureRectClass = null;
+        var rightGridHeadBodyPureRectClass = null;
+        var leftgridBodyPureRectClass = null;
+        var rightgridBodyPureRectClass = null;
 
         var hadRowButton = false;
         var insertBtnSetting = null;
@@ -2368,9 +2383,9 @@ class MobileContentCompiler extends ContentCompiler {
 
         if (clickSelectable) {
             if (isGridForm) {
-                if (selectMode != ESelectMode.None) {
-                    clickSelectable = false;    // grid开始了选择模式后就不能再用点选功能了
-                }
+                //if (selectMode != ESelectMode.None) {
+                    //clickSelectable = false;    // grid开始了选择模式后就不能再用点选功能了
+                //}
             }
         }
         else {
@@ -2390,12 +2405,17 @@ class MobileContentCompiler extends ContentCompiler {
                 if (clickSelectable) {
                     formReactClass.constructorFun.pushLine('this.clickRowHandler = this.clickRowHandler.bind(this);');
                 }
-                gridHeadPureRectClass = clientSide.getReactClass(theKernel.getReactClassName() + '_THead', true, true);
-                gridBodyPureRectClass = clientSide.getReactClass(theKernel.getReactClassName() + '_TBody', true, true);
-                
-                var tableBodyScrollFun = formReactClass.getFunction('tableBodyScroll', true, ['ev']);
-                formReactClass.constructorFun.pushLine('this.' + tableBodyScrollFun.name + '=' + 'this.' + tableBodyScrollFun.name + '.bind(this);');
-                tableBodyScrollFun.pushLine("document.getElementById(this.props.fullPath + 'tableheader').scrollLeft = ev.target.scrollLeft;");
+                if(splitColIndex == 0){
+                    gridHeadPureRectClass = clientSide.getReactClass(theKernel.getReactClassName() + '_THead', true, true);
+                    gridBodyPureRectClass = clientSide.getReactClass(theKernel.getReactClassName() + '_TBody', true, true);
+                }
+                else{
+                    leftGridHeadPureRectClass = clientSide.getReactClass('Left' + theKernel.getReactClassName() + '_THead', true, true);
+                    rightGridHeadPureRectClass = clientSide.getReactClass('Right' + theKernel.getReactClassName() + '_THead', true, true);
+
+                    leftgridBodyPureRectClass = clientSide.getReactClass(theKernel.getReactClassName() + '_LeftTBody', true, true);
+                    rightgridBodyPureRectClass = clientSide.getReactClass(theKernel.getReactClassName() + '_RightTBody', true, true);
+                }
 
                 rowBtns_arr = theKernel.getRowBtnSetting();
                 hadRowButton = rowBtns_arr.length > 0;
@@ -2406,7 +2426,14 @@ class MobileContentCompiler extends ContentCompiler {
                     });
                     formReactClass.constructorFun.pushLine('this.btns = [' + btnsVarStr + '];');
                     formReactClass.constructorFun.pushLine('this.state={};');
-                    gridHeadBodyPureRectClass = clientSide.getReactClass(theKernel.getReactClassName() + '_THeadBody', true, true);
+
+                    if(splitColIndex == 0){
+                        gridHeadBodyPureRectClass = clientSide.getReactClass(theKernel.getReactClassName() + '_THeadBody', true, true);
+                    }
+                    else{
+                        leftGridHeadBodyPureRectClass = clientSide.getReactClass(theKernel.getReactClassName() + '_LeftTHeadBody', true, true);
+                        rightGridHeadBodyPureRectClass = clientSide.getReactClass(theKernel.getReactClassName() + '_RightTHeadBody', true, true);
+                    }
                 }
                 break;
             case EFormType.List:
@@ -2421,6 +2448,10 @@ class MobileContentCompiler extends ContentCompiler {
         renderContentFun.scope.getVar(VarNames.RetElem, true, 'null');
         renderContentFun.scope.getVar(VarNames.NavElem, true, 'null');
         renderContentFun.scope.getVar('bHadBottom', true, useDS != null ? 'false' : 'true');
+        if(splitColIndex > 0){
+            renderContentFun.scope.getVar('leftElem', true,'null');
+            renderContentFun.scope.getVar('rightElem', true, 'null');
+        }
 
         var ifFetingBlock = new JSFile_IF(VarNames.Fetching, "this.props.fetching");
         ifFetingBlock.trueBlock.pushLine(VarNames.RetElem + " = renderFetcingTipDiv();");
@@ -2497,15 +2528,12 @@ class MobileContentCompiler extends ContentCompiler {
         var hasFormStyle = this.clientSide.addStyleObject(formStyleID, layoutConfig.style);
         var gridBottomDivBlock = new FormatFileBlock('gridBottom');
         var hideHeader = theKernel.getAttribute(AttrNames.HideTabHead);
-        var headClassInBodyTag = null;
-        var headClassInFormTag = null;
 
         var keyColumn = theKernel.getAttribute(AttrNames.KeyColumn);
         if (keyColumn == null) {
             keyColumn = DefaultKeyColumn;
         }
         var autoHeight = theKernel.getAttribute(AttrNames.AutoHeight);
-        var gridBodyTag = null;
         var childRenderBlock = null;
         var titleAlgin = theKernel.getAttribute(AttrNames.TextAlign);
         var titleAlginStr = 'justify-content-center';
@@ -2547,32 +2575,80 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentFun.retBlock.pushLine("</div>);");
         }
         else if (isGridForm) {
-            gridBodyTag = new FormatHtmlTag('bodytag', gridBodyPureRectClass.name, this.clientSide);
-            gridBodyTag.setAttr('dataversion', '{setting.dataversion}');
-            gridBodyTag.setAttr('startRowIndex', '{this.props.startRowIndex}');
-            gridBodyTag.setAttr('endRowIndex', '{this.props.endRowIndex}');
-            gridBodyTag.setAttr('fullPath', '{this.props.fullPath}');
-            gridBodyTag.setAttr('form', '{this}');
-            if (insertBtnSetting) {
-                gridBodyTag.setAttr('hadNewRow', '{this.state.hadNewRow}');
+            var gridBodyTag = null;
+            var leftGridBodyTag = null;
+            var rightGridBodyTag = null;
+            for(var gbi=0; gbi<3; ++gbi){
+                var temGridBody = null;
+                switch(gbi){
+                    case 0:{
+                        if(gridBodyPureRectClass){
+                            gridBodyTag = new FormatHtmlTag('bodytag', gridBodyPureRectClass.name, this.clientSide);
+                            temGridBody = gridBodyTag;
+                            gridBodyPureRectClass.gridBodyTag = temGridBody;
+                        }
+                        break;
+                    }
+                    case 1:{
+                        if(leftgridBodyPureRectClass){
+                            leftGridBodyTag = new FormatHtmlTag('leftbodytag', leftgridBodyPureRectClass.name, this.clientSide);
+                            temGridBody = leftGridBodyTag;
+                            leftgridBodyPureRectClass.gridBodyTag = temGridBody;
+                        }
+                        break;
+                    }
+                    case 2:{
+                        if(rightgridBodyPureRectClass){
+                            rightGridBodyTag = new FormatHtmlTag('rightbodytag', rightgridBodyPureRectClass.name, this.clientSide);
+                            temGridBody = rightGridBodyTag;
+                            rightgridBodyPureRectClass.gridBodyTag = temGridBody;
+                        }
+                        break;
+                    }
+                }
+                if(temGridBody == null){
+                    continue;
+                }
+                temGridBody.setAttr('dataversion', '{setting.dataversion}');
+                temGridBody.setAttr('startRowIndex', '{this.props.startRowIndex}');
+                temGridBody.setAttr('endRowIndex', '{this.props.endRowIndex}');
+                temGridBody.setAttr('fullPath', '{this.props.fullPath}');
+                temGridBody.setAttr('form', '{this}');
+                if (insertBtnSetting) {
+                    temGridBody.setAttr('hadNewRow', '{this.state.hadNewRow}');
+                }
+                if (clickSelectable) {
+                    temGridBody.setAttr('clickRowHandler', '{this.clickRowHandler}');
+                }
+                switch (selectMode) {
+                    case ESelectMode.Single:
+                        temGridBody.setAttr(VarNames.SelectedValue, bigbracketStr('this.props.' + VarNames.SelectedValue));
+                        break;
+                    case ESelectMode.Multi:
+                        temGridBody.setAttr(VarNames.SelectedValues_arr, bigbracketStr('this.props.' + VarNames.SelectedValues_arr));
+                        break;
+                }
+            }
 
-            }
-            if (clickSelectable) {
-                gridBodyTag.setAttr('clickRowHandler', '{this.clickRowHandler}');
-            }
-            switch (selectMode) {
-                case ESelectMode.Single:
-                    gridBodyTag.setAttr(VarNames.SelectedValue, bigbracketStr('this.props.' + VarNames.SelectedValue));
-                    break;
-                case ESelectMode.Multi:
-                    gridBodyTag.setAttr(VarNames.SelectedValues_arr, bigbracketStr('this.props.' + VarNames.SelectedValues_arr));
-                    break;
-            }
             renderContentBlock.pushLine("var setting = gGetFormSetting(this.props.fullPath);");
-            renderContentBlock.pushLine(VarNames.RetElem + " = (", 1);
-            renderContentBlock.pushChild(gridBodyTag);
-            renderContentBlock.subNextIndent();
-            renderContentBlock.pushLine(');');
+            if(splitColIndex == 0){
+                renderContentBlock.pushLine(VarNames.RetElem + " = (", 1);
+                renderContentBlock.pushChild(gridBodyTag);
+                renderContentBlock.subNextIndent();
+                renderContentBlock.pushLine(');');
+            }
+            else{
+                renderContentBlock.pushLine("leftElem = (", 1);
+                renderContentBlock.pushChild(leftGridBodyTag);
+                renderContentBlock.subNextIndent();
+                renderContentBlock.pushLine(');');
+
+                renderContentBlock.pushLine("rightElem = (", 1);
+                renderContentBlock.pushChild(rightGridBodyTag);
+                renderContentBlock.subNextIndent();
+                renderContentBlock.pushLine(');');
+            }
+            
             renderContentBlock.pushLine("if (this.props.pagebreak) {", 1);
             renderContentBlock.pushLine(VarNames.NavElem + " = <CBaseGridFormNavBar pageIndex={this.props.pageIndex} rowPerPage={this.props.rowPerPage} rowPerPageChangedHandler={this.rowPerPageChangedHandler} pageCount={this.props.pageCount} prePageClickHandler={this.prePageClickHandler} nxtPageClickHandler={this.nxtPageClickHandler} pageIndexChangedHandler={this.pageIndexChangedHandler} />", -1);
             renderContentBlock.pushLine("}");
@@ -2581,29 +2657,83 @@ class MobileContentCompiler extends ContentCompiler {
             renderContentFun.pushLine("<div ref={this.rootRef} className='" + layoutConfig.getClassName() + "' " + (hasFormStyle ? "style={" + formStyleID + "}" : '') + ">", 1);
             renderContentFun.pushLine("{this.props.title && <div className='bg-dark text-light " + titleAlginStr + " d-flex flex-shrink-0 p-1'><span>{this.props.title}{this.props.records_arr && this.props.records_arr.length > 0 ? '[' + this.props.records_arr.length + '条]' : null}" + (hadRefreshIcon ? "{this.props.fetching ? null : <i className='btn btn-sm fa fa-refresh' onClick={this.clickFreshHandler} />}" : '') + "</span></div>}");
             if (!hideHeader) {
-                renderContentFun.pushLine("<div id={this.props.fullPath + 'tableheader'} className='mw-100 hidenOverflow flex-shrink-0 gridFormFixHeaderDiv'>", 1);
-                renderContentFun.pushLine("<table className='table' style={" + headTableStyleID + "}>", 1);
-                headClassInFormTag = new FormatHtmlTag('headClassInFormTag', gridHeadPureRectClass.name, this.clientSide);
-                headClassInFormTag.setAttr('form', '{this}');
-                renderContentFun.pushChild(headClassInFormTag);
-                renderContentFun.subNextIndent();
-                if (gridHeadBodyPureRectClass && !hideHeader) {
-                    renderContentFun.pushLine("<" + gridHeadBodyPureRectClass.name + ' form={this} />', -1);
+                var headClassInFormTag = null;
+                if(splitColIndex == 0){
+                    renderContentFun.pushLine("<div id={this.props.fullPath + 'tableheader'} className='mw-100 hidenOverflow flex-shrink-0 gridFormFixHeaderDiv'>", 1);
+                    renderContentFun.pushLine("<table className='table' style={" + headTableStyleID + "}>", 1);
+                    headClassInFormTag = new FormatHtmlTag('headClassInFormTag', gridHeadPureRectClass.name, this.clientSide);
+                    headClassInFormTag.setAttr('form', '{this}');
+                    gridBodyPureRectClass.gridBodyTag.headClassInFormTag = headClassInFormTag;
+                    renderContentFun.pushChild(headClassInFormTag);
+                    renderContentFun.subNextIndent();
+                    if (gridHeadBodyPureRectClass && !hideHeader) {
+                        renderContentFun.pushLine("<" + gridHeadBodyPureRectClass.name + ' form={this} />', -1);
+                    }
+                    renderContentFun.pushLine("</table>", -1);
+                    renderContentFun.pushLine("</div>");
+                    renderContentFun.pushLine("<div id={this.props.fullPath + 'scroller'} onScroll={this.tableBodyScroll} className='mw-100 autoScroll'>", 1);
                 }
-                renderContentFun.pushLine("</table>", -1);
-                renderContentFun.pushLine("</div>");
-                renderContentFun.pushLine("<div id={this.props.fullPath + 'scroller'} onScroll={this.tableBodyScroll} className='mw-100 autoScroll'>", 1);
+                else{
+                    // 分割form
+                    renderContentFun.pushLine("<div className='d-flex flex-grow-0 flex-shrink-0 gridFormFixHeaderDiv'>");
+
+                    renderContentFun.pushLine("<div id={this.props.fullPath + 'leftTableheader'} className='hidenOverflow flex-shrink-0 flex-grow-0'>", 1);
+                    renderContentFun.pushLine("<table className='table' style={" + headTableStyleID + "Left}>", 1);
+                    headClassInFormTag = new FormatHtmlTag('headClassInFormTag', leftGridHeadPureRectClass.name, this.clientSide);
+                    headClassInFormTag.setAttr('form', '{this}');
+                    renderContentFun.pushChild(headClassInFormTag);
+                    leftgridBodyPureRectClass.gridBodyTag.headClassInFormTag = headClassInFormTag;
+                    renderContentFun.subNextIndent();
+                    if (leftGridHeadBodyPureRectClass && !hideHeader) {
+                        renderContentFun.pushLine("<" + leftGridHeadBodyPureRectClass.name + ' form={this} />', -1);
+                    }
+                    renderContentFun.pushLine("</table>", -1);
+                    renderContentFun.pushLine("</div>");
+
+                    renderContentFun.pushLine("<div id={this.props.fullPath + 'rightTableheader'} className='hidenOverflow flex-shrink-1 flex-grow-1'>", 1);
+                    renderContentFun.pushLine("<table className='table' style={" + headTableStyleID + "Right}>", 1);
+                    headClassInFormTag = new FormatHtmlTag('headClassInFormTag', rightGridHeadPureRectClass.name, this.clientSide);
+                    headClassInFormTag.setAttr('form', '{this}');
+                    renderContentFun.pushChild(headClassInFormTag);
+                    rightgridBodyPureRectClass.gridBodyTag.headClassInFormTag = headClassInFormTag;
+                    renderContentFun.subNextIndent();
+                    if (rightGridHeadBodyPureRectClass && !hideHeader) {
+                        renderContentFun.pushLine("<" + rightGridHeadBodyPureRectClass.name + ' form={this} />', -1);
+                    }
+                    renderContentFun.pushLine("</table>", -1);
+                    renderContentFun.pushLine("</div>");
+
+                    renderContentFun.pushLine("</div>");
+                    headClassInFormTag = null;
+                }
             }
             else {
                 renderContentFun.pushLine("<div id={this.props.fullPath + 'scroller'} className='mw-100 autoScroll'>", 1);
             }
-            renderContentFun.pushLine("{" + VarNames.RetElem + "}");
+            if(splitColIndex == 0){
+                renderContentFun.pushLine("{" + VarNames.RetElem + "}");
+            }
+            else{
+                renderContentFun.pushLine("{retElem}");
+                renderContentFun.pushLine("<div className='d-flex mw-100'>", 1);
+                renderContentFun.pushLine("<div id={this.props.fullPath + 'leftScroller'} onScroll={this.leftTableBodyScroll} className='autoScroll flex-grow-0 flex-shrink-0 invisible-scrollbar'>", 1);
+                renderContentFun.pushLine("{1 ? leftElem : null}",-1);
+                renderContentFun.pushLine("<div id={this.props.fullPath + 'leftScrollerBottomspan'}></div>");
+                renderContentFun.pushLine("</div>");
+                renderContentFun.pushLine("<div id={this.props.fullPath + 'rightScroller'} onScroll={this.rightTableBodyScroll} className='flex-grow-1 flex-shrink-1 autoScroll border-left'>", 1);
+                renderContentFun.pushLine("{1 ? rightElem : null}",-1);
+                renderContentFun.pushLine("</div>",-1);
+                renderContentFun.pushLine("</div>");
+            }
             if (insertBtnSetting) {
                 var newbtnlabel = theKernel.getAttribute(AttrNames.InsertBtnLabel);
                 renderContentFun.pushLine("{!this.state.hadNewRow && <button onClick={this.clickNewRowHandler} type='button' className='btn btn-success' ><i className='fa fa-plus'/>" + (IsEmptyString(newbtnlabel) ? '新增' : newbtnlabel) + "</button>}");
             }
-            renderContentFun.subNextIndent();
-            renderContentFun.pushLine("</div>");
+            if(splitColIndex == 0){
+                renderContentFun.subNextIndent();
+                renderContentFun.pushLine("</div>");
+            }
+            
             if (theKernel.gridFormBottomDiv.children.length > 0) {
                 renderContentFun.pushLine("{bHadBottom &&");
                 renderContentFun.pushChild(gridBottomDivBlock);
@@ -3417,33 +3547,103 @@ class MobileContentCompiler extends ContentCompiler {
 
         if (isGridForm) {
             var sumTableWidth = 0;
+            var leftTableWidth = 0;
+            var rightTableWidth = 0;
             var gridWidthType = theKernel.getAttribute(AttrNames.WidthType);
-            gridHeadPureRectClass.renderFun.pushLine('var simpleMode = this.props.simpleMode;');
-            gridHeadPureRectClass.renderFun.pushLine('return (<thead className="thead-light"><tr>', 1);
-            var gridHeadRowRenderBlock = new FormatFileBlock('tr');
-            gridHeadPureRectClass.renderFun.pushChild(gridHeadRowRenderBlock, -1);
-            gridHeadPureRectClass.renderFun.pushLine('</tr></thead>);');
+            var gridHeadRowRenderBlock = null;
             var gridHeadBodyRowRenderBlock = null;
-            if (gridHeadBodyPureRectClass) {
-                gridHeadBodyPureRectClass.renderFun.pushLine(VarNames.RetElem + ' = (<tbody className="border border-top-0 border-bottom-0"><tr>', 1);
-                gridHeadBodyRowRenderBlock = new FormatFileBlock('tr');
-                gridHeadBodyPureRectClass.renderFun.pushChild(gridHeadBodyRowRenderBlock, -1);
-                gridHeadBodyPureRectClass.renderFun.pushLine('</tr></tbody>);');
+
+            var leftGridHeadRowRenderBlock = null;
+            var rightGridHeadRowRenderBlock = null;
+            var leftGridHeadBodyRowRenderBlock = null;
+            var rightGridHeadBodyRowRenderBlock = null;
+
+            if (splitColIndex > 0) {
+                if(gridWidthType != EGridWidthType.Fixed){
+                    logManager.errorEx([
+                        logManager.createBadgeItem(
+                        theKernel.getReadableName(),
+                        theKernel,
+                        this.projectCompiler.clickKernelLogBadgeItemHandler),
+                        '要分割grid必须使用固定列宽模式']);
+                    return false;
+                }
+                if(fixedRowHeight == 0){
+                    logManager.errorEx([
+                        logManager.createBadgeItem(
+                        theKernel.getReadableName(),
+                        theKernel,
+                        this.projectCompiler.clickKernelLogBadgeItemHandler),
+                        '要分割grid必须指定固定行高']);
+                    return false;
+                }
+            }
+
+            if(splitColIndex == 0){
+                gridHeadPureRectClass.renderFun.pushLine('var simpleMode = this.props.simpleMode;');
+                gridHeadPureRectClass.renderFun.pushLine('return (<thead className="thead-light"><tr>', 1);
+                gridHeadRowRenderBlock = new FormatFileBlock('tr');
+                gridHeadPureRectClass.renderFun.pushChild(gridHeadRowRenderBlock, -1);
+                gridHeadPureRectClass.renderFun.pushLine('</tr></thead>);');
+                if (gridHeadBodyPureRectClass) {
+                    gridHeadBodyPureRectClass.renderFun.pushLine(VarNames.RetElem + ' = (<tbody className="border border-top-0 border-bottom-0"><tr>', 1);
+                    gridHeadBodyRowRenderBlock = new FormatFileBlock('tr');
+                    gridHeadBodyPureRectClass.renderFun.pushChild(gridHeadBodyRowRenderBlock, -1);
+                    gridHeadBodyPureRectClass.renderFun.pushLine('</tr></tbody>);');
+                }
             }
+            else{
+                leftGridHeadPureRectClass.renderFun.pushLine('var simpleMode = this.props.simpleMode;');
+                leftGridHeadPureRectClass.renderFun.pushLine('return (<thead className="thead-light"><tr>', 1);
+                leftGridHeadRowRenderBlock = new FormatFileBlock('tr');
+                leftGridHeadPureRectClass.renderFun.pushChild(leftGridHeadRowRenderBlock, -1);
+                leftGridHeadPureRectClass.renderFun.pushLine('</tr></thead>);');
+                if (leftGridHeadBodyPureRectClass) {
+                    leftGridHeadBodyPureRectClass.renderFun.pushLine(VarNames.RetElem + ' = (<tbody className="border border-top-0 border-bottom-0"><tr>', 1);
+                    leftGridHeadBodyRowRenderBlock = new FormatFileBlock('tr');
+                    leftGridHeadBodyPureRectClass.renderFun.pushChild(leftGridHeadBodyRowRenderBlock, -1);
+                    leftGridHeadBodyPureRectClass.renderFun.pushLine('</tr></tbody>);');
+                }
 
-
+                rightGridHeadPureRectClass.renderFun.pushLine('var simpleMode = this.props.simpleMode;');
+                rightGridHeadPureRectClass.renderFun.pushLine('return (<thead className="thead-light"><tr>', 1);
+                rightGridHeadRowRenderBlock = new FormatFileBlock('tr');
+                rightGridHeadPureRectClass.renderFun.pushChild(rightGridHeadRowRenderBlock, -1);
+                rightGridHeadPureRectClass.renderFun.pushLine('</tr></thead>);');
+                if (rightGridHeadBodyPureRectClass) {
+                    rightGridHeadBodyPureRectClass.renderFun.pushLine(VarNames.RetElem + ' = (<tbody className="border border-top-0 border-bottom-0"><tr>', 1);
+                    rightGridHeadBodyRowRenderBlock = new FormatFileBlock('tr');
+                    rightGridHeadBodyPureRectClass.renderFun.pushChild(rightGridHeadBodyRowRenderBlock, -1);
+                    rightGridHeadBodyPureRectClass.renderFun.pushLine('</tr></tbody>);');
+                }
+            }
+                
             if (selectMode != ESelectMode.None) {
-                if (gridWidthType == EGridWidthType.Fixed) {
-                    sumTableWidth += 3.5;
+                var selectorLine = "";
+                if(!hideSelector){
+                    if (gridWidthType == EGridWidthType.Fixed) {
+                        sumTableWidth += 3.5;
+                        leftTableWidth += 3.5;
+                    }
+                    if(selectMode == ESelectMode.Multi){
+                        selectorLine = "<th scope='col' className='selectorTableHeader'><CGridFormSelectCog form={this.props.form} /></th>";
+                    }
+                    else{
+                        selectorLine = "<th scope='col' className='selectorTableHeader'></th>";
+                    }
+                    if(gridHeadRowRenderBlock){
+                        gridHeadRowRenderBlock.pushLine(selectorLine);
+                    }
+                    if(leftGridHeadRowRenderBlock){
+                        leftGridHeadRowRenderBlock.pushLine(selectorLine);
+                    }
                 }
-                if(selectMode == ESelectMode.Multi){
-                    gridHeadRowRenderBlock.pushLine("<th scope='col' className='selectorTableHeader'><CGridFormSelectCog form={this.props.form} /></th>");
-                }
-                else{
-                    gridHeadRowRenderBlock.pushLine("<th scope='col' className='selectorTableHeader'></th>");
-                }
+
                 if (gridHeadBodyRowRenderBlock) {
                     gridHeadBodyRowRenderBlock.pushLine("<td className='selectorTableHeader'></td>");
+                }
+                if(leftGridHeadBodyRowRenderBlock){
+                    leftGridHeadBodyRowRenderBlock.pushLine("<td className='selectorTableHeader'></td>");
                 }
                 formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, VarNames.SelectMode), singleQuotesStr(selectMode)));
             }
@@ -3451,10 +3651,20 @@ class MobileContentCompiler extends ContentCompiler {
             if (autoIndexColumn) {
                 if (gridWidthType == EGridWidthType.Fixed) {
                     sumTableWidth += 3;
+                    leftTableWidth += 3;
                 }
-                gridHeadRowRenderBlock.pushLine("<th scope='col' className='indexTableHeader'>序号</th>");
+                var indexLine = "<th scope='col' className='indexTableHeader'>序号</th>";
+                if(gridHeadRowRenderBlock){
+                    gridHeadRowRenderBlock.pushLine(indexLine);
+                }
+                if(leftGridHeadRowRenderBlock){
+                    leftGridHeadRowRenderBlock.pushLine(indexLine);
+                }
                 if (gridHeadBodyRowRenderBlock) {
                     gridHeadBodyRowRenderBlock.pushLine("<td className='indexTableHeader'></td>");
+                }
+                if(leftGridHeadBodyRowRenderBlock){
+                    leftGridHeadBodyRowRenderBlock.pushLine("<td className='indexTableHeader'></td>");
                 }
             }
 
@@ -3546,6 +3756,12 @@ class MobileContentCompiler extends ContentCompiler {
                 }
                 columnWidth = columnWidth;
                 sumTableWidth += columnWidth;
+                if(splitColIndex > 0 && gridColumnCount < splitColIndex){
+                    leftTableWidth += columnWidth;
+                }
+                else{
+                    rightTableWidth += columnWidth;
+                }
                 gridColumnsProfile_obj[childKernel.id] = {
                     id: childKernel.id,
                     width: columnWidth,
@@ -3558,6 +3774,10 @@ class MobileContentCompiler extends ContentCompiler {
                     filtable:filtable,
                     colValueField:useColValueField,
                 };
+            }
+            if(insertBtnSetting && gridWidthType == EGridWidthType.Fixed){
+                sumTableWidth += 8;
+                rightTableWidth += 8;
             }
             
             kernelMidData.hadAdvanceHeader = hadAdvanceHeader;
@@ -3620,6 +3840,13 @@ class MobileContentCompiler extends ContentCompiler {
                     headStyleObj.whiteSpace = 'nowrap';
                     headStyleObj.overflow = 'hidden';
                     tdStyleObj.verticalAlign = 'middle';
+                    if(fixedRowHeight > 0){
+                        tdStyleObj[AttrNames.StyleAttrNames.Height] = fixedRowHeight + "px";
+                    }
+                    if(fixedRowHeight > 0){
+                        tdStyleObj.whiteSpace = 'nowrap';
+                        tdStyleObj.overflow = 'hidden';
+                    }
 
                     this.clientSide.addStyleObject(headStyleID, headStyleObj);
                     this.clientSide.addStyleObject(tdStyleID, tdStyleObj);
@@ -3631,6 +3858,23 @@ class MobileContentCompiler extends ContentCompiler {
                 }
                 columnProfile.headStyleID = headStyleObj.id;
                 columnProfile.tdStyleID = tdStyleObj.id;
+
+                var useGridHeadRowRenderBlock = null;
+                var useGridHeadBodyRowRenderBlock = null;
+                if(splitColIndex == 0){
+                    useGridHeadRowRenderBlock = gridHeadRowRenderBlock;
+                    useGridHeadBodyRowRenderBlock = gridHeadBodyRowRenderBlock;
+                }
+                else{
+                    useGridHeadRowRenderBlock = columnProfile.index < splitColIndex ? leftGridHeadRowRenderBlock : rightGridHeadRowRenderBlock;
+                    useGridHeadBodyRowRenderBlock = columnProfile.index < splitColIndex ? leftGridHeadBodyRowRenderBlock : rightGridHeadBodyRowRenderBlock;
+                }
+                if(splitColIndex == 0){
+                    useGridHeadRowRenderBlock = gridHeadRowRenderBlock;
+                }
+                else{
+                    useGridHeadRowRenderBlock = columnProfile.index < splitColIndex ? leftGridHeadRowRenderBlock : rightGridHeadRowRenderBlock;
+                }
 
                 thTag = new FormatHtmlTag(gi, 'th', this.clientSide);
                 headThTag_map[gi] = thTag;
@@ -3644,21 +3888,29 @@ class MobileContentCompiler extends ContentCompiler {
                     }
                 }
                 if (columnProfile.dynamicVisible) {
-                    gridHeadRowRenderBlock.pushLine('{this.props.' + columnProfile.id + '_visible == false ? null : (', 1);
+                    useGridHeadRowRenderBlock.pushLine('{this.props.' + columnProfile.id + '_visible == false ? null : (', 1);
                 }
-                gridHeadRowRenderBlock.pushChild(thTag);
+                useGridHeadRowRenderBlock.pushChild(thTag);
                 if (columnProfile.dynamicVisible) {
-                    gridHeadRowRenderBlock.subNextIndent();
-                    gridHeadRowRenderBlock.pushLine(')}');
+                    useGridHeadRowRenderBlock.subNextIndent();
+                    useGridHeadRowRenderBlock.pushLine(')}');
                 }
-                if (gridHeadBodyRowRenderBlock) {
-                    gridHeadBodyRowRenderBlock.pushLine("<td style={" + headStyleObj.id + "}></td>");
+                if (useGridHeadBodyRowRenderBlock) {
+                    useGridHeadBodyRowRenderBlock.pushLine("<td style={" + headStyleObj.id + "}></td>");
                 }
             }
             if (hadRowButton || insertBtnSetting) {
-                gridHeadRowRenderBlock.pushLine("<th scope='col'></th>");
-                if (gridHeadBodyRowRenderBlock) {
-                    gridHeadBodyRowRenderBlock.pushLine("<td className='gridbtncoltd'><VisibleERPC_GridForm_BtnCol form={this.props.form} /></td>");
+                if(splitColIndex == 0){
+                    gridHeadRowRenderBlock.pushLine("<th scope='col' className='gridbtncoltd'></th>");
+                    if (gridHeadBodyRowRenderBlock) {
+                        gridHeadBodyRowRenderBlock.pushLine("<td className='gridbtncoltd'><VisibleERPC_GridForm_BtnCol form={this.props.form} /></td>");
+                    }
+                }
+                else{
+                    rightGridHeadRowRenderBlock.pushLine("<th scope='col' className='gridbtncoltd'></th>");
+                    if (rightGridHeadBodyRowRenderBlock) {
+                        rightGridHeadBodyRowRenderBlock.pushLine("<td className='gridbtncoltd'><VisibleERPC_GridForm_BtnCol form={this.props.form} /></td>");
+                    }
                 }
             }
 
@@ -3674,8 +3926,21 @@ class MobileContentCompiler extends ContentCompiler {
                 gridTableStyle.tableLayout = 'fixed';
                 gridHeadTableStyle.tableLayout = 'fixed';
             }
-            this.clientSide.addStyleObject(tableStyleID, gridTableStyle);
-            this.clientSide.addStyleObject(headTableStyleID, gridHeadTableStyle);
+            if(splitColIndex == 0){
+                this.clientSide.addStyleObject(tableStyleID, gridTableStyle);
+                this.clientSide.addStyleObject(headTableStyleID, gridHeadTableStyle);
+            }
+            else{
+                gridTableStyle.width = leftTableWidth + 'em';
+                this.clientSide.addStyleObject(tableStyleID + 'Left', gridTableStyle);
+                gridTableStyle.width = rightTableWidth + 'em';
+                this.clientSide.addStyleObject(tableStyleID + 'Right', gridTableStyle);
+
+                gridHeadTableStyle.width = leftTableWidth + 'em';
+                this.clientSide.addStyleObject(headTableStyleID + 'Left', gridHeadTableStyle);
+                gridHeadTableStyle.width = rightTableWidth + 'em';
+                this.clientSide.addStyleObject(headTableStyleID + 'Right', gridHeadTableStyle);
+            }
 
             var formPathVarName = theKernel.id + "_path";
             var bindPageFun = this.clientSide.scope.getFunction(makeFName_bindFormPage(theKernel), true, [VarNames.ReState, formPathVarName]);
@@ -3716,105 +3981,151 @@ class MobileContentCompiler extends ContentCompiler {
             bindPageFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.NeedSetState, VarNames.EndRowIndex), VarNames.EndRowIndex));
             bindPageFun.retBlock.pushLine('return ' + makeStr_callFun('setManyStateByPath', [VarNames.ReState, formPathVarName, VarNames.NeedSetState], ';'));
 
-            gridBodyPureRectClass.renderFun.scope.getVar('trElems_arr', true, '[]');
-            gridBodyPureRectClass.renderFun.scope.getVar(VarNames.StartRowIndex, true, makeStr_DotProp('this.props', VarNames.StartRowIndex));
-            gridBodyPureRectClass.renderFun.scope.getVar(VarNames.EndRowIndex, true, makeStr_DotProp('this.props', VarNames.EndRowIndex));
-            gridBodyPureRectClass.renderFun.scope.getVar('formProp', true, 'this.props.form.props');
-            callRowBindBlks = {};
-            gridBodyPureRectClass.renderFun.callRowBindBlks = callRowBindBlks;
-            callRowBindBlks.beforeFor = new FormatFileBlock('beforeFor');
-            gridBodyPureRectClass.renderFun.pushChild(callRowBindBlks.beforeFor);
-            gridBodyPureRectClass.renderFun.pushLine('for (var rowIndex = startRowIndex; rowIndex <= endRowIndex; ++rowIndex) {', 1);
-            gridBodyPureRectClass.renderFun.pushLine('var rowRecord = formProp.records_arr[rowIndex];');
-            gridBodyPureRectClass.renderFun.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == DefaultKeyColumn ? 'rowIndex' : 'GetFromatRowKey(rowRecord.' + keyColumn + ')') + ';');
-            callRowBindBlks.inFor = new FormatFileBlock('inFor');
-            gridBodyPureRectClass.renderFun.pushChild(callRowBindBlks.inFor);
-            if (selectMode != ESelectMode.None) {
-                if (selectMode == ESelectMode.Single) {
-                    gridBodyPureRectClass.renderFun.pushLine("var selected = this.props." + VarNames.SelectedValue + " == " + VarNames.RowKey + ";");
+            var setupGridBodyPureRectClass = (targetGridBodyPureRectClass)=>{
+                targetGridBodyPureRectClass.renderFun.scope.getVar('trElems_arr', true, '[]');
+                targetGridBodyPureRectClass.renderFun.scope.getVar(VarNames.StartRowIndex, true, makeStr_DotProp('this.props', VarNames.StartRowIndex));
+                targetGridBodyPureRectClass.renderFun.scope.getVar(VarNames.EndRowIndex, true, makeStr_DotProp('this.props', VarNames.EndRowIndex));
+                targetGridBodyPureRectClass.renderFun.scope.getVar('formProp', true, 'this.props.form.props');
+                callRowBindBlks = {};
+                targetGridBodyPureRectClass.callRowBindBlks = callRowBindBlks;
+                targetGridBodyPureRectClass.renderFun.callRowBindBlks = callRowBindBlks;
+                callRowBindBlks.beforeFor = new FormatFileBlock('beforeFor');
+                targetGridBodyPureRectClass.renderFun.pushChild(callRowBindBlks.beforeFor);
+                targetGridBodyPureRectClass.renderFun.pushLine('for (var rowIndex = startRowIndex; rowIndex <= endRowIndex; ++rowIndex) {', 1);
+                targetGridBodyPureRectClass.renderFun.pushLine('var rowRecord = formProp.records_arr[rowIndex];');
+                targetGridBodyPureRectClass.renderFun.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == DefaultKeyColumn ? 'rowIndex' : 'GetFromatRowKey(rowRecord.' + keyColumn + ')') + ';');
+                callRowBindBlks.inFor = new FormatFileBlock('inFor');
+                targetGridBodyPureRectClass.renderFun.pushChild(callRowBindBlks.inFor);
+                if (selectMode != ESelectMode.None) {
+                    if (selectMode == ESelectMode.Single) {
+                        targetGridBodyPureRectClass.renderFun.pushLine("var selected = this.props." + VarNames.SelectedValue + " == " + VarNames.RowKey + ";");
+                    }
+                    else {
+                        targetGridBodyPureRectClass.renderFun.pushLine("var selected = this.props." + VarNames.SelectedValues_arr + ".indexOf(" + VarNames.RowKey + ") != -1;");
+                    }
+                }
+                targetGridBodyPureRectClass.renderFun.pushLine('trElems_arr.push(', 1);
+                if (selectMode != ESelectMode.None) {
+                    targetGridBodyPureRectClass.renderFun.pushLine(makeStr_AddAll(
+                        '<VisibleERPC_GridSelectableRow key={', VarNames.RowKey, '} ', 
+                        (clickSelectable || OnSelectedChangedBp ? ' onMouseDown={this.props.clickRowHandler}' : ''), 
+                        (clickSelectable ? ' rowClickable={true}' : ''), 
+                        ' rowkey={rowkey} form={this.props.form} selected={selected} ',
+                        (hideSelector || targetGridBodyPureRectClass == rightgridBodyPureRectClass ? 'hideSelector={true} ' : '') +'>'));
                 }
                 else {
-                    gridBodyPureRectClass.renderFun.pushLine("var selected = this.props." + VarNames.SelectedValues_arr + ".indexOf(" + VarNames.RowKey + ") != -1;");
+                    targetGridBodyPureRectClass.renderFun.pushLine(makeStr_AddAll('<tr rowkey={rowkey} key={rowkey}', (clickSelectable || OnSelectedChangedBp ? " className='cursor_hand' onMouseDown={this.props.clickRowHandler}" : ''), '>'));
                 }
-            }
-            gridBodyPureRectClass.renderFun.pushLine('trElems_arr.push(', 1);
-            if (selectMode != ESelectMode.None) {
-                gridBodyPureRectClass.renderFun.pushLine(makeStr_AddAll('<VisibleERPC_GridSelectableRow key={', VarNames.RowKey, '} ', (clickSelectable || OnSelectedChangedBp ? ' onMouseDown={this.props.clickRowHandler}' : ''), 'rowkey={rowkey} form={this.props.form} selected={selected}>'));
-            }
-            else {
-                gridBodyPureRectClass.renderFun.pushLine(makeStr_AddAll('<tr rowkey={rowkey} key={rowkey}', (clickSelectable || OnSelectedChangedBp ? " className='cursor_hand' onMouseDown={this.props.clickRowHandler}" : ''), '>'));
-            }
-            var gridBodyTableRowRenderBlock = new FormatFileBlock('rowRender');
-            gridBodyPureRectClass.renderFun.pushChild(gridBodyTableRowRenderBlock, -1);
-            if (selectMode != ESelectMode.None) {
-                gridBodyPureRectClass.renderFun.pushLine('</VisibleERPC_GridSelectableRow>);', -1);
-            }
-            else {
-                gridBodyPureRectClass.renderFun.pushLine('</tr>);', -1);
-            }
-            gridBodyPureRectClass.renderFun.pushLine('}', -1);
-
-            gridBodyPureRectClass.renderFun.retBlock.clear();
-            var statrowBlk = null;
-            var statTDBlk = null;
-            if(statColumn_arr.length > 0){
-                var statrowBlk = new FormatFileBlock('statrow');
-                gridBodyPureRectClass.renderFun.retBlock.pushChild(statrowBlk);
-                statrowBlk.pushLine('if(trElems_arr.length>1){', 1);
-                statrowBlk.pushLine('trElems_arr.push(', 1);
-                statrowBlk.pushLine("<tr key='统计'>", 1);
+                var gridBodyTableRowRenderBlock = new FormatFileBlock('rowRender');
+                targetGridBodyPureRectClass.gridBodyTableRowRenderBlock = gridBodyTableRowRenderBlock;
+                targetGridBodyPureRectClass.renderFun.pushChild(gridBodyTableRowRenderBlock, -1);
                 if (selectMode != ESelectMode.None) {
-                    statrowBlk.pushLine("<td className='selectorTableHeader'></td>");
+                    targetGridBodyPureRectClass.renderFun.pushLine('</VisibleERPC_GridSelectableRow>);', -1);
                 }
-                if (autoIndexColumn) {
-                    statrowBlk.pushLine("<td className='indexTableHeader'></td>");
+                else {
+                    targetGridBodyPureRectClass.renderFun.pushLine('</tr>);', -1);
                 }
-                var statTDBlk = new FormatFileBlock('stattd');
-                statrowBlk.pushChild(statTDBlk);
-                statrowBlk.subNextIndent();
-                statrowBlk.pushLine('</tr>');
-                statrowBlk.subNextIndent();
-                statrowBlk.pushLine(');');
-                statrowBlk.subNextIndent();
-                statrowBlk.pushLine('}');
+                targetGridBodyPureRectClass.renderFun.pushLine('}', -1);
+                targetGridBodyPureRectClass.renderFun.retBlock.clear();
+
+                if(statColumn_arr.length > 0){
+                    var statrowBlk = new FormatFileBlock('statrow');
+                    targetGridBodyPureRectClass.renderFun.retBlock.pushChild(statrowBlk);
+                    
+                    statrowBlk.pushLine('if(trElems_arr.length>1){', 1);
+                    statrowBlk.pushLine('trElems_arr.push(', 1);
+                    statrowBlk.pushLine("<tr key='统计'>", 1);
+                    if(targetGridBodyPureRectClass != rightgridBodyPureRectClass){
+                        if (selectMode != ESelectMode.None) {
+                            statrowBlk.pushLine("<td className='selectorTableHeader'></td>");
+                        }
+                        if (autoIndexColumn) {
+                            statrowBlk.pushLine("<td className='indexTableHeader'></td>");
+                        }
+                    }
+                    var statTDBlk = new FormatFileBlock('stattd');
+                    targetGridBodyPureRectClass.statTDBlk = statTDBlk;
+                    statrowBlk.pushChild(statTDBlk);
+                    statrowBlk.subNextIndent();
+                    statrowBlk.pushLine('</tr>');
+                    statrowBlk.subNextIndent();
+                    statrowBlk.pushLine(');');
+                    statrowBlk.subNextIndent();
+                    statrowBlk.pushLine('}');
+                }
             }
 
-            callRowBindBlks.endfor = new FormatFileBlock('endfor');
-            gridBodyPureRectClass.renderFun.retBlock.pushChild(callRowBindBlks.endfor);
-            gridBodyPureRectClass.renderFun.retBlock.pushLine("return (<table className='table table-striped table-hover ' style={" + tableStyleID + "}>", 1);
-            if (!hideHeader) {
-                headClassInBodyTag = new FormatHtmlTag('headClassInFormTag', gridHeadPureRectClass.name, this.clientSide);
-                headClassInBodyTag.setAttr('simpleMode', '{true}');
-                gridBodyPureRectClass.renderFun.retBlock.pushChild(headClassInBodyTag);
+            if(gridBodyPureRectClass){
+                setupGridBodyPureRectClass(gridBodyPureRectClass);
             }
-            gridBodyPureRectClass.renderFun.retBlock.pushLine('<tbody>{trElems_arr}</tbody>', -1);
-            gridBodyPureRectClass.renderFun.retBlock.pushLine('</table>);');
+            else if(leftgridBodyPureRectClass){
+                setupGridBodyPureRectClass(leftgridBodyPureRectClass);
+                setupGridBodyPureRectClass(rightgridBodyPureRectClass);
+            }
 
-            var gridBodyTableNewRowRenderBlock = new FormatFileBlock('newrowRender');
-            if (selectMode != ESelectMode.None) {
-                //gridBodyTableRowRenderBlock.pushLine("<td className='selectorTableHeader'></td>");
-                if (insertBtnSetting) {
-                    gridBodyTableNewRowRenderBlock.pushLine("<td className='selectorTableHeader'></td>");
+            var setupGridBodyPureRectClass_2 = (targetGridBodyPureRectClass, targetGridHeadPureRectClass, affix)=>{
+                targetGridBodyPureRectClass.callRowBindBlks.endfor = new FormatFileBlock('endfor');
+                targetGridBodyPureRectClass.renderFun.retBlock.pushChild(targetGridBodyPureRectClass.callRowBindBlks.endfor);
+                targetGridBodyPureRectClass.renderFun.retBlock.pushLine("return (<table className='table table-striped table-hover ' style={" + tableStyleID + affix + "}>", 1);
+                if (!hideHeader) {
+                    if(targetGridHeadPureRectClass){
+                        var headClassInBodyTag = new FormatHtmlTag('headClassInBodyTag', targetGridHeadPureRectClass.name, this.clientSide);
+                        headClassInBodyTag.setAttr('simpleMode', '{true}');
+                        targetGridBodyPureRectClass.gridBodyTag.headClassInBodyTag = headClassInBodyTag;
+                        targetGridHeadPureRectClass.headClassInBodyTag = headClassInBodyTag;
+                        targetGridBodyPureRectClass.renderFun.retBlock.pushChild(headClassInBodyTag);
+                    }
+                }
+                targetGridBodyPureRectClass.renderFun.retBlock.pushLine('<tbody>{trElems_arr}</tbody>', -1);
+                targetGridBodyPureRectClass.renderFun.retBlock.pushLine('</table>);');
+
+                var gridBodyTableNewRowRenderBlock = new FormatFileBlock('newrowRender');
+                targetGridBodyPureRectClass.gridBodyTableNewRowRenderBlock = gridBodyTableNewRowRenderBlock;
+
+                if(targetGridBodyPureRectClass != rightgridBodyPureRectClass){
+                    if (selectMode != ESelectMode.None) {
+                        if (insertBtnSetting) {
+                            gridBodyTableNewRowRenderBlock.pushLine("<td className='selectorTableHeader'></td>");
+                        }
+                    }
+                    if (autoIndexColumn) {
+                        targetGridBodyPureRectClass.gridBodyTableRowRenderBlock.pushLine("<td className='indexTableHeader'>{rowIndex+1}</td>");
+                        if (insertBtnSetting) {
+                            gridBodyTableNewRowRenderBlock.pushLine("<td className='indexTableHeader'>新</td>");
+                        }
+                    }
                 }
             }
-            if (autoIndexColumn) {
-                gridBodyTableRowRenderBlock.pushLine("<td className='indexTableHeader'>{rowIndex+1}</td>");
-                if (insertBtnSetting) {
-                    gridBodyTableNewRowRenderBlock.pushLine("<td className='indexTableHeader'>新</td>");
-                }
+
+            if(gridBodyPureRectClass){
+                setupGridBodyPureRectClass_2(gridBodyPureRectClass, gridHeadPureRectClass, '');
+            }
+            else if(leftgridBodyPureRectClass){
+                setupGridBodyPureRectClass_2(leftgridBodyPureRectClass, leftGridHeadPureRectClass, 'Left');
+                setupGridBodyPureRectClass_2(rightgridBodyPureRectClass, rightGridHeadPureRectClass, 'Right');
+            }
+
+            var setupGridBodyPureRectClass_3 = (targetGridBodyPureRectClass) =>{
+                targetGridBodyPureRectClass.renderFun.pushLine('if(this.props.hadNewRow){', 1);
+                targetGridBodyPureRectClass.renderFun.pushLine("rowkey = 'new';");
+                targetGridBodyPureRectClass.renderFun.pushLine('trElems_arr.push(', 1);
+                targetGridBodyPureRectClass.renderFun.pushLine('<tr key={rowkey}>', 1);
+                targetGridBodyPureRectClass.renderFun.pushChild(targetGridBodyPureRectClass.gridBodyTableNewRowRenderBlock, -1);
+                targetGridBodyPureRectClass.renderFun.pushLine('</tr>);', -1);
+                targetGridBodyPureRectClass.renderFun.pushLine('}', -1);
             }
 
             var insertBtnUseThisFormData = null;
             var insertBtnUseFormChild_map = {};
             if (insertBtnSetting) {
                 // compile insertbtn
-                gridBodyPureRectClass.renderFun.pushLine('if(this.props.hadNewRow){', 1);
-                gridBodyPureRectClass.renderFun.pushLine("rowkey = 'new';");
-                gridBodyPureRectClass.renderFun.pushLine('trElems_arr.push(', 1);
-                gridBodyPureRectClass.renderFun.pushLine('<tr key={rowkey}>', 1);
-                gridBodyPureRectClass.renderFun.pushChild(gridBodyTableNewRowRenderBlock, -1);
-                gridBodyPureRectClass.renderFun.pushLine('</tr>);', -1);
-                gridBodyPureRectClass.renderFun.pushLine('}', -1);
+                if(gridBodyPureRectClass){
+                    setupGridBodyPureRectClass_3(gridBodyPureRectClass);
+                }
+                else if(leftgridBodyPureRectClass){
+                    setupGridBodyPureRectClass_3(leftgridBodyPureRectClass);
+                    setupGridBodyPureRectClass_3(rightgridBodyPureRectClass);
+                }
 
                 var insertCompareRet = this.compileScriptBlueprint(insertBtnSetting.blueprint, {
                     funName: insertBtnSetting.funName,
@@ -3854,12 +4165,19 @@ class MobileContentCompiler extends ContentCompiler {
                 }
                 columnProfile = gridColumnsProfile_obj[childKernel.id];
                 var childRederBlock = new FormatFileBlock('child_' + childKernel.id);
-                gridBodyTableRowRenderBlock.pushChild(childRederBlock);
+                var useGridBodyPureRectClass = null;
+                if(splitColIndex == 0){
+                    useGridBodyPureRectClass = gridBodyPureRectClass;
+                }
+                else{
+                    useGridBodyPureRectClass = columnProfile.index < splitColIndex ? leftgridBodyPureRectClass : rightgridBodyPureRectClass;
+                }
+                useGridBodyPureRectClass.gridBodyTableRowRenderBlock.pushChild(childRederBlock);
                 var statSetting = statColumn_arr.find(x=>{return x.kernel == childKernel;});
                 if (columnProfile.dynamicVisible) {
                     childRederBlock.pushLine('{this.props.' + columnProfile.id + '_visible == false ? null : (', 1);
-                    if(statTDBlk){
-                        statTDBlk.pushLine('{this.props.' + columnProfile.id + '_visible == false ? null : (', 1);
+                    if(useGridBodyPureRectClass.statTDBlk){
+                        useGridBodyPureRectClass.statTDBlk.pushLine('{this.props.' + columnProfile.id + '_visible == false ? null : (', 1);
                     }
                 }
                 childRederBlock.pushLine("<td style={" + columnProfile.tdStyleID + '}>', 1);
@@ -3868,27 +4186,27 @@ class MobileContentCompiler extends ContentCompiler {
                 }
                 childRederBlock.subNextIndent();
                 childRederBlock.pushLine('</td>');
-                if(statTDBlk){
-                    statTDBlk.pushLine("<td style={" + columnProfile.tdStyleID + '}>');
+                if(useGridBodyPureRectClass.statTDBlk){
+                    useGridBodyPureRectClass.statTDBlk.pushLine("<td style={" + columnProfile.tdStyleID + '}>');
                     if(statSetting){
-                        statTDBlk.pushLine("<VisibleERPC_Label className='erp-control' rowkey='统计' id='" + statSetting.key + "' parentPath={this.props.fullPath} type='float' />");
+                        useGridBodyPureRectClass.statTDBlk.pushLine("<VisibleERPC_Label className='erp-control' rowkey='统计' id='" + statSetting.key + "' parentPath={this.props.fullPath} type='float' />");
                     }
-                    statTDBlk.pushLine('</td>');
+                    useGridBodyPureRectClass.statTDBlk.pushLine('</td>');
                 }
                 if (columnProfile.dynamicVisible) {
                     childRederBlock.subNextIndent();
                     childRederBlock.pushLine(')}');
-                    if(statTDBlk){
-                        statTDBlk.subNextIndent();
-                        statTDBlk.pushLine(')}');
+                    if(useGridBodyPureRectClass.statTDBlk){
+                        useGridBodyPureRectClass.statTDBlk.subNextIndent();
+                        useGridBodyPureRectClass.statTDBlk.pushLine(')}');
                     }
                 }
                 if (insertBtnSetting) {
                     if (insertBtnUseFormChild_map[childKernel.id] || childKernel.getAttribute(AttrNames.NewRowDepend)) {
-                        gridBodyTableNewRowRenderBlock.pushChild(childRederBlock.clone());
+                        useGridBodyPureRectClass.gridBodyTableNewRowRenderBlock.pushChild(childRederBlock.clone());
                     }
                     else {
-                        gridBodyTableNewRowRenderBlock.pushLine("<td style={" + columnProfile.tdStyleID + '}/>');
+                        useGridBodyPureRectClass.gridBodyTableNewRowRenderBlock.pushLine("<td style={" + columnProfile.tdStyleID + '}/>');
                     }
                 }
             }
@@ -3901,6 +4219,13 @@ class MobileContentCompiler extends ContentCompiler {
                 var dynamicCol = thisFormMidData.dynamicColumn_map[ci];
                 thTag = headThTag_map[ci];
                 columnProfile = gridColumnsProfile_obj[ci];
+                var useGridBodyTag = null;
+                if(splitColIndex == 0){
+                    useGridBodyTag = gridBodyTag;
+                }
+                else{
+                    useGridBodyTag = columnProfile.index < splitColIndex ? leftGridBodyTag :rightGridBodyTag;
+                }
                 
                 if (dynamicCol.visible || dynamicCol.label) {
                     thTag.clear();
@@ -3908,9 +4233,9 @@ class MobileContentCompiler extends ContentCompiler {
                 if (dynamicCol.visible && !hideHeader) {
                     freshFun.setColumnNameBlock.pushLine(VarNames.NeedSetState + '.' + ci + '_visible = ' + dynamicCol.visible);
                     formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, ci + '_visible'), VarNames.CtlState + '.' + ci + '_visible'));
-                    headClassInBodyTag.setAttr(ci + '_visible', '{this.props.' + ci + '_visible}');
-                    headClassInFormTag.setAttr(ci + '_visible', '{this.props.' + ci + '_visible}');
-                    gridBodyTag.setAttr(ci + '_visible', '{this.props.' + ci + '_visible}');
+                    useGridBodyTag.headClassInBodyTag.setAttr(ci + '_visible', '{this.props.' + ci + '_visible}');
+                    useGridBodyTag.headClassInFormTag.setAttr(ci + '_visible', '{this.props.' + ci + '_visible}');
+                    useGridBodyTag.setAttr(ci + '_visible', '{this.props.' + ci + '_visible}');
                 }
                 if (dynamicCol.label && !hideHeader) {
                     if(columnProfile.sortable || columnProfile.filtable){
@@ -3921,17 +4246,23 @@ class MobileContentCompiler extends ContentCompiler {
                     }
                     freshFun.setColumnNameBlock.pushLine(VarNames.NeedSetState + '.' + ci + '_label = ' + dynamicCol.label);
                     formReactClass.mapStateFun.pushLine(makeLine_Assign(makeStr_DotProp(VarNames.RetProps, ci + '_label'), VarNames.CtlState + '.' + ci + '_label'));
-                    headClassInBodyTag.setAttr(ci + '_label', '{this.props.' + ci + '_label}');
-                    headClassInFormTag.setAttr(ci + '_label', '{this.props.' + ci + '_label}');
-                    gridBodyTag.setAttr(ci + '_label', '{this.props.' + ci + '_label}');
-
+                    useGridBodyTag.headClassInBodyTag.setAttr(ci + '_label', '{this.props.' + ci + '_label}');
+                    useGridBodyTag.headClassInFormTag.setAttr(ci + '_label', '{this.props.' + ci + '_label}');
+                    useGridBodyTag.setAttr(ci + '_label', '{this.props.' + ci + '_label}');
                 }
             }
 
             if (hadRowButton || insertBtnSetting) {
-                gridBodyTableRowRenderBlock.pushLine("<td className='gridbtncoltd'><VisibleERPC_GridForm_BtnCol rowkey={rowkey} form={this.props.form} /></td>");
+                var useGridBodyPureRectClass = null;
+                if(splitColIndex == 0){
+                    useGridBodyPureRectClass = gridBodyPureRectClass;
+                }
+                else{
+                    useGridBodyPureRectClass = rightgridBodyPureRectClass;
+                }
+                useGridBodyPureRectClass.gridBodyTableRowRenderBlock.pushLine("<td className='gridbtncoltd'><VisibleERPC_GridForm_BtnCol rowkey={rowkey} form={this.props.form} /></td>");
                 if (insertBtnSetting) {
-                    gridBodyTableNewRowRenderBlock.pushLine("<td className='gridbtncoltd'><VisibleERPC_GridForm_BtnCol rowkey={rowkey} form={this.props.form} /></td>");
+                    useGridBodyPureRectClass.gridBodyTableNewRowRenderBlock.pushLine("<td className='gridbtncoltd'><VisibleERPC_GridForm_BtnCol rowkey={rowkey} form={this.props.form} /></td>");
                 }
             }
         }
@@ -5717,6 +6048,10 @@ class MobileContentCompiler extends ContentCompiler {
         if (theKernel.getAttribute('showtitle') == false) {
             ctlTag.setAttr('hidetitle', '{true}');
         }
+        var iconSize = theKernel.getAttribute('iconSize');
+        if (!IsEmptyString(iconSize)) {
+            ctlTag.setAttr('iconSize', iconSize);
+        }
 
 
         renderBlock.pushChild(ctlTag);
@@ -6006,6 +6341,10 @@ class MobileContentCompiler extends ContentCompiler {
         var flowCode = theKernel.getAttribute(AttrNames.FlowStepCode);
         if (!IsEmptyString(flowCode)) {
             ctlTag.setAttr('flowCode', flowCode);
+        }
+        var pageType = theKernel.getAttribute('pageType');
+        if (!IsEmptyString(pageType)) {
+            ctlTag.setAttr('pageType', pageType);
         }
 
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
@@ -7077,7 +7416,8 @@ class MobileContentCompiler extends ContentCompiler {
                                 }
                                 else {
                                     // 页面
-                                    tempCallParams_arr = ['state', true, singleQuotesStr(useCtlData.kernel.id)];
+                                    //tempCallParams_arr = ['state', true, singleQuotesStr(useCtlData.kernel.id)];
+                                    tempCallParams_arr = ['state', true, singleQuotesStr(this.getKernelFullParentPath(theKernel))];
                                 }
                             }
                             if (autoPull) {

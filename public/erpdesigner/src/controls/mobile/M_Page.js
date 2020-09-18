@@ -2,7 +2,8 @@ const M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([
     new CAttributeGroup('基本设置', [
         new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'),
         new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false),
-        new CAttribute('隐藏标题', AttrNames.HideTitle, ValueType.Boolean, false),
+        new CAttribute('隐藏页头', AttrNames.HideTitle, ValueType.Boolean, false),
+        new CAttribute('隐藏标题', 'blanktitle', ValueType.Boolean, false),
         new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr),
         new CAttribute('有滚动条', AttrNames.HadScroll, ValueType.Boolean, true),
         new CAttribute('弹出式页面', AttrNames.PopablePage, ValueType.Boolean, false),

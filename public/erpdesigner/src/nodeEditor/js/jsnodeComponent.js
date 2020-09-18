@@ -498,10 +498,19 @@ class C_JSNODE_Do_FlowStep extends React.PureComponent {
         });
     }
 
+    clickWaitMode(ev) {
+        var nodeData = this.props.nodedata;
+        nodeData.waitMode = !(nodeData.waitMode != false);
+        this.setState({
+            magicObj: {},
+        });
+    }
+
     render() {
         var nowVal = this.props.nodedata.flowStepCode;
         var nodeData = this.props.nodedata;
         var autoCallFetchEnd = nodeData.autoCallFetchEnd != false;
+        var waitMode = nodeData.waitMode != false;
         return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={'申请执行流程步骤'} >
             <div className='flex-grow-1 flex-shrink-1'>
                 <DropDownControl ref={this.dropdownRef} itemChanged={this.flowStepDDCChanged} btnclass='btn-dark' options_arr={gFlowMaster.getAllSteps} rootclass='flex-grow-1 flex-shrink-1' style={{ minWidth: '200px', height: '40px' }} textAttrName='fullName' valueAttrName='code' value={nowVal ? nowVal : -1} />
@@ -513,9 +522,19 @@ class C_JSNODE_Do_FlowStep extends React.PureComponent {
                 </span>
                 AutoCallFetchEnd
             </div>
+            <div className='bg-light'>
+                <span className='fa-stack fa-lg' onClick={this.clickWaitMode}>
+                    <i className={"fa fa-square-o fa-stack-2x"} />
+                    <i className={'fa fa-stack-1x ' + (waitMode ? ' fa-check text-success' : ' fa-close text-danger')} />
+                </span>
+                等待执行
+            </div>
             <div className='d-flex'>
                 <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
-                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutFlowScoketDynamic() ? nodeData.processOutputFlowSockets : null} />
+                <div className='d-flex flex-column'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} processFun={nodeData.isOutFlowScoketDynamic() ? nodeData.processOutputFlowSockets : null} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} customSocketRender={this.customSocketRender} />
+                </div>
             </div>
         </C_Node_Frame>
     }

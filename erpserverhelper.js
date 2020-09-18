@@ -422,6 +422,24 @@ helper.CheckPermission = (req, projid, groups_arr)=>{
     });
 }
 
+helper.waitFlowStepExcute = (rcdid)=>{
+    return co(function* () {
+        var startTime = new Date().getTime();
+        do{
+            var excuteRlt = yield dbhelper.asynQueryWithParams("SELECT [完成状态] FROM [base1].[dbo].[T007D步骤执行记录] where 步骤执行记录代码 = @id", [dbhelper.makeSqlparam('id', sqlTypes.Int, rcdid)]);
+            if(excuteRlt.recordset.length == 0){
+                return helper.createErrorRet("步骤执行记录不存在");
+            }
+            if(excuteRlt.recordset[0]["完成状态"] != 0){
+                return null;
+            }
+            if((new Date().getTime() - startTime)/1000 > 120){
+                return helper.createErrorRet('2分钟过去步骤仍未执行完毕');
+            }
+        }while(true);
+    });
+}
+
 helper.DateFun={
     getNowDate:GetNowDate,
     checkDate:CheckDate,

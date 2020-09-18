@@ -21,6 +21,8 @@ class Draw_img:
 
 
     def draw(self, Ext, Eyt, Vx, Vy, E):
+        plt.rcParams['font.sans-serif'] = ['SimHei']
+        plt.rcParams['axes.unicode_minus'] = False
         print('draw', self.file_name)
         self.figure, self.ax = plt.subplots(figsize=self.figsize, ncols=2, nrows=1)
 
@@ -157,10 +159,14 @@ class Draw_img:
         ey_min = -0.01 if len(ey) == 0 else (int(min(ey) * 100) - 1) / 100
         max_x = ex_max
         min_x = ex_min
-        if ex_max < ey_max:
-            max_x = ey_max
-        if ex_min > ey_min:
-            min_x = ey_min
+        if ex_max <= 0.05:
+            ex_max = 0.05
+        if ex_min >= -0.01:
+            ex_min = -0.01
+        if ey_max <= 0.04:
+            ey_max = 0.04
+        if ey_min >= -0.01:
+            ey_min = -0.01
 
         # print('min', min_x, 'max', max_x)
 
