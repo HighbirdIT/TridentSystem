@@ -9061,7 +9061,7 @@ class JSNode_PopPage extends JSNode_Base {
     }
 
     preRemoveSocket(theSocket) {
-        return !theSocket.isIn || theSocket.hideIcon != true;
+        return !theSocket.isIn || theSocket.hideIcon == false;
     }
 
     projLoadedHandler() {
@@ -9105,7 +9105,7 @@ class JSNode_PopPage extends JSNode_Base {
             }
             inSocket.inputable = false;
         });
-        this.inputScokets_arr.filter(s=> !s.isvalid ).forEach(socket=>{
+        this.inputScokets_arr.filter(s=>{return !s.isvalid;}).forEach(socket=>{
             this.removeSocket(socket);
         });
 
