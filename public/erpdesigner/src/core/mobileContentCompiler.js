@@ -988,7 +988,7 @@ class MobileContentCompiler extends ContentCompiler {
                 pageReactClass.renderHeaderFun.pushLine("return (<div className='d-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader'>", 1);
                 pageReactClass.renderHeaderFun.pushLine("<h3 className='flex-grow-1 flex-shrink-1'>" + pageTitle + "</h3>", -1);
                 if (pageKernel.getAttribute(AttrNames.AutoCloseBtn)) {
-                    pageReactClass.renderHeaderFun.pushLine("<button onClick={this.close} className='flex-grow-0 flex-shrink-0 btn btn-sm btn-danger mr-1'><i className='fa fa-close' /></button>");
+                    pageReactClass.renderHeaderFun.pushLine("<button onClick={this.close} className={'flex-grow-0 flex-shrink-0 btn btn-sm btn-danger mr-1' + (this.props.popInSide ? ' d-none' : '')}><i className='fa fa-close' /></button>");
                 }
                 pageReactClass.renderHeaderFun.pushLine("</div>);");
             }
@@ -5577,7 +5577,7 @@ class MobileContentCompiler extends ContentCompiler {
             if (!defaultValParseRet.isScript) {
                 hadDefaultStr = !IsEmptyString(defaultValParseRet.string);
                 if (hadDefaultStr) {
-                    alterValue = defaultValParseRet.string;
+                    alterValue = singleQuotesStr(defaultValParseRet.string);
                 }
             }
 

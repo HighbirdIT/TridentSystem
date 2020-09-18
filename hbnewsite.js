@@ -474,9 +474,14 @@ app.use('/server/queryqrloginstate', function (req, res, next) {
         res.end();
     }
     else{
-        dbhelper.asynGetScalar('SELECT dbo.FB员工登记姓名([登录用户代码]) as 姓名 FROM [base1].[dbo].[T124C外部快捷登录] where [登录令牌] = @id and datediff(minute, [登录时间], getdate()) < 30', [dbhelper.makeSqlparam('id', sqlTypes.NVarChar(50), id)])
-        .then(qName=>{
-            res.write(qName ? '1' + qName : '0');
+        dbhelper.asynQueryWithParams('SELECT dbo.FB员工登记姓名([登录用户代码]) as 姓名,登录用户代码 as 代码 FROM [base1].[dbo].[T124C外部快捷登录] where [登录令牌] = @id and datediff(minute, [登录时间], getdate()) < 30', [dbhelper.makeSqlparam('id', sqlTypes.NVarChar(50), id)])
+        .then(record=>{
+            if(record.recordset.length == 1){
+                res.write('1' + record.recordset[0]['姓名'] + ',' + record.recordset[0]['代码']);
+            }
+            else{
+                res.write('0');
+            }
             res.end();
         });
     }

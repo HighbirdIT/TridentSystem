@@ -339,7 +339,7 @@ function closePage2(pid, state) {
             }, 50);
         }
     } else {
-        closePage('M_Page_0');
+        closePage(pid);
     }
 }
 
@@ -5709,3 +5709,22 @@ var ERPC_AdvanceFormHeader = function (_React$PureComponent24) {
 
     return ERPC_AdvanceFormHeader;
 }(React.PureComponent);
+
+function SmartSetScrollTop(theElem) {
+    if (theElem == null) {
+        return;
+    }
+    var offsetTop = 0;
+    while (theElem.parentElement) {
+        var parent = theElem.parentElement;
+        if (parent.scrollTop > 0) {
+            if (theElem.offsetTop < parent.scrollTop) {
+                parent.scrollTop = offsetTop - 40;
+                offsetTop = 0;
+            }
+        }
+        offsetTop += theElem.offsetTop;
+        theElem = parent;
+        parent = parent.parentElement;
+    }
+}

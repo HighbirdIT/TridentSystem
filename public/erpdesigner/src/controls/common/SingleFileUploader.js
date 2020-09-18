@@ -76,6 +76,7 @@ class SingleFileUploaderKernel extends ControlKernelBase {
         }
     }
 
+    
     renderSelf(clickHandler, replaceChildClick, designer) {
         return (<CSingleFileUploader key={this.id} designer={designer} ctlKernel={this} onClick={clickHandler ? clickHandler : this.clickHandler} />)
     }
@@ -94,6 +95,8 @@ SingleFileUploader_api.pushApi(new ApiItem_fun({
     name:'Reset',
 }));
 SingleFileUploader_api.pushApi(new ApiItem_propsetter('title'));
+SingleFileUploader_api.pushApi(new ApiItem_propsetter('fileID'));
+SingleFileUploader_api.pushApi(new ApiItem_propsetter('fileIdentity'));
 g_controlApi_arr.push(SingleFileUploader_api);
 
 

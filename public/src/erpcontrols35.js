@@ -295,7 +295,7 @@ function closePage2(pid, state) {
         }
 	}
 	else{
-		closePage('M_Page_0');
+		closePage(pid);
 	}
 }
 
@@ -4752,5 +4752,26 @@ class ERPC_AdvanceFormHeader extends React.PureComponent {
                 <button className='btn btn-sm btn-danger' onClick={this.closePopper}>关闭</button>
             </div>
         </React.Fragment>
+    }
+}
+
+
+
+function SmartSetScrollTop(theElem) {
+    if (theElem == null) {
+        return;
+    }
+    var offsetTop = 0;
+    while (theElem.parentElement) {
+        var parent = theElem.parentElement;
+        if (parent.scrollTop > 0) {
+            if (theElem.offsetTop < parent.scrollTop) {
+                parent.scrollTop = offsetTop - 40;
+                offsetTop = 0;
+            }
+        }
+        offsetTop += theElem.offsetTop;
+        theElem = parent;
+        parent = parent.parentElement;
     }
 }
