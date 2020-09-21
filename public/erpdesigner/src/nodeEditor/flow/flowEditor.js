@@ -264,6 +264,7 @@ class FlowNodeEditorCanUseNodePanel extends React.PureComponent{
             this.props.onMouseDown(ctlItem);
         }
     }
+    
     render() {
         var targetID = this.props.bluePrint.code + 'canUseNode';
         return (
@@ -382,6 +383,20 @@ class C_FlowNode_Editor extends React.PureComponent{
         this.quickMenuRef = React.createRef();
 
         this.selectedNFManager=new SelectItemManager(this.cb_addNF, this.cb_removeNF);
+    }
+    selectFlowStep(stepcode){
+        var editingNode = this.state.editingNode;
+        // this.props.editor.showNodeData(nodeData, ev.ctrlKey);
+        if (editingNode.bluePrint.nodes_arr == null){
+            return null;
+        }
+        let select_list_node = editingNode.bluePrint.nodes_arr;
+        for (var i=0,len=select_list_node.length; i<len; i++){ 
+            if(select_list_node[i].stepCode == stepcode){
+                let nodeData = select_list_node[i];
+                this.showNodeData(nodeData, false);
+            }
+        }
     }
 
     startDrag(dragData, callBack, contentFun){

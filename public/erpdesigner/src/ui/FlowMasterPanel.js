@@ -423,6 +423,10 @@ class CFlowStep extends React.PureComponent{
 
         this.setState(newState);
     }
+    clickHandler(ev){
+        var step = this.props.step;
+        this.props.clickStepHandler(step.code);
+    }
 
     render(){
         var step = this.props.step;
@@ -488,11 +492,17 @@ class CFlowStep extends React.PureComponent{
                             </div>
                             </React.Fragment>}
                     </div>
+                    
                     <button onClick={this.clickEditBtn} className='btn'><i className='fa fa-check' /></button>
                 </div>
                 );
         }
         return <div d-code={step.code} onClick={this.props.onclick}  className={'list-group-item flex-shrink-0 d-flex'}>
+                <button type="button" className="btn btn-outline-primary" onClick={this.clickHandler}>
+                    <svg width="1em" height="1em" viewBox="0 0 16 16" className="bi bi-arrow-up-right" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path fillRule="evenodd" d="M14 2.5a.5.5 0 0 0-.5-.5h-6a.5.5 0 0 0 0 1h4.793L2.146 13.146a.5.5 0 0 0 .708.708L13 3.707V8.5a.5.5 0 0 0 1 0v-6z"></path>
+                    </svg>
+                </button>
                 <button onClick={this.clickdoEditBtn} className='btn flex-grow-0'><i className='fa fa-edit fa-1x' /></button>
                 <div className='d-flex flex-column flex-grow-1'>
                     <div className='list-group-item'>{step.name}[{step.code}]</div>
@@ -532,6 +542,7 @@ class CFlowMaster extends React.PureComponent
         this.panelBaseRef = React.createRef();
 
         this.navbarRef = React.createRef();
+        this.editorRef = React.createRef();
 
         var navItems = [
             CreateNavItemData('流程设计', <div/>),
@@ -683,6 +694,12 @@ class CFlowMaster extends React.PureComponent
             stepKeyword:ev.target.value
         })
     }
+   
+    clickStepHandler(stepcode){
+        if(this.editorRef.current){
+            this.editorRef.current.selectFlowStep(stepcode);
+        }
+    }
     renderStepList(){
         var selectedFlow = this.state.selectedFlow;
         var temporary_stepArrs=selectedFlow && selectedFlow.steps_arr;
@@ -699,13 +716,13 @@ class CFlowMaster extends React.PureComponent
                 }
             }
         }
-        return showStepArr                 .map((step,index)=>{
-            return <CFlowStep  key={step.code ? step.code : 'new' + index} step={step} />
+        return showStepArr.map((step,index)=>{
+            return <CFlowStep  key={step.code ? step.code : 'new' + index} step={step}  clickStepHandler={this.clickStepHandler}/>
         })
     }
     
     render(){
-        this.navItems[0].content = <C_FlowNode_Editor bluePrint={this.state.selectedFlowBP} />;
+        this.navItems[0].content = <C_FlowNode_Editor ref={this.editorRef} bluePrint={this.state.selectedFlowBP} />;
         if(this.state.selectedFlowBP){
             this.navItems[1].content = <FlowSqlBPItemPanel dataMaster={this.state.selectedFlowBP.dataMaster} />;
         }
@@ -748,6 +765,7 @@ class CFlowMaster extends React.PureComponent
                                                 })
                                                 */
                                                 this.renderFlowList()
+                                                
                                             }
                                         </div>
                                     </div>
