@@ -496,7 +496,7 @@ class SqlBPEditPanel extends React.PureComponent {
                     <NameInputRow label='类型' type='select' rootClass='m-1' nameWidth={nameWidth} options_arr={['表值', '标量值', 'delete']} default={type} ref={this.typeRef} />
                     <div className='flex-grow-1 flex-shrink-1 text-info'>
                         {
-                            this.state.errinfo
+                            this.state.errinfo5
                         }
                     </div>
                 </div>

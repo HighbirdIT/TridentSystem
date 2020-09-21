@@ -640,7 +640,7 @@ var SqlBPEditPanel = function (_React$PureComponent6) {
                         React.createElement(
                             'div',
                             { className: 'flex-grow-1 flex-shrink-1 text-info' },
-                            this.state.errinfo
+                            this.state.errinfo5
                         )
                     ),
                     React.createElement(
