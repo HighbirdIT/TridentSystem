@@ -4232,7 +4232,7 @@ class JSNode_Form_SetStatValue extends JSNode_Base {
         };
         this.callFreshSocket.type = ValueType.Boolean;
         this.callFreshSocket.label = 'call刷新';
-        this.callFreshSocket.hideIcon = true;
+        this.callFreshSocket.hideIcon = false;
         this.callFreshSocket.inputable = true;
         if (this.callFreshSocket.defval == null) {
             this.callFreshSocket.defval = true;
@@ -4319,8 +4319,20 @@ class JSNode_Form_SetStatValue extends JSNode_Base {
             myJSBlock.pushLine(belongFormControl.id + '_' + VarNames.NowRecord + '.' + statkey + '=' + socketComRet.value + ';');
         }
         var inreducer = this.isInReducer(preNodes_arr);
-        if (this.callFreshSocket.defval) {
+
+        var freshSocketComRet = this.getSocketCompileValue(helper, this.callFreshSocket, usePreNodes_arr, belongBlock, true);
+        if (freshSocketComRet.err) {
+            return false;
+        }
+        if (freshSocketComRet.value !== false) {
+            if(freshSocketComRet.value !== true){
+                myJSBlock.pushLine('if(' + freshSocketComRet.value + '){', 1);
+            }
             myJSBlock.pushLine(makeStr_callFun(makeFName_reCalFormStat(belongFormControl), [inreducer ? VarNames.State : 'null', belongFormControl.id + '_path']));
+            if(freshSocketComRet.value !== true){
+                myJSBlock.subNextIndent();
+                myJSBlock.pushLine('}');
+            }
         }
 
         var selfCompileRet = new CompileResult(this);

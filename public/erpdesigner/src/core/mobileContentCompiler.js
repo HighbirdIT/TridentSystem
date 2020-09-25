@@ -2942,6 +2942,15 @@ class MobileContentCompiler extends ContentCompiler {
                                 }
                             break;
                         }
+                        if(!validStat){
+                            logManager.warnEx([logManager.createBadgeItem(
+                                theKernel.getReadableName(),
+                                theKernel,
+                                this.projectCompiler.clickKernelLogBadgeItemHandler),
+                                '列' + kernelLabel + '没有找到合适的值字段']);
+                            valueColumn = kernelLabel;
+                            validStat = true;
+                        }
                         if(validStat){
                             statColumn_arr.push({
                                 fun:statFun,
@@ -2962,16 +2971,23 @@ class MobileContentCompiler extends ContentCompiler {
                     statColumn_arr.forEach(item=>{
                         reCalStatFun.pushLine("var stat" + item.key +"=0;");
                     });
-                    reCalStatFun.pushLine(records_arrVarName + '.forEach(record=>{',1);
+                    //reCalStatFun.pushLine(records_arrVarName + '.forEach(record=>{',1);
+                    reCalStatFun.pushLine("for(var recordIndex=0;recordIndex<" + records_arrVarName + ".length;++recordIndex){", 1);
+                    reCalStatFun.pushLine("var record=" + records_arrVarName + "[recordIndex];");
+                    statColumn_arr.forEach(item=>{
+                        reCalStatFun.pushLine("if(record." + item.key + "==null) return;");
+                    });
                     statColumn_arr.forEach(item=>{
                         switch(item.fun){
                             case StatFun_SUM:
+                            //reCalStatFun.pushLine("stat" + item.key +"+=record." + item.key + " == null ? 0 : record." + item.key + ";");
                             reCalStatFun.pushLine("stat" + item.key +"+=record." + item.key + ";");
                             break;
                         }
                     });
                     reCalStatFun.subNextIndent();
-                    reCalStatFun.pushLine('});');
+                    //reCalStatFun.pushLine('});');
+                    reCalStatFun.pushLine('}');
                     reCalStatFun.pushLine('var needSetState={};');
                     statColumn_arr.forEach(item=>{
                         reCalStatFun.pushLine("needSetState['row_统计." + item.key + ".text']=stat" + item.key +";");
@@ -3070,7 +3086,7 @@ class MobileContentCompiler extends ContentCompiler {
                         freshFun.pushLine('rcd.' + item.key + '=parseFloat(rcd.' + item.key + ');');
                     }
                     else{
-                        freshFun.pushLine('rcd.' + item.key + '=0;');
+                        freshFun.pushLine('rcd.' + item.key + '=null;');
                     }
                 });
                 freshFun.pushLine('newKey_map[rowkey]=rcd;');

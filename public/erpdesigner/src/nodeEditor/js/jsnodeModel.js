@@ -2063,6 +2063,9 @@ class JSNode_Return extends JSNode_Base {
                 return false;
             }
             socketValue = socketComRet.value;
+            if(socketValue.toLocaleLowerCase() == "'null'"){
+                socketValue = 'null';
+            }
         }
 
         var setLine = new FormatFile_Line('return ' + socketValue + ';');
@@ -7943,6 +7946,13 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
                 else{
                     myJSBlock.pushLine("ResetSFileUploader(" + cltPathVar + ");", -1);
                 }
+            }
+            else if (selectedKernel.type == M_FormKernel_Type && this.funItem.name == 'RecalStat') {
+                var cltPathVar = singleQuotesStr(selectedKernel.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map }));
+                if (belongUserCtl) {
+                    cltPathVar = belongUserCtl.id + '_path + ' + singleQuotesStr('.' + selectedKernel.getStatePath(''));
+                }
+                myJSBlock.pushLine("reCalStat_" + selectedKernel.id + "(null," + cltPathVar + ");", -1);
             }
             else {
                 myJSBlock.pushLine(selectedKernel.id + "_" + this.funItem.name + "();", -1);
