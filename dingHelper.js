@@ -373,6 +373,46 @@ dingHelper.sendMsgToChat = (charid, msgjson)=>{
     });
 }
 
+dingHelper.ORCFile = (type, fileID)=>{
+    return co(function* () {
+        var accessToken = yield getAppAccessToken();
+        if(accessToken == null){
+            return { errInfo: 'accessToken获取失败' };
+        }
+        var fileURL = yield dbhelper.asynGetScalar("SELECT 'http://erp.highbird.cn:1330' + 文件路径 FROM [dbo].[FTB00E文件信息] (@fileid)", [dbhelper.makeSqlparam('fileid', sqlTypes.Int, fileID)]);
+        if(fileURL == null){
+            return { errInfo: '文件未找到' };
+        }
+        var orcRet = yield fetch("https://oapi.dingtalk.com/topapi/ocr/structured/recognize?access_token=" + accessToken, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body:JSON.stringify({
+                type:type,
+                image_url:fileURL
+            }),
+        }).then(
+            response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                else {
+                    return { errInfo: 'no response' };
+                }
+            }
+        ).then(
+            json => {
+                return json;
+            }
+        );
+        if(orcRet.errcode != 0){
+            return { errInfo: orcRet.errmsg };
+        }
+        return sendChatRet.result;
+    });
+}
+
 var appTicket = null;
 var appAccessToken = null;
 var appAccessToken_expiretime = 0;

@@ -1778,7 +1778,9 @@ function ERPC_DropDown_mapstatetoprops(state, ownprops) {
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
         starval: starval,
-        poppanelminwidth: ownprops.poppanelminwidth
+        poppanelminwidth: ownprops.poppanelminwidth,
+        dynamicStyle: ctlState.style,
+        dynamicClass: ctlState.class
     };
 }
 
@@ -1953,9 +1955,10 @@ var ERPC_Text = function (_React$PureComponent5) {
                     );
                 }
             }
+            var useStyleClass = this.getUseStyleClass(this.props.style, rootDivClassName);
             return React.createElement(
                 'div',
-                { className: rootDivClassName, ref: this.rootDivRef, style: this.props.style },
+                { className: useStyleClass.class, ref: this.rootDivRef, style: useStyleClass.style },
                 contentElem,
                 errTipElem
             );
@@ -2287,8 +2290,8 @@ var ERPC_Img = function (_React$PureComponent9) {
             if (this.props.onMouseDown != null) {
                 needCtlPath = true;
             }
-
-            return React.createElement('img', { className: rootDivClassName, style: this.props.style, src: this.props.src, onMouseDown: this.props.onMouseDown, 'ctl-fullpath': needCtlPath ? this.props.fullPath : null });
+            var useStyleClass = this.getUseStyleClass(this.props.style, rootDivClassName);
+            return React.createElement('img', { className: useStyleClass.class, style: useStyleClass.style, src: this.props.src, onMouseDown: this.props.onMouseDown, 'ctl-fullpath': needCtlPath ? this.props.fullPath : null });
         }
     }]);
 
@@ -2307,7 +2310,7 @@ function ERPC_Img_mapstatetoprops(state, ownprops) {
         src: useSrc,
         visible: ctlState.visible,
         fetching: ctlState.fetching
-    }, _defineProperty(_ref2, 'visible', ctlState.visible == false || ownprops.definvisible ? false : true), _defineProperty(_ref2, 'fetchingErr', ctlState.fetchingErr), _defineProperty(_ref2, 'fullParentPath', propProfile.fullParentPath), _defineProperty(_ref2, 'fullPath', propProfile.fullPath), _ref2;
+    }, _defineProperty(_ref2, 'visible', ctlState.visible == false || ownprops.definvisible ? false : true), _defineProperty(_ref2, 'fetchingErr', ctlState.fetchingErr), _defineProperty(_ref2, 'fullParentPath', propProfile.fullParentPath), _defineProperty(_ref2, 'fullPath', propProfile.fullPath), _defineProperty(_ref2, 'dynamicStyle', ctlState.style), _defineProperty(_ref2, 'dynamicClass', ctlState.class), _ref2;
 }
 
 function ERPC_Img_dispatchtorprops(dispatch, ownprops) {
@@ -2358,9 +2361,11 @@ var ERPC_CheckBox = function (_React$PureComponent10) {
                     React.createElement('i', { className: 'fa ' + (checked ? ' fa-check text-success' : ' fa-close text-danger') })
                 );
             }
+            var rootDivClassName = 'erpc_checkbox ' + (this.props.className == null ? '' : this.props.className);
+            var useStyleClass = this.getUseStyleClass(this.props.style, rootDivClassName);
             return React.createElement(
                 'span',
-                { className: 'erpc_checkbox ' + (this.props.className == null ? '' : this.props.className) },
+                { className: useStyleClass.class, style: useStyleClass.style },
                 React.createElement(
                     'span',
                     { onClick: this.props.readonly ? null : this.clickHandler, className: 'fa-stack fa-lg' },
@@ -2386,7 +2391,9 @@ function ERPC_CheckBox_mapstatetoprops(state, ownprops) {
         fetchingErr: ctlState.fetchingErr,
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
-        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowkey != 'new'
+        plainTextMode: rowState != null && rowState.editing != true && propProfile.rowkey != 'new',
+        dynamicStyle: ctlState.style,
+        dynamicClass: ctlState.class
     };
 }
 
@@ -2457,9 +2464,10 @@ var ERPC_Button = function (_React$PureComponent11) {
                     titleElem
                 );
             }
+            var useStyleClass = this.getUseStyleClass(this.props.style, className);
             return React.createElement(
                 'button',
-                { className: className, style: this.props.style, onClick: this.props.onClick, 'ctl-fullpath': this.props.fullPath },
+                { className: useStyleClass.class, style: useStyleClass.style, onClick: this.props.onClick, 'ctl-fullpath': this.props.fullPath },
                 childElem
             );
         }
@@ -2479,7 +2487,9 @@ function ERPC_Button_mapstatetoprops(state, ownprops) {
         fullPath: propProfile.fullPath,
         title: ctlState.title == null ? ownprops.title : ctlState.title,
         fetching: ctlState.fetching,
-        fetchingErr: ctlState.fetchingErr
+        fetchingErr: ctlState.fetchingErr,
+        dynamicStyle: ctlState.style,
+        dynamicClass: ctlState.class
     };
 }
 
@@ -2633,12 +2643,13 @@ var ERPC_PopperBtn = function (_React$PureComponent12) {
                     )
                 );
             }
+            var useStyleClass = this.getUseStyleClass(this.props.style, this.props.className);
             return React.createElement(
                 'span',
                 { ref: this.rootRef },
                 React.createElement(
                     'button',
-                    { className: this.props.className, style: this.props.style, onClick: this.clickHandler },
+                    { className: useStyleClass.class, style: useStyleClass.style, onClick: this.clickHandler },
                     this.props.labelelem,
                     this.props.title
                 ),
@@ -2666,7 +2677,9 @@ function ERPC_PopperBtn_mapstatetoprops(state, ownprops) {
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
         title: ctlState.title == null ? ownprops.title : ctlState.title,
-        closeSignal: ctlState.closeSignal
+        closeSignal: ctlState.closeSignal,
+        dynamicStyle: ctlState.style,
+        dynamicClass: ctlState.class
     };
 }
 
@@ -5877,8 +5890,8 @@ function SmartSetScrollTop(theElem) {
     }
 }
 
-function GenClassObject(args_arr) {
-    var rlt = {};
+function GenClassObject(base, args_arr) {
+    var rlt = Object.assign({}, base);
     args_arr.forEach(function (arg) {
         if (arg.gp == '') {
             arg.gp = null;
@@ -5894,11 +5907,14 @@ function GenClassObject(args_arr) {
             }
         } else {
             if (arg.gp) {
-                rlt[arg.gp] = 0;
+                delete rlt[arg.gp];
             } else {
-                rlt[arg.val] = 0;
+                delete rlt[arg.val];
             }
         }
     });
-    return rlt;
+    for (var si in rlt) {
+        return rlt;
+    }
+    return null;
 }

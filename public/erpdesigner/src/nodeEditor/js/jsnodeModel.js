@@ -2063,7 +2063,7 @@ class JSNode_Return extends JSNode_Base {
                 return false;
             }
             socketValue = socketComRet.value;
-            if(socketValue.toLocaleLowerCase() == "'null'"){
+            if(socketValue == null || socketValue.toLocaleLowerCase() == "'null'"){
                 socketValue = 'null';
             }
         }

@@ -11,6 +11,11 @@ const M_ControlKernelBaseAttrsSetting = {
 var M_ControlKernel_api = new ControlAPIClass(M_AllKernel_Type);
 M_ControlKernel_api.pushApi(new ApiItem_prop(genIsdisplayAttribute(), 'visible'));
 M_ControlKernel_api.pushApi(new ApiItem_propsetter('visible'));
+
+M_ControlKernel_api.pushApi(new ApiItem_prop(genDynamicStyleAttribute(), 'style'));
+M_ControlKernel_api.pushApi(new ApiItem_propsetter('style'));
+M_ControlKernel_api.pushApi(new ApiItem_prop(genDynamicClassAttribute(), 'class'));
+M_ControlKernel_api.pushApi(new ApiItem_propsetter('class'));
 g_controlApi_arr.push(M_ControlKernel_api);
 /*
 new CAttribute('宽度',AttrNames.Width,ValueType.String,''),

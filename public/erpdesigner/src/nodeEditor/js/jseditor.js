@@ -434,6 +434,16 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_Debug_Log,
         type:'DEBUG'
     },
+    {
+        label:'创建Style对象',
+        nodeClass:JSNode_CreateStyleObject,
+        type:'控件样式'
+    },
+    {
+        label:'创建Class对象',
+        nodeClass:JSNode_CreateClassObject,
+        type:'控件样式'
+    },
 ];
 
 var gCopyed_JsNodes_data=null;

@@ -58,6 +58,9 @@ const JSNODE_STRING_SPLIT = 'stringsplit';
 const JSNODE_ISEMPTYSTRING = 'isemptystring';
 const JSNODE_ISEMPTYARRAY = 'isemptyarray';
 
+const JSNODE_CREATESTYLEOBJECT = 'createstyleobj';
+const JSNODE_CREATECLASSOBJECT = 'createclassobj';
+
 const SpecialCharReg = /[\(\)\[\]\.]/;
 
 class JSNode_AddPageToFrameSet extends JSNode_Base {
@@ -5539,6 +5542,260 @@ class JSNode_IsEmptyArray extends JSNode_Base {
     }
 }
 
+class JSNode_CreateStyleObject extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_CREATESTYLEOBJECT, '创建Style对象', false, nodeJson);
+        autoBind(this);
+
+        this.inputScokets_arr.forEach(socket=>{
+            socket.type = ValueType.String;
+            socket.inputable = true;
+
+            if(socket.name == 'base'){
+                this.baseSocket = socket;
+            }
+        });
+
+        if(this.outputScokets_arr.length > 0){
+            this.outSocket = this.outputScokets_arr[0];
+        }
+        if(this.outSocket == null){
+            this.outSocket = this.addSocket(new NodeSocket('out', this, false));
+        }
+        this.outSocket.type = ValueType.Object;
+        if(this.baseSocket == null){
+            this.baseSocket = this.addSocket(new NodeSocket('base', this, true));
+        }
+        this.baseSocket.label = 'base';
+        this.baseSocket.type = ValueType.Object;
+    }
+    
+
+    nameTextChanged(ev) {
+        var theSocketID = getAttributeByNode(ev.target, 'd-sid');
+        if (theSocketID == null)
+            return;
+        var theSocket = this.getSocketById(theSocketID);
+        if (theSocket == null)
+            return;
+        theSocket.setExtra('name', ev.target.value.trim());
+        theSocket.fireEvent('changed', 10);
+    }
+
+    customSocketRender(socket) {
+        if (socket.isIn == false || socket == this.baseSocket) {
+            return null;
+        }
+        var name = socket.getExtra('name');
+        if (name == null) {
+            name = 'unname';
+        }
+        return (<span className='d-flex align-items-center'>
+            <input type='text' className='socketInputer' d-sid={socket.id} value={name} onChange={this.nameTextChanged} />
+        </span>);
+    }
+
+    preRemoveSocket(socket) {
+        return socket != this.baseSocket;
+    }
+
+    genInSocket() {
+        var nameI = this.inputScokets_arr.length;
+        while (nameI < 999) {
+            if (this.getScoketByName('in' + nameI, true) == null) {
+                break;
+            }
+            ++nameI;
+        }
+        return new NodeSocket('in' + nameI, this, true, {type:ValueType.String, inputable:true});
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var project = this.bluePrint.master.project;
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var outStr = '{';
+        var socketComRet = this.getSocketCompileValue(helper, this.baseSocket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var baseValue = socketComRet.value;
+        if(baseValue){
+            outStr = 'Object.assign({},' + baseValue + ',{';
+        }
+
+        for(var si in this.inputScokets_arr){
+            var socket = this.inputScokets_arr[si];
+            if(socket == this.baseSocket){
+                continue;
+            }
+            socketComRet = this.getSocketCompileValue(helper, socket, usePreNodes_arr, belongBlock, true, true);
+            if (socketComRet.err) {
+                return false;
+            }
+            var socketValue = socketComRet.value;
+            var name = socket.getExtra('name');
+            if (this.checkCompileFlag(name == null || name.length == 0, '需要给每个style都设置名称', helper)) {
+                return false;
+            }
+            if(socketValue == null){
+                socketValue = "''";
+            }
+            outStr +=  singleQuotesStr(name) + ":" + socketValue + ',';
+        }
+        outStr += '}';
+        if(baseValue){
+            outStr += ')';
+        }
+
+        var selfCompileRet = new CompileResult(this);
+        helper.setCompileRetCache(this, selfCompileRet);
+        selfCompileRet.setSocketOut(this.outSocket, outStr);
+        return selfCompileRet;
+    }
+}
+
+class JSNode_CreateClassObject extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_CREATECLASSOBJECT, '创建Class对象', false, nodeJson);
+        autoBind(this);
+
+        this.inputScokets_arr.forEach(socket=>{
+            socket.type = ValueType.String;
+            socket.inputable = true;
+
+            if(socket.name == 'base'){
+                this.baseSocket = socket;
+            }
+        });
+
+        if(this.outputScokets_arr.length > 0){
+            this.outSocket = this.outputScokets_arr[0];
+        }
+        if(this.outSocket == null){
+            this.outSocket = this.addSocket(new NodeSocket('out', this, false));
+        }
+        this.outSocket.type = ValueType.Object;
+        if(this.baseSocket == null){
+            this.baseSocket = this.addSocket(new NodeSocket('base', this, true));
+        }
+        this.baseSocket.label = 'base';
+        this.baseSocket.type = ValueType.Object;
+        this.baseSocket.inputable = false;
+    }
+    
+    groupTextChanged(ev) {
+        var theSocketID = getAttributeByNode(ev.target, 'd-sid');
+        if (theSocketID == null)
+            return;
+        var theSocket = this.getSocketById(theSocketID);
+        if (theSocket == null)
+            return;
+        theSocket.setExtra('gp', ev.target.value.trim());
+        theSocket.fireEvent('changed', 10);
+    }
+
+    optChangedHandler(value, dropdown){
+        var theSocketID = getAttributeByNode(dropdown.rootDivRef.current, 'd-socketid');
+        if (theSocketID == null)
+            return;
+        var theSocket = this.getSocketById(theSocketID);
+        if (theSocket == null)
+            return;
+        theSocket.setExtra('opt', value);
+        theSocket.fireEvent('changed', 10);
+    }
+
+    customSocketRender(socket) {
+        if (socket.isIn == false || socket == this.baseSocket) {
+            return null;
+        }
+        var opt = socket.getExtra('opt');
+        if (opt == null) {
+            opt = 'set';
+        }
+        var group = socket.getExtra('gp');
+        if (group == null) {
+            group = '';
+        }
+        return (<span className='d-flex align-items-center'>
+            <DropDownControl itemChanged={this.optChangedHandler} btnclass='btn-dark' options_arr={['set','unset']} rootclass='flex-grow-0 flex-shrink-0' value={opt} />
+            <input type='text' className='socketInputer border-info' d-sid={socket.id} value={group} onChange={this.groupTextChanged} />
+        </span>);
+    }
+
+    preRemoveSocket(socket) {
+        return socket != this.baseSocket;
+    }
+
+    genInSocket() {
+        var nameI = this.inputScokets_arr.length;
+        while (nameI < 999) {
+            if (this.getScoketByName('in' + nameI, true) == null) {
+                break;
+            }
+            ++nameI;
+        }
+        return new NodeSocket('in' + nameI, this, true, {type:ValueType.String, inputable:true});
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var project = this.bluePrint.master.project;
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var outStr = '';
+        var socketComRet = this.getSocketCompileValue(helper, this.baseSocket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var baseValue = socketComRet.value;
+        outStr = 'GenClassObject(' + (baseValue ? baseValue : 'null') + ',[';
+
+        var valueCount = 0;
+        for(var si in this.inputScokets_arr){
+            var socket = this.inputScokets_arr[si];
+            if(socket == this.baseSocket){
+                continue;
+            }
+            var opt = socket.getExtra('opt');
+            var gp = socket.getExtra('gp');
+            if(opt == null){
+                opt = 'set';
+            }
+            if(gp == null){
+                gp = 'null';
+            }
+            else{
+                gp = singleQuotesStr(gp);
+            }
+            socketComRet = this.getSocketCompileValue(helper, socket, usePreNodes_arr, belongBlock, true, opt != 'set');
+            if (socketComRet.err) {
+                return false;
+            }
+            var socketValue = socketComRet.value;
+            outStr += (valueCount++ > 0 ? ',' : '') + '{opt:' + singleQuotesStr(opt) + ',gp:' + gp + ',val:' + socketValue + '}';
+        }
+        outStr += '])';
+
+        var selfCompileRet = new CompileResult(this);
+        helper.setCompileRetCache(this, selfCompileRet);
+        selfCompileRet.setSocketOut(this.outSocket, outStr);
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_OP_NOT] = {
     modelClass: JSNode_OP_Not,
     comClass: C_Node_SimpleNode,
@@ -5723,5 +5980,13 @@ JSNodeClassMap[JSNODE_ISEMPTYSTRING] = {
 };
 JSNodeClassMap[JSNODE_ISEMPTYARRAY] = {
     modelClass: JSNode_IsEmptyArray,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_CREATESTYLEOBJECT] = {
+    modelClass: JSNode_CreateStyleObject,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_CREATECLASSOBJECT] = {
+    modelClass: JSNode_CreateClassObject,
     comClass: C_Node_SimpleNode,
 };

@@ -57,6 +57,14 @@ function genScripAttribute(label,name,group){
     return new CAttribute(label, name, ValueType.Script, null, null, null, null, null, null,{group:group});
 }
 
+function genDynamicStyleAttribute(){
+    return new CAttribute('动态style', 'dynamicstyle', ValueType.String, false, false, false, null, null, false);
+}
+
+function genDynamicClassAttribute(){
+    return new CAttribute('动态class', 'dynamicclass', ValueType.String, false, false, false, null, null, false);
+}
+
 class CAttribute{
     constructor(label, name, valueType, defaultVal, editable, isArray, options_arr, dropdownSetting, visible, scriptSetting) {
         Object.assign(this,{

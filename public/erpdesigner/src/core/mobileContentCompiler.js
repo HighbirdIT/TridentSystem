@@ -3230,8 +3230,9 @@ class MobileContentCompiler extends ContentCompiler {
         }
 
         if (!useDS) {
-            pullFun.retBlock.pushLine(makeLine_Return(VarNames.ReState));
-            pullFun.pushLine(makeLine_Assign(VarNames.ReState, makeStr_callFun(bindFun.name, [VarNames.ReState])));
+            pullFun.pushLine("var state = hadStateParam ? retState : store.getState()");
+            pullFun.retBlock.pushLine(makeLine_Return(VarNames.State));
+            pullFun.pushLine(makeLine_Assign(VarNames.ReState, makeStr_callFun(bindFun.name, [VarNames.State, 'null', 'null', "fullParentPath + '." + theKernel.id + "'"])));
 
             if (belongFormMidData != null) {
                 belongFormMidData.pullFun.beforeRetBlock.pushLine(VarNames.ReState + '=' + makeStr_callFun(pullFun.name, [VarNames.ReState, 'true', "fullParentPath + '." + belongForm.id + "'"]));
