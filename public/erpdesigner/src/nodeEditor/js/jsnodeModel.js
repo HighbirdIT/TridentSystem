@@ -766,11 +766,16 @@ class JSNode_BluePrint extends EventEmitter {
                 compilHelper.clientSide.setCusValidCheckerBlock.pushLine("gCusValidChecker_map['" + ctlKernel.id + "'] = " + theFun.name + ";");
             }
         }
+        else if(this.group == EJsBluePrintFunGroup.CtlFun && ctlKernel.type == M_PageKernel_Type){
+            // 页面方法
+            validCheckBasePath = "''";
+        }
         else {
             if (compilHelper.config && compilHelper.config.params) {
                 params_arr = compilHelper.config.params;
             }
         }
+        
 
         if (!IsEmptyObject(compilHelper.usePage_map)) {
             for (var pageID in compilHelper.usePage_map) {
