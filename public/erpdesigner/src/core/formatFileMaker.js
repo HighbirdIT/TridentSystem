@@ -970,6 +970,7 @@ class FlowScriptFile extends JSFileMaker{
         super();
         this.flow = flow;
         this.fileName = 'serverFlow' + flow.code;
+        this.importModels = {};
 
         this.importBlock.pushLine("const dbhelper = require('../../../../dbhelper.js');");
         this.importBlock.pushLine("const serverhelper = require('../../../../erpserverhelper.js');");
@@ -980,6 +981,13 @@ class FlowScriptFile extends JSFileMaker{
 
         this.processFun = this.scope.getFunction('process', true, ['stepCode', 'param1', 'param2', 'param3']);
         
+    }
+
+    appendImport(name, path){
+        if(this.importModels[name] == null){
+            this.importModels[name] = 1;
+            this.importBlock.pushLine("const " + name + " = require('" + path + "');");
+        }
     }
 
     compile(){

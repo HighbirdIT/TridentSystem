@@ -458,6 +458,7 @@ class FlowNode_BluePrint extends EventEmitter {
             return false;
         }
         var flowJSFile = new FlowScriptFile(flow);
+        compilHelper.flowFile = flowJSFile;
         var stepSwitchBlock = new JSFile_Switch('step', 'stepCode')
         flowJSFile.processFun.pushChild(stepSwitchBlock);
         // find all stepStart
@@ -2648,3 +2649,32 @@ FlowNodeClassMap[JSNODE_ASSIGNMENT_OPERATOR] = {
     comClass: C_JSNode_Assignment_Operator,
 };
 
+FlowNodeClassMap[JSNODE_AI_SENDMESSAGE] = {
+    modelClass: JsNode_AI_SendMessage,
+    comClass: C_Node_SimpleNode,
+};
+
+FlowNodeClassMap[JSNODE_MESSAGE_TEXT] = {
+    modelClass: JSNode_Message_Text,
+    comClass: C_Node_SimpleNode,
+};
+
+FlowNodeClassMap[JSNODE_MESSAGE_LINK] = {
+    modelClass: JSNode_Message_Link,
+    comClass: C_Node_SimpleNode,
+};
+
+FlowNodeClassMap[JSNODE_MESSAGE_SINGLEACTIONCARD] = {
+    modelClass: JSNode_Message_SingleActionCard,
+    comClass: C_Node_SimpleNode,
+};
+
+FlowNodeClassMap[JSNODE_MESSAGE_ACTIONCARD] = {
+    modelClass: JSNode_Message_ActionCard,
+    comClass: C_Node_SimpleNode,
+};
+
+FlowNodeClassMap[JSNODE_MESSAGE_ACTIONCARDITEM] = {
+    modelClass: JSNode_Message_ActionCardItem,
+    comClass: C_Node_SimpleNode,
+};

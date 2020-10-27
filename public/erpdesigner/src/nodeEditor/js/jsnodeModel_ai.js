@@ -4,6 +4,7 @@ const JSNODE_MESSAGE_LINK = 'message_link';
 const JSNODE_MESSAGE_SINGLEACTIONCARD = 'message_singleactioncard';
 const JSNODE_MESSAGE_ACTIONCARD = 'message_actioncard';
 const JSNODE_MESSAGE_ACTIONCARDITEM = 'message_actioncarditem';
+const JSNODE_MESSAGE_MARKDOWN = 'message_markdown';
 
 
 class JsNode_AI_SendMessage extends JSNode_Base {
@@ -89,8 +90,6 @@ class JsNode_AI_SendMessage extends JSNode_Base {
 
         var myJsBlock = new FormatFileBlock(this.id);
         belongBlock.pushChild(myJsBlock);
-        
-        var theServerSide = helper.serverSide;
 
         var socketComRet = this.getSocketCompileValue(helper, this.aiidScoket, usePreNodes_arr, belongBlock, true, false);
         if (socketComRet.err) {
@@ -106,12 +105,13 @@ class JsNode_AI_SendMessage extends JSNode_Base {
             !(socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_TEXT ||
               socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_LINK ||
               socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_SINGLEACTIONCARD ||
-              socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_ACTIONCARD)
+              socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_ACTIONCARD ||
+              socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_MARKDOWN)
             , '不支持的消息体节点', helper)) {
             return false;
         }
 
-        theServerSide.appendImport('dingAIHelper', '../../../../dingding/ai/dingAIHelper.js');
+        helper.flowFile.appendImport('dingAIHelper', '../../../../dingding/ai/dingAIHelper.js');
 
         var tryBlock = new JSFile_Try('try');
         tryBlock.errorBlock.pushLine("return serverhelper.createErrorRet(eo.message);");
@@ -164,7 +164,8 @@ class JsNode_AI_SendMessage extends JSNode_Base {
             !(socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_TEXT ||
               socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_LINK ||
               socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_SINGLEACTIONCARD ||
-              socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_ACTIONCARD)
+              socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_ACTIONCARD ||
+              socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_MARKDOWN)
             , '不支持的消息体节点', helper)) {
             return false;
         }
@@ -988,6 +989,91 @@ class JSNode_Message_ActionCardItem extends JSNode_Base {
     }
 }
 
+class JSNode_Message_MarkDown extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_MESSAGE_MARKDOWN, '创建MarkDown消息', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            this.inputScokets_arr.forEach(socket => {
+                switch (socket.name) {
+                    case 'title':
+                        this.titleScoket = socket;
+                        break;
+                    case 'content':
+                        this.contentScoket = socket;
+                        break;
+                    case 'atall':
+                        this.atallScoket = socket;
+                        break;
+                    default:
+                        console.warn('无法正确识别的接口:' + socket.name);
+                }
+            });
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+        }
+
+        if (this.titleScoket == null) {
+            this.titleScoket = this.addSocket(new NodeSocket('title', this, true));
+        }
+        this.titleScoket.label = '标题';
+        this.titleScoket.inputable = true;
+
+        if (this.contentScoket == null) {
+            this.contentScoket = this.addSocket(new NodeSocket('content', this, true));
+        }
+        this.contentScoket.label = '内容';
+        this.contentScoket.inputable = true;
+        if(this.outSocket == null){
+            this.outSocket = this.addSocket(new NodeSocket('output', this, false));
+        }
+        this.outSocket.label = '消息对象';
+
+        if (this.atallScoket == null) {
+            this.atallScoket = this.addSocket(new NodeSocket('atall', this, true));
+        }
+        this.atallScoket.type = ValueType.Boolean;
+        this.atallScoket.label = '@所有人';
+        this.atallScoket.inputable = true;
+        if(this.atallScoket.defval == null){
+            this.atallScoket.defval = false;
+        }
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketComRet = this.getSocketCompileValue(helper, this.contentScoket, usePreNodes_arr, belongBlock, true, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var content = socketComRet.value;
+
+        socketComRet = this.getSocketCompileValue(helper, this.titleScoket, usePreNodes_arr, belongBlock, true, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var title = socketComRet.value;
+
+        socketComRet = this.getSocketCompileValue(helper, this.atallScoket, usePreNodes_arr, belongBlock, true, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var atall = socketComRet.value;
+
+        var retData = '{type: "markdown",text: ' + content + ',title:' + title + ',isAtAll:' + atall + '}';
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, retData);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
 JSNodeClassMap[JSNODE_AI_SENDMESSAGE] = {
     modelClass: JsNode_AI_SendMessage,
     comClass: C_Node_SimpleNode,
@@ -1015,6 +1101,11 @@ JSNodeClassMap[JSNODE_MESSAGE_ACTIONCARD] = {
 
 JSNodeClassMap[JSNODE_MESSAGE_ACTIONCARDITEM] = {
     modelClass: JSNode_Message_ActionCardItem,
+    comClass: C_Node_SimpleNode,
+};
+
+JSNodeClassMap[JSNODE_MESSAGE_MARKDOWN] = {
+    modelClass: JSNode_Message_MarkDown,
     comClass: C_Node_SimpleNode,
 };
 
@@ -1057,3 +1148,9 @@ JSNodeEditorControls_arr.push(
     type: '通知'
 });
     
+JSNodeEditorControls_arr.push(
+{
+    label: '创建MarkDown消息',
+    nodeClass: JSNode_Message_MarkDown,
+    type: '通知'
+});

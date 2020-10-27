@@ -15,6 +15,9 @@ function sendToAI(aiid, sendData){
             case 'text':
                 fetchRet = yield sendToWebhook(ai_tb.recordset[0]['webhook'], genTextMsg(sendData.content, [], sendData.isAtAll));
                 break;
+            case 'markdown':
+                fetchRet = yield sendToWebhook(ai_tb.recordset[0]['webhook'], genMarkDownMsg(sendData.title, sendData.text, [], sendData.isAtAll));
+                break;
             case 'link':
                 var msgurl = yield makeDingTalkLink(sendData.proj, sendData.ispc, sendData.flowStep, sendData.stepData);
                 fetchRet = yield sendToWebhook(ai_tb.recordset[0]['webhook'], genLinkMsg(sendData.title, sendData.content, null, msgurl));
@@ -106,6 +109,20 @@ function genTextMsg(content, atids, isAtAll){
         "msgtype": "text",
         "text": {
             "content": content
+        },
+        "at": {
+            "atDingtalkIds": atids ? atids : [], 
+            "isAtAll": isAtAll == true ? true : false
+        }
+    }
+}
+
+function genMarkDownMsg(title ,text, atids, isAtAll){
+    return {
+        "msgtype": "markdown",
+        "markdown": {
+            "title": title,
+            "text": text
         },
         "at": {
             "atDingtalkIds": atids ? atids : [], 
