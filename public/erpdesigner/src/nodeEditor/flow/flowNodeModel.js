@@ -128,12 +128,24 @@ class FlowDef_Variable extends FlowNode_Base {
     }
 
     getDefineString() {
-        var defaultvar = IsEmptyString(this.default) ? 'null' : (isNaN(this.default) ? singleQuotesStr(this.default) : this.default);
+        var defaultvar = this.getDefault();
         return 'var ' + this.name + ' ' + defaultvar + ';';
     }
 
     getDefault() {
-        return IsEmptyString(this.default) ? 'null' : (isNaN(this.default) ? singleQuotesStr(this.default) : this.default);
+        var defVal = this.default;
+        if(IsEmptyString(this.default)){
+            defVal = 'null';
+        }
+        /*
+        else if(defVal == "''" || defVal == '""'){
+            defVal = "''";
+        }
+        else if(isNaN(this.default)){
+            defVal = singleQuotesStr(this.default);
+        }
+        */
+        return defVal;
     }
 }
 
