@@ -110,6 +110,46 @@ const FlowNodeEditorControls_arr =[
         type:'流控制'
     },
     {
+        label:'数组-Get',
+        nodeClass:JSNode_Array_Get,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-Push',
+        nodeClass:JSNode_Array_Push,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-Shift',
+        nodeClass:JSNode_Array_Shift,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-Pop',
+        nodeClass:JSNode_Array_Pop,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-Unshift',
+        nodeClass:JSNode_Array_Unshift,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-Join',
+        nodeClass:JSNode_Array_Join,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-Slice',
+        nodeClass:JSNode_Array_Slice,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-Reverse',
+        nodeClass:JSNode_Array_Reverse,
+        type:'操纵数组'
+    },
+    {
         label:'字符串-长度',
         nodeClass:JSNode_String_Length,
         type:'操纵字符串'

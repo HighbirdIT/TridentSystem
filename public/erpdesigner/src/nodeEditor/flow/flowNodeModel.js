@@ -2713,3 +2713,42 @@ FlowNodeClassMap[JSNODE_ARRAY_FOR] = {
     modelClass: JSNode_Array_For,
     comClass: C_Node_SimpleNode,
 };
+
+FlowNodeClassMap[JSNODE_ARRAY_CONCAT] = {
+    modelClass: JSNode_Array_Concat,
+    comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_ARRAY_PUSH] = {
+    modelClass: JSNode_Array_Push,
+    comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_ARRAY_POP] = {
+    modelClass: JSNode_Array_Pop,
+    comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_ARRAY_GET] = {
+    modelClass: JSNode_Array_Get,
+    comClass: C_Node_SimpleNode,
+};
+
+FlowNodeClassMap[JSNODE_ARRAY_JOIN] = {
+    modelClass: JSNode_Array_Join,
+    comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_ARRAY_SLICE] = {
+    modelClass: JSNode_Array_Slice,
+    comClass: C_Node_SimpleNode,
+};
+
+FlowNodeClassMap[JSNODE_ARRAY_SHIFT] = {
+    modelClass: JSNode_Array_Shift,
+    comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_ARRAY_UNSHIFT] = {
+    modelClass: JSNode_Array_Unshift,
+    comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_ARRAY_REVERSE] = {
+    modelClass: JSNode_Array_Reverse,
+    comClass: C_Node_SimpleNode,
+};

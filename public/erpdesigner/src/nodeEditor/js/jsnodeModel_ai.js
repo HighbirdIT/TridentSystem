@@ -106,7 +106,9 @@ class JsNode_AI_SendMessage extends JSNode_Base {
               socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_LINK ||
               socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_SINGLEACTIONCARD ||
               socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_ACTIONCARD ||
-              socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_MARKDOWN)
+              socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_MARKDOWN ||
+              socketComRet.link.outSocket.node.type == JSNODE_VAR_GET ||
+              socketComRet.link.outSocket.node.type == JSNODE_VAR_SET)
             , '不支持的消息体节点', helper)) {
             return false;
         }
@@ -165,7 +167,9 @@ class JsNode_AI_SendMessage extends JSNode_Base {
               socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_LINK ||
               socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_SINGLEACTIONCARD ||
               socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_ACTIONCARD ||
-              socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_MARKDOWN)
+              socketComRet.link.outSocket.node.type == JSNODE_MESSAGE_MARKDOWN ||
+              socketComRet.link.outSocket.node.type == JSNODE_VAR_GET ||
+              socketComRet.link.outSocket.node.type == JSNODE_VAR_SET)
             , '不支持的消息体节点', helper)) {
             return false;
         }
@@ -829,7 +833,8 @@ class JSNode_Message_ActionCard extends JSNode_Base {
 
         if (this.checkCompileFlag(
               socketComRet.link.outSocket.node.type != JSNODE_MESSAGE_ACTIONCARD &&
-              socketComRet.link.outSocket.node.type != JSNODE_ARRAY_NEW
+              socketComRet.link.outSocket.node.type != JSNODE_ARRAY_NEW &&
+              socketComRet.link.outSocket.node.type != JSNODE_VAR_GET
             , '不支持的卡片数组输入值', helper)) {
             return false;
         }

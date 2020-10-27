@@ -1525,13 +1525,13 @@ JSNodeClassMap[JSNODE_WHILE] = {
     comClass: C_Node_SimpleNode,
 };
 
-JSNodeClassMap[JSNODE_ARRAY_CONCAT] = {
-    modelClass: JSNode_Array_Concat,
+JSNodeClassMap[JSNODE_TERNARY_OPERATOR] = {
+    modelClass: JSNode_Ternary_Operator,
     comClass: C_Node_SimpleNode,
 };
 
-JSNodeClassMap[JSNODE_TERNARY_OPERATOR] = {
-    modelClass: JSNode_Ternary_Operator,
+JSNodeClassMap[JSNODE_ARRAY_CONCAT] = {
+    modelClass: JSNode_Array_Concat,
     comClass: C_Node_SimpleNode,
 };
 JSNodeClassMap[JSNODE_ARRAY_PUSH] = {
