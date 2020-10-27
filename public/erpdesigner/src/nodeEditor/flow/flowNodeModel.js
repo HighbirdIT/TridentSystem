@@ -2553,6 +2553,14 @@ FlowNodeClassMap[JSNODE_ARRAY_LENGTH] = {
     modelClass: JSNode_Array_Length,
     comClass: C_Node_SimpleNode,
 };
+FlowNodeClassMap[JSNODE_ISEMPTYARRAY] = {
+    modelClass: JSNode_IsEmptyArray,
+    comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_ARRAY_NEW] = {
+    modelClass: JSNode_Array_New,
+    comClass: C_Node_SimpleNode,
+};
 FlowNodeClassMap[JSNODE_CONSTVALUE] = {
     modelClass: JSNode_ConstValue,
     comClass: C_Node_SimpleNode,
@@ -2693,5 +2701,15 @@ FlowNodeClassMap[JSNODE_MESSAGE_ACTIONCARDITEM] = {
 
 FlowNodeClassMap[JSNODE_MESSAGE_MARKDOWN] = {
     modelClass: JSNode_Message_MarkDown,
+    comClass: C_Node_SimpleNode,
+};
+
+FlowNodeClassMap[JSNODE_STRING_SPLIT] = {
+    modelClass: JSNode_String_Split,
+    comClass: C_Node_SimpleNode,
+};
+
+FlowNodeClassMap[JSNODE_ARRAY_FOR] = {
+    modelClass: JSNode_Array_For,
     comClass: C_Node_SimpleNode,
 };

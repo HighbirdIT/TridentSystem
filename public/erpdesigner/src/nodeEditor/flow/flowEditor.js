@@ -95,6 +95,21 @@ const FlowNodeEditorControls_arr =[
         type:'数组操纵'
     },
     {
+        label:'数组-创建',
+        nodeClass:JSNode_Array_New,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-是否为空',
+        nodeClass:JSNode_IsEmptyArray,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-For',
+        nodeClass:JSNode_Array_For,
+        type:'流控制'
+    },
+    {
         label:'字符串-长度',
         nodeClass:JSNode_String_Length,
         type:'操纵字符串'
@@ -110,7 +125,12 @@ const FlowNodeEditorControls_arr =[
         type:'操纵字符串'
     },
     {
-        label:'字符串-IndexOf',
+        label:'字符串-Split',
+        nodeClass:JSNode_String_Split,
+        type:'操纵字符串'
+    },
+    {
+        label:'IndexOf',
         nodeClass:JSNode_String_IndexOf,
         type:'操纵字符串'
     },
