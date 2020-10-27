@@ -368,7 +368,7 @@ body{
 
 }
 
-@media only screen and (max-width: 600px){
+@media only screen and (max-width: 767.98px){
     .messageBox{
         min-width: 90%;
     }
@@ -642,14 +642,14 @@ body{
     border: solid black 1px;
 }
 
-@media only screen and (max-width: 1300px){
+@media only screen and (max-width: 1200.98px){
     .popPage{
         max-width: 100%;
         max-height: 100%;
     }
 }
 
-@media only screen and (max-width: 600px){
+@media only screen and (max-width: 767.98){
     .popPage{
         max-width: 100%;
         max-height: 100%;
@@ -876,7 +876,7 @@ body{
 }
 
 
-@media only screen and (max-width: 1400px){
+@media only screen and (max-width: 1200.98px){
     body{
         font-size: 0.5rem !important;
     }
@@ -891,7 +891,7 @@ body{
     }
 }
 
-@media only screen and (max-width: 600px){
+@media only screen and (max-width: 767.980px){
     body{
         font-size: 0.8rem !important;
     }

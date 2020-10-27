@@ -3788,15 +3788,10 @@ class JSNode_OpenReport extends JSNode_Base {
         }
 
         var bundleVarName = VarNames.Bundle + '_' + this.id;
-        if (params_arr.length > 0) {
-            myJSBlock.pushLine("var " + bundleVarName + " = Object.assign({}," + VarNames.BaseBunlde + ",{", 1);
-            myJSBlock.pushChild(initBundleBlock);
-            myJSBlock.subNextIndent();
-            myJSBlock.pushLine('});');
-        }
-        else {
-            myJSBlock.pushLine("var " + bundleVarName + " = {};");
-        }
+        myJSBlock.pushLine("var " + bundleVarName + " = Object.assign({}," + VarNames.BaseBunlde + ",{", 1);
+        myJSBlock.pushChild(initBundleBlock);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('});');
         var callBack_bk = new FormatFileBlock('callback' + this.id);
         myJSBlock.pushChild(callBack_bk);
         var inreducer = this.isInReducer(preNodes_arr);

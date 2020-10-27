@@ -16,7 +16,7 @@ var developconfig = require('./developconfig');
 var debug = require('debug');
 var serverhelper = require('./erpserverhelper.js');
 var cluster = require('cluster');
-var QRCode = require('qrcode')
+var QRCode = require('qrcode');
 
 var emailHelper = require('./emailHelper');
 emailHelper.getETCInvoice();
@@ -644,6 +644,28 @@ app.use('/download', function (req, res, next) {
         res.json({ err: '缺失参数' });
         return;
     }
+});
+
+app.use('/ai', function (req, res, next) {
+    var childPath = req.path;
+    if (childPath.length < 2) {
+        res.json({ err: '未指定ai处理器' });
+        return;
+    }
+    var jspath = __dirname + '/dingding/ai/' + childPath.substr(1) + '_ai.js';
+    var jspath = jspath.replace(/^\//, '');
+    if (jsCache[jspath] != null) {
+        jsCache[jspath](req, res, next);
+    }
+    else if (fs.existsSync(jspath))
+    {
+        jsCache[jspath] = require(jspath);
+        jsCache[jspath](req, res, next);
+    }
+    else{
+        res.json({ err: '不存在的ai处理器' });
+    }
+    return;
 });
 
 app.use(function (req, res, next) {

@@ -5643,15 +5643,11 @@ class JSNode_Query_Sql extends JSNode_Base {
             belongBlock.pushChild(myJSBlock);
         }
 
-        if (params_arr.length > 0) {
-            myJSBlock.pushLine("var " + bundleVarName + " = Object.assign({}," + VarNames.BaseBunlde + ",{", 1);
-            myJSBlock.pushChild(initBundleBlock);
-            myJSBlock.subNextIndent();
-            myJSBlock.pushLine('});');
-        }
-        else {
-            myJSBlock.pushLine("var " + bundleVarName + " = {};");
-        }
+        myJSBlock.pushLine("var " + bundleVarName + " = Object.assign({}," + VarNames.BaseBunlde + ",{", 1);
+        myJSBlock.pushChild(initBundleBlock);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('});');
+
         var callBack_bk = new FormatFileBlock('callback' + this.id);
         myJSBlock.pushChild(callBack_bk);
         var inreducer = this.isInReducer(preNodes_arr);
@@ -6017,11 +6013,31 @@ class JSNode_Array_New extends JSNode_Base {
                 this.outSocket = this.outputScokets_arr[0];
             }
         }
+
+        this.insocketInitVal = {
+            type: ValueType.Object,
+            inputable: true,
+        };
+        this.inputScokets_arr.forEach(socket => {
+            socket.set(this.insocketInitVal);
+        });
+
         if (this.outSocket == null) {
             this.outSocket = new NodeSocket('out', this, false);
             this.addSocket(this.outSocket);
         }
         this.outSocket.type = ValueType.Array;
+    }
+
+    genInSocket() {
+        var nameI = this.inputScokets_arr.length;
+        while (nameI < 999) {
+            if (this.getScoketByName('in' + nameI, true) == null) {
+                break;
+            }
+            ++nameI;
+        }
+        return new NodeSocket('in' + nameI, this, true, this.insocketInitVal);
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -6030,8 +6046,19 @@ class JSNode_Array_New extends JSNode_Base {
             return superRet;
         }
 
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketVal_arr = [];
+        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+            var theSocket = this.inputScokets_arr[i];
+            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true, false);
+            if (socketComRet.err) {
+                return false;
+            }
+            socketVal_arr.push(socketComRet.value);
+        }
+
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, '[]');
+        selfCompileRet.setSocketOut(this.outSocket, '[' + (socketVal_arr.length == 0 ? '' : socketVal_arr.join(',')) + ']');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -10307,15 +10334,10 @@ class JSNode_Excute_Pro extends JSNode_Base {
         }
 
         var bundleVarName = VarNames.Bundle + '_' + this.id;
-        if (params_arr.length > 0) {
-            myJSBlock.pushLine("var " + bundleVarName + " = Object.assign({}," + VarNames.BaseBunlde + ",{", 1);
-            myJSBlock.pushChild(initBundleBlock);
-            myJSBlock.subNextIndent();
-            myJSBlock.pushLine('});');
-        }
-        else {
-            myJSBlock.pushLine("var " + bundleVarName + " = {};");
-        }
+        myJSBlock.pushLine("var " + bundleVarName + " = Object.assign({}," + VarNames.BaseBunlde + ",{", 1);
+        myJSBlock.pushChild(initBundleBlock);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('});');
         var callBack_bk = new FormatFileBlock('callback' + this.id);
         myJSBlock.pushChild(callBack_bk);
         var inreducer = this.isInReducer(preNodes_arr);
