@@ -158,6 +158,41 @@ const FlowNodeEditorControls_arr =[
         label:'赋值运算符',
         nodeClass:JSNode_Assignment_Operator,
         type:'运算'
+    },
+    {
+        label: '推送机器人消息',
+        nodeClass: JsNode_AI_SendMessage,
+        type: '机器人'
+    },
+    {
+        label: '创建文本消息',
+        nodeClass: JSNode_Message_Text,
+        type: '通知'
+    },
+    {
+        label: '创建链接消息',
+        nodeClass: JSNode_Message_Link,
+        type: '通知'
+    },
+    {
+        label: '创建独立卡片消息',
+        nodeClass: JSNode_Message_SingleActionCard,
+        type: '通知'
+    },
+    {
+        label: '创建卡片消息',
+        nodeClass: JSNode_Message_ActionCard,
+        type: '通知'
+    },
+    {
+        label: '创建卡片消息项',
+        nodeClass: JSNode_Message_ActionCardItem,
+        type: '通知'
+    },
+    {
+        label: '创建MarkDown消息',
+        nodeClass: JSNode_Message_MarkDown,
+        type: '通知'
     }
 ];
 

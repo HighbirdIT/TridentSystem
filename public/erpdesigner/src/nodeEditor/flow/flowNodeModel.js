@@ -2678,3 +2678,8 @@ FlowNodeClassMap[JSNODE_MESSAGE_ACTIONCARDITEM] = {
     modelClass: JSNode_Message_ActionCardItem,
     comClass: C_Node_SimpleNode,
 };
+
+FlowNodeClassMap[JSNODE_MESSAGE_MARKDOWN] = {
+    modelClass: JSNode_Message_MarkDown,
+    comClass: C_Node_SimpleNode,
+};
