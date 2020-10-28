@@ -119,18 +119,15 @@ class JsNode_AI_SendMessage extends JSNode_Base {
         tryBlock.errorBlock.pushLine("return serverhelper.createErrorRet(eo.message);");
         myJsBlock.pushChild(tryBlock);
         tryBlock.bodyBlock.pushLine('yield dingAIHelper.SendToAI(' + aiid + ',' + sendData + ');');
-        var endtryBlock = new JSFile_Try('endtry');
+        var endtryBlock = new FormatFileBlock('endtry');
         myJsBlock.pushChild(endtryBlock);
 
         var selfCompileRet = new CompileResult(this);
         helper.setCompileRetCache(this, selfCompileRet);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJsBlock);
 
-        var serverFlow_links = this.bluePrint.linkPool.getLinksBySocket(this.serverFlowSocket);
-        if (serverFlow_links.length > 0) {
-            if (this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, endtryBlock) == false) {
-                return false;
-            }
+        if (this.compileOutFlow(helper, usePreNodes_arr, endtryBlock) == false) {
+            return false;
         }
         return selfCompileRet;
     }
