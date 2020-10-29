@@ -878,16 +878,16 @@ body{
 
 @media only screen and (max-width: 1200.98px){
     body{
-        font-size: 0.5rem !important;
+        font-size: 0.8rem !important;
     }
 
     .btn{
-        font-size: 0.5rem !important;
+        font-size: 0.8rem !important;
     }
 
     .form-control{
-        font-size: 0.5rem !important;
-        height:calc(1.4rem + 2px);
+        font-size: 0.8rem !important;
+        height:calc(1.9rem + 2px);
     }
 }
 
