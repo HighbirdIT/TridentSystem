@@ -2092,7 +2092,7 @@ class JSNode_GetFormXMLData extends JSNode_Base {
         var formStateVarName = selectedKernel.id + '_state';
         var formPathVarName = selectedKernel.id + '_path';
         if (traversalFromNode == null) {
-            helper.addUseForm(selectedKernel, EFormRowSource.Context);
+            helper.addUseForm(selectedKernel, EFormRowSource.None);
         }
         else {
             traversalFromNode.addUseControlPath(selectedKernel);
@@ -4177,7 +4177,7 @@ class JSNode_GetFormJsonData extends JSNode_Base {
         var formStateVarName = selectedKernel.id + '_state';
         var formPathVarName = selectedKernel.id + '_path';
         if (traversalFromNode == null) {
-            helper.addUseForm(selectedKernel, EFormRowSource.Context);
+            helper.addUseForm(selectedKernel, EFormRowSource.None);
         }
         else {
             traversalFromNode.addUseControlPath(selectedKernel);

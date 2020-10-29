@@ -4124,7 +4124,7 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
         }
         var rlt = selectedKernel.id + '_' + useApiItem.stateName;
         if (traversalFromNode == null) {
-            helper.addUseControlPropApi(selectedKernel, useApiItem, EFormRowSource.Context);
+            helper.addUseControlPropApi(selectedKernel, useApiItem, EFormRowSource.None);
         }
         else {
             traversalFromNode.addUseControlPropApi(selectedKernel, useApiItem);
