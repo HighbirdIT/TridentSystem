@@ -2323,6 +2323,7 @@ class MobileContentCompiler extends ContentCompiler {
         var autoPull = theKernel.getAttribute(AttrNames.AutoPull);
         var isWrap = theKernel.getAttribute(AttrNames.Wrap);
         var hideSelector = theKernel.getAttribute('hideSelector');
+        var autoResetHeader = theKernel.getAttribute('autoResetHeader');
 
         var thisfullpath = makeStr_DotProp(fullParentPath, theKernel.id);
         var pathVarName = theKernel.id + '_path';
@@ -3813,7 +3814,11 @@ class MobileContentCompiler extends ContentCompiler {
                 recordsArraychangedFunInitBlk.pushLine("}");
                 recordsArraychangedFunInitBlk.pushLine("");
 
-                pullFun.pushLine("gGetFormSetting(fullParentPath + '." + theKernel.id + "').setRecords(null);");
+                pullFun.pushLine("var formSetting = gGetFormSetting(fullParentPath + '." + theKernel.id + "');");
+                pullFun.pushLine("formSetting.setRecords(null)");
+                if(autoResetHeader){
+                    pullFun.pushLine("formSetting.clear()");
+                }
             }
             var gridHeadStyles_map = {};
             var gridHeadStyleCount = 0;
@@ -7345,7 +7350,7 @@ class MobileContentCompiler extends ContentCompiler {
                         }
                         if (IsEmptyObject(useFormData.useControls_map)) {
                             // 只用到了目标form的数据列，需要在其bind的时候进行重新bind
-                            if (useFormMidData.isPageForm) {
+                            if (autoPull && useFormMidData.isPageForm) {
                                 useFormMidData.bindFun.bindEndBlock.pushLine(makeStr_callFun(pullFun.name, [VarNames.ReState, true, thisFormFullParentPath], ';'));
                             }
                         }

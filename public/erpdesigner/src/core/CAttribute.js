@@ -414,6 +414,7 @@ const AttrNames={
         OnUnCollapse:'onUnCollapse',
         OnRowBind:'onRowBind',
         OnClickRefresh:'onclickrefresh',
+        OnClickRow:'onclickrow',
     },
 
     Function:{

@@ -18,6 +18,7 @@ const ButtonKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('隐藏名称', AttrNames.HideLabel, ValueType.Boolean, false),
         new CAttribute('有成功提示', AttrNames.HaveDoneTip, ValueType.Boolean, true),
         new CAttribute('图标类型', AttrNames.IconType, ValueType.String, ''),
+        new CAttribute('权限组', AttrNames.PermissionGroup, ValueType.Int, null, true, true, [], {text:'name', value:'code',pullDataFun:GetCanUsePermissionGroup}),
     ]),
     new CAttributeGroup('事件',[
         new CAttribute('OnClick', AttrNames.Event.OnClick, ValueType.Event),
