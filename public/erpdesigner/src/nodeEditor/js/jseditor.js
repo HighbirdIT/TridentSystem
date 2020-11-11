@@ -430,6 +430,11 @@ const JSNodeEditorControls_arr =[
         type:'XML操作'
     },
     {
+        label:'XML-抽取所有列',
+        nodeClass:JSNode_Xml_ExtractAllColumn,
+        type:'XML操作'
+    },
+    {
         label:'Log',
         nodeClass:JSNode_Debug_Log,
         type:'DEBUG'

@@ -3909,6 +3909,7 @@ class MobileContentCompiler extends ContentCompiler {
                         thTag.pushLine(columnProfile.label);
                     }
                 }
+                
                 if (columnProfile.dynamicVisible) {
                     useGridHeadRowRenderBlock.pushLine('{this.props.' + columnProfile.id + '_visible == false ? null : (', 1);
                 }
@@ -4249,7 +4250,7 @@ class MobileContentCompiler extends ContentCompiler {
                     useGridBodyTag = columnProfile.index < splitColIndex ? leftGridBodyTag :rightGridBodyTag;
                 }
                 
-                if (dynamicCol.visible || dynamicCol.label) {
+                if (dynamicCol.label) {
                     thTag.clear();
                 }
                 if (dynamicCol.visible && !hideHeader) {
