@@ -364,6 +364,11 @@ class MobileContentCompiler extends ContentCompiler {
                         }
                         if (accordionParents_arr) {
                             changedFun.subNextIndent();
+                            changedFun.pushLine('}else{',1);
+                            accordionParents_arr.forEach(accordionKernel => {
+                                changedFun.pushLine('if(!' + accordionKernel.id + '_state.inited){gDataCache.set(' + singleQuotesStr(accordionKernel.getStatePath()) + ',true);}');
+                            });
+                            changedFun.subNextIndent();
                             changedFun.pushLine('}');
                         }
                         break;
@@ -836,6 +841,11 @@ class MobileContentCompiler extends ContentCompiler {
                 }
                 if (accordionParents_arr) {
                     changedFun.subNextIndent();
+                    changedFun.pushLine('}else{',1);
+                    accordionParents_arr.forEach(accordionKernel => {
+                        changedFun.pushLine('if(!' + accordionKernel.id + '_state.inited){gDataCache.set(this.props.fullPath + ' + singleQuotesStr('.' + accordionKernel.getStatePath('needrebind')) + ',true);}');
+                    });
+                    changedFun.subNextIndent();
                     changedFun.pushLine('}');
                 }
             }
@@ -909,6 +919,11 @@ class MobileContentCompiler extends ContentCompiler {
                         break;
                 }
                 if (accordionParents_arr) {
+                    changedFun.subNextIndent();
+                    changedFun.pushLine('}else{',1);
+                    accordionParents_arr.forEach(accordionKernel => {
+                        changedFun.pushLine('if(!' + accordionKernel.id + '_state.inited){gDataCache.set(this.props.fullPath + ' + singleQuotesStr('.' + accordionKernel.getStatePath('needrebind')) + ',true);}');
+                    });
                     changedFun.subNextIndent();
                     changedFun.pushLine('}');
                 }
@@ -5165,6 +5180,7 @@ class MobileContentCompiler extends ContentCompiler {
         var selftRenderBlock = controlReactClass.renderFun;
         selftRenderBlock.pushLine('if(this.props.inited == false){this.rebindBody(); return null;}');
         selftRenderBlock.pushLine('this.initing = false;');
+        selftRenderBlock.pushLine('if(gDataCache.get(this.props.fullPath + ".needrebind")){this.rebindBody();}');
 
         if(invisibleAct == EInvisibleAct.DNONE){
             layoutConfig.removeClass('d-flex');
@@ -5181,6 +5197,7 @@ class MobileContentCompiler extends ContentCompiler {
         rebindBodyFun.scope.getVar(VarNames.State, true, 'store.getState()');
         rebindBodyFun.pushLine('if(this.initing){return}');
         rebindBodyFun.pushLine('this.initing=true;');
+        rebindBodyFun.pushLine('gDataCache.set(this.props.fullPath + ".needrebind",false);');
 
         controlReactClass.mapStateFun.scope.getVar('propProfile', true, "getControlPropProfile(ownprops, state)");
         controlReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
@@ -5242,7 +5259,7 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
         rebindBodyFun.pushLine(VarNames.NeedSetState + '[' + thisFullPathVarName + "+'.inited'] = true;"),
-            rebindBodyFun.pushLine("setTimeout(() => {store.dispatch(makeAction_setManyStateByPath(needSetState, ''));},50);", -1);
+        rebindBodyFun.pushLine("setTimeout(() => {store.dispatch(makeAction_setManyStateByPath(needSetState, ''));},50);", -1);
         ctlMidData.needCallOnInit_arr.forEach(callSetting => {
             rebindBodyFun.pushLine(makeStr_callFun(callSetting.name, callSetting.params_arr, ';'));
         });

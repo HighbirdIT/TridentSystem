@@ -281,6 +281,11 @@ class PCContentCompiler extends MobileContentCompiler {
                         }
                         if (accordionParents_arr) {
                             changedFun.subNextIndent();
+                            changedFun.pushLine('}else{',1);
+                            accordionParents_arr.forEach(accordionKernel => {
+                                changedFun.pushLine('if(!' + accordionKernel.id + '_state.inited){gDataCache.set(' + singleQuotesStr(accordionKernel.getStatePath()) + ',true);}');
+                            });
+                            changedFun.subNextIndent();
                             changedFun.pushLine('}');
                         }
                         break;
