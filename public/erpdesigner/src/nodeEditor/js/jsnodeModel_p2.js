@@ -5944,10 +5944,6 @@ JSNodeClassMap[JSNODE_TRAVERSALFORM] = {
     modelClass: JSNode_TraversalForm,
     comClass: C_JSNode_TraversalForm,
 };
-JSNodeClassMap[JSNODE_TRAVERSALFORM] = {
-    modelClass: JSNode_TraversalForm,
-    comClass: C_JSNode_TraversalForm,
-};
 JSNodeClassMap[JSNODE_CIRCLEEND] = {
     modelClass: JSNode_CircleEnd,
     comClass: C_Node_SimpleNode,

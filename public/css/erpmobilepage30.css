@@ -24,8 +24,8 @@ body{
 }
 
 .form-control{
-    font-size: 1rem !important;
-    height:calc(1.9rem + 2px);
+    font-size: 0.8rem !important;
+    height:calc(1.7rem + 2px);
 }
 
 .pageHeader{
@@ -227,7 +227,7 @@ body{
 }
 
 .rowlFameTwo{
-    width: 136px;
+    width: 146px;
     flex-shrink: 0;
     flex-grow: 0;
     flex-direction: column;
@@ -241,15 +241,15 @@ body{
 }
 
 .rowlFameTwo[wf='-1']{
-    width: 58px;
+    width: 63px;
 }
 
 .rowlFameTwo[wf='2']{
-    width: 292px;
+    width: 312px;
 }
 
 .rowlFameTwo[wf='3']{
-    width: 398px;
+    width: 478px;
 }
 
 .w-20p{
@@ -923,7 +923,7 @@ body{
 }
 
 .dateTextInput{
-    font-size: 0.7rem !important;
+    font-size: 0.6rem !important;
 }
 
 .excelimporter{

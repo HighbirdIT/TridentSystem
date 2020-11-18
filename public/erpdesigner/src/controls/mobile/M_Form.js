@@ -271,7 +271,7 @@ class M_FormKernel extends ContainerKernelBase {
         this.children.forEach(child => {
             if (child == this.gridFormBottomDiv || child == this.placeHolderKernel)
                 return;
-            if(child == M_ContainerKernel_Type){
+            if(child.type == M_ContainerKernel_Type){
                 child.aidAccessableKernels(null, rlt);
             }
             else{
@@ -280,16 +280,14 @@ class M_FormKernel extends ContainerKernelBase {
         });
         var ret = [];
         var bIsGrid = this.isGridForm();
+        var bIsList = this.isListForm();
         rlt.forEach(item=>{
             if(item.type == M_LabeledControlKernel_Type){
-                ret.push(item.editor);
                 if(!bIsGrid){
                     ret.push(item);
                 }
-                else{
-                    if(item.parent != this){
-                        ret.push(item);
-                    }
+                if(item.parent == this){
+                    ret.push(item.editor);
                 }
             }
             else{

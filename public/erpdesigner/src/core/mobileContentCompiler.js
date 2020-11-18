@@ -740,7 +740,7 @@ class MobileContentCompiler extends ContentCompiler {
                                 ctlInitFun.pushLine(setLine);
                             }
                         } else {
-                            if (stateItem.staticValue) {
+                            if (stateItem.staticValue != null) {
                                 var sv = stateItem.staticValue;
                                 switch (sv.toLocaleLowerCase()) {
                                     case 'true':
@@ -1199,7 +1199,7 @@ class MobileContentCompiler extends ContentCompiler {
                                 controlInitBlock.pushLine(setLine);
                             }
                         } else {
-                            if (stateItem.staticValue) {
+                            if (stateItem.staticValue != null) {
                                 var sv = stateItem.staticValue;
                                 switch (sv.toLocaleLowerCase()) {
                                     case 'true':
@@ -1726,6 +1726,7 @@ class MobileContentCompiler extends ContentCompiler {
                         name: 'value',
                         staticValue: !hadDefaultStr ? null : defVal,
                         setNull: !hadDefaultStr,
+                        bindMode: ScriptBindMode.OnForm,
                     };
                 }
             }
@@ -1814,6 +1815,7 @@ class MobileContentCompiler extends ContentCompiler {
                         name: 'value',
                         useColumn: { name: textField },
                         alterValue: !defaultValParseRet.isScript && IsEmptyString(defaultValParseRet.string) ? '0' : defaultValParseRet.string,
+                        bindMode: ScriptBindMode.OnForm,
                     };
                 }
             }
@@ -1822,6 +1824,7 @@ class MobileContentCompiler extends ContentCompiler {
                     setValueStateItem = {
                         name: 'value',
                         staticValue: IsEmptyString(defaultValParseRet.string) ? '0' : defaultValParseRet.string,
+                        bindMode: ScriptBindMode.OnForm,
                     };
                 }
             }
@@ -2064,7 +2067,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else {
             if (!isdisplay) {
-                this.addNeedSetStateToParent(theKernel, { name: 'visible', staticValue: 'false' });
+                this.addNeedSetStateToParent(theKernel, { name: 'visible', staticValue: 'false', bindMode:ScriptBindMode.OnForm });
                 if (ctlTag) {
                     ctlTag.setAttr('visible', '{false}');
                 }
@@ -2184,6 +2187,7 @@ class MobileContentCompiler extends ContentCompiler {
         labeledCtrlTag.setAttr('parentPath', parentPath);
         var widthFactor = theKernel.getAttribute(AttrNames.WidthFactor);
         labeledCtrlTag.setAttr('wf', widthFactor);
+        this.modifyControlTag(theKernel, labeledCtrlTag);
         var renderMode = theKernel.getAttribute(AttrNames.RenderMode);
         if (renderMode != ERenderMode.Auto) {
             labeledCtrlTag.setAttr('rm', renderMode);
@@ -2248,7 +2252,7 @@ class MobileContentCompiler extends ContentCompiler {
                     dynamicColumn_obj.visible = 'false';
                 }
                 else {
-                    this.addNeedSetStateToParent(theKernel, { name: 'visible', staticValue: 'false' });
+                    this.addNeedSetStateToParent(theKernel, { name: 'visible', staticValue: 'false', bindMode:ScriptBindMode.OnForm });
                     labeledCtrlTag.setAttr('visible', '{false}');
                 }
             }
@@ -3559,6 +3563,7 @@ class MobileContentCompiler extends ContentCompiler {
             freshFun.rowInitBlk.pushLine(makeLine_DeclareVar(VarNames.NowRecord, VarNames.Records_arr + '[rowIndex]', false));
             freshFun.rowInitBlk.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == DefaultKeyColumn ? VarNames.RowIndex : 'GetFromatRowKey(' + VarNames.NowRecord + '.' + keyColumn + ')') + ';');
             freshFun.rowInitBlk.pushLine('needSetState["row_" + ' + VarNames.RowKey + ' + "._isdirty"] = false;');
+            freshFun.rowInitBlk.pushLine('needSetState["row_" + ' + VarNames.RowKey + ' + ".editing"] = true;');
             //freshFun.rowInitBlk.pushLine('if(needSetState.hasOwnProperty("row_"+'+VarNames.RowKey+')){delete needSetState["row_"+'+VarNames.RowKey+'];}');
             //freshFun.rowInitBlk.pushLine('var rowstate=getStateByPath(' + theKernel.id + '_state,"row_" + ' + VarNames.RowKey + ');');
             //freshFun.rowInitBlk.pushLine('if(rowstate == null){',1);
@@ -4008,6 +4013,7 @@ class MobileContentCompiler extends ContentCompiler {
             if (awaysEditable) {
                 bindPageFun.pushLine('needSetState["row_" + ' + VarNames.RowKey + ' + ".editing"] = true;');
             }
+
             //bindPageFun.pushChild(staticBindBlock);
             bindPageFun.pushChild(bindNowRecordBlock);
             bindPageFun.pushChild(dynamicSetBlock_hadRecord);
@@ -4629,6 +4635,11 @@ class MobileContentCompiler extends ContentCompiler {
         }
         if (theKernel.getAttribute(AttrNames.OutputCharCount)) {
             ctlTag.setAttr('boutcharlen', true);
+        }
+        if (valType == ValueType.String) {
+            if(theKernel.getAttribute('abbrevlen') > 0){
+                ctlTag.setAttr('abbrevLen', theKernel.getAttribute('abbrevlen'));
+            }
         }
         renderBlock.pushChild(ctlTag);
 
@@ -6019,11 +6030,13 @@ class MobileContentCompiler extends ContentCompiler {
                         name: 'value',
                         staticValue: hadDefaultStr ? defaultValParseRet.string : null,
                         setNull: !hadDefaultStr,
+                        bindMode: ScriptBindMode.OnForm,
                     };
                     if (defaultValParseRet.string == '*') {
                         if (setTextStateItem) {
                             setTextStateItem.setNull = false;
                             setTextStateItem.staticValue = '*';
+                            setTextStateItem.bindMode = ScriptBindMode.OnForm;
                         }
                         setValueStateItem.staticValue = starValue;
                     }
@@ -7516,7 +7529,7 @@ class MobileContentCompiler extends ContentCompiler {
                     validBlock.pushLine('_invalidstate[' + modifyStatePath(theKernel.getStatePath(VarNames.InvalidBundle,'.', {mapVarName: VarNames.RowKeyInfo_map}), belongUserControl) + ']=gPreconditionInvalidInfo;');
                     validBlock.pushLine('_invalidstate[' + modifyStatePath(theKernel.getStatePath(VarNames.Records_arr,'.', {mapVarName: VarNames.RowKeyInfo_map}), belongUserControl) + ']=[];');
                     if (theKernel.isPageForm()) {
-                        validBlock.pushLine('_invalidstate[' + modifyStatePath(theKernel.getStatePath(VarNames.RecordIndex), belongUserControl) + ']=-1;');
+                        validBlock.pushLine('_invalidstate[' + modifyStatePath(theKernel.getStatePath(VarNames.RecordIndex,'.', {mapVarName: VarNames.RowKeyInfo_map}), belongUserControl) + ']=-1;');
                     }
                     else {
                         if (selectMode == ESelectMode.Single) {

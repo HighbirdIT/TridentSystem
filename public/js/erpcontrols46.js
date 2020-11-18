@@ -2091,7 +2091,10 @@ var ERPC_LabeledControl = function (_React$PureComponent6) {
 }(React.PureComponent);
 
 function ERPC_LabeledControl_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    //var rowState = propProfile.rowState;
+    //var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
     var useLabel = ctlState.label != null ? ctlState.label : ownprops.label != null ? ownprops.label : '';
     return {
         label: useLabel,
@@ -2159,6 +2162,11 @@ var ERPC_Label = function (_React$PureComponent8) {
     }
 
     _createClass(ERPC_Label, [{
+        key: 'toggleAbbrev',
+        value: function toggleAbbrev() {
+            store.dispatch(makeAction_setStateByPath(!this.props.abbreved, MakePath(this.props.fullPath, 'abbreved')));
+        }
+    }, {
         key: 'render',
         value: function render() {
             if (this.props.visible == false) {
@@ -2167,6 +2175,7 @@ var ERPC_Label = function (_React$PureComponent8) {
             var rootDivClassName = 'erpc_label ' + (this.props.className == null ? '' : this.props.className);
             var contentElem = null;
             var tileLen = 0;
+            var aftElem = null;
             if (this.props.fetching) {
                 rootDivClassName += 'p-1';
                 contentElem = React.createElement(
@@ -2194,6 +2203,17 @@ var ERPC_Label = function (_React$PureComponent8) {
             } else {
                 contentElem = FormatStringValue(this.props.text, this.props.type, this.props.precision);
                 tileLen = contentElem.toString().length;
+                if (this.props.abbrevLen > 0 && this.props.type == 'string') {
+                    if (contentElem && contentElem.length > this.props.abbrevLen) {
+                        contentElem = this.props.abbreved ? contentElem.substring(0, this.props.abbrevLen) : contentElem;
+                        aftElem = React.createElement(
+                            'button',
+                            { onClick: this.toggleAbbrev, type: 'button', className: 'btn btn-sm btn-link' },
+                            React.createElement('i', { className: 'fa fa-angle-double-' + (this.props.abbreved ? 'down' : 'up') }),
+                            this.props.abbreved ? '展开' : '收起'
+                        );
+                    }
+                }
             }
 
             var needCtlPath = false;
@@ -2205,7 +2225,8 @@ var ERPC_Label = function (_React$PureComponent8) {
             return React.createElement(
                 'span',
                 { className: useStyleClass.class, style: useStyleClass.style, charlen: this.props.boutcharlen ? tileLen : null, onMouseDown: this.props.onMouseDown, 'ctl-fullpath': needCtlPath ? this.props.fullPath : null },
-                contentElem
+                contentElem,
+                aftElem
             );
         }
     }]);
@@ -2225,7 +2246,7 @@ function ERPC_Label_mapstatetoprops(state, ownprops) {
         text: useText,
         visible: ctlState.visible,
         fetching: ctlState.fetching
-    }, _defineProperty(_ref, 'visible', ctlState.visible == false || ownprops.definvisible ? false : true), _defineProperty(_ref, 'fetchingErr', ctlState.fetchingErr), _defineProperty(_ref, 'fullParentPath', propProfile.fullParentPath), _defineProperty(_ref, 'fullPath', propProfile.fullPath), _defineProperty(_ref, 'dynamicStyle', ctlState.style), _defineProperty(_ref, 'dynamicClass', ctlState.class), _ref;
+    }, _defineProperty(_ref, 'visible', ctlState.visible == false || ownprops.definvisible ? false : true), _defineProperty(_ref, 'fetchingErr', ctlState.fetchingErr), _defineProperty(_ref, 'fullParentPath', propProfile.fullParentPath), _defineProperty(_ref, 'fullPath', propProfile.fullPath), _defineProperty(_ref, 'dynamicStyle', ctlState.style), _defineProperty(_ref, 'dynamicClass', ctlState.class), _defineProperty(_ref, 'abbreved', ctlState.abbreved != false), _ref;
 }
 
 function ERPC_Label_dispatchtorprops(dispatch, ownprops) {

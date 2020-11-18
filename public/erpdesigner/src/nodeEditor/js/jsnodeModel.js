@@ -1176,6 +1176,14 @@ class JSNode_BluePrint extends EventEmitter {
                             else {
                                 theFun.scope.getVar(ctlParentStateVarName, true, initValue);
                             }
+
+                            if(isGridForm && parentLabledCtl.parent == useFormData.formKernel){
+                                var parentLabledCtl_isdisplay = parentLabledCtl.getAttribute(AttrNames.Isdisplay);
+                                var parentLabledCtl_isdisplayParseRet = parseObj_CtlPropJsBind(parentLabledCtl_isdisplay, this.bluePrint.master);
+                                if (parentLabledCtl_isdisplayParseRet.isScript) {
+                                    validFormSelectBlock.pushLine(makeLine_Assign(ctlParentStateVarName + '.visible', formStateVarName + '.' + parentLabledCtl.id + '_visible'));
+                                }
+                            }
                         }
 
                         for (propName in useCtlData.useprops_map) {
@@ -4124,7 +4132,7 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
         }
         var rlt = selectedKernel.id + '_' + useApiItem.stateName;
         if (traversalFromNode == null) {
-            helper.addUseControlPropApi(selectedKernel, useApiItem, EFormRowSource.None);
+            helper.addUseControlPropApi(selectedKernel, useApiItem, links_arr.length > 0 ? EFormRowSource.None : EFormRowSource.Context);
         }
         else {
             traversalFromNode.addUseControlPropApi(selectedKernel, useApiItem);
@@ -9103,7 +9111,7 @@ class JSNode_PopPage extends JSNode_Base {
     }
 
     preRemoveSocket(theSocket) {
-        return !theSocket.isIn || theSocket.hideIcon == false;
+        return !theSocket.isIn || theSocket.hideIcon != true;
     }
 
     projLoadedHandler() {

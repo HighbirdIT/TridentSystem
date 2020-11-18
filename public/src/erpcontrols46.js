@@ -1812,7 +1812,10 @@ class ERPC_LabeledControl extends React.PureComponent {
 }
 
 function ERPC_LabeledControl_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    //var rowState = propProfile.rowState;
+    //var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
     var useLabel = ctlState.label != null ? ctlState.label : (ownprops.label != null ? ownprops.label : '');
     return {
         label: useLabel,
@@ -1862,6 +1865,10 @@ class ERPC_Label extends React.PureComponent {
         this.state = this.initState;
     }
 
+    toggleAbbrev(){
+        store.dispatch(makeAction_setStateByPath(!this.props.abbreved, MakePath(this.props.fullPath, 'abbreved')));
+    }
+
     render() {
         if (this.props.visible == false) {
             return null;
@@ -1869,6 +1876,7 @@ class ERPC_Label extends React.PureComponent {
         var rootDivClassName = 'erpc_label ' + (this.props.className == null ? '' : this.props.className);
         var contentElem = null;
         var tileLen = 0;
+        var aftElem = null;
         if (this.props.fetching) {
             rootDivClassName += 'p-1';
             contentElem = <span><i className='fa fa-spinner fa-pulse fa-fw' />通讯中</span>;
@@ -1889,6 +1897,12 @@ class ERPC_Label extends React.PureComponent {
         else {
             contentElem = FormatStringValue(this.props.text, this.props.type, this.props.precision);
             tileLen = contentElem.toString().length;
+            if(this.props.abbrevLen > 0 && this.props.type == 'string'){
+                if(contentElem && contentElem.length > this.props.abbrevLen){
+                    contentElem = this.props.abbreved ? contentElem.substring(0,this.props.abbrevLen) : contentElem;
+                    aftElem = <button onClick={this.toggleAbbrev} type='button' className='btn btn-sm btn-link'><i className={'fa fa-angle-double-' + (this.props.abbreved ? 'down' : 'up')}/>{this.props.abbreved ? '展开' : '收起'}</button>
+                }
+            }
         }
 
         var needCtlPath = false;
@@ -1897,7 +1911,7 @@ class ERPC_Label extends React.PureComponent {
         }
 
         var useStyleClass = this.getUseStyleClass(this.props.style, rootDivClassName);
-        return (<span className={useStyleClass.class} style={useStyleClass.style} charlen={this.props.boutcharlen ? tileLen : null} onMouseDown={this.props.onMouseDown} ctl-fullpath={needCtlPath ? this.props.fullPath : null} >{contentElem}</span>);
+        return (<span className={useStyleClass.class} style={useStyleClass.style} charlen={this.props.boutcharlen ? tileLen : null} onMouseDown={this.props.onMouseDown} ctl-fullpath={needCtlPath ? this.props.fullPath : null} >{contentElem}{aftElem}</span>);
     }
 }
 
@@ -1917,6 +1931,7 @@ function ERPC_Label_mapstatetoprops(state, ownprops) {
         fullPath: propProfile.fullPath,
         dynamicStyle: ctlState.style,
         dynamicClass: ctlState.class,
+        abbreved: ctlState.abbreved != false,
     };
 }
 
