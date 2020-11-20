@@ -949,10 +949,16 @@ class JSNode_BluePrint extends EventEmitter {
                     validCheckBasePath = '_path';
                     fetchKeyVarValue = ctlKernel.id + '_path + ' + singleQuotesStr('_' + funName);
                 }
+                
                 if (isGetXmlRowFun || isGetJsonRowFun) {
                     validCheckBasePath = ctlKernel.id + '_rowpath';
+
+                    if (belongUserControl) {
+                        // 自订控件中的按钮
+                        theFun.scope.getVar(belongUserControl.id + '_path', true, "getBelongUserCtlPath("+ctlKernel.id + "_rowpath)");
+                        theFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath', [VarNames.State, belongUserControl.id + '_path', '{}']));
+                    }
                 }
-                
             }
             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
                 fetchKeyVarValue = VarNames.FullParentPath + '+' + singleQuotesStr('.' + funName);
@@ -1617,7 +1623,7 @@ class JSNode_BluePrint extends EventEmitter {
                 setInvalidStateBlock.pushLine('console.error(err);');
                 if (msgBoxCreated) {
                     setInvalidStateBlock.pushLine("if(" + msgBoxVarName + "){" + msgBoxVarName + ".setData(err.info, EMessageBoxType.Error, '" + ctlName + "');}");
-                    if (ctlKernel.type == ButtonKernel_Type) {
+                    if (ctlKernel.type == ButtonKernel_Type || (compilHelper.config && compilHelper.config.trigerByBtn)) {
                         setInvalidStateBlock.pushLine("else{SendToast(err.info, EToastType.Error);}");
                     }
                 }
@@ -1662,6 +1668,7 @@ class JSNode_BluePrint extends EventEmitter {
                 setInvalidStateBlock.pushLine("if(err){", 1);
                 if (!nomsgbox) {
                     setInvalidStateBlock.pushLine("if(" + msgBoxVarName + "){" + msgBoxVarName + ".setData(err.info, EMessageBoxType.Error, '" + ctlName + "');}");
+                    setInvalidStateBlock.pushLine("else{SendToast(err.info, EToastType.Error);}");
                 }
                 setInvalidStateBlock.pushLine("return;", -1);
                 setInvalidStateBlock.pushLine("}");
@@ -1764,10 +1771,15 @@ class JSNode_Var_Get extends JSNode_Base {
             return superRet;
         }
 
+        var theScope = belongBlock && belongBlock.getScope();
+        var blockInServer = theScope && theScope.isServerSide;
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         if (this.checkCompileFlag(this.varData == null || this.varData.removed, '无效变量', helper)) {
             return false;
+        }
+        if(blockInServer){
+            theScope.getVar(this.varData.name, true, this.varData.default);
         }
         var selfCompileRet = new CompileResult(this);
         helper.addUseVariable(this.varData.name, this.varData.valType, this.varData.getDefineString());
@@ -2851,7 +2863,7 @@ class JSNode_CurrentDataRow extends JSNode_Base {
     }
 
     compile(helper, preNodes_arr, belongBlock) {
-        var superRet = super.compile(helper, preNodes_arr, blockInServer);
+        var superRet = super.compile(helper, preNodes_arr, belongBlock);
         if (superRet == false || superRet != null) {
             return superRet;
         }

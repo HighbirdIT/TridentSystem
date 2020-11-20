@@ -5158,7 +5158,7 @@ function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath
         if (rowState == null || rowState._isdirty) {
             return rlt;
         }
-        var rowItem = getRowItemFun(state, rowState, formPath + '.row_' + rowKey, record);
+        var rowItem = getRowItemFun(state, rowState, formPath + '.row_' + rowKey, record, formState);
         if (rowItem == null) {
             return rlt;
         }

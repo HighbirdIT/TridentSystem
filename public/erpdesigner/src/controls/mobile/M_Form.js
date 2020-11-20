@@ -354,7 +354,7 @@ class M_FormKernel extends ContainerKernelBase {
         }
         var rowTextParam;
         if(scriptBP.name.indexOf(AttrNames.Function.GetXMLRowItem) != -1){
-            scriptBP.setFixParam([VarNames.State,this.id + '_rowState',this.id + '_rowpath',this.id + '_' + VarNames.NowRecord]);
+            scriptBP.setFixParam([VarNames.State,this.id + '_rowState',this.id + '_rowpath',this.id + '_' + VarNames.NowRecord,this.id + '_state']);
             rowTextParam = scriptBP.returnVars_arr.find(item=>{return item.name == AttrNames.RowText;});
             if(rowTextParam == null){
                 rowTextParam = scriptBP.createEmptyVariable(true);

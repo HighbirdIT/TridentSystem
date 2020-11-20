@@ -642,6 +642,14 @@ body{
     border: solid black 1px;
 }
 
+.popPage_fullscreen{
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    padding: 5px;
+    border: solid black 1px;
+}
+
 @media only screen and (max-width: 1200.98px){
     .popPage{
         max-width: 100%;

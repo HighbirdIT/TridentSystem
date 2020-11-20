@@ -1284,8 +1284,8 @@ class JSNode_TraversalForm extends JSNode_Base {
                 outCtls_arr.push(ctlKernel);
                 var nullable = false;
                 var belongLabeledKernel = null;
-                if (ctlKernel.type != M_LabelKernel_Type) {
-                    belongLabeledKernel = ctlKernel.searchParentKernel(M_LabelKernel_Type, true);
+                if (ctlKernel.type != M_LabeledControlKernel_Type) {
+                    belongLabeledKernel = ctlKernel.searchParentKernel(M_LabeledControlKernel_Type, true);
                     if (belongLabeledKernel) {
                         nullable = belongLabeledKernel.getAttribute(AttrNames.Nullable);
                         if (formKernel.isGridForm() && belongLabeledKernel.parent == formKernel) {
@@ -1397,7 +1397,7 @@ class JSNode_TraversalForm extends JSNode_Base {
         myJSBlock.pushLine('},10);');
 
         helper.compilingFun.hadServerFetch = true;
-        checkCtlBlock.pushLine(isvalidVarName + '=' + validErrVarName + '==null;');
+        checkCtlBlock.pushLine(isvalidVarName + '=!' + hadErrVarName + ';');
 
         if (this.compileOutFlow(helper, usePreNodes_arr, endBlock) == false) {
             return false;

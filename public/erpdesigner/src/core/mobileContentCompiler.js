@@ -1044,7 +1044,8 @@ class MobileContentCompiler extends ContentCompiler {
         if (isPopable) {
             var styleID = pageKernel.id + '_style';
             var styleStr = clientSide.addStyleObject(styleID, pageLayoutConfig.style) ? 'style={' + styleID + '}' : '';
-            pageReactClass.renderFun.pushLine("<div className={'d-flex flex-column bg-light ' + (this.props.popInSide ? 'popPageChild' : 'popPage')} " + styleStr + ">", 1);
+            var isForceScreen = pageKernel.getAttribute('forcefullscreen');
+            pageReactClass.renderFun.pushLine("<div className={'d-flex flex-column bg-light ' + (this.props.popInSide ? 'popPageChild' : '" + (isForceScreen ? 'popPage_fullscreen' : 'popPage') + "')} " + styleStr + ">", 1);
         }
         else {
             pageReactClass.renderFun.pushLine("<div className='d-flex flex-column flex-grow-1 flex-shrink-1 h-100'>", 1);
@@ -3401,7 +3402,8 @@ class MobileContentCompiler extends ContentCompiler {
                         if (this.compileScriptBlueprint(btnSetting.blueprint, {
                             funName: btnSetting.funName,
                             scope: formReactClass,
-                            actLabel: btnSetting.actLabel
+                            actLabel: btnSetting.actLabel,
+                            trigerByBtn:true,
                         }) == false) {
                             return false;
                         }
@@ -4176,6 +4178,7 @@ class MobileContentCompiler extends ContentCompiler {
                     scope: formReactClass,
                     actLabel: insertBtnSetting.actLabel,
                     key: 'insert',
+                    trigerByBtn:true,
                 });
                 if (insertCompareRet == false) {
                     return false;

@@ -1572,6 +1572,9 @@ function getRowKeyMapFromPath(path) {
 }
 
 function getRecordFromRowKey(formPath, rowkey) {
+    if (rowkey == 'new') {
+        return {};
+    }
     var mapCache = gDataCache.get(formPath + ".KeyToRcd_map");
     if (mapCache == null) {
         return null;
