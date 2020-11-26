@@ -2945,24 +2945,34 @@ class MobileContentCompiler extends ContentCompiler {
                         var valueColumn = null;
                         var validStat = false;
                         var kernelLabel = labeledKernel.getAttribute(AttrNames.TextField);
-                        switch(theEditor.type){
-                            case M_LabelKernel_Type:
-                            case M_TextKernel_Type:
-                                valueColumn = theEditor.getAttribute(AttrNames.TextField);
-                                validStat = true;
-                            break;
-                            case PopperButtonKernel_Type:
-                            case ButtonKernel_Type:
-                                valueColumn = theEditor.getAttribute(AttrNames.Title);
-                                validStat = true;
-                            break;
-                            default:
-                                if(canUseColumns_arr.indexOf(kernelLabel) != -1){
-                                    valueColumn = kernelLabel;
+                        if(IsEmptyString(labeledKernel.getAttribute(AttrNames.ColumnValueField))){
+                            switch(theEditor.type){
+                                case M_LabelKernel_Type:
+                                case M_TextKernel_Type:
+                                    valueColumn = theEditor.getAttribute(AttrNames.TextField);
                                     validStat = true;
-                                }
-                            break;
+                                break;
+                                case PopperButtonKernel_Type:
+                                case ButtonKernel_Type:
+                                    valueColumn = theEditor.getAttribute(AttrNames.Title);
+                                    validStat = true;
+                                break;
+                                default:
+                                    if(canUseColumns_arr.indexOf(kernelLabel) != -1){
+                                        valueColumn = kernelLabel;
+                                        validStat = true;
+                                    }
+                                break;
+                            }
                         }
+                        else{
+                            valueColumn = labeledKernel.getAttribute(AttrNames.ColumnValueField);
+                            validStat = canUseColumns_arr.indexOf(valueColumn) != -1;
+                        }
+                        if(typeof kernelLabel !== 'string'){
+                            kernelLabel = labeledKernel.id;
+                        }
+                        
                         if(!validStat){
                             logManager.warnEx([logManager.createBadgeItem(
                                 theKernel.getReadableName(),

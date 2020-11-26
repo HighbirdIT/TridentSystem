@@ -48,6 +48,7 @@ const JSNODE_ARRAY_LENGTH = 'arraylength';
 
 const JSNODE_PARSEINT = 'parseInt';
 const JSNODE_PARSEFLOAT = 'parseFloat';
+const JSNODE_PARSEBOOLEAN = 'parseBoolean';
 const JSNODE_ISNAN = 'isnan';
 
 const JSNODE_MATH_RANDINT = 'mathrandint';
@@ -2053,12 +2054,14 @@ class JSNode_Return extends JSNode_Base {
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
+        var theScope = belongBlock && belongBlock.getScope();
+        var blockInServer = theScope && theScope.isServerSide;
 
         var socketComRet;
         var socketValue;
 
         if (this.bluePrint.group == EJsBluePrintFunGroup.CtlAttr || this.bluePrint.group == EJsBluePrintFunGroup.CtlValid) {
-            var inreducer = this.isInReducer(preNodes_arr, false);
+            var inreducer = !blockInServer && this.isInReducer(preNodes_arr, false);
             if (this.checkCompileFlag(inreducer, '此处应该用CallOnFetchEnd', helper)) {
                 return false;
             }
@@ -2729,6 +2732,17 @@ class JSNode_CurrentDataRow extends JSNode_Base {
         if (this.outFlowSockets_arr == null) {
             this.outFlowSockets_arr = [];
         }
+
+        this.outputScokets_arr.forEach(outsocket=>{
+            if(outsocket.name == '__record'){
+                this.recordSocket = outsocket;
+            }
+        });
+        if(this.recordSocket == null){
+            this.recordSocket = this.addSocket(new NodeSocket('__record', this, false, { type: ValueType.Object }));
+        }
+        this.recordSocket.label = 'record';
+
         var proj = null;
         if (createHelper) {
             proj = createHelper.project;
@@ -2792,6 +2806,10 @@ class JSNode_CurrentDataRow extends JSNode_Base {
         }
         this.fireEvent(Event_SocketNumChanged, 20);
         this.bluePrint.fireChanged();
+    }
+
+    preRemoveSocket(theSocket) {
+        return theSocket != this.recordSocket;
     }
 
     requestSaveAttrs() {
@@ -2954,9 +2972,28 @@ class JSNode_CurrentDataRow extends JSNode_Base {
             belongBlock.pushChild(clientForEachBlock);
             selfCompileRet.setSocketOut(this.inFlowSocket, '', clientForEachBlock);
         }
+        
+        if (blockInServer) {
+            selfCompileRet.setSocketOut(this.recordSocket, 'req.body.' + VarNames.Bundle + '.' + nowRowVarName);
+        }
+        else {
+            if (clientForEachDeclarBlock) {
+                selfCompileRet.setSocketOut(this.recordSocket, nowRowVarName);
+            }
+            else {
+                selfCompileRet.setSocketOut(this.recordSocket, formKernel.id + '_' + VarNames.NowRecord);
+            }
+        }
+
         var canUserColumns_arr = formKernel.getCanuseColumns();
+        if(this.outputScokets_arr.length == 1){
+            helper.addUseColumn(formKernel, canUserColumns_arr[0], blockInServer ? theScope.fun : null, this.rowSource);
+        }
         for (var si in this.outputScokets_arr) {
             var outSocket = this.outputScokets_arr[si];
+            if(outSocket == this.recordSocket){
+                continue;
+            }
             var colName = outSocket.getExtra('colName');
             if (canUserColumns_arr.indexOf(colName) == -1) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
@@ -6284,7 +6321,7 @@ class JSNode_FreshForm extends JSNode_Base {
         var parentPath = null;
         if (belongUserControl) {
             if (selectedKernel.parent != belongUserControl) {
-                parentPath = selectedKernel.parent.getStatePath('');
+                parentPath = selectedKernel.parent.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map });
             }
             else {
                 parentPath = '';
@@ -6296,7 +6333,7 @@ class JSNode_FreshForm extends JSNode_Base {
                 parentPath = singleQuotesStr(selectedKernel.parent.id);
             }
             else {
-                parentPath = singleQuotesStr(selectedKernel.parent.getStatePath(''));
+                parentPath = singleQuotesStr(selectedKernel.parent.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map }));
             }
         }
         var freshFunName = 'fresh_' + socketValue;
@@ -10794,6 +10831,55 @@ class JSNode_ParseFloat extends JSNode_Base {
     }
 }
 
+class JSNode_ParseBoolean extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_PARSEBOOLEAN, 'ParseBoolean', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+            }
+        }
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inSocket);
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.inSocket.type = ValueType.String;
+        this.inSocket.inputable = false;
+        this.outSocket.type = ValueType.Float;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var theSocket = this.inSocket;
+        var socketValue = null;
+        var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var socketValue = socketComRet.value;
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, 'parseBoolean(' + socketValue + ')');
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
 class JSNode_IsNaN extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_ISNAN, 'IsNaN', false, nodeJson);
@@ -10998,7 +11084,9 @@ class JSNode_HashFormDataRow extends JSNode_Base {
     }
 
     getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
-        result.pushVariable(this.id + '_data', targetSocket);
+        if(!this.blockInServer){
+            result.pushVariable(this.id + '_data', targetSocket);
+        }
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -11008,9 +11096,11 @@ class JSNode_HashFormDataRow extends JSNode_Base {
         }
         var theScope = belongBlock && belongBlock.getScope();
         var blockInServer = theScope && theScope.isServerSide;
+        this.blockInServer = blockInServer;
+        /*
         if (this.checkCompileFlag(blockInServer, '不可以出现在server流程中', helper)) {
             return false;
-        }
+        }*/
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
@@ -11259,5 +11349,8 @@ JSNodeClassMap[JSNODE_MATH_RANDINT] = {
     modelClass: JSNode_Math_RandInt,
     comClass: C_Node_SimpleNode,
 };
-
+JSNodeClassMap[JSNODE_PARSEBOOLEAN] = {
+    modelClass: JSNode_ParseBoolean,
+    comClass: C_Node_SimpleNode,
+};
 

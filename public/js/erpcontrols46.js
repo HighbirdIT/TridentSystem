@@ -5071,7 +5071,7 @@ var ERPXMLToolKit = {
         });
         var rltStr = '<Data fNum="' + attrs_arr.length + '"';
         attrs_arr.forEach(function (name, i) {
-            rltStr += ' f' + (i + 1) + '="' + name + '"';
+            rltStr += ' fn' + (i + 1) + '="' + name + '"';
         });
         rltStr += '>' + itemStr_arr.join('') + '</Data>';
         return rltStr;
@@ -5131,7 +5131,7 @@ function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath
     };
     for (i = 1; i <= xmlconfig.colcount; ++i) {
         var colName = xmlconfig['col' + i];
-        xmlHeadStr += ' f' + i + '="' + colName + '"';
+        xmlHeadStr += ' fn' + i + '="' + colName + '"';
         cols_arr.push({
             index: i,
             name: colName

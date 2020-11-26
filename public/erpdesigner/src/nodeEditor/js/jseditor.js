@@ -235,6 +235,11 @@ const JSNodeEditorControls_arr =[
         type:'转换'
     },
     {
+        label:'ParseBoolean',
+        nodeClass:JSNode_ParseBoolean,
+        type:'转换'
+    },
+    {
         label:'IsNaN',
         nodeClass:JSNode_IsNaN,
         type:'转换'
@@ -282,6 +287,11 @@ const JSNodeEditorControls_arr =[
     {
         label:'获取表单JSON数据',
         nodeClass:JSNode_GetFormJsonData,
+        type:'表单访问'
+    },
+    {
+        label:'获取表单指定数据行',
+        nodeClass:JSNode_GetFormRecordByKey,
         type:'表单访问'
     },
     {

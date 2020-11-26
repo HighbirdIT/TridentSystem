@@ -143,7 +143,7 @@ class C_JSNode_CurrentDataRow extends React.PureComponent {
             return null;
         }
         var nodeData = this.props.nodedata;
-        if (socket == nodeData.outDataSocket || socket == nodeData.outErrorSocket) {
+        if (socket == nodeData.outDataSocket || socket == nodeData.outErrorSocket || socket == nodeData.recordSocket) {
             return null;
         }
 

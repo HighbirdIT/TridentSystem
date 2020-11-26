@@ -21,6 +21,32 @@ var QRCode = require('qrcode');
 var emailHelper = require('./emailHelper');
 emailHelper.getETCInvoice();
 
+global.parseBoolean = function(val){
+    if(val == null){
+        return false;
+    }
+    if(typeof val === 'boolean'){
+        return val == true;
+    }
+    if(typeof val === 'number'){
+        return val > 0;
+    }
+    if(typeof val === 'string'){
+        if(val.length == 0){
+            return false;
+        }
+        if(!isNaN(val)){
+            val = this.parseFloat(val);
+            return val > 0;
+        }
+        if(val.toLowerCase() == 'false'){
+            return false;
+        }
+        return true;
+    }
+    return true;
+}
+
 debug.enabled = () => {
     return false;
 };

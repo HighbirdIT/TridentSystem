@@ -665,7 +665,7 @@ var ControlKernelBase = function (_IAttributeable) {
                             if (rowKeyVar == null) {
                                 console.error('getStatePath 遇到grid表单但是没有rowkey变量信息');
                             }
-                            rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + "row_'+" + rowKeyVar + "+'." + rlt;
+                            rlt = nowKernel.id + splitChar + "row_'+" + rowKeyVar + (rlt.length == 0 ? "+'" : "+'" + splitChar + rlt);
                         }
                         break;
                 }

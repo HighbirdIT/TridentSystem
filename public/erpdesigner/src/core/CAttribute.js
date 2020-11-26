@@ -262,6 +262,7 @@ const VarNames={
     SelectedValue:'selectedValue',
     SelectedValues_arr:'selectedValues_arr',
     SelectedColumns:'selectedColumns',
+    RecordFromKey:'recordFromKey',
     BaseBunlde:'baseBundle',
     HoldSelected:'holdSelected',
     HoldScroll:'holdScroll',
