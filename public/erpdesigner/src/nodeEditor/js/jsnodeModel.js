@@ -2091,7 +2091,7 @@ class JSNode_Return extends JSNode_Base {
                 return false;
             }
             socketValue = socketComRet.value;
-            if(socketValue == null || socketValue.toLocaleLowerCase() == "'null'"){
+            if(socketValue == null || (typeof socketValue === 'string' && toLocaleLowerCase() == "'null'")){
                 socketValue = 'null';
             }
         }
@@ -2145,7 +2145,7 @@ class JSNode_ConstValue extends JSNode_Base {
             return false;
         }
         if (isNaN(value)) {
-            if (value.toLocaleLowerCase() == 'null') {
+            if (typeof socketValue === 'string' && value.toLocaleLowerCase() == 'null') {
                 value = 'null';
             }
             else{
