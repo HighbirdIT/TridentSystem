@@ -2091,7 +2091,7 @@ class JSNode_Return extends JSNode_Base {
                 return false;
             }
             socketValue = socketComRet.value;
-            if(socketValue == null || (typeof socketValue === 'string' && toLocaleLowerCase() == "'null'")){
+            if(socketValue == null || (typeof socketValue === 'string' && socketValue.toLocaleLowerCase() == "'null'")){
                 socketValue = 'null';
             }
         }
