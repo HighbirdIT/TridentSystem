@@ -2145,7 +2145,7 @@ class JSNode_ConstValue extends JSNode_Base {
             return false;
         }
         if (isNaN(value)) {
-            if (typeof socketValue === 'string' && value.toLocaleLowerCase() == 'null') {
+            if (typeof value === 'string' && value.toLocaleLowerCase() == 'null') {
                 value = 'null';
             }
             else{
