@@ -2297,6 +2297,7 @@ class MobileContentCompiler extends ContentCompiler {
         var rowBindFun = clientSide.scope.getFunction(makeFName_RowBind(formKernel));
         if(rowBindFun == null){
             rowBindFun = clientSide.scope.getFunction(makeFName_RowBind(formKernel), true, [VarNames.State, formKernel.id + '_path', formKernel.id + '_state',formKernel.id + '_rowpath', formKernel.id + '_rowstate', formKernel.id + '_' + VarNames.NowRecord]);
+            rowBindFun.scope.getVar(VarNames.RowKeyInfo_map, true, 'getRowKeyMapFromPath(' + formKernel.id + '_rowpath)');
             var kernelMidData = this.projectCompiler.getMidData(formKernel.id);
             kernelMidData.rowBindFun = rowBindFun;
         }
@@ -7251,7 +7252,8 @@ class MobileContentCompiler extends ContentCompiler {
                     var isUseFormColumn = !IsEmptyObject(useFormData.useColumns_map);
                     var ctlBelongStateVarName = formStateVarName;
                     var formPathVarName = formId + '_path';
-                    var formPath = useFormData.formKernel.getStatePath();
+                    var formPath = useFormData.formKernel.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map });
+                    
 
                     var isUseParentForm = useFormData.formKernel.isKernelInRow(theKernel);
                     if(isUseParentForm){
@@ -7286,7 +7288,7 @@ class MobileContentCompiler extends ContentCompiler {
                                     validBlock.pushLine(makeStr_AddAll(nowRowStateVarName, '=', formStateVarName, "['row_' + ", VarNames.RowKeyInfo_map + '.' + formId, '];'));
                                 }
                                 var theFormRowBindFun = this.getFormRowBindFun(useFormData.formKernel);
-                                theFormRowBindFun.pushLine(makeStr_callFun(pullFun.name, [VarNames.State, 'null', useFormData.formKernel.id + '_rowpath']));
+                                theFormRowBindFun.pushLine(makeStr_callFun(pullFun.name, [VarNames.State, 'null', singleQuotesStr(theKernel.getParentStatePath('.', { mapVarName: VarNames.RowKeyInfo_map}))]));
                             }
                             else{
                                 theFun.scope.getVar(selectedRowsVarName, true, makeStr_callFun('GetFormSelectedRows', [formStateVarName, singleQuotesStr(useFormData.formKernel.getAttribute(AttrNames.KeyColumn))]));

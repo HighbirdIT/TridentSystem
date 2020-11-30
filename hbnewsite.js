@@ -1,4 +1,5 @@
 ﻿﻿var express = require('express');
+var https = require('https');
 var http = require('http');
 var url = require('url');
 var fortune = require('./lib/fortune.js');
@@ -17,6 +18,10 @@ var debug = require('debug');
 var serverhelper = require('./erpserverhelper.js');
 var cluster = require('cluster');
 var QRCode = require('qrcode');
+var fs = require("fs");
+
+const bUseHttps = true;
+var httpPrefix = bUseHttps ? 'https' : 'http';
 
 var emailHelper = require('./emailHelper');
 emailHelper.getETCInvoice();
@@ -47,6 +52,10 @@ global.parseBoolean = function(val){
     return true;
 }
 
+global.getHttpPrefix = function(){
+    return httpPrefix;
+}
+
 debug.enabled = () => {
     return false;
 };
@@ -64,8 +73,8 @@ console.log(ff);
 const sqlTypes = dbhelper.Types;
 
 var app = express();
-
 app.disable('x-powered-by');
+app.bUseHttps = bUseHttps;
 
 var handlebars = require('express3-handlebars').create({
     defaultLayout: 'main',
@@ -87,7 +96,9 @@ var handlebars = require('express3-handlebars').create({
     }
 });
 
-app.set('port', process.env.PORT || 1330);
+app.set('http_port', process.env.PORT || 1330);
+app.set('https_port', 1331);
+app.set('port', bUseHttps ? 1331: (process.env.PORT || 1330));
 //app.set('env', process.env.PORT || 'production');
 
 app.engine('handlebars', handlebars.engine);
@@ -200,7 +211,7 @@ app.use('/', function (req, res, next) {
         res.locals.isMobile = android || ipad || ipod || iphone;
         res.locals.isMobileStr = res.locals.isMobile ? 'true' : 'false';
 
-        dingHelper.asynGetDingDingTicket('http://' + req.headers.host + req.originalUrl).then((data) => {
+        dingHelper.asynGetDingDingTicket(httpPrefix + '://' + req.headers.host + req.originalUrl).then((data) => {
             res.locals.Signature = data.Signature == null ? '' : data.Signature;
             res.locals.TimeStamp = data.TimeStamp == null ? '' : data.TimeStamp;
             res.locals.NonceStr = data.NonceStr == null ? '' : data.NonceStr;
@@ -254,7 +265,7 @@ app.use('/fileSystem', function (req, res, next) {
     if (hostIp == '192.168.0.202') {
         hostIp = 'erp.highbird.cn';
     }
-    res.locals.rootUrl = 'http://' + hostIp + ':' + app.get('port');
+    res.locals.rootUrl = httpPrefix + '://' + hostIp + ':' + app.get('port');
     if(req.body && req.body.userpwd == 'csZiTqtL1O6KXWul'){
         req.session.g_envVar = developconfig.sysVar;
     }
@@ -577,7 +588,7 @@ function renderErpPage(req, res, next) {
             res.locals.isMobile = android || ipad || ipod || iphone;
             res.locals.isMobileStr = res.locals.isMobile ? 'true' : 'false';
 
-            dingHelper.asynGetDingDingTicket('http://' + req.headers.host + req.originalUrl).then((data) => {
+            dingHelper.asynGetDingDingTicket(httpPrefix + '://' + req.headers.host + req.originalUrl).then((data) => {
                 res.locals.Signature = data.Signature == null ? '' : data.Signature;
                 res.locals.TimeStamp = data.TimeStamp == null ? '' : data.TimeStamp;
                 res.locals.NonceStr = data.NonceStr == null ? '' : data.NonceStr;
@@ -720,15 +731,33 @@ app.use(function (err, req, res, next) {
     //res.send('500 - Server Error');
 });
 
+
 function startServer() {
     freshPageCache();
     setInterval(freshPageCache, 1000 * 30);
-    http.createServer(app).listen(app.get('port'), function () {
+    if(bUseHttps){
+        var privateKey = fs.readFileSync('key.pem').toString();
+        var certificate = fs.readFileSync('cert.pem').toString();
+
+        var opts = {
+            key : privateKey,
+            cert : certificate
+        }
+        https.createServer(opts,app).listen(app.get('https_port'), function () {
+            var hostIp = app.get('hostip');
+            if (hostIp == '192.168.0.202') {
+                hostIp = 'erp.highbird.cn';
+            }
+            console.log('Express started on ' + httpPrefix + '://' + hostIp + ':' + app.get('https_port') + '; press Ctl-C to terminate.');
+            console.log('env:' + app.get('env'));
+        });
+    }
+    http.createServer(app).listen(app.get('http_port'), function () {
         var hostIp = app.get('hostip');
         if (hostIp == '192.168.0.202') {
             hostIp = 'erp.highbird.cn';
         }
-        console.log('Express started on http://' + hostIp + ':' + app.get('port') + '; press Ctl-C to terminate.');
+        console.log('Express started on ' + httpPrefix + '://' + hostIp + ':' + app.get('http_port') + '; press Ctl-C to terminate.');
         console.log('env:' + app.get('env'));
     });
 }

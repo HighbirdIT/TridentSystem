@@ -628,6 +628,17 @@ var ControlKernelBase = function (_IAttributeable) {
             return rlt;
         }
     }, {
+        key: 'getParentStatePath',
+        value: function getParentStatePath() {
+            var splitChar = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '.';
+            var rowKeyVar_map = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+            var ignoreRowKey = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+            var rlt = this.getStatePath('', splitChar, rowKeyVar_map, ignoreRowKey, null);
+            var index = rlt.lastIndexOf(splitChar);
+            return index != -1 ? rlt.substring(0, index) : rlt;
+        }
+    }, {
         key: 'getStatePath',
         value: function getStatePath(stateName) {
             var splitChar = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '.';

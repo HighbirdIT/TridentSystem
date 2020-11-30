@@ -62,7 +62,7 @@ function makeDingTalkLink(proj, ispc, flowStep, stepData){
         isPC = true;
     }
     
-    var msgurl = 'http://erp.highbird.cn:1330/erppage/' + (isPC ? 'pc/' : 'mb/') + projectRecord.方案英文名称;
+    var msgurl = getHttpPrefix() + '://erp.highbird.cn:1330/erppage/' + (isPC ? 'pc/' : 'mb/') + projectRecord.方案英文名称;
     if(flowStep != -1){
         msgurl += '?flowStep=' + flowStep;
         if(stepData != -1){

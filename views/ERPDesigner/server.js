@@ -767,8 +767,8 @@ function publishProject(req, res){
             });
         }
 
-        var pageMobileUrl = 'http://' + hostIP + ':' + hostPort + '/erppage/mb/' + projProfile.enName;
-        var pagePcUrl = 'http://' + hostIP + ':' + hostPort + '/erppage/pc/' + projProfile.enName;
+        var pageMobileUrl = (httpApp.bUseHttps ? 'https' : 'http') + '://' + hostIP + ':' + hostPort + '/erppage/mb/' + projProfile.enName;
+        var pagePcUrl = (httpApp.bUseHttps ? 'https' : 'http') + '://' + hostIP + ':' + hostPort + '/erppage/pc/' + projProfile.enName;
         
         return {
             mobileUrl:pageMobileUrl,
