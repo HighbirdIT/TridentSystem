@@ -631,6 +631,9 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
             if(!belongFormKernel.isKernelInRow(ctrKernel)){
                 rowSource = EFormRowSource.None;
             }
+            else{
+                rowSource = EFormRowSource.Context;
+            }
             var formObj = this.addUseForm(belongFormKernel, rowSource);
             rlt = formObj.useControls_map[ctrKernel.id];
             if(rlt == null){
