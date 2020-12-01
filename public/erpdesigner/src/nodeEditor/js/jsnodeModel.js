@@ -853,7 +853,7 @@ class JSNode_BluePrint extends EventEmitter {
                 }
                 if (belongFormControl && belongFormControl.isGridForm()) {
                     theFun.scope.getVar(VarNames.RowKeyInfo_map, true, 'getRowKeyMapFromPath(' + VarNames.BaseValidCheckPath + ')');
-                    theFun.scope.getVar(VarNames.RowKey, true, VarNames.RowKeyInfo_map + '.' + belongFormControl.id);
+                    theFun.scope.getVar(belongFormControl.id + '_' + VarNames.RowKey, true, VarNames.RowKeyInfo_map + '.' + belongFormControl.id);
                 }
             }
 
@@ -983,20 +983,20 @@ class JSNode_BluePrint extends EventEmitter {
                 }
             }
             else if (this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
-                params_arr = [VarNames.RowKey, VarNames.CallBack];
+                params_arr = [ctlKernel.id + '_' + VarNames.RowKey, VarNames.CallBack];
                 if (compilHelper.config) {
                     if (compilHelper.config.key == 'insert') {
                         params_arr = [VarNames.CallBack];
-                        theFun.scope.getVar(VarNames.RowKey, true, singleQuotesStr('new'));
+                        theFun.scope.getVar(ctlKernel.id + '_' + VarNames.RowKey, true, singleQuotesStr('new'));
                     }
-                    fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.parent.id + '_' + compilHelper.config.actLabel + '_'), '+', VarNames.RowKey);
+                    fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.parent.id + '_' + compilHelper.config.actLabel + '_'), '+', ctlKernel.parent.id + '_' + VarNames.RowKey);
                 }
                 else {
-                    fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.id + funName + '_'), '+', VarNames.RowKey);
+                    fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.id + funName + '_'), '+', ctlKernel.id + '_' + VarNames.RowKey);
                 }
                 validCheckBasePath = VarNames.BaseValidCheckPath;
                 theFun.scope.getVar(belongFormControl.id + "_path", true, 'this.props.fullPath');
-                theFun.scope.getVar(belongFormControl.id + "_rowpath", true, 'this.props.fullPath + ".row_" + ' + VarNames.RowKey);
+                theFun.scope.getVar(belongFormControl.id + "_rowpath", true, 'this.props.fullPath + ".row_" + ' + belongFormControl.id + '_' + VarNames.RowKey);
                 theFun.scope.getVar(VarNames.BaseValidCheckPath, true, belongFormControl.id + "_rowpath");
                 theFun.scope.getVar(belongFormControl.id + "_state", true, makeStr_callFun('getStateByPath', [VarNames.State, 'this.props.fullPath', '{}']));
                 if (belongUserControl) {
@@ -1024,6 +1024,7 @@ class JSNode_BluePrint extends EventEmitter {
                 var formNowRowStateVarName = formId + '_' + VarNames.RowState;
                 var formNowRecordVarName = formId + '_' + VarNames.NowRecord;
                 var formPathVarName = formId + '_path';
+                var formKeyVarName = formId + '_' + VarNames.RowKey;
                 var selectedRowsVarName = formId + '_' + VarNames.SelectedRows_arr;
                 var isUseFormCtl = !IsEmptyObject(useFormData.useControls_map);
                 var isUseFormColumn = !IsEmptyObject(useFormData.useColumns_map);
@@ -1060,15 +1061,15 @@ class JSNode_BluePrint extends EventEmitter {
                     if (isGridForm || isListForm) {
                         if (useFormData.useContextRow) {
                             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
-                                theFun.scope.getVar(VarNames.RowKey, true, VarNames.RowKeyInfo_map + '.' + formId);
+                                theFun.scope.getVar(formKeyVarName, true, VarNames.RowKeyInfo_map + '.' + formId);
                             }
                             if (this.group == EJsBluePrintFunGroup.CtlEvent) {
-                                theFun.scope.getVar(VarNames.RowKey, true, VarNames.RowKeyInfo_map + '.' + formId);
+                                theFun.scope.getVar(formKeyVarName, true, VarNames.RowKeyInfo_map + '.' + formId);
                             }
                             if (!isGetXmlRowFun && !isGetJsonRowFun) {
-                                theFun.scope.getVar(formNowRowStateVarName, true, makeStr_callFun('getStateByPath', [formStateVarName, "'row_' + " + VarNames.RowKey, '{}']));
+                                theFun.scope.getVar(formNowRowStateVarName, true, makeStr_callFun('getStateByPath', [formStateVarName, "'row_' + " + formKeyVarName, '{}']));
                                 if (isUseFormColumn) {
-                                    theFun.scope.getVar(formNowRecordVarName, true, makeStr_callFun('getRecordFromRowKey', [formPathVarName, VarNames.RowKey]));
+                                    theFun.scope.getVar(formNowRecordVarName, true, makeStr_callFun('getRecordFromRowKey', [formPathVarName, formKeyVarName]));
                                 }
                             }
                         }
@@ -1390,12 +1391,12 @@ class JSNode_BluePrint extends EventEmitter {
             var gridRowKeyVars_map = {};
             switch (ctlKernel.type) {
                 case M_FormKernel_Type:
-                    gridRowKeyVars_map[ctlKernel.id] = VarNames.RowKey;
+                    gridRowKeyVars_map[ctlKernel.id] = ctlKernel.id + '_' + VarNames.RowKey;
                     break;
                 default:
                     var belongForm = ctlKernel.searchParentKernel(M_FormKernel_Type, true);
                     if (belongForm) {
-                        gridRowKeyVars_map[belongForm.id] = VarNames.RowKey;
+                        gridRowKeyVars_map[belongForm.id] = belongForm.id + '_' + VarNames.RowKey;
                     }
                     break;
             }
@@ -2926,7 +2927,8 @@ class JSNode_CurrentDataRow extends JSNode_Base {
                     realParent = formKernel;
                 }
                 var isSameForm = formKernel == belongFormKernel;
-                if (this.checkCompileFlag(!isSameForm || realParent != belongFormKernel, '此处无法使用目标Form的本属性', helper)) {
+                //!isSameForm || realParent != belongFormKernel
+                if (this.checkCompileFlag(!isSameForm && !belongFormKernel.hadAncestor(formKernel), '此处无法使用目标Form的本属性', helper)) {
                     return false;
                 }
             }
