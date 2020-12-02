@@ -379,7 +379,7 @@ dingHelper.ORCFile = (type, fileID)=>{
         if(accessToken == null){
             return { errInfo: 'accessToken获取失败' };
         }
-        var fileURL = yield dbhelper.asynGetScalar("SELECT '" + getHttpPrefix() + "://erp.highbird.cn:1330' + 文件路径 FROM [dbo].[FTB00E文件信息] (@fileid)", [dbhelper.makeSqlparam('fileid', sqlTypes.Int, fileID)]);
+        var fileURL = yield dbhelper.asynGetScalar("SELECT 'https://erp.highbird.cn:1330' + 文件路径 FROM [dbo].[FTB00E文件信息] (@fileid)", [dbhelper.makeSqlparam('fileid', sqlTypes.Int, fileID)]);
         if(fileURL == null){
             return { errInfo: '文件未找到' };
         }
