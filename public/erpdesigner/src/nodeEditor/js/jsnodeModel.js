@@ -987,7 +987,7 @@ class JSNode_BluePrint extends EventEmitter {
                 if (compilHelper.config) {
                     if (compilHelper.config.key == 'insert') {
                         params_arr = [VarNames.CallBack];
-                        theFun.scope.getVar(ctlKernel.id + '_' + VarNames.RowKey, true, singleQuotesStr('new'));
+                        theFun.scope.getVar(ctlKernel.parent.id + '_' + VarNames.RowKey, true, singleQuotesStr('new'));
                     }
                     fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.parent.id + '_' + compilHelper.config.actLabel + '_'), '+', ctlKernel.parent.id + '_' + VarNames.RowKey);
                 }
