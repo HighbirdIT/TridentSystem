@@ -25,6 +25,7 @@ const M_DropdownKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('弹出框最小宽度', 'poppanelminwidth', ValueType.Int, 0, true),
         new CAttribute('历史Key', AttrNames.HisKey, ValueType.String, '', true, false),
         new CAttribute('Growable', AttrNames.Growable, ValueType.Boolean, true),
+        new CAttribute('有小按钮', 'hadminibtn', ValueType.Boolean, true),
         new CAttribute(AttrNames.ColumnName, AttrNames.ColumnName, ValueType.String, null, false, false, null, null, false),
         new CAttribute(AttrNames.ValuesArray, AttrNames.ValuesArray, ValueType.String, null, false, false, null, null, false),
     ]),

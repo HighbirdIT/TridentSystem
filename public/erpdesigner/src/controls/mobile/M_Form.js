@@ -129,8 +129,12 @@ class M_FormKernel extends ContainerKernelBase {
         this.scriptCreated(null, theBP);
         theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnClickRefresh);
         this.scriptCreated(null, theBP);
-        //theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnClickRow);
-        //this.scriptCreated(null, theBP);
+        theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnInsert);
+        this.scriptCreated(null, theBP);
+        theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnUpdate);
+        this.scriptCreated(null, theBP);
+        theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnDelete);
+        this.scriptCreated(null, theBP);
 
         //this.autoSetCusDataSource();
         var listFormContentValue = this.getAttribute(AttrNames.ListFormContent);
@@ -368,7 +372,7 @@ class M_FormKernel extends ContainerKernelBase {
             scriptBP.canCustomReturnValue = true;
         }
         if(scriptBP.name.indexOf(AttrNames.Event.OnDelete) != -1){
-            scriptBP.setFixParam([VarNames.RowKey, 'callBack']);
+            scriptBP.setFixParam([this.id + '_' + VarNames.RowKey, 'callBack']);
         }
         if(scriptBP.name.indexOf(AttrNames.Event.OnClickRefresh) != -1){
             scriptBP.setFixParam([this.id + '_path']);

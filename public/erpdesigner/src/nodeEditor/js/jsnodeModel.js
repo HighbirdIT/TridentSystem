@@ -983,7 +983,7 @@ class JSNode_BluePrint extends EventEmitter {
                 }
             }
             else if (this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
-                params_arr = [ctlKernel.id + '_' + VarNames.RowKey, VarNames.CallBack];
+                params_arr = [ctlKernel.parent.id + '_' + VarNames.RowKey, VarNames.CallBack];
                 if (compilHelper.config) {
                     if (compilHelper.config.key == 'insert') {
                         params_arr = [VarNames.CallBack];
@@ -2928,7 +2928,7 @@ class JSNode_CurrentDataRow extends JSNode_Base {
                 }
                 var isSameForm = formKernel == belongFormKernel;
                 //!isSameForm || realParent != belongFormKernel
-                if (this.checkCompileFlag(!isSameForm && !belongFormKernel.hadAncestor(formKernel), '此处无法使用目标Form的本属性', helper)) {
+                if (this.checkCompileFlag(!isSameForm && belongFormKernel != null && !belongFormKernel.hadAncestor(formKernel), '此处无法使用目标Form的本属性', helper)) {
                     return false;
                 }
             }
@@ -3700,8 +3700,8 @@ class JSNODE_Insert_table extends JSNode_Base {
         var useClientVariablesRlt = new UseClientVariableResult();
         this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
         useClientVariablesRlt.variables_arr.forEach(varCon => {
-            initBundleBlock.params_map[varCon.name] = varCon.name;
-            if (serverFun) {
+            if (serverFun && initBundleBlock.params_map[varCon.name] == null) {
+                initBundleBlock.params_map[varCon.name] = varCon.name;
                 serverFun.scope.getVar(varCon.name, true);
                 postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
             }
@@ -4016,9 +4016,29 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
         var selectedKernel;
         var options_arr;
         var nowVal;
-        if (this.apiClass.ctltype == M_FormKernel_Type && this.apiItem.attrItem.name == VarNames.SelectedColumns) {
+        var links_arr = this.bluePrint.linkPool.getLinksBySocket(this.inSocket);
+        if(links_arr.length > 0){
+            var link = links_arr[0];
+            var fromNode = link.outSocket.node;
+            if (fromNode.type == FLOWNODE_COLUMN_VAR) {
+                var keySocket = fromNode.getKeySocket();
+                if (keySocket) {
+                    if (keySocket.node.type == JSNODE_TRAVERSALFORM) {
+                        selectedCtlid = keySocket.getExtra('ctlid');
+                    }
+                }
+            }
+            else if (fromNode.type == JSNODE_TRAVERSALFORM) {
+                selectedCtlid = link.outSocket.getExtra('ctlid');
+            }
+        }
+        else{
             selectedCtlid = this.inSocket.getExtra('ctlid');
+        }
+        if(selectedCtlid){
             selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
+        }
+        if (this.apiClass.ctltype == M_FormKernel_Type && this.apiItem.attrItem.name == VarNames.SelectedColumns) {
             if (selectedKernel) {
                 options_arr = selectedKernel.getCanuseColumns;
             }
@@ -4029,8 +4049,6 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
             return <DropDownControl itemChanged={this.columnDDCChanged} btnclass='btn-dark' options_arr={options_arr} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} />;
         }
         if (this.apiClass.ctltype == M_DropdownKernel_Type && this.apiItem.attrItem.name == AttrNames.ColumnName) {
-            selectedCtlid = this.inSocket.getExtra('ctlid');
-            selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
             if (selectedKernel) {
                 options_arr = selectedKernel.getAppandColumns;
             }
@@ -4041,8 +4059,6 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
             return <DropDownControl itemChanged={this.columnDDCChanged} btnclass='btn-dark' options_arr={options_arr} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} />;
         }
         else if (this.apiClass.ctltype == M_PageKernel_Type && this.apiItem.attrItem.name == AttrNames.ParamApi) {
-            selectedCtlid = this.inSocket.getExtra('ctlid');
-            selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
             if (selectedKernel) {
                 options_arr = selectedKernel.getParamApiAttrArray;
             }
@@ -5679,9 +5695,11 @@ class JSNode_Query_Sql extends JSNode_Base {
         var useClientVariablesRlt = new UseClientVariableResult();
         this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
         useClientVariablesRlt.variables_arr.forEach(varCon => {
-            initBundleBlock.params_map[varCon.name] = varCon.name;
-            serverFun.scope.getVar(varCon.name, true);
-            postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
+            if (serverFun && initBundleBlock.params_map[varCon.name] == null) {
+                initBundleBlock.params_map[varCon.name] = varCon.name;
+                serverFun.scope.getVar(varCon.name, true);
+                postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
+            }
         });
 
         if (bpCompileHelper) {
@@ -6627,8 +6645,8 @@ class JSNode_Do_FlowStep extends JSNode_Base {
         var useClientVariablesRlt = new UseClientVariableResult();
         this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
         useClientVariablesRlt.variables_arr.forEach(varCon => {
-            initBundleBlock.params_map[varCon.name] = varCon.name;
-            if (serverFun) {
+            if (serverFun && initBundleBlock.params_map[varCon.name] == null) {
+                initBundleBlock.params_map[varCon.name] = varCon.name;
                 serverFun.scope.getVar(varCon.name, true);
                 postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
             }
@@ -7279,8 +7297,8 @@ class JSNODE_Update_table extends JSNode_Base {
         var useClientVariablesRlt = new UseClientVariableResult();
         this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
         useClientVariablesRlt.variables_arr.forEach(varCon => {
-            initBundleBlock.params_map[varCon.name] = varCon.name;
-            if (serverFun) {
+            if (serverFun && initBundleBlock.params_map[varCon.name] == null) {
+                initBundleBlock.params_map[varCon.name] = varCon.name;
                 serverFun.scope.getVar(varCon.name, true);
                 postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
             }
@@ -8618,8 +8636,8 @@ class JSNODE_Delete_Table extends JSNode_Base {
         var useClientVariablesRlt = new UseClientVariableResult();
         this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
         useClientVariablesRlt.variables_arr.forEach(varCon => {
-            initBundleBlock.params_map[varCon.name] = varCon.name;
-            if (serverFun) {
+            if (serverFun && initBundleBlock.params_map[varCon.name] == null) {
+                initBundleBlock.params_map[varCon.name] = varCon.name;
                 serverFun.scope.getVar(varCon.name, true);
                 postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
             }
@@ -10381,8 +10399,8 @@ class JSNode_Excute_Pro extends JSNode_Base {
         var useClientVariablesRlt = new UseClientVariableResult();
         this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
         useClientVariablesRlt.variables_arr.forEach(varCon => {
-            initBundleBlock.params_map[varCon.name] = varCon.name;
-            if (serverFun) {
+            if (serverFun && initBundleBlock.params_map[varCon.name] == null) {
+                initBundleBlock.params_map[varCon.name] = varCon.name;
                 serverFun.scope.getVar(varCon.name, true);
                 postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
             }
@@ -10668,8 +10686,8 @@ class JSNode_Attachment_Pro extends JSNode_Base {
         var useClientVariablesRlt = new UseClientVariableResult();
         this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
         useClientVariablesRlt.variables_arr.forEach(varCon => {
-            initBundleBlock.params_map[varCon.name] = varCon.name;
-            if (serverFun) {
+            if (serverFun && initBundleBlock.params_map[varCon.name] == null) {
+                initBundleBlock.params_map[varCon.name] = varCon.name;
                 serverFun.scope.getVar(varCon.name, true);
                 postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
             }

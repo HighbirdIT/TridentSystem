@@ -483,6 +483,12 @@ class JSNode_CusObject_Visit extends JSNode_Base {
         return theJson;
     }
 
+    getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
+        if(this.inNode && this.inNode.getScoketClientVariable){
+            this.inNode.getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result);
+        }
+    }
+
     compile(helper, preNodes_arr, belongBlock) {
         var superRet = super.compile(helper, preNodes_arr);
         if (superRet == false || superRet != null) {
@@ -501,6 +507,7 @@ class JSNode_CusObject_Visit extends JSNode_Base {
             return false;
         }
         var selfCompileRet = new CompileResult(this);
+        this.inNode = socketComRet.link.outSocket.node;
         var inSocketValue = socketComRet.value;
         this.objChanged();
         for (var i = 0; i < this.outputScokets_arr.length; ++i) {
@@ -1351,8 +1358,12 @@ class JSNode_TraversalForm extends JSNode_Base {
                 //这里的属性引用也不需要汇报
                 //helper.addUseControlPropApi(ctlset.ctl, apiitem, EFormRowSource.None);
                 var stateVarName = this.id + '_' + ctlset.ctl.id + '_' + apiitem.stateName;
+                var initValue = ctlset.stateVarName + '.' + apiitem.stateName;
+                if (apiitem.getInitValueFun) {
+                    initValue = apiitem.getInitValueFun(ctlset.stateVarName, ctlset.ctl, apiitem);
+                }
                 ctlDeclareBlock.pushLine(makeLine_DeclareVar(stateVarName, 'null', false));
-                checkCtlBlock.pushLine(stateVarName + '=' + ctlset.stateVarName + '.' + apiitem.stateName + ';');
+                checkCtlBlock.pushLine(stateVarName + '=' + initValue + ';');
                 if (apiitem.needValid) {
                     var valueType = 'string';
                     if (ctlset.ctl.hasAttribute(AttrNames.ValueType)) {
@@ -2719,7 +2730,8 @@ class JSNode_Array_For extends JSNode_Base {
 
     getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
         if(!this.blockInServer){
-            result.pushVariable(this.id + '_' + targetSocket.name, targetSocket);
+            //result.pushVariable(this.id + '_' + targetSocket.name, targetSocket);
+            result.pushVariable(this.id + '_data', targetSocket);
         }
     }
 
@@ -3793,8 +3805,8 @@ class JSNode_OpenReport extends JSNode_Base {
         var useClientVariablesRlt = new UseClientVariableResult();
         this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
         useClientVariablesRlt.variables_arr.forEach(varCon => {
-            initBundleBlock.params_map[varCon.name] = varCon.name;
-            if (serverFun) {
+            if (serverFun && initBundleBlock.params_map[varCon.name] == null) {
+                initBundleBlock.params_map[varCon.name] = varCon.name;
                 serverFun.scope.getVar(varCon.name, true);
                 postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
             }

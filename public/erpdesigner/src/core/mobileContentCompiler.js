@@ -5722,6 +5722,9 @@ class MobileContentCompiler extends ContentCompiler {
         if (!theKernel.getAttribute(AttrNames.Growable)) {
             ctlTag.setAttr('growable', '{false}');
         }
+        if (!theKernel.getAttribute('hadminibtn')) {
+            ctlTag.setAttr('miniBtn', '{false}');
+        }
         if (theKernel.getAttribute('poppanelminwidth') > 100) {
             ctlTag.setAttr('poppanelminwidth', theKernel.getAttribute('poppanelminwidth'));
         }
