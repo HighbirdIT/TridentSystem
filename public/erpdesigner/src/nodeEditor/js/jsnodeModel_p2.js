@@ -690,15 +690,27 @@ class JSNode_Fun_Create extends JSNode_Base {
         }
 
         if (nodeJson) {
-            if (this.outputScokets_arr.length > 0) {
-                this.nameSocket = this.outputScokets_arr[0];
-            }
+            this.outputScokets_arr.forEach(socket=>{
+                switch (socket.name){
+                    case 'name':
+                        this.nameSocket = socket;
+                        break;
+                    case 'inparam':
+                        this.inparamSocket = socket;
+                        break;
+                }
+            })
         }
         if (this.nameSocket == null) {
             this.nameSocket = this.addSocket(new NodeSocket('name', this, false));
         }
         this.bodyFlowSocket.label = 'body';
         this.nameSocket.label = 'name';
+
+        if (this.inparamSocket == null) {
+            this.inparamSocket = this.addSocket(new NodeSocket('inparam', this, false));
+        }
+        this.inparamSocket.label = '参数';
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -716,8 +728,8 @@ class JSNode_Fun_Create extends JSNode_Base {
         var bodyJSBlock = new FormatFileBlock('body');
         belongBlock.pushChild(myJSBlock);
 
-        var retParamObjName = this.id + '_ret';
-        myJSBlock.pushLine('var ' + this.id + ' = (' + retParamObjName + ')=>{', 1);
+        var inParamObjName = this.id + '_param';
+        myJSBlock.pushLine('var ' + this.id + ' = (' + inParamObjName + ')=>{', 1);
         myJSBlock.pushChild(bodyJSBlock);
         myJSBlock.subNextIndent();
         myJSBlock.pushLine('}');
@@ -727,14 +739,16 @@ class JSNode_Fun_Create extends JSNode_Base {
             return false;
         }
 
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        selfCompileRet.setSocketOut(this.nameSocket, this.id);
+        selfCompileRet.setSocketOut(this.inparamSocket, inParamObjName);
+        helper.setCompileRetCache(this, selfCompileRet);
+
         if (this.compileFlowNode(bodyFlowLinks_arr[0], helper, usePreNodes_arr, bodyJSBlock) == false) {
             return false;
         }
 
-        var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
-        selfCompileRet.setSocketOut(this.nameSocket, this.id);
-        helper.setCompileRetCache(this, selfCompileRet);
         if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
             return false;
         }
@@ -2482,6 +2496,15 @@ class JSNode_CallCusScript extends JSNode_Base {
         var compileRet = helper.getCompileRetCache(this);
         var socketValue = compileRet.getSocketOut(targetSocket).strContent;
         result.pushVariable(socketValue, targetSocket);
+    }
+    
+    getJson(jsonProf) {
+        var theJson = super.getJson(jsonProf);
+        if (jsonProf) {
+            var targetBP = this.bluePrint.master.getBPByCode(this.script_id);
+            jsonProf.addUseScript_arr(targetBP);
+        }
+        return theJson;
     }
 
     compile(helper, preNodes_arr, belongBlock) {

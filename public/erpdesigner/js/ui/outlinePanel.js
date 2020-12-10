@@ -301,6 +301,9 @@ var OutlinePanel = function (_React$PureComponent2) {
             if (this.bMouseInPanel && this.props.designer.placingKernel != null) {
                 return;
             }
+            if (itemElem == null) {
+                return;
+            }
             var itemRect = itemElem.getBoundingClientRect();
             var scrollDivRect = this.scrollDivRef.current.getBoundingClientRect();
             var scrollBarSize = 25;

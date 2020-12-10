@@ -101,6 +101,22 @@ class ControlKernelBase extends IAttributeable {
         this.getAccessableKernels = this.getAccessableKernels.bind(this);
         this.listendDS_map = {};
 
+        this.freshByKernelJson(this.project, kernelJson);
+
+        if(this.project){
+            this.project.registerControl(this);
+        }
+        if (createHelper) {
+            createHelper.saveJsonMap(kernelJson, this);
+        }
+        if (parentKernel && parentKernel.project != parentKernel) {
+            parentKernel.appandChild(this, this.hintIndexInParent);
+            this.hintIndexInParent = null;
+        }
+        this.readableName = this.getReadableName();
+    }
+
+    freshByKernelJson(project, kernelJson){
         if (kernelJson != null) {
             // restore attr from json
             this.id = kernelJson.id;
@@ -126,13 +142,13 @@ class ControlKernelBase extends IAttributeable {
                             switch(attr.valueType){
                                 case ValueType.DataSource:
                                 if(!IsEmptyString(val)){
-                                    var theDS = parentKernel.project.dataMaster.getDataSourceByCode(val);
+                                    var theDS = project.dataMaster.getDataSourceByCode(val);
                                     if(theDS != null){
                                         this[attrName] = theDS;
                                         this.listenDS(theDS, attr.name);
                                     }
                                     else{
-                                        parentKernel.project.logManager.warn(val + '不是合法的数据源代码');
+                                        project.logManager.warn(val + '不是合法的数据源代码');
                                     }
                                 }
                                 break;
@@ -142,18 +158,6 @@ class ControlKernelBase extends IAttributeable {
                 });
             }
         }
-
-        if(this.project){
-            this.project.registerControl(this);
-        }
-        if (createHelper) {
-            createHelper.saveJsonMap(kernelJson, this);
-        }
-        if (parentKernel && parentKernel.project != parentKernel) {
-            parentKernel.appandChild(this, this.hintIndexInParent);
-            this.hintIndexInParent = null;
-        }
-        this.readableName = this.getReadableName();
     }
 
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray){
@@ -180,6 +184,18 @@ class ControlKernelBase extends IAttributeable {
         if(attrItem.name == AttrNames.TextField || attrItem.name == AttrNames.Name){
             this.readableName = this.getReadableName();
         }
+    }
+
+    __removeFromProject(){
+        if(this.children){
+            var myChildren = this.children.concat();
+            for(var ci in myChildren){
+                myChildren[ci].__removeFromProject();
+            }
+        }
+        this.project.unRegisterControl(this, false);
+        this.parent = null;
+        this.children = [];
     }
 
     delete(forceDelete){

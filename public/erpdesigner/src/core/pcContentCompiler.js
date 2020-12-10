@@ -244,6 +244,11 @@ class PCContentCompiler extends MobileContentCompiler {
                             if (relyPath.approach.funName) {
                                 var relyCtlReactParent = relyPath.relyCtl.getReactParentKernel(true);
                                 var sameReactKernel = relyPath.berelyCtl.searchSameReactParentKernel(relyPath.relyCtl);
+                                if(sameReactKernel == null){
+                                    console.error(relyPath.berelyCtl.id + '和' + relyPath.relyCtl.id + '未能找到sameReactKernel!');
+                                    logManager.error(relyPath.berelyCtl.id + '和' + relyPath.relyCtl.id + '未能找到sameReactKernel!');
+                                    return false;
+                                }
                                 var thirdParam = sameReactKernel.id + '_path';
                                 var sameReactKernelPathInitStr = sameReactKernel.isComplicatedPath() ? "getParentPathByKey(path,'" + sameReactKernel.id + "')" : singleQuotesStr(sameReactKernel.getStatePath(''));
                                 changedFun.scope.getVar(sameReactKernel.id + '_path', true, sameReactKernelPathInitStr);

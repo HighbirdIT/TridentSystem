@@ -113,46 +113,7 @@ var ControlKernelBase = function (_IAttributeable) {
         _this.getAccessableKernels = _this.getAccessableKernels.bind(_this);
         _this.listendDS_map = {};
 
-        if (kernelJson != null) {
-            // restore attr from json
-            _this.id = kernelJson.id;
-            if (kernelJson.attr != null) {
-                Object.assign(_this, kernelJson.attr);
-
-                _this.attrbuteGroups.forEach(function (group) {
-                    group.attrs_arr.forEach(function (attr) {
-                        if (!attr.editable) return;
-                        var attrItemArray = null;
-                        if (attr.isArray) {
-                            attrItemArray = _this.getAttrArrayList(attr.name).map(function (e) {
-                                return e.name;
-                            });
-                        } else {
-                            attrItemArray = [attr.name];
-                        }
-                        attrItemArray.forEach(function (attrName) {
-                            var val = _this[attrName];
-                            if (val == null || val == attr.defaultVal) {
-                                return;
-                            }
-                            switch (attr.valueType) {
-                                case ValueType.DataSource:
-                                    if (!IsEmptyString(val)) {
-                                        var theDS = parentKernel.project.dataMaster.getDataSourceByCode(val);
-                                        if (theDS != null) {
-                                            _this[attrName] = theDS;
-                                            _this.listenDS(theDS, attr.name);
-                                        } else {
-                                            parentKernel.project.logManager.warn(val + '不是合法的数据源代码');
-                                        }
-                                    }
-                                    break;
-                            }
-                        });
-                    });
-                });
-            }
-        }
+        _this.freshByKernelJson(_this.project, kernelJson);
 
         if (_this.project) {
             _this.project.registerControl(_this);
@@ -169,6 +130,52 @@ var ControlKernelBase = function (_IAttributeable) {
     }
 
     _createClass(ControlKernelBase, [{
+        key: 'freshByKernelJson',
+        value: function freshByKernelJson(project, kernelJson) {
+            var _this2 = this;
+
+            if (kernelJson != null) {
+                // restore attr from json
+                this.id = kernelJson.id;
+                if (kernelJson.attr != null) {
+                    Object.assign(this, kernelJson.attr);
+
+                    this.attrbuteGroups.forEach(function (group) {
+                        group.attrs_arr.forEach(function (attr) {
+                            if (!attr.editable) return;
+                            var attrItemArray = null;
+                            if (attr.isArray) {
+                                attrItemArray = _this2.getAttrArrayList(attr.name).map(function (e) {
+                                    return e.name;
+                                });
+                            } else {
+                                attrItemArray = [attr.name];
+                            }
+                            attrItemArray.forEach(function (attrName) {
+                                var val = _this2[attrName];
+                                if (val == null || val == attr.defaultVal) {
+                                    return;
+                                }
+                                switch (attr.valueType) {
+                                    case ValueType.DataSource:
+                                        if (!IsEmptyString(val)) {
+                                            var theDS = project.dataMaster.getDataSourceByCode(val);
+                                            if (theDS != null) {
+                                                _this2[attrName] = theDS;
+                                                _this2.listenDS(theDS, attr.name);
+                                            } else {
+                                                project.logManager.warn(val + '不是合法的数据源代码');
+                                            }
+                                        }
+                                        break;
+                                }
+                            });
+                        });
+                    });
+                }
+            }
+        }
+    }, {
         key: '__attributeChanged',
         value: function __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {
             var attrItem = this.findAttributeByName(attrName);
@@ -196,9 +203,22 @@ var ControlKernelBase = function (_IAttributeable) {
             }
         }
     }, {
+        key: '__removeFromProject',
+        value: function __removeFromProject() {
+            if (this.children) {
+                var myChildren = this.children.concat();
+                for (var ci in myChildren) {
+                    myChildren[ci].__removeFromProject();
+                }
+            }
+            this.project.unRegisterControl(this, false);
+            this.parent = null;
+            this.children = [];
+        }
+    }, {
         key: 'delete',
         value: function _delete(forceDelete) {
-            var _this2 = this;
+            var _this3 = this;
 
             if (!forceDelete && this.isfixed) {
                 return;
@@ -206,9 +226,9 @@ var ControlKernelBase = function (_IAttributeable) {
             // delete all customdatasource
             var cusdsAttr_arr = this.filterAttributesByValType(ValueType.CustomDataSource);
             cusdsAttr_arr.forEach(function (cusdsAttr) {
-                var cusds = _this2.getAttribute(cusdsAttr.name);
+                var cusds = _this3.getAttribute(cusdsAttr.name);
                 if (cusds != null) {
-                    _this2.project.dataMaster.deleteSqlBP(cusds);
+                    _this3.project.dataMaster.deleteSqlBP(cusds);
                 }
             });
 
@@ -338,19 +358,19 @@ var ControlKernelBase = function (_IAttributeable) {
     }, {
         key: 'getLayoutConfig',
         value: function getLayoutConfig(classAttrName, styleAttrName) {
-            var _this3 = this;
+            var _this4 = this;
 
             var rlt = new ControlLayoutConfig();
             var apdAttrList = this.getAttrArrayList(classAttrName ? classAttrName : AttrNames.LayoutNames.APDClass);
             var self = this;
             apdAttrList.forEach(function (attrArrayItem) {
-                var val = _this3.getAttribute(attrArrayItem.name);
+                var val = _this4.getAttribute(attrArrayItem.name);
                 rlt.addClass(val);
             });
 
             var styleAttrList = this.getAttrArrayList(styleAttrName ? styleAttrName : AttrNames.LayoutNames.StyleAttr);
             styleAttrList.forEach(function (attrArrayItem) {
-                var val = _this3.getAttribute(attrArrayItem.name);
+                var val = _this4.getAttribute(attrArrayItem.name);
                 if (val != null && !IsEmptyString(val.name) && !IsEmptyString(val.value)) {
                     var styleName = val.name;
                     var styleValue = val.value;
@@ -759,7 +779,7 @@ var ControlLayoutConfig = function () {
     }, {
         key: 'addClass',
         value: function addClass(value, existsProcess) {
-            var _this4 = this;
+            var _this5 = this;
 
             var class_arr = value.trim().split(' ');
             var added = false;
@@ -771,13 +791,13 @@ var ControlLayoutConfig = function () {
                 if (t_arr != null) {
                     var switchName = className.substr(0, className.length - t_arr[0].length);
                     var switchVal = t_arr[0].substr(1);
-                    if (_this4.addSwitchClass(switchName, switchVal, existsProcess)) {
+                    if (_this5.addSwitchClass(switchName, switchVal, existsProcess)) {
                         added = true;
                     }
                     return;
                 }
                 added = true;
-                _this4.class[className] = 1;
+                _this5.class[className] = 1;
             });
             return added;
         }
@@ -852,13 +872,13 @@ var CtlKernelCreationHelper = function (_EventEmitter) {
     function CtlKernelCreationHelper() {
         _classCallCheck(this, CtlKernelCreationHelper);
 
-        var _this5 = _possibleConstructorReturn(this, (CtlKernelCreationHelper.__proto__ || Object.getPrototypeOf(CtlKernelCreationHelper)).call(this));
+        var _this6 = _possibleConstructorReturn(this, (CtlKernelCreationHelper.__proto__ || Object.getPrototypeOf(CtlKernelCreationHelper)).call(this));
 
-        EnhanceEventEmiter(_this5);
-        _this5.orginID_map = {};
-        _this5.newID_map = {};
-        _this5.idTracer = {};
-        return _this5;
+        EnhanceEventEmiter(_this6);
+        _this6.orginID_map = {};
+        _this6.newID_map = {};
+        _this6.idTracer = {};
+        return _this6;
     }
 
     _createClass(CtlKernelCreationHelper, [{

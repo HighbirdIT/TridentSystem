@@ -86,6 +86,17 @@ class ProjectResPanel extends React.PureComponent {
         project.cloneUserControl(editingControl);
     }
 
+    clickExportUserControlHandler(ev){
+        var project = this.props.project;
+        var editingControl = project.getEditingControl();
+        gCopiedKernelData = project.exportUserControl(editingControl);
+    }
+
+    clickImportUserControlHandler(ev){
+        var project = this.props.project;
+        project.importUserControl(gCopiedKernelData);
+    }
+
     clickControlItem(ev){
         var ctlID = getAttributeByNode(ev.target,'d-id', true);
         var project = this.props.project;
@@ -199,7 +210,11 @@ class ProjectResPanel extends React.PureComponent {
                 <div className='d-flex flex-grow-0 flex-shrink-0'>
                     <input type='text' className='flexinput flex-grow-1 flex-shrink-1' onChange={this.nweUserControlNameChanged} value={this.state.nweUserControlName} />
                     <button type="button" onClick={this.clickCreateNewUserControlHandler} className='btn flex-grow-0 flex-shrink-0 btn-success fa fa-plus' >创建</button>
+                </div>
+                <div className='d-flex flex-grow-0 flex-shrink-0'>
                     <button type="button" onClick={this.clickCopyUserControlHandler} className='btn flex-grow-0 flex-shrink-0 btn-info fa fa-copy' >克隆</button>
+                    <button type="button" onClick={this.clickExportUserControlHandler} className='btn flex-grow-0 flex-shrink-0 btn-info fa fa-export' >导出</button>
+                    <button type="button" onClick={this.clickImportUserControlHandler} className='btn flex-grow-0 flex-shrink-0 btn-info fa fa-import' >导入</button>
                 </div>
                 <div className='bg-secondary text-light'>快捷功能</div>
                 <QuickControlSelector project={project} />
