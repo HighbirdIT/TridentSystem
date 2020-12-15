@@ -1582,7 +1582,7 @@ class FlowNode_ColumnVar extends JSNode_Base {
     }
 
     getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
-        this.keySocket.node.getScoketClientVariable(helper, srcNode, belongFun, this.keySocket, result);
+        this.keySocket.node.getUseClientVariable(helper, srcNode, belongFun, this.keySocket, result);
     }
 
     compile(helper, preNodes_arr) {

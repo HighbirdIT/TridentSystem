@@ -292,6 +292,10 @@ class M_FormKernel extends ContainerKernelBase {
                 }
                 if(item.parent == this){
                     ret.push(item.editor);
+                    if(item.editor.type == M_ContainerKernel_Type || item.editor.type == PopperButtonKernel_Type){
+                        // 穿透div
+                        item.editor.aidAccessableKernels(targetType, ret, true);
+                    }
                 }
             }
             else{
