@@ -6833,6 +6833,17 @@ class MobileContentCompiler extends ContentCompiler {
                 var isUseFormColumn = !IsEmptyObject(useFormData.useColumns_map);
                 var ctlBelongStateVarName = formStateVarName;
 
+                if(isUseFormCtl && isGridForm){
+                    // 有可能用的并不是grid行中的控件
+                    isUseFormCtl = false;
+                    for(var usectlid in useFormData.useControls_map){
+                        if(useFormData.formKernel.isKernelInRow(useFormData.useControls_map[usectlid].kernel)){
+                            isUseFormCtl = true;
+                            break;
+                        }
+                    }
+                }
+
                 if (belongUserControl) {
                     formPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + formPath);
                     initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
