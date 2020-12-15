@@ -2632,6 +2632,7 @@ class MobileContentCompiler extends ContentCompiler {
                     continue;
                 }
                 temGridBody.setAttr('dataversion', '{setting.dataversion}');
+                temGridBody.setAttr('records_arr', '{this.props.records_arr}');
                 temGridBody.setAttr('startRowIndex', '{this.props.startRowIndex}');
                 temGridBody.setAttr('endRowIndex', '{this.props.endRowIndex}');
                 temGridBody.setAttr('fullPath', '{this.props.fullPath}');
