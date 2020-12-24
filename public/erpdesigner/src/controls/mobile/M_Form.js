@@ -372,7 +372,7 @@ class M_FormKernel extends ContainerKernelBase {
             scriptBP.canCustomReturnValue = true;
         }
         if(scriptBP.name.indexOf(AttrNames.Function.GetJSONRowItem) != -1){
-            scriptBP.setFixParam([this.id + '_path',this.id + '_' + VarNames.NowRecord]);
+            scriptBP.setFixParam([this.id + '_rowpath',this.id + '_' + VarNames.NowRecord, VarNames.State]);
             scriptBP.canCustomReturnValue = true;
         }
         if(scriptBP.name.indexOf(AttrNames.Event.OnDelete) != -1){

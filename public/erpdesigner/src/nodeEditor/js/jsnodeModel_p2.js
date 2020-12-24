@@ -4240,7 +4240,7 @@ class JSNode_GetFormJsonData extends JSNode_Base {
             var formMidData = helper.projectCompiler.getMidData(selectedKernel.id);
             formMidData.useFormJSON = true;
         }
-        myJSBlock.pushLine(makeLine_DeclareVar(rltVarName, makeStr_callFun('GenFormJSONData', [formStateVarName, selectedKernel.id + '_' + AttrNames.Function.GetJSONRowItem, formPathVarName, selectedKernel.id + '_jsonHeaders']), false));
+        myJSBlock.pushLine(makeLine_DeclareVar(rltVarName, makeStr_callFun('GenFormJSONData', [formStateVarName, selectedKernel.id + '_' + AttrNames.Function.GetJSONRowItem, formPathVarName, selectedKernel.id + '_jsonHeaders', VarNames.State]), false));
 
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
