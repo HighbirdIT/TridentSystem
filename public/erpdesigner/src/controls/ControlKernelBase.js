@@ -624,8 +624,8 @@ class ControlKernelBase extends IAttributeable {
         return rlt;
     }
 
-    getParentStatePath(splitChar = '.', rowKeyVar_map = {}, ignoreRowKey = false){
-        var rlt = this.getStatePath('',splitChar,rowKeyVar_map,ignoreRowKey, null);
+    getParentStatePath(splitChar = '.', rowKeyVar_map = {}, ignoreRowKey = false, topestParant){
+        var rlt = this.getStatePath('',splitChar,rowKeyVar_map,ignoreRowKey, topestParant);
         var index = rlt.lastIndexOf(splitChar);
         return index != -1 ? rlt.substring(0, index) : rlt;
     }

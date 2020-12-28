@@ -7303,7 +7303,10 @@ class MobileContentCompiler extends ContentCompiler {
                                     validBlock.pushLine(makeStr_AddAll(nowRowStateVarName, '=', formStateVarName, "['row_' + ", VarNames.RowKeyInfo_map + '.' + formId, '];'));
                                 }
                                 var theFormRowBindFun = this.getFormRowBindFun(useFormData.formKernel);
-                                theFormRowBindFun.pushLine(makeStr_callFun(pullFun.name, [VarNames.State, 'null', singleQuotesStr(theKernel.getParentStatePath('.', { mapVarName: VarNames.RowKeyInfo_map}))]));
+                                if(belongUserControl){
+                                    theFormRowBindFun.scope.getVar(belongUserControl.id + '_path', true, makeStr_callFun("getBelongUserCtlPath", [useFormData.formKernel.id + '_path']));
+                                }
+                                theFormRowBindFun.pushLine(makeStr_callFun(pullFun.name, [VarNames.State, 'null', (belongUserControl ? belongUserControl.id + '_path + "." + ' : '') + singleQuotesStr(theKernel.getParentStatePath('.', { mapVarName: VarNames.RowKeyInfo_map}))]));
                             }
                             else{
                                 theFun.scope.getVar(selectedRowsVarName, true, makeStr_callFun('GetFormSelectedRows', [formStateVarName, singleQuotesStr(useFormData.formKernel.getAttribute(AttrNames.KeyColumn))]));

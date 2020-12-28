@@ -653,8 +653,9 @@ var ControlKernelBase = function (_IAttributeable) {
             var splitChar = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '.';
             var rowKeyVar_map = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
             var ignoreRowKey = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+            var topestParant = arguments[3];
 
-            var rlt = this.getStatePath('', splitChar, rowKeyVar_map, ignoreRowKey, null);
+            var rlt = this.getStatePath('', splitChar, rowKeyVar_map, ignoreRowKey, topestParant);
             var index = rlt.lastIndexOf(splitChar);
             return index != -1 ? rlt.substring(0, index) : rlt;
         }

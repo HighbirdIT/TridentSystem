@@ -207,14 +207,14 @@ class JSNode_Array_Concat extends JSNode_Base {
             return false;
         }
         var arrValue = socketComRet.value;
-        socketComRet = this.getSocketCompileValue(helper, this.dataSocket, usePreNodes_arr, belongBlock, true);
+        socketComRet = this.getSocketCompileValue(helper, this.dataSocket, usePreNodes_arr, belongBlock, true, true);
         if (socketComRet.err) {
             return false;
         }
         var dataValue = socketComRet.value;
 
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, arrValue + '.concat(' + dataValue + ')');
+        selfCompileRet.setSocketOut(this.outSocket, arrValue + '.concat(' + (dataValue ? dataValue : '') + ')');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
