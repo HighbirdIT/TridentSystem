@@ -168,6 +168,9 @@ class JSDef_Variable extends JSNode_Base {
         rlt.valType = this.valType;
         rlt.isParam = this.isParam;
         rlt.default = this.default;
+        if(this.bundleMode){
+            rlt.bundleMode = this.bundleMode;
+        }
         if (this.isOutput) {
             rlt.isOutput = this.isOutput;
         }
@@ -181,7 +184,7 @@ class JSDef_Variable extends JSNode_Base {
     }
 
     restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['name', 'valType', 'isParam', 'default', 'isfixed', 'index', 'isOutput']);
+        assginObjByProperties(this, attrsJson, ['name', 'valType', 'isParam', 'default', 'isfixed', 'index', 'isOutput', 'bundleMode']);
     }
 
     setProp(data) {
@@ -212,6 +215,9 @@ class JSDef_Variable extends JSNode_Base {
         }
         if (data.editing != null) {
             this.needEdit = data.editing;
+        }
+        if (data.bundleMode != null) {
+            this.bundleMode = data.bundleMode;
         }
         this.fireChanged();
     }

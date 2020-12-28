@@ -1964,6 +1964,7 @@ class JSDef_Variable_Component extends React.PureComponent{
             isParam:varData.isParam,
             default:varData.default,
             editing:varData.needEdit == true,
+            bundleMode:varData.bundleMode ? varData.bundleMode : 0,
         };
 
         autoBind(this);
@@ -1980,6 +1981,7 @@ class JSDef_Variable_Component extends React.PureComponent{
             isParam:varData.isParam,
             editing:varData.editing,
             default:varData.default,
+            bundleMode:varData.bundleMode ? varData.bundleMode : 0,
         });
     }
 
@@ -2006,6 +2008,12 @@ class JSDef_Variable_Component extends React.PureComponent{
     isParamChangedHandler(newCode){
         this.setState({
             isParam:newCode,
+        });
+    }
+
+    bundleModeChangedHandler(newCode){
+        this.setState({
+            bundleMode:newCode,
         });
     }
 
@@ -2157,6 +2165,7 @@ class JSDef_Variable_Component extends React.PureComponent{
             </div>
             <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={JsVarNodeValueTypes} textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
             {varData.isOutput ? null : <DropDownControl itemChanged={this.isParamChangedHandler} btnclass='btn-dark' options_arr={ISParam_Options_arr} textAttrName='name' valueAttrName='code' value={this.state.isParam} />}
+            {varData.isOutput ? null : <DropDownControl itemChanged={this.bundleModeChangedHandler} btnclass='btn-dark' options_arr={BundleMode_Options_arr} textAttrName='name' valueAttrName='code' value={this.state.bundleMode} />}
         </div>);
     }
 }

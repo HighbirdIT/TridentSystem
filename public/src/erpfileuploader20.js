@@ -2160,11 +2160,13 @@ class ERPC_ExcelImporter extends React.PureComponent {
                 <button type='button' className='btn btn-danger ml-1' onClick={this.clearData}>清空数据</button>
             </React.Fragment>
         }
-        return <div className='w-100 h-100 d-flex p-3 flex-column align-items-center justify-content-center'>
-            <div className='bg-light border d-flex flex-column p-1 rounded' style={{ maxWidth: '95%', maxHeight: '95%' }}>
-                <ERP_Form_ShowData id='dataform' parentPath='excelimporter' fullPath='excelimporter' pagebreak={false} selectMode='none' headers={data.headers} records_arr={data.rows} title={this.state.f_name} ></ERP_Form_ShowData>
-                <div className='d-flex justify-content-center flex-grow-0 flex-shrink-0 border-top p-1'>
-                    {bottomElem}
+        return  <div className='d-fixed w-100 h-100 fixedBackGround'>
+            <div className='w-100 h-100 d-flex p-3 flex-column align-items-center justify-content-center'>
+                <div className='bg-light border d-flex flex-column p-1 rounded' style={{ maxWidth: '95%', maxHeight: '95%' }}>
+                    <ERP_Form_ShowData id='dataform' parentPath='excelimporter' fullPath='excelimporter' pagebreak={false} selectMode='none' headers={data.headers} records_arr={data.rows} title={this.state.f_name} ></ERP_Form_ShowData>
+                    <div className='d-flex justify-content-center flex-grow-0 flex-shrink-0 border-top p-1'>
+                        {bottomElem}
+                    </div>
                 </div>
             </div>
         </div>;
@@ -2192,19 +2194,21 @@ class ERPC_ExcelImporter extends React.PureComponent {
                 </div>
             </div>
         }
-        return <div className='card excelimporter'>
-            <input id={this.props.id + '_file'} onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" />
-            <div className='card-body'>
-                <div className='card-title'><h5>{this.props.title}</h5></div>
-                {selectorElem}
-                {uploaderElem}
-                {this.state.reading ? <span><i className='fa fa-circle-o-notch fa-spin' />{this.state.readingInfo ? this.state.readingInfo : '正在解析Excel内容'}</span> : null}
-                {this.state.error ? <div className='d-flex flex-column flex-grow-1 flex-shrink-1'>
-                    <span className='text-danger flex-grow-1 flex-shrink-1'><i className='fa fa-warning' />{this.state.error.info}</span>
-                    <span className='d-flex justify-content-center flex-grow-0 flex-shrink-0'>
-                        <button className='btn btn-sm btn-danger' onClick={this.cancelClickHandler}>取消操作</button>
-                    </span>
-                </div> : null}
+        return  <div className='d-fixed w-100 h-100 fixedBackGround'>
+            <div className='card excelimporter'>
+                <input id={this.props.id + '_file'} onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" />
+                <div className='card-body'>
+                    <div className='card-title'><h5>{this.props.title}</h5></div>
+                    {selectorElem}
+                    {uploaderElem}
+                    {this.state.reading ? <span><i className='fa fa-circle-o-notch fa-spin' />{this.state.readingInfo ? this.state.readingInfo : '正在解析Excel内容'}</span> : null}
+                    {this.state.error ? <div className='d-flex flex-column flex-grow-1 flex-shrink-1'>
+                        <span className='text-danger flex-grow-1 flex-shrink-1'><i className='fa fa-warning' />{this.state.error.info}</span>
+                        <span className='d-flex justify-content-center flex-grow-0 flex-shrink-0'>
+                            <button className='btn btn-sm btn-danger' onClick={this.cancelClickHandler}>取消操作</button>
+                        </span>
+                    </div> : null}
+                </div>
             </div>
         </div>
     }

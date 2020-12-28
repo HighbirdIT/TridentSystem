@@ -793,6 +793,14 @@ class Node_Base extends EventEmitter {
         if(belongFun == null){
             return;
         }
+        if(result.checkedBundVar == null){
+            result.checkedBundVar = true;
+            this.bluePrint.vars_arr.forEach(varData=>{
+                if(varData.bundleMode == 1){
+                    result.pushVariable(varData.name,targetSocket);
+                }
+            });
+        }
         if(srcNode != this){
             if(this.getScoketClientVariable){
                 this.getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result);
