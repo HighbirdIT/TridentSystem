@@ -27,12 +27,9 @@ sheet = wb.active
 rows = json_data['rows']
 for rowIndex in range(0, len(rows)):
         rowdata = rows[rowIndex]
-        useRowIndex=rowIndex+5
-        if rowIndex == 0:
-            工资月份 = int(rowdata['工资月份'])
-            cell = sheet.cell(row=2, column=2, value=(rowdata['工资年份'] + (str(工资月份) if 工资月份 >= 10 else '0' + str(工资月份))))
-        cell = sheet.cell(row=useRowIndex, column=1, value=(rowdata['人员姓名'] if '人员姓名' in rowdata else ''))
-        cell = sheet.cell(row=useRowIndex, column=2, value=(rowdata['银行账号'] if '银行账号' in rowdata else ''))
+        useRowIndex=rowIndex+3
+        cell = sheet.cell(row=useRowIndex, column=1, value=(rowdata['银行账号'] if '银行账号' in rowdata else ''))
+        cell = sheet.cell(row=useRowIndex, column=2, value=(rowdata['人员姓名'] if '人员姓名' in rowdata else ''))
         cell = sheet.cell(row=useRowIndex, column=3, value=(rowdata['金额'] if '金额' in rowdata else ''))
         
 
