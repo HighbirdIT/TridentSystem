@@ -650,6 +650,10 @@ MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.SelectedC
     return makeStr_AddAll(ctlStateVarName,'==null ? "" : ', makeStr_callFun('GetFormSelectedColumns',[ctlStateVarName,singleQuotesStr(ctlKernel.getAttribute(AttrNames.KeyColumn)), singleQuotesStr(propApiitem.colname)]) + '.join(",")');
 }));
 MForm_api.pushApi(new ApiItem_propsetter(VarNames.Fetching)); 
+MForm_api.pushApi(new ApiItem_fun({
+    label:'刷新统计列',
+    name:'RecalStat',
+}));
 /*
 MForm_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName(VarNames.FormXML, M_FormKernelAttrsSetting), VarNames.FormXML, true,(ctlStateVarName, ctlKernel, propApiitem)=>{
     return ctlKernel.id + '_xmldata.xml';
