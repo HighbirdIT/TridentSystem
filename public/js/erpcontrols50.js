@@ -2299,11 +2299,16 @@ var ERPC_Img = function (_React$PureComponent9) {
                         var aftfix = this.props.src.substring(p1 + 1, p2);
                         var rndName = guid2().toUpperCase();
                         var blob = this.dataURIToBlob(this.props.src);
-                        var aelem = document.createElement('a');
-                        aelem.download = rndName + '.' + aftfix;
-                        aelem.href = URL.createObjectURL(blob);;
-                        document.body.append(aelem);
-                        aelem.click();
+                        //var aelem = document.createElement('a');
+                        //aelem.download = rndName + '.' + aftfix;
+                        //aelem.href = URL.createObjectURL(blob);
+                        //document.body.append(aelem);
+                        //aelem.click();
+                        var blobUrl = URL.createObjectURL(blob);
+                        dingdingKit.biz.util.previewImage({
+                            urls: [blobUrl],
+                            current: 0
+                        });
                     }
                 } else {
                     if (isInDingTalk) {
