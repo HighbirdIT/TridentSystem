@@ -19,6 +19,7 @@ var serverhelper = require('./erpserverhelper.js');
 var cluster = require('cluster');
 var QRCode = require('qrcode');
 var fs = require("fs");
+var projectHelperServer = require('./projectHelperServer.js');
 
 const bUseHttps = true;
 var httpPrefix = bUseHttps ? 'https' : 'http';
@@ -220,7 +221,6 @@ app.use('/', function (req, res, next) {
             res.locals.isProduction = app.get('env') == 'production';
 
             if (!res.locals.isProduction) {
-
                 res.locals.cacheUserid = developconfig.envVar.userid;
                 res.locals.cacheUserName = developconfig.envVar.username;
                 res.locals.g_envVar = JSON.stringify(developconfig.envVar);
@@ -705,6 +705,11 @@ app.use('/ai', function (req, res, next) {
     else{
         res.json({ err: '不存在的ai处理器' });
     }
+    return;
+});
+
+app.use('/app/projhelper', function (req, res, next) {
+    projectHelperServer.process(req, res, next);
     return;
 });
 
