@@ -2,7 +2,7 @@ var dbhelper = require('./dbhelper.js');
 var fileSystem = require('./fileSystem.js');
 var serverhelper = require('./erpserverhelper.js');
 
-let action_map = {};
+var action_map = {};
 
 function process(req, res, next){
     var rlt = {};
