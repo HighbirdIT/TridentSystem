@@ -843,7 +843,7 @@ class MobileContentCompiler extends ContentCompiler {
                     changedFun.subNextIndent();
                     changedFun.pushLine('}else{',1);
                     accordionParents_arr.forEach(accordionKernel => {
-                        changedFun.pushLine('if(!' + accordionKernel.id + '_state.inited){gDataCache.set(this.props.fullPath + ' + singleQuotesStr('.' + accordionKernel.getStatePath('needrebind')) + ',true);}');
+                        changedFun.pushLine('if(!' + accordionKernel.id + '_state.inited){gDataCache.set(' + userCtlKernel.id + '_path + ' + singleQuotesStr('.' + accordionKernel.getStatePath('needrebind')) + ',true);}');
                     });
                     changedFun.subNextIndent();
                     changedFun.pushLine('}');
@@ -922,7 +922,7 @@ class MobileContentCompiler extends ContentCompiler {
                     changedFun.subNextIndent();
                     changedFun.pushLine('}else{',1);
                     accordionParents_arr.forEach(accordionKernel => {
-                        changedFun.pushLine('if(!' + accordionKernel.id + '_state.inited){gDataCache.set(this.props.fullPath + ' + singleQuotesStr('.' + accordionKernel.getStatePath('needrebind')) + ',true);}');
+                        changedFun.pushLine('if(!' + accordionKernel.id + '_state.inited){gDataCache.set(' + userCtlKernel.id + '_path +' + singleQuotesStr('.' + accordionKernel.getStatePath('needrebind')) + ',true);}');
                     });
                     changedFun.subNextIndent();
                     changedFun.pushLine('}');
