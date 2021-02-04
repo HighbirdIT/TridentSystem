@@ -4656,6 +4656,11 @@ class MobileContentCompiler extends ContentCompiler {
                 ctlTag.setAttr('abbrevLen', theKernel.getAttribute('abbrevlen'));
             }
         }
+        if (valType == ValueType.Float || valType == ValueType.Int) {
+            if(theKernel.getAttribute('dotsplit')){
+                ctlTag.setAttr('dotsplit', '{true}');
+            }
+        }
         renderBlock.pushChild(ctlTag);
 
         if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
