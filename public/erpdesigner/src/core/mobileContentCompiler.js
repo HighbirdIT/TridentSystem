@@ -2555,6 +2555,13 @@ class MobileContentCompiler extends ContentCompiler {
         if (keyColumn == null) {
             keyColumn = DefaultKeyColumn;
         }
+        else{
+            if(isPageForm){
+                if (canUseColumns_arr.indexOf(keyColumn) != -1) {
+                    kernelMidData.useColumns_map[keyColumn] = 1;
+                }
+            }
+        }
         var autoHeight = theKernel.getAttribute(AttrNames.AutoHeight);
         var childRenderBlock = null;
         var titleAlgin = theKernel.getAttribute(AttrNames.TextAlign);
