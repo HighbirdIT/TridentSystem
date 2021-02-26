@@ -5003,6 +5003,21 @@ class JSNode_ImportExcel extends JSNode_Base {
         }
     }
 
+    getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
+        if (this.blockInServer) {
+            return;
+        }
+        if(targetSocket == this.goodWorkSocket){
+            result.pushVariable(this.id + 'goodwork', targetSocket);
+        }
+        else if(targetSocket == this.recordSocket){
+            result.pushVariable(this.id + 'records', targetSocket);
+        }
+        else if(targetSocket == this.headerSocket){
+            result.pushVariable(this.id + 'headers', targetSocket);
+        }
+    }
+
     compile(helper, preNodes_arr, belongBlock) {
         var superRet = super.compile(helper, preNodes_arr);
         if (superRet == false || superRet != null) {
@@ -5010,6 +5025,7 @@ class JSNode_ImportExcel extends JSNode_Base {
         }
         var theScope = belongBlock.getScope();
         var blockInServer = theScope && theScope.isServerSide;
+        this.blockInServer = blockInServer;
         var belongFun = theScope ? theScope.fun : null;
         var nodeThis = this;
         if (this.checkCompileFlag(this.bluePrint.group == EJsBluePrintFunGroup.ServerScript, '不可在服务端使用', helper)) {
@@ -5188,7 +5204,9 @@ class JSNode_HashDataSourceRow extends JSNode_Base {
     }
 
     getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
-        result.pushVariable(this.id + '_data', targetSocket);
+        if(!this.blockInServer){
+            result.pushVariable(this.id + '_data', targetSocket);
+        }
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -5200,6 +5218,9 @@ class JSNode_HashDataSourceRow extends JSNode_Base {
         if (this.checkCompileFlag(useEntity == null, '请选择数据源', helper)) {
             return false;
         }
+        var theScope = belongBlock && belongBlock.getScope();
+        var blockInServer = theScope && theScope.isServerSide;
+        this.blockInServer = blockInServer;
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);

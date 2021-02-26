@@ -55,8 +55,8 @@ function process(req, res, next){
 }
 
 function getSubProjectData(req, res){
-    var projectID = parseInt(req.body.projectID);
-    var subProjectID = parseInt(req.body.subProjectID);
+    var projectID = parseInt(req.body.projectid);
+    var subProjectID = parseInt(req.body.subprojectid);
     return co(function* () {
         var rcdRlt = null;
         try{

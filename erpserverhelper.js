@@ -144,9 +144,8 @@ helper.SaveLongProcessResult = (key, result) => {
         result = {};
     }
     var filePath = path.join(fileDirPath, key);
-    fs.writeFile(filePath, JSON.stringify(result), ()=>{
-        fs.rename(filePath, filePath + '.json');
-    });
+    fs.writeFileSync(filePath, JSON.stringify(result));
+    fs.renameSync(filePath, filePath + '.json');
 };
 
 function checkArrayData(val) {
