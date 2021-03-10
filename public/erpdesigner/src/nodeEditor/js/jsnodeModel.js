@@ -2103,6 +2103,26 @@ class JSNode_Return extends JSNode_Base {
             }
         }
 
+        if(blockInServer){
+            var belongFun = theScope.fun;
+            var serverFun = belongFun;
+            if (this.checkCompileFlag(serverFun.bundleCheckBlock == null || serverFun.bundleCheckBlock.initBundleBlock == null, 'server端return节点找不到serverFun.bundleCheckBlock', helper)) {
+                return false;
+            }
+            var postBundleVarName = this.bluePrint.id + '_bundle';
+            var initBundleBlock = serverFun.bundleCheckBlock.initBundleBlock;
+            var postVarinitBlock = serverFun.postVarinitBlock;
+            var useClientVariablesRlt = new UseClientVariableResult();
+            this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
+            useClientVariablesRlt.variables_arr.forEach(varCon => {
+                if (serverFun && initBundleBlock.params_map[varCon.name] == null) {
+                    initBundleBlock.params_map[varCon.name] = varCon.name;
+                    serverFun.scope.getVar(varCon.name, true);
+                    postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
+                }
+            });
+        }
+
         var setLine = new FormatFile_Line('return ' + socketValue + ';');
         belongBlock.pushChild(setLine);
         var selfCompileRet = new CompileResult(this);
