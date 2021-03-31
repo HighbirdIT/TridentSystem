@@ -190,4 +190,4 @@ module.exports = {
     freshCurrencyRate: FreshCurrencyRate,
 };
 
-FreshCurrencyRate();
+//FreshCurrencyRate();
