@@ -36,8 +36,8 @@ function startWork(){
         backupWorkInt = setInterval(backupWorker.doWork, dayTimeInt);
     }
     if(getCurrencyRateWorkInt == 0){
-        //currencyHelper.freshCurrencyRate();
-        //getCurrencyRateWorkInt = setInterval(currencyHelper.freshCurrencyRate, 1000 * 60  * 60 * 12);
+        currencyHelper.freshCurrencyRate();
+        getCurrencyRateWorkInt = setInterval(currencyHelper.freshCurrencyRate, 1000 * 60  * 60 * 12);
     }
     if(locationHelperInt == 0){
         locationHelperInt = setInterval(locationHelper.doWrok, 1000 * 30);

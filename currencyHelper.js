@@ -132,7 +132,7 @@ function _getCurrencyRate(currencyCode) {
         var scriptPath = path.join(scriptDir, 'getCurrencyRate.py');
         var result = '';
         try {
-            var startPythonCmd = 'python3 -W ignore ' + scriptPath;
+            var startPythonCmd = 'python3 -W ignore ' + scriptPath + ' ' + currencyCode;
             result = execSync(startPythonCmd).toString();
             var sPos = result.indexOf('rlt={');
             if(sPos == -1){
@@ -190,3 +190,4 @@ module.exports = {
     freshCurrencyRate: FreshCurrencyRate,
 };
 
+FreshCurrencyRate();

@@ -1,4 +1,5 @@
 from selenium import webdriver
+import traceback
 import time
 import re
 import io
@@ -49,8 +50,8 @@ class Spider:
                     break
                 #print("wait")
         except BaseException as err:
-            errinfo = str(err)
-            #print(err)
+            errinfo = str(err) + "=>" + traceback.print_exc()
+            #print(err) 
         browser.quit()
         return (rate,updateTime,errinfo)
 
@@ -59,6 +60,7 @@ if __name__ == '__main__':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     argv = sys.argv
     #argv = ['','USD']
+    #raise Exception("{};{}".format(len(argv),argv[1]))
     spider = Spider(argv[1])
     rlt = spider.get_rate()
     rlt_json={}
