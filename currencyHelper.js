@@ -175,7 +175,7 @@ function FreshCurrencyRate() {
                     var proret = yield dbhelper.asynExcute('P811P更新货币当前汇率', [
                         dbhelper.makeSqlparam('货币代码', sqlTypes.Int, record.货币种类代码),
                         dbhelper.makeSqlparam('最新汇率', sqlTypes.Float, rateRet.rate),
-                        dbhelper.makeSqlparam('更新时间', sqlTypes.NVarChar(100), GetFullFormatDateString(new Date(rateRet.time))),
+                        dbhelper.makeSqlparam('更新时间', sqlTypes.NVarChar(100), serverhelper.DateFun.getFullFormatDateString(new Date(rateRet.time))),
                         dbhelper.makeSqlparam('通信密码', sqlTypes.NVarChar(100), sqlconfig.ratepasword),
                     ]);
                 }catch(eo){
@@ -185,9 +185,6 @@ function FreshCurrencyRate() {
         }
     });
 }
-
-var dt = new Date("Mar 30, 2021, 07:48 UTC");
-console.log(dt.toString("yyyy-MM-dd"));
 
 module.exports = {
     freshCurrencyRate: FreshCurrencyRate,

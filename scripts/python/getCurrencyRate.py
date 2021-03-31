@@ -34,7 +34,7 @@ class Spider:
             while(True):
                 ++count;
                 if count >= 15:
-                    break
+                    raise Exception("Get rate server count greater than 15.")
                 time.sleep(1)
                 xpath_bds = '//*[@class="result__BigRate-sc-1bsijpp-1 iGrAod"]'
                 dd_list = browser.find_elements_by_xpath(xpath_bds)
@@ -58,10 +58,11 @@ class Spider:
 if __name__ == '__main__':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     argv = sys.argv
+    #argv = ['','USD']
     spider = Spider(argv[1])
     rlt = spider.get_rate()
     rlt_json={}
     rlt_json['rate'] = rlt[0]
     rlt_json['time'] = rlt[1]
-    rlt_json['errinfo'] = rlt[2]
+    rlt_json['err'] = rlt[2]
     print("rlt=" + json.dumps(rlt_json,ensure_ascii=False))
