@@ -33,7 +33,7 @@ class Spider:
             #print("try")
             browser.get(self.url)
             while(True):
-                ++count;
+                count+=1;
                 if count >= 15:
                     raise Exception("Get rate server count greater than 15.")
                 time.sleep(1)
