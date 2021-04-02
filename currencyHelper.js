@@ -181,6 +181,7 @@ function FreshCurrencyRate() {
                 }catch(eo){
                     
                 }
+                break;//一次只获取一个货币的汇率
             }
         }
     });
