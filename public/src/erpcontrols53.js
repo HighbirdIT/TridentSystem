@@ -15,6 +15,7 @@ var gAppMsgPipe = null;
 const gPreconditionInvalidInfo = '前置条件不足';
 const gCantNullInfo = '不能为空值';
 
+
 const HashKey_FixItem = 'fixitem';
 const gEmptyArr = [];
 
