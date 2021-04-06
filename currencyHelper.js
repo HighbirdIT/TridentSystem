@@ -7,6 +7,7 @@ const fetch = require('node-fetch');
 const sqlconfig = require('./dbconfig.js');
 var path = require("path");
 var execSync = require('child_process').execSync;
+const { exec, kill } = require('child_process');
 
 
 function decodeRatesData(data) {
@@ -126,34 +127,74 @@ function _getCurrencyRate_old() {
     });
 }
 
-function _getCurrencyRate(currencyCode) {
-    return co(function* () {
-        var scriptDir = path.join(__dirname, 'scripts/python/');
-        var scriptPath = path.join(scriptDir, 'getCurrencyRate.py');
-        var result = '';
-        try {
-            var startPythonCmd = 'python3 -W ignore ' + scriptPath + ' ' + currencyCode;
-            result = execSync(startPythonCmd).toString();
-            var sPos = result.indexOf('rlt={');
-            if(sPos == -1){
-                throw new Error('找不到 rlt={');
+var execProcess = null;
+
+function _cmdCallback(err,stdout,stderr,record) {
+    execProcess = null;
+    if(err){
+        serverhelper.InformSysManager(JSON.stringify(err), 'FreshCurrencyRate');
+        return;
+    }
+    if(stderr && stderr.length > 0){
+        serverhelper.InformSysManager(stderr, 'FreshCurrencyRate');
+        return;
+    }
+    var result = stdout;
+    var sPos = result.indexOf('rlt={');
+    if(sPos == -1){
+        serverhelper.InformSysManager('找不到 rlt={"' + result + '"', 'FreshCurrencyRate');
+        return;
+    }
+    var ePos = result.indexOf('}', sPos);
+    if(ePos == -1){
+        serverhelper.InformSysManager('找不到 endpos"' + result + '"', 'FreshCurrencyRate');
+        return;
+    }
+    var rateRet = JSON.parse(result.substring(sPos + 4, ePos + 1));
+    if(rateRet.err && rateRet.err.length>0){
+        serverhelper.InformSysManager('获取汇率出错:' + rateRet.err);
+    }
+    try{
+        dbhelper.asynExcute('P811P更新货币当前汇率', [
+            dbhelper.makeSqlparam('货币代码', sqlTypes.Int, record.货币种类代码),
+            dbhelper.makeSqlparam('最新汇率', sqlTypes.Float, rateRet.rate),
+            dbhelper.makeSqlparam('更新时间', sqlTypes.NVarChar(100), serverhelper.DateFun.getFullFormatDateString(new Date(rateRet.time))),
+            dbhelper.makeSqlparam('通信密码', sqlTypes.NVarChar(100), sqlconfig.ratepasword),
+        ]);
+    }catch(eo){
+        
+    }
+}
+
+function _getCurrencyRate(record) {
+    var scriptDir = path.join(__dirname, 'scripts/python/');
+    var scriptPath = path.join(scriptDir, 'getCurrencyRate.py');
+    try {
+        var startPythonCmd = 'python3 -W ignore ' + scriptPath + ' ' + record.货币标识代码;
+        execProcess = exec(startPythonCmd, (err,stdout,stderr)=>{
+            if(err && err.killed){
+                return; // 被kill掉的
             }
-            var ePos = result.indexOf('}', sPos);
-            if(ePos == -1){
-                throw new Error('找不到 endpos');
-            }
-            var rltJson = JSON.parse(result.substring(sPos + 4, ePos + 1));
-            return rltJson;
-        }
-        catch (eo) {
-            return {
-                err: eo.message
-            };
-        }
-    });
+            _cmdCallback(err,stdout,stderr, record);
+        });
+    }
+    catch (eo) {
+        execProcess = null;
+        serverhelper.InformSysManager(JSON.stringify(eo), 'FreshCurrencyRate');
+    }
 }
 
 function FreshCurrencyRate() {
+    if(execProcess){
+        if(execProcess.kill()){
+            execProcess = null;
+            serverhelper.InformSysManager("execProcess kill 成功", 'FreshCurrencyRate');
+        }
+        else{
+            serverhelper.InformSysManager("execProcess kill 失败", 'FreshCurrencyRate');
+            return;
+        }
+    }
     return co(function* () {
         var sql = 'select 货币种类代码,货币标识代码 from(select [货币种类代码],max(汇率更新时间) as 更新时间 from [T811E货币当日汇率] group by [货币种类代码]) as t3 inner join T801B结算货币种类 on T801B结算货币种类.结算货币种类代码=t3.货币种类代码 where DATEDIFF(day,更新时间,getdate()) >= 1 ';
         var waitFresh_ret = null;
@@ -163,26 +204,16 @@ function FreshCurrencyRate() {
         catch (eo) {
             serverhelper.InformSysManager(JSON.stringify(eo), 'FreshCurrencyRate');
         }
-        if (waitFresh_ret && waitFresh_ret.recordset) {
-            for (var si in waitFresh_ret.recordset) {
-                var record = waitFresh_ret.recordset[si];
-                var rateRet = yield _getCurrencyRate(record.货币标识代码);
-                if(rateRet.err && rateRet.err.length>0){
-                    serverhelper.InformSysManager('获取汇率出错:' + rateRet.err);
-                    break;
-                }
-                try{
-                    var proret = yield dbhelper.asynExcute('P811P更新货币当前汇率', [
-                        dbhelper.makeSqlparam('货币代码', sqlTypes.Int, record.货币种类代码),
-                        dbhelper.makeSqlparam('最新汇率', sqlTypes.Float, rateRet.rate),
-                        dbhelper.makeSqlparam('更新时间', sqlTypes.NVarChar(100), serverhelper.DateFun.getFullFormatDateString(new Date(rateRet.time))),
-                        dbhelper.makeSqlparam('通信密码', sqlTypes.NVarChar(100), sqlconfig.ratepasword),
-                    ]);
-                }catch(eo){
-                    
-                }
-                break;//一次只获取一个货币的汇率
+        //if (waitFresh_ret && waitFresh_ret.recordset) {
+        if (waitFresh_ret) {
+            var record = waitFresh_ret.recordset[0];
+            if(record == null) {
+                record = {
+                    "货币标识代码":'AUD',
+                    "货币种类代码":16
+                };
             }
+            _getCurrencyRate(record);
         }
     });
 }
@@ -191,4 +222,9 @@ module.exports = {
     freshCurrencyRate: FreshCurrencyRate,
 };
 
-//FreshCurrencyRate();
+/*
+FreshCurrencyRate();
+setTimeout(()=>{
+    FreshCurrencyRate();
+}, 3000);
+*/
