@@ -204,15 +204,17 @@ function FreshCurrencyRate() {
         catch (eo) {
             serverhelper.InformSysManager(JSON.stringify(eo), 'FreshCurrencyRate');
         }
-        //if (waitFresh_ret && waitFresh_ret.recordset) {
-        if (waitFresh_ret) {
+        if (waitFresh_ret && waitFresh_ret.recordset) {
+        //if (waitFresh_ret) {
             var record = waitFresh_ret.recordset[0];
+            /*
             if(record == null) {
                 record = {
                     "货币标识代码":'AUD',
                     "货币种类代码":16
                 };
             }
+            */
             _getCurrencyRate(record);
         }
     });
