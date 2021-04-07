@@ -7,7 +7,7 @@ const fetch = require('node-fetch');
 const sqlconfig = require('./dbconfig.js');
 var path = require("path");
 var execSync = require('child_process').execSync;
-const { exec } = require('child_process');
+const exec = require('child_process').exec;
 
 
 function decodeRatesData(data) {
@@ -250,4 +250,4 @@ module.exports = {
     freshCurrencyRate: FreshCurrencyRate,
 };
 
-FreshCurrencyRate();
+//FreshCurrencyRate();
