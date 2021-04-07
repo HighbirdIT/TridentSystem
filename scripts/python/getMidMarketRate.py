@@ -51,4 +51,4 @@ class Spider:
 if __name__ == '__main__':
     spider = Spider()
     midBody = spider.get_rate()
-    print("rlt=|" + json.dumps(midBody,ensure_ascii=False) + "|=tlr")
+    print("rlt=" + json.dumps(midBody,ensure_ascii=False) + "=tlr")

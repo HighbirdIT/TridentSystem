@@ -34,7 +34,7 @@ class Spider:
         ret = {}
         try:
             browser.get(self.url)
-            time.sleep(5)
+            time.sleep(3)
             logs = browser.get_log("performance")
             midMarketEvent = self.findMidmarketLog(logs)
             if midMarketEvent:
@@ -51,4 +51,4 @@ class Spider:
 if __name__ == '__main__':
     spider = Spider()
     midBody = spider.get_rate()
-    print("rlt=|" + json.dumps(midBody,ensure_ascii=False) + "|=tlr")
+    print("rlt=" + json.dumps(midBody,ensure_ascii=False))

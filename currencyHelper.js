@@ -7,7 +7,7 @@ const fetch = require('node-fetch');
 const sqlconfig = require('./dbconfig.js');
 var path = require("path");
 var execSync = require('child_process').execSync;
-const { exec, kill } = require('child_process');
+const { exec } = require('child_process');
 
 
 function decodeRatesData(data) {
@@ -111,10 +111,10 @@ function _getCurrencyRate_old() {
                 json => {
                     if (json.payload && json.payload.rates && json.payload.rates.rate) {
                         var timestamp = json.payload.rates.timestamp;
-                        var gettime = timestamp.substr(0,4) + '-' + timestamp.substr(4,2) + '-' + timestamp.substr(6,2) + ' ' + timestamp.substr(8,2) + ':' + timestamp.substr(10,2);
+                        var gettime = timestamp.substr(0, 4) + '-' + timestamp.substr(4, 2) + '-' + timestamp.substr(6, 2) + ' ' + timestamp.substr(8, 2) + ':' + timestamp.substr(10, 2);
                         return {
-                            rate:decodeRatesData(json.payload.rates.rate),
-                            gettime:gettime,
+                            rate: decodeRatesData(json.payload.rates.rate),
+                            gettime: gettime,
                         };
                     }
                     return 0;
@@ -129,53 +129,74 @@ function _getCurrencyRate_old() {
 
 var execProcess = null;
 
-function _cmdCallback(err,stdout,stderr,record) {
+function _cmdCallback(err, stdout, stderr, needUpdates) {
     execProcess = null;
-    if(err){
+    if (err) {
         serverhelper.InformSysManager(JSON.stringify(err), 'FreshCurrencyRate');
         return;
     }
-    if(stderr && stderr.length > 0){
+    if (stderr && stderr.length > 0) {
         serverhelper.InformSysManager(stderr, 'FreshCurrencyRate');
         return;
     }
-    var result = stdout;
-    var sPos = result.indexOf('rlt={');
-    if(sPos == -1){
-        serverhelper.InformSysManager('找不到 rlt={"' + result + '"', 'FreshCurrencyRate');
+    var result = stdout.replace(/\\/g, "");
+    //console.log(result);
+    var sPos = result.indexOf('rlt="');
+    if (sPos == -1) {
+        serverhelper.InformSysManager('找不到 rlt="{' + result + '"', 'FreshCurrencyRate');
         return;
     }
-    var ePos = result.indexOf('}', sPos);
-    if(ePos == -1){
+    var ePos = result.indexOf('"=tlr', sPos);
+    if (ePos == -1) {
         serverhelper.InformSysManager('找不到 endpos"' + result + '"', 'FreshCurrencyRate');
         return;
     }
-    var rateRet = JSON.parse(result.substring(sPos + 4, ePos + 1));
-    if(rateRet.err && rateRet.err.length>0){
-        serverhelper.InformSysManager('获取汇率出错:' + rateRet.err);
+    bodyStr = result.substring(sPos + 5, ePos);
+    if (bodyStr == '{}') {
+        return; // 获取失败
     }
-    try{
-        dbhelper.asynExcute('P811P更新货币当前汇率', [
-            dbhelper.makeSqlparam('货币代码', sqlTypes.Int, record.货币种类代码),
-            dbhelper.makeSqlparam('最新汇率', sqlTypes.Float, rateRet.rate),
-            dbhelper.makeSqlparam('更新时间', sqlTypes.NVarChar(100), serverhelper.DateFun.getFullFormatDateString(new Date(rateRet.time))),
-            dbhelper.makeSqlparam('通信密码', sqlTypes.NVarChar(100), sqlconfig.ratepasword),
-        ]);
-    }catch(eo){
-        
+    var midMarket = JSON.parse(bodyStr);
+    if (midMarket.err && midMarket.err.length > 0) {
+        serverhelper.InformSysManager('获取汇率出错:' + rateRet.err);
+        return;
+    }
+    if (midMarket.timestamp == null || midMarket.rates.CNY == null || midMarket.rates.USD != 1) {
+        serverhelper.InformSysManager('midMarket有误:"' + bodyStr + '"', 'FreshCurrencyRate');
+        return;
+    }
+    var cnyRate = midMarket.rates.CNY;
+    var time = new Date(midMarket.timestamp);
+    for (var si in needUpdates) {
+        var record = needUpdates[si];
+        var otherRate = midMarket.rates[record.货币标识代码];
+        if(otherRate == null){
+            serverhelper.InformSysManager('midMarket中没有:"' + record.货币标识代码 + '"', 'FreshCurrencyRate');
+            continue;
+        }
+        //console.log(record.货币标识代码 + ":" + (cnyRate / otherRate));
+        try{
+            dbhelper.asynExcute('P811P更新货币当前汇率', [
+                dbhelper.makeSqlparam('货币代码', sqlTypes.Int, record.货币种类代码),
+                dbhelper.makeSqlparam('最新汇率', sqlTypes.Float, cnyRate / otherRate),
+                dbhelper.makeSqlparam('更新时间', sqlTypes.NVarChar(100), serverhelper.DateFun.getFullFormatDateString(time)),
+                dbhelper.makeSqlparam('通信密码', sqlTypes.NVarChar(100), sqlconfig.ratepasword),
+            ]);
+        }catch(eo){
+            
+        }
     }
 }
 
-function _getCurrencyRate(record) {
+function _getMidMarketRate(needUpdates) {
     var scriptDir = path.join(__dirname, 'scripts/python/');
-    var scriptPath = path.join(scriptDir, 'getCurrencyRate.py');
+    var scriptPath = path.join(scriptDir, 'getMidMarketRate.py');
     try {
-        var startPythonCmd = 'python3 -W ignore ' + scriptPath + ' ' + record.货币标识代码;
-        execProcess = exec(startPythonCmd, (err,stdout,stderr)=>{
-            if(err && err.killed){
+        var startPythonCmd = 'python3 -W ignore ' + scriptPath;
+        execProcess = exec(startPythonCmd, (err, stdout, stderr) => {
+            if (err && err.killed) {
                 return; // 被kill掉的
             }
-            _cmdCallback(err,stdout,stderr, record);
+            _cmdCallback(err, stdout, stderr, needUpdates);
         });
     }
     catch (eo) {
@@ -185,12 +206,12 @@ function _getCurrencyRate(record) {
 }
 
 function FreshCurrencyRate() {
-    if(execProcess){
-        if(execProcess.kill()){
+    if (execProcess) {
+        if (execProcess.kill()) {
             execProcess = null;
             serverhelper.InformSysManager("execProcess kill 成功", 'FreshCurrencyRate');
         }
-        else{
+        else {
             serverhelper.InformSysManager("execProcess kill 失败", 'FreshCurrencyRate');
             return;
         }
@@ -204,18 +225,23 @@ function FreshCurrencyRate() {
         catch (eo) {
             serverhelper.InformSysManager(JSON.stringify(eo), 'FreshCurrencyRate');
         }
-        if (waitFresh_ret && waitFresh_ret.recordset) {
-        //if (waitFresh_ret) {
-            var record = waitFresh_ret.recordset[0];
+        if (waitFresh_ret && waitFresh_ret.recordset.length > 0) {
+            var needUpdates = waitFresh_ret.recordset;
             /*
-            if(record == null) {
-                record = {
-                    "货币标识代码":'AUD',
-                    "货币种类代码":16
-                };
-            }
+            needUpdates = [{
+                "货币标识代码": 'USD',
+                "货币种类代码": 1
+            },
+            {
+                "货币标识代码": 'AUD',
+                "货币种类代码": 16
+            },
+            {
+                "货币标识代码": 'QAR',
+                "货币种类代码": 9
+            }];
             */
-            _getCurrencyRate(record);
+            _getMidMarketRate(needUpdates);
         }
     });
 }
@@ -224,9 +250,4 @@ module.exports = {
     freshCurrencyRate: FreshCurrencyRate,
 };
 
-/*
 FreshCurrencyRate();
-setTimeout(()=>{
-    FreshCurrencyRate();
-}, 3000);
-*/
