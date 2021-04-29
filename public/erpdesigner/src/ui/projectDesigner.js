@@ -97,6 +97,21 @@ class ProjectDesigner extends React.PureComponent {
         }
     }
 
+    pasteCopiedKernel(){
+        if(gCopiedKernelData){
+            var nowTarget = this.attrbutePanelRef.current.getTarget();
+            if (nowTarget == null) {
+                return;
+            }
+            var targetParent = nowTarget.parent;
+            if(targetParent == null){
+                targetParent = nowTarget;
+            }
+            var targetIndex = targetParent.getChildIndex(nowTarget);
+            this.props.project.pasteKernel(gCopiedKernelData,targetParent,targetIndex);
+        }
+    }
+
     deleteSelectedKernel() {
         if (this.attrbutePanelRef.current == null) {
             return;
