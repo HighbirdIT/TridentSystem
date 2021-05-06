@@ -413,6 +413,43 @@ dingHelper.ORCFile = (type, fileID)=>{
     });
 }
 
+dingHelper.modifyUser = (userdata)=>{
+    return co(function* () {
+        var accessToken = yield getAppAccessToken();
+        if(accessToken == null){
+            return;
+        }
+        var updateRet = yield fetch("https://oapi.dingtalk.com/topapi/v2/user/update?access_token=" + accessToken, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body:JSON.stringify({
+                userdata
+            }),
+        }).then(
+            response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                else {
+                    return { errInfo: 'no response' };
+                }
+            }
+        ).then(
+            json => {
+                return json;
+            }
+        );
+        if(sendChatRet.errcode != 0){
+            return { errInfo: sendChatRet.errmsg };
+        }
+        return {
+            isdone:true
+        };
+    });
+}
+
 var appTicket = null;
 var appAccessToken = null;
 var appAccessToken_expiretime = 0;

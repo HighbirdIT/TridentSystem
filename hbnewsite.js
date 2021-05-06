@@ -329,6 +329,10 @@ app.use('/mobileerp', function (req, res, next) {
 });
 */
 
+app.use('/ERPDesigner/main_v5', function (req, res, next) {
+    return res.render('ERPDesigner/main_v5', { layout: null });
+});
+
 app.use('/ERPDesigner/main', function (req, res, next) {
     return res.render('ERPDesigner/main', { layout: null });
 });
@@ -705,6 +709,18 @@ app.use('/ai', function (req, res, next) {
     else{
         res.json({ err: '不存在的ai处理器' });
     }
+    return;
+});
+
+app.use('/tttgg', function (req, res, next) {
+    var g = {"errcode":0,"department":[{"ext":"{\"faceCount\":\"21\"}","createDeptGroup":true,"name":"管理系统","id":13293238,"autoAddUser":true,"parentid":1},{"ext":"{\"faceCount\":\"284\"}","createDeptGroup":true,"name":"上海海勃膜结构股份有限公司","id":1,"autoAddUser":true},{"ext":"{\"faceCount\":\"10\"}","createDeptGroup":true,"name":"营销系统","id":13239912,"autoAddUser":true,"parentid":1},{"ext":"{\"faceCount\":\"20\"}","createDeptGroup":false,"name":"运营系统","id":13251611,"autoAddUser":false,"parentid":1},{"ext":"{\"faceCount\":\"105\"}","createDeptGroup":true,"name":"生产系统","id":13501229,"autoAddUser":true,"parentid":1},{"ext":"{\"faceCount\":\"121\"}","createDeptGroup":true,"name":"膜加工厂","id":15856831,"autoAddUser":true,"parentid":1},{"createDeptGroup":true,"name":"品品系统","id":15876166,"autoAddUser":true,"parentid":1},{"createDeptGroup":true,"name":"项目管控","id":15879076,"autoAddUser":true,"parentid":1},{"ext":"{\"faceCount\":\"7\"}","createDeptGroup":true,"name":"信息工程部","id":13237624,"autoAddUser":true,"parentid":13293238},{"ext":"{\"faceCount\":\"3\"}","createDeptGroup":true,"name":"营销支持部","id":13238813,"autoAddUser":true,"parentid":13251611},{"ext":"{\"faceCount\":\"5\"}","createDeptGroup":false,"name":"项目经理部","id":13259447,"autoAddUser":false,"parentid":13251611},{"createDeptGroup":true,"name":"总经理办","id":13533158,"autoAddUser":true,"parentid":13293238},{"createDeptGroup":true,"name":"膜加工厂办","id":15850973,"autoAddUser":true,"parentid":15856831},{"ext":"{\"faceCount\":\"2\"}","createDeptGroup":true,"name":"合约管理部","id":15857514,"autoAddUser":true,"parentid":13293238},{"createDeptGroup":true,"name":"运营系统办","id":15858557,"autoAddUser":true,"parentid":13251611},{"ext":"{\"faceCount\":\"5\"}","createDeptGroup":true,"name":"运营管理部","id":15860482,"autoAddUser":true,"parentid":13501229},{"createDeptGroup":true,"name":"营销系统办","id":15860484,"autoAddUser":true,"parentid":13239912},{"createDeptGroup":true,"name":"项目部","id":15860485,"autoAddUser":true,"parentid":15879076},{"createDeptGroup":true,"name":"钢结构厂办","id":15861381,"autoAddUser":true,"parentid":13501229},{"ext":"{\"faceCount\":\"74\"}","createDeptGroup":true,"name":"金属加工部","id":15863306,"autoAddUser":true,"parentid":13501229},{"createDeptGroup":true,"name":"品控系统办","id":15863307,"autoAddUser":true,"parentid":15876166},{"createDeptGroup":true,"name":"管理系统办","id":15864372,"autoAddUser":true,"parentid":13293238},{"ext":"{\"faceCount\":\"6\"}","createDeptGroup":true,"name":"方案设计部","id":15866280,"autoAddUser":true,"parentid":13251611},{"ext":"{\"faceCount\":\"2\"}","createDeptGroup":true,"name":"国外经理部","id":15874236,"autoAddUser":true,"parentid":13251611},{"ext":"{\"faceCount\":\"2\"}","createDeptGroup":true,"name":"企划管理部","id":15874237,"autoAddUser":true,"parentid":13293238},{"ext":"{\"faceCount\":\"1\"}","createDeptGroup":true,"name":"项目管理部","id":15875259,"autoAddUser":true,"parentid":484920454},{"ext":"{\"faceCount\":\"3\"}","createDeptGroup":true,"name":"行政人事部","id":15885149,"autoAddUser":true,"parentid":13293238},{"ext":"{\"faceCount\":\"2\"}","createDeptGroup":true,"name":"采购管理部","id":15887128,"autoAddUser":true,"parentid":13501229},{"ext":"{\"faceCount\":\"1\"}","createDeptGroup":true,"name":"销售管理部","id":15887129,"autoAddUser":true,"parentid":13251611},{"ext":"{\"faceCount\":\"7\"}","createDeptGroup":true,"name":"财务管理部","id":15888073,"autoAddUser":true,"parentid":13501229},{"ext":"{\"faceCount\":\"23\"}","createDeptGroup":true,"name":"钢厂务部","id":15892017,"autoAddUser":true,"parentid":13501229},{"createDeptGroup":true,"name":"挂靠人员","id":15892018,"autoAddUser":true,"parentid":13293238},{"createDeptGroup":true,"name":"施工技术部","id":15892019,"autoAddUser":true,"parentid":484920454},{"ext":"{\"faceCount\":\"9\"}","createDeptGroup":true,"name":"施工管理部","id":15892020,"autoAddUser":true,"parentid":484920454},{"ext":"{\"faceCount\":\"116\"}","createDeptGroup":true,"name":"膜体加工部","id":15894013,"autoAddUser":true,"parentid":13501229},{"ext":"{\"faceCount\":\"2\"}","createDeptGroup":true,"name":"研究发展部","id":51248019,"autoAddUser":true,"parentid":13251611},{"ext":"{\"faceCount\":\"1\"}","createDeptGroup":true,"name":"行政综合部","id":51248020,"autoAddUser":true,"parentid":13501229},{"ext":"{\"faceCount\":\"4\"}","createDeptGroup":true,"name":"安环部","id":350340136,"autoAddUser":true,"parentid":13501229},{"createDeptGroup":true,"name":"检测试验部","id":484852688,"autoAddUser":true,"parentid":13501229},{"createDeptGroup":true,"name":"金属设计部","id":484883565,"autoAddUser":true,"parentid":13501229},{"createDeptGroup":true,"name":"施工系统","id":484920454,"autoAddUser":true,"parentid":1},{"createDeptGroup":true,"name":"施工系统办","id":485078199,"autoAddUser":true,"parentid":484920454},{"createDeptGroup":true,"name":"膜体设计部","id":485282021,"autoAddUser":true,"parentid":13501229}],"errmsg":"ok"}
+    rlt='';
+    for(var d in g.department){
+        var dp = g.department[d];
+        rlt += ',(' + dp.id + ",'" + dp.name + "'," + dp.parentid + ")"
+    }
+    res.write(rlt);
+    res.end();
     return;
 });
 
