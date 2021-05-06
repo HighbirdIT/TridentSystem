@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html style="height:100%">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="/vendor/bootstrap5/bootstrap.css">
+        <link rel="stylesheet" href="/erpdesigner/css/main.css">
+        <link rel="stylesheet" href="/vendor/font-awesome-4.7.0/css/font-awesome.min.css">
+
+        <title>ERP设计器New</title>
+    </head>
+
+    <body class="w-100 h-100">
+        <div id="reactRoot" class="w-100 h-100 bg-secondary unselectable minh-0">
+        </div>
+
+        <script src="https://cdn.bootcss.com/prop-types/15.6.2/prop-types.min.js"></script>
+        <script src="https://cdn.bootcss.com/reselect/4.0.0-beta.1/reselect.min.js"></script>
+        <script src="https://cdn.bootcss.com/babel-polyfill/7.2.5/polyfill.min.js"></script>
+        <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.slim.min.js"></script>
+        <script src="https://cdn.bootcss.com/popper.js/1.14.6/umd/popper.min.js"></script>
+        <script src="/vendor/bootstrap5/bootstrap.bundle.js"></script>
+        {{#if isproduction}}
+        <script src="https://cdn.bootcss.com/react/16.7.0/umd/react.production.min.js"></script>
+        <script src="https://cdn.bootcss.com/react-dom/16.6.3/umd/react-dom.production.min.js"></script>
+        {{else}}
+        <script src="https://cdn.bootcss.com/react/16.7.0/umd/react.development.js"></script>
+        <script src="https://cdn.bootcss.com/react-dom/16.6.3/umd/react-dom.development.js"></script>
+        {{/if}}
+        <script src="https://cdn.bootcss.com/fetch/2.0.4/fetch.min.js"></script>
+        <script src="https://cdn.bootcss.com/js-cookie/latest/js.cookie.min.js"></script>
+        <script src="https://cdn.bootcss.com/EventEmitter/5.2.5/EventEmitter.min.js"></script>
+        <script src="https://cdn.bootcss.com/clipboard.js/2.0.1/clipboard.js"></script>
+        <script src="https://cdn.bootcss.com/forge/0.7.6/forge.min.js"></script>
+
+        <script src="/vendor/js/lzwCompress.js"></script>
+
+        <script src="/erpdesigner/js/core/account.js"></script>
+        <script src="/erpdesigner/js/globalConfig.js"></script>
+        <script src="/erpdesigner/js/myMath.js"></script>
+        <script src="/erpdesigner/js/utilities.js"></script>
+        <script src="/erpdesigner/js/core/IAttributeable.js"></script>
+        <script src="/erpdesigner/js/core/CAttributeGroup.js"></script>
+        <script src="/erpdesigner/js/core/CAttribute.js"></script>
+        <script src="/erpdesigner/js/core/DataMaster.js"></script>
+        <script src="/erpdesigner/js/core/scriptMaster.js"></script>
+        
+        <script src="/erpdesigner/js/core/CProject.js"></script>
+        <script src="/erpdesigner/js/core/formatFileMaker.js"></script>
+        <script src="/erpdesigner/js/core/compiler.js"></script>
+        <script src="/erpdesigner/js/core/mobileContentCompiler.js"></script>
+        <script src="/erpdesigner/js/core/pcContentCompiler.js"></script>
+
+        <script src="/erpdesigner/js/ui/FlowMasterPanel.js"></script>
+
+        <script src="/erpdesigner/js/nodeEditor/common.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/linkComponent.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/linkModel.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/socketComponent.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/socketModel.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/js/jsnodeComponent.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/sql/nodeComponent.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/sql/nodeModel.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/sql/editor.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/sql/nizihua/nzhnodeComponent.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/sql/nizihua/nzhnodeModel.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/sql/yongheng/hyhcomponent.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/sql/yongheng/hyhmodel.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/sql/shilei/slcomponent.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/sql/shilei/slmodel.js"></script>
+        
+        <script src="/erpdesigner/js/nodeEditor/js/jsnodeModel.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/js/jsnodeModel_p2.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/js/jseditor.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/js/nizihua/nzhjscomponent.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/js/nizihua/nzhjsmodel.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/js/shilei/sljscomponent.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/js/shilei/sljsmodel.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/js/hyh/hyhjscomponent.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/js/hyh/hyhjsmodel.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/js/jsnodeModel_extent.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/js/jsnodeModel_ai.js"></script>
+
+        <script src="/erpdesigner/js/nodeEditor/flow/flowNodeComponent.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/flow/flowNodeModel.js"></script>
+        <script src="/erpdesigner/js/nodeEditor/flow/flowEditor.js"></script>
+
+        <script src="/erpdesigner/js/controls/controlTypes.js"></script>
+        <script src="/erpdesigner/js/controls/ControlKernelBase.js"></script>
+        <script src="/erpdesigner/js/controls/ContainerKernelBase.js"></script>
+        <script src="/erpdesigner/js/controls/M_ControlBase.js"></script>
+        <script src="/erpdesigner/js/controls/M_ContainerBase.js"></script>
+        
+        <script src="/erpdesigner/js/controls/mobile/M_Page.js"></script>
+        <script src="/erpdesigner/js/controls/mobile/M_Container.js"></script>
+        <script src="/erpdesigner/js/controls/mobile/M_Label.js"></script>
+        <script src="/erpdesigner/js/controls/mobile/M_CheckBox.js"></script>
+        <script src="/erpdesigner/js/controls/mobile/M_Text.js"></script>
+        <script src="/erpdesigner/js/controls/mobile/M_Form.js"></script>
+        <script src="/erpdesigner/js/controls/mobile/M_LabeledControl.js"></script>
+        <script src="/erpdesigner/js/controls/mobile/M_Dropdown.js"></script>
+        <script src="/erpdesigner/js/controls/mobile/M_Image.js"></script>
+
+        <script src="/erpdesigner/js/controls/common/FilePreviewer.js"></script>
+        <script src="/erpdesigner/js/controls/common/MultiFileUploader.js"></script>
+        <script src="/erpdesigner/js/controls/common/SingleFileUploader.js"></script>
+        <script src="/erpdesigner/js/controls/common/TaskSelector.js"></script>
+        <script src="/erpdesigner/js/controls/common/button.js"></script>
+        <script src="/erpdesigner/js/controls/common/empty.js"></script>
+        <script src="/erpdesigner/js/controls/common/UserControl.js"></script>
+        <script src="/erpdesigner/js/controls/common/HERPAccordion.js"></script>
+        <script src="/erpdesigner/js/controls/common/HERPTabControl.js"></script>
+        <script src="/erpdesigner/js/controls/common/HERPTabItem.js"></script>
+        <script src="/erpdesigner/js/controls/common/PopperButton.js"></script>
+        <script src="/erpdesigner/js/controls/common/IFrame.js"></script>
+        <script src="/erpdesigner/js/controls/common/FrameSet.js"></script>
+        <script src="/erpdesigner/js/controls/common/Chart.js"></script>
+        
+
+        <script src="/erpdesigner/js/ui/mouseSelectManager.js"></script>
+        
+        <script src="/erpdesigner/js/ui/projectResPanel.js"></script>
+        <script src="/erpdesigner/js/ui/attributeEditor.js"></script>
+        <script src="/erpdesigner/js/ui/mainMenu.js"></script>
+        <script src="/erpdesigner/js/ui/statusBar.js"></script>
+        <script src="/erpdesigner/js/ui/controlPanel.js"></script>
+        <script src="/erpdesigner/js/ui/attributePanel.js"></script>
+        <script src="/erpdesigner/js/ui/contentPanel.js"></script>
+        <script src="/erpdesigner/js/ui/flowMouseContainer.js"></script>
+        <script src="/erpdesigner/js/ui/quickMenu.js"></script>
+        <script src="/erpdesigner/js/ui/dropDownControl.js"></script>
+        <script src="/erpdesigner/js/ui/outlinePanel.js"></script>
+        <script src="/erpdesigner/js/ui/splitPanel.js"></script>
+        <script src="/erpdesigner/js/ui/floatPanelBase.js"></script>
+        <script src="/erpdesigner/js/ui/DataMasterPanel.js"></script>
+        <script src="/erpdesigner/js/ui/ScriptMasterPanel.js"></script>
+        <script src="/erpdesigner/js/ui/tabComponent.js"></script>
+        <script src="/erpdesigner/js/ui/listDataEditor.js"></script>
+        <script src="/erpdesigner/js/ui/TipWindow.js"></script>
+        <script src="/erpdesigner/js/ui/logOutputPanel.js"></script>
+        <script src="/erpdesigner/js/ui/projectManagerPanel.js"></script>
+        <script src="/erpdesigner/js/ui/loginPanel.js"></script>
+        <script src="/erpdesigner/js/ui/ListFormContentEditor.js"></script>
+        <script src="/erpdesigner/js/ui/KernelContentEditor.js"></script>
+        
+        
+
+        <script src="/erpdesigner/js/ui/projectDesigner.js"></script>
+        <script src="/erpdesigner/js/ui/projectContainer.js"></script>
+        <script src="/erpdesigner/js/main.js"></script>
+    </body>
+</html>
