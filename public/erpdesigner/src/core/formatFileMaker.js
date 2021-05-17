@@ -970,6 +970,7 @@ class FlowScriptFile extends JSFileMaker{
         super();
         this.flow = flow;
         this.fileName = 'serverFlow' + flow.code;
+        this.importModels = {};
 
         this.importBlock.pushLine("const dbhelper = require('../../../../dbhelper.js');");
         this.importBlock.pushLine("const serverhelper = require('../../../../erpserverhelper.js');");
@@ -980,6 +981,13 @@ class FlowScriptFile extends JSFileMaker{
 
         this.processFun = this.scope.getFunction('process', true, ['stepCode', 'param1', 'param2', 'param3']);
         
+    }
+
+    appendImport(name, path){
+        if(this.importModels[name] == null){
+            this.importModels[name] = 1;
+            this.importBlock.pushLine("const " + name + " = require('" + path + "');");
+        }
     }
 
     compile(){
@@ -1060,7 +1068,14 @@ class CP_ServerSide extends JSFileMaker{
             var belongUserControl = theKernel.searchParentKernel(UserControlKernel_Type, true);
             var belongPage = theKernel.searchParentKernel(M_PageKernel_Type, true);
             var groups_arr;
-            if(belongPage){
+            if(theKernel.hasAttribute(AttrNames.PermissionGroup) && theKernel.getAttrArrayList(AttrNames.PermissionGroup).length>0){
+                // 这个控件带有权限组设置，直接用它的设置
+                groups_arr = theKernel.getAttrArrayList(AttrNames.PermissionGroup).map(attr=>{
+                    return theKernel.getAttribute(attr.name);
+                });
+                theFun.bodyBlock.pushLine('var permissiongroup_arr = [' + groups_arr.join(',') +  '];');
+            }
+            else if(belongPage){
                 groups_arr = belongPage.getAttrArrayList(AttrNames.PermissionGroup).map(attr=>{
                     return belongPage.getAttribute(attr.name);
                 });
@@ -1078,13 +1093,13 @@ class CP_ServerSide extends JSFileMaker{
                 pageSwitch.defaultBlock.pushLine("return serverhelper.createErrorRet('错误的访问来源',0,null)");
                 theFun.bodyBlock.pushChild(pageSwitch);
                 theFun.addPageCheck = (page)=>{
-                    groups_arr = page.getAttrArrayList(AttrNames.PermissionGroup).map(attr=>{
+                    var pageGroups_arr = page.getAttrArrayList(AttrNames.PermissionGroup).map(attr=>{
                         return page.getAttribute(attr.name);
                     });
                     var caseBLK = pageSwitch.getCaseBlock(singleQuotesStr(page.id), false);
                     if(caseBLK == null){
                         caseBLK = pageSwitch.getCaseBlock(singleQuotesStr(page.id), true);
-                        caseBLK.pushLine("permissiongroup_arr=[" + groups_arr.join(',') +  '];');
+                        caseBLK.pushLine("permissiongroup_arr=[" + pageGroups_arr.join(',') +  '];');
                     }
                 };
                 if(theKernel.type == M_PageKernel_Type){

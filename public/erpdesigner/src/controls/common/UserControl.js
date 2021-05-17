@@ -68,30 +68,6 @@ class UserControlKernel extends ContainerKernelBase {
                 return group.clone();
             });
             gUserControlAttsByType_map[oldAttrsSettingID] = gUserControlAttsByType_map[this.attrsSettingID];
-            this.synControlAttrs();
-
-            var theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnInit);
-            this.scriptCreated(null, theBP);
-            this.getAttrArrayList(AttrNames.EventApi).forEach(evenAttr=>{
-                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + evenAttr.name);
-                if(theBP){
-                    theBP.startIsInReducer = true;
-                }
-            });
-            this.getAttrArrayList(AttrNames.FunctionApi).forEach(funAttr=>{
-                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + funAttr.name);
-                if(theBP){
-                    theBP.startIsInReducer = true;
-                }
-            });
-            this.getAttrArrayList(AttrNames.AttrHook).forEach(hookAtrr=>{
-                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + hookAtrr.name);
-                this.scriptCreated(null, theBP);
-            });
-            this.getAttrArrayList(AttrNames.AttrChecker).forEach(checkerAtrr=>{
-                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + checkerAtrr.name);
-                this.scriptCreated(null, theBP);
-            });
         }
         else {
             if (kernelJson) {
@@ -103,11 +79,9 @@ class UserControlKernel extends ContainerKernelBase {
             else {
                 this.attrsSettingID = parentKernel.project.designeConfig.name + '_' + this.refID;
             }
-            this.getAttrArrayList(AttrNames.InsAttrHook).forEach(insAtrrHook=>{
-                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + insAtrrHook.name);
-                this.scriptCreated(null, theBP);
-            });
         }
+
+        this.reinit();
         var self = this;
         autoBind(self);
     }
@@ -131,6 +105,56 @@ class UserControlKernel extends ContainerKernelBase {
         else if(scriptBP.name.indexOf(AttrNames.InsAttrHook) != -1){
             scriptBP.setFixParam([this.id + '_path', 'rowKeyInfo_map']);
         }
+    }
+
+    reinit(){
+        var theBP;
+        if(this.refID == null){
+            this.synControlAttrs();
+            theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnInit);
+            this.scriptCreated(null, theBP);
+            this.getAttrArrayList(AttrNames.EventApi).forEach(evenAttr=>{
+                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + evenAttr.name);
+                if(theBP){
+                    theBP.startIsInReducer = true;
+                }
+            });
+            this.getAttrArrayList(AttrNames.FunctionApi).forEach(funAttr=>{
+                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + funAttr.name);
+                if(theBP){
+                    theBP.startIsInReducer = true;
+                }
+            });
+            this.getAttrArrayList(AttrNames.AttrHook).forEach(hookAtrr=>{
+                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + hookAtrr.name);
+                this.scriptCreated(null, theBP);
+            });
+            this.getAttrArrayList(AttrNames.AttrChecker).forEach(checkerAtrr=>{
+                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + checkerAtrr.name);
+                this.scriptCreated(null, theBP);
+            });
+        }
+        else
+        {
+            this.getAttrArrayList(AttrNames.InsAttrHook).forEach(insAtrrHook=>{
+                theBP = this.project.scriptMaster.getBPByName(this.id + '_' + insAtrrHook.name);
+                this.scriptCreated(null, theBP);
+            });
+        }
+    }
+
+    __recreate(createHelper, kernelJson){
+        if(this.children.length > 0){
+            this.children.forEach(child => {
+                child.__removeFromProject();
+            });
+            this.children = [];
+        }
+        this.cacheObj = {};
+
+        this.freshByKernelJson(this.project,kernelJson);
+        this.reinit();
+        this.__restoreChildren(createHelper, kernelJson);
     }
 
     __restoreChildren(createHelper, kernelJson) {
@@ -369,9 +393,7 @@ class UserControlKernel extends ContainerKernelBase {
     getJson(jsonProf) {
         var rlt = super.getJson(jsonProf);
         rlt.uuid = this.uuid;
-        if(!this.isTemplate()){
-            jsonProf.useUserControl(this.getTemplateKernel());
-        }
+        jsonProf.useUserControl(this.getTemplateKernel());
         return rlt;
     }
 

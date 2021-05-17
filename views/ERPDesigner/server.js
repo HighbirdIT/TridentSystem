@@ -300,8 +300,17 @@ function getBaseConfigData(req) {
         rlt.reports_arr = yield getAllReportRecord();
         rlt.excelTemplate_arr = yield getAllExcelTemplateRecord();
         rlt.permissionGroups_arr = yield getAllPermissionGroup();
+        rlt.ai_arr = yield getAllAI();
 
         return rlt;
+    });
+}
+
+function getAllAI(){
+    return co(function* () {
+        var sql = 'SELECT [钉钉机器人代码] as code,[机器人名称] as name FROM [base1].[dbo].[TA30C钉钉机器人]';
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql);
+        return rcdRlt.recordset;
     });
 }
 
@@ -758,8 +767,8 @@ function publishProject(req, res){
             });
         }
 
-        var pageMobileUrl = 'http://' + hostIP + ':' + hostPort + '/erppage/mb/' + projProfile.enName;
-        var pagePcUrl = 'http://' + hostIP + ':' + hostPort + '/erppage/pc/' + projProfile.enName;
+        var pageMobileUrl = (httpApp.bUseHttps ? 'https' : 'http') + '://' + hostIP + ':' + hostPort + '/erppage/mb/' + projProfile.enName;
+        var pagePcUrl = (httpApp.bUseHttps ? 'https' : 'http') + '://' + hostIP + ':' + hostPort + '/erppage/pc/' + projProfile.enName;
         
         return {
             mobileUrl:pageMobileUrl,

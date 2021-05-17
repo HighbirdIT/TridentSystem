@@ -11,6 +11,11 @@ const M_ControlKernelBaseAttrsSetting = {
 var M_ControlKernel_api = new ControlAPIClass(M_AllKernel_Type);
 M_ControlKernel_api.pushApi(new ApiItem_prop(genIsdisplayAttribute(), 'visible'));
 M_ControlKernel_api.pushApi(new ApiItem_propsetter('visible'));
+
+M_ControlKernel_api.pushApi(new ApiItem_prop(genDynamicStyleAttribute(), 'style'));
+M_ControlKernel_api.pushApi(new ApiItem_propsetter('style'));
+M_ControlKernel_api.pushApi(new ApiItem_prop(genDynamicClassAttribute(), 'class'));
+M_ControlKernel_api.pushApi(new ApiItem_propsetter('class'));
 g_controlApi_arr.push(M_ControlKernel_api);
 /*
 new CAttribute('宽度',AttrNames.Width,ValueType.String,''),
@@ -96,6 +101,22 @@ class ControlKernelBase extends IAttributeable {
         this.getAccessableKernels = this.getAccessableKernels.bind(this);
         this.listendDS_map = {};
 
+        this.freshByKernelJson(this.project, kernelJson);
+
+        if(this.project){
+            this.project.registerControl(this);
+        }
+        if (createHelper) {
+            createHelper.saveJsonMap(kernelJson, this);
+        }
+        if (parentKernel && parentKernel.project != parentKernel) {
+            parentKernel.appandChild(this, this.hintIndexInParent);
+            this.hintIndexInParent = null;
+        }
+        this.readableName = this.getReadableName();
+    }
+
+    freshByKernelJson(project, kernelJson){
         if (kernelJson != null) {
             // restore attr from json
             this.id = kernelJson.id;
@@ -121,13 +142,13 @@ class ControlKernelBase extends IAttributeable {
                             switch(attr.valueType){
                                 case ValueType.DataSource:
                                 if(!IsEmptyString(val)){
-                                    var theDS = parentKernel.project.dataMaster.getDataSourceByCode(val);
+                                    var theDS = project.dataMaster.getDataSourceByCode(val);
                                     if(theDS != null){
                                         this[attrName] = theDS;
                                         this.listenDS(theDS, attr.name);
                                     }
                                     else{
-                                        parentKernel.project.logManager.warn(val + '不是合法的数据源代码');
+                                        project.logManager.warn(val + '不是合法的数据源代码');
                                     }
                                 }
                                 break;
@@ -137,18 +158,6 @@ class ControlKernelBase extends IAttributeable {
                 });
             }
         }
-
-        if(this.project){
-            this.project.registerControl(this);
-        }
-        if (createHelper) {
-            createHelper.saveJsonMap(kernelJson, this);
-        }
-        if (parentKernel && parentKernel.project != parentKernel) {
-            parentKernel.appandChild(this, this.hintIndexInParent);
-            this.hintIndexInParent = null;
-        }
-        this.readableName = this.getReadableName();
     }
 
     __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray){
@@ -175,6 +184,18 @@ class ControlKernelBase extends IAttributeable {
         if(attrItem.name == AttrNames.TextField || attrItem.name == AttrNames.Name){
             this.readableName = this.getReadableName();
         }
+    }
+
+    __removeFromProject(){
+        if(this.children){
+            var myChildren = this.children.concat();
+            for(var ci in myChildren){
+                myChildren[ci].__removeFromProject();
+            }
+        }
+        this.project.unRegisterControl(this, false);
+        this.parent = null;
+        this.children = [];
     }
 
     delete(forceDelete){
@@ -603,6 +624,12 @@ class ControlKernelBase extends IAttributeable {
         return rlt;
     }
 
+    getParentStatePath(splitChar = '.', rowKeyVar_map = {}, ignoreRowKey = false, topestParant){
+        var rlt = this.getStatePath('',splitChar,rowKeyVar_map,ignoreRowKey, topestParant);
+        var index = rlt.lastIndexOf(splitChar);
+        return index != -1 ? rlt.substring(0, index) : rlt;
+    }
+
     getStatePath(stateName, splitChar = '.', rowKeyVar_map = {}, ignoreRowKey = false, topestParant){
         var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
         switch(this.type){
@@ -635,7 +662,7 @@ class ControlKernelBase extends IAttributeable {
                     if(rowKeyVar == null){
                         console.error('getStatePath 遇到grid表单但是没有rowkey变量信息');
                     }
-                    rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + "row_'+" + rowKeyVar + "+'." + rlt;
+                    rlt = nowKernel.id + splitChar + "row_'+" + rowKeyVar + (rlt.length == 0 ? "+'" : ("+'" + splitChar + rlt));
                 }
                 break;
             }

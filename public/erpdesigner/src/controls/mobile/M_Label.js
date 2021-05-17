@@ -4,6 +4,7 @@ const M_LabelKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes),
         new CAttribute('小数精度', AttrNames.FloatNum, ValueType.Int, 2, true, false, null, null, false),
         new CAttribute('输出字数', AttrNames.OutputCharCount, ValueType.Boolean, false),
+        new CAttribute('缩写阈值', 'abbrevlen', ValueType.Int, 0, true, false, null, null, false),
         genIsdisplayAttribute(),
         new CAttribute('默认可见', AttrNames.DefaultVisible, ValueType.Boolean, true),
     ]),
@@ -25,6 +26,7 @@ class M_LabelKernel extends ControlKernelBase{
 
         var nowvt = this.getAttribute(AttrNames.ValueType);
         this[AttrNames.FloatNum + '_visible'] = nowvt == ValueType.Float;
+        this['abbrevlen_visible'] = nowvt == ValueType.String;
 
         var self = this;
         autoBind(self);
@@ -37,6 +39,9 @@ class M_LabelKernel extends ControlKernelBase{
             // 数据类型更改
             var floatNumAttr = this.findAttributeByName(AttrNames.FloatNum);
             floatNumAttr.setVisible(this, newValue == ValueType.Float);
+
+            var abbrevLenAttr = this.findAttributeByName('abbrevlen');
+            abbrevLenAttr.setVisible(this, newValue == ValueType.String);
         }
     }
 

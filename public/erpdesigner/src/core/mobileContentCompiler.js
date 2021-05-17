@@ -364,6 +364,11 @@ class MobileContentCompiler extends ContentCompiler {
                         }
                         if (accordionParents_arr) {
                             changedFun.subNextIndent();
+                            changedFun.pushLine('}else{',1);
+                            accordionParents_arr.forEach(accordionKernel => {
+                                changedFun.pushLine('if(!' + accordionKernel.id + '_state.inited){gDataCache.set(' + singleQuotesStr(accordionKernel.getStatePath()) + ',true);}');
+                            });
+                            changedFun.subNextIndent();
                             changedFun.pushLine('}');
                         }
                         break;
@@ -735,7 +740,7 @@ class MobileContentCompiler extends ContentCompiler {
                                 ctlInitFun.pushLine(setLine);
                             }
                         } else {
-                            if (stateItem.staticValue) {
+                            if (stateItem.staticValue != null) {
                                 var sv = stateItem.staticValue;
                                 switch (sv.toLocaleLowerCase()) {
                                     case 'true':
@@ -836,6 +841,11 @@ class MobileContentCompiler extends ContentCompiler {
                 }
                 if (accordionParents_arr) {
                     changedFun.subNextIndent();
+                    changedFun.pushLine('}else{',1);
+                    accordionParents_arr.forEach(accordionKernel => {
+                        changedFun.pushLine('if(!' + accordionKernel.id + '_state.inited){gDataCache.set(this.props.fullPath + ' + singleQuotesStr('.' + accordionKernel.getStatePath('needrebind')) + ',true);}');
+                    });
+                    changedFun.subNextIndent();
                     changedFun.pushLine('}');
                 }
             }
@@ -909,6 +919,11 @@ class MobileContentCompiler extends ContentCompiler {
                         break;
                 }
                 if (accordionParents_arr) {
+                    changedFun.subNextIndent();
+                    changedFun.pushLine('}else{',1);
+                    accordionParents_arr.forEach(accordionKernel => {
+                        changedFun.pushLine('if(!' + accordionKernel.id + '_state.inited){gDataCache.set(this.props.fullPath + ' + singleQuotesStr('.' + accordionKernel.getStatePath('needrebind')) + ',true);}');
+                    });
                     changedFun.subNextIndent();
                     changedFun.pushLine('}');
                 }
@@ -1029,7 +1044,8 @@ class MobileContentCompiler extends ContentCompiler {
         if (isPopable) {
             var styleID = pageKernel.id + '_style';
             var styleStr = clientSide.addStyleObject(styleID, pageLayoutConfig.style) ? 'style={' + styleID + '}' : '';
-            pageReactClass.renderFun.pushLine("<div className={'d-flex flex-column bg-light ' + (this.props.popInSide ? 'popPageChild' : 'popPage')} " + styleStr + ">", 1);
+            var isForceScreen = pageKernel.getAttribute('forcefullscreen');
+            pageReactClass.renderFun.pushLine("<div className={'d-flex flex-column bg-light ' + (this.props.popInSide ? 'popPageChild' : '" + (isForceScreen ? 'popPage_fullscreen' : 'popPage') + "')} " + styleStr + ">", 1);
         }
         else {
             pageReactClass.renderFun.pushLine("<div className='d-flex flex-column flex-grow-1 flex-shrink-1 h-100'>", 1);
@@ -1184,7 +1200,7 @@ class MobileContentCompiler extends ContentCompiler {
                                 controlInitBlock.pushLine(setLine);
                             }
                         } else {
-                            if (stateItem.staticValue) {
+                            if (stateItem.staticValue != null) {
                                 var sv = stateItem.staticValue;
                                 switch (sv.toLocaleLowerCase()) {
                                     case 'true':
@@ -1711,6 +1727,7 @@ class MobileContentCompiler extends ContentCompiler {
                         name: 'value',
                         staticValue: !hadDefaultStr ? null : defVal,
                         setNull: !hadDefaultStr,
+                        bindMode: ScriptBindMode.OnForm,
                     };
                 }
             }
@@ -1799,6 +1816,7 @@ class MobileContentCompiler extends ContentCompiler {
                         name: 'value',
                         useColumn: { name: textField },
                         alterValue: !defaultValParseRet.isScript && IsEmptyString(defaultValParseRet.string) ? '0' : defaultValParseRet.string,
+                        bindMode: ScriptBindMode.OnForm,
                     };
                 }
             }
@@ -1807,6 +1825,7 @@ class MobileContentCompiler extends ContentCompiler {
                     setValueStateItem = {
                         name: 'value',
                         staticValue: IsEmptyString(defaultValParseRet.string) ? '0' : defaultValParseRet.string,
+                        bindMode: ScriptBindMode.OnForm,
                     };
                 }
             }
@@ -2049,7 +2068,7 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else {
             if (!isdisplay) {
-                this.addNeedSetStateToParent(theKernel, { name: 'visible', staticValue: 'false' });
+                this.addNeedSetStateToParent(theKernel, { name: 'visible', staticValue: 'false', bindMode:ScriptBindMode.OnForm });
                 if (ctlTag) {
                     ctlTag.setAttr('visible', '{false}');
                 }
@@ -2169,6 +2188,7 @@ class MobileContentCompiler extends ContentCompiler {
         labeledCtrlTag.setAttr('parentPath', parentPath);
         var widthFactor = theKernel.getAttribute(AttrNames.WidthFactor);
         labeledCtrlTag.setAttr('wf', widthFactor);
+        this.modifyControlTag(theKernel, labeledCtrlTag);
         var renderMode = theKernel.getAttribute(AttrNames.RenderMode);
         if (renderMode != ERenderMode.Auto) {
             labeledCtrlTag.setAttr('rm', renderMode);
@@ -2233,7 +2253,7 @@ class MobileContentCompiler extends ContentCompiler {
                     dynamicColumn_obj.visible = 'false';
                 }
                 else {
-                    this.addNeedSetStateToParent(theKernel, { name: 'visible', staticValue: 'false' });
+                    this.addNeedSetStateToParent(theKernel, { name: 'visible', staticValue: 'false', bindMode:ScriptBindMode.OnForm });
                     labeledCtrlTag.setAttr('visible', '{false}');
                 }
             }
@@ -2277,6 +2297,7 @@ class MobileContentCompiler extends ContentCompiler {
         var rowBindFun = clientSide.scope.getFunction(makeFName_RowBind(formKernel));
         if(rowBindFun == null){
             rowBindFun = clientSide.scope.getFunction(makeFName_RowBind(formKernel), true, [VarNames.State, formKernel.id + '_path', formKernel.id + '_state',formKernel.id + '_rowpath', formKernel.id + '_rowstate', formKernel.id + '_' + VarNames.NowRecord]);
+            rowBindFun.scope.getVar(VarNames.RowKeyInfo_map, true, 'getRowKeyMapFromPath(' + formKernel.id + '_rowpath)');
             var kernelMidData = this.projectCompiler.getMidData(formKernel.id);
             kernelMidData.rowBindFun = rowBindFun;
         }
@@ -2323,6 +2344,7 @@ class MobileContentCompiler extends ContentCompiler {
         var autoPull = theKernel.getAttribute(AttrNames.AutoPull);
         var isWrap = theKernel.getAttribute(AttrNames.Wrap);
         var hideSelector = theKernel.getAttribute('hideSelector');
+        var autoResetHeader = theKernel.getAttribute('autoResetHeader');
 
         var thisfullpath = makeStr_DotProp(fullParentPath, theKernel.id);
         var pathVarName = theKernel.id + '_path';
@@ -2610,6 +2632,7 @@ class MobileContentCompiler extends ContentCompiler {
                     continue;
                 }
                 temGridBody.setAttr('dataversion', '{setting.dataversion}');
+                temGridBody.setAttr('records_arr', '{this.props.records_arr}');
                 temGridBody.setAttr('startRowIndex', '{this.props.startRowIndex}');
                 temGridBody.setAttr('endRowIndex', '{this.props.endRowIndex}');
                 temGridBody.setAttr('fullPath', '{this.props.fullPath}');
@@ -2924,24 +2947,34 @@ class MobileContentCompiler extends ContentCompiler {
                         var valueColumn = null;
                         var validStat = false;
                         var kernelLabel = labeledKernel.getAttribute(AttrNames.TextField);
-                        switch(theEditor.type){
-                            case M_LabelKernel_Type:
-                            case M_TextKernel_Type:
-                                valueColumn = theEditor.getAttribute(AttrNames.TextField);
-                                validStat = true;
-                            break;
-                            case PopperButtonKernel_Type:
-                            case ButtonKernel_Type:
-                                valueColumn = theEditor.getAttribute(AttrNames.Title);
-                                validStat = true;
-                            break;
-                            default:
-                                if(canUseColumns_arr.indexOf(kernelLabel) != -1){
-                                    valueColumn = kernelLabel;
+                        if(IsEmptyString(labeledKernel.getAttribute(AttrNames.ColumnValueField))){
+                            switch(theEditor.type){
+                                case M_LabelKernel_Type:
+                                case M_TextKernel_Type:
+                                    valueColumn = theEditor.getAttribute(AttrNames.TextField);
                                     validStat = true;
-                                }
-                            break;
+                                break;
+                                case PopperButtonKernel_Type:
+                                case ButtonKernel_Type:
+                                    valueColumn = theEditor.getAttribute(AttrNames.Title);
+                                    validStat = true;
+                                break;
+                                default:
+                                    if(canUseColumns_arr.indexOf(kernelLabel) != -1){
+                                        valueColumn = kernelLabel;
+                                        validStat = true;
+                                    }
+                                break;
+                            }
                         }
+                        else{
+                            valueColumn = labeledKernel.getAttribute(AttrNames.ColumnValueField);
+                            validStat = canUseColumns_arr.indexOf(valueColumn) != -1;
+                        }
+                        if(typeof kernelLabel !== 'string'){
+                            kernelLabel = labeledKernel.id;
+                        }
+                        
                         if(!validStat){
                             logManager.warnEx([logManager.createBadgeItem(
                                 theKernel.getReadableName(),
@@ -3230,8 +3263,9 @@ class MobileContentCompiler extends ContentCompiler {
         }
 
         if (!useDS) {
-            pullFun.retBlock.pushLine(makeLine_Return(VarNames.ReState));
-            pullFun.pushLine(makeLine_Assign(VarNames.ReState, makeStr_callFun(bindFun.name, [VarNames.ReState])));
+            pullFun.pushLine("var state = hadStateParam ? retState : store.getState()");
+            pullFun.retBlock.pushLine(makeLine_Return(VarNames.State));
+            pullFun.pushLine(makeLine_Assign(VarNames.ReState, makeStr_callFun(bindFun.name, [VarNames.State, 'null', 'null', "fullParentPath + '." + theKernel.id + "'"])));
 
             if (belongFormMidData != null) {
                 belongFormMidData.pullFun.beforeRetBlock.pushLine(VarNames.ReState + '=' + makeStr_callFun(pullFun.name, [VarNames.ReState, 'true', "fullParentPath + '." + belongForm.id + "'"]));
@@ -3380,7 +3414,8 @@ class MobileContentCompiler extends ContentCompiler {
                         if (this.compileScriptBlueprint(btnSetting.blueprint, {
                             funName: btnSetting.funName,
                             scope: formReactClass,
-                            actLabel: btnSetting.actLabel
+                            actLabel: btnSetting.actLabel,
+                            trigerByBtn:true,
                         }) == false) {
                             return false;
                         }
@@ -3542,6 +3577,7 @@ class MobileContentCompiler extends ContentCompiler {
             freshFun.rowInitBlk.pushLine(makeLine_DeclareVar(VarNames.NowRecord, VarNames.Records_arr + '[rowIndex]', false));
             freshFun.rowInitBlk.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == DefaultKeyColumn ? VarNames.RowIndex : 'GetFromatRowKey(' + VarNames.NowRecord + '.' + keyColumn + ')') + ';');
             freshFun.rowInitBlk.pushLine('needSetState["row_" + ' + VarNames.RowKey + ' + "._isdirty"] = false;');
+            freshFun.rowInitBlk.pushLine('needSetState["row_" + ' + VarNames.RowKey + ' + ".editing"] = true;');
             //freshFun.rowInitBlk.pushLine('if(needSetState.hasOwnProperty("row_"+'+VarNames.RowKey+')){delete needSetState["row_"+'+VarNames.RowKey+'];}');
             //freshFun.rowInitBlk.pushLine('var rowstate=getStateByPath(' + theKernel.id + '_state,"row_" + ' + VarNames.RowKey + ');');
             //freshFun.rowInitBlk.pushLine('if(rowstate == null){',1);
@@ -3812,7 +3848,11 @@ class MobileContentCompiler extends ContentCompiler {
                 recordsArraychangedFunInitBlk.pushLine("}");
                 recordsArraychangedFunInitBlk.pushLine("");
 
-                pullFun.pushLine("gGetFormSetting(fullParentPath + '." + theKernel.id + "').setRecords(null);");
+                pullFun.pushLine("var formSetting = gGetFormSetting(fullParentPath + '." + theKernel.id + "');");
+                pullFun.pushLine("formSetting.setRecords(null)");
+                if(autoResetHeader){
+                    pullFun.pushLine("formSetting.clear()");
+                }
             }
             var gridHeadStyles_map = {};
             var gridHeadStyleCount = 0;
@@ -3903,6 +3943,7 @@ class MobileContentCompiler extends ContentCompiler {
                         thTag.pushLine(columnProfile.label);
                     }
                 }
+                
                 if (columnProfile.dynamicVisible) {
                     useGridHeadRowRenderBlock.pushLine('{this.props.' + columnProfile.id + '_visible == false ? null : (', 1);
                 }
@@ -3986,6 +4027,7 @@ class MobileContentCompiler extends ContentCompiler {
             if (awaysEditable) {
                 bindPageFun.pushLine('needSetState["row_" + ' + VarNames.RowKey + ' + ".editing"] = true;');
             }
+
             //bindPageFun.pushChild(staticBindBlock);
             bindPageFun.pushChild(bindNowRecordBlock);
             bindPageFun.pushChild(dynamicSetBlock_hadRecord);
@@ -4148,6 +4190,7 @@ class MobileContentCompiler extends ContentCompiler {
                     scope: formReactClass,
                     actLabel: insertBtnSetting.actLabel,
                     key: 'insert',
+                    trigerByBtn:true,
                 });
                 if (insertCompareRet == false) {
                     return false;
@@ -4243,7 +4286,7 @@ class MobileContentCompiler extends ContentCompiler {
                     useGridBodyTag = columnProfile.index < splitColIndex ? leftGridBodyTag :rightGridBodyTag;
                 }
                 
-                if (dynamicCol.visible || dynamicCol.label) {
+                if (dynamicCol.label) {
                     thTag.clear();
                 }
                 if (dynamicCol.visible && !hideHeader) {
@@ -4607,6 +4650,11 @@ class MobileContentCompiler extends ContentCompiler {
         }
         if (theKernel.getAttribute(AttrNames.OutputCharCount)) {
             ctlTag.setAttr('boutcharlen', true);
+        }
+        if (valType == ValueType.String) {
+            if(theKernel.getAttribute('abbrevlen') > 0){
+                ctlTag.setAttr('abbrevLen', theKernel.getAttribute('abbrevlen'));
+            }
         }
         renderBlock.pushChild(ctlTag);
 
@@ -5158,6 +5206,7 @@ class MobileContentCompiler extends ContentCompiler {
         var selftRenderBlock = controlReactClass.renderFun;
         selftRenderBlock.pushLine('if(this.props.inited == false){this.rebindBody(); return null;}');
         selftRenderBlock.pushLine('this.initing = false;');
+        selftRenderBlock.pushLine('if(gDataCache.get(this.props.fullPath + ".needrebind")){this.rebindBody();}');
 
         if(invisibleAct == EInvisibleAct.DNONE){
             layoutConfig.removeClass('d-flex');
@@ -5174,6 +5223,7 @@ class MobileContentCompiler extends ContentCompiler {
         rebindBodyFun.scope.getVar(VarNames.State, true, 'store.getState()');
         rebindBodyFun.pushLine('if(this.initing){return}');
         rebindBodyFun.pushLine('this.initing=true;');
+        rebindBodyFun.pushLine('gDataCache.set(this.props.fullPath + ".needrebind",false);');
 
         controlReactClass.mapStateFun.scope.getVar('propProfile', true, "getControlPropProfile(ownprops, state)");
         controlReactClass.mapStateFun.scope.getVar(VarNames.CtlState, true, "propProfile.ctlState");
@@ -5235,7 +5285,7 @@ class MobileContentCompiler extends ContentCompiler {
             }
         }
         rebindBodyFun.pushLine(VarNames.NeedSetState + '[' + thisFullPathVarName + "+'.inited'] = true;"),
-            rebindBodyFun.pushLine("setTimeout(() => {store.dispatch(makeAction_setManyStateByPath(needSetState, ''));},50);", -1);
+        rebindBodyFun.pushLine("setTimeout(() => {store.dispatch(makeAction_setManyStateByPath(needSetState, ''));},50);", -1);
         ctlMidData.needCallOnInit_arr.forEach(callSetting => {
             rebindBodyFun.pushLine(makeStr_callFun(callSetting.name, callSetting.params_arr, ';'));
         });
@@ -5673,6 +5723,9 @@ class MobileContentCompiler extends ContentCompiler {
         if (!theKernel.getAttribute(AttrNames.Growable)) {
             ctlTag.setAttr('growable', '{false}');
         }
+        if (!theKernel.getAttribute('hadminibtn')) {
+            ctlTag.setAttr('miniBtn', '{false}');
+        }
         if (theKernel.getAttribute('poppanelminwidth') > 100) {
             ctlTag.setAttr('poppanelminwidth', theKernel.getAttribute('poppanelminwidth'));
         }
@@ -5995,11 +6048,13 @@ class MobileContentCompiler extends ContentCompiler {
                         name: 'value',
                         staticValue: hadDefaultStr ? defaultValParseRet.string : null,
                         setNull: !hadDefaultStr,
+                        bindMode: ScriptBindMode.OnForm,
                     };
                     if (defaultValParseRet.string == '*') {
                         if (setTextStateItem) {
                             setTextStateItem.setNull = false;
                             setTextStateItem.staticValue = '*';
+                            setTextStateItem.bindMode = ScriptBindMode.OnForm;
                         }
                         setValueStateItem.staticValue = starValue;
                     }
@@ -6779,6 +6834,17 @@ class MobileContentCompiler extends ContentCompiler {
                 var isUseFormColumn = !IsEmptyObject(useFormData.useColumns_map);
                 var ctlBelongStateVarName = formStateVarName;
 
+                if(isUseFormCtl && isGridForm){
+                    // 有可能用的并不是grid行中的控件
+                    isUseFormCtl = false;
+                    for(var usectlid in useFormData.useControls_map){
+                        if(useFormData.formKernel.isKernelInRow(useFormData.useControls_map[usectlid].kernel)){
+                            isUseFormCtl = true;
+                            break;
+                        }
+                    }
+                }
+
                 if (belongUserControl) {
                     formPath = belongUserControl.id + '_path + ' + singleQuotesStr('.' + formPath);
                     initValue = makeStr_getStateByPath(belongUserControl.id + '_state', singleQuotesStr(useFormData.formKernel.getStatePath()), '{}');
@@ -7201,7 +7267,8 @@ class MobileContentCompiler extends ContentCompiler {
                     var isUseFormColumn = !IsEmptyObject(useFormData.useColumns_map);
                     var ctlBelongStateVarName = formStateVarName;
                     var formPathVarName = formId + '_path';
-                    var formPath = useFormData.formKernel.getStatePath();
+                    var formPath = useFormData.formKernel.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map });
+                    
 
                     var isUseParentForm = useFormData.formKernel.isKernelInRow(theKernel);
                     if(isUseParentForm){
@@ -7236,7 +7303,10 @@ class MobileContentCompiler extends ContentCompiler {
                                     validBlock.pushLine(makeStr_AddAll(nowRowStateVarName, '=', formStateVarName, "['row_' + ", VarNames.RowKeyInfo_map + '.' + formId, '];'));
                                 }
                                 var theFormRowBindFun = this.getFormRowBindFun(useFormData.formKernel);
-                                theFormRowBindFun.pushLine(makeStr_callFun(pullFun.name, [VarNames.State, 'null', useFormData.formKernel.id + '_rowpath']));
+                                if(belongUserControl){
+                                    theFormRowBindFun.scope.getVar(belongUserControl.id + '_path', true, makeStr_callFun("getBelongUserCtlPath", [useFormData.formKernel.id + '_path']));
+                                }
+                                theFormRowBindFun.pushLine(makeStr_callFun(pullFun.name, [VarNames.State, 'null', (belongUserControl ? belongUserControl.id + '_path + "." + ' : '') + singleQuotesStr(theKernel.getParentStatePath('.', { mapVarName: VarNames.RowKeyInfo_map}))]));
                             }
                             else{
                                 theFun.scope.getVar(selectedRowsVarName, true, makeStr_callFun('GetFormSelectedRows', [formStateVarName, singleQuotesStr(useFormData.formKernel.getAttribute(AttrNames.KeyColumn))]));
@@ -7344,7 +7414,7 @@ class MobileContentCompiler extends ContentCompiler {
                         }
                         if (IsEmptyObject(useFormData.useControls_map)) {
                             // 只用到了目标form的数据列，需要在其bind的时候进行重新bind
-                            if (useFormMidData.isPageForm) {
+                            if (autoPull && useFormMidData.isPageForm) {
                                 useFormMidData.bindFun.bindEndBlock.pushLine(makeStr_callFun(pullFun.name, [VarNames.ReState, true, thisFormFullParentPath], ';'));
                             }
                         }
@@ -7492,7 +7562,7 @@ class MobileContentCompiler extends ContentCompiler {
                     validBlock.pushLine('_invalidstate[' + modifyStatePath(theKernel.getStatePath(VarNames.InvalidBundle,'.', {mapVarName: VarNames.RowKeyInfo_map}), belongUserControl) + ']=gPreconditionInvalidInfo;');
                     validBlock.pushLine('_invalidstate[' + modifyStatePath(theKernel.getStatePath(VarNames.Records_arr,'.', {mapVarName: VarNames.RowKeyInfo_map}), belongUserControl) + ']=[];');
                     if (theKernel.isPageForm()) {
-                        validBlock.pushLine('_invalidstate[' + modifyStatePath(theKernel.getStatePath(VarNames.RecordIndex), belongUserControl) + ']=-1;');
+                        validBlock.pushLine('_invalidstate[' + modifyStatePath(theKernel.getStatePath(VarNames.RecordIndex,'.', {mapVarName: VarNames.RowKeyInfo_map}), belongUserControl) + ']=-1;');
                     }
                     else {
                         if (selectMode == ESelectMode.Single) {

@@ -95,6 +95,61 @@ const FlowNodeEditorControls_arr =[
         type:'数组操纵'
     },
     {
+        label:'数组-创建',
+        nodeClass:JSNode_Array_New,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-是否为空',
+        nodeClass:JSNode_IsEmptyArray,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-For',
+        nodeClass:JSNode_Array_For,
+        type:'流控制'
+    },
+    {
+        label:'数组-Get',
+        nodeClass:JSNode_Array_Get,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-Push',
+        nodeClass:JSNode_Array_Push,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-Shift',
+        nodeClass:JSNode_Array_Shift,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-Pop',
+        nodeClass:JSNode_Array_Pop,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-Unshift',
+        nodeClass:JSNode_Array_Unshift,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-Join',
+        nodeClass:JSNode_Array_Join,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-Slice',
+        nodeClass:JSNode_Array_Slice,
+        type:'操纵数组'
+    },
+    {
+        label:'数组-Reverse',
+        nodeClass:JSNode_Array_Reverse,
+        type:'操纵数组'
+    },
+    {
         label:'字符串-长度',
         nodeClass:JSNode_String_Length,
         type:'操纵字符串'
@@ -110,7 +165,12 @@ const FlowNodeEditorControls_arr =[
         type:'操纵字符串'
     },
     {
-        label:'字符串-IndexOf',
+        label:'字符串-Split',
+        nodeClass:JSNode_String_Split,
+        type:'操纵字符串'
+    },
+    {
+        label:'IndexOf',
         nodeClass:JSNode_String_IndexOf,
         type:'操纵字符串'
     },
@@ -159,6 +219,41 @@ const FlowNodeEditorControls_arr =[
         nodeClass:JSNode_Assignment_Operator,
         type:'运算'
     },
+    {
+        label: '推送机器人消息',
+        nodeClass: JsNode_AI_SendMessage,
+        type: '机器人'
+    },
+    {
+        label: '创建文本消息',
+        nodeClass: JSNode_Message_Text,
+        type: '通知'
+    },
+    {
+        label: '创建链接消息',
+        nodeClass: JSNode_Message_Link,
+        type: '通知'
+    },
+    {
+        label: '创建独立卡片消息',
+        nodeClass: JSNode_Message_SingleActionCard,
+        type: '通知'
+    },
+    {
+        label: '创建卡片消息',
+        nodeClass: JSNode_Message_ActionCard,
+        type: '通知'
+    },
+    {
+        label: '创建卡片消息项',
+        nodeClass: JSNode_Message_ActionCardItem,
+        type: '通知'
+    },
+    {
+        label: '创建MarkDown消息',
+        nodeClass: JSNode_Message_MarkDown,
+        type: '通知'
+    }
 ];
 
 var gCopyed_FlowNodes_data = null;

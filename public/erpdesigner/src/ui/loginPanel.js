@@ -43,6 +43,7 @@ class LoginPanel extends React.PureComponent {
             AllReports_arr = respon.json.data.reports_arr;
             AllExcelTemplate_arr = [{name:'无',code:0}].concat(respon.json.data.excelTemplate_arr);
             AllPermissionGroups_arr = respon.json.data.permissionGroups_arr;
+            AI_arr = respon.json.data.ai_arr;
 
             while(AllFileFlows_arr.length > 0){
                 AllFileFlows_arr.pop();

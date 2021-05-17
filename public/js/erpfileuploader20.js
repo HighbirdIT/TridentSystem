@@ -2694,15 +2694,19 @@ var ERPC_ExcelImporter = function (_React$PureComponent9) {
             }
             return React.createElement(
                 'div',
-                { className: 'w-100 h-100 d-flex p-3 flex-column align-items-center justify-content-center' },
+                { className: 'd-fixed w-100 h-100 fixedBackGround' },
                 React.createElement(
                     'div',
-                    { className: 'bg-light border d-flex flex-column p-1 rounded', style: { maxWidth: '95%', maxHeight: '95%' } },
-                    React.createElement(ERP_Form_ShowData, { id: 'dataform', parentPath: 'excelimporter', fullPath: 'excelimporter', pagebreak: false, selectMode: 'none', headers: data.headers, records_arr: data.rows, title: this.state.f_name }),
+                    { className: 'w-100 h-100 d-flex p-3 flex-column align-items-center justify-content-center' },
                     React.createElement(
                         'div',
-                        { className: 'd-flex justify-content-center flex-grow-0 flex-shrink-0 border-top p-1' },
-                        bottomElem
+                        { className: 'bg-light border d-flex flex-column p-1 rounded', style: { maxWidth: '95%', maxHeight: '95%' } },
+                        React.createElement(ERP_Form_ShowData, { id: 'dataform', parentPath: 'excelimporter', fullPath: 'excelimporter', pagebreak: false, selectMode: 'none', headers: data.headers, records_arr: data.rows, title: this.state.f_name }),
+                        React.createElement(
+                            'div',
+                            { className: 'd-flex justify-content-center flex-grow-0 flex-shrink-0 border-top p-1' },
+                            bottomElem
+                        )
                     )
                 )
             );
@@ -2754,47 +2758,51 @@ var ERPC_ExcelImporter = function (_React$PureComponent9) {
             }
             return React.createElement(
                 'div',
-                { className: 'card excelimporter' },
-                React.createElement('input', { id: this.props.id + '_file', onChange: this.fileSelectedHandler, ref: this.fileTagRef, type: 'file', className: 'd-none', accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel' }),
+                { className: 'd-fixed w-100 h-100 fixedBackGround' },
                 React.createElement(
                     'div',
-                    { className: 'card-body' },
+                    { className: 'card excelimporter' },
+                    React.createElement('input', { id: this.props.id + '_file', onChange: this.fileSelectedHandler, ref: this.fileTagRef, type: 'file', className: 'd-none', accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel' }),
                     React.createElement(
                         'div',
-                        { className: 'card-title' },
+                        { className: 'card-body' },
                         React.createElement(
-                            'h5',
-                            null,
-                            this.props.title
-                        )
-                    ),
-                    selectorElem,
-                    uploaderElem,
-                    this.state.reading ? React.createElement(
-                        'span',
-                        null,
-                        React.createElement('i', { className: 'fa fa-circle-o-notch fa-spin' }),
-                        this.state.readingInfo ? this.state.readingInfo : '正在解析Excel内容'
-                    ) : null,
-                    this.state.error ? React.createElement(
-                        'div',
-                        { className: 'd-flex flex-column flex-grow-1 flex-shrink-1' },
-                        React.createElement(
-                            'span',
-                            { className: 'text-danger flex-grow-1 flex-shrink-1' },
-                            React.createElement('i', { className: 'fa fa-warning' }),
-                            this.state.error.info
-                        ),
-                        React.createElement(
-                            'span',
-                            { className: 'd-flex justify-content-center flex-grow-0 flex-shrink-0' },
+                            'div',
+                            { className: 'card-title' },
                             React.createElement(
-                                'button',
-                                { className: 'btn btn-sm btn-danger', onClick: this.cancelClickHandler },
-                                '\u53D6\u6D88\u64CD\u4F5C'
+                                'h5',
+                                null,
+                                this.props.title
                             )
-                        )
-                    ) : null
+                        ),
+                        selectorElem,
+                        uploaderElem,
+                        this.state.reading ? React.createElement(
+                            'span',
+                            null,
+                            React.createElement('i', { className: 'fa fa-circle-o-notch fa-spin' }),
+                            this.state.readingInfo ? this.state.readingInfo : '正在解析Excel内容'
+                        ) : null,
+                        this.state.error ? React.createElement(
+                            'div',
+                            { className: 'd-flex flex-column flex-grow-1 flex-shrink-1' },
+                            React.createElement(
+                                'span',
+                                { className: 'text-danger flex-grow-1 flex-shrink-1' },
+                                React.createElement('i', { className: 'fa fa-warning' }),
+                                this.state.error.info
+                            ),
+                            React.createElement(
+                                'span',
+                                { className: 'd-flex justify-content-center flex-grow-0 flex-shrink-0' },
+                                React.createElement(
+                                    'button',
+                                    { className: 'btn btn-sm btn-danger', onClick: this.cancelClickHandler },
+                                    '\u53D6\u6D88\u64CD\u4F5C'
+                                )
+                            )
+                        ) : null
+                    )
                 )
             );
         }

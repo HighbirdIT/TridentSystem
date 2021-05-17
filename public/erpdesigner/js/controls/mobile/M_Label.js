@@ -10,7 +10,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var M_LabelKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [genTextFiledAttribute(), new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes), new CAttribute('小数精度', AttrNames.FloatNum, ValueType.Int, 2, true, false, null, null, false), new CAttribute('输出字数', AttrNames.OutputCharCount, ValueType.Boolean, false), genIsdisplayAttribute(), new CAttribute('默认可见', AttrNames.DefaultVisible, ValueType.Boolean, true)]), new CAttributeGroup('事件', [new CAttribute('OnMDown', AttrNames.Event.OnMouseDown, ValueType.Event)])]);
+var M_LabelKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [genTextFiledAttribute(), new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes), new CAttribute('小数精度', AttrNames.FloatNum, ValueType.Int, 2, true, false, null, null, false), new CAttribute('输出字数', AttrNames.OutputCharCount, ValueType.Boolean, false), new CAttribute('缩写阈值', 'abbrevlen', ValueType.Int, 0, true, false, null, null, false), genIsdisplayAttribute(), new CAttribute('默认可见', AttrNames.DefaultVisible, ValueType.Boolean, true)]), new CAttributeGroup('事件', [new CAttribute('OnMDown', AttrNames.Event.OnMouseDown, ValueType.Event)])]);
 
 var M_LabelKernel = function (_ControlKernelBase) {
     _inherits(M_LabelKernel, _ControlKernelBase);
@@ -22,6 +22,7 @@ var M_LabelKernel = function (_ControlKernelBase) {
 
         var nowvt = _this.getAttribute(AttrNames.ValueType);
         _this[AttrNames.FloatNum + '_visible'] = nowvt == ValueType.Float;
+        _this['abbrevlen_visible'] = nowvt == ValueType.String;
 
         var self = _this;
         autoBind(self);
@@ -37,6 +38,9 @@ var M_LabelKernel = function (_ControlKernelBase) {
                 // 数据类型更改
                 var floatNumAttr = this.findAttributeByName(AttrNames.FloatNum);
                 floatNumAttr.setVisible(this, newValue == ValueType.Float);
+
+                var abbrevLenAttr = this.findAttributeByName('abbrevlen');
+                abbrevLenAttr.setVisible(this, newValue == ValueType.String);
             }
         }
     }, {

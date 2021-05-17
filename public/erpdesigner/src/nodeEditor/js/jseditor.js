@@ -235,6 +235,11 @@ const JSNodeEditorControls_arr =[
         type:'转换'
     },
     {
+        label:'ParseBoolean',
+        nodeClass:JSNode_ParseBoolean,
+        type:'转换'
+    },
+    {
         label:'IsNaN',
         nodeClass:JSNode_IsNaN,
         type:'转换'
@@ -282,6 +287,11 @@ const JSNodeEditorControls_arr =[
     {
         label:'获取表单JSON数据',
         nodeClass:JSNode_GetFormJsonData,
+        type:'表单访问'
+    },
+    {
+        label:'获取表单指定数据行',
+        nodeClass:JSNode_GetFormRecordByKey,
         type:'表单访问'
     },
     {
@@ -430,9 +440,24 @@ const JSNodeEditorControls_arr =[
         type:'XML操作'
     },
     {
+        label:'XML-抽取所有列',
+        nodeClass:JSNode_Xml_ExtractAllColumn,
+        type:'XML操作'
+    },
+    {
         label:'Log',
         nodeClass:JSNode_Debug_Log,
         type:'DEBUG'
+    },
+    {
+        label:'创建Style对象',
+        nodeClass:JSNode_CreateStyleObject,
+        type:'控件样式'
+    },
+    {
+        label:'创建Class对象',
+        nodeClass:JSNode_CreateClassObject,
+        type:'控件样式'
     },
 ];
 
@@ -605,6 +630,9 @@ class JSNode_CompileHelper extends SqlNode_CompileHelper{
         else{
             if(!belongFormKernel.isKernelInRow(ctrKernel)){
                 rowSource = EFormRowSource.None;
+            }
+            else{
+                rowSource = EFormRowSource.Context;
             }
             var formObj = this.addUseForm(belongFormKernel, rowSource);
             rlt = formObj.useControls_map[ctrKernel.id];
@@ -1936,6 +1964,7 @@ class JSDef_Variable_Component extends React.PureComponent{
             isParam:varData.isParam,
             default:varData.default,
             editing:varData.needEdit == true,
+            bundleMode:varData.bundleMode ? varData.bundleMode : 0,
         };
 
         autoBind(this);
@@ -1952,6 +1981,7 @@ class JSDef_Variable_Component extends React.PureComponent{
             isParam:varData.isParam,
             editing:varData.editing,
             default:varData.default,
+            bundleMode:varData.bundleMode ? varData.bundleMode : 0,
         });
     }
 
@@ -1978,6 +2008,12 @@ class JSDef_Variable_Component extends React.PureComponent{
     isParamChangedHandler(newCode){
         this.setState({
             isParam:newCode,
+        });
+    }
+
+    bundleModeChangedHandler(newCode){
+        this.setState({
+            bundleMode:newCode,
         });
     }
 
@@ -2129,6 +2165,7 @@ class JSDef_Variable_Component extends React.PureComponent{
             </div>
             <DropDownControl itemChanged={this.valTypeChangedHandler} btnclass='btn-dark' options_arr={JsVarNodeValueTypes} textAttrName='name' valueAttrName='code' value={this.state.valType} /> 
             {varData.isOutput ? null : <DropDownControl itemChanged={this.isParamChangedHandler} btnclass='btn-dark' options_arr={ISParam_Options_arr} textAttrName='name' valueAttrName='code' value={this.state.isParam} />}
+            {varData.isOutput ? null : <DropDownControl itemChanged={this.bundleModeChangedHandler} btnclass='btn-dark' options_arr={BundleMode_Options_arr} textAttrName='name' valueAttrName='code' value={this.state.bundleMode} />}
         </div>);
     }
 }

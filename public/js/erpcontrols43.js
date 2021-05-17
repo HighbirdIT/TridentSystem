@@ -472,11 +472,32 @@ function ERPC_Fun_ComponentWillMount() {
     }
 }
 
+function ERPC_Fun_GetUseStyleClass(defaultStyle, defaultClassName) {
+    var useStyle = defaultStyle;
+    if (this.props.dynamicStyle != null) {
+        useStyle = Object.assign({}, defaultStyle, this.props.dynamicStyle);
+    }
+    var useClassName = defaultClassName ? defaultClassName : '';
+    var dynamicClass = this.props.dynamicClass;
+    for (var x in dynamicClass) {
+        if (typeof dynamicClass[x] === 'string') {
+            useClassName += ' ' + dynamicClass[x];
+        } else if (dynamicClass[x] == 1) {
+            useClassName += ' ' + x;
+        }
+    }
+    return {
+        style: useStyle,
+        class: useClassName
+    };
+}
+
 function ERPControlBase(target, initState) {
     target.rootDivRef = React.createRef();
     target.initState = initState == null ? {} : initState;
     target.componentWillUnmount = ERPC_Fun_ComponentWillUnmount.bind(target);
     target.componentWillMount = ERPC_Fun_ComponentWillMount.bind(target);
+    target.getUseStyleClass = ERPC_Fun_GetUseStyleClass.bind(target);
 }
 
 var ERPC_DropDown_PopPanel = function (_React$PureComponent3) {
@@ -2177,9 +2198,10 @@ var ERPC_Label = function (_React$PureComponent8) {
                 needCtlPath = true;
             }
 
+            var useStyleClass = this.getUseStyleClass(this.props.style, rootDivClassName);
             return React.createElement(
                 'span',
-                { className: rootDivClassName, style: this.props.style, charlen: this.props.boutcharlen ? tileLen : null, onMouseDown: this.props.onMouseDown, 'ctl-fullpath': needCtlPath ? this.props.fullPath : null },
+                { className: useStyleClass.class, style: useStyleClass.style, charlen: this.props.boutcharlen ? tileLen : null, onMouseDown: this.props.onMouseDown, 'ctl-fullpath': needCtlPath ? this.props.fullPath : null },
                 contentElem
             );
         }
@@ -2200,7 +2222,7 @@ function ERPC_Label_mapstatetoprops(state, ownprops) {
         text: useText,
         visible: ctlState.visible,
         fetching: ctlState.fetching
-    }, _defineProperty(_ref, 'visible', ctlState.visible == false || ownprops.definvisible ? false : true), _defineProperty(_ref, 'fetchingErr', ctlState.fetchingErr), _defineProperty(_ref, 'fullParentPath', propProfile.fullParentPath), _defineProperty(_ref, 'fullPath', propProfile.fullPath), _ref;
+    }, _defineProperty(_ref, 'visible', ctlState.visible == false || ownprops.definvisible ? false : true), _defineProperty(_ref, 'fetchingErr', ctlState.fetchingErr), _defineProperty(_ref, 'fullParentPath', propProfile.fullParentPath), _defineProperty(_ref, 'fullPath', propProfile.fullPath), _defineProperty(_ref, 'dynamicStyle', ctlState.style), _defineProperty(_ref, 'dynamicClass', ctlState.class), _ref;
 }
 
 function ERPC_Label_dispatchtorprops(dispatch, ownprops) {
@@ -5853,4 +5875,30 @@ function SmartSetScrollTop(theElem) {
         theElem = parent;
         parent = parent.parentElement;
     }
+}
+
+function GenClassObject(args_arr) {
+    var rlt = {};
+    args_arr.forEach(function (arg) {
+        if (arg.gp == '') {
+            arg.gp = null;
+        }
+        if (arg.val == '') {
+            arg.val = null;
+        }
+        if (arg.opt == 'set') {
+            if (arg.gp) {
+                rlt[arg.gp] = arg.val;
+            } else if (arg.val) {
+                rlt[arg.val] = 1;
+            }
+        } else {
+            if (arg.gp) {
+                rlt[arg.gp] = 0;
+            } else {
+                rlt[arg.val] = 0;
+            }
+        }
+    });
+    return rlt;
 }

@@ -341,6 +341,8 @@ var CProject = function (_IAttributeable) {
         value: function unRegisterControl(ctlKernel) {
             var _this3 = this;
 
+            var clearData = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
             var useID = ctlKernel.id;
             var registedCtl = this.getControlById(useID);
             if (registedCtl == null) {
@@ -348,10 +350,12 @@ var CProject = function (_IAttributeable) {
             }
             delete this.controlId_map[useID];
 
-            var useBPs_arr = this.scriptMaster.getBPsByControlKernel(useID);
-            useBPs_arr.forEach(function (bp) {
-                _this3.scriptMaster.deleteBP(bp);
-            });
+            if (clearData) {
+                var useBPs_arr = this.scriptMaster.getBPsByControlKernel(useID);
+                useBPs_arr.forEach(function (bp) {
+                    _this3.scriptMaster.deleteBP(bp);
+                });
+            }
         }
     }, {
         key: 'getControlById',
@@ -725,6 +729,13 @@ var CProject = function (_IAttributeable) {
                 }
                 cusDS_arr.push(dsJson);
             };
+
+            controlJsonProf.customObjects_arr.forEach(function (cusobj) {
+                if (copyResult.cusObjects_arr.indexOf(cusobj) == -1) {
+                    copyResult.cusObjects_arr.push(cusobj);
+                }
+            });
+
             controlJsonProf.customDS_arr.forEach(function (entity) {
                 if (entity.isCustomDS) {
                     copyCusDS(entity, copyResult.cusDS_arr, copyResult.refControlID_map);
@@ -738,10 +749,18 @@ var CProject = function (_IAttributeable) {
                 meetScript_map[scriptBP.code] = 1;
                 var scriptJsonProf = new AttrJsonProfile();
                 var scriptJson = scriptBP.getJson(scriptJsonProf);
+                scriptJsonProf.customObjects_arr.forEach(function (cusobj) {
+                    if (copyResult.cusObjects_arr.indexOf(cusobj) == -1) {
+                        copyResult.cusObjects_arr.push(cusobj);
+                    }
+                });
                 scriptJsonProf.customDS_arr.forEach(function (entity) {
                     if (entity.isCustomDS) {
                         copyCusDS(entity, cusDS_arr, refControl_map);
                     }
+                });
+                scriptJsonProf.useScript_arr.forEach(function (tScriptBP) {
+                    copyScript(tScriptBP, scripts_arr, cusDS_arr, refControl_map);
                 });
                 if (refControl_map) {
                     for (var rcid in scriptJsonProf.refControl_map) {
@@ -750,6 +769,10 @@ var CProject = function (_IAttributeable) {
                 }
                 scripts_arr.push(scriptJson);
             };
+
+            controlJsonProf.useScript_arr.forEach(function (scriptBP) {
+                copyScript(scriptBP, copyResult.scripts_arr, copyResult.cusDS_arr, copyResult.refControlID_map);
+            });
 
             for (ctlid in controlJsonProf.useControl_map) {
                 var ctlType = controlJsonProf.useControl_map[ctlid].type;
@@ -777,10 +800,20 @@ var CProject = function (_IAttributeable) {
                 var UCJsonProf = new AttrJsonProfile();
                 var UCJson = UCKernel.getJson(UCJsonProf);
 
+                UCJsonProf.customObjects_arr.forEach(function (cusobj) {
+                    if (copyResult.cusObjects_arr.indexOf(cusobj) == -1) {
+                        copyResult.cusObjects_arr.push(cusobj);
+                    }
+                });
+
                 UCJsonProf.customDS_arr.forEach(function (entity) {
                     if (entity.isCustomDS) {
                         copyCusDS(entity, userCtlProfile.cusDS_arr, userCtlProfile.refControlID_map);
                     }
+                });
+
+                UCJsonProf.useScript_arr.forEach(function (scriptBP) {
+                    copyScript(scriptBP, copyResult.scripts_arr, copyResult.cusDS_arr, copyResult.refControlID_map);
                 });
 
                 for (ctlid in UCJsonProf.useControl_map) {
@@ -795,17 +828,16 @@ var CProject = function (_IAttributeable) {
                     });
                 }
 
-                for (ctlid in UCJsonProf.useUserControl_map) {
-                    copyUserControl(UCJsonProf.useUserControl_map[ctlid]);
-                }
+                UCJsonProf.meetUserControlSeq_arr.reverse().forEach(function (uctl) {
+                    copyUserControl(uctl);
+                });
                 userCtlProfile.jsonData = UCJson;
                 copyResult.userControls_arr.push(userCtlProfile);
             };
 
-            for (ctlid in controlJsonProf.useUserControl_map) {
-                copyUserControl(controlJsonProf.useUserControl_map[ctlid]);
-            }
-
+            controlJsonProf.meetUserControlSeq_arr.reverse().forEach(function (uctl) {
+                copyUserControl(uctl);
+            });
             copyResult.targetControl = controlJson;
             return copyResult;
         }
@@ -814,7 +846,15 @@ var CProject = function (_IAttributeable) {
         value: function pasteKernel(copiedData, parentKernel, targetIndex) {
             var _this5 = this;
 
+            var bOverwrite = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+
             var copyFromThisProject = copiedData.project == this;
+            if (!copyFromThisProject) {
+                copiedData.cusObjects_arr.forEach(function (cusObj) {
+                    _this5.scriptMaster.smartAddCusObj(cusObj);
+                });
+            }
+
             var ctlID;
             var oldID;
             var useUUID;
@@ -829,7 +869,12 @@ var CProject = function (_IAttributeable) {
             var isPastePage = false;
             if (parentKernel == null) {
                 if (copiedData.targetControl.type == UserControlKernel_Type) {
-                    copyFromThisProject = false;
+                    if (copyFromThisProject) {
+                        if (!bOverwrite) {
+                            // 来自本项目的克隆
+                            copyFromThisProject = false;
+                        }
+                    }
                 } else if (copiedData.targetControl.type == M_PageKernel_Type) {
                     isPastePage = true;
                     var newPageid = this.getUnUserPageID();
@@ -892,9 +937,10 @@ var CProject = function (_IAttributeable) {
                         if (hadUserControl.id != UCJson.id) {
                             renameContrls_map[UCJson.id] = hadUserControl.id;
                         }
-                        return;
-                    }
-                    if (aidControlId_map[UCJson.id] != null) {
+                        if (!bOverwrite) {
+                            return;
+                        }
+                    } else if (aidControlId_map[UCJson.id] != null) {
                         var newID = '';
                         for (i = 0; i < 9999; ++i) {
                             newID = 'UserControl_T' + i;
@@ -913,6 +959,13 @@ var CProject = function (_IAttributeable) {
                     for (ctlType in userCtlProfile.controlsID_map) {
                         userCtlProfile.controlsID_map[ctlType].forEach(function (ctlID) {
                             if (aidControlId_map[ctlID] != null && ctlID != UCJson.id) {
+                                if (hadUserControl) {
+                                    // 看看是否是同一个自订控件中的，是的话就不要改名了
+                                    var ctlBelongUserControl = aidControlId_map[ctlID].searchParentKernel(UserControlKernel_Type, true);
+                                    if (ctlBelongUserControl == hadUserControl) {
+                                        return;
+                                    }
+                                }
                                 var newID = '';
                                 for (i = 0; i < 9999; ++i) {
                                     newID = ctlType + '_' + i;
@@ -967,51 +1020,59 @@ var CProject = function (_IAttributeable) {
 
             needPasteCusDS_arr.forEach(function (cusDSBP) {
                 useUUID = cusDSBP.uuid;
+                var hadSqlBp = null;
                 if (cusDSBP.group == 'custom') {
                     if (copyFromThisProject) {
                         return; // 从本方案里来的，自订数据源已经存在了肯定
                     }
-                    var hadSqlBp = _this5.dataMaster.getSqlBPByUUID(cusDSBP.uuid);
-                    if (hadSqlBp) {
-                        return;
-                    }
-                } else if (cusDSBP.group == 'ctlcus') {
-                    useUUID = null;
-                } else {
+                    hadSqlBp = _this5.dataMaster.getSqlBPByUUID(cusDSBP.uuid);
+                } else if (cusDSBP.group == 'ctlcus') {} else {
                     console.error('不支持的group:' + cusDSBP.group);
                     return;
                 }
-                var expireBP = null;
+
+                if (hadSqlBp && !bOverwrite) {
+                    return;
+                }
+
                 var sqlBPCreationHelper = new NodeCreationHelper();
                 sqlBPCreationHelper.project = _this5.project;
                 var jsonStr = JSON.stringify(cusDSBP);
                 var goodJson = JSON.parse(replaceIDChangedInJsonString(jsonStr));
-                goodJson.uuid = useUUID;
                 if (cusDSBP.group == 'ctlcus') {
-                    expireBP = _this5.dataMaster.getSqlBPByName(goodJson.name);
-                    if (expireBP) {
-                        _this5.dataMaster.deleteSqlBP(expireBP);
-                    }
+                    hadSqlBp = _this5.dataMaster.getSqlBPByName(goodJson.name);
+                    useUUID = hadSqlBp ? hadSqlBp.uuid : null;
                 }
-                var newbp = new SqlNode_BluePrint({ master: _this5.dataMaster }, goodJson, sqlBPCreationHelper);
-                _this5.dataMaster.addSqlBP(newbp);
+                goodJson.uuid = useUUID;
+                if (hadSqlBp) {
+                    if (bOverwrite) {
+                        goodJson.id = hadSqlBp.id;
+                        hadSqlBp.reCreate({}, goodJson, sqlBPCreationHelper);
+                    }
+                } else {
+                    var newbp = new SqlNode_BluePrint({ master: _this5.dataMaster }, goodJson, sqlBPCreationHelper);
+                    _this5.dataMaster.addSqlBP(newbp);
+                }
             });
 
             needPasteScripts_arr.forEach(function (scriptBP) {
                 useUUID = null;
-                var expireBP = null;
+                var hadScriptBP = null;
                 var scriptBPCreationHelper = new NodeCreationHelper();
                 scriptBPCreationHelper.project = _this5.project;
 
                 var jsonStr = JSON.stringify(scriptBP);
                 var goodJson = JSON.parse(replaceIDChangedInJsonString(jsonStr));
-                expireBP = _this5.scriptMaster.getBPByName(goodJson.name);
-                if (expireBP) {
-                    _this5.scriptMaster.deleteBP(expireBP);
+                hadScriptBP = _this5.scriptMaster.getBPByName(goodJson.name);
+                if (hadScriptBP) {
+                    goodJson.uuid = hadScriptBP.uuid;
+                    goodJson.id = hadScriptBP.id;
+                    hadScriptBP.reCreate({}, goodJson, scriptBPCreationHelper);
+                } else {
+                    goodJson.uuid = useUUID;
+                    var newbp = new JSNode_BluePrint({ master: _this5.scriptMaster }, goodJson, scriptBPCreationHelper);
+                    _this5.scriptMaster.addBP(newbp);
                 }
-                goodJson.uuid = useUUID;
-                var newbp = new JSNode_BluePrint({ master: _this5.scriptMaster }, goodJson, scriptBPCreationHelper);
-                _this5.scriptMaster.addBP(newbp);
             });
 
             var createdUserCtls_arr = [];
@@ -1033,6 +1094,11 @@ var CProject = function (_IAttributeable) {
                             ctl: newUCtl,
                             json: goodUserCtlJson
                         });
+                    } else if (bOverwrite) {
+                        userCtlCreatioinHelper = new CtlKernelCreationHelper();
+                        userCtlCreatioinHelper.project = _this5;
+                        goodUserCtlJson = JSON.parse(replaceIDChangedInJsonString(JSON.stringify(UCJson)));
+                        hadUserControl.__recreate(userCtlCreatioinHelper, goodUserCtlJson);
                     }
                 });
 
@@ -1080,6 +1146,21 @@ var CProject = function (_IAttributeable) {
                         self.emit('userControlChanged');
                     }
                 }, 50);
+            }
+        }
+    }, {
+        key: 'exportUserControl',
+        value: function exportUserControl(target) {
+            if (target == null || target.type != UserControlKernel_Type) {
+                return;
+            }
+            return this.copyKernel(target);
+        }
+    }, {
+        key: 'importUserControl',
+        value: function importUserControl(copiedData) {
+            if (copiedData) {
+                this.pasteKernel(copiedData, null, null, true);
             }
         }
     }, {
@@ -1158,6 +1239,8 @@ var AttrJsonProfile = function () {
         this.customObjects_arr = [];
         this.keyIndex = 0;
         this.hadDictionary = hadDictionary == true;
+        this.meetUserControlSeq_arr = [];
+        this.useScript_arr = [];
     }
 
     _createClass(AttrJsonProfile, [{
@@ -1228,7 +1311,10 @@ var AttrJsonProfile = function () {
             if (theCtl == null) {
                 return;
             }
-            this.useUserControl_map[theCtl.id] = theCtl;
+            if (this.useUserControl_map[theCtl.id] == null) {
+                this.useUserControl_map[theCtl.id] = theCtl;
+                this.meetUserControlSeq_arr.push(theCtl);
+            }
         }
     }, {
         key: 'addRefControl',
@@ -1237,6 +1323,16 @@ var AttrJsonProfile = function () {
                 return;
             }
             this.refControl_map[theCtl.id] = theCtl;
+        }
+    }, {
+        key: 'addUseScript_arr',
+        value: function addUseScript_arr(scriptBP) {
+            if (scriptBP == null) {
+                return;
+            }
+            if (this.useScript_arr.indexOf(scriptBP) == -1) {
+                this.useScript_arr.push(scriptBP);
+            }
         }
     }]);
 

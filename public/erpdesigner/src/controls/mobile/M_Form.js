@@ -27,6 +27,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('内容定制', AttrNames.ListFormContent, ValueType.ListFormContent, null, true, false, null, null, false),
         new CAttribute('Wrap', AttrNames.Wrap, ValueType.Boolean, true),
         new CAttribute('智能刷新', AttrNames.AutoPull, ValueType.Boolean, true),
+        new CAttribute('自动表头重置', 'autoResetHeader', ValueType.Boolean, false),
         new CAttribute('自动分页', AttrNames.PageBreak, ValueType.Boolean, true),
         new CAttribute('生成导航栏', AttrNames.GenNavBar, ValueType.Boolean, true),
         new CAttribute('每页条数', AttrNames.RowPerPage, ValueType.String, '20', true, false, ['5','10','20', '50', '100', '200']),
@@ -70,6 +71,7 @@ const M_FormKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('选择行变更', AttrNames.Event.OnSelectedChanged, ValueType.Event),
         new CAttribute('行绑定', AttrNames.Event.OnRowBind, ValueType.Event),
         new CAttribute('点击刷新时', AttrNames.Event.OnClickRefresh, ValueType.Event),
+        //new CAttribute('点击行时', AttrNames.Event.OnClickRow, ValueType.Event),
     ]),
     new CAttributeGroup('List设置', [
         new CAttribute('ItemStyle', 'item' + AttrNames.LayoutNames.StyleAttr, ValueType.StyleValues, null, true, true),
@@ -126,6 +128,12 @@ class M_FormKernel extends ContainerKernelBase {
         theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Function.GetJSONRowItem);
         this.scriptCreated(null, theBP);
         theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnClickRefresh);
+        this.scriptCreated(null, theBP);
+        theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnInsert);
+        this.scriptCreated(null, theBP);
+        theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnUpdate);
+        this.scriptCreated(null, theBP);
+        theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Event.OnDelete);
         this.scriptCreated(null, theBP);
 
         //this.autoSetCusDataSource();
@@ -267,7 +275,7 @@ class M_FormKernel extends ContainerKernelBase {
         this.children.forEach(child => {
             if (child == this.gridFormBottomDiv || child == this.placeHolderKernel)
                 return;
-            if(child == M_ContainerKernel_Type){
+            if(child.type == M_ContainerKernel_Type){
                 child.aidAccessableKernels(null, rlt);
             }
             else{
@@ -276,15 +284,17 @@ class M_FormKernel extends ContainerKernelBase {
         });
         var ret = [];
         var bIsGrid = this.isGridForm();
+        var bIsList = this.isListForm();
         rlt.forEach(item=>{
             if(item.type == M_LabeledControlKernel_Type){
-                ret.push(item.editor);
                 if(!bIsGrid){
                     ret.push(item);
                 }
-                else{
-                    if(item.parent != this){
-                        ret.push(item);
+                if(item.parent == this){
+                    ret.push(item.editor);
+                    if(item.editor.type == M_ContainerKernel_Type || item.editor.type == PopperButtonKernel_Type){
+                        // 穿透div
+                        item.editor.aidAccessableKernels(targetType, ret, true);
                     }
                 }
             }
@@ -334,6 +344,10 @@ class M_FormKernel extends ContainerKernelBase {
             }
             scriptBP.setFixParam(fixParams_arr);
         }
+        if(scriptBP.name.indexOf(AttrNames.Event.OnClickRow) != -1){
+            var fixParams_arr = ['state','fullPath','record', 'rowIndex', 'rowKey'];
+            scriptBP.setFixParam(fixParams_arr);
+        }
         if(scriptBP.name.indexOf(AttrNames.Event.OnRowChanged) != -1){
             scriptBP.setFixParam(['fullPath','rowIndex','record']);
         }
@@ -348,7 +362,7 @@ class M_FormKernel extends ContainerKernelBase {
         }
         var rowTextParam;
         if(scriptBP.name.indexOf(AttrNames.Function.GetXMLRowItem) != -1){
-            scriptBP.setFixParam([VarNames.State,this.id + '_rowState',this.id + '_rowpath',this.id + '_' + VarNames.NowRecord]);
+            scriptBP.setFixParam([VarNames.State,this.id + '_rowState',this.id + '_rowpath',this.id + '_' + VarNames.NowRecord,this.id + '_state']);
             rowTextParam = scriptBP.returnVars_arr.find(item=>{return item.name == AttrNames.RowText;});
             if(rowTextParam == null){
                 rowTextParam = scriptBP.createEmptyVariable(true);
@@ -358,11 +372,11 @@ class M_FormKernel extends ContainerKernelBase {
             scriptBP.canCustomReturnValue = true;
         }
         if(scriptBP.name.indexOf(AttrNames.Function.GetJSONRowItem) != -1){
-            scriptBP.setFixParam([this.id + '_path',this.id + '_' + VarNames.NowRecord]);
+            scriptBP.setFixParam([this.id + '_rowpath',this.id + '_' + VarNames.NowRecord, VarNames.State]);
             scriptBP.canCustomReturnValue = true;
         }
         if(scriptBP.name.indexOf(AttrNames.Event.OnDelete) != -1){
-            scriptBP.setFixParam([VarNames.RowKey, 'callBack']);
+            scriptBP.setFixParam([this.id + '_' + VarNames.RowKey, 'callBack']);
         }
         if(scriptBP.name.indexOf(AttrNames.Event.OnClickRefresh) != -1){
             scriptBP.setFixParam([this.id + '_path']);

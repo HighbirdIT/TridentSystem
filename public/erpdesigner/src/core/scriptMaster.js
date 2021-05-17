@@ -9,6 +9,16 @@ class ScriptMaster extends EventEmitter{
         //this.createBP('test', 'test');
     }
 
+    smartAddCusObj(cobj){
+        var hadCusObj = this.getCusObjByCode(cobj.code);
+        if(hadCusObj){
+            hadCusObj.copyBy(cobj);
+        }
+        else{
+            this.addCusObj(cobj);
+        }
+    }
+
     addCusObj(cobj){
         if(this.cusobjects_arr.indexOf(cobj) != -1){
             return;
@@ -193,5 +203,11 @@ class CustomObject extends EventEmitter{
             code:this.code,
             dm:this.dataMembers_arr,
         };
+    }
+
+    copyBy(target){
+        this.name = target.name;
+        this.code = target.code;
+        this.dm = target.dataMembers_arr.concat();
     }
 }

@@ -27,3 +27,6 @@ scripts/python/shuangzhoutest/__pycache__
 public/js/views/erp/pages/TESTZZMCS_mb_326.js
 text
 package-lock.json
+*.key
+*.crt
+*.pem

@@ -9,6 +9,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var ISParam_Options_arr = [{ name: '参数', code: '1' }, { name: '变量', code: '0' }];
+var BundleMode_Options_arr = [{ name: '强制传服务端', code: '1' }, { name: '根据需要传值', code: '0' }];
 var gCopiedCustomEntity = null;
 
 var __SynAction_count = 0;

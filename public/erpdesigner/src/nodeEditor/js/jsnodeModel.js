@@ -48,6 +48,7 @@ const JSNODE_ARRAY_LENGTH = 'arraylength';
 
 const JSNODE_PARSEINT = 'parseInt';
 const JSNODE_PARSEFLOAT = 'parseFloat';
+const JSNODE_PARSEBOOLEAN = 'parseBoolean';
 const JSNODE_ISNAN = 'isnan';
 
 const JSNODE_MATH_RANDINT = 'mathrandint';
@@ -167,6 +168,9 @@ class JSDef_Variable extends JSNode_Base {
         rlt.valType = this.valType;
         rlt.isParam = this.isParam;
         rlt.default = this.default;
+        if(this.bundleMode){
+            rlt.bundleMode = this.bundleMode;
+        }
         if (this.isOutput) {
             rlt.isOutput = this.isOutput;
         }
@@ -180,7 +184,7 @@ class JSDef_Variable extends JSNode_Base {
     }
 
     restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['name', 'valType', 'isParam', 'default', 'isfixed', 'index', 'isOutput']);
+        assginObjByProperties(this, attrsJson, ['name', 'valType', 'isParam', 'default', 'isfixed', 'index', 'isOutput', 'bundleMode']);
     }
 
     setProp(data) {
@@ -211,6 +215,9 @@ class JSDef_Variable extends JSNode_Base {
         }
         if (data.editing != null) {
             this.needEdit = data.editing;
+        }
+        if (data.bundleMode != null) {
+            this.bundleMode = data.bundleMode;
         }
         this.fireChanged();
     }
@@ -766,11 +773,16 @@ class JSNode_BluePrint extends EventEmitter {
                 compilHelper.clientSide.setCusValidCheckerBlock.pushLine("gCusValidChecker_map['" + ctlKernel.id + "'] = " + theFun.name + ";");
             }
         }
+        else if(this.group == EJsBluePrintFunGroup.CtlFun && ctlKernel.type == M_PageKernel_Type){
+            // 页面方法
+            validCheckBasePath = "''";
+        }
         else {
             if (compilHelper.config && compilHelper.config.params) {
                 params_arr = compilHelper.config.params;
             }
         }
+        
 
         if (!IsEmptyObject(compilHelper.usePage_map)) {
             for (var pageID in compilHelper.usePage_map) {
@@ -847,7 +859,7 @@ class JSNode_BluePrint extends EventEmitter {
                 }
                 if (belongFormControl && belongFormControl.isGridForm()) {
                     theFun.scope.getVar(VarNames.RowKeyInfo_map, true, 'getRowKeyMapFromPath(' + VarNames.BaseValidCheckPath + ')');
-                    theFun.scope.getVar(VarNames.RowKey, true, VarNames.RowKeyInfo_map + '.' + belongFormControl.id);
+                    theFun.scope.getVar(belongFormControl.id + '_' + VarNames.RowKey, true, VarNames.RowKeyInfo_map + '.' + belongFormControl.id);
                 }
             }
 
@@ -944,10 +956,16 @@ class JSNode_BluePrint extends EventEmitter {
                     validCheckBasePath = '_path';
                     fetchKeyVarValue = ctlKernel.id + '_path + ' + singleQuotesStr('_' + funName);
                 }
+                
                 if (isGetXmlRowFun || isGetJsonRowFun) {
                     validCheckBasePath = ctlKernel.id + '_rowpath';
+
+                    if (belongUserControl) {
+                        // 自订控件中的按钮
+                        theFun.scope.getVar(belongUserControl.id + '_path', true, "getBelongUserCtlPath("+ctlKernel.id + "_rowpath)");
+                        theFun.scope.getVar(belongUserControl.id + '_state', true, makeStr_callFun('getStateByPath', [VarNames.State, belongUserControl.id + '_path', '{}']));
+                    }
                 }
-                
             }
             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
                 fetchKeyVarValue = VarNames.FullParentPath + '+' + singleQuotesStr('.' + funName);
@@ -971,20 +989,20 @@ class JSNode_BluePrint extends EventEmitter {
                 }
             }
             else if (this.group == EJsBluePrintFunGroup.GridRowBtnHandler) {
-                params_arr = [VarNames.RowKey, VarNames.CallBack];
+                params_arr = [ctlKernel.parent.id + '_' + VarNames.RowKey, VarNames.CallBack];
                 if (compilHelper.config) {
                     if (compilHelper.config.key == 'insert') {
                         params_arr = [VarNames.CallBack];
-                        theFun.scope.getVar(VarNames.RowKey, true, singleQuotesStr('new'));
+                        theFun.scope.getVar(ctlKernel.parent.id + '_' + VarNames.RowKey, true, singleQuotesStr('new'));
                     }
-                    fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.parent.id + '_' + compilHelper.config.actLabel + '_'), '+', VarNames.RowKey);
+                    fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.parent.id + '_' + compilHelper.config.actLabel + '_'), '+', ctlKernel.parent.id + '_' + VarNames.RowKey);
                 }
                 else {
-                    fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.id + funName + '_'), '+', VarNames.RowKey);
+                    fetchKeyVarValue = makeStr_AddAll(singleQuotesStr(ctlKernel.id + funName + '_'), '+', ctlKernel.id + '_' + VarNames.RowKey);
                 }
                 validCheckBasePath = VarNames.BaseValidCheckPath;
                 theFun.scope.getVar(belongFormControl.id + "_path", true, 'this.props.fullPath');
-                theFun.scope.getVar(belongFormControl.id + "_rowpath", true, 'this.props.fullPath + ".row_" + ' + VarNames.RowKey);
+                theFun.scope.getVar(belongFormControl.id + "_rowpath", true, 'this.props.fullPath + ".row_" + ' + belongFormControl.id + '_' + VarNames.RowKey);
                 theFun.scope.getVar(VarNames.BaseValidCheckPath, true, belongFormControl.id + "_rowpath");
                 theFun.scope.getVar(belongFormControl.id + "_state", true, makeStr_callFun('getStateByPath', [VarNames.State, 'this.props.fullPath', '{}']));
                 if (belongUserControl) {
@@ -1012,6 +1030,7 @@ class JSNode_BluePrint extends EventEmitter {
                 var formNowRowStateVarName = formId + '_' + VarNames.RowState;
                 var formNowRecordVarName = formId + '_' + VarNames.NowRecord;
                 var formPathVarName = formId + '_path';
+                var formKeyVarName = formId + '_' + VarNames.RowKey;
                 var selectedRowsVarName = formId + '_' + VarNames.SelectedRows_arr;
                 var isUseFormCtl = !IsEmptyObject(useFormData.useControls_map);
                 var isUseFormColumn = !IsEmptyObject(useFormData.useColumns_map);
@@ -1048,15 +1067,15 @@ class JSNode_BluePrint extends EventEmitter {
                     if (isGridForm || isListForm) {
                         if (useFormData.useContextRow) {
                             if (this.group == EJsBluePrintFunGroup.CtlAttr) {
-                                theFun.scope.getVar(VarNames.RowKey, true, VarNames.RowKeyInfo_map + '.' + formId);
+                                theFun.scope.getVar(formKeyVarName, true, VarNames.RowKeyInfo_map + '.' + formId);
                             }
                             if (this.group == EJsBluePrintFunGroup.CtlEvent) {
-                                theFun.scope.getVar(VarNames.RowKey, true, VarNames.RowKeyInfo_map + '.' + formId);
+                                theFun.scope.getVar(formKeyVarName, true, VarNames.RowKeyInfo_map + '.' + formId);
                             }
                             if (!isGetXmlRowFun && !isGetJsonRowFun) {
-                                theFun.scope.getVar(formNowRowStateVarName, true, makeStr_callFun('getStateByPath', [formStateVarName, "'row_' + " + VarNames.RowKey, '{}']));
+                                theFun.scope.getVar(formNowRowStateVarName, true, makeStr_callFun('getStateByPath', [formStateVarName, "'row_' + " + formKeyVarName, '{}']));
                                 if (isUseFormColumn) {
-                                    theFun.scope.getVar(formNowRecordVarName, true, makeStr_callFun('getRecordFromRowKey', [formPathVarName, VarNames.RowKey]));
+                                    theFun.scope.getVar(formNowRecordVarName, true, makeStr_callFun('getRecordFromRowKey', [formPathVarName, formKeyVarName]));
                                 }
                             }
                         }
@@ -1170,6 +1189,14 @@ class JSNode_BluePrint extends EventEmitter {
                             }
                             else {
                                 theFun.scope.getVar(ctlParentStateVarName, true, initValue);
+                            }
+
+                            if(isGridForm && parentLabledCtl.parent == useFormData.formKernel){
+                                var parentLabledCtl_isdisplay = parentLabledCtl.getAttribute(AttrNames.Isdisplay);
+                                var parentLabledCtl_isdisplayParseRet = parseObj_CtlPropJsBind(parentLabledCtl_isdisplay, this.bluePrint.master);
+                                if (parentLabledCtl_isdisplayParseRet.isScript) {
+                                    validFormSelectBlock.pushLine(makeLine_Assign(ctlParentStateVarName + '.visible', formStateVarName + '.' + parentLabledCtl.id + '_visible'));
+                                }
                             }
                         }
 
@@ -1370,12 +1397,12 @@ class JSNode_BluePrint extends EventEmitter {
             var gridRowKeyVars_map = {};
             switch (ctlKernel.type) {
                 case M_FormKernel_Type:
-                    gridRowKeyVars_map[ctlKernel.id] = VarNames.RowKey;
+                    gridRowKeyVars_map[ctlKernel.id] = ctlKernel.id + '_' + VarNames.RowKey;
                     break;
                 default:
                     var belongForm = ctlKernel.searchParentKernel(M_FormKernel_Type, true);
                     if (belongForm) {
-                        gridRowKeyVars_map[belongForm.id] = VarNames.RowKey;
+                        gridRowKeyVars_map[belongForm.id] = belongForm.id + '_' + VarNames.RowKey;
                     }
                     break;
             }
@@ -1604,7 +1631,7 @@ class JSNode_BluePrint extends EventEmitter {
                 setInvalidStateBlock.pushLine('console.error(err);');
                 if (msgBoxCreated) {
                     setInvalidStateBlock.pushLine("if(" + msgBoxVarName + "){" + msgBoxVarName + ".setData(err.info, EMessageBoxType.Error, '" + ctlName + "');}");
-                    if (ctlKernel.type == ButtonKernel_Type) {
+                    if (ctlKernel.type == ButtonKernel_Type || (compilHelper.config && compilHelper.config.trigerByBtn)) {
                         setInvalidStateBlock.pushLine("else{SendToast(err.info, EToastType.Error);}");
                     }
                 }
@@ -1649,6 +1676,7 @@ class JSNode_BluePrint extends EventEmitter {
                 setInvalidStateBlock.pushLine("if(err){", 1);
                 if (!nomsgbox) {
                     setInvalidStateBlock.pushLine("if(" + msgBoxVarName + "){" + msgBoxVarName + ".setData(err.info, EMessageBoxType.Error, '" + ctlName + "');}");
+                    setInvalidStateBlock.pushLine("else{SendToast(err.info, EToastType.Error);}");
                 }
                 setInvalidStateBlock.pushLine("return;", -1);
                 setInvalidStateBlock.pushLine("}");
@@ -1751,10 +1779,15 @@ class JSNode_Var_Get extends JSNode_Base {
             return superRet;
         }
 
+        var theScope = belongBlock && belongBlock.getScope();
+        var blockInServer = theScope && theScope.isServerSide;
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         if (this.checkCompileFlag(this.varData == null || this.varData.removed, '无效变量', helper)) {
             return false;
+        }
+        if(blockInServer){
+            theScope.getVar(this.varData.name, true, this.varData.default);
         }
         var selfCompileRet = new CompileResult(this);
         helper.addUseVariable(this.varData.name, this.varData.valType, this.varData.getDefineString());
@@ -2028,12 +2061,14 @@ class JSNode_Return extends JSNode_Base {
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
+        var theScope = belongBlock && belongBlock.getScope();
+        var blockInServer = theScope && theScope.isServerSide;
 
         var socketComRet;
         var socketValue;
 
         if (this.bluePrint.group == EJsBluePrintFunGroup.CtlAttr || this.bluePrint.group == EJsBluePrintFunGroup.CtlValid) {
-            var inreducer = this.isInReducer(preNodes_arr, false);
+            var inreducer = !blockInServer && this.isInReducer(preNodes_arr, false);
             if (this.checkCompileFlag(inreducer, '此处应该用CallOnFetchEnd', helper)) {
                 return false;
             }
@@ -2063,7 +2098,7 @@ class JSNode_Return extends JSNode_Base {
                 return false;
             }
             socketValue = socketComRet.value;
-            if(socketValue.toLocaleLowerCase() == "'null'"){
+            if(socketValue == null || (typeof socketValue === 'string' && socketValue.toLocaleLowerCase() == "'null'")){
                 socketValue = 'null';
             }
         }
@@ -2117,7 +2152,7 @@ class JSNode_ConstValue extends JSNode_Base {
             return false;
         }
         if (isNaN(value)) {
-            if (value.toLocaleLowerCase() == 'null') {
+            if (typeof value === 'string' && value.toLocaleLowerCase() == 'null') {
                 value = 'null';
             }
             else{
@@ -2704,6 +2739,17 @@ class JSNode_CurrentDataRow extends JSNode_Base {
         if (this.outFlowSockets_arr == null) {
             this.outFlowSockets_arr = [];
         }
+
+        this.outputScokets_arr.forEach(outsocket=>{
+            if(outsocket.name == '__record'){
+                this.recordSocket = outsocket;
+            }
+        });
+        if(this.recordSocket == null){
+            this.recordSocket = this.addSocket(new NodeSocket('__record', this, false, { type: ValueType.Object }));
+        }
+        this.recordSocket.label = 'record';
+
         var proj = null;
         if (createHelper) {
             proj = createHelper.project;
@@ -2767,6 +2813,10 @@ class JSNode_CurrentDataRow extends JSNode_Base {
         }
         this.fireEvent(Event_SocketNumChanged, 20);
         this.bluePrint.fireChanged();
+    }
+
+    preRemoveSocket(theSocket) {
+        return theSocket != this.recordSocket;
     }
 
     requestSaveAttrs() {
@@ -2838,7 +2888,7 @@ class JSNode_CurrentDataRow extends JSNode_Base {
     }
 
     compile(helper, preNodes_arr, belongBlock) {
-        var superRet = super.compile(helper, preNodes_arr, blockInServer);
+        var superRet = super.compile(helper, preNodes_arr, belongBlock);
         if (superRet == false || superRet != null) {
             return superRet;
         }
@@ -2883,7 +2933,8 @@ class JSNode_CurrentDataRow extends JSNode_Base {
                     realParent = formKernel;
                 }
                 var isSameForm = formKernel == belongFormKernel;
-                if (this.checkCompileFlag(!isSameForm || realParent != belongFormKernel, '此处无法使用目标Form的本属性', helper)) {
+                //!isSameForm || realParent != belongFormKernel
+                if (this.checkCompileFlag(!isSameForm && belongFormKernel != null && !belongFormKernel.hadAncestor(formKernel), '此处无法使用目标Form的本属性', helper)) {
                     return false;
                 }
             }
@@ -2929,9 +2980,28 @@ class JSNode_CurrentDataRow extends JSNode_Base {
             belongBlock.pushChild(clientForEachBlock);
             selfCompileRet.setSocketOut(this.inFlowSocket, '', clientForEachBlock);
         }
+        
+        if (blockInServer) {
+            selfCompileRet.setSocketOut(this.recordSocket, 'req.body.' + VarNames.Bundle + '.' + nowRowVarName);
+        }
+        else {
+            if (clientForEachDeclarBlock) {
+                selfCompileRet.setSocketOut(this.recordSocket, nowRowVarName);
+            }
+            else {
+                selfCompileRet.setSocketOut(this.recordSocket, formKernel.id + '_' + VarNames.NowRecord);
+            }
+        }
+
         var canUserColumns_arr = formKernel.getCanuseColumns();
+        if(this.outputScokets_arr.length == 1){
+            helper.addUseColumn(formKernel, canUserColumns_arr[0], blockInServer ? theScope.fun : null, this.rowSource);
+        }
         for (var si in this.outputScokets_arr) {
             var outSocket = this.outputScokets_arr[si];
+            if(outSocket == this.recordSocket){
+                continue;
+            }
             var colName = outSocket.getExtra('colName');
             if (canUserColumns_arr.indexOf(colName) == -1) {
                 helper.logManager.errorEx([helper.logManager.createBadgeItem(
@@ -3636,8 +3706,8 @@ class JSNODE_Insert_table extends JSNode_Base {
         var useClientVariablesRlt = new UseClientVariableResult();
         this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
         useClientVariablesRlt.variables_arr.forEach(varCon => {
-            initBundleBlock.params_map[varCon.name] = varCon.name;
-            if (serverFun) {
+            if (serverFun && initBundleBlock.params_map[varCon.name] == null) {
+                initBundleBlock.params_map[varCon.name] = varCon.name;
                 serverFun.scope.getVar(varCon.name, true);
                 postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
             }
@@ -3952,9 +4022,29 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
         var selectedKernel;
         var options_arr;
         var nowVal;
-        if (this.apiClass.ctltype == M_FormKernel_Type && this.apiItem.attrItem.name == VarNames.SelectedColumns) {
+        var links_arr = this.bluePrint.linkPool.getLinksBySocket(this.inSocket);
+        if(links_arr.length > 0){
+            var link = links_arr[0];
+            var fromNode = link.outSocket.node;
+            if (fromNode.type == FLOWNODE_COLUMN_VAR) {
+                var keySocket = fromNode.getKeySocket();
+                if (keySocket) {
+                    if (keySocket.node.type == JSNODE_TRAVERSALFORM) {
+                        selectedCtlid = keySocket.getExtra('ctlid');
+                    }
+                }
+            }
+            else if (fromNode.type == JSNODE_TRAVERSALFORM) {
+                selectedCtlid = link.outSocket.getExtra('ctlid');
+            }
+        }
+        else{
             selectedCtlid = this.inSocket.getExtra('ctlid');
+        }
+        if(selectedCtlid){
             selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
+        }
+        if (this.apiClass.ctltype == M_FormKernel_Type && this.apiItem.attrItem.name == VarNames.SelectedColumns) {
             if (selectedKernel) {
                 options_arr = selectedKernel.getCanuseColumns;
             }
@@ -3965,8 +4055,6 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
             return <DropDownControl itemChanged={this.columnDDCChanged} btnclass='btn-dark' options_arr={options_arr} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} />;
         }
         if (this.apiClass.ctltype == M_DropdownKernel_Type && this.apiItem.attrItem.name == AttrNames.ColumnName) {
-            selectedCtlid = this.inSocket.getExtra('ctlid');
-            selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
             if (selectedKernel) {
                 options_arr = selectedKernel.getAppandColumns;
             }
@@ -3977,8 +4065,6 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
             return <DropDownControl itemChanged={this.columnDDCChanged} btnclass='btn-dark' options_arr={options_arr} rootclass='flex-grow-1 flex-shrink-1' value={nowVal} />;
         }
         else if (this.apiClass.ctltype == M_PageKernel_Type && this.apiItem.attrItem.name == AttrNames.ParamApi) {
-            selectedCtlid = this.inSocket.getExtra('ctlid');
-            selectedKernel = this.bluePrint.master.project.getControlById(selectedCtlid);
             if (selectedKernel) {
                 options_arr = selectedKernel.getParamApiAttrArray;
             }
@@ -4119,7 +4205,7 @@ class JSNode_Control_Api_Prop extends JSNode_Base {
         }
         var rlt = selectedKernel.id + '_' + useApiItem.stateName;
         if (traversalFromNode == null) {
-            helper.addUseControlPropApi(selectedKernel, useApiItem, EFormRowSource.Context);
+            helper.addUseControlPropApi(selectedKernel, useApiItem, links_arr.length > 0 ? EFormRowSource.None : EFormRowSource.Context);
         }
         else {
             traversalFromNode.addUseControlPropApi(selectedKernel, useApiItem);
@@ -5615,9 +5701,11 @@ class JSNode_Query_Sql extends JSNode_Base {
         var useClientVariablesRlt = new UseClientVariableResult();
         this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
         useClientVariablesRlt.variables_arr.forEach(varCon => {
-            initBundleBlock.params_map[varCon.name] = varCon.name;
-            serverFun.scope.getVar(varCon.name, true);
-            postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
+            if (serverFun && initBundleBlock.params_map[varCon.name] == null) {
+                initBundleBlock.params_map[varCon.name] = varCon.name;
+                serverFun.scope.getVar(varCon.name, true);
+                postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
+            }
         });
 
         if (bpCompileHelper) {
@@ -5638,15 +5726,11 @@ class JSNode_Query_Sql extends JSNode_Base {
             belongBlock.pushChild(myJSBlock);
         }
 
-        if (params_arr.length > 0) {
-            myJSBlock.pushLine("var " + bundleVarName + " = Object.assign({}," + VarNames.BaseBunlde + ",{", 1);
-            myJSBlock.pushChild(initBundleBlock);
-            myJSBlock.subNextIndent();
-            myJSBlock.pushLine('});');
-        }
-        else {
-            myJSBlock.pushLine("var " + bundleVarName + " = {};");
-        }
+        myJSBlock.pushLine("var " + bundleVarName + " = Object.assign({}," + VarNames.BaseBunlde + ",{", 1);
+        myJSBlock.pushChild(initBundleBlock);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('});');
+
         var callBack_bk = new FormatFileBlock('callback' + this.id);
         myJSBlock.pushChild(callBack_bk);
         var inreducer = this.isInReducer(preNodes_arr);
@@ -6012,11 +6096,31 @@ class JSNode_Array_New extends JSNode_Base {
                 this.outSocket = this.outputScokets_arr[0];
             }
         }
+
+        this.insocketInitVal = {
+            type: ValueType.Object,
+            inputable: true,
+        };
+        this.inputScokets_arr.forEach(socket => {
+            socket.set(this.insocketInitVal);
+        });
+
         if (this.outSocket == null) {
             this.outSocket = new NodeSocket('out', this, false);
             this.addSocket(this.outSocket);
         }
         this.outSocket.type = ValueType.Array;
+    }
+
+    genInSocket() {
+        var nameI = this.inputScokets_arr.length;
+        while (nameI < 999) {
+            if (this.getScoketByName('in' + nameI, true) == null) {
+                break;
+            }
+            ++nameI;
+        }
+        return new NodeSocket('in' + nameI, this, true, this.insocketInitVal);
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -6025,8 +6129,19 @@ class JSNode_Array_New extends JSNode_Base {
             return superRet;
         }
 
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketVal_arr = [];
+        for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+            var theSocket = this.inputScokets_arr[i];
+            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true, false);
+            if (socketComRet.err) {
+                return false;
+            }
+            socketVal_arr.push(socketComRet.value);
+        }
+
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, '[]');
+        selfCompileRet.setSocketOut(this.outSocket, '[' + (socketVal_arr.length == 0 ? '' : socketVal_arr.join(',')) + ']');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -6232,7 +6347,7 @@ class JSNode_FreshForm extends JSNode_Base {
         var parentPath = null;
         if (belongUserControl) {
             if (selectedKernel.parent != belongUserControl) {
-                parentPath = selectedKernel.parent.getStatePath('');
+                parentPath = selectedKernel.parent.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map });
             }
             else {
                 parentPath = '';
@@ -6244,7 +6359,7 @@ class JSNode_FreshForm extends JSNode_Base {
                 parentPath = singleQuotesStr(selectedKernel.parent.id);
             }
             else {
-                parentPath = singleQuotesStr(selectedKernel.parent.getStatePath(''));
+                parentPath = singleQuotesStr(selectedKernel.parent.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map }));
             }
         }
         var freshFunName = 'fresh_' + socketValue;
@@ -6536,8 +6651,8 @@ class JSNode_Do_FlowStep extends JSNode_Base {
         var useClientVariablesRlt = new UseClientVariableResult();
         this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
         useClientVariablesRlt.variables_arr.forEach(varCon => {
-            initBundleBlock.params_map[varCon.name] = varCon.name;
-            if (serverFun) {
+            if (serverFun && initBundleBlock.params_map[varCon.name] == null) {
+                initBundleBlock.params_map[varCon.name] = varCon.name;
                 serverFun.scope.getVar(varCon.name, true);
                 postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
             }
@@ -7188,8 +7303,8 @@ class JSNODE_Update_table extends JSNode_Base {
         var useClientVariablesRlt = new UseClientVariableResult();
         this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
         useClientVariablesRlt.variables_arr.forEach(varCon => {
-            initBundleBlock.params_map[varCon.name] = varCon.name;
-            if (serverFun) {
+            if (serverFun && initBundleBlock.params_map[varCon.name] == null) {
+                initBundleBlock.params_map[varCon.name] = varCon.name;
                 serverFun.scope.getVar(varCon.name, true);
                 postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
             }
@@ -8527,8 +8642,8 @@ class JSNODE_Delete_Table extends JSNode_Base {
         var useClientVariablesRlt = new UseClientVariableResult();
         this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
         useClientVariablesRlt.variables_arr.forEach(varCon => {
-            initBundleBlock.params_map[varCon.name] = varCon.name;
-            if (serverFun) {
+            if (serverFun && initBundleBlock.params_map[varCon.name] == null) {
+                initBundleBlock.params_map[varCon.name] = varCon.name;
                 serverFun.scope.getVar(varCon.name, true);
                 postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
             }
@@ -9071,7 +9186,7 @@ class JSNode_PopPage extends JSNode_Base {
     }
 
     preRemoveSocket(theSocket) {
-        return !theSocket.isIn || theSocket.hideIcon == false;
+        return !theSocket.isIn || theSocket.hideIcon != true;
     }
 
     projLoadedHandler() {
@@ -10290,8 +10405,8 @@ class JSNode_Excute_Pro extends JSNode_Base {
         var useClientVariablesRlt = new UseClientVariableResult();
         this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
         useClientVariablesRlt.variables_arr.forEach(varCon => {
-            initBundleBlock.params_map[varCon.name] = varCon.name;
-            if (serverFun) {
+            if (serverFun && initBundleBlock.params_map[varCon.name] == null) {
+                initBundleBlock.params_map[varCon.name] = varCon.name;
                 serverFun.scope.getVar(varCon.name, true);
                 postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
             }
@@ -10302,15 +10417,10 @@ class JSNode_Excute_Pro extends JSNode_Base {
         }
 
         var bundleVarName = VarNames.Bundle + '_' + this.id;
-        if (params_arr.length > 0) {
-            myJSBlock.pushLine("var " + bundleVarName + " = Object.assign({}," + VarNames.BaseBunlde + ",{", 1);
-            myJSBlock.pushChild(initBundleBlock);
-            myJSBlock.subNextIndent();
-            myJSBlock.pushLine('});');
-        }
-        else {
-            myJSBlock.pushLine("var " + bundleVarName + " = {};");
-        }
+        myJSBlock.pushLine("var " + bundleVarName + " = Object.assign({}," + VarNames.BaseBunlde + ",{", 1);
+        myJSBlock.pushChild(initBundleBlock);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('});');
         var callBack_bk = new FormatFileBlock('callback' + this.id);
         myJSBlock.pushChild(callBack_bk);
         var inreducer = this.isInReducer(preNodes_arr);
@@ -10582,8 +10692,8 @@ class JSNode_Attachment_Pro extends JSNode_Base {
         var useClientVariablesRlt = new UseClientVariableResult();
         this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
         useClientVariablesRlt.variables_arr.forEach(varCon => {
-            initBundleBlock.params_map[varCon.name] = varCon.name;
-            if (serverFun) {
+            if (serverFun && initBundleBlock.params_map[varCon.name] == null) {
+                initBundleBlock.params_map[varCon.name] = varCon.name;
                 serverFun.scope.getVar(varCon.name, true);
                 postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
             }
@@ -10742,6 +10852,55 @@ class JSNode_ParseFloat extends JSNode_Base {
 
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outSocket, 'parseFloat(' + socketValue + ')');
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+class JSNode_ParseBoolean extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_PARSEBOOLEAN, 'ParseBoolean', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+            }
+        }
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inSocket);
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.inSocket.type = ValueType.String;
+        this.inSocket.inputable = false;
+        this.outSocket.type = ValueType.Float;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var theSocket = this.inSocket;
+        var socketValue = null;
+        var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var socketValue = socketComRet.value;
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, 'parseBoolean(' + socketValue + ')');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -10951,7 +11110,9 @@ class JSNode_HashFormDataRow extends JSNode_Base {
     }
 
     getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
-        result.pushVariable(this.id + '_data', targetSocket);
+        if(!this.blockInServer){
+            result.pushVariable(this.id + '_data', targetSocket);
+        }
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -10961,9 +11122,11 @@ class JSNode_HashFormDataRow extends JSNode_Base {
         }
         var theScope = belongBlock && belongBlock.getScope();
         var blockInServer = theScope && theScope.isServerSide;
+        this.blockInServer = blockInServer;
+        /*
         if (this.checkCompileFlag(blockInServer, '不可以出现在server流程中', helper)) {
             return false;
-        }
+        }*/
         var nodeThis = this;
         var thisNodeTitle = nodeThis.getNodeTitle();
         var usePreNodes_arr = preNodes_arr.concat(this);
@@ -11011,71 +11174,6 @@ class JSNode_HashFormDataRow extends JSNode_Base {
         if (this.compileOutFlow(helper, usePreNodes_arr, myJSBlock) == false) {
             return false;
         }
-        return selfCompileRet;
-    }
-}
-
-class JSNode_String_Split extends JSNode_Base {
-    constructor(initData, parentNode, createHelper, nodeJson) {
-        super(initData, parentNode, createHelper, JSNODE_STRING_SPLIT, 'Split', false, nodeJson);
-        autoBind(this);
-
-        if (nodeJson) {
-            if (this.outputScokets_arr.length > 0) {
-                this.outSocket = this.outputScokets_arr[0];
-            }
-            if (this.inputScokets_arr.length > 0) {
-                this.varSocket = this.inputScokets_arr[0];
-                this.charSocket = this.inputScokets_arr[1];
-            }
-        }
-        if (this.varSocket == null) {
-            this.varSocket = new NodeSocket('invar', this, true);
-            this.addSocket(this.varSocket);
-            this.charSocket = new NodeSocket('char', this, true);
-            this.addSocket(this.charSocket);
-        }
-        this.varSocket.label = 'var';
-        this.charSocket.label = '分隔符';
-        this.varSocket.type = ValueType.String;
-        this.varSocket.inputable = false;
-        this.charSocket.inputable = true;
-
-
-        if (this.outSocket == null) {
-            this.outSocket = new NodeSocket('out', this, false);
-            this.addSocket(this.outSocket);
-        }
-        this.outSocket.type = ValueType.Array;
-    }
-
-    compile(helper, preNodes_arr, belongBlock) {
-        var superRet = super.compile(helper, preNodes_arr);
-        if (superRet == false || superRet != null) {
-            return superRet;
-        }
-        var usePreNodes_arr = preNodes_arr.concat(this);
-        var socketsValues_arr = [];
-        for (var si in this.inputScokets_arr) {
-            var theSocket = this.inputScokets_arr[si];
-            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
-            if (socketComRet.err) {
-                return false;
-            }
-            var socketValue = socketComRet.value;
-            if (theSocket == this.varSocket) {
-                if (!socketComRet.link.outSocket.isSimpleVal) {
-                    socketValue = '(' + socketValue + ')';
-                }
-            }
-            socketsValues_arr.push(socketValue);
-        }
-
-        var finalStr = socketsValues_arr[0] + '.split(' + socketsValues_arr[1] + ')'
-
-        var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, finalStr);
-        helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
 }
@@ -11277,8 +11375,8 @@ JSNodeClassMap[JSNODE_MATH_RANDINT] = {
     modelClass: JSNode_Math_RandInt,
     comClass: C_Node_SimpleNode,
 };
-JSNodeClassMap[JSNODE_STRING_SPLIT] = {
-    modelClass: JSNode_String_Split,
+JSNodeClassMap[JSNODE_PARSEBOOLEAN] = {
+    modelClass: JSNode_ParseBoolean,
     comClass: C_Node_SimpleNode,
 };
 

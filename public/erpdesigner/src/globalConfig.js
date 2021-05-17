@@ -65,6 +65,7 @@ var AllFileFlows_arr = [];
 var AllReports_arr = [];
 var AllExcelTemplate_arr = [];
 var AllPermissionGroups_arr = [];
+var AI_arr = [];
 
 function GetProjectRecords_arr(){
     return ProjectRecords_arr;

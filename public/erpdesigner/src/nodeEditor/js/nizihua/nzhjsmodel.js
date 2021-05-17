@@ -208,14 +208,14 @@ class JSNode_Array_Concat extends JSNode_Base {
             return false;
         }
         var arrValue = socketComRet.value;
-        socketComRet = this.getSocketCompileValue(helper, this.dataSocket, usePreNodes_arr, belongBlock, true);
+        socketComRet = this.getSocketCompileValue(helper, this.dataSocket, usePreNodes_arr, belongBlock, true, true);
         if (socketComRet.err) {
             return false;
         }
         var dataValue = socketComRet.value;
 
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, arrValue + '.concat(' + dataValue + ')');
+        selfCompileRet.setSocketOut(this.outSocket, arrValue + '.concat(' + (dataValue ? dataValue : '') + ')');
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }
@@ -1710,13 +1710,13 @@ JSNodeClassMap[JSNODE_WHILE] = {
     comClass: C_Node_SimpleNode,
 };
 
-JSNodeClassMap[JSNODE_ARRAY_CONCAT] = {
-    modelClass: JSNode_Array_Concat,
+JSNodeClassMap[JSNODE_TERNARY_OPERATOR] = {
+    modelClass: JSNode_Ternary_Operator,
     comClass: C_Node_SimpleNode,
 };
 
-JSNodeClassMap[JSNODE_TERNARY_OPERATOR] = {
-    modelClass: JSNode_Ternary_Operator,
+JSNodeClassMap[JSNODE_ARRAY_CONCAT] = {
+    modelClass: JSNode_Array_Concat,
     comClass: C_Node_SimpleNode,
 };
 JSNodeClassMap[JSNODE_ARRAY_PUSH] = {

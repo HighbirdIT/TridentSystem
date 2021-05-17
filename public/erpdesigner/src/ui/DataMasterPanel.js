@@ -1,4 +1,5 @@
 const ISParam_Options_arr = [{ name: '参数', code: '1' }, { name: '变量', code: '0' }]
+const BundleMode_Options_arr = [{ name: '强制传服务端', code: '1' }, { name: '根据需要传值', code: '0' }]
 var gCopiedCustomEntity = null;
 
 var __SynAction_count = 0;
