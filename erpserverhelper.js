@@ -16,6 +16,16 @@ helper.createErrorRet = (info, code, data) => {
     };
 };
 
+helper.getClientIP = (req)=>{
+    var clientIp = req.headers['x-real-ip'] ||
+        req.headers['x-forwarded-for'] ||
+        req.socket.remoteAddress || '';
+    if (clientIp.split(',').length > 0) {
+        clientIp = clientIp.split(',')[0];
+    }
+    return clientIp;
+}
+
 helper.commonProcess = (req, res, next, action_map, ignoreENVCheck) => {
     var rlt = {};
     if(req.body == null){

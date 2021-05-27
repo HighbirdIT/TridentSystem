@@ -531,6 +531,31 @@ app.use('/server/queryqrloginstate', function (req, res, next) {
     return;
 });
 
+app.use('/rhino/loginbylicence', function (req, res, next) {
+    res.writeHead(200,{
+        "Content-Type":"text/plain;charset=utf-8"
+    });
+    var licence = req.query.licence;
+    var reuqestCode = req.query.reuqestCode;
+    if(licence == null || licence.length == 0 || reuqestCode == null || reuqestCode.length == 0){
+        res.write('0');
+        res.end();
+    }
+    else{
+        dbhelper.asynQueryWithParams('SELECT [用户代码] as 代码,[员工登记姓名] as 姓名 FROM [TD00C犀牛许可证] inner join T100A员工登记姓名 on T100A员工登记姓名.员工登记姓名代码 = [用户代码] where UPPER(申请码)=UPPER(@requestCode) and UPPER(注册码)=UPPER(@licence)', [dbhelper.makeSqlparam('licence', sqlTypes.NVarChar(100), licence),dbhelper.makeSqlparam('requestCode', sqlTypes.NVarChar(100), reuqestCode)])
+        .then(record=>{
+            if(record.recordset.length == 1){
+                res.write('1' + record.recordset[0]['姓名'] + ',' + record.recordset[0]['代码']);
+            }
+            else{
+                res.write('0');
+            }
+            res.end();
+        });
+    }
+    return;
+});
+
 app.use('/makeqrcode', function (req, res, next) {
     var text = req.query.text;
     if(text == null || text.length == 0){
