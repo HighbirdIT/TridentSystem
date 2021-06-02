@@ -173,7 +173,7 @@ app.use(function (req, res, next) {
 
 function checkLogState(req, res, next, process) {
     if (req.session.g_envVar == null) {
-        if (!inProduction) {
+        if (!inProduction && 1==0) {
             req.session.g_envVar = developconfig.envVar;
             process(req, res, next);
         }
@@ -220,7 +220,7 @@ app.use('/', function (req, res, next) {
             res.locals.DingErrInfo = data.errInfo == null ? '' : data.errInfo;
             res.locals.isProduction = app.get('env') == 'production';
 
-            if (!res.locals.isProduction) {
+            if (!res.locals.isProduction && 1==0) {
                 res.locals.cacheUserid = developconfig.envVar.userid;
                 res.locals.cacheUserName = developconfig.envVar.username;
                 res.locals.g_envVar = JSON.stringify(developconfig.envVar);
