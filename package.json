@@ -33,7 +33,7 @@
     "images": "^3.0.1",
     "lzwcompress": "^0.5.7",
     "md5": "^2.2.1",
-    "morgan": "^1.9.0",
+    "morgan": "^1.9.1",
     "mssql": "^4.1.0",
     "node-disk-info": "^1.0.3",
     "node-fetch": "^2.3.0",
