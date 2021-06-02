@@ -53,35 +53,6 @@ function getUserID(req) {
 }
 
 fileSystem.process = (req, res, next) => {
-    if(req.session.g_envVar == null){
-        if(req.body['rhino-licence'] != null){
-            var t_arr = req.body['rhino-licence'].split(',');
-            dbhelper.asynQueryWithParams('SELECT * FROM FT121E查询犀牛许可证(@lience,@mac)'
-            , [dbhelper.makeSqlparam('lience', sqlTypes.NVarChar, t_arr[0]),dbhelper.makeSqlparam('mac', sqlTypes.NVarChar, t_arr[1])]
-            ).then(userInfoRet=>{
-                if (userInfoRet.recordset.length > 0) {
-                    var rlt = {};
-                    serverhelper.SetEnvVarFromDataRow(rlt,userInfoRet.recordset[0]);
-                    req.session.g_envVar = rlt;
-                }
-                serverhelper.commonProcess(req, res, next, processes_map);
-            });
-            return;
-        }
-        else if(req.body['rhino-userkey'] != null){
-            dbhelper.asynQueryWithParams('SELECT * FROM FT121E查询外部快登(@key)'
-            , [dbhelper.makeSqlparam('key', sqlTypes.NVarChar, req.body['rhino-userkey'])]
-            ).then(userInfoRet=>{
-                if (userInfoRet.recordset.length > 0) {
-                    var rlt = {};
-                    serverhelper.SetEnvVarFromDataRow(rlt,userInfoRet.recordset[0]);
-                    req.session.g_envVar = rlt;
-                }
-                serverhelper.commonProcess(req, res, next, processes_map);
-            });
-            return;
-        }
-    }
     serverhelper.commonProcess(req, res, next, processes_map);
 };
 
@@ -249,7 +220,7 @@ fileSystem.downloadBlock = (req, res) => {
             }
             fd = fs.openSync(targetFilePath, 'r');
             var lastSize = fileRecord.文件大小 - startPos;
-            var maxRead = 1024 * 512;
+            var maxRead = 1024 * 10;
             var needRead = lastSize < maxRead ? lastSize : maxRead;
             var blockBuf = new Buffer(needRead);
 

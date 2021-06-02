@@ -60,7 +60,6 @@ helper.commonProcess = (req, res, next, action_map, ignoreENVCheck) => {
                 if(data){
                     if (data.err) {
                         rlt.err = data.err;
-                        data = null;
                     }
                     else if (data.banAutoReturn) {
                         return;
@@ -448,17 +447,6 @@ helper.waitFlowStepExcute = (rcdid)=>{
             }
         }while(true);
     });
-}
-
-helper.SetEnvVarFromDataRow=(obj,datarow)=>{
-    obj.username = datarow['员工姓名'];
-    obj.userid = datarow['员工代码'];
-    obj.workRegionCode = datarow['常驻工作地域代码'];
-    obj.companyCode = datarow['所属公司名称代码'];
-    obj.wokerTypeCode = datarow['员工工时状态代码'];
-    obj.departmentCode = datarow['所属部门名称代码'];
-    obj.systemCode = datarow['所属系统名称代码'];
-    return;
 }
 
 helper.DateFun={
