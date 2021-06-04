@@ -10,6 +10,7 @@ const EAcceptFileType = {
     ImageVedio: 7,
 };
 
+
 var FileAcceptStr = {
 };
 FileAcceptStr[EAcceptFileType.All] = '*/*';

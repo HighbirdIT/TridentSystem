@@ -220,7 +220,7 @@ app.use('/', function (req, res, next) {
             res.locals.DingErrInfo = data.errInfo == null ? '' : data.errInfo;
             res.locals.isProduction = app.get('env') == 'production';
 
-            if (!res.locals.isProduction && 1==0) {
+            if (!res.locals.isProduction) {
                 res.locals.cacheUserid = developconfig.envVar.userid;
                 res.locals.cacheUserName = developconfig.envVar.username;
                 res.locals.g_envVar = JSON.stringify(developconfig.envVar);
