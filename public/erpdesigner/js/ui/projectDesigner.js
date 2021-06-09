@@ -110,6 +110,22 @@ var ProjectDesigner = function (_React$PureComponent) {
             }
         }
     }, {
+        key: 'pasteCopiedKernel',
+        value: function pasteCopiedKernel() {
+            if (gCopiedKernelData) {
+                var nowTarget = this.attrbutePanelRef.current.getTarget();
+                if (nowTarget == null) {
+                    return;
+                }
+                var targetParent = nowTarget.parent;
+                if (targetParent == null) {
+                    targetParent = nowTarget;
+                }
+                var targetIndex = targetParent.getChildIndex(nowTarget);
+                this.props.project.pasteKernel(gCopiedKernelData, targetParent, targetIndex);
+            }
+        }
+    }, {
         key: 'deleteSelectedKernel',
         value: function deleteSelectedKernel() {
             if (this.attrbutePanelRef.current == null) {

@@ -520,7 +520,7 @@ class SqlNode_Charfun extends SqlNode_Base {
             case CharfunType_RIGHT:
             case CharfunType_REPLICATE:
             inputLabels_arrs.push('字符串', '数值');
-                this.inputLabels_arrss = inputLabels_arrs;
+                this.inputLabels_arrs = inputLabels_arrs;
                 break;
             case CharfunType_PATINDEX:
             inputLabels_arrs.push('表达式', '字符串');

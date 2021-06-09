@@ -483,7 +483,7 @@ function gPreviewFile(name, fileType, url) {
         if (fileType == 'image') {
             dingdingKit.biz.util.previewImage({
                 urls: [window.location.origin + url],
-                current: window.location.origin + url
+                current: 0
             });
         } else if (fileType == 'video' || fileType == 'movie') {
             if (isMobile) {
@@ -2053,7 +2053,7 @@ var ERPC_FilePreview = function (_React$PureComponent5) {
             if (this.fileType == 'image') {
                 dingdingKit.biz.util.previewImage({
                     urls: [fileUrl],
-                    current: fileUrl
+                    current: 0
                 });
             } else if (this.fileType == 'audio') {
                 if (this.audioTagRef.current) {

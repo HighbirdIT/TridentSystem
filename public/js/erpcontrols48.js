@@ -2269,6 +2269,20 @@ var ERPC_Img = function (_React$PureComponent9) {
     }
 
     _createClass(ERPC_Img, [{
+        key: 'mouseDownHandler',
+        value: function mouseDownHandler(ev) {
+            if (this.props.onMouseDown) {
+                this.props.onMouseDown(ev);
+            } else {
+                if (isInDingTalk) {
+                    dingdingKit.biz.util.previewImage({
+                        urls: [this.props.src],
+                        current: this.props.src
+                    });
+                }
+            }
+        }
+    }, {
         key: 'render',
         value: function render() {
             if (this.props.visible == false) {
@@ -2302,17 +2316,14 @@ var ERPC_Img = function (_React$PureComponent9) {
             if (contentElem) {
                 return React.createElement(
                     'span',
-                    { className: rootDivClassName, style: this.props.style, onMouseDown: this.props.onMouseDown },
+                    { className: rootDivClassName, style: this.props.style, onMouseDown: this.mouseDownHandler },
                     contentElem
                 );
             }
 
-            var needCtlPath = false;
-            if (this.props.onMouseDown != null) {
-                needCtlPath = true;
-            }
+            var needCtlPath = true;
             var useStyleClass = this.getUseStyleClass(this.props.style, rootDivClassName);
-            return React.createElement('img', { className: useStyleClass.class, style: useStyleClass.style, src: this.props.src, onMouseDown: this.props.onMouseDown, 'ctl-fullpath': needCtlPath ? this.props.fullPath : null });
+            return React.createElement('img', { className: useStyleClass.class, style: useStyleClass.style, src: this.props.src, onMouseDown: this.mouseDownHandler, 'ctl-fullpath': needCtlPath ? this.props.fullPath : null });
         }
     }]);
 

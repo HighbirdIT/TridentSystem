@@ -4,6 +4,7 @@ const M_LabelKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('数据类型', AttrNames.ValueType, ValueType.String, ValueType.String, true, false, JsValueTypes),
         new CAttribute('小数精度', AttrNames.FloatNum, ValueType.Int, 2, true, false, null, null, false),
         new CAttribute('输出字数', AttrNames.OutputCharCount, ValueType.Boolean, false),
+        new CAttribute('逗号隔开', 'dotsplit', ValueType.Boolean, false),
         new CAttribute('缩写阈值', 'abbrevlen', ValueType.Int, 0, true, false, null, null, false),
         genIsdisplayAttribute(),
         new CAttribute('默认可见', AttrNames.DefaultVisible, ValueType.Boolean, true),
@@ -42,6 +43,9 @@ class M_LabelKernel extends ControlKernelBase{
 
             var abbrevLenAttr = this.findAttributeByName('abbrevlen');
             abbrevLenAttr.setVisible(this, newValue == ValueType.String);
+
+            var dotsplitAttr = this.findAttributeByName('dotsplit');
+            dotsplitAttr.setVisible(this, newValue == ValueType.Float || newValue == ValueType.Int);
         }
     }
 

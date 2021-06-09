@@ -569,7 +569,7 @@ class SqlNode_Logical_Not extends SqlNode_Base {
                     return false;
                 }
 
-                tValue = compileRet.getSocketOut(link.outSocket);
+                tValue = compileRet.getSocketOut(link.outSocket).strContent;
             }
             if (!outNode.outputIsSimpleValue()) {
                 tValue = ' (' + tValue + ')';

@@ -37,7 +37,7 @@ function startWork(){
     }
     if(getCurrencyRateWorkInt == 0){
         currencyHelper.freshCurrencyRate();
-        getCurrencyRateWorkInt = setInterval(currencyHelper.freshCurrencyRate, 1000 * 60  * 60 * 12);
+        getCurrencyRateWorkInt = setInterval(currencyHelper.freshCurrencyRate, 1000 * 60  * 3);
     }
     if(locationHelperInt == 0){
         locationHelperInt = setInterval(locationHelper.doWrok, 1000 * 30);

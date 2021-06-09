@@ -843,7 +843,7 @@ class MobileContentCompiler extends ContentCompiler {
                     changedFun.subNextIndent();
                     changedFun.pushLine('}else{',1);
                     accordionParents_arr.forEach(accordionKernel => {
-                        changedFun.pushLine('if(!' + accordionKernel.id + '_state.inited){gDataCache.set(this.props.fullPath + ' + singleQuotesStr('.' + accordionKernel.getStatePath('needrebind')) + ',true);}');
+                        changedFun.pushLine('if(!' + accordionKernel.id + '_state.inited){gDataCache.set(' + 'this.props.fullPath + ' + singleQuotesStr('.' + accordionKernel.getStatePath('needrebind')) + ',true);}');
                     });
                     changedFun.subNextIndent();
                     changedFun.pushLine('}');
@@ -922,7 +922,7 @@ class MobileContentCompiler extends ContentCompiler {
                     changedFun.subNextIndent();
                     changedFun.pushLine('}else{',1);
                     accordionParents_arr.forEach(accordionKernel => {
-                        changedFun.pushLine('if(!' + accordionKernel.id + '_state.inited){gDataCache.set(this.props.fullPath + ' + singleQuotesStr('.' + accordionKernel.getStatePath('needrebind')) + ',true);}');
+                        changedFun.pushLine('if(!' + accordionKernel.id + '_state.inited){gDataCache.set(' + userCtlKernel.id + '_path +' + singleQuotesStr('.' + accordionKernel.getStatePath('needrebind')) + ',true);}');
                     });
                     changedFun.subNextIndent();
                     changedFun.pushLine('}');
@@ -2554,6 +2554,13 @@ class MobileContentCompiler extends ContentCompiler {
         var keyColumn = theKernel.getAttribute(AttrNames.KeyColumn);
         if (keyColumn == null) {
             keyColumn = DefaultKeyColumn;
+        }
+        else{
+            if(isPageForm){
+                if (canUseColumns_arr.indexOf(keyColumn) != -1) {
+                    kernelMidData.useColumns_map[keyColumn] = 1;
+                }
+            }
         }
         var autoHeight = theKernel.getAttribute(AttrNames.AutoHeight);
         var childRenderBlock = null;
@@ -4654,6 +4661,11 @@ class MobileContentCompiler extends ContentCompiler {
         if (valType == ValueType.String) {
             if(theKernel.getAttribute('abbrevlen') > 0){
                 ctlTag.setAttr('abbrevLen', theKernel.getAttribute('abbrevlen'));
+            }
+        }
+        if (valType == ValueType.Float || valType == ValueType.Int) {
+            if(theKernel.getAttribute('dotsplit')){
+                ctlTag.setAttr('dotsplit', '{true}');
             }
         }
         renderBlock.pushChild(ctlTag);

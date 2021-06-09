@@ -461,6 +461,11 @@ var OutlinePanel = function (_React$PureComponent2) {
             this.props.designer.copySelectedKernel();
         }
     }, {
+        key: 'clickPasteBtnHandler',
+        value: function clickPasteBtnHandler(ev) {
+            this.props.designer.pasteCopiedKernel();
+        }
+    }, {
         key: 'clickItemHandler',
         value: function clickItemHandler(data, outlineItem) {
             this.props.designer.selectKernel(data);
@@ -506,6 +511,11 @@ var OutlinePanel = function (_React$PureComponent2) {
                         'div',
                         { className: 'btn btn-dark', onClick: this.clickCopyBtnHandler },
                         React.createElement('i', { className: 'fa fa-copy text-light' })
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'btn btn-dark', onClick: this.clickPasteBtnHandler },
+                        React.createElement('i', { className: 'fa fa-paste text-light' })
                     ),
                     React.createElement(
                         'div',

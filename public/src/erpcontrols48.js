@@ -1949,6 +1949,20 @@ class ERPC_Img extends React.PureComponent {
         this.state = this.initState;
     }
 
+    mouseDownHandler(ev){
+        if(this.props.onMouseDown){
+            this.props.onMouseDown(ev);
+        }
+        else{
+            if (isInDingTalk) {
+                dingdingKit.biz.util.previewImage({
+                    urls: [this.props.src],
+                    current: this.props.src,
+                });
+            }
+        }
+    }
+
     render() {
         if (this.props.visible == false) {
             return null;
@@ -1970,15 +1984,12 @@ class ERPC_Img extends React.PureComponent {
         }
 
         if (contentElem) {
-            return (<span className={rootDivClassName} style={this.props.style} onMouseDown={this.props.onMouseDown} >{contentElem}</span>);
+            return (<span className={rootDivClassName} style={this.props.style} onMouseDown={this.mouseDownHandler} >{contentElem}</span>);
         }
 
-        var needCtlPath = false;
-        if (this.props.onMouseDown != null) {
-            needCtlPath = true;
-        }
+        var needCtlPath = true;
         var useStyleClass = this.getUseStyleClass(this.props.style, rootDivClassName);
-        return (<img className={useStyleClass.class} style={useStyleClass.style} src={this.props.src} onMouseDown={this.props.onMouseDown} ctl-fullpath={needCtlPath ? this.props.fullPath : null} />);
+        return (<img className={useStyleClass.class} style={useStyleClass.style} src={this.props.src} onMouseDown={this.mouseDownHandler} ctl-fullpath={needCtlPath ? this.props.fullPath : null} />);
     }
 }
 

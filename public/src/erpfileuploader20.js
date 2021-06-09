@@ -457,7 +457,7 @@ function gPreviewFile(name, fileType, url) {
         if (fileType == 'image') {
             dingdingKit.biz.util.previewImage({
                 urls: [window.location.origin + url],
-                current: window.location.origin + url,
+                current: 0,
             });
         }
         else if (fileType == 'video' || fileType == 'movie') {
@@ -1637,7 +1637,7 @@ class ERPC_FilePreview extends React.PureComponent {
         if (this.fileType == 'image') {
             dingdingKit.biz.util.previewImage({
                 urls: [fileUrl],
-                current: fileUrl,
+                current: 0,
             });
         }
         else if (this.fileType == 'audio') {

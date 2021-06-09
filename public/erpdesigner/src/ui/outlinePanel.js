@@ -440,6 +440,10 @@ class OutlinePanel extends React.PureComponent {
         this.props.designer.copySelectedKernel();
     }
 
+    clickPasteBtnHandler(ev) {
+        this.props.designer.pasteCopiedKernel();
+    }
+
     clickItemHandler(data, outlineItem) {
         this.props.designer.selectKernel(data);
     }
@@ -468,6 +472,9 @@ class OutlinePanel extends React.PureComponent {
                     </div>
                     <div className='btn btn-dark' onClick={this.clickCopyBtnHandler}>
                         <i className='fa fa-copy text-light' />
+                    </div>
+                    <div className='btn btn-dark' onClick={this.clickPasteBtnHandler}>
+                        <i className='fa fa-paste text-light' />
                     </div>
                     <div className='btn btn-dark' onClick={this.clickMoveUpBtnHandler}>
                         <i className='fa fa-arrow-up text-light' />

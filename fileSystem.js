@@ -192,6 +192,59 @@ fileSystem.uploadBlock = (req, res) => {
     });
 };
 
+fileSystem.downloadBlock = (req, res) => {
+    var bundle = req.body;
+    var fileIdentity = bundle.fileIdentity ? bundle.fileIdentity : bundle.fileidentity;
+    var startPos = parseInt(bundle.startPos == null ? bundle.startpos : bundle.startPos);
+    return co(function* () {
+        var sql = "select * from [TB00C文件上传记录] where [文件令牌] = @identity";
+        var rcdRlt = yield dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('identity', sqlTypes.NVarChar(50), fileIdentity)]);
+        if (rcdRlt.recordset.length == 0) {
+            return serverhelper.createErrorRet('服务端文件记录不存在');
+        }
+        var fd = null;
+        try {
+            var fileRecord = rcdRlt.recordset[0];
+            var fileFullName = fileIdentity;
+            if (fileRecord.文件后缀.length > 0) {
+                fileFullName += '.' + fileRecord.文件后缀;
+            }
+            var belongDirPath = fileRecord.创建时间.getFullYear() + '_' + (fileRecord.创建时间.getMonth() + 1);
+            var targetDirPath = path.join(__dirname, gFileHouseRootPath, belongDirPath);
+            var targetFilePath = path.join(targetDirPath, fileFullName);
+            if (!fs.existsSync(targetFilePath)) {
+                return serverhelper.createErrorRet('服务端文件不存在');
+            }
+            if (startPos >= fileRecord.文件大小) {
+                return serverhelper.createErrorRet('startPos 错误', EFileSystemError.DATATOOLONG);
+            }
+            fd = fs.openSync(targetFilePath, 'r');
+            var lastSize = fileRecord.文件大小 - startPos;
+            var maxRead = 1024 * 10;
+            var needRead = lastSize < maxRead ? lastSize : maxRead;
+            var blockBuf = new Buffer(needRead);
+
+            var bytesRead = fs.readSync(fd, blockBuf, 0, needRead, startPos);
+            var rlt = {
+                nextPos: startPos + bytesRead,
+                hexData: blockBuf.toString('hex'),
+                totalSize: fileRecord.文件大小
+            };
+            
+            return rlt;
+        }
+        catch (eo) {
+            return serverhelper.createErrorRet(eo.message);
+        }
+        finally {
+            if (fd) {
+                fs.closeSync(fd);
+                fd = null;
+            }
+        }
+    });
+};
+
 fileSystem.getFileRecord = (req, res) => {
     var bundle = req.body.bundle;
     return co(function* () {
@@ -503,6 +556,29 @@ fileSystem.makeAttachment = (req, res) => {
     });
 };
 
+fileSystem.getPreviewUrl = (req, res) => {
+    return co(function* () {
+        var identity = req.query.identity;
+        if(!identity){
+            identity = req.body.identity;
+        }
+        if(identity){
+            rcdRlt = yield dbhelper.asynQueryWithParams("select * from [FTB00E文件信息Ex](@文件令牌)",
+            [
+                dbhelper.makeSqlparam('文件令牌', sqlTypes.NVarChar(50), identity)
+            ]);
+        }
+        
+        if (rcdRlt != null && rcdRlt.recordset.length > 0) {
+            res.write(rcdRlt.recordset[0].文件路径);
+        }
+        else{
+            res.write('404');
+        }
+        res.end();
+    });
+}
+
 var processes_map = {
     applyForTempFile: fileSystem.applyForTempFile,
     uploadBlock: fileSystem.uploadBlock,
@@ -514,6 +590,8 @@ var processes_map = {
     readExcelContent: fileSystem.readExcelContent,
     queryQRCodeFiles: fileSystem.queryQRCodeFiles,
     makeAttachment: fileSystem.makeAttachment,
+    getPreviewUrl: fileSystem.getPreviewUrl,
+    downloadBlock: fileSystem.downloadBlock,
 };
 
 module.exports = fileSystem;
