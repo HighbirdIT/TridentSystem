@@ -8,6 +8,7 @@ import io
 import sys
 import random
 import json
+import numpy as np
 
 
 def walkFile(config, drawdata_li):
@@ -26,6 +27,9 @@ def walkFile(config, drawdata_li):
     gauge_length = int(config['测试标距'])  # 测试标距
     errorInfo = ''
     independent_list = []
+
+    # x 轴范围
+    xlabel_list = []
 
     for fi in range(0, len(path_li)):
         # root 表示当前正在访问的文件夹路径
@@ -60,14 +64,27 @@ def walkFile(config, drawdata_li):
         step = step2.Step_two(deviation_bool, temp, force_range, original_data, index, width, gauge_length)
         step.standard_item_identity()
         result = step.process()
+        # 绘制图形的原始数据
         drawdata = step.process_2()
 
+        # 刻画fx，fy
+        ex = np.array(drawdata['ex'])
+        ey = np.array(drawdata['ey'])
+        if len(ex) == 0:
+            ex = np.array([-0.01, 0.06])
+        if len(ey) == 0:
+            ey = np.array([-0.01, 0.06])
+
+        xMax = np.max(ex) if np.max(ex) > np.max(ey) else np.max(ey)
+        xMin = np.min(ex) if np.min(ex) < np.min(ey) else np.min(ey)
+        xlabel_list.append(int(xMin * 100 - 1) / 100)
+        xlabel_list.append(int(xMax * 100 + 1) / 100)
+        print('--', )
 
         # 绘制图形数据写入文本
         # write_data = step.process_3()
         # drawdata = write_data
         # step.write_text(write_data)
-
 
         # 直线需要的起点
         line_point = step.line_point
@@ -90,10 +107,14 @@ def walkFile(config, drawdata_li):
             , 'a22': coefficient.a22, 'b22': coefficient.b22
             , 'a12': coefficient.a12, 'b12': coefficient.b12, 'a': coefficient.a, 'filename': fileName}
         independent_list.append(independent_dict)
+    # 算出x轴最大最小值
+    xlabelMinMax = (np.min(xlabel_list),np.max(xlabel_list))
+
     return {
         'final_dict': final_dict,
         'errinfo': errorInfo,
-        'independent_coefficient': independent_list
+        'independent_coefficient': independent_list,
+        'xlabelMinMax':xlabelMinMax
     }
 
 
@@ -120,16 +141,16 @@ def get_result(final_dict, fileName):
 
 if __name__ == '__main__':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-    argv = sys.argv
-    # argv = ['',
-    #         r'{"files":["output/(1)1:1.text",'
-    #         r'"output/(2)2:1.text","output/(3)1:1.text",'
-    #         r'"output/(4)1:2.text","output/(5)1:1.text",'
-    #         r'"output/(6)1:0.text","output/(7)1:1.text",'
-    #         r'"output/(8)0:1.text"],'
-    #         r'"names":["(1)1:1","(2)2:1","(3)1:1","(4)1:2","(5)1:1","(6)1:0","(7)1:1","(8)0:1"],'
-    #         r'"calfiles":["(1)1:1","(2)2:1","(3)1:1","(4)1:2","(5)1:1","(6)1:0","(7)1:1","(8)0:1"],'
-    #         r'"起始数据项":"149","试样宽度":"160","测试标距":"40","最小应力":"2","最大应力":"30","偏移原点":"1","Area":"21"}']
+    # argv = sys.argv
+    argv = ['',
+            r'{"files":["output/(1)1:1.text",'
+            r'"output/(2)2:1.text","output/(3)1:1.text",'
+            r'"output/(4)1:2.text","output/(5)1:1.text",'
+            r'"output/(6)1:0.text","output/(7)1:1.text",'
+            r'"output/(8)0:1.text"],'
+            r'"names":["(1)1:1","(2)2:1","(3)1:1","(4)1:2","(5)1:1","(6)1:0","(7)1:1","(8)0:1"],'
+            r'"calfiles":["(1)1:1","(2)2:1","(3)1:1","(4)1:2","(5)1:1","(6)1:0","(7)1:1","(8)0:1"],'
+            r'"起始数据项":"149","试样宽度":"160","测试标距":"40","最小应力":"2","最大应力":"30","偏移原点":"1","Area":"21"}']
     constr = argv[1]
     constr = constr.replace("'", '"')
     # print(constr)
@@ -139,9 +160,9 @@ if __name__ == '__main__':
     midResult = walkFile(config, drawData_li)
     final_dict = midResult['final_dict']
     print('errinfo:{' + midResult['errinfo'] + '}')
-    print('middata:' + str(final_dict))
+    # print('middata:' + str(final_dict))
     result = get_result(final_dict, '(1)1:1')
-    print('result:' + str(result))
+    # print('result:' + str(result))
     independentResult_li = []
     for coefficient_dict in midResult['independent_coefficient']:
         independent_result = get_result(coefficient_dict, coefficient_dict['filename'])
@@ -155,6 +176,6 @@ if __name__ == '__main__':
         drawpic = draw.Draw_img(drawData['frame'], drawData['force_range'], drawData['i'], drawData['line_point'])
         drawpic.picName = os.path.dirname(__file__) + '/output/' + str(rnd) + '_' + str(drawData['i']) + '.png'
         picresult['pic' + str(drawData['i'])] = str(rnd) + '_' + str(drawData['i']) + '.png'
-        drawpic.draw(result['Ext'], result['Eyt'], result['Vx'], result['Vy'], result['E'])
+        drawpic.draw(result['Ext'], result['Eyt'], result['Vx'], result['Vy'], result['E'],midResult['xlabelMinMax'])
 
     print('picresult:' + json.dumps(picresult, ensure_ascii=False))
