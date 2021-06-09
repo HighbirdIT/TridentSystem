@@ -4026,6 +4026,7 @@ class MobileContentCompiler extends ContentCompiler {
             bindPageFun.pushLine('var freshrows_arr = [];');
             bindPageFun.pushLine('for (var rowIndex = startRowIndex; rowIndex <= endRowIndex; ++rowIndex) {', 1);
             bindPageFun.pushLine('var ' + VarNames.NowRecord + ' = records_arr[rowIndex];');
+            bindPageFun.pushLine('if(' + VarNames.NowRecord + ' == null){break;}');
             bindPageFun.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == DefaultKeyColumn ? VarNames.RowIndex : 'GetFromatRowKey(' + VarNames.NowRecord + '.' + keyColumn + ')') + ';');
             bindPageFun.pushLine('var rowstate=getStateByPath(formState,"row_" + ' + VarNames.RowKey + ',{});');
             bindPageFun.pushLine('if(rowstate._isdirty != false){', 1);
@@ -4058,6 +4059,7 @@ class MobileContentCompiler extends ContentCompiler {
                 targetGridBodyPureRectClass.renderFun.pushChild(callRowBindBlks.beforeFor);
                 targetGridBodyPureRectClass.renderFun.pushLine('for (var rowIndex = startRowIndex; rowIndex <= endRowIndex; ++rowIndex) {', 1);
                 targetGridBodyPureRectClass.renderFun.pushLine('var rowRecord = formProp.records_arr[rowIndex];');
+                targetGridBodyPureRectClass.renderFun.pushLine('if(rowRecord == null){break;}');
                 targetGridBodyPureRectClass.renderFun.pushLine('var ' + VarNames.RowKey + ' = ' + (keyColumn == DefaultKeyColumn ? 'rowIndex' : 'GetFromatRowKey(rowRecord.' + keyColumn + ')') + ';');
                 callRowBindBlks.inFor = new FormatFileBlock('inFor');
                 targetGridBodyPureRectClass.renderFun.pushChild(callRowBindBlks.inFor);

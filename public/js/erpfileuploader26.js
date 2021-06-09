@@ -999,7 +999,7 @@ var ERPC_SingleFileUploader = function (_React$PureComponent2) {
                 url = fileUploader.previewUrl;
             } else if (this.state.fileRecord) {
                 fileType = this.state.fileRecord.type;
-                fileName = this.state.fileRecord.name;
+                fileName = this.state.fileRecord.fileName;
                 url = this.state.fileRecord.url;
             }
             gPreviewFile(fileName, fileType, url);
@@ -1428,7 +1428,7 @@ var ERPC_SingleFileUploader = function (_React$PureComponent2) {
             return React.createElement(
                 'div',
                 { className: className, style: this.props.style, fixedsize: this.props.fixedsize },
-                React.createElement('input', { onChange: this.fileSelectedHandler, ref: this.fileTagRef, type: 'file', className: 'd-none', accept: '*/*,image/*' }),
+                React.createElement('input', { onChange: this.fileSelectedHandler, ref: this.fileTagRef, type: 'file', className: 'd-none', accept: '*/*' }),
                 React.createElement(
                     'span',
                     { id: 'title', className: 'flex-grow-0 flex-shrink-0 wb-all' },
@@ -2174,19 +2174,31 @@ var ERPC_FilePreview = function (_React$PureComponent5) {
             if (this.deletedAttachmentID && this.deletedAttachmentID == this.props.attachmentID) {
                 return null;
             }
-            var aidData = getRenderAidDataFromFileType(this.props.fileType);
-            this.canPreview = aidData.canPreview;
-            this.fileType = aidData.fileType;
-            var contetnElem = null;
-            var iconSize = this.props.iconSize ? this.props.iconSize : "6.5em";
-            if (aidData.fileType == 'image') {
-                contetnElem = React.createElement('img', { className: 'w-100 h-100', src: window.location.origin + this.props.filePath, onClick: this.clickIconHandler });
-            } else if (aidData.fileType == 'audio') {
-                contetnElem = [React.createElement('audio', { key: 'audio', ref: this.audioTagRef, src: window.location.origin + this.props.filePath }), React.createElement('i', { key: 'icon', style: { fontSize: iconSize }, className: 'fa ' + aidData.fileIconType, onClick: this.clickIconHandler })];
-            } else {
-                contetnElem = React.createElement('i', { style: { fontSize: iconSize }, onClick: this.clickIconHandler, className: 'fa ' + aidData.fileIconType });
-            }
             var fileName = this.props.fileName;
+            if (fileName == null) {
+                fileName = "";
+            }
+            if (this.props.filePath == null || this.props.filePath.length == 0) {
+                contetnElem = React.createElement('img', { className: 'w-100 h-100', src: window.location.origin + "/res/img/404.png" });
+            } else {
+                var aidData = getRenderAidDataFromFileType(this.props.fileType);
+                this.canPreview = aidData.canPreview;
+                this.fileType = aidData.fileType;
+                var contetnElem = null;
+                var iconSize = this.props.iconSize ? this.props.iconSize : "6.5em";
+                if (aidData.fileType == 'image') {
+                    contetnElem = React.createElement('img', { className: 'w-100 h-100', src: window.location.origin + this.props.filePath, onClick: this.clickIconHandler });
+                } else if (aidData.fileType == 'audio') {
+                    contetnElem = [React.createElement('audio', { key: 'audio', ref: this.audioTagRef, src: window.location.origin + this.props.filePath }), React.createElement('i', { key: 'icon', style: { fontSize: iconSize }, className: 'fa ' + aidData.fileIconType, onClick: this.clickIconHandler })];
+                } else {
+                    if (this.fileType == "dwg" || fileName.indexOf(".dwg") != -1) {
+                        contetnElem = React.createElement('img', { className: 'w-100 h-100', src: window.location.origin + "/res/img/cad.png", onClick: this.clickIconHandler });
+                    } else {
+                        contetnElem = React.createElement('i', { style: { fontSize: iconSize }, onClick: this.clickIconHandler, className: 'fa ' + aidData.fileIconType });
+                    }
+                }
+            }
+
             if (fileName.length > 15) {
                 fileName = '...' + this.props.fileName.substr(-15);
             }

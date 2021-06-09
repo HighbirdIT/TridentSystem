@@ -10,6 +10,7 @@ const EAcceptFileType = {
     ImageVedio: 7,
 };
 
+
 var FileAcceptStr = {
 };
 FileAcceptStr[EAcceptFileType.All] = '*/*';
@@ -907,7 +908,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
         }
         else if (this.state.fileRecord) {
             fileType = this.state.fileRecord.type;
-            fileName = this.state.fileRecord.name;
+            fileName = this.state.fileRecord.fileName;
             url = this.state.fileRecord.url;
         }
         gPreviewFile(fileName, fileType, url);

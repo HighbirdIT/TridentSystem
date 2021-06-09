@@ -999,7 +999,7 @@ var ERPC_SingleFileUploader = function (_React$PureComponent2) {
                 url = fileUploader.previewUrl;
             } else if (this.state.fileRecord) {
                 fileType = this.state.fileRecord.type;
-                fileName = this.state.fileRecord.name;
+                fileName = this.state.fileRecord.fileName;
                 url = this.state.fileRecord.url;
             }
             gPreviewFile(fileName, fileType, url);
