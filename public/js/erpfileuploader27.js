@@ -476,6 +476,22 @@ function getRenderAidDataFromFileType(pFileType) {
     };
 }
 
+function _dodownloadFile(fileUrl, fileName) {
+    dingdingKit.biz.util.downloadFile({
+        url: fileUrl, //要下载的文件的url
+        name: fileName, //定义下载文件名字
+        onProgress: function onProgress(msg) {},
+        onSuccess: function onSuccess(result) {
+            dingdingKit.biz.util.openLocalFile({
+                url: fileUrl,
+                onSuccess: function onSuccess(result) {},
+                onFail: function onFail() {}
+            });
+        },
+        onFail: function onFail() {}
+    });
+}
+
 function gPreviewFile(name, fileType, url) {
     var aidData = getRenderAidDataFromFileType(fileType);
     fileType = aidData.fileType;
@@ -516,38 +532,16 @@ function gPreviewFile(name, fileType, url) {
                             dingdingKit.biz.util.openLocalFile({
                                 url: window.location.origin + url, //本地文件的url，指的是调用DingTalkPC.biz.util.downloadFile接口下载时填入的url，配合DingTalkPC.biz.util.downloadFile使用
                                 onSuccess: function onSuccess(result) {},
-                                onFail: function onFail() {}
+                                onFail: function onFail() {
+                                    _dodownloadFile(window.location.origin + url, name);
+                                }
                             });
                         } else {
-                            dingdingKit.biz.util.downloadFile({
-                                url: window.location.origin + url, //要下载的文件的url
-                                name: name, //定义下载文件名字
-                                onProgress: function onProgress(msg) {},
-                                onSuccess: function onSuccess(result) {
-                                    dingdingKit.biz.util.openLocalFile({
-                                        url: window.location.origin + url,
-                                        onSuccess: function onSuccess(result) {},
-                                        onFail: function onFail() {}
-                                    });
-                                },
-                                onFail: function onFail() {}
-                            });
+                            _dodownloadFile(window.location.origin + url, name);
                         }
                     },
                     onFail: function onFail() {
-                        dingdingKit.biz.util.downloadFile({
-                            url: window.location.origin + url, //要下载的文件的url
-                            name: name, //定义下载文件名字
-                            onProgress: function onProgress(msg) {},
-                            onSuccess: function onSuccess(result) {
-                                dingdingKit.biz.util.openLocalFile({
-                                    url: window.location.origin + url,
-                                    onSuccess: function onSuccess(result) {},
-                                    onFail: function onFail() {}
-                                });
-                            },
-                            onFail: function onFail() {}
-                        });
+                        _dodownloadFile(window.location.origin + url, name);
                     }
                 });
             } else {
@@ -2124,38 +2118,16 @@ var ERPC_FilePreview = function (_React$PureComponent5) {
                                 dingdingKit.biz.util.openLocalFile({
                                     url: fileUrl, //本地文件的url，指的是调用DingTalkPC.biz.util.downloadFile接口下载时填入的url，配合DingTalkPC.biz.util.downloadFile使用
                                     onSuccess: function onSuccess(result) {},
-                                    onFail: function onFail() {}
+                                    onFail: function onFail() {
+                                        _dodownloadFile(fileUrl, fileName);
+                                    }
                                 });
                             } else {
-                                dingdingKit.biz.util.downloadFile({
-                                    url: fileUrl, //要下载的文件的url
-                                    name: fileName, //定义下载文件名字
-                                    onProgress: function onProgress(msg) {},
-                                    onSuccess: function onSuccess(result) {
-                                        dingdingKit.biz.util.openLocalFile({
-                                            url: fileUrl,
-                                            onSuccess: function onSuccess(result) {},
-                                            onFail: function onFail() {}
-                                        });
-                                    },
-                                    onFail: function onFail() {}
-                                });
+                                _dodownloadFile(fileUrl, fileName);
                             }
                         },
                         onFail: function onFail() {
-                            dingdingKit.biz.util.downloadFile({
-                                url: fileUrl, //要下载的文件的url
-                                name: fileName, //定义下载文件名字
-                                onProgress: function onProgress(msg) {},
-                                onSuccess: function onSuccess(result) {
-                                    dingdingKit.biz.util.openLocalFile({
-                                        url: fileUrl,
-                                        onSuccess: function onSuccess(result) {},
-                                        onFail: function onFail() {}
-                                    });
-                                },
-                                onFail: function onFail() {}
-                            });
+                            _dodownloadFile(fileUrl, fileName);
                         }
                     });
                 } else {

@@ -556,6 +556,23 @@ app.use('/rhino/loginbylicence', function (req, res, next) {
     return;
 });
 
+app.use('/rhino/standardPartCoord', function (req, res, next) {
+    res.writeHead(200,{
+        "Content-Type":"text/plain;charset=utf-8"
+    });
+
+    dbhelper.asynQueryWithParams('select 项目登记名称,项目标准件代码,标准件名称,文件路径 from T253C项目标准件 cross apply [dbo].[FTB00E查找附件信息] (0,19,项目标准件代码) as T基准面附件 inner join V253C项目数字建模 on V253C项目数字建模.项目数字建模代码=T253C项目标准件.项目数字建模代码 order by 项目登记名称,标准件名称')
+        .then(record=>{
+            rlt = "";
+            record.recordset.forEach(dr=>{
+                rlt += (rlt.length == 0 ? "" : "|r|") + dr["项目登记名称"].toString() + "," + dr["项目标准件代码"].toString() + "," + dr["标准件名称"].toString() + "," + dr["文件路径"].toString()
+            });
+            res.write(rlt);
+            res.end();
+        });
+    return;
+});
+
 app.use('/makeqrcode', function (req, res, next) {
     var text = req.query.text;
     if(text == null || text.length == 0){

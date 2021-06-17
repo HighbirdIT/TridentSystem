@@ -451,6 +451,23 @@ function getRenderAidDataFromFileType(pFileType) {
     };
 }
 
+function _dodownloadFile(fileUrl,fileName){
+    dingdingKit.biz.util.downloadFile({
+        url: fileUrl, //要下载的文件的url
+        name: fileName, //定义下载文件名字
+        onProgress: function (msg) {
+        },
+        onSuccess: function (result) {
+            dingdingKit.biz.util.openLocalFile({
+                url: fileUrl,
+                onSuccess: function (result) {
+                },
+                onFail: function () { }
+            });
+        },
+        onFail: function () { }
+    });
+}
 
 function gPreviewFile(name, fileType, url) {
     var aidData = getRenderAidDataFromFileType(fileType);
@@ -490,53 +507,7 @@ function gPreviewFile(name, fileType, url) {
         }
         else {
             if (!isMobile) {
-                dingdingKit.biz.util.isLocalFileExist({
-                    params: [{ url: window.location.origin + url }],
-                    onSuccess: function (result) {
-                        if (result[0].isExist) {
-                            dingdingKit.biz.util.openLocalFile({
-                                url: window.location.origin + url, //本地文件的url，指的是调用DingTalkPC.biz.util.downloadFile接口下载时填入的url，配合DingTalkPC.biz.util.downloadFile使用
-                                onSuccess: function (result) {
-                                },
-                                onFail: function () { }
-                            });
-                        }
-                        else {
-                            dingdingKit.biz.util.downloadFile({
-                                url: window.location.origin + url, //要下载的文件的url
-                                name: name, //定义下载文件名字
-                                onProgress: function (msg) {
-                                },
-                                onSuccess: function (result) {
-                                    dingdingKit.biz.util.openLocalFile({
-                                        url: window.location.origin + url,
-                                        onSuccess: function (result) {
-                                        },
-                                        onFail: function () { }
-                                    });
-                                },
-                                onFail: function () { }
-                            });
-                        }
-                    },
-                    onFail: function () { 
-                        dingdingKit.biz.util.downloadFile({
-                            url: window.location.origin + url, //要下载的文件的url
-                            name: name, //定义下载文件名字
-                            onProgress: function (msg) {
-                            },
-                            onSuccess: function (result) {
-                                dingdingKit.biz.util.openLocalFile({
-                                    url: window.location.origin + url,
-                                    onSuccess: function (result) {
-                                    },
-                                    onFail: function () { }
-                                });
-                            },
-                            onFail: function () { }
-                        });
-                    }
-                });
+                _dodownloadFile(window.location.origin + url, name);
             }
             else {
                 dingdingKit.biz.util.openLink({
@@ -1714,53 +1685,7 @@ class ERPC_FilePreview extends React.PureComponent {
         }
         else {
             if (!isMobile) {
-                dingdingKit.biz.util.isLocalFileExist({
-                    params: [{ url: fileUrl }],
-                    onSuccess: function (result) {
-                        if (result[0].isExist) {
-                            dingdingKit.biz.util.openLocalFile({
-                                url: fileUrl, //本地文件的url，指的是调用DingTalkPC.biz.util.downloadFile接口下载时填入的url，配合DingTalkPC.biz.util.downloadFile使用
-                                onSuccess: function (result) {
-                                },
-                                onFail: function () { }
-                            });
-                        }
-                        else {
-                            dingdingKit.biz.util.downloadFile({
-                                url: fileUrl, //要下载的文件的url
-                                name: fileName, //定义下载文件名字
-                                onProgress: function (msg) {
-                                },
-                                onSuccess: function (result) {
-                                    dingdingKit.biz.util.openLocalFile({
-                                        url: fileUrl,
-                                        onSuccess: function (result) {
-                                        },
-                                        onFail: function () { }
-                                    });
-                                },
-                                onFail: function () { }
-                            });
-                        }
-                    },
-                    onFail: function () { 
-                        dingdingKit.biz.util.downloadFile({
-                            url: fileUrl, //要下载的文件的url
-                            name: fileName, //定义下载文件名字
-                            onProgress: function (msg) {
-                            },
-                            onSuccess: function (result) {
-                                dingdingKit.biz.util.openLocalFile({
-                                    url: fileUrl,
-                                    onSuccess: function (result) {
-                                    },
-                                    onFail: function () { }
-                                });
-                            },
-                            onFail: function () { }
-                        });
-                    }
-                })
+                _dodownloadFile(fileUrl, fileName);
             }
             else {
                 dingdingKit.biz.util.openLink({
