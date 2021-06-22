@@ -3256,7 +3256,7 @@ function ERPC_GridForm_RoweditClicked(rowkey) {
 function ERPC_GridForm_RowcanceleditClicked(rowkey) {
     var rowPath = this.getRowPath(rowkey);
     var rowState = this.getRowState(rowkey);
-    var needSetState = JSON.parse(rowState.stateshot);
+    var needSetState = rowState.stateshot == null ? {} : JSON.parse(rowState.stateshot);
     needSetState.editing = false;
     store.dispatch(makeAction_setManyStateByPath(needSetState, rowPath));
 }

@@ -141,7 +141,8 @@ def get_result(final_dict, fileName):
 
 if __name__ == '__main__':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-    # argv = sys.argv
+    argv = sys.argv
+    """
     argv = ['',
             r'{"files":["output/(1)1:1.text",'
             r'"output/(2)2:1.text","output/(3)1:1.text",'
@@ -151,6 +152,7 @@ if __name__ == '__main__':
             r'"names":["(1)1:1","(2)2:1","(3)1:1","(4)1:2","(5)1:1","(6)1:0","(7)1:1","(8)0:1"],'
             r'"calfiles":["(1)1:1","(2)2:1","(3)1:1","(4)1:2","(5)1:1","(6)1:0","(7)1:1","(8)0:1"],'
             r'"起始数据项":"149","试样宽度":"160","测试标距":"40","最小应力":"2","最大应力":"30","偏移原点":"1","Area":"21"}']
+    """
     constr = argv[1]
     constr = constr.replace("'", '"')
     # print(constr)
