@@ -11,6 +11,7 @@ import json
 import numpy as np
 
 
+
 def walkFile(config, drawdata_li):
     final_dict = {'a11': 0, 'b11': 0, 'a22': 0, 'b22': 0, 'a12': 0, 'b12': 0, 'a': 0, 'c': 0}
 
