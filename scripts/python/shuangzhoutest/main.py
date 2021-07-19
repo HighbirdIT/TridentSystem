@@ -162,9 +162,9 @@ if __name__ == '__main__':
     midResult = walkFile(config, drawData_li)
     final_dict = midResult['final_dict']
     print('errinfo:{' + midResult['errinfo'] + '}')
-    # print('middata:' + str(final_dict))
+    print('middata:' + str(final_dict))
     result = get_result(final_dict, '(1)1:1')
-    # print('result:' + str(result))
+    print('result:' + str(result))
     independentResult_li = []
     for coefficient_dict in midResult['independent_coefficient']:
         independent_result = get_result(coefficient_dict, coefficient_dict['filename'])
