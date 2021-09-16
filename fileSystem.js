@@ -133,7 +133,7 @@ fileSystem.uploadBlock = (req, res) => {
     var fileIdentity = bundle.fileIdentity;
     var blockData = bundle.data;
     return co(function* () {
-        var sql = "select * from [TB00C文件上传记录] where [文件令牌] = @identity";
+        var sql = "select *,year(创建时间) as 创建年份,month(创建时间) as 创建月份 from [TB00C文件上传记录] where [文件令牌] = @identity";
         var rcdRlt = yield dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('identity', sqlTypes.NVarChar(50), fileIdentity)]);
         if (rcdRlt.recordset.length == 0) {
             return serverhelper.createErrorRet('服务端文件记录不存在');
@@ -149,7 +149,7 @@ fileSystem.uploadBlock = (req, res) => {
             if (fileRecord.文件后缀.length > 0) {
                 fileFullName += '.' + fileRecord.文件后缀;
             }
-            var belongDirPath = fileRecord.创建时间.getFullYear() + '_' + (fileRecord.创建时间.getMonth() + 1);
+            var belongDirPath = fileRecord.创建年份 + '_' + fileRecord.创建月份;
             if (fileRecord.已上传大小 == fileRecord.文件大小) {
                 return {
                     bytesWritten: fileRecord.文件大小 - bundle.startPos,
@@ -226,7 +226,7 @@ fileSystem.downloadBlock = (req, res) => {
     var fileIdentity = bundle.fileIdentity ? bundle.fileIdentity : bundle.fileidentity;
     var startPos = parseInt(bundle.startPos == null ? bundle.startpos : bundle.startPos);
     return co(function* () {
-        var sql = "select * from [TB00C文件上传记录] where [文件令牌] = @identity";
+        var sql = "select *,year(创建时间) as 创建年份,month(创建时间) as 创建月份 from [TB00C文件上传记录] where [文件令牌] = @identity";
         var rcdRlt = yield dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('identity', sqlTypes.NVarChar(50), fileIdentity)]);
         if (rcdRlt.recordset.length == 0) {
             return serverhelper.createErrorRet('服务端文件记录不存在');
@@ -238,7 +238,7 @@ fileSystem.downloadBlock = (req, res) => {
             if (fileRecord.文件后缀.length > 0) {
                 fileFullName += '.' + fileRecord.文件后缀;
             }
-            var belongDirPath = fileRecord.创建时间.getFullYear() + '_' + (fileRecord.创建时间.getMonth() + 1);
+            var belongDirPath = fileRecord.创建年份 + '_' + fileRecord.创建月份;
             var targetDirPath = path.join(__dirname, gFileHouseRootPath, belongDirPath);
             var targetFilePath = path.join(targetDirPath, fileFullName);
             if (!fs.existsSync(targetFilePath)) {
@@ -506,7 +506,7 @@ fileSystem.readExcelContent = (req, res) => {
         if (bundle == null) { return serverhelper.createErrorRet('缺少参数bundle'); }
         var fileIdentity = bundle.fileIdentity;
         if (fileIdentity == null) { return serverhelper.createErrorRet('缺少参数fileIdentity'); }
-        var sql = "select * from [TB00C文件上传记录] where [文件令牌] = @identity and 已上传大小=文件大小";
+        var sql = "select *,year(创建时间) as 创建年份,month(创建时间) as 创建月份 from [TB00C文件上传记录] where [文件令牌] = @identity and 已上传大小=文件大小";
         var rcdRlt = yield dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('identity', sqlTypes.NVarChar(50), fileIdentity)]);
         if (rcdRlt.recordset.length == 0) {
             return serverhelper.createErrorRet('服务端文件记录不存在');
@@ -516,7 +516,7 @@ fileSystem.readExcelContent = (req, res) => {
         if (fileRecord.文件后缀.length > 0) {
             fileFullName += '.' + fileRecord.文件后缀;
         }
-        var belongDirPath = fileRecord.创建时间.getFullYear() + '_' + (fileRecord.创建时间.getMonth() + 1);
+        var belongDirPath = fileRecord.创建年份 + '_' + fileRecord.创建月份;
         var targetDirPath = path.join(__dirname, gFileHouseRootPath, belongDirPath);
         var targetFilePath = path.join(targetDirPath, fileFullName);
         if (!fs.existsSync(targetFilePath)) {

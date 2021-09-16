@@ -542,13 +542,21 @@ app.use('/rhino/loginbylicence', function (req, res, next) {
         res.end();
     }
     else{
-        dbhelper.asynQueryWithParams('SELECT [用户代码] as 代码,[员工登记姓名] as 姓名 FROM [TD00C犀牛许可证] inner join T100A员工登记姓名 on T100A员工登记姓名.员工登记姓名代码 = [用户代码] where UPPER(申请码)=UPPER(@requestCode) and UPPER(注册码)=UPPER(@licence)', [dbhelper.makeSqlparam('licence', sqlTypes.NVarChar(100), licence),dbhelper.makeSqlparam('requestCode', sqlTypes.NVarChar(100), reuqestCode)])
-        .then(record=>{
-            if(record.recordset.length == 1){
-                res.write('1' + record.recordset[0]['姓名'] + ',' + record.recordset[0]['代码']);
+        var inparams_arr = [
+            dbhelper.makeSqlparam('申请码', sqlTypes.NVarChar(1000), reuqestCode),
+            dbhelper.makeSqlparam('注册码', sqlTypes.NVarChar(100), licence),
+        ];
+        var outparams_arr = [
+            dbhelper.makeSqlparam('用户代码', sqlTypes.Int),
+            dbhelper.makeSqlparam('用户姓名', sqlTypes.NVarChar(100)),
+        ];
+        dbhelper.asynExcute('P253E登录犀牛插件', inparams_arr,outparams_arr)
+        .then(ret=>{
+            if(ret.output.用户代码 == 0){
+                res.write('0');
             }
             else{
-                res.write('0');
+                res.write('1' + ret.output.用户姓名 + ',' + ret.output.用户代码);
             }
             res.end();
         });
