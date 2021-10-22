@@ -1646,6 +1646,9 @@ class FlowNode_Send_Message extends JSNode_Base {
         if (nodeJson) {
             this.inputScokets_arr.forEach(socket => {
                 switch (socket.name) {
+                    case 'sendPerson':
+                        this.sendPersonScoket = socket;
+                        break;
                     case 'sendType':
                         this.sendTypeScoket = socket;
                         break;
@@ -1690,6 +1693,12 @@ class FlowNode_Send_Message extends JSNode_Base {
                 this.outSocket = this.outputScokets_arr[0];
             }
         }
+
+        if(this.sendPersonScoket == null){
+            this.sendPersonScoket = new NodeSocket('sendPerson', this, true, { defval: 0 });
+            this.addSocket(this.sendPersonScoket);
+        }
+        this.sendPersonScoket.label = '操作人(默认系统)';
 
         if (this.targetTypeScoket == null) {
             this.targetTypeScoket = new NodeSocket('targetType', this, true, { defval: EMessageTargetType.Person });
@@ -1936,9 +1945,18 @@ class FlowNode_Send_Message extends JSNode_Base {
         belongBlock.pushChild(myCodeBlock);
 
         var params_arr = [{ name: '操作人ID', value: 0 },
-        { name: '发送人ID', value: 0 },
         { name: '来源流程步骤代码', value: theFlowStep.code },
         { name: '加密内容', value: (encrypted == true ? 1 : 0) },];
+
+        var 发送人ID = 0;
+        socketComRet = this.getSocketCompileValue(helper, this.sendPersonScoket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        if (socketComRet.value) {
+            发送人ID = socketComRet.value;
+        }
+        params_arr.push({ name: '发送人ID', value: 发送人ID });
 
         var personVarName = this.id + '_接收人描述';
         params_arr.push({ name: '接收人描述', value: personVarName });

@@ -2,6 +2,7 @@ const dbhelper = require('./dbhelper.js');
 const co = require('co');
 const sqlTypes = dbhelper.Types;
 const fetch = require('node-fetch');
+const serverhelper = require('./erpserverhelper.js');
 
 dingHelper = {};
 
@@ -70,6 +71,14 @@ dingHelper.doAction = (req, res) => {
 dingHelper.asynGetAccessToken = () => {
     return co(function* () {
         var sql = 'select dbo.FBDDAccessToken()';
+        var ret = yield dbhelper.asynQueryWithParams(sql, null, { scalar: 1 });
+        return ret;
+    });
+};
+
+dingHelper.asynGetAccessToken854177276 = () => {
+    return co(function* () {
+        var sql = 'select dbo.FBDDAccessToken854177276()';
         var ret = yield dbhelper.asynQueryWithParams(sql, null, { scalar: 1 });
         return ret;
     });
@@ -157,6 +166,163 @@ dingHelper.aysnLoginfFromRcdID = (logrcdid, req, res) => {
         return null;
     });
 };
+
+dingHelper.getUserInfo = (usercode)=>{
+    return co(function* () {
+        var userid = yield dbhelper.asynGetScalar('select 钉钉标识 from T122C用户登录名称 where 员工登记姓名代码=@usercode', [dbhelper.makeSqlparam('usercode', sqlTypes.Int, usercode)])
+        if(userid == null){
+            return {errcode:-1,errmsg:'没有钉钉标识'};
+        }
+        var accessToken = yield dingHelper.asynGetAccessToken854177276();
+        if(accessToken == null){
+            return {errcode:-2,errmsg:'没有accessToken854177276'};
+        }
+        var getUserInfoRet = yield fetch("https://oapi.dingtalk.com/topapi/v2/user/get?access_token=" + accessToken, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body:JSON.stringify({userid: userid}),
+        }).then(
+            response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                else {
+                    return {errcode:-3,errmsg:'没有response'};
+                }
+            }
+        ).then(
+            json => {
+                return json;
+            }
+        );
+
+        if(getUserInfoRet.errcode != 0){
+            return {errcode:getUserInfoRet.errcode,errmsg:getUserInfoRet.errmsg};
+        }
+        ret = getUserInfoRet.result;
+        ret.errcode == 0;
+        return ret;
+    });
+}
+
+dingHelper.getUnionid = (用户代码)=>{
+    return co(function* () {
+        var Unionid = yield dbhelper.asynGetScalar('select [Unionid] from T122C用户登录名称 where 员工登记姓名代码=@用户代码', [dbhelper.makeSqlparam('用户代码', sqlTypes.Int, 用户代码)])
+        if(Unionid == null || Unionid.length == 0){
+            userInfo = yield dingHelper.getUserInfo(用户代码);
+            if(userInfo.Unionid){
+                Unionid = userInfo.Unionid;
+                var updateRet = yield dbhelper.asynGetScalar('update [T122C用户登录名称] set [Unionid]=@Unionid where [员工登记姓名代码]=@用户代码'
+                , [ dbhelper.makeSqlparam('用户代码', sqlTypes.Int, 用户代码),
+                    dbhelper.makeSqlparam('Unionid', sqlTypes.VarChar(100), Unionid)
+                ]);
+            }
+            return {errcode:-1,errmsg:'没有钉钉标识'};
+        }
+        return Unionid;
+    });
+}
+
+dingHelper.addTask = (工作通知记录代码)=>{
+    return co(function* () {
+        var 工作通知ret = yield dbhelper.asynQueryWithParams('select * from T196C工作通知记录 where 工作通知记录代码=@工作通知记录代码 and 发送钉钉待办=1', [dbhelper.makeSqlparam('工作通知记录代码', sqlTypes.Int, 工作通知记录代码)])
+        if(工作通知ret.recordset .length == 0){
+            return {errcode:1,errmsg:'记录不存在'};
+        }
+        工作通知rcd = 工作通知ret.recordset[0]
+        var 通知对象ret = yield dbhelper.asynQueryWithParams('select * from [T196D工作通知对象] where 工作通知记录代码=@工作通知记录代码', [dbhelper.makeSqlparam('工作通知记录代码', sqlTypes.Int, 工作通知记录代码)])
+        if(通知对象ret.recordset.length > 0){
+            var senderUnionid = yield dingHelper.getUnionid(工作通知rcd.登记确认用户);
+            if(serverhelper.IsEmptyString(senderUnionid)){
+                senderUnionid = yield dingHelper.getUnionid(0);
+            }
+            senderUnionid = yield dingHelper.getUnionid(0);
+            var accessToken = yield dingHelper.asynGetAccessToken854177276();
+            if(accessToken == null){
+                return {errcode:2,errmsg:'没有accessToken854177276'};
+            }
+            var nowDate = new Date();
+            var dueDate = new Date(nowDate.getTime() + 2 * 60 * 60 * 1000);
+            for(var row_i = 0; row_i < 通知对象ret.recordset.length; ++row_i){
+                var 通知对象rcd = 通知对象ret.recordset[row_i];
+                if(通知对象rcd.钉钉待办标识 == null){
+                    userUnionid = yield dingHelper.getUnionid(通知对象rcd.员工登记姓名代码);
+                    var url = "https://api.dingtalk.com/v1.0/todo/users/" + userUnionid + "/tasks";
+                    var appUrl = "http://erp.highbird.cn:1330/fromNotify?id=" + 工作通知记录代码;
+                    var pcUrl = appUrl;
+                    var sourceId = serverhelper.guid2();
+                    
+                    var data = {
+                        sourceId:sourceId,
+                        unionId:senderUnionid,
+                        creatorId:senderUnionid,
+                        executorIds:[userUnionid],
+                        detailUrl:{
+                            pcUrl:pcUrl,
+                            appUrl:appUrl
+                        },
+                        dueTime:dueDate.getTime(),
+                        subject:工作通知rcd.工作通知内容,
+                        isOnlyShowExecutor:true,
+
+                    }
+                    var fetchRet = yield fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            "Content-Type": "application/json",
+                            "x-acs-dingtalk-access-token":accessToken
+                        },
+                        body:JSON.stringify(data),
+                    }).then(
+                        response => {
+                            if (response.ok) {
+                                return response.json();
+                            }
+                            else {
+                                return {errcode:-3,errmsg:'没有response'};
+                            }
+                        }
+                    ).then(
+                        json => {
+                            return json;
+                        }
+                    );
+                    var updateRet;
+                    if(fetchRet.id != null){
+                        updateRet = yield dbhelper.asynGetScalar('update [T196D工作通知对象] set [尝试发送待办次数]=@次数,钉钉待办标识=@待办id where [工作通知对象代码]=@工作通知对象代码'
+                        , [ dbhelper.makeSqlparam('工作通知对象代码', sqlTypes.Int, 通知对象rcd.工作通知对象代码),
+                            dbhelper.makeSqlparam('次数', sqlTypes.Int, 通知对象rcd.尝试发送待办次数 + 1),
+                            dbhelper.makeSqlparam('待办id', sqlTypes.NVarChar(100), fetchRet.id)
+                        ]);
+                    }
+                    else{
+                        updateRet = yield dbhelper.asynGetScalar('update [T196D工作通知对象] set [尝试发送待办次数]=@次数 where [工作通知对象代码]=@工作通知对象代码'
+                        , [ dbhelper.makeSqlparam('工作通知对象代码', sqlTypes.Int, 通知对象rcd.工作通知对象代码),
+                            dbhelper.makeSqlparam('次数', sqlTypes.Int, 通知对象rcd.尝试发送待办次数 + 1)
+                        ]);
+                    }
+                }
+            }
+        }
+        return {errcode:0,errmsg:'创建成功'};
+    });
+}
+
+
+
+//dingHelper.addTask(1077680);
+/*
+dingHelper.getUserInfo(0).then(userinfo=>{
+    console.log(userinfo)
+});
+
+dingHelper.getUserInfo(17).then(userinfo=>{
+    console.log(userinfo)
+});
+*/
+
 
 const baseServerUrl = 'https://oapi.dingtalk.com/service/';
 function saveAppConfig(){

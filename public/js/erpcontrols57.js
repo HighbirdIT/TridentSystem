@@ -2245,7 +2245,7 @@ function ERPC_Label_mapstatetoprops(state, ownprops) {
         text: useText,
         visible: ctlState.visible,
         fetching: ctlState.fetching
-    }, _defineProperty(_ref, 'visible', ctlState.visible == false || ownprops.definvisible ? false : true), _defineProperty(_ref, 'fetchingErr', ctlState.fetchingErr), _defineProperty(_ref, 'fullParentPath', propProfile.fullParentPath), _defineProperty(_ref, 'fullPath', propProfile.fullPath), _defineProperty(_ref, 'dynamicStyle', ctlState.style), _defineProperty(_ref, 'dynamicClass', ctlState.class), _defineProperty(_ref, 'abbreved', ctlState.abbreved != false), _ref;
+    }, _defineProperty(_ref, 'visible', ctlState.visible != null ? ctlState.visible : ownprops.definvisible ? false : true), _defineProperty(_ref, 'fetchingErr', ctlState.fetchingErr), _defineProperty(_ref, 'fullParentPath', propProfile.fullParentPath), _defineProperty(_ref, 'fullPath', propProfile.fullPath), _defineProperty(_ref, 'dynamicStyle', ctlState.style), _defineProperty(_ref, 'dynamicClass', ctlState.class), _defineProperty(_ref, 'abbreved', ctlState.abbreved != false), _ref;
 }
 
 function ERPC_Label_dispatchtorprops(dispatch, ownprops) {
@@ -2381,7 +2381,7 @@ function ERPC_Img_mapstatetoprops(state, ownprops) {
         src: useSrc,
         visible: ctlState.visible,
         fetching: ctlState.fetching
-    }, _defineProperty(_ref2, 'visible', ctlState.visible == false || ownprops.definvisible ? false : true), _defineProperty(_ref2, 'fetchingErr', ctlState.fetchingErr), _defineProperty(_ref2, 'fullParentPath', propProfile.fullParentPath), _defineProperty(_ref2, 'fullPath', propProfile.fullPath), _defineProperty(_ref2, 'dynamicStyle', ctlState.style), _defineProperty(_ref2, 'dynamicClass', ctlState.class), _ref2;
+    }, _defineProperty(_ref2, 'visible', ctlState.visible != null ? ctlState.visible : ownprops.definvisible ? false : true), _defineProperty(_ref2, 'fetchingErr', ctlState.fetchingErr), _defineProperty(_ref2, 'fullParentPath', propProfile.fullParentPath), _defineProperty(_ref2, 'fullPath', propProfile.fullPath), _defineProperty(_ref2, 'dynamicStyle', ctlState.style), _defineProperty(_ref2, 'dynamicClass', ctlState.class), _ref2;
 }
 
 function ERPC_Img_dispatchtorprops(dispatch, ownprops) {
@@ -2768,6 +2768,7 @@ var VisibleERPC_PopperBtn = null;
 var VisibleERPC_FrameSet = null;
 var VisibleERPC_IFrame = null;
 var VisibleERPC_Img = null;
+var VisibleERPC_Container = null;
 var gNeedCallOnErpControlInit_arr = [];
 
 function ErpControlInit() {
@@ -2782,6 +2783,7 @@ function ErpControlInit() {
     VisibleERPC_FrameSet = ReactRedux.connect(ERPC_FrameSet_mapstatetoprops, ERPC_FrameSet_dispatchtorprops)(ERPC_FrameSet);
     VisibleERPC_IFrame = ReactRedux.connect(ERPC_IFrame_mapstatetoprops, ERPC_IFrame_dispatchtorprops)(ERPC_IFrame);
     VisibleERPC_Img = ReactRedux.connect(ERPC_Img_mapstatetoprops, ERPC_Img_dispatchtorprops)(ERPC_Img);
+    VisibleERPC_Container = ReactRedux.connect(ERPC_Container_mapstatetoprops, ERPC_Container_dispatchtorprops)(ERPC_Container);
 
     gNeedCallOnErpControlInit_arr.forEach(function (elem) {
         if (typeof elem == 'function') {
@@ -3256,7 +3258,7 @@ function ERPC_GridForm_RoweditClicked(rowkey) {
 function ERPC_GridForm_RowcanceleditClicked(rowkey) {
     var rowPath = this.getRowPath(rowkey);
     var rowState = this.getRowState(rowkey);
-    var needSetState = JSON.parse(rowState.stateshot);
+    var needSetState = rowState.stateshot == null ? {} : JSON.parse(rowState.stateshot);
     needSetState.editing = false;
     store.dispatch(makeAction_setManyStateByPath(needSetState, rowPath));
 }
@@ -3287,6 +3289,17 @@ function ERPC_GridForm_ClickNewRowHandler() {
     this.setState({
         hadNewRow: true
     });
+    var trPath = this.props.fullPath + 'newrowtr';
+    setTimeout(function () {
+        var newTrElem = document.getElementById(trPath);
+        if (newTrElem) {
+            var trTop = $(newTrElem).offset().top;
+            console.log("trTop:" + trTop);
+            if (trTop >= 30 && trTop < $(window).height() - 100) {} else {
+                newTrElem.scrollIntoView();
+            }
+        }
+    }, 50);
 }
 
 function ERPC_GridForm_CancelInsert() {
@@ -4943,22 +4956,122 @@ function ERPC_IFrame_dispatchtorprops(dispatch, ownprops) {
     return {};
 }
 
-var CGridFormSelectCog = function (_React$PureComponent22) {
-    _inherits(CGridFormSelectCog, _React$PureComponent22);
+var ERPC_Container = function (_React$PureComponent22) {
+    _inherits(ERPC_Container, _React$PureComponent22);
+
+    function ERPC_Container(props) {
+        _classCallCheck(this, ERPC_Container);
+
+        var _this36 = _possibleConstructorReturn(this, (ERPC_Container.__proto__ || Object.getPrototypeOf(ERPC_Container)).call(this, props));
+
+        autoBind(_this36);
+
+        ERPControlBase(_this36);
+        _this36.state = _this36.initState;
+        return _this36;
+    }
+
+    _createClass(ERPC_Container, [{
+        key: 'render',
+        value: function render() {
+            if (this.props.visible == false) {
+                return null;
+            }
+            var childElem = this.props.children;
+            /*
+            var childElem = this.props.creatChild == null ? null : this.props.creatChild(this);
+            if(this.props.creatChild == null){
+                return null;
+            }
+            */
+            var tagtype = this.props.tagtype;
+            if (tagtype == 'div') {
+                return React.createElement(
+                    'div',
+                    { className: this.props.className, style: this.props.style },
+                    childElem
+                );
+            } else if (tagtype == 'span') {
+                return React.createElement(
+                    'span',
+                    { className: this.props.className, style: this.props.style },
+                    childElem
+                );
+            } else if (tagtype == 'h1') {
+                return React.createElement(
+                    'h1',
+                    { className: this.props.className, style: this.props.style },
+                    childElem
+                );
+            } else if (tagtype == 'h2') {
+                return React.createElement(
+                    'h2',
+                    { className: this.props.className, style: this.props.style },
+                    childElem
+                );
+            } else if (tagtype == 'h3') {
+                return React.createElement(
+                    'h3',
+                    { className: this.props.className, style: this.props.style },
+                    childElem
+                );
+            } else if (tagtype == 'h4') {
+                return React.createElement(
+                    'h4',
+                    { className: this.props.className, style: this.props.style },
+                    childElem
+                );
+            } else if (tagtype == 'h5') {
+                return React.createElement(
+                    'h5',
+                    { className: this.props.className, style: this.props.style },
+                    childElem
+                );
+            } else if (tagtype == 'h6') {
+                return React.createElement(
+                    'h6',
+                    { className: this.props.className, style: this.props.style },
+                    childElem
+                );
+            }
+            return null;
+        }
+    }]);
+
+    return ERPC_Container;
+}(React.PureComponent);
+
+function ERPC_Container_mapstatetoprops(state, ownprops) {
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    var useVisible = ctlState.visible != null ? ctlState.visible : ownprops.definvisible ? false : true;
+    return {
+        fullParentPath: propProfile.fullParentPath,
+        fullPath: propProfile.fullPath,
+        visible: useVisible
+    };
+}
+
+function ERPC_Container_dispatchtorprops(dispatch, ownprops) {
+    return {};
+}
+
+var CGridFormSelectCog = function (_React$PureComponent23) {
+    _inherits(CGridFormSelectCog, _React$PureComponent23);
 
     function CGridFormSelectCog(props) {
         _classCallCheck(this, CGridFormSelectCog);
 
-        var _this36 = _possibleConstructorReturn(this, (CGridFormSelectCog.__proto__ || Object.getPrototypeOf(CGridFormSelectCog)).call(this, props));
+        var _this37 = _possibleConstructorReturn(this, (CGridFormSelectCog.__proto__ || Object.getPrototypeOf(CGridFormSelectCog)).call(this, props));
 
-        _this36.clickSelectAll = _this36.clickSelectAll.bind(_this36);
-        _this36.clickUnSelectAll = _this36.clickUnSelectAll.bind(_this36);
-        _this36.clickAntiSelect = _this36.clickAntiSelect.bind(_this36);
-        _this36.divStyle = {
+        _this37.clickSelectAll = _this37.clickSelectAll.bind(_this37);
+        _this37.clickUnSelectAll = _this37.clickUnSelectAll.bind(_this37);
+        _this37.clickAntiSelect = _this37.clickAntiSelect.bind(_this37);
+        _this37.divStyle = {
             width: '5em'
         };
-        _this36.popperBtnRef = React.createRef();
-        return _this36;
+        _this37.popperBtnRef = React.createRef();
+        return _this37;
     }
 
     _createClass(CGridFormSelectCog, [{
@@ -5260,16 +5373,16 @@ function GenFormJSONData(formState, getRowItemFun, formPath, headers, state) {
     return rlt;
 }
 
-var Component_FileDownLoadIcon = function (_React$PureComponent23) {
-    _inherits(Component_FileDownLoadIcon, _React$PureComponent23);
+var Component_FileDownLoadIcon = function (_React$PureComponent24) {
+    _inherits(Component_FileDownLoadIcon, _React$PureComponent24);
 
     function Component_FileDownLoadIcon(props) {
         _classCallCheck(this, Component_FileDownLoadIcon);
 
-        var _this37 = _possibleConstructorReturn(this, (Component_FileDownLoadIcon.__proto__ || Object.getPrototypeOf(Component_FileDownLoadIcon)).call(this, props));
+        var _this38 = _possibleConstructorReturn(this, (Component_FileDownLoadIcon.__proto__ || Object.getPrototypeOf(Component_FileDownLoadIcon)).call(this, props));
 
-        _this37.style = {};
-        return _this37;
+        _this38.style = {};
+        return _this38;
     }
 
     _createClass(Component_FileDownLoadIcon, [{
@@ -5334,50 +5447,26 @@ function gStartExcelExport(bundle, msgItem, callBack) {
     }, false)));
 }
 
+function dodownloadFile(fileUrl, fileName) {
+    dingdingKit.biz.util.downloadFile({
+        url: fileUrl, //要下载的文件的url
+        name: fileName, //定义下载文件名字
+        onProgress: function onProgress(msg) {},
+        onSuccess: function onSuccess(result) {
+            dingdingKit.biz.util.openLocalFile({
+                url: fileUrl,
+                onSuccess: function onSuccess(result) {},
+                onFail: function onFail() {}
+            });
+        },
+        onFail: function onFail() {}
+    });
+}
+
 function gExcelExported(fileUrl, fileName, msgItem, callBack, fileIdentity) {
     if (isInDingTalk) {
         if (!isMobile) {
-            dingdingKit.biz.util.isLocalFileExist({
-                params: [{ url: fileUrl }],
-                onSuccess: function onSuccess(result) {
-                    if (result[0].isExist) {
-                        dingdingKit.biz.util.openLocalFile({
-                            url: fileUrl, //本地文件的url，指的是调用DingTalkPC.biz.util.downloadFile接口下载时填入的url，配合DingTalkPC.biz.util.downloadFile使用
-                            onSuccess: function onSuccess(result) {},
-                            onFail: function onFail() {}
-                        });
-                    } else {
-                        dingdingKit.biz.util.downloadFile({
-                            url: fileUrl, //要下载的文件的url
-                            name: fileName, //定义下载文件名字
-                            onProgress: function onProgress(msg) {},
-                            onSuccess: function onSuccess(result) {
-                                dingdingKit.biz.util.openLocalFile({
-                                    url: fileUrl,
-                                    onSuccess: function onSuccess(result) {},
-                                    onFail: function onFail() {}
-                                });
-                            },
-                            onFail: function onFail() {}
-                        });
-                    }
-                },
-                onFail: function onFail() {
-                    dingdingKit.biz.util.downloadFile({
-                        url: fileUrl, //要下载的文件的url
-                        name: fileName, //定义下载文件名字
-                        onProgress: function onProgress(msg) {},
-                        onSuccess: function onSuccess(result) {
-                            dingdingKit.biz.util.openLocalFile({
-                                url: fileUrl,
-                                onSuccess: function onSuccess(result) {},
-                                onFail: function onFail() {}
-                            });
-                        },
-                        onFail: function onFail() {}
-                    });
-                }
-            });
+            dodownloadFile(fileUrl, fileName);
         } else {
             dingdingKit.biz.util.openLink({
                 url: fileUrl
@@ -5450,7 +5539,7 @@ var FormColumnFilter = function () {
     }, {
         key: 'toggleSelect',
         value: function toggleSelect(value) {
-            var _this38 = this;
+            var _this39 = this;
 
             var values_arr = this.getValues();
             if (this.bAll) {
@@ -5466,7 +5555,7 @@ var FormColumnFilter = function () {
             this.selectedValues[value] = !this.selectedValues[value];
             if (this.selectedValues[value]) {
                 if (values_arr.find(function (x) {
-                    return !_this38.selectedValues[x];
+                    return !_this39.selectedValues[x];
                 }) == null) {
                     this.bAll = true;
                 }
@@ -5693,7 +5782,7 @@ var ERPCFormSetting = function () {
     }, {
         key: 'reProcess',
         value: function reProcess() {
-            var _this39 = this;
+            var _this40 = this;
 
             var rlt_arr = this.records_arr.concat();
             if (this.filters_arr.length > 0) {
@@ -5713,8 +5802,8 @@ var ERPCFormSetting = function () {
             }
             rlt_arr.fromReProcess = true;
             setTimeout(function () {
-                ++_this39.dataversion;
-                store.dispatch(makeAction_setStateByPath(rlt_arr, _this39.formPath + '.records_arr'));
+                ++_this40.dataversion;
+                store.dispatch(makeAction_setStateByPath(rlt_arr, _this40.formPath + '.records_arr'));
             }, 200);
         }
     }]);
@@ -5737,28 +5826,28 @@ function gCreatFormSetting(form) {
     return setting;
 }
 
-var ERPC_AdvanceFormHeader = function (_React$PureComponent24) {
-    _inherits(ERPC_AdvanceFormHeader, _React$PureComponent24);
+var ERPC_AdvanceFormHeader = function (_React$PureComponent25) {
+    _inherits(ERPC_AdvanceFormHeader, _React$PureComponent25);
 
     function ERPC_AdvanceFormHeader(props) {
         _classCallCheck(this, ERPC_AdvanceFormHeader);
 
-        var _this40 = _possibleConstructorReturn(this, (ERPC_AdvanceFormHeader.__proto__ || Object.getPrototypeOf(ERPC_AdvanceFormHeader)).call(this, props));
+        var _this41 = _possibleConstructorReturn(this, (ERPC_AdvanceFormHeader.__proto__ || Object.getPrototypeOf(ERPC_AdvanceFormHeader)).call(this, props));
 
-        _this40.state = {};
-        _this40.rootRef = React.createRef();
-        _this40.popRef = React.createRef();
-        _this40.valueDivRef = React.createRef();
-        _this40.clickHeaderHandler = _this40.clickHeaderHandler.bind(_this40);
-        _this40.clickSortBtn = _this40.clickSortBtn.bind(_this40);
-        _this40.clickSelectAll = _this40.clickSelectAll.bind(_this40);
-        _this40.clickUnselectAll = _this40.clickUnselectAll.bind(_this40);
-        _this40.reRender = _this40.reRender.bind(_this40);
-        _this40.clickFilterElem = _this40.clickFilterElem.bind(_this40);
-        _this40.closePopper = _this40.closePopper.bind(_this40);
-        _this40.valueDivScrollHandler = _this40.valueDivScrollHandler.bind(_this40);
-        _this40.keyInputChanged = _this40.keyInputChanged.bind(_this40);
-        return _this40;
+        _this41.state = {};
+        _this41.rootRef = React.createRef();
+        _this41.popRef = React.createRef();
+        _this41.valueDivRef = React.createRef();
+        _this41.clickHeaderHandler = _this41.clickHeaderHandler.bind(_this41);
+        _this41.clickSortBtn = _this41.clickSortBtn.bind(_this41);
+        _this41.clickSelectAll = _this41.clickSelectAll.bind(_this41);
+        _this41.clickUnselectAll = _this41.clickUnselectAll.bind(_this41);
+        _this41.reRender = _this41.reRender.bind(_this41);
+        _this41.clickFilterElem = _this41.clickFilterElem.bind(_this41);
+        _this41.closePopper = _this41.closePopper.bind(_this41);
+        _this41.valueDivScrollHandler = _this41.valueDivScrollHandler.bind(_this41);
+        _this41.keyInputChanged = _this41.keyInputChanged.bind(_this41);
+        return _this41;
     }
 
     _createClass(ERPC_AdvanceFormHeader, [{
@@ -5900,7 +5989,7 @@ var ERPC_AdvanceFormHeader = function (_React$PureComponent24) {
     }, {
         key: 'render',
         value: function render() {
-            var _this41 = this;
+            var _this42 = this;
 
             var filterElem;
             var filter = this.state.filter;
@@ -5952,7 +6041,7 @@ var ERPC_AdvanceFormHeader = function (_React$PureComponent24) {
                         filtedValues_arr.slice(0, this.state.maxCount).map(function (x, i) {
                             return React.createElement(
                                 'div',
-                                { 'd-key': x, onClick: _this41.clickFilterElem, className: 'list-group-item flex-grow-0 flex-shrink-0 cursor_hand p-2 d-flex', key: i },
+                                { 'd-key': x, onClick: _this42.clickFilterElem, className: 'list-group-item flex-grow-0 flex-shrink-0 cursor_hand p-2 d-flex', key: i },
                                 React.createElement(
                                     'span',
                                     { className: 'fa-stack fa-lg flex-shrink-0' },

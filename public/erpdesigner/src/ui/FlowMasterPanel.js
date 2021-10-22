@@ -116,6 +116,8 @@ class FlowObject extends EventEmitter{
             this.steps_arr.push(newStep);
             newStep.flow = this;
             newStep.是否周期步骤 = 0;
+            newStep.发送钉钉待办 = false;
+            newStep.进入待办队列 = false;
             newStep.周期起始时间 = new Date();
             newStep.周期类型 = '天';
             newStep.周期值 = 1;
@@ -131,6 +133,7 @@ class FlowObject extends EventEmitter{
         }
         if(record){
             theStep.是否周期步骤 = record.是否周期步骤;
+            theStep.发送钉钉待办 = record.发送钉钉待办;
             theStep.周期起始时间 = createDateWithoutTimeZone(record.周期起始时间);
             theStep.周期类型 = record.周期类型;
             theStep.周期值 = record.周期值;
@@ -297,8 +300,9 @@ class CFlowStep extends React.PureComponent{
             param1:this.state.param1Name,
             param2:this.state.param2Name,
             param3:this.state.param3Name,
-            是否周期步骤:this.state.是否周期步骤,
-            进入待办队列:this.state.进入待办队列,
+            是否周期步骤:this.state.是否周期步骤 == null ? false : this.state.是否周期步骤,
+            发送钉钉待办:this.state.发送钉钉待办 == null ? false : this.state.发送钉钉待办,
+            进入待办队列:this.state.进入待办队列 == null ? false : this.state.进入待办队列
         }
 
         if(this.state.是否周期步骤)
@@ -355,6 +359,7 @@ class CFlowStep extends React.PureComponent{
             param2Name:params_arr.length > 1 ? params_arr[1] : '',
             param3Name:params_arr.length > 2 ? params_arr[2] : '',
             是否周期步骤:step.是否周期步骤,
+            发送钉钉待办:step.发送钉钉待办,
             周期起始_日期:getFormatDateString(step.周期起始时间 ? step.周期起始时间 : new Date()),
             周期起始_时间:step.周期起始时间 ? getFormatTimeString(step.周期起始时间) : '08:00',
             周期类型:step.周期类型 ? step.周期类型 : '天',
@@ -381,6 +386,7 @@ class CFlowStep extends React.PureComponent{
         }
         step.params_arr=params_arr;
         step.是否周期步骤 = this.state.是否周期步骤;
+        step.发送钉钉待办 = this.state.发送钉钉待办;
         if(step.是否周期步骤){
             step.周期类型 = this.state.周期类型;
             step.周期值 = this.state.周期值;
@@ -392,6 +398,7 @@ class CFlowStep extends React.PureComponent{
             step.周期起始时间 = null;
         }
         step.进入待办队列 = this.state.进入待办队列;
+        step.发送钉钉待办 = this.state.发送钉钉待办;
 
         this.setState({
             newName:null,
@@ -400,6 +407,7 @@ class CFlowStep extends React.PureComponent{
             param2Name:null,
             param3Name:null,
             进入待办队列:null,
+            发送钉钉待办:null,
         });
         step.emit('changed');
     } 
@@ -407,7 +415,7 @@ class CFlowStep extends React.PureComponent{
     nameInputChanged(ev){
         var tag = ev.target.getAttribute('d-tag');
         var newState = {};
-        if(tag == '进入待办队列'){
+        if(tag == '进入待办队列' || tag == '发送钉钉待办'){
             newState[tag] = ev.target.checked;
         }
         else{
@@ -460,6 +468,10 @@ class CFlowStep extends React.PureComponent{
                         <div className='d-flex flex-grow-1'>
                             <span className='text-nowrap'>进入待办队列:</span>
                             <input d-tag='进入待办队列' type='checkbox' onChange={this.nameInputChanged} checked={this.state.进入待办队列 == null ? step.进入待办队列 : this.state.进入待办队列} />
+                        </div>
+                        <div className='d-flex flex-grow-1'>
+                            <span className='text-nowrap'>发送钉钉待办:</span>
+                            <input d-tag='发送钉钉待办' type='checkbox' onChange={this.nameInputChanged} checked={this.state.发送钉钉待办 == null ? step.发送钉钉待办 : this.state.发送钉钉待办} />
                         </div>
                         <div className='d-flex flex-grow-1 align-items-center'>
                             <span className='text-nowrap'>周期步骤:</span>
@@ -517,6 +529,11 @@ class CFlowStep extends React.PureComponent{
                     {!step.进入待办队列 && 
                     <div className='list-group-item text-danger'>
                         不进待办队列
+                    </div>
+                    }
+                    {!step.发送钉钉待办 && 
+                    <div className='list-group-item text-danger'>
+                        不发送钉钉待办
                     </div>
                     }
                 </div>

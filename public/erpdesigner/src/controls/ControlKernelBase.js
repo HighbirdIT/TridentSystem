@@ -410,6 +410,17 @@ class ControlKernelBase extends IAttributeable {
         return rlt;
     }
 
+    getUnDivParentKernel(){
+        var tKernel = this.parent;
+        while(tKernel != null){
+            if(tKernel.type != M_ContainerKernel_Type) {
+                return tKernel;
+            }
+            tKernel = tKernel.parent;
+        }
+        return null;
+    }
+
     searchSameReactParentKernel(otherKernel){
         if(this.type == M_PageKernel_Type){
             return this;
@@ -632,12 +643,14 @@ class ControlKernelBase extends IAttributeable {
 
     getStatePath(stateName, splitChar = '.', rowKeyVar_map = {}, ignoreRowKey = false, topestParant){
         var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
+        /*
         switch(this.type){
             case M_ContainerKernel_Type:
             console.warn('getStatePath M_ContainerKernel_Type');
             rlt = '';
             break;
         }
+        */
         if(this.parent == null || this == topestParant){
             return rlt;
         }
@@ -648,7 +661,7 @@ class ControlKernelBase extends IAttributeable {
                 case Accordion_Type:
                 case TabItem_Type:
                 case TabControl_Type:
-                rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
+                    rlt = nowKernel.id + (rlt.length == 0 ? '' : splitChar) + rlt;
                 break;
                 case M_FormKernel_Type:
                 if(ignoreRowKey == true || !nowKernel.isKernelInRow(this)){

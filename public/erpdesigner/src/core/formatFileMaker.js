@@ -193,6 +193,13 @@ class FormatFileBlock extends FormatFile_ItemBase{
     }
 }
 
+class UnnameFunction{
+    constructor(params_arr){
+        this.params_arr = params_arr;
+        this.bodyBlock = new FormatFileBlock('unnamefun');
+    }
+}
+
 class FormatHtmlTag extends FormatFile_ItemBase{
     constructor(name, tagName, clientSide){
         super();
@@ -248,7 +255,7 @@ class FormatHtmlTag extends FormatFile_ItemBase{
         this.attrObj[name] = value;
     }
 
-    
+
 
     addSwitchClass(switchName, switchVal, existsProcess) {
         if (this.switch[switchName] != null) {
@@ -338,9 +345,14 @@ class FormatHtmlTag extends FormatFile_ItemBase{
         if(this.clientSide.addStyleObject(styleID,this.style)){
             rlt += " style={" + styleID + "}";
         }
-
+        
+        var unnameFunAttr_arr = [];
         for(var i in this.attrObj){
             var attrVal = this.attrObj[i];
+            if(attrVal instanceof UnnameFunction){
+                unnameFunAttr_arr.push({name:i,fun:attrVal});
+                continue;
+            }
             if(IsEmptyString(attrVal)){
                 continue;
             }
@@ -353,6 +365,12 @@ class FormatHtmlTag extends FormatFile_ItemBase{
             }
             rlt += ' ' + i + '=' + attrVal;
         }
+        unnameFunAttr_arr.forEach(attr=>{
+            rlt += ' ' + attr.name + '={(' + attr.fun.params_arr.join(',') + ')=>{' + newLineChar;
+            rlt += prefixStr + indentChar + 'return <React.Fragment>' + newLineChar;
+            rlt += attr.fun.bodyBlock.getString(prefixStr + indentChar, indentChar, newLineChar) + newLineChar;
+            rlt += prefixStr + indentChar + '</React.Fragment>}}';
+        });
         if(this.childs_arr.length > 0)
         {
             rlt += '>' + newLineChar;
