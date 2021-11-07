@@ -6376,7 +6376,7 @@ class JSNode_FreshForm extends JSNode_Base {
         }
         else {
             if (unDivParent.type == M_PageKernel_Type) {
-                parentPath = singleQuotesStr(selectedKernel.parent.id);
+                parentPath = singleQuotesStr(unDivParent.id);
             }
             else {
                 parentPath = singleQuotesStr(unDivParent.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map }));
