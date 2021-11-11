@@ -184,7 +184,7 @@ function execFromNotify(req, res){
                     return false;
                 }
                 try{
-                    sqlRet = yield dbhelper.asynQueryWithParams('SELECT [关联步骤代码],[关联步骤数据],[关联方案代码]  FROM [base1].[dbo].[T196D流程审批记录] where [流程审批记录代码] = @id', [dbhelper.makeSqlparam('id', sqlTypes.Int, theRecord.流程审批记录代码)]);
+                    sqlRet = yield dbhelper.asynQueryWithParams('SELECT [关联步骤代码],[关联步骤数据],[关联方案代码],[审批确认状态]  FROM [base1].[dbo].[T196D流程审批记录] where [流程审批记录代码] = @id', [dbhelper.makeSqlparam('id', sqlTypes.Int, theRecord.流程审批记录代码)]);
                 }
                 catch(eo){
                     res.locals.errTitle = '严重错误';
@@ -199,6 +199,9 @@ function execFromNotify(req, res){
                     return false;
                 }
                 var shenpiRecord = sqlRet.recordset[0];
+                if(shenpiRecord.审批确认状态 != 0){
+                    // 已经审批过了，还能点进来，
+                }
                 try{
                     sqlRet = yield dbhelper.asynQueryWithParams('SELECT [方案英文名称],[桌面端名称],[移动端名称] FROM [V002C系统方案名称] where [系统方案名称代码]=@id', [dbhelper.makeSqlparam('id', sqlTypes.Int, shenpiRecord.关联方案代码)]);
                 }

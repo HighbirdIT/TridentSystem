@@ -249,7 +249,7 @@ class M_FormKernel extends ContainerKernelBase {
         if(this.isPageForm()){
             return false;
         }
-        if(!theKernel.hadAncestor(this)){
+        if(theKernel == this.gridFormBottomDiv || !theKernel.hadAncestor(this)){
             return false;
         }
         return !theKernel.hadAncestor(this.gridFormBottomDiv);

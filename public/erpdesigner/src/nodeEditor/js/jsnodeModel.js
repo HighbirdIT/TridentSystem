@@ -1205,7 +1205,6 @@ class JSNode_BluePrint extends EventEmitter {
                             varName = usectlid + '_' + propApiitem.stateName;
                             if (hadCallParm && this.group == EJsBluePrintFunGroup.CtlAttr) {
                                 initValue = "bundle != null && bundle['" + varName + "'] != null ? bundle['" + varName + "'] : " + ctlStateVarName + '.' + propApiitem.stateName;
-                                //initValue = "bundle != null && bundle['" + varName + "'] != null ? bundle['" + varName + "'] : " + makeStr_getStateByPath(formStateVarName, singleQuotesStr(useCtlData.kernel.id + '.' + propApiitem.stateName));
                             }
                             else {
                                 initValue = ctlStateVarName + '.' + propApiitem.stateName;
@@ -6365,9 +6364,10 @@ class JSNode_FreshForm extends JSNode_Base {
         var belongUserControl = selectedKernel.searchParentKernel(UserControlKernel_Type, true);
 
         var parentPath = null;
+        var unDivParent = selectedKernel.getUnDivParentKernel()
         if (belongUserControl) {
-            if (selectedKernel.parent != belongUserControl) {
-                parentPath = selectedKernel.parent.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map });
+            if (unDivParent != belongUserControl) {
+                parentPath = unDivParent.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map });
             }
             else {
                 parentPath = '';
@@ -6375,11 +6375,11 @@ class JSNode_FreshForm extends JSNode_Base {
             parentPath = belongUserControl.id + '_path' + (parentPath.length == 0 ? '' : "+'." + parentPath + "'");
         }
         else {
-            if (selectedKernel.parent.type == M_PageKernel_Type) {
+            if (unDivParent.type == M_PageKernel_Type) {
                 parentPath = singleQuotesStr(selectedKernel.parent.id);
             }
             else {
-                parentPath = singleQuotesStr(selectedKernel.parent.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map }));
+                parentPath = singleQuotesStr(unDivParent.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map }));
             }
         }
         var freshFunName = 'fresh_' + socketValue;

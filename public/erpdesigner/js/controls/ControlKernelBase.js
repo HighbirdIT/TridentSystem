@@ -437,6 +437,18 @@ var ControlKernelBase = function (_IAttributeable) {
             return rlt;
         }
     }, {
+        key: 'getUnDivParentKernel',
+        value: function getUnDivParentKernel() {
+            var tKernel = this.parent;
+            while (tKernel != null) {
+                if (tKernel.type != M_ContainerKernel_Type) {
+                    return tKernel;
+                }
+                tKernel = tKernel.parent;
+            }
+            return null;
+        }
+    }, {
         key: 'searchSameReactParentKernel',
         value: function searchSameReactParentKernel(otherKernel) {
             if (this.type == M_PageKernel_Type) {
@@ -668,12 +680,14 @@ var ControlKernelBase = function (_IAttributeable) {
             var topestParant = arguments[4];
 
             var rlt = this.id + (IsEmptyString(stateName) ? '' : splitChar + stateName);
-            switch (this.type) {
+            /*
+            switch(this.type){
                 case M_ContainerKernel_Type:
-                    console.warn('getStatePath M_ContainerKernel_Type');
-                    rlt = '';
-                    break;
+                console.warn('getStatePath M_ContainerKernel_Type');
+                rlt = '';
+                break;
             }
+            */
             if (this.parent == null || this == topestParant) {
                 return rlt;
             }
