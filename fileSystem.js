@@ -326,7 +326,7 @@ fileSystem.queryExcelFileState = (req, res) => {
     });
 };
 
-fileSystem.saveExcelJsonData = (name, json, bAutoIndex, bQuotePrefix, recordid, templateSetting) => {
+fileSystem.saveExcelJsonData = (name, json, bAutoIndex, bQuotePrefix, recordid, templateSetting, version) => {
     var jsonDirPath = path.join(__dirname, 'filedata');
     if (!fs.existsSync(jsonDirPath)) {
         fs.mkdirSync(jsonDirPath);
@@ -347,6 +347,9 @@ fileSystem.saveExcelJsonData = (name, json, bAutoIndex, bQuotePrefix, recordid, 
         fs.mkdirSync(excelFilePath);
     }
     var scriptPath = path.join(__dirname, 'scripts/python/creatExcelFromJson.py');
+    if(version == 2){
+        scriptPath = path.join(__dirname, 'scripts/python/creatExcelFromJson_v2.py');
+    }
     excelFilePath = path.join(excelFilePath, name + '.xlsx');
     var startPythonCmd;
     if (templateSetting.templatePath) {
@@ -417,8 +420,7 @@ fileSystem.exportExcelFileFromJson = (req, res) => {
                     dbhelper.makeSqlparam('_operator', sqlTypes.Int, g_envVar.userid),
                     dbhelper.makeSqlparam('分享令牌', sqlTypes.NVarChar(50), 分享令牌)
                 ]);
-
-            fileSystem.saveExcelJsonData(记录令牌, JSON.stringify(jsonData), bundle.bAutoIndex, bundle.bQuotePrefix, 记录代码, templateSetting);
+            fileSystem.saveExcelJsonData(记录令牌, JSON.stringify(jsonData), bundle.bAutoIndex, bundle.bQuotePrefix, 记录代码, templateSetting, jsonData.version);
             return 记录令牌;
         }
         catch (eo) {

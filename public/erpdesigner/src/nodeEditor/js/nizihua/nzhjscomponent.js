@@ -295,3 +295,45 @@ class C_JSNode_Mathfun extends React.PureComponent {
         </C_Node_Frame>
     }
 }
+
+class C_JSNode_For extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+        this.dropdownRef = React.createRef();
+
+        C_NodeCom_Base(this);
+    }
+
+    clickChecker(ev) {
+        var nodeData = this.props.nodedata;
+        var manualMode = nodeData.manualMode == null ? false : nodeData.manualMode;
+        nodeData.manualMode = !manualMode;
+        this.setState({
+            magicObj: {}
+        });
+    }
+
+    render() {
+        var nodeData = this.props.nodedata;
+        var manualMode = nodeData.manualMode == null ? false : nodeData.manualMode;
+        return <C_Node_Frame ref={this.frameRef} nodedata={nodeData} editor={this.props.editor} headType='tiny' headText={'ArrayFor'} >
+            <div className='flex-grow-1 flex-shrink-1'>
+                <div className='bg-light'>
+                    <span className='fa-stack fa-lg' onClick={this.clickChecker}>
+                        <i className={"fa fa-square-o fa-stack-2x"} />
+                        <i className={'fa fa-stack-1x ' + (manualMode ? ' fa-check text-success' : ' fa-close text-danger')} />
+                    </span>
+                    手动模式
+                </div>
+            </div>
+            <div className='d-flex'>
+                <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.inputScokets_arr} align='start' editor={this.props.editor} processFun={nodeData.isInScoketDynamic() ? nodeData.processInputSockets : null} />
+                <div className='d-flex flex-column'>
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outFlowSockets_arr} align='end' editor={this.props.editor} nameMoveable={true} />
+                    <C_SqlNode_ScoketsPanel nodedata={nodeData} data={nodeData.outputScokets_arr} align='end' editor={this.props.editor} nameMoveable={true} />
+                </div>
+            </div>
+        </C_Node_Frame>
+    }
+}
