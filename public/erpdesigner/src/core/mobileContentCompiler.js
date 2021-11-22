@@ -2998,7 +2998,7 @@ class MobileContentCompiler extends ContentCompiler {
                             statColumn_arr.push({
                                 fun:statFun,
                                 kernel:labeledKernel,
-                                key:kernelLabel,
+                                key:labeledKernel.id,
                                 valueColumn:valueColumn,
                             });
                         }
