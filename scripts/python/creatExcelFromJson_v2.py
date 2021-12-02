@@ -1,10 +1,13 @@
-import json
+﻿import json
 from openpyxl.styles import Font, Border, Side
 from openpyxl import Workbook
 from openpyxl.styles import Alignment
 from openpyxl.drawing.image import Image
 import string
+import io
+import sys
 import os.path
+import typing
 
 border_style = Border(left=Side(border_style='thin', color='000000'),
                       right=Side(border_style='thin', color='000000'),
@@ -12,7 +15,7 @@ border_style = Border(left=Side(border_style='thin', color='000000'),
                       bottom=Side(border_style='thin', color='000000'))
 
 alignment_center = Alignment(horizontal='center', vertical='center')
-
+alignment_center_wrap = Alignment(horizontal='center', vertical='center',wrapText=True)
 
 class JsonData:
     def __init__(self, path: str, encode='utf8'):
@@ -187,6 +190,17 @@ class Excel:
                 self.pict_hs.update({index: setting_dict})
             elif header_type == '数字':
                 self.numb_hs.update({index: setting_dict})
+    def getHS(self,col):
+        rlt = self.numb_hs.get(col)
+        if rlt != None:
+            return rlt
+        rlt = self.pict_hs.get(col)
+        if rlt != None:
+            return rlt
+        rlt = self.text_hs.get(col)
+        if rlt != None:
+            return rlt
+        return None
 
     @property
     def pict_setting_dict(self) -> dict:
@@ -217,11 +231,26 @@ class Excel:
         start_col = 2 if self.autoIndex else 1
 
         for key, val in self.text_setting_dict.items():
-            col_letter,__ = self.get_letter_coord(start_col + int(key),1)
+            col_letter, __ = self.get_letter_coord(start_col + int(key), 1)
             self.sheet.column_dimensions[col_letter].width = int(val.get('width'))
+
+    def set_print_area(self):
+        max_column, max_row = self.get_letter_coord(self.sheet.max_column, self.sheet.max_row)
+        self.sheet.print_area = "A1:%s%d" % (max_column, int(max_row))
+
+    def set_oddHeader(self):
+        title = self.title.data
+        self.sheet.oddHeader.center.text = "%s" % (title)
+        self.sheet.oddHeader.center.size = 16
+
+    def set_oddFooter(self):
+        self.sheet.oddFooter.center.text = '第&[Page]页 共&N页'
 
     def create(self):
         self.set_col_width()
+        self.set_print_area()
+        self.set_oddHeader()
+        self.set_oddFooter()
         self.wb.save(self.path)
 
 
@@ -262,7 +291,6 @@ class ExcelBuilder(object):
         cell.quotePrefix = 1 if self.addQuet else 0
         cell.alignment = alignment_center
         self.sheet.row_dimensions[start_row].height = 25
-        
 
     def add_header(self):
         start_row = self.header.start_row
@@ -288,32 +316,51 @@ class ExcelBuilder(object):
         for row, obj in enumerate(self.rows.data):
             self.rows_height_list = []
             self.rows_exist_pic = None
+            useRowHeight = 18
             for col in range(self.header.length):
+                hs = self.excel.getHS(col)
                 header_name = self.header.data[col]
                 cell_val = obj.get(header_name)
-                # 序号
-                serial_number = self.sheet.cell(row=start_row + row, column=1, value=row + 1)
-
 
                 # 判断这列是图片，并有值
                 if pict_setting_dict.get(col) and cell_val:
                     cell_val = self.add_picture(self.rows, row + start_row, col + start_col, cell_val,
                                                 pict_setting_dict.get(col))
                     self.rows_exist_pic = True
+                    picH = (2.62 / 100) * hs.get('picHeight') * 28.3465 + 10
+                    if picH > useRowHeight:
+                        useRowHeight = picH
+                        print('useRowHeight=' + str(useRowHeight))
 
                 cell = self.sheet.cell(row=start_row + row, column=start_col + col, value=cell_val)
                 # 居中
                 cell.alignment = alignment_center
+                if hs != None:
+                    if hs.get('wrapText') == True:
+                        cell.alignment = alignment_center_wrap
+                        t_arr = cell_val.split("|R|")
+                        cell.value = cell_val.replace("|R|","\n")
+                        rowHeight = len(t_arr) * 14
+                        if useRowHeight < rowHeight:
+                            useRowHeight = rowHeight
+                            print('useRowHeight=' + str(useRowHeight))
                 cell.border = self.rows.border
-                serial_number.alignment = alignment_center
-                serial_number.border = self.rows.border
+                # 序号
+                if self.autoIndex:
+                    serial_number = self.sheet.cell(row=start_row + row, column=1, value=row + 1)
+                    serial_number.alignment = alignment_center
+                    serial_number.border = self.rows.border
 
-            if self.rows_exist_pic:
-                self.sheet.row_dimensions[row + start_row].height = max(self.rows_height_list)
-            else:
-                self.sheet.row_dimensions[row + start_row].height = 18
+            self.sheet.row_dimensions[row + start_row].height = useRowHeight
 
     def add_picture(self, rows_obj, row, col, img_path, setting_dict: dict):
+        picWidth = setting_dict.get('picWidth')
+        if picWidth == None or len (str(picWidth)) == 0:
+            raise ValueError("picWidth 必须给一个数字") 
+        picHeight = setting_dict.get('picHeight')
+        if picHeight == None or len (str(picHeight)) == 0:
+            raise ValueError("picHeight 必须一个数字") 
+        
         picWidth = float(setting_dict.get('picWidth'))
         picHeight = float(setting_dict.get('picHeight'))
 
@@ -321,8 +368,8 @@ class ExcelBuilder(object):
             handle = getattr(rows_obj, 'get_letter_coord', None)
             colLetter, rowIndex = handle(col, row)
             img = None
-            img_path = 'D:/work/TridentSystem/public' + img_path
-            img_path = img_path.replace('/','\\')
+            img_path = 'D:/website/TridentSystem/public' + img_path
+            img_path = img_path.replace('/', '\\')
             if os.path.exists(img_path):
                 img = Image(img_path)
                 img.width = picWidth
@@ -358,9 +405,9 @@ class ExcelBuilder(object):
         return self.excel
 
 if __name__ == '__main__':
-    # sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-    # argv = sys.argv
-    argv=['',r'd:\work\TridentSystem\filedata\excel\820c766a-4841-58a7-28b4-277ca49cbbea.xlsx',r'd:\work\TridentSystem\filedata\exceljson\67d0d371-9569-ce16-1732-42c1c6afa7ea.json','1','0']
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    argv = sys.argv
+    #argv=['',r'd:\work\TridentSystem\filedata\excel\820c766a-4841-58a7-28b4-277ca49cbbea.xlsx',r'd:\work\TridentSystem\filedata\exceljson\1d584262-f1c1-5401-9073-06d7cb46b66c.json','1','0']
     if len(argv) > 2:
         filePath = str(argv[1])
         jsonPath = str(argv[2])
@@ -368,7 +415,6 @@ if __name__ == '__main__':
         Excel.autoIndex = 0 if len(argv) <= 3 else (1 if argv[3] == '1' else 0)
         Excel.addQuet = 0 if len(argv) <= 4 else (1 if argv[4] == '1' else 0)
         title = TitleFactory(Title, data).create()
-        print(title.data)
         header = HeaderFactory(Header, data).create()
 
         rows = RowsFactory(Rows, data).create()
@@ -376,11 +422,14 @@ if __name__ == '__main__':
         header_setting = HeaderSettingFactory(HeaderSettings, data).create()
 
         excel_builder = ExcelBuilder(title, header, rows, filePath)
-        # # 配置settings
+        # 配置settings
         excel_builder.set_header_settings(header_setting)
-        #
+
         excel_builder.add_title()
         excel_builder.add_header()
         excel_builder.add_rows()
         excel = excel_builder.build()
         excel.create()
+        print('OK',end='')
+    else:
+        print("No argv",end='')

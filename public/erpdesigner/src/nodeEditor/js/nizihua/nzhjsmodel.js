@@ -1730,6 +1730,9 @@ class JSNode_ExcelHeader extends JSNode_Base {
                     case 'colName':
                         this.colNameSocket = socket;
                         break;
+                    case 'autoWrap':
+                        this.autoWrapSocket = socket;
+                        break;
                 }
             });
         }
@@ -1745,9 +1748,11 @@ class JSNode_ExcelHeader extends JSNode_Base {
         if (this.picHeightSocket == null) {
             this.picHeightSocket = this.addSocket(new NodeSocket('picHeight', this, true));
         }
-        
         if (this.typeSocket == null) {
             this.typeSocket = this.addSocket(new NodeSocket('type', this, true));
+        }
+        if (this.autoWrapSocket == null) {
+            this.autoWrapSocket = this.addSocket(new NodeSocket('autoWrap', this, true));
         }
      
         this.colNameSocket.label = '列名';
@@ -1755,16 +1760,20 @@ class JSNode_ExcelHeader extends JSNode_Base {
         this.picWidthSocket.label = '图宽';
         this.picHeightSocket.label = '图高';
         this.colNameSocket.inputable = true;
+        this.autoWrapSocket.label = "自动换行";
 
         this.colNameSocket.hideIcon = true;
         this.colWidthSocket.hideIcon = true;
         this.picWidthSocket.hideIcon = true;
         this.picHeightSocket.hideIcon = true;
+        this.autoWrapSocket.hideIcon = true;
+
         this.colNameSocket.type = ValueType.String;
         this.typeSocket.type = ValueType.String;
         this.colWidthSocket.type = ValueType.String;
         this.picWidthSocket.type = ValueType.String;
         this.picHeightSocket.type = ValueType.String;
+        this.autoWrapSocket.type = ValueType.Boolean;
 
         this.typeSocket.hideIcon = true;
         if (this.typeSocket.defval == null) {
@@ -1845,6 +1854,11 @@ class JSNode_ExcelHeader extends JSNode_Base {
             return false;
         }
         var picHeightValue = socketComRet.value;
+        socketComRet = this.getSocketCompileValue(helper, this.autoWrapSocket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var autoWrapValue = socketComRet.value;
         socketComRet = this.getSocketCompileValue(helper, this.typeSocket, usePreNodes_arr, belongBlock, true);
         if (socketComRet.err) {
             return false;
@@ -1858,6 +1872,7 @@ class JSNode_ExcelHeader extends JSNode_Base {
         finalStr += 'width:' + (parseInt(colWidthValue) > 0 ? parseInt(colWidthValue) : "''");
         finalStr += ',picWidth:' + (parseInt(picWidthValue) > 0 ? parseInt(picWidthValue) : "''");
         finalStr += ',picHeight:' + (parseInt(picHeightValue) > 0 ? parseInt(picHeightValue) : "''");
+        finalStr += ',wrapText:' + (autoWrapValue == true);
         finalStr += '}';
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.outDataSocket, finalStr);
