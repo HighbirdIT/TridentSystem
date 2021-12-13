@@ -235,12 +235,14 @@ class M_DropdownKernel extends ControlKernelBase {
                 }
                 cusDS_bp.linkPool.addLink(colNode.outSocket, theSocket);
             }
-            colNode.setFromObj({
-                tableCode: useDS.code,
-                tableAlias: null,
-                tableName: useDS.name,
-                columnName: needOrderColumns_arr[si],
-            });
+            if(useDS){
+                colNode.setFromObj({
+                    tableCode: useDS.code,
+                    tableAlias: null,
+                    tableName: useDS.name,
+                    columnName: needOrderColumns_arr[si],
+                });
+            }
         }
     }
 

@@ -330,7 +330,7 @@ class ExcelBuilder(object):
                     picH = (2.62 / 100) * hs.get('picHeight') * 28.3465 + 10
                     if picH > useRowHeight:
                         useRowHeight = picH
-                        print('useRowHeight=' + str(useRowHeight))
+                        #print('useRowHeight=' + str(useRowHeight))
 
                 cell = self.sheet.cell(row=start_row + row, column=start_col + col, value=cell_val)
                 # 居中
@@ -343,7 +343,7 @@ class ExcelBuilder(object):
                         rowHeight = len(t_arr) * 14
                         if useRowHeight < rowHeight:
                             useRowHeight = rowHeight
-                            print('useRowHeight=' + str(useRowHeight))
+                            #print('useRowHeight=' + str(useRowHeight))
                 cell.border = self.rows.border
                 # 序号
                 if self.autoIndex:
