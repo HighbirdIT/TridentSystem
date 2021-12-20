@@ -3796,7 +3796,7 @@ class JSNode_OpenReport extends JSNode_Base {
             tryBlock.bodyBlock.pushLine('var ' + paramsInsertRetVarName + ';');
             var insertSql = 'INSERT INTO [dbo].[T003E报表打开参数](报表打开记录代码,参数名称,参数值) values(@打开记录代码, @参数名称, @参数值)';
             params_arr.forEach(param => {
-                insertParamStr = "dbhelper.makeSqlparam('打开记录代码', sqlTypes.Int, " + insertRetVarName + ")," + "dbhelper.makeSqlparam('参数名称', sqlTypes.NVarChar(50), " + singleQuotesStr(param.name) + ")," + "dbhelper.makeSqlparam('参数值', sqlTypes.NVarChar(max), " + param.name + ')';
+                insertParamStr = "dbhelper.makeSqlparam('打开记录代码', sqlTypes.Int, " + insertRetVarName + ")," + "dbhelper.makeSqlparam('参数名称', sqlTypes.NVarChar(50), " + singleQuotesStr(param.name) + ")," + "dbhelper.makeSqlparam('参数值', sqlTypes.NVarChar(4000), " + param.name + ')';
                 tryBlock.bodyBlock.pushLine(paramsInsertRetVarName + " = yield dbhelper.asynGetScalar('" + insertSql + "', [" + insertParamStr + "]);");
             });
         }
