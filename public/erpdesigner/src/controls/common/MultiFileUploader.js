@@ -15,6 +15,7 @@ const MFileUploaderKernelAttrsSetting = GenControlKernelAttrsSetting([
         genValidCheckerAttribute(),
         new CAttribute('fileListStr', 'fileListStr', ValueType.String, '', false, false,null,null,false),
         new CAttribute('fileListArray', 'fileListArray', ValueType.Array, '', false, false,null,null,false),
+        new CAttribute('接受的类型', 'accept', ValueType.String, '*', null, false, FileAcceptType_arr),
     ]),
     new CAttributeGroup('事件', [
         new CAttribute('上传完成', AttrNames.Event.OnUploadComplete, ValueType.Event),

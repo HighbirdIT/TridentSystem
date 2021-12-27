@@ -5453,6 +5453,11 @@ class MobileContentCompiler extends ContentCompiler {
         var parentPath = this.getKernelParentPath(theKernel);
         ctlTag.setAttr('parentPath', parentPath);
 
+        var acceptType = theKernel.getAttribute('accept');
+        if(acceptType != '*'){
+            ctlTag.setAttr('accept', singleQuotesStr(GetFileAcceptType(acceptType)));
+        }
+
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
         var reactParentKernel = theKernel.getReactParentKernel(true);
         var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
@@ -5538,6 +5543,11 @@ class MobileContentCompiler extends ContentCompiler {
         var formColumns_arr = null;
         if (belongFormKernel != null && (belongFormKernel.isPageForm() || belongFormKernel.isKernelInRow(theKernel))) {
             formColumns_arr = belongFormKernel.getCanuseColumns();
+        }
+
+        var acceptType = theKernel.getAttribute('accept');
+        if(acceptType != '*'){
+            ctlTag.setAttr('accept', singleQuotesStr(GetFileAcceptType(acceptType)));
         }
 
         var title = theKernel.getAttribute(AttrNames.Title);

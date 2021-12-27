@@ -440,3 +440,22 @@ var EContainerTag = {
 };
 
 var ContainerTag_arr = [EContainerTag.Div, EContainerTag.Span, EContainerTag.H1, EContainerTag.H2, EContainerTag.H3, EContainerTag.H4, EContainerTag.H5, EContainerTag.H6];
+
+var EFileAcceptType = {
+    Image: 'image',
+    Video: 'video',
+    Audio: 'audio'
+};
+
+var FileAcceptType_arr = ['*', EFileAcceptType.Image, EFileAcceptType.Video, EFileAcceptType.Audio];
+
+function GetFileAcceptType(val) {
+    switch (val) {
+        case EFileAcceptType.Image:
+            return 'image/*';
+        case EFileAcceptType.Video:
+            return 'video/*';
+        case EFileAcceptType.Audio:
+            return 'audio/*';
+    }
+}
