@@ -3,23 +3,23 @@ const fileSystemUrl = '/fileSystem';
 const EAcceptFileType = {
     All: 1,
     Image: 2,
-    Vedio: 3,
+    Video: 3,
     Excel: 4,
     Word: 5,
     PDF: 6,
-    ImageVedio: 7,
+    ImageVideo: 7,
+    Audio: 8,
 };
-
 
 var FileAcceptStr = {
 };
 FileAcceptStr[EAcceptFileType.All] = '*/*';
 FileAcceptStr[EAcceptFileType.Image] = 'image/*';
-FileAcceptStr[EAcceptFileType.Vedio] = 'vedio/*';
+FileAcceptStr[EAcceptFileType.Video] = 'video/*';
 FileAcceptStr[EAcceptFileType.Excel] = 'application/msexcel,application/vnd.openxmlformats-officedocument.spre,application/vnd.ms-excel';
 FileAcceptStr[EAcceptFileType.Word] = 'application/msword,application/vnd.openxmlformats-officedocument.word';
 FileAcceptStr[EAcceptFileType.PDF] = 'application/pdf';
-FileAcceptStr[EAcceptFileType.ImageVedio] = 'image/*,vedio/*';
+FileAcceptStr[EAcceptFileType.ImageVideo] = 'image/*,video/*';
 
 const EFileUploaderState = {
     WAITFILE: 'waitfile',
@@ -29,6 +29,7 @@ const EFileUploaderState = {
     UPLOADING: 'uploading',
     COMPLETE: 'complete',
     BEFOREEND: 'beforeend',
+    COMPRING: 'compring',
 };
 
 const EFileSystemError = {
@@ -103,6 +104,7 @@ class FileUploader extends EventEmitter {
         this.state = EFileUploaderState.WAITFILE;
         this.myBlockMaxSize = MINPERBLOCKSIZE;
         autoBind(this);
+        this.bCompresImage = true;
     }
 
     reset() {
@@ -135,6 +137,7 @@ class FileUploader extends EventEmitter {
         this.file = theFile;
         this.base64Data = null;
         this.isPause = false;
+        this.compring = false;
         this.previewUrl = null;
         this.uploading = false;
         this.startPos = 0;
@@ -142,9 +145,9 @@ class FileUploader extends EventEmitter {
         this.evalSize = 0;
         this.evalTime = 0;
         this.changeState(EFileUploaderState.PREPARE);
-        this._prepare();
-
+        
         if (theFile.type.indexOf('image/') != -1) {
+            var doCompresImage = this.bCompresImage && theFile.size > 1024 * 1024;
             var imgReader = new FileReader();
             imgReader.onerror = null;
             imgReader.onload = ev => {
@@ -154,9 +157,52 @@ class FileUploader extends EventEmitter {
                 }
                 self.base64Data = imgReader.result;
                 self._fireChanged();
+                if(doCompresImage){
+                    var image = new Image();
+                    image.src=self.base64Data;
+                    image.onload = function() {
+                        var imgW = image.naturalWidth;
+                        var imgH = image.naturalHeight;
+                        canvas = document.createElement("canvas"),
+                        ctx = canvas.getContext('2d');
+                        var sizeScale = 1;
+                        var bigSize = Math.max(imgW,imgH);
+                        if(bigSize > 2048){
+                            sizeScale = 2048.0 / bigSize;
+                        }
+                        //sizeScale = 0.1;
+                        var canvasW = Math.round(imgW * sizeScale);
+                        var canvasH = Math.round(imgH * sizeScale);
+                        var canvas = document.createElement("canvas");
+                        var ctx = canvas.getContext('2d');
+                        canvas.width = canvasW;
+                        canvas.height = canvasH;
+                        ctx.drawImage(image, 0, 0, imgW, imgH, 0, 0, canvasW, canvasH);
+                        canvas.toBlob(blob=>{
+                            console.log('old:' + DataSizeToString(theFile.size) + ' newSize:' + DataSizeToString(blob.size));
+                            var t_arr = theFile.name.split('.');
+                            blob.name = t_arr[0] + '.jpg';
+                            self.file = blob;
+                            self.fileProfile.name = blob.name;
+                            self.fileProfile.size = blob.size;
+                            self.fileProfile.type = blob.type;
+                            // var newImg = document.createElement("img");
+                            // var url = URL.createObjectURL(blob);
+                            // newImg.src = url;
+                            // document.body.appendChild(newImg);
+                            self._prepare();
+                        },"image/jpeg", 0.8);
+                    };
+                }
             };
             imgReader.readAsDataURL(theFile);
+            if(doCompresImage){
+                this.changeState(EFileUploaderState.COMPRING);
+                self._fireChanged();
+                return;
+            }
         }
+        this._prepare();
     }
 
     pause() {
@@ -451,6 +497,23 @@ function getRenderAidDataFromFileType(pFileType) {
     };
 }
 
+function _dodownloadFile(fileUrl,fileName){
+    dingdingKit.biz.util.downloadFile({
+        url: fileUrl, //要下载的文件的url
+        name: fileName, //定义下载文件名字
+        onProgress: function (msg) {
+        },
+        onSuccess: function (result) {
+            dingdingKit.biz.util.openLocalFile({
+                url: fileUrl,
+                onSuccess: function (result) {
+                },
+                onFail: function () { }
+            });
+        },
+        onFail: function () { }
+    });
+}
 
 function gPreviewFile(name, fileType, url) {
     var aidData = getRenderAidDataFromFileType(fileType);
@@ -490,37 +553,7 @@ function gPreviewFile(name, fileType, url) {
         }
         else {
             if (!isMobile) {
-                dingdingKit.biz.util.isLocalFileExist({
-                    params: [{ url: window.location.origin + url }],
-                    onSuccess: function (result) {
-                        if (result[0].isExist) {
-                            dingdingKit.biz.util.openLocalFile({
-                                url: window.location.origin + url, //本地文件的url，指的是调用DingTalkPC.biz.util.downloadFile接口下载时填入的url，配合DingTalkPC.biz.util.downloadFile使用
-                                onSuccess: function (result) {
-                                },
-                                onFail: function () { }
-                            });
-                        }
-                        else {
-                            dingdingKit.biz.util.downloadFile({
-                                url: window.location.origin + url, //要下载的文件的url
-                                name: name, //定义下载文件名字
-                                onProgress: function (msg) {
-                                },
-                                onSuccess: function (result) {
-                                    dingdingKit.biz.util.openLocalFile({
-                                        url: window.location.origin + url,
-                                        onSuccess: function (result) {
-                                        },
-                                        onFail: function () { }
-                                    });
-                                },
-                                onFail: function () { }
-                            });
-                        }
-                    },
-                    onFail: function () { }
-                });
+                _dodownloadFile(window.location.origin + url, name);
             }
             else {
                 dingdingKit.biz.util.openLink({
@@ -714,6 +747,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
             loading: false
         };
         this.fileTagRef = React.createRef();
+        this.fileTagRef_2 = React.createRef();
     }
 
     reDraw() {
@@ -739,6 +773,7 @@ class ERPC_SingleFileUploader extends React.PureComponent {
         this.unmounted = false;
         if (this.props.uploader == null) {
             var newUploader = new FileUploader();
+            newUploader.bCompresImage = this.props.bCompresImage != false;
             this.listenUploader(newUploader);
             store.dispatch(makeAction_setManyStateByPath({
                 uploader: newUploader,
@@ -881,6 +916,12 @@ class ERPC_SingleFileUploader extends React.PureComponent {
     clickPlusHandler(ev) {
         if (this.fileTagRef.current) {
             this.fileTagRef.current.click();
+        }
+    }
+
+    clickFile2Handler(ev) {
+        if (this.fileTagRef_2.current) {
+            this.fileTagRef_2.current.click();
         }
     }
 
@@ -1031,6 +1072,18 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                 }, 20);
             }
         }
+        var accept = "*/*";
+        var accept_2 = null;
+        var acceptFileType = this.props.acceptFileType;
+        if(acceptFileType != null && acceptFileType != 1){
+            if(acceptFileType == EAcceptFileType.ImageVideo){
+                accept = FileAcceptStr[EAcceptFileType.Image];
+                accept_2 = FileAcceptStr[EAcceptFileType.Video];
+            }
+            else{
+                accept = FileAcceptStr[acceptFileType];
+            }
+        }
         switch (fileUploader.state) {
             case EFileUploaderState.WAITFILE:
                 canDelete = false;
@@ -1122,14 +1175,38 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                         </div>;
                     }
                     else {
-                        contentElem = <div className='flex-grow-1 flex-shrink-1 cursor_hand' onClick={this.clickPlusHandler} onDragEnter={this.dragenter} onDragLeave={this.dragleave} onDrop={this.drop} onDragOver={this.dragOver}>
+                        if(isMobile && (acceptFileType == EAcceptFileType.Image || acceptFileType == EAcceptFileType.Video || acceptFileType == EAcceptFileType.ImageVideo || acceptFileType == EAcceptFileType.Audio)){
+                            if(acceptFileType == EAcceptFileType.Image || acceptFileType == EAcceptFileType.Video){
+                                contentElem = <div className='flex-grow-1 flex-shrink-1' onClick={this.clickPlusHandler}>
+                                    <span className='centerelem position-absolute pointerevent-none' >
+                                        <div className='text-nowrap h5'><i className='fa fa-camera' />上传{acceptFileType == EAcceptFileType.Image ? "图片" : "视频"}</div>
+                                    </span>
+                                </div>;
+                            }
+                            else if(acceptFileType == EAcceptFileType.ImageVideo){
+                                contentElem = <div className='d-flex flex-grow-1 flex-shrink-1 flex-column'>
+                                    <span onClick={this.clickPlusHandler} className='d-flex flex-grow-1 flex-shrink-1 justify-content-center align-items-center border-bottom' >
+                                        <div className='text-nowrap h5'><i className='fa fa-camera' />上传图片</div>
+                                    </span>
+                                    <span onClick={this.clickFile2Handler} className='d-flex flex-grow-1 flex-shrink-1 justify-content-center align-items-center' >
+                                        <div className='text-nowrap h5'><i className='fa fa-video-camera' />上传视频</div>
+                                    </span>
+                                </div>;
+                            }
+                            else if(isInDingTalk){
+                                
+                            }
+                        }
+                        if(contentElem == null){
+                            contentElem = <div className='flex-grow-1 flex-shrink-1 cursor_hand' onClick={this.clickPlusHandler} onDragEnter={this.dragenter} onDragLeave={this.dragleave} onDrop={this.drop} onDragOver={this.dragOver}>
                             <span className='centerelem position-absolute pointerevent-none' >
-                                <div className='text-nowrap'><i className='fa fa-mouse-pointer' />上传文件</div>
-                                {isMobile ? null : <div className='text-nowrap'><i className='fa fa-hand-rock-o' />拖拽文件</div>}
+                                <div className='text-nowrap h5'><i className='fa fa-mouse-pointer' />上传文件</div>
+                                {isMobile ? null : <div className='text-nowrap h5'><i className='fa fa-hand-rock-o' />拖拽文件</div>}
                             </span>
-                        </div>;
-                        if (!isMobile) {
-                            qrCodeBtn = <div className='text-nowrap cursor_hand qrcodebtn' onClick={this.clickQRCodehandler}><i className='fa fa-qrcode' />扫码上传</div>
+                            </div>;
+                            if (!isMobile) {
+                                qrCodeBtn = <div className='text-nowrap cursor_hand qrcodebtn h5' onClick={this.clickQRCodehandler}><i className='fa fa-qrcode' />扫码上传</div>
+                            }
                         }
                     }
                 }
@@ -1141,6 +1218,12 @@ class ERPC_SingleFileUploader extends React.PureComponent {
                 else {
                     childElem = <span className='centerelem position-absolute text-nowrap bg-white'><i className='fa fa-circle-o-notch fa-spin' />读取中</span>;
                 }
+                contentElem = <div className='w-100 h-100'>
+                    {childElem}
+                </div>;
+                break;
+            case EFileUploaderState.COMPRING:
+                childElem = <span className='centerelem position-absolute text-nowrap bg-white'><i className='fa fa-circle-o-notch fa-spin' />压缩中</span>;
                 contentElem = <div className='w-100 h-100'>
                     {childElem}
                 </div>;
@@ -1203,7 +1286,8 @@ class ERPC_SingleFileUploader extends React.PureComponent {
 
         var className = 'fileuploadersingle ' + (this.props.className ? this.props.className : '');
         return <div className={className} style={this.props.style} fixedsize={this.props.fixedsize}>
-            <input onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' accept="*/*,image/*" />
+            <input onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' accept={accept} />
+            {accept_2 == null ? null : <input onChange={this.fileSelectedHandler} ref={this.fileTagRef_2} type='file' className='d-none' accept={accept_2} />}
             <span id='title' className='flex-grow-0 flex-shrink-0 wb-all'>
                 {this.props.title}
             </span>
@@ -1333,6 +1417,9 @@ class CFileUploaderBar extends React.PureComponent {
                         bottomBar = <span className='flex-grow-1 flex-shrink-1'><i className='fa fa-circle-o-notch fa-spin' />文件读取中</span>;
                     }
                     break;
+                case EFileUploaderState.COMPRING:
+                    bottomBar = <span className='flex-grow-1 flex-shrink-1'><i className='fa fa-circle-o-notch fa-spin' />压缩中</span>;
+                    break;
                 case EFileUploaderState.PREPARE:
                     if (fileUploader.errorCode > 0) {
                         bottomBar = <span className='flex-grow-1 flex-shrink-1'>
@@ -1449,6 +1536,7 @@ class ERPC_MultiFileUploader extends React.PureComponent {
             });
             if (!found) {
                 var newUploader = new FileUploader();
+                newUploader.bCompresImage = this.props.bCompresImage != false;
                 newUploader.uploadFile(theFile, this.uploaderJobDone);
                 newUploaders.push(newUploader);
                 ++addedCount;
@@ -1617,8 +1705,13 @@ class ERPC_MultiFileUploader extends React.PureComponent {
             invalidInfoElem = <span className='bg-danger text-white'><i className='fa fa-warning' />{this.props.invalidInfo}</span>
         }
 
+        var accept = "*/*";
+        var acceptFileType = this.props.acceptFileType;
+        if(acceptFileType != null && acceptFileType != 1){
+            accept = FileAcceptStr[acceptFileType];
+        }
         return <div className={rootClassName} style={this.props.style}>
-            <input onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' multiple="multiple" />
+            <input onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' multiple="multiple" accept={accept} />
             <div className='bg-dark d-flex flex-shrink-0 flex-grow-0 p-1 align-items-center'>
                 <span className='text-light flex-grow-1 flex-shrink-1'><i className='fa fa-list mr-1' />{this.props.title}</span>
             </div>
@@ -1698,37 +1791,7 @@ class ERPC_FilePreview extends React.PureComponent {
         }
         else {
             if (!isMobile) {
-                dingdingKit.biz.util.isLocalFileExist({
-                    params: [{ url: fileUrl }],
-                    onSuccess: function (result) {
-                        if (result[0].isExist) {
-                            dingdingKit.biz.util.openLocalFile({
-                                url: fileUrl, //本地文件的url，指的是调用DingTalkPC.biz.util.downloadFile接口下载时填入的url，配合DingTalkPC.biz.util.downloadFile使用
-                                onSuccess: function (result) {
-                                },
-                                onFail: function () { }
-                            });
-                        }
-                        else {
-                            dingdingKit.biz.util.downloadFile({
-                                url: fileUrl, //要下载的文件的url
-                                name: fileName, //定义下载文件名字
-                                onProgress: function (msg) {
-                                },
-                                onSuccess: function (result) {
-                                    dingdingKit.biz.util.openLocalFile({
-                                        url: fileUrl,
-                                        onSuccess: function (result) {
-                                        },
-                                        onFail: function () { }
-                                    });
-                                },
-                                onFail: function () { }
-                            });
-                        }
-                    },
-                    onFail: function () { }
-                })
+                _dodownloadFile(fileUrl, fileName);
             }
             else {
                 dingdingKit.biz.util.openLink({

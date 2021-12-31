@@ -444,18 +444,22 @@ var ContainerTag_arr = [EContainerTag.Div, EContainerTag.Span, EContainerTag.H1,
 var EFileAcceptType = {
     Image: 'image',
     Video: 'video',
+    ImageVideo: 'imagevideo',
     Audio: 'audio'
 };
 
-var FileAcceptType_arr = ['*', EFileAcceptType.Image, EFileAcceptType.Video, EFileAcceptType.Audio];
+var FileAcceptType_arr = ['*', EFileAcceptType.Image, EFileAcceptType.Video, EFileAcceptType.Audio, EFileAcceptType.ImageVideo];
 
 function GetFileAcceptType(val) {
     switch (val) {
         case EFileAcceptType.Image:
-            return 'image/*';
+            return 2;
         case EFileAcceptType.Video:
-            return 'video/*';
+            return 3;
         case EFileAcceptType.Audio:
-            return 'audio/*';
+            return 8;
+        case EFileAcceptType.ImageVideo:
+            return 7;
     }
+    return 1;
 }

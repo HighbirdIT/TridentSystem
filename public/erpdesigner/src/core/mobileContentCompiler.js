@@ -5455,8 +5455,9 @@ class MobileContentCompiler extends ContentCompiler {
 
         var acceptType = theKernel.getAttribute('accept');
         if(acceptType != '*'){
-            ctlTag.setAttr('accept', singleQuotesStr(GetFileAcceptType(acceptType)));
+            ctlTag.setAttr('acceptFileType', GetFileAcceptType(acceptType));
         }
+        ctlTag.setAttr('bCompresImage', bigbracketStr(theKernel.getAttribute('doDompress')));
 
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
         var reactParentKernel = theKernel.getReactParentKernel(true);
@@ -5538,6 +5539,7 @@ class MobileContentCompiler extends ContentCompiler {
         if(layoutConfig.hadSizeSetting()){
             ctlTag.setAttr('fixedsize', singleQuotesStr(0));
         }
+        ctlTag.setAttr('bCompresImage', bigbracketStr(theKernel.getAttribute('doDompress')));
         ctlTag.class = layoutConfig.class;
         ctlTag.style = layoutConfig.style;
         var formColumns_arr = null;
@@ -5547,7 +5549,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         var acceptType = theKernel.getAttribute('accept');
         if(acceptType != '*'){
-            ctlTag.setAttr('accept', singleQuotesStr(GetFileAcceptType(acceptType)));
+            ctlTag.setAttr('acceptFileType', GetFileAcceptType(acceptType));
         }
 
         var title = theKernel.getAttribute(AttrNames.Title);

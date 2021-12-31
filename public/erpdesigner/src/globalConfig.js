@@ -452,18 +452,22 @@ const ContainerTag_arr = [EContainerTag.Div, EContainerTag.Span, EContainerTag.H
 const EFileAcceptType={
     Image:'image',
     Video:'video',
+    ImageVideo:'imagevideo',
     Audio:'audio',
 }
 
-const FileAcceptType_arr = ['*',EFileAcceptType.Image,EFileAcceptType.Video,EFileAcceptType.Audio];
+const FileAcceptType_arr = ['*',EFileAcceptType.Image,EFileAcceptType.Video,EFileAcceptType.Audio,EFileAcceptType.ImageVideo];
 
 function GetFileAcceptType(val){
     switch(val){
         case EFileAcceptType.Image:
-            return 'image/*';
+            return 2;
         case EFileAcceptType.Video:
-            return 'video/*';
+            return 3;
         case EFileAcceptType.Audio:
-            return 'audio/*';
+            return 8;
+        case EFileAcceptType.ImageVideo:
+            return 7;
     }
+    return 1;
 }
