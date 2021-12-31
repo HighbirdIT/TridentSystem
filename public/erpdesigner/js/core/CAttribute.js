@@ -439,7 +439,8 @@ var AttrNames = {
         OnUnCollapse: 'onUnCollapse',
         OnRowBind: 'onRowBind',
         OnClickRefresh: 'onclickrefresh',
-        OnClickRow: 'onclickrow'
+        OnClickRow: 'onclickrow',
+        OnRecordEnd: 'onRecordEnd'
     },
 
     Function: {

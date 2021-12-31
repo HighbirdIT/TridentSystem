@@ -416,6 +416,7 @@ const AttrNames={
         OnRowBind:'onRowBind',
         OnClickRefresh:'onclickrefresh',
         OnClickRow:'onclickrow',
+        OnRecordEnd:'onRecordEnd',
     },
 
     Function:{
