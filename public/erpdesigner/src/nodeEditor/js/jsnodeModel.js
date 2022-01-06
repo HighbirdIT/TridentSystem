@@ -6376,7 +6376,7 @@ class JSNode_FreshForm extends JSNode_Base {
         }
         else {
             if (unDivParent.type == M_PageKernel_Type) {
-                parentPath = singleQuotesStr(selectedKernel.parent.id);
+                parentPath = singleQuotesStr(unDivParent.id);
             }
             else {
                 parentPath = singleQuotesStr(unDivParent.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map }));
@@ -7222,6 +7222,10 @@ class JSNODE_Update_table extends JSNode_Base {
                         return;
                     }
                     var theEditor = labelKernel.editor;
+                    if(theEditor.type == M_LabelKernel_Type){
+                        // 标签编辑器跳过
+                        return
+                    }
                     var apiItem = null;
                     if (theEditor.hasAttribute(AttrNames.ValueField)) {
                         apiItem = gFindPropApiItem(theEditor.type, AttrNames.ValueField);
