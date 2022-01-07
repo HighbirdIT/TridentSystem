@@ -10548,7 +10548,7 @@ class JSNode_Attachment_Pro extends JSNode_Base {
         }
         else {
             this.serverFlowSocket = this.outFlowSockets_arr[0];
-            if (!bluePrintIsServer) {
+            if (bluePrintIsServer) {
                 this.removeSocket(this.serverFlowSocket);
                 this.serverFlowSocket = null;
             }

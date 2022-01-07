@@ -451,6 +451,23 @@ function getRenderAidDataFromFileType(pFileType) {
     };
 }
 
+function _dodownloadFile(fileUrl,fileName){
+    dingdingKit.biz.util.downloadFile({
+        url: fileUrl, //要下载的文件的url
+        name: fileName, //定义下载文件名字
+        onProgress: function (msg) {
+        },
+        onSuccess: function (result) {
+            dingdingKit.biz.util.openLocalFile({
+                url: fileUrl,
+                onSuccess: function (result) {
+                },
+                onFail: function () { }
+            });
+        },
+        onFail: function () { }
+    });
+}
 
 function gPreviewFile(name, fileType, url) {
     var aidData = getRenderAidDataFromFileType(fileType);
@@ -490,37 +507,7 @@ function gPreviewFile(name, fileType, url) {
         }
         else {
             if (!isMobile) {
-                dingdingKit.biz.util.isLocalFileExist({
-                    params: [{ url: window.location.origin + url }],
-                    onSuccess: function (result) {
-                        if (result[0].isExist) {
-                            dingdingKit.biz.util.openLocalFile({
-                                url: window.location.origin + url, //本地文件的url，指的是调用DingTalkPC.biz.util.downloadFile接口下载时填入的url，配合DingTalkPC.biz.util.downloadFile使用
-                                onSuccess: function (result) {
-                                },
-                                onFail: function () { }
-                            });
-                        }
-                        else {
-                            dingdingKit.biz.util.downloadFile({
-                                url: window.location.origin + url, //要下载的文件的url
-                                name: name, //定义下载文件名字
-                                onProgress: function (msg) {
-                                },
-                                onSuccess: function (result) {
-                                    dingdingKit.biz.util.openLocalFile({
-                                        url: window.location.origin + url,
-                                        onSuccess: function (result) {
-                                        },
-                                        onFail: function () { }
-                                    });
-                                },
-                                onFail: function () { }
-                            });
-                        }
-                    },
-                    onFail: function () { }
-                });
+                _dodownloadFile(window.location.origin + url, name);
             }
             else {
                 dingdingKit.biz.util.openLink({
@@ -1202,8 +1189,9 @@ class ERPC_SingleFileUploader extends React.PureComponent {
         }
 
         var className = 'fileuploadersingle ' + (this.props.className ? this.props.className : '');
+        var accept = this.props.accept ? this.props.accept : "*/*";
         return <div className={className} style={this.props.style} fixedsize={this.props.fixedsize}>
-            <input onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' accept="*/*,image/*" />
+            <input onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' accept={accept} />
             <span id='title' className='flex-grow-0 flex-shrink-0 wb-all'>
                 {this.props.title}
             </span>
@@ -1617,8 +1605,9 @@ class ERPC_MultiFileUploader extends React.PureComponent {
             invalidInfoElem = <span className='bg-danger text-white'><i className='fa fa-warning' />{this.props.invalidInfo}</span>
         }
 
+        var accept = this.props.accept ? this.props.accept : "*/*";
         return <div className={rootClassName} style={this.props.style}>
-            <input onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' multiple="multiple" />
+            <input onChange={this.fileSelectedHandler} ref={this.fileTagRef} type='file' className='d-none' multiple="multiple" accept={accept} />
             <div className='bg-dark d-flex flex-shrink-0 flex-grow-0 p-1 align-items-center'>
                 <span className='text-light flex-grow-1 flex-shrink-1'><i className='fa fa-list mr-1' />{this.props.title}</span>
             </div>
@@ -1698,37 +1687,7 @@ class ERPC_FilePreview extends React.PureComponent {
         }
         else {
             if (!isMobile) {
-                dingdingKit.biz.util.isLocalFileExist({
-                    params: [{ url: fileUrl }],
-                    onSuccess: function (result) {
-                        if (result[0].isExist) {
-                            dingdingKit.biz.util.openLocalFile({
-                                url: fileUrl, //本地文件的url，指的是调用DingTalkPC.biz.util.downloadFile接口下载时填入的url，配合DingTalkPC.biz.util.downloadFile使用
-                                onSuccess: function (result) {
-                                },
-                                onFail: function () { }
-                            });
-                        }
-                        else {
-                            dingdingKit.biz.util.downloadFile({
-                                url: fileUrl, //要下载的文件的url
-                                name: fileName, //定义下载文件名字
-                                onProgress: function (msg) {
-                                },
-                                onSuccess: function (result) {
-                                    dingdingKit.biz.util.openLocalFile({
-                                        url: fileUrl,
-                                        onSuccess: function (result) {
-                                        },
-                                        onFail: function () { }
-                                    });
-                                },
-                                onFail: function () { }
-                            });
-                        }
-                    },
-                    onFail: function () { }
-                })
+                _dodownloadFile(fileUrl, fileName);
             }
             else {
                 dingdingKit.biz.util.openLink({

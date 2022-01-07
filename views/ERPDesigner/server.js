@@ -518,9 +518,14 @@ function GetEntityInfo(codes_arr,req) {
         var 目标库内对象_dic = {};
         //var t = yield WriteEntity(rcdRlt.recordset[0], 目标库内对象_dic);
 
-        rlt = yield rcdRlt.recordset.map(entity_dr => {
-            return WriteEntity(entity_dr, 目标库内对象_dic,req);
-        });
+        rlt = []
+        for(var ss in rcdRlt.recordset){
+            var t = yield WriteEntity(rcdRlt.recordset[ss], 目标库内对象_dic,req)
+            rlt.push(t)
+        }
+        // rlt = yield rcdRlt.recordset.map(entity_dr => {
+        //     return WriteEntity(entity_dr, 目标库内对象_dic,req);
+        // });
 
         return rlt;
     });

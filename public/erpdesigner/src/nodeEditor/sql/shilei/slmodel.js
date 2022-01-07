@@ -575,7 +575,7 @@ class SqlNode_XApply extends SqlNode_Base {
 
         var applyString = socketOuts_arr[0].strContent + clampStr(this.xapplyType, ' ', ' ') + entityString;
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.outSocket, applyString);
+        selfCompileRet.setSocketOut(this.outSocket, applyString, { tableName: this.title });
         helper.setCompileRetCache(this, selfCompileRet);
         return selfCompileRet;
     }

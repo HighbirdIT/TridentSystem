@@ -2998,7 +2998,7 @@ class MobileContentCompiler extends ContentCompiler {
                             statColumn_arr.push({
                                 fun:statFun,
                                 kernel:labeledKernel,
-                                key:kernelLabel,
+                                key:labeledKernel.id,
                                 valueColumn:valueColumn,
                             });
                         }
@@ -5453,6 +5453,12 @@ class MobileContentCompiler extends ContentCompiler {
         var parentPath = this.getKernelParentPath(theKernel);
         ctlTag.setAttr('parentPath', parentPath);
 
+        var acceptType = theKernel.getAttribute('accept');
+        if(acceptType != '*'){
+            ctlTag.setAttr('acceptFileType', GetFileAcceptType(acceptType));
+        }
+        ctlTag.setAttr('bCompresImage', bigbracketStr(theKernel.getAttribute('doDompress')));
+
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
         var reactParentKernel = theKernel.getReactParentKernel(true);
         var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
@@ -5533,11 +5539,17 @@ class MobileContentCompiler extends ContentCompiler {
         if(layoutConfig.hadSizeSetting()){
             ctlTag.setAttr('fixedsize', singleQuotesStr(0));
         }
+        ctlTag.setAttr('bCompresImage', bigbracketStr(theKernel.getAttribute('doDompress')));
         ctlTag.class = layoutConfig.class;
         ctlTag.style = layoutConfig.style;
         var formColumns_arr = null;
         if (belongFormKernel != null && (belongFormKernel.isPageForm() || belongFormKernel.isKernelInRow(theKernel))) {
             formColumns_arr = belongFormKernel.getCanuseColumns();
+        }
+
+        var acceptType = theKernel.getAttribute('accept');
+        if(acceptType != '*'){
+            ctlTag.setAttr('acceptFileType', GetFileAcceptType(acceptType));
         }
 
         var title = theKernel.getAttribute(AttrNames.Title);

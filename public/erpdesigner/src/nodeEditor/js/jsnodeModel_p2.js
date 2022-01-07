@@ -3796,7 +3796,7 @@ class JSNode_OpenReport extends JSNode_Base {
             tryBlock.bodyBlock.pushLine('var ' + paramsInsertRetVarName + ';');
             var insertSql = 'INSERT INTO [dbo].[T003E报表打开参数](报表打开记录代码,参数名称,参数值) values(@打开记录代码, @参数名称, @参数值)';
             params_arr.forEach(param => {
-                insertParamStr = "dbhelper.makeSqlparam('打开记录代码', sqlTypes.Int, " + insertRetVarName + ")," + "dbhelper.makeSqlparam('参数名称', sqlTypes.NVarChar(50), " + singleQuotesStr(param.name) + ")," + "dbhelper.makeSqlparam('参数值', sqlTypes.NVarChar(50), " + param.name + ')';
+                insertParamStr = "dbhelper.makeSqlparam('打开记录代码', sqlTypes.Int, " + insertRetVarName + ")," + "dbhelper.makeSqlparam('参数名称', sqlTypes.NVarChar(50), " + singleQuotesStr(param.name) + ")," + "dbhelper.makeSqlparam('参数值', sqlTypes.NVarChar(4000), " + param.name + ')';
                 tryBlock.bodyBlock.pushLine(paramsInsertRetVarName + " = yield dbhelper.asynGetScalar('" + insertSql + "', [" + insertParamStr + "]);");
             });
         }
@@ -3917,6 +3917,8 @@ class JSNode_ExportExcel extends JSNode_Base {
                     case 'template':
                         this.tempalteSocket = socket;
                         break;
+                    case 'colsetSocket':
+                        this.colsetSocket = socket;
                 }
             });
         }
@@ -3935,15 +3937,21 @@ class JSNode_ExportExcel extends JSNode_Base {
         if (this.addquetSocket == null) {
             this.addquetSocket = this.addSocket(new NodeSocket('addquet', this, true));
         }
+        if (this.colsetSocket == null) {
+            this.colsetSocket = this.addSocket(new NodeSocket('colsetSocket', this, true));
+        }
         this.titleSocket.label = '标题';
         this.jsonSocket.label = 'json数组';
         this.indexedSocket.label = '带序号';
         this.addquetSocket.label = 'addquet';
+        this.colsetSocket.label = '表列设置'
         this.tempalteSocket.type = ValueType.String;
         this.titleSocket.type = ValueType.String;
         this.jsonSocket.type = ValueType.Object;
         this.indexedSocket.type = ValueType.Boolean;
         this.addquetSocket.type = ValueType.Boolean;
+        this.colsetSocket.type = ValueType.Array;
+        this.colsetSocket.inputable = false;
         this.indexedSocket.hideIcon = true;
         this.addquetSocket.hideIcon = true;
         this.tempalteSocket.hideIcon = true;
@@ -4014,12 +4022,6 @@ class JSNode_ExportExcel extends JSNode_Base {
         var blockInServer = theScope && theScope.isServerSide;
         var belongFun = theScope ? theScope.fun : null;
         var nodeThis = this;
-        if (this.checkCompileFlag(this.bluePrint.group == EJsBluePrintFunGroup.ServerScript, '不可在服务端使用', helper)) {
-            return false;
-        }
-        if (this.checkCompileFlag(blockInServer, '不可在服务端调用', helper)) {
-            return false;
-        }
         var params_arr = [];
         var usePreNodes_arr = preNodes_arr.concat(this);
         var theSocket;
@@ -4047,7 +4049,29 @@ class JSNode_ExportExcel extends JSNode_Base {
         if (socketComRet.err) {
             return false;
         }
+        
         var templateValue = socketComRet.value;
+        
+        var colsetValue = null;
+        var tLinks = this.bluePrint.linkPool.getLinksBySocket(this.colsetSocket);
+        if (tLinks.length > 0) {
+            var fromNode = tLinks[0].outSocket.node;
+            if(fromNode.type == JSNODE_EXCELHEADER || fromNode.type == JSNODE_ARRAY_NEW){
+                socketComRet = this.getSocketCompileValue(helper, this.colsetSocket, usePreNodes_arr, belongBlock, true, true);
+                if (socketComRet.err) {
+                    return false;
+                }
+                colsetValue = socketComRet.value;
+                if(fromNode.type == JSNODE_EXCELHEADER){
+                    colsetValue = '[' + colsetValue + ']'
+                }
+            }
+            else{
+                if (this.checkCompileFlag(true, '表列设置只支持由excelHeader节点构成', helper)) {
+                    return false;
+                }
+            }
+        }
 
         // makeClient
         helper.compilingFun.hadServerFetch = true;
@@ -4058,6 +4082,11 @@ class JSNode_ExportExcel extends JSNode_Base {
         helper.addInitClientBundleBlock(initBundleBlock);
         var bundleVarName = this.id + '_bundle';
 
+        if(colsetValue == null){
+            colsetValue = "[]";
+        }
+        myJSBlock.pushLine(makeLine_Assign(jsonValue + '.headerSetting', colsetValue));
+        myJSBlock.pushLine(makeLine_Assign(jsonValue + '.version', 2));
         initBundleBlock.params_map['title'] = 'fileTitle';
         initBundleBlock.params_map['data'] = jsonValue;
         initBundleBlock.params_map['bAutoIndex'] = indexedValue == true;
@@ -4067,6 +4096,7 @@ class JSNode_ExportExcel extends JSNode_Base {
         }
 
         myJSBlock.pushLine('var fileTitle = ' + titleValue + ';');
+        myJSBlock.pushLine(makeLine_Assign(jsonValue + '.title', 'fileTitle'));
         myJSBlock.pushLine("var " + bundleVarName + " = Object.assign({}," + VarNames.BaseBunlde + ",{", 1);
         myJSBlock.pushChild(initBundleBlock);
         myJSBlock.subNextIndent();

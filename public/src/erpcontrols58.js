@@ -788,7 +788,7 @@ class ERPC_DropDown_PopPanel extends React.PureComponent {
                     <span className='text-nowrap'>没有数据</span>
                 </div>
             }
-            if (!multiselect && options_arr.length > 20) {
+            if (!multiselect && options_arr.length > 5) {
                 searchItem = (<div className='flex-shrink-0 input-group flex-nowrap'>
                     <div className="input-group-prepend">
                         <span className='text-primary input-group-text p-1' ><i className='fa fa-search' /></span>
@@ -1812,7 +1812,10 @@ class ERPC_LabeledControl extends React.PureComponent {
 }
 
 function ERPC_LabeledControl_mapstatetoprops(state, ownprops) {
-    var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    //var rowState = propProfile.rowState;
+    //var ctlState = getStateByPath(state, MakePath(ownprops.parentPath, ownprops.id), {});
     var useLabel = ctlState.label != null ? ctlState.label : (ownprops.label != null ? ownprops.label : '');
     return {
         label: useLabel,
@@ -1862,6 +1865,10 @@ class ERPC_Label extends React.PureComponent {
         this.state = this.initState;
     }
 
+    toggleAbbrev(){
+        store.dispatch(makeAction_setStateByPath(!this.props.abbreved, MakePath(this.props.fullPath, 'abbreved')));
+    }
+
     render() {
         if (this.props.visible == false) {
             return null;
@@ -1869,6 +1876,7 @@ class ERPC_Label extends React.PureComponent {
         var rootDivClassName = 'erpc_label ' + (this.props.className == null ? '' : this.props.className);
         var contentElem = null;
         var tileLen = 0;
+        var aftElem = null;
         if (this.props.fetching) {
             rootDivClassName += 'p-1';
             contentElem = <span><i className='fa fa-spinner fa-pulse fa-fw' />通讯中</span>;
@@ -1887,17 +1895,22 @@ class ERPC_Label extends React.PureComponent {
             contentElem = <i className={'fa ' + (checked ? ' fa-check text-success' : ' fa-close text-danger')} />
         }
         else {
-            contentElem = FormatStringValue(this.props.text, this.props.type, this.props.precision);
+            contentElem = FormatStringValue(this.props.text, this.props.type, this.props.precision, this.props.dotsplit);
             tileLen = contentElem.toString().length;
+            if(this.props.abbrevLen > 0 && this.props.type == 'string'){
+                if(contentElem && contentElem.length > this.props.abbrevLen){
+                    contentElem = this.props.abbreved ? contentElem.substring(0,this.props.abbrevLen) : contentElem;
+                    aftElem = <button onClick={this.toggleAbbrev} type='button' className='btn btn-sm btn-link'><i className={'fa fa-angle-double-' + (this.props.abbreved ? 'down' : 'up')}/>{this.props.abbreved ? '展开' : '收起'}</button>
+                }
+            }
         }
 
         var needCtlPath = false;
         if (this.props.onMouseDown != null) {
             needCtlPath = true;
         }
-
         var useStyleClass = this.getUseStyleClass(this.props.style, rootDivClassName);
-        return (<span className={useStyleClass.class} style={useStyleClass.style} charlen={this.props.boutcharlen ? tileLen : null} onMouseDown={this.props.onMouseDown} ctl-fullpath={needCtlPath ? this.props.fullPath : null} >{contentElem}</span>);
+        return (<span className={useStyleClass.class} style={useStyleClass.style} charlen={this.props.boutcharlen ? tileLen : null} onMouseDown={this.props.onMouseDown} ctl-fullpath={needCtlPath ? this.props.fullPath : null} >{contentElem}{aftElem}</span>);
     }
 }
 
@@ -1911,12 +1924,13 @@ function ERPC_Label_mapstatetoprops(state, ownprops) {
         text: useText,
         visible: ctlState.visible,
         fetching: ctlState.fetching,
-        visible: ctlState.visible == false || ownprops.definvisible ? false : true,
+        visible: ctlState.visible != null ? ctlState.visible : (ownprops.definvisible ? false : true),
         fetchingErr: ctlState.fetchingErr,
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
         dynamicStyle: ctlState.style,
         dynamicClass: ctlState.class,
+        abbreved: ctlState.abbreved != false,
     };
 }
 
@@ -1932,6 +1946,61 @@ class ERPC_Img extends React.PureComponent {
 
         ERPControlBase(this);
         this.state = this.initState;
+    }
+
+    dataURIToBlob(base64) {
+        var binStr = atob(base64.split(',')[1]),
+          len = binStr.length,
+          arr = new Uint8Array(len);
+      
+        for (var i = 0; i < len; i++) {
+          arr[i] = binStr.charCodeAt(i);
+        }
+        return new Blob([arr]);
+    }
+
+    mouseDownHandler(ev){
+        if(this.props.onMouseDown){
+            this.props.onMouseDown(ev);
+        }
+        else{
+            var isBase64 = this.props.src.indexOf("base64,") != -1;
+            if(isBase64){
+                if (isMobile) {
+                    dingdingKit.biz.util.previewImage({
+                        urls: [this.props.src],
+                        current: 0,
+                    });
+                }
+                else{
+                    var p1 = this.props.src.indexOf('/');
+                    var p2 = this.props.src.indexOf(';');
+                    var aftfix = this.props.src.substring(p1+1, p2);
+                    var rndName = guid2().toUpperCase();
+                    var blob = this.dataURIToBlob(this.props.src);
+                    var aelem = document.createElement('a');
+                    aelem.download = rndName + '.' + aftfix;
+                    aelem.href = URL.createObjectURL(blob);
+                    document.body.append(aelem);
+                    aelem.click();
+                    /*
+                    var blobUrl = URL.createObjectURL(blob);
+                    dingdingKit.biz.util.previewImage({
+                        urls: [blobUrl],
+                        current: 0,
+                    });
+                    */
+                }
+            }
+            else{
+                if (isInDingTalk) {
+                        dingdingKit.biz.util.previewImage({
+                            urls: [this.props.src],
+                            current: 0,
+                        });
+                    }
+                }
+            }
     }
 
     render() {
@@ -1955,15 +2024,12 @@ class ERPC_Img extends React.PureComponent {
         }
 
         if (contentElem) {
-            return (<span className={rootDivClassName} style={this.props.style} onMouseDown={this.props.onMouseDown} >{contentElem}</span>);
+            return (<span className={rootDivClassName} style={this.props.style} onMouseDown={this.mouseDownHandler} >{contentElem}</span>);
         }
 
-        var needCtlPath = false;
-        if (this.props.onMouseDown != null) {
-            needCtlPath = true;
-        }
+        var needCtlPath = true;
         var useStyleClass = this.getUseStyleClass(this.props.style, rootDivClassName);
-        return (<img className={useStyleClass.class} style={useStyleClass.style} src={this.props.src} onMouseDown={this.props.onMouseDown} ctl-fullpath={needCtlPath ? this.props.fullPath : null} />);
+        return (<img className={useStyleClass.class} style={useStyleClass.style} src={this.props.src} onMouseDown={this.mouseDownHandler} ctl-fullpath={needCtlPath ? this.props.fullPath : null} />);
     }
 }
 
@@ -1977,7 +2043,7 @@ function ERPC_Img_mapstatetoprops(state, ownprops) {
         src: useSrc,
         visible: ctlState.visible,
         fetching: ctlState.fetching,
-        visible: ctlState.visible == false || ownprops.definvisible ? false : true,
+        visible: ctlState.visible != null ? ctlState.visible : (ownprops.definvisible ? false : true),
         fetchingErr: ctlState.fetchingErr,
         fullParentPath: propProfile.fullParentPath,
         fullPath: propProfile.fullPath,
@@ -2302,6 +2368,7 @@ var VisibleERPC_PopperBtn = null;
 var VisibleERPC_FrameSet = null;
 var VisibleERPC_IFrame = null;
 var VisibleERPC_Img = null;
+var VisibleERPC_Container = null;
 const gNeedCallOnErpControlInit_arr = [];
 
 function ErpControlInit() {
@@ -2316,6 +2383,7 @@ function ErpControlInit() {
     VisibleERPC_FrameSet = ReactRedux.connect(ERPC_FrameSet_mapstatetoprops, ERPC_FrameSet_dispatchtorprops)(ERPC_FrameSet);
     VisibleERPC_IFrame = ReactRedux.connect(ERPC_IFrame_mapstatetoprops, ERPC_IFrame_dispatchtorprops)(ERPC_IFrame);
     VisibleERPC_Img = ReactRedux.connect(ERPC_Img_mapstatetoprops, ERPC_Img_dispatchtorprops)(ERPC_Img);
+    VisibleERPC_Container = ReactRedux.connect(ERPC_Container_mapstatetoprops, ERPC_Container_dispatchtorprops)(ERPC_Container);
 
     gNeedCallOnErpControlInit_arr.forEach(elem => {
         if (typeof elem == 'function') {
@@ -2740,7 +2808,7 @@ function ERPC_GridForm_RoweditClicked(rowkey) {
 function ERPC_GridForm_RowcanceleditClicked(rowkey) {
     var rowPath = this.getRowPath(rowkey);
     var rowState = this.getRowState(rowkey);
-    var needSetState = JSON.parse(rowState.stateshot);
+    var needSetState = rowState.stateshot == null ? {} : JSON.parse(rowState.stateshot);
     needSetState.editing = false;
     store.dispatch(makeAction_setManyStateByPath(needSetState, rowPath));
 }
@@ -2769,6 +2837,19 @@ function ERPC_GridForm_ClickNewRowHandler() {
     this.setState({
         hadNewRow: true,
     });
+    var trPath = this.props.fullPath + 'newrowtr';
+    setTimeout(()=>{
+        var newTrElem = document.getElementById(trPath);
+        if(newTrElem){
+            var trTop = $(newTrElem).offset().top
+            console.log("trTop:" + trTop);
+            if (trTop >= 30 && trTop < $(window).height() - 100) {
+            }
+            else{
+                newTrElem.scrollIntoView();
+            }
+        }
+    },50)
 }
 
 function ERPC_GridForm_CancelInsert() {
@@ -2971,7 +3052,7 @@ class ERPC_GridSelectableRow extends React.PureComponent {
         }
     }
     clickRowHandler(ev){
-        if(ev.target.tagName == 'TD' || ev.target.tagName == 'TR'){
+        if(this.props.hideSelector || ev.target.tagName == 'TD' || ev.target.tagName == 'TR'){
             this.clickHandler();
         }
     }
@@ -4075,6 +4156,71 @@ function ERPC_IFrame_dispatchtorprops(dispatch, ownprops) {
     };
 }
 
+class ERPC_Container extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        autoBind(this);
+
+        ERPControlBase(this);
+        this.state = this.initState;
+    }
+
+    render() {
+        if (this.props.visible == false) {
+            return null;
+        }
+        var childElem = this.props.children;
+        /*
+        var childElem = this.props.creatChild == null ? null : this.props.creatChild(this);
+        if(this.props.creatChild == null){
+            return null;
+        }
+        */
+        var tagtype = this.props.tagtype;
+        if(tagtype == 'div'){
+            return <div className={this.props.className} style={this.props.style}>{childElem}</div>
+        }
+        else if(tagtype == 'span'){
+            return <span className={this.props.className} style={this.props.style}>{childElem}</span>
+        }
+        else if(tagtype == 'h1'){
+            return <h1 className={this.props.className} style={this.props.style}>{childElem}</h1>
+        }
+        else if(tagtype == 'h2'){
+            return <h2 className={this.props.className} style={this.props.style}>{childElem}</h2>
+        }
+        else if(tagtype == 'h3'){
+            return <h3 className={this.props.className} style={this.props.style}>{childElem}</h3>
+        }
+        else if(tagtype == 'h4'){
+            return <h4 className={this.props.className} style={this.props.style}>{childElem}</h4>
+        }
+        else if(tagtype == 'h5'){
+            return <h5 className={this.props.className} style={this.props.style}>{childElem}</h5>
+        }
+        else if(tagtype == 'h6'){
+            return <h6 className={this.props.className} style={this.props.style}>{childElem}</h6>
+        }
+        return null;
+    }
+}
+
+function ERPC_Container_mapstatetoprops(state, ownprops) {
+    var propProfile = getControlPropProfile(ownprops, state);
+    var ctlState = propProfile.ctlState;
+    var useVisible = ctlState.visible != null ? ctlState.visible : (ownprops.definvisible ? false : true);
+    return {
+        fullParentPath: propProfile.fullParentPath,
+        fullPath: propProfile.fullPath,
+        visible: useVisible,
+    };
+}
+
+function ERPC_Container_dispatchtorprops(dispatch, ownprops) {
+    return {
+    };
+}
+
 class CGridFormSelectCog extends React.PureComponent {
     constructor(props) {
         super(props);
@@ -4167,6 +4313,42 @@ const ERPXMLToolKit = {
         return rlt;
     },
 
+    extractAllColumn: (xmldoc) => {
+        var rlt = [];
+        if (typeof xmldoc === 'string') {
+            if(xmldoc.length == 0){
+                return rlt;
+            }
+            if(xmldoc[0] == '<'){
+                xmldoc = ERPXMLToolKit.createDocFromString(xmldoc);
+            }
+        }
+        if (xmldoc == null || xmldoc.childNodes == null || xmldoc.childNodes.length == 0) {
+            return rlt;
+        }
+        var rootNode = xmldoc.childNodes[0];
+        var fNumAttr = rootNode.attributes['fNum'];
+        if(fNumAttr == null){
+            return rlt;
+        }
+        var colNum = parseFloat(fNumAttr.value);
+        if(isNaN(colNum)){
+            return rlt;
+        }
+        rootNode.childNodes.forEach(node => {
+            if (node.nodeType != 1) {
+                return;
+            }
+            var rowItem = {};
+            rlt.push(rowItem);
+            for(var ci=1;ci<=colNum;++ci){
+                var val = node.attributes['f' + ci];
+                rowItem['f' + ci] = val == null || IsEmptyString(val.value) ? '' : (!isNaN(val.value) ? parseFloat(val.value) : val.value);
+            }
+        });
+        return rlt;
+    },
+
     convertToXmlString: (item_arr, attrs_arr) => {
         if (item_arr == null || item_arr.length == 0) {
             return '';
@@ -4192,7 +4374,7 @@ const ERPXMLToolKit = {
         });
         var rltStr = '<Data fNum="' + attrs_arr.length + '"';
         attrs_arr.forEach((name, i) => {
-            rltStr += ' f' + (i + 1) + '="' + name + '"';
+            rltStr += ' fn' + (i + 1) + '="' + name + '"';
         });
         rltStr += '>' + itemStr_arr.join('') + '</Data>';
         return rltStr;
@@ -4252,7 +4434,7 @@ function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath
     };
     for (i = 1; i <= xmlconfig.colcount; ++i) {
         var colName = xmlconfig['col' + i];
-        xmlHeadStr += ' f' + i + '="' + colName + '"';
+        xmlHeadStr += ' fn' + i + '="' + colName + '"';
         cols_arr.push({
             index: i,
             name: colName,
@@ -4279,7 +4461,7 @@ function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath
         if (rowState == null || rowState._isdirty) {
             return rlt;
         }
-        var rowItem = getRowItemFun(state, rowState, formPath + '.row_' + rowKey, record);
+        var rowItem = getRowItemFun(state, rowState, formPath + '.row_' + rowKey, record, formState);
         if (rowItem == null) {
             return rlt;
         }
@@ -4304,7 +4486,7 @@ function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath
     return rlt;
 }
 
-function GenFormJSONData(formState, getRowItemFun, formPath, headers) {
+function GenFormJSONData(formState, getRowItemFun, formPath, headers, state) {
     var records_arr = formState.records_arr;
     var i;
     var rlt = {
@@ -4317,7 +4499,7 @@ function GenFormJSONData(formState, getRowItemFun, formPath, headers) {
     var rows_arr = [];
     for (var ri = 0; ri < records_arr.length; ++ri) {
         var record = records_arr[ri];
-        var rowItem = getRowItemFun(formPath, record);
+        var rowItem = getRowItemFun(formPath, record, state);
         if (rowItem != null) {
             rows_arr.push(rowItem);
         }
@@ -4384,40 +4566,28 @@ function gStartExcelExport(bundle, msgItem, callBack) {
         }, false)));
 }
 
-function gExcelExported(fileUrl, fileName, msgItem, callBack, fileIdentity) {
-    if (isInDingTalk) {
-        if (!isMobile) {
-            dingdingKit.biz.util.isLocalFileExist({
-                params: [{ url: fileUrl }],
+function dodownloadFile(fileUrl,fileName){
+    dingdingKit.biz.util.downloadFile({
+        url: fileUrl, //要下载的文件的url
+        name: fileName, //定义下载文件名字
+        onProgress: function (msg) {
+        },
+        onSuccess: function (result) {
+            dingdingKit.biz.util.openLocalFile({
+                url: fileUrl,
                 onSuccess: function (result) {
-                    if (result[0].isExist) {
-                        dingdingKit.biz.util.openLocalFile({
-                            url: fileUrl, //本地文件的url，指的是调用DingTalkPC.biz.util.downloadFile接口下载时填入的url，配合DingTalkPC.biz.util.downloadFile使用
-                            onSuccess: function (result) {
-                            },
-                            onFail: function () { }
-                        });
-                    }
-                    else {
-                        dingdingKit.biz.util.downloadFile({
-                            url: fileUrl, //要下载的文件的url
-                            name: fileName, //定义下载文件名字
-                            onProgress: function (msg) {
-                            },
-                            onSuccess: function (result) {
-                                dingdingKit.biz.util.openLocalFile({
-                                    url: fileUrl,
-                                    onSuccess: function (result) {
-                                    },
-                                    onFail: function () { }
-                                });
-                            },
-                            onFail: function () { }
-                        });
-                    }
                 },
                 onFail: function () { }
             });
+        },
+        onFail: function () { }
+    });
+}
+
+function gExcelExported(fileUrl, fileName, msgItem, callBack, fileIdentity) {
+    if (isInDingTalk) {
+        if (!isMobile) {
+            dodownloadFile(fileUrl, fileName);
         }
         else {
             dingdingKit.biz.util.openLink({

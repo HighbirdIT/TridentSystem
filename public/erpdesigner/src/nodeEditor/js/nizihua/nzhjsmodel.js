@@ -18,6 +18,7 @@ const JSNODE_ISNULLOPERATOR = 'IsNullOperator';
 const JSNODE_MATHFUN = 'mathfun';
 const JSNODE_ARRAY_CLEAR = 'clear';
 const JSNODE_FOR = 'for';
+const JSNODE_EXCELHEADER = 'excelHeader'
 class JSNode_While extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_WHILE, 'While', false, nodeJson);
@@ -1705,6 +1706,184 @@ class JSNode_For extends JSNode_Base {
     }
 }
 
+class JSNode_ExcelHeader extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_EXCELHEADER, 'excelHeader', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            this.outDataSocket = this.outputScokets_arr[0];
+            this.inputScokets_arr.forEach(socket => {
+                switch (socket.name) {
+                    case 'colWidth':
+                        this.colWidthSocket = socket;
+                        break;
+                    case 'type':
+                        this.typeSocket = socket;
+                        break;
+                    case 'picWidth':
+                        this.picWidthSocket = socket;
+                        break;
+                    case 'picHeight':
+                        this.picHeightSocket = socket;
+                        break;
+                    case 'colName':
+                        this.colNameSocket = socket;
+                        break;
+                    case 'autoWrap':
+                        this.autoWrapSocket = socket;
+                        break;
+                }
+            });
+        }
+        if (this.colNameSocket == null) {
+            this.colNameSocket = this.addSocket(new NodeSocket('colName', this, true));
+        }
+        if (this.colWidthSocket == null) {
+            this.colWidthSocket = this.addSocket(new NodeSocket('colWidth', this, true));
+        }
+        if (this.picWidthSocket == null) {
+            this.picWidthSocket = this.addSocket(new NodeSocket('picWidth', this, true));
+        }
+        if (this.picHeightSocket == null) {
+            this.picHeightSocket = this.addSocket(new NodeSocket('picHeight', this, true));
+        }
+        if (this.typeSocket == null) {
+            this.typeSocket = this.addSocket(new NodeSocket('type', this, true));
+        }
+        if (this.autoWrapSocket == null) {
+            this.autoWrapSocket = this.addSocket(new NodeSocket('autoWrap', this, true));
+        }
+     
+        this.colNameSocket.label = '列名';
+        this.colWidthSocket.label = '列宽';
+        this.picWidthSocket.label = '图宽';
+        this.picHeightSocket.label = '图高';
+        this.colNameSocket.inputable = true;
+        this.autoWrapSocket.label = "自动换行";
+
+        this.colNameSocket.hideIcon = true;
+        this.colWidthSocket.hideIcon = true;
+        this.picWidthSocket.hideIcon = true;
+        this.picHeightSocket.hideIcon = true;
+        this.autoWrapSocket.hideIcon = true;
+
+        this.colNameSocket.type = ValueType.String;
+        this.typeSocket.type = ValueType.String;
+        this.colWidthSocket.type = ValueType.String;
+        this.picWidthSocket.type = ValueType.String;
+        this.picHeightSocket.type = ValueType.String;
+        this.autoWrapSocket.type = ValueType.Boolean;
+
+        this.typeSocket.hideIcon = true;
+        if (this.typeSocket.defval == null) {
+            this.typeSocket.defval = "文本";
+        }
+
+        if (this.outDataSocket == null) {
+            this.outDataSocket = new NodeSocket('Header设置', this, false, { type: ValueType.String });
+            this.addSocket(this.outDataSocket);
+        }
+        this.outDataSocket.label = 'Header设置';
+        var excelHeader_arr = ['文本','数字','图片']
+        this.typeSocket.set({
+            inputable: true,
+            inputDDC_setting: {
+                options_arr: excelHeader_arr,
+            },
+            label: '类型',
+        });
+    }
+
+    requestSaveAttrs(jsonProf) {
+        var rlt = super.requestSaveAttrs();
+        return rlt;
+    }
+
+    restorFromAttrs(attrsJson) {
+        assginObjByProperties(this, attrsJson, []);
+    }
+
+    getScoketClientVariable(helper, srcNode, belongFun, targetSocket, result) {
+        if (belongFun.scope.isServerSide) {
+            return;
+        }
+        if (targetSocket == this.outErrorSocket) {
+            return;
+        }
+        var compileRet = helper.getCompileRetCache(this);
+        var socketValue = compileRet.getSocketOut(targetSocket).strContent;
+        result.pushVariable(socketValue, targetSocket);
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+        var theScope = belongBlock.getScope();
+        var blockInServer = theScope && theScope.isServerSide;
+        var belongFun = theScope ? theScope.fun : null;
+        var nodeThis = this;
+        if (this.checkCompileFlag(this.bluePrint.group == EJsBluePrintFunGroup.ServerScript, '不可在服务端使用', helper)) {
+            return false;
+        }
+        if (this.checkCompileFlag(blockInServer, '不可在服务端调用', helper)) {
+            return false;
+        }
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var socketComRet = this.getSocketCompileValue(helper, this.colWidthSocket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var colWidthValue = socketComRet.value;
+        
+        socketComRet = this.getSocketCompileValue(helper, this.colNameSocket, usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var colName = socketComRet.value;
+
+        socketComRet = this.getSocketCompileValue(helper, this.picWidthSocket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var picWidthValue = socketComRet.value;
+        socketComRet = this.getSocketCompileValue(helper, this.picHeightSocket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var picHeightValue = socketComRet.value;
+        socketComRet = this.getSocketCompileValue(helper, this.autoWrapSocket, usePreNodes_arr, belongBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var autoWrapValue = socketComRet.value;
+        socketComRet = this.getSocketCompileValue(helper, this.typeSocket, usePreNodes_arr, belongBlock, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var typeValue = socketComRet.value;
+        var headerObj = {
+            type: typeValue,
+        };
+        
+        var finalStr = "{name:"+colName+",type:" + typeValue + ",";
+        finalStr += 'width:' + (parseInt(colWidthValue) > 0 ? parseInt(colWidthValue) : "''");
+        finalStr += ',picWidth:' + (parseInt(picWidthValue) > 0 ? parseInt(picWidthValue) : "''");
+        finalStr += ',picHeight:' + (parseInt(picHeightValue) > 0 ? parseInt(picHeightValue) : "''");
+        finalStr += ',wrapText:' + (autoWrapValue == true);
+        finalStr += '}';
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outDataSocket, finalStr);
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+
+
+
 JSNodeClassMap[JSNODE_WHILE] = {
     modelClass: JSNode_While,
     comClass: C_Node_SimpleNode,
@@ -1787,6 +1966,10 @@ JSNodeClassMap[JSNODE_ARRAY_REVERSE] = {
 JSNodeClassMap[JSNODE_FOR] = {
     modelClass: JSNode_For,
     comClass: C_JSNode_For,
+};
+JSNodeClassMap[JSNODE_EXCELHEADER] = {
+    modelClass: JSNode_ExcelHeader,
+    comClass: C_Node_SimpleNode,
 };
 /*
 JSNodeEditorControls_arr.push(
@@ -1897,5 +2080,11 @@ JSNodeEditorControls_arr.push(
     {
         label: 'for',
         nodeClass: JSNode_For,
+        type: '基础'
+    });
+JSNodeEditorControls_arr.push(
+    {
+        label: 'excelHeader',
+        nodeClass: JSNode_ExcelHeader,
         type: '基础'
     });
