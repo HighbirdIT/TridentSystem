@@ -457,7 +457,7 @@ var RC_SavaPanel = function (_React$PureComponent3) {
                     }, 2000);
                 }
             } else {
-                this.logManager.err(respon.json.err.info);
+                this.logManager.error(respon.json.err.info);
             }
             this.setState(newState);
         }

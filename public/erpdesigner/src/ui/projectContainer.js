@@ -387,7 +387,7 @@ class RC_SavaPanel extends React.PureComponent {
             }
         }
         else{
-            this.logManager.err(respon.json.err.info);
+            this.logManager.error(respon.json.err.info);
             
         }
         this.setState(newState);
