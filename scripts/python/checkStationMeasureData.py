@@ -135,7 +135,7 @@ class StationData:
                 ms = ms_dic[aIndex]
                 ms.anchor = anchor
                 # print('pre:%d,%d,%d'%(ms.loc.X,ms.loc.Y,ms.loc.Z))
-                ms.loc.Z += int(a['offsetZ'])
+                ms.loc.Z -= int(a['offsetZ'])
                 # print('aft:%d,%d,%d'%(ms.loc.X,ms.loc.Y,ms.loc.Z))
                 # print('%s->%s:%s'%(ms_dic[aIndex].index,anchor.name,anchor.code))
         return newData
