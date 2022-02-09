@@ -161,6 +161,9 @@ class StationData:
 
             for step in range(2):
                 if step == 0:
+                    if data_pre == None:
+                        #没有前置站点，不检测前控点
+                        continue
                     ms_arr = checkData.measures_arr[:4]
                 else:
                     ms_arr = checkData.measures_arr[-4:]
@@ -175,6 +178,9 @@ class StationData:
             for step in range(2):
                 tested_dic = {}
                 if step == 0:
+                    if data_pre == None:
+                        #没有前置站点，不检测前控点
+                        continue
                     ms_arr = checkData.measures_arr[:4]
                 else:
                     ms_arr = checkData.measures_arr[-4:]
@@ -252,7 +258,7 @@ if __name__ == '__main__':
     argv = sys.argv
     # argv = ['',
     #         '{"fileName":"1-1-1",'
-    #         '"filePath":"C:/Users/Administrator/Downloads/1-1-1.txt",'
+    #         '"filePath":"C:/Users/Administrator/Downloads/111.MES",'
     #         '"preFileName":"",'
     #         '"preFilePath":"",'
     #         '"aftFileName":"",'
@@ -261,7 +267,7 @@ if __name__ == '__main__':
     #         '"minVDistance":"2000",'
     #         '"anchor_arr":[{"code":1,"name":"测试锚点1","X":1000,"Y":2000,"Z":3000},{"code":2,"name":"测试锚点2","X":54000,"Y":12000,"Z":32000}],'
     #         '"preAnchor_arr":[],"nxtAnchor_arr":[],'
-    #         '"thisAnchor_arr":[{"index":-1,"key":"后1","anchorCode":"2","Z向偏移":"20"},{"index":-1,"key":"前1","anchorCode":"1","Z向偏移":"200"}],'
+    #         '"thisAnchor_arr":[],'
     #         '"minDistance":"2000"'
     #         '}']
 
