@@ -255,22 +255,22 @@ class StationData:
         return errList
 
 if __name__ == '__main__':
-    # sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-    # argv = sys.argv
-    argv = ['',
-            '{"fileName":"1-1-1",'
-            '"filePath":"C:/Users/Administrator/Downloads/111.MES",'
-            '"preFileName":"",'
-            '"preFilePath":"",'
-            '"aftFileName":"",'
-            '"aftFilePath":"",'
-            '"maxDif":"10",'
-            '"minVDistance":"2000",'
-            '"anchor_arr":[{"code":3,"name":"1","X":-50588,"Y":127153,"Z":10693},{"code":4,"name":"2","X":-81868,"Y":107382,"Z":10692},{"code":5,"name":"3","X":18219,"Y":-137871,"Z":10661},{"code":6,"name":"4","X":68969,"Y":-119474,"Z":10739},{"code":1,"name":"5","X":36863,"Y":132806,"Z":10673},{"code":2,"name":"6","X":-103435,"Y":-81558,"Z":10688},{"code":7,"name":"7","X":124377,"Y":-36693,"Z":10700},{"code":8,"name":"8","X":116036,"Y":60383,"Z":10689},{"code":9,"name":"9","X":84225,"Y":104782,"Z":10706},{"code":10,"name":"10","X":-31440,"Y":-135247,"Z":10679},{"code":11,"name":"11","X":-127629,"Y":-18481,"Z":10701},{"code":12,"name":"12","X":-126598,"Y":28816,"Z":10693}],'
-            '"preAnchor_arr":[],"nxtAnchor_arr":[],'
-            '"thisAnchor_arr":[{"index":-1,"key":"后3","anchorCode":"9","offsetZ":"1300"},{"index":-1,"key":"后4","anchorCode":"1","offsetZ":"2150"}],'
-            '"minDistance":"2000"'
-            '}']
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    argv = sys.argv
+    # argv = ['',
+    #         '{"fileName":"1-1-1",'
+    #         '"filePath":"C:/Users/Administrator/Downloads/111.MES",'
+    #         '"preFileName":"",'
+    #         '"preFilePath":"",'
+    #         '"aftFileName":"",'
+    #         '"aftFilePath":"",'
+    #         '"maxDif":"10",'
+    #         '"minVDistance":"2000",'
+    #         '"anchor_arr":[{"code":3,"name":"1","X":-50588,"Y":127153,"Z":10693},{"code":4,"name":"2","X":-81868,"Y":107382,"Z":10692},{"code":5,"name":"3","X":18219,"Y":-137871,"Z":10661},{"code":6,"name":"4","X":68969,"Y":-119474,"Z":10739},{"code":1,"name":"5","X":36863,"Y":132806,"Z":10673},{"code":2,"name":"6","X":-103435,"Y":-81558,"Z":10688},{"code":7,"name":"7","X":124377,"Y":-36693,"Z":10700},{"code":8,"name":"8","X":116036,"Y":60383,"Z":10689},{"code":9,"name":"9","X":84225,"Y":104782,"Z":10706},{"code":10,"name":"10","X":-31440,"Y":-135247,"Z":10679},{"code":11,"name":"11","X":-127629,"Y":-18481,"Z":10701},{"code":12,"name":"12","X":-126598,"Y":28816,"Z":10693}],'
+    #         '"preAnchor_arr":[],"nxtAnchor_arr":[],'
+    #         '"thisAnchor_arr":[{"index":-1,"key":"后3","anchorCode":"9","offsetZ":"1300"},{"index":-1,"key":"后4","anchorCode":"1","offsetZ":"2150"}],'
+    #         '"minDistance":"2000"'
+    #         '}']
 
     constr = argv[1]
     # print(constr)
