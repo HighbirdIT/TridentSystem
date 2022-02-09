@@ -215,6 +215,7 @@ class StationData:
                     ms_j = withAnchorMs_arr[j]
                     dis = ms_i.loc.DistanceTo(ms_j.loc)
                     standDis = ms_i.anchor.loc.DistanceTo(ms_j.anchor.loc)
+                    # print('dis:%d,standDis:%d'%(dis,standDis))
                     if abs(dis - standDis) > maxDif:
                         errList.append('"锚%s"(%s)到"锚%s"(%s)的间距是%d,和设计值%d相比偏差%d'%(ms_i.anchor.name,ms_i.标记序号,ms_j.anchor.name,ms_j.标记序号,dis,standDis,dis - standDis))
 
