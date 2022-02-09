@@ -125,8 +125,8 @@ class StationData:
                 # print(a)
                 aIndex = a['index']
                 aCode = a['anchorCode']
-                aKey = a['key']
                 if aIndex < 0:
+                    aKey = a['key']
                     if aKey[0] == '前':
                         aIndex = newData.measures_arr[int(aKey[1])-1].index
                     else:
@@ -221,6 +221,7 @@ class StationData:
 
             if len(errList) > 0:
                 return errList
+        #print('data_pre:%s'%(data_pre))
         if data_pre == None:
             return errList
         links_pre = MeasureDataLink.Create(data_pre.measures_arr[-4:])
@@ -243,32 +244,32 @@ class StationData:
             if abs(v) > maxDif:
                 isValid = False
                 break
+        print(linkDif_arr)
         if not isValid:
             errInfo = '%s的测量数据和%s相比，存在以下偏差:\n'%(checkData.name, data_pre.name)
             for i in range(len(useThisLink.node_arr)):
                 node_this = useThisLink.node_arr[i]
                 node_pre = usePreLink.node_arr[i]
                 errInfo += '%s和%s的间距是%d,相较%s的%s和%s的间距%d,偏差%d\n'%(useThisLink.baseMD.标记序号,node_this.md.标记序号,node_this.dis,specTip,usePreLink.baseMD.标记序号,node_pre.md.标记序号,node_pre.dis,linkDif_arr[i])
-        #     print(errInfo)
-        # print(linkDif_arr)
-        errList.append(errInfo)
+            errList.append(errInfo)
         return errList
 
 if __name__ == '__main__':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     argv = sys.argv
     # argv = ['',
-    #         '{"fileName":"1-1-1",'
-    #         '"filePath":"C:/Users/Administrator/Downloads/111.MES",'
-    #         '"preFileName":"",'
-    #         '"preFilePath":"",'
+    #         '{"fileName":"1-2-1",'
+    #         '"filePath":"C:/Users/Administrator/Downloads/121.MES",'
+    #         '"preFileName":"1-1-1",'
+    #         '"preFilePath":"C:/Users/Administrator/Downloads/111.MES",'
     #         '"aftFileName":"",'
     #         '"aftFilePath":"",'
     #         '"maxDif":"10",'
     #         '"minVDistance":"2000",'
     #         '"anchor_arr":[{"code":3,"name":"1","X":-50588,"Y":127153,"Z":10693},{"code":4,"name":"2","X":-81868,"Y":107382,"Z":10692},{"code":5,"name":"3","X":18219,"Y":-137871,"Z":10661},{"code":6,"name":"4","X":68969,"Y":-119474,"Z":10739},{"code":1,"name":"5","X":36863,"Y":132806,"Z":10673},{"code":2,"name":"6","X":-103435,"Y":-81558,"Z":10688},{"code":7,"name":"7","X":124377,"Y":-36693,"Z":10700},{"code":8,"name":"8","X":116036,"Y":60383,"Z":10689},{"code":9,"name":"9","X":84225,"Y":104782,"Z":10706},{"code":10,"name":"10","X":-31440,"Y":-135247,"Z":10679},{"code":11,"name":"11","X":-127629,"Y":-18481,"Z":10701},{"code":12,"name":"12","X":-126598,"Y":28816,"Z":10693}],'
-    #         '"preAnchor_arr":[],"nxtAnchor_arr":[],'
-    #         '"thisAnchor_arr":[{"index":-1,"key":"后3","anchorCode":"9","offsetZ":"1300"},{"index":-1,"key":"后4","anchorCode":"1","offsetZ":"2150"}],'
+    #         '"preAnchor_arr":[{"index":50,"anchorCode":9,"offsetZ":1300},{"index":51,"anchorCode":1,"offsetZ":2150}],'
+    #         '"nxtAnchor_arr":[],'
+    #         '"thisAnchor_arr":[{"index":-1,"key":"前4","anchorCode":"1","offsetZ":"2150"},{"index":-1,"key":"后3","anchorCode":"1","offsetZ":"2150"},{"index":-1,"key":"后4","anchorCode":"9","offsetZ":"1300"},{"index":-1,"key":"前3","anchorCode":"9","offsetZ":"1300"}],'
     #         '"minDistance":"2000"'
     #         '}']
 
@@ -303,11 +304,13 @@ if __name__ == '__main__':
         sd_this.name = fileName
         sd_pre = None
         if len(preFilePath) > 0:
+            print()
             if not os.path.exists(preFilePath):
                 result['err'] = '"%s"的数据文件"%s"未在服务器找到'%(preFileName,os.path.basename(preFilePath))
             else:
                 sd_pre = StationData.CreateFromFile(preFilePath, 1000, preAnchor_arr, anchor_dic)
                 sd_pre.name = preFileName
+        #print(sd_pre)
         if 'err' not in result:
             checkRlt = StationData.CheckDataValid(True,sd_this,sd_pre,maxDif,minDistance,minVDistance,'前个站点')
             if len(checkRlt) > 0:
