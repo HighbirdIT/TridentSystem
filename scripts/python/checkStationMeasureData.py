@@ -132,11 +132,15 @@ class StationData:
                     else:
                         aIndex = newData.measures_arr[msCount - 5 + int(aKey[1])].index
                 anchor = anchor_dic[int(aCode)]
-                ms_dic[aIndex].anchor = anchor
+                ms = ms_dic[aIndex]
+                ms.anchor = anchor
+                # print('pre:%d,%d,%d'%(ms.loc.X,ms.loc.Y,ms.loc.Z))
+                ms.loc.Z += int(a['offsetZ'])
+                # print('aft:%d,%d,%d'%(ms.loc.X,ms.loc.Y,ms.loc.Z))
                 # print('%s->%s:%s'%(ms_dic[aIndex].index,anchor.name,anchor.code))
         return newData
     @staticmethod
-    def CheckDataValid(doSelfCheck,checkData, data_pre, maxDif, minDistance, minVDistance):
+    def CheckDataValid(doSelfCheck, checkData, data_pre, maxDif, minDistance, minVDistance,specTip):
         errList = []
         if doSelfCheck:
             if checkData.loc == None:
@@ -206,7 +210,7 @@ class StationData:
                     dis = ms_i.loc.DistanceTo(ms_j.loc)
                     standDis = ms_i.anchor.loc.DistanceTo(ms_j.anchor.loc)
                     if abs(dis - standDis) > maxDif:
-                        errList.append('"%s"(%s)到"%s"(%s)的间距是%d,和设计值%d相比偏差%d'%(ms_i.anchor.name,ms_i.标记序号,ms_j.anchor.name,ms_j.标记序号,dis,standDis,dis - standDis))
+                        errList.append('"锚%s"(%s)到"锚%s"(%s)的间距是%d,和设计值%d相比偏差%d'%(ms_i.anchor.name,ms_i.标记序号,ms_j.anchor.name,ms_j.标记序号,dis,standDis,dis - standDis))
 
             if len(errList) > 0:
                 return errList
@@ -237,7 +241,7 @@ class StationData:
             for i in range(len(useThisLink.node_arr)):
                 node_this = useThisLink.node_arr[i]
                 node_pre = usePreLink.node_arr[i]
-                errInfo += 'F%d和F%d的间距是%d,相较F%d和F%d的间距%d,偏差%d\n'%(useThisLink.baseMD.index,node_this.md.index,node_this.dis,usePreLink.baseMD.index,node_pre.md.index,node_pre.dis,linkDif_arr[i])
+                errInfo += '%s和%s的间距是%d,相较%s的%s和%s的间距%d,偏差%d\n'%(useThisLink.baseMD.标记序号,node_this.md.标记序号,node_this.dis,specTip,usePreLink.baseMD.标记序号,node_pre.md.标记序号,node_pre.dis,linkDif_arr[i])
         #     print(errInfo)
         # print(linkDif_arr)
         errList.append(errInfo)
@@ -257,12 +261,12 @@ if __name__ == '__main__':
     #         '"minVDistance":"2000",'
     #         '"anchor_arr":[{"code":1,"name":"测试锚点1","X":1000,"Y":2000,"Z":3000},{"code":2,"name":"测试锚点2","X":54000,"Y":12000,"Z":32000}],'
     #         '"preAnchor_arr":[],"nxtAnchor_arr":[],'
-    #         '"thisAnchor_arr":[{"index":-1,"key":"后1","anchorCode":"2"},{"index":-1,"key":"前1","anchorCode":"1"}],'
+    #         '"thisAnchor_arr":[{"index":-1,"key":"后1","anchorCode":"2","Z向偏移":"20"},{"index":-1,"key":"前1","anchorCode":"1","Z向偏移":"200"}],'
     #         '"minDistance":"2000"'
     #         '}']
 
     constr = argv[1]
-    print(constr)
+    # print(constr)
     constr = constr.replace("'", '"')
     config = json.loads(constr)
 
@@ -298,7 +302,7 @@ if __name__ == '__main__':
                 sd_pre = StationData.CreateFromFile(preFilePath, 1000, preAnchor_arr, anchor_dic)
                 sd_pre.name = preFileName
         if 'err' not in result:
-            checkRlt = StationData.CheckDataValid(True,sd_this,sd_pre,maxDif,minDistance,minVDistance)
+            checkRlt = StationData.CheckDataValid(True,sd_this,sd_pre,maxDif,minDistance,minVDistance,'前个站点')
             if len(checkRlt) > 0:
                 result['errList'] = checkRlt
         
@@ -311,7 +315,7 @@ if __name__ == '__main__':
                     sd_aft = StationData.CreateFromFile(aftFilePath, 1000, nxtAnchor_arr, anchor_dic)
                     sd_aft.name = preFileName
             if 'err' not in result and sd_aft != None:
-                checkRlt = StationData.CheckDataValid(False,sd_aft,sd_this,maxDif,minDistance,minVDistance)
+                checkRlt = StationData.CheckDataValid(False,sd_aft,sd_this,maxDif,minDistance,minVDistance,'后个站点')
                 if len(checkRlt) > 0:
                     result['errList'] = checkRlt
 

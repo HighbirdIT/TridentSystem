@@ -14,9 +14,10 @@ function checkStationData(锚点配置_arr,项目代码,组号,顺序号,分序�
     return co(function* () {
         var rlt = {};
         try{
+            var thisAnchor_arr = []
             for(var i in 锚点配置_arr){
-                let d = 锚点配置_arr[i];
-                锚点配置_arr[i] = {index:-1,key:d.测点名称,anchorCode:d.锚点代码};
+                var d = 锚点配置_arr[i];
+                thisAnchor_arr.push({index:-1,key:d.测点名称,anchorCode:d.锚点代码, offsetZ:d.Z偏移});
             }
             var querysql_0params_arr=[
                 dbhelper.makeSqlparam('组号', sqlTypes.Int, 组号),
@@ -40,7 +41,7 @@ function checkStationData(锚点配置_arr,项目代码,组号,顺序号,分序�
             var querysql_1params_arr=[
                 dbhelper.makeSqlparam('项目代码', sqlTypes.Int, 项目代码)
             ];
-            var querysql_1sql="select 项目全局锚点代码 as code,锚点名称 as name,X + [X偏移] as X,Y + [Y偏移] as Y,Z + [Z偏移] as Z FROM [base1].[dbo].[T254C项目全局锚点] where 项目登记名称代码=@项目代码";
+            var querysql_1sql="select 项目全局锚点代码 as code,锚点名称 as name,X,Y,Z FROM [base1].[dbo].[T254C项目全局锚点] where 项目登记名称代码=@项目代码";
             var querysql_1_rcdRlt = yield dbhelper.asynQueryWithParams(querysql_1sql, querysql_1params_arr);
 
             var baseDir = __dirname + '\\public';
@@ -58,13 +59,13 @@ function checkStationData(锚点配置_arr,项目代码,组号,顺序号,分序�
             cong.anchor_arr = querysql_1_rcdRlt.recordset;
             cong.preAnchor_arr = [];
             cong.nxtAnchor_arr = [];
-            cong.thisAnchor_arr = 锚点配置_arr;
+            cong.thisAnchor_arr = thisAnchor_arr;
 
             if(querysql_0_上个测站记录代码 > 0){
                 var querysql_2params_arr=[
                     dbhelper.makeSqlparam('记录代码', sqlTypes.Int, querysql_0_上个测站记录代码)
                 ];
-                var querysql_2sql="select [序号] as index,[全局锚点代码] as anchorCode FROM [base1].[dbo].[T254D测站数据明细] where 项目测站记录代码=@记录代码 and [全局锚点代码] > 0";
+                var querysql_2sql="select [序号] as index,[全局锚点代码] as anchorCode, [Z向偏移] offsetZ FROM [base1].[dbo].[T254D测站数据明细] where 项目测站记录代码=@记录代码 and [全局锚点代码] > 0";
                 var querysql_2_rcdRlt = yield dbhelper.asynQueryWithParams(querysql_2sql, querysql_2params_arr);
                 cong.preAnchor_arr = querysql_2_rcdRlt.recordset;
             }
@@ -72,7 +73,7 @@ function checkStationData(锚点配置_arr,项目代码,组号,顺序号,分序�
                 var querysql_2params_arr=[
                     dbhelper.makeSqlparam('记录代码', sqlTypes.Int, querysql_0_下个测站记录代码)
                 ];
-                var querysql_2sql="select [序号] as index,[全局锚点代码] as anchorCode FROM [base1].[dbo].[T254D测站数据明细] where 项目测站记录代码=@记录代码 and [全局锚点代码] > 0";
+                var querysql_2sql="select [序号] as index,[全局锚点代码] as anchorCode, [Z向偏移] offsetZ FROM [base1].[dbo].[T254D测站数据明细] where 项目测站记录代码=@记录代码 and [全局锚点代码] > 0";
                 var querysql_2_rcdRlt = yield dbhelper.asynQueryWithParams(querysql_2sql, querysql_2params_arr);
                 cong.nxtAnchor_arr = querysql_2_rcdRlt.recordset;
             }
@@ -92,6 +93,9 @@ function checkStationData(锚点配置_arr,项目代码,组号,顺序号,分序�
                         newErrList.push({序号:i,错误信息:rltJson.errList[i]});
                     }
                     rltJson.errList = newErrList;
+                }
+                else{
+                    rltJson.errList = [];
                 }
                 rlt = rltJson;
             }

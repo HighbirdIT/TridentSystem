@@ -122,7 +122,10 @@ helper.IsEmptyString = (val)=>{
 };
 
 helper.IsEmptyArray = (val)=>{
-    return Array.isArray(val) && val.length == 0;
+    if(Array.isArray(val)){
+        return val.length == 0;
+    }
+    return true;
 };
 
 helper.InformSysManager = (text, identity)=>{

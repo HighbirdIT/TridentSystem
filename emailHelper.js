@@ -16,15 +16,15 @@ if (!fs.existsSync(exportDirPath)) {
 
 function doETCInvoice() {
     console.log('doETCInvoice');
-    var scriptPath = path.join(__dirname, 'scripts/python/GetETCInvoice.py');
-    var startPythonCmd = 'python3 -W ignore ' + scriptPath + ' ' + exportDirPath + '\\';
-    exec(startPythonCmd, (error, stdout, stderr) => {
-        var output = stdout;
-        if (output.substr(0, 2) == 'OK') {
-            var uids = output.substring(4, output.length - 1).split(',');
-            uids.forEach(processUID);
-        }
-    });
+    // var scriptPath = path.join(__dirname, 'scripts/python/GetETCInvoice.py');
+    // var startPythonCmd = 'python3 -W ignore ' + scriptPath + ' ' + exportDirPath + '\\';
+    // exec(startPythonCmd, (error, stdout, stderr) => {
+    //     var output = stdout;
+    //     if (output.substr(0, 2) == 'OK') {
+    //         var uids = output.substring(4, output.length - 1).split(',');
+    //         uids.forEach(processUID);
+    //     }
+    // });
 }
 
 function processUID(uid) {
