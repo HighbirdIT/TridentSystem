@@ -442,13 +442,13 @@ class ERPC_ThreeDApp extends React.PureComponent {
         this.focusParam = paramItem;
         this.sphereInter.visible = false;
         if (paramItem == null) {
-            this.loadCameraView();
+            //this.loadCameraView();
             // this.paramBtns_arr.forEach(btnItem => {
             //     btnItem.geometry.visible = true;
             // });
         }
         else {
-            this.saveCameraView();
+            //this.saveCameraView();
             controls.target.copy(paramItem.worldPos);
             paramItem.geometry.material = selectedLineMat;
             // this.paramBtns_arr.forEach(btnItem => {
