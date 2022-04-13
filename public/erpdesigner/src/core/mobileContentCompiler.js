@@ -1350,6 +1350,9 @@ class MobileContentCompiler extends ContentCompiler {
             case ChartKernel_Type:
                 rlt = this.compileChartKernel(theKernel, renderBlock, renderFun);
                 break;
+            case ThreeDAppAKernel_Type:
+                rlt = this.compileThreeDAppAKernel(theKernel, renderBlock, renderFun);
+                break;
             default:
                 logManager.error('不支持的编译kernel type:' + theKernel.type);
         }
@@ -6430,6 +6433,62 @@ class MobileContentCompiler extends ContentCompiler {
         this.modifyControlTag(theKernel, ctlTag);
         ctlTag.class = layoutConfig.class;
         ctlTag.style = layoutConfig.style;
+
+        ctlTag.setAttr('id', theKernel.id);
+        var parentPath = this.getKernelParentPath(theKernel);
+        ctlTag.setAttr('parentPath', parentPath);
+        renderBlock.pushChild(ctlTag);
+
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
+    }
+
+    compileThreeDAppAKernel(theKernel, renderBlock, renderFun){
+        var project = this.project;
+        var layoutConfig = theKernel.getLayoutConfig();
+        var clientSide = this.clientSide;
+
+        var ctlTag = new FormatHtmlTag(theKernel.id, 'VisibleERPC_ThreeDApp', this.clientSide);
+        this.modifyControlTag(theKernel, ctlTag);
+        ctlTag.class = layoutConfig.class;
+        ctlTag.style = layoutConfig.style;
+
+
+        var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
+        var reactParentKernel = theKernel.getReactParentKernel(true);
+        var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
+        var parentMidData = this.projectCompiler.getMidData(reactParentKernel.id);
+        var setprojCodeDataStateItem = null;
+        var projCodeData = theKernel.getAttribute('projectCode');
+        var projCodeDataParseRet = parseObj_CtlPropJsBind(projCodeData, project.scriptMaster);
+        if (projCodeDataParseRet.isScript) {
+            if (this.compileScriptAttribute(projCodeDataParseRet, theKernel, 'projectCode', 'projectCode', { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (!IsEmptyString(projCodeDataParseRet.string)) {
+                if (belongFormKernel != null && (!belongFormKernel.isGridForm() || belongFormKernel.isKernelInRow(theKernel))) {
+                    var formColumns_arr = belongFormKernel.getCanuseColumns();
+                    if (formColumns_arr.indexOf(projCodeData) != -1) {
+                        parentMidData.useColumns_map[projCodeData] = 1;
+                        setprojCodeDataStateItem = {
+                            name: 'projectCode',
+                            useColumn: { name: projCodeData },
+                        };
+                    }
+                }
+                if (setprojCodeDataStateItem == null) {
+                    ctlTag.setAttr('projectCode', projCodeData);
+                }
+            }
+        }
+
+        if (setprojCodeDataStateItem) {
+            kernelMidData.needSetStates_arr.push(setprojCodeDataStateItem);
+            if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
+                parentMidData.needSetKernels_arr.push(theKernel);
+            }
+        }
 
         ctlTag.setAttr('id', theKernel.id);
         var parentPath = this.getKernelParentPath(theKernel);

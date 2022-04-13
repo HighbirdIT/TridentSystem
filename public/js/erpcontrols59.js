@@ -1470,7 +1470,7 @@ var ERPC_DropDown = function (_React$PureComponent4) {
                                     return selectedVal.indexOf(item.value + '') != -1;
                                 });
                                 if (selectedItems_arr) {
-                                    if (selectedItems_arr.length != this.props.selectOpt.length) {
+                                    if (this.props.selectOpt == null || selectedItems_arr.length != this.props.selectOpt.length) {
                                         setTimeout(function () {
                                             self.selectItem(selectedItems_arr, null, true);
                                         }, 50);
@@ -5314,10 +5314,15 @@ function GenFormXmlData(formState, getRowItemFun, xmlconfig, keyColumn, formPath
     var itemStrs_arr = [];
     var rowText_arr = [];
     var count = 0;
-    var selectedValues_arr = formState.selectedValues_arr;
+    var selectedValues_arr = formState.selectedValues_arr.map(function (x) {
+        return isNaN(x) ? x : Number(x);
+    });
     for (var ri = 0; ri < records_arr.length; ++ri) {
         var record = records_arr[ri];
         var rowKey = keyColumn == '_default' ? ri : record[keyColumn];
+        if (!isNaN(rowKey)) {
+            rowKey = Number(rowKey);
+        }
         if (onlySelected && selectedValues_arr && selectedValues_arr.indexOf(rowKey) == -1) {
             continue;
         }

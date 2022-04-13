@@ -20,20 +20,25 @@ class THREE_ButtonItem extends THREE_UIItem {
     }
 }
 
-class THREE_ModelMetaItem extends THREE_ButtonItem {
-    constructor(docElem, worldPosition, 位置信息) {
-        super(docElem, worldPosition);
+class THREE_图纸部位Item {
+    constructor(位置信息) {
         this.位置信息 = 位置信息;
         this.参数信息_arr = [];
+        this.worldPos = new THREE.Vector3(0,0,0);
     }
 
     clearParam() {
         this.参数信息_arr = [];
     }
 
-    addParam(target) {
+    addParam(target,startPos) {
         this.参数信息_arr.push(target);
         target.modelMeta = this;
+        this.worldPos.add(startPos);
+    }
+
+    calWordlPos(){
+        this.worldPos.divideScalar(this.参数信息_arr.length);
     }
 
     paramChanged() {
@@ -46,8 +51,24 @@ class THREE_ModelMetaItem extends THREE_ButtonItem {
         });
         this.completeCount = completeCount;
         this.allDone = completeCount == this.参数信息_arr.length;
-        this.docElem.innerHTML = `${this.位置信息.中文名称}</br>${completeCount}/${this.paramCount}`;
-        this.docElem.className = 'btn btn-' + (this.allDone ? 'success' : 'primary');
+        //this.docElem.innerHTML = `${this.位置信息.中文名称}</br>${completeCount}/${this.paramCount}`;
+        //this.docElem.className = 'btn btn-' + (this.allDone ? 'success' : 'primary');
+    }
+
+    getNextParam(base){
+        let index = this.参数信息_arr.indexOf(base) + 1;
+        if(index >= this.参数信息_arr.length){
+            index = 0;
+        }
+        return this.参数信息_arr[index];
+    }
+
+    getPreParam(base){
+        let index = this.参数信息_arr.indexOf(base) - 1;
+        if(index < 0){
+            index = this.参数信息_arr.length - 1;
+        }
+        return this.参数信息_arr[index];
     }
 }
 
@@ -70,7 +91,7 @@ class THREE_ParamItem extends THREE_ButtonItem {
         var htmlText = '';
         if (this.record.一级序号 > 0) {
             let 序号str = "" + this.record.一级序号;
-            if (二级序号 > 0) {
+            if (this.record.二级序号 > 0) {
                 序号str += "-" + this.record.二级序号;
             }
             htmlText = `${序号str}:${this.record.参数名称}${this.record.参数序号}`;
@@ -78,9 +99,9 @@ class THREE_ParamItem extends THREE_ButtonItem {
         else {
             htmlText = `${this.record.参数名称}${this.record.参数序号}`;
         }
-        if (this.record.参数值 > 0) {
-            htmlText += `</br>${RoundFloat(this.record.参数值)}`;
-        }
+        // if (this.record.参数值 > 0) {
+        //     htmlText += `</br>${RoundFloat(this.record.参数值)}`;
+        // }
         this.docElem.innerHTML = htmlText;
     }
 }
@@ -218,6 +239,10 @@ function getCurveGeoLength(geo) {
     return sumLen;
 }
 
+const normalLineMat = new THREE.LineBasicMaterial( {
+	color: 0x0000FF,
+} );
+
 class ERPC_ThreeDApp extends React.PureComponent {
     constructor(props) {
         super();
@@ -244,12 +269,13 @@ class ERPC_ThreeDApp extends React.PureComponent {
 
         this.cubes_arr = [];
         this.uiItem_arr = [];
-        this.modelMetaBtns_arr = [];
+        this.图纸部位Btns_arr = [];
         this.paramBtns_arr = [];
         this.focusUIElem = null;
-        this.focusModelMetaBtn = null;
+        this.focus图纸部位Btn = null;
         this.focusParam = null;
         this.cameraInfo_arr = [];
+        this.部位相机loc = {};
     }
 
     saveCameraView() {
@@ -292,9 +318,9 @@ class ERPC_ThreeDApp extends React.PureComponent {
     }
 
     clickViewDrawingHandler(ev) {
-        if (this.focusModelMetaBtn && this.focusModelMetaBtn.参数信息_arr.length > 0) {
-            const 参数信息 = this.focusModelMetaBtn.参数信息_arr[0];
-            view附件文件(this.focusModelMetaBtn.位置信息.中文名称, 参数信息.record.发图记录代码, 27);
+        if (this.focus图纸部位Btn && this.focus图纸部位Btn.参数信息_arr.length > 0) {
+            const 参数信息 = this.focus图纸部位Btn.参数信息_arr[0];
+            view附件文件(this.focus图纸部位Btn.位置信息.中文名称, 参数信息.record.发图记录代码, 27);
         }
     }
 
@@ -305,7 +331,7 @@ class ERPC_ThreeDApp extends React.PureComponent {
                 if (self.focusParam != null) {
                     self.focusParam.record.拍照状态 = 1;
                     self.focusParam.recordChanged();
-                    self.focusModelMetaBtn.paramChanged();
+                    self.focus图纸部位Btn.paramChanged();
                 }
             };
             shotParam(this.focusParam.位置信息.中文名称, this.focusParam.record.发图记录代码, this.focusParam.record.参数上传数据代码, callBack);
@@ -322,18 +348,35 @@ class ERPC_ThreeDApp extends React.PureComponent {
         this.setFocusParam(uiItem);
     }
 
-    clickExitShowingMetaHandler(ev) {
-        if (this.focusParam != null) {
-            this.setFocusParam(null);
-            return;
+    getNext图纸部位(base){
+        let index = this.图纸部位Btns_arr.indexOf(base) + 1;
+        if(index >= this.图纸部位Btns_arr.length){
+            return null;
         }
-        this.setShowingModelMeta(null);
+        let rlt = this.图纸部位Btns_arr[index];
+        if(rlt.位置信息.全局代码 != base.位置信息.全局代码){
+            return null;
+        }
+        return this.图纸部位Btns_arr[index];
     }
 
-    setShowingModelMeta(newModelMeta) {
-        if (newModelMeta == this.focusModelMetaBtn) {
+    getPre图纸部位(base){
+        let index = this.图纸部位Btns_arr.indexOf(base) - 1;
+        if(index < 0){
+            return null;
+        }
+        let rlt = this.图纸部位Btns_arr[index];
+        if(rlt.位置信息.全局代码 != base.位置信息.全局代码){
+            return null;
+        }
+        return this.图纸部位Btns_arr[index];
+    }
+
+    图纸部位Changed(want图纸部位) {
+        if (want图纸部位 == this.focus图纸部位Btn) {
             return;
         }
+        this.setFocusParam(null);
         const controls = this.controls;
         let self = this;
         let nowChildren = this.参数Parant.children.concat();
@@ -345,28 +388,41 @@ class ERPC_ThreeDApp extends React.PureComponent {
         });
         self.paramBtns_arr = [];
 
-        this.focusModelMetaBtn = newModelMeta;
-        if (newModelMeta == null) {
+        if(this.focus图纸部位Btn != null){
+            this.部位相机loc[this.focus图纸部位Btn.位置信息.英文名称] = new THREE.Vector3(this.camera.position.x,this.camera.position.y,this.camera.position.z);
+        }
+        this.focus图纸部位Btn = want图纸部位;
+        if (want图纸部位 == null) {
             // controls.target.copy(this.originControlsTarget);
             this.loadCameraView();
             controls.enablePan = true;
         }
         else {
-            //console.log(newModelMeta);
+            let eyePos = this.部位相机loc[want图纸部位.位置信息.英文名称];
+            if(eyePos == null){
+                let pos_center = new THREE.Vector3(0,0,want图纸部位.worldPos.z);
+                let theVec = new THREE.Vector3();
+                theVec.subVectors(want图纸部位.worldPos, pos_center);
+                theVec.normalize();
+                eyePos = new THREE.Vector3(want图纸部位.worldPos.x,want图纸部位.worldPos.y,want图纸部位.worldPos.z + 0.2);
+                eyePos.addScaledVector(theVec,1);
+            }
+            this.camera.position.copy(eyePos);
+
+            //console.log(want图纸部位);
             this.saveCameraView();
             // this.originControlsTarget.copy(controls.target);
-            controls.target.copy(newModelMeta.worldPos);
+            controls.target.copy(want图纸部位.worldPos);
             controls.enablePan = false;
 
-            newModelMeta.参数信息_arr.forEach(item => {
+            want图纸部位.参数信息_arr.forEach(item => {
                 self.参数Parant.add(item.geometry);
                 self.paramBtns_arr.push(item);
                 self.btnsRef.current.appendChild(item.docElem);
             });
-
         }
         this.setState({
-            focusModelMeta: this.focusModelMetaBtn,
+            focus图纸部位: this.focus图纸部位Btn,
         });
         controls.update();
     }
@@ -410,6 +466,36 @@ class ERPC_ThreeDApp extends React.PureComponent {
             focusParam: this.focusParam,
         });
         controls.update();
+    }
+
+    clickPreButtonHandler(ev){
+        if(this.focusParam != null){
+            this.setFocusParam(this.focus图纸部位Btn.getPreParam(this.focusParam));
+        }
+        let newItem = this.getPre图纸部位(this.focus图纸部位Btn);
+        if(newItem){
+            this.setState({watchPos:newItem.位置信息});
+        }
+    }
+
+    clickNextButtonHandler(ev){
+        if(this.focusParam != null){
+            this.setFocusParam(this.focus图纸部位Btn.getNextParam(this.focusParam));
+            return;
+        }
+        let newItem = this.getNext图纸部位(this.focus图纸部位Btn);
+        if(newItem){
+            this.setState({watchPos:newItem.位置信息});
+        }
+    }
+
+    clickExitButtonHandler(ev){
+        if(this.focusParam != null){
+            this.setFocusParam(null);
+            return;
+        }
+        let drawing = this.state.drawing;
+        popLocationSelector(drawing.name,drawing.code,this.props.projectCode,drawing.关联模型代码,this.部位选择Callback);
     }
 
     clickKeyPointButtonHandler(ev) {
@@ -470,7 +556,8 @@ class ERPC_ThreeDApp extends React.PureComponent {
 
         const scene = new THREE.Scene();
         this.scene = scene;
-        scene.background = new THREE.Color(0x9DA3AA);
+        //scene.background = new THREE.Color(0x9DA3AA);
+        scene.background = new THREE.Color(0xEEEEEE);
         this.参数Parant = new THREE.Object3D();
         this.参数Parant.position.set(0, 0, 0);
         scene.add(this.参数Parant);
@@ -508,7 +595,7 @@ class ERPC_ThreeDApp extends React.PureComponent {
         let sphereInter = new THREE.Mesh(geometry, material);
         this.sphereInter = sphereInter;
         sphereInter.visible = false;
-        scene.add(sphereInter);
+        //scene.add(sphereInter);
     }
 
     ProjectChanged() {
@@ -565,111 +652,111 @@ class ERPC_ThreeDApp extends React.PureComponent {
         }
     }
 
-    图元Changed() {
-        if (this.state.drawing == null) {
-            return;
-        }
-        if (this.state.showing图元代码 != this.state.drawing.图元代码) {
-            this.setState({
-                showing图元代码: this.state.drawing.图元代码,
-                fetching: true,
-                fetch_percent: 0,
-                fetch_title: '加载图元数据',
-                fetch_error: '',
-            });
-            const self = this;
-            const scene = self.scene;
-            const camera = self.camera;
-            const controls = self.controls;
+    // 图元Changed() {
+    //     if (this.state.drawing == null) {
+    //         return;
+    //     }
+    //     if (this.state.showing图元代码 != this.state.drawing.图元代码) {
+    //         this.setState({
+    //             showing图元代码: this.state.drawing.图元代码,
+    //             fetching: true,
+    //             fetch_percent: 0,
+    //             fetch_title: '加载图元数据',
+    //             fetch_error: '',
+    //         });
+    //         const self = this;
+    //         const scene = self.scene;
+    //         const camera = self.camera;
+    //         const controls = self.controls;
 
-            nativeFetchJson(false, threeDServerUrl, { bundle: { 图元代码: this.state.drawing.图元代码 }, action: 'pulldata_图元明细数据' }).then(json => {
-                if (json.err != null) {
-                    self.setState({
-                        fetch_error: `出错了:${JSON.stringify(json.err)}`,
-                    });
-                    return;
-                }
-                self.setState({
-                    fetch_percent: 0.3,
-                    fetch_title: '分析图元数据',
-                });
-                if (self.modelMetaBtns_arr != null) {
-                    self.modelMetaBtns_arr.forEach(tElem => {
-                        self.btnsRef.current.removeChild(tElem.docElem);
-                    });
-                }
-                self.modelMeta_dic = {};
-                self.modelMetaBtns_arr = [];
-                for (let si in json.data) {
-                    let dr = json.data[si];
-                    let worldPos = new THREE.Vector3();
-                    let t_arr = dr.放置点.split(',');
-                    let X = parseFloat(t_arr[0]) * 0.001;
-                    let Y = parseFloat(t_arr[1]) * 0.001;
-                    let Z = parseFloat(t_arr[2]) * 0.001;
-                    worldPos.set(X, Y, Z);
-                    let btnElem = document.createElement('button');
-                    btnElem.className = 'btn btn-primary';
-                    btnElem.onclick = self.clickModelMetaButtonHandler;
-                    let newMetaItem = new THREE_ModelMetaItem(btnElem, worldPos, self.ProjectMeta.createPositionInfo(dr.全局代码, dr.方位名称, dr.部位代码));
-                    btnElem.innerText = newMetaItem.位置信息.中文名称;
-                    //btnElem.innerHTML = "<i class=\"fa fa-star\" />";
-                    btnElem.uiItem = newMetaItem;
-                    self.btnsRef.current.appendChild(btnElem);
-                    self.modelMetaBtns_arr.push(newMetaItem);
-                    self.modelMeta_dic[newMetaItem.位置信息.中文名称] = newMetaItem;
-                    self.modelMeta_dic[newMetaItem.位置信息.英文名称] = newMetaItem;
-                }
-                if (this.state.drawing.图元信息文件路径 == '无') {
-                    if (self.metaModelObject != null) {
-                        scene.remove(self.metaModelObject);
-                        self.metaModelObject = null;
-                    }
-                    self.setState({
-                        fetching: false,
-                        metaModelVisible: true,
-                    });
-                }
-                else {
-                    self.setState({
-                        fetch_title: '加载图元模型',
-                        fetch_percent: 0.5,
-                    });
-                    const loader = new Rhino3dmLoader();
-                    loader.setLibraryPath('/vendor/other/');
-                    loader.load(window.location.origin + this.state.drawing.图元信息文件路径, function (object) {
-                        if (self.metaModelObject != null) {
-                            scene.remove(self.metaModelObject);
-                        }
-                        self.metaModelObject = object;
-                        scene.add(object);
-                        self.setState({
-                            fetching: false,
-                            metaModelVisible: true,
-                        });
-                    }, (ev) => {
-                        self.setState({
-                            fetch_percent: 0.5 + (ev.loaded / ev.total) * 0.5,
-                        });
-                    }, (err) => {
-                        self.setState({
-                            fetch_error: JSON.stringify(`出错了:${err.target.statusText}`),
-                        });
-                        console.error(err);
-                    });
-                }
-            });
-        }
-    }
+    //         nativeFetchJson(false, threeDServerUrl, { bundle: { 图元代码: this.state.drawing.图元代码 }, action: 'pulldata_图元明细数据' }).then(json => {
+    //             if (json.err != null) {
+    //                 self.setState({
+    //                     fetch_error: `出错了:${JSON.stringify(json.err)}`,
+    //                 });
+    //                 return;
+    //             }
+    //             self.setState({
+    //                 fetch_percent: 0.3,
+    //                 fetch_title: '分析图元数据',
+    //             });
+    //             if (self.图纸部位Btns_arr != null) {
+    //                 self.图纸部位Btns_arr.forEach(tElem => {
+    //                     self.btnsRef.current.removeChild(tElem.docElem);
+    //                 });
+    //             }
+    //             self.图纸部位_dic = {};
+    //             self.图纸部位Btns_arr = [];
+    //             for (let si in json.data) {
+    //                 let dr = json.data[si];
+    //                 let worldPos = new THREE.Vector3();
+    //                 let t_arr = dr.放置点.split(',');
+    //                 let X = parseFloat(t_arr[0]) * 0.001;
+    //                 let Y = parseFloat(t_arr[1]) * 0.001;
+    //                 let Z = parseFloat(t_arr[2]) * 0.001;
+    //                 worldPos.set(X, Y, Z);
+    //                 let btnElem = document.createElement('button');
+    //                 btnElem.className = 'btn btn-primary';
+    //                 btnElem.onclick = self.clickModelMetaButtonHandler;
+    //                 let newMetaItem = new THREE_图纸部位Item(btnElem, worldPos, self.ProjectMeta.createPositionInfo(dr.全局代码, dr.方位名称, dr.部位代码));
+    //                 btnElem.innerText = newMetaItem.位置信息.中文名称;
+    //                 //btnElem.innerHTML = "<i class=\"fa fa-star\" />";
+    //                 btnElem.uiItem = newMetaItem;
+    //                 self.btnsRef.current.appendChild(btnElem);
+    //                 self.图纸部位Btns_arr.push(newMetaItem);
+    //                 self.图纸部位_dic[newMetaItem.位置信息.中文名称] = newMetaItem;
+    //                 self.图纸部位_dic[newMetaItem.位置信息.英文名称] = newMetaItem;
+    //             }
+    //             if (this.state.drawing.图元信息文件路径 == '无') {
+    //                 if (self.metaModelObject != null) {
+    //                     scene.remove(self.metaModelObject);
+    //                     self.metaModelObject = null;
+    //                 }
+    //                 self.setState({
+    //                     fetching: false,
+    //                     metaModelVisible: true,
+    //                 });
+    //             }
+    //             else {
+    //                 self.setState({
+    //                     fetch_title: '加载图元模型',
+    //                     fetch_percent: 0.5,
+    //                 });
+    //                 const loader = new Rhino3dmLoader();
+    //                 loader.setLibraryPath('/vendor/other/');
+    //                 loader.load(window.location.origin + this.state.drawing.图元信息文件路径, function (object) {
+    //                     if (self.metaModelObject != null) {
+    //                         scene.remove(self.metaModelObject);
+    //                     }
+    //                     self.metaModelObject = object;
+    //                     scene.add(object);
+    //                     self.setState({
+    //                         fetching: false,
+    //                         metaModelVisible: true,
+    //                     });
+    //                 }, (ev) => {
+    //                     self.setState({
+    //                         fetch_percent: 0.5 + (ev.loaded / ev.total) * 0.5,
+    //                     });
+    //                 }, (err) => {
+    //                     self.setState({
+    //                         fetch_error: JSON.stringify(`出错了:${err.target.statusText}`),
+    //                     });
+    //                     console.error(err);
+    //                 });
+    //             }
+    //         });
+    //     }
+    // }
 
 
     modelChanged() {
         if (this.state.drawing == null) {
             return;
         }
-        if (this.state.showingModelPath != this.state.drawing.modelPath) {
+        if (this.state.showingModelPath != this.state.drawing.全局模型文件路径) {
             this.setState({
-                showingModelPath: this.state.drawing.modelPath,
+                showingModelPath: this.state.drawing.全局模型文件路径,
                 fetching: true,
                 fetch_percent: 0,
                 fetch_title: '加载图纸模型',
@@ -679,7 +766,7 @@ class ERPC_ThreeDApp extends React.PureComponent {
             const loader = new Rhino3dmLoader();
             loader.setLibraryPath('/vendor/other/');
             const self = this;
-            loader.load(window.location.origin + this.state.drawing.modelPath, function (object) {
+            loader.load(window.location.origin + this.state.drawing.全局模型文件路径, function (object) {
                 self.setState({
                     fetch_title: '解析图纸模型',
                 });
@@ -731,7 +818,7 @@ class ERPC_ThreeDApp extends React.PureComponent {
                         // let newBtnItem = new THREE_ButtonItem(btnElem,worldPos);
                         // btnElem.uiItem = newBtnItem;
                         // self.btnsRef.current.appendChild(btnElem);
-                        // self.modelMetaBtns_arr.push(newBtnItem);
+                        // self.图纸部位Btns_arr.push(newBtnItem);
                     });
                     self.setState({
                         fetching: false,
@@ -797,7 +884,7 @@ class ERPC_ThreeDApp extends React.PureComponent {
                         const camera = self.camera;
                         const controls = self.controls;
 
-                        self.modelMetaBtns_arr.forEach(item => item.clearParam());
+                        self.图纸部位Btns_arr.forEach(item => item.clearParam());
 
                         let 参数几何体_dic = {};
                         let layers_arr = object.userData['layers'];
@@ -842,9 +929,12 @@ class ERPC_ThreeDApp extends React.PureComponent {
                             let 参数序号 = t_arr[5];
                             let 参数位置信息 = self.ProjectMeta.createPositionInfo(全局代码, 方位名称, 部位代码, 一级序号, 二级序号);
                             let 参数key = `${参数位置信息.英文名称}_${paramName}${参数序号}`;
+                            obj.material = normalLineMat;
                             参数几何体_dic[参数key] = { obj: obj, center: centerPos, start: startPos, end: endPos, 位置信息: 参数位置信息 };
                         });
-
+                        
+                        self.图纸部位Btns_arr = [];
+                        self.图纸部位_dic = {};
                         参数数据_arr.forEach(item => {
                             let 全局代码 = item.全局代码;
                             let 方位名称 = item.方位名称;
@@ -857,30 +947,31 @@ class ERPC_ThreeDApp extends React.PureComponent {
                             if (参数几何体 == null) {
                                 return;
                             }
-                            let 图元位置信息 = self.ProjectMeta.createPositionInfo(全局代码, 方位名称, 部位代码);
-                            let 关联图元 = self.modelMeta_dic[图元位置信息.英文名称];
-                            if (关联图元 == null) {
-                                return;
+                            if(self.图纸部位_dic[参数位置信息.英文名称] == null){
+                                let new图纸部位Item = new THREE_图纸部位Item(参数位置信息);
+                                self.图纸部位Btns_arr.push(new图纸部位Item);
+                                self.图纸部位_dic[参数位置信息.英文名称] = new图纸部位Item;
+                                self.图纸部位_dic[参数位置信息.中文名称] = new图纸部位Item;
                             }
-                            if (关联图元 != null) {
-                                let btnElem = document.createElement('button');
-                                btnElem.className = 'btn btn-primary';
-                                btnElem.onclick = self.clickParamButtonHandler;
-                                let worldPos = 参数几何体.center;
-                                if (item.参数序号 == 0) {
-                                    worldPos = 参数几何体.start;
-                                }
-                                let 参数item = new THREE_ParamItem(btnElem, worldPos, 参数几何体.obj, 参数位置信息, item);
-                                关联图元.addParam(参数item);
-                                btnElem.uiItem = 参数item;
+                            let use图纸部位Item = self.图纸部位_dic[参数位置信息.英文名称];
+                            let btnElem = document.createElement('button');
+                            btnElem.className = 'btn btn-primary';
+                            btnElem.onclick = self.clickParamButtonHandler;
+                            let worldPos = 参数几何体.center;
+                            if (item.参数序号 == 0) {
+                                worldPos = 参数几何体.start;
                             }
+                            let 参数item = new THREE_ParamItem(btnElem, worldPos, 参数几何体.obj, 参数位置信息, item);
+                            use图纸部位Item.addParam(参数item,参数几何体.start);
+                            btnElem.uiItem = 参数item;
                         });
 
-                        self.modelMetaBtns_arr.forEach(meta => {
+                        self.图纸部位Btns_arr.forEach(meta => {
                             meta.paramChanged();
+                            meta.calWordlPos();
                         });
 
-                        //let newMetaItem = new THREE_ModelMetaItem(btnElem,worldPos,self.ProjectMeta.createPositionInfo(dr.全局代码,dr.方位名称,dr.部位代码));
+                        //let newMetaItem = new THREE_图纸部位Item(btnElem,worldPos,self.ProjectMeta.createPositionInfo(dr.全局代码,dr.方位名称,dr.部位代码));
                         // scene.add(object);
                         // console.log(object);
                         self.setState({
@@ -952,9 +1043,26 @@ class ERPC_ThreeDApp extends React.PureComponent {
         this.setState({ drawing: null });
     }
 
-    drawingChangedHandler(drawingName, drawingCode, modelPath, 图元代码, 参数上传记录代码, 参数信息文件路径, 图元信息文件路径) {
-        console.log(`name:${drawingName},code:${drawingCode},modelPath:${modelPath},图元代码:${图元代码},参数上传记录代码:${参数上传记录代码},参数信息文件路径:${参数信息文件路径},图元信息文件路径:${图元信息文件路径}`);
-        this.setState({ drawing: { name: drawingName, code: drawingCode, modelPath: modelPath, 图元代码: 图元代码, 参数信息文件路径: 参数信息文件路径, 参数上传记录代码: 参数上传记录代码, 图元信息文件路径: 图元信息文件路径 } });
+    drawingChangedHandler(drawingName, drawingCode, 参数上传记录代码, 参数信息文件路径, 关联模型代码) {
+        console.log(`name:${drawingName},code:${drawingCode},参数上传记录代码:${参数上传记录代码},参数信息文件路径:${参数信息文件路径},关联模型代码:${关联模型代码}`);
+        this.setState({ drawing: { name: drawingName, code: drawingCode, 关联模型代码:关联模型代码, 参数信息文件路径: 参数信息文件路径, 参数上传记录代码: 参数上传记录代码,全局模型文件代码:0,全局模型文件路径:null } });
+        let self = this;
+        this.setFocusParam(null);
+        setTimeout(()=>{
+            popLocationSelector(drawingName,drawingCode,self.props.projectCode,关联模型代码,self.部位选择Callback);
+        },100);
+    }
+
+    部位选择Callback(rlt){
+        if(rlt == null){
+            if(this.state.focus图纸部位 == null){
+                this.setState({ drawing: null });
+            }
+            return;
+        }
+        var posInfo = this.ProjectMeta.createPositionInfo(rlt.全局代码,rlt.方位名称,rlt.部位代码,rlt.一级序号,rlt.二级序号);
+        var newdrawing = Object.assign(this.state.drawing, {全局模型文件代码:rlt.全局模型文件代码,全局模型文件路径:rlt.全局模型文件路径});
+        this.setState({watchPos:posInfo,drawing:newdrawing});
     }
 
     resizeRendererToDisplaySize() {
@@ -1000,26 +1108,26 @@ class ERPC_ThreeDApp extends React.PureComponent {
             item.docElem.style.zIndex = (-tempV.z * .5 + .5) * 100000 | 0;
         });
 
-        this.modelMetaBtns_arr.forEach(keyBtn => {
-            if (this.focusModelMetaBtn != null) {
-                keyBtn.docElem.style.display = 'none';
-            }
-            else {
-                if (keyBtn.allDone) {
-                    if (this.state.doneVisible == false) {
-                        keyBtn.docElem.style.display = 'none';
-                        return;
-                    }
-                }
-                else {
-                    if (this.state.undoneVisible == false) {
-                        keyBtn.docElem.style.display = 'none';
-                        return;
-                    }
-                }
-                this.smartUpdateButtonItem(keyBtn, camera, canvas);
-            }
-        });
+        // this.图纸部位Btns_arr.forEach(keyBtn => {
+        //     if (this.focus图纸部位Btn != null) {
+        //         keyBtn.docElem.style.display = 'none';
+        //     }
+        //     else {
+        //         if (keyBtn.allDone) {
+        //             if (this.state.doneVisible == false) {
+        //                 keyBtn.docElem.style.display = 'none';
+        //                 return;
+        //             }
+        //         }
+        //         else {
+        //             if (this.state.undoneVisible == false) {
+        //                 keyBtn.docElem.style.display = 'none';
+        //                 return;
+        //             }
+        //         }
+        //         this.smartUpdateButtonItem(keyBtn, camera, canvas);
+        //     }
+        // });
 
         this.paramBtns_arr.forEach(btnItem => {
             if (this.focusParam != null) {
@@ -1041,18 +1149,18 @@ class ERPC_ThreeDApp extends React.PureComponent {
             this.smartUpdateButtonItem(btnItem, camera, canvas, 1000);
         });
 
-        if (this.focusParam != null) {
-            if (this.sphereInter.visible && this.focusParam.record.参数序号 > 0) {
-                let newPos = geoPointAtNormalizeLength(this.focusParam.geometry, this.sphereLocPercent);
-                if (newPos != null) {
-                    this.sphereInter.position.copy(newPos);
-                    this.sphereLocPercent += (time / 1000) * 0.3;
-                    if (this.sphereLocPercent > 1.2) {
-                        this.sphereLocPercent = 0;
-                    }
-                }
-            }
-        }
+        // if (this.focusParam != null) {
+        //     if (this.sphereInter.visible && this.focusParam.record.参数序号 > 0) {
+        //         let newPos = geoPointAtNormalizeLength(this.focusParam.geometry, this.sphereLocPercent);
+        //         if (newPos != null) {
+        //             this.sphereInter.position.copy(newPos);
+        //             this.sphereLocPercent += (time / 1000) * 0.3;
+        //             if (this.sphereLocPercent > 1.2) {
+        //                 this.sphereLocPercent = 0;
+        //             }
+        //         }
+        //     }
+        // }
 
         renderer.render(scene, camera);
         requestAnimationFrame(this.renderFrame);
@@ -1065,7 +1173,7 @@ class ERPC_ThreeDApp extends React.PureComponent {
         const self = this;
         let fetchBarElem = null;
         if (this.state.fetching) {
-            let percentValue = Math.fround(this.state.fetch_percent * 100);
+            let percentValue = Math.round(this.state.fetch_percent * 100);
             fetchBarElem = <div className='progressContainer' style={{ zIndex: 2000 }}>
                 <div className='mask'></div>
                 <div className='progressDiv'>
@@ -1105,7 +1213,7 @@ class ERPC_ThreeDApp extends React.PureComponent {
         else if (this.state.drawing == null) {
             // 选择全局图
             nativeUIElem = <div className='w-100 h-100 position-absolute' style={{ left: 0, top: 0, zIndex: 500 }}>
-                <button onClick={testHandler} className='btn btn-light'>测试功能</button>
+                {/* <button onClick={testHandler} className='btn btn-light'>测试功能</button> */}
                 <VisibleCDrawingSelectorForm 项目代码={this.props.projectCode} id='DrawingSelectorForm' parentPath={this.props.fullParentPath} title='选择图纸' pagebreak={false} selectMode='single' keyColumn='项目图纸定义代码' onSelectedChanged={this.drawingChangedHandler} />
             </div>
             if (this.drawingDataDirted) {
@@ -1115,20 +1223,18 @@ class ERPC_ThreeDApp extends React.PureComponent {
                 }, 10);
             }
         }
-        else {
+        else{
             let drawingBtn = <button className="btn btn-light flex-grow-0 flex-shrink=0" onClick={this.clickDrawingBtnHandler}><i className="fa fa-map" />{this.state.drawing.name}</button>
             topBtnsDiv = <div className="d-flex position-absolute" style={{ height: '30px', top: '5px', left: '5px' }}>
                 {drawingBtn}
             </div>
-            if (this.state.showingModelPath != this.state.drawing.modelPath) {
-                setTimeout(() => {
-                    self.modelChanged();
-                }, 10);
+            if(this.state.drawing.全局模型文件代码 == 0){
+                // 等待选择全局模型文件
             }
-            else if (this.state.fetching == false) {
-                if (this.state.showing图元代码 != this.state.drawing.图元代码) {
+            else if (this.state.fetching == false){
+                if (this.state.showingModelPath != this.state.drawing.全局模型文件路径) {
                     setTimeout(() => {
-                        self.图元Changed();
+                        self.modelChanged();
                     }, 10);
                 }
                 else if (this.state.showing参数信息文件路径 != this.state.drawing.参数信息文件路径) {
@@ -1136,37 +1242,52 @@ class ERPC_ThreeDApp extends React.PureComponent {
                         self.参数文件Changed();
                     }, 10);
                 }
-            }
-            if (this.state.focusModelMeta != null) {
-                let btnName = this.state.focusModelMeta.位置信息.中文名称 + '  ';
-                let shotBtn = null;
-                if (this.state.focusParam != null) {
-                    btnName += this.state.focusParam.record.参数名称 + this.state.focusParam.record.参数序号 + '[' + RoundFloat(this.state.focusParam.record.参数值) + ']';
-                    shotBtn = <button onClick={this.clickShotHandler} className="btn btn-primary flex-grow-0 flex-shrink=0 ml-2" ><i className="fa fa-camera" /></button>
+                else{
+                    let wantfocus图纸部位 = this.图纸部位_dic[this.state.watchPos.英文名称];
+                    if(this.state.focus图纸部位 != wantfocus图纸部位){
+                        setTimeout(() => {
+                            self.图纸部位Changed(wantfocus图纸部位);
+                        }, 10);
+                    }
+                    else if (this.state.focus图纸部位 != null) {
+                        let btnName = this.state.focus图纸部位.位置信息.中文名称 + '  ';
+                        let shotBtn = null;
+                        if (this.state.focusParam != null) {
+                            btnName += this.state.focusParam.record.参数名称 + this.state.focusParam.record.参数序号;// + '[' + RoundFloat(this.state.focusParam.record.参数值) + ']';
+                            shotBtn = <button onClick={this.clickShotHandler} className="btn btn-primary flex-grow-0 flex-shrink=0 ml-2" ><i className="fa fa-camera" /></button>
+                        }
+                        extraUIs_arr.push(
+                            <div key='nag_middleBtns' className="d-flex flex-nowrap position-absolute " style={{ left: canvasWidth_half + 'px', top: (canvasHeight - 50) + 'px', transform: 'translate(-50%,-100%)' }}>
+                                <button onClick={this.clickPreButtonHandler} className="btn btn-primary flex-grow-0 flex-shrink=0 mr-2" ><i className="fa fa-angle-left" /></button>
+                                <button onClick={this.clickExitButtonHandler} className="btn btn-primary flex-grow-0 flex-shrink=0 mr-2" >{btnName}</button>
+                                <button onClick={this.clickNextButtonHandler} className="btn btn-primary flex-grow-0 flex-shrink=0 mr-2" ><i className="fa fa-angle-right" /></button>
+                            </div>
+                        );
+                        extraUIs_arr.push(
+                            <div key='middleBtns' className="d-flex flex-nowrap position-absolute " style={{ left: canvasWidth_half + 'px', top: (canvasHeight - 10) + 'px', transform: 'translate(-50%,-100%)' }}>
+                                <button onClick={this.clickViewDrawingHandler} className="btn btn-primary flex-grow-0 flex-shrink=0 mr-2" ><i className="fa fa-file-image-o" /></button>
+                                {/* <button onClick={this.clickExitButtonHandler} className="btn btn-primary flex-grow-0 flex-shrink=0 mr-2" ><i className="fa fa-undo" /></button> */}
+                                {shotBtn}
+                            </div>
+                        );
+                    }
                 }
+
                 extraUIs_arr.push(
-                    <div key='middleBtns' className="d-flex flex-nowrap position-absolute " style={{ left: canvasWidth_half + 'px', top: (canvasHeight - 10) + 'px', transform: 'translate(-50%,-100%)' }}>
-                        <button onClick={this.clickViewDrawingHandler} className="btn btn-primary flex-grow-0 flex-shrink=0 mr-2" ><i className="fa fa-file-image-o" /></button>
-                        <button onClick={this.clickExitShowingMetaHandler} className="btn btn-primary flex-grow-0 flex-shrink=0" >{btnName}<i className="fa fa-sign-out" /></button>
-                        {shotBtn}
+                    <div key='toprightBtns' className="d-flex flex-column position-absolute " style={{ left: (canvasWidth - 5) + 'px', top: '5px', transform: 'translate(-100%,0%)' }}>
+                        <button onClick={this.toggleProjModelVisible} className="btn btn-sm btn-light flex-grow-0 flex-shrink=0" ><i className={"fa fa-eye" + (this.state.projModelVisible == false ? '-slash text-danger' : '')}></i>场馆模型</button>
+                        {/* <button onClick={this.toggleMetaModelVisible} className="btn btn-sm btn-light flex-grow-0 flex-shrink=0 mt-1" ><i className={"fa fa-eye" + (this.state.metaModelVisible == false ? '-slash text-danger' : '')}></i>图元模型</button> */}
+                        <button onClick={this.toggleDoneVisible} className="btn btn-sm btn-light flex-grow-0 flex-shrink=0 mt-1" ><i className={"fa fa-eye" + (this.state.doneVisible == false ? '-slash text-danger' : '')}></i>已完成</button>
+                        <button onClick={this.toggleUnDoneVisible} className="btn btn-sm btn-light flex-grow-0 flex-shrink=0 mt-1" ><i className={"fa fa-eye" + (this.state.undoneVisible == false ? '-slash text-danger' : '')}></i>未完成</button>
                     </div>
                 );
-            }
-
-            extraUIs_arr.push(
-                <div key='toprightBtns' className="d-flex flex-column position-absolute " style={{ left: (canvasWidth - 5) + 'px', top: '5px', transform: 'translate(-100%,0%)' }}>
-                    <button onClick={this.toggleProjModelVisible} className="btn btn-sm btn-light flex-grow-0 flex-shrink=0" ><i className={"fa fa-eye" + (this.state.projModelVisible == false ? '-slash text-danger' : '')}></i>场馆模型</button>
-                    <button onClick={this.toggleMetaModelVisible} className="btn btn-sm btn-light flex-grow-0 flex-shrink=0 mt-1" ><i className={"fa fa-eye" + (this.state.metaModelVisible == false ? '-slash text-danger' : '')}></i>图元模型</button>
-                    <button onClick={this.toggleDoneVisible} className="btn btn-sm btn-light flex-grow-0 flex-shrink=0 mt-1" ><i className={"fa fa-eye" + (this.state.doneVisible == false ? '-slash text-danger' : '')}></i>已完成</button>
-                    <button onClick={this.toggleUnDoneVisible} className="btn btn-sm btn-light flex-grow-0 flex-shrink=0 mt-1" ><i className={"fa fa-eye" + (this.state.undoneVisible == false ? '-slash text-danger' : '')}></i>未完成</button>
-                </div>
-            );
-            if (this.ProjectMeta != null) {
-                // 全局BtnsDiv = <div className="d-flex flex-column position-absolute" style={{width: '50px',left: '100%', transform: 'translate(-50%, -50%)'}}>
-                //     {this.ProjectMeta.全局_arr.map(全局item=>{
-                //         return <button key={全局item.代码} className="btn btn-light flex-grow-0 flex-shrink=0" >{全局item.名称}</button>;
-                //     })}
-                // </div>
+                if (this.ProjectMeta != null) {
+                    // 全局BtnsDiv = <div className="d-flex flex-column position-absolute" style={{width: '50px',left: '100%', transform: 'translate(-50%, -50%)'}}>
+                    //     {this.ProjectMeta.全局_arr.map(全局item=>{
+                    //         return <button key={全局item.代码} className="btn btn-light flex-grow-0 flex-shrink=0" >{全局item.名称}</button>;
+                    //     })}
+                    // </div>
+                }
             }
         }
 
@@ -1325,7 +1446,7 @@ function DrawingSelectorForm_selectedValue_changed(state, newValue, oldValue, pa
     var selectedProfile = GetFormSelectedProfile(formState, '项目图纸定义代码');
     // console.log(selectedProfile.record);
     if (typeof this.props.onSelectedChanged == 'function') {
-        this.props.onSelectedChanged(selectedProfile.record['图纸名称'], selectedProfile.record['项目图纸定义代码'], selectedProfile.record['模型文件路径'], selectedProfile.record['可视模型图元代码'], selectedProfile.record['参数上传记录代码'], selectedProfile.record['参数信息路径'], selectedProfile.record['图元信息路径']);
+        this.props.onSelectedChanged(selectedProfile.record['图纸名称'], selectedProfile.record['项目图纸定义代码'], selectedProfile.record['参数上传记录代码'], selectedProfile.record['参数信息路径'], selectedProfile.record['关联模型代码']);
     }
 }
 
@@ -1559,6 +1680,24 @@ function shotParam(名称显示, 发图记录代码, 参数上传记录代码, c
     popPage('M_Page_ParamShoter', <VisibleCM_Page_ParamShoter key='M_Page_ParamShoter' />);
 }
 
+function popLocationSelector(图纸名称, 图纸代码, 项目代码,关联模型代码, completeCallBack) {
+    var popPage_1_callback = (popPage_1exportParam) => {
+        setTimeout(()=>{
+            completeCallBack(popPage_1exportParam.部位信息);
+        }, 50);
+    };
+    var popPage_1entryParam = {
+        图纸名称:图纸名称,
+		图纸代码:图纸代码,
+		项目代码:项目代码,
+		可视模型代码:关联模型代码,
+        callBack: popPage_1_callback,
+    };
+    gDataCache.set('M_Page_LocSelentryParam', popPage_1entryParam);
+    init_M_Page_LocSel();
+    popPage('M_Page_LocSel', <VisibleCM_Page_LocSel key='M_Page_LocSel' />);
+}
+
 function testHandler() {
     return;
     var popPage_1_callback = (popPage_1exportParam) => {
@@ -1600,7 +1739,7 @@ function M_Page_FileViewer_onLoad() {
     var M_Page_FileViewer_归属流程代码 = getPageEntryParam('M_Page_FileViewer', '归属流程代码', 0);
     var state = store.getState();
     setTimeout(() => {
-        store.dispatch(makeAction_setStateByPath({ type: '查看文件', data: { 显示名称: M_Page_FileViewer_显示名称, 关联记录代码: M_Page_FileViewer_关联记录代码, 归属流程代码: M_Page_FileViewer_归属流程代码 } }, 'M_Page_FileViewer.iframe_1.msg'));
+        store.dispatch(makeAction_setStateByPath({ type: '查看文件', data: { 显示名称: M_Page_FileViewer_显示名称, 关联记录代码: M_Page_FileViewer_关联记录代码, 归属流程代码: M_Page_FileViewer_归属流程代码 } }, 'M_Page_FileViewer.iframe_fv.msg'));
     }, 50);
 }
 
@@ -1633,7 +1772,7 @@ class CM_Page_FileViewer extends React.PureComponent {
         var retElem = null;
         retElem = (
             <div className='d-flex flex-grow-1 flex-shrink-1 flex-column fixPageContent '>
-                <VisibleERPC_IFrame className='flex-grow-1 flex-shrink-1 d-flex flex-column ' proj='GJYM' flowCode='286' pageType='mb' id='iframe_1' parentPath='M_Page_FileViewer' />
+                <VisibleERPC_IFrame className='flex-grow-1 flex-shrink-1 d-flex flex-column ' proj='GJYM' flowCode='286' pageType='mb' id='iframe_fv' parentPath='M_Page_FileViewer' />
                 {this.renderSidePage()}
             </div>);
         return retElem;
@@ -1653,6 +1792,7 @@ function CM_Page_FileViewer_disptchtoprops(dispatch, ownprops) {
 }
 const VisibleCM_Page_FileViewer = ReactRedux.connect(CM_Page_FileViewer_mapstatetoprops, CM_Page_FileViewer_disptchtoprops)(CM_Page_FileViewer);
 
+// M_Page_ParamShoter
 function init_M_Page_ParamShoter(state, parentPageID) {
     var needSetState = { parentPageID: parentPageID };
     var fullParentPath = 'M_Page_ParamShoter';
@@ -1676,13 +1816,13 @@ function M_Page_ParamShoter_onLoad() {
     var M_Page_ParamShoter_名称显示 = getPageEntryParam('M_Page_ParamShoter', '名称显示', 0);
     var state = store.getState();
     setTimeout(() => {
-        store.dispatch(makeAction_setStateByPath({ type: '刷新参数', data: { 发图记录代码: M_Page_ParamShoter_发图记录代码, 参数上传数据代码: M_Page_ParamShoter_参数上传记录代码, 构件全称: M_Page_ParamShoter_名称显示 } }, 'M_Page_ParamShoter.iframe_0.msg'));
+        store.dispatch(makeAction_setStateByPath({ type: '刷新参数', data: { 发图记录代码: M_Page_ParamShoter_发图记录代码, 参数上传数据代码: M_Page_ParamShoter_参数上传记录代码, 构件全称: M_Page_ParamShoter_名称显示 } }, 'M_Page_ParamShoter.iframe_shot.msg'));
     }, 50);
 }
 
-function iframe_0_onReceiveMsg(msgtype, data, fullPath) {
+function iframe_shot_onReceiveMsg(msgtype, data, fullPath) {
     var state = store.getState();
-    var iframe_0_path = fullPath;
+    var iframe_shot_path = fullPath;
     if (msgtype == '拍照完成') {
         var closePage_0exportParam = {
             拍照完成: true,
@@ -1722,7 +1862,7 @@ class CM_Page_ParamShoter extends React.PureComponent {
         var retElem = null;
         retElem = (
             <div className='d-flex flex-grow-1 flex-shrink-1 flex-column fixPageContent '>
-                <VisibleERPC_IFrame className='flex-grow-1 flex-shrink-1 d-flex flex-column ' proj='GJYM' flowCode='285' pageType='mb' onMessageFun={iframe_0_onReceiveMsg} id='iframe_0' parentPath='M_Page_ParamShoter' />
+                <VisibleERPC_IFrame className='flex-grow-1 flex-shrink-1 d-flex flex-column ' proj='GJYM' flowCode='285' pageType='mb' onMessageFun={iframe_shot_onReceiveMsg} id='iframe_shot' parentPath='M_Page_ParamShoter' />
                 {this.renderSidePage()}
             </div>);
         return retElem;
@@ -1741,3 +1881,94 @@ function CM_Page_ParamShoter_disptchtoprops(dispatch, ownprops) {
     return retDispath;
 }
 const VisibleCM_Page_ParamShoter = ReactRedux.connect(CM_Page_ParamShoter_mapstatetoprops, CM_Page_ParamShoter_disptchtoprops)(CM_Page_ParamShoter);
+
+
+// M_Page_LocSel
+function init_M_Page_LocSel(state,parentPageID){
+	var needSetState={parentPageID:parentPageID};
+	var fullParentPath='M_Page_LocSel';
+	var hadState = state != null;
+	if(!hadState){state = store.getState();}
+	setTimeout(() => {M_Page_LocSel_onLoad();},50);
+	setTimeout(() => {
+	}, 50);
+	needSetState['M_Page_LocSel.parentPageID']=parentPageID;
+	needSetState['M_Page_LocSel._magicobj']={};
+	if(hadState){
+		state = setManyStateByPath(state,'',needSetState);
+	}else{
+		store.dispatch(makeAction_setManyStateByPath(needSetState, ''));
+	}
+	return state;
+}
+function M_Page_LocSel_onLoad(){
+	var M_Page_LocSel_图纸名称=getPageEntryParam('M_Page_LocSel','图纸名称',0);
+	var M_Page_LocSel_项目代码=getPageEntryParam('M_Page_LocSel','项目代码',0);
+	var M_Page_LocSel_可视模型代码=getPageEntryParam('M_Page_LocSel','可视模型代码',0);
+	var M_Page_LocSel_图纸代码=getPageEntryParam('M_Page_LocSel','图纸代码',0);
+	var state=store.getState();
+	setTimeout(() => {
+		store.dispatch(makeAction_setStateByPath({type:'设置参数',data:{图纸名称:M_Page_LocSel_图纸名称,项目代码:M_Page_LocSel_项目代码,可视模型代码:M_Page_LocSel_可视模型代码,图纸代码:M_Page_LocSel_图纸代码}},'M_Page_LocSel.iframe_locsel.msg'));
+	},50);
+}
+function iframe_locsel_onReceiveMsg(msgtype,data,fullPath){
+	var state=store.getState();
+	var iframe_locsel_path=fullPath;
+	if(msgtype=='选取完成'){
+		var closePage_0exportParam={
+			部位信息:data,
+		};
+		closePage2('M_Page_LocSel', state);
+		var closePage_0_callback = getPageEntryParam('M_Page_LocSel','callBack');
+		if(closePage_0_callback){setTimeout(()=>{closePage_0_callback(closePage_0exportParam);},20);}
+	}
+}
+
+class CM_Page_LocSel extends React.PureComponent{
+	constructor(props){
+		super(props);
+		this.id='M_Page_LocSel';
+		ERPC_Page(this);
+	}
+	render(){
+		var retElem=null;
+		retElem = (
+			<div className={'d-flex flex-column bg-light ' + (this.props.popInSide ? 'popPageChild' : 'popPage_fullscreen')} >
+				{this.renderHead()}
+				{this.renderContent()}
+			</div>);
+		return retElem;
+	}
+	renderHead(){
+		return (<div className='d-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader'>
+			<h3 className='flex-grow-1 flex-shrink-1'>图纸部位选取</h3>
+		<button onClick={this.close} className={'flex-grow-0 flex-shrink-0 btn btn-sm btn-danger mr-1' + (this.props.popInSide ? ' d-none' : '')}><i className='fa fa-close' /></button>
+		</div>);
+	}
+	renderHeadButton(){
+		var rlt_arr=[];
+		return rlt_arr;
+	}
+	renderContent(){
+		var retElem=null;
+		retElem = (
+			<div className='d-flex flex-grow-1 flex-shrink-1 flex-column fixPageContent '>
+				<VisibleERPC_IFrame className='flex-grow-1 flex-shrink-1 d-flex flex-column ' proj='GJYM' flowCode='287' pageType='auto' onMessageFun={iframe_locsel_onReceiveMsg} id='iframe_locsel' parentPath='M_Page_LocSel' />
+				{this.renderSidePage()}
+			</div>);
+		return retElem;
+	}
+
+}
+function CM_Page_LocSel_mapstatetoprops(state,ownprops){
+	var retProps={};
+	var pageState = getStateByPath(state, 'M_Page_LocSel', {});
+	retProps['sidepages_arr']=pageState.sidepages_arr;
+	retProps['parentPageID']=pageState.parentPageID;
+	return retProps;
+}
+function CM_Page_LocSel_disptchtoprops(dispatch,ownprops){
+	var retDispath={};
+	return retDispath;
+}
+const VisibleCM_Page_LocSel = ReactRedux.connect(CM_Page_LocSel_mapstatetoprops, CM_Page_LocSel_disptchtoprops)(CM_Page_LocSel);

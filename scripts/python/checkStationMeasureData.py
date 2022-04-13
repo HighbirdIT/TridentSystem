@@ -109,6 +109,7 @@ class StationData:
                 if line[0] == 'A':
                     t_arr = line.split(',')
                     newData.loc = HBGeometry.Point3d(float(t_arr[3]) * factor,float(t_arr[2]) * factor,float(t_arr[4]) * factor)
+                    newData.measures_arr = []
                 elif line[0] == 'F':
                     t_arr = line.split(',')
                     temPt = HBGeometry.Point3d(float(t_arr[9]) * factor,float(t_arr[8]) * factor,float(t_arr[10]) * factor)
@@ -215,9 +216,13 @@ class StationData:
                     ms_j = withAnchorMs_arr[j]
                     dis = ms_i.loc.DistanceTo(ms_j.loc)
                     standDis = ms_i.anchor.loc.DistanceTo(ms_j.anchor.loc)
+                    heightBais = ms_i.loc.Z - ms_j.loc.Z
+                    standHeightBais = ms_i.anchor.loc.Z - ms_j.anchor.loc.Z
                     # print('dis:%d,standDis:%d'%(dis,standDis))
                     if abs(dis - standDis) > maxDif:
                         errList.append('"锚%s"(%s)到"锚%s"(%s)的间距是%d,和设计值%d相比偏差%d'%(ms_i.anchor.name,ms_i.标记序号,ms_j.anchor.name,ms_j.标记序号,dis,standDis,dis - standDis))
+                    if abs(standHeightBais - heightBais) > maxDif:
+                        errList.append('"锚%s"(%s)到"锚%s"(%s)的高差是%d,和设计值%d相比偏差%d'%(ms_i.anchor.name,ms_i.标记序号,ms_j.anchor.name,ms_j.标记序号,heightBais,standHeightBais,standHeightBais - heightBais))
 
             if len(errList) > 0:
                 return errList
@@ -323,7 +328,7 @@ if __name__ == '__main__':
                     result['err'] = '"%s"的数据文件"%s"未在服务器找到'%(aftFileName,os.path.basename(aftFilePath))
                 else:
                     sd_aft = StationData.CreateFromFile(aftFilePath, 1000, nxtAnchor_arr, anchor_dic)
-                    sd_aft.name = preFileName
+                    sd_aft.name = aftFileName
             if 'err' not in result and sd_aft != None:
                 checkRlt = StationData.CheckDataValid(False,sd_aft,sd_this,maxDif,minDistance,minVDistance,'后个站点')
                 if len(checkRlt) > 0:
