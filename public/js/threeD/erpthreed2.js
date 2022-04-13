@@ -459,29 +459,34 @@ var ERPC_ThreeDApp = function (_React$PureComponent) {
             self.paramBtns_arr = [];
 
             if (this.focus图纸部位Btn != null) {
-                this.部位相机loc[this.focus图纸部位Btn.位置信息.英文名称] = new THREE.Vector3(this.camera.position.x, this.camera.position.y, this.camera.position.z);
+                this.部位相机loc[this.focus图纸部位Btn.位置信息.英文名称] = [new THREE.Vector3(this.camera.position.x, this.camera.position.y, this.camera.position.z), new THREE.Vector3(controls.target.x, controls.target.y, controls.target.z)];
             }
             this.focus图纸部位Btn = want图纸部位;
             if (want图纸部位 == null) {
                 // controls.target.copy(this.originControlsTarget);
-                this.loadCameraView();
+                //this.loadCameraView();
                 controls.enablePan = true;
             } else {
-                var eyePos = this.部位相机loc[want图纸部位.位置信息.英文名称];
-                if (eyePos == null) {
+                var t_arr = this.部位相机loc[want图纸部位.位置信息.英文名称];
+                var targetPos = want图纸部位.worldPos;
+                var eyePos = null;
+                if (t_arr == null) {
                     var pos_center = new THREE.Vector3(0, 0, want图纸部位.worldPos.z);
                     var theVec = new THREE.Vector3();
                     theVec.subVectors(want图纸部位.worldPos, pos_center);
                     theVec.normalize();
                     eyePos = new THREE.Vector3(want图纸部位.worldPos.x, want图纸部位.worldPos.y, want图纸部位.worldPos.z + 0.2);
                     eyePos.addScaledVector(theVec, 1);
+                } else {
+                    eyePos = t_arr[0];
+                    targetPos = t_arr[1];
                 }
                 this.camera.position.copy(eyePos);
 
                 //console.log(want图纸部位);
-                this.saveCameraView();
+                //this.saveCameraView();
                 // this.originControlsTarget.copy(controls.target);
-                controls.target.copy(want图纸部位.worldPos);
+                controls.target.copy(targetPos);
                 controls.enablePan = false;
 
                 want图纸部位.参数信息_arr.forEach(function (item) {

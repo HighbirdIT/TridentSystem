@@ -393,17 +393,19 @@ class ERPC_ThreeDApp extends React.PureComponent {
         self.paramBtns_arr = [];
 
         if(this.focus图纸部位Btn != null){
-            this.部位相机loc[this.focus图纸部位Btn.位置信息.英文名称] = new THREE.Vector3(this.camera.position.x,this.camera.position.y,this.camera.position.z);
+            this.部位相机loc[this.focus图纸部位Btn.位置信息.英文名称] = [new THREE.Vector3(this.camera.position.x,this.camera.position.y,this.camera.position.z),new THREE.Vector3(controls.target.x,controls.target.y,controls.target.z)];
         }
         this.focus图纸部位Btn = want图纸部位;
         if (want图纸部位 == null) {
             // controls.target.copy(this.originControlsTarget);
-            this.loadCameraView();
+            //this.loadCameraView();
             controls.enablePan = true;
         }
         else {
-            let eyePos = this.部位相机loc[want图纸部位.位置信息.英文名称];
-            if(eyePos == null){
+            let t_arr = this.部位相机loc[want图纸部位.位置信息.英文名称];
+            let targetPos = want图纸部位.worldPos;
+            let eyePos = null;
+            if(t_arr == null){
                 let pos_center = new THREE.Vector3(0,0,want图纸部位.worldPos.z);
                 let theVec = new THREE.Vector3();
                 theVec.subVectors(want图纸部位.worldPos, pos_center);
@@ -411,12 +413,16 @@ class ERPC_ThreeDApp extends React.PureComponent {
                 eyePos = new THREE.Vector3(want图纸部位.worldPos.x,want图纸部位.worldPos.y,want图纸部位.worldPos.z + 0.2);
                 eyePos.addScaledVector(theVec,1);
             }
+            else{
+                eyePos = t_arr[0];
+                targetPos = t_arr[1];
+            }
             this.camera.position.copy(eyePos);
 
             //console.log(want图纸部位);
-            this.saveCameraView();
+            //this.saveCameraView();
             // this.originControlsTarget.copy(controls.target);
-            controls.target.copy(want图纸部位.worldPos);
+            controls.target.copy(targetPos);
             controls.enablePan = false;
 
             want图纸部位.参数信息_arr.forEach(item => {
