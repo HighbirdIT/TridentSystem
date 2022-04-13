@@ -686,6 +686,7 @@ var ERPC_ThreeDApp = function (_React$PureComponent) {
                     projModelVisible: true,
                     metaModelVisible: true
                 });
+                this.drawingDataDirted = true;
                 var self = this;
                 nativeFetchJson(false, threeDServerUrl, { bundle: { 项目代码: this.props.projectCode }, action: 'pulldata_ProjectMeta' }).then(function (json) {
                     if (json.err != null) {
@@ -1474,6 +1475,7 @@ function ERPC_ThreeDApp_mapstatetoprops(state, ownprops) {
     var propProfile = getControlPropProfile(ownprops, state);
     var ctlState = propProfile.ctlState;
     var rowState = propProfile.rowState;
+    var projectCode = ctlState.projectCode == null ? ownprops.projectCode : ctlState.projectCode;
 
     return {
         visible: ctlState.visible != null ? ctlState.visible : ownprops.definvisible ? false : true,
@@ -1481,7 +1483,7 @@ function ERPC_ThreeDApp_mapstatetoprops(state, ownprops) {
         fullPath: propProfile.fullPath,
         dynamicStyle: ctlState.style,
         dynamicClass: ctlState.class,
-        projectCode: ownprops.projectCode
+        projectCode: projectCode
     };
 }
 
