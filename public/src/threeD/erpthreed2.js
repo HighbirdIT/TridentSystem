@@ -243,6 +243,10 @@ const normalLineMat = new THREE.LineBasicMaterial( {
 	color: 0x0000FF,
 } );
 
+const selectedLineMat = new THREE.LineBasicMaterial( {
+	color: 0xFF0000,
+} );
+
 class ERPC_ThreeDApp extends React.PureComponent {
     constructor(props) {
         super();
@@ -431,26 +435,30 @@ class ERPC_ThreeDApp extends React.PureComponent {
         if (paramItem == this.focusParam) {
             return;
         }
+        if(this.focusParam != null){
+            this.focusParam.geometry.material = normalLineMat;
+        }
         const controls = this.controls;
         this.focusParam = paramItem;
         this.sphereInter.visible = false;
         if (paramItem == null) {
             this.loadCameraView();
-            this.paramBtns_arr.forEach(btnItem => {
-                btnItem.geometry.visible = true;
-            });
+            // this.paramBtns_arr.forEach(btnItem => {
+            //     btnItem.geometry.visible = true;
+            // });
         }
         else {
             this.saveCameraView();
             controls.target.copy(paramItem.worldPos);
-            this.paramBtns_arr.forEach(btnItem => {
-                btnItem.geometry.visible = false;
-            });
-            this.paramBtns_arr.forEach(btnItem => {
-                if (btnItem == this.focusParam) {
-                    btnItem.geometry.visible = true;
-                }
-            });
+            paramItem.geometry.material = selectedLineMat;
+            // this.paramBtns_arr.forEach(btnItem => {
+            //     btnItem.geometry.visible = false;
+            // });
+            // this.paramBtns_arr.forEach(btnItem => {
+            //     if (btnItem == this.focusParam) {
+            //         btnItem.geometry.visible = true;
+            //     }
+            // });
             if (paramItem.record.参数序号 == 0) {
                 this.sphereInter.visible = true;
                 this.sphereInter.position.copy(paramItem.worldPos);

@@ -292,6 +292,10 @@ var normalLineMat = new THREE.LineBasicMaterial({
     color: 0x0000FF
 });
 
+var selectedLineMat = new THREE.LineBasicMaterial({
+    color: 0xFF0000
+});
+
 var ERPC_ThreeDApp = function (_React$PureComponent) {
     _inherits(ERPC_ThreeDApp, _React$PureComponent);
 
@@ -494,30 +498,32 @@ var ERPC_ThreeDApp = function (_React$PureComponent) {
     }, {
         key: 'setFocusParam',
         value: function setFocusParam(paramItem) {
-            var _this5 = this;
-
             if (paramItem == this.focusParam) {
                 return;
+            }
+            if (this.focusParam != null) {
+                this.focusParam.geometry.material = normalLineMat;
             }
             var controls = this.controls;
             this.focusParam = paramItem;
             this.sphereInter.visible = false;
             if (paramItem == null) {
                 this.loadCameraView();
-                this.paramBtns_arr.forEach(function (btnItem) {
-                    btnItem.geometry.visible = true;
-                });
+                // this.paramBtns_arr.forEach(btnItem => {
+                //     btnItem.geometry.visible = true;
+                // });
             } else {
                 this.saveCameraView();
                 controls.target.copy(paramItem.worldPos);
-                this.paramBtns_arr.forEach(function (btnItem) {
-                    btnItem.geometry.visible = false;
-                });
-                this.paramBtns_arr.forEach(function (btnItem) {
-                    if (btnItem == _this5.focusParam) {
-                        btnItem.geometry.visible = true;
-                    }
-                });
+                paramItem.geometry.material = selectedLineMat;
+                // this.paramBtns_arr.forEach(btnItem => {
+                //     btnItem.geometry.visible = false;
+                // });
+                // this.paramBtns_arr.forEach(btnItem => {
+                //     if (btnItem == this.focusParam) {
+                //         btnItem.geometry.visible = true;
+                //     }
+                // });
                 if (paramItem.record.参数序号 == 0) {
                     this.sphereInter.visible = true;
                     this.sphereInter.position.copy(paramItem.worldPos);
@@ -922,7 +928,7 @@ var ERPC_ThreeDApp = function (_React$PureComponent) {
     }, {
         key: '\u53C2\u6570\u6587\u4EF6Changed',
         value: function Changed() {
-            var _this6 = this;
+            var _this5 = this;
 
             if (this.state.drawing == null) {
                 return;
@@ -956,7 +962,7 @@ var ERPC_ThreeDApp = function (_React$PureComponent) {
 
                     var loader = new Rhino3dmLoader();
                     loader.setLibraryPath('/vendor/other/');
-                    loader.load(window.location.origin + _this6.state.drawing.参数信息文件路径, function (object) {
+                    loader.load(window.location.origin + _this5.state.drawing.参数信息文件路径, function (object) {
                         self.setState({
                             fetch_title: '解析参数数据模型'
                         });
@@ -1167,7 +1173,7 @@ var ERPC_ThreeDApp = function (_React$PureComponent) {
     }, {
         key: 'renderFrame',
         value: function renderFrame(gameTime) {
-            var _this7 = this;
+            var _this6 = this;
 
             var time = gameTime - this.preGameTime;
             this.preGameTime = gameTime;
@@ -1220,22 +1226,22 @@ var ERPC_ThreeDApp = function (_React$PureComponent) {
             // });
 
             this.paramBtns_arr.forEach(function (btnItem) {
-                if (_this7.focusParam != null) {
+                if (_this6.focusParam != null) {
                     btnItem.docElem.style.display = 'none';
                     return;
                 }
                 if (btnItem.record.拍照状态 == 1) {
-                    if (_this7.state.doneVisible == false) {
+                    if (_this6.state.doneVisible == false) {
                         btnItem.docElem.style.display = 'none';
                         return;
                     }
                 } else {
-                    if (_this7.state.undoneVisible == false) {
+                    if (_this6.state.undoneVisible == false) {
                         btnItem.docElem.style.display = 'none';
                         return;
                     }
                 }
-                _this7.smartUpdateButtonItem(btnItem, camera, canvas, 1000);
+                _this6.smartUpdateButtonItem(btnItem, camera, canvas, 1000);
             });
 
             // if (this.focusParam != null) {
@@ -1257,7 +1263,7 @@ var ERPC_ThreeDApp = function (_React$PureComponent) {
     }, {
         key: 'render',
         value: function render() {
-            var _this8 = this;
+            var _this7 = this;
 
             if (this.props.visible == false) {
                 return null;
@@ -1334,7 +1340,7 @@ var ERPC_ThreeDApp = function (_React$PureComponent) {
                 if (this.drawingDataDirted) {
                     this.drawingDataDirted = false;
                     setTimeout(function () {
-                        pull_DrawingSelectorForm(null, self.props.fullParentPath, true, _this8.props.projectCode);
+                        pull_DrawingSelectorForm(null, self.props.fullParentPath, true, _this7.props.projectCode);
                     }, 10);
                 }
             } else {
@@ -1616,17 +1622,17 @@ var CDrawingSelectorForm = function (_React$PureComponent2) {
     function CDrawingSelectorForm(props) {
         _classCallCheck(this, CDrawingSelectorForm);
 
-        var _this9 = _possibleConstructorReturn(this, (CDrawingSelectorForm.__proto__ || Object.getPrototypeOf(CDrawingSelectorForm)).call(this, props));
+        var _this8 = _possibleConstructorReturn(this, (CDrawingSelectorForm.__proto__ || Object.getPrototypeOf(CDrawingSelectorForm)).call(this, props));
 
-        ERPC_GridForm(_this9);
-        gCreatFormSetting(_this9);
-        _this9.clickRowHandler = _this9.clickRowHandler.bind(_this9);
-        _this9.clickFreshHandler = _this9.clickFreshHandler.bind(_this9);
+        ERPC_GridForm(_this8);
+        gCreatFormSetting(_this8);
+        _this8.clickRowHandler = _this8.clickRowHandler.bind(_this8);
+        _this8.clickFreshHandler = _this8.clickFreshHandler.bind(_this8);
 
-        _this9.DrawingSelectorForm_records_arr_changed = DrawingSelectorForm_records_arr_changed.bind(_this9);
-        _this9.bind_DrawingSelectorForm = bind_DrawingSelectorForm.bind(_this9);
-        _this9.DrawingSelectorForm_selectedValue_changed = DrawingSelectorForm_selectedValue_changed.bind(_this9);
-        return _this9;
+        _this8.DrawingSelectorForm_records_arr_changed = DrawingSelectorForm_records_arr_changed.bind(_this8);
+        _this8.bind_DrawingSelectorForm = bind_DrawingSelectorForm.bind(_this8);
+        _this8.DrawingSelectorForm_selectedValue_changed = DrawingSelectorForm_selectedValue_changed.bind(_this8);
+        return _this8;
     }
 
     _createClass(CDrawingSelectorForm, [{
@@ -1993,11 +1999,11 @@ var CM_Page_FileViewer = function (_React$PureComponent5) {
     function CM_Page_FileViewer(props) {
         _classCallCheck(this, CM_Page_FileViewer);
 
-        var _this12 = _possibleConstructorReturn(this, (CM_Page_FileViewer.__proto__ || Object.getPrototypeOf(CM_Page_FileViewer)).call(this, props));
+        var _this11 = _possibleConstructorReturn(this, (CM_Page_FileViewer.__proto__ || Object.getPrototypeOf(CM_Page_FileViewer)).call(this, props));
 
-        _this12.id = 'M_Page_FileViewer';
-        ERPC_Page(_this12);
-        return _this12;
+        _this11.id = 'M_Page_FileViewer';
+        ERPC_Page(_this11);
+        return _this11;
     }
 
     _createClass(CM_Page_FileViewer, [{
@@ -2120,11 +2126,11 @@ var CM_Page_ParamShoter = function (_React$PureComponent6) {
     function CM_Page_ParamShoter(props) {
         _classCallCheck(this, CM_Page_ParamShoter);
 
-        var _this13 = _possibleConstructorReturn(this, (CM_Page_ParamShoter.__proto__ || Object.getPrototypeOf(CM_Page_ParamShoter)).call(this, props));
+        var _this12 = _possibleConstructorReturn(this, (CM_Page_ParamShoter.__proto__ || Object.getPrototypeOf(CM_Page_ParamShoter)).call(this, props));
 
-        _this13.id = 'M_Page_ParamShoter';
-        ERPC_Page(_this13);
-        return _this13;
+        _this12.id = 'M_Page_ParamShoter';
+        ERPC_Page(_this12);
+        return _this12;
     }
 
     _createClass(CM_Page_ParamShoter, [{
@@ -2247,11 +2253,11 @@ var CM_Page_LocSel = function (_React$PureComponent7) {
     function CM_Page_LocSel(props) {
         _classCallCheck(this, CM_Page_LocSel);
 
-        var _this14 = _possibleConstructorReturn(this, (CM_Page_LocSel.__proto__ || Object.getPrototypeOf(CM_Page_LocSel)).call(this, props));
+        var _this13 = _possibleConstructorReturn(this, (CM_Page_LocSel.__proto__ || Object.getPrototypeOf(CM_Page_LocSel)).call(this, props));
 
-        _this14.id = 'M_Page_LocSel';
-        ERPC_Page(_this14);
-        return _this14;
+        _this13.id = 'M_Page_LocSel';
+        ERPC_Page(_this13);
+        return _this13;
     }
 
     _createClass(CM_Page_LocSel, [{
