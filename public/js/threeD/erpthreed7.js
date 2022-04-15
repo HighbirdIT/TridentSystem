@@ -1378,6 +1378,7 @@ var ERPC_ThreeDApp = function (_React$PureComponent) {
                 return;
             }
             if (!this.state.inited) {
+                alert("startAPP init");
                 this.initApp();
                 this.setState({
                     inited: true

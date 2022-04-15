@@ -1281,6 +1281,7 @@ class ERPC_ThreeDApp extends React.PureComponent {
             return;
         }
         if (!this.state.inited) {
+            alert("startAPP init");
             this.initApp();
             this.setState({
                 inited: true,
