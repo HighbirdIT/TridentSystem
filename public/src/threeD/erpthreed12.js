@@ -780,7 +780,17 @@ class ERPC_ThreeDApp extends React.PureComponent {
 
     initApp() {
         const canvas = this.canvasRef.current;
-        const renderer = new THREE.WebGLRenderer({ canvas });
+        let renderer = null;
+        try{
+            renderer = new THREE.WebGLRenderer({ canvas });
+        }catch(eo){
+            alert('需要开启钉钉的WebGL功能');
+            return;
+        }
+        if(renderer == null){
+            alert('需要开启钉钉的WebGL功能');
+            return;
+        }
         this.renderer = renderer;
 
         const fov = 75;
@@ -796,12 +806,6 @@ class ERPC_ThreeDApp extends React.PureComponent {
         const scene = new THREE.Scene();
         if(scene == null){
             alert('无法创建THREE.Scene对象');
-            // setTimeout(() => {
-            //     self.setState({
-            //         fetching:true,
-            //         fetch_error:'无法创建THREE.Scene对象'
-            //     });
-            // }, 10);
         }
         this.scene = scene;
         //scene.background = new THREE.Color(0x9DA3AA);
@@ -847,8 +851,6 @@ class ERPC_ThreeDApp extends React.PureComponent {
         this.sphereInter = sphereInter;
         sphereInter.visible = false;
         //scene.add(sphereInter);
-        this.selfTag = "THDA";
-        alert("inited:" + this.selfTag);
     }
 
     ProjectChanged() {
@@ -1010,7 +1012,6 @@ class ERPC_ThreeDApp extends React.PureComponent {
             return;
         }
         let self = this;
-        alert("tag" + this.selfTag);
         if (this.state.showingModelPath != this.state.drawing.全局模型文件路径) {
             this.setState({
                 showingModelPath: this.state.drawing.全局模型文件路径,
@@ -1283,7 +1284,6 @@ class ERPC_ThreeDApp extends React.PureComponent {
             setTimeout(this.startAPP, 100);
             return;
         }
-        alert("startAPP:" + this.state.inited);
         if (!this.state.inited) {
             this.initApp();
             this.setState({

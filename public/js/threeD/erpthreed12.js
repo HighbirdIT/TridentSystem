@@ -871,7 +871,17 @@ var ERPC_ThreeDApp = function (_React$PureComponent) {
         key: 'initApp',
         value: function initApp() {
             var canvas = this.canvasRef.current;
-            var renderer = new THREE.WebGLRenderer({ canvas: canvas });
+            var renderer = null;
+            try {
+                renderer = new THREE.WebGLRenderer({ canvas: canvas });
+            } catch (eo) {
+                alert('需要开启钉钉的WebGL功能');
+                return;
+            }
+            if (renderer == null) {
+                alert('需要开启钉钉的WebGL功能');
+                return;
+            }
             this.renderer = renderer;
 
             var fov = 75;
@@ -887,12 +897,6 @@ var ERPC_ThreeDApp = function (_React$PureComponent) {
             var scene = new THREE.Scene();
             if (scene == null) {
                 alert('无法创建THREE.Scene对象');
-                // setTimeout(() => {
-                //     self.setState({
-                //         fetching:true,
-                //         fetch_error:'无法创建THREE.Scene对象'
-                //     });
-                // }, 10);
             }
             this.scene = scene;
             //scene.background = new THREE.Color(0x9DA3AA);
@@ -938,8 +942,6 @@ var ERPC_ThreeDApp = function (_React$PureComponent) {
             this.sphereInter = sphereInter;
             sphereInter.visible = false;
             //scene.add(sphereInter);
-            this.selfTag = "THDA";
-            alert("inited:" + this.selfTag);
         }
     }, {
         key: 'ProjectChanged',
@@ -1104,7 +1106,6 @@ var ERPC_ThreeDApp = function (_React$PureComponent) {
                 return;
             }
             var self = this;
-            alert("tag" + this.selfTag);
             if (this.state.showingModelPath != this.state.drawing.全局模型文件路径) {
                 this.setState({
                     showingModelPath: this.state.drawing.全局模型文件路径,
@@ -1380,7 +1381,6 @@ var ERPC_ThreeDApp = function (_React$PureComponent) {
                 setTimeout(this.startAPP, 100);
                 return;
             }
-            alert("startAPP:" + this.state.inited);
             if (!this.state.inited) {
                 this.initApp();
                 this.setState({
