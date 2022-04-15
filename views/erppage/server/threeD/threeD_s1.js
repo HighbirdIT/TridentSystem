@@ -95,6 +95,22 @@ function pulldata_全局参数数据(req,res){
 	});
 }
 
+function pulldata_图纸关联构件模型(req,res){
+	var g_envVar = req.session.g_envVar;
+	return co(function* () {
+		if(req.body.bundle == null){return serverhelper.createErrorRet('没有提供bundle',0,null);}
+		var bundle=req.body.bundle;
+		if(bundle.图纸代码 == null){return serverhelper.createErrorRet('没有提供图纸代码',0,null);};
+		var params_arr = null;
+		params_arr=[
+			dbhelper.makeSqlparam('图纸代码', sqlTypes.Int, bundle.图纸代码),
+		];
+		var sql = "SELECT * FROM [dbo].[FT254D图纸关联构件模型] (@图纸代码) order by 全局代码,方位名称,部位代码,一级序号,二级序号";
+		var rlt = yield dbhelper.asynQueryWithParams(sql, params_arr);
+		return rlt.recordset;
+	});
+}
+
 function pulldata_查询附件记录(req,res){
 	var g_envVar = req.session.g_envVar;
 	return co(function* () {
@@ -119,6 +135,6 @@ processes_map.pulldata_DrawingSelectorForm = pulldata_DrawingSelectorForm;
 processes_map.pulldata_ProjectMeta = pulldata_ProjectMeta;
 processes_map.pulldata_全局参数数据 = pulldata_全局参数数据;
 processes_map.pulldata_查询附件记录 = pulldata_查询附件记录;
-
+processes_map.pulldata_图纸关联构件模型 = pulldata_图纸关联构件模型;
 
 module.exports = process;
