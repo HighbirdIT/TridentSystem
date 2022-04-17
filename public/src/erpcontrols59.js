@@ -131,6 +131,7 @@ class FixedContainer extends React.PureComponent {
         this.state = {
             items_arr: [],
             pages_arr: [],
+            persistentPages_arr: [],
         };
         this.item_map = {};
         this.banItemChange = false;
@@ -170,16 +171,42 @@ class FixedContainer extends React.PureComponent {
         });
     }
 
+    popPersistentPage(id, createFun) {
+        this.setState(state => {
+            var foundElem = state.persistentPages_arr.find(x => { return x.id == id; });
+            if (foundElem != null) {
+                foundElem.closed = false;
+                return {
+                    persistentPages_arr: state.persistentPages_arr.concat(),
+                };
+            }
+            foundElem = createFun();
+            return {
+                persistentPages_arr: state.persistentPages_arr.concat({ id: id, elem: foundElem, isPersistent: true, }),
+            };
+        });
+    }
+
     closePage(id) {
         var foundElem = this.state.pages_arr.find(x => { return x.id == id; });
-        if (foundElem == null)
-            return false;
-        foundElem.closed = true;
-        var newArr = this.state.pages_arr.filter(x => { return !x.closed && x != foundElem; });
-        this.setState({
-            pages_arr: newArr,
-        });
-        return true;
+        if (foundElem != null){
+            foundElem.closed = true;
+            var newArr = this.state.pages_arr.filter(x => { return !x.closed && x != foundElem; });
+            this.setState({
+                pages_arr: newArr,
+            });
+            return true;
+        }
+        foundElem = this.state.persistentPages_arr.find(x => { return x.id == id; });
+        if (foundElem != null){
+            foundElem.closed = true;
+            var newArr = this.state.persistentPages_arr.concat();
+            this.setState({
+                persistentPages_arr: newArr,
+            });
+            return true;
+        }
+        return false;
     }
 
     addItem(target) {
@@ -231,15 +258,35 @@ class FixedContainer extends React.PureComponent {
     render() {
         var items_arr = this.state.items_arr;
         var pages_arr = this.state.pages_arr;
-        if (items_arr.length == 0 && pages_arr.length == 0) {
+        var persistentPages_arr = this.state.persistentPages_arr;
+        if (items_arr.length == 0 && pages_arr.length == 0 && persistentPages_arr.length == 0) {
             return null;
         }
-        return (<div className='d-fixed w-100 h-100 fixedBackGround'>
-            {pages_arr.map(item => {
-                return <div key={item.id} className='d-fixed w-100 h-100 fixedBackGround'>
-                    {item.elem}
-                </div>;
-            })}
+
+        var visibleClassName = 'd-fixed w-100 h-100 fixedBackGround';
+        var hiddenClassName = 'd-none';
+        var renderElem_arr = [];
+        var hadVisiblePersistentPage = false;
+        persistentPages_arr.forEach(item=>{
+            let useClassName = hiddenClassName;
+            if(!item.closed){
+                useClassName = visibleClassName;
+                hadVisiblePersistentPage = true;
+            }
+            renderElem_arr.push(<div key={item.id} className={useClassName} >{item.elem}</div>);
+        });
+        pages_arr.forEach(item=>{
+            let useClassName = hadVisiblePersistentPage ? hiddenClassName : visibleClassName;
+            renderElem_arr.push(<div key={item.id} className={useClassName} >{item.elem}</div>);
+        });
+
+        let rootUseClassName = visibleClassName;
+        if(items_arr.length == 0 && persistentPages_arr.length > 0 && pages_arr.length == 0 && !hadVisiblePersistentPage){
+            rootUseClassName = hiddenClassName;
+        }
+        
+        return (<div className={rootUseClassName}>
+            {renderElem_arr}
             {items_arr}
         </div>);
     }
@@ -266,6 +313,12 @@ function removeTopestFixedItem(target) {
 function popPage(pid, pelem) {
     if (gFixedContainerRef.current) {
         gFixedContainerRef.current.popPage(pid, pelem);
+    }
+}
+
+function popPersistentPage(pid, createFun) {
+    if (gFixedContainerRef.current) {
+        gFixedContainerRef.current.popPersistentPage(pid, createFun);
     }
 }
 

@@ -7,6 +7,7 @@ const ThreeDAppAAttrsSetting = GenControlKernelAttrsSetting([
             type:FunType_Client,
             group:EJsBluePrintFunGroup.CtlAttr,
         }),
+        new CAttribute('APP类型', 'apptype', ValueType.String, EThreeDAppType.全局图拍照, true, false, ThreeDAppType_arr),
     ]),
 ]);
 

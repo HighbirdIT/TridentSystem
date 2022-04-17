@@ -153,7 +153,8 @@ var FixedContainer = function (_React$PureComponent) {
 
         _this.state = {
             items_arr: [],
-            pages_arr: []
+            pages_arr: [],
+            persistentPages_arr: []
         };
         _this.item_map = {};
         _this.banItemChange = false;
@@ -199,20 +200,52 @@ var FixedContainer = function (_React$PureComponent) {
             });
         }
     }, {
+        key: 'popPersistentPage',
+        value: function popPersistentPage(id, createFun) {
+            this.setState(function (state) {
+                var foundElem = state.persistentPages_arr.find(function (x) {
+                    return x.id == id;
+                });
+                if (foundElem != null) {
+                    foundElem.closed = false;
+                    return {
+                        persistentPages_arr: state.persistentPages_arr.concat()
+                    };
+                }
+                foundElem = createFun();
+                return {
+                    persistentPages_arr: state.persistentPages_arr.concat({ id: id, elem: foundElem, isPersistent: true })
+                };
+            });
+        }
+    }, {
         key: 'closePage',
         value: function closePage(id) {
             var foundElem = this.state.pages_arr.find(function (x) {
                 return x.id == id;
             });
-            if (foundElem == null) return false;
-            foundElem.closed = true;
-            var newArr = this.state.pages_arr.filter(function (x) {
-                return !x.closed && x != foundElem;
+            if (foundElem != null) {
+                foundElem.closed = true;
+                var newArr = this.state.pages_arr.filter(function (x) {
+                    return !x.closed && x != foundElem;
+                });
+                this.setState({
+                    pages_arr: newArr
+                });
+                return true;
+            }
+            foundElem = this.state.persistentPages_arr.find(function (x) {
+                return x.id == id;
             });
-            this.setState({
-                pages_arr: newArr
-            });
-            return true;
+            if (foundElem != null) {
+                foundElem.closed = true;
+                var newArr = this.state.persistentPages_arr.concat();
+                this.setState({
+                    persistentPages_arr: newArr
+                });
+                return true;
+            }
+            return false;
         }
     }, {
         key: 'addItem',
@@ -266,19 +299,45 @@ var FixedContainer = function (_React$PureComponent) {
         value: function render() {
             var items_arr = this.state.items_arr;
             var pages_arr = this.state.pages_arr;
-            if (items_arr.length == 0 && pages_arr.length == 0) {
+            var persistentPages_arr = this.state.persistentPages_arr;
+            if (items_arr.length == 0 && pages_arr.length == 0 && persistentPages_arr.length == 0) {
                 return null;
             }
+
+            var visibleClassName = 'd-fixed w-100 h-100 fixedBackGround';
+            var hiddenClassName = 'd-none';
+            var renderElem_arr = [];
+            var hadVisiblePersistentPage = false;
+            persistentPages_arr.forEach(function (item) {
+                var useClassName = hiddenClassName;
+                if (!item.closed) {
+                    useClassName = visibleClassName;
+                    hadVisiblePersistentPage = true;
+                }
+                renderElem_arr.push(React.createElement(
+                    'div',
+                    { key: item.id, className: useClassName },
+                    item.elem
+                ));
+            });
+            pages_arr.forEach(function (item) {
+                var useClassName = hadVisiblePersistentPage ? hiddenClassName : visibleClassName;
+                renderElem_arr.push(React.createElement(
+                    'div',
+                    { key: item.id, className: useClassName },
+                    item.elem
+                ));
+            });
+
+            var rootUseClassName = visibleClassName;
+            if (items_arr.length == 0 && persistentPages_arr.length > 0 && pages_arr.length == 0 && !hadVisiblePersistentPage) {
+                rootUseClassName = hiddenClassName;
+            }
+
             return React.createElement(
                 'div',
-                { className: 'd-fixed w-100 h-100 fixedBackGround' },
-                pages_arr.map(function (item) {
-                    return React.createElement(
-                        'div',
-                        { key: item.id, className: 'd-fixed w-100 h-100 fixedBackGround' },
-                        item.elem
-                    );
-                }),
+                { className: rootUseClassName },
+                renderElem_arr,
                 items_arr
             );
         }
@@ -308,6 +367,12 @@ function removeTopestFixedItem(target) {
 function popPage(pid, pelem) {
     if (gFixedContainerRef.current) {
         gFixedContainerRef.current.popPage(pid, pelem);
+    }
+}
+
+function popPersistentPage(pid, createFun) {
+    if (gFixedContainerRef.current) {
+        gFixedContainerRef.current.popPersistentPage(pid, createFun);
     }
 }
 

@@ -264,6 +264,12 @@ var ETextAlign = {
 };
 var TextAligns_arr = [ETextAlign.Left, ETextAlign.Center, ETextAlign.Right];
 
+var EThreeDAppType = {
+    全局图拍照: '全局图拍照',
+    构件安装拍照: '构件安装拍照'
+};
+var ThreeDAppType_arr = [EThreeDAppType.全局图拍照, EThreeDAppType.构件安装拍照];
+
 var Event_CurrentComponentchanged = 'currentComponentchanged';
 var Event_LinkChanged = 'linkChanged';
 var Event_SocketNumChanged = 'socketnumChanged';

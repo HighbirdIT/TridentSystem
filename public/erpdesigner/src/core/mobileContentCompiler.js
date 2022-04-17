@@ -6447,7 +6447,16 @@ class MobileContentCompiler extends ContentCompiler {
         var layoutConfig = theKernel.getLayoutConfig();
         var clientSide = this.clientSide;
 
-        var ctlTag = new FormatHtmlTag(theKernel.id, 'VisibleERPC_ThreeDApp', this.clientSide);
+        let tagName = '';
+        let apptype = theKernel.getAttribute("apptype");
+        if(apptype == EThreeDAppType.全局图拍照){
+            tagName = 'VisibleERPC_ThreeDApp_A';
+        }
+        else{
+            tagName = 'VisibleERPC_ThreeDApp_B';
+        }
+
+        var ctlTag = new FormatHtmlTag(theKernel.id, tagName, this.clientSide);
         this.modifyControlTag(theKernel, ctlTag);
         ctlTag.class = layoutConfig.class;
         ctlTag.style = layoutConfig.style;
