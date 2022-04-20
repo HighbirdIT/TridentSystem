@@ -164,6 +164,42 @@ function pulldata_查询附件记录(req,res){
 	});
 }
 
+function pulldata_查找相邻构件信息(req,res){
+	var g_envVar = req.session.g_envVar;
+	return co(function* () {
+		if(req.body.bundle == null){return serverhelper.createErrorRet('没有提供bundle',0,null);}
+		var bundle=req.body.bundle;
+		if(bundle.上传记录代码 == null){return serverhelper.createErrorRet('没有提供上传记录代码',0,null);};
+		if(bundle.最大距离 == null){return serverhelper.createErrorRet('没有提供最大距离',0,null);};
+		var params_arr = null;
+		params_arr=[
+			dbhelper.makeSqlparam('上传记录代码', sqlTypes.Int, bundle.上传记录代码),
+			dbhelper.makeSqlparam('最大距离', sqlTypes.Float, bundle.最大距离),
+		];
+		var sql = "select * from FT254E查找相邻构件信息(@上传记录代码,@最大距离)";
+		if (sql == null || sql.length == 0) {return serverhelper.createErrorRet('生成sql失败');}
+		var rcdRlt = yield dbhelper.asynQueryWithParams(sql, params_arr);
+		return rcdRlt.recordset;
+	});
+}
+
+function pulldata_查询构件记录图模(req,res){
+	var g_envVar = req.session.g_envVar;
+	return co(function* () {
+		if(req.body.bundle == null){return serverhelper.createErrorRet('没有提供bundle',0,null);}
+		var bundle=req.body.bundle;
+		if(bundle.上传记录代码 == null){return serverhelper.createErrorRet('没有提供上传记录代码',0,null);};
+		var params_arr = null;
+		params_arr=[
+			dbhelper.makeSqlparam('上传记录代码', sqlTypes.Int, bundle.上传记录代码),
+		];
+		var sql = "select * from FT254E查询构件记录图模(@上传记录代码)";
+		if (sql == null || sql.length == 0) {return serverhelper.createErrorRet('生成sql失败');}
+		var rcdRlt = yield dbhelper.asynQueryWithParams(sql, params_arr);
+		return rcdRlt.recordset;
+	});
+}
+
 processes_map.pulldata_图元明细数据 = pulldata_图元明细数据;
 processes_map.pulldata_可选全局图纸 = pulldata_可选全局图纸;
 processes_map.pulldata_可选构件安装图纸 = pulldata_可选构件安装图纸;
@@ -172,5 +208,7 @@ processes_map.pulldata_全局参数数据 = pulldata_全局参数数据;
 processes_map.pulldata_构件参数数据 = pulldata_构件参数数据;
 processes_map.pulldata_查询附件记录 = pulldata_查询附件记录;
 processes_map.pulldata_图纸关联构件模型 = pulldata_图纸关联构件模型;
+processes_map.pulldata_查找相邻构件信息 = pulldata_查找相邻构件信息;
+processes_map.pulldata_查询构件记录图模 = pulldata_查询构件记录图模;
 
 module.exports = process;

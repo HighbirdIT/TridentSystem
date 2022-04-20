@@ -275,8 +275,9 @@ const TextAligns_arr = [ETextAlign.Left,ETextAlign.Center,ETextAlign.Right];
 const EThreeDAppType={
     全局图拍照:'全局图拍照',
     构件安装拍照:'构件安装拍照',
+    构件模型查看:'构件模型查看',
 }
-const ThreeDAppType_arr = [EThreeDAppType.全局图拍照,EThreeDAppType.构件安装拍照];
+const ThreeDAppType_arr = [EThreeDAppType.全局图拍照,EThreeDAppType.构件安装拍照,EThreeDAppType.构件模型查看];
 
 const Event_CurrentComponentchanged = 'currentComponentchanged';
 const Event_LinkChanged = 'linkChanged';

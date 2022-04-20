@@ -3944,8 +3944,6 @@ function InitThreedApp() {
 
 gNeedCallOnErpControlInit_arr.push(InitThreedApp);
 
-var VisibleERPC_ThreeDApp_C = null;
-
 // M_Page_ComSel
 function init_M_Page_ComSel(state, parentPageID) {
     var needSetState = { parentPageID: parentPageID };

@@ -8,6 +8,12 @@ const ThreeDAppAAttrsSetting = GenControlKernelAttrsSetting([
             group:EJsBluePrintFunGroup.CtlAttr,
         }),
         new CAttribute('APP类型', 'apptype', ValueType.String, EThreeDAppType.全局图拍照, true, false, ThreeDAppType_arr),
+        new CAttribute('构件上传记录代码', 'targetRecordID', ValueType.String, '', true, false, null, null, true,{
+            scriptable:true,
+            type:FunType_Client,
+            group:EJsBluePrintFunGroup.CtlAttr,
+        }),
+        new CAttribute('最大探测距离', 'maxDistance', ValueType.Float, '', true, false, null, null),
     ]),
 ]);
 
@@ -35,6 +41,7 @@ class ThreeDAppA extends ControlKernelBase {
     }
 }
 var ThreeDAppA_api = new ControlAPIClass(ThreeDAppAKernel_Type);
+ThreeDAppA_api.pushApi(new ApiItem_propsetter('targetRecordID'));
 g_controlApi_arr.push(ThreeDAppA_api);
 
 class CThreeDAppA extends React.PureComponent {

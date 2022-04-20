@@ -6452,8 +6452,11 @@ class MobileContentCompiler extends ContentCompiler {
         if(apptype == EThreeDAppType.全局图拍照){
             tagName = 'VisibleERPC_ThreeDApp_A';
         }
-        else{
+        else if(apptype == EThreeDAppType.构件安装拍照){
             tagName = 'VisibleERPC_ThreeDApp_B';
+        }
+        else{
+            tagName = 'VisibleERPC_ThreeDApp_C';
         }
 
         var ctlTag = new FormatHtmlTag(theKernel.id, tagName, this.clientSide);
@@ -6496,6 +6499,46 @@ class MobileContentCompiler extends ContentCompiler {
             kernelMidData.needSetStates_arr.push(setprojCodeDataStateItem);
             if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
                 parentMidData.needSetKernels_arr.push(theKernel);
+            }
+        }
+
+        if(apptype == EThreeDAppType.构件模型查看){
+            var settargetRecordIDDataStateItem = null;
+            var targetRecordIDData = theKernel.getAttribute('targetRecordID');
+            var targetRecordIDDataParseRet = parseObj_CtlPropJsBind(targetRecordIDData, project.scriptMaster);
+            if (targetRecordIDDataParseRet.isScript) {
+                if (this.compileScriptAttribute(targetRecordIDDataParseRet, theKernel, 'targetRecordID', 'targetRecordID', { autoSetFetchState: true }) == false) {
+                    return false;
+                }
+            }
+            else {
+                if (!IsEmptyString(targetRecordIDDataParseRet.string)) {
+                    if (belongFormKernel != null && (!belongFormKernel.isGridForm() || belongFormKernel.isKernelInRow(theKernel))) {
+                        var formColumns_arr = belongFormKernel.getCanuseColumns();
+                        if (formColumns_arr.indexOf(targetRecordIDData) != -1) {
+                            parentMidData.useColumns_map[targetRecordIDData] = 1;
+                            settargetRecordIDDataStateItem = {
+                                name: 'targetRecordID',
+                                useColumn: { name: targetRecordIDData },
+                            };
+                        }
+                    }
+                    if (settargetRecordIDDataStateItem == null) {
+                        ctlTag.setAttr('targetRecordID', targetRecordIDData);
+                    }
+                }
+            }
+
+            if (settargetRecordIDDataStateItem) {
+                kernelMidData.needSetStates_arr.push(settargetRecordIDDataStateItem);
+                if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
+                    parentMidData.needSetKernels_arr.push(theKernel);
+                }
+            }
+
+            var maxDistance = theKernel.getAttribute('maxDistance');
+            if(!isNaN(maxDistance) && maxDistance >= 0){
+                ctlTag.setAttr('maxDistance', maxDistance);
             }
         }
 
