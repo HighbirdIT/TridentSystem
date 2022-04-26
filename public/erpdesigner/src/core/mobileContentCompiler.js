@@ -3021,15 +3021,16 @@ class MobileContentCompiler extends ContentCompiler {
                     reCalStatFun.pushLine("for(var recordIndex=0;recordIndex<" + records_arrVarName + ".length;++recordIndex){", 1);
                     reCalStatFun.pushLine("var record=" + records_arrVarName + "[recordIndex];");
                     statColumn_arr.forEach(item=>{
-                        reCalStatFun.pushLine("if(record." + item.key + "==null) return;");
-                    });
-                    statColumn_arr.forEach(item=>{
+                        reCalStatFun.pushLine("if(record." + item.key + "!=null){");
+                        reCalStatFun.addNextIndent();
                         switch(item.fun){
                             case StatFun_SUM:
                             //reCalStatFun.pushLine("stat" + item.key +"+=record." + item.key + " == null ? 0 : record." + item.key + ";");
                             reCalStatFun.pushLine("stat" + item.key +"+=record." + item.key + ";");
                             break;
                         }
+                        reCalStatFun.subNextIndent();
+                        reCalStatFun.pushLine('}');
                     });
                     reCalStatFun.subNextIndent();
                     //reCalStatFun.pushLine('});');
