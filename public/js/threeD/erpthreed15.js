@@ -702,7 +702,8 @@ function ThreeD_Load全局模型(callback) {
             this.setState({
                 fetching: false,
                 fetch_percent: 0,
-                projModelVisible: true
+                projModelVisible: true,
+                showingModelPath: 全局模型文件路径
             });
             if (callback != null) {
                 callback(object);

@@ -2988,7 +2988,7 @@ var ERPC_ThreeDApp_B = function (_React$PureComponent8) {
                     return;
                 }
                 var dis = targetPos.distanceTo(item.worldPos);
-                if (dis <= 0) {
+                if (dis <= 1.5) {
                     if (item.object3d != null) {
                         _this19.构件模型Parant.add(item.object3d);
                         SetObejectMaterail(item.object3d, 判断构件使用Mat(item.生存状态代码));

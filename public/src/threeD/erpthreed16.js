@@ -2564,7 +2564,7 @@ class ERPC_ThreeDApp_B extends React.PureComponent {
                 return;
             }
             let dis = targetPos.distanceTo(item.worldPos);
-            if (dis <= 0) {
+            if (dis <= 1.5) {
                 if (item.object3d != null) {
                     this.构件模型Parant.add(item.object3d);
                     SetObejectMaterail(item.object3d, 判断构件使用Mat(item.生存状态代码));
