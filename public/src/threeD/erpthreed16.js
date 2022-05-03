@@ -2564,7 +2564,7 @@ class ERPC_ThreeDApp_B extends React.PureComponent {
                 return;
             }
             let dis = targetPos.distanceTo(item.worldPos);
-            if (dis <= 1.5) {
+            if (dis <= 0) {
                 if (item.object3d != null) {
                     this.构件模型Parant.add(item.object3d);
                     SetObejectMaterail(item.object3d, 判断构件使用Mat(item.生存状态代码));
@@ -2604,10 +2604,16 @@ class ERPC_ThreeDApp_B extends React.PureComponent {
         self.paramBtns_arr = [];
 
         if (this.focus构件记录Btn != null) {
-            if (this.TargetToEye_vec == null) {
-                this.TargetToEye_vec = new THREE.Vector3(0, 0, 0);
+            if(want构件记录 != null && this.focus构件记录Btn.位置信息.全局代码 != want构件记录.位置信息.全局代码){
+                // 换全局模型了
+                this.TargetToEye_vec = null;
             }
-            this.TargetToEye_vec.subVectors(this.camera.position, this.controls.target);
+            else{
+                if (this.TargetToEye_vec == null) {
+                    this.TargetToEye_vec = new THREE.Vector3(0, 0, 0);
+                }
+                this.TargetToEye_vec.subVectors(this.camera.position, this.controls.target);
+            }
         }
         this.构件模型Parant.clear();
         this.focus构件记录Btn = want构件记录;
