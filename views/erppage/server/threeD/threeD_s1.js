@@ -200,6 +200,37 @@ function pulldata_查询构件记录图模(req,res){
 	});
 }
 
+function pulldata_组网数据查询(req,res){
+	var g_envVar = req.session.g_envVar;
+	return co(function* () {
+		if(req.body.bundle == null){return serverhelper.createErrorRet('没有提供bundle',0,null);}
+		var bundle=req.body.bundle;
+		if(bundle.大连索网代码 == null){return serverhelper.createErrorRet('没有提供大连索网代码',0,null);};
+		var params_arr = null;
+		params_arr=[
+			dbhelper.makeSqlparam('大连索网代码', sqlTypes.Int, bundle.大连索网代码),
+		];
+		var sql = "select T257D拉索节点.* from T257C组网拉索 inner join T257D拉索节点 on T257C组网拉索.构件上传记录代码 = T257D拉索节点.构件上传记录代码 where T257C组网拉索.大连索网代码=@大连索网代码 order by T257D拉索节点.构件上传记录代码,节点序号";
+		var 节点Rlt = yield dbhelper.asynQueryWithParams(sql, params_arr);
+		var 索夹sql = "SELECT * FROM [base1].[dbo].[T257C组网索夹] where [大连索网代码] = @大连索网代码";
+		var 索夹Rlt = yield dbhelper.asynQueryWithParams(索夹sql, params_arr);
+		var 构件sql = "select 关联记录代码 as 构件代码,文件路径 from (select 关联记录代码,max(文件记录代码) as 最新文件 from TB00C附件记录 where 归属流程代码=33 and 关联记录代码 in (257,258,259,260,26,27,29,30,31,33,34,35,3,8,15,14,17,18,20,21,23,24) group by 关联记录代码) as t1 cross apply FTB00E文件信息(最新文件)";
+		var 构件Rlt = yield dbhelper.asynQueryWithParams(构件sql);
+		var 原竖索节点sql = "select 参数序号,参数值 from (select 构件上传记录代码 from T257C组网拉索 where 大连索网代码 = @大连索网代码 and [项目构件定义代码] in (69,70)) as t1 inner join T254D参数上传数据_索 on T254D参数上传数据_索.构件上传记录代码 = t1.构件上传记录代码 and 加工图纸参数代码 in (142,122,146,130) and 参数序号 > 0 order by 参数序号";
+		var 原竖索节点Rlt = yield dbhelper.asynQueryWithParams(原竖索节点sql, params_arr);
+		var 组网参数sql = "SELECT [组网参数数据代码],[关联记录代码],T257D组网图纸参数.[组网图纸参数代码],参数名称,[复测文件代码1],case when [复测文件代码1] > 0 then 1 else 0 end as 拍照状态 FROM [T257D组网参数数据] inner join T257D组网图纸参数 on T257D组网图纸参数.[组网图纸参数代码] = [T257D组网参数数据].[组网图纸参数代码] where [大连索网代码] = @大连索网代码 order by 组号,序号";
+		var 组网参数Rlt = yield dbhelper.asynQueryWithParams(组网参数sql, params_arr);
+		
+		return {
+			节点_arr : 节点Rlt.recordset,
+			索夹_arr : 索夹Rlt.recordset,
+			构件_arr : 构件Rlt.recordset,
+			原竖索节点_arr : 原竖索节点Rlt.recordset,
+			组网参数_arr : 组网参数Rlt.recordset,
+		};
+	});
+}
+
 processes_map.pulldata_图元明细数据 = pulldata_图元明细数据;
 processes_map.pulldata_可选全局图纸 = pulldata_可选全局图纸;
 processes_map.pulldata_可选构件安装图纸 = pulldata_可选构件安装图纸;
@@ -210,5 +241,7 @@ processes_map.pulldata_查询附件记录 = pulldata_查询附件记录;
 processes_map.pulldata_图纸关联构件模型 = pulldata_图纸关联构件模型;
 processes_map.pulldata_查找相邻构件信息 = pulldata_查找相邻构件信息;
 processes_map.pulldata_查询构件记录图模 = pulldata_查询构件记录图模;
+processes_map.pulldata_组网数据查询 = pulldata_组网数据查询;
+
 
 module.exports = process;

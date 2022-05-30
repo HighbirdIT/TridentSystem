@@ -144,6 +144,18 @@ class OrbitControls extends ERPEventDispatcher {
 		// public methods
 		//
 
+		this.cameraZoomChanged = function(){
+			zoomChanged = true;
+		}
+
+		this.clearspherical = function(){
+			sphericalDelta.theta = 0;
+			sphericalDelta.phi = 0;
+
+			spherical.theta = 0;
+			spherical.phi = 0;
+		}
+
 		this.getPolarAngle = function () {
 
 			return spherical.phi;
@@ -291,6 +303,9 @@ class OrbitControls extends ERPEventDispatcher {
 
 				position.copy( scope.target ).add( offset );
 
+				// console.log('---------');
+				// console.log(scope.object.position);
+				// console.log(scope.target);
 				scope.object.lookAt( scope.target );
 
 				if ( scope.enableDamping === true ) {

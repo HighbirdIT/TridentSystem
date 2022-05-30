@@ -2059,12 +2059,12 @@ var ERPC_ThreeDApp_ZuWang = function (_React$PureComponent) {
             });
 
             // this.show张拉索(目标网片.竖索, true);
-            this.switch步骤(self.步骤_安装竖索索夹, {
-                fetching: false
-            });
-            // this.switch步骤(self.步骤_无步骤,{
+            // this.switch步骤(self.步骤_安装竖索索夹,{
             //     fetching: false,
             // });
+            this.switch步骤(self.步骤_无步骤, {
+                fetching: false
+            });
         }
     }, {
         key: 'switch\u6B65\u9AA4',
@@ -2447,11 +2447,11 @@ function ERPC_ThreeDApp_ZuWang_dispatchtorprops(dispatch, ownprops) {
 }
 var VisibleERPC_ThreeDApp_ZuWang = null;
 
-function InitThreedApp2() {
+function InitThreedApp_ZuWang() {
     VisibleERPC_ThreeDApp_ZuWang = ReactRedux.connect(ERPC_ThreeDApp_ZuWang_mapstatetoprops, ERPC_ThreeDApp_ZuWang_dispatchtorprops)(ERPC_ThreeDApp_ZuWang);
 }
 
-gNeedCallOnErpControlInit_arr.push(InitThreedApp2);
+gNeedCallOnErpControlInit_arr.push(InitThreedApp_ZuWang);
 
 function popZuWangSelector(completeCallBack) {
     var popPage_1_callback = function popPage_1_callback(popPage_1exportParam) {
