@@ -1543,7 +1543,7 @@ var ERPC_SingleFileUploader = function (_React$PureComponent2) {
             return React.createElement(
                 'div',
                 { className: className, style: this.props.style, fixedsize: this.props.fixedsize },
-                React.createElement('input', { onChange: this.fileSelectedHandler, ref: this.fileTagRef, type: 'file', className: 'd-none', accept: accept }),
+                React.createElement('input', { onChange: this.fileSelectedHandler, ref: this.fileTagRef, type: 'file', className: 'd-none', accept: accept, capture: this.props.capture }),
                 accept_2 == null ? null : React.createElement('input', { onChange: this.fileSelectedHandler, ref: this.fileTagRef_2, type: 'file', className: 'd-none', accept: accept_2 }),
                 React.createElement(
                     'span',

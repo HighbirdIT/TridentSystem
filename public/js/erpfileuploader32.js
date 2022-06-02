@@ -13,22 +13,22 @@ var fileSystemUrl = '/fileSystem';
 var EAcceptFileType = {
     All: 1,
     Image: 2,
-    Vedio: 3,
+    Video: 3,
     Excel: 4,
     Word: 5,
     PDF: 6,
-    ImageVedio: 7,
+    ImageVideo: 7,
     Audio: 8
 };
 
 var FileAcceptStr = {};
 FileAcceptStr[EAcceptFileType.All] = '*/*';
 FileAcceptStr[EAcceptFileType.Image] = 'image/*';
-FileAcceptStr[EAcceptFileType.Vedio] = 'vedio/*';
+FileAcceptStr[EAcceptFileType.Video] = 'video/*';
 FileAcceptStr[EAcceptFileType.Excel] = 'application/msexcel,application/vnd.openxmlformats-officedocument.spre,application/vnd.ms-excel';
 FileAcceptStr[EAcceptFileType.Word] = 'application/msword,application/vnd.openxmlformats-officedocument.word';
 FileAcceptStr[EAcceptFileType.PDF] = 'application/pdf';
-FileAcceptStr[EAcceptFileType.ImageVedio] = 'image/*,vedio/*';
+FileAcceptStr[EAcceptFileType.ImageVideo] = 'image/*,video/*';
 
 var EFileUploaderState = {
     WAITFILE: 'waitfile',
@@ -37,7 +37,8 @@ var EFileUploaderState = {
     CALMD5: 'calmd5',
     UPLOADING: 'uploading',
     COMPLETE: 'complete',
-    BEFOREEND: 'beforeend'
+    BEFOREEND: 'beforeend',
+    COMPRING: 'compring'
 };
 
 var EFileSystemError = {
@@ -114,6 +115,7 @@ var FileUploader = function (_EventEmitter) {
         _this.state = EFileUploaderState.WAITFILE;
         _this.myBlockMaxSize = MINPERBLOCKSIZE;
         autoBind(_this);
+        _this.bCompresImage = true;
         return _this;
     }
 
@@ -150,6 +152,7 @@ var FileUploader = function (_EventEmitter) {
             this.file = theFile;
             this.base64Data = null;
             this.isPause = false;
+            this.compring = false;
             this.previewUrl = null;
             this.uploading = false;
             this.startPos = 0;
@@ -157,9 +160,9 @@ var FileUploader = function (_EventEmitter) {
             this.evalSize = 0;
             this.evalTime = 0;
             this.changeState(EFileUploaderState.PREPARE);
-            this._prepare();
 
             if (theFile.type.indexOf('image/') != -1) {
+                var doCompresImage = this.bCompresImage && theFile.size > 1024 * 1024;
                 var imgReader = new FileReader();
                 imgReader.onerror = null;
                 imgReader.onload = function (ev) {
@@ -169,9 +172,51 @@ var FileUploader = function (_EventEmitter) {
                     }
                     self.base64Data = imgReader.result;
                     self._fireChanged();
+                    if (doCompresImage) {
+                        var image = new Image();
+                        image.src = self.base64Data;
+                        image.onload = function () {
+                            var imgW = image.naturalWidth;
+                            var imgH = image.naturalHeight;
+                            canvas = document.createElement("canvas"), ctx = canvas.getContext('2d');
+                            var sizeScale = 1;
+                            var bigSize = Math.max(imgW, imgH);
+                            if (bigSize > 2048) {
+                                sizeScale = 2048.0 / bigSize;
+                            }
+                            //sizeScale = 0.1;
+                            var canvasW = Math.round(imgW * sizeScale);
+                            var canvasH = Math.round(imgH * sizeScale);
+                            var canvas = document.createElement("canvas");
+                            var ctx = canvas.getContext('2d');
+                            canvas.width = canvasW;
+                            canvas.height = canvasH;
+                            ctx.drawImage(image, 0, 0, imgW, imgH, 0, 0, canvasW, canvasH);
+                            canvas.toBlob(function (blob) {
+                                console.log('old:' + DataSizeToString(theFile.size) + ' newSize:' + DataSizeToString(blob.size));
+                                var t_arr = theFile.name.split('.');
+                                blob.name = t_arr[0] + '.jpg';
+                                self.file = blob;
+                                self.fileProfile.name = blob.name;
+                                self.fileProfile.size = blob.size;
+                                self.fileProfile.type = blob.type;
+                                // var newImg = document.createElement("img");
+                                // var url = URL.createObjectURL(blob);
+                                // newImg.src = url;
+                                // document.body.appendChild(newImg);
+                                self._prepare();
+                            }, "image/jpeg", 0.8);
+                        };
+                    }
                 };
                 imgReader.readAsDataURL(theFile);
+                if (doCompresImage) {
+                    this.changeState(EFileUploaderState.COMPRING);
+                    self._fireChanged();
+                    return;
+                }
             }
+            this._prepare();
         }
     }, {
         key: 'pause',
@@ -783,6 +828,7 @@ var ERPC_SingleFileUploader = function (_React$PureComponent2) {
             loading: false
         };
         _this5.fileTagRef = React.createRef();
+        _this5.fileTagRef_2 = React.createRef();
         return _this5;
     }
 
@@ -814,6 +860,7 @@ var ERPC_SingleFileUploader = function (_React$PureComponent2) {
             this.unmounted = false;
             if (this.props.uploader == null) {
                 var newUploader = new FileUploader();
+                newUploader.bCompresImage = this.props.bCompresImage != false;
                 this.listenUploader(newUploader);
                 store.dispatch(makeAction_setManyStateByPath({
                     uploader: newUploader
@@ -899,9 +946,6 @@ var ERPC_SingleFileUploader = function (_React$PureComponent2) {
     }, {
         key: 'startUploadFile',
         value: function startUploadFile(theFile) {
-            if (this.props.doCompress) {
-                console.log('sdfdfdsf');
-            }
             this.uploader.fileFlow = this.props.fileflow;
             this.uploader.relrecordid = this.props.relrecordid;
             this.uploader.definfo = {
@@ -961,37 +1005,17 @@ var ERPC_SingleFileUploader = function (_React$PureComponent2) {
             addFixedItem(qrUploader);
         }
     }, {
-        key: 'clickDingImageHandler',
-        value: function clickDingImageHandler(ev) {
-            alert(dingdingKit.chooseImage);
-            alert(dingdingKit.biz.util.previewImage);
-            dingdingKit.chooseImage({
-                count: 1,
-                success: function success(res) {
-                    dingdingKit.alert({
-                        title: '选中的图片',
-                        content: res.filePaths
-                    });
-                },
-                fail: function fail(ev) {
-                    dingdingKit.alert({
-                        title: '出错了',
-                        content: JSON.stringify(ev)
-                    });
-                },
-                complete: function complete(ev) {
-                    dingdingKit.alert({
-                        title: 'complete',
-                        content: "complete@@"
-                    });
-                }
-            });
-        }
-    }, {
         key: 'clickPlusHandler',
         value: function clickPlusHandler(ev) {
             if (this.fileTagRef.current) {
                 this.fileTagRef.current.click();
+            }
+        }
+    }, {
+        key: 'clickFile2Handler',
+        value: function clickFile2Handler(ev) {
+            if (this.fileTagRef_2.current) {
+                this.fileTagRef_2.current.click();
             }
         }
     }, {
@@ -1158,9 +1182,15 @@ var ERPC_SingleFileUploader = function (_React$PureComponent2) {
                 }
             }
             var accept = "*/*";
+            var accept_2 = null;
             var acceptFileType = this.props.acceptFileType;
             if (acceptFileType != null && acceptFileType != 1) {
-                accept = FileAcceptStr[acceptFileType];
+                if (acceptFileType == EAcceptFileType.ImageVideo) {
+                    accept = FileAcceptStr[EAcceptFileType.Image];
+                    accept_2 = FileAcceptStr[EAcceptFileType.Video];
+                } else {
+                    accept = FileAcceptStr[acceptFileType];
+                }
             }
             switch (fileUploader.state) {
                 case EFileUploaderState.WAITFILE:
@@ -1292,24 +1322,51 @@ var ERPC_SingleFileUploader = function (_React$PureComponent2) {
                                 )
                             );
                         } else {
-                            if (isMobile && isInDingTalk && (acceptFileType == EAcceptFileType.Image || acceptFileType == EAcceptFileType.Vedio || acceptFileType == EAcceptFileType.ImageVedio || acceptFileType == EAcceptFileType.Audio)) {
-                                if (acceptFileType == EAcceptFileType.Image) {
+                            if (isMobile && (acceptFileType == EAcceptFileType.Image || acceptFileType == EAcceptFileType.Video || acceptFileType == EAcceptFileType.ImageVideo || acceptFileType == EAcceptFileType.Audio)) {
+                                if (acceptFileType == EAcceptFileType.Image || acceptFileType == EAcceptFileType.Video) {
                                     contentElem = React.createElement(
                                         'div',
-                                        { className: 'flex-grow-1 flex-shrink-1', onClick: this.clickDingImageHandler },
+                                        { className: 'flex-grow-1 flex-shrink-1', onClick: this.clickPlusHandler },
                                         React.createElement(
                                             'span',
                                             { className: 'centerelem position-absolute pointerevent-none' },
                                             React.createElement(
                                                 'div',
-                                                { className: 'text-nowrap' },
+                                                { className: 'text-nowrap h5' },
                                                 React.createElement('i', { className: 'fa fa-camera' }),
-                                                '\u4E0A\u4F20\u56FE\u7247'
+                                                '\u4E0A\u4F20',
+                                                acceptFileType == EAcceptFileType.Image ? "图片" : "视频"
                                             )
                                         )
                                     );
-                                }
-                            } else {
+                                } else if (acceptFileType == EAcceptFileType.ImageVideo) {
+                                    contentElem = React.createElement(
+                                        'div',
+                                        { className: 'd-flex flex-grow-1 flex-shrink-1 flex-column' },
+                                        React.createElement(
+                                            'span',
+                                            { onClick: this.clickPlusHandler, className: 'd-flex flex-grow-1 flex-shrink-1 justify-content-center align-items-center border-bottom' },
+                                            React.createElement(
+                                                'div',
+                                                { className: 'text-nowrap h5' },
+                                                React.createElement('i', { className: 'fa fa-camera' }),
+                                                '\u4E0A\u4F20\u56FE\u7247'
+                                            )
+                                        ),
+                                        React.createElement(
+                                            'span',
+                                            { onClick: this.clickFile2Handler, className: 'd-flex flex-grow-1 flex-shrink-1 justify-content-center align-items-center' },
+                                            React.createElement(
+                                                'div',
+                                                { className: 'text-nowrap h5' },
+                                                React.createElement('i', { className: 'fa fa-video-camera' }),
+                                                '\u4E0A\u4F20\u89C6\u9891'
+                                            )
+                                        )
+                                    );
+                                } else if (isInDingTalk) {}
+                            }
+                            if (contentElem == null) {
                                 contentElem = React.createElement(
                                     'div',
                                     { className: 'flex-grow-1 flex-shrink-1 cursor_hand', onClick: this.clickPlusHandler, onDragEnter: this.dragenter, onDragLeave: this.dragleave, onDrop: this.drop, onDragOver: this.dragOver },
@@ -1318,13 +1375,13 @@ var ERPC_SingleFileUploader = function (_React$PureComponent2) {
                                         { className: 'centerelem position-absolute pointerevent-none' },
                                         React.createElement(
                                             'div',
-                                            { className: 'text-nowrap' },
+                                            { className: 'text-nowrap h5' },
                                             React.createElement('i', { className: 'fa fa-mouse-pointer' }),
                                             '\u4E0A\u4F20\u6587\u4EF6'
                                         ),
                                         isMobile ? null : React.createElement(
                                             'div',
-                                            { className: 'text-nowrap' },
+                                            { className: 'text-nowrap h5' },
                                             React.createElement('i', { className: 'fa fa-hand-rock-o' }),
                                             '\u62D6\u62FD\u6587\u4EF6'
                                         )
@@ -1333,7 +1390,7 @@ var ERPC_SingleFileUploader = function (_React$PureComponent2) {
                                 if (!isMobile) {
                                     qrCodeBtn = React.createElement(
                                         'div',
-                                        { className: 'text-nowrap cursor_hand qrcodebtn', onClick: this.clickQRCodehandler },
+                                        { className: 'text-nowrap cursor_hand qrcodebtn h5', onClick: this.clickQRCodehandler },
                                         React.createElement('i', { className: 'fa fa-qrcode' }),
                                         '\u626B\u7801\u4E0A\u4F20'
                                     );
@@ -1357,6 +1414,19 @@ var ERPC_SingleFileUploader = function (_React$PureComponent2) {
                             '\u8BFB\u53D6\u4E2D'
                         );
                     }
+                    contentElem = React.createElement(
+                        'div',
+                        { className: 'w-100 h-100' },
+                        childElem
+                    );
+                    break;
+                case EFileUploaderState.COMPRING:
+                    childElem = React.createElement(
+                        'span',
+                        { className: 'centerelem position-absolute text-nowrap bg-white' },
+                        React.createElement('i', { className: 'fa fa-circle-o-notch fa-spin' }),
+                        '\u538B\u7F29\u4E2D'
+                    );
                     contentElem = React.createElement(
                         'div',
                         { className: 'w-100 h-100' },
@@ -1473,7 +1543,8 @@ var ERPC_SingleFileUploader = function (_React$PureComponent2) {
             return React.createElement(
                 'div',
                 { className: className, style: this.props.style, fixedsize: this.props.fixedsize },
-                React.createElement('input', { onChange: this.fileSelectedHandler, ref: this.fileTagRef, type: 'file', className: 'd-none', accept: accept }),
+                React.createElement('input', { onChange: this.fileSelectedHandler, ref: this.fileTagRef, type: 'file', className: 'd-none', accept: accept, capture: this.props.capture }),
+                accept_2 == null ? null : React.createElement('input', { onChange: this.fileSelectedHandler, ref: this.fileTagRef_2, type: 'file', className: 'd-none', accept: accept_2 }),
                 React.createElement(
                     'span',
                     { id: 'title', className: 'flex-grow-0 flex-shrink-0 wb-all' },
@@ -1644,6 +1715,14 @@ var CFileUploaderBar = function (_React$PureComponent3) {
                                 '\u6587\u4EF6\u8BFB\u53D6\u4E2D'
                             );
                         }
+                        break;
+                    case EFileUploaderState.COMPRING:
+                        bottomBar = React.createElement(
+                            'span',
+                            { className: 'flex-grow-1 flex-shrink-1' },
+                            React.createElement('i', { className: 'fa fa-circle-o-notch fa-spin' }),
+                            '\u538B\u7F29\u4E2D'
+                        );
                         break;
                     case EFileUploaderState.PREPARE:
                         if (fileUploader.errorCode > 0) {
@@ -1834,6 +1913,7 @@ var ERPC_MultiFileUploader = function (_React$PureComponent4) {
                 });
                 if (!found) {
                     var newUploader = new FileUploader();
+                    newUploader.bCompresImage = this.props.bCompresImage != false;
                     newUploader.uploadFile(theFile, this.uploaderJobDone);
                     newUploaders.push(newUploader);
                     ++addedCount;
@@ -2028,7 +2108,11 @@ var ERPC_MultiFileUploader = function (_React$PureComponent4) {
                 );
             }
 
-            var accept = this.props.accept ? this.props.accept : "*/*";
+            var accept = "*/*";
+            var acceptFileType = this.props.acceptFileType;
+            if (acceptFileType != null && acceptFileType != 1) {
+                accept = FileAcceptStr[acceptFileType];
+            }
             return React.createElement(
                 'div',
                 { className: rootClassName, style: this.props.style },

@@ -108,6 +108,51 @@ function checkStationData(锚点配置_arr,项目代码,组号,顺序号,分序�
     });
 }
 
+function loadStationData(数据文件代码) {
+    return co(function* () {
+        var rlt = {};
+        try{
+            var querysql_1params_arr=[
+                dbhelper.makeSqlparam('文件代码', sqlTypes.Int, 数据文件代码)
+            ];
+            var querysql_1sql="select 文件路径 from FTB00E文件信息(@文件代码)";
+            var querysql_1_rcdRlt = yield dbhelper.asynQueryWithParams(querysql_1sql, querysql_1params_arr);
+            var row_文件信息 = querysql_1_rcdRlt.recordset[0];
+            var baseDir = __dirname + '\\public';
+            var cong = {
+                filePath: (baseDir + row_文件信息.文件路径).replace(/\\/g,'/'),
+            }
+            var scriptPath = path.join(__dirname, 'scripts/python/loadStationMeasureData.py');
+            var result = '';
+            var startPythonCmd = 'python3 -W ignore ' + scriptPath + ' ' + JSON.stringify(cong).replace(/"/g, "'");
+            result = execSync(startPythonCmd).toString();
+            var pos_s = result.indexOf('<result>');
+            if (pos_s != -1) {
+                var pos_e = result.indexOf('</result>', pos_s);
+                var jsonStr = result.substring(pos_s + 8, pos_e);
+                var rltJson = JSON.parse(jsonStr);
+                if(rltJson.errList != null) {
+                    var newErrList = [];
+                    for(var i in rltJson.errList){
+                        newErrList.push({序号:i,错误信息:rltJson.errList[i]});
+                    }
+                    rltJson.errList = newErrList;
+                }
+                else{
+                    rltJson.errList = [];
+                }
+                rlt = rltJson;
+            }
+        }catch(eo){
+            return {
+                err: eo.message
+            };
+        }
+        return rlt;
+    });
+}
+
 module.exports = {
     checkStationData: checkStationData,
+    loadStationData: loadStationData,
 };
