@@ -1613,6 +1613,7 @@ class JSNODE_EX_StationDataLoader extends JSNode_Base {
                     case 'baseX': this.baseXSocket = socket; break;
                     case 'baseY': this.baseYSocket = socket; break;
                     case 'baseZ': this.baseZSocket = socket; break;
+                    case 'tag': this.tagSocket = socket; break;
                     case '错误信息': this.错误信息Socket = socket; break;
                 }
             });
@@ -1647,6 +1648,9 @@ class JSNODE_EX_StationDataLoader extends JSNode_Base {
         if(this.baseZSocket == null) {
             this.baseZSocket = this.addSocket(new NodeSocket('baseZ', this, false));
         }
+        if(this.tagSocket == null) {
+            this.tagSocket = this.addSocket(new NodeSocket('tag', this, false));
+        }
         if(this.错误信息Socket == null) {
             this.错误信息Socket = this.addSocket(new NodeSocket('错误信息', this, false));
         }
@@ -1656,6 +1660,7 @@ class JSNODE_EX_StationDataLoader extends JSNode_Base {
         this.returnValueSocket.label = '返回值';
         this.outDataSocket.label = '测点数据';
         this.outDataSocket.type = ValueType.Array;
+        this.tagSocket.label = 'tag';
         this.baseXSocket.label = 'baseX';
         this.baseYSocket.label = 'baseY';
         this.baseZSocket.label = 'baseZ';
@@ -1814,6 +1819,7 @@ class JSNODE_EX_StationDataLoader extends JSNode_Base {
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.returnValueSocket, dataVarName);
         selfCompileRet.setSocketOut(this.outDataSocket, dataVarName + '.rcd_arr');
+        selfCompileRet.setSocketOut(this.tagSocket, dataVarName + '.tag');
         selfCompileRet.setSocketOut(this.baseXSocket, dataVarName + '.baseX');
         selfCompileRet.setSocketOut(this.baseYSocket, dataVarName + '.baseY');
         selfCompileRet.setSocketOut(this.baseZSocket, dataVarName + '.baseZ');

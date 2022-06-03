@@ -13,7 +13,7 @@ class Anchor:
         self.code = code
 
 class MeasureData:
-    def __init__(self,inLoc,inStation,inIndex,flatDis):
+    def __init__(self,inLoc,inStation,inIndex,flatDis,tag):
         self.loc = inLoc
         self.station = inStation
         self.index = inIndex
@@ -21,6 +21,7 @@ class MeasureData:
         self.前序号 = None
         self.anchor = None
         self.flatDis = flatDis
+        self.tag = tag
     @staticmethod
     def SortData(a,b):
         return a.index - b.index
@@ -36,6 +37,7 @@ class StationData:
     def __init__(self):
         self.name = None
         self.loc = None
+        self.tag = None
         self.measures_arr = []
 
     def IsValid(self):
@@ -61,11 +63,12 @@ class StationData:
                 if line[0] == 'A':
                     t_arr = line.split(',')
                     newData.loc = HBGeometry.Point3d(float(t_arr[3]) * factor,float(t_arr[2]) * factor,float(t_arr[4]) * factor)
+                    newData.tag = t_arr[1]
                     newData.measures_arr = []
                 elif line[0] == 'F':
                     t_arr = line.split(',')
                     temPt = HBGeometry.Point3d(float(t_arr[9]) * factor,float(t_arr[8]) * factor,float(t_arr[10]) * factor)
-                    md = MeasureData(temPt,newData,int(t_arr[1]),float(t_arr[4]) * factor)
+                    md = MeasureData(temPt,newData,len(newData.measures_arr)+1,float(t_arr[4]) * factor,t_arr[1])
                     newData.measures_arr.append(md)
                     ms_dic[md.index] = md
         newData.measures_arr.sort(key=functools.cmp_to_key(MeasureData.SortData))
@@ -93,6 +96,7 @@ if __name__ == '__main__':
         result['baseX'] = sd_this.loc.X
         result['baseY'] = sd_this.loc.Y
         result['baseZ'] = sd_this.loc.Z
+        result['tag'] = sd_this.tag
         rcd_arr = []
         result['rcd_arr'] = rcd_arr
         for m in sd_this.measures_arr:
@@ -103,4 +107,5 @@ if __name__ == '__main__':
             m_obj['Y'] = m.loc.Y
             m_obj['Z'] = m.loc.Z
             m_obj['flatDis'] = m.flatDis
+            m_obj['tag'] = m.tag
     print('<result>' + json.dumps(result, ensure_ascii=False) + "</result>")
