@@ -26,7 +26,7 @@ function checkStationData(锚点配置_arr,项目代码,组号,顺序号,分序�
                 dbhelper.makeSqlparam('项目代码', sqlTypes.Int, 项目代码),
                 dbhelper.makeSqlparam('数据文件代码', sqlTypes.NVarChar(4000), 数据文件代码),
             ];
-            var querysql_0sql="select [本测站文件路径],[本测站全称],[上个测站文件路径],[上个测站全称],[下个测站文件路径],[下个测站全称],上个测站记录代码,下个测站记录代码 from FT254E查询关联测站(@项目代码,@组号,@顺序号,@分序号,@数据文件代码)";
+            var querysql_0sql="select [本测站文件路径],[本测站全称],[上个测站文件路径],[上个测站全称],[下个测站文件路径],[下个测站全称],上个测站记录代码,下个测站记录代码 from FT254E查询关联测站(@项目代码,@组号,@顺序号,@分序号,@数据文件代码,1)";
             var querysql_0_rcdRlt = yield dbhelper.asynQueryWithParams(querysql_0sql, querysql_0params_arr);
             var row_querysql_0 = querysql_0_rcdRlt.recordset[0];
             var querysql_0_本测站文件路径=row_querysql_0.本测站文件路径;
