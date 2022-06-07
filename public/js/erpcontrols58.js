@@ -2370,18 +2370,21 @@ var ERPC_Img = function (_React$PureComponent9) {
 }(React.PureComponent);
 
 function ERPC_Img_mapstatetoprops(state, ownprops) {
-    var _ref2;
-
     var propProfile = getControlPropProfile(ownprops, state);
     var ctlState = propProfile.ctlState;
     var rowState = propProfile.rowState;
     var useSrc = ctlState.src != null ? ctlState.src : ownprops.src ? ownprops.src : '';
 
-    return _ref2 = {
+    return {
         src: useSrc,
-        visible: ctlState.visible,
-        fetching: ctlState.fetching
-    }, _defineProperty(_ref2, 'visible', ctlState.visible != null ? ctlState.visible : ownprops.definvisible ? false : true), _defineProperty(_ref2, 'fetchingErr', ctlState.fetchingErr), _defineProperty(_ref2, 'fullParentPath', propProfile.fullParentPath), _defineProperty(_ref2, 'fullPath', propProfile.fullPath), _defineProperty(_ref2, 'dynamicStyle', ctlState.style), _defineProperty(_ref2, 'dynamicClass', ctlState.class), _ref2;
+        fetching: ctlState.fetching,
+        visible: ctlState.visible != null ? ctlState.visible : ownprops.definvisible ? false : true,
+        fetchingErr: ctlState.fetchingErr,
+        fullParentPath: propProfile.fullParentPath,
+        fullPath: propProfile.fullPath,
+        dynamicStyle: ctlState.style,
+        dynamicClass: ctlState.class
+    };
 }
 
 function ERPC_Img_dispatchtorprops(dispatch, ownprops) {
@@ -4100,6 +4103,7 @@ var MessageBoxItem = function () {
             this.btns = btns_arr;
             this.callBack = callBack;
             this.type = EMessageBoxType.Tip;
+            this.dataVersion += 1;
             this.fireChanged();
         }
     }, {

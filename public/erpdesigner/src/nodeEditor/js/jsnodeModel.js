@@ -9382,7 +9382,13 @@ class JSNode_PopPage extends JSNode_Base {
             if (inreducer) {
                 myJSBlock.pushLine('setTimeout(() => {', 1);
             }
-            myJSBlock.pushLine(makeStr_AddAll('popPage(', singleQuotesStr(thePage.id), ',<', thePage.getReactClassName(true), " key='", thePage.id, "' />);"));
+            var isPersistent = thePage.getAttribute(AttrNames.PersistentPage) == true;
+            if(isPersistent){
+                myJSBlock.pushLine(makeStr_AddAll('popPersistentPage(', singleQuotesStr(thePage.id), ',()=>{return <', thePage.getReactClassName(true), " key='", thePage.id, "' />;});"));
+            }
+            else{
+                myJSBlock.pushLine(makeStr_AddAll('popPage(', singleQuotesStr(thePage.id), ',<', thePage.getReactClassName(true), " key='", thePage.id, "' />);"));
+            }
             if (inreducer) {
                 myJSBlock.subNextIndent();
                 myJSBlock.pushLine('}, 50);');

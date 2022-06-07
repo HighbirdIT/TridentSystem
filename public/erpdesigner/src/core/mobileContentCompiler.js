@@ -1350,6 +1350,9 @@ class MobileContentCompiler extends ContentCompiler {
             case ChartKernel_Type:
                 rlt = this.compileChartKernel(theKernel, renderBlock, renderFun);
                 break;
+            case ThreeDAppAKernel_Type:
+                rlt = this.compileThreeDAppAKernel(theKernel, renderBlock, renderFun);
+                break;
             default:
                 logManager.error('不支持的编译kernel type:' + theKernel.type);
         }
@@ -3018,15 +3021,16 @@ class MobileContentCompiler extends ContentCompiler {
                     reCalStatFun.pushLine("for(var recordIndex=0;recordIndex<" + records_arrVarName + ".length;++recordIndex){", 1);
                     reCalStatFun.pushLine("var record=" + records_arrVarName + "[recordIndex];");
                     statColumn_arr.forEach(item=>{
-                        reCalStatFun.pushLine("if(record." + item.key + "==null) return;");
-                    });
-                    statColumn_arr.forEach(item=>{
+                        reCalStatFun.pushLine("if(record." + item.key + "!=null){");
+                        reCalStatFun.addNextIndent();
                         switch(item.fun){
                             case StatFun_SUM:
                             //reCalStatFun.pushLine("stat" + item.key +"+=record." + item.key + " == null ? 0 : record." + item.key + ";");
                             reCalStatFun.pushLine("stat" + item.key +"+=record." + item.key + ";");
                             break;
                         }
+                        reCalStatFun.subNextIndent();
+                        reCalStatFun.pushLine('}');
                     });
                     reCalStatFun.subNextIndent();
                     //reCalStatFun.pushLine('});');
@@ -6430,6 +6434,114 @@ class MobileContentCompiler extends ContentCompiler {
         this.modifyControlTag(theKernel, ctlTag);
         ctlTag.class = layoutConfig.class;
         ctlTag.style = layoutConfig.style;
+
+        ctlTag.setAttr('id', theKernel.id);
+        var parentPath = this.getKernelParentPath(theKernel);
+        ctlTag.setAttr('parentPath', parentPath);
+        renderBlock.pushChild(ctlTag);
+
+        if (this.compileIsdisplayAttribute(theKernel, ctlTag) == false) { return false; }
+    }
+
+    compileThreeDAppAKernel(theKernel, renderBlock, renderFun){
+        var project = this.project;
+        var layoutConfig = theKernel.getLayoutConfig();
+        var clientSide = this.clientSide;
+
+        let tagName = '';
+        let apptype = theKernel.getAttribute("apptype");
+        if(apptype == EThreeDAppType.全局图拍照){
+            tagName = 'VisibleERPC_ThreeDApp_A';
+        }
+        else if(apptype == EThreeDAppType.构件安装拍照){
+            tagName = 'VisibleERPC_ThreeDApp_B';
+        }
+        else{
+            tagName = 'VisibleERPC_ThreeDApp_C';
+        }
+
+        var ctlTag = new FormatHtmlTag(theKernel.id, tagName, this.clientSide);
+        this.modifyControlTag(theKernel, ctlTag);
+        ctlTag.class = layoutConfig.class;
+        ctlTag.style = layoutConfig.style;
+
+
+        var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
+        var reactParentKernel = theKernel.getReactParentKernel(true);
+        var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
+        var parentMidData = this.projectCompiler.getMidData(reactParentKernel.id);
+        var setprojCodeDataStateItem = null;
+        var projCodeData = theKernel.getAttribute('projectCode');
+        var projCodeDataParseRet = parseObj_CtlPropJsBind(projCodeData, project.scriptMaster);
+        if (projCodeDataParseRet.isScript) {
+            if (this.compileScriptAttribute(projCodeDataParseRet, theKernel, 'projectCode', 'projectCode', { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (!IsEmptyString(projCodeDataParseRet.string)) {
+                if (belongFormKernel != null && (!belongFormKernel.isGridForm() || belongFormKernel.isKernelInRow(theKernel))) {
+                    var formColumns_arr = belongFormKernel.getCanuseColumns();
+                    if (formColumns_arr.indexOf(projCodeData) != -1) {
+                        parentMidData.useColumns_map[projCodeData] = 1;
+                        setprojCodeDataStateItem = {
+                            name: 'projectCode',
+                            useColumn: { name: projCodeData },
+                        };
+                    }
+                }
+                if (setprojCodeDataStateItem == null) {
+                    ctlTag.setAttr('projectCode', projCodeData);
+                }
+            }
+        }
+
+        if (setprojCodeDataStateItem) {
+            kernelMidData.needSetStates_arr.push(setprojCodeDataStateItem);
+            if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
+                parentMidData.needSetKernels_arr.push(theKernel);
+            }
+        }
+
+        if(apptype == EThreeDAppType.构件模型查看){
+            var settargetRecordIDDataStateItem = null;
+            var targetRecordIDData = theKernel.getAttribute('targetRecordID');
+            var targetRecordIDDataParseRet = parseObj_CtlPropJsBind(targetRecordIDData, project.scriptMaster);
+            if (targetRecordIDDataParseRet.isScript) {
+                if (this.compileScriptAttribute(targetRecordIDDataParseRet, theKernel, 'targetRecordID', 'targetRecordID', { autoSetFetchState: true }) == false) {
+                    return false;
+                }
+            }
+            else {
+                if (!IsEmptyString(targetRecordIDDataParseRet.string)) {
+                    if (belongFormKernel != null && (!belongFormKernel.isGridForm() || belongFormKernel.isKernelInRow(theKernel))) {
+                        var formColumns_arr = belongFormKernel.getCanuseColumns();
+                        if (formColumns_arr.indexOf(targetRecordIDData) != -1) {
+                            parentMidData.useColumns_map[targetRecordIDData] = 1;
+                            settargetRecordIDDataStateItem = {
+                                name: 'targetRecordID',
+                                useColumn: { name: targetRecordIDData },
+                            };
+                        }
+                    }
+                    if (settargetRecordIDDataStateItem == null) {
+                        ctlTag.setAttr('targetRecordID', targetRecordIDData);
+                    }
+                }
+            }
+
+            if (settargetRecordIDDataStateItem) {
+                kernelMidData.needSetStates_arr.push(settargetRecordIDDataStateItem);
+                if (parentMidData.needSetKernels_arr.indexOf(theKernel) == -1) {
+                    parentMidData.needSetKernels_arr.push(theKernel);
+                }
+            }
+
+            var maxDistance = theKernel.getAttribute('maxDistance');
+            if(!isNaN(maxDistance) && maxDistance >= 0){
+                ctlTag.setAttr('maxDistance', maxDistance);
+            }
+        }
 
         ctlTag.setAttr('id', theKernel.id);
         var parentPath = this.getKernelParentPath(theKernel);

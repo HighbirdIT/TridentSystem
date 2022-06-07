@@ -24,6 +24,7 @@ const FrameSetKernel_Type = 'frameset';
 const IFrameKernel_Type = 'iframe';
 const ChartKernel_Type = 'chart';
 const DingAudioRecorder_Type = 'dingaudiorecorder';
+const ThreeDAppAKernel_Type = 'threedappa';
 
 const M_LabelKernel_Prefix = 'M_Label';
 const M_PageKernel_Prefix = 'M_Page';
@@ -50,6 +51,7 @@ const IFrameKernel_Prefix = 'iframe';
 const ChartKernel_Prefix = 'chart';
 const M_ImageKernel_Prefix = 'M_Img';
 const DingAudioRecorder_Prefix = 'singlefuploader';
+const ThreeDAppAKernel_Prefix = 'tdappa';
 
 function GetControlTypeReadableName(type){
     switch(type){
@@ -105,6 +107,8 @@ function GetControlTypeReadableName(type){
         return '图像';
         case DingAudioRecorder_Type:
         return '语音输入';
+        case ThreeDAppAKernel_Type:
+        return '参数拍照APP';
     }
     return type;
 }

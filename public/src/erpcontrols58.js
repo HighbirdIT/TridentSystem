@@ -2041,7 +2041,6 @@ function ERPC_Img_mapstatetoprops(state, ownprops) {
 
     return {
         src: useSrc,
-        visible: ctlState.visible,
         fetching: ctlState.fetching,
         visible: ctlState.visible != null ? ctlState.visible : (ownprops.definvisible ? false : true),
         fetchingErr: ctlState.fetchingErr,
@@ -3488,6 +3487,7 @@ class MessageBoxItem {
         this.btns = btns_arr;
         this.callBack = callBack;
         this.type = EMessageBoxType.Tip;
+        this.dataVersion += 1;
         this.fireChanged();
     }
 

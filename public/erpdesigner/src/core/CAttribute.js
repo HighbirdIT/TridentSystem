@@ -334,6 +334,7 @@ const AttrNames={
     EntryParam:'entryParam',
     ExportParam:'exportParam',
     PopablePage:'popablepage',
+    PersistentPage:'persistentpage',
     ParamApi:'paramapi',
     EventApi:'eventapi',
     FunctionApi:'functionapi',
