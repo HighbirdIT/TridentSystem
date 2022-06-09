@@ -48,6 +48,7 @@ const SingleFileUploaderKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('attachmentid', 'attachmentID', ValueType.String, '', false, false,null,null,false),
         new CAttribute('接受的类型', 'accept', ValueType.String, '*', null, false, FileAcceptType_arr,{ text: 'name', value: 'code' }),
         new CAttribute('压缩图片', 'doDompress', ValueType.Boolean, true, null, false),
+        new CAttribute('仅摄像头', 'onlyCamera', ValueType.Boolean, false, null, false),
     ]),
     new CAttributeGroup('事件', [
         new CAttribute('上传完成', AttrNames.Event.OnUploadComplete, ValueType.Event),

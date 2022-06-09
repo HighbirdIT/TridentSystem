@@ -171,6 +171,18 @@ var OrbitControls = function (_ERPEventDispatcher) {
 				// public methods
 				//
 
+				_this.cameraZoomChanged = function () {
+						zoomChanged = true;
+				};
+
+				_this.clearspherical = function () {
+						sphericalDelta.theta = 0;
+						sphericalDelta.phi = 0;
+
+						spherical.theta = 0;
+						spherical.phi = 0;
+				};
+
 				_this.getPolarAngle = function () {
 
 						return spherical.phi;
@@ -301,6 +313,9 @@ var OrbitControls = function (_ERPEventDispatcher) {
 
 								position.copy(scope.target).add(offset);
 
+								// console.log('---------');
+								// console.log(scope.object.position);
+								// console.log(scope.target);
 								scope.object.lookAt(scope.target);
 
 								if (scope.enableDamping === true) {

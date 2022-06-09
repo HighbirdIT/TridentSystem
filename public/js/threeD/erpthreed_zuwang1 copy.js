@@ -587,7 +587,7 @@ var C组网步骤_无步骤 = function (_C) {
             var app = this.app;
             var controls = app.controls;
             controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
-            controls.touches.TWO = THREE.TOUCH.PAN;
+            controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
             var 目标网片 = app.目标网片;
 
             目标网片.索_arr.forEach(function (拉索) {
@@ -723,7 +723,7 @@ var C组网步骤_铺设竖索 = function (_C2) {
             var labelsContainer = app.labelsRef.current;
             var controls = app.controls;
             controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
-            controls.touches.TWO = THREE.TOUCH.PAN;
+            controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
 
             目标网片.索_arr.forEach(function (拉索) {
                 if (拉索.类型 != E索类型.竖索) {
@@ -911,7 +911,7 @@ var C组网步骤_铺设索 = function (_C3) {
             var controls = app.controls;
 
             controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
-            controls.touches.TWO = THREE.TOUCH.PAN;
+            controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
 
             var labelsContainer = app.labelsRef.current;
             labelsContainer.appendChild(this.B端label.docElem);
@@ -1041,7 +1041,7 @@ var C组网步骤_铺设索 = function (_C3) {
             app.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
             app.controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
             app.controls.touches.ONE = THREE.TOUCH.PAN;
-            app.controls.touches.TWO = THREE.TOUCH.PAN;
+            app.controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
         }
     }, {
         key: 'renderFrame',
@@ -1179,7 +1179,7 @@ var C组网步骤_铺设索 = function (_C3) {
                 app.索夹模型Parant.visible = false;
                 app.controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
                 app.controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
-                app.controls.touches.ONE = THREE.TOUCH.DOLLY_ROTATE;
+                app.controls.touches.ONE = THREE.TOUCH.ROTATE;
                 app.controls.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
 
                 var xAxis = new THREE.Vector3(move_vec.x * -1, move_vec.y * -1, move_vec.z * -1);
@@ -1210,7 +1210,7 @@ var C组网步骤_铺设索 = function (_C3) {
                 app.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
                 app.controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
                 app.controls.touches.ONE = THREE.TOUCH.PAN;
-                app.controls.touches.TWO = THREE.TOUCH.PAN;
+                app.controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
 
                 this.轴helper.visible = false;
             }
@@ -1406,7 +1406,7 @@ var C组网步骤_铺索夹 = function (_C4) {
             var controls = app.controls;
 
             controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
-            controls.touches.TWO = THREE.TOUCH.PAN;
+            controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
 
             var labelsContainer = app.labelsRef.current;
             var buttonsContainer = app.btnsRef.current;
@@ -1505,7 +1505,7 @@ var C组网步骤_铺索夹 = function (_C4) {
             app.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
             app.controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
             app.controls.touches.ONE = THREE.TOUCH.PAN;
-            app.controls.touches.TWO = THREE.TOUCH.PAN;
+            app.controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
         }
     }, {
         key: 'renderFrame',
@@ -1584,7 +1584,7 @@ var C组网步骤_铺索夹 = function (_C4) {
 
                 app.controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
                 app.controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
-                app.controls.touches.ONE = THREE.TOUCH.DOLLY_ROTATE;
+                app.controls.touches.ONE = THREE.TOUCH.ROTATE;
                 app.controls.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
 
                 if (focus索夹.rcd.主次夹角 > 10) {
@@ -1654,7 +1654,7 @@ var C组网步骤_铺索夹 = function (_C4) {
                 app.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
                 app.controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
                 app.controls.touches.ONE = THREE.TOUCH.PAN;
-                app.controls.touches.TWO = THREE.TOUCH.PAN;
+                app.controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
             }
 
             app.setState({
@@ -1793,6 +1793,7 @@ var ERPC_ThreeDApp_ZuWang = function (_React$PureComponent) {
             var aspect = canvas.clientWidth / canvas.clientHeight;
             var frustumSize = 100;
             var camera = new THREE.OrthographicCamera(frustumSize * aspect / -2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / -2, 0.1, 1000);
+            camera.frustumSize = frustumSize;
             this.camera = camera;
 
             camera.position.set(0, 0, 100);
@@ -1828,7 +1829,7 @@ var ERPC_ThreeDApp_ZuWang = function (_React$PureComponent) {
 
             var controls = new MapControls(camera, canvas);
             // controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
-            // controls.touches.TWO = THREE.TOUCH.PAN;
+            // controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
             this.controls = controls;
             controls.target.set(0, 0, 0);
             controls.update();
@@ -2059,12 +2060,12 @@ var ERPC_ThreeDApp_ZuWang = function (_React$PureComponent) {
             });
 
             // this.show张拉索(目标网片.竖索, true);
-            this.switch步骤(self.步骤_安装竖索索夹, {
-                fetching: false
-            });
-            // this.switch步骤(self.步骤_无步骤,{
+            // this.switch步骤(self.步骤_安装竖索索夹,{
             //     fetching: false,
             // });
+            this.switch步骤(self.步骤_无步骤, {
+                fetching: false
+            });
         }
     }, {
         key: 'switch\u6B65\u9AA4',
@@ -2238,7 +2239,13 @@ var ERPC_ThreeDApp_ZuWang = function (_React$PureComponent) {
             var canvas = this.canvasRef.current;
             var renderer = this.renderer;
             if (this.resizeRendererToDisplaySize()) {
-                camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                // camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                var aspect = canvas.clientWidth / canvas.clientHeight;
+                var frustumSize = camera.frustumSize;
+                camera.left = frustumSize * aspect / -2;
+                camera.right = frustumSize * aspect / 2;
+                camera.top = frustumSize / 2;
+                camera.bottom = frustumSize / -2;
                 camera.updateProjectionMatrix();
                 this.setState({
                     magicObj: {} // 窗口尺寸有变化，UI也要重新渲染
@@ -2447,11 +2454,11 @@ function ERPC_ThreeDApp_ZuWang_dispatchtorprops(dispatch, ownprops) {
 }
 var VisibleERPC_ThreeDApp_ZuWang = null;
 
-function InitThreedApp2() {
+function InitThreedApp_ZuWang() {
     VisibleERPC_ThreeDApp_ZuWang = ReactRedux.connect(ERPC_ThreeDApp_ZuWang_mapstatetoprops, ERPC_ThreeDApp_ZuWang_dispatchtorprops)(ERPC_ThreeDApp_ZuWang);
 }
 
-gNeedCallOnErpControlInit_arr.push(InitThreedApp2);
+gNeedCallOnErpControlInit_arr.push(InitThreedApp_ZuWang);
 
 function popZuWangSelector(completeCallBack) {
     var popPage_1_callback = function popPage_1_callback(popPage_1exportParam) {

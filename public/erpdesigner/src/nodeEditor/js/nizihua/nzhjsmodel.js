@@ -1345,7 +1345,17 @@ class JSNode_Mathfun extends JSNode_Base {
         var usePreNodes_arr = preNodes_arr.concat(this);
         var inSocket = this.inSocket;
 
-        var finalStr = 'Math.' + this.mathType.toLocaleLowerCase() + '(';
+        var funName = this.mathType.toLocaleLowerCase();
+        switch (this.mathType) {
+            case Math_CEILING:
+                funName = 'ceil';
+                break;
+            case Math_POWER:
+                funName = 'pow';
+                break;
+        }
+
+        var finalStr = 'Math.' + funName + '(';
         var socketVal_arr = [];
         var theSocket;
         var socketComRet;

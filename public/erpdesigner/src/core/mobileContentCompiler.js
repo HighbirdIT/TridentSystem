@@ -5463,6 +5463,11 @@ class MobileContentCompiler extends ContentCompiler {
         }
         ctlTag.setAttr('bCompresImage', bigbracketStr(theKernel.getAttribute('doDompress')));
 
+        // var onlyCamera = theKernel.getAttribute('onlyCamera');
+        // if(onlyCamera){
+        //     ctlTag.setAttr('capture', 'camera');
+        // }
+
         var kernelMidData = this.projectCompiler.getMidData(theKernel.id);
         var reactParentKernel = theKernel.getReactParentKernel(true);
         var belongFormKernel = reactParentKernel.type == M_FormKernel_Type ? reactParentKernel : null;
@@ -5554,6 +5559,11 @@ class MobileContentCompiler extends ContentCompiler {
         var acceptType = theKernel.getAttribute('accept');
         if(acceptType != '*'){
             ctlTag.setAttr('acceptFileType', GetFileAcceptType(acceptType));
+        }
+
+        var onlyCamera = theKernel.getAttribute('onlyCamera');
+        if(onlyCamera){
+            ctlTag.setAttr('capture', 'camera');
         }
 
         var title = theKernel.getAttribute(AttrNames.Title);
@@ -6456,8 +6466,11 @@ class MobileContentCompiler extends ContentCompiler {
         else if(apptype == EThreeDAppType.构件安装拍照){
             tagName = 'VisibleERPC_ThreeDApp_B';
         }
-        else{
+        else if(apptype == EThreeDAppType.构件模型查看){
             tagName = 'VisibleERPC_ThreeDApp_C';
+        }
+        else if(apptype == EThreeDAppType.大连组网拍照){
+            tagName = 'VisibleERPC_ThreeDApp_ZuWang';
         }
 
         var ctlTag = new FormatHtmlTag(theKernel.id, tagName, this.clientSide);

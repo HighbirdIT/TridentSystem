@@ -459,6 +459,11 @@ const JSNodeEditorControls_arr =[
         nodeClass:JSNode_CreateClassObject,
         type:'控件样式'
     },
+    {
+        label:'文件是否存在',
+        nodeClass:JSNode_FileSystem_FileExists,
+        type:'文件系统'
+    },
 ];
 
 var gCopyed_JsNodes_data=null;

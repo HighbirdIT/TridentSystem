@@ -587,7 +587,7 @@ var C组网步骤_无步骤 = function (_C) {
             var app = this.app;
             var controls = app.controls;
             controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
-            controls.touches.TWO = THREE.TOUCH.PAN;
+            controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
             var 目标网片 = app.目标网片;
 
             目标网片.索_arr.forEach(function (拉索) {
@@ -723,7 +723,7 @@ var C组网步骤_铺设竖索 = function (_C2) {
             var labelsContainer = app.labelsRef.current;
             var controls = app.controls;
             controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
-            controls.touches.TWO = THREE.TOUCH.PAN;
+            controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
 
             目标网片.索_arr.forEach(function (拉索) {
                 if (拉索.类型 != E索类型.竖索) {
@@ -911,7 +911,7 @@ var C组网步骤_铺设索 = function (_C3) {
             var controls = app.controls;
 
             controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
-            controls.touches.TWO = THREE.TOUCH.PAN;
+            controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
 
             var labelsContainer = app.labelsRef.current;
             labelsContainer.appendChild(this.B端label.docElem);
@@ -1041,7 +1041,7 @@ var C组网步骤_铺设索 = function (_C3) {
             app.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
             app.controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
             app.controls.touches.ONE = THREE.TOUCH.PAN;
-            app.controls.touches.TWO = THREE.TOUCH.PAN;
+            app.controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
         }
     }, {
         key: 'renderFrame',
@@ -1179,7 +1179,7 @@ var C组网步骤_铺设索 = function (_C3) {
                 app.索夹模型Parant.visible = false;
                 app.controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
                 app.controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
-                app.controls.touches.ONE = THREE.TOUCH.DOLLY_ROTATE;
+                app.controls.touches.ONE = THREE.TOUCH.ROTATE;
                 app.controls.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
 
                 var xAxis = new THREE.Vector3(move_vec.x * -1, move_vec.y * -1, move_vec.z * -1);
@@ -1210,7 +1210,7 @@ var C组网步骤_铺设索 = function (_C3) {
                 app.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
                 app.controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
                 app.controls.touches.ONE = THREE.TOUCH.PAN;
-                app.controls.touches.TWO = THREE.TOUCH.PAN;
+                app.controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
 
                 this.轴helper.visible = false;
             }
@@ -1406,14 +1406,18 @@ var C组网步骤_铺索夹 = function (_C4) {
             var controls = app.controls;
 
             controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
-            controls.touches.TWO = THREE.TOUCH.PAN;
+            controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
 
             var labelsContainer = app.labelsRef.current;
             var buttonsContainer = app.btnsRef.current;
             labelsContainer.appendChild(this.角度label.docElem);
 
             目标网片.索_arr.forEach(function (拉索) {
-                拉索.object3d.visible = true;
+                if (_this9.索类型 == E索类型.竖索) {
+                    拉索.object3d.visible = 拉索.类型 == E索类型.竖索;
+                } else {
+                    拉索.object3d.visible = true;
+                }
                 拉索.平B_label.docElem.style.display = 'none';
                 拉索.平T_label.docElem.style.display = 'none';
             });
@@ -1424,15 +1428,16 @@ var C组网步骤_铺索夹 = function (_C4) {
                 var needed = false;
                 if (_this9.索类型 == E索类型.竖索) {
                     needed = 索夹.关联竖索 != null;
+                    索夹.meshObj.visible = needed;
                 } else {
                     needed = 索夹.关联竖索 == null;
+                    索夹.meshObj.visible = true;
                 }
                 if (needed) {
                     索夹.params_arr = [];
                     关联索夹_arr.push(索夹);
                     关联索夹_dic[索夹.组网索夹代码] = 索夹;
                 }
-                索夹.meshObj.visible = true;
             });
             if (this.索类型 == E索类型.竖索) {
                 关联索夹_arr.sort(function (a, b) {
@@ -1491,6 +1496,11 @@ var C组网步骤_铺索夹 = function (_C4) {
 
             关联索夹_arr.forEach(function (索夹, 索夹i) {
                 索夹.meshObj.material = 索夹Meshmaterial;
+                索夹.meshObj.visible = true;
+            });
+
+            目标网片.索_arr.forEach(function (拉索) {
+                拉索.object3d.visible = true;
             });
 
             labelsContainer.removeChild(this.角度label.docElem);
@@ -1505,7 +1515,7 @@ var C组网步骤_铺索夹 = function (_C4) {
             app.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
             app.controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
             app.controls.touches.ONE = THREE.TOUCH.PAN;
-            app.controls.touches.TWO = THREE.TOUCH.PAN;
+            app.controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
         }
     }, {
         key: 'renderFrame',
@@ -1584,7 +1594,7 @@ var C组网步骤_铺索夹 = function (_C4) {
 
                 app.controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
                 app.controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
-                app.controls.touches.ONE = THREE.TOUCH.DOLLY_ROTATE;
+                app.controls.touches.ONE = THREE.TOUCH.ROTATE;
                 app.controls.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
 
                 if (focus索夹.rcd.主次夹角 > 10) {
@@ -1654,7 +1664,7 @@ var C组网步骤_铺索夹 = function (_C4) {
                 app.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
                 app.controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
                 app.controls.touches.ONE = THREE.TOUCH.PAN;
-                app.controls.touches.TWO = THREE.TOUCH.PAN;
+                app.controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
             }
 
             app.setState({
@@ -1667,6 +1677,26 @@ var C组网步骤_铺索夹 = function (_C4) {
             this.setFocus索夹(null);
         }
     }, {
+        key: 'clickPreHandler',
+        value: function clickPreHandler(ev) {
+            var focus索夹 = this.focus索夹;
+            var 关联索夹_arr = this.关联索夹_arr;
+            var 索夹index = 关联索夹_arr.indexOf(focus索夹);
+            if (索夹index > 0) {
+                this.setFocus索夹(关联索夹_arr[索夹index - 1]);
+            }
+        }
+    }, {
+        key: 'clickNextHandler',
+        value: function clickNextHandler(ev) {
+            var focus索夹 = this.focus索夹;
+            var 关联索夹_arr = this.关联索夹_arr;
+            var 索夹index = 关联索夹_arr.indexOf(focus索夹);
+            if (索夹index < 关联索夹_arr.length - 1) {
+                this.setFocus索夹(关联索夹_arr[索夹index + 1]);
+            }
+        }
+    }, {
         key: 'render',
         value: function render(extraUIs_arr, canvasWidth, canvasHeight) {
             _get(C组网步骤_铺索夹.prototype.__proto__ || Object.getPrototypeOf(C组网步骤_铺索夹.prototype), 'render', this).call(this, extraUIs_arr, canvasWidth, canvasHeight);
@@ -1674,7 +1704,7 @@ var C组网步骤_铺索夹 = function (_C4) {
             var canvasHeight_half = this.canvasHeight_half;
             var app = this.app;
             var 目标网片 = app.目标网片;
-            var 关联索_arr = this.关联索_arr;
+            var 关联索夹_arr = this.关联索夹_arr;
             if (目标网片 == null) {
                 return;
             }
@@ -1701,6 +1731,26 @@ var C组网步骤_铺索夹 = function (_C4) {
                     '\u53D6\u6D88\u67E5\u770B'
                 )
             ));
+
+            if (this.索类型 == E索类型.竖索) {
+                var 索夹index = 关联索夹_arr.indexOf(focus索夹);
+                var hadPre = 索夹index > 0;
+                var hadNex = 索夹index < 关联索夹_arr.length - 1;
+                extraUIs_arr.push(React.createElement(
+                    'div',
+                    { key: 'nag_rightBottomBtns', className: 'd-flex flex-column flex-nowrap position-absolute ', style: { left: canvasWidth + 'px', top: canvasHeight - 5 + 'px', width: '80px', transform: 'translate(-100%,-100%)' } },
+                    React.createElement(
+                        'button',
+                        { onClick: this.clickPreHandler, className: 'btn btn-primary flex-grow-0 flex-shrink=0', style: { visibility: hadPre ? '' : 'hidden' } },
+                        '\u4E0A\u4E2A\u7D22\u5939'
+                    ),
+                    React.createElement(
+                        'button',
+                        { onClick: this.clickNextHandler, className: 'btn btn-primary flex-grow-0 flex-shrink=0', style: { visibility: hadNex ? '' : 'hidden' } },
+                        '\u4E0B\u4E2A\u7D22\u5939'
+                    )
+                ));
+            }
         }
     }]);
 
@@ -1738,10 +1788,10 @@ var ERPC_ThreeDApp_ZuWang = function (_React$PureComponent) {
         _this10.网片_map = {};
 
         步骤_无步骤.set后续步骤(步骤_铺设竖索);
-        步骤_铺设竖索.set后续步骤(步骤_铺设次索);
+        步骤_铺设竖索.set后续步骤(步骤_安装竖索索夹);
+        步骤_安装竖索索夹.set后续步骤(步骤_铺设次索);
         步骤_铺设次索.set后续步骤(步骤_铺设主索);
-        步骤_铺设主索.set后续步骤(步骤_安装竖索索夹);
-        步骤_安装竖索索夹.set后续步骤(步骤_安装主次索夹);
+        步骤_铺设主索.set后续步骤(步骤_安装主次索夹);
 
         _this10.步骤_无步骤 = 步骤_无步骤;
         _this10.步骤_铺设竖索 = 步骤_铺设竖索;
@@ -1793,6 +1843,7 @@ var ERPC_ThreeDApp_ZuWang = function (_React$PureComponent) {
             var aspect = canvas.clientWidth / canvas.clientHeight;
             var frustumSize = 100;
             var camera = new THREE.OrthographicCamera(frustumSize * aspect / -2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / -2, 0.1, 1000);
+            camera.frustumSize = frustumSize;
             this.camera = camera;
 
             camera.position.set(0, 0, 100);
@@ -1828,7 +1879,7 @@ var ERPC_ThreeDApp_ZuWang = function (_React$PureComponent) {
 
             var controls = new MapControls(camera, canvas);
             // controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
-            // controls.touches.TWO = THREE.TOUCH.PAN;
+            // controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
             this.controls = controls;
             controls.target.set(0, 0, 0);
             controls.update();
@@ -2059,12 +2110,12 @@ var ERPC_ThreeDApp_ZuWang = function (_React$PureComponent) {
             });
 
             // this.show张拉索(目标网片.竖索, true);
-            this.switch步骤(self.步骤_安装竖索索夹, {
-                fetching: false
-            });
-            // this.switch步骤(self.步骤_无步骤,{
+            // this.switch步骤(self.步骤_安装竖索索夹,{
             //     fetching: false,
             // });
+            this.switch步骤(self.步骤_无步骤, {
+                fetching: false
+            });
         }
     }, {
         key: 'switch\u6B65\u9AA4',
@@ -2238,7 +2289,13 @@ var ERPC_ThreeDApp_ZuWang = function (_React$PureComponent) {
             var canvas = this.canvasRef.current;
             var renderer = this.renderer;
             if (this.resizeRendererToDisplaySize()) {
-                camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                // camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                var aspect = canvas.clientWidth / canvas.clientHeight;
+                var frustumSize = camera.frustumSize;
+                camera.left = frustumSize * aspect / -2;
+                camera.right = frustumSize * aspect / 2;
+                camera.top = frustumSize / 2;
+                camera.bottom = frustumSize / -2;
                 camera.updateProjectionMatrix();
                 this.setState({
                     magicObj: {} // 窗口尺寸有变化，UI也要重新渲染
@@ -2447,11 +2504,11 @@ function ERPC_ThreeDApp_ZuWang_dispatchtorprops(dispatch, ownprops) {
 }
 var VisibleERPC_ThreeDApp_ZuWang = null;
 
-function InitThreedApp2() {
+function InitThreedApp_ZuWang() {
     VisibleERPC_ThreeDApp_ZuWang = ReactRedux.connect(ERPC_ThreeDApp_ZuWang_mapstatetoprops, ERPC_ThreeDApp_ZuWang_dispatchtorprops)(ERPC_ThreeDApp_ZuWang);
 }
 
-gNeedCallOnErpControlInit_arr.push(InitThreedApp2);
+gNeedCallOnErpControlInit_arr.push(InitThreedApp_ZuWang);
 
 function popZuWangSelector(completeCallBack) {
     var popPage_1_callback = function popPage_1_callback(popPage_1exportParam) {

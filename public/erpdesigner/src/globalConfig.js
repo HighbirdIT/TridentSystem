@@ -127,7 +127,7 @@ var Math_SQRT = 'SQRT'; //计算参数的平方根
 var Math_SIN ='SIN';
 var Math_COS ='COS';
 var Math_TAN ='TAN';
-var Math_SIGN='SING';
+var Math_SIGN='SIGN';
 var Math_arr = [Math_ABS, Math_CEILING, Math_FLOOR, Math_ROUND, Math_POWER, Math_SQRT];
 var JSMath_arr = [Math_ABS, Math_CEILING, Math_FLOOR, Math_ROUND, Math_POWER, Math_SQRT,Math_SIN,Math_COS,Math_TAN,Math_SIGN];
 //2018-23-31黄永恒编辑charfunType
@@ -276,8 +276,9 @@ const EThreeDAppType={
     全局图拍照:'全局图拍照',
     构件安装拍照:'构件安装拍照',
     构件模型查看:'构件模型查看',
+    大连组网拍照:'大连组网拍照',
 }
-const ThreeDAppType_arr = [EThreeDAppType.全局图拍照,EThreeDAppType.构件安装拍照,EThreeDAppType.构件模型查看];
+const ThreeDAppType_arr = [EThreeDAppType.全局图拍照,EThreeDAppType.构件安装拍照,EThreeDAppType.构件模型查看,EThreeDAppType.大连组网拍照];
 
 const Event_CurrentComponentchanged = 'currentComponentchanged';
 const Event_LinkChanged = 'linkChanged';

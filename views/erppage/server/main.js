@@ -15,13 +15,15 @@ var processes_map = {
     getMenu: getMenu,
     userlogin: userLogin,
     readyLogin: readyLogin,
-    reportError: reportErr
+    reportError: reportErr,
+    visitorUserlogin: visitorUserlogin,
 };
 
 function process(req, res, next) {
     var ignoreENVCheck = false;
     switch (req.body.action) {
         case 'userlogin':
+        case 'visitorUserlogin':
         case 'readyLogin':
         case 'reportError':
             ignoreENVCheck = true;
@@ -51,6 +53,63 @@ function userLogin(req, res) {
         var realAccount = privateKey.decrypt(req.body.account);
         var realPassword = privateKey.decrypt(req.body.password);
         var sql = 'select 用户登录密码,员工登记姓名代码,登录锁定状态 from V123A有效用户密码 where 用户登录名称=@name';
+        var queryRet = yield dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('name', sqlTypes.NVarChar(100), realAccount)]);
+        if (queryRet.recordset.length == 0) {
+            return { err: { info: '账号不存在' } };
+        }
+        var accountRow = queryRet.recordset[0];
+        sql = "select 随机标识令牌,钉钉标识 from T122C用户登录名称 where 员工登记姓名代码=" + accountRow.员工登记姓名代码;
+        queryRet = yield dbhelper.asynQueryWithParams(sql);
+        var logAccountRow = queryRet.recordset[0];
+        var theMd5 = md5(logAccountRow.随机标识令牌 + realPassword);
+        if (theMd5.toUpperCase() != accountRow.用户登录密码.toUpperCase()) {
+            return { err: { info: '密码错误' } };
+        }
+        if (accountRow.登录锁定状态 == '1') {
+            return { err: { info: '账号被锁定了' } };
+        }
+        var clientIp = req.headers['x-real-ip'] ||
+            req.headers['x-forwarded-for'] ||
+            req.socket.remoteAddress || '';
+        if (clientIp.split(',').length > 0) {
+            clientIp = clientIp.split(',')[0];
+        }
+        var logProRet = yield dbhelper.asynExcute('P121E钉钉用户直登',
+            [dbhelper.makeSqlparam('userid', sqlTypes.NVarChar, logAccountRow.钉钉标识),
+            dbhelper.makeSqlparam('userIP', sqlTypes.NVarChar, clientIp),],
+            [
+                dbhelper.makeSqlparam('errInfo', sqlTypes.NVarChar),
+                dbhelper.makeSqlparam('logrcdid', sqlTypes.NVarChar),
+            ]);
+        if (logProRet.returnValue != '1') {
+            return { err: { info: logProRet.output.errInfo } };
+        }
+        var logrcd = logProRet.output.logrcdid;
+        var userData = yield dingHelper.aysnLoginfFromRcdID(logrcd, req, res);
+        if (userData == null) {
+            return { err: { info: '快捷登录失败' } };
+        }
+
+        return {
+            info: '登录成功',
+        };
+    });
+}
+
+function visitorUserlogin(req, res) {
+    //userLogin(req.body.account,req.body.password);
+    return co(function* () {
+        if (req.session.logRsaPrivateKeyPem == null) {
+            return { err: { info: 'session中断，请刷新页面' } };
+        }
+        if (req.body.account == null || req.body.password == null) {
+            return { err: { info: '参数非法' } };
+        }
+
+        var privateKey = forge.pki.privateKeyFromPem(req.session.logRsaPrivateKeyPem);
+        var realAccount = privateKey.decrypt(req.body.account);
+        var realPassword = privateKey.decrypt(req.body.password);
+        var sql = 'select 用户登录密码,员工登记姓名代码,登录锁定状态 from V123A有效用户密码 where 用户登录名称=@name and [是外部人员] = 1';
         var queryRet = yield dbhelper.asynQueryWithParams(sql, [dbhelper.makeSqlparam('name', sqlTypes.NVarChar(100), realAccount)]);
         if (queryRet.recordset.length == 0) {
             return { err: { info: '账号不存在' } };
