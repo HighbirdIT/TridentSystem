@@ -1,8 +1,8 @@
-﻿//var express = require('express');
-//var https = require('https');
-//var http = require('http');
-//var url = require('url');
-//var fortune = require('./lib/fortune.js');
+﻿var express = require('express');
+var https = require('https');
+var http = require('http');
+var url = require('url');
+var fortune = require('./lib/fortune.js');
 var bodyParser = require('body-parser');
 var credentials = require('./credentials.js');
 var connect = require('connect');
@@ -73,9 +73,9 @@ console.log(ff);
 
 const sqlTypes = dbhelper.Types;
 
-//var app = express();
-//app.disable('x-powered-by');
-//app.bUseHttps = bUseHttps;
+var app = express();
+app.disable('x-powered-by');
+app.bUseHttps = bUseHttps;
 
 var handlebars = require('express3-handlebars').create({
     defaultLayout: 'main',
