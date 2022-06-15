@@ -175,6 +175,31 @@ function split_suangzhoudatafile(fileid) {
     });
 }
 
+function file_transformMd5(_config){
+    return co(function* () {
+        var rlt = {};
+        var scriptDir = path.join(__dirname, 'scripts/python/shuangzhoutest/');
+        var scriptPath = path.join(scriptDir, 'main.py');
+        var result = '';
+        try {
+            _config.files = _config.files.map(x => { return path.join(__dirname, 'public', x); });
+            var startPythonCmd = 'python3 -W ignore ' + scriptPath + ' ' + JSON.stringify(_config).replace(/"/g, "'");
+            result = execSync(startPythonCmd).toString();
+        }
+        catch (eo) {
+            return {
+                err: eo.message
+            };
+        }
+       
+        tpos = result.indexOf('result:');
+        if (tpos != 1) {
+            rlt.result = result.substring(result.indexOf('{', tpos) + 1, result.indexOf('}', tpos)).replace(/:/g, '=').replace(/'/g, '');
+        }
+        return rlt;
+    });
+}
+
 module.exports = {
     cal_shuangzhoutest: cal_shuangzhoutest,
     draw_suangzhoudatafile: draw_suangzhoudatafile,
