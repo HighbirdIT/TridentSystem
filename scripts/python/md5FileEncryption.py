@@ -21,12 +21,16 @@ class FileMd5(object):
 
     def work(self, paths):
         for path in paths:
-            with open(path, 'rb') as f:
-                content = f.read()
-                ret = self.transform(content)
-                self.threadLock.acquire()
-                self.result.append({'path': path, 'md5': ret})
-                self.threadLock.release()
+            try:
+                with open(path, 'rb') as f:
+                    content = f.read()
+                    ret = self.transform(content)
+                    self.threadLock.acquire()
+                    self.result.append({'path': path, 'md5': ret})
+                    self.threadLock.release()
+            except Exception as err:
+                self.result.append({'path': path,'err':str(err)})
+                
 
     def start(self):
         if self.path:
@@ -57,7 +61,7 @@ class FileMd5(object):
 def update(conn,cur, args: list):
     if not args:
         return
-    print('update')
+    
     arr = [(_dict['md5'], _dict['path']) for _dict in args]
     sql = 'update TB00C文件上传记录 set 电子指纹=%s where 电子令牌=%s'
     cur.executemany(sql, arr)
@@ -66,38 +70,42 @@ def update(conn,cur, args: list):
 
 def connection():
     # 创建连接对象
-    conn = pymssql.connect(host='erp.highbird.cn', server='erp.highbird.cn', port='9155', user='nizihua',
-                           password='13o84x',
-                           database='base1')
+    try:
+        conn = pymssql.connect(host='erp.highbird.cn', server='erp.highbird.cn', port='9155', user='nizihua',
+                            password='13o84x',
+                            database='base1')
 
-    cursor = conn.cursor(as_dict=True)
+        cursor = conn.cursor(as_dict=True)
 
-    sql = 'select * from TB00C文件上传记录 where len(电子指纹) = 0'
+        sql = 'select * from TB00C文件上传记录 where len(电子指纹) = 0'
 
-    cursor.execute(sql)
-    # 列名
-    columns = [name[0] for name in cursor.description]
-    df = pd.DataFrame(cursor.fetchall(), columns=columns)
-    length = df.shape[0]
-    print(length)
-    n = 1
-    s = 0
-    e = 100
-    while True:
-        dataframe = df.iloc[s:e, 9]
-        paths = list(dataframe)
-        print(paths)
-        if not len(paths):
-            break
-        f = FileMd5(paths=paths)
-        r = f.start()
-        update(conn,cursor, r)
-        n += 1
-        s, e = e, 100 * n
+        cursor.execute(sql)
+        # 列名
+        columns = [name[0] for name in cursor.description]
+        df = pd.DataFrame(cursor.fetchall(), columns=columns)
+        length = df.shape[0]
+        print(length)
+        n = 1
+        s = 0
+        e = 100
+        while True:
+            dataframe = df.iloc[s:e, 9]
+            paths = list(dataframe)
+            print(paths)
+            if not len(paths):
+                break
+            f = FileMd5(paths=paths)
+            r = f.start()
+            update(conn,cursor, r)
+            n += 1
+            s, e = e, 100 * n
 
 
-    cursor.close()
-    conn.close()
+        cursor.close()
+        conn.close()
+    except Exception as err:
+        err = str(err)
+    return err
 
 
 if __name__ == '__main__':
@@ -111,11 +119,12 @@ if __name__ == '__main__':
             f= FileMd5(path=filepath)
             result = f.start()
             print('result:',result)
-        elif filestring:
+        else filestring:
             f = FileMd5()
             result = f.transform(filestring)
             print('result:',result)
-        else autoBoolen or str(autoBoolen) == 'True':
+        if autoBoolen or str(autoBoolen) == 'True':
             # 自动
-            connection()
+            err = connection()
+            print('autoresult:',err)
             

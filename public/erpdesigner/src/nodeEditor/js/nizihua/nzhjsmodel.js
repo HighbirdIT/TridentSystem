@@ -1948,15 +1948,15 @@ class JSNode_Md5 extends JSNode_Base {
             });
         }
         if (this.fileidSocket == null) {
-            this.fileidSocket = new NodeSocket('fileid', this, true);
+            this.fileidSocket = new NodeSocket('fileid', this, false);
             this.addSocket(this.fileidSocket);
         }
         if (this.textSocket == null) {
-            this.textSocket = new NodeSocket('text', this, true);
+            this.textSocket = new NodeSocket('text', this, false);
             this.addSocket(this.textSocket);
         }
         if (this.autoSocket == null) {
-            this.autoSocket = new NodeSocket('autoUpdate', this, true);
+            this.autoSocket = new NodeSocket('autoUpdate', this, false);
             this.addSocket(this.autoSocket);
         }
 
@@ -2014,7 +2014,7 @@ class JSNode_Md5 extends JSNode_Base {
             theServerSide = new CP_ServerSide({});
         }
         else {
-            theServerSide.appendImport('extend_liufeng', '../../../../extend_liufeng.js');
+            theServerSide.appendImport('extend_zihua', '../../../../extend_zihua.js');
         }
 
         var serverSideActName = this.bluePrint.id + '_' + this.id;
@@ -2069,7 +2069,7 @@ class JSNode_Md5 extends JSNode_Base {
         var dataVarName = 'data_' + this.id;
         var errVarName = 'error_' + this.id;
 
-        myServerBlock.pushLine('var ' + dataVarName + " = yield extend_liufeng.split_suangzhoudatafile(" + this.id + "_fileid);");
+        myServerBlock.pushLine('var ' + dataVarName + " = yield extend_zihua.file_transformMd5(" + this.id + "_fileid);");
         myServerBlock.pushLine('if(' + dataVarName + '.err){return serverhelper.createErrorRet(' + dataVarName + '.err);}');
 
         var myClientBlock = new FormatFileBlock('client');
@@ -2140,14 +2140,14 @@ class JSNode_Md5 extends JSNode_Base {
                 }
             }
 
-            if (serverFlow_links.length > 0) {
-                if (this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, tryBlock.bodyBlock) == false) {
-                    return false;
-                }
-            }
-            else {
-                myServerBlock.pushLine('return ' + dataVarName + ';');
-            }
+            // if (serverFlow_links.length > 0) {
+            //     if (this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, tryBlock.bodyBlock) == false) {
+            //         return false;
+            //     }
+            // }
+            // else {
+            //     myServerBlock.pushLine('return ' + dataVarName + ';');
+            // }
         }
         return selfCompileRet;
     }
