@@ -7802,6 +7802,9 @@ class JSNode_Control_Api_CallFun extends JSNode_Base {
         var params_arr = [];
         var selectedCtlid = this.ctlSocket.getExtra('ctlid');
         var funAttrName = this.ctlSocket.getExtra('funAttrName');
+        if(funAttrName == null){
+            funAttrName = "";
+        }
         var selectedKernel = project.getControlById(selectedCtlid);
         if (selectedKernel) {
             if (this.isUserControlEvent) {
