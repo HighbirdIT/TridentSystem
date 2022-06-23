@@ -125,7 +125,7 @@ var ERPC_Chart = function (_React$PureComponent) {
                         backgroundColor: ['green','Red'],
                     }]
                 },
-                             animation: {
+                              animation: {
                         duration: 1,
                         onComplete: function () {
                             var chartInstance = this.chart;

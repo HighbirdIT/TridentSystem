@@ -1,8 +1,8 @@
-﻿//var express = require('express');
-//var https = require('https');
-//var http = require('http');
-//var url = require('url');
-//var fortune = require('./lib/fortune.js');
+﻿﻿var express = require('express');
+var https = require('https');
+var http = require('http');
+var url = require('url');
+var fortune = require('./lib/fortune.js');
 var bodyParser = require('body-parser');
 var credentials = require('./credentials.js');
 var connect = require('connect');
@@ -73,9 +73,9 @@ console.log(ff);
 
 const sqlTypes = dbhelper.Types;
 
-//var app = express();
-//app.disable('x-powered-by');
-//app.bUseHttps = bUseHttps;
+var app = express();
+app.disable('x-powered-by');
+app.bUseHttps = bUseHttps;
 
 var handlebars = require('express3-handlebars').create({
     defaultLayout: 'main',
@@ -211,7 +211,7 @@ app.use('/', function (req, res, next) {
         var iphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/) != null;
         res.locals.isMobile = android || ipad || ipod || iphone;
         res.locals.isMobileStr = res.locals.isMobile ? 'true' : 'false';
-
+        
         var fromHttp = req.client.ssl == null;
         dingHelper.asynGetDingDingTicket((fromHttp ? 'http' : 'https') + '://' + req.headers.host + req.originalUrl).then((data) => {
             res.locals.Signature = data.Signature == null ? '' : data.Signature;
@@ -421,7 +421,7 @@ app.post('/process', function(req, res){
 
 let myFirstPromise = new Promise((resolve, reject) => {
     // We call resolve(...) when what we were doing asynchronously was successful, and reject(...) when it failed.
-    // In this example, we use setTimeout(...) to simulate async code.
+    // In this example, we use setTimeout(...) to simulate async code. 
     // In reality, you will probably be using something like XHR or an HTML5 API.
     setTimeout(function(){
       resolve("Success434!"); // Yay! Everything went well!
@@ -685,7 +685,7 @@ app.use('/erppage', function (req, res, next) {
 var jsCache = {};
 app.use('/interview', function (req, res, next) {
     var childPath = req.path.toLowerCase();
-    var path = '/interview' + childPath; // 检查 缓存； 如果 它在 那里， 渲染 这个 视图
+    var path = '/interview' + childPath; // 检查 缓存； 如果 它在 那里， 渲染 这个 视图 
     if (childPath != null && childPath.lastIndexOf('_process') == childPath.length - 8) {
         var jspath = __dirname + '/views' + path + '.js';
         jspath = jspath.replace(/^\//, '');
@@ -701,7 +701,7 @@ app.use('/interview', function (req, res, next) {
     }
     else {
         if (autoViews[path]) {
-            return res.render(autoViews[path], { layout: 'mobilesimple' }); // 如果 它不 在 缓存 里， 那就 看看 有没有. handlebars 文件 能 匹配
+            return res.render(autoViews[path], { layout: 'mobilesimple' }); // 如果 它不 在 缓存 里， 那就 看看 有没有. handlebars 文件 能 匹配 
         }
         if (fs.existsSync(__dirname + '/views' + path + '.handlebars')) {
             autoViews[path] = path.replace(/^\//, '');
@@ -735,7 +735,7 @@ app.use('/dingcallback', function (req, res, next) {
     var msgJson = JSON.parse(msg);
     var retMsg = dingHelper.receiveCallback(msgJson);
     var rlt = theDingTalkCrypt.EncryptMsg(retMsg, req.query.timestamp, req.query.nonce);
-
+    
     res.json({
         msg_signature: rlt.signature,
         encrypt: rlt.sEncryptMsg,
@@ -795,14 +795,14 @@ app.use('/app/projhelper', function (req, res, next) {
 });
 
 app.use(function (req, res, next) {
-    var path = req.path.toLowerCase(); // 检查 缓存； 如果 它在 那里， 渲染 这个 视图
+    var path = req.path.toLowerCase(); // 检查 缓存； 如果 它在 那里， 渲染 这个 视图 
     if (autoViews[path]) {
-        return res.render(autoViews[path]); // 如果 它不 在 缓存 里， 那就 看看 有没有. handlebars 文件 能 匹配
+        return res.render(autoViews[path]); // 如果 它不 在 缓存 里， 那就 看看 有没有. handlebars 文件 能 匹配 
     }
     if (fs.existsSync(__dirname + '/views' + path + '.handlebars')) {
         autoViews[path] = path.replace(/^\//, '');
         return res.render(autoViews[path]);
-    } // 没 发现 视图； 转到 404 处理器
+    } // 没 发现 视图； 转到 404 处理器 
     next();
 });
 
@@ -825,10 +825,8 @@ function startServer() {
     freshPageCache();
     setInterval(freshPageCache, 1000 * 30);
     if(bUseHttps){
-        // var privateKey = fs.readFileSync('key.pem').toString();
-        // var certificate = fs.readFileSync('cert.pem').toString();
-        var privateKey = ''
-        var certificate = ''
+        var privateKey = fs.readFileSync('key.pem').toString();
+        var certificate = fs.readFileSync('cert.pem').toString();
 
         var opts = {
             key : privateKey,
