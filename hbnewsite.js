@@ -1,4 +1,4 @@
-var express = require('express');
+﻿﻿var express = require('express');
 var https = require('https');
 var http = require('http');
 var url = require('url');
@@ -824,23 +824,23 @@ app.use(function (err, req, res, next) {
 function startServer() {
     freshPageCache();
     setInterval(freshPageCache, 1000 * 30);
-    // if(bUseHttps){
-    //     var privateKey = fs.readFileSync('key.pem').toString();
-    //     var certificate = fs.readFileSync('cert.pem').toString();
+    if(bUseHttps){
+        var privateKey = fs.readFileSync('key.pem').toString();
+        var certificate = fs.readFileSync('cert.pem').toString();
 
-    //     var opts = {
-    //         key : privateKey,
-    //         cert : certificate
-    //     }
-    //     https.createServer(opts,app).listen(app.get('https_port'), function () {
-    //         var hostIp = app.get('hostip');
-    //         if (hostIp == '192.168.0.202') {
-    //             hostIp = 'erp.highbird.cn';
-    //         }
-    //         console.log('Express started on https://' + hostIp + ':' + app.get('https_port') + '; press Ctl-C to terminate.');
-    //         console.log('env:' + app.get('env'));
-    //     });
-    // }
+        var opts = {
+            key : privateKey,
+            cert : certificate
+        }
+        https.createServer(opts,app).listen(app.get('https_port'), function () {
+            var hostIp = app.get('hostip');
+            if (hostIp == '192.168.0.202') {
+                hostIp = 'erp.highbird.cn';
+            }
+            console.log('Express started on https://' + hostIp + ':' + app.get('https_port') + '; press Ctl-C to terminate.');
+            console.log('env:' + app.get('env'));
+        });
+    }
     http.createServer(app).listen(app.get('http_port'), function () {
         var hostIp = app.get('hostip');
         if (hostIp == '192.168.0.202') {
