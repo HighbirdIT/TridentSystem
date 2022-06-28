@@ -253,7 +253,18 @@ const FlowNodeEditorControls_arr =[
         label: '创建MarkDown消息',
         nodeClass: JSNode_Message_MarkDown,
         type: '通知'
+    },
+    {
+        label: 'md5加密',
+        nodeClass: JSNode_Md5,
+        type: '基础'
+    },
+    {
+        label: '文件删除',
+        nodeClass: JSNode_FileDelete,
+        type: '基础'
     }
+
 ];
 
 var gCopyed_FlowNodes_data = null;

@@ -2770,3 +2770,11 @@ FlowNodeClassMap[JSNODE_ARRAY_REVERSE] = {
     modelClass: JSNode_Array_Reverse,
     comClass: C_Node_SimpleNode,
 };
+FlowNodeClassMap[JSNODE_MD5] = {
+    modelClass: JSNode_Md5,
+    comClass: C_Node_SimpleNode,
+};
+FlowNodeClassMap[JSNODE_FILEDELETE] = {
+    modelClass: JSNode_FileDelete,
+    comClass: C_Node_SimpleNode,
+};

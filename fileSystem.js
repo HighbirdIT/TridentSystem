@@ -636,13 +636,18 @@ fileSystem.fileExists = (fileIdentity) => {
 
 fileSystem.deleteFile = (req,fileIdentity) => {
     return co(function* () {
+        
         var ret = false;
         try {
+            
             var userID = getUserID(req);
-            if(userID != 17){
-                return serverhelper.createErrorRet("你没有文件删除权限");
+            
+            if(userID != 1359){
+                // return serverhelper.createErrorRet("你没有文件删除权限");
+                return "你没有文件删除权限"
             }
             var dbRlt = yield dbhelper.asynQueryWithParams("select *,year(创建时间) as 创建年份,month(创建时间) as 创建月份 from [TB00C文件上传记录] where [文件令牌] = @identity",[dbhelper.makeSqlparam("identity", sqlTypes.NVarChar(50),fileIdentity)]);
+            console.log(dbRlt,'===')
             if(dbRlt.recordset.length > 0){
                 var fileRecord = dbRlt.recordset[0];
                 var fileFullName = fileIdentity;
@@ -656,13 +661,14 @@ fileSystem.deleteFile = (req,fileIdentity) => {
                     fs.unlinkSync(targetFilePath);
                     ret = true;
                 }
-                var delRlt = yield dbhelper.asynGetScalar("delete [TB00C文件上传记录] where @文件上传记录代码=[文件上传记录代码]", [dbhelper.makeSqlparam('文件上传记录代码', sqlTypes.Int, fileRecord.文件上传记录代码)]);
+                //var delRlt = yield dbhelper.asynGetScalar("delete [TB00C文件上传记录] where @文件上传记录代码=[文件上传记录代码]", [dbhelper.makeSqlparam('文件上传记录代码', sqlTypes.Int, fileRecord.文件上传记录代码)]);
             }
         }
         catch (eo) {
-            return serverhelper.createErrorRet(eo.message);
+            // return serverhelper.createErrorRet(eo.message);
+            return eo.message
         }
-        return {deleted:ret};
+        return ret;
     });
 };
 
