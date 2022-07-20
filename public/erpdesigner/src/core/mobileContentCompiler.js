@@ -5791,6 +5791,17 @@ class MobileContentCompiler extends ContentCompiler {
         if (theKernel.getAttribute('poppanelminwidth') > 100) {
             ctlTag.setAttr('poppanelminwidth', theKernel.getAttribute('poppanelminwidth'));
         }
+
+        let tiplabel = theKernel.getAttribute('tiplabel');
+        if(IsEmptyString(tiplabel)){
+            if (theKernel.parent && theKernel.parent.type == M_LabeledControlKernel_Type) {
+                tiplabel = theKernel.parent.getAttribute(AttrNames.TextField);
+            }
+        }
+        if(!IsEmptyString(tiplabel)){
+            ctlTag.setAttr('label', tiplabel);
+        }
+
         var appandColumns_arr = [];
         var appandColAttrs_arr = theKernel.getAttrArrayList(AttrNames.AppandColumn);
         var canuseColumns = theKernel.getCanuseColumns();
@@ -6471,6 +6482,9 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else if(apptype == EThreeDAppType.大连组网拍照){
             tagName = 'VisibleERPC_ThreeDApp_ZuWang';
+        }
+        else if(apptype == EThreeDAppType.大连并网拍照){
+            tagName = 'VisibleERPC_ThreeDApp_BingWang';
         }
 
         var ctlTag = new FormatHtmlTag(theKernel.id, tagName, this.clientSide);
