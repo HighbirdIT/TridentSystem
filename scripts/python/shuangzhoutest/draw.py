@@ -196,8 +196,8 @@ class Draw_img:
         plt.ylabel("stress kN/m")  # 设置y轴名称,plt.ylabel
         plot1 = plt.plot(ex, fx, linestyle='-', color='b', label='Warp')  # 点图：marker图标
         plot1 = plt.plot(ey, fy, linestyle='-', color='y', label='Fill')  # 点图：marker图标
-        plt.yticks(range(-4, 32, 2))
-        plt.xticks(np.arange(min_x, max_x, 0.01))
+        # plt.yticks(range(-4, 32, 2))
+        # plt.xticks(np.arange(min_x, max_x, 0.01))
         plt.grid(linestyle='--')
         plt.legend(loc='upper left')
 
