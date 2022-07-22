@@ -33,7 +33,7 @@ class Data_processed:
             self.series_arr = self.original_data.loc[self.start_index:, 'Fy']
         else:
             self.series_arr = self.original_data.loc[self.start_index:, 'Fx']
-        print(self.series_arr)
+        # print(self.series_arr)
         # plt.plot(self.series_arr)
         # plt.show()
         return self.series_arr
@@ -43,7 +43,7 @@ class Data_processed:
         fy_arr = self.original_data.loc[self.start_index:, 'Fy']
         fx_max = max(fx_arr)
         fy_max = max(fy_arr)
-        print('max:', fx_max, fy_max)
+        # print('max:', fx_max, fy_max)
         difference = 0
         if self.filename == '(2)2:1':
             difference = fx_max - 2 * fy_max if (fx_max - 2 * fy_max) > 0 else 2 * fy_max - fx_max
@@ -51,7 +51,7 @@ class Data_processed:
             difference = 2 * fx_max - fy_max if (2 * fx_max - fy_max) > 0 else fy_max - 2 * fx_max
         elif self.filename != '(6)1:0' and self.filename != '(8)0:1':
             difference = (fx_max - fy_max) if (fx_max - fy_max) > 0 else fy_max - fx_max
-        print('计算的结果：', float(difference) / fx_max)
+        # print('计算的结果：', float(difference) / fx_max)
         if float(difference) / fx_max <= 0.3:
             return True
 
