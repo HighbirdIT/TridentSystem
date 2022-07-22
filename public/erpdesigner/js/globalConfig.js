@@ -268,9 +268,10 @@ var EThreeDAppType = {
     全局图拍照: '全局图拍照',
     构件安装拍照: '构件安装拍照',
     构件模型查看: '构件模型查看',
-    大连组网拍照: '大连组网拍照'
+    大连组网拍照: '大连组网拍照',
+    大连并网拍照: '大连并网拍照'
 };
-var ThreeDAppType_arr = [EThreeDAppType.全局图拍照, EThreeDAppType.构件安装拍照, EThreeDAppType.构件模型查看, EThreeDAppType.大连组网拍照];
+var ThreeDAppType_arr = [EThreeDAppType.全局图拍照, EThreeDAppType.构件安装拍照, EThreeDAppType.构件模型查看, EThreeDAppType.大连组网拍照, EThreeDAppType.大连并网拍照];
 
 var Event_CurrentComponentchanged = 'currentComponentchanged';
 var Event_LinkChanged = 'linkChanged';

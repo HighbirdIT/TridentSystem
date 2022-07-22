@@ -580,6 +580,13 @@ function gPreviewFile(name, fileType, url) {
             if (!isMobile) {
                 _dodownloadFile(window.location.origin + url, name);
             } else {
+                if (!isInDingTalk) {
+                    var a = document.createElement('a');
+                    a.href = window.location.origin + url;
+                    a.download = name;
+                    a.click();
+                    return;
+                }
                 dingdingKit.biz.util.openLink({
                     url: window.location.origin + url
                 });
@@ -2242,6 +2249,13 @@ var ERPC_FilePreview = function (_React$PureComponent5) {
                 if (!isMobile) {
                     _dodownloadFile(fileUrl, fileName);
                 } else {
+                    if (!isInDingTalk) {
+                        var a = document.createElement('a');
+                        a.href = fileUrl;
+                        a.download = fileName;
+                        a.click();
+                        return;
+                    }
                     dingdingKit.biz.util.openLink({
                         url: fileUrl
                     });
