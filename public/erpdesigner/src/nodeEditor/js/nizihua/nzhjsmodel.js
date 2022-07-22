@@ -21,6 +21,7 @@ const JSNODE_FOR = 'for';
 const JSNODE_EXCELHEADER = 'excelHeader'
 const JSNODE_MD5 = 'md5加密'
 const JSNODE_FILEDELETE = '文件删除'
+const JSNODE_BIAXIALSTRETCHINGLENGTH = '双轴拉伸长度计算'
 
 class JSNode_While extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
@@ -2398,6 +2399,348 @@ class JSNode_FileDelete extends JSNode_Base {
     }
 }
 
+class JSNode_BiaxialStretchingLength extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_BIAXIALSTRETCHINGLENGTH, '双轴拉伸长度计算', false, nodeJson);
+        autoBind(this);
+        this.hadFetchFun = true;
+        this.genCloseure = true;
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSockets_arr == null || this.outFlowSockets_arr.length == 0) {
+            this.outFlowSockets_arr = [];
+            this.serverFlowSocket = new NodeFlowSocket('server', this, false);
+            this.addSocket(this.serverFlowSocket);
+            this.clientFlowSocket = new NodeFlowSocket('client', this, false);
+            this.addSocket(this.clientFlowSocket);
+        }
+        else {
+            for (var si in this.outFlowSockets_arr) {
+                switch (this.outFlowSockets_arr[si].name) {
+                    case 'server':
+                        this.serverFlowSocket = this.outFlowSockets_arr[si];
+                        break;
+                    case 'client':
+                        this.clientFlowSocket = this.outFlowSockets_arr[si];
+                        break;
+                }
+            }
+        }
+        this.serverFlowSocket.label = 'server';
+        this.clientFlowSocket.label = 'client';
+
+        if (this.outputScokets_arr.length > 0) {
+            this.outputScokets_arr.forEach(socket => {
+                switch (socket.name) {
+                    case 'ex':
+                        this.exSocket = socket;
+                    case 'ey':
+                        this.eySocket = socket;
+                    case 'area_ratio':
+                        this.areaRatioSocket = socket;
+                    case 'fill_tensile':
+                        this.fillTensileSocket = socket;
+                    case 'warp_stretched_len':
+                        this.warpStretchedSocket = socket;
+                    case 'fill_stretched_len':
+                        this.fillStretchedSocket = socket;
+                    case 'pic_path':
+                        this.picPathSocket = socket;
+                    case 'err': 
+                        this.errSocket = socket;
+                    break;
+                }
+            });
+        }
+        if (this.inputScokets_arr.length > 0) {
+            this.inputScokets_arr.forEach(socket => {
+                switch (socket.name) {
+                    case 'file_code':
+                        this.codeSocket = socket;
+                    case 'force_max':
+                        this.forceSocket = socket;
+                    case 'warp_tensile':
+                        this.warpTensileSocket = socket;
+                    case 'mebrane_len':
+                        this.mebraneLenSocket = socket;
+                    case 'mebrane_wid':
+                        this.mebraneWidSocket = socket;
+                        break;
+            }});
+        }
+        
+
+        if (this.codeSocket == null) {
+            this.codeSocket = new NodeSocket('file_code', this, true);
+            this.addSocket(this.codeSocket);
+        }
+        if (this.forceSocket == null) {
+            this.forceSocket = new NodeSocket('force_max', this, true);
+            this.addSocket(this.forceSocket);
+        }
+        if (this.warpTensileSocket == null) {
+            this.warpTensileSocket = new NodeSocket('warp_tensile', this, true);
+            this.addSocket(this.warpTensileSocket);
+        }
+        if (this.mebraneLenSocket == null) {
+            this.mebraneLenSocket = new NodeSocket('mebrane_len', this, true);
+            this.addSocket(this.mebraneLenSocket);
+        }
+        if (this.mebraneWidSocket == null) {
+            this.mebraneWidSocket = new NodeSocket('mebrane_wid', this, true);
+            this.addSocket(this.mebraneWidSocket);
+        }
+        
+        
+        if (this.exSocket == null) {
+            this.exSocket = this.addSocket(new NodeSocket('ex', this, false));
+        }
+        if (this.eySocket == null) {
+            this.eySocket = this.addSocket(new NodeSocket('ey', this, false));
+        }
+        if (this.areaRatioSocket == null) {
+            this.areaRatioSocket = this.addSocket(new NodeSocket('area_ratio', this, false));
+        }
+        if (this.fillTensileSocket == null) {
+            this.fillTensileSocket = this.addSocket(new NodeSocket('fill_tensile', this, false));
+        }
+        if (this.warpStretchedSocket == null) {
+            this.warpStretchedSocket = this.addSocket(new NodeSocket('warp_stretched_len', this, false));
+        }
+        if (this.fillStretchedSocket == null) {
+            this.fillStretchedSocket = this.addSocket(new NodeSocket('fill_stretched_len', this, false));
+        }
+        if (this.picPathSocket == null) {
+            this.picPathSocket = this.addSocket(new NodeSocket('pic_path', this, false));
+        }
+        if (this.errSocket == null) {
+            this.errSocket = this.addSocket(new NodeSocket('err', this, false));
+        }
+
+       
+        this.exSocket.label = '经向应变'
+        this.exSocket.type = ValueType.String;
+        this.eySocket.label ='纬向应变'
+        this.eySocket.type = ValueType.String;
+        this.areaRatioSocket.label = '张拉面积比'
+        this.areaRatioSocket.type = ValueType.String;
+        this.fillTensileSocket.label = '纬向拉伸系数'
+        this.fillTensileSocket.type = ValueType.String;
+
+        this.warpStretchedSocket.label = '经向拉伸长度'
+        this.warpStretchedSocket.type = ValueType.String;
+
+        this.fillStretchedSocket.label = '纬向拉伸长度'
+        this.fillStretchedSocket.type = ValueType.String;
+
+        this.picPathSocket.label = '图片路径'
+        this.picPathSocket.type = ValueType.String;
+        this.errSocket.label = '错误信息'
+        this.errSocket.type = ValueType.String;
+
+
+        this.codeSocket.label = '文件代码';
+        this.codeSocket.type = ValueType.String;
+        this.forceSocket.label = '最大应力';
+        this.forceSocket.type = ValueType.String;
+        this.warpTensileSocket.label = '经向张拉系数';
+        this.warpTensileSocket.type = ValueType.String;
+        this.mebraneLenSocket.label = '膜片长度';
+        this.mebraneLenSocket.type = ValueType.String;
+        this.mebraneWidSocket.label = '膜片宽度';
+        this.mebraneWidSocket.type = ValueType.String;
+      
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        if (this.checkCompileFlag(this.bluePrint.group == EJsBluePrintFunGroup.ServerScript, '此节点的暂不支持在服务端被使用', helper)) {
+            return false;
+        }
+
+        var theScope = belongBlock.getScope();
+        var blockInServer = theScope && theScope.isServerSide;
+        var belongFun = theScope ? theScope.fun : null;
+        var theServerSide = helper.serverSide;
+
+        var inputSocketsVal = {};
+        if (this.inputScokets_arr.length > 0) {
+            for (var i = 0; i < this.inputScokets_arr.length; ++i) {
+                var theSocket = this.inputScokets_arr[i];
+                var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, true);
+                if (socketComRet.err) {
+                    return false;
+                }
+                inputSocketsVal[theSocket.name] = socketComRet.value;
+            }
+        }
+        var myServerBlock = new FormatFileBlock('serverblock');
+        var postBundleVarName = this.bluePrint.id + '_bundle';
+
+        var serverFun = null;
+        var serverFunBodyBlock = null;
+        var postCheckBlock = new FormatFileBlock('postCheckBlock');
+        var postVarinitBlock = new FormatFileBlock('postVarInit');
+
+        if (theServerSide == null) {
+            theServerSide = new CP_ServerSide({});
+        }
+        else {
+            theServerSide.appendImport('extend_zihua', '../../../../extend_zihua.js');
+        }
+
+        var serverSideActName = this.bluePrint.id + '_' + this.id;
+        if (!blockInServer) {
+            var serverSideFun = theServerSide.scope.getFunction(serverSideActName, true, ['req', 'res']);
+            theServerSide.initProcessFun(serverSideFun, this.bluePrint.ctlKernel, true);
+            helper.appendOutputItem(serverSideFun);
+
+            serverSideFun.scope.getVar(postBundleVarName, true, "req.body." + VarNames.Bundle);
+            serverSideFun.pushLine("if(" + postBundleVarName + "==null){return serverhelper.createErrorRet('缺少参数bundle');}");
+            postCheckBlock.pushChild(postVarinitBlock);
+            serverSideFun.bundleCheckBlock = postCheckBlock;
+            serverSideFun.postVarinitBlock = postVarinitBlock;
+            theServerSide.processesMapVarInitVal[serverSideFun.name] = serverSideFun.name;
+            serverFun = serverSideFun;
+            serverFunBodyBlock = serverSideFun.bodyBlock;
+        }
+        else {
+            // 已处于服务端
+            serverFun = belongFun;
+            serverFunBodyBlock = belongBlock;
+            postVarinitBlock = belongFun.postVarinitBlock;
+        }
+        this.serverFun = serverFun;
+        serverFunBodyBlock.pushChild(postCheckBlock);
+        serverFunBodyBlock.pushChild(myServerBlock);
+        var initBundleBlock = null;
+        if (serverFun.bundleCheckBlock.initBundleBlock) {
+            initBundleBlock = serverFun.bundleCheckBlock.initBundleBlock;
+        }
+        else {
+            initBundleBlock = new FormatFileBlock('initbundle');
+            serverFun.bundleCheckBlock.initBundleBlock = initBundleBlock;
+        }
+        helper.addInitClientBundleBlock(initBundleBlock);
+
+        var useClientVariablesRlt = new UseClientVariableResult();
+        this.getUseClientVariable(helper, this, belongFun, null, useClientVariablesRlt);
+        useClientVariablesRlt.variables_arr.forEach(varCon => {
+            initBundleBlock.params_map[varCon.name] = varCon.name;
+            if (serverFun) {
+                serverFun.scope.getVar(varCon.name, true);
+                postVarinitBlock.pushLine(makeLine_Assign(varCon.name, postBundleVarName + '.' + varCon.name));
+            }
+        });
+
+        myServerBlock.pushLine('var ' + this.id + '_config={', 1);
+        this.inputScokets_arr.forEach(socket => {
+            postCheckBlock.pushLine('var ' + this.id + '_' + socket.name + '=' + inputSocketsVal[socket.name] + ';');
+            postCheckBlock.pushLine("if(" + this.id + '_' + socket.name + ' == null' + '){return serverhelper.createErrorRet("缺少参数[' + socket.name + ']");}');
+            myServerBlock.pushLine(socket.name + ':' + this.id + '_' + socket.name + ',');
+        });
+        myServerBlock.subIndent();
+        myServerBlock.pushLine('};');
+
+        var dataVarName = 'data_' + this.id;
+        var errVarName = 'error_' + this.id;
+
+        myServerBlock.pushLine('var ' + dataVarName + " = yield extend_zihua.file_BiaxialStretchingLength(" + this.id + "_config);");
+        myServerBlock.pushLine('if(' + dataVarName + '.err){return serverhelper.createErrorRet(' + dataVarName + '.err);}');
+
+        var myClientBlock = new FormatFileBlock('client');
+        var fetchEndBlock = null;
+
+        var serverFlow_links = this.bluePrint.linkPool.getLinksBySocket(this.serverFlowSocket);
+        var clientFlow_links = this.bluePrint.linkPool.getLinksBySocket(this.clientFlowSocket);
+        if (blockInServer) {
+            if (this.checkCompileFlag(clientFlow_links.length > 0, '此节点的client流无法被执行到', helper)) {
+                return false;
+            }
+        }
+        else {
+            helper.compilingFun.hadServerFetch = true;
+            this.hadServerFetch = !blockInServer;
+            belongBlock.pushChild(myClientBlock);
+
+            var bundleVarName = VarNames.Bundle + '_' + this.id;
+            myClientBlock.pushLine("var " + bundleVarName + " = Object.assign({}," + VarNames.BaseBunlde + ",{", 1);
+            myClientBlock.pushChild(initBundleBlock);
+            myClientBlock.subNextIndent();
+            myClientBlock.pushLine('});');
+
+            var callBack_bk = new FormatFileBlock('callback' + this.id);
+            myClientBlock.pushChild(callBack_bk);
+            var inreducer = this.isInReducer(preNodes_arr);
+            if (inreducer) {
+                myClientBlock.pushLine('setTimeout(() => {', 1);
+            }
+            if (this.bluePrint.group != EJsBluePrintFunGroup.Custom) {
+                myClientBlock.pushLine("if(fetchTracer[" + VarNames.FetchKey + "] != fetchid) return;");
+            }
+            myClientBlock.pushLine(makeLine_FetchFTDCallBack(this.bluePrint.ctlKernel, serverSideActName, bundleVarName, dataVarName, errVarName), 1);
+            fetchEndBlock = new FormatFileBlock('fetchend');
+            if (this.bluePrint.group == EJsBluePrintFunGroup.Custom) {
+                fetchEndBlock.pushLine('if(' + errVarName + '){return _callback(null,' + errVarName + ');}');
+            }
+            else {
+                fetchEndBlock.pushLine('if(' + errVarName + '){return callback_final(state, null,' + errVarName + ');}');
+            }
+            myClientBlock.pushChild(fetchEndBlock);
+            myClientBlock.subNextIndent();
+            myClientBlock.pushLine('},false)));');
+            myClientBlock.subNextIndent();
+            if (inreducer) {
+                myClientBlock.pushLine('}, 50);');
+            }
+        }
+
+        var selfCompileRet = new CompileResult(this);
+        this.outputScokets_arr.forEach(socket => {
+            selfCompileRet.setSocketOut(socket, dataVarName + '.' + socket.name);
+        });
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (blockInServer) {
+            selfCompileRet.setSocketOut(this.inFlowSocket, '', myServerBlock);
+            if (serverFlow_links.length > 0) {
+                if (this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, myServerBlock) == false) {
+                    return false;
+                }
+            }
+        }
+        else {
+            selfCompileRet.setSocketOut(this.inFlowSocket, '', myClientBlock);
+            fetchEndBlock.pushLine('if(' + errVarName + '){callback_final(state, null,' + errVarName + ');}');
+            if (clientFlow_links.length > 0) {
+                if (this.compileFlowNode(clientFlow_links[0], helper, usePreNodes_arr, fetchEndBlock) == false) {
+                    return false;
+                }
+            }
+
+            if (serverFlow_links.length > 0) {
+                if (this.compileFlowNode(serverFlow_links[0], helper, usePreNodes_arr, tryBlock.bodyBlock) == false) {
+                    return false;
+                }
+            }
+            else {
+                myServerBlock.pushLine('return ' + dataVarName + ';');
+            }
+        }
+        return selfCompileRet;
+    }
+}
+
 
 JSNodeClassMap[JSNODE_WHILE] = {
     modelClass: JSNode_While,
@@ -2492,6 +2835,10 @@ JSNodeClassMap[JSNODE_MD5] = {
 };
 JSNodeClassMap[JSNODE_FILEDELETE] = {
     modelClass: JSNode_FileDelete,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_BIAXIALSTRETCHINGLENGTH] = {
+    modelClass: JSNode_BiaxialStretchingLength,
     comClass: C_Node_SimpleNode,
 };
 /*
@@ -2621,5 +2968,12 @@ JSNodeEditorControls_arr.push(
     {
         label: '文件删除',
         nodeClass: JSNode_FileDelete,
+        type: '基础'
+    });
+    
+JSNodeEditorControls_arr.push(
+    {
+        label: '双轴拉伸-长度计算',
+        nodeClass: JSNode_BiaxialStretchingLength,
         type: '基础'
     });
