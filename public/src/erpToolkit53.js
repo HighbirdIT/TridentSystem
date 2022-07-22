@@ -88,6 +88,7 @@ function delayAction() {
 const makeAction_setStateByPath = makeActionCreator(AT_SETSTATEBYPATH, 'value', 'path');
 const makeAction_setManyStateByPath = makeActionCreator(AT_SETMANYSTATEBYPATH, 'value', 'path');
 const makeAction_gotoPage = makeActionCreator(AT_GOTOPAGE, 'pageName');
+const makeAction_gotoPageEx = makeActionCreator(AT_GOTOPAGE, 'pageData');
 const makeAction_setRootState = makeActionCreator(AT_SETROOTSTATE, 'value');
 const makeAction_callFunction = makeActionCreator(AT_CALLFUNCTION, 'fun');
 

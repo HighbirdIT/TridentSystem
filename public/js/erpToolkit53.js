@@ -99,6 +99,7 @@ function delayAction() {}
 var makeAction_setStateByPath = makeActionCreator(AT_SETSTATEBYPATH, 'value', 'path');
 var makeAction_setManyStateByPath = makeActionCreator(AT_SETMANYSTATEBYPATH, 'value', 'path');
 var makeAction_gotoPage = makeActionCreator(AT_GOTOPAGE, 'pageName');
+var makeAction_gotoPageEx = makeActionCreator(AT_GOTOPAGE, 'pageData');
 var makeAction_setRootState = makeActionCreator(AT_SETROOTSTATE, 'value');
 var makeAction_callFunction = makeActionCreator(AT_CALLFUNCTION, 'fun');
 

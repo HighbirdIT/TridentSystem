@@ -259,8 +259,8 @@ function pulldata_并网数据查询(req,res){
 		var dataB = {};
 		for(var i=0;i<2;++i){
 			var params_arr = null;
-			let use索网代码 = bundle.索网A代码;
-			let useData = dataA;
+			var use索网代码 = bundle.索网A代码;
+			var useData = dataA;
 			if(i == 1){
 				use索网代码 = bundle.索网B代码;
 				useData = dataB;
