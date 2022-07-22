@@ -30,3 +30,7 @@ package-lock.json
 *.key
 *.crt
 *.pem
+.idea
+hbnewsite.js
+public/js/erpchart1.js
+public/js/threeD/erpthreedHelper1.js

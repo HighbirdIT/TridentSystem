@@ -56,14 +56,14 @@ class Step_two:
             self.standard_item_ny = self.fy_series[0]
             self.standard_item_sx = self.sx_series[0]
             self.standard_item_sy = self.sy_series[0]
-            print(self.standard_item_nx)
+            # print(self.standard_item_nx)
         elif self.deviation_bool:
             # 【基准项】=【起点项】数据筛选的第一个
             self.standard_item_nx = self.fx_series[self.first_index]
             self.standard_item_ny = self.fy_series[self.first_index]
             self.standard_item_sx = self.sx_series[self.first_index]
             self.standard_item_sy = self.sy_series[self.first_index]
-            print('起点项' + str(self.standard_item_nx))
+            # print('起点项' + str(self.standard_item_nx))
 
     def process(self):
         self.standard_item_identity()
@@ -133,7 +133,7 @@ class Step_two:
             Nx.append(nx)
             if index == self.line_first_index:
                 self.line_point['nx'] = nx
-                print(index, nx, '这个是起始点的坐标nx')
+                # print(index, nx, '这个是起始点的坐标nx')
         for index, value in self.fy_series.items():
             ny = (value - self.fy_series[0]) / self.width
             Ny.append(ny)

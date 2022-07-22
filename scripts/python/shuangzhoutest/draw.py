@@ -169,7 +169,11 @@ class Draw_img:
         plt.savefig(self.picName)
 
     def draw2(self):
-        print('draw2')
+        figure, ax = plt.subplots(figsize=(12,7), ncols=1, nrows=1)
+
+        ax1 = ax
+
+        # print('draw2')
         # 刻画fx，fy
         ex = np.array(self.data_frame['ex'])
         fx = np.array(self.data_frame['Nx'])
@@ -192,13 +196,25 @@ class Draw_img:
 
         # print('min', min_x, 'max', max_x)
 
-        plt.xlabel("strain(%)")  # 设置x轴名称,plt.xlabel
-        plt.ylabel("stress kN/m")  # 设置y轴名称,plt.ylabel
-        plot1 = plt.plot(ex, fx, linestyle='-', color='b', label='Warp')  # 点图：marker图标
-        plot1 = plt.plot(ey, fy, linestyle='-', color='y', label='Fill')  # 点图：marker图标
-        # plt.yticks(range(-4, 32, 2))
-        # plt.xticks(np.arange(min_x, max_x, 0.01))
-        plt.grid(linestyle='--')
-        plt.legend(loc='upper left')
 
+        ax1.set_xlabel("strain(%)")  # 设置x轴名称,plt.xlabel
+        ax1.set_ylabel("stress kN/m")  # 设置y轴名称,plt.ylabel
+        plot1 = ax1.plot(ex*100, fx, linestyle='-', color='b', label='Warp')  # 点图：marker图标
+        plot2 = ax1.plot(ey*100, fy, linestyle='-', color='y', label='Fill')  # 点图：marker图标
+
+
+        xmaloc = plt.MultipleLocator(0.5)
+        xmiloc = plt.MultipleLocator(0.25)
+        ymaloc = plt.MultipleLocator(4)
+        ymiloc = plt.MultipleLocator(2)
+       
+        ax1.yaxis.set_major_locator(ymaloc)
+        ax1.yaxis.set_minor_locator(ymiloc)
+        ax1.xaxis.set_major_locator(xmaloc)
+        ax1.xaxis.set_minor_locator(xmiloc)
+        ax1.grid(linestyle='--')
+        ax1.grid(which='both', axis='both', color='darkgray', linestyle='--', linewidth=0.75)
+        ax1.legend(loc='upper left')
+
+        plt.tight_layout()
         plt.savefig(self.picName)
