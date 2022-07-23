@@ -225,6 +225,11 @@ const JSNodeEditorControls_arr =[
         type:'操纵字符串'
     },
     {
+        label:'字符串-Trim',
+        nodeClass:JSNode_String_Trim,
+        type:'操纵字符串'
+    },
+    {
         label:'ParseInt',
         nodeClass:JSNode_ParseInt,
         type:'转换'

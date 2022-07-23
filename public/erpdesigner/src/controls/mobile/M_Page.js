@@ -12,6 +12,7 @@ const M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('有关闭按钮', AttrNames.AutoCloseBtn, ValueType.Boolean, true),
         new CAttribute('有主页按钮', AttrNames.AutoHomeBtn, ValueType.Boolean, true),
         new CAttribute('关联步骤', AttrNames.RelFlowStep, ValueType.Int, null, true, true, gFlowMaster.getAllSteps, {text:'fullName', value:'code'}),
+        genScripAttribute('获取出口值', AttrNames.Function.GetOutputData, EJsBluePrintFunGroup.CtlFun),
         new CAttribute('属性列表', AttrNames.ParamApi, ValueType.String, '', true, true),
         new CAttribute('权限组', AttrNames.PermissionGroup, ValueType.Int, null, true, true, [], {text:'name', value:'code',pullDataFun:GetCanUsePermissionGroup}),
     ]),
@@ -48,6 +49,10 @@ class M_PageKernel extends ContainerKernelBase {
         if(theBP){
             theBP.ctlID = this.id;
         }
+
+        theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Function.GetOutputData);
+        this.scriptCreated(null, theBP);
+
         this.getAttrArrayList(AttrNames.FunctionApi).forEach(funAtrr=>{
             theBP = this.project.scriptMaster.getBPByName(this.id + '_' + funAtrr.name);
             this.scriptCreated(null, theBP);
@@ -114,6 +119,67 @@ class M_PageKernel extends ContainerKernelBase {
         }
         if(scriptBP.name.indexOf(AttrNames.FunctionApi) != -1){
             scriptBP.startIsInReducer = false; 
+        }
+
+        if(scriptBP.name.indexOf(AttrNames.Function.GetOutputData) != -1){
+            scriptBP.setFixParam([VarNames.State]);
+
+            // var rowTextParam = scriptBP.returnVars_arr.find(item=>{return item.name == AttrNames.RowText;});
+            // if(rowTextParam == null){
+            //     rowTextParam = scriptBP.createEmptyVariable(true);
+            //     rowTextParam.name = AttrNames.RowText;
+            //     rowTextParam.needEdit = false;
+            // }
+
+            var returnVars_arr = scriptBP.returnVars_arr;
+            var var_dic = {};
+            returnVars_arr.forEach(varData=>{
+                var_dic[varData.tag] = varData;
+                varData.needRemove = true;
+            });
+            var pageExportAttrs_arr = this.getAttrArrayList(AttrNames.ExportParam);
+            pageExportAttrs_arr.forEach((attrItem, index) => {
+                var retVar = null;
+                var paramLabel = this.getAttribute(attrItem.name);
+                var paramTag = attrItem.name;
+                if (var_dic[paramTag] == null) {
+                    retVar = scriptBP.createEmptyVariable(true);
+                    retVar.needEdit = false;
+                    retVar.name = paramLabel;
+                    retVar.tag = paramTag;
+                }
+                else {
+                    retVar = var_dic[paramTag];
+                    retVar.needRemove = false;
+                    retVar.name = paramLabel;
+                    retVar.emit('changed');
+                }
+            });
+            var needRemoveVars = returnVars_arr.filter(item=>{return item.needRemove == true;});
+            if(needRemoveVars.length > 0){
+                needRemoveVars.forEach(varData=>{
+                    var index = returnVars_arr.indexOf(varData);
+                    if (index != -1) {
+                        returnVars_arr.splice(index, 1);
+                        varData.removed = true;
+                    }
+                    varData.removed = true;
+                });
+                scriptBP.fireEvent('varChanged');
+            }
+
+            scriptBP.canCustomReturnValue = true;
+        }
+    }
+
+    __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {
+        super.__attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray);
+        var attrItem = this.findAttributeByName(attrName);
+        switch (attrItem.name) {
+            case AttrNames.ExportParam:
+                var theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Function.GetOutputData);
+                this.scriptCreated(null, theBP);
+                break;
         }
     }
 
