@@ -6385,7 +6385,11 @@ class JSNode_FreshForm extends JSNode_Base {
             }
             else {
                 parentPath = singleQuotesStr(unDivParent.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map }));
-                parentPath += "+'.row_'+" + VarNames.RowKeyInfo_map + '.' + unDivParent.id;
+                if(unDivParent.type == M_FormKernel_Type){
+                    if(!unDivParent.isPageForm()){
+                        parentPath += "+'.row_'+" + VarNames.RowKeyInfo_map + '.' + unDivParent.id;
+                    }
+                }
             }
         }
         var freshFunName = 'fresh_' + socketValue;
