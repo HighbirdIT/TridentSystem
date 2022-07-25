@@ -9,6 +9,8 @@ from step2 import Step_two
 from draw import Draw_img
 import random
 
+
+
 class DataProcess(Data_processed):
     def __init__(self, original_data, start_index, filename):
         super().__init__(original_data, start_index, filename)
@@ -57,9 +59,9 @@ def draw_pic(drawdata):
         drawpic.picName = os.path.dirname(__file__) + '/output/' + str(rnd) + 'tensile.png'
         drawpic.draw2()
     except Exception as err:
-        print(err)
-        return
-    return os.path.dirname(__file__) + '/output/' + str(rnd) + 'tensile.png'
+        
+        return str(err)
+    return str(rnd) + 'tensile.png'
 
 def deal(config):
     errorInfo = ''

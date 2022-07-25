@@ -9,6 +9,7 @@ var execSync = require('child_process').execSync;
 var exec = require('child_process').exec;
 const mineType = require('mime-types');
 const fileSystem = require('./fileSystem.js');
+const e = require('express');
 
 
 
@@ -130,17 +131,27 @@ function file_BiaxialStretchingLength(config){
         if(result.match(fill_sPattern)){
             rlt.fill_stretched_len=result.match(fill_sPattern)[1]
         }
-        var pic_pattern = /pic_path':\s*(\S*),/
+        var pic_pattern = /pic_path':\s*'(\S*)',/
         if (result.match(pic_pattern)){
-            rlt.pic_path = result.match(pic_pattern)[1]
+            var picName = result.match(pic_pattern)[1];
+            var picPath = path.join(scriptDir, 'output/' + picName);  // 如果是本地文件
+            var data = fs.readFileSync(picPath);
+            var base64 = 'data:' + mineType.lookup(picPath) + ';base64,' + data.toString('base64');
+            rlt.picdata = base64;
+            rlt.pic_path = picPath;
+            // fs.unlink(picPath);
+            fs.unlink(picPath, (err => { 
+                if (err) {
+                    console.log(err)
+                };})); 
         }
-        var err_pattern = /err':\s*(\S*),/
-        if(result.match(err_pattern)){
-            rlt.err = result.match(err_pattern)[1]
+        var err_pattern = /err':\s*(\S*)}/
+        var err = result.match(err_pattern)[1]
+        if (err == '' || err == 'none'|| err == "''" || err == '""'){
+            rlt.err = null
         }else{
-            rlt.err =null
+            rlt.err = err;
         }
-        
         console.log(rlt)
         
         return rlt;
