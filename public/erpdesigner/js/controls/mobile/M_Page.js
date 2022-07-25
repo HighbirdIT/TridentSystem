@@ -2,13 +2,15 @@
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'), new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false), new CAttribute('隐藏页头', AttrNames.HideTitle, ValueType.Boolean, false), new CAttribute('隐藏标题', 'blanktitle', ValueType.Boolean, false), new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr), new CAttribute('有滚动条', AttrNames.HadScroll, ValueType.Boolean, true), new CAttribute('是常驻页面', AttrNames.PersistentPage, ValueType.Boolean, false), new CAttribute('弹出式页面', AttrNames.PopablePage, ValueType.Boolean, false), new CAttribute('强制全屏', 'forcefullscreen', ValueType.Boolean, false), new CAttribute('有关闭按钮', AttrNames.AutoCloseBtn, ValueType.Boolean, true), new CAttribute('有主页按钮', AttrNames.AutoHomeBtn, ValueType.Boolean, true), new CAttribute('关联步骤', AttrNames.RelFlowStep, ValueType.Int, null, true, true, gFlowMaster.getAllSteps, { text: 'fullName', value: 'code' }), new CAttribute('属性列表', AttrNames.ParamApi, ValueType.String, '', true, true), new CAttribute('权限组', AttrNames.PermissionGroup, ValueType.Int, null, true, true, [], { text: 'name', value: 'code', pullDataFun: GetCanUsePermissionGroup })]), new CAttributeGroup('接口设置', [new CAttribute('入口参数', AttrNames.EntryParam, ValueType.String, '', true, true), new CAttribute('出口参数', AttrNames.ExportParam, ValueType.String, '', true, true)]), new CAttributeGroup('事件', [new CAttribute('OnLoad', AttrNames.Event.OnLoad, ValueType.Event), new CAttribute('点击关闭', AttrNames.Event.OnClickCloseBtn, ValueType.Event), new CAttribute('消息处理', AttrNames.Event.OnReceiveMsg, ValueType.Event)]), new CAttributeGroup('自订方法', [new CAttribute('自订方法', AttrNames.FunctionApi, ValueType.CustomFunction, '', true, true)])], false);
+var M_PageKernelAttrsSetting = GenControlKernelAttrsSetting([new CAttributeGroup('基本设置', [new CAttribute('标题', AttrNames.Title, ValueType.String, '未命名页面'), new CAttribute('主页面', AttrNames.IsMain, ValueType.Boolean, false), new CAttribute('隐藏页头', AttrNames.HideTitle, ValueType.Boolean, false), new CAttribute('隐藏标题', 'blanktitle', ValueType.Boolean, false), new CAttribute('方向', AttrNames.Orientation, ValueType.String, Orientation_V, true, false, Orientation_Options_arr), new CAttribute('有滚动条', AttrNames.HadScroll, ValueType.Boolean, true), new CAttribute('是常驻页面', AttrNames.PersistentPage, ValueType.Boolean, false), new CAttribute('弹出式页面', AttrNames.PopablePage, ValueType.Boolean, false), new CAttribute('强制全屏', 'forcefullscreen', ValueType.Boolean, false), new CAttribute('有关闭按钮', AttrNames.AutoCloseBtn, ValueType.Boolean, true), new CAttribute('有主页按钮', AttrNames.AutoHomeBtn, ValueType.Boolean, true), new CAttribute('关联步骤', AttrNames.RelFlowStep, ValueType.Int, null, true, true, gFlowMaster.getAllSteps, { text: 'fullName', value: 'code' }), genScripAttribute('获取出口值', AttrNames.Function.GetOutputData, EJsBluePrintFunGroup.CtlFun), new CAttribute('属性列表', AttrNames.ParamApi, ValueType.String, '', true, true), new CAttribute('权限组', AttrNames.PermissionGroup, ValueType.Int, null, true, true, [], { text: 'name', value: 'code', pullDataFun: GetCanUsePermissionGroup })]), new CAttributeGroup('接口设置', [new CAttribute('入口参数', AttrNames.EntryParam, ValueType.String, '', true, true), new CAttribute('出口参数', AttrNames.ExportParam, ValueType.String, '', true, true)]), new CAttributeGroup('事件', [new CAttribute('OnLoad', AttrNames.Event.OnLoad, ValueType.Event), new CAttribute('点击关闭', AttrNames.Event.OnClickCloseBtn, ValueType.Event), new CAttribute('消息处理', AttrNames.Event.OnReceiveMsg, ValueType.Event)]), new CAttributeGroup('自订方法', [new CAttribute('自订方法', AttrNames.FunctionApi, ValueType.CustomFunction, '', true, true)])], false);
 
 var M_PageKernel = function (_ContainerKernelBase) {
     _inherits(M_PageKernel, _ContainerKernelBase);
@@ -27,6 +29,10 @@ var M_PageKernel = function (_ContainerKernelBase) {
         if (theBP) {
             theBP.ctlID = _this.id;
         }
+
+        theBP = _this.project.scriptMaster.getBPByName(_this.id + '_' + AttrNames.Function.GetOutputData);
+        _this.scriptCreated(null, theBP);
+
         _this.getAttrArrayList(AttrNames.FunctionApi).forEach(function (funAtrr) {
             theBP = _this.project.scriptMaster.getBPByName(_this.id + '_' + funAtrr.name);
             _this.scriptCreated(null, theBP);
@@ -97,6 +103,8 @@ var M_PageKernel = function (_ContainerKernelBase) {
     }, {
         key: 'scriptCreated',
         value: function scriptCreated(attrName, scriptBP) {
+            var _this4 = this;
+
             if (scriptBP == null) {
                 return;
             }
@@ -106,24 +114,87 @@ var M_PageKernel = function (_ContainerKernelBase) {
             if (scriptBP.name.indexOf(AttrNames.FunctionApi) != -1) {
                 scriptBP.startIsInReducer = false;
             }
+
+            if (scriptBP.name.indexOf(AttrNames.Function.GetOutputData) != -1) {
+                scriptBP.setFixParam([VarNames.State]);
+
+                // var rowTextParam = scriptBP.returnVars_arr.find(item=>{return item.name == AttrNames.RowText;});
+                // if(rowTextParam == null){
+                //     rowTextParam = scriptBP.createEmptyVariable(true);
+                //     rowTextParam.name = AttrNames.RowText;
+                //     rowTextParam.needEdit = false;
+                // }
+
+                var returnVars_arr = scriptBP.returnVars_arr;
+                var var_dic = {};
+                returnVars_arr.forEach(function (varData) {
+                    var_dic[varData.tag] = varData;
+                    varData.needRemove = true;
+                });
+                var pageExportAttrs_arr = this.getAttrArrayList(AttrNames.ExportParam);
+                pageExportAttrs_arr.forEach(function (attrItem, index) {
+                    var retVar = null;
+                    var paramLabel = _this4.getAttribute(attrItem.name);
+                    var paramTag = attrItem.name;
+                    if (var_dic[paramTag] == null) {
+                        retVar = scriptBP.createEmptyVariable(true);
+                        retVar.needEdit = false;
+                        retVar.name = paramLabel;
+                        retVar.tag = paramTag;
+                    } else {
+                        retVar = var_dic[paramTag];
+                        retVar.needRemove = false;
+                        retVar.name = paramLabel;
+                        retVar.emit('changed');
+                    }
+                });
+                var needRemoveVars = returnVars_arr.filter(function (item) {
+                    return item.needRemove == true;
+                });
+                if (needRemoveVars.length > 0) {
+                    needRemoveVars.forEach(function (varData) {
+                        var index = returnVars_arr.indexOf(varData);
+                        if (index != -1) {
+                            returnVars_arr.splice(index, 1);
+                            varData.removed = true;
+                        }
+                        varData.removed = true;
+                    });
+                    scriptBP.fireEvent('varChanged');
+                }
+
+                scriptBP.canCustomReturnValue = true;
+            }
+        }
+    }, {
+        key: '__attributeChanged',
+        value: function __attributeChanged(attrName, oldValue, newValue, realAtrrName, indexInArray) {
+            _get(M_PageKernel.prototype.__proto__ || Object.getPrototypeOf(M_PageKernel.prototype), '__attributeChanged', this).call(this, attrName, oldValue, newValue, realAtrrName, indexInArray);
+            var attrItem = this.findAttributeByName(attrName);
+            switch (attrItem.name) {
+                case AttrNames.ExportParam:
+                    var theBP = this.project.scriptMaster.getBPByName(this.id + '_' + AttrNames.Function.GetOutputData);
+                    this.scriptCreated(null, theBP);
+                    break;
+            }
         }
     }, {
         key: 'getFunctionApiAttrArray',
         value: function getFunctionApiAttrArray() {
-            var _this4 = this;
+            var _this5 = this;
 
             var attrValue;
             var rlt_arr = [];
             var funApis_arr = this.getAttrArrayList(AttrNames.FunctionApi);
             funApis_arr.forEach(function (attr) {
-                attrValue = _this4.getAttribute(attr.name);
+                attrValue = _this5.getAttribute(attr.name);
                 if (IsEmptyString(attrValue)) {
                     return;
                 }
                 rlt_arr.push({
                     label: attrValue,
                     name: attr.name,
-                    fullname: _this4.id + '_' + attr.name
+                    fullname: _this5.id + '_' + attr.name
                 });
             });
 
@@ -132,13 +203,13 @@ var M_PageKernel = function (_ContainerKernelBase) {
     }, {
         key: 'getParamApiAttrArray',
         value: function getParamApiAttrArray() {
-            var _this5 = this;
+            var _this6 = this;
 
             var attrValue;
             var rlt_arr = [];
             var paramApis_arr = this.getAttrArrayList(AttrNames.ParamApi);
             paramApis_arr.forEach(function (attr) {
-                attrValue = _this5.getAttribute(attr.name);
+                attrValue = _this6.getAttribute(attr.name);
                 if (IsEmptyString(attrValue)) {
                     return;
                 }
@@ -166,21 +237,21 @@ var M_Page = function (_React$PureComponent) {
     function M_Page(props) {
         _classCallCheck(this, M_Page);
 
-        var _this6 = _possibleConstructorReturn(this, (M_Page.__proto__ || Object.getPrototypeOf(M_Page)).call(this, props));
+        var _this7 = _possibleConstructorReturn(this, (M_Page.__proto__ || Object.getPrototypeOf(M_Page)).call(this, props));
 
-        _this6.state = {
-            title: _this6.props.ctlKernel.getAttribute(AttrNames.Title),
-            ctlKernel: _this6.props.ctlKernel,
-            children: _this6.props.ctlKernel.children,
-            orientation: _this6.props.ctlKernel.getAttribute(AttrNames.Orientation),
-            popablePage: _this6.props.ctlKernel.getAttribute(AttrNames.PopablePage),
-            autoCloseBtn: _this6.props.ctlKernel.getAttribute(AttrNames.AutoCloseBtn)
+        _this7.state = {
+            title: _this7.props.ctlKernel.getAttribute(AttrNames.Title),
+            ctlKernel: _this7.props.ctlKernel,
+            children: _this7.props.ctlKernel.children,
+            orientation: _this7.props.ctlKernel.getAttribute(AttrNames.Orientation),
+            popablePage: _this7.props.ctlKernel.getAttribute(AttrNames.PopablePage),
+            autoCloseBtn: _this7.props.ctlKernel.getAttribute(AttrNames.AutoCloseBtn)
         };
 
-        autoBind(_this6);
-        M_ControlBase(_this6, [AttrNames.Title, AttrNames.Chidlren, AttrNames.Orientation, AttrNames.PopablePage, AttrNames.AutoCloseBtn, AttrNames.LayoutNames.APDClass]);
-        M_ContainerBase(_this6);
-        return _this6;
+        autoBind(_this7);
+        M_ControlBase(_this7, [AttrNames.Title, AttrNames.Chidlren, AttrNames.Orientation, AttrNames.PopablePage, AttrNames.AutoCloseBtn, AttrNames.LayoutNames.APDClass]);
+        M_ContainerBase(_this7);
+        return _this7;
     }
 
     _createClass(M_Page, [{
@@ -210,7 +281,7 @@ var M_Page = function (_React$PureComponent) {
     }, {
         key: 'renderMobilePage',
         value: function renderMobilePage(ctlKernel) {
-            var _this7 = this;
+            var _this8 = this;
 
             var layoutConfig = ctlKernel.getLayoutConfig();
             layoutConfig.addClass('d-flex');
@@ -255,7 +326,7 @@ var M_Page = function (_React$PureComponent) {
                     'div',
                     { className: layoutConfig.getClassName(), ref: this.rootElemRef },
                     this.state.children.map(function (childData) {
-                        return childData.renderSelf(null, null, _this7.props.designer);
+                        return childData.renderSelf(null, null, _this8.props.designer);
                     })
                 )
             );
@@ -263,7 +334,7 @@ var M_Page = function (_React$PureComponent) {
     }, {
         key: 'render',
         value: function render() {
-            var _this8 = this;
+            var _this9 = this;
 
             if (this.props.ctlKernel != this.state.ctlKernel) {
                 var self = this;
@@ -271,12 +342,12 @@ var M_Page = function (_React$PureComponent) {
                 this.listenTarget(this.props.ctlKernel);
                 setTimeout(function () {
                     self.setState({
-                        title: _this8.props.ctlKernel.getAttribute('title'),
-                        ctlKernel: _this8.props.ctlKernel,
-                        children: _this8.props.ctlKernel.children,
-                        orientation: _this8.props.ctlKernel.getAttribute(AttrNames.Orientation),
-                        popablePage: _this8.props.ctlKernel.getAttribute(AttrNames.PopablePage),
-                        autoCloseBtn: _this8.props.ctlKernel.getAttribute(AttrNames.AutoCloseBtn)
+                        title: _this9.props.ctlKernel.getAttribute('title'),
+                        ctlKernel: _this9.props.ctlKernel,
+                        children: _this9.props.ctlKernel.children,
+                        orientation: _this9.props.ctlKernel.getAttribute(AttrNames.Orientation),
+                        popablePage: _this9.props.ctlKernel.getAttribute(AttrNames.PopablePage),
+                        autoCloseBtn: _this9.props.ctlKernel.getAttribute(AttrNames.AutoCloseBtn)
                     });
                 }, 1);
                 return null;

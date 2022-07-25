@@ -5,6 +5,7 @@ import functools
 import os
 import json
 import HBGeometry
+import pymssql as mssql
 
 class Anchor:
     def __init__(self,code,name,X,Y,Z):
@@ -267,18 +268,18 @@ if __name__ == '__main__':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     argv = sys.argv
     # argv = ['',
-    #         '{"fileName":"1-2-1",'
-    #         '"filePath":"C:/Users/Administrator/Downloads/121.MES",'
-    #         '"preFileName":"1-1-1",'
-    #         '"preFilePath":"C:/Users/Administrator/Downloads/111.MES",'
-    #         '"aftFileName":"",'
+    #         '{"fileName":"12-20-1",'
+    #         '"filePath":"d:/work/TridentSystem/public/filehouse/2022_7/B38FA4D5-02A2-475A-9CCE-97B80BF0939A.MES",'
+    #         '"preFileName":"12-19-1",'
+    #         '"preFilePath":"d:/work/TridentSystem/public/filehouse/2022_7/01E469C0-18B5-4431-928D-C51A0D21015E.MES",'
+    #         '"aftFileName":"未找到",'
     #         '"aftFilePath":"",'
     #         '"maxDif":"10",'
+    #         '"projCode":"10429",'
     #         '"minVDistance":"2000",'
-    #         '"anchor_arr":[{"code":3,"name":"1","X":-50588,"Y":127153,"Z":10693},{"code":4,"name":"2","X":-81868,"Y":107382,"Z":10692},{"code":5,"name":"3","X":18219,"Y":-137871,"Z":10661},{"code":6,"name":"4","X":68969,"Y":-119474,"Z":10739},{"code":1,"name":"5","X":36863,"Y":132806,"Z":10673},{"code":2,"name":"6","X":-103435,"Y":-81558,"Z":10688},{"code":7,"name":"7","X":124377,"Y":-36693,"Z":10700},{"code":8,"name":"8","X":116036,"Y":60383,"Z":10689},{"code":9,"name":"9","X":84225,"Y":104782,"Z":10706},{"code":10,"name":"10","X":-31440,"Y":-135247,"Z":10679},{"code":11,"name":"11","X":-127629,"Y":-18481,"Z":10701},{"code":12,"name":"12","X":-126598,"Y":28816,"Z":10693}],'
-    #         '"preAnchor_arr":[{"index":50,"anchorCode":9,"offsetZ":1300},{"index":51,"anchorCode":1,"offsetZ":2150}],'
+    #         '"preAnchor_arr":[{"index":27,"anchorCode":133,"offsetZ":1300},{"index":28,"anchorCode":130,"offsetZ":1300}],'
     #         '"nxtAnchor_arr":[],'
-    #         '"thisAnchor_arr":[{"index":-1,"key":"前4","anchorCode":"1","offsetZ":"2150"},{"index":-1,"key":"后3","anchorCode":"1","offsetZ":"2150"},{"index":-1,"key":"后4","anchorCode":"9","offsetZ":"1300"},{"index":-1,"key":"前3","anchorCode":"9","offsetZ":"1300"}],'
+    #         '"thisAnchor_arr":[{"index":-1,"key":"前1","anchorCode":92,"offsetZ":1300},{"index":-1,"key":"前2","anchorCode":133,"offsetZ":1300},{"index":-1,"key":"后3","anchorCode":134,"offsetZ":1300}],'
     #         '"minDistance":"2000"'
     #         '}']
 
@@ -296,13 +297,21 @@ if __name__ == '__main__':
     maxDif = int(config['maxDif'])
     minDistance = int(config['minDistance'])
     minVDistance = int(config['minVDistance'])
+    projCode = int(config['projCode'])
     thisAnchor_arr = config['thisAnchor_arr']
     preAnchor_arr = config['preAnchor_arr']
     nxtAnchor_arr = config['nxtAnchor_arr']
-    anchor_arr = config['anchor_arr']
     anchor_dic = {}
-    for a in anchor_arr:
-        anchor_dic[a['code']] = Anchor(a['code'],a['name'],a['X'],a['Y'],a['Z'])
+
+    # 登陆用户名和密码
+    conn = mssql.connect('erp.highbird.cn:9155', 'python_tinyreader', '9THH2uJX3Mz3', "base1", 'utf8')
+    cursor = conn.cursor()
+    sql = 'select 项目全局锚点代码 as code,锚点名称 as name,X,Y,Z from T254C项目全局锚点 where 项目登记名称代码=%d'%projCode
+    cursor.execute(sql)
+    data = cursor.fetchall()
+    
+    for a in data:
+        anchor_dic[a[0]] = Anchor(a[0],a[1],a[2],a[3],a[4])
     #print(anchor_dic[1])
 
     result = {}

@@ -9,6 +9,13 @@ var backupWorker = require('./backupWorker.js');
 var currencyHelper = require('./currencyHelper');
 var locationHelper = require('./locationHelper.js');
 
+// var extend_zhaozhimiao = require('./extend_zhaozhimiao.js');
+// extend_zhaozhimiao.checkStationData([
+//     {测点名称:'前1',锚点代码:92, Z偏移:1300},
+//     {测点名称:'前2',锚点代码:133, Z偏移:1300},
+//     {测点名称:'后3',锚点代码:134, Z偏移:1300},
+// ],10429,12,20,1,161653,20,20,20);
+
 //path模块，可以生产相对和绝对路径
 const path =require('path');
 

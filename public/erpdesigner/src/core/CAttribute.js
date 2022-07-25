@@ -103,6 +103,10 @@ class CAttribute{
     }
 }
 
+function makeFName_getOuptputPage(pageKernel){
+    return pageKernel.id + '_' + AttrNames.Function.GetOutputData;
+}
+
 function makeFName_activePage(pageKernel){
     return 'active_' + pageKernel.id;
 }
@@ -424,6 +428,7 @@ const AttrNames={
         GetXMLRowItem:'getxmlrowitem',
         GenarateChartData:'generateChartData',
         GetJSONRowItem:'getJSONrowitem',
+        GetOutputData:'getOutputData',
     },
 
     LayoutNames:{

@@ -59,6 +59,7 @@ const JSNODE_STRING_INDEXOF = 'stringindexOf';
 const JSNODE_STRING_SPLIT = 'stringsplit';
 const JSNODE_ISEMPTYSTRING = 'isemptystring';
 const JSNODE_ISEMPTYARRAY = 'isemptyarray';
+const JSNODE_STRING_TRIM = 'stringtrim';
 
 const JSNODE_CREATESTYLEOBJECT = 'createstyleobj';
 const JSNODE_CREATECLASSOBJECT = 'createclassobj';
@@ -5730,6 +5731,55 @@ class JSNode_String_IndexOf extends JSNode_Base {
     }
 }
 
+class JSNode_String_Trim extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_STRING_TRIM, '字符串-Trim', false, nodeJson);
+        autoBind(this);
+
+        if (nodeJson) {
+            if (this.outputScokets_arr.length > 0) {
+                this.outSocket = this.outputScokets_arr[0];
+            }
+            if (this.inputScokets_arr.length > 0) {
+                this.inSocket = this.inputScokets_arr[0];
+            }
+        }
+        if (this.inSocket == null) {
+            this.inSocket = new NodeSocket('in', this, true);
+            this.addSocket(this.inSocket);
+        }
+        if (this.outSocket == null) {
+            this.outSocket = new NodeSocket('out', this, false);
+            this.addSocket(this.outSocket);
+        }
+        this.inSocket.type = ValueType.String;
+        this.inSocket.inputable = false;
+        this.outSocket.type = ValueType.Int;
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var usePreNodes_arr = preNodes_arr.concat(this);
+        var theSocket = this.inSocket;
+        var socketValue = null;
+        var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, belongBlock, false);
+        if (socketComRet.err) {
+            return false;
+        }
+        var socketValue = socketComRet.value;
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.outSocket, socketValue + '.trim()');
+        helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
 class JSNode_IsEmptyString extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
         super(initData, parentNode, createHelper, JSNODE_ISEMPTYSTRING, 'IsEmptySting', false, nodeJson);
@@ -6550,6 +6600,10 @@ JSNodeClassMap[JSNODE_DEBUG_LOG] = {
     comClass: C_Node_SimpleNode,
 };
 
+JSNodeClassMap[JSNODE_STRING_TRIM] = {
+    modelClass: JSNode_String_Trim,
+    comClass: C_Node_SimpleNode,
+};
 JSNodeClassMap[JSNODE_STRING_LENGTH] = {
     modelClass: JSNode_String_Length,
     comClass: C_Node_SimpleNode,

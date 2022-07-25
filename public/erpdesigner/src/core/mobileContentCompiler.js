@@ -129,6 +129,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         clientSide.gotoPageFun = clientSide.scope.getFunction('gotoPage', true, ['pageName', 'state']);
         clientSide.gotoPageFun.pushLine("if (state.nowPage == pageName){return state;}");
+        clientSide.gotoPageFun.pushLine('if(pageRouter.indexOf(pageName) != -1){alert(pageName + "被循环跳转了！");return}');
         clientSide.gotoPageFun.pushLine(VarNames.PageRouter + '.push(pageName);');
         clientSide.gotoPageFun.scope.getVar(VarNames.ReState, true, 'state');
         var gotoPageSwitchBlock = new JSFile_Switch('gotopage', 'pageName');
@@ -136,13 +137,25 @@ class MobileContentCompiler extends ContentCompiler {
         clientSide.gotoPageFun.switchBlock = gotoPageSwitchBlock;
         clientSide.gotoPageFun.retBlock.pushLine("return Object.assign({}, " + VarNames.ReState + ");");
 
-        clientSide.pageRouteBackFun = clientSide.scope.getFunction('pageRoute_Back', true, ['trigerCallBack']);
+        clientSide.pageRouteBackFun = clientSide.scope.getFunction('pageRoute_Back', true, []);
         clientSide.pageRouteBackFun.pushLine('if(' + VarNames.PageRouter + '.length > 1){', 1);
-        clientSide.pageRouteBackFun.pushLine('var popedPageName = ' + VarNames.PageRouter + '.pop();');
-        clientSide.pageRouteBackFun.pushLine('store.dispatch(makeAction_gotoPage(' + VarNames.PageRouter + '.pop()));');
-        clientSide.pageRouteBackFun.pushLine('if(trigerCallBack != false){', 1);
-        clientSide.pageRouteBackFun.pushLine("var close_callback = getPageEntryParam(popedPageName,'callBack');");
-        clientSide.pageRouteBackFun.pushLine('if(close_callback){close_callback({});}', -1);
+        clientSide.pageRouteBackFun.pushLine('var closedPageName = ' + VarNames.PageRouter + '.pop();');
+        clientSide.pageRouteBackFun.pushLine("gDataCache.set(closedPageName + '_opened',0);");
+        clientSide.pageRouteBackFun.pushLine('var openPageName = pageRouter[pageRouter.length - 1];');
+        clientSide.pageRouteBackFun.pushLine("store.dispatch(makeAction_setStateByPath(openPageName, 'nowPage'));");
+
+        clientSide.pageRouteBackFun.pushLine("var close_callback = getPageEntryParam(closedPageName,'callBack');");
+        clientSide.pageRouteBackFun.pushLine('if(close_callback){', 1);
+        clientSide.pageRouteBackFun.pushLine('var closeRet = {};');
+        clientSide.pageRouteBackFun.pushLine('var state = state = store.getState();');
+        var pageRouteBackSwitchBlock = new JSFile_Switch('pageRoute_Back', 'closedPageName');
+        clientSide.pageRouteBackFun.switchBlock = pageRouteBackSwitchBlock;
+        clientSide.pageRouteBackFun.addNextIndent();
+        clientSide.pageRouteBackFun.pushChild(pageRouteBackSwitchBlock);
+        clientSide.pageRouteBackFun.subNextIndent();
+        clientSide.pageRouteBackFun.subNextIndent();
+        clientSide.pageRouteBackFun.pushLine('if(closeRet == null){closeRet = {};}');
+        clientSide.pageRouteBackFun.pushLine('setTimeout(() => {close_callback(closeRet);}, 100);');
         clientSide.pageRouteBackFun.pushLine('}', -1);
         clientSide.pageRouteBackFun.pushLine('}');
 
@@ -954,6 +967,7 @@ class MobileContentCompiler extends ContentCompiler {
             }
             else {
                 logManager.error('重复设置主页面:' + pageKernel.getAttribute(AttrNames.Title));
+                return false;
             }
         }
         var pageLayoutConfig = pageKernel.getLayoutConfig();
@@ -976,6 +990,24 @@ class MobileContentCompiler extends ContentCompiler {
         pageReactClass.renderHeadButtonFun.retBlock.pushLine('return rlt_arr;');
         //pageReactClass.renderFootFun = pageReactClass.getFunction('renderFoot', true);
         //pageReactClass.renderFun.pushLine(makeLine_Assign(VarNames.RetElem, '<div>' + pageKernel.getAttribute(AttrNames.Title) + '</div>'));
+
+        var getOutputFunName = pageKernel.id + '_' + AttrNames.Function.GetOutputData;
+        var getOutputFunBp = project.scriptMaster.getBPByName(getOutputFunName);
+        if (getOutputFunBp != null) {
+            var compileRet = this.compileScriptBlueprint(getOutputFunBp, { params: [], haveDoneTip: false });
+            if (compileRet == false) {
+                return false;
+            }
+            var caseBlock = clientSide.pageRouteBackFun.switchBlock.getCaseBlock(singleQuotesStr(pageKernel.id));
+            caseBlock.pushLine(makeLine_Assign('closeRet', makeStr_callFun(getOutputFunName, [VarNames.State])));
+        }
+        else{
+            var pageExportAttrs_arr = pageKernel.getAttrArrayList(AttrNames.ExportParam);
+            if(pageExportAttrs_arr.length > 0 && !isPopable){
+                logManager.error(pageKernel.id + "设置了出口参数，但是没有提供‘获取出口值’方法！");
+                return false;
+            }
+        }
 
         if (!isPopable) {
             var autoHomeBtn = pageKernel.getAttribute(AttrNames.AutoHomeBtn);
@@ -5791,6 +5823,17 @@ class MobileContentCompiler extends ContentCompiler {
         if (theKernel.getAttribute('poppanelminwidth') > 100) {
             ctlTag.setAttr('poppanelminwidth', theKernel.getAttribute('poppanelminwidth'));
         }
+
+        let tiplabel = theKernel.getAttribute('tiplabel');
+        if(IsEmptyString(tiplabel)){
+            if (theKernel.parent && theKernel.parent.type == M_LabeledControlKernel_Type) {
+                tiplabel = theKernel.parent.getAttribute(AttrNames.TextField);
+            }
+        }
+        if(!IsEmptyString(tiplabel)){
+            ctlTag.setAttr('label', tiplabel);
+        }
+
         var appandColumns_arr = [];
         var appandColAttrs_arr = theKernel.getAttrArrayList(AttrNames.AppandColumn);
         var canuseColumns = theKernel.getCanuseColumns();
@@ -6471,6 +6514,9 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else if(apptype == EThreeDAppType.大连组网拍照){
             tagName = 'VisibleERPC_ThreeDApp_ZuWang';
+        }
+        else if(apptype == EThreeDAppType.大连并网拍照){
+            tagName = 'VisibleERPC_ThreeDApp_BingWang';
         }
 
         var ctlTag = new FormatHtmlTag(theKernel.id, tagName, this.clientSide);

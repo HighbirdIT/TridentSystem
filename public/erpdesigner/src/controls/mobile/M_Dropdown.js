@@ -10,6 +10,7 @@ const M_DropdownKernelAttrsSetting = GenControlKernelAttrsSetting([
             type: FunType_Client,
             group: EJsBluePrintFunGroup.CtlAttr,
         }),
+        new CAttribute('选择提示', 'tiplabel', ValueType.String, '', true, false),
         genIsdisplayAttribute(),
         genNullableAttribute(),
         genValidCheckerAttribute(),
@@ -26,6 +27,7 @@ const M_DropdownKernelAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('历史Key', AttrNames.HisKey, ValueType.String, '', true, false),
         new CAttribute('Growable', AttrNames.Growable, ValueType.Boolean, true),
         new CAttribute('有小按钮', 'hadminibtn', ValueType.Boolean, true),
+        new CAttribute('自订排序', 'customOrder', ValueType.Boolean, false),
         new CAttribute(AttrNames.ColumnName, AttrNames.ColumnName, ValueType.String, null, false, false, null, null, false),
         new CAttribute(AttrNames.ValuesArray, AttrNames.ValuesArray, ValueType.String, null, false, false, null, null, false),
     ]),
@@ -156,6 +158,20 @@ class M_DropdownKernel extends ControlKernelBase {
             });
         }
 
+        var orderNode = cusDS_bp.finalSelectNode.orderNode;
+        var bCustomOrder = this.getAttribute('customOrder') == true;
+        if(bCustomOrder){
+            orderNode.inputScokets_arr.forEach(sk=>{
+                var skLinks = cusDS_bp.linkPool.getLinksBySocket(sk);
+                if(skLinks.length == 1){
+                    var columnName = skLinks[0].outSocket.node.columnName;
+                    if (needSelectColumns_arr.indexOf(columnName) == -1) {
+                        needSelectColumns_arr.push(columnName);
+                    }   
+                }
+            });
+        }
+
         while (columnNode.inputScokets_arr.length < needSelectColumns_arr.length) {
             columnNode.addSocket(columnNode.genInSocket());
         }
@@ -210,38 +226,39 @@ class M_DropdownKernel extends ControlKernelBase {
         if (!IsEmptyString(fromtextfield)) {
             needOrderColumns_arr.push(fromtextfield);
         }
-        var orderNode = cusDS_bp.finalSelectNode.orderNode;
-        while (orderNode.inputScokets_arr.length < needOrderColumns_arr.length) {
-            orderNode.addSocket(orderNode.genInSocket());
-        }
-        while (orderNode.inputScokets_arr.length > needOrderColumns_arr.length) {
-            orderNode.removeSocket(orderNode.inputScokets_arr[orderNode.inputScokets_arr.length - 1]);
-        }
-        for (var si in orderNode.inputScokets_arr) {
-            theSocket = orderNode.inputScokets_arr[si];
-            theLinks = cusDS_bp.linkPool.getLinksBySocket(theSocket);
-            colNode = null;
-            if (theLinks.length == 1) {
-                theLink = theLinks[0];
-                if (theLink.outSocket.node.type == SQLNODE_COLUMN) {
-                    colNode = theLink.outSocket.node;
-                }
+        if(bCustomOrder == false){
+            while (orderNode.inputScokets_arr.length < needOrderColumns_arr.length) {
+                orderNode.addSocket(orderNode.genInSocket());
             }
-            if (theLinks.length == 0 || colNode == null) {
-                if (colNode == null) {
-                    colNode = new SqlNode_Column({}, cusDS_bp.finalSelectNode);
-                    colNode.left = orderNode.left - 300;
-                    colNode.top = orderNode.top + (parseInt(si) + 1) * 50;
-                }
-                cusDS_bp.linkPool.addLink(colNode.outSocket, theSocket);
+            while (orderNode.inputScokets_arr.length > needOrderColumns_arr.length) {
+                orderNode.removeSocket(orderNode.inputScokets_arr[orderNode.inputScokets_arr.length - 1]);
             }
-            if(useDS){
-                colNode.setFromObj({
-                    tableCode: useDS.code,
-                    tableAlias: null,
-                    tableName: useDS.name,
-                    columnName: needOrderColumns_arr[si],
-                });
+            for (var si in orderNode.inputScokets_arr) {
+                theSocket = orderNode.inputScokets_arr[si];
+                theLinks = cusDS_bp.linkPool.getLinksBySocket(theSocket);
+                colNode = null;
+                if (theLinks.length == 1) {
+                    theLink = theLinks[0];
+                    if (theLink.outSocket.node.type == SQLNODE_COLUMN) {
+                        colNode = theLink.outSocket.node;
+                    }
+                }
+                if (theLinks.length == 0 || colNode == null) {
+                    if (colNode == null) {
+                        colNode = new SqlNode_Column({}, cusDS_bp.finalSelectNode);
+                        colNode.left = orderNode.left - 300;
+                        colNode.top = orderNode.top + (parseInt(si) + 1) * 50;
+                    }
+                    cusDS_bp.linkPool.addLink(colNode.outSocket, theSocket);
+                }
+                if(useDS){
+                    colNode.setFromObj({
+                        tableCode: useDS.code,
+                        tableAlias: null,
+                        tableName: useDS.name,
+                        columnName: needOrderColumns_arr[si],
+                    });
+                }
             }
         }
     }

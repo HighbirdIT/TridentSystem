@@ -124,6 +124,10 @@ var CAttribute = function () {
     return CAttribute;
 }();
 
+function makeFName_getOuptputPage(pageKernel) {
+    return pageKernel.id + '_' + AttrNames.Function.GetOutputData;
+}
+
 function makeFName_activePage(pageKernel) {
     return 'active_' + pageKernel.id;
 }
@@ -447,7 +451,8 @@ var AttrNames = {
     Function: {
         GetXMLRowItem: 'getxmlrowitem',
         GenarateChartData: 'generateChartData',
-        GetJSONRowItem: 'getJSONrowitem'
+        GetJSONRowItem: 'getJSONrowitem',
+        GetOutputData: 'getOutputData'
     },
 
     LayoutNames: {

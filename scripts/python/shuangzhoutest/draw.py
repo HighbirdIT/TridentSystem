@@ -196,10 +196,12 @@ class Draw_img:
 
         # print('min', min_x, 'max', max_x)
 
+
         ax1.set_xlabel("strain(%)")  # 设置x轴名称,plt.xlabel
         ax1.set_ylabel("stress kN/m")  # 设置y轴名称,plt.ylabel
         plot1 = ax1.plot(ex*100, fx, linestyle='-', color='b', label='Warp')  # 点图：marker图标
         plot2 = ax1.plot(ey*100, fy, linestyle='-', color='y', label='Fill')  # 点图：marker图标
+
 
         xmaloc = plt.MultipleLocator(0.5)
         xmiloc = plt.MultipleLocator(0.25)

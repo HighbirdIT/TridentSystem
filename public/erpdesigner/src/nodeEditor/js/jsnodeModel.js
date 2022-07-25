@@ -159,6 +159,7 @@ class JSDef_Variable extends JSNode_Base {
         this.valType = ReplaceIfNull(this.valType, ValueType.Int);
         this.default = ReplaceIfNull(this.default, '');
         this.isParam = ReplaceIfNaN(this.isParam, 0);
+        this.tag = ReplaceIfNull(this.tag, "");
         autoBind(this);
     }
 
@@ -168,6 +169,10 @@ class JSDef_Variable extends JSNode_Base {
         rlt.valType = this.valType;
         rlt.isParam = this.isParam;
         rlt.default = this.default;
+        if(this.tag.length > 0){
+            rlt.tag = this.tag;
+        }
+        
         if(this.bundleMode){
             rlt.bundleMode = this.bundleMode;
         }
@@ -184,7 +189,7 @@ class JSDef_Variable extends JSNode_Base {
     }
 
     restorFromAttrs(attrsJson) {
-        assginObjByProperties(this, attrsJson, ['name', 'valType', 'isParam', 'default', 'isfixed', 'index', 'isOutput', 'bundleMode']);
+        assginObjByProperties(this, attrsJson, ['name', 'valType', 'isParam', 'default', 'isfixed', 'index', 'isOutput', 'bundleMode', 'tag']);
     }
 
     setProp(data) {
@@ -6380,6 +6385,11 @@ class JSNode_FreshForm extends JSNode_Base {
             }
             else {
                 parentPath = singleQuotesStr(unDivParent.getStatePath('', '.', { mapVarName: VarNames.RowKeyInfo_map }));
+                if(unDivParent.type == M_FormKernel_Type){
+                    if(!unDivParent.isPageForm()){
+                        parentPath += "+'.row_'+" + VarNames.RowKeyInfo_map + '.' + unDivParent.id;
+                    }
+                }
             }
         }
         var freshFunName = 'fresh_' + socketValue;
@@ -9739,22 +9749,25 @@ class JSNode_ClosePage extends JSNode_Base {
             }
             return;
         }
-        var pageExportAttrs_arr = this.targetPage.getAttrArrayList(AttrNames.ExportParam);
-        pageExportAttrs_arr.forEach((attrItem, index) => {
-            var inSocket = null;
-            if (index >= this.inputScokets_arr.length) {
-                inSocket = new NodeSocket(attrItem.name, this, true);
-                this.addSocket(inSocket);
-            }
-            else {
-                inSocket = this.inputScokets_arr[index];
-            }
-            var paramLabel = this.targetPage.getAttribute(attrItem.name);
-            if (paramLabel != inSocket.label) {
-                inSocket.label = paramLabel;
-                inSocket.fireEvent('changed');
-            }
-        });
+        var pageExportAttrs_arr = [];
+        if(this.targetPage.getAttribute(AttrNames.PopablePage)){
+            pageExportAttrs_arr = this.targetPage.getAttrArrayList(AttrNames.ExportParam);
+            pageExportAttrs_arr.forEach((attrItem, index) => {
+                var inSocket = null;
+                if (index >= this.inputScokets_arr.length) {
+                    inSocket = new NodeSocket(attrItem.name, this, true);
+                    this.addSocket(inSocket);
+                }
+                else {
+                    inSocket = this.inputScokets_arr[index];
+                }
+                var paramLabel = this.targetPage.getAttribute(attrItem.name);
+                if (paramLabel != inSocket.label) {
+                    inSocket.label = paramLabel;
+                    inSocket.fireEvent('changed');
+                }
+            });
+        }
         while (this.inputScokets_arr.length > pageExportAttrs_arr.length) {
             this.removeSocket(this.inputScokets_arr[this.inputScokets_arr.length - 1]);
         }
@@ -9809,31 +9822,40 @@ class JSNode_ClosePage extends JSNode_Base {
 
         var myJSBlock = new FormatFileBlock('');
         belongBlock.pushChild(myJSBlock);
-
-        var exportParamName = this.id + 'exportParam';
-        myJSBlock.pushLine('var ' + exportParamName + '={', 1);
-        var socketValues_arr = [];
-        var i;
-        var theSocket;
-        for (i = 0; i < this.inputScokets_arr.length; ++i) {
-            theSocket = this.inputScokets_arr[i];
-            var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, myJSBlock, true, true);
-            if (socketComRet.err) {
-                return false;
+        if(this.targetPage.getAttribute(AttrNames.PopablePage)){
+            var exportParamName = this.id + 'exportParam';
+            myJSBlock.pushLine('var ' + exportParamName + '={', 1);
+            var socketValues_arr = [];
+            var i;
+            var theSocket;
+            for (i = 0; i < this.inputScokets_arr.length; ++i) {
+                theSocket = this.inputScokets_arr[i];
+                var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, myJSBlock, true, true);
+                if (socketComRet.err) {
+                    return false;
+                }
+                var socketValue = socketComRet.value;
+                if (IsEmptyString(socketValue)) {
+                    socketValue = 'null';
+                }
+                socketValues_arr.push(socketValue);
+                myJSBlock.pushLine(makeStr_AddAll(theSocket.label, ':', socketValue, ','));
             }
-            var socketValue = socketComRet.value;
-            if (IsEmptyString(socketValue)) {
-                socketValue = 'null';
-            }
-            socketValues_arr.push(socketValue);
-            myJSBlock.pushLine(makeStr_AddAll(theSocket.label, ':', socketValue, ','));
+            myJSBlock.subNextIndent();
+            myJSBlock.pushLine('};');
+            var callBackName = this.id + '_callback';
+            myJSBlock.pushLine('closePage2(' + singleQuotesStr(thePage.id) + ', state);');
+            myJSBlock.pushLine('var ' + callBackName + ' = ' + makeStr_callFun('getPageEntryParam', [singleQuotesStr(thePage.id), singleQuotesStr('callBack')], ';'));
+            myJSBlock.pushLine('if(' + callBackName + '){setTimeout(()=>{' + callBackName + '(' + exportParamName + ');},20);}');
         }
-        myJSBlock.subNextIndent();
-        myJSBlock.pushLine('};');
-        var callBackName = this.id + '_callback';
-        myJSBlock.pushLine('closePage2(' + singleQuotesStr(thePage.id) + ', state);');
-        myJSBlock.pushLine('var ' + callBackName + ' = ' + makeStr_callFun('getPageEntryParam', [singleQuotesStr(thePage.id), singleQuotesStr('callBack')], ';'));
-        myJSBlock.pushLine('if(' + callBackName + '){setTimeout(()=>{' + callBackName + '(' + exportParamName + ');},20);}');
+        else{
+            var pageExportAttrs_arr = thePage.getAttrArrayList(AttrNames.ExportParam);
+            if(pageExportAttrs_arr.length > 0){
+                myJSBlock.pushLine('var retData = ' + makeStr_callFun(makeFName_getOuptputPage(thePage),[VarNames.State],';'));
+                myJSBlock.pushLine('if(retData == null){return;}');
+            }
+            myJSBlock.pushLine("pageRoute_Back();");
+        }
         var selfCompileRet = new CompileResult(this);
 
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);

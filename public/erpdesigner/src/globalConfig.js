@@ -277,8 +277,9 @@ const EThreeDAppType={
     构件安装拍照:'构件安装拍照',
     构件模型查看:'构件模型查看',
     大连组网拍照:'大连组网拍照',
+    大连并网拍照:'大连并网拍照',
 }
-const ThreeDAppType_arr = [EThreeDAppType.全局图拍照,EThreeDAppType.构件安装拍照,EThreeDAppType.构件模型查看,EThreeDAppType.大连组网拍照];
+const ThreeDAppType_arr = [EThreeDAppType.全局图拍照,EThreeDAppType.构件安装拍照,EThreeDAppType.构件模型查看,EThreeDAppType.大连组网拍照,EThreeDAppType.大连并网拍照];
 
 const Event_CurrentComponentchanged = 'currentComponentchanged';
 const Event_LinkChanged = 'linkChanged';

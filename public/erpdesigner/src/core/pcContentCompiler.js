@@ -41,6 +41,7 @@ class PCContentCompiler extends MobileContentCompiler {
 
         clientSide.gotoPageFun = clientSide.scope.getFunction('gotoPage', true, ['pageName', 'state']);
         clientSide.gotoPageFun.pushLine("if (state.nowPage == pageName){return state;}");
+        clientSide.gotoPageFun.pushLine('if(pageRouter.indexOf(pageName) != -1){alert(pageName + "被循环跳转了！");return}');
         clientSide.gotoPageFun.pushLine(VarNames.PageRouter + '.push(pageName);');
         clientSide.gotoPageFun.scope.getVar(VarNames.ReState, true, 'state');
         var gotoPageSwitchBlock = new JSFile_Switch('gotopage', 'pageName');
@@ -48,13 +49,24 @@ class PCContentCompiler extends MobileContentCompiler {
         clientSide.gotoPageFun.switchBlock = gotoPageSwitchBlock;
         clientSide.gotoPageFun.retBlock.pushLine("return Object.assign({}, " + VarNames.ReState + ");");
 
-        clientSide.pageRouteBackFun = clientSide.scope.getFunction('pageRoute_Back', true, ['trigerCallBack']);
+        clientSide.pageRouteBackFun = clientSide.scope.getFunction('pageRoute_Back', true, []);
         clientSide.pageRouteBackFun.pushLine('if(' + VarNames.PageRouter + '.length > 1){', 1);
-        clientSide.pageRouteBackFun.pushLine('var popedPageName = ' + VarNames.PageRouter + '.pop();');
-        clientSide.pageRouteBackFun.pushLine('store.dispatch(makeAction_gotoPage(' + VarNames.PageRouter + '.pop()));');
-        clientSide.pageRouteBackFun.pushLine('if(trigerCallBack != false){', 1);
-        clientSide.pageRouteBackFun.pushLine("var close_callback = getPageEntryParam(popedPageName,'callBack');");
-        clientSide.pageRouteBackFun.pushLine('if(close_callback){close_callback({});}',-1);
+        clientSide.pageRouteBackFun.pushLine('var closedPageName = ' + VarNames.PageRouter + '.pop();');
+        clientSide.pageRouteBackFun.pushLine("gDataCache.set(closedPageName + '_opened',0);");
+        clientSide.pageRouteBackFun.pushLine('var openPageName = pageRouter[pageRouter.length - 1];');
+        clientSide.pageRouteBackFun.pushLine("store.dispatch(makeAction_setStateByPath(openPageName, 'nowPage'));");
+        clientSide.pageRouteBackFun.pushLine("var close_callback = getPageEntryParam(closedPageName,'callBack');");
+        clientSide.pageRouteBackFun.pushLine('if(close_callback){', 1);
+        clientSide.pageRouteBackFun.pushLine('var closeRet = {};');
+        clientSide.pageRouteBackFun.pushLine('var state = state = store.getState();');
+        var pageRouteBackSwitchBlock = new JSFile_Switch('pageRoute_Back', 'closedPageName');
+        clientSide.pageRouteBackFun.switchBlock = pageRouteBackSwitchBlock;
+        clientSide.pageRouteBackFun.addNextIndent();
+        clientSide.pageRouteBackFun.pushChild(pageRouteBackSwitchBlock);
+        clientSide.pageRouteBackFun.subNextIndent();
+        clientSide.pageRouteBackFun.subNextIndent();
+        clientSide.pageRouteBackFun.pushLine('if(closeRet == null){closeRet = {};}');
+        clientSide.pageRouteBackFun.pushLine('setTimeout(() => {close_callback(closeRet);}, 100);');
         clientSide.pageRouteBackFun.pushLine('}', -1);
         clientSide.pageRouteBackFun.pushLine('}');
 
