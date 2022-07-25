@@ -2448,8 +2448,9 @@ class JSNode_BiaxialStretchingLength extends JSNode_Base {
                         this.warpStretchedSocket = socket;
                     case 'fill_stretched_len':
                         this.fillStretchedSocket = socket;
-                    case 'pic_path':
-                        this.picPathSocket = socket;
+                    case 'picdata':
+                        this.picdataSocket = socket;
+                    
                     case 'err': 
                         this.errSocket = socket;
                     break;
@@ -2514,8 +2515,8 @@ class JSNode_BiaxialStretchingLength extends JSNode_Base {
         if (this.fillStretchedSocket == null) {
             this.fillStretchedSocket = this.addSocket(new NodeSocket('fill_stretched_len', this, false));
         }
-        if (this.picPathSocket == null) {
-            this.picPathSocket = this.addSocket(new NodeSocket('pic_path', this, false));
+        if (this.picdataSocket == null) {
+            this.picdataSocket = this.addSocket(new NodeSocket('picdata', this, false));
         }
         if (this.errSocket == null) {
             this.errSocket = this.addSocket(new NodeSocket('err', this, false));
@@ -2537,8 +2538,9 @@ class JSNode_BiaxialStretchingLength extends JSNode_Base {
         this.fillStretchedSocket.label = '纬向拉伸长度'
         this.fillStretchedSocket.type = ValueType.String;
 
-        this.picPathSocket.label = '图片路径'
-        this.picPathSocket.type = ValueType.String;
+        this.picdataSocket.type = ValueType.Int;
+        this.picdataSocket.label = '图像数据';
+
         this.errSocket.label = '错误信息'
         this.errSocket.type = ValueType.String;
 
