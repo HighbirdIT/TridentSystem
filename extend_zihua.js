@@ -10,6 +10,7 @@ var exec = require('child_process').exec;
 const mineType = require('mime-types');
 const fileSystem = require('./fileSystem.js');
 const e = require('express');
+const { random } = require('node-forge');
 
 
 
@@ -97,8 +98,6 @@ function file_BiaxialStretchingLength(config){
                 err: eo.message
             };
         }
-        console.log(result);
-
         
         var ex_pattern = /ex':\s*(\S*),/
         if (result.match(ex_pattern)){
@@ -152,14 +151,71 @@ function file_BiaxialStretchingLength(config){
         }else{
             rlt.err = err;
         }
-        console.log(rlt)
-        
         return rlt;
     });
+}
+
+function zipHelper(config){
+    return co(function* (){
+        
+        var scriptDir = path.join(__dirname, 'scripts/python/');
+        var scriptPath = path.join(scriptDir, 'compressed_files.py');
+        var rlt = {};
+       
+        // 生成json临时文件
+
+        const data = JSON.stringify(config)
+        jsonName = Math.round(Math.random() * 999999)+'_json.json';
+        // console.log(jsonName);
+        try{
+            var jsonPath = path.join(scriptDir, 'tempoutput/' + jsonName);  // 如果是本地文件
+            fs.writeFileSync(jsonPath,data)
+        }catch(eo){
+            return {
+                err: eo.message
+            };
+        }
+        var result = ''
+        try {
+            var startPythonCmd = 'python3 -W ignore ' + scriptPath + ' ' + '"'+jsonPath.replace(/"/g, "'")+'"';
+            result = execSync(startPythonCmd).toString();
+            console.log(result)
+        }
+        catch (eo) {
+            return {
+                err: eo.message
+            };
+        }
+
+
+        var err_pattern = /err:(.*)#/
+        var err = result.match(err_pattern)[1]
+        console.log(err,'-=-=-=-=-=')
+        if (err == null||err == '' || err == 'none'|| err == "''" || err == '""'){
+            zip_pattern = /result:(.*)#/
+            zipPath = result.match(zip_pattern)
+            if (zipPath != null){
+                try{
+                    return zipPath[1]
+                }catch(eo){
+                    return {err:eo.message}
+                }finally{
+                    fs.unlink(jsonPath, (err => { 
+                        if (err) {
+                            console.log(err)
+                        };})); 
+                }
+            }
+        }else{
+            rlt.err = err[1];
+        }
+        return rlt;
+    })
 }
 
 
 module.exports = {
     file_transformMd5: file_transformMd5,
-    file_BiaxialStretchingLength:file_BiaxialStretchingLength
+    file_BiaxialStretchingLength:file_BiaxialStretchingLength,
+    zipHelper:zipHelper
 };
