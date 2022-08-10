@@ -855,9 +855,13 @@ function startServer() {
     freshPageCache();
     setInterval(freshPageCache, 1000 * 30);
     if(bUseHttps){
-        var privateKey = fs.readFileSync('key.pem').toString();
-        var certificate = fs.readFileSync('cert.pem').toString();
-
+        try{
+            var privateKey = fs.readFileSync('key.pem').toString();
+            var certificate = fs.readFileSync('cert.pem').toString();
+        }catch(err){
+            var privateKey = null;
+            var certificate = null;
+        }
         var opts = {
             key : privateKey,
             cert : certificate
