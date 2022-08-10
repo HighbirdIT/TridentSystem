@@ -8,6 +8,13 @@ const FilePreviewer_TypeAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('可否删除', 'deletable', ValueType.Boolean, false),
         new CAttribute('显示名称', 'showtitle', ValueType.Boolean, true),
         new CAttribute('图标尺寸', 'iconSize', ValueType.String, ''),
+        new CAttribute('SizeMode', 'sizeMode', ValueType.String, '', null, false, ['默认','真实尺寸']),
+
+        new CAttribute('缩放比例', 'scale', ValueType.Float, 1, true, false, null, null, true,{
+            scriptable:true,
+            type:FunType_Client,
+            group:EJsBluePrintFunGroup.CtlAttr,
+        }),
     ]),
 ]);
 
@@ -29,6 +36,10 @@ class FilePreviewer extends ControlKernelBase {
     }
 }
 
+var FilePreviewer_api = new ControlAPIClass(FilePreviewer_Type);
+FilePreviewer_api.pushApi(new ApiItem_prop(findAttrInGroupArrayByName('scale',FilePreviewer_TypeAttrsSetting), 'scale', true));
+FilePreviewer_api.pushApi(new ApiItem_propsetter('scale'));
+g_controlApi_arr.push(FilePreviewer_api);
 
 class CFilepreviewer extends React.PureComponent {
     constructor(props) {

@@ -2616,9 +2616,17 @@ class MobileContentCompiler extends ContentCompiler {
         else{
             alignitems = " align-items-" + alignitems;
         }
+        var justifyContents = theKernel.getAttribute('justifycontent');
+        if(justifyContents == 'initial'){
+            justifyContents = '';
+        }
+        else{
+            justifyContents = " justify-content-" + justifyContents;
+        }
+        
         if (isPageForm) {
             renderContentBlock.pushLine(VarNames.RetElem + " = (<React.Fragment>", 1);
-            renderContentBlock.pushLine("<div " + (autoHeight ? " id={this.props.fullPath + 'scroller'}" : '') + " className='d-flex flex-grow-1 flex-shrink-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + (isWrap ? ' flex-wrap' : '') + alignitems + "'>", 1);
+            renderContentBlock.pushLine("<div " + (autoHeight ? " id={this.props.fullPath + 'scroller'}" : '') + " className='d-flex flex-grow-1 flex-shrink-1 " + (orientation == Orientation_V ? ' flex-column' : '') + (autoHeight ? ' autoScroll_Touch' : '') + (isWrap ? ' flex-wrap' : '') + alignitems + justifyContents + "'>", 1);
             childRenderBlock = new FormatFileBlock(theKernel.id + 'child');
             renderContentBlock.pushChild(childRenderBlock);
             renderContentBlock.subNextIndent();
@@ -6227,6 +6235,25 @@ class MobileContentCompiler extends ContentCompiler {
         var iconSize = theKernel.getAttribute('iconSize');
         if (!IsEmptyString(iconSize)) {
             ctlTag.setAttr('iconSize', iconSize);
+        }
+
+        var sizeMode = theKernel.getAttribute('sizeMode');
+        if(sizeMode == '真实尺寸'){
+            ctlTag.setAttr('sizeMode', singleQuotesStr('natural'));
+        }
+
+        var setScaleDataStateItem = null;
+        var scaleData = theKernel.getAttribute('scale');
+        var scaleDataParseRet = parseObj_CtlPropJsBind(scaleData, project.scriptMaster);
+        if (scaleDataParseRet.isScript && scaleDataParseRet.jsBp != null) {
+            if (this.compileScriptAttribute(scaleDataParseRet, theKernel, 'scale', 'scale', { autoSetFetchState: true }) == false) {
+                return false;
+            }
+        }
+        else {
+            if (!IsEmptyString(scaleDataParseRet.string) && !isNaN(scaleDataParseRet.string)) {
+                ctlTag.setAttr('scale', scaleDataParseRet.string);
+            }
         }
 
 

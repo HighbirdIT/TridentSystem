@@ -507,6 +507,29 @@ app.use('/erppage/visitorlogin', function (req, res, next) {
     }
 });
 
+app.use('/erppage/mentalWorkShopLoginpage', function (req, res, next) {
+    res.locals.isProduction = app.get('env') == 'production';
+    var jsFilePath = '/js/views/erp/mentalWorkShopLoginpage.js';
+    if (fs.existsSync(__dirname + '/public' + jsFilePath)) {
+        res.locals.clientJs = jsFilePath;
+        res.locals.title = '金属车间扫码登录';
+        res.locals.g_envVar = req.session.g_envVar == null ? '{}' : JSON.stringify(req.session.g_envVar);
+        var ua = req.headers['user-agent'];
+        var android = ua.match(/(Android);?[\s\/]+([\d.]+)?/) != null;
+        var ipad = ua.match(/(iPad).*OS\s([\d_]+)/) != null;
+        var ipod = ua.match(/(iPod)(.*OS\s([\d_]+))?/) != null;
+        var iphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/) != null;
+        res.locals.isMobile = android || ipad || ipod || iphone;
+        res.locals.isMobileStr = res.locals.isMobile ? 'true' : 'false';
+
+        return res.render('erppage/client', { layout: 'erppagetype_MA' });
+    }
+    else {
+        res.status(404);
+        return res.render('404');
+    }
+});
+
 app.use('/erppage/QRlogin', function (req, res, next) {
     res.locals.isProduction = app.get('env') == 'production';
     var jsFilePath = '/js/views/erp/QRCodeLogin.js';
@@ -524,10 +547,10 @@ app.use('/erppage/QRlogin', function (req, res, next) {
 
 app.use('/server/queryqrloginstate', function (req, res, next) {
     var id = req.query.id;
-    res.writeHead(200,{
-        "Content-Type":"text/plain;charset=utf-8"
-    });
     if(id == null || id.length == 0){
+        res.writeHead(200,{
+            "Content-Type":"text/plain;charset=utf-8"
+        });
         res.write('0');
         res.end();
     }
@@ -535,9 +558,16 @@ app.use('/server/queryqrloginstate', function (req, res, next) {
         dbhelper.asynQueryWithParams('SELECT dbo.FB员工登记姓名([登录用户代码]) as 姓名,登录用户代码 as 代码 FROM [base1].[dbo].[T124C外部快捷登录] where [登录令牌] = @id and datediff(minute, [登录时间], getdate()) < 30', [dbhelper.makeSqlparam('id', sqlTypes.NVarChar(50), id)])
         .then(record=>{
             if(record.recordset.length == 1){
+                res.cookie('_erplogrcdid', id, { signed: true, maxAge: 518400000, httpOnly: true });
+                res.writeHead(200,{
+                    "Content-Type":"text/plain;charset=utf-8"
+                });
                 res.write('1' + record.recordset[0]['姓名'] + ',' + record.recordset[0]['代码']);
             }
             else{
+                res.writeHead(200,{
+                    "Content-Type":"text/plain;charset=utf-8"
+                });
                 res.write('0');
             }
             res.end();
