@@ -7530,6 +7530,21 @@ class JSNode_JumpPage extends JSNode_Base {
             this.addSocket(this.outFlowSocket);
         }
 
+        if (nodeJson) {
+            this.inputScokets_arr.forEach(socket => {
+                switch (socket.name) {
+                    case 'alias':
+                        this.aliasScoket = socket;
+                        break;
+                }
+            });
+        }
+        if (this.aliasScoket == null) {
+            this.aliasScoket = this.addSocket(new NodeSocket('alias', this, true));
+        }
+        this.aliasScoket.label = '自订标题';
+        this.aliasScoket.type = ValueType.String;
+
         if (createHelper) {
             if (!IsEmptyString(this.pageCode)) {
                 if (!createHelper.project.loaded) {
@@ -7549,10 +7564,11 @@ class JSNode_JumpPage extends JSNode_Base {
     }
 
     pageChangedHandler() {
+        var paraminputScokets_arr = this.inputScokets_arr.filter(x=>x.name != "alias");
         if (this.targetPage == null) {
-            while (this.inputScokets_arr.length > 0) {
-                this.removeSocket(this.inputScokets_arr[this.inputScokets_arr.length - 1]);
-            }
+            paraminputScokets_arr.forEach(scoket=>{
+                this.removeSocket(scoket);
+            })
             while (this.outputScokets_arr.length > 0) {
                 this.removeSocket(this.outputScokets_arr[this.outputScokets_arr.length - 1]);
             }
@@ -7561,12 +7577,12 @@ class JSNode_JumpPage extends JSNode_Base {
         var pageEntryAttrs_arr = this.targetPage.getAttrArrayList(AttrNames.EntryParam);
         pageEntryAttrs_arr.forEach((attrItem, index) => {
             var inSocket = null;
-            if (index >= this.inputScokets_arr.length) {
+            if (index >= paraminputScokets_arr.length) {
                 inSocket = new NodeSocket(attrItem.name, this, true);
                 this.addSocket(inSocket);
             }
             else {
-                inSocket = this.inputScokets_arr[index];
+                inSocket = paraminputScokets_arr[index];
             }
             var paramLabel = this.targetPage.getAttribute(attrItem.name);
             if (paramLabel != inSocket.label) {
@@ -7575,8 +7591,8 @@ class JSNode_JumpPage extends JSNode_Base {
             }
             inSocket.inputable = false;
         });
-        while (this.inputScokets_arr.length > pageEntryAttrs_arr.length) {
-            this.removeSocket(this.inputScokets_arr[this.inputScokets_arr.length - 1]);
+        while (paraminputScokets_arr.length > pageEntryAttrs_arr.length) {
+            this.removeSocket(paraminputScokets_arr.pop());
         }
 
         var pageExportAttrs_arr = this.targetPage.getAttrArrayList(AttrNames.ExportParam);
@@ -7670,19 +7686,38 @@ class JSNode_JumpPage extends JSNode_Base {
         myJSBlock.pushLine('var ' + entryParamName + '={', 1);
         var i;
         var theSocket;
-        for (i = 0; i < this.inputScokets_arr.length; ++i) {
-            theSocket = this.inputScokets_arr[i];
+        var paraminputScokets_arr = this.inputScokets_arr.filter(x=>x.name != "alias");
+        for (i = 0; i < paraminputScokets_arr.length; ++i) {
+            theSocket = paraminputScokets_arr[i];
             var socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, myJSBlock, true);
             if (socketComRet.err) {
                 return false;
             }
             myJSBlock.pushLine(makeStr_AddAll(theSocket.label, ':', socketComRet.value, ','));
         }
+        var aliasSocket = this.inputScokets_arr.find(x=>x.name == "alias");
+        socketComRet = this.getSocketCompileValue(helper, aliasSocket, usePreNodes_arr, myJSBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+
         myJSBlock.pushLine(makeStr_AddAll('callBack', ':', flowLinks_arr.length > 0 ? callBackName : 'null', ','));
         myJSBlock.subNextIndent();
         myJSBlock.pushLine('};');
         myJSBlock.pushLine(makeLine_setGDataCache(thePage.id + AttrNames.EntryParam, entryParamName));
-        myJSBlock.pushLine("setTimeout(() => {store.dispatch(makeAction_gotoPage('" + this.pageCode + "'));},50);");
+        
+        var pageTitle = singleQuotesStr(thePage.getAttribute(AttrNames.Title));
+        if(!IsEmptyString(socketComRet.value)){
+            pageTitle = socketComRet.value;
+        }
+
+        myJSBlock.pushLine(makeLine_DeclareVar("needSetState", `{'${this.pageCode}.title':${pageTitle}}`));
+        myJSBlock.pushLine("setTimeout(() => {");
+        myJSBlock.addNextIndent();
+        myJSBlock.pushLine("store.dispatch(makeAction_setManyStateByPath(needSetState, ''));");
+        myJSBlock.pushLine("store.dispatch(makeAction_gotoPage('" + this.pageCode + "'));");
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine("},50);");
 
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
@@ -9162,6 +9197,9 @@ class JSNode_PopPage extends JSNode_Base {
                 case 'popMaxHeight':
                     this.popMaxHeightSocket = theSocket;
                     break;
+                case 'alias':
+                    this.aliasScoket = theSocket;
+                    break;
             }
         }
 
@@ -9169,6 +9207,12 @@ class JSNode_PopPage extends JSNode_Base {
             this.popPosSocket = new NodeSocket('popPos', this, true, { type: ValueType.String });
             this.addSocket(this.popPosSocket);
         }
+        if (this.aliasScoket == null) {
+            this.aliasScoket = this.addSocket(new NodeSocket('alias', this, true));
+        }
+        this.aliasScoket.label = '自订标题';
+        this.aliasScoket.type = ValueType.String;
+
         this.popPosSocket.inputDDC_setting = {options_arr: ['默认', '左侧', '右侧', '上侧', '下侧'] },
         this.popPosSocket.label = '位置';
         this.popPosSocket.inputable = true;
@@ -9223,7 +9267,13 @@ class JSNode_PopPage extends JSNode_Base {
     }
 
     preRemoveSocket(theSocket) {
-        return !theSocket.isIn || theSocket.hideIcon != true;
+        if(!theSocket.isIn){
+            return false;
+        }
+        if(theSocket.name == "alias"){
+            return false;
+        }
+        return theSocket.hideIcon != true;
     }
 
     projLoadedHandler() {
@@ -9233,22 +9283,18 @@ class JSNode_PopPage extends JSNode_Base {
     }
 
     pageChangedHandler() {
+        var paraminputScokets_arr = this.inputScokets_arr.filter(x=>x.name != "alias" && !x.hideIcon);
         if (this.targetPage == null) {
-            this.inputScokets_arr.concat().forEach(socket=>{
+            paraminputScokets_arr.forEach(socket=>{
                 this.removeSocket(socket);
             });
-            /*
-            while (this.inputScokets_arr.length > 0) {
-                this.removeSocket(this.inputScokets_arr[this.inputScokets_arr.length - 1]);
-            }
-            */
             while (this.outputScokets_arr.length > 0) {
                 this.removeSocket(this.outputScokets_arr[this.outputScokets_arr.length - 1]);
             }
             return;
         }
         this.inputScokets_arr.forEach(socket=>{
-            if(!socket.hideIcon){
+            if(!socket.hideIcon && socket.name != "alias"){
                 socket.isvalid = false;
             }
         });
@@ -9373,7 +9419,7 @@ class JSNode_PopPage extends JSNode_Base {
         var socketComRet;
         for (i = 0; i < this.inputScokets_arr.length; ++i) {
             theSocket = this.inputScokets_arr[i];
-            if(theSocket.hideIcon){
+            if(theSocket.hideIcon || theSocket.name == "alias"){
                 continue;
             }
             socketComRet = this.getSocketCompileValue(helper, theSocket, usePreNodes_arr, myJSBlock, true);
@@ -9389,12 +9435,24 @@ class JSNode_PopPage extends JSNode_Base {
         myJSBlock.pushLine(makeLine_setGDataCache(thePage.id + AttrNames.EntryParam, entryParamName));
         var inreducer = this.isInReducer(preNodes_arr);
 
+        var aliasSocket = this.inputScokets_arr.find(x=>x.name == "alias");
+        socketComRet = this.getSocketCompileValue(helper, aliasSocket, usePreNodes_arr, myJSBlock, true, true);
+        if (socketComRet.err) {
+            return false;
+        }
+        var pageTitle = singleQuotesStr(thePage.getAttribute(AttrNames.Title));
+        if(!IsEmptyString(socketComRet.value)){
+            pageTitle = socketComRet.value;
+        }
+        myJSBlock.pushLine(makeLine_DeclareVar("needSetState", `{'${this.pageCode}.title':${pageTitle}}`));
+
         var popPos = this.popPosSocket.defval;
         if(popPos == '默认'){
             myJSBlock.pushLine(makeStr_callFun(makeFName_initPage(thePage), inreducer ? [VarNames.State] : null, ';'));
             if (inreducer) {
                 myJSBlock.pushLine('setTimeout(() => {', 1);
             }
+            myJSBlock.pushLine("store.dispatch(makeAction_setManyStateByPath(needSetState, ''));");
             var isPersistent = thePage.getAttribute(AttrNames.PersistentPage) == true;
             if(isPersistent){
                 myJSBlock.pushLine(makeStr_AddAll('popPersistentPage(', singleQuotesStr(thePage.id), ',()=>{return <', thePage.getReactClassName(true), " key='", thePage.id, "' />;});"));
@@ -9494,6 +9552,7 @@ class JSNode_PopPage extends JSNode_Base {
             if (inreducer) {
                 myJSBlock.pushLine('setTimeout(() => {', 1);
             }
+            myJSBlock.pushLine("store.dispatch(makeAction_setManyStateByPath(needSetState, ''));");
             myJSBlock.pushLine("store.dispatch(makeAction_setStateByPath(newarr, " + (this.id + '_pageID+') + "'.sidepages_arr'));");
             if (inreducer) {
                 myJSBlock.subNextIndent();

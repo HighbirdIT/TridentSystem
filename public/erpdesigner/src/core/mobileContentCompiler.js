@@ -1017,9 +1017,10 @@ class MobileContentCompiler extends ContentCompiler {
             var gotoPageCaseBlock = clientSide.gotoPageFun.switchBlock.getCaseBlock(singleQuotesStr(pageKernel.id));
             gotoPageCaseBlock.pushLine(makeLine_Assign(VarNames.ReState, makeStr_callFun(makeFName_activePage(pageKernel), [VarNames.ReState])));
             if (!hideTitle) {
+                pageReactClass.renderHeaderFun.pushLine("var useTitle = this.props.title != null ? this.props.title : '"+pageTitle+"';");
                 pageReactClass.renderHeaderFun.pushLine("var routeElem = " + VarNames.PageRouter + ".length > 1 ? <i className='fa fa-arrow-left' /> : null;");
                 pageReactClass.renderHeaderFun.pushLine("return (<div className='d-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader'>", 1);
-                pageReactClass.renderHeaderFun.pushLine("<h3 onClick={pageRoute_Back}>{routeElem}" + pageTitle + "</h3>");
+                pageReactClass.renderHeaderFun.pushLine("<h3 onClick={pageRoute_Back}>{routeElem}{useTitle}</h3>");
                 pageReactClass.renderHeaderFun.pushLine("<span className='flex-grow-1 flex-shrink-1' />");
                 pageReactClass.renderHeaderFun.pushLine("{this.renderHeadButton()}");
                 pageReactClass.renderHeaderFun.subNextIndent();
@@ -1036,8 +1037,9 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else {
             if (!hideTitle) {
+                pageReactClass.renderHeaderFun.pushLine("var useTitle = this.props.title != null ? this.props.title : '"+pageTitle+"';");
                 pageReactClass.renderHeaderFun.pushLine("return (<div className='d-flex flex-grow-0 flex-shrink-0 bg-primary text-light align-items-center text-nowrap pageHeader'>", 1);
-                pageReactClass.renderHeaderFun.pushLine("<h3 className='flex-grow-1 flex-shrink-1'>" + pageTitle + "</h3>", -1);
+                pageReactClass.renderHeaderFun.pushLine("<h3 className='flex-grow-1 flex-shrink-1'>{useTitle}</h3>", -1);
                 if (pageKernel.getAttribute(AttrNames.AutoCloseBtn)) {
                     pageReactClass.renderHeaderFun.pushLine("<button onClick={this.close} className={'flex-grow-0 flex-shrink-0 btn btn-sm btn-danger mr-1' + (this.props.popInSide ? ' d-none' : '')}><i className='fa fa-close' /></button>");
                 }
@@ -1261,6 +1263,7 @@ class MobileContentCompiler extends ContentCompiler {
         pageReactClass.mapStateFun.pushLine("var pageState = getStateByPath(state, '" + pageKernel.id + "', {});");
         pageReactClass.addMapState('sidepages_arr', 'pageState.sidepages_arr');
         pageReactClass.addMapState('parentPageID', 'pageState.parentPageID');
+        pageReactClass.addMapState('title', 'pageState.title');
         pageRenderBlock.pushLine('{this.renderSidePage()}');
     }
 

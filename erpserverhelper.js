@@ -417,7 +417,7 @@ helper.CheckPermission = (req, projid, groups_arr)=>{
         recordset.forEach(rcd=>{
             cache[projid + '_' + rcd.权限组代码] = {
                 有效授权:rcd.有效授权,
-                过期时间:new Date(new Date().getTime() + 1000 * 60 * (rcd.有效授权 ? 60 : 3)).toLocaleTimeString(),  //有效授权缓存60分钟，无效授权缓存3分钟
+                过期时间:new Date(new Date().getTime() + 1000 * 60 * (rcd.有效授权 ? 10 : 0.5)).toLocaleTimeString(),  //有效授权缓存10分钟，无效授权缓存30淼
             };
             if(rcd.有效授权){
                 if(rcd.权限组代码 == 0){

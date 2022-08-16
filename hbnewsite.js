@@ -558,6 +558,11 @@ app.use('/server/queryqrloginstate', function (req, res, next) {
         dbhelper.asynQueryWithParams('SELECT dbo.FB员工登记姓名([登录用户代码]) as 姓名,登录用户代码 as 代码 FROM [base1].[dbo].[T124C外部快捷登录] where [登录令牌] = @id and datediff(minute, [登录时间], getdate()) < 30', [dbhelper.makeSqlparam('id', sqlTypes.NVarChar(50), id)])
         .then(record=>{
             if(record.recordset.length == 1){
+                var session =  req && req.session ? req.session : null;
+                if(session){
+                    session.permissionCache = null;
+                    session.g_envVar = null;
+                }
                 res.cookie('_erplogrcdid', id, { signed: true, maxAge: 518400000, httpOnly: true });
                 res.writeHead(200,{
                     "Content-Type":"text/plain;charset=utf-8"
@@ -855,12 +860,14 @@ function startServer() {
     freshPageCache();
     setInterval(freshPageCache, 1000 * 30);
     if(bUseHttps){
+        var privateKey;
+        var certificate;
         try{
-            var privateKey = fs.readFileSync('key.pem').toString();
-            var certificate = fs.readFileSync('cert.pem').toString();
+            privateKey = fs.readFileSync('key.pem').toString();
+            certificate = fs.readFileSync('cert.pem').toString();
         }catch(err){
-            var privateKey = null;
-            var certificate = null;
+            privateKey = null;
+            certificate = null;
         }
         var opts = {
             key : privateKey,
