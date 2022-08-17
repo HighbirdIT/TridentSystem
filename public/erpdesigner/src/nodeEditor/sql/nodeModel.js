@@ -748,16 +748,25 @@ class SqlNode_DBEntity extends SqlNode_Base {
                     '参数:"' + theSocket.name + '"未设置']);
                     return false;
                 }
-                params_arr.push({ name: theSocket.name, value: paramValue });
+                var paramIndex = 0;
+                if(!this.targetEntity.isCustomDS){
+                    var paramItem = this.targetEntity.getParamByName(theSocket.name);
+                    if(paramItem){
+                        paramIndex = paramItem.position;
+                    }
+                }
+                params_arr.push({ name: theSocket.name, value: paramValue, index:paramIndex });
             }
         }
         helper.addUseEntity(this.targetEntity);
         var selfCompileRet = new CompileResult(this);
         if(!this.targetEntity.isCustomDS){
             var paramsStr = '';
+            params_arr.sort((a,b)=>{return a.index-b.index});
             params_arr.forEach((item, index) => {
                 paramsStr += (index == 0 ? '' : ',') + item.value;
             });
+
             if(params_arr.length == 0){
                 if(this.targetEntity.type == 'FT' || this.targetEntity.type == 'FB'){
                     paramsStr = '()';
