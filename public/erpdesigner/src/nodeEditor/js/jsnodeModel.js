@@ -701,6 +701,7 @@ class JSNode_BluePrint extends EventEmitter {
         var isAttrCheckFun = false;
         var isGetXmlRowFun = false;
         var isRowBindFun = false;
+        var isOnSelectedChanged = false;
         var isGetJsonRowFun = false;
         var isInsAttrHookFun = false;
         if (this.group == EJsBluePrintFunGroup.CtlEvent) {
@@ -709,6 +710,7 @@ class JSNode_BluePrint extends EventEmitter {
             isOnloadFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnLoad;
             isOnmouseDownFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnMouseDown;
             isRowBindFun = this.name == ctlKernel.id + '_' + AttrNames.Event.OnRowBind;
+            isOnSelectedChanged = this.name == ctlKernel.id + '_' + AttrNames.Event.OnSelectedChanged;
 
             isNavieFun = isOnclickFun || isOnchangedFun || isOnloadFun || isOnmouseDownFun;
 
@@ -731,6 +733,7 @@ class JSNode_BluePrint extends EventEmitter {
         this.isAttrCheckFun = isAttrCheckFun;
         this.isGetXmlRowFun = isGetXmlRowFun;
         this.isRowBindFun = isRowBindFun;
+        this.isOnSelectedChanged = isOnSelectedChanged;
         this.isGetJsonRowFun = isGetJsonRowFun;
         this.isInsAttrHookFun = isInsAttrHookFun;
 
@@ -809,6 +812,10 @@ class JSNode_BluePrint extends EventEmitter {
                     theFun.scope.getVar(pageID + '_' + pageParam.name, true, makeStr_callFun('getPageEntryParam', [singleQuotesStr(pageID), singleQuotesStr(pageParam.name), pageParam.defVal]));
                 });
             }
+        }
+
+        if(isOnSelectedChanged){
+            theFun.scope.getVar(VarNames.RowKeyInfo_map, true, 'getRowKeyMapFromPath(fullPath)');
         }
 
         if(isRowBindFun){

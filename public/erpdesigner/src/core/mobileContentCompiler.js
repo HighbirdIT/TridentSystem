@@ -6244,6 +6244,12 @@ class MobileContentCompiler extends ContentCompiler {
         if(sizeMode == '真实尺寸'){
             ctlTag.setAttr('sizeMode', singleQuotesStr('natural'));
         }
+        else if(sizeMode == '适配容器宽度'){
+            ctlTag.setAttr('sizeMode', singleQuotesStr('fitWidth'));
+        }
+        else if(sizeMode == '适配容器高度'){
+            ctlTag.setAttr('sizeMode', singleQuotesStr('fitHeight'));
+        }
 
         var setScaleDataStateItem = null;
         var scaleData = theKernel.getAttribute('scale');

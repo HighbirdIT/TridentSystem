@@ -8,7 +8,7 @@ const FilePreviewer_TypeAttrsSetting = GenControlKernelAttrsSetting([
         new CAttribute('可否删除', 'deletable', ValueType.Boolean, false),
         new CAttribute('显示名称', 'showtitle', ValueType.Boolean, true),
         new CAttribute('图标尺寸', 'iconSize', ValueType.String, ''),
-        new CAttribute('SizeMode', 'sizeMode', ValueType.String, '', null, false, ['默认','真实尺寸']),
+        new CAttribute('SizeMode', 'sizeMode', ValueType.String, '', null, false, ['默认','真实尺寸','适配容器宽度','适配容器高度']),
 
         new CAttribute('缩放比例', 'scale', ValueType.Float, 1, true, false, null, null, true,{
             scriptable:true,
