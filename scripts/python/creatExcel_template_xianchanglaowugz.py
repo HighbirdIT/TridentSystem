@@ -8,9 +8,14 @@ import pymssql
 import pandas as pd
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter, column_index_from_string
-from 操作excel.excelApi.style import *
+from style import *
 from copy import copy
 import re
+
+pd.set_option('display.max_columns', 1000)  # 显示完整的列
+pd.set_option('display.max_rows', None)  # 显示完整的行
+pd.set_option('display.width', 1000)  # 显示最大的行宽
+pd.set_option('display.max_colwidth', 1000)  # 显示最大的列宽
 
 
 class SqlData(object):
@@ -23,8 +28,9 @@ class SqlData(object):
     def connection(self):
         # 创建连接对象
         try:
-            conn = pymssql.connect(host='erp.highbird.cn', server='erp.highbird.cn', port='9155', user='nizihua',
-                                   password='13o84x',
+            conn = pymssql.connect(host='erp.highbird.cn', server='erp.highbird.cn', port='9155',
+                                   user='python_tinyreader',
+                                   password='9THH2uJX3Mz3',
                                    database='base1', charset='utf8')
 
             cursor = conn.cursor(as_dict=True)
@@ -65,6 +71,7 @@ class DataDeal(object):
         对列的类型进行修正
         """
         self.df['工人工日'] = pd.to_numeric(self.df['工人工日'])
+        self.df['当日总工时'] = pd.to_numeric(self.df['当日总工时'])
         self.df['劳务费小计'] = pd.to_numeric(self.df['劳务费小计'])
 
     def add_new_column(self):
@@ -224,7 +231,7 @@ def clone_header(c, dst_sheet, loc_row):
     # loc_row 起始的行数 ，默认的列为1
     # 模板长度35 ， 高度4行
     p1 = (loc_row, 1)
-    p2 = (loc_row + 3, 35)
+    p2 = (loc_row + 3, 36)
 
     rc_range = [p1, p2]
 
@@ -238,7 +245,7 @@ def clone_header(c, dst_sheet, loc_row):
 def clone_footer(c, dst_sheet, loc_row):
     ...
     p1 = (loc_row, 1)
-    p2 = (loc_row + 3, 35)
+    p2 = (loc_row + 3, 36)
 
     rc_range = [p1, p2]
 
@@ -262,24 +269,29 @@ def create_table(projectName, month_word, loc_row, dataframe, cloneObj, dst_shee
         set_style(cell_c1)
         dst_sheet.row_dimensions[row_i].height = 20
 
-        time_sum = (df_month['工人工日'] * 100).sum() / 100
+
         price = df_month.loc[:, '工日单价'].iloc[0]
         total_price = df_month['劳务费小计'].sum()
+        worktime = (df_month['当日总工时'] * 100).sum() / 100
+        time_sum = float(worktime/9)
 
-        cell_AG = dst_sheet.cell(row=row_i, column=33, value=time_sum)
+        cell_AG = dst_sheet.cell(row=row_i, column=33, value=worktime)
         set_style(cell_AG)
 
-        cell_AH = dst_sheet.cell(row=row_i, column=34, value=price)
+        cell_AH = dst_sheet.cell(row=row_i, column=34, value=time_sum)
         set_style(cell_AH)
 
-        cell_AI = dst_sheet.cell(row=row_i, column=35, value=total_price)
+        cell_AI = dst_sheet.cell(row=row_i, column=35, value=price)
         set_style(cell_AI)
+
+        cell_AJ = dst_sheet.cell(row=row_i, column=36, value=total_price)
+        set_style(cell_AJ)
 
         # print(df_month)
         # 遍历工人数据
         for day in range(1, 32):
             working_time = None
-            res = df_month[df_month['day'] == day]['工人工日']
+            res = df_month[df_month['day'] == day]['当日总工时']
 
             working_time = res.iloc[0] if not res.empty else '/'
 
@@ -290,15 +302,19 @@ def create_table(projectName, month_word, loc_row, dataframe, cloneObj, dst_shee
 
     # 按照每日统计
     dst_sheet.row_dimensions[row_i].height = 20
-    table_sumDay = dataframe.groupby(['day'])['工人工日'].sum().reset_index(name='sumday')
-    total_time = dataframe['工人工日'].sum()
+    table_sumDay = dataframe.groupby(['day'])['当日总工时'].sum().reset_index(name='sumday')
+
     total_money = dataframe['劳务费小计'].sum()
+    total_worktime = dataframe['当日总工时'].sum()
+    total_time = float(total_worktime/9)
 
     name_t = dst_sheet.cell(row=row_i, column=1, value='合计')
     set_style(name_t)
-    cell_total_time = dst_sheet.cell(row=row_i, column=33, value=total_time)
-    cell_total_money = dst_sheet.cell(row=row_i, column=35, value=total_money)
+    cell_total_worktime = dst_sheet.cell(row=row_i, column=33, value=total_worktime)
+    cell_total_time = dst_sheet.cell(row=row_i, column=34, value=total_time)
+    cell_total_money = dst_sheet.cell(row=row_i, column=36, value=total_money)
 
+    set_style((cell_total_worktime))
     set_style(cell_total_time)
     set_style(cell_total_money)
 
@@ -343,6 +359,7 @@ def create_model_sheets(cloneObj, data_obj: DataDeal):
         except Exception as err:
             sheet = wb.copy_worksheet(empty_sheet)
             sheet.title = team
+
 
         create_detail_tables(cloneObj, df, sheet)
 
@@ -481,8 +498,6 @@ if __name__ == '__main__':
             # 筛选时间
             startTime = json_args.get('起始时间')
             endTime = json_args.get('结束时间')
-
-
 
     sql = "select  * from FT256D现场工人出勤统计('%s','%s','%s',%d,'%s','%s')" % (
         teamCode, companyCode, workerCode, projectCode, startTime, endTime)
