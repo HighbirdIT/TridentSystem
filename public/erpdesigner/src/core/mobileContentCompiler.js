@@ -5848,6 +5848,7 @@ class MobileContentCompiler extends ContentCompiler {
         var appandColumns_arr = [];
         var appandColAttrs_arr = theKernel.getAttrArrayList(AttrNames.AppandColumn);
         var canuseColumns = theKernel.getCanuseColumns();
+        var meetError = false;
         appandColAttrs_arr.forEach((attr, attrIndex) => {
             var attrValue = theKernel.getAttribute(attr.name);
             if (attrValue != null && !IsEmptyString(attrValue.name)) {
@@ -5865,10 +5866,13 @@ class MobileContentCompiler extends ContentCompiler {
                         theKernel,
                         this.projectCompiler.clickKernelLogBadgeItemHandler),
                     '附加数据列' + attrIndex + '不在数据源中']);
-                    return false;
+                    meetError = true;
                 }
             }
         });
+        if(meetError){
+            return false;
+        }
         if (appandColumns_arr.length > 0) {
             ctlTag.setAttr('dataCols', singleQuotesStr(appandColumns_arr.map(item => { return item.name; }).join(',')));
         }
@@ -6553,6 +6557,9 @@ class MobileContentCompiler extends ContentCompiler {
         }
         else if(apptype == EThreeDAppType.大连并网拍照){
             tagName = 'VisibleERPC_ThreeDApp_BingWang';
+        }
+        else if(apptype == EThreeDAppType.大连WCB安装){
+            tagName = 'VisibleERPC_ThreeDApp_AZWCB';
         }
 
         var ctlTag = new FormatHtmlTag(theKernel.id, tagName, this.clientSide);

@@ -200,6 +200,38 @@ function pulldata_查找相邻构件信息(req,res){
 	});
 }
 
+function pulldata_同步WCB信息(req,res){
+	var g_envVar = req.session.g_envVar;
+	return co(function* () {
+		if(req.body.bundle == null){return serverhelper.createErrorRet('没有提供bundle',0,null);}
+		var bundle=req.body.bundle;
+		if(bundle.上传记录代码 == null){return serverhelper.createErrorRet('没有提供上传记录代码',0,null);};
+		if(bundle.最大距离 == null){return serverhelper.createErrorRet('没有提供最大距离',0,null);};
+		var params_arr = null;
+		params_arr=[
+			dbhelper.makeSqlparam('上传记录代码', sqlTypes.Int, bundle.上传记录代码),
+			dbhelper.makeSqlparam('最大距离', sqlTypes.Float, bundle.最大距离),
+		];
+		var sql = "select * from FT254E查找相邻耳板信息(@上传记录代码,@最大距离)";
+		if (sql == null || sql.length == 0) {return serverhelper.createErrorRet('生成sql失败');}
+		var rcdRlt = yield dbhelper.asynQueryWithParams(sql, params_arr);
+		var 相邻rcd_arr = rcdRlt.recordset;
+
+		params_arr=[
+			dbhelper.makeSqlparam('构件上传记录代码', sqlTypes.Int, bundle.上传记录代码),
+		];
+		var sql = "SELECT * FROM [dbo].[FT254E查询构件图纸参数SP] (@构件上传记录代码,4) order by 组号,序号,参数名称,参数序号";
+		rcdRlt = yield dbhelper.asynQueryWithParams(sql, params_arr);
+		var 参数rcd_arr = rcdRlt.recordset
+		
+		return {
+			相邻rcd_arr:相邻rcd_arr,
+			参数rcd_arr:参数rcd_arr,
+		};
+	});
+}
+
+
 function pulldata_查询构件记录图模(req,res){
 	var g_envVar = req.session.g_envVar;
 	return co(function* () {
@@ -305,6 +337,6 @@ processes_map.pulldata_查询构件记录图模 = pulldata_查询构件记录图
 processes_map.pulldata_组网数据查询 = pulldata_组网数据查询;
 processes_map.pulldata_并网数据查询 = pulldata_并网数据查询;
 processes_map.pulldata_项目全局可视模型 = pulldata_项目全局可视模型;
-
+processes_map.pulldata_同步WCB信息 = pulldata_同步WCB信息;
 
 module.exports = process;
