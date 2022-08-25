@@ -269,11 +269,13 @@ def create_table(projectName, month_word, loc_row, dataframe, cloneObj, dst_shee
         set_style(cell_c1)
         dst_sheet.row_dimensions[row_i].height = 20
 
-
         price = df_month.loc[:, '工日单价'].iloc[0]
-        total_price = df_month['劳务费小计'].sum()
+
         worktime = (df_month['当日总工时'] * 100).sum() / 100
-        time_sum = float(worktime/9)
+
+        time_sum = round(worktime / 9, 2)
+
+        total_price = round(price * time_sum, 2)
 
         cell_AG = dst_sheet.cell(row=row_i, column=33, value=worktime)
         set_style(cell_AG)
@@ -304,9 +306,12 @@ def create_table(projectName, month_word, loc_row, dataframe, cloneObj, dst_shee
     dst_sheet.row_dimensions[row_i].height = 20
     table_sumDay = dataframe.groupby(['day'])['当日总工时'].sum().reset_index(name='sumday')
 
-    total_money = dataframe['劳务费小计'].sum()
+    data__ = dataframe.groupby(['工人姓名', '工日单价'])['当日总工时'].sum().reset_index(name='工时总和')
+    data__['当月工资'] = data__['工日单价'] * (data__['工时总和'] / 9)
+
+    total_money = round(data__['当月工资'].sum(),2)
     total_worktime = dataframe['当日总工时'].sum()
-    total_time = float(total_worktime/9)
+    total_time = round(total_worktime / 9,2)
 
     name_t = dst_sheet.cell(row=row_i, column=1, value='合计')
     set_style(name_t)
@@ -359,7 +364,6 @@ def create_model_sheets(cloneObj, data_obj: DataDeal):
         except Exception as err:
             sheet = wb.copy_worksheet(empty_sheet)
             sheet.title = team
-
 
         create_detail_tables(cloneObj, df, sheet)
 
@@ -511,4 +515,4 @@ if __name__ == '__main__':
         else:
             print('')
     except Exception as err:
-        print('',err)
+        print('', err)
