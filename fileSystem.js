@@ -484,6 +484,24 @@ fileSystem.downloadExcelFile = (req, res) => {
     });
 };
 
+fileSystem.downloadZipFile = (req, res) => {
+    var zipid = req.query.zipid;
+    var zipName = req.query.zipname;
+    return co(function* () {
+        var zipFilePath = path.join(__dirname, 'filedata/zipFile', zipid + '.rar');
+        fs.readFile(zipFilePath, function (error, data) {
+            if (error) {
+                res.setHeader("Content-Type", "text/plain;charset=utf-8");
+                res.end("文件读取失败");
+            } else {
+                res.setHeader("Content-Type", "application/octet-stream");
+                res.setHeader('Content-Disposition', 'attachment;filename="' + encodeURIComponent(zipName));
+                res.end(data);
+            }
+        });
+    });
+};
+
 fileSystem.queryLongProcessResult = (req, res) => {
     return co(function* () {
         var bundle = req.body.bundle;

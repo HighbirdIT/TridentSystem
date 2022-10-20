@@ -118,7 +118,10 @@ class StationData:
                 elif line[0] == 'F':
                     t_arr = line.split(',')
                     temPt = HBGeometry.Point3d(float(t_arr[9]) * factor,float(t_arr[8]) * factor,float(t_arr[10]) * factor)
-                    md = MeasureData(temPt,newData,len(newData.measures_arr)+1,float(t_arr[4]) * factor,t_arr[1])
+                    useIndex = len(newData.measures_arr)+1
+                    # if str.isdigit(t_arr[1]):
+                    #     useIndex = int(t_arr[1])
+                    md = MeasureData(temPt,newData,useIndex,float(t_arr[4]) * factor,t_arr[1])
                     newData.measures_arr.append(md)
                     ms_dic[md.index] = md
         newData.measures_arr.sort(key=functools.cmp_to_key(MeasureData.SortData))

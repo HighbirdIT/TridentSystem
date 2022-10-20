@@ -2,6 +2,7 @@ import zipfile, os,sys,io
 from typing import List, Dict
 from zipfile import ZIP_STORED, ZIP_DEFLATED
 import json
+import os
 
 
 class FileZipHelper(object):
@@ -58,16 +59,18 @@ class Zip(object):
     @classmethod
     def ziper(cls):
         current_directory = os.path.dirname(os.path.abspath(__file__))
-        if not cls.File:
-            cls.File = os.path.join(current_directory, 'tempoutput/myZip.zip')
-        else:
-            cls.File = os.path.join(current_directory, 'tempoutput/'+cls.File)
+        # if not cls.File:
+        #     cls.File = os.path.join(current_directory, 'tempoutput/myZip.zip')
+        # else:
+        #     cls.File = os.path.join(current_directory, 'tempoutput/'+cls.File)
         return zipfile.ZipFile(file=Zip.File, mode=Zip.Mode, compression=Zip.Compression)
 
 
 if __name__ == '__main__':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     argv = sys.argv
+
+    # argv = ['',r'D:\work\TridentSystem\filedata\zipFile\config\zipcong_543685.json']
     
     if len(argv) > 1:
         json_config_path = argv[1]
@@ -80,8 +83,14 @@ if __name__ == '__main__':
 
         if json_config:
             zipPath = json_config.get('zipPath')
+            filehousePath = json_config.get('filehousePath')
             
             file_path_li = json_config.get('files')
+            for i in range(len(file_path_li)):
+                fPath = file_path_li[i]
+                if fPath[0] == '/':
+                    fPath = fPath[1:].replace('/','\\')
+                    file_path_li[i] = os.path.join(filehousePath,fPath)
             file_name_li = json_config.get('names')
 
             deal = FileZipHelper(file_path_li, file_name_li, zipPath)
@@ -90,6 +99,5 @@ if __name__ == '__main__':
                 print('err:',deal.err,'#')
             else:
                 print('result:',Zip.File,'#')
-                print('err:#')
     else:
         print('err:','python参数错误#')

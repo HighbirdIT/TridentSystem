@@ -22,7 +22,7 @@ const JSNODE_EXCELHEADER = 'excelHeader'
 const JSNODE_MD5 = 'md5加密'
 const JSNODE_FILEDELETE = '文件删除'
 const JSNODE_BIAXIALSTRETCHINGLENGTH = '双轴拉伸长度计算'
-const JSNODE_ZIP = '压缩文件'
+const JSNODE_ZIP = 'zipFiles'
 
 class JSNode_While extends JSNode_Base {
     constructor(initData, parentNode, createHelper, nodeJson) {
@@ -2781,8 +2781,17 @@ class JSNode_Zip extends JSNode_Base {
         if (this.outputScokets_arr.length > 0) {
             this.outputScokets_arr.forEach(socket => {
                 switch (socket.name) {
-                    case '返回值': 
-                    this.returnValueSocket = socket; 
+                    case 'return': 
+                    this.outReturnSocket = socket; 
+                    break;
+                    case 'zipPath': 
+                    this.outZipPathSocket = socket; 
+                    break;
+                    case 'zipName': 
+                    this.outZipNameSocket = socket; 
+                    break;
+                    case 'zipUrl': 
+                    this.outDownloadUrlSocket = socket; 
                     break;
                 }
             });
@@ -2790,8 +2799,8 @@ class JSNode_Zip extends JSNode_Base {
         if (this.inputScokets_arr.length > 0) {
             this.inputScokets_arr.forEach(socket => {
                 switch (socket.name) {
-                    case 'zipPath':
-                        this.zipPathSocket = socket;
+                    case 'zipName':
+                        this.zipNameSocket = socket;
                     case 'files':
                         this.filesSocket = socket;
                     case 'names':
@@ -2801,9 +2810,9 @@ class JSNode_Zip extends JSNode_Base {
         }
         
 
-        if (this.zipPathSocket == null) {
-            this.zipPathSocket = new NodeSocket('zipPath', this, true);
-            this.addSocket(this.zipPathSocket);
+        if (this.zipNameSocket == null) {
+            this.zipNameSocket = new NodeSocket('zipName', this, true);
+            this.addSocket(this.zipNameSocket);
         }
         if (this.filesSocket == null) {
             this.filesSocket = new NodeSocket('files', this, true);
@@ -2814,22 +2823,31 @@ class JSNode_Zip extends JSNode_Base {
             this.addSocket(this.namesSocket);
         }
         
-        if (this.returnValueSocket == null) {
-            this.returnValueSocket = this.addSocket(new NodeSocket('返回值', this, false));
+        if (this.outReturnSocket == null) {
+            this.outReturnSocket = this.addSocket(new NodeSocket('return', this, false));
+        }
+        if (this.outZipPathSocket == null) {
+            this.outZipPathSocket = this.addSocket(new NodeSocket('zipPath', this, false));
+        }
+        if (this.outZipNameSocket == null) {
+            this.outZipNameSocket = this.addSocket(new NodeSocket('zipName', this, false));
+        }
+        if (this.outDownloadUrlSocket == null) {
+            this.outDownloadUrlSocket = this.addSocket(new NodeSocket('zipUrl', this, false));
         }
         
-
-        this.zipPathSocket.label = '压缩包名称';
-        this.zipPathSocket.type = ValueType.String;
+        this.zipNameSocket.label = '压缩包名称';
+        this.zipNameSocket.type = ValueType.String;
 
         this.filesSocket.label = '文件路径';
         this.filesSocket.type = ValueType.Array;
         this.namesSocket.label = '文件重命名';
-        this.namesSocket.type = ValueType.Array;
+        this.namesSocket.type = ValueType.Array;      
 
-        this.returnValueSocket.label = '返回值';
-        this.returnValueSocket.type = ValueType.Object;
-      
+        this.outReturnSocket.label = '返回值';
+        this.outZipPathSocket.label = 'zipPath';
+        this.outZipNameSocket.label = 'zipName';
+        this.outDownloadUrlSocket.label = 'zipUrl';
     }
 
     compile(helper, preNodes_arr, belongBlock) {
@@ -2985,7 +3003,10 @@ class JSNode_Zip extends JSNode_Base {
         }
 
         var selfCompileRet = new CompileResult(this);
-        selfCompileRet.setSocketOut(this.returnValueSocket, dataVarName);
+        selfCompileRet.setSocketOut(this.outReturnSocket, dataVarName);
+        selfCompileRet.setSocketOut(this.outZipPathSocket, dataVarName + '.zipPath');
+        selfCompileRet.setSocketOut(this.outZipNameSocket, dataVarName + '.zipName');
+        selfCompileRet.setSocketOut(this.outDownloadUrlSocket, dataVarName + '.downloadUrl');
      
         
         helper.setCompileRetCache(this, selfCompileRet);

@@ -345,6 +345,7 @@ class ExcelBuilder(object):
                             useRowHeight = rowHeight
                             #print('useRowHeight=' + str(useRowHeight))
                 cell.border = self.rows.border
+                cell.quotePrefix = 1 if self.addQuet else 0
                 # 序号
                 if self.autoIndex:
                     serial_number = self.sheet.cell(row=start_row + row, column=1, value=row + 1)
@@ -407,7 +408,7 @@ class ExcelBuilder(object):
 if __name__ == '__main__':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     argv = sys.argv
-    #argv=['',r'd:\work\TridentSystem\filedata\excel\820c766a-4841-58a7-28b4-277ca49cbbea.xlsx',r'd:\work\TridentSystem\filedata\exceljson\1d584262-f1c1-5401-9073-06d7cb46b66c.json','1','0']
+    # argv=['',r'd:\work\TridentSystem\filedata\excel\820c766a-4841-58a7-28b4-277ca49cbbea.xlsx',r'd:\work\TridentSystem\filedata\exceljson\1d584262-f1c1-5401-9073-06d7cb46b66c.json','1','0']
     if len(argv) > 2:
         filePath = str(argv[1])
         jsonPath = str(argv[2])
@@ -416,6 +417,7 @@ if __name__ == '__main__':
         Excel.addQuet = 0 if len(argv) <= 4 else (1 if argv[4] == '1' else 0)
         title = TitleFactory(Title, data).create()
         header = HeaderFactory(Header, data).create()
+        # print('addQuet:%s'%(Excel.addQuet))
 
         rows = RowsFactory(Rows, data).create()
 

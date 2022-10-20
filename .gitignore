@@ -21,6 +21,7 @@ filedata/
 *.pyc
 scripts/python/shuangzhoutest/output
 scripts/python/shuangzhoutest/__pycache__
+scripts/python/tempoutput
 
 # put any other files you don;t want to check in here
 # such as .DS_Store(OSX), *.bak, etc.

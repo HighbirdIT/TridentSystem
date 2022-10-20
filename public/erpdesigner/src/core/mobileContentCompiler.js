@@ -1115,7 +1115,7 @@ class MobileContentCompiler extends ContentCompiler {
 
         pageReactClass.renderContentFun = pageReactClass.getFunction('renderContent', true);
         pageReactClass.renderContentFun.pushLine(VarNames.RetElem + " = (", 1);
-        pageReactClass.renderContentFun.pushLine("<div className='" + pageLayoutConfig.getClassName() + "'>", 1);
+        pageReactClass.renderContentFun.pushLine("<div "+(hadScroll ? "id='" + pageKernel.id + "scroller'" : "") + " className='" + pageLayoutConfig.getClassName() + "'>", 1);
         var pageRenderBlock = new FormatFileBlock(pageKernel.id);
         pageReactClass.renderContentFun.pushChild(pageRenderBlock);
         pageReactClass.renderContentFun.subNextIndent();

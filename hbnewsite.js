@@ -790,6 +790,16 @@ app.use('/download', function (req, res, next) {
     }
 });
 
+app.use('/downloadzip', function (req, res, next) {
+    if(req.query.zipid != null && req.query.zipname != null){
+        fileSystem.downloadZipFile(req, res);
+    }
+    else{
+        res.json({ err: '缺失参数' });
+        return;
+    }
+});
+
 app.use('/ai', function (req, res, next) {
     var childPath = req.path;
     if (childPath.length < 2) {

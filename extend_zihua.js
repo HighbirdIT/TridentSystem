@@ -156,19 +156,42 @@ function file_BiaxialStretchingLength(config){
 
 function zipHelper(config){
     return co(function* (){
+        config.filehousePath = path.join(__dirname, 'public');
+        var filedataPath = path.join(__dirname, 'filedata');
+        var zipFileDir = path.join(filedataPath,'zipFile');
+        if(!fs.existsSync(zipFileDir)){
+            fs.mkdirSync(zipFileDir)
+        }
+        var rarid = serverhelper.guid2()
+        config.zipPath = path.join(zipFileDir, rarid + '.rar');
+        var configDir = path.join(zipFileDir,'config');
+        if(!fs.existsSync(configDir)){
+            fs.mkdirSync(configDir)
+        }
         
         var scriptDir = path.join(__dirname, 'scripts/python/');
         var scriptPath = path.join(scriptDir, 'compressed_files.py');
-        var rlt = {};
+        var zipName = config.zipName;
+        var extname = path.extname(zipName);
+        zipName = zipName.replace(extname,'');
+        var zipFullName = zipName + '.rar';
+        var downloadUrl = `downloadzip?zipid=${rarid}&zipname=${encodeURIComponent(zipName)}`;
+        var rlt = {
+            zipPath:config.zipPath,
+            zipName:zipFullName,
+            err:null,
+            zipUrl:downloadUrl
+        };
        
-        // 生成json临时文件
-
+        // 生成config.json临时文件
         const data = JSON.stringify(config)
-        jsonName = Math.round(Math.random() * 999999)+'_json.json';
-        // console.log(jsonName);
+        jsonName = 'zipcong_' + Math.round(Math.random() * 999999) + '.json';
+        var jsonPath = path.join(configDir, jsonName);
         try{
-            var jsonPath = path.join(scriptDir, 'tempoutput/' + jsonName);  // 如果是本地文件
-            fs.writeFileSync(jsonPath,data)
+            if(fs.existsSync(jsonPath)){
+                fs.unlinkSync(jsonPath);
+            }
+            fs.writeFileSync(jsonPath,data);
         }catch(eo){
             return {
                 err: eo.message
@@ -178,7 +201,6 @@ function zipHelper(config){
         try {
             var startPythonCmd = 'python3 -W ignore ' + scriptPath + ' ' + '"'+jsonPath.replace(/"/g, "'")+'"';
             result = execSync(startPythonCmd).toString();
-            console.log(result)
         }
         catch (eo) {
             return {
@@ -187,26 +209,18 @@ function zipHelper(config){
         }
 
 
-        var err_pattern = /err:(.*)#/
-        var err = result.match(err_pattern)[1]
-        console.log(err,'-=-=-=-=-=')
+        var err_pattern = /err:(.*)#/;
+        var mathRlt = result.match(err_pattern);
+        var err = null;
+        if(mathRlt != null){
+            err = mathRlt[1];
+        }
         if (err == null||err == '' || err == 'none'|| err == "''" || err == '""'){
             zip_pattern = /result:(.*)#/
-            zipPath = result.match(zip_pattern)
-            if (zipPath != null){
-                try{
-                    return zipPath[1]
-                }catch(eo){
-                    return {err:eo.message}
-                }finally{
-                    fs.unlink(jsonPath, (err => { 
-                        if (err) {
-                            console.log(err)
-                        };})); 
-                }
-            }
+            zipPath = result.match(zip_pattern);
+            fs.unlinkSync(jsonPath);
         }else{
-            rlt.err = err[1];
+            rlt.err = err;
         }
         return rlt;
     })
