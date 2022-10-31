@@ -16,6 +16,7 @@ const JSNODE_OPENEXTERNAL_PAGE = 'openexternalpage';
 const JSNODE_DD_GETGEO_LOCATION = 'ddgetgeolocation';
 const JSNODE_DD_MAP_SEARCH = 'ddmapsearch';
 const JSNODE_DD_NAV_CLOSE = 'ddnavclose';
+const JSNODE_DD_TOOL_SCAN = 'ddtoolscan';
 
 const JSNODE_PAGE_CALLFUN = 'pagecallfun';
 
@@ -1626,6 +1627,112 @@ class JSNode_DD_NavClose extends JSNode_Base {
         var selfCompileRet = new CompileResult(this);
         selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
         helper.setCompileRetCache(this, selfCompileRet);
+        return selfCompileRet;
+    }
+}
+
+class JSNode_DD_ToolScan extends JSNode_Base {
+    constructor(initData, parentNode, createHelper, nodeJson) {
+        super(initData, parentNode, createHelper, JSNODE_DD_TOOL_SCAN, '钉钉.扫码', false, nodeJson);
+        autoBind(this);
+        this.genCloseure = true;
+
+        if (this.inFlowSocket == null) {
+            this.inFlowSocket = new NodeFlowSocket('flow_i', this, true);
+            this.addSocket(this.inFlowSocket);
+        }
+
+        if (this.outFlowSocket == null) {
+            this.outFlowSocket = new NodeFlowSocket('flow_o', this, false);
+            this.addSocket(this.outFlowSocket);
+        }
+
+
+        if (nodeJson) {
+            this.outputScokets_arr.forEach(socket => {
+                switch (socket.name) {
+                    case 'done':
+                        this.doneSocket = socket;
+                        break;
+                    case 'text':
+                        this.textSocket = socket;
+                        break;
+                    case 'errInfo':
+                        this.errorSocket = socket;
+                        break;
+                }
+            });
+        }
+
+        if (this.doneSocket == null) {
+            this.doneSocket = this.addSocket(new NodeSocket('done', this, false));
+        }
+
+        if (this.textSocket == null) {
+            this.textSocket = this.addSocket(new NodeSocket('text', this, false));
+        }
+
+        if (this.errorSocket == null) {
+            this.errorSocket = this.addSocket(new NodeSocket('errInfo', this, false));
+        }
+
+        this.textSocket.label = '结果文本';
+        this.errorSocket.label = '错误信息';
+        this.doneSocket.label = '是否成功';
+    }
+
+    compile(helper, preNodes_arr, belongBlock) {
+        var superRet = super.compile(helper, preNodes_arr);
+        if (superRet == false || superRet != null) {
+            return superRet;
+        }
+
+        var nodeThis = this;
+        var thisNodeTitle = nodeThis.getNodeTitle();
+        var usePreNodes_arr = preNodes_arr.concat(this);
+
+        var myJSBlock = new FormatFileBlock('');
+        var callBackBlock = new FormatFileBlock('callBack');
+        belongBlock.pushChild(myJSBlock);
+        myJSBlock.pushChild(callBackBlock);
+
+        var callBackVarName = this.id + '_callBack';
+        var doneVarName = this.id + '_done';
+        var textVarName = this.id + '_text';
+        var errInfoVarName = this.id + '_error';
+        myJSBlock.pushLine(`var ${callBackVarName}=(${doneVarName},${textVarName},${errInfoVarName})=>{`,1);
+        myJSBlock.pushChild(callBackBlock);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('};');
+
+        var onSuccessVarName = this.id + '_onScuccess';
+        myJSBlock.pushLine('var ' + onSuccessVarName + ' = result=>{', 1);
+        myJSBlock.pushLine(`${callBackVarName}(true,result.text,null);`);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('};');
+
+        var onFailVarName = this.id + '_onFail';
+        myJSBlock.pushLine('var ' + onFailVarName + ' = err=>{', 1);
+        myJSBlock.pushLine(`${callBackVarName}(false,null,JSON.stringify(err));`);
+        myJSBlock.subNextIndent();
+        myJSBlock.pushLine('};');
+
+        var ifBlock = new JSFile_IF('checkENV', 'isMobile && isInDingTalk');
+        myJSBlock.pushChild(ifBlock);
+        ifBlock.trueBlock.pushLine("dingdingKit.biz.util.scan({type:'all',onSuccess:" + onSuccessVarName + ",onFail:" + onFailVarName + "});");
+        ifBlock.falseBlock.pushLine(`${callBackVarName}(false,null,'只能在钉钉手机端使用扫码功能');`);
+
+        var selfCompileRet = new CompileResult(this);
+        selfCompileRet.setSocketOut(this.inFlowSocket, '', myJSBlock);
+        selfCompileRet.setSocketOut(this.doneSocket, this.id + '_done');
+        selfCompileRet.setSocketOut(this.textSocket, this.id + '_text');
+        selfCompileRet.setSocketOut(this.errorSocket, this.id + '_error');
+        helper.setCompileRetCache(this, selfCompileRet);
+
+        if (this.compileOutFlow(helper, usePreNodes_arr, callBackBlock) == false) {
+            return false;
+        }
+
         return selfCompileRet;
     }
 }
@@ -6488,6 +6595,10 @@ JSNodeClassMap[JSNODE_DD_MAP_SEARCH] = {
 };
 JSNodeClassMap[JSNODE_DD_NAV_CLOSE] = {
     modelClass: JSNode_DD_NavClose,
+    comClass: C_Node_SimpleNode,
+};
+JSNodeClassMap[JSNODE_DD_TOOL_SCAN] = {
+    modelClass: JSNode_DD_ToolScan,
     comClass: C_Node_SimpleNode,
 };
 JSNodeClassMap[JSNODE_GETFORMXMLDATA] = {

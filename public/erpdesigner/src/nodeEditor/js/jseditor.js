@@ -415,6 +415,11 @@ const JSNodeEditorControls_arr =[
         type:'钉钉Api'
     },
     {
+        label:'钉钉-扫码',
+        nodeClass:JSNode_DD_ToolScan,
+        type:'钉钉Api'
+    },
+    {
         label:'函数-创建局部函数',
         nodeClass:JSNode_Fun_Create,
         type:'操作函数'
