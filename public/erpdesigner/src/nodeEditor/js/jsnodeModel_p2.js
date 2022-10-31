@@ -1694,7 +1694,6 @@ class JSNode_DD_ToolScan extends JSNode_Base {
         var myJSBlock = new FormatFileBlock('');
         var callBackBlock = new FormatFileBlock('callBack');
         belongBlock.pushChild(myJSBlock);
-        myJSBlock.pushChild(callBackBlock);
 
         var callBackVarName = this.id + '_callBack';
         var doneVarName = this.id + '_done';

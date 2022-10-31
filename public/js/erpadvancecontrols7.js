@@ -213,33 +213,120 @@ function ERPC_TaskSelector_dispatchtoprops(dispatch, ownprops) {
 // 大连项目适用
 var DalianServerURL = '/erppage/server/dalian';
 var DaLianStatus_Setting = {
-    CellSize: 30
+    CellSize: 33,
+    BtnSize: 28
 };
 var DaLianStatus_HheaderCellSyle = { width: DaLianStatus_Setting.CellSize + 'px', height: DaLianStatus_Setting.CellSize + 'px' };
+var DaLianStatus_NormalCellSyle = { width: DaLianStatus_Setting.CellSize + 'px', height: DaLianStatus_Setting.CellSize + 'px', padding: '2px' };
+var DaLianStatus_ButtonCellSyle = { width: DaLianStatus_Setting.BtnSize + 'px', height: DaLianStatus_Setting.BtnSize + 'px' };
 
-var ERPC_DaLianStatus = function (_React$PureComponent2) {
-    _inherits(ERPC_DaLianStatus, _React$PureComponent2);
+var CDSComponentData = function CDSComponentData(data) {
+    _classCallCheck(this, CDSComponentData);
+
+    this.data = data;
+    for (var si in data) {
+        this[si] = data[si];
+    }
+};
+
+var C_DaLianStatusCell = function (_React$PureComponent2) {
+    _inherits(C_DaLianStatusCell, _React$PureComponent2);
+
+    function C_DaLianStatusCell(props) {
+        _classCallCheck(this, C_DaLianStatusCell);
+
+        var _this2 = _possibleConstructorReturn(this, (C_DaLianStatusCell.__proto__ || Object.getPrototypeOf(C_DaLianStatusCell)).call(this, props));
+
+        _this2.state = {};
+        _this2.btnClickHandler = _this2.btnClickHandler.bind(_this2);
+        return _this2;
+    }
+
+    _createClass(C_DaLianStatusCell, [{
+        key: 'btnClickHandler',
+        value: function btnClickHandler(ev) {
+            if (this.props.onClick) {
+                this.props.onClick(this);
+            }
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var contentElem = null;
+            var data = this.props.data;
+            var rootClassName = 'd-block border text-center flex-shrink-0 flex-grow-0';
+            if (data == null) {
+                rootClassName += ' bg-secondary';
+            } else {
+                contentElem = React.createElement(
+                    'button',
+                    { onClick: this.btnClickHandler, type: 'button', className: 'btn btn-sm btn-primary p-1', style: DaLianStatus_ButtonCellSyle },
+                    data.列号
+                );
+            }
+            return React.createElement(
+                'div',
+                { className: rootClassName, style: DaLianStatus_NormalCellSyle },
+                contentElem
+            );
+        }
+    }]);
+
+    return C_DaLianStatusCell;
+}(React.PureComponent);
+
+var C_DaLianStatusRow = function (_React$PureComponent3) {
+    _inherits(C_DaLianStatusRow, _React$PureComponent3);
+
+    function C_DaLianStatusRow(props) {
+        _classCallCheck(this, C_DaLianStatusRow);
+
+        var _this3 = _possibleConstructorReturn(this, (C_DaLianStatusRow.__proto__ || Object.getPrototypeOf(C_DaLianStatusRow)).call(this, props));
+
+        _this3.state = {};
+        return _this3;
+    }
+
+    _createClass(C_DaLianStatusRow, [{
+        key: 'render',
+        value: function render() {
+            var contentElem = null;
+            if (this.props.data == null) {} else {}
+            return React.createElement(
+                'div',
+                { className: 'd-flex flex-shrink-0 flex-grow-0' },
+                Children
+            );
+        }
+    }]);
+
+    return C_DaLianStatusRow;
+}(React.PureComponent);
+
+var ERPC_DaLianStatus = function (_React$PureComponent4) {
+    _inherits(ERPC_DaLianStatus, _React$PureComponent4);
 
     function ERPC_DaLianStatus(props) {
         _classCallCheck(this, ERPC_DaLianStatus);
 
-        var _this2 = _possibleConstructorReturn(this, (ERPC_DaLianStatus.__proto__ || Object.getPrototypeOf(ERPC_DaLianStatus)).call(this, props));
+        var _this4 = _possibleConstructorReturn(this, (ERPC_DaLianStatus.__proto__ || Object.getPrototypeOf(ERPC_DaLianStatus)).call(this, props));
 
-        ERPControlBase(_this2);
-        _this2.state = Object.assign(_this2.initState, {
-            钢框架数据_arr: null,
+        ERPControlBase(_this4);
+        _this4.state = Object.assign(_this4.initState, {
+            钢框架cell_dic: null,
             行Range: null,
             列Range: null
         });
-        _this2.gridDivScrollHandler = _this2.gridDivScrollHandler.bind(_this2);
-        _this2.clickSearchHandler = _this2.clickSearchHandler.bind(_this2);
-        _this2.processData = _this2.processData.bind(_this2);
+        _this4.gridDivScrollHandler = _this4.gridDivScrollHandler.bind(_this4);
+        _this4.clickSearchHandler = _this4.clickSearchHandler.bind(_this4);
+        _this4.processData = _this4.processData.bind(_this4);
+        _this4.clickCellHandler = _this4.clickCellHandler.bind(_this4);
 
-        _this2.gridDivRef = React.createRef();
-        _this2.rowHeaderDivRef = React.createRef();
-        _this2.columnHeaderDiv = React.createRef();
-        _this2.selectRef = React.createRef();
-        return _this2;
+        _this4.gridDivRef = React.createRef();
+        _this4.rowHeaderDivRef = React.createRef();
+        _this4.columnHeaderDiv = React.createRef();
+        _this4.selectRef = React.createRef();
+        return _this4;
     }
 
     _createClass(ERPC_DaLianStatus, [{
@@ -255,7 +342,7 @@ var ERPC_DaLianStatus = function (_React$PureComponent2) {
     }, {
         key: 'clickSearchHandler',
         value: function clickSearchHandler(ev) {
-            var _this3 = this;
+            var _this5 = this;
 
             if (this.selectRef.current == null) {
                 return;
@@ -281,7 +368,7 @@ var ERPC_DaLianStatus = function (_React$PureComponent2) {
                     //     fetching:false,
                     // });
                     self.钢框架数据_arr = retJson.data;
-                    _this3.processData();
+                    _this5.processData();
                 }
             });
             // nativeFetchJson();
@@ -289,6 +376,7 @@ var ERPC_DaLianStatus = function (_React$PureComponent2) {
     }, {
         key: 'processData',
         value: function processData() {
+            var 钢框架cell_dic = {};
             var 钢框架数据_arr = this.钢框架数据_arr;
             var min行号 = 999;
             var max行号 = 0;
@@ -300,14 +388,21 @@ var ERPC_DaLianStatus = function (_React$PureComponent2) {
                 max行号 = Math.max(max行号, data.行号);
                 min列号 = Math.min(min列号, data.列号);
                 max列号 = Math.max(max列号, data.列号);
+                var key = data.行号 + '_' + data.列号;
+                钢框架cell_dic[key] = new CDSComponentData(data);
             }
 
             this.setState({
                 fetching: false,
-                钢框架数据_arr: 钢框架数据_arr,
+                钢框架cell_dic: 钢框架cell_dic,
                 行Range: [min行号, max行号],
                 列Range: [min列号, max列号]
             });
+        }
+    }, {
+        key: 'clickCellHandler',
+        value: function clickCellHandler(cellElem) {
+            console.log(cellElem);
         }
     }, {
         key: 'render',
@@ -326,10 +421,11 @@ var ERPC_DaLianStatus = function (_React$PureComponent2) {
             } else if (this.state.fetchingErr != null) {
                 titleInfo = this.state.fetchingErr;
                 infoTye = 'danger';
-            } else if (this.state.钢框架数据_arr == null) {
+            } else if (this.state.钢框架cell_dic == null) {
                 titleInfo = '请点击检索按钮';
                 infoTye = 'light';
             } else {
+                var 钢框架cell_dic = this.state.钢框架cell_dic;
                 var 行Range = this.state.行Range;
                 var 列Range = this.state.列Range;
                 var rowCount = 行Range[1] - 行Range[0] + 1;
@@ -353,18 +449,17 @@ var ERPC_DaLianStatus = function (_React$PureComponent2) {
                 }
 
                 for (var row_i = 行Range[1]; row_i >= 行Range[0]; --row_i) {
-                    var colElems = [];
+                    // rowElems.push(<C_DaLianStatusRow key={row_i} />);
+                    // continue;
+                    var cellElems = [];
                     for (var col_i = 列Range[0]; col_i <= 列Range[1]; ++col_i) {
-                        colElems.push(React.createElement(
-                            'div',
-                            { key: col_i, className: 'd-block border text-center pt-1 pb-1 flex-shrink-0 flex-grow-0', style: { width: CellSize + 'px', height: CellSize + 'px' } },
-                            col_i
-                        ));
+                        var cellKey = row_i + '_' + col_i;
+                        cellElems.push(React.createElement(C_DaLianStatusCell, { key: col_i, data: 钢框架cell_dic[cellKey], onClick: this.clickCellHandler }));
                     }
                     rowElems.push(React.createElement(
                         'div',
                         { key: row_i, className: 'd-flex flex-shrink-0 flex-grow-0' },
-                        colElems
+                        cellElems
                     ));
                 }
             }
