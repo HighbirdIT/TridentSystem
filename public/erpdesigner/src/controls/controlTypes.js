@@ -25,6 +25,7 @@ const IFrameKernel_Type = 'iframe';
 const ChartKernel_Type = 'chart';
 const DingAudioRecorder_Type = 'dingaudiorecorder';
 const ThreeDAppAKernel_Type = 'threedappa';
+const DaLianStatusViewerKernel_Type = 'dalianstatusviewer';
 
 const M_LabelKernel_Prefix = 'M_Label';
 const M_PageKernel_Prefix = 'M_Page';
@@ -52,6 +53,7 @@ const ChartKernel_Prefix = 'chart';
 const M_ImageKernel_Prefix = 'M_Img';
 const DingAudioRecorder_Prefix = 'singlefuploader';
 const ThreeDAppAKernel_Prefix = 'tdappa';
+const DaLianStatusViewerKernel_Prefix = 'dlsv';
 
 function GetControlTypeReadableName(type){
     switch(type){
@@ -109,6 +111,8 @@ function GetControlTypeReadableName(type){
         return '语音输入';
         case ThreeDAppAKernel_Type:
         return '参数拍照APP';
+        case DaLianStatusViewerKernel_Type:
+        return '大连构件生产追踪';
     }
     return type;
 }

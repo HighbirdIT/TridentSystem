@@ -213,21 +213,61 @@ function ERPC_TaskSelector_dispatchtoprops(dispatch, ownprops) {
 // 大连项目适用
 var DalianServerURL = '/erppage/server/dalian';
 var DaLianStatus_Setting = {
-    CellSize: 33,
-    BtnSize: 28
+    CellSize: 31,
+    BtnSize: 26
 };
 var DaLianStatus_HheaderCellSyle = { width: DaLianStatus_Setting.CellSize + 'px', height: DaLianStatus_Setting.CellSize + 'px' };
 var DaLianStatus_NormalCellSyle = { width: DaLianStatus_Setting.CellSize + 'px', height: DaLianStatus_Setting.CellSize + 'px', padding: '2px' };
 var DaLianStatus_ButtonCellSyle = { width: DaLianStatus_Setting.BtnSize + 'px', height: DaLianStatus_Setting.BtnSize + 'px' };
-
-var CDSComponentData = function CDSComponentData(data) {
-    _classCallCheck(this, CDSComponentData);
-
-    this.data = data;
-    for (var si in data) {
-        this[si] = data[si];
-    }
+var 工序_arr = ['拼装', '油漆', '发运', '组膜', '吊膜'];
+var E构件类型 = {
+    钢框架: '钢框架',
+    铝框架: '铝框架',
+    驳接爪: '驳接爪',
+    特殊驳接爪: '特殊驳接爪'
 };
+var 构件类型_arr = [E构件类型.钢框架, E构件类型.铝框架, E构件类型.驳接爪, E构件类型.特殊驳接爪];
+
+var CDSComponentData = function () {
+    function CDSComponentData(data) {
+        _classCallCheck(this, CDSComponentData);
+
+        this.data = data;
+        for (var si in data) {
+            this[si] = data[si];
+        }
+    }
+
+    _createClass(CDSComponentData, [{
+        key: 'doQuery',
+        value: function doQuery(type) {
+            var ret_arr = this.pureQuery(type);
+            this.isDone = ret_arr[0];
+            this.doneDate = ret_arr[1];
+            if (this.isDone) {
+                var nowData = getNowDate();
+                this.passDay = getDateDiff('天', this.doneDate, nowData);
+            } else {
+                this.passDay = -1;
+            }
+        }
+    }, {
+        key: 'pureQuery',
+        value: function pureQuery(type) {
+            var statueKey = type + '状态';
+            var dateKey = type + '日期';
+            if (this[statueKey] == 1) {
+                var doneDate = castDate(this[dateKey]);
+                var nowData = getNowDate();
+                return [true, doneDate];
+            } else {
+                return [false, null];
+            }
+        }
+    }]);
+
+    return CDSComponentData;
+}();
 
 var C_DaLianStatusCell = function (_React$PureComponent2) {
     _inherits(C_DaLianStatusCell, _React$PureComponent2);
@@ -246,7 +286,7 @@ var C_DaLianStatusCell = function (_React$PureComponent2) {
         key: 'btnClickHandler',
         value: function btnClickHandler(ev) {
             if (this.props.onClick) {
-                this.props.onClick(this);
+                this.props.onClick(this.props.data);
             }
         }
     }, {
@@ -254,19 +294,71 @@ var C_DaLianStatusCell = function (_React$PureComponent2) {
         value: function render() {
             var contentElem = null;
             var data = this.props.data;
-            var rootClassName = 'd-block border text-center flex-shrink-0 flex-grow-0';
+            var rootBaseClassName = 'd-block text-center flex-shrink-0 flex-grow-0  ';
+            var rootClassName = '';
+            var btnBaseClassName = 'btn btn-sm p-1 ';
+            var btnClassName = '';
+            var label = '';
+            var selectedCell = this.props.selectedCell;
             if (data == null) {
-                rootClassName += ' bg-secondary';
+                rootClassName = 'border bg-secondary';
+                if (selectedCell) {
+                    if (selectedCell.列号 == this.props.col || selectedCell.行号 == this.props.row) {
+                        rootClassName = 'bg-info';
+                    }
+                }
             } else {
+                rootClassName = 'border bg-light';
+                // var statueKey = this.props.queryType + '状态';
+                // var dateKey = this.props.queryType + '日期';
+                if (data.isDone) {
+                    btnClassName = 'btn-success';
+                    // var doneDate = castDate(data[dateKey]);
+                    // var nowData = getNowDate();
+                    // var passDay = getDateDiff('天',doneDate,nowData);
+                    // if(passDay > 30){
+                    //     label = '30+';
+                    // }
+                    // else if(passDay > 20){
+                    //     label = '20+';
+                    // }else if(passDay > 10){
+                    //     label = '10+';
+                    // }
+                    var passDay = data.passDay;
+                    if (passDay > 9) {
+                        label = '9+';
+                    } else {
+                        label = passDay + '';
+                        if (passDay == 0) {
+                            label = '';
+                            btnClassName = 'btn-primary';
+                        }
+                    }
+                } else {
+                    btnClassName = 'btn-danger';
+                }
+
+                if (selectedCell) {
+                    var same行 = selectedCell.行号 == this.props.row;
+                    var same列 = selectedCell.列号 == this.props.col;
+                    if (same行 || same列) {
+                        if (same行 && same列) {
+                            rootClassName = 'bg-warning';
+                            btnClassName += ' text-dark';
+                        } else {
+                            rootClassName = 'bg-info';
+                        }
+                    }
+                }
                 contentElem = React.createElement(
                     'button',
-                    { onClick: this.btnClickHandler, type: 'button', className: 'btn btn-sm btn-primary p-1', style: DaLianStatus_ButtonCellSyle },
-                    data.列号
+                    { onClick: this.btnClickHandler, type: 'button', className: btnBaseClassName + btnClassName, style: DaLianStatus_ButtonCellSyle },
+                    label
                 );
             }
             return React.createElement(
                 'div',
-                { className: rootClassName, style: DaLianStatus_NormalCellSyle },
+                { className: rootBaseClassName + rootClassName, style: DaLianStatus_NormalCellSyle },
                 contentElem
             );
         }
@@ -275,58 +367,40 @@ var C_DaLianStatusCell = function (_React$PureComponent2) {
     return C_DaLianStatusCell;
 }(React.PureComponent);
 
-var C_DaLianStatusRow = function (_React$PureComponent3) {
-    _inherits(C_DaLianStatusRow, _React$PureComponent3);
-
-    function C_DaLianStatusRow(props) {
-        _classCallCheck(this, C_DaLianStatusRow);
-
-        var _this3 = _possibleConstructorReturn(this, (C_DaLianStatusRow.__proto__ || Object.getPrototypeOf(C_DaLianStatusRow)).call(this, props));
-
-        _this3.state = {};
-        return _this3;
-    }
-
-    _createClass(C_DaLianStatusRow, [{
-        key: 'render',
-        value: function render() {
-            var contentElem = null;
-            if (this.props.data == null) {} else {}
-            return React.createElement(
-                'div',
-                { className: 'd-flex flex-shrink-0 flex-grow-0' },
-                Children
-            );
-        }
-    }]);
-
-    return C_DaLianStatusRow;
-}(React.PureComponent);
-
-var ERPC_DaLianStatus = function (_React$PureComponent4) {
-    _inherits(ERPC_DaLianStatus, _React$PureComponent4);
+var ERPC_DaLianStatus = function (_React$PureComponent3) {
+    _inherits(ERPC_DaLianStatus, _React$PureComponent3);
 
     function ERPC_DaLianStatus(props) {
         _classCallCheck(this, ERPC_DaLianStatus);
 
-        var _this4 = _possibleConstructorReturn(this, (ERPC_DaLianStatus.__proto__ || Object.getPrototypeOf(ERPC_DaLianStatus)).call(this, props));
+        var _this3 = _possibleConstructorReturn(this, (ERPC_DaLianStatus.__proto__ || Object.getPrototypeOf(ERPC_DaLianStatus)).call(this, props));
 
-        ERPControlBase(_this4);
-        _this4.state = Object.assign(_this4.initState, {
+        ERPControlBase(_this3);
+        _this3.state = Object.assign(_this3.initState, {
             钢框架cell_dic: null,
+            铝框架cell_dic: null,
+            驳接爪cell_dic: null,
+            特殊驳接爪cell_dic: null,
             行Range: null,
-            列Range: null
+            列Range: null,
+            queryType: '拼装',
+            componentType: E构件类型.钢框架
         });
-        _this4.gridDivScrollHandler = _this4.gridDivScrollHandler.bind(_this4);
-        _this4.clickSearchHandler = _this4.clickSearchHandler.bind(_this4);
-        _this4.processData = _this4.processData.bind(_this4);
-        _this4.clickCellHandler = _this4.clickCellHandler.bind(_this4);
+        _this3.gridDivScrollHandler = _this3.gridDivScrollHandler.bind(_this3);
+        _this3.clickSearchHandler = _this3.clickSearchHandler.bind(_this3);
+        _this3.processData = _this3.processData.bind(_this3);
+        _this3.clickCellHandler = _this3.clickCellHandler.bind(_this3);
+        _this3.queryChangedHandler = _this3.queryChangedHandler.bind(_this3);
+        _this3.levelChangedHandler = _this3.levelChangedHandler.bind(_this3);
+        _this3.comTypeChangedHandler = _this3.comTypeChangedHandler.bind(_this3);
 
-        _this4.gridDivRef = React.createRef();
-        _this4.rowHeaderDivRef = React.createRef();
-        _this4.columnHeaderDiv = React.createRef();
-        _this4.selectRef = React.createRef();
-        return _this4;
+        _this3.gridDivRef = React.createRef();
+        _this3.rowHeaderDivRef = React.createRef();
+        _this3.columnHeaderDiv = React.createRef();
+        _this3.levelSelectRef = React.createRef();
+        _this3.querySelectRef = React.createRef();
+        _this3.comTypeSelectRef = React.createRef();
+        return _this3;
     }
 
     _createClass(ERPC_DaLianStatus, [{
@@ -340,11 +414,43 @@ var ERPC_DaLianStatus = function (_React$PureComponent4) {
             }
         }
     }, {
+        key: 'comTypeChangedHandler',
+        value: function comTypeChangedHandler(ev) {
+            var newType = this.comTypeSelectRef.current.value;
+            this.setState({
+                componentType: newType,
+                selectedCell: null
+            });
+        }
+    }, {
+        key: 'queryChangedHandler',
+        value: function queryChangedHandler(ev) {
+            var newType = this.querySelectRef.current.value;
+            var allCellData_arr = this.state.allCellData_arr;
+            if (allCellData_arr) {
+                for (var si in allCellData_arr) {
+                    var cell = allCellData_arr[si];
+                    cell.doQuery(newType);
+                }
+            }
+            this.setState({
+                queryType: newType,
+                selectedCell: null
+            });
+        }
+    }, {
+        key: 'levelChangedHandler',
+        value: function levelChangedHandler(ev) {
+            this.setState({
+                magicObj: {}
+            });
+        }
+    }, {
         key: 'clickSearchHandler',
         value: function clickSearchHandler(ev) {
-            var _this5 = this;
+            var _this4 = this;
 
-            if (this.selectRef.current == null) {
+            if (this.levelSelectRef.current == null) {
                 return;
             }
             if (this.state.fetching) {
@@ -352,11 +458,13 @@ var ERPC_DaLianStatus = function (_React$PureComponent4) {
             }
             var self = this;
             this.setState({
-                fetching: true
+                fetching: true,
+                level: 'F' + this.levelSelectRef.current.value,
+                levelCode: this.levelSelectRef.current.value
             });
             nativeFetchJson(false, DalianServerURL, {
                 action: 'getConstructState',
-                bundle: { userid: g_envVar.userid, 全局代码: this.selectRef.current.value, 材料种类: 'K' }
+                bundle: { userid: g_envVar.userid, 全局代码: this.levelSelectRef.current.value }
             }).then(function (retJson) {
                 if (retJson.err != null) {
                     self.setState({
@@ -364,11 +472,8 @@ var ERPC_DaLianStatus = function (_React$PureComponent4) {
                         fetchingErr: retJson.err.info
                     });
                 } else {
-                    // self.setState({
-                    //     fetching:false,
-                    // });
-                    self.钢框架数据_arr = retJson.data;
-                    _this5.processData();
+                    self.all数据_arr = retJson.data;
+                    _this4.processData();
                 }
             });
             // nativeFetchJson();
@@ -377,24 +482,52 @@ var ERPC_DaLianStatus = function (_React$PureComponent4) {
         key: 'processData',
         value: function processData() {
             var 钢框架cell_dic = {};
-            var 钢框架数据_arr = this.钢框架数据_arr;
+            var 铝框架cell_dic = {};
+            var 驳接爪cell_dic = {};
+            var 特殊驳接爪cell_dic = {};
+
+            var all数据_arr = this.all数据_arr;
+            var allCellData_arr = [];
             var min行号 = 999;
             var max行号 = 0;
             var min列号 = 999;
             var max列号 = 0;
-            for (var si in 钢框架数据_arr) {
-                var data = 钢框架数据_arr[si];
+            var queryType = this.state.queryType;
+            for (var si in all数据_arr) {
+                var data = all数据_arr[si];
                 min行号 = Math.min(min行号, data.行号);
                 max行号 = Math.max(max行号, data.行号);
                 min列号 = Math.min(min列号, data.列号);
                 max列号 = Math.max(max列号, data.列号);
                 var key = data.行号 + '_' + data.列号;
-                钢框架cell_dic[key] = new CDSComponentData(data);
+                var cellData = new CDSComponentData(data);
+                allCellData_arr.push(cellData);
+                cellData.key = key;
+                var 材料名称 = data.材料名称;
+                if (材料名称[0] == 'K') {
+                    钢框架cell_dic[key] = cellData;
+                }
+                if (材料名称[0] == 'V') {
+                    铝框架cell_dic[key] = cellData;
+                }
+                if (材料名称[0] == 'A') {
+                    if (材料名称 == 'AE' || 材料名称 == 'AF') {
+                        特殊驳接爪cell_dic[key] = cellData;
+                    } else {
+                        驳接爪cell_dic[key] = cellData;
+                    }
+                }
+
+                cellData.doQuery(queryType);
             }
 
             this.setState({
                 fetching: false,
                 钢框架cell_dic: 钢框架cell_dic,
+                铝框架cell_dic: 铝框架cell_dic,
+                驳接爪cell_dic: 驳接爪cell_dic,
+                特殊驳接爪cell_dic: 特殊驳接爪cell_dic,
+                allCellData_arr: allCellData_arr,
                 行Range: [min行号, max行号],
                 列Range: [min列号, max列号]
             });
@@ -402,7 +535,10 @@ var ERPC_DaLianStatus = function (_React$PureComponent4) {
     }, {
         key: 'clickCellHandler',
         value: function clickCellHandler(cellElem) {
-            console.log(cellElem);
+            var newValue = this.state.selectedCell == cellElem ? null : cellElem;
+            this.setState({
+                selectedCell: newValue
+            });
         }
     }, {
         key: 'render',
@@ -421,40 +557,87 @@ var ERPC_DaLianStatus = function (_React$PureComponent4) {
             } else if (this.state.fetchingErr != null) {
                 titleInfo = this.state.fetchingErr;
                 infoTye = 'danger';
-            } else if (this.state.钢框架cell_dic == null) {
+            } else if (this.all数据_arr == null) {
                 titleInfo = '请点击检索按钮';
                 infoTye = 'light';
             } else {
-                var 钢框架cell_dic = this.state.钢框架cell_dic;
+                var use数据_dic = null;
+                switch (this.state.componentType) {
+                    case E构件类型.钢框架:
+                        use数据_dic = this.state.钢框架cell_dic;
+                        break;
+                    case E构件类型.铝框架:
+                        use数据_dic = this.state.铝框架cell_dic;
+                        break;
+                    case E构件类型.驳接爪:
+                        use数据_dic = this.state.驳接爪cell_dic;
+                        break;
+                    case E构件类型.特殊驳接爪:
+                        use数据_dic = this.state.特殊驳接爪cell_dic;
+                        break;
+                }
+
+                if (this.levelSelectRef.current) {
+                    if (this.levelSelectRef.current.value != this.state.levelCode) {
+                        titleInfo = '更改楼层后请点击检索按钮来刷新数据';
+                    }
+                }
+
                 var 行Range = this.state.行Range;
                 var 列Range = this.state.列Range;
                 var rowCount = 行Range[1] - 行Range[0] + 1;
                 var columnCount = 列Range[1] - 列Range[0] + 1;
+                var selectedCell = this.state.selectedCell;
                 //autoScroll_Touch
                 var CellSize = DaLianStatus_Setting.CellSize;
-                for (var i = 列Range[0]; i <= columnCount; ++i) {
+                var infoContent = null;
+                for (var i = 列Range[0]; i <= 列Range[1]; ++i) {
+                    var useCalssName = '';
+                    if (selectedCell && selectedCell.列号 == i) {
+                        useCalssName = ' bg-info';
+                    }
                     columnHeaderElems.push(React.createElement(
                         'div',
-                        { key: i, className: 'd-block border text-center pt-1 pb-1 flex-shrink-0 flex-grow-0', style: DaLianStatus_HheaderCellSyle },
+                        { key: i, className: 'd-block border text-center pt-1 pb-1 flex-shrink-0 flex-grow-0' + useCalssName, style: DaLianStatus_HheaderCellSyle },
                         i
                     ));
                 }
 
                 for (var i = 行Range[1]; i >= 行Range[0]; --i) {
+                    var useCalssName = '';
+                    if (selectedCell && selectedCell.行号 == i) {
+                        useCalssName = ' bg-info';
+                    }
                     rowHeaderElems.push(React.createElement(
                         'div',
-                        { key: i, className: 'd-block border text-center pt-1 pb-1 flex-shrink-0 flex-grow-0', style: DaLianStatus_HheaderCellSyle },
+                        { key: i, className: 'd-block border text-center pt-1 pb-1 flex-shrink-0 flex-grow-0' + useCalssName, style: DaLianStatus_HheaderCellSyle },
                         i
                     ));
                 }
 
+                var count = 0;
+                var doneCount = 0;
+                var todyDoneCount = 0;
+                var yesterdayDoneCount = 0;
                 for (var row_i = 行Range[1]; row_i >= 行Range[0]; --row_i) {
                     // rowElems.push(<C_DaLianStatusRow key={row_i} />);
                     // continue;
                     var cellElems = [];
                     for (var col_i = 列Range[0]; col_i <= 列Range[1]; ++col_i) {
                         var cellKey = row_i + '_' + col_i;
-                        cellElems.push(React.createElement(C_DaLianStatusCell, { key: col_i, data: 钢框架cell_dic[cellKey], onClick: this.clickCellHandler }));
+                        var cellData = use数据_dic[cellKey];
+                        if (cellData) {
+                            count += 1;
+                            if (cellData.isDone) {
+                                doneCount += 1;
+                                if (cellData.passDay == 0) {
+                                    todyDoneCount += 1;
+                                } else if (cellData.passDay == 1) {
+                                    yesterdayDoneCount += 1;
+                                }
+                            }
+                        }
+                        cellElems.push(React.createElement(C_DaLianStatusCell, { key: col_i, data: cellData, onClick: this.clickCellHandler, queryType: this.state.queryType, selectedCell: selectedCell, row: row_i, col: col_i }));
                     }
                     rowElems.push(React.createElement(
                         'div',
@@ -462,22 +645,101 @@ var ERPC_DaLianStatus = function (_React$PureComponent4) {
                         cellElems
                     ));
                 }
+
+                if (selectedCell) {
+                    var elems_arr = [];
+                    for (var si in 工序_arr) {
+                        var 工序 = 工序_arr[si];
+                        var ret_arr = selectedCell.pureQuery(工序);
+                        var elemInfo = '';
+                        if (ret_arr[0]) {
+                            var doneDate = ret_arr[1];
+                            elemInfo = doneDate.getMonth() + 1 + '\u6708' + doneDate.getDate() + '\u65E5' + 工序;
+                        } else {
+                            elemInfo = '待' + 工序;
+                        }
+                        elems_arr.push(React.createElement(
+                            'span',
+                            { key: 工序, className: 'ml-1 badge badge-' + (ret_arr[0] ? 'success' : 'danger') },
+                            React.createElement('i', { className: 'fa fa-' + (ret_arr[0] ? 'check' : 'cross') }),
+                            elemInfo
+                        ));
+                    }
+                    infoContent = React.createElement(
+                        'div',
+                        { className: 'h4 d-flex flex-grow-1 flex-wrap' },
+                        React.createElement(
+                            'span',
+                            { className: 'flex-grow-0 flex-shrink-0' },
+                            '\u9009\u4E2D\u7684:'
+                        ),
+                        React.createElement(
+                            'span',
+                            { className: 'badge badge-parimary' },
+                            selectedCell.构件全称缓存
+                        ),
+                        elems_arr
+                    );
+                } else {
+                    infoContent = React.createElement(
+                        'div',
+                        { className: 'd-flex flex-column' },
+                        React.createElement(
+                            'div',
+                            { className: 'h4' },
+                            this.state.queryType,
+                            '\u8FDB\u5EA6:',
+                            React.createElement(
+                                'span',
+                                { className: 'badge badge-success' },
+                                doneCount
+                            ),
+                            '/',
+                            React.createElement(
+                                'span',
+                                { className: 'badge badge-light' },
+                                count
+                            ),
+                            React.createElement(
+                                'span',
+                                { className: 'ml-2' },
+                                '\u4ECA\u65E5\u5B8C\u6210:'
+                            ),
+                            React.createElement(
+                                'span',
+                                { className: 'badge badge-primary' },
+                                todyDoneCount
+                            ),
+                            React.createElement(
+                                'span',
+                                { className: 'ml-2' },
+                                '\u6628\u65E5\u5B8C\u6210:'
+                            ),
+                            React.createElement(
+                                'span',
+                                { className: 'badge badge-primary' },
+                                yesterdayDoneCount
+                            )
+                        )
+                    );
+                }
             }
+            var useRootClassName = 'd-flex flex-column hidenOverflow ' + this.props.className;
 
             return React.createElement(
                 'div',
-                { className: 'd-flex flex-column flex-grow-1 flex-shrink-1 hidenOverflow' },
+                { className: useRootClassName, style: this.props.style },
                 React.createElement(
                     'div',
-                    { className: 'bg-dark d-flex flex-grow-0 flex-shrink-1 align-items-center p-2' },
+                    { className: 'bg-dark d-flex flex-grow-0 flex-shrink-0 align-items-center p-2 flex-wrap' },
                     React.createElement(
                         'span',
-                        { className: 'h4 text-light mb-0 p-1' },
+                        { className: 'h4 text-light mb-0 p-1 flex-grow-0 flex-shrink-0' },
                         '\u5927\u8FDE\u751F\u4EA7\u65BD\u5DE5\u8FFD\u8E2A'
                     ),
                     React.createElement(
                         'select',
-                        { ref: this.selectRef, className: 'h4' },
+                        { ref: this.levelSelectRef, className: 'h4', onChange: this.levelChangedHandler },
                         React.createElement(
                             'option',
                             { value: '1' },
@@ -504,7 +766,37 @@ var ERPC_DaLianStatus = function (_React$PureComponent4) {
                         'span',
                         { className: 'h5 mb-0 p-1 ml-2 badge badge-' + infoTye },
                         titleInfo
+                    ),
+                    React.createElement(
+                        'select',
+                        { ref: this.comTypeSelectRef, className: 'h4', value: this.state.componentType, onChange: this.comTypeChangedHandler },
+                        构件类型_arr.map(function (item) {
+                            return React.createElement(
+                                'option',
+                                { key: item, value: item },
+                                item
+                            );
+                        })
+                    ),
+                    React.createElement(
+                        'select',
+                        { ref: this.querySelectRef, className: 'h4', value: this.state.queryType, onChange: this.queryChangedHandler },
+                        工序_arr.map(function (item) {
+                            return React.createElement(
+                                'option',
+                                { key: item, value: item },
+                                item
+                            );
+                        })
                     )
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'bg-secondary h5 text-light p-1 mb-0' },
+                    this.state.level,
+                    '\u94A2\u6846\u67B6',
+                    this.state.queryType,
+                    '\u72B6\u6001\u4E00\u89C8'
                 ),
                 React.createElement(
                     'div',
@@ -531,6 +823,11 @@ var ERPC_DaLianStatus = function (_React$PureComponent4) {
                         { id: 'gridDiv', ref: this.gridDivRef, className: 'flex-shrink-1 flex-grow-1', onScroll: this.gridDivScrollHandler, style: { overflow: 'scroll' } },
                         rowElems
                     )
+                ),
+                React.createElement(
+                    'div',
+                    { id: 'infoDiv', className: 'd-flex flex-shrink-0 flex-grow-0' },
+                    infoContent
                 )
             );
         }
