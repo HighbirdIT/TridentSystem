@@ -138,19 +138,23 @@ def write工序(targetSheet,baseRow,cell_dic,title,工序):
                 cellData = cell_dic[cellKey]
                 工序Data = cellData[工序]
                 if 工序Data['isDone']:
-                    doneCount += 1
-                    useFill = greenFill
-                    passDay = 工序Data['passDay']
-                    if passDay > 9:
-                        colLabel = '9+'
+                    if 'label' in 工序Data:
+                        colLabel = 工序Data['label']
+                        useFill = greenFill
                     else:
-                        colLabel = passDay
-                        if passDay == 0:
-                            todyCount += 1
-                            useFill = blueFill
-                            colLabel = ''
-                        elif passDay == 1:
-                            yesterDayCount += 1
+                        doneCount += 1
+                        useFill = greenFill
+                        passDay = 工序Data['passDay']
+                        if passDay > 9:
+                            colLabel = '9+'
+                        else:
+                            colLabel = passDay
+                            if passDay == 0:
+                                todyCount += 1
+                                useFill = blueFill
+                                colLabel = ''
+                            elif passDay == 1:
+                                yesterDayCount += 1
                 else:
                     useFill = redFill
 
