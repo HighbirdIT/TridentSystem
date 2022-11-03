@@ -485,7 +485,7 @@ class ERPC_DaLianStatus extends React.PureComponent {
         var callback_final = (state, data, err) => {
             if (err) {
                 console.error(err);
-                if (scriptBP_1_msg) { scriptBP_1_msg.setData(err.info, EMessageBoxType.Error, 'open'); }
+                if (scriptBP_1_msg) { scriptBP_1_msg.setData(err.info, EMessageBoxType.Error, '导出EXCEL'); }
                 else { SendToast(err.info, EToastType.Error); }
                 return;
             }
@@ -497,7 +497,7 @@ class ERPC_DaLianStatus extends React.PureComponent {
         fetchTracer[fetchKey] = fetchid;
         var baseBundle = {
         };
-        scriptBP_1_msg = PopMessageBox('', EMessageBoxType.Loading, 'open');
+        scriptBP_1_msg = PopMessageBox('', EMessageBoxType.Loading, '导出EXCEL');
         data_obj.headerSetting = [];
         data_obj.version = 2;
         var fileTitle = `大连${this.state.level}构件进度_${queryTime.getMonth() + 1}月${queryTime.getDate()}日` ;

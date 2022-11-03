@@ -370,7 +370,14 @@ fileSystem.saveExcelJsonData = (name, json, bAutoIndex, bQuotePrefix, recordid, 
             serverhelper.InformSysManager(eo.message, 'fileSystem.saveExcelJsonData')
         }
         if (errmsg == '') {
-            fs.unlink(jsonFilePath);
+            try{
+                if(fs.existsSync(jsonFilePath)){
+                    fs.unlinkSync(jsonFilePath);
+                }
+            }
+            catch(eo){
+                console.log(eo.me);
+            }
         }
     });
 };
@@ -389,7 +396,7 @@ fileSystem.exportExcelFileFromJson = (req, res) => {
         var templateCode = bundle.templateCode;
         var templateSetting = {};
         if (templateCode > 0) {
-            var tempalteRcdRlt = yield dbhelper.asynQueryWithParams('SELECT 模板标识,脚本名称 FROM [base1].[dbo].[T721C表格模板记录] where [表格模板记录代码]=@id', [
+            var tempalteRcdRlt = yield dbhelper.asynQueryWithParams('SELECT 模板标识,脚本名称,纯脚本模式 FROM [base1].[dbo].[T721C表格模板记录] where [表格模板记录代码]=@id', [
                 dbhelper.makeSqlparam('id', sqlTypes.Int, templateCode)
             ]);
             var templateFileExits = false;
@@ -399,7 +406,12 @@ fileSystem.exportExcelFileFromJson = (req, res) => {
             if (tempalteRcdRlt.recordset.length > 0) {
                 var templateRcd = tempalteRcdRlt.recordset[0];
                 templateFilePath = path.join(__dirname, 'filedata\\exceltemplate\\' + templateRcd['模板标识']);
-                templateFileExits = fs.existsSync(templateFilePath);
+                if(!templateRcd.纯脚本模式){
+                    templateFileExits = fs.existsSync(templateFilePath);
+                }
+                else{
+                    templateFileExits = true;
+                }
                 scriptPath = path.join(__dirname, 'scripts/python/' + templateRcd['脚本名称'] + '.py');
                 scriptFileExits = fs.existsSync(scriptPath);
             }

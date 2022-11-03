@@ -550,7 +550,7 @@ var ERPC_DaLianStatus = function (_React$PureComponent3) {
                 if (err) {
                     console.error(err);
                     if (scriptBP_1_msg) {
-                        scriptBP_1_msg.setData(err.info, EMessageBoxType.Error, 'open');
+                        scriptBP_1_msg.setData(err.info, EMessageBoxType.Error, '导出EXCEL');
                     } else {
                         SendToast(err.info, EToastType.Error);
                     }
@@ -565,7 +565,7 @@ var ERPC_DaLianStatus = function (_React$PureComponent3) {
             var fetchKey = this.state.id + '_onexport';
             fetchTracer[fetchKey] = fetchid;
             var baseBundle = {};
-            scriptBP_1_msg = PopMessageBox('', EMessageBoxType.Loading, 'open');
+            scriptBP_1_msg = PopMessageBox('', EMessageBoxType.Loading, '导出EXCEL');
             data_obj.headerSetting = [];
             data_obj.version = 2;
             var fileTitle = '\u5927\u8FDE' + this.state.level + '\u6784\u4EF6\u8FDB\u5EA6_' + (queryTime.getMonth() + 1) + '\u6708' + queryTime.getDate() + '\u65E5';
