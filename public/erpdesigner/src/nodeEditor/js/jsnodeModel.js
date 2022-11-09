@@ -9915,11 +9915,11 @@ class JSNode_ClosePage extends JSNode_Base {
             myJSBlock.pushLine('if(' + callBackName + '){setTimeout(()=>{' + callBackName + '(' + exportParamName + ');},20);}');
         }
         else{
-            var pageExportAttrs_arr = thePage.getAttrArrayList(AttrNames.ExportParam);
-            if(pageExportAttrs_arr.length > 0){
-                myJSBlock.pushLine('var retData = ' + makeStr_callFun(makeFName_getOuptputPage(thePage),[VarNames.State],';'));
-                myJSBlock.pushLine('if(retData == null){return;}');
-            }
+            // var pageExportAttrs_arr = thePage.getAttrArrayList(AttrNames.ExportParam);
+            // if(pageExportAttrs_arr.length > 0){
+            //     myJSBlock.pushLine('var retData = ' + makeStr_callFun(makeFName_getOuptputPage(thePage),[VarNames.State],';'));
+            //     myJSBlock.pushLine('if(retData == null){return;}');
+            // }
             myJSBlock.pushLine("pageRoute_Back();");
         }
         var selfCompileRet = new CompileResult(this);
