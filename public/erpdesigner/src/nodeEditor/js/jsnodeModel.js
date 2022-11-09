@@ -9920,7 +9920,15 @@ class JSNode_ClosePage extends JSNode_Base {
             //     myJSBlock.pushLine('var retData = ' + makeStr_callFun(makeFName_getOuptputPage(thePage),[VarNames.State],';'));
             //     myJSBlock.pushLine('if(retData == null){return;}');
             // }
+            var inreducer = this.isInReducer(preNodes_arr);
+            if (inreducer) {
+                myJSBlock.pushLine('setTimeout(() => {', 1);
+            }
             myJSBlock.pushLine("pageRoute_Back();");
+            myJSBlock.subNextIndent();
+            if (inreducer) {
+                myJSBlock.pushLine('},100);');
+            }
         }
         var selfCompileRet = new CompileResult(this);
 
