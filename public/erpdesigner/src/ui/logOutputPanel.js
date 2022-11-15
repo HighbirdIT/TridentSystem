@@ -211,7 +211,7 @@ class CLogItem extends React.PureComponent{
         return (<div className='d-flex flex-grow-0 flex-shrink-0 align-items-center'>
                     <span className='text-light'>{'[' + paseSec + ']'}</span>
                     {iconElem}
-                    <span id={itemID} className={textColor + ' selectable flex-grow-1 flex-shrink-1'}>
+                    <span id={itemID} className={textColor + ' selectable flex-grow-1 flex-shrink-1'} style={{whiteSpace:'pre'}}>
                         {this.renderItem(logItem)}
                     </span>
                     <span ref={this.copyBtnRef} className='btn btn-dark' data-clipboard-target={"#" + itemID}>

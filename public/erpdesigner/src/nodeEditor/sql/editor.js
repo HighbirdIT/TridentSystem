@@ -758,7 +758,8 @@ class C_SqlNode_Editor extends React.PureComponent{
         }
         else{
             this.logManager.log('[' + theBluePrint.name + ']编译成功');
-            this.logManager.log(compileRet.varDeclareStr + compileRet.sql);
+            console.log("sdafasdf")
+            this.logManager.log(formatSQLText(compileRet.varDeclareStr + compileRet.sql));
         }
         this.logManager.log('共' + this.logManager.getCount(LogTag_Warning) + '条警告,' + this.logManager.getCount(LogTag_Error) + '条错误,');
     }
